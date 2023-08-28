@@ -10,13 +10,13 @@
 #ifndef _BLE_MESH_TEST_H_
 #define _BLE_MESH_TEST_H_
 
+#include "net.h"
+#include "proxy_client.h"
 #include "mesh/adapter.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-int bt_mesh_test(void);
 
 struct bt_mesh_device_network_info {
     uint8_t  net_key[16];
@@ -44,6 +44,14 @@ int bt_mesh_test_update_white_list(struct bt_mesh_white_list *wl);
 int bt_mesh_test_start_scanning(bool wl_en);
 
 int bt_mesh_test_stop_scanning(void);
+
+typedef void (* bt_mesh_test_net_pdu_cb_t)(const uint8_t *data, uint16_t length);
+
+extern bt_mesh_test_net_pdu_cb_t net_pdu_test_cb;
+
+void bt_mesh_test_register_net_pdu_cb(bt_mesh_test_net_pdu_cb_t cb);
+
+void bt_mesh_test_set_seq(uint32_t seq);
 
 #ifdef __cplusplus
 }

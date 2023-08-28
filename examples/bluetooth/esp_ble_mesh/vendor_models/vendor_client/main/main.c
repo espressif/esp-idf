@@ -33,7 +33,6 @@
 #define PROV_OWN_ADDR       0x0001
 
 #define MSG_SEND_TTL        3
-#define MSG_SEND_REL        false
 #define MSG_TIMEOUT         0
 #define MSG_ROLE            ROLE_PROVISIONER
 
@@ -155,9 +154,7 @@ static void example_ble_mesh_set_msg_common(esp_ble_mesh_client_common_param_t *
     common->ctx.app_idx = prov_key.app_idx;
     common->ctx.addr = node->unicast_addr;
     common->ctx.send_ttl = MSG_SEND_TTL;
-    common->ctx.send_rel = MSG_SEND_REL;
     common->msg_timeout = MSG_TIMEOUT;
-    common->msg_role = MSG_ROLE;
 }
 
 static esp_err_t prov_complete(uint16_t node_index, const esp_ble_mesh_octet16_t uuid,
@@ -460,7 +457,6 @@ void example_ble_mesh_send_vendor_message(bool resend)
     ctx.app_idx = prov_key.app_idx;
     ctx.addr = store.server_addr;
     ctx.send_ttl = MSG_SEND_TTL;
-    ctx.send_rel = MSG_SEND_REL;
     opcode = ESP_BLE_MESH_VND_MODEL_OP_SEND;
 
     if (resend == false) {

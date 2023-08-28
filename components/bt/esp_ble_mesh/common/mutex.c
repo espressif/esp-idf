@@ -74,10 +74,54 @@ void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex)
     }
 }
 
-static inline void bt_mesh_alarm_mutex_new(void)
+void bt_mesh_r_mutex_create(bt_mesh_mutex_t *mutex)
 {
-    if (!alarm_lock.mutex) {
-        bt_mesh_mutex_create(&alarm_lock);
+    if (!mutex) {
+        BT_ERR("Create, invalid recursive mutex");
+        return;
+    }
+
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
+#if CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL
+    mutex->buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_IRAM_8BIT
+    mutex->buffer = heap_caps_calloc_prefer(1, sizeof(StaticQueue_t), 2, MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#endif
+    __ASSERT(mutex->buffer, "Failed to create recursive mutex buffer");
+    mutex->mutex = xSemaphoreCreateRecursiveMutexStatic(mutex->buffer);
+    __ASSERT(mutex->mutex, "Failed to create static recursive mutex");
+#else /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
+    mutex->mutex = xSemaphoreCreateRecursiveMutex();
+    __ASSERT(mutex->mutex, "Failed to create recursive mutex");
+#endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
+}
+
+void bt_mesh_r_mutex_free(bt_mesh_mutex_t *mutex)
+{
+    bt_mesh_mutex_free(mutex);
+}
+
+void bt_mesh_r_mutex_lock(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("Lock, invalid recursive mutex");
+        return;
+    }
+
+    if (mutex->mutex) {
+        xSemaphoreTakeRecursive(mutex->mutex, portMAX_DELAY);
+    }
+}
+
+void bt_mesh_r_mutex_unlock(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("Unlock, invalid recursive mutex");
+        return;
+    }
+
+    if (mutex->mutex) {
+        xSemaphoreGiveRecursive(mutex->mutex);
     }
 }
 
@@ -91,13 +135,6 @@ void bt_mesh_alarm_unlock(void)
     bt_mesh_mutex_unlock(&alarm_lock);
 }
 
-static inline void bt_mesh_list_mutex_new(void)
-{
-    if (!list_lock.mutex) {
-        bt_mesh_mutex_create(&list_lock);
-    }
-}
-
 void bt_mesh_list_lock(void)
 {
     bt_mesh_mutex_lock(&list_lock);
@@ -108,13 +145,6 @@ void bt_mesh_list_unlock(void)
     bt_mesh_mutex_unlock(&list_lock);
 }
 
-static inline void bt_mesh_buf_mutex_new(void)
-{
-    if (!buf_lock.mutex) {
-        bt_mesh_mutex_create(&buf_lock);
-    }
-}
-
 void bt_mesh_buf_lock(void)
 {
     bt_mesh_mutex_lock(&buf_lock);
@@ -123,13 +153,6 @@ void bt_mesh_buf_lock(void)
 void bt_mesh_buf_unlock(void)
 {
     bt_mesh_mutex_unlock(&buf_lock);
-}
-
-static inline void bt_mesh_atomic_mutex_new(void)
-{
-    if (!atomic_lock.mutex) {
-        bt_mesh_mutex_create(&atomic_lock);
-    }
 }
 
 void bt_mesh_atomic_lock(void)
@@ -144,38 +167,18 @@ void bt_mesh_atomic_unlock(void)
 
 void bt_mesh_mutex_init(void)
 {
-    bt_mesh_alarm_mutex_new();
-    bt_mesh_list_mutex_new();
-    bt_mesh_buf_mutex_new();
-    bt_mesh_atomic_mutex_new();
+    bt_mesh_mutex_create(&alarm_lock);
+    bt_mesh_mutex_create(&list_lock);
+    bt_mesh_mutex_create(&buf_lock);
+    bt_mesh_mutex_create(&atomic_lock);
 }
 
 #if CONFIG_BLE_MESH_DEINIT
-static inline void bt_mesh_alarm_mutex_free(void)
-{
-    bt_mesh_mutex_free(&alarm_lock);
-}
-
-static inline void bt_mesh_list_mutex_free(void)
-{
-    bt_mesh_mutex_free(&list_lock);
-}
-
-static inline void bt_mesh_buf_mutex_free(void)
-{
-    bt_mesh_mutex_free(&buf_lock);
-}
-
-static inline void bt_mesh_atomic_mutex_free(void)
-{
-    bt_mesh_mutex_free(&atomic_lock);
-}
-
 void bt_mesh_mutex_deinit(void)
 {
-    bt_mesh_alarm_mutex_free();
-    bt_mesh_list_mutex_free();
-    bt_mesh_buf_mutex_free();
-    bt_mesh_atomic_mutex_free();
+    bt_mesh_mutex_free(&alarm_lock);
+    bt_mesh_mutex_free(&list_lock);
+    bt_mesh_mutex_free(&buf_lock);
+    bt_mesh_mutex_free(&atomic_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */

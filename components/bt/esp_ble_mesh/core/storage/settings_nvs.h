@@ -57,6 +57,8 @@ int bt_mesh_remove_settings_item(bt_mesh_nvs_handle_t handle, const char *key, c
 int bt_mesh_remove_core_settings_item(const char *key, const uint16_t val);
 int bt_mesh_remove_uid_settings_item(const char *key, const uint16_t val);
 
+bool bt_mesh_is_settings_item_exist(struct net_buf_simple *buf, const uint16_t val);
+
 int bt_mesh_settings_erase_key(bt_mesh_nvs_handle_t handle, const char *key);
 int bt_mesh_settings_erase_all(bt_mesh_nvs_handle_t handle);
 

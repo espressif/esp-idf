@@ -390,7 +390,11 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/models/server/include"
                     "esp_ble_mesh/api/core/include"
                     "esp_ble_mesh/api/models/include"
-                    "esp_ble_mesh/api")
+                    "esp_ble_mesh/api"
+                    "esp_ble_mesh/v1.1/api/core/include"
+                    "esp_ble_mesh/v1.1/api/models/include"
+                    "esp_ble_mesh/v1.1/btc/include"
+                    "esp_ble_mesh/v1.1/include")
 
         list(APPEND srcs "esp_ble_mesh/api/core/esp_ble_mesh_ble_api.c"
                     "esp_ble_mesh/api/core/esp_ble_mesh_common_api.c"
@@ -452,15 +456,18 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/core/lpn.c"
                     "esp_ble_mesh/core/main.c"
                     "esp_ble_mesh/core/net.c"
+                    "esp_ble_mesh/core/prov_common.c"
                     "esp_ble_mesh/core/prov_node.c"
                     "esp_ble_mesh/core/prov_pvnr.c"
                     "esp_ble_mesh/core/proxy_client.c"
                     "esp_ble_mesh/core/proxy_server.c"
                     "esp_ble_mesh/core/pvnr_mgmt.c"
+                    "esp_ble_mesh/core/rpl.c"
                     "esp_ble_mesh/core/scan.c"
                     "esp_ble_mesh/core/test.c"
                     "esp_ble_mesh/core/transport.c"
                     "esp_ble_mesh/models/common/device_property.c"
+                    "esp_ble_mesh/models/common/model_common.c"
                     "esp_ble_mesh/models/client/client_common.c"
                     "esp_ble_mesh/models/client/generic_client.c"
                     "esp_ble_mesh/models/client/lighting_client.c"
@@ -472,7 +479,29 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/models/server/server_common.c"
                     "esp_ble_mesh/models/server/state_binding.c"
                     "esp_ble_mesh/models/server/state_transition.c"
-                    "esp_ble_mesh/models/server/time_scene_server.c")
+                    "esp_ble_mesh/models/server/time_scene_server.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_agg_model_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_brc_model_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_cm_data_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_df_model_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_lcd_model_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_odp_model_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_prb_model_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_rpr_model_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_sar_model_api.c"
+                    "esp_ble_mesh/v1.1/api/core/esp_ble_mesh_srpl_model_api.c"
+                    "esp_ble_mesh/v1.1/api/models/esp_ble_mesh_mbt_model_api.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_agg_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_brc_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_df_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_lcd_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_mbt_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_odp_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_prb_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_rpr_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_sar_model.c"
+                    "esp_ble_mesh/v1.1/btc/btc_ble_mesh_srpl_model.c"
+                    "esp_ble_mesh/v1.1/ext.c")
     endif()
 
 
@@ -739,6 +768,25 @@ if(CONFIG_BT_ENABLED)
         PROPERTIES COMPILE_FLAGS -Wno-address-of-packed-member)
 
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
+endif()
+
+if(CONFIG_BLE_MESH)
+    if(CONFIG_IDF_TARGET_ESP32)
+        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32/libmesh_v1.1.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+    elseif(CONFIG_IDF_TARGET_ESP32S3)
+        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32s3/libmesh_v1.1.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+    elseif(CONFIG_IDF_TARGET_ESP32C3)
+        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32c3/libmesh_v1.1.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+    elseif(CONFIG_IDF_TARGET_ESP32C6)
+        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32c6/libmesh_v1.1.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+    elseif(CONFIG_IDF_TARGET_ESP32H2)
+        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32h2/libmesh_v1.1.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+    endif()
 endif()
 
 if(CONFIG_BT_NIMBLE_MESH)

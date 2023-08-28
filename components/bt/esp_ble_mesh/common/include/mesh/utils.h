@@ -26,13 +26,13 @@ extern "C" {
  * Those are available for 32 bits architectures:
  */
 #ifndef POINTER_TO_UINT
-#define POINTER_TO_UINT(x) ((uint32_t)  (x))
+#define POINTER_TO_UINT(x) ((uint32_t) (x))
 #endif
 #ifndef UINT_TO_POINTER
 #define UINT_TO_POINTER(x) ((void *) (x))
 #endif
 #ifndef POINTER_TO_INT
-#define POINTER_TO_INT(x)  ((int32_t)  (x))
+#define POINTER_TO_INT(x)  ((int32_t) (x))
 #endif
 #ifndef INT_TO_POINTER
 #define INT_TO_POINTER(x)  ((void *) (x))
@@ -108,7 +108,7 @@ extern "C" {
  * evaluation version.
  */
 #ifndef MAX
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MAX(a, b)       (((a) > (b)) ? (a) : (b))
 #endif
 
 /** @brief Return smaller value of two provided expressions.
@@ -117,15 +117,15 @@ extern "C" {
  * evaluation version.
  */
 #ifndef MIN
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MIN(a, b)       (((a) < (b)) ? (a) : (b))
 #endif
 
 #ifndef BIT
-#define BIT(n)      (1UL << (n))
+#define BIT(n)          (1UL << (n))
 #endif
 
 #ifndef BIT_MASK
-#define BIT_MASK(n) (BIT(n) - 1)
+#define BIT_MASK(n)     (BIT(n) - 1)
 #endif
 
 /**

@@ -1,0 +1,38 @@
+menu "Example Configuration"
+
+    choice BLE_MESH_EXAMPLE_BOARD
+        prompt "Board selection for BLE Mesh"
+        default BLE_MESH_ESP_WROOM_32 if IDF_TARGET_ESP32
+        default BLE_MESH_ESP32C3_DEV if IDF_TARGET_ESP32C3
+        default BLE_MESH_ESP32S3_DEV if IDF_TARGET_ESP32S3
+        default BLE_MESH_ESP32C6_DEV if IDF_TARGET_ESP32C6
+        help
+            Select this option to choose the board for BLE Mesh. The default is ESP32-WROOM-32
+
+        config BLE_MESH_ESP_WROOM_32
+            bool "ESP32-WROOM-32"
+            depends on IDF_TARGET_ESP32
+
+        config BLE_MESH_ESP_WROVER
+            bool "ESP32-WROVER"
+            depends on IDF_TARGET_ESP32
+
+        config BLE_MESH_ESP32C3_DEV
+            bool "ESP32C3-DevKitC"
+            depends on IDF_TARGET_ESP32C3
+
+        config BLE_MESH_ESP32S3_DEV
+            bool "ESP32S3-DevKitC"
+            depends on IDF_TARGET_ESP32S3
+
+        config BLE_MESH_ESP32C6_DEV
+            bool "ESP32C6-DevKitC"
+            depends on IDF_TARGET_ESP32C6
+
+        config BLE_MESH_ESP32H2_DEV
+            bool "ESP32H2-DevKitC"
+            depends on IDF_TARGET_ESP32H2
+
+    endchoice
+
+endmenu

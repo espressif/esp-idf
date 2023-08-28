@@ -349,10 +349,8 @@ esp_err_t example_send_config_appkey_add(esp_ble_mesh_model_t *model,
     common.ctx.net_idx  = info->net_idx;
     common.ctx.app_idx  = 0x0000; /* not used for config messages */
     common.ctx.addr     = info->dst;
-    common.ctx.send_rel = false;
     common.ctx.send_ttl = 0;
     common.msg_timeout  = info->timeout;
-    common.msg_role     = info->role;
 
     return esp_ble_mesh_config_client_set_state(&common, &set);
 }
@@ -372,10 +370,8 @@ esp_err_t example_send_generic_onoff_get(esp_ble_mesh_model_t *model,
     common.ctx.net_idx  = info->net_idx;
     common.ctx.app_idx  = info->app_idx;
     common.ctx.addr     = info->dst;
-    common.ctx.send_rel = false;
     common.ctx.send_ttl = 0;
     common.msg_timeout  = info->timeout;
-    common.msg_role     = info->role;
 
     return esp_ble_mesh_generic_client_get_state(&common, &get);
 }
@@ -405,10 +401,8 @@ esp_err_t example_send_generic_onoff_set(esp_ble_mesh_model_t *model,
     common.ctx.net_idx  = info->net_idx;
     common.ctx.app_idx  = info->app_idx;
     common.ctx.addr     = info->dst;
-    common.ctx.send_rel = false;
     common.ctx.send_ttl = 0;
     common.msg_timeout  = info->timeout;
-    common.msg_role     = info->role;
 
     return esp_ble_mesh_generic_client_set_state(&common, &set);
 }
@@ -472,7 +466,6 @@ esp_err_t example_send_fast_prov_info_set(esp_ble_mesh_model_t *model,
         .net_idx  = info->net_idx,
         .app_idx  = info->app_idx,
         .addr     = info->dst,
-        .send_rel = false,
         .send_ttl = 0,
     };
     err = esp_ble_mesh_client_model_send_msg(model, &ctx,
@@ -495,7 +488,6 @@ esp_err_t example_send_fast_prov_net_key_add(esp_ble_mesh_model_t *model,
         .net_idx  = info->net_idx,
         .app_idx  = info->app_idx,
         .addr     = info->dst,
-        .send_rel = false,
         .send_ttl = 0,
     };
 
@@ -518,7 +510,6 @@ esp_err_t example_send_fast_prov_self_prov_node_addr(esp_ble_mesh_model_t *model
         .net_idx  = info->net_idx,
         .app_idx  = info->app_idx,
         .addr     = info->dst,
-        .send_rel = false,
         .send_ttl = 0,
     };
 
@@ -538,7 +529,6 @@ esp_err_t example_send_fast_prov_all_node_addr_get(esp_ble_mesh_model_t *model,
         .net_idx  = info->net_idx,
         .app_idx  = info->app_idx,
         .addr     = info->dst,
-        .send_rel = false,
         .send_ttl = 0,
     };
 
@@ -561,7 +551,6 @@ esp_err_t example_send_fast_prov_status_msg(esp_ble_mesh_model_t *model,
     case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_ACK:
     case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS:
         ctx->send_ttl = 0;
-        ctx->send_rel = false;
         break;
     default:
         ESP_LOGW(TAG, "%s: Invalid fast prov status opcode 0x%04" PRIx32, __func__, opcode);

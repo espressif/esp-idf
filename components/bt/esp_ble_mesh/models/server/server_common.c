@@ -171,9 +171,9 @@ void bt_mesh_server_alloc_ctx(struct k_work *work)
      * Here we use the allocated heap memory to store the "struct bt_mesh_msg_ctx".
      */
     __ASSERT(work, "Invalid parameter");
-    if (!work->_reserved) {
-        work->_reserved = bt_mesh_calloc(sizeof(struct bt_mesh_msg_ctx));
-        __ASSERT(work->_reserved, "Out of memory");
+    if (!work->user_data) {
+        work->user_data = bt_mesh_calloc(sizeof(struct bt_mesh_msg_ctx));
+        __ASSERT(work->user_data, "Out of memory");
     }
 }
 
@@ -181,9 +181,9 @@ void bt_mesh_server_alloc_ctx(struct k_work *work)
 void bt_mesh_server_free_ctx(struct k_work *work)
 {
     __ASSERT(work, "Invalid parameter");
-    if (work->_reserved) {
-        bt_mesh_free(work->_reserved);
-        work->_reserved = NULL;
+    if (work->user_data) {
+        bt_mesh_free(work->user_data);
+        work->user_data = NULL;
     }
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
@@ -199,7 +199,7 @@ bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
     }
 
     if (last->tid == tid && last->src == src && last->dst == dst &&
-            (*now - last->timestamp <= K_SECONDS(6))) {
+        (*now - last->timestamp <= K_SECONDS(6))) {
         return true;
     }
 
@@ -218,7 +218,6 @@ void bt_mesh_server_update_last_msg(struct bt_mesh_last_msg_info *last,
     last->src = src;
     last->dst = dst;
     last->timestamp = *now;
-    return;
 }
 
 struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, uint16_t msg_len)
@@ -231,7 +230,7 @@ struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, u
     }
 
     if (model->pub == NULL || model->pub->msg == NULL ||
-            model->pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
+        model->pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
         BT_DBG("No publication support, model id 0x%04x", model->id);
         return NULL;
     }

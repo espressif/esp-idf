@@ -141,7 +141,7 @@ typedef struct {
 } esp_ble_mesh_sensor_settings_status_cb_t;
 
 /** Parameters of Sensor Setting Status */
-typedef struct  {
+typedef struct {
     bool     op_en;                        /*!< Indicate id optional parameters are included */
     uint16_t sensor_property_id;           /*!< Property ID identifying a sensor */
     uint16_t sensor_setting_property_id;   /*!< Setting ID identifying a setting within a sensor */

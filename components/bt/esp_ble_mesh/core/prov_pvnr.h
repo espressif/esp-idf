@@ -8,18 +8,11 @@
 #define _PROV_PVNR_H_
 
 #include "mesh/main.h"
+#include "prov_common.h"
 #include "mesh/adapter.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef CONFIG_BLE_MESH_PBA_SAME_TIME
-#define CONFIG_BLE_MESH_PBA_SAME_TIME   0
-#endif
-
-#ifndef CONFIG_BLE_MESH_PBG_SAME_TIME
-#define CONFIG_BLE_MESH_PBG_SAME_TIME   0
 #endif
 
 #define RM_AFTER_PROV  BIT(0)
@@ -84,23 +77,12 @@ void bt_mesh_provisioner_pb_adv_recv(struct net_buf_simple *buf);
  * @brief This function sends provisioning invite to start
  *        provisioning this unprovisioned device.
  *
- * @param[in] addr: Remote device address
- * @param[in] conn: Pointer to the bt_conn structure
- *
- * @return Zero - success, otherwise - fail
- */
-int bt_mesh_provisioner_set_prov_conn(const uint8_t addr[6], struct bt_mesh_conn *conn);
-
-/**
- * @brief This function sends provisioning invite to start
- *        provisioning this unprovisioned device.
- *
  * @param[in] conn: Pointer to the bt_conn structure
  * @param[in] addr: Address of the connected device
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_pb_gatt_open(struct bt_mesh_conn *conn, uint8_t *addr);
+int bt_mesh_provisioner_pb_gatt_open(struct bt_mesh_conn *conn, const uint8_t addr[6]);
 
 /**
  * @brief This function resets the used information when
@@ -128,11 +110,9 @@ int bt_mesh_provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_s
  * @brief This function initializes provisioner's PB-GATT and PB-ADV
  *        related information.
  *
- * @param[in] prov_info: Pointer to the application-initialized provisioner info.
- *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info);
+int bt_mesh_provisioner_prov_init(void);
 
 int bt_mesh_provisioner_prov_reset(bool erase);
 
@@ -160,13 +140,6 @@ void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, int8_t r
 
 void bt_mesh_provisioner_prov_adv_recv(struct net_buf_simple *buf,
                                        const bt_mesh_addr_t *addr, int8_t rssi);
-
-/**
- * @brief This function gets the bt_mesh_prov pointer.
- *
- * @return bt_mesh_prov pointer(prov)
- */
-const struct bt_mesh_prov *bt_mesh_provisioner_get_prov_info(void);
 
 void bt_mesh_provisioner_restore_prov_info(uint16_t primary_addr, uint16_t alloc_addr);
 
@@ -406,15 +379,12 @@ uint16_t bt_mesh_provisioner_get_fast_prov_net_idx(void);
  */
 uint8_t bt_mesh_set_fast_prov_unicast_addr_range(uint16_t min, uint16_t max);
 
-/**
- * @brief This function is called to set flags & iv_index used for fast provisioning.
- *
- * @param[in] flags:    Key refresh flag and iv update flag
- * @param[in] iv_index: IV index
- *
- * @return None
- */
-void bt_mesh_set_fast_prov_flags_iv_index(uint8_t flags, uint32_t iv_index);
+int bt_mesh_rpr_cli_pdu_recv(struct bt_mesh_prov_link *link, uint8_t type,
+                             struct net_buf_simple *buf);
+
+int bt_mesh_rpr_cli_pdu_send(struct bt_mesh_prov_link *link, uint8_t type);
+
+int bt_mesh_rpr_cli_recv_pub_key_outbound_report(struct bt_mesh_prov_link *link);
 
 #ifdef __cplusplus
 }

@@ -37,7 +37,7 @@ struct bt_mesh_node {
     char  name[BLE_MESH_NODE_NAME_SIZE + 1]; /* Node name */
     uint16_t comp_length;  /* Length of Composition Data */
     uint8_t *comp_data;    /* Value of Composition Data */
-} __packed;
+} __attribute__((packed));
 
 int bt_mesh_provisioner_init(void);
 
@@ -57,7 +57,7 @@ int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const uint8_t uuid
                                   uint16_t oob_info, uint16_t unicast_addr,
                                   uint8_t element_num, uint16_t net_idx,
                                   uint8_t flags, uint32_t iv_index,
-                                  const uint8_t dev_key[16], uint16_t *index);
+                                  const uint8_t dev_key[16], uint16_t *index, bool nppi);
 
 int bt_mesh_provisioner_remove_node(const uint8_t uuid[16]);
 
@@ -89,13 +89,9 @@ int bt_mesh_provisioner_store_node_comp_data(uint16_t addr, const uint8_t *data,
 
 const uint8_t *bt_mesh_provisioner_net_key_get(uint16_t net_idx);
 
-struct bt_mesh_subnet *bt_mesh_provisioner_subnet_get(uint16_t net_idx);
-
 bool bt_mesh_provisioner_check_msg_dst(uint16_t dst);
 
-const uint8_t *bt_mesh_provisioner_dev_key_get(uint16_t dst);
-
-struct bt_mesh_app_key *bt_mesh_provisioner_app_key_find(uint16_t app_idx);
+const uint8_t *bt_mesh_provisioner_dev_key_get(uint16_t addr);
 
 int bt_mesh_provisioner_local_app_key_add(const uint8_t app_key[16],
                                           uint16_t net_idx, uint16_t *app_idx);
@@ -110,8 +106,6 @@ int bt_mesh_provisioner_local_app_key_del(uint16_t net_idx, uint16_t app_idx, bo
 int bt_mesh_provisioner_local_net_key_add(const uint8_t net_key[16], uint16_t *net_idx);
 
 int bt_mesh_provisioner_local_net_key_update(const uint8_t net_key[16], uint16_t net_idx);
-
-const uint8_t *bt_mesh_provisioner_local_net_key_get(uint16_t net_idx);
 
 int bt_mesh_provisioner_local_net_key_del(uint16_t net_idx, bool store);
 
@@ -132,9 +126,6 @@ int bt_mesh_provisioner_set_heartbeat_filter_info(uint8_t op, uint16_t src, uint
 void bt_mesh_provisioner_heartbeat(uint16_t hb_src, uint16_t hb_dst,
                                    uint8_t init_ttl, uint8_t rx_ttl,
                                    uint8_t hops, uint16_t feat, int8_t rssi);
-
-/* Provisioner print own element information */
-int bt_mesh_print_local_composition_data(void);
 
 int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node);
 

@@ -69,10 +69,20 @@
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_health_model.h"
 #include "btc_ble_mesh_config_model.h"
+#include "btc_ble_mesh_agg_model.h"
+#include "btc_ble_mesh_brc_model.h"
+#include "btc_ble_mesh_df_model.h"
+#include "btc_ble_mesh_lcd_model.h"
+#include "btc_ble_mesh_odp_model.h"
+#include "btc_ble_mesh_prb_model.h"
+#include "btc_ble_mesh_rpr_model.h"
+#include "btc_ble_mesh_sar_model.h"
+#include "btc_ble_mesh_srpl_model.h"
 #include "btc_ble_mesh_generic_model.h"
 #include "btc_ble_mesh_lighting_model.h"
 #include "btc_ble_mesh_sensor_model.h"
 #include "btc_ble_mesh_time_scene_model.h"
+#include "btc_ble_mesh_mbt_model.h"
 #endif /* #if CONFIG_BLE_MESH */
 
 #define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
@@ -158,6 +168,60 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_CONFIG_CLIENT]     = {btc_ble_mesh_config_client_call_handler,     btc_ble_mesh_config_client_cb_handler    },
 #endif /* CONFIG_BLE_MESH_CFG_CLI */
     [BTC_PID_CONFIG_SERVER]     = {NULL,                                        btc_ble_mesh_config_server_cb_handler    },
+#if CONFIG_BLE_MESH_AGG_CLI
+    [BTC_PID_AGG_CLIENT]        = {btc_ble_mesh_agg_client_call_handler,        btc_ble_mesh_agg_client_cb_handler       },
+#endif /* CONFIG_BLE_MESH_AGG_CLI */
+#if CONFIG_BLE_MESH_AGG_SRV
+    [BTC_PID_AGG_SERVER]        = {NULL,                                        btc_ble_mesh_agg_server_cb_handler       },
+#endif /* CONFIG_BLE_MESH_AGG_SRV */
+#if CONFIG_BLE_MESH_BRC_CLI
+    [BTC_PID_BRC_CLIENT]        = {btc_ble_mesh_brc_client_call_handler,        btc_ble_mesh_brc_client_cb_handler       },
+#endif /* CONFIG_BLE_MESH_BRC_CLI */
+#if CONFIG_BLE_MESH_BRC_SRV
+    [BTC_PID_BRC_SERVER]        = {NULL,                                        btc_ble_mesh_brc_server_cb_handler       },
+#endif  /* CONFIG_BLE_MESH_BRC_SRV */
+#if CONFIG_BLE_MESH_DF_CLI
+    [BTC_PID_DF_CLIENT]         = {btc_ble_mesh_df_client_call_handler,         btc_ble_mesh_df_client_cb_handler        },
+#endif /* CONFIG_BLE_MESH_DF_CLI */
+#if CONFIG_BLE_MESH_DF_SRV
+    [BTC_PID_DF_SERVER]         = {NULL,                                        btc_ble_mesh_df_server_cb_handler        },
+#endif /* CONFIG_BLE_MESH_DF_SRV */
+#if CONFIG_BLE_MESH_LCD_CLI
+    [BTC_PID_LCD_CLIENT]        = {btc_ble_mesh_lcd_client_call_handler,        btc_ble_mesh_lcd_client_cb_handler       },
+#endif /* CONFIG_BLE_MESH_LCD_CLI */
+#if CONFIG_BLE_MESH_LCD_SRV
+    [BTC_PID_LCD_SERVER]        = {NULL,                                        btc_ble_mesh_lcd_server_cb_handler       },
+#endif /* CONFIG_BLE_MESH_LCD_SRV */
+#if CONFIG_BLE_MESH_ODP_CLI
+    [BTC_PID_ODP_CLIENT]        = {btc_ble_mesh_odp_client_call_handler,        btc_ble_mesh_odp_client_cb_handler       },
+#endif /* CONFIG_BLE_MESH_ODP_CLI */
+#if CONFIG_BLE_MESH_ODP_SRV
+    [BTC_PID_ODP_SERVER]        = {NULL,                                        btc_ble_mesh_odp_server_cb_handler       },
+#endif /* CONFIG_BLE_MESH_ODP_SRV */
+#if CONFIG_BLE_MESH_PRB_CLI
+    [BTC_PID_PRB_CLIENT]        = {btc_ble_mesh_prb_client_call_handler,        btc_ble_mesh_prb_client_cb_handler       },
+#endif  /* CONFIG_BLE_MESH_PRB_CLI */
+#if CONFIG_BLE_MESH_PRB_SRV
+    [BTC_PID_PRB_SERVER]        = {NULL,                                        btc_ble_mesh_prb_server_cb_handler       },
+#endif  /*CONFIG_BLE_MESH_PRB_SRV*/
+#if CONFIG_BLE_MESH_RPR_CLI
+    [BTC_PID_RPR_CLIENT]        = {btc_ble_mesh_rpr_client_call_handler,        btc_ble_mesh_rpr_client_cb_handler       },
+#endif /* CONFIG_BLE_MESH_RPR_CLI */
+#if CONFIG_BLE_MESH_RPR_SRV
+    [BTC_PID_RPR_SERVER]        = {NULL,                                        btc_ble_mesh_rpr_server_cb_handler       },
+#endif /* CONFIG_BLE_MESH_RPR_SRV */
+#if CONFIG_BLE_MESH_SAR_CLI
+    [BTC_PID_SAR_CLIENT]        = {btc_ble_mesh_sar_client_call_handler,        btc_ble_mesh_sar_client_cb_handler       },
+#endif /* CONFIG_BLE_MESH_SAR_CLI */
+#if CONFIG_BLE_MESH_SAR_SRV
+    [BTC_PID_SAR_SERVER]        = {NULL,                                        btc_ble_mesh_sar_server_cb_handler       },
+#endif /* CONFIG_BLE_MESH_SAR_SRV */
+#if CONFIG_BLE_MESH_SRPL_CLI
+    [BTC_PID_SRPL_CLIENT]       = {btc_ble_mesh_srpl_client_call_handler,       btc_ble_mesh_srpl_client_cb_handler      },
+#endif /* CONFIG_BLE_MESH_SRPL_CLI */
+#if CONFIG_BLE_MESH_SRPL_SRV
+    [BTC_PID_SRPL_SERVER]       = {NULL,                                        btc_ble_mesh_srpl_server_cb_handler      },
+#endif /* CONFIG_BLE_MESH_SRPL_SRV */
 #if CONFIG_BLE_MESH_GENERIC_CLIENT
     [BTC_PID_GENERIC_CLIENT]    = {btc_ble_mesh_generic_client_call_handler,    btc_ble_mesh_generic_client_cb_handler   },
 #endif /* CONFIG_BLE_MESH_GENERIC_CLIENT */
@@ -182,6 +246,12 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if CONFIG_BLE_MESH_TIME_SCENE_SERVER
     [BTC_PID_TIME_SCENE_SERVER] = {NULL,                                        btc_ble_mesh_time_scene_server_cb_handler},
 #endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */
+#if CONFIG_BLE_MESH_MBT_CLI
+    [BTC_PID_MBT_CLIENT]        = {btc_ble_mesh_mbt_client_call_handler,        btc_ble_mesh_mbt_client_cb_handler       },
+#endif /* CONFIG_BLE_MESH_MBT_CLI */
+#if CONFIG_BLE_MESH_MBT_SRV
+    [BTC_PID_MBT_SERVER]        = {btc_ble_mesh_mbt_server_call_handler,        btc_ble_mesh_mbt_server_cb_handler       },
+#endif /* CONFIG_BLE_MESH_MBT_SRV */
 #if CONFIG_BLE_MESH_BLE_COEX_SUPPORT
     [BTC_PID_BLE_MESH_BLE_COEX] = {btc_ble_mesh_ble_call_handler,               btc_ble_mesh_ble_cb_handler              },
 #endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT */

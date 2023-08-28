@@ -17,13 +17,16 @@
 #include "access.h"
 #include "beacon.h"
 #include "lpn.h"
+#include "rpl.h"
 #include "foundation.h"
 #include "mesh/main.h"
 #include "mesh/cfg_srv.h"
 
+#include "mesh_v1.1/utils.h"
+
 #ifdef CONFIG_BLE_MESH_LOW_POWER
 
-#if defined(CONFIG_BLE_MESH_LPN_AUTO)
+#if CONFIG_BLE_MESH_LPN_AUTO
 #define LPN_AUTO_TIMEOUT          K_SECONDS(CONFIG_BLE_MESH_LPN_AUTO_TIMEOUT)
 #else
 #define LPN_AUTO_TIMEOUT          0
@@ -180,23 +183,24 @@ static const struct bt_mesh_send_cb clear_sent_cb = {
 static int send_friend_clear(void)
 {
     struct bt_mesh_msg_ctx ctx = {
-        .net_idx     = bt_mesh.sub[0].net_idx,
-        .app_idx     = BLE_MESH_KEY_UNUSED,
-        .addr        = bt_mesh.lpn.frnd,
-        .send_ttl    = 0,
+        .net_idx   = bt_mesh.sub[0].net_idx,
+        .app_idx   = BLE_MESH_KEY_UNUSED,
+        .addr      = bt_mesh.lpn.frnd,
+        .send_ttl  = 0,
+        .send_cred = BLE_MESH_FLOODING_CRED,
+        /* Tag with immutable-credentials */
+        .send_tag  = BLE_MESH_TAG_IMMUTABLE_CRED,
     };
     struct bt_mesh_net_tx tx = {
-        .sub = &bt_mesh.sub[0],
-        .ctx = &ctx,
-        .src = bt_mesh_primary_addr(),
+        .sub  = &bt_mesh.sub[0],
+        .ctx  = &ctx,
+        .src  = bt_mesh_primary_addr(),
         .xmit = bt_mesh_net_transmit_get(),
     };
     struct bt_mesh_ctl_friend_clear req = {
         .lpn_addr    = sys_cpu_to_be16(tx.src),
         .lpn_counter = sys_cpu_to_be16(bt_mesh.lpn.counter),
     };
-
-    BT_DBG("%s", __func__);
 
     return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR, &req,
                             sizeof(req), &clear_sent_cb, NULL);
@@ -210,13 +214,14 @@ static void clear_friendship(bool force, bool disable)
     BT_DBG("force %u disable %u", force, disable);
 
     if (!force && lpn->established && !lpn->clear_success &&
-            lpn->req_attempts < CLEAR_ATTEMPTS) {
+        lpn->req_attempts < CLEAR_ATTEMPTS) {
         send_friend_clear();
         lpn->disable = disable;
         return;
     }
 
-    bt_mesh_rx_reset(true);
+    bt_mesh_rx_reset();
+    bt_mesh_rpl_reset(true);
 
     k_delayed_work_cancel(&lpn->timer);
 
@@ -303,15 +308,18 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 {
     const struct bt_mesh_comp *comp = bt_mesh_comp_get();
     struct bt_mesh_msg_ctx ctx = {
-        .net_idx  = bt_mesh.sub[0].net_idx,
-        .app_idx  = BLE_MESH_KEY_UNUSED,
-        .addr     = BLE_MESH_ADDR_FRIENDS,
-        .send_ttl = 0,
+        .net_idx   = bt_mesh.sub[0].net_idx,
+        .app_idx   = BLE_MESH_KEY_UNUSED,
+        .addr      = BLE_MESH_ADDR_FRIENDS,
+        .send_ttl  = 0,
+        .send_cred = BLE_MESH_FLOODING_CRED,
+        /* Tag with immutable-credentials and as a friendship PDU */
+        .send_tag  = BLE_MESH_TAG_IMMUTABLE_CRED | BLE_MESH_TAG_FRIENDSHIP,
     };
     struct bt_mesh_net_tx tx = {
-        .sub = &bt_mesh.sub[0],
-        .ctx = &ctx,
-        .src = bt_mesh_primary_addr(),
+        .sub  = &bt_mesh.sub[0],
+        .ctx  = &ctx,
+        .src  = bt_mesh_primary_addr(),
         .xmit = POLL_XMIT,
     };
     struct bt_mesh_ctl_friend_req req = {
@@ -322,8 +330,6 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
         .num_elem    = comp->elem_count,
         .lpn_counter = sys_cpu_to_be16(lpn->counter),
     };
-
-    BT_DBG("%s", __func__);
 
     return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_REQ, &req,
                             sizeof(req), &friend_req_sent_cb, NULL);
@@ -348,7 +354,7 @@ static void req_sent(uint16_t duration, int err, void *user_data)
 
     if (lpn->established || IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
         lpn_set_state(BLE_MESH_LPN_RECV_DELAY);
-        /* We start scanning a bit early to elimitate risk of missing
+        /* We start scanning a bit early to eliminate risk of missing
          * response data due to HCI and other latencies.
          */
         k_delayed_work_submit(&lpn->timer,
@@ -374,17 +380,19 @@ static const struct bt_mesh_send_cb req_sent_cb = {
 static int send_friend_poll(void)
 {
     struct bt_mesh_msg_ctx ctx = {
-        .net_idx     = bt_mesh.sub[0].net_idx,
-        .app_idx     = BLE_MESH_KEY_UNUSED,
-        .addr        = bt_mesh.lpn.frnd,
-        .send_ttl    = 0,
+        .net_idx   = bt_mesh.sub[0].net_idx,
+        .app_idx   = BLE_MESH_KEY_UNUSED,
+        .addr      = bt_mesh.lpn.frnd,
+        .send_ttl  = 0,
+        .send_cred = BLE_MESH_FRIENDSHIP_CRED,
+        /* Tag with immutable-credentials and as a friendship PDU */
+        .send_tag  = BLE_MESH_TAG_IMMUTABLE_CRED | BLE_MESH_TAG_FRIENDSHIP,
     };
     struct bt_mesh_net_tx tx = {
-        .sub = &bt_mesh.sub[0],
-        .ctx = &ctx,
-        .src = bt_mesh_primary_addr(),
+        .sub  = &bt_mesh.sub[0],
+        .ctx  = &ctx,
+        .src  = bt_mesh_primary_addr(),
         .xmit = POLL_XMIT,
-        .friend_cred = true,
     };
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     uint8_t fsn = lpn->fsn;
@@ -632,7 +640,7 @@ static void lpn_group_del(uint16_t group)
     for (i = 0; i < ARRAY_SIZE(lpn->groups); i++) {
         if (lpn->groups[i] == group) {
             if (bt_mesh_atomic_test_bit(lpn->added, i) ||
-                    bt_mesh_atomic_test_bit(lpn->pending, i)) {
+                bt_mesh_atomic_test_bit(lpn->pending, i)) {
                 bt_mesh_atomic_set_bit(lpn->to_remove, i);
                 lpn->groups_changed = 1U;
             } else {
@@ -660,17 +668,19 @@ static bool sub_update(uint8_t op)
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     int added_count = group_popcount(lpn->added);
     struct bt_mesh_msg_ctx ctx = {
-        .net_idx     = bt_mesh.sub[0].net_idx,
-        .app_idx     = BLE_MESH_KEY_UNUSED,
-        .addr        = lpn->frnd,
-        .send_ttl    = 0,
+        .net_idx   = bt_mesh.sub[0].net_idx,
+        .app_idx   = BLE_MESH_KEY_UNUSED,
+        .addr      = lpn->frnd,
+        .send_ttl  = 0,
+        .send_cred = BLE_MESH_FRIENDSHIP_CRED,
+        /* Tag with immutable-credentials and as a friendship PDU */
+        .send_tag  = BLE_MESH_TAG_IMMUTABLE_CRED | BLE_MESH_TAG_FRIENDSHIP,
     };
     struct bt_mesh_net_tx tx = {
-        .sub = &bt_mesh.sub[0],
-        .ctx = &ctx,
-        .src = bt_mesh_primary_addr(),
+        .sub  = &bt_mesh.sub[0],
+        .ctx  = &ctx,
+        .src  = bt_mesh_primary_addr(),
         .xmit = POLL_XMIT,
-        .friend_cred = true,
     };
     struct bt_mesh_ctl_friend_sub req = {0};
     size_t i = 0U, g = 0U;
@@ -920,7 +930,7 @@ int bt_mesh_lpn_friend_sub_cfm(struct bt_mesh_net_rx *rx,
 
         for (i = 0; i < ARRAY_SIZE(lpn->groups); i++) {
             if (bt_mesh_atomic_test_and_clear_bit(lpn->pending, i) &&
-                    bt_mesh_atomic_test_and_clear_bit(lpn->to_remove, i)) {
+                bt_mesh_atomic_test_and_clear_bit(lpn->to_remove, i)) {
                 lpn->groups[i] = BLE_MESH_ADDR_UNASSIGNED;
             }
         }
@@ -975,8 +985,8 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
     }
 
     if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_INITIATOR) &&
-            (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) ==
-             BLE_MESH_IV_UPDATE(msg->flags))) {
+        (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) ==
+         BLE_MESH_IV_UPDATE(msg->flags))) {
         bt_mesh_beacon_ivu_initiator(false);
     }
 
@@ -988,7 +998,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
          * credentials so we need to ensure the right ones (Friend
          * Credentials) were used for this message.
          */
-        if (!rx->friend_cred) {
+        if (rx->ctx.recv_cred != BLE_MESH_FRIENDSHIP_CRED) {
             BT_WARN("Friend Update with wrong credentials");
             return -EINVAL;
         }
@@ -1008,6 +1018,17 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
         /* Set initial poll timeout */
         lpn->poll_timeout = MIN(POLL_TIMEOUT_MAX(lpn),
                                 POLL_TIMEOUT_INIT);
+
+        /* If the Low Power node supports directed forwarding functionality when
+         * the friendship is established in a subnet, the Low Power node shall
+         * store the current value of the Directed Forwarding state and shall set
+         * the state to 0x00 for that subnet. When that friendship is terminated,
+         * the Low Power node shall set the Directed Forwarding state to the stored
+         * value.
+         */
+        /* TODO:
+         * Store - clear - restore directed forwarding state value of the subnet.
+         */
     }
 
     friend_response_received(lpn);
@@ -1019,7 +1040,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
     if (bt_mesh_kr_update(sub, BLE_MESH_KEY_REFRESH(msg->flags),
                           rx->new_key)) {
-        bt_mesh_net_beacon_update(sub);
+        bt_mesh_net_secure_beacon_update(sub);
     }
 
     bt_mesh_net_iv_update(iv_index, BLE_MESH_IV_UPDATE(msg->flags));
@@ -1064,8 +1085,6 @@ void bt_mesh_lpn_set_cb(void (*cb)(uint16_t friend_addr, bool established))
 int bt_mesh_lpn_init(void)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
-
-    BT_DBG("%s", __func__);
 
     k_delayed_work_init(&lpn->timer, lpn_timeout);
 

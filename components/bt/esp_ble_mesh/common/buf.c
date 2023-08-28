@@ -281,7 +281,7 @@ uint32_t net_buf_simple_pull_le24(struct net_buf_simple *buf)
 {
     struct uint24 {
         uint32_t u24:24;
-    } __packed val;
+    } __attribute__((packed)) val;
 
     val = UNALIGNED_GET((struct uint24 *)buf->data);
     net_buf_simple_pull(buf, sizeof(val));
@@ -293,7 +293,7 @@ uint32_t net_buf_simple_pull_be24(struct net_buf_simple *buf)
 {
     struct uint24 {
         uint32_t u24:24;
-    } __packed val;
+    } __attribute__((packed)) val;
 
     val = UNALIGNED_GET((struct uint24 *)buf->data);
     net_buf_simple_pull(buf, sizeof(val));
@@ -325,7 +325,7 @@ uint64_t net_buf_simple_pull_le48(struct net_buf_simple *buf)
 {
     struct uint48 {
         uint64_t u48:48;
-    } __packed val;
+    } __attribute__((packed)) val;
 
     val = UNALIGNED_GET((struct uint48 *)buf->data);
     net_buf_simple_pull(buf, sizeof(val));
@@ -337,7 +337,7 @@ uint64_t net_buf_simple_pull_be48(struct net_buf_simple *buf)
 {
     struct uint48 {
         uint64_t u48:48;
-    } __packed val;
+    } __attribute__((packed)) val;
 
     val = UNALIGNED_GET((struct uint48 *)buf->data);
     net_buf_simple_pull(buf, sizeof(val));
@@ -459,7 +459,7 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
     return buf;
 }
 
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
 void net_buf_unref_debug(struct net_buf *buf, const char *func, int line)
 #else
 void net_buf_unref(struct net_buf *buf)
@@ -471,7 +471,7 @@ void net_buf_unref(struct net_buf *buf)
         struct net_buf *frags = buf->frags;
         struct net_buf_pool *pool = NULL;
 
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
         if (!buf->ref) {
             NET_BUF_ERR("%s():%d: buf %p double free", func, line,
                         buf);
@@ -491,7 +491,7 @@ void net_buf_unref(struct net_buf *buf)
         pool = buf->pool;
 
         pool->uninit_count++;
-#if defined(CONFIG_BLE_MESH_NET_BUF_POOL_USAGE)
+#if CONFIG_BLE_MESH_NET_BUF_POOL_USAGE
         pool->avail_count++;
         NET_BUF_DBG("Unref, pool %p, avail_count %d, uninit_count %d",
                     pool, pool->avail_count, pool->uninit_count);
@@ -533,7 +533,7 @@ static uint8_t *data_alloc(struct net_buf *buf, size_t *size, int32_t timeout)
     return pool->alloc->cb->alloc(buf, size, timeout);
 }
 
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
 struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
                                         int32_t timeout, const char *func, int line)
 #else
@@ -594,7 +594,7 @@ success:
     net_buf_reset(buf);
 
     pool->uninit_count--;
-#if defined(CONFIG_BLE_MESH_NET_BUF_POOL_USAGE)
+#if CONFIG_BLE_MESH_NET_BUF_POOL_USAGE
     pool->avail_count--;
     NET_BUF_ASSERT(pool->avail_count >= 0);
 #endif
@@ -602,7 +602,7 @@ success:
     return buf;
 }
 
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
 struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
                                           int32_t timeout, const char *func,
                                           int line)
@@ -656,7 +656,7 @@ struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)
     return head;
 }
 
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
 struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
                                        struct net_buf *frag,
                                        const char *func, int line)
@@ -678,7 +678,7 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 
     frag->frags = NULL;
 
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
     net_buf_unref_debug(frag, func, line);
 #else
     net_buf_unref(frag);

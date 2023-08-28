@@ -10,50 +10,18 @@
 
 #include "mesh/config.h"
 #include "mesh/common.h"
+#include "mesh/model_common.h"
 #include "mesh/model_opcode.h"
 #include "mesh/state_binding.h"
 #include "mesh/state_transition.h"
 
 #if CONFIG_BLE_MESH_SERVER_MODEL
 
-#define MINDIFF (2.25e-308)
-
-static float bt_mesh_sqrt(float square)
-{
-    float root = 0.0, last = 0.0, diff = 0.0;
-
-    root = square / 3.0;
-    diff = 1;
-
-    if (square <= 0) {
-        return 0;
-    }
-
-    do {
-        last = root;
-        root = (root + square / root) / 2.0;
-        diff = root - last;
-    } while (diff > MINDIFF || diff < -MINDIFF);
-
-    return root;
-}
-
-static int32_t bt_mesh_ceiling(float num)
-{
-    int32_t inum = (int32_t)num;
-
-    if (num == (float)inum) {
-        return inum;
-    }
-
-    return inum + 1;
-}
-
 uint16_t bt_mesh_convert_lightness_actual_to_linear(uint16_t actual)
 {
     float tmp = ((float) actual / UINT16_MAX);
 
-    return bt_mesh_ceiling(UINT16_MAX * tmp * tmp);
+    return bt_mesh_ceil(UINT16_MAX * tmp * tmp);
 }
 
 uint16_t bt_mesh_convert_lightness_linear_to_actual(uint16_t linear)
@@ -99,7 +67,7 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
                                  bt_mesh_server_state_value_t *value)
 {
     if (model == NULL || model->user_data == NULL ||
-            value == NULL || type > BIND_STATE_MAX) {
+        value == NULL || type > BIND_STATE_MAX) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }

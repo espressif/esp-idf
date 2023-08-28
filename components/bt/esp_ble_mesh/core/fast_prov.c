@@ -9,6 +9,7 @@
 
 #include "mesh.h"
 #include "mesh/common.h"
+#include "mesh/main.h"
 #include "access.h"
 #include "beacon.h"
 #include "foundation.h"
@@ -24,16 +25,27 @@
 
 const uint8_t *bt_mesh_fast_prov_dev_key_get(uint16_t dst)
 {
+    const uint8_t *key = NULL;
+
     if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
         BT_ERR("Invalid unicast address 0x%04x", dst);
         return NULL;
     }
 
-    if (dst == bt_mesh_primary_addr()) {
+    if (bt_mesh_is_provisioner_en() == false) {
         return bt_mesh.dev_key;
     }
 
-    return bt_mesh_provisioner_dev_key_get(dst);
+    /* For fast provisioning, try to find the DevKey from
+     * the database firstly. If the dst is not in the DB,
+     * then we will directly use the DevKey.
+     */
+    key = bt_mesh_provisioner_dev_key_get(dst);
+    if (key) {
+        return key;
+    }
+
+    return bt_mesh.dev_key;
 }
 
 struct bt_mesh_subnet *bt_mesh_fast_prov_subnet_get(uint16_t net_idx)
@@ -153,8 +165,8 @@ uint8_t bt_mesh_set_fast_prov_action(uint8_t action)
     }
 
     if (action == ACTION_ENTER) {
-        if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
-            bt_mesh_beacon_disable();
+        if (bt_mesh_secure_beacon_get() == BLE_MESH_SECURE_BEACON_ENABLED) {
+            bt_mesh_secure_beacon_disable();
         }
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_proxy_client_prov_enable();
@@ -167,8 +179,8 @@ uint8_t bt_mesh_set_fast_prov_action(uint8_t action)
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_proxy_client_prov_disable();
         }
-        if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
-            bt_mesh_beacon_enable();
+        if (bt_mesh_secure_beacon_get() == BLE_MESH_SECURE_BEACON_ENABLED) {
+            bt_mesh_secure_beacon_enable();
         }
         bt_mesh_atomic_and(bt_mesh.flags, ~(BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV)));
         bt_mesh_provisioner_fast_prov_enable(false);

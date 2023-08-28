@@ -12,6 +12,8 @@
 
 #include "mesh.h"
 #include "adv.h"
+#include "lpn.h"
+#include "friend.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
@@ -20,10 +22,17 @@
 #include "fast_prov.h"
 #include "pvnr_mgmt.h"
 
+#include "mesh_v1.1/utils.h"
+
 #define BLE_MESH_SDU_MAX_LEN    384
 
-static const struct bt_mesh_comp *dev_comp;
+extern const struct bt_mesh_comp *comp_0;
 static uint16_t dev_primary_addr;
+
+static int model_send(struct bt_mesh_model *model,
+                      struct bt_mesh_net_tx *tx, bool implicit_bind,
+                      struct net_buf_simple *msg,
+                      const struct bt_mesh_send_cb *cb, void *cb_data);
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
                                         struct bt_mesh_elem *elem,
@@ -33,13 +42,13 @@ void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
 {
     int i, j;
 
-    if (dev_comp == NULL) {
+    if (comp_0 == NULL) {
         BT_ERR("Invalid device composition");
         return;
     }
 
-    for (i = 0; i < dev_comp->elem_count; i++) {
-        struct bt_mesh_elem *elem = &dev_comp->elem[i];
+    for (i = 0; i < comp_0->elem_count; i++) {
+        struct bt_mesh_elem *elem = &comp_0->elem[i];
 
         for (j = 0; j < elem->model_count; j++) {
             struct bt_mesh_model *model = &elem->models[j];
@@ -88,9 +97,9 @@ int32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 
     if (mod->pub->fast_period) {
         return period >> mod->pub->period_div;
-    } else {
-        return period;
     }
+
+    return period;
 }
 
 static int32_t next_period(struct bt_mesh_model *mod)
@@ -169,43 +178,49 @@ static const struct bt_mesh_send_cb pub_sent_cb = {
 static int publish_retransmit(struct bt_mesh_model *mod)
 {
     struct bt_mesh_model_pub *pub = mod->pub;
-    if (!pub) {
+    struct bt_mesh_app_key *key = NULL;
+    struct net_buf_simple *sdu = NULL;
+    struct bt_mesh_msg_ctx ctx = {0};
+    struct bt_mesh_net_tx tx = {
+        .ctx  = &ctx,
+        .src  = bt_mesh_model_elem(mod)->addr,
+        .xmit = bt_mesh_net_transmit_get(),
+    };
+    int err = 0;
+
+    if (!pub || !pub->msg) {
         BT_ERR("Model has no publication support");
         return -ENOTSUP;
     }
 
-    struct bt_mesh_app_key *key = NULL;
-    struct net_buf_simple *sdu = NULL;
-    struct bt_mesh_msg_ctx ctx = {
-        .addr = pub->addr,
-        .send_ttl = pub->ttl,
-        .model = mod,
-        .srv_send = (pub->dev_role == NODE ? true : false),
-    };
-    struct bt_mesh_net_tx tx = {
-        .ctx = &ctx,
-        .src = bt_mesh_model_elem(mod)->addr,
-        .xmit = bt_mesh_net_transmit_get(),
-        .friend_cred = pub->cred,
-    };
-    int err = 0;
-
-    key = bt_mesh_tx_appkey_get(pub->dev_role, pub->key);
+    key = bt_mesh_app_key_get(pub->key);
     if (!key) {
-        BT_ERR("AppKey 0x%03x not exists", pub->key);
+        BT_ERR("Publish, AppKey 0x%03x not found", pub->key);
         return -EADDRNOTAVAIL;
     }
 
-    tx.sub = bt_mesh_tx_netkey_get(pub->dev_role, key->net_idx);
+    tx.sub = bt_mesh_subnet_get(key->net_idx);
     if (!tx.sub) {
-        BT_ERR("Subnet 0x%04x not exists", key->net_idx);
+        BT_ERR("Publish, NetKey 0x%04x not found", key->net_idx);
         return -EADDRNOTAVAIL;
     }
 
+    ctx.addr = pub->addr;
     ctx.net_idx = key->net_idx;
     ctx.app_idx = key->app_idx;
+    ctx.send_ttl = pub->ttl;
+    ctx.send_cred = pub->cred ? BLE_MESH_FRIENDSHIP_CRED : BLE_MESH_FLOODING_CRED;
+    ctx.send_szmic = pub->send_szmic;
+    if (pub->send_rel) {
+        /* Tag with send-segmented */
+        ctx.send_tag |= BLE_MESH_TAG_SEND_SEGMENTED;
+    }
 
-    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_SHORT);
+#if CONFIG_BLE_MESH_DF_SRV
+    bt_mesh_model_pub_use_directed(&tx, pub->directed_pub_policy);
+#endif
+
+    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_LONG);
     if (!sdu) {
         BT_ERR("%s, Out of memory", __func__);
         return -ENOMEM;
@@ -215,7 +230,7 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 
     pub->count--;
 
-    err = bt_mesh_trans_send(&tx, sdu, &pub_sent_cb, mod);
+    err = model_send(mod, &tx, true, sdu, &pub_sent_cb, mod);
 
     bt_mesh_free_buf(sdu);
     return err;
@@ -237,8 +252,6 @@ static void mod_publish(struct k_work *work)
     int32_t period_ms = 0;
     int err = 0;
 
-    BT_DBG("%s", __func__);
-
     period_ms = bt_mesh_model_pub_period_get(pub->mod);
     BT_INFO("Publish period %u ms", period_ms);
 
@@ -254,7 +267,6 @@ static void mod_publish(struct k_work *work)
                 k_delayed_work_submit(&pub->timer, period_ms);
             }
         }
-
         return;
     }
 
@@ -282,24 +294,24 @@ static void mod_publish(struct k_work *work)
 
 struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod)
 {
-    return &dev_comp->elem[mod->elem_idx];
+    return &comp_0->elem[mod->elem_idx];
 }
 
 struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_t mod_idx)
 {
     struct bt_mesh_elem *elem = NULL;
 
-    if (!dev_comp) {
-        BT_ERR("dev_comp not initialized");
+    if (!comp_0) {
+        BT_ERR("comp_0 not initialized");
         return NULL;
     }
 
-    if (elem_idx >= dev_comp->elem_count) {
+    if (elem_idx >= comp_0->elem_count) {
         BT_ERR("Invalid element index %u", elem_idx);
         return NULL;
     }
 
-    elem = &dev_comp->elem[elem_idx];
+    elem = &comp_0->elem[elem_idx];
 
     if (vnd) {
         if (mod_idx >= elem->vnd_model_count) {
@@ -346,7 +358,7 @@ static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
     }
 
     mod->flags = 0;
-    mod->elem_idx = elem - dev_comp->elem;
+    mod->elem_idx = elem - comp_0->elem;
     if (vnd) {
         mod->model_idx = mod - elem->vnd_models;
     } else {
@@ -371,7 +383,7 @@ int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
         return -EINVAL;
     }
 
-    dev_comp = comp;
+    comp_0 = comp;
 
     bt_mesh_model_foreach(mod_init, &err);
 
@@ -423,13 +435,13 @@ int bt_mesh_comp_deregister(void)
 {
     int err = 0;
 
-    if (dev_comp == NULL) {
+    if (comp_0 == NULL) {
         return -EINVAL;
     }
 
     bt_mesh_model_foreach(mod_deinit, &err);
 
-    dev_comp = NULL;
+    comp_0 = NULL;
 
     return err;
 }
@@ -441,10 +453,10 @@ void bt_mesh_comp_provision(uint16_t addr)
 
     dev_primary_addr = addr;
 
-    BT_INFO("Primary address 0x%04x, element count %u", addr, dev_comp->elem_count);
+    BT_INFO("Primary address 0x%04x, element count %u", addr, comp_0->elem_count);
 
-    for (i = 0; i < dev_comp->elem_count; i++) {
-        struct bt_mesh_elem *elem = &dev_comp->elem[i];
+    for (i = 0; i < comp_0->elem_count; i++) {
+        struct bt_mesh_elem *elem = &comp_0->elem[i];
 
         elem->addr = addr++;
 
@@ -455,8 +467,6 @@ void bt_mesh_comp_provision(uint16_t addr)
 
 void bt_mesh_comp_unprovision(void)
 {
-    BT_DBG("%s", __func__);
-
     dev_primary_addr = BLE_MESH_ADDR_UNASSIGNED;
 }
 
@@ -511,16 +521,16 @@ struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr)
     uint16_t index = 0U;
 
     if (BLE_MESH_ADDR_IS_UNICAST(addr)) {
-        index = (addr - dev_comp->elem[0].addr);
-        if (index < dev_comp->elem_count) {
-            return &dev_comp->elem[index];
-        } else {
-            return NULL;
+        index = (addr - comp_0->elem[0].addr);
+        if (index < comp_0->elem_count) {
+            return &comp_0->elem[index];
         }
+
+        return NULL;
     }
 
-    for (index = 0; index < dev_comp->elem_count; index++) {
-        struct bt_mesh_elem *elem = &dev_comp->elem[index];
+    for (index = 0; index < comp_0->elem_count; index++) {
+        struct bt_mesh_elem *elem = &comp_0->elem[index];
 
         if (bt_mesh_elem_find_group(elem, addr)) {
             return elem;
@@ -532,7 +542,7 @@ struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr)
 
 uint8_t bt_mesh_elem_count(void)
 {
-    return dev_comp->elem_count;
+    return comp_0->elem_count;
 }
 
 static bool model_has_key(struct bt_mesh_model *mod, uint16_t key)
@@ -548,15 +558,20 @@ static bool model_has_key(struct bt_mesh_model *mod, uint16_t key)
     return false;
 }
 
-static bool model_has_dst(struct bt_mesh_model *model, uint16_t dst)
+static bool model_has_dst(struct bt_mesh_model *model,
+                          struct bt_mesh_subnet *sub,
+                          uint16_t dst)
 {
     if (BLE_MESH_ADDR_IS_UNICAST(dst)) {
-        return (dev_comp->elem[model->elem_idx].addr == dst);
-    } else if (BLE_MESH_ADDR_IS_GROUP(dst) || BLE_MESH_ADDR_IS_VIRTUAL(dst)) {
+        return (comp_0->elem[model->elem_idx].addr == dst);
+    }
+
+    if (BLE_MESH_ADDR_IS_GROUP(dst) || BLE_MESH_ADDR_IS_VIRTUAL(dst)) {
         return !!bt_mesh_model_find_group(model, dst);
     }
 
-    return (model->elem_idx == 0 && bt_mesh_fixed_group_match(dst));
+    return (model->elem_idx == 0 && (bt_mesh_fixed_group_match(dst) ||
+                                     bt_mesh_fixed_direct_match(sub, dst)));
 }
 
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
@@ -581,7 +596,7 @@ static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
     return NULL;
 }
 
-static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
+static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode, bool pull_buf)
 {
     switch (buf->data[0] >> 6) {
     case 0x00:
@@ -591,32 +606,49 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
             return -EINVAL;
         }
 
-        *opcode = net_buf_simple_pull_u8(buf);
+        *opcode = pull_buf ? net_buf_simple_pull_u8(buf) : buf->data[0];
         return 0;
+
     case 0x02:
         if (buf->len < 2) {
             BT_ERR("Too short payload for 2-octet OpCode");
             return -EINVAL;
         }
 
-        *opcode = net_buf_simple_pull_be16(buf);
+        *opcode = pull_buf ? net_buf_simple_pull_be16(buf) : sys_get_be16(buf->data);
         return 0;
+
     case 0x03:
         if (buf->len < 3) {
             BT_ERR("Too short payload for 3-octet OpCode");
             return -EINVAL;
         }
 
-        *opcode = net_buf_simple_pull_u8(buf) << 16;
-        /* Using LE for the CID since the model layer is defined as
-         * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
-         * will declare the opcode in this way.
-         */
-        *opcode |= net_buf_simple_pull_le16(buf);
+        if (pull_buf) {
+            *opcode = net_buf_simple_pull_u8(buf) << 16;
+            /* Using LE for the CID since the model layer is defined as
+            * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+            * will declare the opcode in this way.
+            */
+            *opcode |= net_buf_simple_pull_le16(buf);
+        } else {
+            *opcode = buf->data[0] << 16 | sys_get_le16(&buf->data[1]);
+        }
         return 0;
     }
 
     return -EINVAL;
+}
+
+int bt_mesh_get_opcode(struct net_buf_simple *buf,
+                       uint32_t *opcode, bool pull_buf)
+{
+    if (buf == NULL || buf->len == 0 || opcode == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    return get_opcode(buf, opcode, pull_buf);
 }
 
 bool bt_mesh_fixed_group_match(uint16_t addr)
@@ -636,6 +668,22 @@ bool bt_mesh_fixed_group_match(uint16_t addr)
     }
 }
 
+bool bt_mesh_fixed_direct_match(struct bt_mesh_subnet *sub, uint16_t addr)
+{
+    /* A message sent to the all-directed-forwarding-nodes address
+     * shall be processed by the primary element of all nodes that
+     * have directed forwarding functionality enabled.
+     */
+#if CONFIG_BLE_MESH_DF_SRV
+    if (addr == BLE_MESH_ADDR_DIRECTS && sub &&
+        sub->directed_forwarding == BLE_MESH_DIRECTED_FORWARDING_ENABLED) {
+        return true;
+    }
+#endif
+
+    return false;
+}
+
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
     struct bt_mesh_model *models = NULL, *model = NULL;
@@ -648,15 +696,15 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
            rx->ctx.addr, rx->ctx.recv_dst);
     BT_INFO("recv, len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
-    if (get_opcode(buf, &opcode) < 0) {
+    if (get_opcode(buf, &opcode, true) < 0) {
         BT_WARN("Unable to decode OpCode");
         return;
     }
 
     BT_DBG("OpCode 0x%08x", opcode);
 
-    for (i = 0; i < dev_comp->elem_count; i++) {
-        struct bt_mesh_elem *elem = &dev_comp->elem[i];
+    for (i = 0; i < comp_0->elem_count; i++) {
+        struct bt_mesh_elem *elem = &comp_0->elem[i];
         struct net_buf_simple_state state = {0};
 
         /* SIG models cannot contain 3-byte (vendor) OpCodes, and
@@ -681,7 +729,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             continue;
         }
 
-        if (!model_has_dst(model, rx->ctx.recv_dst)) {
+        if (!model_has_dst(model, rx->sub, rx->ctx.recv_dst)) {
             continue;
         }
 
@@ -690,17 +738,28 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             continue;
         }
 
-        /* The following three operations are added by Espressif.
-         * 1. Update the "recv_op" with the opcode got from the buf;
-         * 2. Update the model pointer with the found model;
-         * 3. Update the "srv_send" to be true when received a message.
-         *    This flag will be used when a server model sends a status
-         *    message, and has no impact on the client messages.
-         * Most of these info will be used by the application layer.
+        /* The following operation is added by Espressif.
+         * Update the "recv_op" with the opcode got from the buf;
          */
         rx->ctx.recv_op = opcode;
-        rx->ctx.model = model;
-        rx->ctx.srv_send = true;
+
+        /* The message is transmitted by a model in response to a message that
+         * it has received.
+         *
+         * The TTL field shall be set to the value of the Default TTL state.
+         *
+         * The response message shall use master security credentials. However,
+         * the security credentials may be changed by a lower layer unless the
+         * received message uses the master security credentials. If the received
+         * message uses master security credentials, then the response message
+         * shall be tagged with the immutable-credentials tag, and the security
+         * credentials will not be changed by any lower layer.
+         */
+        rx->ctx.send_ttl = BLE_MESH_TTL_DEFAULT;
+        if (rx->ctx.recv_cred == BLE_MESH_FLOODING_CRED) {
+            rx->ctx.send_tag |= BLE_MESH_TAG_IMMUTABLE_CRED;
+            rx->ctx.send_cred = BLE_MESH_FLOODING_CRED;
+        }
 
         /* The callback will likely parse the buffer, so store
          * the parsing state in case multiple models receive
@@ -737,17 +796,18 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode)
     }
 }
 
-static bool ready_to_send(uint8_t role, uint16_t dst)
+static bool ready_to_send(uint16_t dst)
 {
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() && role == NODE) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
         return true;
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en() && role == PROVISIONER) {
-        if (!bt_mesh_provisioner_check_msg_dst(dst)) {
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+        if (bt_mesh_provisioner_check_msg_dst(dst) == false &&
+            bt_mesh_elem_find(dst) == false) {
             BT_ERR("Failed to find DST 0x%04x", dst);
             return false;
         }
-        return true;
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV) && bt_mesh_is_provisioned() && role == FAST_PROV) {
         return true;
     }
 
@@ -759,20 +819,20 @@ static int model_send(struct bt_mesh_model *model,
                       struct net_buf_simple *msg,
                       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-    uint8_t role = 0U;
-
-    role = bt_mesh_get_device_role(model, tx->ctx->srv_send);
-    if (role == ROLE_NVAL) {
-        BT_ERR("Failed to get model role");
-        return -EINVAL;
-    }
+    int err = 0;
 
     BT_INFO("send, app_idx 0x%04x src 0x%04x dst 0x%04x",
         tx->ctx->app_idx, tx->src, tx->ctx->addr);
     BT_INFO("send, len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
-    if (!ready_to_send(role, tx->ctx->addr)) {
+    if (ready_to_send(tx->ctx->addr) == false) {
         BT_ERR("Not ready to send");
+        return -EINVAL;
+    }
+
+    if (tx->ctx->send_ttl != BLE_MESH_TTL_DEFAULT &&
+        tx->ctx->send_ttl > BLE_MESH_TTL_MAX) {
+        BT_ERR("Too big send TTL 0x%02x", tx->ctx->send_ttl);
         return -EINVAL;
     }
 
@@ -791,7 +851,43 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    return bt_mesh_trans_send(tx, msg, cb, cb_data);
+    if (bt_mesh_valid_security_cred(tx) == false) {
+        BT_ERR("Can not use security cred 0x%02x", tx->ctx->send_cred);
+        return -EIO;
+    }
+
+    bt_mesh_choose_better_security_cred(tx);
+
+    err = bt_mesh_trans_send(tx, msg, cb, cb_data);
+
+#if CONFIG_BLE_MESH_DF_SRV
+    bt_mesh_is_directed_path_needed(tx);
+#endif
+
+    return err;
+}
+
+int bt_mesh_model_send_implicit(struct bt_mesh_model *model,
+                                struct bt_mesh_msg_ctx *ctx,bool implicit_bind,
+                                struct net_buf_simple *msg,
+                                const struct bt_mesh_send_cb *cb, void *cb_data)
+{
+    struct bt_mesh_subnet *sub = NULL;
+
+    sub = bt_mesh_subnet_get(ctx->net_idx);
+    if (!sub) {
+        BT_ERR("Send, NetKey 0x%04x not found", ctx->net_idx);
+        return -EADDRNOTAVAIL;
+    }
+
+    struct bt_mesh_net_tx tx = {
+        .sub  = sub,
+        .ctx  = ctx,
+        .src  = bt_mesh_model_elem(model)->addr,
+        .xmit = bt_mesh_net_transmit_get(),
+    };
+
+    return model_send(model, &tx, implicit_bind, msg, cb, cb_data);
 }
 
 int bt_mesh_model_send(struct bt_mesh_model *model,
@@ -800,28 +896,18 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
                        const struct bt_mesh_send_cb *cb, void *cb_data)
 {
     struct bt_mesh_subnet *sub = NULL;
-    uint8_t role = 0U;
 
-    role = bt_mesh_get_device_role(model, ctx->srv_send);
-    if (role == ROLE_NVAL) {
-        BT_ERR("Failed to get model role");
-        return -EINVAL;
-    }
-
-    sub = bt_mesh_tx_netkey_get(role, ctx->net_idx);
+    sub = bt_mesh_subnet_get(ctx->net_idx);
     if (!sub) {
-        BT_ERR("Invalid NetKeyIndex 0x%04x", ctx->net_idx);
-        return -EINVAL;
+        BT_ERR("Send, NetKey 0x%04x not found", ctx->net_idx);
+        return -EADDRNOTAVAIL;
     }
-
-    ctx->model = model;
 
     struct bt_mesh_net_tx tx = {
-        .sub = sub,
-        .ctx = ctx,
-        .src = bt_mesh_model_elem(model)->addr,
+        .sub  = sub,
+        .ctx  = ctx,
+        .src  = bt_mesh_model_elem(model)->addr,
         .xmit = bt_mesh_net_transmit_get(),
-        .friend_cred = 0,
     };
 
     return model_send(model, &tx, false, msg, cb, cb_data);
@@ -832,18 +918,13 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     struct bt_mesh_model_pub *pub = model->pub;
     struct bt_mesh_app_key *key = NULL;
     struct net_buf_simple *sdu = NULL;
-    struct bt_mesh_msg_ctx ctx = {
-        .model = model,
-    };
+    struct bt_mesh_msg_ctx ctx = {0};
     struct bt_mesh_net_tx tx = {
-        .sub = NULL,
-        .ctx = &ctx,
-        .src = bt_mesh_model_elem(model)->addr,
+        .ctx  = &ctx,
+        .src  = bt_mesh_model_elem(model)->addr,
         .xmit = bt_mesh_net_transmit_get(),
     };
     int err = 0;
-
-    BT_DBG("%s", __func__);
 
     if (!pub || !pub->msg) {
         BT_ERR("Model has no publication support");
@@ -852,12 +933,6 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     if (pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
         BT_WARN("Unassigned publish address");
-        return -EADDRNOTAVAIL;
-    }
-
-    key = bt_mesh_tx_appkey_get(pub->dev_role, pub->key);
-    if (!key) {
-        BT_ERR("Invalid AppKeyIndex 0x%03x", pub->key);
         return -EADDRNOTAVAIL;
     }
 
@@ -871,27 +946,39 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
         k_delayed_work_cancel(&pub->timer);
     }
 
-    ctx.addr = pub->addr;
-    ctx.send_rel = pub->send_rel;
-    ctx.send_ttl = pub->ttl;
-    ctx.net_idx = key->net_idx;
-    ctx.app_idx = key->app_idx;
-    ctx.srv_send = pub->dev_role == NODE ? true : false;
-
-    tx.friend_cred = pub->cred;
-
-    tx.sub = bt_mesh_tx_netkey_get(pub->dev_role, ctx.net_idx);
-    if (!tx.sub) {
-        BT_ERR("Invalid NetKeyIndex 0x%04x", ctx.net_idx);
+    key = bt_mesh_app_key_get(pub->key);
+    if (!key) {
+        BT_ERR("Publish, AppKey 0x%03x not found", pub->key);
         return -EADDRNOTAVAIL;
     }
+
+    tx.sub = bt_mesh_subnet_get(ctx.net_idx);
+    if (!tx.sub) {
+        BT_ERR("Publish, NetKey 0x%04x not found", ctx.net_idx);
+        return -EADDRNOTAVAIL;
+    }
+
+    ctx.addr = pub->addr;
+    ctx.net_idx = key->net_idx;
+    ctx.app_idx = key->app_idx;
+    ctx.send_ttl = pub->ttl;
+    ctx.send_cred = pub->cred ? BLE_MESH_FRIENDSHIP_CRED : BLE_MESH_FLOODING_CRED;
+    ctx.send_szmic = pub->send_szmic;
+    if (pub->send_rel) {
+        /* Tag with send-segmented */
+        ctx.send_tag |= BLE_MESH_TAG_SEND_SEGMENTED;
+    }
+
+#if CONFIG_BLE_MESH_DF_SRV
+    bt_mesh_model_pub_use_directed(&tx, pub->directed_pub_policy);
+#endif
 
     pub->count = BLE_MESH_PUB_TRANSMIT_COUNT(pub->retransmit);
 
     BT_INFO("Publish Retransmit Count %u Interval %ums", pub->count,
            BLE_MESH_PUB_TRANSMIT_INT(pub->retransmit));
 
-    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_SHORT);
+    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_LONG);
     if (!sdu) {
         BT_ERR("%s, Out of memory", __func__);
         return -ENOMEM;
@@ -915,7 +1002,7 @@ struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
 
     for (i = 0; i < elem->vnd_model_count; i++) {
         if (elem->vnd_models[i].vnd.company == company &&
-                elem->vnd_models[i].vnd.id == id) {
+            elem->vnd_models[i].vnd.id == id) {
             return &elem->vnd_models[i];
         }
     }
@@ -938,56 +1025,26 @@ struct bt_mesh_model *bt_mesh_model_find(struct bt_mesh_elem *elem, uint16_t id)
 
 const struct bt_mesh_comp *bt_mesh_comp_get(void)
 {
-    return dev_comp;
+    return comp_0;
 }
 
-/* APIs used by messages encryption in upper transport layer & network layer */
-struct bt_mesh_subnet *bt_mesh_tx_netkey_get(uint8_t role, uint16_t net_idx)
-{
-    struct bt_mesh_subnet *sub = NULL;
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() && role == NODE) {
-        sub = bt_mesh_subnet_get(net_idx);
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en() && role == PROVISIONER) {
-        sub = bt_mesh_provisioner_subnet_get(net_idx);
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV) && bt_mesh_is_provisioned() && role == FAST_PROV) {
-        sub = bt_mesh_fast_prov_subnet_get(net_idx);
-    }
-
-    return sub;
-}
-
-const uint8_t *bt_mesh_tx_devkey_get(uint8_t role, uint16_t dst)
+const uint8_t *bt_mesh_dev_key_get(uint16_t dst)
 {
     const uint8_t *key = NULL;
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() && role == NODE) {
-        key = bt_mesh.dev_key;
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en() && role == PROVISIONER) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+        if (!IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV)) {
+            key = bt_mesh.dev_key;
+        } else {
+            key = bt_mesh_fast_prov_dev_key_get(dst);
+        }
+    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
         key = bt_mesh_provisioner_dev_key_get(dst);
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV) && bt_mesh_is_provisioned() && role == FAST_PROV) {
-        key = bt_mesh_fast_prov_dev_key_get(dst);
     }
 
     return key;
 }
 
-struct bt_mesh_app_key *bt_mesh_tx_appkey_get(uint8_t role, uint16_t app_idx)
-{
-    struct bt_mesh_app_key *key = NULL;
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() && role == NODE) {
-        key = bt_mesh_app_key_find(app_idx);
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en() && role == PROVISIONER) {
-        key = bt_mesh_provisioner_app_key_find(app_idx);
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV) && bt_mesh_is_provisioned() && role == FAST_PROV) {
-        key = bt_mesh_fast_prov_app_key_find(app_idx);
-    }
-
-    return key;
-}
-
-/* APIs used by messages decryption in network layer & upper transport layer */
 size_t bt_mesh_rx_netkey_size(void)
 {
     size_t size = 0U;
@@ -1048,6 +1105,9 @@ size_t bt_mesh_rx_devkey_size(void)
 #if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
     if (bt_mesh_is_provisioned()) {
         size = 1;
+        if (bt_mesh_dev_key_ca_valid()) {
+            size += 1;
+        }
     }
 #endif
 
@@ -1059,6 +1119,9 @@ size_t bt_mesh_rx_devkey_size(void)
 
 #if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
     size = 1;
+    if (bt_mesh_dev_key_ca_valid()) {
+        size += 1;
+    }
     if (bt_mesh_is_provisioner_en()) {
         size += 1;
     }
@@ -1073,7 +1136,11 @@ const uint8_t *bt_mesh_rx_devkey_get(size_t index, uint16_t src)
 
 #if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
     if (bt_mesh_is_provisioned()) {
-        key = bt_mesh.dev_key;
+        if (index == 0) {
+            key = bt_mesh.dev_key;
+        } else if (index == 1) {
+            key = bt_mesh.dev_key_ca;
+        }
     }
 #endif
 
@@ -1084,8 +1151,18 @@ const uint8_t *bt_mesh_rx_devkey_get(size_t index, uint16_t src)
 #endif
 
 #if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (index < 1) {
+    if (index == 0) {
         key = bt_mesh.dev_key;
+    } else if (index == 1 && bt_mesh_dev_key_ca_valid()) {
+        /* If index == 1, there are two cases.
+         *  1. bt_mesh_dev_key_ca_valid() is true, it should be return bt_mesh.dev_key_ca.
+         *  2. bt_mesh_is_provisioner_en() is true, it should be return bt_mesh_provisioner_dev_key_get(src).
+         *
+         * If index == 2, that means bt_mesh_dev_key_ca_valid() and bt_mesh_is_provisioner_en() are true.
+         * So the previous round of function bt_mesh_rx_devkey_get(1, src) will return bt_mesh.dev_key_ca.
+         * Then this round of function bt_mesh_rx_devkey_get(2, src) will return bt_mesh_provisioner_dev_key_get(src).
+         */
+        key = bt_mesh.dev_key_ca;
     } else {
         key = bt_mesh_provisioner_dev_key_get(src);
     }

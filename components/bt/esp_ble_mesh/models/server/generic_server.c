@@ -21,20 +21,6 @@
 
 static bt_mesh_mutex_t generic_server_lock;
 
-static inline void bt_mesh_generic_server_mutex_new(void)
-{
-    if (!generic_server_lock.mutex) {
-        bt_mesh_mutex_create(&generic_server_lock);
-    }
-}
-
-#if CONFIG_BLE_MESH_DEINIT
-static inline void bt_mesh_generic_server_mutex_free(void)
-{
-    bt_mesh_mutex_free(&generic_server_lock);
-}
-#endif /* CONFIG_BLE_MESH_DEINIT */
-
 void bt_mesh_generic_server_lock(void)
 {
     bt_mesh_mutex_lock(&generic_server_lock);
@@ -88,7 +74,6 @@ static void send_gen_onoff_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_onoff_get(struct bt_mesh_model *model,
@@ -104,13 +89,12 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, NULL, 0);
         return;
     }
 
     send_gen_onoff_status(model, ctx, false);
-    return;
 }
 
 void gen_onoff_publish(struct bt_mesh_model *model)
@@ -121,7 +105,6 @@ void gen_onoff_publish(struct bt_mesh_model *model)
     }
 
     send_gen_onoff_status(model, NULL, true);
-    return;
 }
 
 static void gen_onoff_set(struct bt_mesh_model *model,
@@ -158,8 +141,8 @@ static void gen_onoff_set(struct bt_mesh_model *model,
             .onoff_set.trans_time = trans_time,
             .onoff_set.delay = delay,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -185,8 +168,8 @@ static void gen_onoff_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_state_change_t change = {
             .gen_onoff_set.onoff = srv->state.onoff,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                             model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
             send_gen_onoff_status(model, ctx, false);
@@ -198,8 +181,8 @@ static void gen_onoff_set(struct bt_mesh_model *model,
     }
 
     /* Copy the ctx of the received message */
-    if (srv->transition.timer.work._reserved) {
-        memcpy(srv->transition.timer.work._reserved, ctx, sizeof(struct bt_mesh_msg_ctx));
+    if (srv->transition.timer.work.user_data) {
+        memcpy(srv->transition.timer.work.user_data, ctx, sizeof(struct bt_mesh_msg_ctx));
     }
 
     /* For Instantaneous Transition */
@@ -216,7 +199,6 @@ static void gen_onoff_set(struct bt_mesh_model *model,
     bt_mesh_generic_server_unlock();
 
     bt_mesh_server_start_transition(&srv->transition);
-    return;
 }
 
 /* Generic Level Server message handlers */
@@ -269,7 +251,6 @@ static void send_gen_level_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_level_get(struct bt_mesh_model *model,
@@ -285,13 +266,12 @@ static void gen_level_get(struct bt_mesh_model *model,
 
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, NULL, 0);
         return;
     }
 
     send_gen_level_status(model, ctx, false);
-    return;
 }
 
 void gen_level_publish(struct bt_mesh_model *model)
@@ -302,7 +282,6 @@ void gen_level_publish(struct bt_mesh_model *model)
     }
 
     send_gen_level_status(model, NULL, true);
-    return;
 }
 
 static void gen_level_set(struct bt_mesh_model *model,
@@ -336,8 +315,8 @@ static void gen_level_set(struct bt_mesh_model *model,
             .level_set.trans_time = trans_time,
             .level_set.delay = delay,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -367,8 +346,8 @@ static void gen_level_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_state_change_t change = {
             .gen_level_set.level = srv->state.level,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                             model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_LEVEL_SET) {
             send_gen_level_status(model, ctx, false);
@@ -380,8 +359,8 @@ static void gen_level_set(struct bt_mesh_model *model,
     }
 
     /* Copy the ctx of the received message */
-    if (srv->transition.timer.work._reserved) {
-        memcpy(srv->transition.timer.work._reserved, ctx, sizeof(struct bt_mesh_msg_ctx));
+    if (srv->transition.timer.work.user_data) {
+        memcpy(srv->transition.timer.work.user_data, ctx, sizeof(struct bt_mesh_msg_ctx));
     }
 
     /* For Instantaneous Transition */
@@ -398,7 +377,6 @@ static void gen_level_set(struct bt_mesh_model *model,
     bt_mesh_generic_server_unlock();
 
     bt_mesh_server_start_transition(&srv->transition);
-    return;
 }
 
 static void gen_delta_set(struct bt_mesh_model *model,
@@ -432,8 +410,8 @@ static void gen_delta_set(struct bt_mesh_model *model,
             .delta_set.trans_time = trans_time,
             .delta_set.delay = delay,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -488,8 +466,8 @@ static void gen_delta_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_state_change_t change = {
             .gen_delta_set.level = srv->state.level,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                             model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_DELTA_SET) {
             send_gen_level_status(model, ctx, false);
@@ -501,8 +479,8 @@ static void gen_delta_set(struct bt_mesh_model *model,
     }
 
     /* Copy the ctx of the received message */
-    if (srv->transition.timer.work._reserved) {
-        memcpy(srv->transition.timer.work._reserved, ctx, sizeof(struct bt_mesh_msg_ctx));
+    if (srv->transition.timer.work.user_data) {
+        memcpy(srv->transition.timer.work.user_data, ctx, sizeof(struct bt_mesh_msg_ctx));
     }
 
     /* For Instantaneous Transition */
@@ -519,7 +497,6 @@ static void gen_delta_set(struct bt_mesh_model *model,
     bt_mesh_generic_server_unlock();
 
     bt_mesh_server_start_transition(&srv->transition);
-    return;
 }
 
 static void gen_move_set(struct bt_mesh_model *model,
@@ -554,8 +531,8 @@ static void gen_move_set(struct bt_mesh_model *model,
             .move_set.trans_time = trans_time,
             .move_set.delay = delay,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -593,8 +570,8 @@ static void gen_move_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_state_change_t change = {
             .gen_move_set.level = srv->state.level,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                             model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_MOVE_SET) {
             send_gen_level_status(model, ctx, false);
@@ -607,8 +584,8 @@ static void gen_move_set(struct bt_mesh_model *model,
     }
 
     /* Copy the ctx of the received message */
-    if (srv->transition.timer.work._reserved) {
-        memcpy(srv->transition.timer.work._reserved, ctx, sizeof(struct bt_mesh_msg_ctx));
+    if (srv->transition.timer.work.user_data) {
+        memcpy(srv->transition.timer.work.user_data, ctx, sizeof(struct bt_mesh_msg_ctx));
     }
 
     if (delta) {
@@ -639,13 +616,12 @@ static void gen_move_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_state_change_t change = {
             .gen_move_set.level = srv->state.level,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                             model, ctx, (const uint8_t *)&change, sizeof(change));
         return;
     }
 
     bt_mesh_server_start_transition(&srv->transition);
-    return;
 }
 
 /* Generic Default Transition Time Server message handlers */
@@ -684,7 +660,6 @@ static void send_gen_def_trans_time_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_def_trans_time_get(struct bt_mesh_model *model,
@@ -700,13 +675,12 @@ static void gen_def_trans_time_get(struct bt_mesh_model *model,
 
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, NULL, 0);
         return;
     }
 
     send_gen_def_trans_time_status(model, ctx, false);
-    return;
 }
 
 static void gen_def_trans_time_set(struct bt_mesh_model *model,
@@ -732,8 +706,8 @@ static void gen_def_trans_time_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_recv_set_msg_t set = {
             .def_trans_time_set.trans_time = trans_time,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -744,15 +718,13 @@ static void gen_def_trans_time_set(struct bt_mesh_model *model,
     bt_mesh_gen_server_state_change_t change = {
         .gen_def_trans_time_set.trans_time = trans_time,
     };
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET) {
         send_gen_def_trans_time_status(model, ctx, false);
     }
     send_gen_def_trans_time_status(model, NULL, true);
-
-    return;
 }
 
 /* Generic Power OnOff Server message handlers */
@@ -807,7 +779,6 @@ static void send_gen_onpowerup_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_onpowerup_get(struct bt_mesh_model *model,
@@ -823,13 +794,12 @@ static void gen_onpowerup_get(struct bt_mesh_model *model,
 
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, NULL, 0);
         return;
     }
 
     send_gen_onpowerup_status(model, ctx, false);
-    return;
 }
 
 /* Generic Power OnOff Setup Server message handlers */
@@ -863,7 +833,6 @@ void gen_onpowerup_publish(struct bt_mesh_model *model)
     }
 
     send_gen_onpowerup_status(model, NULL, true);
-    return;
 }
 
 static void gen_onpowerup_set(struct bt_mesh_model *model,
@@ -889,8 +858,8 @@ static void gen_onpowerup_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_recv_set_msg_t set = {
             .onpowerup_set.onpowerup = onpowerup,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -901,15 +870,13 @@ static void gen_onpowerup_set(struct bt_mesh_model *model,
     bt_mesh_gen_server_state_change_t change = {
         .gen_onpowerup_set.onpowerup = onpowerup,
     };
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET) {
         send_gen_onpowerup_status(model, ctx, false);
     }
     send_gen_onpowerup_status(model, NULL, true);
-
-    return;
 }
 
 /* Generic Power Level Server message handlers */
@@ -991,7 +958,6 @@ static void send_gen_power_level_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_power_level_get(struct bt_mesh_model *model,
@@ -1008,8 +974,8 @@ static void gen_power_level_get(struct bt_mesh_model *model,
 
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, NULL, 0);
         return;
     }
 
@@ -1032,7 +998,6 @@ static void gen_power_level_get(struct bt_mesh_model *model,
     }
 
     send_gen_power_level_status(model, ctx, false, opcode);
-    return;
 }
 
 void gen_power_level_publish(struct bt_mesh_model *model, uint16_t opcode)
@@ -1065,7 +1030,6 @@ void gen_power_level_publish(struct bt_mesh_model *model, uint16_t opcode)
     }
 
     send_gen_power_level_status(model, NULL, true, opcode);
-    return;
 }
 
 static void gen_power_level_set(struct bt_mesh_model *model,
@@ -1099,8 +1063,8 @@ static void gen_power_level_set(struct bt_mesh_model *model,
             .power_level_set.trans_time = trans_time,
             .power_level_set.delay = delay,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1136,8 +1100,8 @@ static void gen_power_level_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_state_change_t change = {
             .gen_power_level_set.power = srv->state->power_actual,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                             model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET) {
             send_gen_power_level_status(model, ctx, false, BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS);
@@ -1149,8 +1113,8 @@ static void gen_power_level_set(struct bt_mesh_model *model,
     }
 
     /* Copy the ctx of the received message */
-    if (srv->transition.timer.work._reserved) {
-        memcpy(srv->transition.timer.work._reserved, ctx, sizeof(struct bt_mesh_msg_ctx));
+    if (srv->transition.timer.work.user_data) {
+        memcpy(srv->transition.timer.work.user_data, ctx, sizeof(struct bt_mesh_msg_ctx));
     }
 
     /* For Instantaneous Transition */
@@ -1175,7 +1139,6 @@ static void gen_power_level_set(struct bt_mesh_model *model,
     bt_mesh_generic_server_unlock();
 
     bt_mesh_server_start_transition(&srv->transition);
-    return;
 }
 
 /* Generic Power Level Setup Server message handlers */
@@ -1198,8 +1161,8 @@ static void gen_power_default_set(struct bt_mesh_model *model,
         bt_mesh_gen_server_recv_set_msg_t set = {
             .power_default_set.power = power, /* Just callback the actual received value */
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1218,15 +1181,13 @@ static void gen_power_default_set(struct bt_mesh_model *model,
     bt_mesh_gen_server_state_change_t change = {
         .gen_power_default_set.power = power,
     };
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET) {
         send_gen_power_level_status(model, ctx, false, BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_STATUS);
     }
     send_gen_power_level_status(model, NULL, true, BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_STATUS);
-
-    return;
 }
 
 static void gen_power_range_set(struct bt_mesh_model *model,
@@ -1256,8 +1217,8 @@ static void gen_power_range_set(struct bt_mesh_model *model,
             .power_range_set.range_min = range_min,
             .power_range_set.range_max = range_max,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1281,15 +1242,13 @@ static void gen_power_range_set(struct bt_mesh_model *model,
         .gen_power_range_set.range_min = srv->state->power_range_min,
         .gen_power_range_set.range_max = srv->state->power_range_max,
     };
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET) {
         send_gen_power_level_status(model, ctx, false, BLE_MESH_MODEL_OP_GEN_POWER_RANGE_STATUS);
     }
     send_gen_power_level_status(model, NULL, true, BLE_MESH_MODEL_OP_GEN_POWER_RANGE_STATUS);
-
-    return;
 }
 
 /* Generic Battery Server message handlers */
@@ -1307,8 +1266,8 @@ static void gen_battery_get(struct bt_mesh_model *model,
 
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, NULL, 0);
         return;
     }
 
@@ -1317,7 +1276,6 @@ static void gen_battery_get(struct bt_mesh_model *model,
     net_buf_simple_add_le32(&msg, srv->state.battery_flags << 24 | srv->state.time_to_charge);
 
     BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_send(model, ctx, &msg, NULL, NULL));
-    return;
 }
 
 /* Generic Location Server message handlers */
@@ -1392,7 +1350,6 @@ static void send_gen_location_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_location_get(struct bt_mesh_model *model,
@@ -1409,8 +1366,8 @@ static void gen_location_get(struct bt_mesh_model *model,
 
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, NULL, 0);
         return;
     }
 
@@ -1427,7 +1384,6 @@ static void gen_location_get(struct bt_mesh_model *model,
     }
 
     send_gen_location_status(model, ctx, false, opcode);
-    return;
 }
 
 /* Generic Location Setup Server message handlers */
@@ -1458,8 +1414,8 @@ static void gen_location_set(struct bt_mesh_model *model,
                 .loc_global_set.longitude = longitude,
                 .loc_global_set.altitude = altitude,
             };
-            bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+            bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                                 model, ctx, (const uint8_t *)&set, sizeof(set));
             return;
         }
 
@@ -1478,8 +1434,8 @@ static void gen_location_set(struct bt_mesh_model *model,
             .gen_loc_global_set.longitude = srv->state->global_longitude,
             .gen_loc_global_set.altitude = srv->state->global_altitude,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                             model, ctx, (const uint8_t *)&change, sizeof(change));
         break;
     }
     case BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET:
@@ -1500,8 +1456,8 @@ static void gen_location_set(struct bt_mesh_model *model,
                 .loc_local_set.floor_number = floor,
                 .loc_local_set.uncertainty = uncertainty,
             };
-            bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+            bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                                 model, ctx, (const uint8_t *)&set, sizeof(set));
             return;
         }
 
@@ -1526,8 +1482,8 @@ static void gen_location_set(struct bt_mesh_model *model,
             .gen_loc_local_set.floor_number = srv->state->floor_number,
             .gen_loc_local_set.uncertainty = srv->state->uncertainty,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                             model, ctx, (const uint8_t *)&change, sizeof(change));
         break;
     }
     default:
@@ -1540,8 +1496,6 @@ static void gen_location_set(struct bt_mesh_model *model,
         send_gen_location_status(model, ctx, false, opcode);
     }
     send_gen_location_status(model, NULL, true, opcode);
-
-    return;
 }
 
 /* Generic User Property Server message handlers */
@@ -1617,7 +1571,6 @@ static void send_gen_user_prop_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_user_prop_get(struct bt_mesh_model *model,
@@ -1634,7 +1587,7 @@ static void gen_user_prop_get(struct bt_mesh_model *model,
     /* Callback the received message to the application layer */
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
         /**
-         * Also we can use __packed for esp_ble_mesh_gen_user_property_get_t,
+         * Also we can use __attribute__((packed)) for esp_ble_mesh_gen_user_property_get_t,
          * and directly callback with buf->data & buf->len.
          */
         bt_mesh_gen_server_recv_get_msg_t get = {0};
@@ -1645,8 +1598,8 @@ static void gen_user_prop_get(struct bt_mesh_model *model,
             param = (const uint8_t *)&get;
             len = sizeof(get);
         }
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, param, len);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, param, len);
         return;
     }
 
@@ -1662,7 +1615,7 @@ static void gen_user_prop_get(struct bt_mesh_model *model,
         bt_mesh_model_msg_init(msg, BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_STATUS);
         for (i = 0U; i < srv->property_count; i++) {
             if (srv->properties[i].admin_access != ADMIN_NOT_USER_PROP &&
-                    srv->properties[i].manu_access != MANU_NOT_USER_PROP) {
+                srv->properties[i].manu_access != MANU_NOT_USER_PROP) {
                 net_buf_simple_add_le16(msg, srv->properties[i].id);
             }
         }
@@ -1703,14 +1656,14 @@ static void gen_user_prop_set(struct bt_mesh_model *model,
             .user_property_set.id = property_id,
             .user_property_set.value = buf,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
     property = gen_get_user_property(model, property_id);
     if (property == NULL || property->user_access == USER_ACCESS_PROHIBIT ||
-            property->user_access == USER_ACCESS_READ) {
+        property->user_access == USER_ACCESS_READ) {
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET) {
             send_gen_user_prop_status(model, ctx, property_id, false);
         }
@@ -1737,15 +1690,13 @@ static void gen_user_prop_set(struct bt_mesh_model *model,
         .gen_user_prop_set.id = property_id,
         .gen_user_prop_set.value = property->val,
     };
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET) {
         send_gen_user_prop_status(model, ctx, property_id, false);
     }
     send_gen_user_prop_status(model, ctx, property_id, true);
-
-    return;
 }
 
 /* Generic Admin Property Server message handlers */
@@ -1816,7 +1767,6 @@ static void send_gen_admin_prop_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_admin_prop_get(struct bt_mesh_model *model,
@@ -1840,8 +1790,8 @@ static void gen_admin_prop_get(struct bt_mesh_model *model,
             param = (const uint8_t *)&get;
             len = sizeof(get);
         }
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, param, len);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, param, len);
         return;
     }
 
@@ -1901,8 +1851,8 @@ static void gen_admin_prop_set(struct bt_mesh_model *model,
             .admin_property_set.access = access,
             .admin_property_set.value = buf,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1925,15 +1875,13 @@ static void gen_admin_prop_set(struct bt_mesh_model *model,
         .gen_admin_prop_set.access = property->admin_access,
         .gen_admin_prop_set.value = property->val,
     };
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET) {
         send_gen_admin_prop_status(model, ctx, property_id, false);
     }
     send_gen_admin_prop_status(model, ctx, property_id, true);
-
-    return;
 }
 
 /* Generic Manufacturer Property Server message handlers */
@@ -2001,7 +1949,6 @@ static void send_gen_manu_prop_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void gen_manu_prop_get(struct bt_mesh_model *model,
@@ -2025,8 +1972,8 @@ static void gen_manu_prop_get(struct bt_mesh_model *model,
             param = (const uint8_t *)&get;
             len = sizeof(get);
         }
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, param, len);
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, param, len);
         return;
     }
 
@@ -2085,8 +2032,8 @@ static void gen_manu_prop_set(struct bt_mesh_model *model,
             .manu_property_set.id = property_id,
             .manu_property_set.access = access,
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_SET_MSG,
+                                             model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -2105,15 +2052,13 @@ static void gen_manu_prop_set(struct bt_mesh_model *model,
         .gen_manu_prop_set.id = property_id,
         .gen_manu_prop_set.access = property->manu_access,
     };
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_SET) {
         send_gen_manu_prop_status(model, ctx, property_id, false);
     }
     send_gen_manu_prop_status(model, ctx, property_id, true);
-
-    return;
 }
 
 /* Generic Client Property Server message handlers */
@@ -2130,9 +2075,9 @@ static int search_prop_id_index(const uint16_t *array, uint8_t array_idx, uint16
     if (array_idx == 0U) {
         if (*array >= id) {
             return array - start;
-        } else {
-            return -1;
         }
+
+        return -1;
     }
 
     index = array_idx / 2;
@@ -2140,11 +2085,13 @@ static int search_prop_id_index(const uint16_t *array, uint8_t array_idx, uint16
 
     if (temp == id) {
         return array + index - start;
-    } else if (temp > id) {
-        return search_prop_id_index(array, index, id);
-    } else {
-        return search_prop_id_index(array + index + 1, array_idx - 1 - index, id);
     }
+
+    if (temp > id) {
+        return search_prop_id_index(array, index, id);
+    }
+
+    return search_prop_id_index(array + index + 1, array_idx - 1 - index, id);
 }
 
 static void gen_client_prop_get(struct bt_mesh_model *model,
@@ -2167,14 +2114,14 @@ static void gen_client_prop_get(struct bt_mesh_model *model,
         bt_mesh_gen_server_recv_get_msg_t get = {
             .client_properties_get.id = net_buf_simple_pull_le16(buf),
         };
-        bt_mesh_generic_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG, model, ctx, (const uint8_t *)&get, sizeof(get));
+        bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_RECV_GET_MSG,
+                                             model, ctx, (const uint8_t *)&get, sizeof(get));
         return;
     }
 
     /* The sequence shall be in an ascending order of Property ID values and shall
      * start with a smallest Property ID that is greater than or equal to the value
-     * of the Generic Client Property field of the Generic Client Properities Get
+     * of the Generic Client Property field of the Generic Client Properties Get
      * message that it is responding to.
      */
 
@@ -2205,8 +2152,8 @@ static void gen_client_prop_get(struct bt_mesh_model *model,
     }
 
     BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_send(model, ctx, sdu, NULL, NULL));
+
     bt_mesh_free_buf(sdu);
-    return;
 }
 
 /* message handlers (End) */
@@ -2332,9 +2279,11 @@ static inline int property_id_compare(const void *p1, const void *p2)
     if (*(uint16_t *)p1 < * (uint16_t *)p2) {
         return -1;
     }
+
     if (*(uint16_t *)p1 > *(uint16_t *)p2) {
         return 1;
     }
+
     return 0;
 }
 
@@ -2475,7 +2424,7 @@ static int generic_server_init(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    bt_mesh_generic_server_mutex_new();
+    bt_mesh_mutex_create(&generic_server_lock);
 
     return 0;
 }
@@ -2683,7 +2632,7 @@ static int generic_server_deinit(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    bt_mesh_generic_server_mutex_free();
+    bt_mesh_mutex_free(&generic_server_lock);
 
     return 0;
 }

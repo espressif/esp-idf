@@ -22,6 +22,7 @@ enum bt_mesh_friend_pdu_type {
 };
 
 bool bt_mesh_friend_match(uint16_t net_idx, uint16_t addr);
+bool bt_mesh_friend_unicast_match(uint16_t net_idx, uint16_t addr, uint8_t *selem);
 
 struct bt_mesh_friend *bt_mesh_friend_find(uint16_t net_idx, uint16_t lpn_addr,
                                            bool valid, bool established);

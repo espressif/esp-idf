@@ -134,7 +134,7 @@ typedef struct {
 typedef struct {
     bool     op_en;            /*!< Indicate if optional parameters are included */
     uint16_t ctl_lightness;    /*!< Target value of light ctl lightness state */
-    uint16_t ctl_temperatrue;  /*!< Target value of light ctl temperature state */
+    uint16_t ctl_temperature;  /*!< Target value of light ctl temperature state */
     int16_t  ctl_delta_uv;     /*!< Target value of light ctl delta UV state */
     uint8_t  tid;              /*!< Transaction ID */
     uint8_t  trans_time;       /*!< Time to complete state transition (optional) */
@@ -144,7 +144,7 @@ typedef struct {
 /** Parameters of Light CTL Temperature Set */
 typedef struct {
     bool     op_en;            /*!< Indicate if optional parameters are included */
-    uint16_t ctl_temperatrue;  /*!< Target value of light ctl temperature state */
+    uint16_t ctl_temperature;  /*!< Target value of light ctl temperature state */
     int16_t  ctl_delta_uv;     /*!< Target value of light ctl delta UV state */
     uint8_t  tid;              /*!< Transaction ID */
     uint8_t  trans_time;       /*!< Time to complete state transition (optional) */

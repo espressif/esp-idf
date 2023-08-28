@@ -4,7 +4,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,16 +26,20 @@
 extern "C" {
 #endif
 
-#define BLE_MESH_CID_NVAL          0xFFFF
+#define BLE_MESH_CID_NVAL           0xFFFF
 
-#define BLE_MESH_ADDR_UNASSIGNED   0x0000
-#define BLE_MESH_ADDR_ALL_NODES    0xffff
-#define BLE_MESH_ADDR_PROXIES      0xfffc
-#define BLE_MESH_ADDR_FRIENDS      0xfffd
-#define BLE_MESH_ADDR_RELAYS       0xfffe
+#define BLE_MESH_ADDR_UNASSIGNED    0x0000
 
-#define BLE_MESH_KEY_UNUSED        0xffff
-#define BLE_MESH_KEY_DEV           0xfffe
+#define BLE_MESH_ADDR_IPT_ROUTERS   0xFFF9
+#define BLE_MESH_ADDR_IPT_NODES     0xFFFA
+#define BLE_MESH_ADDR_DIRECTS       0xFFFB
+#define BLE_MESH_ADDR_PROXIES       0xFFFC
+#define BLE_MESH_ADDR_FRIENDS       0xFFFD
+#define BLE_MESH_ADDR_RELAYS        0xFFFE
+#define BLE_MESH_ADDR_ALL_NODES     0xFFFF
+
+#define BLE_MESH_KEY_UNUSED         0xFFFF
+#define BLE_MESH_KEY_DEV            0xFFFE
 
 /** Helper to define a mesh element within an array.
  *
@@ -75,6 +79,24 @@ struct bt_mesh_elem {
 #define BLE_MESH_MODEL_ID_CFG_CLI                   0x0001
 #define BLE_MESH_MODEL_ID_HEALTH_SRV                0x0002
 #define BLE_MESH_MODEL_ID_HEALTH_CLI                0x0003
+#define BLE_MESH_MODEL_ID_RPR_SRV                   0x0004
+#define BLE_MESH_MODEL_ID_RPR_CLI                   0x0005
+#define BLE_MESH_MODEL_ID_DF_SRV                    0x0006
+#define BLE_MESH_MODEL_ID_DF_CLI                    0x0007
+#define BLE_MESH_MODEL_ID_BRC_SRV                   0x0008
+#define BLE_MESH_MODEL_ID_BRC_CLI                   0x0009
+#define BLE_MESH_MODEL_ID_PRB_SRV                   0x000A
+#define BLE_MESH_MODEL_ID_PRB_CLI                   0x000B
+#define BLE_MESH_MODEL_ID_ODP_SRV                   0x000C
+#define BLE_MESH_MODEL_ID_ODP_CLI                   0x000D
+#define BLE_MESH_MODEL_ID_SAR_SRV                   0x000E
+#define BLE_MESH_MODEL_ID_SAR_CLI                   0x000F
+#define BLE_MESH_MODEL_ID_AGG_SRV                   0x0010
+#define BLE_MESH_MODEL_ID_AGG_CLI                   0x0011
+#define BLE_MESH_MODEL_ID_LCD_SRV                   0x0012
+#define BLE_MESH_MODEL_ID_LCD_CLI                   0x0013
+#define BLE_MESH_MODEL_ID_SRPL_SRV                  0x0014
+#define BLE_MESH_MODEL_ID_SRPL_CLI                  0x0015
 
 /* Models from the Mesh Model Specification */
 #define BLE_MESH_MODEL_ID_GEN_ONOFF_SRV             0x1000
@@ -129,6 +151,8 @@ struct bt_mesh_elem {
 #define BLE_MESH_MODEL_ID_LIGHT_LC_SRV              0x130f
 #define BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV        0x1310
 #define BLE_MESH_MODEL_ID_LIGHT_LC_CLI              0x1311
+#define BLE_MESH_MODEL_ID_MBT_SRV                   0x1400
+#define BLE_MESH_MODEL_ID_MBT_CLI                   0x1401
 
 /** Message sending context. */
 struct bt_mesh_msg_ctx {
@@ -144,28 +168,42 @@ struct bt_mesh_msg_ctx {
     /** Destination address of a received message. Not used for sending. */
     uint16_t recv_dst;
 
-    /** RSSI of received packet. Not used for sending. */
-    int8_t  recv_rssi;
+    /** RSSI of a received message. Not used for sending. */
+    int8_t   recv_rssi;
+
+    /** Opcode of a received message. Not used for sending. */
+    uint32_t recv_op;
 
     /** Received TTL value. Not used for sending. */
-    uint8_t  recv_ttl: 7;
+    uint8_t  recv_ttl;
 
-    /** Force sending reliably by using segment acknowledgement */
-    uint8_t  send_rel: 1;
+    /** Security credentials of a received message. Not used for sending. */
+    uint8_t  recv_cred;
+
+    /** Tag of a received message. Not used for sending. */
+    uint8_t  recv_tag;
+
+    /** Force sending reliably by using segment acknowledgement. */
+    uint8_t  send_rel:1 __attribute__((deprecated));
+
+    /** Size of TransMIC when sending a Segmented Access message. */
+    uint8_t  send_szmic:1;
 
     /** TTL, or BLE_MESH_TTL_DEFAULT for default TTL. */
     uint8_t  send_ttl;
 
-    /** Change by Espressif, opcode of a received message.
-     *  Not used for sending message. */
-    uint32_t recv_op;
+    /** Security credentials used for sending the message */
+    uint8_t  send_cred;
+
+    /** Tag used for sending the message. */
+    uint8_t  send_tag;
 
     /** Change by Espressif, model corresponds to the message */
-    struct bt_mesh_model *model;
+    struct bt_mesh_model *model __attribute__((deprecated));
 
     /** Change by Espressif, if the message is sent by a server
      *  model. Not used for receiving message. */
-    bool srv_send;
+    bool srv_send __attribute__((deprecated));
 };
 
 struct bt_mesh_model_op {
@@ -194,8 +232,21 @@ struct bt_mesh_model_op {
 
 /** Length of a short Mesh MIC. */
 #define BLE_MESH_MIC_SHORT              4
+
 /** Length of a long Mesh MIC. */
 #define BLE_MESH_MIC_LONG               8
+
+/* Using 4-octets TransMIC for a segmented message */
+#define BLE_MESH_SEG_SZMIC_SHORT        0
+
+/* Using 8-octets TransMIC for a segmented message */
+#define BLE_MESH_SEG_SZMIC_LONG         1
+
+/** Maximum length of payload with short MIC */
+#define BLE_MESH_MAX_PDU_LEN_WITH_SMIC  380
+
+/** Maximum length of payload with long MIC */
+#define BLE_MESH_MAX_PDU_LEN_WITH_LMIC  376
 
 /** @def BLE_MESH_MODEL_OP_LEN
  *
@@ -203,7 +254,7 @@ struct bt_mesh_model_op {
  *
  * @param _op Opcode.
  */
-#define BLE_MESH_MODEL_OP_LEN(_op) ((_op) <= 0xff ? 1 : (_op) <= 0xffff ? 2 : 3)
+#define BLE_MESH_MODEL_OP_LEN(_op)      ((_op) <= 0xff ? 1 : (_op) <= 0xffff ? 2 : 3)
 
 /** @def BLE_MESH_MODEL_BUF_LEN
  *
@@ -364,7 +415,8 @@ struct bt_mesh_model_pub {
     uint16_t addr;          /**< Publish Address. */
     uint16_t key:12,        /**< Publish AppKey Index. */
              cred:1,        /**< Friendship Credentials Flag. */
-             send_rel:1;    /**< Force reliable sending (segment acks) */
+             send_rel:1,    /**< Force reliable sending (segment acks) */
+             send_szmic:1;  /**< Size of TransMIC when sending Segmented Access message */
 
     uint8_t  ttl;           /**< Publish Time to Live. */
     uint8_t  retransmit;    /**< Retransmit Count & Interval Steps. */
@@ -374,6 +426,10 @@ struct bt_mesh_model_pub {
              count:3;       /**< Retransmissions left. */
 
     uint32_t period_start;  /**< Start of the current period. */
+
+#if CONFIG_BLE_MESH_DF_SRV
+    uint8_t  directed_pub_policy; /**< Directed publish policy */
+#endif
 
     /** @brief Publication buffer, containing the publication message.
      *
@@ -405,7 +461,7 @@ struct bt_mesh_model_pub {
     struct k_delayed_work timer;
 
     /* Change by Espressif, role of the device going to publish messages */
-    uint8_t dev_role;
+    uint8_t dev_role __attribute__((deprecated));
 };
 
 /** @def BLE_MESH_MODEL_PUB_DEFINE

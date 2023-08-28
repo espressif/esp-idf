@@ -47,7 +47,8 @@ void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg);
 
 void btc_ble_mesh_health_client_cb_handler(btc_msg_t *msg);
 
-void btc_ble_mesh_health_publish_callback(uint32_t opcode, struct bt_mesh_model *model,
+void btc_ble_mesh_health_publish_callback(uint32_t opcode,
+                                          struct bt_mesh_model *model,
                                           struct bt_mesh_msg_ctx *ctx,
                                           struct net_buf_simple *buf);
 

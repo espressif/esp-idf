@@ -294,7 +294,6 @@ static void provisioner_prov_complete(int node_idx, const uint8_t uuid[16], uint
         .app_idx = node->app_idx,
         .dst = node->unicast_addr,
         .timeout = 0,
-        .role = ROLE_FAST_PROV,
     };
     err = example_send_config_appkey_add(config_client.model, &info, NULL);
     if (err != ESP_OK) {
@@ -618,7 +617,6 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
                 .app_idx = node->app_idx,
                 .dst = node->unicast_addr,
                 .timeout = 0,
-                .role = ROLE_FAST_PROV,
             };
             err = example_send_fast_prov_info_set(fast_prov_client.model, &info, &set);
             if (err != ESP_OK) {
@@ -641,7 +639,6 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
                 .app_idx = node->app_idx,
                 .dst = node->unicast_addr,
                 .timeout = 0,
-                .role = ROLE_FAST_PROV,
             };
             err = example_send_config_appkey_add(config_client.model, &info, NULL);
             if (err != ESP_OK) {

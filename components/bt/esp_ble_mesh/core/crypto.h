@@ -70,8 +70,8 @@ static inline int bt_mesh_identity_key(const uint8_t net_key[16],
     return bt_mesh_id128(net_key, "nkik", identity_key);
 }
 
-static inline int bt_mesh_beacon_key(const uint8_t net_key[16],
-                                     uint8_t beacon_key[16])
+static inline int bt_mesh_secure_beacon_key(const uint8_t net_key[16],
+                                            uint8_t beacon_key[16])
 {
     return bt_mesh_id128(net_key, "nkbk", beacon_key);
 }
@@ -79,6 +79,10 @@ static inline int bt_mesh_beacon_key(const uint8_t net_key[16],
 int bt_mesh_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
                         const uint8_t net_id[8], uint32_t iv_index,
                         uint8_t auth[8]);
+
+int bt_mesh_secure_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
+                               const uint8_t net_id[8], uint32_t iv_index,
+                               uint8_t auth[8]);
 
 static inline int bt_mesh_app_id(const uint8_t app_key[16], uint8_t app_id[1])
 {
@@ -133,10 +137,10 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
                           const uint8_t privacy_key[16]);
 
 int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
-                        uint32_t iv_index, bool proxy);
+                        uint32_t iv_index, bool proxy, bool proxy_solic);
 
 int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
-                        uint32_t iv_index, bool proxy);
+                        uint32_t iv_index, bool proxy, bool proxy_solic);
 
 int bt_mesh_app_encrypt(const uint8_t key[16], bool dev_key, uint8_t aszmic,
                         struct net_buf_simple *buf, const uint8_t *ad,

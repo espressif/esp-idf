@@ -26,7 +26,7 @@ int bt_mesh_lpn_friend_sub_cfm(struct bt_mesh_net_rx *rx,
 
 static inline bool bt_mesh_lpn_established(void)
 {
-#if defined(CONFIG_BLE_MESH_LOW_POWER)
+#if CONFIG_BLE_MESH_LOW_POWER
     return bt_mesh.lpn.established;
 #else
     return false;
@@ -35,7 +35,7 @@ static inline bool bt_mesh_lpn_established(void)
 
 static inline bool bt_mesh_lpn_match(uint16_t addr)
 {
-#if defined(CONFIG_BLE_MESH_LOW_POWER)
+#if CONFIG_BLE_MESH_LOW_POWER
     if (bt_mesh_lpn_established()) {
         return (addr == bt_mesh.lpn.frnd);
     }
@@ -45,7 +45,7 @@ static inline bool bt_mesh_lpn_match(uint16_t addr)
 
 static inline bool bt_mesh_lpn_waiting_update(void)
 {
-#if defined(CONFIG_BLE_MESH_LOW_POWER)
+#if CONFIG_BLE_MESH_LOW_POWER
     return (bt_mesh.lpn.state == BLE_MESH_LPN_WAIT_UPDATE);
 #else
     return false;
@@ -54,7 +54,7 @@ static inline bool bt_mesh_lpn_waiting_update(void)
 
 static inline bool bt_mesh_lpn_timer(void)
 {
-#if defined(CONFIG_BLE_MESH_LPN_AUTO)
+#if CONFIG_BLE_MESH_LPN_AUTO
     return (bt_mesh.lpn.state == BLE_MESH_LPN_TIMER);
 #else
     return false;

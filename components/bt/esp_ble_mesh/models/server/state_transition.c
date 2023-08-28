@@ -238,26 +238,27 @@ void scene_tt_values(struct bt_mesh_scene_srv *srv, uint8_t trans_time, uint8_t 
 #if CONFIG_BLE_MESH_GENERIC_SERVER
 void generic_onoff_work_handler(struct k_work *work)
 {
-    struct bt_mesh_gen_onoff_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_gen_onoff_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_gen_onoff_srv *srv = CONTAINER_OF(work,
+                                        struct bt_mesh_gen_onoff_srv,
+                                        transition.timer.work);
     bt_mesh_gen_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
-    if (srv == NULL || srv->transition.timer.work._reserved == NULL) {
+    if (srv == NULL || srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_generic_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
         if (srv->transition.counter == 0U) {
             change.gen_onoff_set.onoff = srv->state.onoff;
-            bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                                 srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             /**
@@ -269,8 +270,8 @@ void generic_onoff_work_handler(struct k_work *work)
             if (srv->state.target_onoff == BLE_MESH_STATE_ON) {
                 srv->state.onoff = BLE_MESH_STATE_ON;
                 change.gen_onoff_set.onoff = srv->state.onoff;
-                bt_mesh_generic_server_cb_evt_to_btc(
-                    BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+                bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                                     srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             }
             transition_timer_start(&srv->transition);
         }
@@ -288,32 +289,32 @@ void generic_onoff_work_handler(struct k_work *work)
         srv->state.onoff = srv->state.target_onoff;
         if (srv->state.target_onoff != BLE_MESH_STATE_ON) {
             change.gen_onoff_set.onoff = srv->state.onoff;
-            bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                                 srv->model, ctx, (const uint8_t *)&change, sizeof(change));
         }
     }
 
     gen_onoff_publish(srv->model);
 
     bt_mesh_generic_server_unlock();
-    return;
 }
 
 void generic_level_work_handler(struct k_work *work)
 {
-    struct bt_mesh_gen_level_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_gen_level_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_gen_level_srv *srv = CONTAINER_OF(work,
+                                        struct bt_mesh_gen_level_srv,
+                                        transition.timer.work);
     bt_mesh_gen_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
-    if (srv == NULL || srv->transition.timer.work._reserved == NULL) {
+    if (srv == NULL || srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_generic_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
@@ -332,8 +333,8 @@ void generic_level_work_handler(struct k_work *work)
                 change.gen_move_set.level = srv->state.level;
                 break;
             }
-            bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                                 srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -367,38 +368,38 @@ void generic_level_work_handler(struct k_work *work)
         change.gen_move_set.level = srv->state.level;
         break;
     }
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     gen_level_publish(srv->model);
 
     bt_mesh_generic_server_unlock();
-    return;
 }
 
 void generic_power_level_work_handler(struct k_work *work)
 {
-    struct bt_mesh_gen_power_level_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_gen_power_level_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_gen_power_level_srv *srv = CONTAINER_OF(work,
+                                              struct bt_mesh_gen_power_level_srv,
+                                              transition.timer.work);
     bt_mesh_gen_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->transition.timer.work._reserved == NULL) {
+        srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_generic_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
         if (srv->transition.counter == 0U) {
             change.gen_power_level_set.power = srv->state->power_actual;
-            bt_mesh_generic_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                                 srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -429,40 +430,40 @@ void generic_power_level_work_handler(struct k_work *work)
     }
 
     change.gen_power_level_set.power = srv->state->power_actual;
-    bt_mesh_generic_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_generic_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_GENERIC_SERVER_STATE_CHANGE,
+                                         srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     gen_power_level_publish(srv->model, BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS);
 
     bt_mesh_generic_server_unlock();
-    return;
 }
 #endif /* CONFIG_BLE_MESH_GENERIC_SERVER */
 
 #if CONFIG_BLE_MESH_LIGHTING_SERVER
 void light_lightness_actual_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_lightness_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_lightness_srv, actual_transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_lightness_srv *srv = CONTAINER_OF(work,
+                                              struct bt_mesh_light_lightness_srv,
+                                              actual_transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->actual_transition.timer.work._reserved == NULL) {
+        srv->actual_transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->actual_transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->actual_transition.timer.work.user_data;
 
     if (srv->actual_transition.just_started) {
         srv->actual_transition.just_started = false;
         if (srv->actual_transition.counter == 0U) {
             change.lightness_set.lightness = srv->state->lightness_actual;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->actual_transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->actual_transition);
@@ -493,38 +494,38 @@ void light_lightness_actual_work_handler(struct k_work *work)
     }
 
     change.lightness_set.lightness = srv->state->lightness_actual;
-    bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                          srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_lightness_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 
 void light_lightness_linear_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_lightness_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_lightness_srv, linear_transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_lightness_srv *srv = CONTAINER_OF(work,
+                                              struct bt_mesh_light_lightness_srv,
+                                              linear_transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->linear_transition.timer.work._reserved == NULL) {
+        srv->linear_transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->linear_transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->linear_transition.timer.work.user_data;
 
     if (srv->linear_transition.just_started) {
         srv->linear_transition.just_started = false;
         if (srv->linear_transition.counter == 0U) {
             change.lightness_linear_set.lightness = srv->state->lightness_linear;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->linear_transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->linear_transition);
@@ -545,31 +546,31 @@ void light_lightness_linear_work_handler(struct k_work *work)
     }
 
     change.lightness_linear_set.lightness = srv->state->lightness_linear;
-    bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                          srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_lightness_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 
 void light_ctl_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_ctl_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_ctl_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_ctl_srv *srv = CONTAINER_OF(work,
+                                        struct bt_mesh_light_ctl_srv,
+                                        transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->transition.timer.work._reserved == NULL) {
+        srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
@@ -577,8 +578,8 @@ void light_ctl_work_handler(struct k_work *work)
             change.ctl_set.lightness = srv->state->lightness;
             change.ctl_set.temperature = srv->state->temperature;
             change.ctl_set.delta_uv = srv->state->delta_uv;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -605,39 +606,39 @@ void light_ctl_work_handler(struct k_work *work)
     change.ctl_set.lightness = srv->state->lightness;
     change.ctl_set.temperature = srv->state->temperature;
     change.ctl_set.delta_uv = srv->state->delta_uv;
-    bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                          srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_ctl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_CTL_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 
 void light_ctl_temp_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_ctl_temp_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_ctl_temp_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_ctl_temp_srv *srv = CONTAINER_OF(work,
+                                             struct bt_mesh_light_ctl_temp_srv,
+                                             transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->transition.timer.work._reserved == NULL) {
+        srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
         if (srv->transition.counter == 0U) {
             change.ctl_temp_set.temperature = srv->state->temperature;
             change.ctl_temp_set.delta_uv = srv->state->delta_uv;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -661,31 +662,31 @@ void light_ctl_temp_work_handler(struct k_work *work)
 
     change.ctl_temp_set.temperature = srv->state->temperature;
     change.ctl_temp_set.delta_uv = srv->state->delta_uv;
-    bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                          srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_ctl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 
 void light_hsl_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_hsl_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_hsl_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_hsl_srv *srv = CONTAINER_OF(work,
+                                        struct bt_mesh_light_hsl_srv,
+                                        transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->transition.timer.work._reserved == NULL) {
+        srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
@@ -693,8 +694,8 @@ void light_hsl_work_handler(struct k_work *work)
             change.hsl_set.lightness = srv->state->lightness;
             change.hsl_set.hue = srv->state->hue;
             change.hsl_set.saturation = srv->state->saturation;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -721,38 +722,38 @@ void light_hsl_work_handler(struct k_work *work)
     change.hsl_set.lightness = srv->state->lightness;
     change.hsl_set.hue = srv->state->hue;
     change.hsl_set.saturation = srv->state->saturation;
-    bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                          srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_hsl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 
 void light_hsl_hue_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_hsl_hue_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_hsl_hue_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_hsl_hue_srv *srv = CONTAINER_OF(work,
+                                            struct bt_mesh_light_hsl_hue_srv,
+                                            transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->transition.timer.work._reserved == NULL) {
+        srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
         if (srv->transition.counter == 0U) {
             change.hsl_hue_set.hue = srv->state->hue;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -773,38 +774,38 @@ void light_hsl_hue_work_handler(struct k_work *work)
     }
 
     change.hsl_hue_set.hue = srv->state->hue;
-    bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                          srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_hsl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 
 void light_hsl_sat_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_hsl_sat_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_hsl_sat_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_hsl_sat_srv *srv = CONTAINER_OF(work,
+                                            struct bt_mesh_light_hsl_sat_srv,
+                                            transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->transition.timer.work._reserved == NULL) {
+        srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
         if (srv->transition.counter == 0U) {
             change.hsl_saturation_set.saturation = srv->state->saturation;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -825,31 +826,31 @@ void light_hsl_sat_work_handler(struct k_work *work)
     }
 
     change.hsl_saturation_set.saturation = srv->state->saturation;
-    bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                          srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_hsl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 
 void light_xyl_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_xyl_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_xyl_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_xyl_srv *srv = CONTAINER_OF(work,
+                                        struct bt_mesh_light_xyl_srv,
+                                        transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->transition.timer.work._reserved == NULL) {
+        srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
@@ -857,8 +858,8 @@ void light_xyl_work_handler(struct k_work *work)
             change.xyl_set.lightness = srv->state->lightness;
             change.xyl_set.x = srv->state->x;
             change.xyl_set.y = srv->state->y;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -885,37 +886,37 @@ void light_xyl_work_handler(struct k_work *work)
     change.xyl_set.lightness = srv->state->lightness;
     change.xyl_set.x = srv->state->x;
     change.xyl_set.y = srv->state->y;
-    bt_mesh_lighting_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                          srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     light_xyl_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_XYL_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 
 void light_lc_work_handler(struct k_work *work)
 {
-    struct bt_mesh_light_lc_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_light_lc_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_light_lc_srv *srv = CONTAINER_OF(work,
+                                       struct bt_mesh_light_lc_srv,
+                                       transition.timer.work);
     bt_mesh_light_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
-    if (srv == NULL || srv->transition.timer.work._reserved == NULL) {
+    if (srv == NULL || srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_light_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
         if (srv->transition.counter == 0U) {
             change.lc_light_onoff_set.onoff = srv->lc->state.light_onoff;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             /**
@@ -929,8 +930,8 @@ void light_lc_work_handler(struct k_work *work)
                 bt_mesh_light_server_state_change_t change = {
                     .lc_light_onoff_set.onoff = srv->lc->state.light_onoff,
                 };
-                bt_mesh_lighting_server_cb_evt_to_btc(
-                    BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+                bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                      srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             }
             transition_timer_start(&srv->transition);
         }
@@ -948,42 +949,42 @@ void light_lc_work_handler(struct k_work *work)
         srv->lc->state.light_onoff = srv->lc->state.target_light_onoff;
         if (srv->lc->state.light_onoff != BLE_MESH_STATE_ON) {
             change.lc_light_onoff_set.onoff = srv->lc->state.light_onoff;
-            bt_mesh_lighting_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_lighting_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE,
+                                                  srv->model, ctx, (const uint8_t *)&change, sizeof(change));
         }
     }
 
     light_lc_publish(srv->model, BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS);
 
     bt_mesh_light_server_unlock();
-    return;
 }
 #endif /* CONFIG_BLE_MESH_LIGHTING_SERVER */
 
 #if CONFIG_BLE_MESH_TIME_SCENE_SERVER
 void scene_recall_work_handler(struct k_work *work)
 {
-    struct bt_mesh_scene_srv *srv =
-        CONTAINER_OF(work, struct bt_mesh_scene_srv, transition.timer.work);
-    struct bt_mesh_msg_ctx *ctx = NULL;
+    struct bt_mesh_scene_srv *srv = CONTAINER_OF(work,
+                                    struct bt_mesh_scene_srv,
+                                    transition.timer.work);
     bt_mesh_time_scene_server_state_change_t change = {0};
+    struct bt_mesh_msg_ctx *ctx = NULL;
 
     if (srv == NULL || srv->state == NULL ||
-            srv->transition.timer.work._reserved == NULL) {
+        srv->transition.timer.work.user_data == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     bt_mesh_time_scene_server_lock();
 
-    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work._reserved;
+    ctx = (struct bt_mesh_msg_ctx *)srv->transition.timer.work.user_data;
 
     if (srv->transition.just_started) {
         srv->transition.just_started = false;
         if (srv->transition.counter == 0U) {
             change.scene_recall.scene_number = srv->state->current_scene;
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
+                                                    srv->model, ctx, (const uint8_t *)&change, sizeof(change));
             bt_mesh_atomic_clear_bit(srv->transition.flag, BLE_MESH_TRANS_TIMER_START);
         } else {
             transition_timer_start(&srv->transition);
@@ -1005,13 +1006,12 @@ void scene_recall_work_handler(struct k_work *work)
     }
 
     change.scene_recall.scene_number = srv->state->current_scene;
-    bt_mesh_time_scene_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, srv->model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
+                                            srv->model, ctx, (const uint8_t *)&change, sizeof(change));
 
     scene_publish(srv->model, ctx, BLE_MESH_MODEL_OP_SCENE_STATUS);
 
     bt_mesh_time_scene_server_unlock();
-    return;
 }
 #endif /* CONFIG_BLE_MESH_TIME_SCENE_SERVER */
 
@@ -1027,11 +1027,9 @@ void bt_mesh_server_stop_transition(struct bt_mesh_state_transition *transition)
 
 void bt_mesh_server_start_transition(struct bt_mesh_state_transition *transition)
 {
+    k_delayed_work_submit(&transition->timer, K_MSEC(5 * transition->delay));
     if (transition->delay) {
-        k_delayed_work_submit(&transition->timer, K_MSEC(5 * transition->delay));
         bt_mesh_atomic_set_bit(transition->flag, BLE_MESH_TRANS_TIMER_START);
-    } else {
-        k_work_submit(&transition->timer.work);
     }
 }
 

@@ -54,7 +54,9 @@ typedef enum {
     BLE_MESH_PROV_OOB_NFC       = BIT(4),
     BLE_MESH_PROV_OOB_NUMBER    = BIT(5),
     BLE_MESH_PROV_OOB_STRING    = BIT(6),
-    /* 7 - 10 are reserved */
+    BLE_MESH_PROV_CERT_BASED    = BIT(7),
+    BLE_MESH_PROV_RECORDS       = BIT(8),
+    /* 9 - 10 are reserved */
     BLE_MESH_PROV_OOB_ON_BOX    = BIT(11),
     BLE_MESH_PROV_OOB_IN_BOX    = BIT(12),
     BLE_MESH_PROV_OOB_ON_PAPER  = BIT(13),
@@ -62,7 +64,12 @@ typedef enum {
     BLE_MESH_PROV_OOB_ON_DEV    = BIT(15),
 } bt_mesh_prov_oob_info_t;
 
+#if CONFIG_BLE_MESH_PROV_EPA
+#define BLE_MESH_PROV_STATIC_OOB_MAX_LEN    32
+#else /* CONFIG_BLE_MESH_PROV_EPA */
 #define BLE_MESH_PROV_STATIC_OOB_MAX_LEN    16
+#endif /* CONFIG_BLE_MESH_PROV_EPA */
+
 #define BLE_MESH_PROV_OUTPUT_OOB_MAX_LEN    8
 #define BLE_MESH_PROV_INPUT_OOB_MAX_LEN     8
 
@@ -91,6 +98,9 @@ struct bt_mesh_prov {
      *  set OOB public key & private key pair.
      */
     void (*oob_pub_key_cb)(void);
+
+    /** OOB type */
+    uint8_t oob_type;
 
     /** Static OOB value */
     const uint8_t *static_val;
@@ -161,8 +171,9 @@ struct bt_mesh_prov {
      *  link has been closed on the given provisioning bearer.
      *
      *  @param bearer Provisioning bearer.
+     *  @param reason Provisioning link close reason(disconnect reason)
      */
-    void        (*link_close)(bt_mesh_prov_bearer_t bearer);
+    void        (*link_close)(bt_mesh_prov_bearer_t bearer, uint8_t reason);
 
     /** @brief Provisioning is complete.
      *
@@ -181,7 +192,7 @@ struct bt_mesh_prov {
     /** @brief Node has been reset.
      *
      *  This callback notifies the application that the local node
-     *  has been reset and needs to be reprovisioned. The node will
+     *  has been reset and needs to be re-provisioned. The node will
      *  not automatically advertise as unprovisioned, rather the
      *  bt_mesh_prov_enable() API needs to be called to enable
      *  unprovisioned advertising on one or more provisioning bearers.
@@ -305,6 +316,41 @@ struct bt_mesh_prov {
     void (*prov_complete)(uint16_t node_idx, const uint8_t device_uuid[16],
                           uint16_t unicast_addr, uint8_t element_num,
                           uint16_t netkey_idx);
+
+    /** @brief Provisioner start certificate based provisioning.
+     *
+     *  This callback notifies the application that certificate based provisioning
+     *  has started. Provisioner need to send prov_records_get, prov_record_request
+     *  or prov_invite message.
+     *
+     * @param link_idx: The provisioning link index
+     */
+    void (*cert_based_prov_start)(uint16_t link_idx);
+
+    /** @brief Provisioner receive provisioning records list from device.
+     *
+     *  This callback notifies the application that provisioner has received
+     *  provisioning records list, and will send the list to application.
+     *
+     * @param link_idx: The provisioning link index
+     * @param data:     The provisioning records list.
+     */
+    void (*records_list_get)(uint16_t link_idx, struct net_buf_simple *data);
+
+    /** @brief Provisioner receive complete provisioning record from device.
+     *
+     *  This callback notifies the application that provisioner has received
+     *  complete provisioning record, and will send the record to application.
+     *
+     * @param status:      Status
+     * @param link_idx:    The provisioning link index.
+     * @param record_id:   The provisioning record index.
+     * @param frag_offset: The starting of the fragment.
+     * @param total_len:   The length of the record.
+     * @param record:      The data of the record.
+     */
+    void (*prov_record_recv_comp)(uint8_t status, uint16_t link_idx, uint16_t record_id,
+                                  uint16_t frag_offset, uint16_t total_len, uint8_t *record);
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 };
 
@@ -415,36 +461,82 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers);
  */
 
 /* Primary Network Key index */
-#define BLE_MESH_NET_PRIMARY                 0x000
+#define BLE_MESH_NET_PRIMARY                            0x000
 
-#define BLE_MESH_RELAY_DISABLED              0x00
-#define BLE_MESH_RELAY_ENABLED               0x01
-#define BLE_MESH_RELAY_NOT_SUPPORTED         0x02
+#define BLE_MESH_RELAY_DISABLED                         0x00
+#define BLE_MESH_RELAY_ENABLED                          0x01
+#define BLE_MESH_RELAY_NOT_SUPPORTED                    0x02
 
-#define BLE_MESH_BEACON_DISABLED             0x00
-#define BLE_MESH_BEACON_ENABLED              0x01
+#define BLE_MESH_SECURE_BEACON_DISABLED                 0x00
+#define BLE_MESH_SECURE_BEACON_ENABLED                  0x01
 
-#define BLE_MESH_GATT_PROXY_DISABLED         0x00
-#define BLE_MESH_GATT_PROXY_ENABLED          0x01
-#define BLE_MESH_GATT_PROXY_NOT_SUPPORTED    0x02
+#define BLE_MESH_GATT_PROXY_DISABLED                    0x00
+#define BLE_MESH_GATT_PROXY_ENABLED                     0x01
+#define BLE_MESH_GATT_PROXY_NOT_SUPPORTED               0x02
 
-#define BLE_MESH_FRIEND_DISABLED             0x00
-#define BLE_MESH_FRIEND_ENABLED              0x01
-#define BLE_MESH_FRIEND_NOT_SUPPORTED        0x02
+#define BLE_MESH_FRIEND_DISABLED                        0x00
+#define BLE_MESH_FRIEND_ENABLED                         0x01
+#define BLE_MESH_FRIEND_NOT_SUPPORTED                   0x02
 
-#define BLE_MESH_NODE_IDENTITY_STOPPED       0x00
-#define BLE_MESH_NODE_IDENTITY_RUNNING       0x01
-#define BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED 0x02
+#define BLE_MESH_NODE_IDENTITY_STOPPED                  0x00
+#define BLE_MESH_NODE_IDENTITY_RUNNING                  0x01
+#define BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED            0x02
+
+#define BLE_MESH_PRIVATE_BEACON_DISABLED                0x00
+#define BLE_MESH_PRIVATE_BEACON_ENABLED                 0x01
+
+#define BLE_MESH_RANDOM_UPDATE_EVERY_PRIVATE_BEACON     0x00
+
+#define BLE_MESH_PRIVATE_GATT_PROXY_DISABLED            0x00
+#define BLE_MESH_PRIVATE_GATT_PROXY_ENABLED             0x01
+#define BLE_MESH_PRIVATE_GATT_PROXY_NOT_SUPPORTED       0x02
+
+#define BLE_MESH_PRIVATE_NODE_IDENTITY_STOPPED          0x00
+#define BLE_MESH_PRIVATE_NODE_IDENTITY_RUNNING          0x01
+#define BLE_MESH_PRIVATE_NODE_IDENTITY_NOT_SUPPORTED    0x02
+
+#define BLE_MESH_SUBNET_BRIDGE_DISABLED                 0x00
+#define BLE_MESH_SUBNET_BRIDGE_ENABLED                  0x01
+
+#define BLE_MESH_PRIVATE_NET_ID_CANNOT_EN_ON_DEMAND     0x00
+
+#define BLE_MESH_DIRECTED_FORWARDING_DISABLED           0x00
+#define BLE_MESH_DIRECTED_FORWARDING_ENABLED            0x01
+
+#define BLE_MESH_DIRECTED_RELAY_DISABLED                0x00
+#define BLE_MESH_DIRECTED_RELAY_ENABLED                 0x01
+
+#define BLE_MESH_DIRECTED_PROXY_DISABLED                0x00
+#define BLE_MESH_DIRECTED_PROXY_ENABLED                 0x01
+#define BLE_MESH_DIRECTED_PROXY_NOT_SUPPORTED           0x02
+
+#define BLE_MESH_DIRECTED_PROXY_USE_DEF_DISABLED        0x00
+#define BLE_MESH_DIRECTED_PROXY_USE_DEF_ENABLED         0x01
+#define BLE_MESH_DIRECTED_PROXY_USE_DEF_NOT_SUPPORTED   0x02
+
+#define BLE_MESH_DIRECTED_FRIEND_DISABLED               0x00
+#define BLE_MESH_DIRECTED_FRIEND_ENABLED                0x01
+#define BLE_MESH_DIRECTED_FRIEND_NOT_SUPPORTED          0x02
+
+#define BLE_MESH_DIRECTED_PUB_POLICY_FLOODING           0x00
+#define BLE_MESH_DIRECTED_PUB_POLICY_FORWARD            0x01
+
+#define BLE_MESH_PROXY_USE_DIRECTED_DISABLED            0x00
+#define BLE_MESH_PROXY_USE_DIRECTED_ENABLED             0x01
+
+#define BLE_MESH_FLOODING_CRED                          0x00
+#define BLE_MESH_FRIENDSHIP_CRED                        0x01
+#define BLE_MESH_DIRECTED_CRED                          0x02
 
 /* Features */
-#define BLE_MESH_FEAT_RELAY                  BIT(0)
-#define BLE_MESH_FEAT_PROXY                  BIT(1)
-#define BLE_MESH_FEAT_FRIEND                 BIT(2)
-#define BLE_MESH_FEAT_LOW_POWER              BIT(3)
-#define BLE_MESH_FEAT_SUPPORTED              (BLE_MESH_FEAT_RELAY |     \
-                                              BLE_MESH_FEAT_PROXY |     \
-                                              BLE_MESH_FEAT_FRIEND |    \
-                                              BLE_MESH_FEAT_LOW_POWER)
+#define BLE_MESH_FEAT_RELAY                             BIT(0)
+#define BLE_MESH_FEAT_PROXY                             BIT(1)
+#define BLE_MESH_FEAT_FRIEND                            BIT(2)
+#define BLE_MESH_FEAT_LOW_POWER                         BIT(3)
+#define BLE_MESH_FEAT_SUPPORTED                         (BLE_MESH_FEAT_RELAY | \
+                                                         BLE_MESH_FEAT_PROXY | \
+                                                         BLE_MESH_FEAT_FRIEND | \
+                                                         BLE_MESH_FEAT_LOW_POWER)
 
 /** @brief Check if the mesh stack is initialized.
  *
@@ -482,7 +574,7 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param);
 /** @brief Reset the state of the local Mesh node.
  *
  *  Resets the state of the node, which means that it needs to be
- *  reprovisioned to become an active node in a Mesh network again.
+ *  re-provisioned to become an active node in a Mesh network again.
  *
  *  After calling this API, the node will not automatically advertise as
  *  unprovisioned, rather the bt_mesh_prov_enable() API needs to be called

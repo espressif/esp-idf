@@ -14,10 +14,15 @@
 #include <tinycrypt/aes.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/cmac_mode.h>
+#include <tinycrypt/hmac.h>
+#include <tinycrypt/sha256.h>
 
 #include "crypto.h"
+#include "mesh/config.h"
 #include "mesh/common.h"
 #include "mesh/adapter.h"
+
+#include "mesh_v1.1/utils.h"
 
 #define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
 #define APP_MIC_LEN(aszmic) ((aszmic) ? 8 : 4)
@@ -512,7 +517,7 @@ static int bt_mesh_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
     return 0;
 }
 
-#if defined(CONFIG_BLE_MESH_PROXY)
+#if CONFIG_BLE_MESH_PROXY
 static void create_proxy_nonce(uint8_t nonce[13], const uint8_t *pdu,
                                uint32_t iv_index)
 {
@@ -538,7 +543,7 @@ static void create_proxy_nonce(uint8_t nonce[13], const uint8_t *pdu,
     /* IV Index */
     sys_put_be32(iv_index, &nonce[9]);
 }
-#endif /* PROXY */
+#endif /* CONFIG_BLE_MESH_PROXY */
 
 static void create_net_nonce(uint8_t nonce[13], const uint8_t *pdu,
                              uint32_t iv_index)
@@ -593,7 +598,7 @@ int bt_mesh_net_obfuscate(uint8_t *pdu, uint32_t iv_index,
 }
 
 int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
-                        uint32_t iv_index, bool proxy)
+                        uint32_t iv_index, bool proxy, bool proxy_solic)
 {
     uint8_t mic_len = NET_MIC_LEN(buf->data);
     uint8_t nonce[13] = {0};
@@ -603,15 +608,22 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
            mic_len);
     BT_DBG("PDU (len %u) %s", buf->len, bt_hex(buf->data, buf->len));
 
-#if defined(CONFIG_BLE_MESH_PROXY)
+#if CONFIG_BLE_MESH_PROXY
     if (proxy) {
-        create_proxy_nonce(nonce, buf->data, iv_index);
+#if CONFIG_BLE_MESH_PROXY_SOLIC
+        if (proxy_solic) {
+            bt_mesh_create_proxy_solic_nonce(nonce, buf->data, iv_index);
+        } else
+#endif /* CONFIG_BLE_MESH_PROXY_SOLIC */
+        {
+            create_proxy_nonce(nonce, buf->data, iv_index);
+        }
     } else {
         create_net_nonce(nonce, buf->data, iv_index);
     }
-#else
+#else /* CONFIG_BLE_MESH_PROXY */
     create_net_nonce(nonce, buf->data, iv_index);
-#endif
+#endif /* CONFIG_BLE_MESH_PROXY */
 
     BT_DBG("Nonce %s", bt_hex(nonce, 13));
 
@@ -625,7 +637,7 @@ int bt_mesh_net_encrypt(const uint8_t key[16], struct net_buf_simple *buf,
 }
 
 int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
-                        uint32_t iv_index, bool proxy)
+                        uint32_t iv_index, bool proxy, bool proxy_solic)
 {
     uint8_t mic_len = NET_MIC_LEN(buf->data);
     uint8_t nonce[13] = {0};
@@ -634,15 +646,22 @@ int bt_mesh_net_decrypt(const uint8_t key[16], struct net_buf_simple *buf,
     BT_DBG("iv_index %u, key %s mic_len %u", iv_index, bt_hex(key, 16),
            mic_len);
 
-#if defined(CONFIG_BLE_MESH_PROXY)
+#if CONFIG_BLE_MESH_PROXY
     if (proxy) {
-        create_proxy_nonce(nonce, buf->data, iv_index);
+#if CONFIG_BLE_MESH_PROXY_SOLIC
+        if (proxy_solic) {
+            bt_mesh_create_proxy_solic_nonce(nonce, buf->data, iv_index);
+        } else
+#endif /* CONFIG_BLE_MESH_PROXY_SOLIC */
+        {
+            create_proxy_nonce(nonce, buf->data, iv_index);
+        }
     } else {
         create_net_nonce(nonce, buf->data, iv_index);
     }
-#else
+#else /* CONFIG_BLE_MESH_PROXY */
     create_net_nonce(nonce, buf->data, iv_index);
-#endif
+#endif /* CONFIG_BLE_MESH_PROXY */
 
     BT_DBG("Nonce %s", bt_hex(nonce, 13));
 
@@ -849,9 +868,9 @@ int bt_mesh_prov_encrypt(const uint8_t key[16], uint8_t nonce[13],
 }
 #endif
 
-int bt_mesh_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
-                        const uint8_t net_id[8], uint32_t iv_index,
-                        uint8_t auth[8])
+int bt_mesh_secure_beacon_auth(const uint8_t beacon_key[16], uint8_t flags,
+                               const uint8_t net_id[8], uint32_t iv_index,
+                               uint8_t auth[8])
 {
     uint8_t msg[13] = {0}, tmp[16] = {0};
     int err = 0;

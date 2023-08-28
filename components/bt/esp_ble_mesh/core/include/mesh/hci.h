@@ -107,19 +107,19 @@ struct bt_mesh_hci_cp_set_adv_param {
     bt_mesh_addr_t direct_addr;
     uint8_t        channel_map;
     uint8_t        filter_policy;
-} __packed;
+} __attribute__((packed));
 
 #define BLE_MESH_HCI_OP_SET_ADV_DATA        BLE_MESH_OP(BLE_MESH_OGF_LE, 0x0008)
 struct bt_mesh_hci_cp_set_adv_data {
     uint8_t len;
     uint8_t data[31];
-} __packed;
+} __attribute__((packed));
 
 #define BLE_MESH_HCI_OP_SET_SCAN_RSP_DATA   BLE_MESH_OP(BLE_MESH_OGF_LE, 0x0009)
 struct bt_mesh_hci_cp_set_scan_rsp_data {
     uint8_t len;
     uint8_t data[31];
-} __packed;
+} __attribute__((packed));
 
 /* Added by Espressif */
 extern struct bt_mesh_dev bt_mesh_dev;

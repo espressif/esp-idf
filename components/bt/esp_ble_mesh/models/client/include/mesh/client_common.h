@@ -25,7 +25,7 @@ typedef struct {
     struct bt_mesh_model *model;
 
     /** Size of the opcode pair table */
-    int op_pair_size;
+    uint32_t op_pair_size;
 
     /** Pointer to the opcode pair table */
     const bt_mesh_client_op_pair_t *op_pair;
@@ -41,23 +41,29 @@ typedef struct {
      *
      * @return None
      */
-    void (*publish_status)(uint32_t opcode, struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
+    void (*publish_status)(uint32_t opcode, struct bt_mesh_model *model,
+                           struct bt_mesh_msg_ctx *ctx,
+                           struct net_buf_simple *buf);
 
     /** Pointer to the internal data of client model */
     void *internal_data;
 
+    /** Pointer to the vendor data of client model */
+    void *vendor_data;
+
     /** Role of the device to which the client model belongs */
-    uint8_t msg_role;
+    uint8_t msg_role __attribute__((deprecated));
 } bt_mesh_client_user_data_t;
 
 /** Client model internal data context */
-typedef struct  {
+typedef struct {
     sys_slist_t queue;
 } bt_mesh_client_internal_data_t;
 
 /** Client model sending message related context */
 typedef struct {
     sys_snode_t client_node;
+    struct bt_mesh_model *model;    /* Pointer to the client model */
     struct bt_mesh_msg_ctx ctx;     /* Message context */
     uint32_t opcode;                /* Message opcode */
     uint32_t op_pending;            /* Expected status message opcode */
@@ -71,7 +77,7 @@ typedef struct {
     struct bt_mesh_model *model;        /* Pointer to the client model */
     struct bt_mesh_msg_ctx ctx;         /* Message context */
     int32_t msg_timeout;                /* Time to get corresponding response */
-    uint8_t msg_role;                   /* Role (Node/Provisioner) of the device */
+    uint8_t msg_role __attribute__((deprecated));   /* Role (Node/Provisioner) of the device */
     const struct bt_mesh_send_cb *cb;   /* User defined callback function */
     void *cb_data;                      /* User defined callback value */
 } bt_mesh_client_common_param_t;
@@ -95,7 +101,8 @@ int bt_mesh_client_deinit(struct bt_mesh_model *model);
  */
 bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(struct bt_mesh_model *model,
                                                           struct bt_mesh_msg_ctx *ctx,
-                                                          struct net_buf_simple *buf, bool need_pub);
+                                                          struct net_buf_simple *buf,
+                                                          bool need_pub);
 
 int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
                             struct net_buf_simple *msg, bool need_ack,
@@ -104,16 +111,6 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
 int bt_mesh_client_free_node(bt_mesh_client_node_t *node);
 
 int bt_mesh_client_clear_list(void *data);
-
-/**
- * @brief Set role of the client model for internal use.
- *
- * @param[in] model: Pointer to the client model
- * @param[in] role:  Role of the device
- *
- * @return Zero - success, otherwise - fail
- */
-int bt_mesh_set_client_model_role(struct bt_mesh_model *model, uint8_t role);
 
 #ifdef __cplusplus
 }

@@ -568,7 +568,7 @@ ESP-BLE-MESH 常见问题手册
 
     此 **count** 值提供给 App 配置的代理节点，以决定何时提前开始 Proxy 广播信息。
 
-4.5 运行以下示例 :example:`fast_prov_server <bluetooth/esp_ble_mesh/fast_provision/fast_prov_server>` 的节点的 Configuration Client Model 何时开始工作？
+4.5 运行以下示例 :example:`fast_prov_server <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server>` 的节点的 Configuration Client Model 何时开始工作？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     使能了 Temporary Provisioner 功能后，Configuration Client Model 会开始工作。

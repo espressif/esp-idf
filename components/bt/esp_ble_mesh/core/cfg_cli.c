@@ -24,7 +24,7 @@
 static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
     { OP_BEACON_GET,           OP_BEACON_STATUS        },
     { OP_BEACON_SET,           OP_BEACON_STATUS        },
-    { OP_DEV_COMP_DATA_GET,    OP_DEV_COMP_DATA_STATUS },
+    { OP_COMP_DATA_GET,        OP_COMP_DATA_STATUS     },
     { OP_DEFAULT_TTL_GET,      OP_DEFAULT_TTL_STATUS   },
     { OP_DEFAULT_TTL_SET,      OP_DEFAULT_TTL_STATUS   },
     { OP_GATT_PROXY_GET,       OP_GATT_PROXY_STATUS    },
@@ -73,40 +73,17 @@ static const bt_mesh_client_op_pair_t cfg_op_pair[] = {
 
 static bt_mesh_mutex_t cfg_client_lock;
 
-static inline void bt_mesh_cfg_client_mutex_new(void)
-{
-    if (!cfg_client_lock.mutex) {
-        bt_mesh_mutex_create(&cfg_client_lock);
-    }
-}
-
-#if CONFIG_BLE_MESH_DEINIT
-static inline void bt_mesh_cfg_client_mutex_free(void)
-{
-    bt_mesh_mutex_free(&cfg_client_lock);
-}
-#endif /* CONFIG_BLE_MESH_DEINIT */
-
-static inline void bt_mesh_cfg_client_lock(void)
-{
-    bt_mesh_mutex_lock(&cfg_client_lock);
-}
-
-static inline void bt_mesh_cfg_client_unlock(void)
-{
-    bt_mesh_mutex_unlock(&cfg_client_lock);
-}
-
 static void timeout_handler(struct k_work *work)
 {
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
+    struct bt_mesh_model *model = NULL;
     struct bt_mesh_msg_ctx ctx = {0};
     uint32_t opcode = 0U;
 
     BT_WARN("Receive configuration status message timeout");
 
-    bt_mesh_cfg_client_lock();
+    bt_mesh_mutex_lock(&cfg_client_lock);
 
     timer = CONTAINER_OF(work, struct k_delayed_work, work);
 
@@ -115,15 +92,14 @@ static void timeout_handler(struct k_work *work)
         if (node) {
             memcpy(&ctx, &node->ctx, sizeof(ctx));
             opcode = node->opcode;
+            model = node->model;
             bt_mesh_client_free_node(node);
             bt_mesh_config_client_cb_evt_to_btc(
-                opcode, BTC_BLE_MESH_EVT_CONFIG_CLIENT_TIMEOUT, ctx.model, &ctx, NULL, 0);
+                opcode, BTC_BLE_MESH_EVT_CONFIG_CLIENT_TIMEOUT, model, &ctx, NULL, 0);
         }
     }
 
-    bt_mesh_cfg_client_unlock();
-
-    return;
+    bt_mesh_mutex_unlock(&cfg_client_lock);
 }
 
 static void cfg_client_recv_status(struct bt_mesh_model *model,
@@ -143,7 +119,7 @@ static void cfg_client_recv_status(struct bt_mesh_model *model,
     buf.data = (uint8_t *)status;
     buf.len  = (uint16_t)len;
 
-    bt_mesh_cfg_client_lock();
+    bt_mesh_mutex_lock(&cfg_client_lock);
 
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, &buf, true);
     if (!node) {
@@ -151,7 +127,7 @@ static void cfg_client_recv_status(struct bt_mesh_model *model,
     } else {
         switch (node->opcode) {
         case OP_BEACON_GET:
-        case OP_DEV_COMP_DATA_GET:
+        case OP_COMP_DATA_GET:
         case OP_DEFAULT_TTL_GET:
         case OP_GATT_PROXY_GET:
         case OP_RELAY_GET:
@@ -213,10 +189,10 @@ static void cfg_client_recv_status(struct bt_mesh_model *model,
         }
     }
 
-    bt_mesh_cfg_client_unlock();
+    bt_mesh_mutex_unlock(&cfg_client_lock);
 
     switch (ctx->recv_op) {
-    case OP_DEV_COMP_DATA_STATUS: {
+    case OP_COMP_DATA_STATUS: {
         struct bt_mesh_cfg_comp_data_status *val = status;
         bt_mesh_free_buf(val->comp_data);
         break;
@@ -649,7 +625,7 @@ static void net_trans_status(struct bt_mesh_model *model,
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
-    { OP_DEV_COMP_DATA_STATUS,   15,  comp_data_status  },
+    { OP_COMP_DATA_STATUS,       15,  comp_data_status  },
     { OP_BEACON_STATUS,          1,   beacon_status     },
     { OP_DEFAULT_TTL_STATUS,     1,   ttl_status        },
     { OP_FRIEND_STATUS,          1,   friend_status     },
@@ -707,7 +683,7 @@ static int send_msg_with_le16(bt_mesh_client_common_param_t *param, uint32_t op,
 
 int bt_mesh_cfg_comp_data_get(bt_mesh_client_common_param_t *param, uint8_t page)
 {
-    return send_msg_with_u8(param, OP_DEV_COMP_DATA_GET, page);
+    return send_msg_with_u8(param, OP_COMP_DATA_GET, page);
 }
 
 int bt_mesh_cfg_beacon_get(bt_mesh_client_common_param_t *param)
@@ -1264,27 +1240,28 @@ static int cfg_cli_init(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    if (!client->internal_data) {
-        internal = bt_mesh_calloc(sizeof(config_internal_data_t));
-        if (!internal) {
-            BT_ERR("Allocate memory for Configuration Client internal data fail");
-            return -ENOMEM;
-        }
-
-        sys_slist_init(&internal->queue);
-
-        client->model = model;
-        client->op_pair_size = ARRAY_SIZE(cfg_op_pair);
-        client->op_pair = cfg_op_pair;
-        client->internal_data = internal;
-    } else {
-        bt_mesh_client_clear_list(client->internal_data);
+    if (client->internal_data) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
     }
+
+    internal = bt_mesh_calloc(sizeof(config_internal_data_t));
+    if (!internal) {
+        BT_ERR("%s, Out of memory", __func__);
+        return -ENOMEM;
+    }
+
+    sys_slist_init(&internal->queue);
+
+    client->model = model;
+    client->op_pair_size = ARRAY_SIZE(cfg_op_pair);
+    client->op_pair = cfg_op_pair;
+    client->internal_data = internal;
 
     /* Configuration Model security is device-key based */
     model->keys[0] = BLE_MESH_KEY_DEV;
 
-    bt_mesh_cfg_client_mutex_new();
+    bt_mesh_mutex_create(&cfg_client_lock);
 
     return 0;
 }
@@ -1319,7 +1296,7 @@ static int cfg_cli_deinit(struct bt_mesh_model *model)
         client->internal_data = NULL;
     }
 
-    bt_mesh_cfg_client_mutex_free();
+    bt_mesh_mutex_free(&cfg_client_lock);
 
     return 0;
 }

@@ -130,9 +130,7 @@ The `esp_ble_mesh_set_msg_common` function is used to set the message controllin
 | `ctx.app_idx` | The AppKey Index for message encryption |
 | `ctx.addr`    | The address of the destination nodes |
 | `ctx.send_ttl`| The TTL State, which determines how many times a message will be relayed |
-| `ctx.send_rel`| This parameter determines if the Model will wait for an acknowledgement after sending a message   |
 | `msg_timeout` | The maximum time the Model will wait for an acknowledgement   |
-| `msg_role`    | The role of message (node/provisioner)  |
 
 > Note: 
 > 

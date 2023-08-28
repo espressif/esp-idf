@@ -18,6 +18,7 @@
 #include "lpn.h"
 #include "transport.h"
 #include "crypto.h"
+#include "net.h"
 #include "access.h"
 #include "beacon.h"
 #include "foundation.h"
@@ -28,94 +29,17 @@
 #include "mesh/main.h"
 #include "mesh/common.h"
 
-#define DEFAULT_TTL 7
+#include "mesh_v1.1/utils.h"
 
-/* Maximum message length is 384 in BLE Mesh. Here for composition data,
- * due to 1 octet opcode and 4 octets TransMIC, 379 octets can be used to
- * store device composition data.
- */
-#define COMP_DATA_MAX_LEN   379
+#define DEFAULT_TTL         7
 
 static struct bt_mesh_cfg_srv *conf;
 
 static struct label labels[CONFIG_BLE_MESH_LABEL_COUNT];
 
-static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
-                         bool primary)
-{
-    struct bt_mesh_model *mod = NULL;
-    int i;
-
-    if (net_buf_simple_tailroom(buf) <
-            4 + (elem->model_count * 2U) + (elem->vnd_model_count * 4U)) {
-        BT_ERR("Too large device composition");
-        return -E2BIG;
-    }
-
-    net_buf_simple_add_le16(buf, elem->loc);
-
-    net_buf_simple_add_u8(buf, elem->model_count);
-    net_buf_simple_add_u8(buf, elem->vnd_model_count);
-
-    for (i = 0; i < elem->model_count; i++) {
-        mod = &elem->models[i];
-        net_buf_simple_add_le16(buf, mod->id);
-    }
-
-    for (i = 0; i < elem->vnd_model_count; i++) {
-        mod = &elem->vnd_models[i];
-        net_buf_simple_add_le16(buf, mod->vnd.company);
-        net_buf_simple_add_le16(buf, mod->vnd.id);
-    }
-
-    return 0;
-}
-
-static int comp_get_page_0(struct net_buf_simple *buf)
-{
-    const struct bt_mesh_comp *comp = NULL;
-    uint16_t feat = 0U;
-    int i;
-
-    comp = bt_mesh_comp_get();
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_RELAY)) {
-        feat |= BLE_MESH_FEAT_RELAY;
-    }
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
-        feat |= BLE_MESH_FEAT_PROXY;
-    }
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
-        feat |= BLE_MESH_FEAT_FRIEND;
-    }
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
-        feat |= BLE_MESH_FEAT_LOW_POWER;
-    }
-
-    net_buf_simple_add_le16(buf, comp->cid);
-    net_buf_simple_add_le16(buf, comp->pid);
-    net_buf_simple_add_le16(buf, comp->vid);
-    net_buf_simple_add_le16(buf, CONFIG_BLE_MESH_CRPL);
-    net_buf_simple_add_le16(buf, feat);
-
-    for (i = 0; i < comp->elem_count; i++) {
-        int err;
-
-        err = comp_add_elem(buf, &comp->elem[i], i == 0);
-        if (err) {
-            return err;
-        }
-    }
-
-    return 0;
-}
-
-static void dev_comp_data_get(struct bt_mesh_model *model,
-                              struct bt_mesh_msg_ctx *ctx,
-                              struct net_buf_simple *buf)
+static void comp_data_get(struct bt_mesh_model *model,
+                          struct bt_mesh_msg_ctx *ctx,
+                          struct net_buf_simple *buf)
 {
     struct net_buf_simple *sdu = NULL;
     uint8_t page = 0U;
@@ -124,23 +48,59 @@ static void dev_comp_data_get(struct bt_mesh_model *model,
            ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
            bt_hex(buf->data, buf->len));
 
-    page = net_buf_simple_pull_u8(buf);
-    if (page != 0U) {
-        BT_WARN("Composition page %u not available", page);
-        page = 0U;
-    }
+    /* TODO:
+     *
+     * When an element receives a Config Composition Data Get message with
+     * the Page field of the message containing a value of a Composition
+     * Data Page that the node contains, it shall respond with a Config
+     * Composition Data Status message with the Page field set to the page
+     * number of the Composition Data and the Data field set to the value
+     * of the largest portion of the Composition Data Page that fits in the
+     * Data field. If an element is reported in the Config Composition Data
+     * Status message, the complete list of models supported by the element
+     * shall be included in the elements description. If the complete list
+     * of models does not fit in the Data field, the element shall not be
+     * reported.
+     *
+     * When an element receives a Config Composition Data Get message with
+     * the Page field of the message containing a reserved page number or a
+     * page number the node does not support, it shall respond with a Config
+     * Composition Data Status message with the Page field set to the largest
+     * page number of the Composition Data that the node supports and that is
+     * less than the Page field value of the received Config Composition Data
+     * Get message and with the Data field set to the value of the largest
+     * portion of the Composition Data Page for that page number that fits in
+     * the Data field. If an element is reported in a Config Composition Data
+     * Status message, the complete list of models supported by the element
+     * shall be included in the elements description. If the complete list of
+     * models does not fit in the Data field, the element shall not be reported.
+     */
 
-    sdu = bt_mesh_alloc_buf(MIN(BLE_MESH_TX_SDU_MAX, COMP_DATA_MAX_LEN));
+    page = net_buf_simple_pull_u8(buf);
+
+    /* Check if the page exists, and if not, get the largest one
+     * which is smaller than this page.
+     */
+    page = bt_mesh_comp_page_check(page, false);
+
+    sdu = bt_mesh_alloc_buf(MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_MAX_PDU_LEN_WITH_SMIC));
     if (!sdu) {
         BT_ERR("%s, Out of memory", __func__);
         return;
     }
 
-    bt_mesh_model_msg_init(sdu, OP_DEV_COMP_DATA_STATUS);
-
+    bt_mesh_model_msg_init(sdu, OP_COMP_DATA_STATUS);
     net_buf_simple_add_u8(sdu, page);
-    if (comp_get_page_0(sdu) < 0) {
-        BT_ERR("Unable to get composition page 0");
+
+    /* Mesh v1.1 updates:
+     * If an element is reported in the Config Composition Data
+     * Status message, the complete list of models supported by
+     * the element shall be included in the elements description.
+     * If the complete list of models does not fit in the Data
+     * field, the element shall not be reported.
+     */
+    if (bt_mesh_get_comp_data(sdu, page, 0, true)) {
+        BT_ERR("Unable to get composition page 0x%02x", page);
         bt_mesh_free_buf(sdu);
         return;
     }
@@ -150,15 +110,14 @@ static void dev_comp_data_get(struct bt_mesh_model *model,
     }
 
     bt_mesh_free_buf(sdu);
-    return;
 }
 
 static struct bt_mesh_model *get_model(struct bt_mesh_elem *elem,
                                        struct net_buf_simple *buf, bool *vnd)
 {
-    if (buf->len < 4) {
-        uint16_t id = 0U;
+    uint16_t company = 0U, id = 0U;
 
+    if (buf->len < 4) {
         id = net_buf_simple_pull_le16(buf);
 
         BT_DBG("ID 0x%04x addr 0x%04x", id, elem->addr);
@@ -166,35 +125,17 @@ static struct bt_mesh_model *get_model(struct bt_mesh_elem *elem,
         *vnd = false;
 
         return bt_mesh_model_find(elem, id);
-    } else {
-        uint16_t company = 0U, id = 0U;
-
-        company = net_buf_simple_pull_le16(buf);
-        id = net_buf_simple_pull_le16(buf);
-
-        BT_DBG("Company 0x%04x ID 0x%04x addr 0x%04x", company, id,
-               elem->addr);
-
-        *vnd = true;
-
-        return bt_mesh_model_find_vnd(elem, company, id);
-    }
-}
-
-static bool app_key_is_valid(uint16_t app_idx)
-{
-    int i;
-
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
-        struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
-
-        if (key->net_idx != BLE_MESH_KEY_UNUSED &&
-                key->app_idx == app_idx) {
-            return true;
-        }
     }
 
-    return false;
+    company = net_buf_simple_pull_le16(buf);
+    id = net_buf_simple_pull_le16(buf);
+
+    BT_DBG("Company 0x%04x ID 0x%04x addr 0x%04x", company, id,
+            elem->addr);
+
+    *vnd = true;
+
+    return bt_mesh_model_find_vnd(elem, company, id);
 }
 
 static bool mod_pub_app_key_bound(struct bt_mesh_model *model,
@@ -208,7 +149,7 @@ static bool mod_pub_app_key_bound(struct bt_mesh_model *model,
         }
     }
 
-    BT_ERR("Appkey(0x%02x) not bound to this model.", app_idx);
+    BT_ERR("AppKey(0x%02x) not bound to this model", app_idx);
     return false;
 }
 
@@ -255,7 +196,7 @@ static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
     /* For case MESH/NODE/CFG/MP/BI-03-C, need to check if appkey
      * is bound to model identified by the ModelIdentifier.
      */
-    if (!bt_mesh_app_key_find(app_idx) ||
+    if (!bt_mesh_app_key_get(app_idx) ||
         !mod_pub_app_key_bound(model, app_idx)) {
         return STATUS_INVALID_APPKEY;
     }
@@ -293,7 +234,7 @@ static uint8_t mod_bind(struct bt_mesh_model *model, uint16_t key_idx)
 
     BT_DBG("model %p key_idx 0x%03x", model, key_idx);
 
-    if (!app_key_is_valid(key_idx)) {
+    if (!bt_mesh_app_key_get(key_idx)) {
         return STATUS_INVALID_APPKEY;
     }
 
@@ -325,7 +266,7 @@ static uint8_t mod_unbind(struct bt_mesh_model *model, uint16_t key_idx, bool st
 
     BT_DBG("model %p key_idx 0x%03x store %u", model, key_idx, store);
 
-    if (!app_key_is_valid(key_idx)) {
+    if (!bt_mesh_app_key_get(key_idx)) {
         return STATUS_INVALID_APPKEY;
     }
 
@@ -379,7 +320,7 @@ static uint8_t app_key_set(uint16_t net_idx, uint16_t app_idx, const uint8_t val
         return STATUS_INVALID_NETKEY;
     }
 
-    key = bt_mesh_app_key_find(app_idx);
+    key = bt_mesh_app_key_get(app_idx);
     if (update) {
         if (!key) {
             return STATUS_INVALID_APPKEY;
@@ -403,24 +344,24 @@ static uint8_t app_key_set(uint16_t net_idx, uint16_t app_idx, const uint8_t val
         if (key->updated) {
             if (memcmp(keys->val, val, 16)) {
                 return STATUS_CANNOT_UPDATE;
-            } else {
-                return STATUS_SUCCESS;
             }
+
+            return STATUS_SUCCESS;
         }
 
         key->updated = true;
     } else {
         if (key) {
             if (key->net_idx == net_idx &&
-                    !memcmp(key->keys[0].val, val, 16)) {
+                !memcmp(key->keys[0].val, val, 16)) {
                 return STATUS_SUCCESS;
             }
 
             if (key->net_idx == net_idx) {
                 return STATUS_IDX_ALREADY_STORED;
-            } else {
-                return STATUS_INVALID_NETKEY;
             }
+
+            return STATUS_INVALID_NETKEY;
         }
 
         key = bt_mesh_app_key_alloc(app_idx);
@@ -569,7 +510,7 @@ static void app_key_del(struct bt_mesh_model *model,
         goto send_status;
     }
 
-    key = bt_mesh_app_key_find(key_app_idx);
+    key = bt_mesh_app_key_get(key_app_idx);
     if (!key) {
         /* Treat as success since the client might have missed a
          * previous response and is resending the request.
@@ -679,7 +620,7 @@ static void beacon_get(struct bt_mesh_model *model,
            bt_hex(buf->data, buf->len));
 
     bt_mesh_model_msg_init(&msg, OP_BEACON_STATUS);
-    net_buf_simple_add_u8(&msg, bt_mesh_beacon_get());
+    net_buf_simple_add_u8(&msg, bt_mesh_secure_beacon_get());
 
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config Beacon Status");
@@ -708,9 +649,9 @@ static void beacon_set(struct bt_mesh_model *model,
             }
 
             if (cfg->beacon) {
-                bt_mesh_beacon_enable();
+                bt_mesh_secure_beacon_enable();
             } else {
-                bt_mesh_beacon_disable();
+                bt_mesh_secure_beacon_disable();
             }
         }
     } else {
@@ -719,7 +660,7 @@ static void beacon_set(struct bt_mesh_model *model,
     }
 
     bt_mesh_model_msg_init(&msg, OP_BEACON_STATUS);
-    net_buf_simple_add_u8(&msg, bt_mesh_beacon_get());
+    net_buf_simple_add_u8(&msg, bt_mesh_secure_beacon_get());
 
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("Unable to send Config Beacon Status");
@@ -818,7 +759,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
     }
 
     if (!IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) ||
-            bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_NOT_SUPPORTED) {
+        bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_NOT_SUPPORTED) {
         goto send_status;
     }
 
@@ -834,6 +775,23 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
     }
 
     cfg->gatt_proxy = buf->data[0];
+
+#if CONFIG_BLE_MESH_PRB_SRV
+    /* If the value of the GATT Proxy state of the node is 0x01 (see Table 4.21),
+     * then the value of the Private GATT Proxy state shall be Disable (0x00).
+    */
+    if (buf->data[0] == BLE_MESH_GATT_PROXY_ENABLED) {
+        bt_mesh_disable_private_gatt_proxy();
+    }
+#endif
+
+#if CONFIG_BLE_MESH_DF_SRV
+    /* If the value of the GATT Proxy state of the node is 0x00,
+     * then the value of the directed proxy state shall be 0x00,
+     * directed proxy use directed default shall be 0x02.
+     */
+    bt_mesh_disable_directed_proxy_state(ctx->net_idx);
+#endif
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_store_cfg();
@@ -1464,7 +1422,8 @@ static void mod_sub_add(struct bt_mesh_model *model,
         goto send_status;
     }
 
-    BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT,
+    BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | \
+           BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT,
            "SubGroupAddr: 0x%x", sub_addr);
 
     for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
@@ -1491,6 +1450,10 @@ static void mod_sub_add(struct bt_mesh_model *model,
 send_status:
     send_mod_sub_status(model, ctx, status, elem_addr, sub_addr,
                         mod_id, vnd);
+
+#if CONFIG_BLE_MESH_DF_SRV
+    bt_mesh_directed_forwarding_node_solicitation(mod, bt_mesh_subnet_get(ctx->net_idx));
+#endif
 
     if (status == STATUS_SUCCESS) {
         bt_mesh_cfg_server_state_change_t change = {0};
@@ -1868,7 +1831,8 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
         goto send_status;
     }
 
-    BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT,
+    BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | \
+           BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT,
            "SubVirtualAddr: 0x%x", sub_addr);
 
     for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
@@ -2230,17 +2194,36 @@ static void net_key_add(struct bt_mesh_model *model,
     }
 
     /* Make sure we have valid beacon data to be sent */
-    bt_mesh_net_beacon_update(sub);
+    bt_mesh_net_secure_beacon_update(sub);
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         sub->node_id = BLE_MESH_NODE_IDENTITY_STOPPED;
         bt_mesh_proxy_server_beacon_send(sub);
+
+#if CONFIG_BLE_MESH_DF_SRV && CONFIG_BLE_MESH_SUPPORT_DIRECTED_PROXY
+        /* When the Directed Proxy Server is added to a new subnet, and the
+         * Proxy_Client_Type parameter for the connection is either Unset or
+         * Directed_Proxy_Client, then the Directed Proxy Server shall send a
+         * DIRECTED_PROXY_CAPABILITIES_STATUS message for that subnet to the
+         * Proxy Client.
+         */
+        if (sub->directed_proxy != BLE_MESH_DIRECTED_PROXY_NOT_SUPPORTED) {
+            bt_mesh_directed_proxy_server_directed_proxy_caps_send(sub, false);
+        }
+#endif
+
         bt_mesh_adv_update();
     } else {
         sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
     }
 
     send_net_key_status(model, ctx, idx, STATUS_SUCCESS);
+
+#if CONFIG_BLE_MESH_DF_SRV
+    if (bt_mesh_directed_forwarding_sub_init(sub)) {
+        BT_ERR("Failed to init subnet for directed forward");
+    }
+#endif
 
     bt_mesh_cfg_server_state_change_t change = {0};
     change.cfg_netkey_add.net_idx = sub->net_idx;
@@ -2313,7 +2296,7 @@ static void net_key_update(struct bt_mesh_model *model,
         bt_mesh_store_subnet(sub);
     }
 
-    bt_mesh_net_beacon_update(sub);
+    bt_mesh_net_secure_beacon_update(sub);
 
     send_net_key_status(model, ctx, idx, STATUS_SUCCESS);
 
@@ -2326,8 +2309,6 @@ static void net_key_update(struct bt_mesh_model *model,
 
 static void hb_pub_disable(struct bt_mesh_cfg_srv *cfg)
 {
-    BT_DBG("%s", __func__);
-
     cfg->hb_pub.dst = BLE_MESH_ADDR_UNASSIGNED;
     cfg->hb_pub.count = 0U;
     cfg->hb_pub.ttl = 0U;
@@ -2369,8 +2350,43 @@ static void net_key_del(struct bt_mesh_model *model,
         goto send_status;
     }
 
+#if CONFIG_BLE_MESH_DF_SRV && CONFIG_BLE_MESH_SUPPORT_DIRECTED_PROXY
+    /* When the Directed Proxy Server is deleted from a subnet, and the
+     * Proxy_Client_Type parameter for the connection is either Unset or
+     * Directed_Proxy_Client, then the Directed Proxy Server shall set
+     * the Use_Directed parameter of the connection for the deleted subnet
+     * to 0x00, shall set the Proxy_Client_Address_Range parameter of the
+     * connection for the deleted subnet to the Unassigned value, and shall
+     * send a DIRECTED_PROXY_CAPABILITIES_STATUS message for the deleted
+     * subnet to the Proxy Client.
+     */
+    if (sub->directed_proxy != BLE_MESH_DIRECTED_PROXY_NOT_SUPPORTED) {
+        /* Directed Proxy Caps Status must be sent before the subnet is deleted */
+        bt_mesh_directed_proxy_server_directed_proxy_caps_send(sub, true);
+    }
+
+#if CONFIG_BLE_MESH_SETTINGS
+    bt_mesh_clear_directed_forwarding_table_data(del_idx);
+#endif
+#endif
+
     bt_mesh_subnet_del(sub, true);
     status = STATUS_SUCCESS;
+
+#if CONFIG_BLE_MESH_BRC_SRV
+    /**
+     * TODO: When a NetKey is deleted from the NetKey List state,
+     * and subnet bridge functionality is supported, then all the
+     * Bridging Table state entries with one of the values of the
+     * NetKeyIndex1 and NetKeyIndex2 fields that matches the NetKey
+     * Index of the deleted NetKey are removed.
+     */
+    bt_mesh_delete_netkey_in_bridge_table(del_idx);
+#endif  /* CONFIG_BLE_MESH_BRC_SRV */
+
+#if CONFIG_BLE_MESH_RPR_SRV
+    bt_mesh_rpr_srv_netkey_del(del_idx);
+#endif
 
 send_status:
     send_net_key_status(model, ctx, del_idx, status);
@@ -2489,18 +2505,25 @@ static void node_identity_set(struct bt_mesh_model *model,
         net_buf_simple_add_u8(&msg, STATUS_INVALID_NETKEY);
         net_buf_simple_add_le16(&msg, idx);
         net_buf_simple_add_u8(&msg, node_id);
-    } else  {
-        net_buf_simple_add_u8(&msg, STATUS_SUCCESS);
-        net_buf_simple_add_le16(&msg, idx);
-
+    } else {
         if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
-            if (node_id) {
+            if (node_id == BLE_MESH_NODE_IDENTITY_RUNNING) {
+#if CONFIG_BLE_MESH_PRB_SRV
+                /* If the value of the Node Identity state of the node for
+                 * any subnet is 0x01, then the value of the Private Node
+                 * Identity state shall be Disable (0x00).
+                 */
+                disable_all_private_node_identity();
+#endif
                 bt_mesh_proxy_server_identity_start(sub);
             } else {
                 bt_mesh_proxy_server_identity_stop(sub);
             }
             bt_mesh_adv_update();
         }
+
+        net_buf_simple_add_u8(&msg, STATUS_SUCCESS);
+        net_buf_simple_add_le16(&msg, idx);
         net_buf_simple_add_u8(&msg, sub->node_id);
     }
 
@@ -2570,6 +2593,7 @@ static void mod_app_bind(struct bt_mesh_model *model,
 
     status = mod_bind(mod, key_app_idx);
 
+    BT_INFO("bind app key %#x on mode %#x", key_app_idx, mod->id);
 send_status:
     BT_DBG("status 0x%02x", status);
     create_mod_app_status(&msg, mod, vnd, elem_addr, key_app_idx, status,
@@ -2805,6 +2829,13 @@ static void friend_set(struct bt_mesh_model *model,
 
         if (cfg->frnd == BLE_MESH_FRIEND_DISABLED) {
             bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
+
+#if CONFIG_BLE_MESH_DF_SRV && CONFIG_BLE_MESH_FRIEND
+            /* If the value of the friend state of the node is 0x00,
+             * then the value of the directed friend state shall be 0x00.
+             */
+            bt_mesh_disable_directed_friend_state(ctx->net_idx);
+#endif
         }
     }
 
@@ -2925,8 +2956,8 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
     BT_DBG("%u -> %u", sub->kr_phase, phase);
 
     if (phase < BLE_MESH_KR_PHASE_2 || phase > BLE_MESH_KR_PHASE_3 ||
-            (sub->kr_phase == BLE_MESH_KR_NORMAL &&
-             phase == BLE_MESH_KR_PHASE_2)) {
+        (sub->kr_phase == BLE_MESH_KR_NORMAL &&
+         phase == BLE_MESH_KR_PHASE_2)) {
         BT_WARN("Prohibited transition %u -> %u", sub->kr_phase, phase);
         return;
     }
@@ -2941,7 +2972,7 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
             bt_mesh_store_subnet(sub);
         }
 
-        bt_mesh_net_beacon_update(sub);
+        bt_mesh_net_secure_beacon_update(sub);
     } else if ((sub->kr_phase == BLE_MESH_KR_PHASE_1 ||
                 sub->kr_phase == BLE_MESH_KR_PHASE_2) &&
                phase == BLE_MESH_KR_PHASE_3) {
@@ -2950,11 +2981,11 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
         bt_mesh_net_revoke_keys(sub);
 
         if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) ||
-                IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
-            friend_cred_refresh(ctx->net_idx);
+            IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+            friend_cred_refresh(sub->net_idx);
         }
 
-        bt_mesh_net_beacon_update(sub);
+        bt_mesh_net_secure_beacon_update(sub);
     }
 
     send_krp_status(model, ctx, idx, sub->kr_phase, STATUS_SUCCESS);
@@ -2968,35 +2999,39 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 static uint8_t hb_log(uint16_t val)
 {
-    if (!val) {
+    switch (val) {
+    case 0x0000:
         return 0x00;
-    } else if (val == 0xffff) {
-        return 0xff;
-    } else {
+    case 0xFFFF:
+        return 0xFF;
+    default:
         return 32 - __builtin_clz(val);
     }
 }
 
 static uint8_t hb_pub_count_log(uint16_t val)
 {
-    if (!val) {
+    switch (val) {
+    case 0x0000:
         return 0x00;
-    } else if (val == 0x01) {
+    case 0x0001:
         return 0x01;
-    } else if (val == 0xffff) {
-        return 0xff;
-    } else {
+    case 0xFFFF:
+        return 0xFF;
+    default:
         return 32 - __builtin_clz(val - 1) + 1;
     }
 }
 
 static uint16_t hb_pwr2(uint8_t val, uint8_t sub)
 {
-    if (!val) {
+    switch (val) {
+    case 0x00:
         return 0x0000;
-    } else if (val == 0xff || val == 0x11) {
-        return 0xffff;
-    } else {
+    case 0x11:
+    case 0xFF:
+        return 0xFFFF;
+    default:
         return (1 << (val - sub));
     }
 }
@@ -3008,7 +3043,7 @@ struct hb_pub_param {
     uint8_t  ttl;
     uint16_t feat;
     uint16_t net_idx;
-} __packed;
+} __attribute__((packed));
 
 static void hb_pub_send_status(struct bt_mesh_model *model,
                                struct bt_mesh_msg_ctx *ctx, uint8_t status,
@@ -3118,7 +3153,7 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
          * has been configured for periodic publishing.
          */
         if (param->period_log && param->count_log) {
-            k_work_submit(&cfg->hb_pub.timer.work);
+            k_delayed_work_submit(&cfg->hb_pub.timer, K_NO_WAIT);
         } else {
             k_delayed_work_cancel(&cfg->hb_pub.timer);
         }
@@ -3137,7 +3172,7 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
      */
     if (dst != BLE_MESH_ADDR_UNASSIGNED) {
         if (param->period_log && param->count_log) {
-            k_work_submit(&cfg->hb_pub.timer.work);
+            k_delayed_work_submit(&cfg->hb_pub.timer, K_NO_WAIT);
         } else {
             k_delayed_work_cancel(&cfg->hb_pub.timer);
         }
@@ -3209,14 +3244,14 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
            sub_src, sub_dst, sub_period);
 
     if (sub_src != BLE_MESH_ADDR_UNASSIGNED &&
-            !BLE_MESH_ADDR_IS_UNICAST(sub_src)) {
+        !BLE_MESH_ADDR_IS_UNICAST(sub_src)) {
         BT_WARN("Prohibited source address");
         return;
     }
 
     if (BLE_MESH_ADDR_IS_VIRTUAL(sub_dst) || BLE_MESH_ADDR_IS_RFU(sub_dst) ||
-            (BLE_MESH_ADDR_IS_UNICAST(sub_dst) &&
-             sub_dst != bt_mesh_primary_addr())) {
+        (BLE_MESH_ADDR_IS_UNICAST(sub_dst) &&
+         sub_dst != bt_mesh_primary_addr())) {
         BT_WARN("Prohibited destination address");
         return;
     }
@@ -3278,53 +3313,53 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
-    { OP_DEV_COMP_DATA_GET,        1,   dev_comp_data_get },
-    { OP_APP_KEY_ADD,              19,  app_key_add },
-    { OP_APP_KEY_UPDATE,           19,  app_key_update },
-    { OP_APP_KEY_DEL,              3,   app_key_del },
-    { OP_APP_KEY_GET,              2,   app_key_get },
-    { OP_BEACON_GET,               0,   beacon_get },
-    { OP_BEACON_SET,               1,   beacon_set },
-    { OP_DEFAULT_TTL_GET,          0,   default_ttl_get },
-    { OP_DEFAULT_TTL_SET,          1,   default_ttl_set },
-    { OP_GATT_PROXY_GET,           0,   gatt_proxy_get },
-    { OP_GATT_PROXY_SET,           1,   gatt_proxy_set },
-    { OP_NET_TRANSMIT_GET,         0,   net_transmit_get },
-    { OP_NET_TRANSMIT_SET,         1,   net_transmit_set },
-    { OP_RELAY_GET,                0,   relay_get },
-    { OP_RELAY_SET,                2,   relay_set },
-    { OP_MOD_PUB_GET,              4,   mod_pub_get },
-    { OP_MOD_PUB_SET,              11,  mod_pub_set },
-    { OP_MOD_PUB_VA_SET,           24,  mod_pub_va_set },
-    { OP_MOD_SUB_ADD,              6,   mod_sub_add },
-    { OP_MOD_SUB_VA_ADD,           20,  mod_sub_va_add },
-    { OP_MOD_SUB_DEL,              6,   mod_sub_del },
-    { OP_MOD_SUB_VA_DEL,           20,  mod_sub_va_del },
-    { OP_MOD_SUB_OVERWRITE,        6,   mod_sub_overwrite },
-    { OP_MOD_SUB_VA_OVERWRITE,     20,  mod_sub_va_overwrite },
-    { OP_MOD_SUB_DEL_ALL,          4,   mod_sub_del_all },
-    { OP_MOD_SUB_GET,              4,   mod_sub_get },
-    { OP_MOD_SUB_GET_VND,          6,   mod_sub_get_vnd },
-    { OP_NET_KEY_ADD,              18,  net_key_add },
-    { OP_NET_KEY_UPDATE,           18,  net_key_update },
-    { OP_NET_KEY_DEL,              2,   net_key_del },
-    { OP_NET_KEY_GET,              0,   net_key_get },
-    { OP_NODE_IDENTITY_GET,        2,   node_identity_get },
-    { OP_NODE_IDENTITY_SET,        3,   node_identity_set },
-    { OP_MOD_APP_BIND,             6,   mod_app_bind },
-    { OP_MOD_APP_UNBIND,           6,   mod_app_unbind },
-    { OP_SIG_MOD_APP_GET,          4,   mod_app_get },
-    { OP_VND_MOD_APP_GET,          6,   mod_app_get },
-    { OP_NODE_RESET,               0,   node_reset },
-    { OP_FRIEND_GET,               0,   friend_get },
-    { OP_FRIEND_SET,               1,   friend_set },
-    { OP_LPN_TIMEOUT_GET,          2,   lpn_timeout_get },
-    { OP_KRP_GET,                  2,   krp_get },
-    { OP_KRP_SET,                  3,   krp_set },
-    { OP_HEARTBEAT_PUB_GET,        0,   heartbeat_pub_get },
-    { OP_HEARTBEAT_PUB_SET,        9,   heartbeat_pub_set },
-    { OP_HEARTBEAT_SUB_GET,        0,   heartbeat_sub_get },
-    { OP_HEARTBEAT_SUB_SET,        5,   heartbeat_sub_set },
+    { OP_COMP_DATA_GET,        1,  comp_data_get        },
+    { OP_APP_KEY_ADD,          19, app_key_add          },
+    { OP_APP_KEY_UPDATE,       19, app_key_update       },
+    { OP_APP_KEY_DEL,          3,  app_key_del          },
+    { OP_APP_KEY_GET,          2,  app_key_get          },
+    { OP_BEACON_GET,           0,  beacon_get           },
+    { OP_BEACON_SET,           1,  beacon_set           },
+    { OP_DEFAULT_TTL_GET,      0,  default_ttl_get      },
+    { OP_DEFAULT_TTL_SET,      1,  default_ttl_set      },
+    { OP_GATT_PROXY_GET,       0,  gatt_proxy_get       },
+    { OP_GATT_PROXY_SET,       1,  gatt_proxy_set       },
+    { OP_NET_TRANSMIT_GET,     0,  net_transmit_get     },
+    { OP_NET_TRANSMIT_SET,     1,  net_transmit_set     },
+    { OP_RELAY_GET,            0,  relay_get            },
+    { OP_RELAY_SET,            2,  relay_set            },
+    { OP_MOD_PUB_GET,          4,  mod_pub_get          },
+    { OP_MOD_PUB_SET,          11, mod_pub_set          },
+    { OP_MOD_PUB_VA_SET,       24, mod_pub_va_set       },
+    { OP_MOD_SUB_ADD,          6,  mod_sub_add          },
+    { OP_MOD_SUB_VA_ADD,       20, mod_sub_va_add       },
+    { OP_MOD_SUB_DEL,          6,  mod_sub_del          },
+    { OP_MOD_SUB_VA_DEL,       20, mod_sub_va_del       },
+    { OP_MOD_SUB_OVERWRITE,    6,  mod_sub_overwrite    },
+    { OP_MOD_SUB_VA_OVERWRITE, 20, mod_sub_va_overwrite },
+    { OP_MOD_SUB_DEL_ALL,      4,  mod_sub_del_all      },
+    { OP_MOD_SUB_GET,          4,  mod_sub_get          },
+    { OP_MOD_SUB_GET_VND,      6,  mod_sub_get_vnd      },
+    { OP_NET_KEY_ADD,          18, net_key_add          },
+    { OP_NET_KEY_UPDATE,       18, net_key_update       },
+    { OP_NET_KEY_DEL,          2,  net_key_del          },
+    { OP_NET_KEY_GET,          0,  net_key_get          },
+    { OP_NODE_IDENTITY_GET,    2,  node_identity_get    },
+    { OP_NODE_IDENTITY_SET,    3,  node_identity_set    },
+    { OP_MOD_APP_BIND,         6,  mod_app_bind         },
+    { OP_MOD_APP_UNBIND,       6,  mod_app_unbind       },
+    { OP_SIG_MOD_APP_GET,      4,  mod_app_get          },
+    { OP_VND_MOD_APP_GET,      6,  mod_app_get          },
+    { OP_NODE_RESET,           0,  node_reset           },
+    { OP_FRIEND_GET,           0,  friend_get           },
+    { OP_FRIEND_SET,           1,  friend_set           },
+    { OP_LPN_TIMEOUT_GET,      2,  lpn_timeout_get      },
+    { OP_KRP_GET,              2,  krp_get              },
+    { OP_KRP_SET,              3,  krp_set              },
+    { OP_HEARTBEAT_PUB_GET,    0,  heartbeat_pub_get    },
+    { OP_HEARTBEAT_PUB_SET,    9,  heartbeat_pub_set    },
+    { OP_HEARTBEAT_SUB_GET,    0,  heartbeat_sub_get    },
+    { OP_HEARTBEAT_SUB_SET,    5,  heartbeat_sub_set    },
     BLE_MESH_MODEL_OP_END,
 };
 
@@ -3374,6 +3409,21 @@ static bool conf_is_valid(struct bt_mesh_cfg_srv *cfg)
 
     if (cfg->default_ttl > BLE_MESH_TTL_MAX) {
         return false;
+    }
+
+    if (!IS_ENABLED(CONFIG_BLE_MESH_RELAY)) {
+        BT_INFO("Relay not supported");
+        cfg->relay = BLE_MESH_RELAY_NOT_SUPPORTED;
+    }
+
+    if (!IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
+        BT_INFO("GATT Proxy not supported");
+        cfg->gatt_proxy = BLE_MESH_GATT_PROXY_NOT_SUPPORTED;
+    }
+
+    if (!IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+        BT_INFO("Friend not supported");
+        cfg->frnd = BLE_MESH_FRIEND_NOT_SUPPORTED;
     }
 
     return true;
@@ -3489,8 +3539,6 @@ void bt_mesh_cfg_reset(bool store)
     struct bt_mesh_cfg_srv *cfg = conf;
     int i;
 
-    BT_DBG("%s", __func__);
-
     if (!cfg) {
         return;
     }
@@ -3589,13 +3637,13 @@ uint8_t bt_mesh_relay_retransmit_get(void)
     return 0;
 }
 
-uint8_t bt_mesh_beacon_get(void)
+uint8_t bt_mesh_secure_beacon_get(void)
 {
     if (conf) {
         return conf->beacon;
     }
 
-    return BLE_MESH_BEACON_DISABLED;
+    return BLE_MESH_SECURE_BEACON_DISABLED;
 }
 
 uint8_t bt_mesh_gatt_proxy_get(void)

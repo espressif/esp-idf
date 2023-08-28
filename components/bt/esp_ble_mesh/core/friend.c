@@ -18,7 +18,10 @@
 #include "friend.h"
 #include "foundation.h"
 #include "mesh/main.h"
+#include "mesh/common.h"
 #include "pvnr_mgmt.h"
+
+#include "mesh_v1.1/utils.h"
 
 #ifdef CONFIG_BLE_MESH_FRIEND
 
@@ -26,12 +29,17 @@
  * to resend the last sent PDU, which sits separately outside of the queue.
  */
 #define FRIEND_BUF_COUNT    ((CONFIG_BLE_MESH_FRIEND_QUEUE_SIZE + 1) * \
-                 CONFIG_BLE_MESH_FRIEND_LPN_COUNT)
+                              CONFIG_BLE_MESH_FRIEND_LPN_COUNT)
 
-#define FRIEND_ADV(buf) CONTAINER_OF(BLE_MESH_ADV(buf), struct friend_adv, adv)
+#define FRIEND_ADV(buf)     CONTAINER_OF(BLE_MESH_ADV(buf), struct friend_adv, adv)
 
 /* PDUs from Friend to the LPN should only be transmitted once with the
  * smallest possible interval (20ms).
+ *
+ * Spec v1.1, Section 3.4.6:
+ * When transmitting a Network PDU that is tagged as friendship, the
+ * Advertising Bearer Network Interface shall transmit the Network PDU
+ * over the advertising bearer only once.
  */
 #define FRIEND_XMIT         BLE_MESH_TRANSMIT(0, 20)
 
@@ -70,15 +78,7 @@ static bool friend_init = false;
 
 static struct bt_mesh_subnet *friend_subnet_get(uint16_t net_idx)
 {
-    struct bt_mesh_subnet *sub = NULL;
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-        sub = bt_mesh_subnet_get(net_idx);
-    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
-        sub = bt_mesh_provisioner_subnet_get(net_idx);
-    }
-
-    return sub;
+    return bt_mesh_subnet_get(net_idx);
 }
 
 static struct bt_mesh_adv *adv_alloc(int id)
@@ -166,6 +166,15 @@ static void friend_clear(struct bt_mesh_friend *frnd, uint8_t reason)
         if (friend_cb) {
             friend_cb(false, frnd->lpn, reason);
         }
+
+#if CONFIG_BLE_MESH_DF_SRV
+        struct bt_mesh_subnet *sub = friend_subnet_get(frnd->net_idx);
+        if (sub && sub->directed_friend == BLE_MESH_DIRECTED_FRIEND_ENABLED) {
+            if (bt_mesh_directed_update_dependent_node(sub, 0, frnd->lpn, frnd->num_elem)) {
+                BT_ERR("Friend failed to update dependent node");
+            }
+        }
+#endif /* CONFIG_BLE_MESH_DF_SRV */
     }
 
     friend_cred_del(frnd->net_idx, frnd->lpn);
@@ -296,7 +305,10 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         return 0;
     }
 
-    tx.ctx->send_ttl = BLE_MESH_TTL_MAX;
+    tx.ctx->send_ttl  = BLE_MESH_TTL_MAX;
+    tx.ctx->send_cred = BLE_MESH_FLOODING_CRED;
+    /* Tag with immutable-credentials */
+    tx.ctx->send_tag  = BLE_MESH_TAG_IMMUTABLE_CRED;
 
     cfm.lpn_addr    = msg->lpn_addr;
     cfm.lpn_counter = msg->lpn_counter;
@@ -307,6 +319,19 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     friend_clear(frnd, BLE_MESH_FRIENDSHIP_TERMINATE_RECV_FRND_CLEAR);
 
     return 0;
+}
+
+static bool friend_sub_exist(struct bt_mesh_friend *frnd, uint16_t addr)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(frnd->sub_list); i++) {
+        if (frnd->sub_list[i] == addr) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static void friend_sub_add(struct bt_mesh_friend *frnd, uint16_t addr)
@@ -342,8 +367,7 @@ static struct net_buf *create_friend_pdu(struct bt_mesh_friend *frnd,
     struct net_buf *buf = NULL;
 
     buf = bt_mesh_adv_create_from_pool(&friend_buf_pool, adv_alloc,
-                                       BLE_MESH_ADV_DATA,
-                                       FRIEND_XMIT, K_NO_WAIT);
+                                       BLE_MESH_ADV_DATA, K_NO_WAIT);
     if (!buf) {
         return NULL;
     }
@@ -380,7 +404,6 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
                                 struct unseg_app_sdu_meta *meta)
 {
     uint16_t app_idx = FRIEND_ADV(buf)->app_idx;
-    uint8_t role = 0U;
     int err = 0;
 
     meta->subnet = friend_subnet_get(frnd->net_idx);
@@ -389,13 +412,10 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
         return -EINVAL;
     }
 
-    role = (IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
-            bt_mesh_is_provisioned()) ? NODE : PROVISIONER;
-
     meta->is_dev_key = (app_idx == BLE_MESH_KEY_DEV);
     bt_mesh_net_header_parse(&buf->b, &meta->net);
-    err = bt_mesh_app_key_get(meta->subnet, app_idx, &meta->key,
-                              &meta->aid, role, meta->net.ctx.addr);
+    err = bt_mesh_upper_key_get(meta->subnet, app_idx, &meta->key,
+                                &meta->aid, meta->net.ctx.addr);
     if (err) {
         BT_ERR("Failed to get AppKey");
         return err;
@@ -532,7 +552,7 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
 
     buf->data[0] = (nid | (iv_index & 1) << 7);
 
-    if (bt_mesh_net_encrypt(enc, &buf->b, iv_index, false)) {
+    if (bt_mesh_net_encrypt(enc, &buf->b, iv_index, false, false)) {
         BT_ERR("Encrypting failed");
         return -EINVAL;
     }
@@ -657,12 +677,29 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
     xact = net_buf_simple_pull_u8(buf);
 
     while (buf->len >= 2U) {
-        friend_sub_add(frnd, net_buf_simple_pull_be16(buf));
+        uint16_t addr = net_buf_simple_pull_be16(buf);
+
+        if (!BLE_MESH_ADDR_IS_GROUP(addr) &&
+            !BLE_MESH_ADDR_IS_VIRTUAL(addr) &&
+            !BLE_MESH_ADDR_IS_FIXED_GROUP(addr)) {
+            BT_WARN("Invalid friend sub addr 0x%04x to add", addr);
+            continue;
+        }
+
+        if (friend_sub_exist(frnd, addr)) {
+            continue;
+        }
+
+        friend_sub_add(frnd, addr);
     }
 
     enqueue_sub_cfm(frnd, xact);
 
+#if CONFIG_BLE_MESH_DF_SRV
+    return bt_mesh_directed_friend_solicitation(frnd, rx->sub);
+#else
     return 0;
+#endif
 }
 
 int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
@@ -692,7 +729,16 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
     xact = net_buf_simple_pull_u8(buf);
 
     while (buf->len >= 2U) {
-        friend_sub_rem(frnd, net_buf_simple_pull_be16(buf));
+        uint16_t addr = net_buf_simple_pull_be16(buf);
+
+        if (!BLE_MESH_ADDR_IS_GROUP(addr) &&
+            !BLE_MESH_ADDR_IS_VIRTUAL(addr) &&
+            !BLE_MESH_ADDR_IS_FIXED_GROUP(addr)) {
+            BT_WARN("Invalid friend sub addr 0x%04x to remove", addr);
+            continue;
+        }
+
+        friend_sub_rem(frnd, addr);
     }
 
     enqueue_sub_cfm(frnd, xact);
@@ -808,10 +854,13 @@ static const struct bt_mesh_send_cb clear_sent_cb = {
 static void send_friend_clear(struct bt_mesh_friend *frnd)
 {
     struct bt_mesh_msg_ctx ctx = {
-        .net_idx  = frnd->net_idx,
-        .app_idx  = BLE_MESH_KEY_UNUSED,
-        .addr     = frnd->clear.frnd,
-        .send_ttl = BLE_MESH_TTL_MAX,
+        .net_idx   = frnd->net_idx,
+        .app_idx   = BLE_MESH_KEY_UNUSED,
+        .addr      = frnd->clear.frnd,
+        .send_ttl  = BLE_MESH_TTL_MAX,
+        .send_cred = BLE_MESH_FLOODING_CRED,
+        /* Tag with immutable-credentials */
+        .send_tag  = BLE_MESH_TAG_IMMUTABLE_CRED,
     };
     struct bt_mesh_net_tx tx = {
         .sub  = friend_subnet_get(frnd->net_idx),
@@ -823,8 +872,6 @@ static void send_friend_clear(struct bt_mesh_friend *frnd)
         .lpn_addr    = sys_cpu_to_be16(frnd->lpn),
         .lpn_counter = sys_cpu_to_be16(frnd->lpn_counter),
     };
-
-    BT_DBG("%s", __func__);
 
     if (!tx.sub) {
         BT_ERR("Invalid subnet for Friend Clear");
@@ -870,8 +917,6 @@ int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
     struct bt_mesh_friend *frnd = NULL;
     uint16_t lpn_addr = 0U, lpn_counter = 0U;
 
-    BT_DBG("%s", __func__);
-
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Clear Confirm (len %d)", buf->len);
         return -EINVAL;
@@ -909,17 +954,15 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, int8_t rssi)
     NET_BUF_SIMPLE_DEFINE(sdu, 1 + sizeof(*off));
     struct net_buf *buf = NULL;
 
-    BT_DBG("%s", __func__);
-
     net_buf_simple_reserve(&sdu, 1);
 
     off = net_buf_simple_add(&sdu, sizeof(*off));
 
-    off->recv_win = CONFIG_BLE_MESH_FRIEND_RECV_WIN,
-         off->queue_size = CONFIG_BLE_MESH_FRIEND_QUEUE_SIZE,
-              off->sub_list_size = ARRAY_SIZE(frnd->sub_list),
-                   off->rssi = rssi,
-                        off->frnd_counter = sys_cpu_to_be16(frnd->counter);
+    off->recv_win = CONFIG_BLE_MESH_FRIEND_RECV_WIN;
+    off->queue_size = CONFIG_BLE_MESH_FRIEND_QUEUE_SIZE;
+    off->sub_list_size = ARRAY_SIZE(frnd->sub_list);
+    off->rssi = rssi;
+    off->frnd_counter = sys_cpu_to_be16(frnd->counter);
 
     buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_OFFER, &sdu);
     if (!buf) {
@@ -956,8 +999,8 @@ static int32_t offer_delay(struct bt_mesh_friend *frnd, int8_t rssi, uint8_t cri
     int32_t delay = 0;
 
     BT_INFO("ReceiveWindowFactor %u ReceiveWindow %u RSSIFactor %u RSSI %d",
-           fact[RECV_WIN_FACT(crit)], RECV_WIN,
-           fact[RSSI_FACT(crit)], rssi);
+            fact[RECV_WIN_FACT(crit)], RECV_WIN,
+            fact[RSSI_FACT(crit)], rssi);
 
     /* Delay = ReceiveWindowFactor * ReceiveWindow - RSSIFactor * RSSI */
     delay = (int32_t)fact[RECV_WIN_FACT(crit)] * RECV_WIN;
@@ -1059,7 +1102,7 @@ init_friend:
      * begin sending Friend Clear messages to that unicast address.
      */
     if (BLE_MESH_ADDR_IS_UNICAST(frnd->clear.frnd) &&
-            !bt_mesh_elem_find(frnd->clear.frnd)) {
+        !bt_mesh_elem_find(frnd->clear.frnd)) {
         clear_procedure_start(frnd);
     }
 
@@ -1245,7 +1288,7 @@ static void friend_timeout(struct k_work *work)
 send_last:
     frnd->pending_req = 0U;
     frnd->pending_buf = 1U;
-    bt_mesh_adv_send(frnd->last, &buf_sent_cb, frnd);
+    bt_mesh_adv_send(frnd->last, FRIEND_XMIT, &buf_sent_cb, frnd);
 }
 
 void bt_mesh_friend_set_cb(void (*cb)(bool establish, uint16_t lpn_addr, uint8_t reason))
@@ -1513,6 +1556,29 @@ bool bt_mesh_friend_match(uint16_t net_idx, uint16_t addr)
     return false;
 }
 
+bool bt_mesh_friend_unicast_match(uint16_t net_idx, uint16_t addr, uint8_t *selem)
+{
+    int i;
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(addr) || selem == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return false;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
+        struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
+
+        if (frnd->established && net_idx == frnd->net_idx &&
+            BLE_MESH_ADDR_IS_UNICAST(frnd->lpn) &&
+            (addr >= frnd->lpn && addr < (frnd->lpn + frnd->num_elem))) {
+            *selem = frnd->num_elem - 1;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static bool friend_queue_has_space(struct bt_mesh_friend *frnd, uint16_t addr,
                                    const uint64_t *seq_auth, uint8_t seg_count)
 {
@@ -1623,8 +1689,8 @@ void bt_mesh_friend_enqueue_rx(struct bt_mesh_net_rx *rx,
     int i;
 
     if (!rx->friend_match ||
-            (rx->ctx.recv_ttl <= 1U && rx->net_if != BLE_MESH_NET_IF_LOCAL) ||
-            bt_mesh_friend_get() != BLE_MESH_FRIEND_ENABLED) {
+        (rx->ctx.recv_ttl <= 1U && rx->net_if != BLE_MESH_NET_IF_LOCAL) ||
+        bt_mesh_friend_get() != BLE_MESH_FRIEND_ENABLED) {
         return;
     }
 
@@ -1659,7 +1725,7 @@ bool bt_mesh_friend_enqueue_tx(struct bt_mesh_net_tx *tx,
     int i;
 
     if (!bt_mesh_friend_match(tx->sub->net_idx, tx->ctx->addr) ||
-            bt_mesh_friend_get() != BLE_MESH_FRIEND_ENABLED) {
+        bt_mesh_friend_get() != BLE_MESH_FRIEND_ENABLED) {
         return matched;
     }
 
@@ -1691,8 +1757,6 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, uint16_t src,
                                      uint16_t dst, const uint64_t *seq_auth)
 {
     int i;
-
-    BT_DBG("%s", __func__);
 
     for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
         struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];

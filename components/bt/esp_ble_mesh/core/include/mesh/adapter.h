@@ -113,20 +113,41 @@ extern "C" {
 #define BLE_MESH_DATA_UUID128_ALL           0x07 /* 128-bit UUID, all listed */
 #define BLE_MESH_DATA_NAME_SHORTENED        0x08 /* Shortened name */
 #define BLE_MESH_DATA_NAME_COMPLETE         0x09 /* Complete name */
-#define BLE_MESH_DATA_TX_POWER              0x0a /* Tx Power */
+#define BLE_MESH_DATA_TX_POWER              0x0A /* Tx Power */
+#define BLE_MESH_DATA_CLASS_OF_DEVICE       0x0D /* Class of Device */
+#define BLE_MESH_DATA_SIMP_PAIR_HASH_C      0x0E /* Simple Pairing Hash C */
+#define BLE_MESH_DATA_SIMP_PAIR_RAND_R      0x0F /* Simple Pairing Randomizer R */
+#define BLE_MESH_DATA_SEC_MANAGER_TK_VAL    0x10 /* Security Manager TK Value */
+#define BLE_MESH_DATA_SEC_MANAGER_OOB_FLAG  0x11 /* Security Manager Out of Band Flags */
+#define BLE_MESH_DATA_SLAVE_CONN_INT_RANGE  0x12 /* Slave Connection Interval Range */
 #define BLE_MESH_DATA_SOLICIT16             0x14 /* Solicit UUIDs, 16-bit */
 #define BLE_MESH_DATA_SOLICIT128            0x15 /* Solicit UUIDs, 128-bit */
 #define BLE_MESH_DATA_SVC_DATA16            0x16 /* Service data, 16-bit UUID */
+#define BLE_MESH_DATA_PUBLIC_TARGET_ADDR    0x17 /* Public Target Address */
+#define BLE_MESH_DATA_RANDOM_TARGET_ADDR    0x18 /* Random Target Address */
 #define BLE_MESH_DATA_GAP_APPEARANCE        0x19 /* GAP appearance */
-#define BLE_MESH_DATA_SOLICIT32             0x1f /* Solicit UUIDs, 32-bit */
+#define BLE_MESH_DATA_ADV_INTERVAL          0x1A /* Advertising Interval */
+#define BLE_MESH_DATA_LE_DEVICE_ADDR        0x1B /* LE Bluetooth Device Address */
+#define BLE_MESH_DATA_LE_ROLE               0x1C /* LE Role */
+#define BLE_MESH_DATA_SIMP_PAIR_HASH_C_256  0x1D /* Simple Pairing Hash C-256 */
+#define BLE_MESH_DATA_SIMP_PAIR_RAND_R_256  0x1E /* Simple Pairing Randomizer R-256 */
+#define BLE_MESH_DATA_SOLICIT32             0x1F /* Solicit UUIDs, 32-bit */
 #define BLE_MESH_DATA_SVC_DATA32            0x20 /* Service data, 32-bit UUID */
 #define BLE_MESH_DATA_SVC_DATA128           0x21 /* Service data, 128-bit UUID */
+#define BLE_MESH_DATA_LE_SEC_CONN_CFM_VAL   0x22 /* LE Secure Connections Confirmation Value */
+#define BLE_MESH_DATA_LE_SEC_CONN_RAND_VAL  0x23 /* LE Secure Connections Random Value */
 #define BLE_MESH_DATA_URI                   0x24 /* URI */
+#define BLE_MESH_DATA_INDOOR_POSITION       0x25 /* Indoor Positioning */
+#define BLE_MESH_DATA_TRANS_DISC_DATA       0x26 /* Transport Discovery Data */
+#define BLE_MESH_DATA_LE_SUPPORT_FEAT       0x27 /* LE Supported Features */
+#define BLE_MESH_DATA_CHAN_MAP_UPDATE_IND   0x28 /* Channel Map Update Indication */
 #define BLE_MESH_DATA_MESH_PROV             0x29 /* Mesh Provisioning PDU */
-#define BLE_MESH_DATA_MESH_MESSAGE          0x2a /* Mesh Networking PDU */
-#define BLE_MESH_DATA_MESH_BEACON           0x2b /* Mesh Beacon */
-
-#define BLE_MESH_DATA_MANUFACTURER_DATA     0xff /* Manufacturer Specific Data */
+#define BLE_MESH_DATA_MESH_MESSAGE          0x2A /* Mesh Networking PDU */
+#define BLE_MESH_DATA_MESH_BEACON           0x2B /* Mesh Beacon */
+#define BLE_MESH_DATA_BIGINFO               0x2C /* BIGInf */
+#define BLE_MESH_DATA_BROADCAST_COD         0x2D /* Broadcast_Cod */
+#define BLE_MESH_DATA_3D_INFO_DATA          0x3D /* 3D Information Data */
+#define BLE_MESH_DATA_MANUFACTURER_DATA     0xFF /* Manufacturer Specific Data */
 
 #define BLE_MESH_AD_LIMITED     0x01 /* Limited Discoverable */
 #define BLE_MESH_AD_GENERAL     0x02 /* General Discoverable */
@@ -442,9 +463,11 @@ struct bt_mesh_conn {
  *  @param rssi Strength of advertiser signal.
  *  @param adv_type Type of advertising response from advertiser.
  *  @param data Buffer containing advertiser data.
+ *  @param scan_rsp_len Scan Response data length.
  */
 typedef void bt_mesh_scan_cb_t(const bt_mesh_addr_t *addr, int8_t rssi,
-                               uint8_t adv_type, struct net_buf_simple *buf);
+                               uint8_t adv_type, struct net_buf_simple *buf,
+                               uint8_t scan_rsp_len);
 
 /*  @typedef bt_mesh_dh_key_cb_t
  *  @brief Callback type for DH Key calculation.
@@ -452,11 +475,11 @@ typedef void bt_mesh_scan_cb_t(const bt_mesh_addr_t *addr, int8_t rssi,
  *  Used to notify of the calculated DH Key.
  *
  *  @param key Public key.
- *  @param idx Provisioning link index, only used by Provisioner.
+ *  @param user_data User data.
  *
  *  @return The DH Key, or NULL in case of failure.
  */
-typedef void (*bt_mesh_dh_key_cb_t)(const uint8_t key[32], const uint8_t idx);
+typedef void (*bt_mesh_dh_key_cb_t)(const uint8_t key[32], void *user_data);
 
 /** @typedef bt_mesh_gatt_attr_func_t
  *  @brief Attribute iterator callback.
@@ -767,7 +790,7 @@ const uint8_t *bt_mesh_pub_key_get(void);
 
 bool bt_mesh_check_public_key(const uint8_t key[64]);
 
-int bt_mesh_dh_key_gen(const uint8_t remote_pk[64], bt_mesh_dh_key_cb_t cb, const uint8_t idx);
+int bt_mesh_dh_key_gen(const uint8_t remote_pub_key[64], uint8_t dhkey[32]);
 
 int bt_mesh_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
                        uint8_t enc_data[16]);

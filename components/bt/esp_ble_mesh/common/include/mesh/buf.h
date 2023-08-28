@@ -816,7 +816,7 @@ struct net_buf_pool {
     /** Number of uninitialized buffers */
     uint16_t uninit_count;
 
-#if defined(CONFIG_BLE_MESH_NET_BUF_POOL_USAGE)
+#if CONFIG_BLE_MESH_NET_BUF_POOL_USAGE
     /** Amount of available buffers in the pool. */
     int16_t avail_count;
 
@@ -837,7 +837,7 @@ struct net_buf_pool {
     struct net_buf *const __bufs;
 };
 
-#if defined(CONFIG_BLE_MESH_NET_BUF_POOL_USAGE)
+#if CONFIG_BLE_MESH_NET_BUF_POOL_USAGE
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy) \
     {                                                                   \
         .alloc = _alloc,                                                \
@@ -962,11 +962,11 @@ int net_buf_id(struct net_buf *buf);
  *
  * @return New buffer or NULL if out of buffers.
  */
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
 struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool, int32_t timeout,
                                           const char *func, int line);
 #define net_buf_alloc_fixed(_pool, _timeout) \
-    net_buf_alloc_fixed_debug(_pool, _timeout, __func__, __LINE__)
+        net_buf_alloc_fixed_debug(_pool, _timeout, __func__, __LINE__)
 #else
 struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, int32_t timeout);
 #endif
@@ -1031,7 +1031,7 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list);
  *
  *  @param buf A valid pointer on a buffer
  */
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
 void net_buf_unref_debug(struct net_buf *buf, const char *func, int line);
 #define net_buf_unref(_buf) \
         net_buf_unref_debug(_buf, __func__, __LINE__)
@@ -1630,12 +1630,12 @@ struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag);
  * @return Pointer to the buffer following the fragment, or NULL if it
  *         had no further fragments.
  */
-#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+#if CONFIG_BLE_MESH_NET_BUF_LOG
 struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
                                        struct net_buf *frag,
                                        const char *func, int line);
 #define net_buf_frag_del(_parent, _frag) \
-    net_buf_frag_del_debug(_parent, _frag, __func__, __LINE__)
+        net_buf_frag_del_debug(_parent, _frag, __func__, __LINE__)
 #else
 struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
 #endif

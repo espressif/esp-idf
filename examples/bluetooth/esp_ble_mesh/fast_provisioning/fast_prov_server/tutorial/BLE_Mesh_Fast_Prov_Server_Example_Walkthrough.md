@@ -371,20 +371,17 @@ The Vendor Client Model calls the `esp_ble_mesh_client_model_send_msg` API to se
 | `ctx.app_idx` | The AppKey Index for the message encryption |
 | `ctx.addr`    | The address of the destination nodes |
 | `ctx.send_ttl`| The TTL State, which determines how many times a message can be relayed|
-| `ctx.send_rel`| This parameter determines whether the Model will wait for an acknowledgment after sending a message   |
 | `opcode`      | The message opcode  |
 | `msg->len`    | The length of the `msg->data`|
 | `msg->data`   | The pointer to sent data|
 | `msg_timeout` | The maximum duration (4000 ms by default) that the Model waits for an acknowledgment.  |
 |`true`         | True: an acknowledgement is required; False: no acknowledgement is required |
-| `msg_role`    | The role of a message (node/provisioner) |
 
 ```c
 esp_ble_mesh_msg_ctx_t ctx = {
     .net_idx  = info->net_idx,
     .app_idx  = info->app_idx,
     .addr     = info->dst, 
-    .send_rel = false,
     .send_ttl = 0,
  };
  err = esp_ble_mesh_client_model_send_msg(model, &ctx,

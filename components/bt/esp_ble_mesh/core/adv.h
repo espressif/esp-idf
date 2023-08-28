@@ -18,16 +18,16 @@ extern "C" {
 #endif
 
 /* Maximum advertising data payload for a single data type */
-#define BLE_MESH_ADV_DATA_SIZE 29
+#define BLE_MESH_ADV_DATA_SIZE          29
 
 /* The user data is a pointer (4 bytes) to struct bt_mesh_adv */
-#define BLE_MESH_ADV_USER_DATA_SIZE 4
+#define BLE_MESH_ADV_USER_DATA_SIZE     4
 
-#define BLE_MESH_ADV(buf) (*(struct bt_mesh_adv **)net_buf_user_data(buf))
+#define BLE_MESH_ADV(buf)               (*(struct bt_mesh_adv **)net_buf_user_data(buf))
 
 typedef struct bt_mesh_msg {
-    bool  relay;        /* Flag indicates if the packet is a relayed one */
-    void *arg;          /* Pointer to the struct net_buf */
+    bool     relay;     /* Flag indicates if the packet is a relayed one */
+    void    *arg;       /* Pointer to the struct net_buf */
     uint16_t src;       /* Source address for relay packets */
     uint16_t dst;       /* Destination address for relay packets */
     uint32_t timestamp; /* Timestamp recorded when the relay packet is posted to queue */
@@ -39,6 +39,7 @@ enum bt_mesh_adv_type {
     BLE_MESH_ADV_BEACON,
     BLE_MESH_ADV_URI,
     BLE_MESH_ADV_BLE,
+    BLE_MESH_ADV_PROXY_SOLIC,
 };
 
 struct bt_mesh_adv {
@@ -52,9 +53,7 @@ struct bt_mesh_adv {
 
 typedef struct bt_mesh_adv *(*bt_mesh_adv_alloc_t)(int id);
 
-/* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
-struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
-                                   int32_t timeout);
+struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, int32_t timeout);
 
 typedef enum {
     BLE_MESH_BUF_REF_EQUAL,
@@ -68,18 +67,20 @@ void bt_mesh_adv_buf_ref_debug(const char *func, struct net_buf *buf,
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
                                              bt_mesh_adv_alloc_t get_id,
                                              enum bt_mesh_adv_type type,
-                                             uint8_t xmit, int32_t timeout);
+                                             int32_t timeout);
 
 void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool);
 
-void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
+void bt_mesh_adv_send(struct net_buf *buf, uint8_t xmit,
+                      const struct bt_mesh_send_cb *cb,
                       void *cb_data);
 
-struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
-                                         int32_t timeout);
+struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, int32_t timeout);
 
-void bt_mesh_relay_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
-                            void *cb_data, uint16_t src, uint16_t dst);
+void bt_mesh_relay_adv_send(struct net_buf *buf, uint8_t xmit,
+                            uint16_t src, uint16_t dst,
+                            const struct bt_mesh_send_cb *cb,
+                            void *cb_data);
 
 uint16_t bt_mesh_get_stored_relay_count(void);
 

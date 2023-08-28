@@ -27,6 +27,11 @@ void bt_mesh_mutex_free(bt_mesh_mutex_t *mutex);
 void bt_mesh_mutex_lock(bt_mesh_mutex_t *mutex);
 void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex);
 
+void bt_mesh_r_mutex_create(bt_mesh_mutex_t *mutex);
+void bt_mesh_r_mutex_free(bt_mesh_mutex_t *mutex);
+void bt_mesh_r_mutex_lock(bt_mesh_mutex_t *mutex);
+void bt_mesh_r_mutex_unlock(bt_mesh_mutex_t *mutex);
+
 void bt_mesh_alarm_lock(void);
 void bt_mesh_alarm_unlock(void);
 

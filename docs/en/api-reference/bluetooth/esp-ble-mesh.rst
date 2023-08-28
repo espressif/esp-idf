@@ -1,6 +1,10 @@
 ESP-BLE-MESH
 ============
 
+.. note::
+
+  The current ESP-BLE-MESH v1.1 related code is a preview version, so the Mesh Protocol v1.1 related Structures, MACROs, and APIs involved in the code may be changed.
+
 With various features of ESP-BLE-MESH, users can create a managed flooding mesh network for several scenarios, such as lighting, sensor and etc.
 
 For an ESP32 to join and work on a ESP-BLE-MESH network, it must be provisioned firstly. By provisioning, the ESP32, as an unprovisioned device, will join the ESP-BLE-MESH network and become a ESP-BLE-MESH node, communicating with other nodes within or beyond the radio range.

@@ -35,9 +35,9 @@ static struct bt_mesh_model *find_model(uint16_t elem_addr, uint16_t cid, uint16
 
     if (cid == BLE_MESH_CID_NVAL) {
         return bt_mesh_model_find(elem, mod_id);
-    } else {
-        return bt_mesh_model_find_vnd(elem, cid, mod_id);
     }
+
+    return bt_mesh_model_find_vnd(elem, cid, mod_id);
 }
 
 int bt_mesh_model_subscribe_group_addr(uint16_t elem_addr, uint16_t cid,
@@ -120,6 +120,36 @@ int bt_mesh_model_unsubscribe_group_addr(uint16_t elem_addr, uint16_t cid,
     return 0;
 }
 
+#if CONFIG_BLE_MESH_DF_SRV
+int bt_mesh_enable_directed_forwarding(uint16_t net_idx, bool directed_forwarding,
+                                       bool directed_forwarding_relay)
+{
+    struct bt_mesh_subnet *sub = NULL;
+
+    if (net_idx > 0xFFF) {
+        BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
+        return -EINVAL;
+    }
+
+    sub = bt_mesh_subnet_get(net_idx);
+    if (!sub) {
+        BT_ERR("NetKey 0x%04x not exists", net_idx);
+        return -EINVAL;
+    }
+
+    if (directed_forwarding == BLE_MESH_DIRECTED_FORWARDING_DISABLED &&
+        directed_forwarding_relay == BLE_MESH_DIRECTED_RELAY_ENABLED) {
+        BT_ERR("Invalid Config directed forwarding: %d, directed forwarding relay: %d", directed_forwarding, directed_forwarding_relay);
+        return -EINVAL;
+    }
+
+    sub->directed_forwarding = directed_forwarding;
+    sub->directed_relay = directed_forwarding_relay;
+
+    return 0;
+}
+
+#endif
 #if CONFIG_BLE_MESH_NODE
 
 const uint8_t *bt_mesh_node_get_local_net_key(uint16_t net_idx)
@@ -149,7 +179,7 @@ const uint8_t *bt_mesh_node_get_local_app_key(uint16_t app_idx)
         return NULL;
     }
 
-    key = bt_mesh_app_key_find(app_idx);
+    key = bt_mesh_app_key_get(app_idx);
     if (!key) {
         BT_ERR("AppKey 0x%04x not exists", app_idx);
         return NULL;
@@ -225,7 +255,7 @@ int bt_mesh_node_local_net_key_add(uint16_t net_idx, const uint8_t net_key[16])
     }
 
     /* Make sure we have valid beacon data to be sent */
-    bt_mesh_net_beacon_update(sub);
+    bt_mesh_net_secure_beacon_update(sub);
 
     return 0;
 }
@@ -250,7 +280,7 @@ int bt_mesh_node_local_app_key_add(uint16_t net_idx, uint16_t app_idx,
         return -EIO;
     }
 
-    key = bt_mesh_app_key_find(app_idx);
+    key = bt_mesh_app_key_get(app_idx);
     if (key) {
         BT_WARN("AppKey 0x%04x already exists", app_idx);
         return -EEXIST;
@@ -312,7 +342,7 @@ int bt_mesh_node_bind_app_key_to_model(uint16_t elem_addr, uint16_t mod_id,
         return -ENODEV;
     }
 
-    if (bt_mesh_app_key_find(app_idx) == NULL) {
+    if (bt_mesh_app_key_get(app_idx) == NULL) {
         BT_ERR("Bind, AppKey 0x%03x not exists", app_idx);
         return -ENODEV;
     }

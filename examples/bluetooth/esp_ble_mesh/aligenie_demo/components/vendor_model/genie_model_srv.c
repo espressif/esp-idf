@@ -387,7 +387,6 @@ esp_err_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
     ctx.net_idx  = bt_mesh_model_get_netkey_id(p_model_msg->p_elem);
     ctx.addr     = GENIE_RECV_ADDR;
     ctx.send_ttl = BLE_MESH_TTL_DEFAULT;
-    ctx.send_rel = 0;
 
     ESP_LOGI(TAG, "vendor message send: tid: 0x%02x, retry: %02d, len: %02d, opcode: 0x%02x, data: 0x%s", p_model_msg->tid, p_model_msg->retry, p_model_msg->len, p_model_msg->opid, util_hex2str(p_model_msg->data, p_model_msg->len));
     ESP_LOGD(TAG, "vendor message send: element: %p, app_idx: %d, net_idx: %d, tid: 0x%02x, retry: %02d, len: %02d, opcode: 0x%02x, data: 0x%s",

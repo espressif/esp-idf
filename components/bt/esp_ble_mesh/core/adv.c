@@ -11,11 +11,11 @@
 #include <string.h>
 #include <errno.h>
 
-#include "mesh/kernel.h"
+#include "adv.h"
 #include "mesh.h"
 #include "mesh/hci.h"
+#include "mesh/kernel.h"
 #include "mesh/common.h"
-#include "adv.h"
 #include "beacon.h"
 #include "prov_node.h"
 #include "foundation.h"
@@ -63,7 +63,7 @@ static struct bt_mesh_queue adv_queue;
 #define BLE_MESH_ADV_QUEUE_SIZE     (CONFIG_BLE_MESH_ADV_BUF_COUNT + 1)
 #endif
 
-#if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
 NET_BUF_POOL_DEFINE(relay_adv_buf_pool, CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT,
                     BLE_MESH_ADV_DATA_SIZE, BLE_MESH_ADV_USER_DATA_SIZE, NULL);
 
@@ -79,7 +79,7 @@ static QueueSetHandle_t mesh_queue_set;
 #define BLE_MESH_MAX_TIME_INTERVAL       0xFFFFFFFF
 
 static bool ignore_relay_packet(uint32_t timestamp);
-#endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 /* length + advertising data + length + scan response data */
@@ -175,9 +175,21 @@ static inline int adv_send(struct net_buf *buf)
         param.interval_min = ADV_SCAN_UNIT(adv_int);
         param.interval_max = param.interval_min;
 
-        bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
-
-        err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
+#if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
+        if (BLE_MESH_ADV(buf)->type == BLE_MESH_ADV_PROXY_SOLIC) {
+            bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
+            struct bt_mesh_adv_data solic_ad[3] = {
+                BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_FLAGS, (BLE_MESH_AD_GENERAL | BLE_MESH_AD_NO_BREDR)),
+                BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_UUID16_ALL, 0x29, 0x18),
+                BLE_MESH_ADV_DATA(BLE_MESH_DATA_SVC_DATA16, buf->data, buf->len),
+            };
+            err = bt_le_adv_start(&param, solic_ad, 3, NULL, 0);
+        } else
+#endif
+        {
+            bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
+            err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
+        }
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     } else {
         struct bt_mesh_ble_adv_data data = {0};
@@ -238,7 +250,7 @@ static inline TickType_t K_WAIT(int32_t val)
 
 static void adv_thread(void *p)
 {
-#if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
     QueueSetMemberHandle_t handle = NULL;
 #endif
     bt_mesh_msg_t msg = {0};
@@ -250,9 +262,9 @@ static void adv_thread(void *p)
 
     while (1) {
         *buf = NULL;
-#if !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+#if !CONFIG_BLE_MESH_RELAY_ADV_BUF
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
-    CONFIG_BLE_MESH_GATT_PROXY_SERVER
+     CONFIG_BLE_MESH_GATT_PROXY_SERVER
         xQueueReceive(adv_queue.handle, &msg, K_NO_WAIT);
         while (!(*buf)) {
             int32_t timeout = 0;
@@ -266,9 +278,9 @@ static void adv_thread(void *p)
 #else
         xQueueReceive(adv_queue.handle, &msg, portMAX_DELAY);
 #endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
-#else /* !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+#else /* !CONFIG_BLE_MESH_RELAY_ADV_BUF */
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
-    CONFIG_BLE_MESH_GATT_PROXY_SERVER
+     CONFIG_BLE_MESH_GATT_PROXY_SERVER
         handle = xQueueSelectFromSet(mesh_queue_set, K_NO_WAIT);
         if (handle) {
             if (uxQueueMessagesWaiting(adv_queue.handle)) {
@@ -304,7 +316,7 @@ static void adv_thread(void *p)
             }
         }
 #endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
-#endif /* !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+#endif /* !CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
         if (*buf == NULL) {
             continue;
@@ -313,11 +325,11 @@ static void adv_thread(void *p)
         /* busy == 0 means this was canceled */
         if (BLE_MESH_ADV(*buf)->busy) {
             BLE_MESH_ADV(*buf)->busy = 0U;
-#if !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+#if !CONFIG_BLE_MESH_RELAY_ADV_BUF
             if (adv_send(*buf)) {
                 BT_WARN("Failed to send adv packet");
             }
-#else /* !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+#else /* !CONFIG_BLE_MESH_RELAY_ADV_BUF */
             if (msg.relay && ignore_relay_packet(msg.timestamp)) {
                 /* If the interval between "current time - msg.timestamp" is bigger than
                  * BLE_MESH_RELAY_TIME_INTERVAL, this relay packet will not be sent.
@@ -329,7 +341,7 @@ static void adv_thread(void *p)
                     BT_WARN("Failed to send adv packet");
                 }
             }
-#endif
+#endif /* !CONFIG_BLE_MESH_RELAY_ADV_BUF */
         } else {
             bt_mesh_adv_buf_ref_debug(__func__, *buf, 1U, BLE_MESH_BUF_REF_EQUAL);
             net_buf_unref(*buf);
@@ -343,7 +355,7 @@ static void adv_thread(void *p)
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
                                              bt_mesh_adv_alloc_t get_id,
                                              enum bt_mesh_adv_type type,
-                                             uint8_t xmit, int32_t timeout)
+                                             int32_t timeout)
 {
     struct bt_mesh_adv *adv = NULL;
     struct net_buf *buf = NULL;
@@ -367,7 +379,6 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
     (void)memset(adv, 0, sizeof(*adv));
 
     adv->type = type;
-    adv->xmit = xmit;
 
     return buf;
 }
@@ -390,11 +401,10 @@ void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool)
     }
 }
 
-struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
-                                   int32_t timeout)
+struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, int32_t timeout)
 {
-    return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_alloc, type,
-                                        xmit, timeout);
+    return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_alloc,
+                                        type, timeout);
 }
 
 void bt_mesh_adv_buf_ref_debug(const char *func, struct net_buf *buf,
@@ -433,14 +443,10 @@ static void bt_mesh_unref_buf(bt_mesh_msg_t *msg)
         }
         net_buf_unref(buf);
     }
-
-    return;
 }
 
 static void bt_mesh_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front)
 {
-    BT_DBG("%s", __func__);
-
     if (adv_queue.handle == NULL) {
         BT_ERR("Invalid adv queue");
         return;
@@ -459,7 +465,8 @@ static void bt_mesh_task_post(bt_mesh_msg_t *msg, uint32_t timeout, bool front)
     }
 }
 
-void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
+void bt_mesh_adv_send(struct net_buf *buf, uint8_t xmit,
+                      const struct bt_mesh_send_cb *cb,
                       void *cb_data)
 {
     bt_mesh_msg_t msg = {
@@ -472,6 +479,7 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
     BLE_MESH_ADV(buf)->cb = cb;
     BLE_MESH_ADV(buf)->cb_data = cb_data;
     BLE_MESH_ADV(buf)->busy = 1U;
+    BLE_MESH_ADV(buf)->xmit = xmit;
 
     bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
 
@@ -486,12 +494,10 @@ void bt_mesh_adv_update(void)
         .arg = NULL,
     };
 
-    BT_DBG("%s", __func__);
-
     bt_mesh_task_post(&msg, K_NO_WAIT, false);
 }
 
-#if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
 static bool ignore_relay_packet(uint32_t timestamp)
 {
     uint32_t now = k_uptime_get_32();
@@ -511,19 +517,16 @@ static struct bt_mesh_adv *relay_adv_alloc(int id)
     return &relay_adv_pool[id];
 }
 
-struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, uint8_t xmit,
-                                         int32_t timeout)
+struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, int32_t timeout)
 {
-    return bt_mesh_adv_create_from_pool(&relay_adv_buf_pool, relay_adv_alloc, type,
-                                        xmit, timeout);
+    return bt_mesh_adv_create_from_pool(&relay_adv_buf_pool, relay_adv_alloc,
+                                        type, timeout);
 }
 
 static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
 {
     QueueSetMemberHandle_t handle = NULL;
     bt_mesh_msg_t old_msg = {0};
-
-    BT_DBG("%s", __func__);
 
     if (relay_queue.handle == NULL) {
         BT_ERR("Invalid relay queue");
@@ -534,8 +537,7 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
         return;
     }
 
-    /**
-     * If failed to send packet to the relay queue(queue is full), we will
+    /* If failed to send packet to the relay queue(queue is full), we will
      * remove the oldest packet in the queue and put the new one into it.
      */
     handle = xQueueSelectFromSet(mesh_queue_set, K_NO_WAIT);
@@ -561,8 +563,10 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
     }
 }
 
-void bt_mesh_relay_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
-                            void *cb_data, uint16_t src, uint16_t dst)
+void bt_mesh_relay_adv_send(struct net_buf *buf, uint8_t xmit,
+                            uint16_t src, uint16_t dst,
+                            const struct bt_mesh_send_cb *cb,
+                            void *cb_data)
 {
     bt_mesh_msg_t msg = {
         .relay = true,
@@ -574,6 +578,7 @@ void bt_mesh_relay_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *c
     BLE_MESH_ADV(buf)->cb = cb;
     BLE_MESH_ADV(buf)->cb_data = cb_data;
     BLE_MESH_ADV(buf)->busy = 1U;
+    BLE_MESH_ADV(buf)->xmit = xmit;
 
     msg.arg = (void *)net_buf_ref(buf);
     msg.src = src;
@@ -587,7 +592,7 @@ uint16_t bt_mesh_get_stored_relay_count(void)
 {
     return (uint16_t)uxQueueMessagesWaiting(relay_queue.handle);
 }
-#endif /* #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+#endif /* #if CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
 void bt_mesh_adv_init(void)
 {
@@ -611,7 +616,7 @@ void bt_mesh_adv_init(void)
     __ASSERT(adv_queue.handle, "Failed to create static queue");
 #endif /* !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
 
-#if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
 #if !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
     relay_queue.handle = xQueueCreate(BLE_MESH_RELAY_QUEUE_SIZE, sizeof(bt_mesh_msg_t));
     __ASSERT(relay_queue.handle, "Failed to create relay queue");
@@ -636,7 +641,7 @@ void bt_mesh_adv_init(void)
     __ASSERT(mesh_queue_set, "Failed to create queue set");
     xQueueAddToSet(adv_queue.handle, mesh_queue_set);
     xQueueAddToSet(relay_queue.handle, mesh_queue_set);
-#endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
 #if (CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && \
     (CONFIG_SPIRAM_CACHE_WORKAROUND || !CONFIG_IDF_TARGET_ESP32) && \
@@ -674,7 +679,7 @@ void bt_mesh_adv_deinit(void)
     adv_task.task = NULL;
 #endif
 
-#if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+#if CONFIG_BLE_MESH_RELAY_ADV_BUF
     xQueueRemoveFromSet(adv_queue.handle, mesh_queue_set);
     xQueueRemoveFromSet(relay_queue.handle, mesh_queue_set);
 
@@ -685,14 +690,14 @@ void bt_mesh_adv_deinit(void)
     relay_queue.buffer = NULL;
     heap_caps_free(relay_queue.storage);
     relay_queue.storage = NULL;
-#endif
+#endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
 
     bt_mesh_unref_buf_from_pool(&relay_adv_buf_pool);
     memset(relay_adv_pool, 0, sizeof(relay_adv_pool));
 
     vQueueDelete(mesh_queue_set);
     mesh_queue_set = NULL;
-#endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+#endif /* CONFIG_BLE_MESH_RELAY_ADV_BUF */
 
     vQueueDelete(adv_queue.handle);
     adv_queue.handle = NULL;
@@ -701,14 +706,14 @@ void bt_mesh_adv_deinit(void)
     adv_queue.buffer = NULL;
     heap_caps_free(adv_queue.storage);
     adv_queue.storage = NULL;
-#endif
+#endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC */
 
     bt_mesh_unref_buf_from_pool(&adv_buf_pool);
     memset(adv_pool, 0, sizeof(adv_pool));
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     bt_mesh_ble_adv_deinit();
-#endif
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
@@ -718,10 +723,10 @@ static struct bt_mesh_adv *ble_adv_alloc(int id)
     return &ble_adv_pool[id];
 }
 
-static struct net_buf *bt_mesh_ble_adv_create(enum bt_mesh_adv_type type, uint8_t xmit, int32_t timeout)
+static struct net_buf *bt_mesh_ble_adv_create(enum bt_mesh_adv_type type, int32_t timeout)
 {
-    return bt_mesh_adv_create_from_pool(&ble_adv_buf_pool, ble_adv_alloc, type,
-                                        xmit, timeout);
+    return bt_mesh_adv_create_from_pool(&ble_adv_buf_pool, ble_adv_alloc,
+                                        type, timeout);
 }
 
 static void bt_mesh_ble_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
@@ -789,11 +794,7 @@ static void ble_adv_send_end(int err, void *cb_data)
     }
 
     if (tx->param.count) {
-        if (tx->param.period) {
-            k_delayed_work_submit(&tx->resend, tx->param.period);
-        } else {
-            k_work_submit(&tx->resend.work);
-        }
+        k_delayed_work_submit(&tx->resend, tx->param.period);
     } else {
         ble_adv_tx_reset(tx, true);
     }
@@ -806,7 +807,9 @@ static struct bt_mesh_send_cb ble_adv_send_cb = {
 
 static void ble_adv_resend(struct k_work *work)
 {
-    struct ble_adv_tx *tx = CONTAINER_OF(work, struct ble_adv_tx, resend.work);
+    struct ble_adv_tx *tx = CONTAINER_OF(work,
+                            struct ble_adv_tx,
+                            resend.work);
     bool front = false;
 
     if (tx->buf == NULL) {
@@ -880,7 +883,7 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
         return -EINVAL;
     }
 
-    buf = bt_mesh_ble_adv_create(BLE_MESH_ADV_BLE, 0U, K_NO_WAIT);
+    buf = bt_mesh_ble_adv_create(BLE_MESH_ADV_BLE, K_NO_WAIT);
     if (!buf) {
         BT_ERR("No empty ble adv buffer");
         return -ENOBUFS;

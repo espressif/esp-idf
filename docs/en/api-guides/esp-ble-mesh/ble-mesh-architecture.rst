@@ -390,7 +390,7 @@ When adopting the design of independent module, the two main factors should be c
     - ESP-BLE-MESH Proxy Server related functionalities
   * - :component_file:`proxy_client.c <bt/esp_ble_mesh/core/proxy_client.c>`
     - ESP-BLE-MESH Proxy Client related functionalities
-  * - :component_file:`settings.c <bt/esp_ble_mesh/core/settings.c>`
+  * - :component_file:`settings.c <bt/esp_ble_mesh/core/storage/settings.c>`
     - ESP-BLE-MESH NVS storage functionality
   * - :component_file:`main.c <bt/esp_ble_mesh/core/main.c>`
     - ESP-BLE-MESH stack initialize, stack enable, node removal related functionalities

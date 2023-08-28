@@ -29,6 +29,8 @@
 
 #define GPTIMER_RESOLUTION_HZ 1000000 // 1MHz, 1 tick=1us
 
+#if (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3)
+
 typedef struct {
     int cur;
     int final;
@@ -475,3 +477,5 @@ esp_err_t iot_led_set_gamma_table(const uint16_t gamma_table[GAMMA_TABLE_SIZE])
     memcpy(g_gamma_table, gamma_table, GAMMA_TABLE_SIZE * sizeof(uint16_t));
     return ESP_OK;
 }
+
+#endif /* (IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3) */

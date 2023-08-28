@@ -18,20 +18,6 @@
 
 static bt_mesh_mutex_t time_scene_server_lock;
 
-static inline void bt_mesh_time_scene_server_mutex_new(void)
-{
-    if (!time_scene_server_lock.mutex) {
-        bt_mesh_mutex_create(&time_scene_server_lock);
-    }
-}
-
-#if CONFIG_BLE_MESH_DEINIT
-static inline void bt_mesh_time_scene_server_mutex_free(void)
-{
-    bt_mesh_mutex_free(&time_scene_server_lock);
-}
-#endif /* CONFIG_BLE_MESH_DEINIT */
-
 void bt_mesh_time_scene_server_lock(void)
 {
     bt_mesh_mutex_lock(&time_scene_server_lock);
@@ -148,7 +134,6 @@ static void send_time_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void time_get(struct bt_mesh_model *model,
@@ -191,8 +176,8 @@ static void time_get(struct bt_mesh_model *model,
 
     if (rsp_ctrl->get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
         if (ctx->recv_op != BLE_MESH_MODEL_OP_TIME_STATUS) {
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG,
+                                                    model, ctx, NULL, 0);
             return;
         }
     }
@@ -208,7 +193,7 @@ static void time_get(struct bt_mesh_model *model,
             return;
         }
         if (srv->state->time_role != TIME_RELAY &&
-                srv->state->time_role != TIME_CLINET) {
+                srv->state->time_role != TIME_CLIENT) {
             /**
              * If the value of the Time Role state of the element is 0x00 (None) or
              * 0x01 (Time Authority), the message shall be ignored.
@@ -231,8 +216,8 @@ static void time_get(struct bt_mesh_model *model,
                 status.time_status.tai_utc_delta = (val >> 1) & BIT_MASK(15);
                 status.time_status.time_zone_offset = net_buf_simple_pull_u8(buf);
             }
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_STATUS_MSG, model, ctx, (const uint8_t *)&status, sizeof(status));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_STATUS_MSG,
+                                                    model, ctx, (const uint8_t *)&status, sizeof(status));
             return;
         }
         memcpy(srv->state->time.tai_seconds, buf->data, TAI_SECONDS_LEN);
@@ -260,8 +245,8 @@ static void time_get(struct bt_mesh_model *model,
         change.time_status.uncertainty = srv->state->time.uncertainty;
         change.time_status.time_authority = srv->state->time.time_authority;
         change.time_status.tai_utc_delta_curr = srv->state->time.subsecond;
-        bt_mesh_time_scene_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
+                                                model, ctx, (const uint8_t *)&change, sizeof(change));
 
         if (model->pub == NULL || model->pub->msg == NULL ||
                 model->pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
@@ -296,7 +281,6 @@ static void time_get(struct bt_mesh_model *model,
     }
 
     send_time_status(model, ctx, false, opcode);
-    return;
 }
 
 static void time_set(struct bt_mesh_model *model,
@@ -325,8 +309,8 @@ static void time_set(struct bt_mesh_model *model,
             set.time_set.time_authority = val & BIT(0);
             set.time_set.tai_utc_delta = (val >> 1) & BIT_MASK(15);
             set.time_set.time_zone_offset = net_buf_simple_pull_u8(buf);
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG,
+                                                    model, ctx, (const uint8_t *)&set, sizeof(set));
             return;
         }
         memcpy(srv->state->time.tai_seconds, buf->data, TAI_SECONDS_LEN);
@@ -345,8 +329,8 @@ static void time_set(struct bt_mesh_model *model,
             set.time_zone_set.time_zone_offset_new = net_buf_simple_pull_u8(buf);
             memcpy(set.time_zone_set.tai_zone_change, buf->data, TAI_OF_ZONE_CHANGE_LEN);
             net_buf_simple_pull(buf, TAI_OF_ZONE_CHANGE_LEN);
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG,
+                                                    model, ctx, (const uint8_t *)&set, sizeof(set));
             return;
         }
         srv->state->time.time_zone_offset_new = net_buf_simple_pull_u8(buf);
@@ -365,8 +349,8 @@ static void time_set(struct bt_mesh_model *model,
             set.tai_utc_delta_set.tai_utc_delta_new = val & BIT_MASK(15);
             memcpy(set.tai_utc_delta_set.tai_delta_change, buf->data, TAI_OF_DELTA_CHANGE_LEN);
             net_buf_simple_pull(buf, TAI_OF_DELTA_CHANGE_LEN);
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG,
+                                                    model, ctx, (const uint8_t *)&set, sizeof(set));
             return;
         }
         srv->state->time.tai_utc_delta_new = val & BIT_MASK(15);
@@ -376,7 +360,7 @@ static void time_set(struct bt_mesh_model *model,
         break;
     case BLE_MESH_MODEL_OP_TIME_ROLE_SET:
         role = net_buf_simple_pull_u8(buf);
-        if (role > TIME_CLINET) {
+        if (role > TIME_CLIENT) {
             BT_ERR("Invalid Time Role 0x%02x", role);
             return;
         }
@@ -384,8 +368,8 @@ static void time_set(struct bt_mesh_model *model,
             bt_mesh_time_scene_server_recv_set_msg_t set = {
                 .time_role_set.time_role = role,
             };
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG,
+                                                    model, ctx, (const uint8_t *)&set, sizeof(set));
             return;
         }
         srv->state->time_role = role;
@@ -419,12 +403,11 @@ static void time_set(struct bt_mesh_model *model,
         return;
     }
 
-    bt_mesh_time_scene_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
+                                            model, ctx, (const uint8_t *)&change, sizeof(change));
 
     /* Send corresponding time status message */
     send_time_status(model, ctx, false, opcode);
-    return;
 }
 
 /* Scene Server & Scene Setup Server message handlers */
@@ -480,7 +463,6 @@ static void send_scene_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void send_scene_register_status(struct bt_mesh_model *model,
@@ -520,7 +502,7 @@ static void send_scene_register_status(struct bt_mesh_model *model,
         if (scene->scene_number != INVALID_SCENE_NUMBER) {
             total_len += SCENE_NUMBER_LEN;
             if ((publish == false && total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) ||
-                    (publish == true && total_len > msg->size + BLE_MESH_SERVER_TRANS_MIC_SIZE)) {
+                (publish == true && total_len > msg->size + BLE_MESH_SERVER_TRANS_MIC_SIZE)) {
                 /* Add this in case the message is too long */
                 BT_WARN("Too large scene register status");
                 break;
@@ -535,7 +517,6 @@ static void send_scene_register_status(struct bt_mesh_model *model,
     } else {
         BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_publish(model));
     }
-    return;
 }
 
 static void scene_get(struct bt_mesh_model *model,
@@ -550,8 +531,8 @@ static void scene_get(struct bt_mesh_model *model,
     }
 
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-        bt_mesh_time_scene_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+        bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG,
+                                                model, ctx, NULL, 0);
         return;
     }
 
@@ -583,7 +564,6 @@ void scene_publish(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, uin
     }
 
     send_scene_status(model, ctx, true);
-    return;
 }
 
 static void scene_recall(struct bt_mesh_model *model,
@@ -622,8 +602,8 @@ static void scene_recall(struct bt_mesh_model *model,
             .scene_recall.trans_time = trans_time,
             .scene_recall.delay = delay,
         };
-        bt_mesh_time_scene_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG,
+                                                model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -681,16 +661,16 @@ static void scene_recall(struct bt_mesh_model *model,
         bt_mesh_time_scene_server_state_change_t change = {
             .scene_recall.scene_number = scene_number,
         };
-        bt_mesh_time_scene_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
+                                                model, ctx, (const uint8_t *)&change, sizeof(change));
 
         bt_mesh_time_scene_server_unlock();
         return;
     }
 
     /* Copy the ctx of the received message */
-    if (srv->transition.timer.work._reserved) {
-        memcpy(srv->transition.timer.work._reserved, ctx, sizeof(struct bt_mesh_msg_ctx));
+    if (srv->transition.timer.work.user_data) {
+        memcpy(srv->transition.timer.work.user_data, ctx, sizeof(struct bt_mesh_msg_ctx));
     }
 
     /* For Instantaneous Transition */
@@ -715,7 +695,6 @@ static void scene_recall(struct bt_mesh_model *model,
     bt_mesh_time_scene_server_unlock();
 
     bt_mesh_server_start_transition(&srv->transition);
-    return;
 }
 
 static void scene_action(struct bt_mesh_model *model,
@@ -745,8 +724,8 @@ static void scene_action(struct bt_mesh_model *model,
             bt_mesh_time_scene_server_recv_set_msg_t set = {
                 .scene_store.scene_number = scene_number,
             };
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG,
+                                                    model, ctx, (const uint8_t *)&set, sizeof(set));
             return;
         }
         /* Try to find a matching Scene Number */
@@ -800,8 +779,8 @@ static void scene_action(struct bt_mesh_model *model,
             bt_mesh_time_scene_server_state_change_t change = {
                 .scene_store.scene_number = scene_number,
             };
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
+                                                    model, ctx, (const uint8_t *)&change, sizeof(change));
         }
         break;
     }
@@ -811,8 +790,8 @@ static void scene_action(struct bt_mesh_model *model,
             bt_mesh_time_scene_server_recv_set_msg_t set = {
                 .scene_delete.scene_number = scene_number,
             };
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG,
+                                                    model, ctx, (const uint8_t *)&set, sizeof(set));
             return;
         }
         for (i = 0; i < srv->state->scene_count; i++) {
@@ -904,8 +883,8 @@ static void scene_action(struct bt_mesh_model *model,
         bt_mesh_time_scene_server_state_change_t change = {
             .scene_delete.scene_number = scene_number,
         };
-        bt_mesh_time_scene_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+        bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
+                                                model, ctx, (const uint8_t *)&change, sizeof(change));
         break;
     }
     default:
@@ -918,8 +897,6 @@ static void scene_action(struct bt_mesh_model *model,
         send_scene_register_status(model, ctx, srv->state->status_code, false);
     }
     send_scene_register_status(model, NULL, srv->state->status_code, true);
-
-    return;
 }
 
 static uint16_t get_schedule_reg_bit(struct bt_mesh_scheduler_state *state)
@@ -981,7 +958,6 @@ static void send_scheduler_act_status(struct bt_mesh_model *model,
     }
 
     BLE_MESH_CHECK_SEND_STATUS(bt_mesh_model_send(model, ctx, &msg, NULL, NULL));
-    return;
 }
 
 static void scheduler_get(struct bt_mesh_model *model,
@@ -999,8 +975,8 @@ static void scheduler_get(struct bt_mesh_model *model,
     switch (ctx->recv_op) {
     case BLE_MESH_MODEL_OP_SCHEDULER_GET: {
         if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG, model, ctx, NULL, 0);
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG,
+                                                    model, ctx, NULL, 0);
             return;
         }
 
@@ -1020,8 +996,8 @@ static void scheduler_get(struct bt_mesh_model *model,
             bt_mesh_time_scene_server_recv_get_msg_t get = {
                 .scheduler_act_get.index = index,
             };
-            bt_mesh_time_scene_server_cb_evt_to_btc(
-                BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG, model, ctx, (const uint8_t *)&get, sizeof(get));
+            bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG,
+                                                    model, ctx, (const uint8_t *)&get, sizeof(get));
             return;
         }
 
@@ -1109,8 +1085,8 @@ static void scheduler_act_set(struct bt_mesh_model *model,
             .scheduler_act_set.trans_time = trans_time,
             .scheduler_act_set.scene_number = scene_number,
         };
-        bt_mesh_time_scene_server_cb_evt_to_btc(
-            BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const uint8_t *)&set, sizeof(set));
+        bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG,
+                                                model, ctx, (const uint8_t *)&set, sizeof(set));
         return;
     }
 
@@ -1139,14 +1115,12 @@ static void scheduler_act_set(struct bt_mesh_model *model,
         .scheduler_act_set.trans_time = trans_time,
         .scheduler_act_set.scene_number = scene_number,
     };
-    bt_mesh_time_scene_server_cb_evt_to_btc(
-        BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, model, ctx, (const uint8_t *)&change, sizeof(change));
+    bt_mesh_time_scene_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE,
+                                            model, ctx, (const uint8_t *)&change, sizeof(change));
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET) {
         send_scheduler_act_status(model, ctx, index);
     }
-
-    return;
 }
 
 /* message handlers (End) */
@@ -1235,6 +1209,7 @@ static int time_scene_server_init(struct bt_mesh_model *model)
             BT_ERR("Invalid Time State");
             return -EINVAL;
         }
+
         srv->model = model;
         break;
     }
@@ -1244,6 +1219,7 @@ static int time_scene_server_init(struct bt_mesh_model *model)
             BT_ERR("Invalid Time State");
             return -EINVAL;
         }
+
         srv->model = model;
         break;
     }
@@ -1253,9 +1229,11 @@ static int time_scene_server_init(struct bt_mesh_model *model)
             BT_ERR("Invalid Scene State");
             return -EINVAL;
         }
+
         if (check_scene_server_init(srv->state)) {
             return -EINVAL;
         }
+
         if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
             bt_mesh_server_alloc_ctx(&srv->transition.timer.work);
             k_delayed_work_init(&srv->transition.timer, scene_recall_work_handler);
@@ -1269,9 +1247,11 @@ static int time_scene_server_init(struct bt_mesh_model *model)
             BT_ERR("Invalid Scene State");
             return -EINVAL;
         }
+
         if (check_scene_server_init(srv->state)) {
             return -EINVAL;
         }
+
         srv->model = model;
         break;
     }
@@ -1281,10 +1261,12 @@ static int time_scene_server_init(struct bt_mesh_model *model)
             BT_ERR("Invalid Scheduler State");
             return -EINVAL;
         }
+
         if (srv->state->schedule_count == 0U || srv->state->schedules == NULL) {
             BT_ERR("Invalid Register Schedule");
             return -EINVAL;
         }
+
         srv->model = model;
         break;
     }
@@ -1294,10 +1276,12 @@ static int time_scene_server_init(struct bt_mesh_model *model)
             BT_ERR("Invalid Scheduler State");
             return -EINVAL;
         }
+
         if (srv->state->schedule_count == 0U || srv->state->schedules == NULL) {
             BT_ERR("Invalid Register Schedule");
             return -EINVAL;
         }
+
         srv->model = model;
         break;
     }
@@ -1306,7 +1290,7 @@ static int time_scene_server_init(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    bt_mesh_time_scene_server_mutex_new();
+    bt_mesh_mutex_create(&time_scene_server_lock);
 
     return 0;
 }
@@ -1429,9 +1413,11 @@ static int time_scene_server_deinit(struct bt_mesh_model *model)
             BT_ERR("Invalid Scene State");
             return -EINVAL;
         }
+
         if (check_scene_server_init(srv->state)) {
             return -EINVAL;
         }
+
         if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
             bt_mesh_server_free_ctx(&srv->transition.timer.work);
             k_delayed_work_free(&srv->transition.timer);
@@ -1449,7 +1435,7 @@ static int time_scene_server_deinit(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    bt_mesh_time_scene_server_mutex_free();
+    bt_mesh_mutex_free(&time_scene_server_lock);
 
     return 0;
 }

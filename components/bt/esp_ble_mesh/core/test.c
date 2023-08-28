@@ -18,8 +18,11 @@
 #include "access.h"
 #include "foundation.h"
 #include "mesh/main.h"
+#include "transport.h"
+#include "proxy_common.h"
+#include "proxy_server.h"
 
-#if defined(CONFIG_BLE_MESH_SELF_TEST)
+#if CONFIG_BLE_MESH_SELF_TEST
 
 int bt_mesh_test(void)
 {
@@ -39,7 +42,7 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
     int err = 0;
 
     if (info == NULL || !BLE_MESH_ADDR_IS_UNICAST(info->unicast_addr) ||
-            !BLE_MESH_ADDR_IS_GROUP(info->group_addr)) {
+        !BLE_MESH_ADDR_IS_GROUP(info->group_addr)) {
         return -EINVAL;
     }
 
@@ -158,9 +161,9 @@ int bt_mesh_test_start_scanning(bool wl_en)
 
     if (wl_en) {
         return bt_mesh_scan_with_wl_enable();
-    } else {
-        return bt_mesh_scan_enable();
     }
+
+    return bt_mesh_scan_enable();
 }
 
 int bt_mesh_test_stop_scanning(void)
@@ -168,5 +171,22 @@ int bt_mesh_test_stop_scanning(void)
     return bt_mesh_scan_disable();
 }
 #endif /* CONFIG_BLE_MESH_TEST_USE_WHITE_LIST */
+
+bt_mesh_test_net_pdu_cb_t net_pdu_test_cb;
+
+void bt_mesh_test_register_net_pdu_cb(bt_mesh_test_net_pdu_cb_t cb)
+{
+    net_pdu_test_cb = cb;
+}
+
+void bt_mesh_test_set_seq(uint32_t seq)
+{
+    if (seq > 0xFFFFFF) {
+        BT_ERR("Invalid SEQ 0x%08x", seq);
+        return;
+    }
+
+    bt_mesh.seq = seq;
+}
 
 #endif /* CONFIG_BLE_MESH_SELF_TEST */

@@ -9,23 +9,13 @@
 
 #include "net.h"
 #include "mesh/adapter.h"
+#include "prov_common.h"
+
+#include "mesh_v1.1/utils.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define BLE_MESH_PROXY_ADV_NET_ID           0x00
-#define BLE_MESH_PROXY_ADV_NODE_ID          0x01
-
-#define BLE_MESH_PROXY_NET_PDU              0x00
-#define BLE_MESH_PROXY_BEACON               0x01
-#define BLE_MESH_PROXY_CONFIG               0x02
-#define BLE_MESH_PROXY_PROV                 0x03
-
-#define BLE_MESH_PROXY_CFG_FILTER_SET       0x00
-#define BLE_MESH_PROXY_CFG_FILTER_ADD       0x01
-#define BLE_MESH_PROXY_CFG_FILTER_REMOVE    0x02
-#define BLE_MESH_PROXY_CFG_FILTER_STATUS    0x03
 
 typedef union {
     struct {
@@ -35,6 +25,13 @@ typedef union {
     struct {
         uint16_t src;
     } node_id;
+    struct {
+        uint8_t  net_id[8];
+        uint16_t net_idx;
+    } private_net_id;
+    struct {
+        uint16_t src;
+    } private_node_id;
 } bt_mesh_proxy_adv_ctx_t;
 
 struct bt_mesh_proxy_net_pdu {
@@ -55,6 +52,14 @@ struct bt_mesh_proxy_cfg_pdu {
             uint16_t *addr;
             uint16_t  addr_num;
         } remove;
+        struct cfg_direct_proxy_ctrl {
+            uint8_t use_directed;
+            struct {
+                uint16_t len_present:1,
+                         range_start:15;
+                uint8_t  range_length;
+            } proxy_client_uar;
+        } direct_proxy_ctrl;
     };
 };
 
@@ -95,12 +100,17 @@ void bt_mesh_proxy_client_gatt_adv_recv(struct net_buf_simple *buf,
 int bt_mesh_proxy_client_connect(const uint8_t addr[6], uint8_t addr_type, uint16_t net_idx);
 int bt_mesh_proxy_client_disconnect(uint8_t conn_handle);
 
-bool bt_mesh_proxy_client_beacon_send(struct bt_mesh_subnet *sub);
+bool bt_mesh_proxy_client_beacon_send(struct bt_mesh_subnet *sub, bool private);
 
 bool bt_mesh_proxy_client_relay(struct net_buf_simple *buf, uint16_t dst);
 
 int bt_mesh_proxy_client_cfg_send(uint8_t conn_handle, uint16_t net_idx,
                                   struct bt_mesh_proxy_cfg_pdu *pdu);
+
+#if CONFIG_BLE_MESH_RPR_SRV
+int bt_mesh_rpr_srv_set_waiting_prov_link(struct bt_mesh_prov_link* link,
+                                          bt_mesh_addr_t *addr);
+#endif
 
 int bt_mesh_proxy_client_init(void);
 int bt_mesh_proxy_client_deinit(void);

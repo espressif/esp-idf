@@ -335,7 +335,7 @@ static inline void sys_put_le16(uint16_t val, uint8_t dst[2])
  *  @brief Put a 24-bit integer as little-endian to arbitrary location.
  *
  *  Put a 24-bit integer, originally in host endianness, to a
- *  potentially unaligned memory location in littel-endian format.
+ *  potentially unaligned memory location in little-endian format.
  *
  *  @param val 24-bit integer in host endianness.
  *  @param dst Destination memory address to store the result.

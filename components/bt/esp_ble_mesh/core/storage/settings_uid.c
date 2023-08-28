@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "mesh.h"
+#include "rpl.h"
 #include "mesh/main.h"
 #include "mesh/common.h"
 #include "settings_nvs.h"
@@ -354,8 +355,9 @@ static int settings_close(uint8_t index, bool erase)
     bt_mesh_provisioner_prov_reset(erase);
     bt_mesh_provisioner_main_reset(erase);
     bt_mesh_net_reset();
-    bt_mesh_rx_reset(erase);
+    bt_mesh_rx_reset();
     bt_mesh_tx_reset();
+    bt_mesh_rpl_reset(erase);
     bt_mesh_settings_reset(erase);
 
     if (erase == true) {

@@ -7,13 +7,12 @@ Supported Features
 Mesh Core
 """""""""
 
-* Provisioning: Node Role
-    * PB-ADV and PB-GATT
+* Provisioning:
+    * PB-ADV, PB-GATT and PB-Remote
     * OOB Authentication
-
-* Provisioning: Provisioner Role
-    * PB-ADV and PB-GATT
-    * OOB Authentication
+    * Certificate-based Provisioning
+    * Remote Provisioning
+    * Enhanced Provisioning Authentication
 
 * Networking
     * Relay
@@ -24,6 +23,10 @@ Mesh Core
     * Low Power
     * Proxy Server
     * Proxy Client
+    * Directed Forwarding
+    * Private Beacon
+    * Subnet Bridge
+    * Minor Enhancements
 
 * Multiple Client Models Run Simultaneously
     * Support multiple client models send packets to different nodes simultaneously
@@ -40,6 +43,24 @@ Mesh Models
     * Configuration Client model
     * Health Server model
     * Health Client model
+    * Remote Provisioning Server model
+    * Remote Provisioning Client model
+    * Directed Forwarding Configuration Server model
+    * Directed Forwarding Configuration Client model
+    * Bridge Configuration Server model
+    * Bridge Configuration Client model
+    * Mesh Private Beacon Server model
+    * Mesh Private Beacon Client model
+    * On-Demend Private Proxy Server model
+    * On-Demend Private Proxy Client model
+    * SAR Configuration Server model
+    * SAR Configuration Client model
+    * Solicitation PDU RPL Configuration Server model
+    * Solicitation PDU RPL Configuration Client model
+    * Opcodes Aggregator Server model
+    * Opcodes Aggregator Client model
+    * Large Composition Data Server model
+    * Large Composition Data Client model
 
 * Generic client models
     * Generic OnOff Client
@@ -120,9 +141,9 @@ Mesh Applications
     * :example_file:`Tutorial <bluetooth/esp_ble_mesh/provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/provisioner>`
 * ESP-BLE-MESH Fast Provisioning
-    * :example_file:`Fast Provisioning Client Model Tutorial <bluetooth/esp_ble_mesh/fast_provision/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>`
-    * :example_file:`Fast Provisioning Server Model Tutorial <bluetooth/esp_ble_mesh/fast_provision/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>`
-    * :example:`Example <bluetooth/esp_ble_mesh/fast_provision>`
+    * :example_file:`Fast Provisioning Client Model Tutorial <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>`
+    * :example_file:`Fast Provisioning Server Model Tutorial <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>`
+    * :example:`Example <bluetooth/esp_ble_mesh/fast_provisioning>`
     * `Demo Video <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`__
 * ESP-BLE-MESH and Wi-Fi Coexistence
     * :example_file:`Tutorial <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`

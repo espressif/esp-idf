@@ -219,9 +219,13 @@ ESP-BLE-MESH 示例
 
 * :example_file:`ESP-BLE-MESH Provisioner <bluetooth/esp_ble_mesh/provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>` - 展示了设备如何充当 ESP-BLE-MESH Provisioner 以配网设备。Provisioner 拥有 Configuration Server model、Configuration Client model 和 Generic OnOff Client model，示例请见 :example:`example code <bluetooth/esp_ble_mesh/provisioner>`。
 
-* ESP-BLE-MESH 快速配网 - :example_file:`Client <bluetooth/esp_ble_mesh/fast_provision/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>` 和 :example_file:`Server <bluetooth/esp_ble_mesh/fast_provision/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>` - 该示例用于演示快速配网。配网 100 个设备费时不超过 60 秒，示例请见：:example:`example client code <bluetooth/esp_ble_mesh/fast_provision/fast_prov_client>` 和 :example:`example server code <bluetooth/esp_ble_mesh/fast_provision/fast_prov_server>`。
+* ESP-BLE-MESH 快速配网 - :example_file:`Client <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>` 和 :example_file:`Server <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>` - 该示例用于演示快速配网。配网 100 个设备费时不超过 60 秒，示例请见：:example:`example client code <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_client>` 和 :example:`example server code <bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server>`。
 
 * :example_file:`Wi-Fi 和 ESP-BLE-MESH 共存 <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - 该示例用于演示 Wi-Fi 和 ESP-BLE-MESH 共存的功能。简而言之，用户可在运行 ESP-BLE-MESH 时使用 Wi-Fi，示例请见 :example:`example code <bluetooth/esp_ble_mesh/wifi_coexist>`。
+
+* ESP-BLE-MESH 远程配网(v1.1 新增) - :example_file:`Client, Server and device <bluetooth/esp_ble_mesh/remote_provisioning/tutorial/BLE_Mesh_Remote_Provisioning_Example_Walkthrough.md>` - 该示例用于演示 mesh 协议 v1.1 中新增的远程配网功能, 示例请见： :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>`, :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>` and :example:`example device code <bluetooth/esp_ble_mesh/remote_provisioning/unprov_dev>`.
+
+* ESP-BLE-MESH 定向转发(v1.1 新增) - :example_file:`Client and Server <bluetooth/esp_ble_mesh/directed_forwarding/tutorial/BLE_Mesh_Directed_Forwarding_Example_Walkthrough.md>` - 该示例用于演示 mesh 协议 v1.1 中新增的定向转发功能。只有路径上的节点才会对定向消息进行转发，而其他节点不参与转发, 示例请见 :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>` and :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>`.
 
 
 .. _esp-ble-mesh-demo-videos:
@@ -262,7 +266,9 @@ ESP-BLE-MESH 常见问题手册
 -------------
 
 - `BLE Mesh Core Specification <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633>`_
+- `BLE Mesh Protocol v1.1 Specification(draft) <https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=554899>`_
 - `BLE Mesh Model Specification <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429634>`_
+- `BLE Mesh Model v1.1 Specification(draft) <https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=557081>`_
 - `An Intro to Bluetooth Mesh Part 1 <https://www.bluetooth.com/blog/an-intro-to-bluetooth-mesh-part1>`_ / `Part 2 <https://www.bluetooth.com/blog/an-intro-to-bluetooth-mesh-part2>`__
 - `The Fundamental Concepts of Bluetooth Mesh Networking, Part 1 <https://www.bluetooth.com/blog/the-fundamental-concepts-of-bluetooth-mesh-networking-part-1>`_ / `Part 2 <https://www.bluetooth.com/blog/the-fundamental-concepts-of-bluetooth-mesh-networking-part-2>`__
 - `Bluetooth Mesh Networking: Friendship <https://www.bluetooth.com/blog/bluetooth-mesh-networking-series-friendship>`_

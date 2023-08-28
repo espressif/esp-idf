@@ -390,7 +390,7 @@ Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议�
     - ESP-BLE-MESH 代理服务器相关功能
   * - :component_file:`proxy_client.c <bt/esp_ble_mesh/core/proxy_client.c>`
     - ESP-BLE-MESH 代理客户端相关功能
-  * - :component_file:`settings.c <bt/esp_ble_mesh/core/settings.c>`
+  * - :component_file:`settings.c <bt/esp_ble_mesh/core/storage/settings.c>`
     - ESP-BLE-MESH NVS 存储器功能
   * - :component_file:`main.c <bt/esp_ble_mesh/core/main.c>`
     - ESP-BLE-MESH 协议栈初始化，协议栈使能，节点移除相关功能

@@ -60,40 +60,17 @@ static const bt_mesh_client_op_pair_t time_scene_op_pair[] = {
 
 static bt_mesh_mutex_t time_scene_client_lock;
 
-static inline void bt_mesh_time_scene_client_mutex_new(void)
-{
-    if (!time_scene_client_lock.mutex) {
-        bt_mesh_mutex_create(&time_scene_client_lock);
-    }
-}
-
-#if CONFIG_BLE_MESH_DEINIT
-static inline void bt_mesh_time_scene_client_mutex_free(void)
-{
-    bt_mesh_mutex_free(&time_scene_client_lock);
-}
-#endif /* CONFIG_BLE_MESH_DEINIT */
-
-static inline void bt_mesh_time_scene_client_lock(void)
-{
-    bt_mesh_mutex_lock(&time_scene_client_lock);
-}
-
-static inline void bt_mesh_time_scene_client_unlock(void)
-{
-    bt_mesh_mutex_unlock(&time_scene_client_lock);
-}
-
 static void timeout_handler(struct k_work *work)
 {
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
+    struct bt_mesh_model *model = NULL;
     struct bt_mesh_msg_ctx ctx = {0};
     uint32_t opcode = 0U;
 
     BT_WARN("Receive time scene status message timeout");
 
-    bt_mesh_time_scene_client_lock();
+    bt_mesh_mutex_lock(&time_scene_client_lock);
 
     timer = CONTAINER_OF(work, struct k_delayed_work, work);
 
@@ -102,15 +79,14 @@ static void timeout_handler(struct k_work *work)
         if (node) {
             memcpy(&ctx, &node->ctx, sizeof(ctx));
             opcode = node->opcode;
+            model = node->model;
             bt_mesh_client_free_node(node);
             bt_mesh_time_scene_client_cb_evt_to_btc(
-                opcode, BTC_BLE_MESH_EVT_TIME_SCENE_CLIENT_TIMEOUT, ctx.model, &ctx, NULL, 0);
+                opcode, BTC_BLE_MESH_EVT_TIME_SCENE_CLIENT_TIMEOUT, model, &ctx, NULL, 0);
         }
     }
 
-    bt_mesh_time_scene_client_unlock();
-
-    return;
+    bt_mesh_mutex_unlock(&time_scene_client_lock);
 }
 
 static void time_scene_status(struct bt_mesh_model *model,
@@ -290,7 +266,7 @@ static void time_scene_status(struct bt_mesh_model *model,
     buf->data = val;
     buf->len = len;
 
-    bt_mesh_time_scene_client_lock();
+    bt_mesh_mutex_lock(&time_scene_client_lock);
 
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true);
     if (!node) {
@@ -328,7 +304,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         }
     }
 
-    bt_mesh_time_scene_client_unlock();
+    bt_mesh_mutex_unlock(&time_scene_client_lock);
 
     switch (ctx->recv_op) {
     case BLE_MESH_MODEL_OP_SCENE_REGISTER_STATUS: {
@@ -342,8 +318,6 @@ static void time_scene_status(struct bt_mesh_model *model,
     }
 
     bt_mesh_free(val);
-
-    return;
 }
 
 const struct bt_mesh_model_op bt_mesh_time_cli_op[] = {
@@ -643,24 +617,25 @@ static int time_scene_client_init(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    if (!client->internal_data) {
-        internal = bt_mesh_calloc(sizeof(time_scene_internal_data_t));
-        if (!internal) {
-            BT_ERR("%s, Out of memory", __func__);
-            return -ENOMEM;
-        }
-
-        sys_slist_init(&internal->queue);
-
-        client->model = model;
-        client->op_pair_size = ARRAY_SIZE(time_scene_op_pair);
-        client->op_pair = time_scene_op_pair;
-        client->internal_data = internal;
-    } else {
-        bt_mesh_client_clear_list(client->internal_data);
+    if (client->internal_data) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
     }
 
-    bt_mesh_time_scene_client_mutex_new();
+    internal = bt_mesh_calloc(sizeof(time_scene_internal_data_t));
+    if (!internal) {
+        BT_ERR("%s, Out of memory", __func__);
+        return -ENOMEM;
+    }
+
+    sys_slist_init(&internal->queue);
+
+    client->model = model;
+    client->op_pair_size = ARRAY_SIZE(time_scene_op_pair);
+    client->op_pair = time_scene_op_pair;
+    client->internal_data = internal;
+
+    bt_mesh_mutex_create(&time_scene_client_lock);
 
     return 0;
 }
@@ -690,7 +665,7 @@ static int time_scene_client_deinit(struct bt_mesh_model *model)
         client->internal_data = NULL;
     }
 
-    bt_mesh_time_scene_client_mutex_free();
+    bt_mesh_mutex_free(&time_scene_client_lock);
 
     return 0;
 }

@@ -14,6 +14,8 @@
 #include "mesh/client_common.h"
 #include "mesh/common.h"
 
+#include "mesh_v1.1/utils.h"
+
 #define HCI_TIME_FOR_START_ADV  K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
 
 static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, uint16_t tx_dst)
@@ -28,7 +30,7 @@ static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, uint16
     }
 
     for (cur = sys_slist_peek_head(list);
-            cur != NULL; cur = sys_slist_peek_next(cur)) {
+         cur != NULL; cur = sys_slist_peek_next(cur)) {
         node = (bt_mesh_client_node_t *)cur;
         if (node->ctx.addr == tx_dst) {
             bt_mesh_list_unlock();
@@ -121,7 +123,7 @@ static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, uint16_t tx_dst
     }
 
     for (cur = sys_slist_peek_head(list);
-            cur != NULL; cur = sys_slist_peek_next(cur)) {
+         cur != NULL; cur = sys_slist_peek_next(cur)) {
         node = (bt_mesh_client_node_t *)cur;
         if (node->ctx.addr == tx_dst) {
             bt_mesh_list_unlock();
@@ -151,12 +153,22 @@ static uint32_t bt_mesh_client_get_status_op(const bt_mesh_client_op_pair_t *op_
     return 0;
 }
 
-static int32_t bt_mesh_get_adv_duration(void)
+static int32_t bt_mesh_get_adv_duration(struct bt_mesh_msg_ctx *ctx)
 {
-    uint16_t duration, adv_int;
-    uint8_t xmit;
+    uint16_t duration = 0, adv_int = 0;
+    uint8_t xmit = 0;
 
-    xmit = bt_mesh_net_transmit_get();  /* Network transmit */
+    /* Initialize with network transmission */
+    xmit = bt_mesh_net_transmit_get();
+
+    if (bt_mesh_tag_immutable_cred(ctx->send_tag)) {
+#if CONFIG_BLE_MESH_DF_SRV
+        if (ctx->send_cred == BLE_MESH_DIRECTED_CRED) {
+            xmit = bt_mesh_direct_net_transmit_get();   /* Directed network transmission */
+        }
+#endif
+    }
+
     adv_int = BLE_MESH_TRANSMIT_INT(xmit);
     duration = (BLE_MESH_TRANSMIT_COUNT(xmit) + 1) * (adv_int + 10);
 
@@ -167,29 +179,31 @@ static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
                                            struct net_buf_simple *msg,
                                            uint32_t opcode, int32_t timeout)
 {
-    int32_t seg_retrans_to = 0, duration = 0, time = 0;
-    uint8_t seg_count = 0, seg_retrans_num = 0;
+    int32_t seg_rtx_to = 0, duration = 0, time = 0;
+    uint8_t seg_count = 0, seg_rtx_num = 0;
     bool need_seg = false;
     uint8_t mic_size = 0;
 
-    if (msg->len > BLE_MESH_SDU_UNSEG_MAX || ctx->send_rel) {
+    if (msg->len > BLE_MESH_SDU_UNSEG_MAX ||
+        bt_mesh_tag_send_segmented(ctx->send_tag)) {
         need_seg = true;    /* Needs segmentation */
     }
 
-    mic_size = (need_seg && net_buf_simple_tailroom(msg) >= BLE_MESH_MIC_LONG) ?
+    mic_size = (need_seg && ctx->send_szmic == BLE_MESH_SEG_SZMIC_LONG &&
+                net_buf_simple_tailroom(msg) >= BLE_MESH_MIC_LONG) ?
                 BLE_MESH_MIC_LONG : BLE_MESH_MIC_SHORT;
 
     if (need_seg) {
         /* Based on the message length, calculate how many segments are needed.
          * All the messages sent from here are access messages.
          */
-        seg_retrans_num = bt_mesh_get_seg_retrans_num();
-        seg_retrans_to = bt_mesh_get_seg_retrans_timeout(ctx->send_ttl);
+        seg_rtx_num = bt_mesh_get_seg_retrans_num();
+        seg_rtx_to = bt_mesh_get_seg_retrans_timeout(ctx->send_ttl);
         seg_count = (msg->len + mic_size - 1) / 12U + 1U;
 
-        duration = bt_mesh_get_adv_duration();
+        duration = bt_mesh_get_adv_duration(ctx);
 
-        /* Currenlty only consider the time consumption of the same segmented
+        /* Currently only consider the time consumption of the same segmented
          * messages, but if there are other messages between any two retrans-
          * missions of the same segmented messages, then the whole time will
          * be longer.
@@ -200,7 +214,7 @@ static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
          * the attempts reaches ZERO when the dst is a unicast address.
          */
         int32_t seg_duration = seg_count * (duration + HCI_TIME_FOR_START_ADV);
-        time = (seg_duration + seg_retrans_to) * seg_retrans_num;
+        time = (seg_duration + seg_rtx_to) * seg_rtx_num;
 
         BT_INFO("Original timeout %dms, calculated timeout %dms", timeout, time);
 
@@ -274,11 +288,6 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
         return -EINVAL;
     }
 
-    if (bt_mesh_set_client_model_role(param->model, param->msg_role)) {
-        BT_ERR("Failed to set client role");
-        return -EIO;
-    }
-
     if (need_ack == false || !BLE_MESH_ADDR_IS_UNICAST(param->ctx.addr)) {
         /* 1. If this is an unacknowledged message, send it directly.
          * 2. If this is an acknowledged message, but the destination
@@ -311,11 +320,11 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
     }
 
     memcpy(&node->ctx, &param->ctx, sizeof(struct bt_mesh_msg_ctx));
-    node->ctx.model = param->model;
+    node->model = param->model;
     node->opcode = param->opcode;
     node->op_pending = bt_mesh_client_get_status_op(client->op_pair, client->op_pair_size, param->opcode);
     if (node->op_pending == 0U) {
-        BT_ERR("Not found the status opcode in op_pair list");
+        BT_ERR("Status opcode not found in op_pair list, opcode 0x%08x", param->opcode);
         bt_mesh_free(node);
         return -EINVAL;
     }
@@ -348,20 +357,6 @@ int bt_mesh_client_send_msg(bt_mesh_client_common_param_t *param,
 
 static bt_mesh_mutex_t client_model_lock;
 
-static inline void bt_mesh_client_model_mutex_new(void)
-{
-    if (!client_model_lock.mutex) {
-        bt_mesh_mutex_create(&client_model_lock);
-    }
-}
-
-#if CONFIG_BLE_MESH_DEINIT
-static inline void bt_mesh_client_model_mutex_free(void)
-{
-    bt_mesh_mutex_free(&client_model_lock);
-}
-#endif /* CONFIG_BLE_MESH_DEINIT */
-
 void bt_mesh_client_model_lock(void)
 {
     bt_mesh_mutex_lock(&client_model_lock);
@@ -374,7 +369,7 @@ void bt_mesh_client_model_unlock(void)
 
 int bt_mesh_client_init(struct bt_mesh_model *model)
 {
-    bt_mesh_client_internal_data_t *data = NULL;
+    bt_mesh_client_internal_data_t *internal = NULL;
     bt_mesh_client_user_data_t *client = NULL;
 
     if (!model || !model->op) {
@@ -388,23 +383,23 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    if (!client->internal_data) {
-        data = bt_mesh_calloc(sizeof(bt_mesh_client_internal_data_t));
-        if (!data) {
-            BT_ERR("%s, Out of memory", __func__);
-            return -ENOMEM;
-        }
-
-        /* Init the client data queue */
-        sys_slist_init(&data->queue);
-
-        client->model = model;
-        client->internal_data = data;
-    } else {
-        bt_mesh_client_clear_list(client->internal_data);
+    if (client->internal_data) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
     }
 
-    bt_mesh_client_model_mutex_new();
+    internal = bt_mesh_calloc(sizeof(bt_mesh_client_internal_data_t));
+    if (!internal) {
+        BT_ERR("%s, Out of memory", __func__);
+        return -ENOMEM;
+    }
+
+    sys_slist_init(&internal->queue);
+
+    client->model = model;
+    client->internal_data = internal;
+
+    bt_mesh_mutex_create(&client_model_lock);
 
     return 0;
 }
@@ -434,7 +429,7 @@ int bt_mesh_client_deinit(struct bt_mesh_model *model)
         client->internal_data = NULL;
     }
 
-    bt_mesh_client_model_mutex_free();
+    bt_mesh_mutex_free(&client_model_lock);
 
     return 0;
 }
@@ -445,12 +440,12 @@ int bt_mesh_client_free_node(bt_mesh_client_node_t *node)
     bt_mesh_client_internal_data_t *internal = NULL;
     bt_mesh_client_user_data_t *client = NULL;
 
-    if (!node || !node->ctx.model) {
+    if (!node || !node->model) {
         BT_ERR("Invalid client list item");
         return -EINVAL;
     }
 
-    client = (bt_mesh_client_user_data_t *)node->ctx.model->user_data;
+    client = (bt_mesh_client_user_data_t *)node->model->user_data;
     if (!client) {
         BT_ERR("Invalid client user data");
         return -EINVAL;
@@ -466,6 +461,7 @@ int bt_mesh_client_free_node(bt_mesh_client_node_t *node)
     bt_mesh_list_lock();
     sys_slist_find_and_remove(&internal->queue, &node->client_node);
     bt_mesh_list_unlock();
+
     // Free the node
     bt_mesh_free(node);
 
@@ -492,29 +488,5 @@ int bt_mesh_client_clear_list(void *data)
     }
     bt_mesh_list_unlock();
 
-    return 0;
-}
-
-int bt_mesh_set_client_model_role(struct bt_mesh_model *model, uint8_t role)
-{
-    bt_mesh_client_user_data_t *client = NULL;
-
-    if (!model) {
-        BT_ERR("Invalid client model");
-        return -EINVAL;
-    }
-
-    client = (bt_mesh_client_user_data_t *)model->user_data;
-    if (!client) {
-        BT_ERR("Invalid client user data");
-        return -EINVAL;
-    }
-
-    if (role >= ROLE_NVAL) {
-        BT_ERR("Invalid client role 0x%02x", role);
-        return -EINVAL;
-    }
-
-    client->msg_role = role;
     return 0;
 }

@@ -182,8 +182,6 @@ static void health_fault_test(struct bt_mesh_model *model,
     uint16_t company_id = 0U;
     uint8_t test_id = 0U;
 
-    BT_DBG("%s", __func__);
-
     if (!srv) {
         BT_ERR("No Health Server context provided");
         return;
@@ -241,8 +239,6 @@ static void attention_get(struct bt_mesh_model *model,
                           struct bt_mesh_msg_ctx *ctx,
                           struct net_buf_simple *buf)
 {
-    BT_DBG("%s", __func__);
-
     send_attention_status(model, ctx);
 }
 
@@ -263,8 +259,6 @@ static void attention_set(struct bt_mesh_model *model,
                           struct bt_mesh_msg_ctx *ctx,
                           struct net_buf_simple *buf)
 {
-    BT_DBG("%s", __func__);
-
     health_set_attention(model, ctx, buf);
 
     if (ctx->recv_op == OP_ATTENTION_SET) {
@@ -289,8 +283,6 @@ static void health_period_get(struct bt_mesh_model *model,
                               struct bt_mesh_msg_ctx *ctx,
                               struct net_buf_simple *buf)
 {
-    BT_DBG("%s", __func__);
-
     send_health_period_status(model, ctx);
 }
 
@@ -315,8 +307,6 @@ static void health_period_set(struct bt_mesh_model *model,
                               struct bt_mesh_msg_ctx *ctx,
                               struct net_buf_simple *buf)
 {
-    BT_DBG("%s", __func__);
-
     health_set_period(model, ctx, buf);
 
     if (ctx->recv_op == OP_HEALTH_PERIOD_SET) {
@@ -367,8 +357,6 @@ static int health_pub_update(struct bt_mesh_model *model)
     struct bt_mesh_model_pub *pub = model->pub;
     size_t count = 0U;
 
-    BT_DBG("%s", __func__);
-
     if (!pub || !pub->msg) {
         BT_ERR("Invalid health publication context");
         return -EINVAL;
@@ -416,8 +404,6 @@ static void attention_off(struct k_work *work)
     struct bt_mesh_health_srv *srv = CONTAINER_OF(work,
                                      struct bt_mesh_health_srv,
                                      attn_timer.work);
-    BT_DBG("%s", __func__);
-
     if (!srv) {
         BT_ERR("No Health Server context provided");
         return;

@@ -158,7 +158,7 @@ struct bt_mesh_sensor_state {
 /* 1. Multiple instances of the Sensor states may be present within the
  *    same model, provided that each instance has a unique value of the
  *    Sensor Property ID to allow the instances to be differentiated.
- * 2. Note: The number of sensors within a multisensor is limited by the
+ * 2. Note: The number of sensors within a multi-sensor is limited by the
  *    size of the message payload for the Sensor Descriptor Status message.
  *    A single Sensor Descriptor may be sent using a single Unsegmented
  *    Access message. Using Segmentation and Reassembly (SAR), up to 38

@@ -10,6 +10,7 @@
 #include "mesh.h"
 #include "crypto.h"
 #include "adv.h"
+#include "rpl.h"
 #include "access.h"
 #include "settings.h"
 #include "friend.h"
@@ -17,8 +18,11 @@
 #include "foundation.h"
 #include "mesh/common.h"
 #include "proxy_client.h"
+#include "prov_common.h"
 #include "prov_pvnr.h"
 #include "pvnr_mgmt.h"
+
+#include "mesh_v1.1/utils.h"
 
 #if CONFIG_BLE_MESH_PROVISIONER
 
@@ -66,14 +70,10 @@ int bt_mesh_provisioner_init(void)
  */
 int bt_mesh_provisioner_net_create(void)
 {
-    const struct bt_mesh_prov *prov = NULL;
     struct bt_mesh_subnet *sub = NULL;
     uint8_t p_key[16] = {0};
 
-    BT_DBG("%s", __func__);
-
-    prov = bt_mesh_provisioner_get_prov_info();
-    if (!prov) {
+    if (bt_mesh_prov_get() == NULL) {
         BT_ERR("No provisioning context provided");
         return -EINVAL;
     }
@@ -99,7 +99,7 @@ int bt_mesh_provisioner_net_create(void)
         return -ENOMEM;
     }
 
-    sub->kr_flag = BLE_MESH_KEY_REFRESH(prov->flags);
+    sub->kr_flag = BLE_MESH_KEY_REFRESH(bt_mesh_prov_get()->flags);
     if (sub->kr_flag) {
         if (bt_mesh_net_keys_create(&sub->keys[1], p_key)) {
             BT_ERR("Failed to generate net-related keys");
@@ -119,6 +119,10 @@ int bt_mesh_provisioner_net_create(void)
     sub->net_idx = BLE_MESH_KEY_PRIMARY;
     sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
 
+#if CONFIG_BLE_MESH_DF_SRV
+    bt_mesh_directed_forwarding_sub_init(sub);
+#endif
+
     bt_mesh.p_sub[0] = sub;
 
     /* Dynamically added appkey & netkey will use these key_idx */
@@ -131,9 +135,9 @@ int bt_mesh_provisioner_net_create(void)
         bt_mesh_store_p_subnet(bt_mesh.p_sub[0]);
     }
 
-    bt_mesh.iv_index = prov->iv_index;
+    bt_mesh.iv_index = bt_mesh_prov_get()->iv_index;
     bt_mesh_atomic_set_bit_to(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS,
-                              BLE_MESH_IV_UPDATE(prov->flags));
+                              BLE_MESH_IV_UPDATE(bt_mesh_prov_get()->flags));
 
     /* Set minimum required hours, since the 96-hour minimum requirement
      * doesn't apply straight after provisioning (since we can't know how
@@ -311,11 +315,9 @@ int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const uint8_t uuid
                                   uint16_t oob_info, uint16_t unicast_addr,
                                   uint8_t element_num, uint16_t net_idx,
                                   uint8_t flags, uint32_t iv_index,
-                                  const uint8_t dev_key[16], uint16_t *index)
+                                  const uint8_t dev_key[16], uint16_t *index, bool nppi)
 {
     struct bt_mesh_node node = {0};
-
-    BT_DBG("%s", __func__);
 
     if (!addr || !uuid || !dev_key || !index) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -326,6 +328,11 @@ int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const uint8_t uuid
             unicast_addr, element_num, net_idx);
     BT_INFO("UUID %s", bt_hex(uuid, 16));
     BT_INFO("DevKey %s", bt_hex(dev_key, 16));
+
+    if (nppi == true) {
+        /* For NPPI, remove the node from database firstly. */
+        bt_mesh_provisioner_remove_node(uuid);
+    }
 
     memcpy(node.addr, addr->val, BLE_MESH_ADDR_LEN);
     node.addr_type = addr->type;
@@ -367,6 +374,9 @@ static int provisioner_remove_node(uint16_t index, bool erase)
     for (i = 0; i < node->element_num; i++) {
         bt_mesh_tx_reset_single(node->unicast_addr + i);
     }
+    for (i = 0; i < node->element_num; i++) {
+        bt_mesh_rpl_reset_single(node->unicast_addr + i, erase);
+    }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
         bt_mesh_friend_remove_lpn(node->unicast_addr);
@@ -391,8 +401,6 @@ static int provisioner_remove_node(uint16_t index, bool erase)
 static struct bt_mesh_node *provisioner_find_node_with_uuid(const uint8_t uuid[16], uint16_t *index)
 {
     int i;
-
-    BT_DBG("%s", __func__);
 
     if (uuid == NULL) {
         BT_ERR("Invalid device uuid");
@@ -444,8 +452,6 @@ static struct bt_mesh_node *provisioner_find_node_with_addr(uint16_t addr, uint1
 {
     struct bt_mesh_node *node = NULL;
     int i;
-
-    BT_DBG("%s", __func__);
 
     if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
         BT_ERR("Invalid unicast address 0x%04x", addr);
@@ -711,37 +717,14 @@ const uint8_t *bt_mesh_provisioner_net_key_get(uint16_t net_idx)
     struct bt_mesh_subnet *sub = NULL;
     int i;
 
-    BT_DBG("%s", __func__);
-
     for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
         sub = bt_mesh.p_sub[i];
         if (sub && sub->net_idx == net_idx) {
             if (sub->kr_flag) {
                 return sub->keys[1].net;
-            } else {
-                return sub->keys[0].net;
             }
-        }
-    }
 
-    return NULL;
-}
-
-struct bt_mesh_subnet *bt_mesh_provisioner_subnet_get(uint16_t net_idx)
-{
-    struct bt_mesh_subnet *sub = NULL;
-    int i;
-
-    BT_DBG("%s", __func__);
-
-    if (net_idx == BLE_MESH_KEY_ANY) {
-        return bt_mesh.p_sub[0];
-    }
-
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
-        sub = bt_mesh.p_sub[i];
-        if (sub && sub->net_idx == net_idx) {
-            return sub;
+            return sub->keys[0].net;
         }
     }
 
@@ -752,8 +735,6 @@ bool bt_mesh_provisioner_check_msg_dst(uint16_t dst)
 {
     struct bt_mesh_node *node = NULL;
     int i;
-
-    BT_DBG("%s", __func__);
 
     if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
         return true;
@@ -770,44 +751,24 @@ bool bt_mesh_provisioner_check_msg_dst(uint16_t dst)
     return false;
 }
 
-const uint8_t *bt_mesh_provisioner_dev_key_get(uint16_t dst)
+const uint8_t *bt_mesh_provisioner_dev_key_get(uint16_t addr)
 {
     /* Device key is only used to encrypt configuration messages.
-    *  Configuration model shall only be supported by the primary
-    *  element which uses the primary unicast address.
-    */
-    struct bt_mesh_node *node = NULL;
+     * Configuration model shall only be supported by the primary
+     * element which uses the primary unicast address.
+     */
     int i;
 
-    BT_DBG("%s", __func__);
-
-    if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
-        BT_ERR("Invalid unicast address 0x%04x", dst);
+    if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
+        BT_ERR("Invalid unicast address 0x%04x", addr);
         return NULL;
     }
 
     for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
-        node = mesh_nodes[i];
-        if (node && node->unicast_addr == dst) {
+        struct bt_mesh_node *node = mesh_nodes[i];
+
+        if (node && node->unicast_addr == addr) {
             return node->dev_key;
-        }
-    }
-
-    return NULL;
-}
-
-struct bt_mesh_app_key *bt_mesh_provisioner_app_key_find(uint16_t app_idx)
-{
-    struct bt_mesh_app_key *key = NULL;
-    int i;
-
-    BT_DBG("%s", __func__);
-
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.p_app_keys); i++) {
-        key = bt_mesh.p_app_keys[i];
-        if (key && key->net_idx != BLE_MESH_KEY_UNUSED &&
-                key->app_idx == app_idx) {
-            return key;
         }
     }
 
@@ -1054,9 +1015,9 @@ int bt_mesh_provisioner_local_app_key_update(const uint8_t app_key[16],
         return -ENODEV;
     }
 
-    key = bt_mesh_provisioner_app_key_find(app_idx);
+    key = bt_mesh_app_key_get(app_idx);
     if (key == NULL) {
-        BT_ERR("Invalid AppKeyIndex 0x%04x", app_idx);
+        BT_ERR("AppKey 0x%04x not found", app_idx);
         return -ENODEV;
     }
 
@@ -1083,8 +1044,6 @@ const uint8_t *bt_mesh_provisioner_local_app_key_get(uint16_t net_idx, uint16_t 
 {
     struct bt_mesh_app_key *key = NULL;
     int i;
-
-    BT_DBG("%s", __func__);
 
     if (provisioner_check_net_idx(net_idx, false)) {
         BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
@@ -1135,8 +1094,6 @@ static void model_pub_clear(struct bt_mesh_model *model, bool store)
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && store) {
         bt_mesh_store_mod_pub(model);
     }
-
-    return;
 }
 
 static void model_unbind(struct bt_mesh_model *model, uint16_t app_idx, bool store)
@@ -1178,8 +1135,6 @@ int bt_mesh_provisioner_local_app_key_del(uint16_t net_idx, uint16_t app_idx, bo
     struct unbind_data data = { .app_idx = app_idx, .store = store };
     struct bt_mesh_app_key *key = NULL;
     int i;
-
-    BT_DBG("%s", __func__);
 
     if (provisioner_check_net_idx(net_idx, false)) {
         BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
@@ -1290,6 +1245,10 @@ int bt_mesh_provisioner_local_net_key_add(const uint8_t net_key[16], uint16_t *n
     sub->kr_flag  = false;
     sub->node_id  = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
 
+#if CONFIG_BLE_MESH_DF_SRV
+    bt_mesh_directed_forwarding_sub_init(sub);
+#endif
+
     bt_mesh.p_sub[add] = sub;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
@@ -1312,9 +1271,9 @@ int bt_mesh_provisioner_local_net_key_update(const uint8_t net_key[16], uint16_t
 
     BT_INFO("NetKey %s, net_idx 0x%03x", bt_hex(net_key, 16), net_idx);
 
-    sub = bt_mesh_provisioner_subnet_get(net_idx);
+    sub = bt_mesh_subnet_get(net_idx);
     if (sub == NULL) {
-        BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
+        BT_ERR("NetKey 0x%04x not found", net_idx);
         return -ENODEV;
     }
 
@@ -1331,7 +1290,7 @@ int bt_mesh_provisioner_local_net_key_update(const uint8_t net_key[16], uint16_t
     sub->kr_flag = false;
     sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
 
-    err = bt_mesh_net_beacon_update(sub);
+    err = bt_mesh_net_secure_beacon_update(sub);
     if (err) {
         BT_ERR("Failed to update secure beacon");
         return -EIO;
@@ -1344,37 +1303,10 @@ int bt_mesh_provisioner_local_net_key_update(const uint8_t net_key[16], uint16_t
     return 0;
 }
 
-const uint8_t *bt_mesh_provisioner_local_net_key_get(uint16_t net_idx)
-{
-    struct bt_mesh_subnet *sub = NULL;
-    int i;
-
-    BT_DBG("%s", __func__);
-
-    if (provisioner_check_net_idx(net_idx, false)) {
-        BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
-        return NULL;
-    }
-
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
-        sub = bt_mesh.p_sub[i];
-        if (sub && sub->net_idx == net_idx) {
-            if (sub->kr_flag) {
-                return sub->keys[1].net;
-            }
-            return sub->keys[0].net;
-        }
-    }
-
-    return NULL;
-}
-
 int bt_mesh_provisioner_local_net_key_del(uint16_t net_idx, bool store)
 {
     struct bt_mesh_subnet *sub = NULL;
     int i, j;
-
-    BT_DBG("%s", __func__);
 
     if (provisioner_check_net_idx(net_idx, false)) {
         BT_ERR("Invalid NetKeyIndex 0x%04x", net_idx);
@@ -1455,42 +1387,6 @@ int bt_mesh_provisioner_bind_local_model_app_idx(uint16_t elem_addr, uint16_t mo
 
     BT_ERR("Model bound is full!");
     return -ENOMEM;
-}
-
-int bt_mesh_print_local_composition_data(void)
-{
-    const struct bt_mesh_comp *comp = NULL;
-    struct bt_mesh_model *model = NULL;
-    struct bt_mesh_elem *elem = NULL;
-    int i, j;
-
-    comp = bt_mesh_comp_get();
-    if (!comp) {
-        BT_ERR("Invalid composition data");
-        return -EINVAL;
-    }
-
-    BT_INFO("************************************************");
-    BT_INFO("* cid: 0x%04x    pid: 0x%04x    vid: 0x%04x    *", comp->cid, comp->pid, comp->vid);
-    BT_INFO("* Element Number: 0x%02x                         *", comp->elem_count);
-    for (i = 0; i < comp->elem_count; i++) {
-        elem = &comp->elem[i];
-        BT_INFO("* Element %d: 0x%04x                            *", i, elem->addr);
-        BT_INFO("*     Loc: 0x%04x   NumS: 0x%02x   NumV: 0x%02x    *", elem->loc, elem->model_count, elem->vnd_model_count);
-        for (j = 0; j < elem->model_count; j++) {
-            model = &elem->models[j];
-            BT_INFO("*     sig_model %d: id - 0x%04x                 *", j, model->id);
-        }
-        for (j = 0; j < elem->vnd_model_count; j++) {
-            model = &elem->vnd_models[j];
-            BT_INFO("*     vnd_model %d: id - 0x%04x, cid - 0x%04x   *", j, model->vnd.id, model->vnd.company);
-        }
-    }
-    BT_INFO("************************************************");
-
-    ((void) model);
-
-    return 0;
 }
 
 #if CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK

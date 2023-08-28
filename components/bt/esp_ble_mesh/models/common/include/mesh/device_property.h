@@ -852,7 +852,7 @@ typedef uint16_t bt_mesh_voltage_t;
 /* This characteristic aggregates the Electric Current characteristic and instance of
  * the Time Exponential 8 characteristic.
  */
-typedef struct __packed average_current {
+typedef struct __attribute__((packed)) average_current {
     bt_mesh_electric_current_t   electric_current;
     bt_mesh_time_exponential_8_t sensing_duration;
 } bt_mesh_average_current_t;
@@ -860,7 +860,7 @@ typedef struct __packed average_current {
 /* This characteristic aggregates the Voltage characteristic and instance of the Time
  * Exponential 8 characteristic.
  */
-typedef struct __packed average_voltage {
+typedef struct __attribute__((packed)) average_voltage {
     bt_mesh_voltage_t            voltage;
     bt_mesh_time_exponential_8_t sensing_duration;
 } bt_mesh_average_voltage_t;
@@ -896,7 +896,7 @@ typedef uint16_t bt_mesh_chromaticity_coordinate_t;
 /* This characteristic represents a chromaticity coordinate as a tuple with an x and
  * y coordinate.
  */
-typedef struct __packed chromaticity_coordinates {
+typedef struct __attribute__((packed)) chromaticity_coordinates {
     bt_mesh_chromaticity_coordinate_t chromaticity_x_coordinate;
     bt_mesh_chromaticity_coordinate_t chromaticity_y_coordinate;
 } bt_mesh_chromaticity_coordinates_t;
@@ -913,7 +913,7 @@ typedef uint16_t bt_mesh_correlated_color_temperature_t;
  * consisting of the Correlated Color Temperature characteristic and the Chromatic
  * Distance From Planckian characteristic.
  */
-typedef struct __packed chromaticity_in_cct_and_duv_values {
+typedef struct __attribute__((packed)) chromaticity_in_cct_and_duv_values {
     bt_mesh_correlated_color_temperature_t      correlated_color_temperature;
     bt_mesh_chromatic_distance_from_planckian_t chromaticity_distance_from_planckian;
 } bt_mesh_chromaticity_in_cct_and_duv_values_t;
@@ -969,7 +969,7 @@ typedef uint8_t bt_mesh_date_utc_t[3];
 /* This characteristic aggregates two instances of the Electric Current characteristic
  * to represent a range of Electric Current values.
  */
-typedef struct __packed electric_current_range {
+typedef struct __attribute__((packed)) electric_current_range {
     bt_mesh_electric_current_t minimum_electric_current_value;
     bt_mesh_electric_current_t maximum_electric_current_value;
 } bt_mesh_electric_current_range_t;
@@ -977,7 +977,7 @@ typedef struct __packed electric_current_range {
 /* This characteristic aggregates three instances of the Electric Current characteristic
  * to represent a specification of electric current values.
  */
-typedef struct __packed electric_current_specification {
+typedef struct __attribute__((packed)) electric_current_specification {
     bt_mesh_electric_current_t minimum_electric_current_value;
     bt_mesh_electric_current_t typical_electric_current_value;
     bt_mesh_electric_current_t maximum_electric_current_value;
@@ -986,7 +986,7 @@ typedef struct __packed electric_current_specification {
 /* This characteristic aggregates four instances of the Electric Current characteristic
  * with a Sensing Duration to represent a set of statistical electric current values.
  */
-typedef struct __packed electric_current_statistics {
+typedef struct __attribute__((packed)) electric_current_statistics {
     bt_mesh_electric_current_t   average_electric_current_value;
     bt_mesh_electric_current_t   standard_electric_current_value;
     bt_mesh_electric_current_t   minimum_electric_current_value;
@@ -1013,7 +1013,7 @@ typedef uint8_t bt_mesh_time_decihour_8_t;
 /* This characteristic aggregates the Energy characteristic, and two instances of
  * the Time Decihour 8 characteristic, to represent energy use in a period of day.
  */
-typedef struct __packed energy_in_a_period_of_day {
+typedef struct __attribute__((packed)) energy_in_a_period_of_day {
     bt_mesh_energy_t          energy_value;
     bt_mesh_time_decihour_8_t start_time;
     bt_mesh_time_decihour_8_t end_time;
@@ -1031,7 +1031,7 @@ typedef uint16_t bt_mesh_time_second_16_t;
  * Time Decihour 8 characteristic and an instance of the Sensing Duration characteristic,
  * to represent statistical values of events.
  */
-typedef struct __packed event_statistics {
+typedef struct __attribute__((packed)) event_statistics {
     bt_mesh_count_16_t           number_of_events;
     bt_mesh_time_second_16_t     average_event_duration;
     bt_mesh_time_exponential_8_t time_elapsed_since_last_event;
@@ -1106,7 +1106,7 @@ typedef uint16_t bt_mesh_luminous_flux_t;
 /* This characteristic aggregates two instances of the Luminous Flux characteristic
  * to represent a luminous flux range.
  */
-typedef struct __packed luminous_flux_range {
+typedef struct __attribute__((packed)) luminous_flux_range {
     bt_mesh_luminous_flux_t minimum_luminous_flux;
     bt_mesh_luminous_flux_t maximum_luminous_flux;
 } bt_mesh_luminous_flux_range_t;
@@ -1178,7 +1178,7 @@ typedef uint8_t bt_mesh_power_t[3];
 /* This characteristic aggregates three instances of the Power characteristic to
  * represent a specification of Power values.
  */
-typedef struct __packed power_specification {
+typedef struct __attribute__((packed)) power_specification {
     bt_mesh_power_t minimum_power_value;
     bt_mesh_power_t typical_power_value;
     bt_mesh_power_t maximum_power_value;
@@ -1188,7 +1188,7 @@ typedef struct __packed power_specification {
  * the Electric Current characteristic to represent a relative value in an electric
  * current range.
  */
-typedef struct __packed relative_runtime_in_a_current_range {
+typedef struct __attribute__((packed)) relative_runtime_in_a_current_range {
     bt_mesh_percentage_8_t     relative_runtime_value;
     bt_mesh_electric_current_t minimum_current;
     bt_mesh_electric_current_t maximum_current;
@@ -1197,7 +1197,7 @@ typedef struct __packed relative_runtime_in_a_current_range {
 /* This characteristic aggregates the Percentage 8 characteristic and two instances of
  * the Generic Level characteristic to represent a runtime in a generic level range.
  */
-typedef struct __packed relative_runtime_in_a_generic_level_range {
+typedef struct __attribute__((packed)) relative_runtime_in_a_generic_level_range {
     bt_mesh_percentage_8_t  relative_value;
     bt_mesh_generic_level_t minimum_generic_level;
     bt_mesh_generic_level_t maximum_generic_level;
@@ -1206,7 +1206,7 @@ typedef struct __packed relative_runtime_in_a_generic_level_range {
 /* This characteristic aggregates the Percentage 8 characteristic, and two instances of
  * the Time Decihour 8 characteristic.
  */
-typedef struct __packed relative_value_in_a_period_of_day {
+typedef struct __attribute__((packed)) relative_value_in_a_period_of_day {
     bt_mesh_percentage_8_t    relative_value;
     bt_mesh_time_decihour_8_t start_time;
     bt_mesh_time_decihour_8_t end_time;
@@ -1215,7 +1215,7 @@ typedef struct __packed relative_value_in_a_period_of_day {
 /* This characteristic aggregates the Percentage 8 characteristic, and two instances of
  * the Temperature characteristic.
  */
-typedef struct __packed relative_value_in_a_temperature_range {
+typedef struct __attribute__((packed)) relative_value_in_a_temperature_range {
     bt_mesh_percentage_8_t relative_value;
     bt_mesh_temperature_t  minimum_temperature_value;
     bt_mesh_temperature_t  maximum_temperature_value;
@@ -1224,7 +1224,7 @@ typedef struct __packed relative_value_in_a_temperature_range {
 /* This characteristic aggregates the Percentage 8 characteristic and two instances of
  * the Voltage characteristic to represent a relative value in a voltage range.
  */
-typedef struct __packed relative_value_in_a_voltage_range {
+typedef struct __attribute__((packed)) relative_value_in_a_voltage_range {
     bt_mesh_percentage_8_t relative_value;
     bt_mesh_voltage_t      minimum_voltage;
     bt_mesh_voltage_t      maximum_voltage;
@@ -1233,7 +1233,7 @@ typedef struct __packed relative_value_in_a_voltage_range {
 /* This characteristic aggregates the Percentage 8 characteristic and two instances of
  * the Illuminance characteristic to represent a relative value in a illuminance range.
  */
-typedef struct __packed relative_value_in_an_illuminance_range {
+typedef struct __attribute__((packed)) relative_value_in_an_illuminance_range {
     bt_mesh_percentage_8_t relative_value;
     bt_mesh_illuminance_t  minimum_illuminance;
     bt_mesh_illuminance_t  maximum_illuminance;
@@ -1251,7 +1251,7 @@ typedef int8_t bt_mesh_temperature_8_t;
  * of the Time Decihour 8 characteristic, to represent a temperature value in a period
  * of day.
  */
-typedef struct __packed temperature_8_in_a_period_of_day {
+typedef struct __attribute__((packed)) temperature_8_in_a_period_of_day {
     bt_mesh_temperature_8_t   temperature;
     bt_mesh_time_decihour_8_t start_time;
     bt_mesh_time_decihour_8_t end_time;
@@ -1260,7 +1260,7 @@ typedef struct __packed temperature_8_in_a_period_of_day {
 /* This characteristic aggregates four instances of the Temperature 8 characteristic,
  * and one instance of the Time Exponential 8 characteristic.
  */
-typedef struct __packed temperature_8_statistics {
+typedef struct __attribute__((packed)) temperature_8_statistics {
     bt_mesh_temperature_8_t      average;
     bt_mesh_temperature_8_t      standard_deviation_value;
     bt_mesh_temperature_8_t      minimum_value;
@@ -1271,7 +1271,7 @@ typedef struct __packed temperature_8_statistics {
 /* This characteristic aggregates two instances of the Temperature characteristic to
  * represent a temperature range.
  */
-typedef struct __packed temperature_range {
+typedef struct __attribute__((packed)) temperature_range {
     bt_mesh_temperature_t minimum_temperature;
     bt_mesh_temperature_t maximum_temperature;
 } bt_mesh_temperature_range_t;
@@ -1279,7 +1279,7 @@ typedef struct __packed temperature_range {
 /* This characteristic aggregates four instances of the Temperature characteristic,
  * and one instance of the Time Exponential 8 characteristic.
  */
-typedef struct __packed temperature_statistics {
+typedef struct __attribute__((packed)) temperature_statistics {
     bt_mesh_temperature_t        average_temperature;
     bt_mesh_temperature_t        standard_deviation_temperature;
     bt_mesh_temperature_t        minimum_temperature;
@@ -1313,7 +1313,7 @@ typedef uint8_t bt_mesh_time_second_8_t;
 /* This characteristic aggregates three instances of the Voltage characteristic to
  * represent a specification of voltage values.
  */
-typedef struct __packed voltage_specification {
+typedef struct __attribute__((packed)) voltage_specification {
     bt_mesh_voltage_t minimum_voltage_value;
     bt_mesh_voltage_t typical_voltage_value;
     bt_mesh_voltage_t maximum_voltage_value;
@@ -1323,7 +1323,7 @@ typedef struct __packed voltage_specification {
  * instance of the Time Exponential 8 characteristic to represent a set of statistical
  * voltage values over a period of time.
  */
-typedef struct __packed voltage_statistics {
+typedef struct __attribute__((packed)) voltage_statistics {
     bt_mesh_voltage_t            average_voltage_value;
     bt_mesh_voltage_t            standard_deviation_voltage_value;
     bt_mesh_voltage_t            minimum_voltage_value;

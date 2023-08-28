@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _PROXY_H_
-#define _PROXY_H_
+#ifndef _PROXY_SERVER_H_
+#define _PROXY_SERVER_H_
 
 #include "net.h"
 #include "mesh/adapter.h"
@@ -16,11 +16,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define BLE_MESH_PROXY_NET_PDU   0x00
-#define BLE_MESH_PROXY_BEACON    0x01
-#define BLE_MESH_PROXY_CONFIG    0x02
-#define BLE_MESH_PROXY_PROV      0x03
 
 #if CONFIG_BLE_MESH_PROXY
 /**
@@ -38,10 +33,47 @@ extern "C" {
 #define DEVICE_NAME_SIZE    (BLE_MESH_GAP_ADV_MAX_LEN - 2)
 #endif
 
+struct bt_mesh_proxy_client {
+    struct bt_mesh_conn *conn;
+
+    enum __attribute__((packed)) {
+        SRV_NONE,
+        SRV_WHITELIST,
+        SRV_BLACKLIST,
+        SRV_PROV,
+    } filter_type;
+
+    uint8_t msg_type;
+
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    struct {
+        uint16_t addr;
+        bool     proxy_client; /* Indicate if the address is the element address of Proxy Client. */
+    } filter[CONFIG_BLE_MESH_PROXY_FILTER_SIZE];
+    struct k_delayed_work send_beacons;
+
+    uint8_t proxy_client_type;
+    uint8_t proxy_msg_recv : 1;     /* Indicate if proxy server has received a message from proxy client */
+
+#if CONFIG_BLE_MESH_PROXY_PRIVACY
+    uint8_t proxy_privacy;
+#endif
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
+
+    struct k_delayed_work sar_timer;
+
+    struct net_buf_simple buf;
+};
+
 typedef void (*proxy_server_connect_cb_t)(uint8_t conn_handle);
 typedef void (*proxy_server_disconnect_cb_t)(uint8_t conn_handle, uint8_t reason);
 
 int bt_mesh_set_device_name(const char *name);
+
+const char *bt_mesh_get_device_name(void);
+
+int bt_mesh_proxy_server_segment_send(struct bt_mesh_conn *conn, uint8_t type,
+                                      struct net_buf_simple *msg);
 
 int bt_mesh_proxy_server_send(struct bt_mesh_conn *conn, uint8_t type,
                               struct net_buf_simple *msg);
@@ -64,6 +96,22 @@ struct net_buf_simple *bt_mesh_proxy_server_get_buf(void);
 int32_t bt_mesh_proxy_server_adv_start(void);
 void bt_mesh_proxy_server_adv_stop(void);
 
+void bt_mesh_proxy_server_update_net_id_rand(void);
+void bt_mesh_proxy_server_update_net_id_rand_stop(void);
+
+#if CONFIG_BLE_MESH_PRB_SRV
+void bt_mesh_proxy_server_private_identity_start(struct bt_mesh_subnet *sub);
+void bt_mesh_proxy_server_private_identity_stop(struct bt_mesh_subnet *sub);
+
+void bt_mesh_disable_private_gatt_proxy(void);
+
+bool bt_mesh_proxy_server_is_node_id_enable(void);
+
+void disable_all_private_node_identity(void);
+
+void bt_mesh_prb_pnid_adv_local_set(bool start);
+#endif /* CONFIG_BLE_MESH_PRB_SRV */
+
 void bt_mesh_proxy_server_identity_start(struct bt_mesh_subnet *sub);
 void bt_mesh_proxy_server_identity_stop(struct bt_mesh_subnet *sub);
 
@@ -73,8 +121,11 @@ void bt_mesh_proxy_server_addr_add(struct net_buf_simple *buf, uint16_t addr);
 int bt_mesh_proxy_server_init(void);
 int bt_mesh_proxy_server_deinit(void);
 
+bool bt_mesh_proxy_server_find_client_by_addr(uint16_t addr);
+uint8_t bt_mesh_proxy_server_get_all_client_type(void);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _PROXY_H_ */
+#endif /* _PROXY_SERVER_H_ */

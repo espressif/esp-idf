@@ -96,6 +96,9 @@ ESP-BLE-MESH Terminology
   * - PB-GATT
     - "PB-GATT is a provisioning bearer used to provision a device using Proxy PDUs to encapsulate Provisioning PDUs within the Mesh Provisioning Service."
     - PB-GATT 通过连接通道传输配网过程中产生的数据包。如果未配网设备想使用此方式进行配网，其需要实现相关的 Mesh Provisioning Service。未实现此服务的未配网设备不能通过 PB-GATT 承载层配网接入 mesh 网络。
+  * - PB-Remote
+    - "The PB-Remote provisioning bearer uses the existing mesh network to provision an unprovisioned device that is not within immediate radio range of the Provisioner."
+    - PB-Remote 是一种使用现有的网状网络来为无法与配网器直接通信的未配网设备进行配网的配网承载方式。
   * - 配置入网
     - "Provisioning is a process of adding an unprovisioned device to a mesh network, managed by a Provisioner."
     - 经过配网，“未配网设备”的身份转变为“节点”，成为 ESP-BLE-MESH 网络中的一员。
@@ -114,7 +117,9 @@ ESP-BLE-MESH Terminology
   * - 无带外 (No OOB)
     - No Out-of-Band
     - 无 OOB 的认证方法：将“静态 OOB”字段赋值为 0。采用这种方式相当于不认证未配网的设备。
-
+  * - 基于证书的配网 (Certificate-based Provisioning)
+    - Certificate-based Out-of-Band
+    - 基于证书的配网功能利用公钥基础设施来验证未配网设备的公钥和UUID信息。
 
 .. _ble-mesh-terminology-address:
 
@@ -154,10 +159,12 @@ ESP-BLE-MESH Terminology
   * - 应用密钥 (AppKey)
     - "Application keys are used to secure communications at the upper transport layer."
     - 应用密钥用于应用数据传递至应用层过程中对应用数据的解密，和应用层下发过程中对数据的加密。网络中的一些节点有特定的用途，并且可以根据应用程序的需求对一些潜在敏感数据的访问进行限制。通过特定的应用密钥，这些节点与特定应用程序相关联。通常而言，使用不同应用密钥的领域有安全（楼宇门禁、机房门禁和 CEO 办公室门禁）、照明（工厂、外部楼宇和人行道）和 HVAC 系统。应用密钥绑定在网络密钥上，这意味着应用密钥仅在绑定网络密钥的情况下使用。每一个应用密钥仅可绑定到一个网络密钥。
-  * - 主安全资料
+  * - 泛洪安全资料
     - "The master security material is derived from the network key (NetKey) and can be used by other nodes in the same network. Messages encrypted with master security material can be decoded by any node in the same network. "
-    - 使用好友安全材料加密的相应友谊消息有：1. 好友轮询 (Friend Poll)，2. 好友更新 (Friend Update)，3. 好友订阅列表 (Friend Subscription List)，添加/删除/确认，4. 好友节点发送到低功耗节点的“已存储消息”，使用主安全材料加密的相应友谊消息有：1. 好友清除 (Friend Clear)，2. 好友清除确认 (Friend Clear Confirm)。根据应用程序的设置，从低功耗节点发送到好友节点的消息会使用友谊安全材料或主安全材料进行加密，前者用于低功耗节点与好友节点之间的消息传输，而后者用于其他网络消息。
-
+    - 使用好友安全材料加密的相应友谊消息有：1. 好友轮询 (Friend Poll)，2. 好友更新 (Friend Update)，3. 好友订阅列表 (Friend Subscription List)，添加/删除/确认，4. 好友节点发送到低功耗节点的“已存储消息”，使用泛洪安全材料加密的相应友谊消息有：1. 好友清除 (Friend Clear)，2. 好友清除确认 (Friend Clear Confirm)。根据应用程序的设置，从低功耗节点发送到好友节点的消息会使用友谊安全材料或泛洪安全材料进行加密，前者用于低功耗节点与好友节点之间的消息传输，而后者用于其他网络消息。
+  * - 定向安全资料
+    - "The directed security material is derived from the network key (NetKey) and can be used by other nodes in the directed forwarding path."
+    - 定向安全资料是从网络密钥（NetKey）派生的，可以被定向转发路径中的其他节点使用。使用定向安全资料加密的消息可以被同一定向转发路径中的任何节点解码。
 
 .. _ble-mesh-terminology-message:
 
@@ -196,6 +203,60 @@ ESP-BLE-MESH Terminology
   * - Health Client Model
     - "The model is used to represent an element that can control and monitor the health of a node."
     - Health Client Model 通过消息控制 Health Server Model 维护的状态。该模型可通过消息 “Health Fault Get” 获取其他节点的自检信息。
+  * - Remote Provisioning Server model
+    - "The model is used to support the functionality of provisioning a remote device over the mesh network and to perform the Node Provisioning Protocol Interface procedures."
+    - 该模型用于支持通过网状网络对远程设备进行供应，并执行节点供应协议接口程序。
+  * - Remote Provisioning Client model
+    - "The model is used to support the functionality of provisioning devices into a mesh network by interacting with a mesh node that supports the Remote Provisioning Server model."
+    - 该模型用于与支持远程供应服务器模型的网状节点进行交互，以支持将设备供应到网状网络的功能。
+  * - Directed Forwarding Configuration Server model
+    - "The model is used to support the configuration of the directed forwarding functionality of a node."
+    - 该模型用于支持节点的定向转发功能的配置。
+  * - Directed Forwarding Configuration Client model
+    - "The model is used to support the functionality of a node that can configure the directed forwarding functionality of another node."
+    - 该模型用于支持一个节点配置另一个节点的定向转发功能的功能。
+  * - Bridge Configuration Server model
+    - "The model is used to support the configuration of the subnet bridge functionality of a node."
+    - 该模型用于支持节点的子网桥接功能的配置。
+  * - Bridge Configuration Client model
+    - "The model is used to support the functionality of a node that can configure the subnet bridge functionality of another node."
+    - 该模型用于支持一个节点配置另一个节点的子网桥接功能的功能。
+  * - Mesh Private Beacon Server model
+    - "The model is used to support the configuration of the Mesh Private beacons functionality of a node."
+    - 该模型用于支持节点的 Mesh 私有信标功能的配置。
+  * - Mesh Private Beacon Client model
+    - "The model is used to support the functionality of a node that can configure the Mesh Private beacons functionality of another node."
+    - 该模型用于支持一个节点配置另一个节点的 Mesh 私有信标功能的功能。
+  * - On-Demend Private Proxy Server model
+    - "The model is used to support the configuration of the advertising with Private Network Identity type functionality of a node."
+    - 该模型用于支持节点的私有网络身份类型广告配置功能。
+  * - On-Demend Private Proxy Client model
+    - "The model is used to support the functionality of a node that can configure the advertising with Private Network Identity type functionality of another node."
+    - 该模型用于支持一个节点配置另一个节点的私有网络身份类型广告功能的功能。
+  * - SAR Configuration Server model
+    - "The model is used to support the configuration of the segmentation and reassembly behavior of a node."
+    - 该模型用于支持节点的分段和重组行为的配置。
+  * - SAR Configuration Client model
+    - "The SAR Configuration Client model is used to support the functionality of configuring the behavior of the lower transport layer of a node that supports the SAR Configuration Server model."
+    - SAR配置客户端模型用于支持配置支持 SAR 配置服务器模型的节点的较低传输层行为的功能。
+  * - Solicitation PDU RPL Configuration Server model
+    - "The Solicitation PDU RPL Configuration Server model is used to support the functionality of removing items from the solicitation replay protection list of a node."
+    - Solicitation PDU RPL 配置服务器模型用于支持从节点的请求重放保护列表中移除项目的功能。
+  * - Solicitation PDU RPL Configuration Client model
+    - "The model is used to support the functionality of removing addresses from the solicitation replay protection list of a node that supports the Solicitation PDU RPL Configuration Server model."
+    - 该模型用于支持支持 Solicitation PDU RPL 配置服务器模型的节点从其请求重放保护列表中移除地址的功能。
+  * - Opcodes Aggregator Server model
+    - "The model is used to support the functionality of processing a sequence of access layer messages."
+    - 该模型用于支持处理一系列访问层消息的功能。
+  * - Opcodes Aggregator Client model
+    - "The model is used to support the functionality of dispatching a sequence of access layer messages to nodes supporting the Opcodes Aggregator Server model."
+    - 该模型用于支持将一系列访问层消息分派给支持 Opcodes Aggregator Server 模型的节点的功能。
+  * - Large Composition Data Server model
+    - "The model is used to support the functionality of exposing pages of Composition Data that do not fit in a Config Composition Data Status message and to expose metadata of the model instances."
+    - 该模型用于支持暴露不适应于 Config Composition Data Status 消息中的组成数据页的功能，并暴露模型实例的元数据。
+  * - Large Composition Data Client model
+    - "The model is used to support the functionality of reading pages of Composition Data that do not fit in a Config Composition Data Status message and reading the metadata of the model instances."
+    - 该模型用于支持读取不适应于 Config Composition Data Status 消息中的组成数据页的功能，并读取模型实例的元数据。
 
 
 .. _ble-mesh-terminology-network-management:

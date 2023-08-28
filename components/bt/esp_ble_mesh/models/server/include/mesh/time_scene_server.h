@@ -63,7 +63,7 @@ extern "C" {
 #define TIME_NONE                   0x00
 #define TIME_AUTHORITY              0x01
 #define TIME_RELAY                  0x02
-#define TIME_CLINET                 0x03
+#define TIME_CLIENT                 0x03
 
 #define SCENE_SUCCESS               0x00
 #define SCENE_REG_FULL              0x01

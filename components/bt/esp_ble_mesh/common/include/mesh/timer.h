@@ -50,15 +50,15 @@ struct k_work;
 typedef void (*k_work_handler_t)(struct k_work *work);
 
 struct k_work {
-    void *_reserved;
     k_work_handler_t handler;
     int index;
+    void *user_data;
 };
 
 #define _K_WORK_INITIALIZER(work_handler)   \
 {                                           \
-    ._reserved = NULL,                      \
     .handler = work_handler,                \
+    .user_data = NULL,                      \
 }
 
 /**
@@ -118,6 +118,18 @@ struct k_work {
  * @return Timeout delay value.
  */
 #define K_HOURS(h)      K_MINUTES((h) * 60)
+
+/**
+ * @brief Generate timeout delay from days.
+ *
+ * This macro generates a timeout delay that that instructs a kernel API
+ * to wait up to @a d days to perform the requested operation.
+ *
+ * @param d Duration in days.
+ *
+ * @return Timeout delay value.
+ */
+#define K_DAYS(d)       K_HOURS((d) * 24)
 
 /**
  * @brief Generate infinite timeout delay.

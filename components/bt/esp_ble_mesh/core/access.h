@@ -31,7 +31,12 @@ struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr);
 
 uint16_t *bt_mesh_model_find_group(struct bt_mesh_model *mod, uint16_t addr);
 
+int bt_mesh_get_opcode(struct net_buf_simple *buf,
+                       uint32_t *opcode, bool pull_buf);
+
 bool bt_mesh_fixed_group_match(uint16_t addr);
+
+bool bt_mesh_fixed_direct_match(struct bt_mesh_subnet *sub, uint16_t addr);
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
                                         struct bt_mesh_elem *elem,
@@ -55,11 +60,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);
 int bt_mesh_comp_register(const struct bt_mesh_comp *comp);
 int bt_mesh_comp_deregister(void);
 
-struct bt_mesh_subnet *bt_mesh_tx_netkey_get(uint8_t role, uint16_t net_idx);
-
-const uint8_t *bt_mesh_tx_devkey_get(uint8_t role, uint16_t dst);
-
-struct bt_mesh_app_key *bt_mesh_tx_appkey_get(uint8_t role, uint16_t app_idx);
+const uint8_t *bt_mesh_dev_key_get(uint16_t dst);
 
 size_t bt_mesh_rx_netkey_size(void);
 

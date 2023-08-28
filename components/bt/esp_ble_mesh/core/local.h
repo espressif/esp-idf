@@ -34,6 +34,11 @@ int bt_mesh_node_local_app_key_add(uint16_t net_idx, uint16_t app_idx,
 int bt_mesh_node_bind_app_key_to_model(uint16_t elem_addr, uint16_t mod_id,
                                        uint16_t cid, uint16_t app_idx);
 
+#if CONFIG_BLE_MESH_DF_SRV
+int bt_mesh_enable_directed_forwarding(uint16_t net_idx, bool directed_forwarding,
+                                       bool directed_forwarding_relay);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

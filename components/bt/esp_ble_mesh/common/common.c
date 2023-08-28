@@ -72,25 +72,6 @@ void bt_mesh_free_buf(struct net_buf_simple *buf)
     }
 }
 
-uint8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
-{
-    bt_mesh_client_user_data_t *client = NULL;
-
-    if (srv_send) {
-        BT_DBG("Message is sent by a server model");
-        return NODE;
-    }
-
-    if (!model || !model->user_data) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return ROLE_NVAL;
-    }
-
-    client = (bt_mesh_client_user_data_t *)model->user_data;
-
-    return client->msg_role;
-}
-
 int bt_mesh_rand(void *buf, size_t len)
 {
     if (buf == NULL || len == 0) {

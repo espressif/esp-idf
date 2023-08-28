@@ -60,7 +60,7 @@ esp_err_t esp_ble_mesh_model_msg_opcode_init(uint8_t *data, uint32_t opcode);
 /**
  * @brief         Initialize the user-defined client model. All user-defined client models
  *                shall call this function to initialize the client model internal data.
- *                Node: Before calling this API, the op_pair_size and op_pair variabled within
+ *                Node: Before calling this API, the op_pair_size and op_pair variables within
  *                      the user_data(defined using esp_ble_mesh_client_t_) of the client model
  *                      need to be initialized.
  *
@@ -168,7 +168,7 @@ esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
  * @brief         Reset the provisioning procedure of the local BLE Mesh node.
  *
  * @note          All provisioning information in this node will be deleted and the node
- *                needs to be reprovisioned. The API function esp_ble_mesh_node_prov_enable()
+ *                needs to be re-provisioned. The API function esp_ble_mesh_node_prov_enable()
  *                needs to be called to start a new provisioning procedure.
  *
  * @return        ESP_OK on success or error code otherwise.
@@ -640,6 +640,55 @@ uint8_t esp_ble_mesh_provisioner_get_free_settings_count(void);
  *
  */
 const uint8_t *esp_ble_mesh_get_fast_prov_app_key(uint16_t net_idx, uint16_t app_idx);
+
+#if CONFIG_BLE_MESH_CERT_BASED_PROV
+/**
+ * @brief         This function is called by provisioner to send provisioning records
+ *                get message.
+ *
+ * @param[in]     link_idx:    The provisioning link index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_send_prov_records_get(uint16_t link_idx);
+
+/**
+ * @brief         This function is called by provisioner to send provisioning record
+ *                request message.
+ *
+ * @param[in]     link_idx:    The provisioning link index.
+ * @param[in]     record_id:   The record identity.
+ * @param[in]     frag_offset: The starting offset of the fragment.
+ * @param[in]     max_size:    The max record fragment size.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_send_prov_record_req(uint16_t link_idx, uint16_t record_id,
+                                                        uint16_t frag_offset, uint16_t max_size);
+
+/**
+ * @brief         This function is called by provisioner to send provisioning invite
+ *                message.
+ *
+ * @param[in]     link_idx:  The provisioning link index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_send_prov_invite(uint16_t link_idx);
+
+/**
+ * @brief         This function is called by provisioner to send link close
+ *
+ * @param[in]     link_idx:  The provisioning link index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_send_link_close(uint16_t link_idx);
+#endif /* #if CONFIG_BLE_MESH_CERT_BASED_PROV */
 
 #ifdef __cplusplus
 }

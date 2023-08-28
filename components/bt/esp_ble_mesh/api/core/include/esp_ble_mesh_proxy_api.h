@@ -13,6 +13,9 @@
 extern "C" {
 #endif
 
+#define ESP_BLE_MESH_PROXY_CLI_DIRECTED_FORWARDING_ENABLE 0x01
+#define ESP_BLE_MESH_PROXY_CLI_DIRECTED_FORWARDING_DISABLE 0x00
+
 /**
  * @brief   Enable advertising with Node Identity.
  *
@@ -110,6 +113,31 @@ esp_err_t esp_ble_mesh_proxy_client_add_filter_addr(uint8_t conn_handle, uint16_
  */
 esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle, uint16_t net_idx,
                                                        uint16_t *addr, uint16_t addr_num);
+
+/**
+ * @brief        Proxy Client sets whether or not the Directed Proxy Server uses directed forwarding
+ *               for Directed Proxy Client messages.
+ *
+ * @param[in]    conn_handle:  Proxy connection handle.
+ * @param[in]    net_idx:      Corresponding NetKey Index.
+ * @param[in]    use_directed: Whether or not to send message by directed forwarding.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_proxy_client_directed_proxy_set(uint8_t conn_handle, uint16_t net_idx,
+                                                       uint8_t use_directed);
+/**
+ * @brief        Proxy Client sends Solicitation PDU.
+ *
+ * @param[in]    net_idx:   Corresponding NetKey Index.
+ * @param[in]    ssrc:      Solicitation SRC, shall be one of its element address.
+ * @param[in]    dst:       Solicitation DST (TBD).
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_proxy_client_send_solic_pdu(uint8_t net_idx, uint16_t ssrc, uint16_t dst);
 
 #ifdef __cplusplus
 }

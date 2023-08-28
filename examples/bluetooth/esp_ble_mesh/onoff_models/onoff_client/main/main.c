@@ -181,9 +181,7 @@ void example_ble_mesh_send_gen_onoff_set(void)
     common.ctx.app_idx = store.app_idx;
     common.ctx.addr = 0xFFFF;   /* to all nodes */
     common.ctx.send_ttl = 3;
-    common.ctx.send_rel = false;
     common.msg_timeout = 0;     /* 0 indicates that timeout value from menuconfig will be used */
-    common.msg_role = ROLE_NODE;
 
     set.onoff_set.op_en = false;
     set.onoff_set.onoff = store.onoff;

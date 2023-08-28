@@ -432,7 +432,7 @@ struct net_buf_simple *bt_mesh_get_uid_settings_item(const char *key)
 
 /* API used to check if the settings item exists */
 
-static bool is_settings_item_exist(struct net_buf_simple *buf, const uint16_t val)
+bool bt_mesh_is_settings_item_exist(struct net_buf_simple *buf, const uint16_t val)
 {
     struct net_buf_simple_state state = {0};
     size_t length = 0U;
@@ -469,7 +469,7 @@ static int settings_add_item(bt_mesh_nvs_handle_t handle, const char *key, const
     buf = settings_get_item(handle, key);
 
     /* Check if val already exists */
-    if (is_settings_item_exist(buf, val) == true) {
+    if (bt_mesh_is_settings_item_exist(buf, val) == true) {
         BT_DBG("0x%04x already exists", val);
         bt_mesh_free_buf(buf);
         return 0;
@@ -533,7 +533,7 @@ static int settings_remove_item(bt_mesh_nvs_handle_t handle, const char *key, co
     buf = settings_get_item(handle, key);
 
     /* Check if val does exist */
-    if (is_settings_item_exist(buf, val) == false) {
+    if (bt_mesh_is_settings_item_exist(buf, val) == false) {
         BT_DBG("0x%04x not exists", val);
         bt_mesh_free_buf(buf);
         return 0;

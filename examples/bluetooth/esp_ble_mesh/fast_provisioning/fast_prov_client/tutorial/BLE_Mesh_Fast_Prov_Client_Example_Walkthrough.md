@@ -151,10 +151,8 @@ common.model        = model;
 common.ctx.net_idx  = info->net_idx;
 common.ctx.app_idx  = 0x0000; /* not used for config messages */
 common.ctx.addr     = info->dst;
-common.ctx.send_rel = false;
 common.ctx.send_ttl = 0;
 common.msg_timeout  = info->timeout;
-common.msg_role     = info->role;
 
 return esp_ble_mesh_config_client_set_state(&common, &set);
 ```
@@ -208,7 +206,6 @@ example_msg_common_info_t info = {
     .app_idx = node->app_idx,
     .dst = node->group_addr,
     .timeout = 0,
-    .role = ROLE_PROVISIONER,
 };
 err = example_send_generic_onoff_set(cli_model, &info, LED_ON, 0x00, false);
 if (err != ESP_OK) {
