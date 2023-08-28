@@ -103,7 +103,7 @@ list(APPEND srcs
 
 if(kernel_impl STREQUAL "FreeRTOS-Kernel")
     list(APPEND srcs
-        "esp_additions/freertos_v8_compat.c")
+        "esp_additions/freertos_compatibility.c")
 endif()
 
 if(arch STREQUAL "linux")
