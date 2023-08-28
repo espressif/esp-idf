@@ -204,6 +204,15 @@ To prefer the Espressif download server when installing tools, use the following
     export IDF_GITHUB_ASSETS="dl.espressif.com/github_assets"
     ./install.sh
 
+.. note::
+    For users in China, we recommend using our download server located in China for faster download speed.
+
+    .. code-block:: bash
+
+        cd ~/esp/esp-idf
+        export IDF_GITHUB_ASSETS="dl.espressif.cn/github_assets"
+        ./install.sh
+
 Customizing the Tools Installation Path
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
