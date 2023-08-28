@@ -17,6 +17,10 @@ entries:
     #     to always keep it in IRAM
     # ------------------------------------------------------------------------------------------------------------------
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
+        # Kernel Control
+        if FREERTOS_SMP = n && FREERTOS_UNICORE = n:
+            tasks:prvTakeKernelLock (default)
+            tasks:prvReleaseKernelLock (default)
         # Task Creation
         if FREERTOS_SMP = y:
             tasks:xTaskCreatePinnedToCore (default)

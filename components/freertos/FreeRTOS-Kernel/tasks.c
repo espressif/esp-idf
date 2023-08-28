@@ -46,6 +46,8 @@
 #include "task.h"
 #include "timers.h"
 #include "stack_macros.h"
+/* Include private IDF API additions for critical thread safety macros */
+#include "esp_private/freertos_idf_additions_priv.h"
 
 #ifdef ESP_PLATFORM
     #undef _REENT_INIT_PTR
@@ -4008,20 +4010,6 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 }
 /*-----------------------------------------------------------*/
 
-#if ( configNUM_CORES > 1 )
-    void vTaskTakeKernelLock( void )
-    {
-        /* We call the tasks.c critical section macro to take xKernelLock */
-        taskENTER_CRITICAL( &xKernelLock );
-    }
-
-    void vTaskReleaseKernelLock( void )
-    {
-        /* We call the tasks.c critical section macro to release xKernelLock */
-        taskEXIT_CRITICAL( &xKernelLock );
-    }
-#endif /* configNUM_CORES > 1 */
-
 void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
                                         const TickType_t xItemValue )
 {
@@ -4032,7 +4020,7 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
 
         /* THIS FUNCTION MUST BE CALLED WITH THE KERNEL LOCK ALREADY TAKEN.
          * It is used by the event flags implementation, thus those functions
-         * should call vTaskTakeKernelLock() before calling this function. */
+         * should call prvTakeKernelLock() before calling this function. */
     #else /* configNUM_CORES > 1 */
 
         /* THIS FUNCTION MUST BE CALLED WITH THE SCHEDULER SUSPENDED.  It is used by

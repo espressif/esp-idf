@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 /*
@@ -3440,32 +3440,6 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp ) PRIVILEGED_FUNCTION;
 /** @cond !DOC_EXCLUDE_HEADER_SECTION */
 
 /*
- * Various convenience macros for critical sections and scheduler suspension
- * called by other FreeRTOS sources and not meant to be called by the
- * application. The behavior of each macro depends on whether FreeRTOS is
- * currently configured for SMP or single core.
- */
-#if ( configNUM_CORES > 1 )
-    #define prvENTER_CRITICAL_OR_SUSPEND_ALL( x )  taskENTER_CRITICAL( ( x ) )
-    #define prvEXIT_CRITICAL_OR_RESUME_ALL( x )    ( { taskEXIT_CRITICAL( ( x ) ); pdFALSE; } )
-    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus ) \
-        taskENTER_CRITICAL_ISR( ( pxLock ) );                          \
-        ( void ) ( uxInterruptStatus );
-    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus ) \
-        taskEXIT_CRITICAL_ISR( ( pxLock ) );                            \
-        ( void ) ( uxInterruptStatus );
-#else /* configNUM_CORES > 1 */
-    #define prvENTER_CRITICAL_OR_SUSPEND_ALL( x )  ( { vTaskSuspendAll(); ( void ) ( x ); } )
-    #define prvEXIT_CRITICAL_OR_RESUME_ALL( x )    xTaskResumeAll()
-    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus )  \
-        ( uxInterruptStatus ) = portSET_INTERRUPT_MASK_FROM_ISR();      \
-        ( void ) ( pxLock );
-    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus )  \
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( ( uxInterruptStatus ) );      \
-        ( void ) ( pxLock );
-#endif /* configNUM_CORES > 1 */
-
-/*
  * Return the handle of the task running on a certain CPU. Because of
  * the nature of SMP processing, there is no guarantee that this
  * value will still be valid on return and should only be used for
@@ -3576,26 +3550,6 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
 void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
                                       TickType_t xTicksToWait,
                                       const BaseType_t xWaitIndefinitely ) PRIVILEGED_FUNCTION;
-
-#if ( configNUM_CORES > 1 )
-
-/*
- * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
- * INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
- *
- * This function is a wrapper to take the "xKernelLock" spinlock of tasks.c.
- * This lock is taken whenver any of the kernel's data structures are
- * accessed/modified, such as when adding/removing tasks to/from the delayed
- * task list or various event lists.
- *
- * This functions is meant to be called by xEventGroupSetBits() and
- * vEventGroupDelete() as both those functions will access event lists (instead
- * of delegating the entire responsibility to one of vTask...EventList()
- * functions).
- */
-    void vTaskTakeKernelLock( void );
-    void vTaskReleaseKernelLock( void );
-#endif /* configNUM_CORES > 1 */
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN

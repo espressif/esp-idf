@@ -33,6 +33,34 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
 /* ------------------------------------------------- Kernel Control ------------------------------------------------- */
 
+#if ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
+
+/*
+ * Wrapper function to take "xKerneLock"
+ */
+    void prvTakeKernelLock( void )
+    {
+        /* We call the tasks.c critical section macro to take xKernelLock */
+        taskENTER_CRITICAL( &xKernelLock );
+    }
+
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
+/*----------------------------------------------------------*/
+
+#if ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
+
+/*
+ * Wrapper function to release "xKerneLock"
+ */
+    void prvReleaseKernelLock( void )
+    {
+        /* We call the tasks.c critical section macro to release xKernelLock */
+        taskEXIT_CRITICAL( &xKernelLock );
+    }
+
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
+/*----------------------------------------------------------*/
+
 #if ( CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
 
 /*

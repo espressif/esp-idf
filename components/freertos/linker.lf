@@ -142,9 +142,6 @@ entries:
         tasks:vTaskPlaceOnEventList (default)
         tasks:vTaskPlaceOnUnorderedEventList (default)
         tasks:vTaskPlaceOnEventListRestricted (default)
-        if FREERTOS_UNICORE = n:
-            tasks:vTaskTakeKernelLock (default)
-            tasks:vTaskReleaseKernelLock (default)
         tasks:vTaskRemoveFromUnorderedEventList (default)
         tasks:vTaskSetTimeOutState (default)
         tasks:vTaskInternalSetTimeOutState (default)
