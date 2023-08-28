@@ -261,6 +261,7 @@
 #define WLAN_RSNX_CAPAB_SAE_H2E 5
 #define WLAN_RSNX_CAPAB_SAE_PK 6
 
+#define WLAN_EXT_CAPAB_20_40_COEX 0
 #define WLAN_EXT_CAPAB_BSS_TRANSITION 19
 
 /* Action frame categories (IEEE Std 802.11-2016, 9.4.1.11, Table 9-76) */
