@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import re
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pexpect
 import pytest
@@ -67,12 +67,16 @@ CONFIGS_HW_STACK_GUARD = [
     pytest.param('panic', marks=TARGETS_HW_STACK_GUARD),
 ]
 
+# Panic abort information will start with this string.
+PANIC_ABORT_PREFIX = 'Panic reason: '
+
 
 def get_default_backtrace(config: str) -> List[str]:
     return [config, 'app_main', 'main_task', 'vPortTaskWrapper']
 
 
-def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[List[str]] = None, check_cpu_reset: Optional[bool] = True) -> None:
+def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[List[str]] = None, check_cpu_reset: Optional[bool] = True,
+                expected_coredump: Optional[List[Union[str, re.Pattern]]] = None) -> None:
     if 'gdbstub' in config:
         dut.expect_exact('Entering gdb stub now.')
         dut.start_gdb()
@@ -82,10 +86,14 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
         dut.revert_log_level()
         return  # don't expect "Rebooting" output below
 
+    # We will only perform comparisons for ELF files, as we are not introducing any new fields to the binary file format.
+    if 'bin' in config:
+        expected_coredump = None
+
     if 'uart' in config:
-        dut.process_coredump_uart()
+        dut.process_coredump_uart(expected_coredump)
     elif 'flash' in config:
-        dut.process_coredump_flash()
+        dut.process_coredump_flash(expected_coredump)
     elif 'panic' in config:
         pass
 
@@ -371,7 +379,8 @@ def test_storeprohibited(dut: PanicTestDut, config: str, test_func_name: str) ->
 @pytest.mark.generic
 def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    dut.expect(r'abort\(\) was called at PC [0-9xa-f]+ on core 0')
+    regex_pattern = rb'abort\(\) was called at PC [0-9xa-f]+ on core 0'
+    dut.expect(regex_pattern)
     if dut.is_xtensa:
         dut.expect_backtrace()
     else:
@@ -379,6 +388,7 @@ def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
+    coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'))
     common_test(
         dut,
         config,
@@ -387,6 +397,7 @@ def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
             'esp_system_abort',
             'abort'
         ] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern]
     )
 
 
@@ -394,7 +405,8 @@ def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
 @pytest.mark.generic
 def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    dut.expect('Undefined behavior of type out_of_bounds')
+    regex_pattern = rb'Undefined behavior of type out_of_bounds'
+    dut.expect(regex_pattern)
     if dut.is_xtensa:
         dut.expect_backtrace()
     else:
@@ -402,6 +414,7 @@ def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
+    coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'))
     common_test(
         dut,
         config,
@@ -411,6 +424,7 @@ def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
             '__ubsan_default_handler',
             '__ubsan_handle_out_of_bounds'
         ] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern]
     )
 
 
@@ -422,7 +436,8 @@ def test_abort_cache_disabled(
     if dut.target == 'esp32s2':
         pytest.xfail(reason='Crashes in itoa which is not in ROM, IDF-3572')
     dut.run_test_func(test_func_name)
-    dut.expect(r'abort\(\) was called at PC [0-9xa-f]+ on core 0')
+    regex_pattern = rb'abort\(\) was called at PC [0-9xa-f]+ on core 0'
+    dut.expect(regex_pattern)
     if dut.is_xtensa:
         dut.expect_backtrace()
     else:
@@ -430,6 +445,7 @@ def test_abort_cache_disabled(
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
+    coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'))
     common_test(
         dut,
         config,
@@ -438,6 +454,7 @@ def test_abort_cache_disabled(
             'esp_system_abort',
             'abort'
         ] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern]
     )
 
 
@@ -445,17 +462,16 @@ def test_abort_cache_disabled(
 @pytest.mark.generic
 def test_assert(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    dut.expect(
-        re.compile(
-            rb'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$', re.MULTILINE
-        )
-    )
+    regex_pattern = rb'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$'
+    dut.expect(re.compile(regex_pattern, re.MULTILINE))
     if dut.is_xtensa:
         dut.expect_backtrace()
     else:
         dut.expect_stack_dump()
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
+
+    coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'), re.MULTILINE)
     common_test(
         dut,
         config,
@@ -463,7 +479,9 @@ def test_assert(dut: PanicTestDut, config: str, test_func_name: str) -> None:
             'panic_abort',
             'esp_system_abort',
             '__assert_func'
-        ] + get_default_backtrace(test_func_name))
+        ] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern]
+    )
 
 
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
@@ -474,7 +492,8 @@ def test_assert_cache_disabled(
     if dut.target == 'esp32s2':
         pytest.xfail(reason='Crashes in itoa which is not in ROM, IDF-3572')
     dut.run_test_func(test_func_name)
-    dut.expect(re.compile(rb'assert failed: [0-9xa-fA-F]+.*$', re.MULTILINE))
+    regex_pattern = rb'assert failed: [0-9xa-fA-F]+.*$'
+    dut.expect(re.compile(regex_pattern, re.MULTILINE))
     if dut.is_xtensa:
         dut.expect_backtrace()
     else:
@@ -482,6 +501,7 @@ def test_assert_cache_disabled(
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
+    coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'), re.MULTILINE)
     common_test(
         dut,
         config,
@@ -489,7 +509,9 @@ def test_assert_cache_disabled(
             'panic_abort',
             'esp_system_abort',
             '__assert_func'
-        ] + get_default_backtrace(test_func_name))
+        ] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern]
+    )
 
 
 @pytest.mark.esp32

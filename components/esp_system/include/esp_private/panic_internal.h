@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 extern bool g_panic_abort;
-
+extern char *g_panic_abort_details;
 extern void *g_exc_frames[SOC_CPU_CORES_NUM];
 
 // Function to print longer amounts of information such as the details

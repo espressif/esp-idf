@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,7 +65,7 @@
 #define MWDT_DEFAULT_TICKS_PER_US       500
 
 bool g_panic_abort = false;
-static char *s_panic_abort_details = NULL;
+char *g_panic_abort_details = NULL;
 
 static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 
@@ -224,7 +224,7 @@ static inline void disable_all_wdts(void)
 
 static void print_abort_details(const void *f)
 {
-    panic_print_str(s_panic_abort_details);
+    panic_print_str(g_panic_abort_details);
 }
 
 // Control arrives from chip-specific panic handler, environment prepared for
@@ -239,7 +239,7 @@ void esp_panic_handler(panic_info_t *info)
     // If the exception was due to an abort, override some of the panic info
     if (g_panic_abort) {
         info->description = NULL;
-        info->details = s_panic_abort_details ? print_abort_details : NULL;
+        info->details = g_panic_abort_details ? print_abort_details : NULL;
         info->reason = NULL;
         info->exception = PANIC_EXCEPTION_ABORT;
     }
@@ -438,7 +438,7 @@ void esp_panic_handler(panic_info_t *info)
 void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined)) panic_abort(const char *details)
 {
     g_panic_abort = true;
-    s_panic_abort_details = (char *) details;
+    g_panic_abort_details = (char *) details;
 
 #if CONFIG_APPTRACE_ENABLE
 #if CONFIG_APPTRACE_SV_ENABLE
