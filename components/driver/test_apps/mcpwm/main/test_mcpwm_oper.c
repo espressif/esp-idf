@@ -64,22 +64,11 @@ TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
 
 TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
 {
-    mcpwm_timer_config_t timer_config = {
-        .group_id = 0,
-        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
-        .resolution_hz = 1000000, // 1MHz, 1us per tick
-        .period_ticks = 20000,
-        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
-    };
-    mcpwm_timer_handle_t timer = NULL;
-    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
-
     mcpwm_operator_config_t operator_config = {
         .group_id = 0,
     };
     mcpwm_oper_handle_t oper = NULL;
     TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
-    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = 0,
@@ -87,36 +76,34 @@ TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
     mcpwm_gen_handle_t generator = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
 
-    TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(generator,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE)));
-
     printf("add carrier to PWM wave\r\n");
     mcpwm_carrier_config_t carrier_config = {
+        .clk_src = MCPWM_CARRIER_CLK_SRC_DEFAULT,
         .frequency_hz = 1000000, // 1MHz carrier
         .duty_cycle = 0.5,
         .first_pulse_duration_us = 10,
     };
+
     TEST_ESP_OK(mcpwm_operator_apply_carrier(oper, &carrier_config));
-
-    TEST_ESP_OK(mcpwm_timer_enable(timer));
-
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
-    vTaskDelay(pdMS_TO_TICKS(100));
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
-    vTaskDelay(pdMS_TO_TICKS(100));
+    TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 1, true));
+    vTaskDelay(pdMS_TO_TICKS(10));
+    TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 0, true));
+    vTaskDelay(pdMS_TO_TICKS(10));
+    TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 1, true));
+    vTaskDelay(pdMS_TO_TICKS(10));
 
     printf("remove carrier from PWM wave\r\n");
     carrier_config.frequency_hz = 0;
     TEST_ESP_OK(mcpwm_operator_apply_carrier(oper, &carrier_config));
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
-    vTaskDelay(pdMS_TO_TICKS(200));
-    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
-    vTaskDelay(pdMS_TO_TICKS(100));
+    TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 1, true));
+    vTaskDelay(pdMS_TO_TICKS(10));
+    TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 0, true));
+    vTaskDelay(pdMS_TO_TICKS(10));
+    TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 1, true));
+    vTaskDelay(pdMS_TO_TICKS(10));
 
-    TEST_ESP_OK(mcpwm_timer_disable(timer));
     TEST_ESP_OK(mcpwm_del_generator(generator));
     TEST_ESP_OK(mcpwm_del_operator(oper));
-    TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
 static bool IRAM_ATTR test_cbc_brake_on_gpio_fault_callback(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_data)

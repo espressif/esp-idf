@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,15 @@ typedef int mcpwm_timer_clock_source_t;
 typedef soc_periph_mcpwm_capture_clk_src_t mcpwm_capture_clock_source_t;
 #else
 typedef int mcpwm_capture_clock_source_t;
+#endif // SOC_MCPWM_SUPPORTED
+
+/**
+ * @brief MCPWM carrier clock source
+ */
+#if SOC_MCPWM_SUPPORTED
+typedef soc_periph_mcpwm_carrier_clk_src_t mcpwm_carrier_clock_source_t;
+#else
+typedef int mcpwm_carrier_clock_source_t;
 #endif // SOC_MCPWM_SUPPORTED
 
 /**
