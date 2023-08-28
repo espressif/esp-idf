@@ -303,6 +303,7 @@ typedef void (tBTA_DM_CONFIG_EIR_CBACK) (tBTA_STATUS status, UINT8 eir_type_num,
 
 typedef struct {
     BOOLEAN bta_dm_eir_fec_required;        /* FEC required */
+    BOOLEAN bta_dm_eir_included_name;       /* Included device name or not */
     UINT8   bta_dm_eir_min_name_len;        /* minimum length of local name when it is shortened */
 
     BOOLEAN bta_dm_eir_included_uuid;       /* Included UUIDs or not */

@@ -454,6 +454,7 @@ const UINT8 bta_dm_eir_uuid16_list[] = {    0x08, 0x11, /* Headset */
 /* Extended Inquiry Response */
 tBTA_DM_EIR_CONF bta_dm_eir_cfg = {
     BTM_EIR_DEFAULT_FEC_REQUIRED, /* FEC required */
+    TRUE,  /* Included local name */
     50,    /* minimum length of local name when it is shortened */
     /* if length of local name is longer than this and EIR has not enough */
     /* room for all UUID list then local name is shortened to this length */
