@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "esp_openeth.h"
 #include "esp_assert.h"
 
 #ifdef __cplusplus
