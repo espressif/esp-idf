@@ -10,9 +10,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+/* *INDENT-OFF* */
 #ifdef __cplusplus
-extern "C" {
+    extern "C" {
 #endif
+/* *INDENT-ON* */
 
 /**
  * @brief Task Snapshot structure
@@ -22,10 +24,10 @@ extern "C" {
  */
 typedef struct xTASK_SNAPSHOT
 {
-    void        *pxTCB;         /*!< Address of the task control block. */
-    StackType_t *pxTopOfStack;  /*!< Points to the location of the last item placed on the tasks stack. */
-    StackType_t *pxEndOfStack;  /*!< Points to the end of the stack. pxTopOfStack < pxEndOfStack, stack grows hi2lo
-                                    pxTopOfStack > pxEndOfStack, stack grows lo2hi*/
+    void * pxTCB;               /*!< Address of the task control block. */
+    StackType_t * pxTopOfStack; /*!< Points to the location of the last item placed on the tasks stack. */
+    StackType_t * pxEndOfStack; /*!< Points to the end of the stack. pxTopOfStack < pxEndOfStack, stack grows hi2lo
+                                 *  pxTopOfStack > pxEndOfStack, stack grows lo2hi*/
 } TaskSnapshot_t;
 
 /**
@@ -53,7 +55,8 @@ TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask );
  * @param[out] pxTaskSnapshot Snapshot of the task
  * @return pdTRUE if operation was successful else pdFALSE
  */
-BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot );
+BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask,
+                             TaskSnapshot_t * pxTaskSnapshot );
 
 /**
  * @brief Fill an array of TaskSnapshot_t structures for every task in the system
@@ -67,8 +70,12 @@ BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot
  * @param[out] pxTCBSize Size of the a task's TCB structure
  * @return UBaseType_t
  */
-UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, const UBaseType_t uxArrayLength, UBaseType_t * const pxTCBSize );
+UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
+                                  const UBaseType_t uxArrayLength,
+                                  UBaseType_t * const pxTCBSize );
 
+/* *INDENT-OFF* */
 #ifdef __cplusplus
-}
+    }
 #endif
+/* *INDENT-ON* */
