@@ -1043,7 +1043,8 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot send polling transaction while the previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE );
 
     spi_host_t *host = handle->host;
-    ret = setup_priv_desc(trans_desc, &host->cur_trans_buf, (host->bus_attr->dma_enabled));
+    spi_trans_priv_t priv_polling_trans;
+    ret = setup_priv_desc(trans_desc, &priv_polling_trans, (host->bus_attr->dma_enabled));
     if (ret!=ESP_OK) return ret;
 
     /* If device_acquiring_lock is set to handle, it means that the user has already
@@ -1059,10 +1060,15 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     } else {
         ret = spi_bus_lock_wait_bg_done(handle->dev_lock, ticks_to_wait);
     }
-    if (ret != ESP_OK) return ret;
+    if (ret != ESP_OK) {
+        uninstall_priv_desc(&priv_polling_trans);
+        ESP_LOGE(SPI_TAG, "polling can't get buslock");
+        return ret;
+    }
 
     //Polling, no interrupt is used.
     host->polling = true;
+    host->cur_trans_buf = priv_polling_trans;
 
     ESP_LOGV(SPI_TAG, "polling trans");
     spi_new_trans(handle, &host->cur_trans_buf);
