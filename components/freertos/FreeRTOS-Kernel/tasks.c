@@ -504,28 +504,6 @@ PRIVILEGED_DATA static volatile BaseType_t xSwitchingContext[ configNUM_CORES ] 
 
 /*-----------------------------------------------------------*/
 
-/* Callback function prototypes. --------------------------*/
-#if ( configCHECK_FOR_STACK_OVERFLOW > 0 )
-
-    extern void vApplicationStackOverflowHook( TaskHandle_t xTask,
-                                               char * pcTaskName );
-
-#endif
-
-#if ( configUSE_TICK_HOOK > 0 )
-
-    extern void vApplicationTickHook( void ); /*lint !e526 Symbol not defined as it is an application callback. */
-
-#endif
-
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-    extern void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
-                                               StackType_t ** ppxIdleTaskStackBuffer,
-                                               uint32_t * pulIdleTaskStackSize ); /*lint !e526 Symbol not defined as it is an application callback. */
-
-#endif
-
 /* File private functions. --------------------------------*/
 
 /**
