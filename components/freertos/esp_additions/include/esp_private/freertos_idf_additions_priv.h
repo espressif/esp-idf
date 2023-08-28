@@ -109,6 +109,22 @@
 
 #endif /* ( CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
 
+/*
+ * In ESP-IDF FreeRTOS (i.e., multi-core SMP), core 0 manages the the FreeRTOS
+ * tick count. Thus only core 0 calls xTaskIncrementTick().
+ *
+ * However, all other cores also receive a periodic tick interrupt. Thus all
+ * other cores should call this function instead.
+ *
+ * This function will check if the current core requires time slicing, and also
+ * call the application tick hook. However, the tick count will remain unchanged.
+ */
+#if ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
+
+    BaseType_t xTaskIncrementTickOtherCores( void );
+
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
+
 /*------------------------------------------------------------------------------
  * TASK UTILITIES (PRIVATE)
  *----------------------------------------------------------------------------*/

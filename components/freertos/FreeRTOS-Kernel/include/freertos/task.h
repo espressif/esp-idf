@@ -3485,20 +3485,6 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
  */
 BaseType_t xTaskIncrementTick( void ) PRIVILEGED_FUNCTION;
 
-#if ( configNUM_CORES > 1 )
-
-/*
- * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS ONLY
- * INTENDED FOR USE WHEN IMPLEMENTING A PORT OF THE SCHEDULER AND IS
- * AN INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
- *
- * Called from all other cores except core 0 when their tick interrupt
- * occurs. This function will check if the current core requires time slicing,
- * and also call the application tick hook.
- */
-    BaseType_t xTaskIncrementTickOtherCores( void ) PRIVILEGED_FUNCTION;
-#endif /* configNUM_CORES > 1 */
-
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
  * INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
