@@ -4,7 +4,6 @@ menu "GDB Stub"
     # menu in the target component.
     config ESP_GDBSTUB_ENABLED
         bool
-        select FREERTOS_ENABLE_TASK_SNAPSHOT
 
     config ESP_SYSTEM_GDBSTUB_RUNTIME
         bool "GDBStub at runtime"

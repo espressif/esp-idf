@@ -411,7 +411,6 @@ menu "ESP System Settings"
     config ESP_TASK_WDT_EN
         bool "Enable Task Watchdog Timer"
         default y
-        select FREERTOS_ENABLE_TASK_SNAPSHOT
         help
             The Task Watchdog Timer can be used to make sure individual tasks are still
             running. Enabling this option will enable the Task Watchdog Timer. It can be

@@ -64,8 +64,6 @@ struct _reent *__getreent(void)
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-
 #include "freertos/task_snapshot.h"
 
 /**
@@ -246,7 +244,6 @@ UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, co
     *pxTCBSize = sizeof(TCB_t);
     return uxArrayNumFilled;
 }
-#endif // CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
 
 /* ----------------------------------------------------- OpenOCD -------------------------------------------------------
  *

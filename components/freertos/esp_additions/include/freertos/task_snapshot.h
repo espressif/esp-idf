@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 
-#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT || defined __DOXYGEN__
 /**
  * @brief Task Snapshot structure
  *
@@ -35,7 +34,6 @@ typedef struct xTASK_SNAPSHOT
  * - This function can be used to iterate over every task in the system
  * - The first call to this function must set pxTask to NULL
  * - When all functions have been iterated, this function will return NULL.
- * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
  *
  * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
  *       does not acquire any locks.
@@ -48,7 +46,6 @@ TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask );
  * @brief Fill a TaskSnapshot_t structure for specified task.
  *
  * - This function is used by the panic handler to get the snapshot of a particular task.
- * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
  *
  * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
  *       does not acquire any locks.
@@ -62,7 +59,6 @@ BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot
  * @brief Fill an array of TaskSnapshot_t structures for every task in the system
  *
  * - This function is used by the panic handler to get a snapshot of all tasks in the system
- * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
  *
  * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
  *        does not acquire any locks.
@@ -72,8 +68,6 @@ BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot
  * @return UBaseType_t
  */
 UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, const UBaseType_t uxArrayLength, UBaseType_t * const pxTCBSize );
-
-#endif // CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT || defined __DOXYGEN__
 
 #ifdef __cplusplus
 }
