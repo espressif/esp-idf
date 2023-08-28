@@ -242,6 +242,27 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 #endif /* CONFIG_FREERTOS_SMP && ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
 /*----------------------------------------------------------*/
 
+#if ( configUSE_TIMERS == 1 )
+
+/*
+ * In ESP-IDF, configUSE_TIMERS is always defined as 1 (i.e., not user configurable).
+ * However, tasks.c: vTaskStartScheduler() will always call xTimerCreateTimerTask()
+ * if ( configUSE_TIMERS == 1 ), thus causing the linker to link timers.c and
+ * wasting some memory (due to the timer task being created)/
+ *
+ * If we provide a weak version of xTimerCreateTimerTask(), this version will be
+ * compiled if the application does not call any other FreeRTOS timer functions.
+ * Thus we can save some text/RAM as timers.c will not be linked and the timer
+ * task never created.
+ */
+    BaseType_t __attribute__( ( weak ) ) xTimerCreateTimerTask( void )
+    {
+        return pdPASS;
+    }
+
+#endif /* configUSE_TIMERS */
+/*----------------------------------------------------------*/
+
 /* ------------------------------------------------- Task Utilities ------------------------------------------------- */
 
 #if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
