@@ -3,7 +3,7 @@
 */
 
 /*
- * SPDX-FileCopyrightText: 2013-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -92,6 +92,10 @@ static const char* TAG = "quad_psram";
 #define _SPI_80M_CLK_DIV            1
 #define _SPI_40M_CLK_DIV            2
 #define _SPI_20M_CLK_DIV            4
+
+typedef enum {
+    PSRAM_VADDR_MODE_NORMAL = 0,
+} psram_vaddr_mode_t;
 
 typedef enum {
     PSRAM_CLK_MODE_NORM = 0,  /*!< Normal SPI mode */
@@ -410,8 +414,9 @@ static void psram_set_clk_mode(int spi_num, psram_clk_mode_t clk_mode)
  * Psram mode init will overwrite original flash speed mode, so that it is possible to change psram and flash speed after OTA.
  * Flash read mode(QIO/QOUT/DIO/DOUT) will not be changed in app bin. It is decided by bootloader, OTA can not change this mode.
  */
-esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psram init
+esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
 {
+    psram_vaddr_mode_t vaddrmode = PSRAM_VADDR_MODE_NORMAL;
     psram_cache_speed_t mode = PSRAM_SPEED;
     assert(mode < PSRAM_CACHE_MAX && "we don't support any other mode for now.");
     // GPIO related settings

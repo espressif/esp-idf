@@ -294,7 +294,7 @@ static void s_configure_psram_ecc(void)
 #endif
 }
 
-esp_err_t esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)
+esp_err_t esp_psram_impl_enable(void)
 {
     s_init_psram_pins();
     s_set_psram_cs_timing();

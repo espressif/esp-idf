@@ -303,7 +303,7 @@ static void psram_gpio_config(void)
     esp_gpio_reserve_pins(BIT64(cs1_io) | BIT64(wp_io));
 }
 
-esp_err_t esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psram init
+esp_err_t esp_psram_impl_enable(void)   //psram init
 {
     psram_gpio_config();
     psram_set_cs_timing();

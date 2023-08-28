@@ -25,6 +25,10 @@ if(CONFIG_SPIRAM)
     elseif(CONFIG_SPIRAM_MODE_OCT)
         list(APPEND srcs "${target}/esp_psram_impl_octal.c")
     endif()
+
+    if(CONFIG_SPIRAM_MODE_HEX)
+        list(APPEND srcs "device/esp_psram_impl_ap_hex.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

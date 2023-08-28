@@ -17,9 +17,9 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/xtensa_api.h"
 #include "esp_heap_caps_init.h"
 #include "hal/mmu_hal.h"
+#include "hal/mmu_ll.h"
 #include "hal/cache_ll.h"
 #include "esp_private/esp_psram_io.h"
 #include "esp_private/esp_psram_extram.h"
@@ -35,16 +35,6 @@
 #include "esp_private/esp_cache_esp32_private.h"
 #endif
 
-
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_FREERTOS_UNICORE
-#define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
-#else
-#define PSRAM_MODE PSRAM_VADDR_MODE_LOWHIGH
-#endif
-#else
-#define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
-#endif
 
 /**
  * Two types of PSRAM memory regions for now:
@@ -123,7 +113,7 @@ esp_err_t esp_psram_init(void)
     }
 
     esp_err_t ret = ESP_FAIL;
-    ret = esp_psram_impl_enable(PSRAM_MODE);
+    ret = esp_psram_impl_enable();
     if (ret != ESP_OK) {
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
         ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
@@ -139,10 +129,11 @@ esp_err_t esp_psram_init(void)
     ESP_EARLY_LOGI(TAG, "Found %dMB PSRAM device", psram_physical_size / (1024 * 1024));
     ESP_EARLY_LOGI(TAG, "Speed: %dMHz", CONFIG_SPIRAM_SPEED);
 #if CONFIG_IDF_TARGET_ESP32
-    ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
-                                          (PSRAM_MODE==PSRAM_VADDR_MODE_EVENODD)?"even/odd (2-core)": \
-                                          (PSRAM_MODE==PSRAM_VADDR_MODE_LOWHIGH)?"low/high (2-core)": \
-                                          (PSRAM_MODE==PSRAM_VADDR_MODE_NORMAL)?"normal (1-core)":"ERROR");
+#if CONFIG_FREERTOS_UNICORE
+    ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in normal (1-core) mode.");
+#else
+    ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in low/high (2-core) mode.");
+#endif
 #endif
 
     uint32_t psram_available_size = 0;
@@ -196,30 +187,19 @@ esp_err_t esp_psram_init(void)
     size_t total_mapped_size = 0;
     size_t size_to_map = 0;
     size_t byte_aligned_size = 0;
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7495
-    ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_PSRAM, MMU_TARGET_PSRAM0, &byte_aligned_size);
-#else
     ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &byte_aligned_size);
-#endif
     assert(ret == ESP_OK);
     size_to_map = MIN(byte_aligned_size, psram_available_size);
 
     const void *v_start_8bit_aligned = NULL;
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7495
-    ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_PSRAM, MMU_TARGET_PSRAM0, &v_start_8bit_aligned);
-#else
     ret = esp_mmu_map_reserve_block_with_caps(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &v_start_8bit_aligned);
-#endif
     assert(ret == ESP_OK);
 
 #if CONFIG_IDF_TARGET_ESP32
     s_mapping((int)v_start_8bit_aligned, size_to_map);
 #else
     uint32_t actual_mapped_len = 0;
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7495
+#if MMU_LL_MMU_PER_TARGET
     mmu_hal_map_region(1, MMU_TARGET_PSRAM0, (intptr_t)v_start_8bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);
 #else
     mmu_hal_map_region(0, MMU_TARGET_PSRAM0, (intptr_t)v_start_8bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);

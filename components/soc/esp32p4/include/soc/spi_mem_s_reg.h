@@ -370,22 +370,22 @@ extern "C" {
  */
 #define SPI_MEM_S_CLOCK_REG (DR_REG_PSRAM_MSPI0_BASE + 0x14)
 /** SPI_MEM_S_CLKCNT_L : R/W; bitpos: [7:0]; default: 3;
- *  In the master mode it must be equal to SPI_MEM_S_clkcnt_N.
+ *  In the master mode it must be equal to spi_mem_clkcnt_N.
  */
 #define SPI_MEM_S_CLKCNT_L    0x000000FFU
 #define SPI_MEM_S_CLKCNT_L_M  (SPI_MEM_S_CLKCNT_L_V << SPI_MEM_S_CLKCNT_L_S)
 #define SPI_MEM_S_CLKCNT_L_V  0x000000FFU
 #define SPI_MEM_S_CLKCNT_L_S  0
 /** SPI_MEM_S_CLKCNT_H : R/W; bitpos: [15:8]; default: 1;
- *  In the master mode it must be floor((SPI_MEM_S_clkcnt_N+1)/2-1).
+ *  In the master mode it must be floor((spi_mem_clkcnt_N+1)/2-1).
  */
 #define SPI_MEM_S_CLKCNT_H    0x000000FFU
 #define SPI_MEM_S_CLKCNT_H_M  (SPI_MEM_S_CLKCNT_H_V << SPI_MEM_S_CLKCNT_H_S)
 #define SPI_MEM_S_CLKCNT_H_V  0x000000FFU
 #define SPI_MEM_S_CLKCNT_H_S  8
 /** SPI_MEM_S_CLKCNT_N : R/W; bitpos: [23:16]; default: 3;
- *  In the master mode it is the divider of SPI_MEM_S_clk. So SPI_MEM_S_clk frequency is
- *  system/(SPI_MEM_S_clkcnt_N+1)
+ *  In the master mode it is the divider of spi_mem_clk. So spi_mem_clk frequency is
+ *  system/(spi_mem_clkcnt_N+1)
  */
 #define SPI_MEM_S_CLKCNT_N    0x000000FFU
 #define SPI_MEM_S_CLKCNT_N_M  (SPI_MEM_S_CLKCNT_N_V << SPI_MEM_S_CLKCNT_N_S)
@@ -445,7 +445,7 @@ extern "C" {
  */
 #define SPI_MEM_S_USER1_REG (DR_REG_PSRAM_MSPI0_BASE + 0x1c)
 /** SPI_MEM_S_USR_DUMMY_CYCLELEN : R/W; bitpos: [5:0]; default: 7;
- *  The length in SPI_MEM_S_clk cycles of dummy phase. The register value shall be
+ *  The length in spi_mem_clk cycles of dummy phase. The register value shall be
  *  (cycle_num-1).
  */
 #define SPI_MEM_S_USR_DUMMY_CYCLELEN    0x0000003FU
@@ -486,6 +486,18 @@ extern "C" {
 #define SPI_MEM_S_USR_COMMAND_BITLEN_V  0x0000000FU
 #define SPI_MEM_S_USR_COMMAND_BITLEN_S  28
 
+/** SPI_MEM_S_RD_STATUS_REG register
+ *  SPI0 read control register.
+ */
+#define SPI_MEM_S_RD_STATUS_REG (DR_REG_PSRAM_MSPI0_BASE + 0x2c)
+/** SPI_MEM_S_WB_MODE : R/W; bitpos: [23:16]; default: 0;
+ *  Mode bits in the flash fast read mode  it is combined with spi_mem_fastrd_mode bit.
+ */
+#define SPI_MEM_S_WB_MODE    0x000000FFU
+#define SPI_MEM_S_WB_MODE_M  (SPI_MEM_S_WB_MODE_V << SPI_MEM_S_WB_MODE_S)
+#define SPI_MEM_S_WB_MODE_V  0x000000FFU
+#define SPI_MEM_S_WB_MODE_S  16
+
 /** SPI_MEM_S_MISC_REG register
  *  SPI0 misc register
  */
@@ -523,11 +535,80 @@ extern "C" {
  *  SPI0 bit mode control register.
  */
 #define SPI_MEM_S_CACHE_FCTRL_REG (DR_REG_PSRAM_MSPI0_BASE + 0x3c)
+/** SPI_MEM_S_AXI_REQ_EN : R/W; bitpos: [0]; default: 0;
+ *  For SPI0, AXI master access enable, 1: enable, 0:disable.
+ */
+#define SPI_MEM_S_AXI_REQ_EN    (BIT(0))
+#define SPI_MEM_S_AXI_REQ_EN_M  (SPI_MEM_S_AXI_REQ_EN_V << SPI_MEM_S_AXI_REQ_EN_S)
+#define SPI_MEM_S_AXI_REQ_EN_V  0x00000001U
+#define SPI_MEM_S_AXI_REQ_EN_S  0
+/** SPI_MEM_S_CACHE_USR_ADDR_4BYTE : R/W; bitpos: [1]; default: 0;
+ *  For SPI0,  cache  read flash with 4 bytes address, 1: enable, 0:disable.
+ */
+#define SPI_MEM_S_CACHE_USR_ADDR_4BYTE    (BIT(1))
+#define SPI_MEM_S_CACHE_USR_ADDR_4BYTE_M  (SPI_MEM_S_CACHE_USR_ADDR_4BYTE_V << SPI_MEM_S_CACHE_USR_ADDR_4BYTE_S)
+#define SPI_MEM_S_CACHE_USR_ADDR_4BYTE_V  0x00000001U
+#define SPI_MEM_S_CACHE_USR_ADDR_4BYTE_S  1
+/** SPI_MEM_S_CACHE_FLASH_USR_CMD : R/W; bitpos: [2]; default: 0;
+ *  For SPI0,  cache  read flash for user define command, 1: enable, 0:disable.
+ */
+#define SPI_MEM_S_CACHE_FLASH_USR_CMD    (BIT(2))
+#define SPI_MEM_S_CACHE_FLASH_USR_CMD_M  (SPI_MEM_S_CACHE_FLASH_USR_CMD_V << SPI_MEM_S_CACHE_FLASH_USR_CMD_S)
+#define SPI_MEM_S_CACHE_FLASH_USR_CMD_V  0x00000001U
+#define SPI_MEM_S_CACHE_FLASH_USR_CMD_S  2
+/** SPI_MEM_S_FDIN_DUAL : R/W; bitpos: [3]; default: 0;
+ *  For SPI0 flash, din phase apply 2 signals. 1: enable 0: disable. The bit is the
+ *  same with spi_mem_fread_dio.
+ */
+#define SPI_MEM_S_FDIN_DUAL    (BIT(3))
+#define SPI_MEM_S_FDIN_DUAL_M  (SPI_MEM_S_FDIN_DUAL_V << SPI_MEM_S_FDIN_DUAL_S)
+#define SPI_MEM_S_FDIN_DUAL_V  0x00000001U
+#define SPI_MEM_S_FDIN_DUAL_S  3
+/** SPI_MEM_S_FDOUT_DUAL : R/W; bitpos: [4]; default: 0;
+ *  For SPI0 flash, dout phase apply 2 signals. 1: enable 0: disable. The bit is the
+ *  same with spi_mem_fread_dio.
+ */
+#define SPI_MEM_S_FDOUT_DUAL    (BIT(4))
+#define SPI_MEM_S_FDOUT_DUAL_M  (SPI_MEM_S_FDOUT_DUAL_V << SPI_MEM_S_FDOUT_DUAL_S)
+#define SPI_MEM_S_FDOUT_DUAL_V  0x00000001U
+#define SPI_MEM_S_FDOUT_DUAL_S  4
+/** SPI_MEM_S_FADDR_DUAL : R/W; bitpos: [5]; default: 0;
+ *  For SPI0 flash, address phase apply 2 signals. 1: enable 0: disable.  The bit is
+ *  the same with spi_mem_fread_dio.
+ */
+#define SPI_MEM_S_FADDR_DUAL    (BIT(5))
+#define SPI_MEM_S_FADDR_DUAL_M  (SPI_MEM_S_FADDR_DUAL_V << SPI_MEM_S_FADDR_DUAL_S)
+#define SPI_MEM_S_FADDR_DUAL_V  0x00000001U
+#define SPI_MEM_S_FADDR_DUAL_S  5
+/** SPI_MEM_S_FDIN_QUAD : R/W; bitpos: [6]; default: 0;
+ *  For SPI0 flash, din phase apply 4 signals. 1: enable 0: disable.  The bit is the
+ *  same with spi_mem_fread_qio.
+ */
+#define SPI_MEM_S_FDIN_QUAD    (BIT(6))
+#define SPI_MEM_S_FDIN_QUAD_M  (SPI_MEM_S_FDIN_QUAD_V << SPI_MEM_S_FDIN_QUAD_S)
+#define SPI_MEM_S_FDIN_QUAD_V  0x00000001U
+#define SPI_MEM_S_FDIN_QUAD_S  6
+/** SPI_MEM_S_FDOUT_QUAD : R/W; bitpos: [7]; default: 0;
+ *  For SPI0 flash, dout phase apply 4 signals. 1: enable 0: disable.  The bit is the
+ *  same with spi_mem_fread_qio.
+ */
+#define SPI_MEM_S_FDOUT_QUAD    (BIT(7))
+#define SPI_MEM_S_FDOUT_QUAD_M  (SPI_MEM_S_FDOUT_QUAD_V << SPI_MEM_S_FDOUT_QUAD_S)
+#define SPI_MEM_S_FDOUT_QUAD_V  0x00000001U
+#define SPI_MEM_S_FDOUT_QUAD_S  7
+/** SPI_MEM_S_FADDR_QUAD : R/W; bitpos: [8]; default: 0;
+ *  For SPI0 flash, address phase apply 4 signals. 1: enable 0: disable.  The bit is
+ *  the same with spi_mem_fread_qio.
+ */
+#define SPI_MEM_S_FADDR_QUAD    (BIT(8))
+#define SPI_MEM_S_FADDR_QUAD_M  (SPI_MEM_S_FADDR_QUAD_V << SPI_MEM_S_FADDR_QUAD_S)
+#define SPI_MEM_S_FADDR_QUAD_V  0x00000001U
+#define SPI_MEM_S_FADDR_QUAD_S  8
 /** SPI_MEM_S_SAME_AW_AR_ADDR_CHK_EN : R/W; bitpos: [30]; default: 1;
  *  Set this bit to check AXI read/write the same address region.
  */
 #define SPI_MEM_S_SAME_AW_AR_ADDR_CHK_EN    (BIT(30))
-#define SPI_MEM_S_SAME_AW_AR_ADDR_CHK_EN_M  (SPI_SAME_AW_AR_ADDR_CHK_EN_V << SPI_SAME_AW_AR_ADDR_CHK_EN_S)
+#define SPI_MEM_S_SAME_AW_AR_ADDR_CHK_EN_M  (SPI_MEM_S_SAME_AW_AR_ADDR_CHK_EN_V << SPI_MEM_S_SAME_AW_AR_ADDR_CHK_EN_S)
 #define SPI_MEM_S_SAME_AW_AR_ADDR_CHK_EN_V  0x00000001U
 #define SPI_MEM_S_SAME_AW_AR_ADDR_CHK_EN_S  30
 /** SPI_MEM_S_CLOSE_AXI_INF_EN : R/W; bitpos: [31]; default: 1;
@@ -535,17 +616,222 @@ extern "C" {
  *  SLV_ERR will be replied to BRESP/RRESP.
  */
 #define SPI_MEM_S_CLOSE_AXI_INF_EN    (BIT(31))
-#define SPI_MEM_S_CLOSE_AXI_INF_EN_M  (SPI_CLOSE_AXI_INF_EN_V << SPI_CLOSE_AXI_INF_EN_S)
+#define SPI_MEM_S_CLOSE_AXI_INF_EN_M  (SPI_MEM_S_CLOSE_AXI_INF_EN_V << SPI_MEM_S_CLOSE_AXI_INF_EN_S)
 #define SPI_MEM_S_CLOSE_AXI_INF_EN_V  0x00000001U
 #define SPI_MEM_S_CLOSE_AXI_INF_EN_S  31
+
+/** SPI_MEM_S_CACHE_SCTRL_REG register
+ *  SPI0 external RAM control register
+ */
+#define SPI_MEM_S_CACHE_SCTRL_REG (DR_REG_PSRAM_MSPI0_BASE + 0x40)
+/** SPI_MEM_S_CACHE_USR_SADDR_4BYTE : R/W; bitpos: [0]; default: 0;
+ *  For SPI0, In the external RAM mode, cache read flash with 4 bytes command, 1:
+ *  enable, 0:disable.
+ */
+#define SPI_MEM_S_CACHE_USR_SADDR_4BYTE    (BIT(0))
+#define SPI_MEM_S_CACHE_USR_SADDR_4BYTE_M  (SPI_MEM_S_CACHE_USR_SADDR_4BYTE_V << SPI_MEM_S_CACHE_USR_SADDR_4BYTE_S)
+#define SPI_MEM_S_CACHE_USR_SADDR_4BYTE_V  0x00000001U
+#define SPI_MEM_S_CACHE_USR_SADDR_4BYTE_S  0
+/** SPI_MEM_S_USR_SRAM_DIO : R/W; bitpos: [1]; default: 0;
+ *  For SPI0, In the external RAM mode, spi dual I/O mode enable, 1: enable, 0:disable
+ */
+#define SPI_MEM_S_USR_SRAM_DIO    (BIT(1))
+#define SPI_MEM_S_USR_SRAM_DIO_M  (SPI_MEM_S_USR_SRAM_DIO_V << SPI_MEM_S_USR_SRAM_DIO_S)
+#define SPI_MEM_S_USR_SRAM_DIO_V  0x00000001U
+#define SPI_MEM_S_USR_SRAM_DIO_S  1
+/** SPI_MEM_S_USR_SRAM_QIO : R/W; bitpos: [2]; default: 0;
+ *  For SPI0, In the external RAM mode, spi quad I/O mode enable, 1: enable, 0:disable
+ */
+#define SPI_MEM_S_USR_SRAM_QIO    (BIT(2))
+#define SPI_MEM_S_USR_SRAM_QIO_M  (SPI_MEM_S_USR_SRAM_QIO_V << SPI_MEM_S_USR_SRAM_QIO_S)
+#define SPI_MEM_S_USR_SRAM_QIO_V  0x00000001U
+#define SPI_MEM_S_USR_SRAM_QIO_S  2
+/** SPI_MEM_S_USR_WR_SRAM_DUMMY : R/W; bitpos: [3]; default: 0;
+ *  For SPI0, In the external RAM mode, it is the enable bit of dummy phase for write
+ *  operations.
+ */
+#define SPI_MEM_S_USR_WR_SRAM_DUMMY    (BIT(3))
+#define SPI_MEM_S_USR_WR_SRAM_DUMMY_M  (SPI_MEM_S_USR_WR_SRAM_DUMMY_V << SPI_MEM_S_USR_WR_SRAM_DUMMY_S)
+#define SPI_MEM_S_USR_WR_SRAM_DUMMY_V  0x00000001U
+#define SPI_MEM_S_USR_WR_SRAM_DUMMY_S  3
+/** SPI_MEM_S_USR_RD_SRAM_DUMMY : R/W; bitpos: [4]; default: 1;
+ *  For SPI0, In the external RAM mode, it is the enable bit of dummy phase for read
+ *  operations.
+ */
+#define SPI_MEM_S_USR_RD_SRAM_DUMMY    (BIT(4))
+#define SPI_MEM_S_USR_RD_SRAM_DUMMY_M  (SPI_MEM_S_USR_RD_SRAM_DUMMY_V << SPI_MEM_S_USR_RD_SRAM_DUMMY_S)
+#define SPI_MEM_S_USR_RD_SRAM_DUMMY_V  0x00000001U
+#define SPI_MEM_S_USR_RD_SRAM_DUMMY_S  4
+/** SPI_MEM_S_CACHE_SRAM_USR_RCMD : R/W; bitpos: [5]; default: 1;
+ *  For SPI0, In the external RAM mode cache read external RAM for user define command.
+ */
+#define SPI_MEM_S_CACHE_SRAM_USR_RCMD    (BIT(5))
+#define SPI_MEM_S_CACHE_SRAM_USR_RCMD_M  (SPI_MEM_S_CACHE_SRAM_USR_RCMD_V << SPI_MEM_S_CACHE_SRAM_USR_RCMD_S)
+#define SPI_MEM_S_CACHE_SRAM_USR_RCMD_V  0x00000001U
+#define SPI_MEM_S_CACHE_SRAM_USR_RCMD_S  5
+/** SPI_MEM_S_SRAM_RDUMMY_CYCLELEN : R/W; bitpos: [11:6]; default: 1;
+ *  For SPI0, In the external RAM mode, it is the length in bits of read dummy phase.
+ *  The register value shall be (bit_num-1).
+ */
+#define SPI_MEM_S_SRAM_RDUMMY_CYCLELEN    0x0000003FU
+#define SPI_MEM_S_SRAM_RDUMMY_CYCLELEN_M  (SPI_MEM_S_SRAM_RDUMMY_CYCLELEN_V << SPI_MEM_S_SRAM_RDUMMY_CYCLELEN_S)
+#define SPI_MEM_S_SRAM_RDUMMY_CYCLELEN_V  0x0000003FU
+#define SPI_MEM_S_SRAM_RDUMMY_CYCLELEN_S  6
+/** SPI_MEM_S_SRAM_ADDR_BITLEN : R/W; bitpos: [19:14]; default: 23;
+ *  For SPI0, In the external RAM mode, it is the length in bits of address phase. The
+ *  register value shall be (bit_num-1).
+ */
+#define SPI_MEM_S_SRAM_ADDR_BITLEN    0x0000003FU
+#define SPI_MEM_S_SRAM_ADDR_BITLEN_M  (SPI_MEM_S_SRAM_ADDR_BITLEN_V << SPI_MEM_S_SRAM_ADDR_BITLEN_S)
+#define SPI_MEM_S_SRAM_ADDR_BITLEN_V  0x0000003FU
+#define SPI_MEM_S_SRAM_ADDR_BITLEN_S  14
+/** SPI_MEM_S_CACHE_SRAM_USR_WCMD : R/W; bitpos: [20]; default: 1;
+ *  For SPI0, In the external RAM mode cache write sram for user define command
+ */
+#define SPI_MEM_S_CACHE_SRAM_USR_WCMD    (BIT(20))
+#define SPI_MEM_S_CACHE_SRAM_USR_WCMD_M  (SPI_MEM_S_CACHE_SRAM_USR_WCMD_V << SPI_MEM_S_CACHE_SRAM_USR_WCMD_S)
+#define SPI_MEM_S_CACHE_SRAM_USR_WCMD_V  0x00000001U
+#define SPI_MEM_S_CACHE_SRAM_USR_WCMD_S  20
+/** SPI_MEM_S_SRAM_OCT : R/W; bitpos: [21]; default: 0;
+ *  reserved
+ */
+#define SPI_MEM_S_SRAM_OCT    (BIT(21))
+#define SPI_MEM_S_SRAM_OCT_M  (SPI_MEM_S_SRAM_OCT_V << SPI_MEM_S_SRAM_OCT_S)
+#define SPI_MEM_S_SRAM_OCT_V  0x00000001U
+#define SPI_MEM_S_SRAM_OCT_S  21
+/** SPI_MEM_S_SRAM_WDUMMY_CYCLELEN : R/W; bitpos: [27:22]; default: 1;
+ *  For SPI0, In the external RAM mode, it is the length in bits of write dummy phase.
+ *  The register value shall be (bit_num-1).
+ */
+#define SPI_MEM_S_SRAM_WDUMMY_CYCLELEN    0x0000003FU
+#define SPI_MEM_S_SRAM_WDUMMY_CYCLELEN_M  (SPI_MEM_S_SRAM_WDUMMY_CYCLELEN_V << SPI_MEM_S_SRAM_WDUMMY_CYCLELEN_S)
+#define SPI_MEM_S_SRAM_WDUMMY_CYCLELEN_V  0x0000003FU
+#define SPI_MEM_S_SRAM_WDUMMY_CYCLELEN_S  22
 
 /** SPI_MEM_S_SRAM_CMD_REG register
  *  SPI0 external RAM mode control register
  */
 #define SPI_MEM_S_SRAM_CMD_REG (DR_REG_PSRAM_MSPI0_BASE + 0x44)
+/** SPI_MEM_S_SCLK_MODE : R/W; bitpos: [1:0]; default: 0;
+ *  SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed
+ *  one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3:
+ *  SPI clock is always on.
+ */
+#define SPI_MEM_S_SCLK_MODE    0x00000003U
+#define SPI_MEM_S_SCLK_MODE_M  (SPI_MEM_S_SCLK_MODE_V << SPI_MEM_S_SCLK_MODE_S)
+#define SPI_MEM_S_SCLK_MODE_V  0x00000003U
+#define SPI_MEM_S_SCLK_MODE_S  0
+/** SPI_MEM_S_SWB_MODE : R/W; bitpos: [9:2]; default: 0;
+ *  Mode bits in the external RAM fast read mode  it is combined with
+ *  spi_mem_fastrd_mode bit.
+ */
+#define SPI_MEM_S_SWB_MODE    0x000000FFU
+#define SPI_MEM_S_SWB_MODE_M  (SPI_MEM_S_SWB_MODE_V << SPI_MEM_S_SWB_MODE_S)
+#define SPI_MEM_S_SWB_MODE_V  0x000000FFU
+#define SPI_MEM_S_SWB_MODE_S  2
+/** SPI_MEM_S_SDIN_DUAL : R/W; bitpos: [10]; default: 0;
+ *  For SPI0 external RAM , din phase apply 2 signals. 1: enable 0: disable. The bit is
+ *  the same with spi_mem_usr_sram_dio.
+ */
+#define SPI_MEM_S_SDIN_DUAL    (BIT(10))
+#define SPI_MEM_S_SDIN_DUAL_M  (SPI_MEM_S_SDIN_DUAL_V << SPI_MEM_S_SDIN_DUAL_S)
+#define SPI_MEM_S_SDIN_DUAL_V  0x00000001U
+#define SPI_MEM_S_SDIN_DUAL_S  10
+/** SPI_MEM_S_SDOUT_DUAL : R/W; bitpos: [11]; default: 0;
+ *  For SPI0 external RAM , dout phase apply 2 signals. 1: enable 0: disable. The bit
+ *  is the same with spi_mem_usr_sram_dio.
+ */
+#define SPI_MEM_S_SDOUT_DUAL    (BIT(11))
+#define SPI_MEM_S_SDOUT_DUAL_M  (SPI_MEM_S_SDOUT_DUAL_V << SPI_MEM_S_SDOUT_DUAL_S)
+#define SPI_MEM_S_SDOUT_DUAL_V  0x00000001U
+#define SPI_MEM_S_SDOUT_DUAL_S  11
+/** SPI_MEM_S_SADDR_DUAL : R/W; bitpos: [12]; default: 0;
+ *  For SPI0 external RAM , address phase apply 2 signals. 1: enable 0: disable. The
+ *  bit is the same with spi_mem_usr_sram_dio.
+ */
+#define SPI_MEM_S_SADDR_DUAL    (BIT(12))
+#define SPI_MEM_S_SADDR_DUAL_M  (SPI_MEM_S_SADDR_DUAL_V << SPI_MEM_S_SADDR_DUAL_S)
+#define SPI_MEM_S_SADDR_DUAL_V  0x00000001U
+#define SPI_MEM_S_SADDR_DUAL_S  12
+/** SPI_MEM_S_SDIN_QUAD : R/W; bitpos: [14]; default: 0;
+ *  For SPI0 external RAM , din phase apply 4 signals. 1: enable 0: disable. The bit is
+ *  the same with spi_mem_usr_sram_qio.
+ */
+#define SPI_MEM_S_SDIN_QUAD    (BIT(14))
+#define SPI_MEM_S_SDIN_QUAD_M  (SPI_MEM_S_SDIN_QUAD_V << SPI_MEM_S_SDIN_QUAD_S)
+#define SPI_MEM_S_SDIN_QUAD_V  0x00000001U
+#define SPI_MEM_S_SDIN_QUAD_S  14
+/** SPI_MEM_S_SDOUT_QUAD : R/W; bitpos: [15]; default: 0;
+ *  For SPI0 external RAM , dout phase apply 4 signals. 1: enable 0: disable. The bit
+ *  is the same with spi_mem_usr_sram_qio.
+ */
+#define SPI_MEM_S_SDOUT_QUAD    (BIT(15))
+#define SPI_MEM_S_SDOUT_QUAD_M  (SPI_MEM_S_SDOUT_QUAD_V << SPI_MEM_S_SDOUT_QUAD_S)
+#define SPI_MEM_S_SDOUT_QUAD_V  0x00000001U
+#define SPI_MEM_S_SDOUT_QUAD_S  15
+/** SPI_MEM_S_SADDR_QUAD : R/W; bitpos: [16]; default: 0;
+ *  For SPI0 external RAM , address phase apply 4 signals. 1: enable 0: disable. The
+ *  bit is the same with spi_mem_usr_sram_qio.
+ */
+#define SPI_MEM_S_SADDR_QUAD    (BIT(16))
+#define SPI_MEM_S_SADDR_QUAD_M  (SPI_MEM_S_SADDR_QUAD_V << SPI_MEM_S_SADDR_QUAD_S)
+#define SPI_MEM_S_SADDR_QUAD_V  0x00000001U
+#define SPI_MEM_S_SADDR_QUAD_S  16
+/** SPI_MEM_S_SCMD_QUAD : R/W; bitpos: [17]; default: 0;
+ *  For SPI0 external RAM , cmd phase apply 4 signals. 1: enable 0: disable. The bit is
+ *  the same with spi_mem_usr_sram_qio.
+ */
+#define SPI_MEM_S_SCMD_QUAD    (BIT(17))
+#define SPI_MEM_S_SCMD_QUAD_M  (SPI_MEM_S_SCMD_QUAD_V << SPI_MEM_S_SCMD_QUAD_S)
+#define SPI_MEM_S_SCMD_QUAD_V  0x00000001U
+#define SPI_MEM_S_SCMD_QUAD_S  17
+/** SPI_MEM_S_SDIN_OCT : R/W; bitpos: [18]; default: 0;
+ *  For SPI0 external RAM , din phase apply 8 signals. 1: enable 0: disable.
+ */
+#define SPI_MEM_S_SDIN_OCT    (BIT(18))
+#define SPI_MEM_S_SDIN_OCT_M  (SPI_MEM_S_SDIN_OCT_V << SPI_MEM_S_SDIN_OCT_S)
+#define SPI_MEM_S_SDIN_OCT_V  0x00000001U
+#define SPI_MEM_S_SDIN_OCT_S  18
+/** SPI_MEM_S_SDOUT_OCT : R/W; bitpos: [19]; default: 0;
+ *  For SPI0 external RAM , dout phase apply 8 signals. 1: enable 0: disable.
+ */
+#define SPI_MEM_S_SDOUT_OCT    (BIT(19))
+#define SPI_MEM_S_SDOUT_OCT_M  (SPI_MEM_S_SDOUT_OCT_V << SPI_MEM_S_SDOUT_OCT_S)
+#define SPI_MEM_S_SDOUT_OCT_V  0x00000001U
+#define SPI_MEM_S_SDOUT_OCT_S  19
+/** SPI_MEM_S_SADDR_OCT : R/W; bitpos: [20]; default: 0;
+ *  For SPI0 external RAM , address phase apply 4 signals. 1: enable 0: disable.
+ */
+#define SPI_MEM_S_SADDR_OCT    (BIT(20))
+#define SPI_MEM_S_SADDR_OCT_M  (SPI_MEM_S_SADDR_OCT_V << SPI_MEM_S_SADDR_OCT_S)
+#define SPI_MEM_S_SADDR_OCT_V  0x00000001U
+#define SPI_MEM_S_SADDR_OCT_S  20
+/** SPI_MEM_S_SCMD_OCT : R/W; bitpos: [21]; default: 0;
+ *  For SPI0 external RAM , cmd phase apply 8 signals. 1: enable 0: disable.
+ */
+#define SPI_MEM_S_SCMD_OCT    (BIT(21))
+#define SPI_MEM_S_SCMD_OCT_M  (SPI_MEM_S_SCMD_OCT_V << SPI_MEM_S_SCMD_OCT_S)
+#define SPI_MEM_S_SCMD_OCT_V  0x00000001U
+#define SPI_MEM_S_SCMD_OCT_S  21
+/** SPI_MEM_S_SDUMMY_RIN : R/W; bitpos: [22]; default: 1;
+ *  In the dummy phase of a MSPI read data transfer when accesses to external RAM, the
+ *  signal level of SPI bus is output by the MSPI controller.
+ */
+#define SPI_MEM_S_SDUMMY_RIN    (BIT(22))
+#define SPI_MEM_S_SDUMMY_RIN_M  (SPI_MEM_S_SDUMMY_RIN_V << SPI_MEM_S_SDUMMY_RIN_S)
+#define SPI_MEM_S_SDUMMY_RIN_V  0x00000001U
+#define SPI_MEM_S_SDUMMY_RIN_S  22
+/** SPI_MEM_S_SDUMMY_WOUT : R/W; bitpos: [23]; default: 1;
+ *  In the dummy phase of a MSPI write data transfer when accesses to external RAM, the
+ *  signal level of SPI bus is output by the MSPI controller.
+ */
+#define SPI_MEM_S_SDUMMY_WOUT    (BIT(23))
+#define SPI_MEM_S_SDUMMY_WOUT_M  (SPI_MEM_S_SDUMMY_WOUT_V << SPI_MEM_S_SDUMMY_WOUT_S)
+#define SPI_MEM_S_SDUMMY_WOUT_V  0x00000001U
+#define SPI_MEM_S_SDUMMY_WOUT_S  23
 /** SPI_MEM_S_SMEM_WDUMMY_DQS_ALWAYS_OUT : R/W; bitpos: [24]; default: 0;
  *  In the dummy phase of an MSPI write data transfer when accesses to external RAM,
- *  the level of SPI_DQS is output by the MSPI controller.
+ *  the level of SPI_MEM_S_DQS is output by the MSPI controller.
  */
 #define SPI_MEM_S_SMEM_WDUMMY_DQS_ALWAYS_OUT    (BIT(24))
 #define SPI_MEM_S_SMEM_WDUMMY_DQS_ALWAYS_OUT_M  (SPI_MEM_S_SMEM_WDUMMY_DQS_ALWAYS_OUT_V << SPI_MEM_S_SMEM_WDUMMY_DQS_ALWAYS_OUT_S)
@@ -553,14 +839,28 @@ extern "C" {
 #define SPI_MEM_S_SMEM_WDUMMY_DQS_ALWAYS_OUT_S  24
 /** SPI_MEM_S_SMEM_WDUMMY_ALWAYS_OUT : R/W; bitpos: [25]; default: 0;
  *  In the dummy phase of an MSPI write data transfer when accesses to external RAM,
- *  the level of SPI_IO[7:0] is output by the MSPI controller.
+ *  the level of SPI_MEM_S_IO[7:0] is output by the MSPI controller.
  */
 #define SPI_MEM_S_SMEM_WDUMMY_ALWAYS_OUT    (BIT(25))
 #define SPI_MEM_S_SMEM_WDUMMY_ALWAYS_OUT_M  (SPI_MEM_S_SMEM_WDUMMY_ALWAYS_OUT_V << SPI_MEM_S_SMEM_WDUMMY_ALWAYS_OUT_S)
 #define SPI_MEM_S_SMEM_WDUMMY_ALWAYS_OUT_V  0x00000001U
 #define SPI_MEM_S_SMEM_WDUMMY_ALWAYS_OUT_S  25
+/** SPI_MEM_S_SDIN_HEX : R/W; bitpos: [26]; default: 0;
+ *  For SPI0 external RAM , din phase apply 16 signals. 1: enable 0: disable.
+ */
+#define SPI_MEM_S_SDIN_HEX    (BIT(26))
+#define SPI_MEM_S_SDIN_HEX_M  (SPI_MEM_S_SDIN_HEX_V << SPI_MEM_S_SDIN_HEX_S)
+#define SPI_MEM_S_SDIN_HEX_V  0x00000001U
+#define SPI_MEM_S_SDIN_HEX_S  26
+/** SPI_MEM_S_SDOUT_HEX : R/W; bitpos: [27]; default: 0;
+ *  For SPI0 external RAM , dout phase apply 16 signals. 1: enable 0: disable.
+ */
+#define SPI_MEM_S_SDOUT_HEX    (BIT(27))
+#define SPI_MEM_S_SDOUT_HEX_M  (SPI_MEM_S_SDOUT_HEX_V << SPI_MEM_S_SDOUT_HEX_S)
+#define SPI_MEM_S_SDOUT_HEX_V  0x00000001U
+#define SPI_MEM_S_SDOUT_HEX_S  27
 /** SPI_MEM_S_SMEM_DQS_IE_ALWAYS_ON : R/W; bitpos: [30]; default: 0;
- *  When accesses to external RAM, 1: the IE signals of pads connected to SPI_DQS are
+ *  When accesses to external RAM, 1: the IE signals of pads connected to SPI_MEM_S_DQS are
  *  always 1. 0: Others.
  */
 #define SPI_MEM_S_SMEM_DQS_IE_ALWAYS_ON    (BIT(30))
@@ -568,13 +868,90 @@ extern "C" {
 #define SPI_MEM_S_SMEM_DQS_IE_ALWAYS_ON_V  0x00000001U
 #define SPI_MEM_S_SMEM_DQS_IE_ALWAYS_ON_S  30
 /** SPI_MEM_S_SMEM_DATA_IE_ALWAYS_ON : R/W; bitpos: [31]; default: 1;
- *  When accesses to external RAM, 1: the IE signals of pads connected to SPI_IO[7:0]
+ *  When accesses to external RAM, 1: the IE signals of pads connected to SPI_MEM_S_IO[7:0]
  *  are always 1. 0: Others.
  */
 #define SPI_MEM_S_SMEM_DATA_IE_ALWAYS_ON    (BIT(31))
 #define SPI_MEM_S_SMEM_DATA_IE_ALWAYS_ON_M  (SPI_MEM_S_SMEM_DATA_IE_ALWAYS_ON_V << SPI_MEM_S_SMEM_DATA_IE_ALWAYS_ON_S)
 #define SPI_MEM_S_SMEM_DATA_IE_ALWAYS_ON_V  0x00000001U
 #define SPI_MEM_S_SMEM_DATA_IE_ALWAYS_ON_S  31
+
+/** SPI_MEM_S_SRAM_DRD_CMD_REG register
+ *  SPI0 external RAM DDR read command control register
+ */
+#define SPI_MEM_S_SRAM_DRD_CMD_REG (DR_REG_PSRAM_MSPI0_BASE + 0x48)
+/** SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_VALUE : R/W; bitpos: [15:0]; default: 0;
+ *  For SPI0,When cache mode is enable it is the read command value of command phase
+ *  for sram.
+ */
+#define SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_VALUE    0x0000FFFFU
+#define SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_VALUE_M  (SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_VALUE_V << SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_VALUE_S)
+#define SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_VALUE_V  0x0000FFFFU
+#define SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_VALUE_S  0
+/** SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_BITLEN : R/W; bitpos: [31:28]; default: 0;
+ *  For SPI0,When cache mode is enable it is the length in bits of command phase for
+ *  sram. The register value shall be (bit_num-1).
+ */
+#define SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_BITLEN    0x0000000FU
+#define SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_BITLEN_M  (SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_BITLEN_V << SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_BITLEN_S)
+#define SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_BITLEN_V  0x0000000FU
+#define SPI_MEM_S_CACHE_SRAM_USR_RD_CMD_BITLEN_S  28
+
+/** SPI_MEM_S_SRAM_DWR_CMD_REG register
+ *  SPI0 external RAM DDR write command control register
+ */
+#define SPI_MEM_S_SRAM_DWR_CMD_REG (DR_REG_PSRAM_MSPI0_BASE + 0x4c)
+/** SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_VALUE : R/W; bitpos: [15:0]; default: 0;
+ *  For SPI0,When cache mode is enable it is the write command value of command phase
+ *  for sram.
+ */
+#define SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_VALUE    0x0000FFFFU
+#define SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_VALUE_M  (SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_VALUE_V << SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_VALUE_S)
+#define SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_VALUE_V  0x0000FFFFU
+#define SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_VALUE_S  0
+/** SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_BITLEN : R/W; bitpos: [31:28]; default: 0;
+ *  For SPI0,When cache mode is enable it is the in bits of command phase  for sram.
+ *  The register value shall be (bit_num-1).
+ */
+#define SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_BITLEN    0x0000000FU
+#define SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_BITLEN_M  (SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_BITLEN_V << SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_BITLEN_S)
+#define SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_BITLEN_V  0x0000000FU
+#define SPI_MEM_S_CACHE_SRAM_USR_WR_CMD_BITLEN_S  28
+
+/** SPI_MEM_S_SRAM_CLK_REG register
+ *  SPI0 external RAM clock control register
+ */
+#define SPI_MEM_S_SRAM_CLK_REG (DR_REG_PSRAM_MSPI0_BASE + 0x50)
+/** SPI_MEM_S_SCLKCNT_L : R/W; bitpos: [7:0]; default: 3;
+ *  For SPI0 external RAM  interface, it must be equal to spi_mem_clkcnt_N.
+ */
+#define SPI_MEM_S_SCLKCNT_L    0x000000FFU
+#define SPI_MEM_S_SCLKCNT_L_M  (SPI_MEM_S_SCLKCNT_L_V << SPI_MEM_S_SCLKCNT_L_S)
+#define SPI_MEM_S_SCLKCNT_L_V  0x000000FFU
+#define SPI_MEM_S_SCLKCNT_L_S  0
+/** SPI_MEM_S_SCLKCNT_H : R/W; bitpos: [15:8]; default: 1;
+ *  For SPI0 external RAM  interface, it must be floor((spi_mem_clkcnt_N+1)/2-1).
+ */
+#define SPI_MEM_S_SCLKCNT_H    0x000000FFU
+#define SPI_MEM_S_SCLKCNT_H_M  (SPI_MEM_S_SCLKCNT_H_V << SPI_MEM_S_SCLKCNT_H_S)
+#define SPI_MEM_S_SCLKCNT_H_V  0x000000FFU
+#define SPI_MEM_S_SCLKCNT_H_S  8
+/** SPI_MEM_S_SCLKCNT_N : R/W; bitpos: [23:16]; default: 3;
+ *  For SPI0 external RAM  interface, it is the divider of spi_mem_clk. So spi_mem_clk
+ *  frequency is system/(spi_mem_clkcnt_N+1)
+ */
+#define SPI_MEM_S_SCLKCNT_N    0x000000FFU
+#define SPI_MEM_S_SCLKCNT_N_M  (SPI_MEM_S_SCLKCNT_N_V << SPI_MEM_S_SCLKCNT_N_S)
+#define SPI_MEM_S_SCLKCNT_N_V  0x000000FFU
+#define SPI_MEM_S_SCLKCNT_N_S  16
+/** SPI_MEM_S_SCLK_EQU_SYSCLK : R/W; bitpos: [31]; default: 0;
+ *  For SPI0 external RAM  interface, 1: spi_mem_clk is eqaul to system 0: spi_mem_clk
+ *  is divided from system clock.
+ */
+#define SPI_MEM_S_SCLK_EQU_SYSCLK    (BIT(31))
+#define SPI_MEM_S_SCLK_EQU_SYSCLK_M  (SPI_MEM_S_SCLK_EQU_SYSCLK_V << SPI_MEM_S_SCLK_EQU_SYSCLK_S)
+#define SPI_MEM_S_SCLK_EQU_SYSCLK_V  0x00000001U
+#define SPI_MEM_S_SCLK_EQU_SYSCLK_S  31
 
 /** SPI_MEM_S_FSM_REG register
  *  SPI0 FSM status register
@@ -1188,27 +1565,27 @@ extern "C" {
 #define SPI_MEM_S_SMEM_HYPERBUS_CA_S  30
 
 /** SPI_MEM_S_FMEM_PMS0_ATTR_REG register
- *  MSPI flash PMS section 0 attribute register
+ *  MSPI flash PMS section $n attribute register
  */
 #define SPI_MEM_S_FMEM_PMS0_ATTR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x100)
 /** SPI_MEM_S_FMEM_PMS0_RD_ATTR : R/W; bitpos: [0]; default: 1;
- *  1: SPI1 flash PMS section 0 read accessible. 0: Not allowed.
+ *  1: SPI1 flash PMS section $n read accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_FMEM_PMS0_RD_ATTR    (BIT(0))
 #define SPI_MEM_S_FMEM_PMS0_RD_ATTR_M  (SPI_MEM_S_FMEM_PMS0_RD_ATTR_V << SPI_MEM_S_FMEM_PMS0_RD_ATTR_S)
 #define SPI_MEM_S_FMEM_PMS0_RD_ATTR_V  0x00000001U
 #define SPI_MEM_S_FMEM_PMS0_RD_ATTR_S  0
 /** SPI_MEM_S_FMEM_PMS0_WR_ATTR : R/W; bitpos: [1]; default: 1;
- *  1: SPI1 flash PMS section 0 write accessible. 0: Not allowed.
+ *  1: SPI1 flash PMS section $n write accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_FMEM_PMS0_WR_ATTR    (BIT(1))
 #define SPI_MEM_S_FMEM_PMS0_WR_ATTR_M  (SPI_MEM_S_FMEM_PMS0_WR_ATTR_V << SPI_MEM_S_FMEM_PMS0_WR_ATTR_S)
 #define SPI_MEM_S_FMEM_PMS0_WR_ATTR_V  0x00000001U
 #define SPI_MEM_S_FMEM_PMS0_WR_ATTR_S  1
 /** SPI_MEM_S_FMEM_PMS0_ECC : R/W; bitpos: [2]; default: 0;
- *  SPI1 flash PMS section 0 ECC mode, 1: enable ECC mode. 0: Disable it. The flash PMS
- *  section 0 is configured by registers SPI_MEM_S_FMEM_PMS0_ADDR_REG and
- *  SPI_MEM_S_FMEM_PMS0_SIZE_REG.
+ *  SPI1 flash PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The flash
+ *  PMS section $n is configured by registers SPI_MEM_S_FMEM_PMS$n_ADDR_REG and
+ *  SPI_MEM_S_FMEM_PMS$n_SIZE_REG.
  */
 #define SPI_MEM_S_FMEM_PMS0_ECC    (BIT(2))
 #define SPI_MEM_S_FMEM_PMS0_ECC_M  (SPI_MEM_S_FMEM_PMS0_ECC_V << SPI_MEM_S_FMEM_PMS0_ECC_S)
@@ -1216,27 +1593,27 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS0_ECC_S  2
 
 /** SPI_MEM_S_FMEM_PMS1_ATTR_REG register
- *  MSPI flash PMS section 1 attribute register
+ *  SPI1 flash PMS section $n attribute register
  */
 #define SPI_MEM_S_FMEM_PMS1_ATTR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x104)
 /** SPI_MEM_S_FMEM_PMS1_RD_ATTR : R/W; bitpos: [0]; default: 1;
- *  1: SPI1 flash PMS section 1 read accessible. 0: Not allowed.
+ *  1: SPI1 flash PMS section $n read accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_FMEM_PMS1_RD_ATTR    (BIT(0))
 #define SPI_MEM_S_FMEM_PMS1_RD_ATTR_M  (SPI_MEM_S_FMEM_PMS1_RD_ATTR_V << SPI_MEM_S_FMEM_PMS1_RD_ATTR_S)
 #define SPI_MEM_S_FMEM_PMS1_RD_ATTR_V  0x00000001U
 #define SPI_MEM_S_FMEM_PMS1_RD_ATTR_S  0
 /** SPI_MEM_S_FMEM_PMS1_WR_ATTR : R/W; bitpos: [1]; default: 1;
- *  1: SPI1 flash PMS section 1 write accessible. 0: Not allowed.
+ *  1: SPI1 flash PMS section $n write accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_FMEM_PMS1_WR_ATTR    (BIT(1))
 #define SPI_MEM_S_FMEM_PMS1_WR_ATTR_M  (SPI_MEM_S_FMEM_PMS1_WR_ATTR_V << SPI_MEM_S_FMEM_PMS1_WR_ATTR_S)
 #define SPI_MEM_S_FMEM_PMS1_WR_ATTR_V  0x00000001U
 #define SPI_MEM_S_FMEM_PMS1_WR_ATTR_S  1
 /** SPI_MEM_S_FMEM_PMS1_ECC : R/W; bitpos: [2]; default: 0;
- *  SPI1 flash PMS section 1 ECC mode, 1: enable ECC mode. 0: Disable it. The flash PMS
- *  section 1 is configured by registers SPI_MEM_S_FMEM_PMS1_ADDR_REG and
- *  SPI_MEM_S_FMEM_PMS1_SIZE_REG.
+ *  SPI1 flash PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The flash
+ *  PMS section $n is configured by registers SPI_MEM_S_FMEM_PMS$n_ADDR_REG and
+ *  SPI_MEM_S_FMEM_PMS$n_SIZE_REG.
  */
 #define SPI_MEM_S_FMEM_PMS1_ECC    (BIT(2))
 #define SPI_MEM_S_FMEM_PMS1_ECC_M  (SPI_MEM_S_FMEM_PMS1_ECC_V << SPI_MEM_S_FMEM_PMS1_ECC_S)
@@ -1244,27 +1621,27 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS1_ECC_S  2
 
 /** SPI_MEM_S_FMEM_PMS2_ATTR_REG register
- *  MSPI flash PMS section 2 attribute register
+ *  SPI1 flash PMS section $n attribute register
  */
 #define SPI_MEM_S_FMEM_PMS2_ATTR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x108)
 /** SPI_MEM_S_FMEM_PMS2_RD_ATTR : R/W; bitpos: [0]; default: 1;
- *  1: SPI1 flash PMS section 2 read accessible. 0: Not allowed.
+ *  1: SPI1 flash PMS section $n read accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_FMEM_PMS2_RD_ATTR    (BIT(0))
 #define SPI_MEM_S_FMEM_PMS2_RD_ATTR_M  (SPI_MEM_S_FMEM_PMS2_RD_ATTR_V << SPI_MEM_S_FMEM_PMS2_RD_ATTR_S)
 #define SPI_MEM_S_FMEM_PMS2_RD_ATTR_V  0x00000001U
 #define SPI_MEM_S_FMEM_PMS2_RD_ATTR_S  0
 /** SPI_MEM_S_FMEM_PMS2_WR_ATTR : R/W; bitpos: [1]; default: 1;
- *  1: SPI1 flash PMS section 2 write accessible. 0: Not allowed.
+ *  1: SPI1 flash PMS section $n write accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_FMEM_PMS2_WR_ATTR    (BIT(1))
 #define SPI_MEM_S_FMEM_PMS2_WR_ATTR_M  (SPI_MEM_S_FMEM_PMS2_WR_ATTR_V << SPI_MEM_S_FMEM_PMS2_WR_ATTR_S)
 #define SPI_MEM_S_FMEM_PMS2_WR_ATTR_V  0x00000001U
 #define SPI_MEM_S_FMEM_PMS2_WR_ATTR_S  1
 /** SPI_MEM_S_FMEM_PMS2_ECC : R/W; bitpos: [2]; default: 0;
- *  SPI1 flash PMS section 2 ECC mode, 1: enable ECC mode. 0: Disable it. The flash PMS
- *  section 2 is configured by registers SPI_MEM_S_FMEM_PMS2_ADDR_REG and
- *  SPI_MEM_S_FMEM_PMS2_SIZE_REG.
+ *  SPI1 flash PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The flash
+ *  PMS section $n is configured by registers SPI_MEM_S_FMEM_PMS$n_ADDR_REG and
+ *  SPI_MEM_S_FMEM_PMS$n_SIZE_REG.
  */
 #define SPI_MEM_S_FMEM_PMS2_ECC    (BIT(2))
 #define SPI_MEM_S_FMEM_PMS2_ECC_M  (SPI_MEM_S_FMEM_PMS2_ECC_V << SPI_MEM_S_FMEM_PMS2_ECC_S)
@@ -1272,27 +1649,27 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS2_ECC_S  2
 
 /** SPI_MEM_S_FMEM_PMS3_ATTR_REG register
- *  MSPI flash PMS section 3 attribute register
+ *  SPI1 flash PMS section $n attribute register
  */
 #define SPI_MEM_S_FMEM_PMS3_ATTR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x10c)
 /** SPI_MEM_S_FMEM_PMS3_RD_ATTR : R/W; bitpos: [0]; default: 1;
- *  1: SPI1 flash PMS section 3 read accessible. 0: Not allowed.
+ *  1: SPI1 flash PMS section $n read accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_FMEM_PMS3_RD_ATTR    (BIT(0))
 #define SPI_MEM_S_FMEM_PMS3_RD_ATTR_M  (SPI_MEM_S_FMEM_PMS3_RD_ATTR_V << SPI_MEM_S_FMEM_PMS3_RD_ATTR_S)
 #define SPI_MEM_S_FMEM_PMS3_RD_ATTR_V  0x00000001U
 #define SPI_MEM_S_FMEM_PMS3_RD_ATTR_S  0
 /** SPI_MEM_S_FMEM_PMS3_WR_ATTR : R/W; bitpos: [1]; default: 1;
- *  1: SPI1 flash PMS section 3 write accessible. 0: Not allowed.
+ *  1: SPI1 flash PMS section $n write accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_FMEM_PMS3_WR_ATTR    (BIT(1))
 #define SPI_MEM_S_FMEM_PMS3_WR_ATTR_M  (SPI_MEM_S_FMEM_PMS3_WR_ATTR_V << SPI_MEM_S_FMEM_PMS3_WR_ATTR_S)
 #define SPI_MEM_S_FMEM_PMS3_WR_ATTR_V  0x00000001U
 #define SPI_MEM_S_FMEM_PMS3_WR_ATTR_S  1
 /** SPI_MEM_S_FMEM_PMS3_ECC : R/W; bitpos: [2]; default: 0;
- *  SPI1 flash PMS section 3 ECC mode, 1: enable ECC mode. 0: Disable it. The flash PMS
- *  section 3 is configured by registers SPI_MEM_S_FMEM_PMS3_ADDR_REG and
- *  SPI_MEM_S_FMEM_PMS3_SIZE_REG.
+ *  SPI1 flash PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The flash
+ *  PMS section $n is configured by registers SPI_MEM_S_FMEM_PMS$n_ADDR_REG and
+ *  SPI_MEM_S_FMEM_PMS$n_SIZE_REG.
  */
 #define SPI_MEM_S_FMEM_PMS3_ECC    (BIT(2))
 #define SPI_MEM_S_FMEM_PMS3_ECC_M  (SPI_MEM_S_FMEM_PMS3_ECC_V << SPI_MEM_S_FMEM_PMS3_ECC_S)
@@ -1300,11 +1677,11 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS3_ECC_S  2
 
 /** SPI_MEM_S_FMEM_PMS0_ADDR_REG register
- *  SPI1 flash PMS section 0 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_FMEM_PMS0_ADDR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x110)
 /** SPI_MEM_S_FMEM_PMS0_ADDR_S : R/W; bitpos: [26:0]; default: 0;
- *  SPI1 flash PMS section 0 start address value
+ *  SPI1 flash PMS section $n start address value
  */
 #define SPI_MEM_S_FMEM_PMS0_ADDR_S    0x07FFFFFFU
 #define SPI_MEM_S_FMEM_PMS0_ADDR_S_M  (SPI_MEM_S_FMEM_PMS0_ADDR_S_V << SPI_MEM_S_FMEM_PMS0_ADDR_S_S)
@@ -1312,11 +1689,11 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS0_ADDR_S_S  0
 
 /** SPI_MEM_S_FMEM_PMS1_ADDR_REG register
- *  SPI1 flash PMS section 1 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_FMEM_PMS1_ADDR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x114)
-/** SPI_MEM_S_FMEM_PMS1_ADDR_S : R/W; bitpos: [26:0]; default: 0;
- *  SPI1 flash PMS section 1 start address value
+/** SPI_MEM_S_FMEM_PMS1_ADDR_S : R/W; bitpos: [26:0]; default: 16777215;
+ *  SPI1 flash PMS section $n start address value
  */
 #define SPI_MEM_S_FMEM_PMS1_ADDR_S    0x07FFFFFFU
 #define SPI_MEM_S_FMEM_PMS1_ADDR_S_M  (SPI_MEM_S_FMEM_PMS1_ADDR_S_V << SPI_MEM_S_FMEM_PMS1_ADDR_S_S)
@@ -1324,11 +1701,11 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS1_ADDR_S_S  0
 
 /** SPI_MEM_S_FMEM_PMS2_ADDR_REG register
- *  SPI1 flash PMS section 2 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_FMEM_PMS2_ADDR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x118)
-/** SPI_MEM_S_FMEM_PMS2_ADDR_S : R/W; bitpos: [26:0]; default: 0;
- *  SPI1 flash PMS section 2 start address value
+/** SPI_MEM_S_FMEM_PMS2_ADDR_S : R/W; bitpos: [26:0]; default: 33554431;
+ *  SPI1 flash PMS section $n start address value
  */
 #define SPI_MEM_S_FMEM_PMS2_ADDR_S    0x07FFFFFFU
 #define SPI_MEM_S_FMEM_PMS2_ADDR_S_M  (SPI_MEM_S_FMEM_PMS2_ADDR_S_V << SPI_MEM_S_FMEM_PMS2_ADDR_S_S)
@@ -1336,11 +1713,11 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS2_ADDR_S_S  0
 
 /** SPI_MEM_S_FMEM_PMS3_ADDR_REG register
- *  SPI1 flash PMS section 3 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_FMEM_PMS3_ADDR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x11c)
-/** SPI_MEM_S_FMEM_PMS3_ADDR_S : R/W; bitpos: [26:0]; default: 0;
- *  SPI1 flash PMS section 3 start address value
+/** SPI_MEM_S_FMEM_PMS3_ADDR_S : R/W; bitpos: [26:0]; default: 50331647;
+ *  SPI1 flash PMS section $n start address value
  */
 #define SPI_MEM_S_FMEM_PMS3_ADDR_S    0x07FFFFFFU
 #define SPI_MEM_S_FMEM_PMS3_ADDR_S_M  (SPI_MEM_S_FMEM_PMS3_ADDR_S_V << SPI_MEM_S_FMEM_PMS3_ADDR_S_S)
@@ -1348,12 +1725,12 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS3_ADDR_S_S  0
 
 /** SPI_MEM_S_FMEM_PMS0_SIZE_REG register
- *  SPI1 flash PMS section 0 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_FMEM_PMS0_SIZE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x120)
 /** SPI_MEM_S_FMEM_PMS0_SIZE : R/W; bitpos: [14:0]; default: 4096;
- *  SPI1 flash PMS section 0 address region is (SPI_MEM_S_FMEM_PMS0_ADDR_S,
- *  SPI_MEM_S_FMEM_PMS0_ADDR_S + SPI_MEM_S_FMEM_PMS0_SIZE)
+ *  SPI1 flash PMS section $n address region is (SPI_MEM_S_FMEM_PMS$n_ADDR_S,
+ *  SPI_MEM_S_FMEM_PMS$n_ADDR_S + SPI_MEM_S_FMEM_PMS$n_SIZE)
  */
 #define SPI_MEM_S_FMEM_PMS0_SIZE    0x00007FFFU
 #define SPI_MEM_S_FMEM_PMS0_SIZE_M  (SPI_MEM_S_FMEM_PMS0_SIZE_V << SPI_MEM_S_FMEM_PMS0_SIZE_S)
@@ -1361,12 +1738,12 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS0_SIZE_S  0
 
 /** SPI_MEM_S_FMEM_PMS1_SIZE_REG register
- *  SPI1 flash PMS section 1 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_FMEM_PMS1_SIZE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x124)
 /** SPI_MEM_S_FMEM_PMS1_SIZE : R/W; bitpos: [14:0]; default: 4096;
- *  SPI1 flash PMS section 1 address region is (SPI_MEM_S_FMEM_PMS1_ADDR_S,
- *  SPI_MEM_S_FMEM_PMS1_ADDR_S + SPI_MEM_S_FMEM_PMS1_SIZE)
+ *  SPI1 flash PMS section $n address region is (SPI_MEM_S_FMEM_PMS$n_ADDR_S,
+ *  SPI_MEM_S_FMEM_PMS$n_ADDR_S + SPI_MEM_S_FMEM_PMS$n_SIZE)
  */
 #define SPI_MEM_S_FMEM_PMS1_SIZE    0x00007FFFU
 #define SPI_MEM_S_FMEM_PMS1_SIZE_M  (SPI_MEM_S_FMEM_PMS1_SIZE_V << SPI_MEM_S_FMEM_PMS1_SIZE_S)
@@ -1374,12 +1751,12 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS1_SIZE_S  0
 
 /** SPI_MEM_S_FMEM_PMS2_SIZE_REG register
- *  SPI1 flash PMS section 2 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_FMEM_PMS2_SIZE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x128)
 /** SPI_MEM_S_FMEM_PMS2_SIZE : R/W; bitpos: [14:0]; default: 4096;
- *  SPI1 flash PMS section 2 address region is (SPI_MEM_S_FMEM_PMS2_ADDR_S,
- *  SPI_MEM_S_FMEM_PMS2_ADDR_S + SPI_MEM_S_FMEM_PMS2_SIZE)
+ *  SPI1 flash PMS section $n address region is (SPI_MEM_S_FMEM_PMS$n_ADDR_S,
+ *  SPI_MEM_S_FMEM_PMS$n_ADDR_S + SPI_MEM_S_FMEM_PMS$n_SIZE)
  */
 #define SPI_MEM_S_FMEM_PMS2_SIZE    0x00007FFFU
 #define SPI_MEM_S_FMEM_PMS2_SIZE_M  (SPI_MEM_S_FMEM_PMS2_SIZE_V << SPI_MEM_S_FMEM_PMS2_SIZE_S)
@@ -1387,12 +1764,12 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS2_SIZE_S  0
 
 /** SPI_MEM_S_FMEM_PMS3_SIZE_REG register
- *  SPI1 flash PMS section 3 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_FMEM_PMS3_SIZE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x12c)
 /** SPI_MEM_S_FMEM_PMS3_SIZE : R/W; bitpos: [14:0]; default: 4096;
- *  SPI1 flash PMS section 3 address region is (SPI_MEM_S_FMEM_PMS3_ADDR_S,
- *  SPI_MEM_S_FMEM_PMS3_ADDR_S + SPI_MEM_S_FMEM_PMS3_SIZE)
+ *  SPI1 flash PMS section $n address region is (SPI_MEM_S_FMEM_PMS$n_ADDR_S,
+ *  SPI_MEM_S_FMEM_PMS$n_ADDR_S + SPI_MEM_S_FMEM_PMS$n_SIZE)
  */
 #define SPI_MEM_S_FMEM_PMS3_SIZE    0x00007FFFU
 #define SPI_MEM_S_FMEM_PMS3_SIZE_M  (SPI_MEM_S_FMEM_PMS3_SIZE_V << SPI_MEM_S_FMEM_PMS3_SIZE_S)
@@ -1400,27 +1777,27 @@ extern "C" {
 #define SPI_MEM_S_FMEM_PMS3_SIZE_S  0
 
 /** SPI_MEM_S_SMEM_PMS0_ATTR_REG register
- *  SPI1 flash PMS section 0 start address register
+ *  SPI1 flash PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS0_ATTR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x130)
 /** SPI_MEM_S_SMEM_PMS0_RD_ATTR : R/W; bitpos: [0]; default: 1;
- *  1: SPI1 external RAM PMS section 0 read accessible. 0: Not allowed.
+ *  1: SPI1 external RAM PMS section $n read accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_SMEM_PMS0_RD_ATTR    (BIT(0))
 #define SPI_MEM_S_SMEM_PMS0_RD_ATTR_M  (SPI_MEM_S_SMEM_PMS0_RD_ATTR_V << SPI_MEM_S_SMEM_PMS0_RD_ATTR_S)
 #define SPI_MEM_S_SMEM_PMS0_RD_ATTR_V  0x00000001U
 #define SPI_MEM_S_SMEM_PMS0_RD_ATTR_S  0
 /** SPI_MEM_S_SMEM_PMS0_WR_ATTR : R/W; bitpos: [1]; default: 1;
- *  1: SPI1 external RAM PMS section 0 write accessible. 0: Not allowed.
+ *  1: SPI1 external RAM PMS section $n write accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_SMEM_PMS0_WR_ATTR    (BIT(1))
 #define SPI_MEM_S_SMEM_PMS0_WR_ATTR_M  (SPI_MEM_S_SMEM_PMS0_WR_ATTR_V << SPI_MEM_S_SMEM_PMS0_WR_ATTR_S)
 #define SPI_MEM_S_SMEM_PMS0_WR_ATTR_V  0x00000001U
 #define SPI_MEM_S_SMEM_PMS0_WR_ATTR_S  1
 /** SPI_MEM_S_SMEM_PMS0_ECC : R/W; bitpos: [2]; default: 0;
- *  SPI1 external RAM PMS section 0 ECC mode, 1: enable ECC mode. 0: Disable it. The
- *  external RAM PMS section 0 is configured by registers SPI_MEM_S_SMEM_PMS0_ADDR_REG and
- *  SPI_MEM_S_SMEM_PMS0_SIZE_REG.
+ *  SPI1 external RAM PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The
+ *  external RAM PMS section $n is configured by registers SPI_MEM_S_SMEM_PMS$n_ADDR_REG and
+ *  SPI_MEM_S_SMEM_PMS$n_SIZE_REG.
  */
 #define SPI_MEM_S_SMEM_PMS0_ECC    (BIT(2))
 #define SPI_MEM_S_SMEM_PMS0_ECC_M  (SPI_MEM_S_SMEM_PMS0_ECC_V << SPI_MEM_S_SMEM_PMS0_ECC_S)
@@ -1428,27 +1805,27 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS0_ECC_S  2
 
 /** SPI_MEM_S_SMEM_PMS1_ATTR_REG register
- *  SPI1 flash PMS section 1 start address register
+ *  SPI1 external RAM PMS section $n attribute register
  */
 #define SPI_MEM_S_SMEM_PMS1_ATTR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x134)
 /** SPI_MEM_S_SMEM_PMS1_RD_ATTR : R/W; bitpos: [0]; default: 1;
- *  1: SPI1 external RAM PMS section 1 read accessible. 0: Not allowed.
+ *  1: SPI1 external RAM PMS section $n read accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_SMEM_PMS1_RD_ATTR    (BIT(0))
 #define SPI_MEM_S_SMEM_PMS1_RD_ATTR_M  (SPI_MEM_S_SMEM_PMS1_RD_ATTR_V << SPI_MEM_S_SMEM_PMS1_RD_ATTR_S)
 #define SPI_MEM_S_SMEM_PMS1_RD_ATTR_V  0x00000001U
 #define SPI_MEM_S_SMEM_PMS1_RD_ATTR_S  0
 /** SPI_MEM_S_SMEM_PMS1_WR_ATTR : R/W; bitpos: [1]; default: 1;
- *  1: SPI1 external RAM PMS section 1 write accessible. 0: Not allowed.
+ *  1: SPI1 external RAM PMS section $n write accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_SMEM_PMS1_WR_ATTR    (BIT(1))
 #define SPI_MEM_S_SMEM_PMS1_WR_ATTR_M  (SPI_MEM_S_SMEM_PMS1_WR_ATTR_V << SPI_MEM_S_SMEM_PMS1_WR_ATTR_S)
 #define SPI_MEM_S_SMEM_PMS1_WR_ATTR_V  0x00000001U
 #define SPI_MEM_S_SMEM_PMS1_WR_ATTR_S  1
 /** SPI_MEM_S_SMEM_PMS1_ECC : R/W; bitpos: [2]; default: 0;
- *  SPI1 external RAM PMS section 1 ECC mode, 1: enable ECC mode. 0: Disable it. The
- *  external RAM PMS section 1 is configured by registers SPI_MEM_S_SMEM_PMS1_ADDR_REG and
- *  SPI_MEM_S_SMEM_PMS1_SIZE_REG.
+ *  SPI1 external RAM PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The
+ *  external RAM PMS section $n is configured by registers SPI_MEM_S_SMEM_PMS$n_ADDR_REG and
+ *  SPI_MEM_S_SMEM_PMS$n_SIZE_REG.
  */
 #define SPI_MEM_S_SMEM_PMS1_ECC    (BIT(2))
 #define SPI_MEM_S_SMEM_PMS1_ECC_M  (SPI_MEM_S_SMEM_PMS1_ECC_V << SPI_MEM_S_SMEM_PMS1_ECC_S)
@@ -1456,27 +1833,27 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS1_ECC_S  2
 
 /** SPI_MEM_S_SMEM_PMS2_ATTR_REG register
- *  SPI1 flash PMS section 2 start address register
+ *  SPI1 external RAM PMS section $n attribute register
  */
 #define SPI_MEM_S_SMEM_PMS2_ATTR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x138)
 /** SPI_MEM_S_SMEM_PMS2_RD_ATTR : R/W; bitpos: [0]; default: 1;
- *  1: SPI1 external RAM PMS section 2 read accessible. 0: Not allowed.
+ *  1: SPI1 external RAM PMS section $n read accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_SMEM_PMS2_RD_ATTR    (BIT(0))
 #define SPI_MEM_S_SMEM_PMS2_RD_ATTR_M  (SPI_MEM_S_SMEM_PMS2_RD_ATTR_V << SPI_MEM_S_SMEM_PMS2_RD_ATTR_S)
 #define SPI_MEM_S_SMEM_PMS2_RD_ATTR_V  0x00000001U
 #define SPI_MEM_S_SMEM_PMS2_RD_ATTR_S  0
 /** SPI_MEM_S_SMEM_PMS2_WR_ATTR : R/W; bitpos: [1]; default: 1;
- *  1: SPI1 external RAM PMS section 2 write accessible. 0: Not allowed.
+ *  1: SPI1 external RAM PMS section $n write accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_SMEM_PMS2_WR_ATTR    (BIT(1))
 #define SPI_MEM_S_SMEM_PMS2_WR_ATTR_M  (SPI_MEM_S_SMEM_PMS2_WR_ATTR_V << SPI_MEM_S_SMEM_PMS2_WR_ATTR_S)
 #define SPI_MEM_S_SMEM_PMS2_WR_ATTR_V  0x00000001U
 #define SPI_MEM_S_SMEM_PMS2_WR_ATTR_S  1
 /** SPI_MEM_S_SMEM_PMS2_ECC : R/W; bitpos: [2]; default: 0;
- *  SPI1 external RAM PMS section 2 ECC mode, 1: enable ECC mode. 0: Disable it. The
- *  external RAM PMS section 2 is configured by registers SPI_MEM_S_SMEM_PMS2_ADDR_REG and
- *  SPI_MEM_S_SMEM_PMS2_SIZE_REG.
+ *  SPI1 external RAM PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The
+ *  external RAM PMS section $n is configured by registers SPI_MEM_S_SMEM_PMS$n_ADDR_REG and
+ *  SPI_MEM_S_SMEM_PMS$n_SIZE_REG.
  */
 #define SPI_MEM_S_SMEM_PMS2_ECC    (BIT(2))
 #define SPI_MEM_S_SMEM_PMS2_ECC_M  (SPI_MEM_S_SMEM_PMS2_ECC_V << SPI_MEM_S_SMEM_PMS2_ECC_S)
@@ -1484,27 +1861,27 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS2_ECC_S  2
 
 /** SPI_MEM_S_SMEM_PMS3_ATTR_REG register
- *  SPI1 flash PMS section 3 start address register
+ *  SPI1 external RAM PMS section $n attribute register
  */
 #define SPI_MEM_S_SMEM_PMS3_ATTR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x13c)
 /** SPI_MEM_S_SMEM_PMS3_RD_ATTR : R/W; bitpos: [0]; default: 1;
- *  1: SPI1 external RAM PMS section 3 read accessible. 0: Not allowed.
+ *  1: SPI1 external RAM PMS section $n read accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_SMEM_PMS3_RD_ATTR    (BIT(0))
 #define SPI_MEM_S_SMEM_PMS3_RD_ATTR_M  (SPI_MEM_S_SMEM_PMS3_RD_ATTR_V << SPI_MEM_S_SMEM_PMS3_RD_ATTR_S)
 #define SPI_MEM_S_SMEM_PMS3_RD_ATTR_V  0x00000001U
 #define SPI_MEM_S_SMEM_PMS3_RD_ATTR_S  0
 /** SPI_MEM_S_SMEM_PMS3_WR_ATTR : R/W; bitpos: [1]; default: 1;
- *  1: SPI1 external RAM PMS section 3 write accessible. 0: Not allowed.
+ *  1: SPI1 external RAM PMS section $n write accessible. 0: Not allowed.
  */
 #define SPI_MEM_S_SMEM_PMS3_WR_ATTR    (BIT(1))
 #define SPI_MEM_S_SMEM_PMS3_WR_ATTR_M  (SPI_MEM_S_SMEM_PMS3_WR_ATTR_V << SPI_MEM_S_SMEM_PMS3_WR_ATTR_S)
 #define SPI_MEM_S_SMEM_PMS3_WR_ATTR_V  0x00000001U
 #define SPI_MEM_S_SMEM_PMS3_WR_ATTR_S  1
 /** SPI_MEM_S_SMEM_PMS3_ECC : R/W; bitpos: [2]; default: 0;
- *  SPI1 external RAM PMS section 3 ECC mode, 1: enable ECC mode. 0: Disable it. The
- *  external RAM PMS section 3 is configured by registers SPI_MEM_S_SMEM_PMS3_ADDR_REG and
- *  SPI_MEM_S_SMEM_PMS3_SIZE_REG.
+ *  SPI1 external RAM PMS section $n ECC mode, 1: enable ECC mode. 0: Disable it. The
+ *  external RAM PMS section $n is configured by registers SPI_MEM_S_SMEM_PMS$n_ADDR_REG and
+ *  SPI_MEM_S_SMEM_PMS$n_SIZE_REG.
  */
 #define SPI_MEM_S_SMEM_PMS3_ECC    (BIT(2))
 #define SPI_MEM_S_SMEM_PMS3_ECC_M  (SPI_MEM_S_SMEM_PMS3_ECC_V << SPI_MEM_S_SMEM_PMS3_ECC_S)
@@ -1512,11 +1889,11 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS3_ECC_S  2
 
 /** SPI_MEM_S_SMEM_PMS0_ADDR_REG register
- *  SPI1 external RAM PMS section 0 start address register
+ *  SPI1 external RAM PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS0_ADDR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x140)
 /** SPI_MEM_S_SMEM_PMS0_ADDR_S : R/W; bitpos: [26:0]; default: 0;
- *  SPI1 external RAM PMS section 0 start address value
+ *  SPI1 external RAM PMS section $n start address value
  */
 #define SPI_MEM_S_SMEM_PMS0_ADDR_S    0x07FFFFFFU
 #define SPI_MEM_S_SMEM_PMS0_ADDR_S_M  (SPI_MEM_S_SMEM_PMS0_ADDR_S_V << SPI_MEM_S_SMEM_PMS0_ADDR_S_S)
@@ -1524,11 +1901,11 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS0_ADDR_S_S  0
 
 /** SPI_MEM_S_SMEM_PMS1_ADDR_REG register
- *  SPI1 external RAM PMS section 1 start address register
+ *  SPI1 external RAM PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS1_ADDR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x144)
-/** SPI_MEM_S_SMEM_PMS1_ADDR_S : R/W; bitpos: [26:0]; default: 0;
- *  SPI1 external RAM PMS section 1 start address value
+/** SPI_MEM_S_SMEM_PMS1_ADDR_S : R/W; bitpos: [26:0]; default: 16777215;
+ *  SPI1 external RAM PMS section $n start address value
  */
 #define SPI_MEM_S_SMEM_PMS1_ADDR_S    0x07FFFFFFU
 #define SPI_MEM_S_SMEM_PMS1_ADDR_S_M  (SPI_MEM_S_SMEM_PMS1_ADDR_S_V << SPI_MEM_S_SMEM_PMS1_ADDR_S_S)
@@ -1536,11 +1913,11 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS1_ADDR_S_S  0
 
 /** SPI_MEM_S_SMEM_PMS2_ADDR_REG register
- *  SPI1 external RAM PMS section 2 start address register
+ *  SPI1 external RAM PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS2_ADDR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x148)
-/** SPI_MEM_S_SMEM_PMS2_ADDR_S : R/W; bitpos: [26:0]; default: 0;
- *  SPI1 external RAM PMS section 2 start address value
+/** SPI_MEM_S_SMEM_PMS2_ADDR_S : R/W; bitpos: [26:0]; default: 33554431;
+ *  SPI1 external RAM PMS section $n start address value
  */
 #define SPI_MEM_S_SMEM_PMS2_ADDR_S    0x07FFFFFFU
 #define SPI_MEM_S_SMEM_PMS2_ADDR_S_M  (SPI_MEM_S_SMEM_PMS2_ADDR_S_V << SPI_MEM_S_SMEM_PMS2_ADDR_S_S)
@@ -1548,11 +1925,11 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS2_ADDR_S_S  0
 
 /** SPI_MEM_S_SMEM_PMS3_ADDR_REG register
- *  SPI1 external RAM PMS section 3 start address register
+ *  SPI1 external RAM PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS3_ADDR_REG (DR_REG_PSRAM_MSPI0_BASE + 0x14c)
-/** SPI_MEM_S_SMEM_PMS3_ADDR_S : R/W; bitpos: [26:0]; default: 0;
- *  SPI1 external RAM PMS section 3 start address value
+/** SPI_MEM_S_SMEM_PMS3_ADDR_S : R/W; bitpos: [26:0]; default: 50331647;
+ *  SPI1 external RAM PMS section $n start address value
  */
 #define SPI_MEM_S_SMEM_PMS3_ADDR_S    0x07FFFFFFU
 #define SPI_MEM_S_SMEM_PMS3_ADDR_S_M  (SPI_MEM_S_SMEM_PMS3_ADDR_S_V << SPI_MEM_S_SMEM_PMS3_ADDR_S_S)
@@ -1560,12 +1937,12 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS3_ADDR_S_S  0
 
 /** SPI_MEM_S_SMEM_PMS0_SIZE_REG register
- *  SPI1 external RAM PMS section 0 start address register
+ *  SPI1 external RAM PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS0_SIZE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x150)
 /** SPI_MEM_S_SMEM_PMS0_SIZE : R/W; bitpos: [14:0]; default: 4096;
- *  SPI1 external RAM PMS section 0 address region is (SPI_MEM_S_SMEM_PMS0_ADDR_S,
- *  SPI_MEM_S_SMEM_PMS0_ADDR_S + SPI_MEM_S_SMEM_PMS0_SIZE)
+ *  SPI1 external RAM PMS section $n address region is (SPI_MEM_S_SMEM_PMS$n_ADDR_S,
+ *  SPI_MEM_S_SMEM_PMS$n_ADDR_S + SPI_MEM_S_SMEM_PMS$n_SIZE)
  */
 #define SPI_MEM_S_SMEM_PMS0_SIZE    0x00007FFFU
 #define SPI_MEM_S_SMEM_PMS0_SIZE_M  (SPI_MEM_S_SMEM_PMS0_SIZE_V << SPI_MEM_S_SMEM_PMS0_SIZE_S)
@@ -1573,12 +1950,12 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS0_SIZE_S  0
 
 /** SPI_MEM_S_SMEM_PMS1_SIZE_REG register
- *  SPI1 external RAM PMS section 1 start address register
+ *  SPI1 external RAM PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS1_SIZE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x154)
 /** SPI_MEM_S_SMEM_PMS1_SIZE : R/W; bitpos: [14:0]; default: 4096;
- *  SPI1 external RAM PMS section 1 address region is (SPI_MEM_S_SMEM_PMS1_ADDR_S,
- *  SPI_MEM_S_SMEM_PMS1_ADDR_S + SPI_MEM_S_SMEM_PMS1_SIZE)
+ *  SPI1 external RAM PMS section $n address region is (SPI_MEM_S_SMEM_PMS$n_ADDR_S,
+ *  SPI_MEM_S_SMEM_PMS$n_ADDR_S + SPI_MEM_S_SMEM_PMS$n_SIZE)
  */
 #define SPI_MEM_S_SMEM_PMS1_SIZE    0x00007FFFU
 #define SPI_MEM_S_SMEM_PMS1_SIZE_M  (SPI_MEM_S_SMEM_PMS1_SIZE_V << SPI_MEM_S_SMEM_PMS1_SIZE_S)
@@ -1586,12 +1963,12 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS1_SIZE_S  0
 
 /** SPI_MEM_S_SMEM_PMS2_SIZE_REG register
- *  SPI1 external RAM PMS section 2 start address register
+ *  SPI1 external RAM PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS2_SIZE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x158)
 /** SPI_MEM_S_SMEM_PMS2_SIZE : R/W; bitpos: [14:0]; default: 4096;
- *  SPI1 external RAM PMS section 2 address region is (SPI_MEM_S_SMEM_PMS2_ADDR_S,
- *  SPI_MEM_S_SMEM_PMS2_ADDR_S + SPI_MEM_S_SMEM_PMS2_SIZE)
+ *  SPI1 external RAM PMS section $n address region is (SPI_MEM_S_SMEM_PMS$n_ADDR_S,
+ *  SPI_MEM_S_SMEM_PMS$n_ADDR_S + SPI_MEM_S_SMEM_PMS$n_SIZE)
  */
 #define SPI_MEM_S_SMEM_PMS2_SIZE    0x00007FFFU
 #define SPI_MEM_S_SMEM_PMS2_SIZE_M  (SPI_MEM_S_SMEM_PMS2_SIZE_V << SPI_MEM_S_SMEM_PMS2_SIZE_S)
@@ -1599,12 +1976,12 @@ extern "C" {
 #define SPI_MEM_S_SMEM_PMS2_SIZE_S  0
 
 /** SPI_MEM_S_SMEM_PMS3_SIZE_REG register
- *  SPI1 external RAM PMS section 3 start address register
+ *  SPI1 external RAM PMS section $n start address register
  */
 #define SPI_MEM_S_SMEM_PMS3_SIZE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x15c)
 /** SPI_MEM_S_SMEM_PMS3_SIZE : R/W; bitpos: [14:0]; default: 4096;
- *  SPI1 external RAM PMS section 3 address region is (SPI_MEM_S_SMEM_PMS3_ADDR_S,
- *  SPI_MEM_S_SMEM_PMS3_ADDR_S + SPI_MEM_S_SMEM_PMS3_SIZE)
+ *  SPI1 external RAM PMS section $n address region is (SPI_MEM_S_SMEM_PMS$n_ADDR_S,
+ *  SPI_MEM_S_SMEM_PMS$n_ADDR_S + SPI_MEM_S_SMEM_PMS$n_SIZE)
  */
 #define SPI_MEM_S_SMEM_PMS3_SIZE    0x00007FFFU
 #define SPI_MEM_S_SMEM_PMS3_SIZE_M  (SPI_MEM_S_SMEM_PMS3_SIZE_V << SPI_MEM_S_SMEM_PMS3_SIZE_S)
@@ -2548,7 +2925,7 @@ extern "C" {
 #define SPI_MEM_S_SMEM_CS_HOLD_S  1
 /** SPI_MEM_S_SMEM_CS_SETUP_TIME : R/W; bitpos: [6:2]; default: 1;
  *  For spi0, (cycles-1) of prepare phase by spi clock this bits are combined with
- *  SPI_MEM_S_cs_setup bit.
+ *  spi_mem_cs_setup bit.
  */
 #define SPI_MEM_S_SMEM_CS_SETUP_TIME    0x0000001FU
 #define SPI_MEM_S_SMEM_CS_SETUP_TIME_M  (SPI_MEM_S_SMEM_CS_SETUP_TIME_V << SPI_MEM_S_SMEM_CS_SETUP_TIME_S)
@@ -2556,7 +2933,7 @@ extern "C" {
 #define SPI_MEM_S_SMEM_CS_SETUP_TIME_S  2
 /** SPI_MEM_S_SMEM_CS_HOLD_TIME : R/W; bitpos: [11:7]; default: 1;
  *  For SPI0 and SPI1, spi cs signal is delayed to inactive by spi clock this bits are
- *  combined with SPI_MEM_S_cs_hold bit.
+ *  combined with spi_mem_cs_hold bit.
  */
 #define SPI_MEM_S_SMEM_CS_HOLD_TIME    0x0000001FU
 #define SPI_MEM_S_SMEM_CS_HOLD_TIME_M  (SPI_MEM_S_SMEM_CS_HOLD_TIME_V << SPI_MEM_S_SMEM_CS_HOLD_TIME_S)
@@ -2876,13 +3253,13 @@ extern "C" {
  *  SPI0 clock gate register
  */
 #define SPI_MEM_S_CLOCK_GATE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x200)
-/** SPI_CLK_EN : R/W; bitpos: [0]; default: 1;
+/** SPI_MEM_S_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Register clock gate enable signal. 1: Enable. 0: Disable.
  */
-#define SPI_CLK_EN    (BIT(0))
-#define SPI_CLK_EN_M  (SPI_CLK_EN_V << SPI_CLK_EN_S)
-#define SPI_CLK_EN_V  0x00000001U
-#define SPI_CLK_EN_S  0
+#define SPI_MEM_S_CLK_EN    (BIT(0))
+#define SPI_MEM_S_CLK_EN_M  (SPI_MEM_S_CLK_EN_V << SPI_MEM_S_CLK_EN_S)
+#define SPI_MEM_S_CLK_EN_V  0x00000001U
+#define SPI_MEM_S_CLK_EN_S  0
 
 /** SPI_MEM_S_XTS_PLAIN_BASE_REG register
  *  The base address of the memory that stores plaintext in Manual Encryption
@@ -2893,7 +3270,7 @@ extern "C" {
  *  Please do not use this field.
  */
 #define SPI_MEM_S_XTS_PLAIN    0xFFFFFFFFU
-#define SPI_MEM_S_XTS_PLAIN_M  (SPI_XTS_PLAIN_V << SPI_XTS_PLAIN_S)
+#define SPI_MEM_S_XTS_PLAIN_M  (SPI_MEM_S_XTS_PLAIN_V << SPI_MEM_S_XTS_PLAIN_S)
 #define SPI_MEM_S_XTS_PLAIN_V  0xFFFFFFFFU
 #define SPI_MEM_S_XTS_PLAIN_S  0
 
@@ -2907,7 +3284,7 @@ extern "C" {
  *  32-bytes, 2: 64-bytes, 3:reserved.
  */
 #define SPI_MEM_S_XTS_LINESIZE    0x00000003U
-#define SPI_MEM_S_XTS_LINESIZE_M  (SPI_XTS_LINESIZE_V << SPI_XTS_LINESIZE_S)
+#define SPI_MEM_S_XTS_LINESIZE_M  (SPI_MEM_S_XTS_LINESIZE_V << SPI_MEM_S_XTS_LINESIZE_S)
 #define SPI_MEM_S_XTS_LINESIZE_V  0x00000003U
 #define SPI_MEM_S_XTS_LINESIZE_S  0
 
@@ -2920,7 +3297,7 @@ extern "C" {
  *  calculation. 0: flash(default), 1: psram(reserved). Only default value can be used.
  */
 #define SPI_MEM_S_XTS_DESTINATION    (BIT(0))
-#define SPI_MEM_S_XTS_DESTINATION_M  (SPI_XTS_DESTINATION_V << SPI_XTS_DESTINATION_S)
+#define SPI_MEM_S_XTS_DESTINATION_M  (SPI_MEM_S_XTS_DESTINATION_V << SPI_MEM_S_XTS_DESTINATION_S)
 #define SPI_MEM_S_XTS_DESTINATION_V  0x00000001U
 #define SPI_MEM_S_XTS_DESTINATION_S  0
 
@@ -2934,7 +3311,7 @@ extern "C" {
  *  line-size parameter.
  */
 #define SPI_MEM_S_XTS_PHYSICAL_ADDRESS    0x03FFFFFFU
-#define SPI_MEM_S_XTS_PHYSICAL_ADDRESS_M  (SPI_XTS_PHYSICAL_ADDRESS_V << SPI_XTS_PHYSICAL_ADDRESS_S)
+#define SPI_MEM_S_XTS_PHYSICAL_ADDRESS_M  (SPI_MEM_S_XTS_PHYSICAL_ADDRESS_V << SPI_MEM_S_XTS_PHYSICAL_ADDRESS_S)
 #define SPI_MEM_S_XTS_PHYSICAL_ADDRESS_V  0x03FFFFFFU
 #define SPI_MEM_S_XTS_PHYSICAL_ADDRESS_S  0
 
@@ -2949,7 +3326,7 @@ extern "C" {
  *  status becomes 2.
  */
 #define SPI_MEM_S_XTS_TRIGGER    (BIT(0))
-#define SPI_MEM_S_XTS_TRIGGER_M  (SPI_XTS_TRIGGER_V << SPI_XTS_TRIGGER_S)
+#define SPI_MEM_S_XTS_TRIGGER_M  (SPI_MEM_S_XTS_TRIGGER_V << SPI_MEM_S_XTS_TRIGGER_S)
 #define SPI_MEM_S_XTS_TRIGGER_V  0x00000001U
 #define SPI_MEM_S_XTS_TRIGGER_S  0
 
@@ -2963,7 +3340,7 @@ extern "C" {
  *  status will become 3.
  */
 #define SPI_MEM_S_XTS_RELEASE    (BIT(0))
-#define SPI_MEM_S_XTS_RELEASE_M  (SPI_XTS_RELEASE_V << SPI_XTS_RELEASE_S)
+#define SPI_MEM_S_XTS_RELEASE_M  (SPI_MEM_S_XTS_RELEASE_V << SPI_MEM_S_XTS_RELEASE_S)
 #define SPI_MEM_S_XTS_RELEASE_V  0x00000001U
 #define SPI_MEM_S_XTS_RELEASE_S  0
 
@@ -2977,7 +3354,7 @@ extern "C" {
  *  become 0.
  */
 #define SPI_MEM_S_XTS_DESTROY    (BIT(0))
-#define SPI_MEM_S_XTS_DESTROY_M  (SPI_XTS_DESTROY_V << SPI_XTS_DESTROY_S)
+#define SPI_MEM_S_XTS_DESTROY_M  (SPI_MEM_S_XTS_DESTROY_V << SPI_MEM_S_XTS_DESTROY_S)
 #define SPI_MEM_S_XTS_DESTROY_V  0x00000001U
 #define SPI_MEM_S_XTS_DESTROY_S  0
 
@@ -2991,7 +3368,7 @@ extern "C" {
  *  invisible to mspi, 3: the encrypted result is visible to mspi.
  */
 #define SPI_MEM_S_XTS_STATE    0x00000003U
-#define SPI_MEM_S_XTS_STATE_M  (SPI_XTS_STATE_V << SPI_XTS_STATE_S)
+#define SPI_MEM_S_XTS_STATE_M  (SPI_MEM_S_XTS_STATE_V << SPI_MEM_S_XTS_STATE_S)
 #define SPI_MEM_S_XTS_STATE_V  0x00000003U
 #define SPI_MEM_S_XTS_STATE_S  0
 
@@ -2999,13 +3376,13 @@ extern "C" {
  *  Manual Encryption version register
  */
 #define SPI_MEM_S_XTS_DATE_REG (DR_REG_PSRAM_MSPI0_BASE + 0x35c)
-/** SPI_XTS_DATE : R/W; bitpos: [29:0]; default: 538972176;
+/** SPI_MEM_S_XTS_DATE : R/W; bitpos: [29:0]; default: 538972176;
  *  This bits stores the last modified-time of manual encryption feature.
  */
-#define SPI_XTS_DATE    0x3FFFFFFFU
-#define SPI_XTS_DATE_M  (SPI_XTS_DATE_V << SPI_XTS_DATE_S)
-#define SPI_XTS_DATE_V  0x3FFFFFFFU
-#define SPI_XTS_DATE_S  0
+#define SPI_MEM_S_XTS_DATE    0x3FFFFFFFU
+#define SPI_MEM_S_XTS_DATE_M  (SPI_MEM_S_XTS_DATE_V << SPI_MEM_S_XTS_DATE_S)
+#define SPI_MEM_S_XTS_DATE_V  0x3FFFFFFFU
+#define SPI_MEM_S_XTS_DATE_S  0
 
 /** SPI_MEM_S_MMU_ITEM_CONTENT_REG register
  *  MSPI-MMU item content register
@@ -3015,7 +3392,7 @@ extern "C" {
  *  MSPI-MMU item content
  */
 #define SPI_MEM_S_MMU_ITEM_CONTENT    0xFFFFFFFFU
-#define SPI_MEM_S_MMU_ITEM_CONTENT_M  (SPI_MMU_ITEM_CONTENT_V << SPI_MMU_ITEM_CONTENT_S)
+#define SPI_MEM_S_MMU_ITEM_CONTENT_M  (SPI_MEM_S_MMU_ITEM_CONTENT_V << SPI_MEM_S_MMU_ITEM_CONTENT_S)
 #define SPI_MEM_S_MMU_ITEM_CONTENT_V  0xFFFFFFFFU
 #define SPI_MEM_S_MMU_ITEM_CONTENT_S  0
 
@@ -3027,7 +3404,7 @@ extern "C" {
  *  MSPI-MMU item index
  */
 #define SPI_MEM_S_MMU_ITEM_INDEX    0xFFFFFFFFU
-#define SPI_MEM_S_MMU_ITEM_INDEX_M  (SPI_MMU_ITEM_INDEX_V << SPI_MMU_ITEM_INDEX_S)
+#define SPI_MEM_S_MMU_ITEM_INDEX_M  (SPI_MEM_S_MMU_ITEM_INDEX_V << SPI_MEM_S_MMU_ITEM_INDEX_S)
 #define SPI_MEM_S_MMU_ITEM_INDEX_V  0xFFFFFFFFU
 #define SPI_MEM_S_MMU_ITEM_INDEX_S  0
 
@@ -3039,14 +3416,14 @@ extern "C" {
  *  Set this bit to enable mmu-memory clock force on
  */
 #define SPI_MEM_S_MMU_MEM_FORCE_ON    (BIT(0))
-#define SPI_MEM_S_MMU_MEM_FORCE_ON_M  (SPI_MMU_MEM_FORCE_ON_V << SPI_MMU_MEM_FORCE_ON_S)
+#define SPI_MEM_S_MMU_MEM_FORCE_ON_M  (SPI_MEM_S_MMU_MEM_FORCE_ON_V << SPI_MEM_S_MMU_MEM_FORCE_ON_S)
 #define SPI_MEM_S_MMU_MEM_FORCE_ON_V  0x00000001U
 #define SPI_MEM_S_MMU_MEM_FORCE_ON_S  0
 /** SPI_MEM_S_MMU_MEM_FORCE_PD : R/W; bitpos: [1]; default: 0;
  *  Set this bit to force mmu-memory powerdown
  */
 #define SPI_MEM_S_MMU_MEM_FORCE_PD    (BIT(1))
-#define SPI_MEM_S_MMU_MEM_FORCE_PD_M  (SPI_MMU_MEM_FORCE_PD_V << SPI_MMU_MEM_FORCE_PD_S)
+#define SPI_MEM_S_MMU_MEM_FORCE_PD_M  (SPI_MEM_S_MMU_MEM_FORCE_PD_V << SPI_MEM_S_MMU_MEM_FORCE_PD_S)
 #define SPI_MEM_S_MMU_MEM_FORCE_PD_V  0x00000001U
 #define SPI_MEM_S_MMU_MEM_FORCE_PD_S  1
 /** SPI_MEM_S_MMU_MEM_FORCE_PU : R/W; bitpos: [2]; default: 1;
@@ -3054,7 +3431,7 @@ extern "C" {
  *  controlled by rtc.
  */
 #define SPI_MEM_S_MMU_MEM_FORCE_PU    (BIT(2))
-#define SPI_MEM_S_MMU_MEM_FORCE_PU_M  (SPI_MMU_MEM_FORCE_PU_V << SPI_MMU_MEM_FORCE_PU_S)
+#define SPI_MEM_S_MMU_MEM_FORCE_PU_M  (SPI_MEM_S_MMU_MEM_FORCE_PU_V << SPI_MEM_S_MMU_MEM_FORCE_PU_S)
 #define SPI_MEM_S_MMU_MEM_FORCE_PU_V  0x00000001U
 #define SPI_MEM_S_MMU_MEM_FORCE_PU_S  2
 /** SPI_MEM_S_AUX_CTRL : R/W; bitpos: [29:16]; default: 4896;
@@ -3064,6 +3441,20 @@ extern "C" {
 #define SPI_MEM_S_AUX_CTRL_M  (SPI_MEM_S_AUX_CTRL_V << SPI_MEM_S_AUX_CTRL_S)
 #define SPI_MEM_S_AUX_CTRL_V  0x00003FFFU
 #define SPI_MEM_S_AUX_CTRL_S  16
+/** SPI_MEM_S_RDN_ENA : R/W; bitpos: [30]; default: 0;
+ *  ECO register enable bit
+ */
+#define SPI_MEM_S_RDN_ENA    (BIT(30))
+#define SPI_MEM_S_RDN_ENA_M  (SPI_MEM_S_RDN_ENA_V << SPI_MEM_S_RDN_ENA_S)
+#define SPI_MEM_S_RDN_ENA_V  0x00000001U
+#define SPI_MEM_S_RDN_ENA_S  30
+/** SPI_MEM_S_RDN_RESULT : RO; bitpos: [31]; default: 0;
+ *  MSPI module clock domain and AXI clock domain ECO register result register
+ */
+#define SPI_MEM_S_RDN_RESULT    (BIT(31))
+#define SPI_MEM_S_RDN_RESULT_M  (SPI_MEM_S_RDN_RESULT_V << SPI_MEM_S_RDN_RESULT_S)
+#define SPI_MEM_S_RDN_RESULT_V  0x00000001U
+#define SPI_MEM_S_RDN_RESULT_S  31
 
 /** SPI_MEM_S_DPA_CTRL_REG register
  *  SPI memory cryption DPA register
@@ -3075,26 +3466,50 @@ extern "C" {
  *  performance of cryption will decrease together with this number increasing)
  */
 #define SPI_MEM_S_CRYPT_SECURITY_LEVEL    0x00000007U
-#define SPI_MEM_S_CRYPT_SECURITY_LEVEL_M  (SPI_CRYPT_SECURITY_LEVEL_V << SPI_CRYPT_SECURITY_LEVEL_S)
+#define SPI_MEM_S_CRYPT_SECURITY_LEVEL_M  (SPI_MEM_S_CRYPT_SECURITY_LEVEL_V << SPI_MEM_S_CRYPT_SECURITY_LEVEL_S)
 #define SPI_MEM_S_CRYPT_SECURITY_LEVEL_V  0x00000007U
 #define SPI_MEM_S_CRYPT_SECURITY_LEVEL_S  0
 /** SPI_MEM_S_CRYPT_CALC_D_DPA_EN : R/W; bitpos: [3]; default: 1;
- *  Only available when SPI_CRYPT_SECURITY_LEVEL is not 0. 1: Enable DPA in the
+ *  Only available when SPI_MEM_S_CRYPT_SECURITY_LEVEL is not 0. 1: Enable DPA in the
  *  calculation that using key 1 or key 2. 0: Enable DPA only in the calculation that
  *  using key 1.
  */
 #define SPI_MEM_S_CRYPT_CALC_D_DPA_EN    (BIT(3))
-#define SPI_MEM_S_CRYPT_CALC_D_DPA_EN_M  (SPI_CRYPT_CALC_D_DPA_EN_V << SPI_CRYPT_CALC_D_DPA_EN_S)
+#define SPI_MEM_S_CRYPT_CALC_D_DPA_EN_M  (SPI_MEM_S_CRYPT_CALC_D_DPA_EN_V << SPI_MEM_S_CRYPT_CALC_D_DPA_EN_S)
 #define SPI_MEM_S_CRYPT_CALC_D_DPA_EN_V  0x00000001U
 #define SPI_MEM_S_CRYPT_CALC_D_DPA_EN_S  3
 /** SPI_MEM_S_CRYPT_DPA_SELECT_REGISTER : R/W; bitpos: [4]; default: 0;
- *  1: MSPI XTS DPA clock gate is controlled by SPI_CRYPT_CALC_D_DPA_EN and
- *  SPI_CRYPT_SECURITY_LEVEL. 0: Controlled by efuse bits.
+ *  1: MSPI XTS DPA clock gate is controlled by SPI_MEM_S_CRYPT_CALC_D_DPA_EN and
+ *  SPI_MEM_S_CRYPT_SECURITY_LEVEL. 0: Controlled by efuse bits.
  */
 #define SPI_MEM_S_CRYPT_DPA_SELECT_REGISTER    (BIT(4))
-#define SPI_MEM_S_CRYPT_DPA_SELECT_REGISTER_M  (SPI_CRYPT_DPA_SELECT_REGISTER_V << SPI_CRYPT_DPA_SELECT_REGISTER_S)
+#define SPI_MEM_S_CRYPT_DPA_SELECT_REGISTER_M  (SPI_MEM_S_CRYPT_DPA_SELECT_REGISTER_V << SPI_MEM_S_CRYPT_DPA_SELECT_REGISTER_S)
 #define SPI_MEM_S_CRYPT_DPA_SELECT_REGISTER_V  0x00000001U
 #define SPI_MEM_S_CRYPT_DPA_SELECT_REGISTER_S  4
+
+/** SPI_MEM_S_REGISTERRND_ECO_HIGH_REG register
+ *  MSPI ECO high register
+ */
+#define SPI_MEM_S_REGISTERRND_ECO_HIGH_REG (DR_REG_PSRAM_MSPI0_BASE + 0x3f0)
+/** SPI_MEM_S_REGISTERRND_ECO_HIGH : R/W; bitpos: [31:0]; default: 892;
+ *  ECO high register
+ */
+#define SPI_MEM_S_REGISTERRND_ECO_HIGH    0xFFFFFFFFU
+#define SPI_MEM_S_REGISTERRND_ECO_HIGH_M  (SPI_MEM_S_REGISTERRND_ECO_HIGH_V << SPI_MEM_S_REGISTERRND_ECO_HIGH_S)
+#define SPI_MEM_S_REGISTERRND_ECO_HIGH_V  0xFFFFFFFFU
+#define SPI_MEM_S_REGISTERRND_ECO_HIGH_S  0
+
+/** SPI_MEM_S_REGISTERRND_ECO_LOW_REG register
+ *  MSPI ECO low register
+ */
+#define SPI_MEM_S_REGISTERRND_ECO_LOW_REG (DR_REG_PSRAM_MSPI0_BASE + 0x3f4)
+/** SPI_MEM_S_REGISTERRND_ECO_LOW : R/W; bitpos: [31:0]; default: 892;
+ *  ECO low register
+ */
+#define SPI_MEM_S_REGISTERRND_ECO_LOW    0xFFFFFFFFU
+#define SPI_MEM_S_REGISTERRND_ECO_LOW_M  (SPI_MEM_S_REGISTERRND_ECO_LOW_V << SPI_MEM_S_REGISTERRND_ECO_LOW_S)
+#define SPI_MEM_S_REGISTERRND_ECO_LOW_V  0xFFFFFFFFU
+#define SPI_MEM_S_REGISTERRND_ECO_LOW_S  0
 
 /** SPI_MEM_S_DATE_REG register
  *  SPI0 version control register

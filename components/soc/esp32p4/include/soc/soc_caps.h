@@ -69,7 +69,7 @@
 // #define SOC_PMU_SUPPORTED               1  //TODO: IDF-7531
 // #define SOC_PAU_SUPPORTED               1  //TODO: IDF-7531
 // #define SOC_LP_TIMER_SUPPORTED          1  //TODO: IDF-7532
-// #define SOC_SPIRAM_SUPPORTED            1  //TODO: IDF-7495
+#define SOC_SPIRAM_SUPPORTED            1
 // #define SOC_ULP_SUPPORTED               1  //TODO: IDF-7534
 // #define SOC_SDMMC_HOST_SUPPORTED        1  //TODO: IDF-6502
 // #define SOC_CLK_TREE_SUPPORTED          1  //TODO: IDF-7526
