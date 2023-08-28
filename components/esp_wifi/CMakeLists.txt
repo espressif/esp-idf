@@ -1,5 +1,10 @@
+idf_build_get_property(idf_target IDF_TARGET)
+
+if(${idf_target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 if(CONFIG_ESP_WIFI_ENABLED)
-    idf_build_get_property(idf_target IDF_TARGET)
 
     if(CONFIG_APP_NO_BLOBS)
         set(link_binary_libs 0)

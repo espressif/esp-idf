@@ -82,6 +82,9 @@ Note that any "Yes" here does not necessarily mean a full implementation or mock
    * - Component
      - Mock
      - Simulation
+   * - cmock
+     - No
+     - Yes
    * - driver
      - Yes
      - No
@@ -91,12 +94,27 @@ Note that any "Yes" here does not necessarily mean a full implementation or mock
    * - esp_event
      - Yes
      - Yes
+   * - esp_http_client
+     - No
+     - Yes
+   * - esp_http_server
+     - No
+     - Yes
+   * - esp_https_server
+     - No
+     - Yes
    * - esp_hw_support
      - Yes
      - Yes
+   * - esp_netif
+     - Yes
+     - Yes
+   * - esp_netif_stack
+     - No
+     - Yes
    * - esp_partition
      - Yes
-     - No
+     - Yes
    * - esp_rom
      - No
      - Yes
@@ -108,7 +126,10 @@ Note that any "Yes" here does not necessarily mean a full implementation or mock
      - No
    * - esp_tls
      - Yes
+     - Yes
+   * - fatfs
      - No
+     - Yes
    * - freertos
      - Yes
      - Yes
@@ -120,14 +141,41 @@ Note that any "Yes" here does not necessarily mean a full implementation or mock
      - Yes
    * - http_parser
      - Yes
+     - Yes
+   * - json
      - No
+     - Yes
+   * - linux
+     - No
+     - Yes
    * - log
      - No
      - Yes
    * - lwip
      - Yes
+     - Yes
+   * - mbedtls
      - No
+     - Yes
+   * - mqtt
+     - No
+     - Yes
+   * - nvs_flash
+     - No
+     - Yes
+   * - partition_table
+     - No
+     - Yes
+   * - protobuf-c
+     - No
+     - Yes
+   * - pthread
+     - No
+     - Yes
    * - soc
+     - No
+     - Yes
+   * - spiffs
      - No
      - Yes
    * - spi_flash
@@ -136,3 +184,6 @@ Note that any "Yes" here does not necessarily mean a full implementation or mock
    * - tcp_transport
      - Yes
      - No
+   * - unity
+     - No
+     - Yes

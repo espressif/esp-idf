@@ -1,4 +1,8 @@
-idf_build_get_property(idf_target IDF_TARGET)
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
 
 set(srcs "")
 set(include "include")

@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 # API headers that are used in the docs are also compiled
 # even if CONFIG_BT_ENABLED=n as long as CONFIG_IDF_DOC_BUILD=y
 

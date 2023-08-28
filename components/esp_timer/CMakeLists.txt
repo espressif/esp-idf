@@ -1,5 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+idf_component_register(INCLUDE_DIRS include)
+else()
+
 set(srcs "src/esp_timer.c"
          "src/ets_timer_legacy.c"
          "src/system_time.c"
@@ -20,3 +24,5 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS private_include
                     REQUIRES esp_common
                     PRIV_REQUIRES soc driver)
+
+endif()

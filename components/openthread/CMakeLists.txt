@@ -1,11 +1,17 @@
+idf_build_get_property(idf_target IDF_TARGET)
+
+if(${idf_target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 if(CONFIG_OPENTHREAD_ENABLED OR CONFIG_IDF_DOC_BUILD)
+
     set(public_include_dirs
         "include"
         "openthread/include")
 endif()
 
 if(CONFIG_OPENTHREAD_ENABLED)
-    idf_build_get_property(idf_target IDF_TARGET)
 
     set(private_include_dirs
         "openthread/examples/platforms"
