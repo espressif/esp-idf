@@ -657,6 +657,20 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
 }
 
 /**
+ * @brief Set the ACK level that the I2C master must send when the Rx FIFO count has reached the threshold value.
+ *        ack_level: 1 (NACK)
+ *        ack_level: 0 (ACK)
+ *
+ * @param  hw Beginning address of the peripheral registers
+ *
+ * @return None
+ */
+static inline void i2c_ll_master_rx_full_ack_level(i2c_dev_t *hw, int ack_level)
+{
+    hw->ctr.rx_full_ack_level = ack_level;
+}
+
+/**
  * @brief Set I2C source clock
  *
  * @param  hw Beginning address of the peripheral registers
