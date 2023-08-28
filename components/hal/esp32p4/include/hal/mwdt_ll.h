@@ -17,6 +17,7 @@ extern "C" {
 #include <stdbool.h>
 #include "soc/timer_periph.h"
 #include "soc/timer_group_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/wdt_types.h"
 #include "hal/assert.h"
 #include "esp_attr.h"
@@ -24,24 +25,23 @@ extern "C" {
 #include "hal/misc.h"
 
 /* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
-#define MWDT_LL_DEFAULT_CLK_PRESCALER 40000
+#define MWDT_LL_DEFAULT_CLK_PRESCALER 20000
 
 
-//TODO: IDF-6516
 // //Type check wdt_stage_action_t
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_OFF == TIMG_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_INT == TIMG_WDT_STG_SEL_INT, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_CPU == TIMG_WDT_STG_SEL_RESET_CPU, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_SYSTEM == TIMG_WDT_STG_SEL_RESET_SYSTEM, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// //Type check wdt_reset_sig_length_t
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_100ns == TIMG_WDT_RESET_LENGTH_100_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_200ns == TIMG_WDT_RESET_LENGTH_200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_300ns == TIMG_WDT_RESET_LENGTH_300_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_400ns == TIMG_WDT_RESET_LENGTH_400_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_500ns == TIMG_WDT_RESET_LENGTH_500_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_800ns == TIMG_WDT_RESET_LENGTH_800_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_1_6us == TIMG_WDT_RESET_LENGTH_1600_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_3_2us == TIMG_WDT_RESET_LENGTH_3200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_OFF == TIMG_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_INT == TIMG_WDT_STG_SEL_INT, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_CPU == TIMG_WDT_STG_SEL_RESET_CPU, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_SYSTEM == TIMG_WDT_STG_SEL_RESET_SYSTEM, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+//Type check wdt_reset_sig_length_t
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_100ns == TIMG_WDT_RESET_LENGTH_100_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_200ns == TIMG_WDT_RESET_LENGTH_200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_300ns == TIMG_WDT_RESET_LENGTH_300_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_400ns == TIMG_WDT_RESET_LENGTH_400_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_500ns == TIMG_WDT_RESET_LENGTH_500_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_800ns == TIMG_WDT_RESET_LENGTH_800_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_1_6us == TIMG_WDT_RESET_LENGTH_1600_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_3_2us == TIMG_WDT_RESET_LENGTH_3200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
 
 /**
  * @brief Enable the MWDT
@@ -50,8 +50,7 @@ extern "C" {
  */
 FORCE_INLINE_ATTR void mwdt_ll_enable(timg_dev_t *hw)
 {
-    // hw->wdt_config0.en = 1;
-    abort();
+    hw->wdtconfig0.wdt_en = 1;
 }
 
 /**
@@ -64,8 +63,7 @@ FORCE_INLINE_ATTR void mwdt_ll_enable(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_disable(timg_dev_t *hw)
 {
-    // hw->wdt_config0.en = 0;
-    abort();
+    hw->wdtconfig0.wdt_en = 0;
 }
 
 /**
@@ -76,8 +74,7 @@ FORCE_INLINE_ATTR void mwdt_ll_disable(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR bool mwdt_ll_check_if_enabled(timg_dev_t *hw)
 {
-    // return (hw->wdt_config0.en) ? true : false;
-    abort();
+    return (hw->wdtconfig0.wdt_en) ? true : false;
 }
 
 /**
@@ -90,30 +87,29 @@ FORCE_INLINE_ATTR bool mwdt_ll_check_if_enabled(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_config_stage(timg_dev_t *hw, wdt_stage_t stage, uint32_t timeout, wdt_stage_action_t behavior)
 {
-    // switch (stage) {
-    // case WDT_STAGE0:
-    //     hw->wdt_config0.stg0 = behavior;
-    //     hw->wdt_config2 = timeout;
-    //     break;
-    // case WDT_STAGE1:
-    //     hw->wdt_config0.stg1 = behavior;
-    //     hw->wdt_config3 = timeout;
-    //     break;
-    // case WDT_STAGE2:
-    //     hw->wdt_config0.stg2 = behavior;
-    //     hw->wdt_config4 = timeout;
-    //     break;
-    // case WDT_STAGE3:
-    //     hw->wdt_config0.stg3 = behavior;
-    //     hw->wdt_config5 = timeout;
-    //     break;
-    // default:
-    //     HAL_ASSERT(false && "unsupported WDT stage");
-    //     break;
-    // }
-    // //Config registers are updated asynchronously
-    // //hw->wdt_config0.wdt_conf_update_en = 1;
-    abort();
+    switch (stage) {
+    case WDT_STAGE0:
+        hw->wdtconfig0.wdt_stg0 = behavior;
+        hw->wdtconfig2.wdt_stg0_hold = timeout;
+        break;
+    case WDT_STAGE1:
+        hw->wdtconfig0.wdt_stg1 = behavior;
+        hw->wdtconfig3.wdt_stg1_hold = timeout;
+        break;
+    case WDT_STAGE2:
+        hw->wdtconfig0.wdt_stg2 = behavior;
+        hw->wdtconfig4.wdt_stg2_hold = timeout;
+        break;
+    case WDT_STAGE3:
+        hw->wdtconfig0.wdt_stg3 = behavior;
+        hw->wdtconfig5.wdt_stg3_hold = timeout;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported WDT stage");
+        break;
+    }
+    //Config registers are updated asynchronously
+    hw->wdtconfig0.wdt_conf_update_en = 1;
 }
 
 /**
@@ -124,26 +120,25 @@ FORCE_INLINE_ATTR void mwdt_ll_config_stage(timg_dev_t *hw, wdt_stage_t stage, u
  */
 FORCE_INLINE_ATTR void mwdt_ll_disable_stage(timg_dev_t *hw, uint32_t stage)
 {
-    // switch (stage) {
-    // case WDT_STAGE0:
-    //     hw->wdt_config0.stg0 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE1:
-    //     hw->wdt_config0.stg1 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE2:
-    //     hw->wdt_config0.stg2 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE3:
-    //     hw->wdt_config0.stg3 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // default:
-    //     HAL_ASSERT(false && "unsupported WDT stage");
-    //     break;
-    // }
-    // //Config registers are updated asynchronously
-    // //hw->wdt_config0.wdt_conf_update_en = 1;
-    abort();
+    switch (stage) {
+    case WDT_STAGE0:
+        hw->wdtconfig0.wdt_stg0 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE1:
+        hw->wdtconfig0.wdt_stg1 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE2:
+        hw->wdtconfig0.wdt_stg2 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE3:
+        hw->wdtconfig0.wdt_stg3 = WDT_STAGE_ACTION_OFF;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported WDT stage");
+        break;
+    }
+    //Config registers are updated asynchronously
+    hw->wdtconfig0.wdt_conf_update_en = 1;
 }
 
 /**
@@ -154,10 +149,9 @@ FORCE_INLINE_ATTR void mwdt_ll_disable_stage(timg_dev_t *hw, uint32_t stage)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_cpu_reset_length(timg_dev_t *hw, wdt_reset_sig_length_t length)
 {
-    // hw->wdt_config0.cpu_reset_length = length;
-    // //Config registers are updated asynchronously
-    // //hw->wdt_config0.wdt_conf_update_en = 1;
-    abort();
+    hw->wdtconfig0.wdt_cpu_reset_length = length;
+    //Config registers are updated asynchronously
+    hw->wdtconfig0.wdt_conf_update_en = 1;
 }
 
 /**
@@ -168,10 +162,9 @@ FORCE_INLINE_ATTR void mwdt_ll_set_cpu_reset_length(timg_dev_t *hw, wdt_reset_si
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_sys_reset_length(timg_dev_t *hw, wdt_reset_sig_length_t length)
 {
-    // hw->wdt_config0.sys_reset_length = length;
-    // //Config registers are updated asynchronously
-    // //hw->wdt_config0.wdt_conf_update_en = 1;
-    abort();
+    hw->wdtconfig0.wdt_sys_reset_length = length;
+    //Config registers are updated asynchronously
+    hw->wdtconfig0.wdt_conf_update_en = 1;
 }
 
 /**
@@ -186,10 +179,9 @@ FORCE_INLINE_ATTR void mwdt_ll_set_sys_reset_length(timg_dev_t *hw, wdt_reset_si
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_flashboot_en(timg_dev_t *hw, bool enable)
 {
-    // hw->wdt_config0.flashboot_mod_en = (enable) ? 1 : 0;
-    // //Config registers are updated asynchronously
-    // //hw->wdt_config0.wdt_conf_update_en = 1;
-    abort();
+    hw->wdtconfig0.wdt_flashboot_mod_en = (enable) ? 1 : 0;
+    //Config registers are updated asynchronously
+    hw->wdtconfig0.wdt_conf_update_en = 1;
 }
 
 /**
@@ -200,12 +192,11 @@ FORCE_INLINE_ATTR void mwdt_ll_set_flashboot_en(timg_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_prescaler(timg_dev_t *hw, uint32_t prescaler)
 {
-    // // In case the compiler optimise a 32bit instruction (e.g. s32i) into 8/16bit instruction (e.g. s8i, which is not allowed to access a register)
-    // // We take care of the "read-modify-write" procedure by ourselves.
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wdt_config1, clk_prescale, prescaler);
-    // //Config registers are updated asynchronously
-    // //hw->wdt_config0.wdt_conf_update_en = 1;
-    abort();
+    // In case the compiler optimise a 32bit instruction (e.g. s32i) into 8/16bit instruction (e.g. s8i, which is not allowed to access a register)
+    // We take care of the "read-modify-write" procedure by ourselves.
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wdtconfig1, wdt_clk_prescale, prescaler);
+    //Config registers are updated asynchronously
+    hw->wdtconfig0.wdt_conf_update_en = 1;
 }
 
 /**
@@ -217,8 +208,7 @@ FORCE_INLINE_ATTR void mwdt_ll_set_prescaler(timg_dev_t *hw, uint32_t prescaler)
  */
 FORCE_INLINE_ATTR void mwdt_ll_feed(timg_dev_t *hw)
 {
-    // hw->wdt_feed = 1;
-    abort();
+    hw->wdtfeed.wdt_feed = 1;
 }
 
 /**
@@ -230,8 +220,7 @@ FORCE_INLINE_ATTR void mwdt_ll_feed(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_write_protect_enable(timg_dev_t *hw)
 {
-    // hw->wdt_wprotect = 0;
-    abort();
+    hw->wdtwprotect.wdt_wkey = 0;
 }
 
 /**
@@ -241,8 +230,7 @@ FORCE_INLINE_ATTR void mwdt_ll_write_protect_enable(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_write_protect_disable(timg_dev_t *hw)
 {
-    // hw->wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    abort();
+    hw->wdtwprotect.wdt_wkey = TIMG_WDT_WKEY_VALUE;
 }
 
 /**
@@ -252,8 +240,7 @@ FORCE_INLINE_ATTR void mwdt_ll_write_protect_disable(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t *hw)
 {
-    // hw->int_clr.wdt = 1;
-    abort();
+    hw->int_clr_timers.wdt_int_clr = 1;
 }
 
 /**
@@ -264,9 +251,9 @@ FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
 {
-    // hw->int_ena.wdt = (enable) ? 1 : 0;
-    abort();
+    hw->int_ena_timers.wdt_int_ena = (enable) ? 1 : 0;
 }
+
 
 /**
  * @brief Set the clock source for the MWDT.
@@ -276,7 +263,16 @@ FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_source_t clk_src)
 {
+    /* We currently always use default clock source on P4: XTAL
+       If we update to be able to select a clock source then this function
+       needs to be protected with PERIPH_RCC_ATOMIC as it touches shared registers.
+     */
+    (void)hw;
+    (void)clk_src;
+
+     HAL_ASSERT(clk_src == MWDT_CLK_SRC_XTAL);
 }
+
 
 /**
  * @brief Enable MWDT module clock
@@ -287,8 +283,13 @@ FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_sourc
 __attribute__((always_inline))
 static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
 {
+    /* The clock always defaults to enabled on P4.
+       If we update to be able to enable/disable the clock then this function
+       needs to be protected with PERIPH_RCC_ATOMIC as it touches shared registers.
+     */
+    (void)hw;
+    (void)en;
 }
-
 
 
 #ifdef __cplusplus
