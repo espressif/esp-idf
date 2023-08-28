@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -501,18 +501,18 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                */
             int binary_file_len = 0;
             if (handle->binary_file_len) {
-                /*
-                 * Header length gets added to handle->binary_file_len in _ota_write
-                 * Clear handle->binary_file_len to avoid additional 289 bytes in binary_file_len
-                 */
                 binary_file_len = handle->binary_file_len;
-                handle->binary_file_len = 0;
             } else {
                 if (read_header(handle) != ESP_OK) {
                     return ESP_FAIL;
                 }
                 binary_file_len = IMAGE_HEADER_SIZE;
             }
+            /*
+            * Header length gets added to handle->binary_file_len in _ota_write
+            * Clear handle->binary_file_len to avoid additional bytes in upgrade image size calculation
+            */
+            handle->binary_file_len = 0;
 
             const void *data_buf = (const void *) handle->ota_upgrade_buf;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
