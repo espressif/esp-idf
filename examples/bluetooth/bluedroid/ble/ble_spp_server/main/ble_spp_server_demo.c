@@ -271,7 +271,13 @@ static bool store_wr_buffer(esp_ble_gatts_cb_param_t *p_data)
     temp_spp_recv_data_node_p1->next_node = NULL;
     temp_spp_recv_data_node_p1->node_buff = (uint8_t *)malloc(p_data->write.len);
     temp_spp_recv_data_node_p2 = temp_spp_recv_data_node_p1;
-    memcpy(temp_spp_recv_data_node_p1->node_buff,p_data->write.value,p_data->write.len);
+    if (temp_spp_recv_data_node_p1->node_buff == NULL) {
+        ESP_LOGI(GATTS_TABLE_TAG, "malloc error %s %d\n", __func__, __LINE__);
+        temp_spp_recv_data_node_p1->len = 0;
+    } else {
+        memcpy(temp_spp_recv_data_node_p1->node_buff,p_data->write.value,p_data->write.len);
+    }
+
     if(SppRecvDataBuff.node_num == 0){
         SppRecvDataBuff.first_node = temp_spp_recv_data_node_p1;
         SppRecvDataBuff.node_num++;
@@ -288,7 +294,9 @@ static void free_write_buffer(void)
 
     while(temp_spp_recv_data_node_p1 != NULL){
         temp_spp_recv_data_node_p2 = temp_spp_recv_data_node_p1->next_node;
-        free(temp_spp_recv_data_node_p1->node_buff);
+        if (temp_spp_recv_data_node_p1->node_buff) {
+            free(temp_spp_recv_data_node_p1->node_buff);
+        }
         free(temp_spp_recv_data_node_p1);
         temp_spp_recv_data_node_p1 = temp_spp_recv_data_node_p2;
     }

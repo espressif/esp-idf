@@ -258,6 +258,10 @@ static void show_bonded_devices(void)
     int dev_num = esp_ble_get_bond_device_num();
 
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    if (!dev_list) {
+        ESP_LOGI(GATTS_TABLE_TAG, "malloc failed, return\n");
+        return;
+    }
     esp_ble_get_bond_device_list(&dev_num, dev_list);
     ESP_LOGI(GATTS_TABLE_TAG, "Bonded devices number : %d", dev_num);
 
@@ -274,6 +278,10 @@ static void __attribute__((unused)) remove_all_bonded_devices(void)
     int dev_num = esp_ble_get_bond_device_num();
 
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    if (!dev_list) {
+        ESP_LOGI(GATTS_TABLE_TAG, "malloc failed, return\n");
+        return;
+    }
     esp_ble_get_bond_device_list(&dev_num, dev_list);
     for (int i = 0; i < dev_num; i++) {
         esp_ble_remove_bond_device(dev_list[i].bd_addr);

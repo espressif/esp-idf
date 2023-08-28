@@ -248,6 +248,10 @@ static void show_bonded_devices(void)
     int dev_num = esp_ble_get_bond_device_num();
 
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    if (!dev_list) {
+        ESP_LOGE(EXAMPLE_TAG, "malloc failed, return\n");
+        return;
+    }
     esp_ble_get_bond_device_list(&dev_num, dev_list);
     EXAMPLE_DEBUG(EXAMPLE_TAG, "Bonded devices number : %d\n", dev_num);
 
@@ -266,6 +270,10 @@ static void __attribute__((unused)) remove_all_bonded_devices(void)
     int dev_num = esp_ble_get_bond_device_num();
 
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
+    if (!dev_list) {
+        ESP_LOGE(EXAMPLE_TAG, "malloc failed, return\n");
+        return;
+    }
     esp_ble_get_bond_device_list(&dev_num, dev_list);
     for (int i = 0; i < dev_num; i++) {
         esp_ble_remove_bond_device(dev_list[i].bd_addr);
@@ -414,7 +422,8 @@ void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t 
             }
             free(gatt_rsp);
         }else{
-            ESP_LOGE(EXAMPLE_TAG, "%s, malloc failed", __func__);
+            ESP_LOGE(EXAMPLE_TAG, "%s, malloc failed, and no resource to send response", __func__);
+            status = ESP_GATT_NO_RESOURCES;
         }
     }
     if (status != ESP_GATT_OK){

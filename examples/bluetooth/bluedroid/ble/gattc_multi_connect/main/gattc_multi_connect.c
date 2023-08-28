@@ -201,11 +201,13 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                                                                      &count);
             if (status != ESP_GATT_OK){
                 ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
+                break;
             }
             if (count > 0) {
                 char_elem_result_a = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result_a){
                     ESP_LOGE(GATTC_TAG, "gattc no mem");
+                    break;
                 }else {
                     status = esp_ble_gattc_get_char_by_uuid( gattc_if,
                                                              p_data->search_cmpl.conn_id,
@@ -216,6 +218,9 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                                                              &count);
                     if (status != ESP_GATT_OK){
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_char_by_uuid error");
+                        free(char_elem_result_a);
+                        char_elem_result_a = NULL;
+                        break;
                     }
 
                     /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo, so we used first 'char_elem_result' */
@@ -226,6 +231,7 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                 }
                 /* free char_elem_result */
                 free(char_elem_result_a);
+                char_elem_result_a = NULL;
             }else {
                 ESP_LOGE(GATTC_TAG, "no char found");
             }
@@ -407,6 +413,7 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                 char_elem_result_b = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result_b){
                     ESP_LOGE(GATTC_TAG, "gattc no mem");
+                    break;
                 }else{
                     status = esp_ble_gattc_get_char_by_uuid( gattc_if,
                                                              p_data->search_cmpl.conn_id,
@@ -417,6 +424,9 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                                                              &count);
                     if (status != ESP_GATT_OK){
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_char_by_uuid error");
+                        free(char_elem_result_b);
+                        char_elem_result_b = NULL;
+                        break;
                     }
 
                     /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo, so we used first 'char_elem_result' */
@@ -427,6 +437,7 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                 }
                 /* free char_elem_result */
                 free(char_elem_result_b);
+                char_elem_result_b = NULL;
             }else{
                 ESP_LOGE(GATTC_TAG, "no char found");
             }
@@ -463,6 +474,9 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                                                                      &count);
                 if (ret_status != ESP_GATT_OK){
                     ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_descr_by_char_handle error");
+                    free(descr_elem_result_b);
+                    descr_elem_result_b = NULL;
+                    break;
                 }
 
                 /* Every char has only one descriptor in our 'ESP_GATTS_DEMO' demo, so we used first 'descr_elem_result' */
@@ -482,6 +496,7 @@ static void gattc_profile_b_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
 
                 /* free descr_elem_result */
                 free(descr_elem_result_b);
+                descr_elem_result_b = NULL;
             }
         }
         else{
@@ -606,6 +621,7 @@ static void gattc_profile_c_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                 char_elem_result_c = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
                 if (!char_elem_result_c){
                     ESP_LOGE(GATTC_TAG, "gattc no mem");
+                    break;
                 }else{
                     status = esp_ble_gattc_get_char_by_uuid( gattc_if,
                                                              p_data->search_cmpl.conn_id,
@@ -616,6 +632,9 @@ static void gattc_profile_c_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                                                              &count);
                     if (status != ESP_GATT_OK){
                         ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_char_by_uuid error");
+                        free(char_elem_result_c);
+                        char_elem_result_c = NULL;
+                        break;
                     }
 
                     /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo, so we used first 'char_elem_result' */
@@ -626,6 +645,7 @@ static void gattc_profile_c_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                 }
                 /* free char_elem_result */
                 free(char_elem_result_c);
+                char_elem_result_c = NULL;
             }else{
                 ESP_LOGE(GATTC_TAG, "no char found");
             }
@@ -652,6 +672,7 @@ static void gattc_profile_c_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
             descr_elem_result_c = (esp_gattc_descr_elem_t *)malloc(sizeof(esp_gattc_descr_elem_t) * count);
             if (!descr_elem_result_c){
                 ESP_LOGE(GATTC_TAG, "malloc error, gattc no mem");
+                break;
             }else{
                 ret_status = esp_ble_gattc_get_descr_by_char_handle( gattc_if,
                                                                      gl_profile_tab[PROFILE_C_APP_ID].conn_id,
@@ -661,6 +682,9 @@ static void gattc_profile_c_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
                                                                      &count);
                 if (ret_status != ESP_GATT_OK){
                     ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_descr_by_char_handle error");
+                    free(descr_elem_result_c);
+                    descr_elem_result_c = NULL;
+                    break;
                 }
 
                 /* Every char has only one descriptor in our 'ESP_GATTS_DEMO' demo, so we used first 'descr_elem_result' */
@@ -680,6 +704,7 @@ static void gattc_profile_c_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
 
                 /* free descr_elem_result */
                 free(descr_elem_result_c);
+                descr_elem_result_c = NULL;
             }
         }
         else{
