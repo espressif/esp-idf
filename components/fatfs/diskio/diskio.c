@@ -21,7 +21,9 @@ static ff_diskio_impl_t * s_impls[FF_VOLUMES] = { NULL };
 #if FF_MULTI_PARTITION		/* Multiple partition configuration */
 const PARTITION VolToPart[FF_VOLUMES] = {
     {0, 0},    /* Logical drive 0 ==> Physical drive 0, auto detection */
+#if FF_VOLUMES > 1
     {1, 0},    /* Logical drive 1 ==> Physical drive 1, auto detection */
+#endif
 #if FF_VOLUMES > 2
     {2, 0},     /* Logical drive 2 ==> Physical drive 2, auto detection */
 #endif
