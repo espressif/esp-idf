@@ -43,6 +43,12 @@ entries:
         tasks:uxTaskGetSnapshotAll (default)
 
     # ------------------------------------------------------------------------------------------------------------------
+    # freertos_compatibility.c
+    # Placement Rules: Functions always in flash as they are never called from an ISR
+    # ------------------------------------------------------------------------------------------------------------------
+    freertos_compatibility (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
     # idf_additions.c
     # Placement Rules: Functions always in flash as they are never called from an ISR
     # ------------------------------------------------------------------------------------------------------------------

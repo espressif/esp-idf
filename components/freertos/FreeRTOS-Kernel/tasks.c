@@ -1530,15 +1530,6 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_xTaskDelayUntil == 1 )
-    #ifdef ESP_PLATFORM
-        /* backward binary compatibility - remove later */
-        #undef vTaskDelayUntil
-        void vTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
-                              const TickType_t xTimeIncrement )
-        {
-            xTaskDelayUntil( pxPreviousWakeTime, xTimeIncrement );
-        }
-    #endif // ESP_PLATFORM
 
     BaseType_t xTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
                                 const TickType_t xTimeIncrement )
@@ -5633,16 +5624,6 @@ TickType_t uxTaskResetEventItemValue( void )
 
 #if ( configUSE_TASK_NOTIFICATIONS == 1 )
 
-    #ifdef ESP_PLATFORM /* IDF-3851 */
-        /* included here for backward binary compatibility */
-        #undef ulTaskNotifyTake
-        uint32_t ulTaskNotifyTake( BaseType_t xClearCountOnExit,
-                                   TickType_t xTicksToWait )
-        {
-            return ulTaskGenericNotifyTake( tskDEFAULT_INDEX_TO_NOTIFY, xClearCountOnExit, xTicksToWait );
-        }
-    #endif // ESP-PLATFORM
-
     uint32_t ulTaskGenericNotifyTake( UBaseType_t uxIndexToWait,
                                       BaseType_t xClearCountOnExit,
                                       TickType_t xTicksToWait )
@@ -5714,18 +5695,6 @@ TickType_t uxTaskResetEventItemValue( void )
 /*-----------------------------------------------------------*/
 
 #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-
-    #ifdef ESP_PLATFORM /* IDF-3851 */
-        /* included for backward compatibility */
-        #undef xTaskNotifyWait
-        BaseType_t xTaskNotifyWait( uint32_t ulBitsToClearOnEntry,
-                                    uint32_t ulBitsToClearOnExit,
-                                    uint32_t * pulNotificationValue,
-                                    TickType_t xTicksToWait )
-        {
-            return xTaskGenericNotifyWait( tskDEFAULT_INDEX_TO_NOTIFY, ulBitsToClearOnEntry, ulBitsToClearOnExit, pulNotificationValue, xTicksToWait );
-        }
-    #endif // ESP-PLATFORM
 
     BaseType_t xTaskGenericNotifyWait( UBaseType_t uxIndexToWait,
                                        uint32_t ulBitsToClearOnEntry,
