@@ -123,7 +123,16 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
     - It is used to store NVS encryption keys when `NVS Encryption` feature is enabled.
     - The size of this partition should be 4096 bytes (minimum partition size).
 
-  - There are other predefined data subtypes for data storage supported by ESP-IDF. These include :doc:`FAT filesystem </api-reference/storage/fatfs>` (:cpp:enumerator:`ESP_PARTITION_SUBTYPE_DATA_FAT`), :doc:`SPIFFS </api-reference/storage/spiffs>` (:cpp:enumerator:`ESP_PARTITION_SUBTYPE_DATA_SPIFFS`), etc.
+  - There are other predefined data subtypes for data storage supported by ESP-IDF. These include:
+
+    - ``coredump`` (0x03) is for storing core dumps while using a custom partition table CSV file. See :doc:`Core Dump </api-guides/core_dump>` for more details.
+    - ``efuse`` (0x05) is for emulating eFuse bits using :ref:`Virtual eFuses <virtual-efuses>`.
+    - ``undefined`` (0x06) is implicitly used for data partitions with unspecified (empty) subtype, however it is possible to explicitly mark them as undefined as well.
+    - ``fat`` (0x81) is for :doc:`FAT filesystem </api-reference/storage/fatfs>`.
+    - ``spiffs`` (0x82) is for :doc:`SPIFFS filesystem </api-reference/storage/spiffs>`.
+    - ``littlefs`` (0x83) is for `LittleFS filesystem <https://github.com/littlefs-project/littlefs>`_. See :example:`storage/littlefs` example for more details.
+
+.. Comment: ``esphttpd`` (0x80) was not added to the list because there is no docs section for it and it is not clear whether user should use it explicitly.
 
   Other subtypes of ``data`` type are reserved for future ESP-IDF uses.
 
