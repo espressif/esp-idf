@@ -12,6 +12,8 @@
    set a router or a AP using the same SSID&PASSWORD as configuration of this example.
    start esp32 and when it connected to AP it will enter power save mode
 */
+#include <string.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
@@ -19,10 +21,7 @@
 #include "esp_event.h"
 #include "esp_pm.h"
 #include "nvs_flash.h"
-
-/*set the ssid and password via "idf.py menuconfig"*/
-#define DEFAULT_SSID CONFIG_EXAMPLE_WIFI_SSID
-#define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
+#include "get_ap_info.h"
 
 #define DEFAULT_LISTEN_INTERVAL CONFIG_EXAMPLE_WIFI_LISTEN_INTERVAL
 #define DEFAULT_BEACON_TIMEOUT  CONFIG_EXAMPLE_WIFI_BEACON_TIMEOUT
@@ -69,11 +68,15 @@ static void wifi_power_save(void)
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = DEFAULT_SSID,
-            .password = DEFAULT_PWD,
             .listen_interval = DEFAULT_LISTEN_INTERVAL,
         },
     };
+
+    strcpy((char *)wifi_config.sta.ssid, get_ap_ssid());
+    strcpy((char *)wifi_config.sta.password, get_ap_password());
+
+    ESP_LOGI(TAG, "Connecting AP: %s with password: %s", wifi_config.sta.ssid, wifi_config.sta.password);
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
@@ -92,6 +95,10 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
+
+#if CONFIG_EXAMPLE_GET_AP_INFO_FROM_STDIN
+    get_ap_info_from_stdin();
+#endif
 
 #if CONFIG_PM_ENABLE
     // Configure dynamic frequency scaling:

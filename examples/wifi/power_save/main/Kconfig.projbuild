@@ -1,14 +1,23 @@
 menu "Example Configuration"
 
+    config EXAMPLE_GET_AP_INFO_FROM_STDIN
+        bool "Get AP info from console"
+        default n
+        help
+            If enabled, the example will prompt the user to enter the SSID and Password of the AP to be connected
+            via the console.
+
     config EXAMPLE_WIFI_SSID
         string "WiFi SSID"
         default "myssid"
+        depends on !EXAMPLE_GET_AP_INFO_FROM_STDIN
         help
             SSID (network name) for the example to connect to.
 
     config EXAMPLE_WIFI_PASSWORD
         string "WiFi Password"
         default "mypassword"
+        depends on !EXAMPLE_GET_AP_INFO_FROM_STDIN
         help
             WiFi password (WPA or WPA2) for the example to use.
 
