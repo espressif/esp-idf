@@ -1351,9 +1351,6 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 #define xQueueSendFromISR( xQueue, pvItemToQueue, pxHigherPriorityTaskWoken ) \
     xQueueGenericSendFromISR( ( xQueue ), ( pvItemToQueue ), ( pxHigherPriorityTaskWoken ), queueSEND_TO_BACK )
 
-/** @cond !DOC_EXCLUDE_HEADER_SECTION */
-/**@{*/
-
 /**
  * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h

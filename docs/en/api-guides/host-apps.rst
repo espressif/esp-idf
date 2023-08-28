@@ -44,9 +44,11 @@ POSIX/Linux Simulator Approach
 
 The `FreeRTOS POSIX/Linux simulator <https://www.freertos.org/FreeRTOS-simulator-for-Linux.html>`_ is available on ESP-IDF as a preview target already. This simulator allows ESP-IDF components to be implemented on the host, making them accessible to ESP-IDF applications when running on host. Currently, only a limited number of components are ready to be built on Linux. Furthermore, the functionality of each component ported to Linux may also be limited or different compared to the functionality when building that component for a chip target. For more information about whether the desired components are supported on Linux, please refer to :ref:`component-linux-mock-support`.
 
-.. note::
+.. only:: not esp32p4
 
-    The FreeRTOS POSIX/Linux simulator allows configuring the :ref:`amazon_smp_freertos` version. However, the simulation still runs in single-core mode. The main reason allowing Amazon SMP FreeRTOS is to provide API compatibility with ESP-IDF applications written for Amazon SMP FreeRTOS.
+    .. note::
+
+        The FreeRTOS POSIX/Linux simulator allows configuring the :ref:`amazon_smp_freertos` version. However, the simulation still runs in single-core mode. The main reason allowing Amazon SMP FreeRTOS is to provide API compatibility with ESP-IDF applications written for Amazon SMP FreeRTOS.
 
 Requirements for Using Mocks
 ----------------------------
