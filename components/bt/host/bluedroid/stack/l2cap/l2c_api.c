@@ -2139,6 +2139,33 @@ UINT8 L2CA_DataWrite (UINT16 cid, BT_HDR *p_data)
 
 /*******************************************************************************
 **
+** Function         l2cap_bqb_write_data
+**
+** Description      Call L2CA_DataWrite and write I-Frame data for BQB test.
+**
+** Returns          None
+**
+*******************************************************************************/
+#if (BT_CLASSIC_BQB_INCLUDED == TRUE)
+void l2cap_bqb_write_data(UINT16 cid)
+{
+    BT_HDR *p_buf;
+    uint8_t *p;
+
+    if ((p_buf = (BT_HDR *)osi_malloc(SDP_DATA_BUF_SIZE)) != NULL) {
+        p_buf->len = 30;
+        p_buf->offset = L2CAP_MIN_OFFSET;
+        p = (UINT8 *)(p_buf + 1) + p_buf->offset;
+        for(int i = 0 ; i < 10; i++) {
+            UINT8_TO_BE_STREAM(p, 0)
+        }
+        L2CA_DataWrite(cid, p_buf);
+    }
+}
+#endif /* BT_CLASSIC_BQB_INCLUDED */
+
+/*******************************************************************************
+**
 ** Function         L2CA_SetChnlFlushability
 **
 ** Description      Higher layers call this function to set a channels
