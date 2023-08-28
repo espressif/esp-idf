@@ -251,18 +251,19 @@ Additionally, all API functions are protected with a mutex (``s_flash_op_mutex``
 
 In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
 
+Related Documents
+------------------
+
+.. list::
+
+    - :doc:`spi_flash_optional_feature`
+    - :doc:`spi_flash_concurrency`
+    :CONFIG_ESP_ROM_HAS_SPI_FLASH: - :doc:`spi_flash_idf_vs_rom`
 
 .. toctree::
     :hidden:
 
     spi_flash_idf_vs_rom
-
-.. only:: CONFIG_ESP_ROM_HAS_SPI_FLASH
-
-    ESP-IDF vs Chip-ROM SPI Flash Driver
-    ------------------------------------
-
-    Refer to :doc:`spi_flash_idf_vs_rom`.
 
 
 API Reference - SPI Flash

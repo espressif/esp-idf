@@ -158,15 +158,18 @@ menu "SPI Flash driver"
         default n
         depends on SPI_FLASH_SUSPEND_QVL_SUPPORTED && !SPI_FLASH_ROM_IMPL
         help
-            This option is default n because it can't be used in every situation. You need to
-            evaluate this feature through suspend part in `SPI Flash API` document.
+            This option is disabled by default because it is supported only
+            for specific flash chips and for specific Espressif chips.
+            To evaluate if you can use this feature refer to
+            `Optional Features for Flash` > `Auto Suspend & Resume` of the `ESP-IDF Programming Guide`.
 
             CAUTION: If you want to OTA to an app with this feature turned on, please make
             sure the bootloader has the support for it. (later than IDF v4.3)
 
-            Auto-suspend feature only supported by specific flash chips.
-            If you are using an official module, please contact Espressif Business support.
-            Also reading auto suspend part in `SPI Flash API` document before you enable this function.
+            If you are using an official Espressif module, please contact Espressif Business support
+            to check if the module has the flash that support this feature installed.
+            Also refer to `Concurrency Constraints for Flash on SPI1` > `Flash Auto Suspend Feature`
+            before enabling this option.
 
     config SPI_FLASH_WRITE_CHUNK_SIZE
         int "Flash write chunk size"

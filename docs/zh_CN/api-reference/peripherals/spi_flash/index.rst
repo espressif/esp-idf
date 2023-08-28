@@ -251,18 +251,19 @@ Flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
 
 在单核环境中（启用 :ref:`CONFIG_FREERTOS_UNICORE`），您需要禁用上述两个 cache 以防发生 CPU 间通信。
 
+相关文档
+-----------------
+
+.. list::
+
+    - :doc:`spi_flash_optional_feature`
+    - :doc:`spi_flash_concurrency`
+    :CONFIG_ESP_ROM_HAS_SPI_FLASH: - :doc:`spi_flash_idf_vs_rom`
 
 .. toctree::
     :hidden:
 
     spi_flash_idf_vs_rom
-
-.. only:: CONFIG_ESP_ROM_HAS_SPI_FLASH
-
-    ESP-IDF 和 Chip-ROM 版本 SPI Flash 驱动对比
-    -----------------------------------------------------------------
-
-    请参考 :doc:`spi_flash_idf_vs_rom`.
 
 
 SPI Flash API 参考
