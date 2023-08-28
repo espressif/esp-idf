@@ -166,25 +166,18 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask );
  */
 uint8_t * pxTaskGetStackStart( TaskHandle_t xTask );
 
-/* --------------------------------------------- TLSP Deletion Callbacks -----------------------------------------------
- * TLSP Deletion Callback API Additions
- *
- * Todo: Move IDF FreeRTOS TLSP Deletion Callback related additions to this header as well (see IDF-7201)
- * Todo: Add these SMP related additions to docs once they are combined with IDF FreeRTOS.
- * ------------------------------------------------------------------------------------------------------------------ */
+/* --------------------------------------------- TLSP Deletion Callbacks -------------------------------------------- */
 
-#if ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+#if CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 
 /**
  * Prototype of local storage pointer deletion callback.
  */
     typedef void (* TlsDeleteCallbackFunction_t)( int,
                                                   void * );
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 
-#endif /* ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS ) */
-
-
-#if ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+#if CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 
 /**
  * Set local storage pointer and deletion callback.
@@ -213,7 +206,7 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask );
                                                           void * pvValue,
                                                           TlsDeleteCallbackFunction_t pvDelCallback );
 
-#endif /* ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS ) */
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 
 /* -------------------------------------------- Creation With Memory Caps ----------------------------------------------
  * Helper functions to create various FreeRTOS objects (e.g., queues, semaphores) with specific memory capabilities

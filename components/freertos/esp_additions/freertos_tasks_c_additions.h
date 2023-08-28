@@ -21,7 +21,7 @@
 
 /* ------------------------------------------------- Static Asserts ------------------------------------------------- */
 
-/**
+/*
  * Both StaticTask_t and TCB_t structures are provided by FreeRTOS sources.
  * This is just an additional check of the consistency of these structures.
  */
@@ -555,26 +555,61 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
 
 /* --------------------------------------------- TLSP Deletion Callbacks -------------------------------------------- */
 
-#if ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+#if CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 
     void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet,
                                                           BaseType_t xIndex,
                                                           void * pvValue,
                                                           TlsDeleteCallbackFunction_t pvDelCallback )
     {
-        /* Verify that the offsets of pvThreadLocalStoragePointers and pvDummy15 match. */
-        /* pvDummy15 is part of the StaticTask_t struct and is used to access the TLSPs */
-        /* while deletion. */
-        _Static_assert( offsetof( StaticTask_t, pvDummy15 ) == offsetof( TCB_t, pvThreadLocalStoragePointers ), "Offset of pvDummy15 must match the offset of pvThreadLocalStoragePointers" );
+        /* If TLSP deletion callbacks are enabled, then configNUM_THREAD_LOCAL_STORAGE_POINTERS
+         * is doubled in size so that the latter half of the pvThreadLocalStoragePointers
+         * stores the deletion callbacks. */
+        if( xIndex < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) )
+        {
+            TCB_t * pxTCB;
 
-        /*Set the local storage pointer first */
-        vTaskSetThreadLocalStoragePointer( xTaskToSet, xIndex, pvValue );
+            #if ( configNUM_CORES > 1 )
+            {
+                /* For SMP, we need a critical section as another core could also
+                 * update this task's TLSP at the same time. */
+                #if CONFIG_FREERTOS_SMP
+                {
+                    taskENTER_CRITICAL();
+                }
+                #else /* CONFIG_FREERTOS_SMP */
+                {
+                    taskENTER_CRITICAL( &xKernelLock );
+                }
+                #endif /* CONFIG_FREERTOS_SMP */
+            }
+            #endif /* configNUM_CORES > 1 */
 
-        /*Set the deletion callback at an offset of configNUM_THREAD_LOCAL_STORAGE_POINTERS/2 */
-        vTaskSetThreadLocalStoragePointer( xTaskToSet, ( xIndex + ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ), pvDelCallback );
+            pxTCB = prvGetTCBFromHandle( xTaskToSet );
+            /* Store the TLSP by indexing the first half of the array */
+            pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
+
+            /* Store the TLSP deletion callback by indexing the second half
+             * of the array. */
+            pxTCB->pvThreadLocalStoragePointers[ ( xIndex + ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ) ] = ( void * ) pvDelCallback;
+
+            #if ( configNUM_CORES > 1 )
+            {
+                #if CONFIG_FREERTOS_SMP
+                {
+                    taskEXIT_CRITICAL();
+                }
+                #else /* CONFIG_FREERTOS_SMP */
+                {
+                    taskEXIT_CRITICAL( &xKernelLock );
+                }
+                #endif /* CONFIG_FREERTOS_SMP */
+            }
+            #endif /* configNUM_CORES > 1 */
+        }
     }
 
-#endif /* CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 /*----------------------------------------------------------*/
 
 /* ----------------------------------------------------- Newlib ----------------------------------------------------- */

@@ -146,8 +146,6 @@ entries:
         tasks:xTaskCheckForTimeOut (default)
         tasks:vTaskMissedYield (default)
         tasks:prvIdleTask (default)
-        if FREERTOS_TLSP_DELETION_CALLBACKS = y:
-            tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
         if FREERTOS_THREAD_LOCAL_STORAGE_POINTERS != 0:
             tasks:vTaskSetThreadLocalStoragePointer (default)
             tasks:pvTaskGetThreadLocalStoragePointer (default)

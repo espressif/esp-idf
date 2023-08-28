@@ -2024,7 +2024,6 @@ configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVIL
                                             BaseType_t xIndex,
                                             void * pvValue ) PRIVILEGED_FUNCTION;
 
-
     /**
      * Get local storage pointer specific to the given task.
      *
@@ -2040,39 +2039,6 @@ configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVIL
      */
     void * pvTaskGetThreadLocalStoragePointer( TaskHandle_t xTaskToQuery,
                                                BaseType_t xIndex ) PRIVILEGED_FUNCTION;
-
-    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-
-        /**
-         * Prototype of local storage pointer deletion callback.
-         */
-        typedef void (*TlsDeleteCallbackFunction_t)( int, void * );
-
-        /**
-         * Set local storage pointer and deletion callback.
-         *
-         * Each task contains an array of pointers that is dimensioned by the
-         * configNUM_THREAD_LOCAL_STORAGE_POINTERS setting in FreeRTOSConfig.h.
-         * The kernel does not use the pointers itself, so the application writer
-         * can use the pointers for any purpose they wish.
-         *
-         * Local storage pointers set for a task can reference dynamically
-         * allocated resources. This function is similar to
-         * vTaskSetThreadLocalStoragePointer, but provides a way to release
-         * these resources when the task gets deleted. For each pointer,
-         * a callback function can be set. This function will be called
-         * when task is deleted, with the local storage pointer index
-         * and value as arguments.
-         *
-         * @param xTaskToSet  Task to set thread local storage pointer for
-         * @param xIndex The index of the pointer to set, from 0 to
-         *               configNUM_THREAD_LOCAL_STORAGE_POINTERS - 1.
-         * @param pvValue  Pointer value to set.
-         * @param pvDelCallback  Function to call to dispose of the local
-         *                       storage pointer when the task is deleted.
-         */
-        void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue, TlsDeleteCallbackFunction_t pvDelCallback);
-    #endif
 
 #endif /* if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 ) */
 

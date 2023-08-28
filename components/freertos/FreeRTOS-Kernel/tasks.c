@@ -4331,79 +4331,42 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
 #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
 
-    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-
-        void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet,
-                                                              BaseType_t xIndex,
-                                                              void * pvValue,
-                                                              TlsDeleteCallbackFunction_t xDelCallback )
+    void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
+                                            BaseType_t xIndex,
+                                            void * pvValue )
+    {
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
+        {
+            /* TLSP Deletion Callbacks are enabled. Call the TLSPDC funciton
+             * instead with a NULL callback. */
+            vTaskSetThreadLocalStoragePointerAndDelCallback( xTaskToSet, xIndex, pvValue, NULL );
+        }
+        #else /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
         {
             TCB_t * pxTCB;
 
-            /* If TLSP deletion callbacks are enabled, then
-             * configNUM_THREAD_LOCAL_STORAGE_POINTERS is doubled in size so
-             * that the latter half of the pvThreadLocalStoragePointers stores
-             * the deletion callbacks. */
-            if( xIndex < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) )
-            {
-                #if ( configNUM_CORES > 1 )
+            #if ( configNUM_CORES > 1 )
 
-                    /* For SMP, we need to take the kernel lock here as we
-                     * another core could also update this task's TLSP at the
-                     * same time. */
-                    taskENTER_CRITICAL( &xKernelLock );
-                #endif /* ( configNUM_CORES > 1 ) */
-
-                pxTCB = prvGetTCBFromHandle( xTaskToSet );
-                /* Store the TLSP by indexing the first half of the array */
-                pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
-                /* Store the TLSP deletion callback by indexing the second half
-                 * of the array. */
-                pxTCB->pvThreadLocalStoragePointers[ ( xIndex + ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ) ] = ( void * ) xDelCallback;
-
-                #if ( configNUM_CORES > 1 )
-                    /* Release the previously taken kernel lock. */
-                    taskEXIT_CRITICAL( &xKernelLock );
-                #endif /* configNUM_CORES > 1 */
-            }
-        }
-
-        void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
-                                                BaseType_t xIndex,
-                                                void * pvValue )
-        {
-            vTaskSetThreadLocalStoragePointerAndDelCallback( xTaskToSet, xIndex, pvValue, ( TlsDeleteCallbackFunction_t ) NULL );
-        }
-
-
-    #else /* if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 ) */
-        void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
-                                                BaseType_t xIndex,
-                                                void * pvValue )
-        {
-            TCB_t * pxTCB;
+                /* For SMP, we need to take the kernel lock here as we
+                 * another core could also update this task's TLSP at the
+                 * same time. */
+                taskENTER_CRITICAL( &xKernelLock );
+            #endif /* ( configNUM_CORES > 1 ) */
 
             if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
             {
-                #if ( configNUM_CORES > 1 )
-
-                    /* For SMP, we need to take the kernel lock here as we
-                     * another core could also update this task's TLSP at the
-                     * same time. */
-                    taskENTER_CRITICAL( &xKernelLock );
-                #endif /* ( configNUM_CORES > 1 ) */
-
                 pxTCB = prvGetTCBFromHandle( xTaskToSet );
                 configASSERT( pxTCB != NULL );
                 pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
-
-                #if ( configNUM_CORES > 1 )
-                    /* Release the previously taken kernel lock. */
-                    taskEXIT_CRITICAL( &xKernelLock );
-                #endif /* configNUM_CORES > 1 */
             }
+
+            #if ( configNUM_CORES > 1 )
+                /* Release the previously taken kernel lock. */
+                taskEXIT_CRITICAL( &xKernelLock );
+            #endif /* configNUM_CORES > 1 */
         }
-    #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
+        #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
+    }
 
 #endif /* configNUM_THREAD_LOCAL_STORAGE_POINTERS */
 /*-----------------------------------------------------------*/
