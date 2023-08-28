@@ -68,3 +68,40 @@ TEST_CASE("Partition manager invalidates handle on partition de-init", "[partiti
 
     delete handle;
 }
+
+TEST_CASE("Partition manager initializes multiple partitions", "[partition_mgr]")
+{
+    const uint32_t NVS_FLASH_SECTOR_BEGIN1 = 0;
+    const uint32_t NVS_FLASH_SECTOR_SIZE1 = 3;
+    const char* NVS_FLASH_PARTITION1 = "test1";
+    const uint32_t NVS_FLASH_SECTOR_BEGIN2 = 3;
+    const uint32_t NVS_FLASH_SECTOR_SIZE2 = 3;
+    const char* NVS_FLASH_PARTITION2 = "test2";
+
+    PartitionEmulationFixture2 f(NVS_FLASH_SECTOR_BEGIN1,
+        NVS_FLASH_SECTOR_SIZE1,
+        NVS_FLASH_PARTITION1,
+        NVS_FLASH_SECTOR_BEGIN2,
+        NVS_FLASH_SECTOR_SIZE2,
+        NVS_FLASH_PARTITION2
+        );
+
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
+        NVS_FLASH_SECTOR_BEGIN1,
+        NVS_FLASH_SECTOR_SIZE1)
+            == ESP_OK);
+
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->init_custom(f.part2(),
+        NVS_FLASH_SECTOR_BEGIN2,
+        NVS_FLASH_SECTOR_SIZE2)
+            == ESP_OK);
+
+    nvs::Storage *storage1 = nvs::NVSPartitionManager::get_instance()->lookup_storage_from_name(NVS_FLASH_PARTITION1);
+    REQUIRE(storage1 != nullptr);
+    nvs::Storage *storage2 = nvs::NVSPartitionManager::get_instance()->lookup_storage_from_name(NVS_FLASH_PARTITION2);
+    REQUIRE(storage2 != nullptr);
+
+    CHECK(storage1 != storage2);
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->deinit_partition(NVS_FLASH_PARTITION1) == ESP_OK);
+    REQUIRE(nvs::NVSPartitionManager::get_instance()->deinit_partition(NVS_FLASH_PARTITION2) == ESP_OK);
+}

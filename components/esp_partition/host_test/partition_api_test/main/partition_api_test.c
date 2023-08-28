@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -18,6 +18,7 @@
 #include "unity.h"
 #include "unity_fixture.h"
 #include "esp_log.h"
+#include "spi_flash_mmap.h"
 
 const char *TAG = "partition_api_test";
 
@@ -694,16 +695,16 @@ TEST(partition_api, test_partition_power_off_emulation)
     // --- power-off on, write ---
     // ensure power-off emulation is on, below the limit for size
     // esp_partition_write consumes one power off failure cycle per 4 bytes written
-    esp_partition_fail_after(size / 4 - 1, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+    esp_partition_fail_after(size / 4, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
 
     // write data - should fail
     err = esp_partition_write(partition_data, offset, test_data_ptr, size);
-    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, err);
 
     // --- power-off on, erase has just enough power off failure cycles available---
     // ensure power-off emulation is on, at the limit for size
     // esp_partition_erase_range consumes one power-off emulation cycle per one virtual sector erased
-    esp_partition_fail_after(size / ESP_PARTITION_EMULATED_SECTOR_SIZE, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+    esp_partition_fail_after(size / ESP_PARTITION_EMULATED_SECTOR_SIZE + 1, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
 
     // write data - should be ok
     err = esp_partition_erase_range(partition_data, offset, size);
@@ -712,11 +713,11 @@ TEST(partition_api, test_partition_power_off_emulation)
     // --- power-off on, erase has one cycle less than required---
     // ensure power-off emulation is on, below the limit for size
     // esp_partition_erase_range consumes one power-off emulation cycle per one virtual sector erased
-    esp_partition_fail_after(size / ESP_PARTITION_EMULATED_SECTOR_SIZE - 1, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+    esp_partition_fail_after(size / ESP_PARTITION_EMULATED_SECTOR_SIZE, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
 
     // write data - should fail
     err = esp_partition_erase_range(partition_data, offset, size);
-    TEST_ASSERT_EQUAL(ESP_FAIL, err);
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, err);
 
     // ---cleanup ---
     // disable power-off emulation
