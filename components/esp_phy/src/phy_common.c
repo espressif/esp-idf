@@ -15,7 +15,7 @@ static volatile int64_t s_previous_timestamp;
 
 static void phy_track_pll_timer_callback(void* arg)
 {
-#if IEEE802154_ENABLED || BT_ENABLED
+#if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED
     bt_track_pll_cap();
 #endif
     s_previous_timestamp = esp_timer_get_time();
