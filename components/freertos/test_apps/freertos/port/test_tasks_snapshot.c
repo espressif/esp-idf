@@ -5,8 +5,6 @@
  */
 
 #include "sdkconfig.h"
-
-#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
 #include <stdio.h>
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
@@ -187,5 +185,3 @@ TEST_CASE("Task snapshot: Iterate", "[freertos]")
     check_snapshots(task_list, num_tasks, task_snapshots, num_snapshots);
     teardown(task_list, num_tasks, old_priority);
 }
-
-#endif // CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
