@@ -8,25 +8,29 @@
 
 /*
  * This file is like "idf_additions.h" but for private API (i.e., only meant to
- * be called by other internally by other
- * ESP-IDF components.
+ * be called internally by other ESP-IDF components.
  */
 
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 
+/* *INDENT-OFF* */
 #ifdef __cplusplus
     extern "C" {
 #endif
+/* *INDENT-ON* */
 
-/* -----------------------------------------------------------------------------
- * Priority Raise/Restore
- * - Special functions to forcefully raise and restore a task's priority
- * - Used by cache_utils.c when disabling/enabling the cache
- * -------------------------------------------------------------------------- */
-
+/*------------------------------------------------------------------------------
+ * TASK UTILITIES (PRIVATE)
+ *----------------------------------------------------------------------------*/
 #if ( INCLUDE_vTaskPrioritySet == 1 )
 
+/**
+ * @brief Structure to save a task's previous priority
+ *
+ * This structure is meant to be used with prvTaskPriorityRaise() and
+ * prvTaskPriorityRestore().
+ */
     typedef struct
     {
         UBaseType_t uxPriority;
@@ -35,13 +39,17 @@
         #endif
     } prvTaskSavedPriority_t;
 
+#endif /* INCLUDE_vTaskPrioritySet == 1 */
+
+#if ( INCLUDE_vTaskPrioritySet == 1 )
+
 /**
  * INCLUDE_vTaskPrioritySet must be defined as 1 for this function to be
  * available. See the configuration section for more information.
  *
- * Saves the current priority and current base priority of a task, then
- * raises the task's current and base priority to uxNewPriority if
- * uxNewPriority is of a higher priority.
+ * Saves the current priority and current base priority of a task, then raises
+ * the task's current and base priority to uxNewPriority if uxNewPriority is of
+ * a higher priority.
  *
  * Once a task's priority has been raised with this function, the priority
  * can be restored by calling prvTaskPriorityRestore()
@@ -53,8 +61,8 @@
  *   forced immediately to a higher priority.
  *
  * For configUSE_MUTEXES == 0: A context switch will occur before the
- * function returns if the priority being set is higher than the currently
- * executing task.
+ * function returns if the priority being set is higher than the priority of the
+ * currently executing task.
  *
  * @note This functions is private and should only be called internally
  * within various IDF components. Users should never call this function from
@@ -71,17 +79,20 @@
     void prvTaskPriorityRaise( prvTaskSavedPriority_t * pxSavedPriority,
                                UBaseType_t uxNewPriority );
 
+#endif /* INCLUDE_vTaskPrioritySet == 1 */
+
+#if ( INCLUDE_vTaskPrioritySet == 1 )
+
 /**
  * INCLUDE_vTaskPrioritySet must be defined as 1 for this function to be
- * available.
- * See the configuration section for more information.
+ * available. See the configuration section for more information.
  *
  * Restore a task's priority that was previously raised by
  * prvTaskPriorityRaise().
  *
  * For configUSE_MUTEXES == 0: A context switch will occur before the function
- * returns if the priority
- * being set is higher than the currently executing task.
+ * returns if the priority being set is higher than the priority of the currently
+ * executing task.
  *
  * @note This functions is private and should only be called internally within
  * various IDF components. Users should never call this function from their
@@ -92,8 +103,10 @@
  */
     void prvTaskPriorityRestore( prvTaskSavedPriority_t * pxSavedPriority );
 
-#endif // ( INCLUDE_vTaskPrioritySet == 1)
+#endif /* INCLUDE_vTaskPrioritySet == 1 */
 
+/* *INDENT-OFF* */
 #ifdef __cplusplus
     }
 #endif
+/* *INDENT-ON* */

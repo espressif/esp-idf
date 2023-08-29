@@ -6,33 +6,35 @@ archive: libfreertos.a
 entries:
     # ------------------------------------------------------------------------------------------------------------------
     # esp_additions/private_include/freertos_tasks_c_additions.h
+    # Placement Rules (FreeRTOS API Additions):
+    #   - Default: Place all functions in internal RAM.
+    #   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: Place functions in flash if they are never called from an ISR
+    #     context (directly or indirectly).
     # Placement Rules (Task Snapshot):
     #   - Default: Place all functions in internal RAM.
     #   - CONFIG_FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH: Place functions in flash
     #   - vTaskGetSnapshot is omitted on purpose as it is used to by the Task Watchdog (TWDT) interrupt handler, we want
     #     to always keep it in IRAM
-    # Placement Rules (FreeRTOS API Additions):
-    #   - Default: Place all functions in internal RAM.
-    #   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: Place functions in flash if they are never called from an ISR
-    #     context (directly or indirectly).
     # ------------------------------------------------------------------------------------------------------------------
+    if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
+        # Task Creation
+        if FREERTOS_SMP = y:
+            tasks:xTaskCreatePinnedToCore (default)
+            tasks:xTaskCreateStaticPinnedToCore (default)
+        # Task Utilities
+        tasks:xTaskGetCurrentTaskHandleForCPU (default)
+        tasks:xTaskGetIdleTaskHandleForCPU (default)
+        tasks:xTaskGetAffinity (default)
+        tasks:prvTaskPriorityRaise (default)
+        tasks:prvTaskPriorityRestore (default)
+        # TLSP Deletion Callbacks
+        if FREERTOS_TLSP_DELETION_CALLBACKS = y:
+            tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
     # Task Snapshot
     if FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH = y:
         tasks:pxGetNextTaskList (default)
         tasks:pxTaskGetNext (default)
         tasks:uxTaskGetSnapshotAll (default)
-    # FreeRTOS API Additions
-    if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
-        if FREERTOS_SMP = y:
-            tasks:xTaskCreatePinnedToCore (default)
-            tasks:xTaskCreateStaticPinnedToCore (default)
-        tasks:xTaskGetCurrentTaskHandleForCPU (default)
-        tasks:xTaskGetIdleTaskHandleForCPU (default)
-        tasks:xTaskGetAffinity (default)
-        if FREERTOS_TLSP_DELETION_CALLBACKS = y:
-            tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
-        tasks:prvTaskPriorityRaise (default)
-        tasks:prvTaskPriorityRestore (default)
 
     # ------------------------------------------------------------------------------------------------------------------
     # idf_additions.c
