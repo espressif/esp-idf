@@ -52,7 +52,6 @@
 ******************************************************************************/
 #if (UC_BT_CLASSIC_ENABLED == TRUE)
 #define CLASSIC_BT_INCLUDED         TRUE
-#define BT_SSP_INCLUDED             TRUE
 #define BTC_SM_INCLUDED             TRUE
 #define BTC_PRF_QUEUE_INCLUDED      TRUE
 #define BTC_GAP_BT_INCLUDED         TRUE
@@ -1420,19 +1419,6 @@
 #else
 #define SMP_LINK_TOUT_MIN               2
 #endif
-#endif
-
-/******************************************************************************
-**
-** BT_SSP
-**
-******************************************************************************/
-#ifndef BT_SSP_INCLUDED
-#define BT_SSP_INCLUDED         FALSE
-#endif
-
-#if BT_SSP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == FALSE
-#error "Can't have SSP without CLASSIC BT"
 #endif
 
 /******************************************************************************

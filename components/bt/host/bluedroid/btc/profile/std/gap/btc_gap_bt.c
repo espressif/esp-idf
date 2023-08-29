@@ -652,7 +652,6 @@ static void btc_gap_bt_pin_reply(btc_gap_bt_args_t *arg){
     BTA_DmPinReply(arg->pin_reply.bda.address, arg->pin_reply.accept, arg->pin_reply.pin_code_len, arg->pin_reply.pin_code);
 }
 
-#if (BT_SSP_INCLUDED == TRUE)
 static esp_err_t btc_gap_bt_set_security_param(btc_gap_bt_args_t *arg)
 {
     esp_err_t ret;
@@ -680,8 +679,6 @@ static void btc_gap_bt_ssp_confirm(btc_gap_bt_args_t *arg)
 {
     BTA_DmConfirm(arg->confirm_reply.bda.address, arg->confirm_reply.accept);
 }
-
-#endif ///BT_SSP_INCLUDED == TRUE
 
 static void btc_gap_bt_config_eir(btc_gap_bt_args_t *arg)
 {
@@ -848,7 +845,6 @@ void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_GAP_BT_ACT_SET_PAGE_TIMEOUT:
     case BTC_GAP_BT_ACT_GET_PAGE_TIMEOUT:
         break;
-#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_ACT_PASSKEY_REPLY:
     case BTC_GAP_BT_ACT_CONFIRM_REPLY:
         break;
@@ -865,7 +861,6 @@ void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
     }
-#endif ///BT_SSP_INCLUDED == TRUE
 
     case BTC_GAP_BT_ACT_CONFIG_EIR:{
         btc_gap_bt_args_t *src = (btc_gap_bt_args_t *)p_src;
@@ -916,7 +911,6 @@ void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_ACT_SET_PAGE_TIMEOUT:
     case BTC_GAP_BT_ACT_GET_PAGE_TIMEOUT:
         break;
-#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_ACT_PASSKEY_REPLY:
     case BTC_GAP_BT_ACT_CONFIRM_REPLY:
         break;
@@ -925,7 +919,6 @@ void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
             osi_free(arg->set_security_param.value);
         }
         break;
-#endif ///BT_SSP_INCLUDED == TRUE
 
     case BTC_GAP_BT_ACT_CONFIG_EIR:
         if (arg->config_eir.eir_data.p_manufacturer_data) {
@@ -986,7 +979,6 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_pin_reply(arg);
         break;
     }
-#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_ACT_SET_SECURITY_PARAM:{
         btc_gap_bt_set_security_param(arg);
         break;
@@ -999,7 +991,6 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_ssp_confirm(arg);
         break;
     }
-#endif ///BT_SSP_INCLUDED == TRUE
     case BTC_GAP_BT_ACT_CONFIG_EIR: {
         btc_gap_bt_config_eir(arg);
         break;
@@ -1069,11 +1060,9 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_QOS_EVT:
     case BTC_GAP_BT_SET_PAGE_TO_EVT:
     case BTC_GAP_BT_GET_PAGE_TO_EVT:
-#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_CFM_REQ_EVT:
     case BTC_GAP_BT_KEY_NOTIF_EVT:
     case BTC_GAP_BT_KEY_REQ_EVT:
-#endif ///BT_SSP_INCLUDED == TRUE
 #if (BTC_DM_PM_INCLUDED == TRUE)
     case BTC_GAP_BT_MODE_CHG_EVT:
 #endif /// BTC_DM_PM_INCLUDED == TRUE
@@ -1115,7 +1104,6 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         btc_gap_bt_cb_to_app(ESP_BT_GAP_PIN_REQ_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
-#if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_CFM_REQ_EVT:{
         btc_gap_bt_cb_to_app(ESP_BT_GAP_CFM_REQ_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
@@ -1128,7 +1116,6 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         btc_gap_bt_cb_to_app(ESP_BT_GAP_KEY_REQ_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
-#endif ///BT_SSP_INCLUDED == TRUE
     case BTC_GAP_BT_SET_AFH_CHANNELS_EVT:{
         btc_gap_bt_cb_to_app(ESP_BT_GAP_SET_AFH_CHANNELS_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;

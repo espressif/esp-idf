@@ -709,7 +709,6 @@ esp_err_t esp_bt_gap_set_pin(esp_bt_pin_type_t pin_type, uint8_t pin_code_len, e
 */
 esp_err_t esp_bt_gap_pin_reply(esp_bd_addr_t bd_addr, bool accept, uint8_t pin_code_len, esp_bt_pin_code_t pin_code);
 
-#if (BT_SSP_INCLUDED == TRUE)
 /**
 * @brief            Set a GAP security parameter value. Overrides the default value.
 *
@@ -757,8 +756,6 @@ esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint3
 *
 */
 esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
-
-#endif /*(BT_SSP_INCLUDED == TRUE)*/
 
 /**
 * @brief            Set the AFH channels

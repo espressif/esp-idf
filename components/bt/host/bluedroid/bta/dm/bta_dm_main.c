@@ -90,12 +90,12 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
     /* simple pairing events */
 #if (SMP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_confirm,                         /* BTA_DM_API_CONFIRM_EVT */
-#if (BT_SSP_INCLUDED == TRUE)
     bta_dm_key_req,                         /* BTA_DM_API_KEY_REQ_EVT */
-#endif ///BT_SSP_INCLUDED == TRUE
+#endif  /* (CLASSIC_BT_INCLUDED == TRUE) */
     bta_dm_set_encryption,                  /* BTA_DM_API_SET_ENCRYPTION_EVT */
-#endif  ///SMP_INCLUDED == TRUE
+#endif /* (SMP_INCLUDED == TRUE) */
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     bta_dm_loc_oob,                         /* BTA_DM_API_LOC_OOB_EVT */
     bta_dm_oob_reply,                       /* BTA_DM_API_OOB_REPLY_EVT */

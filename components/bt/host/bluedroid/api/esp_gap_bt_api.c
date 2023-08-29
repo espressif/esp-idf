@@ -311,7 +311,6 @@ esp_err_t esp_bt_gap_pin_reply(esp_bd_addr_t bd_addr, bool accept, uint8_t pin_c
                 btc_gap_bt_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-#if (BT_SSP_INCLUDED == TRUE)
 esp_err_t esp_bt_gap_set_security_param(esp_bt_sp_param_t param_type,
         void *value, uint8_t len)
 {
@@ -384,8 +383,6 @@ esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy,
                 btc_gap_bt_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-
-#endif /*(BT_SSP_INCLUDED == TRUE)*/
 
 esp_err_t esp_bt_gap_set_afh_channels(esp_bt_gap_afh_channels channels)
 {

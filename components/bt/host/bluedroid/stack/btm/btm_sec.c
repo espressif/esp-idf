@@ -1554,7 +1554,7 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, BD_ADDR bd_addr)
 **                  BTM_MIN_PASSKEY_VAL(0) - BTM_MAX_PASSKEY_VAL(999999(0xF423F)).
 **
 *******************************************************************************/
-#if (BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void BTM_PasskeyReqReply(tBTM_STATUS res, BD_ADDR bd_addr, UINT32 passkey)
 {
 #if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
@@ -1602,7 +1602,7 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, BD_ADDR bd_addr, UINT32 passkey)
         btsnd_hcic_user_passkey_reply (bd_addr, passkey);
     }
 }
-#endif  ///BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE
+#endif /* (CLASSIC_BT_INCLUDED == TRUE) */
 
 /*******************************************************************************
 **
@@ -1618,7 +1618,7 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, BD_ADDR bd_addr, UINT32 passkey)
 **                  type - notification type
 **
 *******************************************************************************/
-#if (BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void BTM_SendKeypressNotif(BD_ADDR bd_addr, tBTM_SP_KEY_TYPE type)
 {
     /* This API only make sense between PASSKEY_REQ and SP complete */
@@ -1626,7 +1626,7 @@ void BTM_SendKeypressNotif(BD_ADDR bd_addr, tBTM_SP_KEY_TYPE type)
         btsnd_hcic_send_keypress_notif (bd_addr, type);
     }
 }
-#endif  ///BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE
+#endif  /* (CLASSIC_BT_INCLUDED == TRUE) */
 
 #if BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 /*******************************************************************************
@@ -3515,6 +3515,7 @@ void btm_io_capabilities_rsp (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
 {
     tBTM_STATUS status = BTM_ERR_PROCESSING;
@@ -3576,12 +3577,10 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
             btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
             break;
 
-#if (BT_SSP_INCLUDED == TRUE)
         case BTM_SP_KEY_REQ_EVT:
             /* HCI_USER_PASSKEY_REQUEST_EVT */
             btm_sec_change_pairing_state (BTM_PAIR_STATE_KEY_ENTRY);
             break;
-#endif
         }
 
         if (btm_cb.api.p_sp_callback) {
@@ -3598,12 +3597,9 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
         if (event == BTM_SP_CFM_REQ_EVT) {
             BTM_TRACE_DEBUG ("calling BTM_ConfirmReqReply with status: %d\n", status);
             BTM_ConfirmReqReply (status, p_bda);
-        }
-#if (BT_SSP_INCLUDED == TRUE)
-        else if (event == BTM_SP_KEY_REQ_EVT) {
+        } else if (event == BTM_SP_KEY_REQ_EVT) {
             BTM_PasskeyReqReply(status, p_bda, 0);
         }
-#endif
         return;
     }
     /* Something bad. we can only fail this connection */
@@ -3621,15 +3617,10 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
         if (NULL != (p_dev_rec = btm_find_dev (p_bda)) ) {
             btm_sec_disconnect (p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE);
         }
-    }
-
-#if (BT_SSP_INCLUDED == TRUE)
-    else {
+    } else {
         btsnd_hcic_user_passkey_neg_reply(p_bda);
     }
-#endif
 }
-
 
 /*******************************************************************************
 **
@@ -3727,6 +3718,7 @@ void btm_simple_pair_complete (UINT8 *p)
         }
     }
 }
+#endif /* (CLASSIC_BT_INCLUDED == TRUE) */
 #endif   ///SMP_INCLUDED == TRUE
 
 
@@ -4934,12 +4926,12 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
         /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
         break;
 
-#if (BT_SSP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
     case BTM_PAIR_STATE_KEY_ENTRY:
         btsnd_hcic_user_passkey_neg_reply(p_cb->pairing_bda);
         /* btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE); */
         break;
-#endif /* !BTM_IO_CAP_NONE */
+#endif /* (CLASSIC_BT_INCLUDED == TRUE) */
 
 #if BTM_OOB_INCLUDED == TRUE
     case BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS:

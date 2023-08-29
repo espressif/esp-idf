@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -451,10 +451,9 @@ static void btc_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
 #endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
 
-#if (BT_SSP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static void btc_dm_sp_cfm_req_evt(tBTA_DM_SP_CFM_REQ *p_cfm_req)
 {
-#if (BTC_GAP_BT_INCLUDED == TRUE)
     if (p_cfm_req->just_works) {
         // just work, not show to users.
         BTA_DmConfirm(p_cfm_req->bd_addr, true);
@@ -483,12 +482,10 @@ static void btc_dm_sp_cfm_req_evt(tBTA_DM_SP_CFM_REQ *p_cfm_req)
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
-#endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
 
 static void btc_dm_sp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF *p_key_notif)
 {
-#if (BTC_GAP_BT_INCLUDED == TRUE)
     esp_bt_gap_cb_param_t param;
     bt_status_t ret;
     btc_msg_t *msg;
@@ -511,12 +508,10 @@ static void btc_dm_sp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF *p_key_notif)
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
-#endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
 
 static void btc_dm_sp_key_req_evt(tBTA_DM_SP_KEY_REQ *p_key_req)
 {
-#if (BTC_GAP_BT_INCLUDED == TRUE)
     esp_bt_gap_cb_param_t param;
     bt_status_t ret;
     btc_msg_t *msg;
@@ -538,9 +533,8 @@ static void btc_dm_sp_key_req_evt(tBTA_DM_SP_KEY_REQ *p_key_req)
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
     }
-#endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
-#endif /// BT_SSP_INCLUDED == TRUE
+#endif /// CLASSIC_BT_INCLUDED == TRUE
 
 static void btc_dm_dev_unpaired_evt(tBTA_DM_LINK_DOWN *p_link_down)
 {
@@ -773,7 +767,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
         BTC_TRACE_DEBUG("BTA_DM_BOND_CANCEL_CMPL_EVT");
         break;
-#if (BT_SSP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
     case BTA_DM_SP_CFM_REQ_EVT:
         btc_dm_sp_cfm_req_evt(&p_data->cfm_req);
         break;
@@ -783,14 +777,15 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_SP_KEY_REQ_EVT:
         btc_dm_sp_key_req_evt(&p_data->key_req);
         break;
-    case BTA_DM_SP_RMT_OOB_EVT:
-        BTC_TRACE_DEBUG("BTA_DM_SP_RMT_OOB_EVT");
-        break;
     case BTA_DM_SP_KEYPRESS_EVT:
         BTC_TRACE_DEBUG("BTA_DM_SP_KEYPRESS_EVT");
         break;
-#endif ///BT_SSP_INCLUDED == TRUE
-
+#endif /* (CLASSIC_BT_INCLUDED == TRUE) */
+#if BTM_OOB_INCLUDED == TRUE
+    case BTA_DM_SP_RMT_OOB_EVT:
+        BTC_TRACE_DEBUG("BTA_DM_SP_RMT_OOB_EVT");
+        break;
+#endif /* BTM_OOB_INCLUDED == TRUE */
     case BTA_DM_ACL_LINK_STAT_EVT: {
         btc_dm_acl_link_stat(&p_data->acl_link_stat);
         break;
