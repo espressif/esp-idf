@@ -2,22 +2,7 @@ set(srcs "highint_hdl.S"
          "clk.c"
          "reset_reason.c"
          "system_internal.c"
-         "cache_err_int.c"
-         "../../arch/xtensa/panic_arch.c"
-         "../../arch/xtensa/panic_handler_asm.S"
-         "../../arch/xtensa/expression_with_stack.c"
-         "../../arch/xtensa/expression_with_stack_asm.S"
-         "../../arch/xtensa/debug_helpers.c"
-         "../../arch/xtensa/debug_helpers_asm.S"
-         "../../arch/xtensa/debug_stubs.c"
-         "../../arch/xtensa/trax.c"
-         )
-
-if(CONFIG_ESP_IPC_ISR_ENABLE)
-    list(APPEND srcs "../../arch/xtensa/esp_ipc_isr.c"
-                     "../../arch/xtensa/esp_ipc_isr_handler.S"
-                     "../../arch/xtensa/esp_ipc_isr_routines.S")
-endif()
+         "cache_err_int.c")
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
