@@ -707,7 +707,8 @@ esp_err_t nvs_entry_find(const char *part_name,
  *             - ESP_OK if no internal error or programming error occurred.
  *             - ESP_ERR_NVS_NOT_FOUND if no element of specified criteria has been found.
  *             - ESP_ERR_NO_MEM if memory has been exhausted during allocation of internal structures.
- *             - ESP_ERR_INVALID_ARG if any of the parameters is NULL.
+ *             - ESP_ERR_NVS_INVALID_HANDLE if unknown handle was specified.
+ *             - ESP_ERR_INVALID_ARG if output_iterator parameter is NULL.
  *                  Note: don't release \c output_iterator in case ESP_ERR_INVALID_ARG has been returned
  */
 esp_err_t nvs_entry_find_in_handle(nvs_handle_t handle, nvs_type_t type, nvs_iterator_t *output_iterator);

@@ -125,9 +125,9 @@ public:
 
     esp_err_t calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries);
 
-    bool findEntry(nvs_opaque_iterator_t*, const char* name);
+    bool findEntry(nvs_opaque_iterator_t* it, const char* name);
 
-    bool findEntryNs(nvs_opaque_iterator_t*, uint8_t nsIndex);
+    bool findEntryNs(nvs_opaque_iterator_t* it, uint8_t nsIndex);
 
     bool nextEntry(nvs_opaque_iterator_t* it);
 
