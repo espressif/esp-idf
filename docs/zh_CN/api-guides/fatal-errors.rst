@@ -510,15 +510,15 @@ FreeRTOS 堆栈检查
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     .. |CPU_EXCEPTIONS_LIST| replace:: 非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误，双重异常。
-    .. |ILLEGAL_INSTR_MSG| replace:: 非法指令
-    .. |CACHE_ERR_MSG| replace:: cache 已禁用，但仍可访问缓存内存区域
+    .. |ILLEGAL_INSTR_MSG| replace:: IllegalInstruction
+    .. |CACHE_ERR_MSG| replace:: Cache disabled but cached memory region accessed
     .. |STACK_OVERFLOW| replace:: 堆栈溢出
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
     .. |CPU_EXCEPTIONS_LIST| replace:: 非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误。
-    .. |ILLEGAL_INSTR_MSG| replace:: 非法指令
-    .. |CACHE_ERR_MSG| replace:: cache 错误
+    .. |ILLEGAL_INSTR_MSG| replace:: IllegalInstruction
+    .. |CACHE_ERR_MSG| replace:: Cache error
     .. |STACK_OVERFLOW| replace:: 堆栈溢出
 
 未定义行为清理器 (UBSAN) 检查
