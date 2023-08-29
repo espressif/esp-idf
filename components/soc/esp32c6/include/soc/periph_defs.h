@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 typedef enum {
+    /* HP peripherals */
     PERIPH_LEDC_MODULE = 0,
     PERIPH_UART0_MODULE,
     PERIPH_UART1_MODULE,
@@ -45,7 +46,10 @@ typedef enum {
     PERIPH_TEMPSENSOR_MODULE,
     PERIPH_REGDMA_MODULE,
     PERIPH_ASSIST_DEBUG_MODULE,
-/* Peripherals clock managed by the modem_clock driver must be listed last in the enumeration */
+    /* LP peripherals */
+    PERIPH_LP_I2C0_MODULE,
+    PERIPH_LP_UART0_MODULE,
+    /* Peripherals clock managed by the modem_clock driver must be listed last in the enumeration */
     PERIPH_WIFI_MODULE,
     PERIPH_BT_MODULE,
     PERIPH_IEEE802154_MODULE,
@@ -54,14 +58,8 @@ typedef enum {
     PERIPH_ANA_I2C_MASTER_MODULE,
     PERIPH_MODEM_ETM_MODULE,
     PERIPH_MODULE_MAX
-/*  !!! Don't append soc modules here !!! */
+    /*  !!! Don't append soc modules here !!! */
 } periph_module_t;
-
-typedef enum {
-    LP_PERIPH_I2C0_MODULE = 0,
-    LP_PERIPH_UART0_MODULE,
-    LP_PERIPH_MODULE_MAX,
-} lp_periph_module_t;
 
 #define PERIPH_MODEM_MODULE_MIN PERIPH_WIFI_MODULE
 #define PERIPH_MODEM_MODULE_MAX PERIPH_MODEM_ETM_MODULE

@@ -18,6 +18,7 @@
 #include "hal/i2c_types.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/lp_clkrst_struct.h"
+#include "soc/lpperi_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,7 +89,7 @@ typedef enum {
  */
 static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2c_hal_clk_config_t *clk_cal)
 {
-    uint32_t clkm_div = source_clk / (bus_freq * 1024) +1;
+    uint32_t clkm_div = source_clk / (bus_freq * 1024) + 1;
     uint32_t sclk_freq = source_clk / clkm_div;
     uint32_t half_cycle = sclk_freq / bus_freq / 2;
     //SCL
@@ -97,7 +98,7 @@ static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_f
     // default, scl_wait_high < scl_high
     // Make 80KHz as a boundary here, because when working at lower frequency, too much scl_wait_high will faster the frequency
     // according to some hardware behaviors.
-    clk_cal->scl_wait_high = (bus_freq >= 80*1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
+    clk_cal->scl_wait_high = (bus_freq >= 80 * 1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
     clk_cal->scl_high = half_cycle - clk_cal->scl_wait_high;
     clk_cal->sda_hold = half_cycle / 4;
     clk_cal->sda_sample = half_cycle / 2;
@@ -565,7 +566,7 @@ static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *h
 __attribute__((always_inline))
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_t len)
 {
-    for (int i = 0; i< len; i++) {
+    for (int i = 0; i < len; i++) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->data, fifo_rdata, ptr[i]);
     }
 }
@@ -582,7 +583,7 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_
 __attribute__((always_inline))
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
-    for(int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         ptr[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->data, fifo_rdata);
     }
 }
@@ -740,6 +741,62 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_c
 }
 
 /**
+ * @brief Set LP I2C source clock
+ *
+ * @param  hw Address offset of the LP I2C peripheral registers
+ * @param  src_clk Source clock for the LP I2C peripheral
+ */
+static inline void lp_i2c_ll_set_source_clk(i2c_dev_t *hw, soc_periph_lp_i2c_clk_src_t src_clk)
+{
+    (void)hw;
+    // src_clk : (0) for LP_FAST_CLK (RTC Fast), (1) for XTAL_D2_CLK
+    switch (src_clk) {
+    case LP_I2C_SCLK_LP_FAST:
+        LP_CLKRST.lpperi.lp_i2c_clk_sel = 0;
+        break;
+    case LP_I2C_SCLK_XTAL_D2:
+        LP_CLKRST.lpperi.lp_i2c_clk_sel = 1;
+        break;
+    default:
+        // Invalid source clock selected
+        HAL_ASSERT(false);
+    }
+}
+
+/// LP_CLKRST.lpperi is a shared register, so this function must be used in an atomic way
+#define lp_i2c_ll_set_source_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2c_ll_set_source_clk(__VA_ARGS__)
+
+/**
+ * @brief Enable bus clock for the LP I2C module
+ *
+ * @param hw_id LP I2C instance ID
+ * @param enable True to enable, False to disable
+ */
+static inline void lp_i2c_ll_enable_bus_clock(int hw_id, bool enable)
+{
+    (void)hw_id;
+    LPPERI.clk_en.lp_ext_i2c_ck_en = enable;
+}
+
+/// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
+#define lp_i2c_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2c_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset LP I2C module
+ *
+ * @param hw_id LP I2C instance ID
+ */
+static inline void lp_i2c_ll_reset_register(int hw_id)
+{
+    (void)hw_id;
+    LPPERI.reset_en.lp_ext_i2c_reset_en = 1;
+    LPPERI.reset_en.lp_ext_i2c_reset_en = 0;
+}
+
+/// LPPERI.reset_en is a shared register, so this function must be used in an atomic way
+#define lp_i2c_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2c_ll_reset_register(__VA_ARGS__)
+
+/**
  * @brief Enable I2C peripheral controller clock
  *
  * @param dev Peripheral instance address
@@ -807,7 +864,6 @@ static inline volatile void *i2c_ll_get_interrupt_status_reg(i2c_dev_t *dev)
 {
     return &dev->int_status;
 }
-
 
 /**
  * @brief Enable I2C slave clock stretch.

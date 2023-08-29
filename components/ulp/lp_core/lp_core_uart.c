@@ -12,7 +12,7 @@
 #include "hal/uart_hal.h"
 #include "hal/rtc_io_types.h"
 #include "esp_clk_tree.h"
-#include "esp_private/lp_periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 
 #define LP_UART_PORT_NUM    LP_UART_NUM_0
 #define LP_UART_TX_IDLE_NUM_DEFAULT     (0U)
@@ -39,15 +39,19 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
 
     /* Get LP UART source clock frequency */
     uint32_t sclk_freq = 0;
-    soc_module_clk_t clk_src = (soc_module_clk_t)(cfg->lp_uart_source_clk) ? (cfg->lp_uart_source_clk) : LP_UART_SCLK_DEFAULT;
-    ret = esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+    soc_periph_lp_uart_clk_src_t clk_src = cfg->lp_uart_source_clk ? cfg->lp_uart_source_clk : LP_UART_SCLK_DEFAULT;
+    ret = esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
     if (ret != ESP_OK) {
         // Unable to fetch LP UART source clock frequency
         return ESP_FAIL;
     }
 
+    // LP UART clock source is mixed with other peripherals in the same register
+    PERIPH_RCC_ATOMIC() {
+        lp_uart_ll_set_source_clk(hal.dev, clk_src);
+    }
+
     /* Override protocol parameters from the configuration */
-    lp_periph_set_clk_src(LP_PERIPH_UART0_MODULE, clk_src);
     uart_hal_set_baudrate(&hal, cfg->uart_proto_cfg.baud_rate, sclk_freq);
     uart_hal_set_parity(&hal, cfg->uart_proto_cfg.parity);
     uart_hal_set_data_bit_num(&hal, cfg->uart_proto_cfg.data_bits);

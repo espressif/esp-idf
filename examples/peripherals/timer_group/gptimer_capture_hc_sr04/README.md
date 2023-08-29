@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 | ESP32-H2 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C6 | ESP32-H2 | ESP32-P4 |
+| ----------------- | -------- | -------- | -------- |
 
 # HC-SR04 Example based on GPTimer Capture and ETM
 
