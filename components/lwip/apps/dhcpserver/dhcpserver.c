@@ -1178,7 +1178,7 @@ static void dhcps_poll_set(dhcps_t *dhcps, u32_t ip)
         end_ip = htonl(dhcps_poll->end_ip.addr);
 
         /*config ip information can't contain local ip*/
-        if ((start_ip <= server_ip) && (server_ip <= end_ip)) {
+        if ((server_ip >= start_ip) && (server_ip <= end_ip)) {
             dhcps_poll->enable = false;
         } else {
             /*config ip information must be in the same segment as the local ip*/
@@ -1211,6 +1211,7 @@ static void dhcps_poll_set(dhcps_t *dhcps, u32_t ip)
         dhcps_poll->end_ip.addr = range_end_ip;
         dhcps_poll->start_ip.addr = htonl(dhcps_poll->start_ip.addr);
         dhcps_poll->end_ip.addr = htonl(dhcps_poll->end_ip.addr);
+        dhcps_poll->enable = true;
     }
 
 }
