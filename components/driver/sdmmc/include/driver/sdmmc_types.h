@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -114,7 +114,8 @@ typedef struct {
         uint32_t arg;               /*!< SD/MMC command argument */
         sdmmc_response_t response;  /*!< response buffer */
         void* data;                 /*!< buffer to send or read into */
-        size_t datalen;             /*!< length of data buffer */
+        size_t datalen;             /*!< length of data in the buffer */
+        size_t buflen;              /*!< length of the buffer */
         size_t blklen;              /*!< block length */
         int flags;                  /*!< see below */
 /** @cond */

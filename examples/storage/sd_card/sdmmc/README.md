@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-S3 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-P4 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- |
 
 # SD Card example (SDMMC)
 
@@ -48,7 +48,7 @@ GPIO13 (MTCK) | D3          | not used in 1-line SD mode, but card's D3 pin must
 On ESP32-S3, SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
 
 1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open "SD/MMC Example Configuration" menu.
-2. In the source code: See the initialization of ``sdmmc_slot_config_t slot_config`` structure in the example code.
+2. In the source code: See the initialization of `sdmmc_slot_config_t slot_config` structure in the example code.
 
 The table below lists the default pin assignments.
 
@@ -62,6 +62,24 @@ GPIO37        | D0          | 10k pullup
 GPIO38        | D1          | not used in 1-line SD mode; 10k pullup in 4-line mode
 GPIO33        | D2          | not used in 1-line SD mode; 10k pullup in 4-line mode
 GPIO34        | D3          | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
+
+### Pin assignments for ESP32-P4
+
+On ESP32-P4, Slot 1 of the SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
+
+1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open "SD/MMC Example Configuration" menu.
+2. In the source code: See the initialization of `sdmmc_slot_config_t slot_config` structure in the example code.
+
+The table below lists the default pin assignments.
+
+ESP32-P4 pin  | SD card pin | Notes
+--------------|-------------|------------
+GPIO43        | CLK         | 10k pullup
+GPIO44        | CMD         | 10k pullup
+GPIO39        | D0          | 10k pullup
+GPIO40        | D1          | not used in 1-line SD mode; 10k pullup in 4-line mode
+GPIO41        | D2          | not used in 1-line SD mode; 10k pullup in 4-line mode
+GPIO42        | D3          | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
 
 ### 4-line and 1-line SD modes
 

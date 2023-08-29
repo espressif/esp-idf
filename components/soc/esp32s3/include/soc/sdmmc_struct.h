@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -284,7 +284,52 @@ typedef volatile struct sdmmc_dev_s {
 
     uint32_t usrid;     ///< user ID
     uint32_t verid;     ///< IP block version
-    uint32_t hcon;      ///< compile-time IP configuration
+
+    union {
+        struct {
+            /** card_type_reg : RO; bitpos: [0]; default: 1;
+             *  Hardware support SDIO and MMC.
+             */
+            uint32_t card_type_reg:1;
+            /** card_num_reg : RO; bitpos: [5:1]; default: 1;
+             *  Support card number is 2.
+             */
+            uint32_t card_num_reg:5;
+            /** bus_type_reg : RO; bitpos: [6]; default: 1;
+             *  Register config is APB bus.
+             */
+            uint32_t bus_type_reg:1;
+            /** data_width_reg : RO; bitpos: [9:7]; default: 1;
+             *  Regisger data widht is 32.
+             */
+            uint32_t data_width_reg:3;
+            /** addr_width_reg : RO; bitpos: [15:10]; default: 19;
+             *  Register address width is 32.
+             */
+            uint32_t addr_width_reg:6;
+            uint32_t reserved_16:2;
+            /** dma_width_reg : RO; bitpos: [20:18]; default: 1;
+             *  DMA data witdth is 32.
+             */
+            uint32_t dma_width_reg:3;
+            /** ram_indise_reg : RO; bitpos: [21]; default: 0;
+             *  Inside RAM in SDMMC module.
+             */
+            uint32_t ram_indise_reg:1;
+            /** hold_reg : RO; bitpos: [22]; default: 1;
+             *  Have a hold regiser in data path .
+             */
+            uint32_t hold_reg:1;
+            uint32_t reserved_23:1;
+            /** num_clk_div_reg : RO; bitpos: [25:24]; default: 3;
+             *  Have 4 clk divider in design .
+             */
+            uint32_t num_clk_div_reg:2;
+            uint32_t reserved_26:6;
+        };
+        uint32_t val;
+    } hcon;
+
     union {
         struct {
             uint32_t voltage: 16;           ///< voltage control for slots; no-op on ESP32.

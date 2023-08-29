@@ -78,7 +78,7 @@
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_PSRAM_DMA_CAPABLE           1
 // #define SOC_ULP_SUPPORTED               1  //TODO: IDF-7534
-// #define SOC_SDMMC_HOST_SUPPORTED        1  //TODO: IDF-6502
+#define SOC_SDMMC_HOST_SUPPORTED        1
 // #define SOC_CLK_TREE_SUPPORTED          1  //TODO: IDF-7526
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1  //TODO: IDF-7565
 #define SOC_WDT_SUPPORTED               1
@@ -343,6 +343,19 @@
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (4096)
 
+/*-------------------------- SDMMC CAPS -----------------------------------------*/
+
+/**
+ * Card detect, write protect, interrupt use GPIO Matrix on all chips.
+ * Slot 0 clock/cmd/data pins use IOMUX
+ * Slot 1 clock/cmd/data pins use GPIO Matrix
+ */
+#define SOC_SDMMC_USE_IOMUX          1
+#define SOC_SDMMC_USE_GPIO_MATRIX    1
+#define SOC_SDMMC_NUM_SLOTS          2
+/* Supported host clock delay phase number */
+#define SOC_SDMMC_DELAY_PHASE_NUM    4
+
 // TODO: IDF-5353 (Copy from esp32c3, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
@@ -366,15 +379,6 @@
 
 /*--------------------------- ECDSA CAPS ---------------------------------------*/
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)
-
-#ifdef SDMMC_DEFAULT_IOMUX
-#define SOC_SDMMC_USE_IOMUX 1
-#else
-#define SOC_SDMMC_USE_GPIO_MATRIX 1
-#endif
-#define SOC_SDMMC_NUM_SLOTS 2
-#define SOC_SDMMC_IOMUX_FUNC 0
-#define SOC_SDMMC_DMA_NEED_CACHE_WB 1
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS               1U

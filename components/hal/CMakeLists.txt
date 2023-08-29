@@ -131,6 +131,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sdm_hal.c")
     endif()
 
+    if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
+        list(APPEND srcs "sdmmc_hal.c")
+    endif()
+
     if(CONFIG_ETH_USE_ESP32_EMAC)
         list(APPEND srcs "emac_hal.c")
     endif()

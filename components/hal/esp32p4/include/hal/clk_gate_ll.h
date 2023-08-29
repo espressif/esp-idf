@@ -154,8 +154,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return ret;
     case PERIPH_ECDSA_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_ECDSA;
-    case PERIPH_SDMMC_MODULE:
-        return LP_CLKRST_RST_EN_SDMMC;
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_RST_EN_EMAC;
     default:
@@ -237,7 +235,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_SHA_MODULE:
     case PERIPH_ECDSA_MODULE:
         return HP_SYS_CLKRST_HP_RST_EN2_REG;
-    case PERIPH_SDMMC_MODULE:
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG;
     default:

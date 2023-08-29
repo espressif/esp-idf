@@ -87,15 +87,18 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
     /* Get the contents of SSR register: SD additional information
      * ACMD13 to read 512byte SD status information
      */
-    uint32_t* sd_ssr = heap_caps_calloc(1, SD_SSR_SIZE, MALLOC_CAP_DMA);
-    if (!sd_ssr) {
+    uint32_t* sd_ssr = NULL;
+    size_t actual_size = 0;
+    err = esp_dma_calloc(1, SD_SSR_SIZE, 0, (void *)&sd_ssr, &actual_size);
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: could not allocate sd_ssr", __func__);
-        return ESP_ERR_NO_MEM;
+        return err;
     }
 
     sdmmc_command_t cmd = {
         .data = sd_ssr,
         .datalen = SD_SSR_SIZE,
+        .buflen = actual_size,
         .blklen = SD_SSR_SIZE,
         .opcode = SD_APP_SD_STATUS,
         .arg = 0,

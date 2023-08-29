@@ -26,9 +26,7 @@
     :SOC_PARLIO_SUPPORTED: parlio
     :SOC_PCNT_SUPPORTED: pcnt
     :SOC_RMT_SUPPORTED: rmt
-    :esp32: sd_pullup_requirements
-    :esp32s3: sd_pullup_requirements
-    :esp32c6: sd_pullup_requirements
+    :SOC_SDMMC_HOST_SUPPORTED or SOC_SDIO_SLAVE_SUPPORTED: sd_pullup_requirements
     :SOC_SDMMC_HOST_SUPPORTED: sdmmc_host
     sdspi_host
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave

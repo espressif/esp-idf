@@ -26,6 +26,7 @@
 #include "sdmmc_cmd.h"
 #include "sys/param.h"
 #include "soc/soc_memory_layout.h"
+#include "esp_dma_utils.h"
 
 #define SDMMC_GO_IDLE_DELAY_MS              20
 #define SDMMC_IO_SEND_OP_COND_DELAY_MS      10
@@ -81,9 +82,9 @@ esp_err_t sdmmc_send_cmd_crc_on_off(sdmmc_card_t* card, bool crc_enable);
 esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card);
 esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
-        size_t start_block, size_t block_count);
+        size_t start_block, size_t block_count, size_t buffer_len);
 esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
-        size_t start_block, size_t block_count);
+        size_t start_block, size_t block_count, size_t buffer_len);
 uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 
 /* SD specific */
@@ -105,7 +106,7 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int function,
 
 
 /* MMC specific */
-esp_err_t sdmmc_mmc_send_ext_csd_data(sdmmc_card_t* card, void *out_data, size_t datalen);
+esp_err_t sdmmc_mmc_send_ext_csd_data(sdmmc_card_t* card, void *out_data, size_t datalen, size_t buffer_len);
 esp_err_t sdmmc_mmc_switch(sdmmc_card_t* card, uint8_t set, uint8_t index, uint8_t value);
 esp_err_t sdmmc_mmc_decode_cid(int mmc_ver, sdmmc_response_t resp, sdmmc_cid_t* out_cid);
 esp_err_t sdmmc_mmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd);

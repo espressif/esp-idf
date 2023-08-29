@@ -179,7 +179,8 @@ ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
 
 ESP32H2_DOCS = ['api-guides/RF_calibration.rst']
 
-ESP32P4_DOCS = ['api-reference/system/ipc.rst']
+ESP32P4_DOCS = ['api-reference/system/ipc.rst',
+                'api-reference/peripherals/sd_pullup_requirements.rst']
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
