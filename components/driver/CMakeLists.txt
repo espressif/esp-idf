@@ -31,6 +31,10 @@ set(includes "include"
              "uart/include"
              "usb_serial_jtag/include")
 
+# Always included linker fragments
+set(ldfragments "linker.lf"
+                "gpio/linker.lf")
+
 # ADC related source files (dprecated)
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "deprecated/adc_legacy.c")
@@ -83,6 +87,8 @@ if(CONFIG_SOC_GPTIMER_SUPPORTED)
     list(APPEND srcs "gptimer/gptimer.c"
                      "gptimer/gptimer_priv.c"
                      "deprecated/timer_legacy.c")
+
+    list(APPEND ldfragments "gptimer/linker.lf")
 endif()
 
 if(CONFIG_SOC_TIMER_SUPPORT_ETM)
@@ -95,6 +101,8 @@ if(CONFIG_SOC_I2C_SUPPORTED)
                      "i2c/i2c_master.c"
                      "i2c/i2c_common.c"
         )
+
+    list(APPEND ldfragments "i2c/linker.lf")
 endif()
 
 # I2S related source files
@@ -190,11 +198,15 @@ endif()
 # TWAI related source files
 if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "twai/twai.c")
+
+    list(APPEND ldfragments "twai/linker.lf")
 endif()
 
 # UART related source files
 if(CONFIG_SOC_UART_SUPPORTED)
     list(APPEND srcs "uart/uart.c")
+
+    list(APPEND ldfragments "uart/linker.lf")
 endif()
 
 # USB Serial JTAG related source files
@@ -216,10 +228,11 @@ else()
     # (Legacy drivers requires `esp_adc`, due to ADC HW resource mutex logics are there.
     # Can be removed together with legacy drivers)
     idf_component_register(SRCS "${srcs}"
-                        INCLUDE_DIRS ${includes}
-                        PRIV_REQUIRES efuse esp_timer
-                        REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
-                        LDFRAGMENTS linker.lf gptimer/linker.lf gpio/linker.lf twai/linker.lf i2c/linker.lf)
+                           INCLUDE_DIRS ${includes}
+                           PRIV_REQUIRES efuse esp_timer
+                           REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
+                           LDFRAGMENTS ${ldfragments}
+                          )
 endif()
 
 # If system needs to monitor USJ connection status, then usb_serial_jtag_connection_monitor object file has to be linked

@@ -36,3 +36,9 @@ entries:
     if ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:
         vfs_cdcacm:cdcacm_tx_cb (noflash)
         vfs_cdcacm:cdcacm_rx_cb (noflash)
+
+[mapping:esp_system_hal]
+archive: libhal.a
+entries:
+    if ESP_PANIC_HANDLER_IRAM = y:
+        uart_hal_iram (noflash)

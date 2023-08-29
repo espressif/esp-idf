@@ -186,6 +186,7 @@ static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
     // typeof(hw->clkdiv_sync) div_reg = hw->clkdiv_sync;
     // return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));
     HAL_ASSERT(false);
+    return 115200; // TODO: IDF-5338
 }
 
 /**
@@ -937,8 +938,7 @@ static inline uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
  */
 static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
 {
-    // return UART_RX_TOUT_THRHD_V;
-    HAL_ASSERT(false);
+    return UART_RX_TOUT_THRHD_V;
 }
 
 /**
@@ -1035,16 +1035,15 @@ static inline void uart_ll_force_xon(uart_port_t uart_num)
 }
 
 /**
- * @brief  Get UART finite-state machine status.
+ * @brief  Get UART transmitter finite-state machine status.
  *
  * @param  uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
  * @return UART module FSM status.
  */
-static inline uint32_t uart_ll_get_fsm_status(uart_port_t uart_num)
+static inline uint32_t uart_ll_get_tx_fsm_status(uart_port_t uart_num)
 {
-    // return REG_GET_FIELD(UART_FSM_STATUS_REG(uart_num), UART_ST_UTX_OUT);
-    HAL_ASSERT(false);
+    return REG_GET_FIELD(UART_FSM_STATUS_REG(uart_num), UART_ST_UTX_OUT);
 }
 
 #ifdef __cplusplus

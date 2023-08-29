@@ -450,10 +450,10 @@ FORCE_INLINE_ATTR void suspend_uarts(void)
 #if SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
         uint32_t uart_fsm = 0;
         do {
-            uart_fsm = uart_ll_get_fsm_status(i);
+            uart_fsm = uart_ll_get_tx_fsm_status(i);
         } while (!(uart_fsm == UART_LL_FSM_IDLE || uart_fsm == UART_LL_FSM_TX_WAIT_SEND));
 #else
-        while (uart_ll_get_fsm_status(i) != 0) {}
+        while (uart_ll_get_tx_fsm_status(i) != 0) {}
 #endif
     }
 }

@@ -355,7 +355,7 @@ esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t *flo
 
 esp_err_t UART_ISR_ATTR uart_clear_intr_status(uart_port_t uart_num, uint32_t clr_mask)
 {
-    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE_ISR((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), clr_mask);
     return ESP_OK;
 }
