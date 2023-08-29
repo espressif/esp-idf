@@ -338,8 +338,9 @@ esp_err_t esp_cpu_set_breakpoint(int bp_num, const void *bp_addr)
         if (ret == 0) {
             return ESP_ERR_INVALID_RESPONSE;
         }
-    }
-    rv_utils_set_breakpoint(bp_num, (uint32_t)bp_addr);
+    } else {
+        rv_utils_set_breakpoint(bp_num, (uint32_t)bp_addr);
+	}
 #endif // __XTENSA__
     return ESP_OK;
 }
@@ -360,8 +361,9 @@ esp_err_t esp_cpu_clear_breakpoint(int bp_num)
         if (ret == 0) {
             return ESP_ERR_INVALID_RESPONSE;
         }
-    }
-    rv_utils_clear_breakpoint(bp_num);
+    } else {
+        rv_utils_clear_breakpoint(bp_num);
+	}
 #endif // __XTENSA__
     return ESP_OK;
 }
@@ -393,8 +395,9 @@ esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, e
         if (ret == 0) {
             return ESP_ERR_INVALID_RESPONSE;
         }
-    }
-    rv_utils_set_watchpoint(wp_num, (uint32_t)wp_addr, size, on_read, on_write);
+    } else {
+        rv_utils_set_watchpoint(wp_num, (uint32_t)wp_addr, size, on_read, on_write);
+	}
 #endif // __XTENSA__
     return ESP_OK;
 }
@@ -415,8 +418,9 @@ esp_err_t esp_cpu_clear_watchpoint(int wp_num)
         if (ret == 0) {
             return ESP_ERR_INVALID_RESPONSE;
         }
-    }
-    rv_utils_clear_watchpoint(wp_num);
+    } else {
+        rv_utils_clear_watchpoint(wp_num);
+	}
 #endif // __XTENSA__
     return ESP_OK;
 }
