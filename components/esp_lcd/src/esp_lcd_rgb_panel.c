@@ -134,7 +134,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     bool alloc_from_psram = false;
     // fb_in_psram is only an option, if there's no PSRAM on board, we still alloc from SRAM
     if (rgb_panel_config->flags.fb_in_psram) {
-#if CONFIG_SPIRAM_USE_MALLOC || CONFIG_SPIRAM_USE_CAPS_ALLOC
+#if CONFIG_SPIRAM
         if (esp_spiram_is_initialized()) {
             alloc_from_psram = true;
         }
@@ -142,6 +142,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     }
     size_t psram_trans_align = rgb_panel_config->psram_trans_align ? rgb_panel_config->psram_trans_align : 64;
     size_t sram_trans_align = rgb_panel_config->sram_trans_align ? rgb_panel_config->sram_trans_align : 4;
+
     if (alloc_from_psram) {
         // the low level malloc function will help check the validation of alignment
         rgb_panel->fb = heap_caps_aligned_calloc(psram_trans_align, 1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
