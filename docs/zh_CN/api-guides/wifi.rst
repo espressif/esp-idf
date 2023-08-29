@@ -2743,62 +2743,6 @@ Auto Light-sleep 有如下可配置选项：
   .. note::
       上表中不涉及的配置均是默认
 
-.. only:: esp32c2
-
-  .. list-table::
-   :header-rows: 1
-   :widths: 30 15
-
-   * - 配置名称
-     - 设置情况
-
-   * - CONFIG_PM_ENABLE
-     - ON
-
-   * - CONFIG_FREERTOS_USE_TICKLESS_IDLE
-     - ON
-
-   * - max_freq_mhz
-     - 120
-
-   * - min_freq_mhz
-     - 40
-
-   * - RTOS Tick rate (Hz)
-     - 1000
-
-   * - light_sleep_enable
-     - true
-
-   * - Minimum step to enter sleep mode
-     - 3
-
-   * - Put light sleep codes in IRAM
-     - OFF
-
-   * - Put RTOS IDLE codes in IRAM
-     - OFF
-
-   * - RTC slow clock source
-     - Internal 150kHz OSC
-
-   * - Disable all GPIO when chip at sleep
-     - ON
-
-   * - Power down MAC and baseband
-     - ON
-
-   * - Power down I/D-cache tag memory
-     - ON
-
-   * - Power down CPU
-     - ON
-
-   * - Power down flash in light sleep
-     - OFF
-
-  .. note::
-      上表中不涉及的配置均是默认
 
 Deep-sleep 配置
 ++++++++++++++++++
@@ -3113,9 +3057,6 @@ Deep-sleep 模式在 Wi-Fi 场景下的配置与纯系统下配置基本一致�
 
   平均电流约4.8 μA
 
-.. only:: esp32c2
-
-  平均电流约4.9 μA
 
 
 Wi-Fi 场景如何选择低功耗模式
