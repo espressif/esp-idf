@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+
 /**
  * @brief Group of RMT TX callbacks
  * @note The callbacks are all running under ISR environment
@@ -43,6 +44,8 @@ typedef struct {
         uint32_t io_loop_back: 1; /*!< The signal output from the GPIO will be fed to the input path as well */
         uint32_t io_od_mode: 1;   /*!< Configure the GPIO as open-drain mode */
     } flags;                      /*!< TX channel config flags */
+    int intr_priority;            /*!< RMT interrupt priority,
+                                       if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } rmt_tx_channel_config_t;
 
 /**

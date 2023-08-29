@@ -28,6 +28,7 @@ TEST_CASE("rmt bytes encoder", "[rmt]")
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .trans_queue_depth = 4,
         .gpio_num = 0,
+        .intr_priority = 3
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel = NULL;
@@ -75,6 +76,10 @@ TEST_CASE("rmt bytes encoder", "[rmt]")
     printf("remove tx channel and encoder\r\n");
     TEST_ESP_OK(rmt_del_channel(tx_channel));
     TEST_ESP_OK(rmt_del_encoder(bytes_encoder));
+
+    // Test if intr_priority check works
+    tx_channel_cfg.intr_priority = 4;  // 4 is an invalid interrupt priority
+    TEST_ESP_ERR(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel), ESP_ERR_INVALID_ARG);
 }
 
 static void test_rmt_channel_single_trans(size_t mem_block_symbols, bool with_dma)
@@ -86,6 +91,7 @@ static void test_rmt_channel_single_trans(size_t mem_block_symbols, bool with_dm
         .trans_queue_depth = 4,
         .gpio_num = 0,
         .flags.with_dma = with_dma,
+        .intr_priority = 2
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel_single_led = NULL;
@@ -140,6 +146,7 @@ static void test_rmt_ping_pong_trans(size_t mem_block_symbols, bool with_dma)
         .trans_queue_depth = 4,
         .gpio_num = 0,
         .flags.with_dma = with_dma,
+        .intr_priority = 1
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel_multi_leds = NULL;
@@ -226,6 +233,7 @@ static void test_rmt_trans_done_event(size_t mem_block_symbols, bool with_dma)
         .trans_queue_depth = 1,
         .gpio_num = 0,
         .flags.with_dma = with_dma,
+        .intr_priority = 3
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel_multi_leds = NULL;
@@ -299,6 +307,7 @@ static void test_rmt_loop_trans(size_t mem_block_symbols, bool with_dma)
         .trans_queue_depth = 4,
         .gpio_num = 0,
         .flags.with_dma = with_dma,
+        .intr_priority = 2
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel_multi_leds = NULL;
@@ -358,6 +367,7 @@ TEST_CASE("rmt infinite loop transaction", "[rmt]")
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .gpio_num = 2,
         .trans_queue_depth = 3,
+        .intr_priority = 1
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel = NULL;
@@ -437,6 +447,7 @@ static void test_rmt_tx_nec_carrier(size_t mem_block_symbols, bool with_dma)
         .gpio_num = 2,
         .trans_queue_depth = 4,
         .flags.with_dma = with_dma,
+        .intr_priority = 3
     };
     printf("install tx channel\r\n");
     rmt_channel_handle_t tx_channel = NULL;
@@ -511,6 +522,7 @@ static void test_rmt_multi_channels_trans(size_t channel0_mem_block_symbols, siz
         .clk_src = RMT_CLK_SRC_DEFAULT,
         .resolution_hz = 10000000, // 10MHz, 1 tick = 0.1us (led strip needs a high resolution)
         .trans_queue_depth = 4,
+        .intr_priority = 3
     };
     printf("install tx channels\r\n");
     rmt_channel_handle_t tx_channels[TEST_RMT_CHANS] = {NULL};
@@ -642,4 +654,39 @@ TEST_CASE("rmt multiple channels transaction", "[rmt]")
 #if SOC_RMT_SUPPORT_DMA
     test_rmt_multi_channels_trans(1024, SOC_RMT_MEM_WORDS_PER_CHANNEL, true, false);
 #endif
+}
+
+TEST_CASE("RMT TX test specifying interrupt priority", "[rmt]")
+{
+    rmt_tx_channel_config_t tx_channel_cfg = {
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
+        .trans_queue_depth = 4,
+        .gpio_num = 0,
+        .intr_priority = 3
+    };
+    // --- Check if specifying interrupt priority works
+    printf("install tx channel\r\n");
+    rmt_channel_handle_t tx_channel = NULL;
+    TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
+
+    rmt_channel_handle_t another_tx_channel = NULL;
+    rmt_tx_channel_config_t another_tx_channel_cfg = tx_channel_cfg;
+    // --- Check if rmt interrupt priority valid check works
+    another_tx_channel_cfg.intr_priority = 4;
+    TEST_ESP_ERR(rmt_new_tx_channel(&another_tx_channel_cfg, &another_tx_channel), ESP_ERR_INVALID_ARG);
+    // --- Check if rmt interrupt priority conflict check works
+    another_tx_channel_cfg.intr_priority = 1;   ///< Specifying a conflict intr_priority
+    TEST_ESP_ERR(rmt_new_tx_channel(&another_tx_channel_cfg, &another_tx_channel), ESP_ERR_INVALID_ARG);
+    another_tx_channel_cfg.intr_priority = 0;   ///< Do not specify an intr_priority, should not conflict
+    TEST_ESP_OK(rmt_new_tx_channel(&another_tx_channel_cfg, &another_tx_channel));
+    // --- Check if channel works
+    TEST_ESP_OK(rmt_enable(tx_channel));
+    TEST_ESP_OK(rmt_enable(another_tx_channel));
+    // --- Post-test
+    TEST_ESP_OK(rmt_disable(tx_channel));
+    TEST_ESP_OK(rmt_disable(another_tx_channel));
+    TEST_ESP_OK(rmt_del_channel(tx_channel));
+    TEST_ESP_OK(rmt_del_channel(another_tx_channel));
 }

@@ -35,20 +35,25 @@ extern "C" {
 
 // RMT driver object is per-channel, the interrupt source is shared between channels
 #if CONFIG_RMT_ISR_IRAM_SAFE
-#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
+#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
 #else
-#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED)
+#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED)
 #endif
 
 // Hopefully the channel offset won't change in other targets
 #define RMT_TX_CHANNEL_OFFSET_IN_GROUP 0
 #define RMT_RX_CHANNEL_OFFSET_IN_GROUP (SOC_RMT_CHANNELS_PER_GROUP - SOC_RMT_TX_CANDIDATES_PER_GROUP)
 
+
+#define RMT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
+
 // DMA buffer size must align to `rmt_symbol_word_t`
 #define RMT_DMA_DESC_BUF_MAX_SIZE      (DMA_DESCRIPTOR_BUFFER_MAX_SIZE & ~(sizeof(rmt_symbol_word_t) - 1))
 
 #define RMT_DMA_NODES_PING_PONG  2  // two nodes ping-pong
 #define RMT_PM_LOCK_NAME_LEN_MAX 16
+
+#define RMT_GROUP_INTR_PRIORITY_UNINITALIZED (-1)
 
 typedef struct {
     struct {
@@ -92,6 +97,7 @@ struct rmt_group_t {
     rmt_tx_channel_t *tx_channels[SOC_RMT_TX_CANDIDATES_PER_GROUP]; // array of RMT TX channels
     rmt_rx_channel_t *rx_channels[SOC_RMT_RX_CANDIDATES_PER_GROUP]; // array of RMT RX channels
     rmt_sync_manager_t *sync_manager; // sync manager, this can be extended into an array if there're more sync controllers in one RMT group
+    int intr_priority;     // RMT interrupt priority
 };
 
 struct rmt_channel_t {
@@ -131,12 +137,13 @@ typedef struct {
         uint32_t eot_level : 1;    // Set the output level for the "End Of Transmission"
         uint32_t encoding_done: 1; // Indicate whether the encoding has finished (not the encoding of transmission)
     } flags;
+
 } rmt_tx_trans_desc_t;
 
 struct rmt_tx_channel_t {
     rmt_channel_t base; // channel base class
     size_t mem_off;     // runtime argument, indicating the next writing position in the RMT hardware memory
-    size_t mem_end;     // runtime argument, incidating the end of current writing region
+    size_t mem_end;     // runtime argument, indicating the end of current writing region
     size_t ping_pong_symbols;  // ping-pong size (half of the RMT channel memory)
     size_t queue_size;         // size of transaction queue
     size_t num_trans_inflight; // indicates the number of transactions that are undergoing but not recycled to ready_queue
@@ -145,7 +152,7 @@ struct rmt_tx_channel_t {
     void *user_data;                // user context
     rmt_tx_done_callback_t on_trans_done; // callback, invoked on trans done
     dma_descriptor_t dma_nodes[RMT_DMA_NODES_PING_PONG]; // DMA descriptor nodes, make up a circular link list
-    rmt_tx_trans_desc_t trans_desc_pool[];   // tranfer descriptor pool
+    rmt_tx_trans_desc_t trans_desc_pool[];   // transfer descriptor pool
 };
 
 typedef struct {
@@ -193,6 +200,24 @@ void rmt_release_group_handle(rmt_group_t *group);
  *      - ESP_FAIL: Set clock source failed because of other error
  */
 esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t clk_src);
+
+
+/**
+ * @brief Set interrupt priority to RMT group
+ * @param group RMT group to set interrupt priority to
+ * @param intr_priority User-specified interrupt priority (in num, not bitmask)
+ * @return If the priority conflicts
+ *      - true:  Interrupt priority conflict with previous specified
+ *      - false: Interrupt priority set successfully
+ */
+bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority);
+
+/**
+ * @brief Get isr_flags to be passed to `esp_intr_alloc_intrstatus()` according to `intr_priority` set in RMT group
+ * @param group RMT group
+ * @return isr_flags
+ */
+int rmt_get_isr_flags(rmt_group_t *group);
 
 #ifdef __cplusplus
 }
