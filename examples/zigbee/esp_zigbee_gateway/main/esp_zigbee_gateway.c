@@ -34,22 +34,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include <fcntl.h>
-#include "esp_log.h"
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/usb_serial_jtag.h"
+#include "esp_coexist_internal.h"
+#include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_spiffs.h"
 #include "esp_vfs_eventfd.h"
+#include "esp_vfs_dev.h"
+#include "esp_vfs_usb_serial_jtag.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
-#include "esp_coexist_internal.h"
 #include "esp_zigbee_gateway.h"
-
-#include "esp_vfs_dev.h"
-#include "esp_vfs_usb_serial_jtag.h"
-#include "driver/usb_serial_jtag.h"
 
 #if (!defined ZB_MACSPLIT_HOST && defined ZB_MACSPLIT_DEVICE)
 #error Only Zigbee gateway host device should be defined
@@ -82,7 +82,6 @@ esp_err_t esp_zb_gateway_console_init(void)
 }
 #endif
 
-/********************* Define functions **************************/
 static void bdb_start_top_level_commissioning_cb(uint8_t mode_mask)
 {
     ESP_ERROR_CHECK(esp_zb_bdb_start_top_level_commissioning(mode_mask));
@@ -103,8 +102,8 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
         break;
     case ESP_ZB_MACSPLIT_DEVICE_BOOT:
         ESP_LOGI(TAG, "Zigbee rcp device booted");
-        rcp_version = (esp_zb_zdo_signal_macsplit_dev_boot_params_t*)esp_zb_app_signal_get_params(p_sg_p);
-        ESP_LOGI(TAG, "Running RCP Version:%s", rcp_version->version_str);
+        rcp_version = (esp_zb_zdo_signal_macsplit_dev_boot_params_t *)esp_zb_app_signal_get_params(p_sg_p);
+        ESP_LOGI(TAG, "Running RCP Version: %s", rcp_version->version_str);
         break;
     case ESP_ZB_BDB_SIGNAL_DEVICE_FIRST_START:
     case ESP_ZB_BDB_SIGNAL_DEVICE_REBOOT:
@@ -112,7 +111,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
             ESP_LOGI(TAG, "Start network formation");
             esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_FORMATION);
         } else {
-            ESP_LOGE(TAG, "Failed to initialize Zigbee stack (status: %d)", err_status);
+            ESP_LOGE(TAG, "Failed to initialize Zigbee stack (status: %s)", esp_err_to_name(err_status));
         }
         break;
     case ESP_ZB_BDB_SIGNAL_FORMATION:
@@ -125,7 +124,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
                      esp_zb_get_pan_id(), esp_zb_get_current_channel());
             esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
         } else {
-            ESP_LOGI(TAG, "Restart network formation (status: %d)", err_status);
+            ESP_LOGI(TAG, "Restart network formation (status: %s)", esp_err_to_name(err_status));
             esp_zb_scheduler_alarm((esp_zb_callback_t)bdb_start_top_level_commissioning_cb, ESP_ZB_BDB_MODE_NETWORK_FORMATION, 1000);
         }
         break;
@@ -139,7 +138,8 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
         ESP_LOGI(TAG, "New device commissioned or rejoined (short: 0x%04hx)", dev_annce_params->device_short_addr);
         break;
     default:
-        ESP_LOGI(TAG, "ZDO signal: %d, status: %d", sig_type, err_status);
+        ESP_LOGI(TAG, "ZDO signal: %s (0x%x), status: %s", esp_zb_zdo_signal_to_string(sig_type), sig_type,
+                 esp_err_to_name(err_status));
         break;
     }
 }
