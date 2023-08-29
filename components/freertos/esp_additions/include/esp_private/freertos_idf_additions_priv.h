@@ -21,6 +21,22 @@
 /* *INDENT-ON* */
 
 /*------------------------------------------------------------------------------
+ * KERNEL CONTROL (PRIVATE)
+ *----------------------------------------------------------------------------*/
+
+#if ( CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
+
+/**
+ * @brief Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+ *
+ * This function must be called with interrupts disabled on all cores other than
+ * core 0 during startup.
+ */
+    void prvStartSchedulerOtherCores( void );
+
+#endif /* ( CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
+
+/*------------------------------------------------------------------------------
  * TASK UTILITIES (PRIVATE)
  *----------------------------------------------------------------------------*/
 #if ( INCLUDE_vTaskPrioritySet == 1 )

@@ -18,6 +18,7 @@
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"
 #include "xtensa/xtruntime.h"
+#include "esp_private/freertos_idf_additions_priv.h"
 #include "esp_private/esp_int_wdt.h"
 #include "esp_private/systimer.h"
 #include "esp_private/periph_ctrl.h"
@@ -328,7 +329,7 @@ BaseType_t xPortStartScheduler( void )
 #if configNUM_CORES > 1
     // Workaround for non-thread safe multi-core OS startup (see IDF-4524)
     if (xPortGetCoreID() != 0) {
-        vTaskStartSchedulerOtherCores();
+        prvStartSchedulerOtherCores();
     }
 #endif // configNUM_CORES > 1
 

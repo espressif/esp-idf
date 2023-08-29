@@ -6506,14 +6506,3 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
     #endif
 
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
-
-#if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
-/*
-Workaround for non-thread safe multi-core OS startup (see IDF-4524)
-*/
-void vTaskStartSchedulerOtherCores( void )
-{
-    /* This function is always called with interrupts disabled*/
-    xSchedulerRunning = pdTRUE;
-}
-#endif // ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1

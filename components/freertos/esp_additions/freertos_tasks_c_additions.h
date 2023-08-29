@@ -31,6 +31,22 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
     _Static_assert( tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY" );
 #endif /* CONFIG_FREERTOS_SMP */
 
+/* ------------------------------------------------- Kernel Control ------------------------------------------------- */
+
+#if ( CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
+
+/*
+ * Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+ */
+    void prvStartSchedulerOtherCores( void )
+    {
+        /* This function is always called with interrupts disabled*/
+        xSchedulerRunning = pdTRUE;
+    }
+
+#endif /* ( CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
+/*----------------------------------------------------------*/
+
 /* -------------------------------------------------- Task Creation ------------------------------------------------- */
 
 #if CONFIG_FREERTOS_SMP
