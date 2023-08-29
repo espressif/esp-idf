@@ -30,8 +30,9 @@ enum {
     SOC_MEMORY_TYPE_STACK_DRAM  = 1,
     SOC_MEMORY_TYPE_DIRAM       = 2,
     SOC_MEMORY_TYPE_STACK_DIRAM = 3,
-    SOC_MEMORY_TYPE_RTCRAM      = 4,
-    SOC_MEMORY_TYPE_TCM         = 5,
+    SOC_MEMORY_TYPE_SPIRAM      = 4,
+    SOC_MEMORY_TYPE_RTCRAM      = 5,
+    SOC_MEMORY_TYPE_TCM         = 6,
     SOC_MEMORY_TYPE_NUM,
 };
 
@@ -44,9 +45,11 @@ const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
     [SOC_MEMORY_TYPE_DIRAM] = { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
     // Type 3: DIRAM used for startup stacks
     [SOC_MEMORY_TYPE_STACK_DIRAM] = { "STACK/DIRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT | MALLOC_CAP_RETENTION, MALLOC_CAP_EXEC | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, true, true},
-    // Type 4: RTCRAM   // TODO: IDF-5667 Better to rename to LPRAM
+    // Type 4: SPI SRAM data
+    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT}, false, false},
+    // Type 5: RTCRAM   // TODO: IDF-5667 Better to rename to LPRAM
     [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM, MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT }, false, false},
-    // Type 5: TCM
+    // Type 6: TCM
     [SOC_MEMORY_TYPE_TCM] = {"TCM", {MALLOC_CAP_TCM, MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT}, false, false},
 };
 
@@ -75,7 +78,7 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_LOW,  SOC_EXTRAM_HIGH,                                SOC_MEMORY_TYPE_SPIRAM,     0}, //PSRAM, if available
+    { SOC_EXTRAM_LOW,       SOC_EXTRAM_SIZE,                           SOC_MEMORY_TYPE_SPIRAM,      0}, //PSRAM, if available
 #endif
     // base 192k is always avaible, even if we config l2 cache size to 512k
     { 0x4ff00000,           0x30000,                                   SOC_MEMORY_TYPE_DEFAULT,     0x4ff00000},

@@ -189,6 +189,25 @@ typedef struct {
 #define PSRAM_SPICLKEN      DPORT_SPI01_CLK_EN
 #endif
 
+/*
+See the TRM, chapter PID/MPU/MMU, header 'External RAM' for the definitions of these modes.
+
+Important is that NORMAL works with the app CPU cache disabled, but gives huge cache coherency
+issues when both app and pro CPU are enabled. LOWHIGH and EVENODD do not have these coherency
+issues but cannot be used when the app CPU cache is disabled.
+*/
+typedef enum {
+    PSRAM_VADDR_MODE_NORMAL = 0, ///< App and pro CPU use their own flash cache for external RAM access
+    PSRAM_VADDR_MODE_LOWHIGH,    ///< App and pro CPU share external RAM caches: pro CPU has low 2M, app CPU has high 2M
+    PSRAM_VADDR_MODE_EVENODD,    ///< App and pro CPU share external RAM caches: pro CPU does even 32yte ranges, app does odd ones.
+} psram_vaddr_mode_t;
+
+#if CONFIG_FREERTOS_UNICORE
+#define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
+#else
+#define PSRAM_MODE PSRAM_VADDR_MODE_LOWHIGH
+#endif
+
 static const char *TAG = "quad_psram";
 typedef enum {
     PSRAM_SPI_1  = 0x1,
@@ -832,8 +851,9 @@ bool psram_is_32mbit_ver0(void)
  * Psram mode init will overwrite original flash speed mode, so that it is possible to change psram and flash speed after OTA.
  * Flash read mode(QIO/QOUT/DIO/DOUT) will not be changed in app bin. It is decided by bootloader, OTA can not change this mode.
  */
-esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psram init
+esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
 {
+    psram_vaddr_mode_t vaddrmode = PSRAM_MODE;
     psram_cache_speed_t mode = PSRAM_SPEED;
     psram_io_t psram_io = {0};
     uint32_t pkg_ver = efuse_ll_get_chip_ver_pkg();

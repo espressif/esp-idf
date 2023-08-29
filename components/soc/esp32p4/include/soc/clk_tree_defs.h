@@ -48,7 +48,7 @@ extern "C" {
  * PLL Clocks:
  *
  * from 40MHz XTAL oscillator frequency multipliers:
- * 1) CPLL (400MHz), used for CPU clock source
+ * 1) CPLL (400MHz), used for CPU, MSPI-Flash, MSPI-PSRAM clock source
  * 2) MPLL (500MHz), used for MSPI-PSRAM clock source; and is further divided to PLL_F50M, PLL_F25M, to be used for peripheral's clock sources
  * 3) SPLL (480MHz), directly used for MSPI-Flash, MSPI-PSRAM, GPSPI clock sources; and is further divided to PLL_F240M, PLL_F160M, PLL_F120M, PLL_F80M, PLL_F20M, to be used for peripherals' clock sources
  * 4) APLL (configurable), can be the clock source for peripherals (GPSPI, I2S, LCD, CAM, etc.)
@@ -144,6 +144,9 @@ typedef enum {
     SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from SPLL (clock gating + fixed divider of 6), it has a fixed frequency of 80MHz */
     SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from SPLL (clock gating + fixed divider of 3), it has a fixed frequency of 160MHz */
     SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from SPLL (clock gating + fixed divider of 2), it has a fixed frequency of 240MHz */
+    SOC_MOD_CLK_CPLL,                          /*!< CPLL is from 40MHz XTAL oscillator frequency multipliers, it has a fixed frequency of 400MHz */
+    SOC_MOD_CLK_SPLL,                          /*!< SPLL is from 40MHz XTAL oscillator frequency multipliers, it has a fixed frequency of 480MHz */
+    SOC_MOD_CLK_MPLL,                          /*!< MPLL is from 40MHz XTAL oscillator frequency multipliers, it has a fixed frequency of 500MHz */
     SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */
@@ -327,6 +330,41 @@ typedef enum {
     SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as SPI source clock */
     SPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as SPI source clock */
 } soc_periph_spi_clk_src_t;
+
+/////////////////////////////////////////////////PSRAM////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of PSRAM
+ */
+#define SOC_PSRAM_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_CPLL, SOC_MOD_CLK_SPLL, SOC_MOD_CLK_MPLL}
+
+/**
+ * @brief Type of PSRAM clock source.
+ */
+typedef enum {
+    PSRAM_CLK_SRC_DEFAULT = SOC_MOD_CLK_SPLL,         /*!< Select SOC_MOD_CLK_SPLL as PSRAM source clock */
+    PSRAM_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select SOC_MOD_CLK_XTAL as PSRAM source clock */
+    PSRAM_CLK_SRC_CPLL = SOC_MOD_CLK_CPLL,            /*!< Select SOC_MOD_CLK_CPLL as PSRAM source clock */
+    PSRAM_CLK_SRC_SPLL = SOC_MOD_CLK_SPLL,            /*!< Select SOC_MOD_CLK_SPLL as PSRAM source clock */
+    PSRAM_CLK_SRC_MPLL = SOC_MOD_CLK_MPLL,            /*!< Select SOC_MOD_CLK_MPLL as PSRAM source clock */
+} soc_periph_psram_clk_src_t;
+
+/////////////////////////////////////////////////FLASH////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of FLASH
+ */
+#define SOC_FLASH_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_CPLL, SOC_MOD_CLK_SPLL}
+
+/**
+ * @brief Type of FLASH clock source.
+ */
+typedef enum {
+    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_SPLL,         /*!< Select SOC_MOD_CLK_SPLL as FLASH source clock */
+    FLASH_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select SOC_MOD_CLK_XTAL as FLASH source clock */
+    FLASH_CLK_SRC_CPLL = SOC_MOD_CLK_CPLL,            /*!< Select SOC_MOD_CLK_CPLL as FLASH source clock */
+    FLASH_CLK_SRC_SPLL = SOC_MOD_CLK_SPLL,            /*!< Select SOC_MOD_CLK_SPLL as FLASH source clock */
+} soc_periph_flash_clk_src_t;
 
 //////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
 

@@ -79,6 +79,10 @@ config SOC_FLASH_ENC_SUPPORTED
     bool
     default y
 
+config SOC_SPIRAM_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y

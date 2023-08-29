@@ -80,6 +80,9 @@
 #include "lwip/sys.h"
 #include <string.h>
 #include "esp_rom_md5.h"
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#include "esp_memory_utils.h"
+#endif
 
 #ifdef CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
 

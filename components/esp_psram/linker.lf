@@ -13,3 +13,6 @@ entries:
 
         if IDF_TARGET_ESP32S2 = y || IDF_TARGET_ESP32S3 = y:
             mmu_psram_flash (noflash)
+
+        if SPIRAM_MODE_HEX = y:
+            esp_psram_impl_ap_hex (noflash)
