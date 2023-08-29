@@ -625,7 +625,8 @@ void app_main(void)
     }
 
     ESP_LOGI(GATTC_TAG, "%s init bluetooth", __func__);
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

@@ -88,13 +88,6 @@
 #define UC_BT_HID_DEVICE_ENABLED           	FALSE
 #endif
 
-//SSP
-#ifdef CONFIG_BT_SSP_ENABLED
-#define UC_BT_SSP_ENABLED                   CONFIG_BT_SSP_ENABLED
-#else
-#define UC_BT_SSP_ENABLED                   FALSE
-#endif
-
 //BQB(BT)
 #ifdef CONFIG_BT_CLASSIC_BQB_ENABLED
 #define UC_BT_CLASSIC_BQB_ENABLED           CONFIG_BT_CLASSIC_BQB_ENABLED

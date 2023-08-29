@@ -8,13 +8,17 @@
 #include <string.h>
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
+#include "esp_log.h"
 #include "common/bt_trace.h"
 #include "bta/bta_api.h"
 #include "btc/btc_manage.h"
 #include "btc_gap_bt.h"
 #include "btc/btc_storage.h"
+#include "config/stack_config.h"
 
 #if (BTC_GAP_BT_INCLUDED == TRUE)
+
+#define TAG "BT_GAP"
 
 esp_err_t esp_bt_gap_register_callback(esp_bt_gap_cb_t callback)
 {
@@ -318,6 +322,11 @@ esp_err_t esp_bt_gap_set_security_param(esp_bt_sp_param_t param_type,
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (!(bluedriod_config_get()->get_ssp_enabled())) {
+        ESP_LOGE(TAG, "%s is not supported when `ssp_en` in `esp_bluedroid_config_t` is disabled!", __func__);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_ACT_SET_SECURITY_PARAM;
@@ -338,6 +347,11 @@ esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint3
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (!(bluedriod_config_get()->get_ssp_enabled())) {
+        ESP_LOGE(TAG, "%s is not supported when `ssp_en` in `esp_bluedroid_config_t` is disabled!", __func__);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_ACT_PASSKEY_REPLY;
@@ -355,6 +369,11 @@ esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
 
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!(bluedriod_config_get()->get_ssp_enabled())) {
+        ESP_LOGE(TAG, "%s is not supported when `ssp_en` in `esp_bluedroid_config_t` is disabled!", __func__);
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
     msg.sig = BTC_SIG_API_CALL;

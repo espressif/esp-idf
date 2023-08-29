@@ -60,7 +60,8 @@ void app_main()
         return;
     }
 
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (ret) {
         ESP_LOGE(GATTC_TAG, "%s init bluetooth failed, error code = %x", __func__, ret);
         return;
@@ -119,13 +120,13 @@ esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 ret = esp_bt_controller_init(&bt_cfg);
 ```
 
-Next, the controller is enabled in BLE Mode. 
+Next, the controller is enabled in BLE Mode.
 
 ```c
 ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
 ```
 >The controller should be enabled in `ESP_BT_MODE_BTDM`, if you want to use the dual mode (BLE + BT).
- 
+
 There are four Bluetooth modes supported:
 
 1. `ESP_BT_MODE_IDLE`: Bluetooth not running
@@ -136,7 +137,8 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-ret = esp_bluedroid_init();
+esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
 ret = esp_bluedroid_enable();
 ```
 The main function ends by registering the GAP and GATT event handlers, as well as the Application Profile and set the maximum supported MTU size.
@@ -209,7 +211,7 @@ static struct gattc_profile_inst gl_profile_tab[PROFILE_NUM] = {
 };
 ```
 
-The initialization of the Application Profile table array includes defining the callback function for Profile. It is `gattc_profile_event_handler()`. In addition, the GATT interface is initialized to the default value of `ESP_GATT_IF_NONE`. Later on, when the Application Profile is registered, the BLE stack returns a GATT interface instance to use with that Application Profile. 
+The initialization of the Application Profile table array includes defining the callback function for Profile. It is `gattc_profile_event_handler()`. In addition, the GATT interface is initialized to the default value of `ESP_GATT_IF_NONE`. Later on, when the Application Profile is registered, the BLE stack returns a GATT interface instance to use with that Application Profile.
 
 The profile registration triggers an `ESP_GATTC_REG_EVT` event, which is handled by the `esp_gattc_cb()` event handler. The handler takes the GATT interface returned by the event and stores it in the profile table:
 
@@ -261,8 +263,8 @@ typedef struct {
     esp_ble_scan_type_t     scan_type;              /*!< Scan type */
     esp_ble_addr_type_t     own_addr_type;          /*!< Owner address type */
     esp_ble_scan_filter_t   scan_filter_policy;     /*!< Scan filter policy */
-    uint16_t                scan_interval;          /*!< Scan interval. This is defined as the time interval from when the Controller started its last LE scan until it begins the subsequent LE scan.*/ 
-    //Range: 0x0004 to 0x4000 
+    uint16_t                scan_interval;          /*!< Scan interval. This is defined as the time interval from when the Controller started its last LE scan until it begins the subsequent LE scan.*/
+    //Range: 0x0004 to 0x4000
     //Default: 0x0010 (10 ms)
     //Time = N * 0.625 msec
     //Time Range: 2.5 msec to 10.24	seconds
@@ -430,10 +432,10 @@ The connection ID and the address of the remote device (server) are stored in th
 ```c
 conn_id = p_data->connect.conn_id;
 gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
-memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda, 
+memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda,
 		sizeof(esp_bd_addr_t));
 ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, 
+esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda,
 		sizeof(esp_bd_addr_t));
 ```
 
@@ -484,7 +486,7 @@ Where,
 ```c
 #define REMOTE_SERVICE_UUID        0x00FF
 ```
-If UUID of the service application the user is interested in is 128-bit, then there is one note below for the user which is relevant with the little-endian storage mode of the processor architecture. 
+If UUID of the service application the user is interested in is 128-bit, then there is one note below for the user which is relevant with the little-endian storage mode of the processor architecture.
 The struct of UUID is defined as:
 
 ```c
@@ -516,7 +518,7 @@ The resulting service found, if there is any, will be returned from an `ESP_GATT
  case ESP_GATTC_SEARCH_RES_EVT: {
         esp_gatt_srvc_id_t *srvc_id = &p_data->search_res.srvc_id;
         conn_id = p_data->search_res.conn_id;
-        if (srvc_id->id.uuid.len == ESP_UUID_LEN_16 && srvc_id->id.uuid.uuid.uuid16 == 
+        if (srvc_id->id.uuid.len == ESP_UUID_LEN_16 && srvc_id->id.uuid.uuid.uuid16 ==
 REMOTE_SERVICE_UUID) {
         get_server = true;
         gl_profile_tab[PROFILE_A_APP_ID].service_start_handle = p_data->search_res.start_handle;
@@ -574,8 +576,8 @@ case ESP_GATTC_SEARCH_CMPL_EVT:
     if (get_server){
         uint16_t count = 0;
         esp_gatt_status_t status = esp_ble_gattc_get_attr_count( gattc_if,
-                          p_data->search_cmpl.conn_id,ESP_GATT_DB_CHARACTERISTIC,                                                                                                                 		                    gl_profile_tab[PROFILE_A_APP_ID].service_start_handle,                                                                   		                    gl_profile_tab[PROFILE_A_APP_ID].service_end_handle,        
-                                                                INVALID_HANDLE,      	                  
+                          p_data->search_cmpl.conn_id,ESP_GATT_DB_CHARACTERISTIC,                                                                                                                 		                    gl_profile_tab[PROFILE_A_APP_ID].service_start_handle,                                                                   		                    gl_profile_tab[PROFILE_A_APP_ID].service_end_handle,
+                                                                INVALID_HANDLE,
                                                                      &count);
         if (status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
@@ -588,8 +590,8 @@ case ESP_GATTC_SEARCH_CMPL_EVT:
                 ESP_LOGE(GATTC_TAG, "gattc no mem");
             }else{
                 status = esp_ble_gattc_get_char_by_uuid( gattc_if,
-                                                       p_data->search_cmpl.conn_id,                                                                      
-                              gl_profile_tab[PROFILE_A_APP_ID].service_start_handle,                                                            
+                                                       p_data->search_cmpl.conn_id,
+                              gl_profile_tab[PROFILE_A_APP_ID].service_start_handle,
                               gl_profile_tab[PROFILE_A_APP_ID].service_end_handle,
                                                          remote_filter_char_uuid,
                                                          char_elem_result,
@@ -598,14 +600,14 @@ case ESP_GATTC_SEARCH_CMPL_EVT:
                     ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_char_by_uuid error");
                 }
 
-                /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo,     
+                /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo,
                     so we used first 'char_elem_result' */
-                if (count > 0 && (char_elem_result[0].properties                       
+                if (count > 0 && (char_elem_result[0].properties
                                  &ESP_GATT_CHAR_PROP_BIT_NOTIFY)){
-                    gl_profile_tab[PROFILE_A_APP_ID].char_handle =  
+                    gl_profile_tab[PROFILE_A_APP_ID].char_handle =
                     char_elem_result[0].char_handle;
-                    esp_ble_gattc_register_for_notify (gattc_if,   
-                                   gl_profile_tab[PROFILE_A_APP_ID].remote_bda, 
+                    esp_ble_gattc_register_for_notify (gattc_if,
+                                   gl_profile_tab[PROFILE_A_APP_ID].remote_bda,
                                    char_elem_result[0].char_handle);
                 }
             }
@@ -657,21 +659,21 @@ This procedure registers notifications to the BLE stack, and triggers an `ESP_GA
                 if (!descr_elem_result){
                     ESP_LOGE(GATTC_TAG, "malloc error, gattc no mem");
                 }else{
-                    ret_status = esp_ble_gattc_get_descr_by_char_handle( 
-                    gattc_if, 
-                    gl_profile_tab[PROFILE_A_APP_ID].conn_id, 
-                    p_data->reg_for_notify.handle, 
-                    notify_descr_uuid, 
+                    ret_status = esp_ble_gattc_get_descr_by_char_handle(
+                    gattc_if,
+                    gl_profile_tab[PROFILE_A_APP_ID].conn_id,
+                    p_data->reg_for_notify.handle,
+                    notify_descr_uuid,
                     descr_elem_result,&count);
-                    
+
                     if (ret_status != ESP_GATT_OK){
-                        ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_descr_by_char_handle   
+                        ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_descr_by_char_handle
                                                                             error");
                     }
 
                     /* Every char has only one descriptor in our 'ESP_GATTS_DEMO' demo, so we used first 'descr_elem_result' */
                     if (count > 0 && descr_elem_result[0].uuid.len == ESP_UUID_LEN_16 && descr_elem_result[0].uuid.uuid.uuid16 == ESP_GATT_UUID_CHAR_CLIENT_CONFIG){
-                        ret_status = esp_ble_gattc_write_char_descr( gattc_if, 
+                        ret_status = esp_ble_gattc_write_char_descr( gattc_if,
 								                        gl_profile_tab[PROFILE_A_APP_ID].conn_id,
 								                        descr_elem_result[0].handle,
 								                        sizeof(notify_en),

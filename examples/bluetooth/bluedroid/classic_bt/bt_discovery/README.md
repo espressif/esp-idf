@@ -118,7 +118,8 @@ There are four Bluetooth modes supported:
 After the initialization of the Bluetooth controller, the Bluedroid stack, which includes the common definitions and APIs for both Bluetooth Classic and BLE, is initialized and enabled by using:
 
 ```c
-if ((ret = esp_bluedroid_init()) != ESP_OK) {
+esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+if ((ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg)) != ESP_OK) {
     ESP_LOGE(GAP_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));
     return;
 }

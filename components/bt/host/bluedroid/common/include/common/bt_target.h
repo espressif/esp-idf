@@ -52,6 +52,7 @@
 ******************************************************************************/
 #if (UC_BT_CLASSIC_ENABLED == TRUE)
 #define CLASSIC_BT_INCLUDED         TRUE
+#define BT_SSP_INCLUDED             TRUE
 #define BTC_SM_INCLUDED             TRUE
 #define BTC_PRF_QUEUE_INCLUDED      TRUE
 #define BTC_GAP_BT_INCLUDED         TRUE
@@ -133,10 +134,6 @@
 #define SBC_ENC_INCLUDED            TRUE
 #endif
 #endif  /* UC_BT_HFP_CLIENT_ENABLED */
-
-#if UC_BT_SSP_ENABLED
-#define BT_SSP_INCLUDED             TRUE
-#endif /* UC_BT_SSP_ENABLED */
 
 #if UC_BT_HID_ENABLED
 #define BT_HID_INCLUDED             TRUE

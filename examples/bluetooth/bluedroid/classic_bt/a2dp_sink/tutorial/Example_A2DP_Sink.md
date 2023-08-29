@@ -66,16 +66,20 @@ if (esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT) != OK) {
 After the initialization of the Bluetooth Controller, the Bluedroid Stack, which includes the common definitions and APIs for Classic Bluetooth is initialized and enabled by using:
 
 ```c
-/* initialize Bluedroid Host */
-if (esp_bluedroid_init() != ESP_OK) {
-    ESP_LOGE(BT_AV_TAG, "%s initialize bluedroid failed", __func__);
-    return;
-}
-/* enable Bluedroid Host */
-if (esp_bluedroid_enable() != ESP_OK) {
-    ESP_LOGE(BT_AV_TAG, "%s enable bluedroid failed", __func__);
-    return;
-}
+    /* initialize Bluedroid Host */
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+#if (CONFIG_EXAMPLE_A2DP_SINK_SSP_ENABLED == false)
+    bluedroid_cfg.ssp_en = false;
+#endif
+    if ((err = esp_bluedroid_init_with_cfg(&bluedroid_cfg)) != ESP_OK) {
+        ESP_LOGE(BT_AV_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(err));
+        return;
+    }
+    /* enable Bluedroid Host */
+    if (esp_bluedroid_enable() != ESP_OK) {
+        ESP_LOGE(BT_AV_TAG, "%s enable bluedroid failed", __func__);
+        return;
+    }
 ```
 
 The Classic Bluetooth uses an asynchronous programming paradigm. The entire Bluedroid stack sees the use of events, event handlers, callbacks and state machines. Most APIs are implemented by posting specific type of events to the work queue of Bluedroid Stack. Threads(FreeRTOS) tasks inside Bluedroid then process the events with specific handlers, according to the internal state. When the operations are completed, Bluedroid stack invokes the callback function which is registered by application, to report some other events and information.
@@ -136,7 +140,7 @@ The main function installs I2S to play the audio. A loudspeaker, additional ADC 
 The main function continues to set up paring parameters including Secure Simple Pairing and Legacy Pairing.
 
 ```c
-#if (CONFIG_BT_SSP_ENABLED == true)
+#if (CONFIG_EXAMPLE_A2DP_SINK_SSP_ENABLED == true)
     /* set default parameters for Secure Simple Pairing */
     esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
     esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IO;
