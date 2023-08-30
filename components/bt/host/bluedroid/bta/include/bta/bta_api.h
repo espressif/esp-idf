@@ -438,6 +438,9 @@ typedef tBTM_RSSI_RESULTS tBTA_RSSI_RESULTS;
 typedef tBTM_SET_AFH_CHANNELS_RESULTS tBTA_SET_AFH_CHANNELS_RESULTS;
 typedef tBTM_BLE_SET_CHANNELS_RESULTS tBTA_BLE_SET_CHANNELS_RESULTS;
 
+typedef tBTM_SET_PAGE_TIMEOUT_RESULTS tBTA_SET_PAGE_TIMEOUT_RESULTS;
+typedef tBTM_GET_PAGE_TIMEOUT_RESULTS tBTA_GET_PAGE_TIMEOUT_RESULTS;
+
 typedef tBTM_REMOTE_DEV_NAME tBTA_REMOTE_DEV_NAME;
 
 /* advertising channel map */
@@ -1759,6 +1762,29 @@ void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb);
 *******************************************************************************/
 void BTA_DmSetQos(BD_ADDR bd_addr, UINT32 t_poll, tBTM_CMPL_CB *p_cb);
 #endif /// (BTA_DM_QOS_INCLUDED == TRUE)
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetPageTimeout
+**
+** Description      This function sets the Bluetooth page timeout.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetPageTimeout(UINT16 page_to, tBTM_CMPL_CB *p_cb);
+/*******************************************************************************
+**
+** Function         BTA_DmGetPageTimeout
+**
+** Description      This function gets the Bluetooth page timeout.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmGetPageTimeout(tBTM_CMPL_CB *p_cb);
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************

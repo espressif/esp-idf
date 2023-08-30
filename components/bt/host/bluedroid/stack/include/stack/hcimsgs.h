@@ -586,7 +586,7 @@ BOOLEAN btsnd_hcic_ble_set_channels (BLE_CHANNELS channels);
 BOOLEAN btsnd_hcic_write_pin_type(UINT8 type);                   /* Write PIN Type */
 BOOLEAN btsnd_hcic_write_auto_accept(UINT8 flag);                /* Write Auto Accept */
 BOOLEAN btsnd_hcic_read_name (void);                             /* Read Local Name */
-BOOLEAN btsnd_hcic_write_page_tout(UINT16 timeout);              /* Write Page Timout */
+BOOLEAN btsnd_hcic_write_page_tout(UINT16 timeout);              /* Write Page Timeout */
 BOOLEAN btsnd_hcic_write_scan_enable(UINT8 flag);                /* Write Scan Enable */
 BOOLEAN btsnd_hcic_write_pagescan_cfg(UINT16 interval,
                                       UINT16 window);            /* Write Page Scan Activity */

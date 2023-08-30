@@ -214,6 +214,10 @@ tBTM_CMPL_CB        *p_tx_power_cmpl_cb;/* Callback function to be called       
 TIMER_LIST_ENT       afh_channels_timer;
 tBTM_CMPL_CB        *p_afh_channels_cmpl_cb; /* Callback function to be called  When */
 /* set AFH channels is completed   */
+
+TIMER_LIST_ENT       page_timeout_set_timer;
+tBTM_CMPL_CB         *p_page_to_set_cmpl_cb; /* Callback function to be called when */
+/* set page timeout is completed */
 #endif
 
 DEV_CLASS            dev_class;         /* Local device class                   */
@@ -315,6 +319,7 @@ typedef struct {
     UINT16           inq_scan_type;
     UINT16           page_scan_type;        /* current page scan type */
     tBTM_INQ_TYPE    scan_type;
+    UINT16           page_timeout;
 
     BD_ADDR          remname_bda;           /* Name of bd addr for active remote name request */
 #define BTM_RMT_NAME_INACTIVE       0
@@ -1135,6 +1140,8 @@ void btm_delete_stored_link_key_complete (UINT8 *p);
 void btm_report_device_status (tBTM_DEV_STATUS status);
 void btm_set_afh_channels_complete (UINT8 *p);
 void btm_ble_set_channels_complete (UINT8 *p);
+void btm_set_page_timeout_complete (const UINT8 *p);
+void btm_page_to_setup_timeout (void *p_tle);
 
 /* Internal functions provided by btm_dev.c
 **********************************************

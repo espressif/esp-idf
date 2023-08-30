@@ -271,6 +271,51 @@ void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb)
         bta_sys_sendmsg(p_msg);
     }
 }
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetPageTimeout
+**
+** Description      This function sets the Bluetooth page timeout.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetPageTimeout(UINT16 page_to, tBTM_CMPL_CB *p_cb)
+{
+    tBTA_DM_API_PAGE_TO_SET *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_PAGE_TO_SET *) osi_malloc(sizeof(tBTA_DM_API_PAGE_TO_SET))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_PAGE_TO_SET_EVT;
+        p_msg->page_to = page_to;
+        p_msg->set_page_to_cb = p_cb;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         BTA_DmGetPageTimeout
+**
+** Description      This function gets the Bluetooth page timeout.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmGetPageTimeout(tBTM_CMPL_CB *p_cb)
+{
+    tBTA_DM_API_PAGE_TO_GET *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_PAGE_TO_GET *) osi_malloc(sizeof(tBTA_DM_API_PAGE_TO_GET))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_PAGE_TO_GET_EVT;
+        p_msg->get_page_to_cb = p_cb;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
 #endif /// CLASSIC_BT_INCLUDED == TRUE
 
 #if (SDP_INCLUDED == TRUE)
