@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
 #include "soc/twai_struct.h"
+#include "soc/system_struct.h"
 
 #define TWAI_LL_GET_HW(controller_id) ((controller_id == 0) ? (&TWAI) : NULL)
 
@@ -83,6 +84,40 @@ typedef union {
 } __attribute__((packed)) twai_ll_frame_buffer_t;
 
 ESP_STATIC_ASSERT(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type should be 13 bytes");
+
+/* ---------------------------- Reset and Clock Control ------------------------------ */
+
+/**
+ * @brief Enable the bus clock for twai module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void twai_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en0.can_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define twai_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; twai_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the twai module
+ *
+ * @param group_id Group ID
+ */
+static inline void twai_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en0.can_rst = 1;
+    SYSTEM.perip_rst_en0.can_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define twai_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; twai_ll_reset_register(__VA_ARGS__)
 
 /* ---------------------------- Peripheral Control Register ----------------- */
 
