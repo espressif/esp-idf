@@ -64,14 +64,17 @@ static void bootloader_check_wdt_reset(void)
 {
     int wdt_rst = 0;
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 || rst_reason == RESET_REASON_CORE_MWDT1 ||
-        rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_MWDT1 || rst_reason == RESET_REASON_CPU0_RTC_WDT) {
-        ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
+    if (rst_reason == RESET_REASON_SYS_HP_WDT || rst_reason == RESET_REASON_SYS_LP_WDT || rst_reason == RESET_REASON_CORE_HP_WDT ||
+        rst_reason == RESET_REASON_CORE_LP_WDT || rst_reason == RESET_REASON_CHIP_LP_WDT) {
+        ESP_LOGW(TAG, "CPU has been reset by WDT.");
         wdt_rst = 1;
     }
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
+#if !CONFIG_FREERTOS_UNICORE
+        wdt_reset_info_dump(1);
+#endif
     }
     wdt_reset_cpu0_info_enable();
 }

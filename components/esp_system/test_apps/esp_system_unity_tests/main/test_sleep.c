@@ -30,6 +30,8 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7529
+
 #if SOC_PMU_SUPPORTED
 #include "esp_private/esp_pmu.h"
 #else
@@ -665,3 +667,5 @@ TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
     esp_deep_sleep_start();
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)
