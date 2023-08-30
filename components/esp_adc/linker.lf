@@ -3,3 +3,23 @@ archive: libesp_adc.a
 entries:
     if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
         adc_oneshot: adc_oneshot_read_isr (noflash)
+
+[mapping:adc_hal]
+archive: libhal.a
+entries:
+    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        adc_oneshot_hal (noflash)
+        if COMPILER_OPTIMIZATION_DEBUG = y:
+            adc_hal_common: get_controller (noflash)
+        adc_hal_common: adc_hal_set_controller (noflash)
+        if SOC_ADC_ARBITER_SUPPORTED = y:
+            adc_hal_common: adc_hal_arbiter_config (noflash)
+        if SOC_ADC_CALIBRATION_V1_SUPPORTED = y:
+            adc_hal_common: adc_hal_set_calibration_param (noflash)
+            adc_hal_common: adc_hal_calibration_init (noflash)
+    if ADC_CONTINUOUS_ISR_IRAM_SAFE = y || GDMA_ISR_IRAM_SAFE = y:
+        adc_hal: adc_hal_get_reading_result (noflash)
+        if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
+            adc_hal: adc_hal_check_event (noflash)
+            adc_hal: adc_hal_digi_clr_intr (noflash)
+            adc_hal: adc_hal_get_desc_addr (noflash)
