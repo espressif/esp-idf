@@ -110,7 +110,7 @@ def main() -> None:
 
         if args.integrity_check:
             nvs_log.info()
-            nvs_check.integrity_check(nvs, nvs_logger)
+            nvs_check.integrity_check(nvs, nvs_log)
 
 
 if __name__ == '__main__':
