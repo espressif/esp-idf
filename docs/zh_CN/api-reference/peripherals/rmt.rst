@@ -54,7 +54,7 @@ RMT 接收器可以对输入信号采样，将其转换为 RMT 数据格式，�
 
 下文将分节概述 RMT 的功能：
 
-- :ref:`rmt-resource-allocation` - 介绍如何分配和正确配置 RMT 通道，以及如何回收闲置信道及其他资源。
+- :ref:`rmt-resource-allocation` - 介绍如何分配和正确配置 RMT 通道，以及如何回收闲置通道及其他资源。
 - :ref:`rmt-carrier-modulation-and demodulation` - 介绍如何调制和解调用于 TX 和 RX 通道的载波信号。
 - :ref:`rmt-register-event-callbacks` - 介绍如何注册用户提供的事件回调函数以接收 RMT 通道事件。
 - :ref:`rmt-enable-and-disable-channel` - 介绍如何启用和禁用 RMT 通道。
@@ -80,7 +80,7 @@ RMT 接收器可以对输入信号采样，将其转换为 RMT 数据格式，�
 要安装 RMT TX 通道，应预先提供配置结构体 :cpp:type:`rmt_tx_channel_config_t`。以下列表介绍了配置结构体中的各个部分。
 
 - :cpp:member:`rmt_tx_channel_config_t::gpio_num` 设置发射器使用的 GPIO 编号。
-- :cpp:member:`rmt_tx_channel_config_t::clk_src` 选择 RMT 通道的时钟源。:cpp:type:`rmt_clock_source_t` 中列出了可用的时钟源。注意，其他信道将使用同一所选时钟源，因此，应确保分配的任意 TX 或 RX 通道都享有相同的配置。有关不同时钟源对功耗的影响，请参阅 :ref:`rmt-power-management`。
+- :cpp:member:`rmt_tx_channel_config_t::clk_src` 选择 RMT 通道的时钟源。:cpp:type:`rmt_clock_source_t` 中列出了可用的时钟源。注意，其他通道将使用同一所选时钟源，因此，应确保分配的任意 TX 或 RX 通道都享有相同的配置。有关不同时钟源对功耗的影响，请参阅 :ref:`rmt-power-management`。
 - :cpp:member:`rmt_tx_channel_config_t::resolution_hz` 设置内部滴答计数器的分辨率。基于此 **滴答**，可以计算 RMT 信号的定时参数。
 - 在启用 DMA 后端和未启用 DMA 后端的情况下，:cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` 字段含义稍有不同。
 
@@ -115,7 +115,7 @@ RMT 接收器可以对输入信号采样，将其转换为 RMT 数据格式，�
 要安装 RMT RX 通道，应预先提供配置结构体 :cpp:type:`rmt_rx_channel_config_t`。以下列表介绍了配置结构体中的各个部分。
 
 - :cpp:member:`rmt_rx_channel_config_t::gpio_num` 设置接收器使用的 GPIO 编号。
-- :cpp:member:`rmt_rx_channel_config_t::clk_src` 选择 RMT 通道的时钟源。:cpp:type:`rmt_clock_source_t` 中列出了可用的时钟源。注意，其他信道将使用同一所选时钟源，因此，应确保分配的任意 TX 或 RX 通道都享有相同的配置。有关不同时钟源对功耗的影响，请参阅 :ref:`rmt-power-management`。
+- :cpp:member:`rmt_rx_channel_config_t::clk_src` 选择 RMT 通道的时钟源。:cpp:type:`rmt_clock_source_t` 中列出了可用的时钟源。注意，其他通道将使用同一所选时钟源，因此，应确保分配的任意 TX 或 RX 通道都享有相同的配置。有关不同时钟源对功耗的影响，请参阅 :ref:`rmt-power-management`。
 - :cpp:member:`rmt_rx_channel_config_t::resolution_hz` 设置内部滴答计数器的分辨率。基于此 **滴答**，可以计算 RMT 信号的定时参数。
 - 在启用 DMA 后端和未启用 DMA 后端的情况下，:cpp:member:`rmt_rx_channel_config_t::mem_block_symbols` 字段含义稍有不同。
 
@@ -191,7 +191,7 @@ RMT 发射器可以生成载波信号，并将其调制到消息信号上。载�
 注册事件回调
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-当 RMT 信道生成发送或接收完成等事件时，会通过中断告知 CPU。如果需要在发生特定事件时调用函数，可以为 TX 和 RX 信道分别调用 :cpp:func:`rmt_tx_register_event_callbacks` 和 :cpp:func:`rmt_rx_register_event_callbacks`，向 RMT 驱动程序的中断服务程序 (ISR) 注册事件回调。由于上述回调函数是在 ISR 中调用的，因此，这些函数不应涉及 block 操作。可以检查调用 API 的后缀，确保在函数中只调用了后缀为 ISR 的 FreeRTOS API。回调函数具有布尔返回值，指示回调是否解除了更高优先级任务的阻塞状态。
+当 RMT 通道生成发送或接收完成等事件时，会通过中断告知 CPU。如果需要在发生特定事件时调用函数，可以为 TX 和 RX 通道分别调用 :cpp:func:`rmt_tx_register_event_callbacks` 和 :cpp:func:`rmt_rx_register_event_callbacks`，向 RMT 驱动程序的中断服务程序 (ISR) 注册事件回调。由于上述回调函数是在 ISR 中调用的，因此，这些函数不应涉及 block 操作。可以检查调用 API 的后缀，确保在函数中只调用了后缀为 ISR 的 FreeRTOS API。回调函数具有布尔返回值，指示回调是否解除了更高优先级任务的阻塞状态。
 
 有关 TX 通道支持的事件回调，请参阅 :cpp:type:`rmt_tx_event_callbacks_t`：
 
@@ -319,7 +319,7 @@ RMT 是一种特殊的通信外设，无法像 SPI 和 I2C 那样发送原始字
 发起 RX 事务
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-如 :ref:`rmt-enable-and-disable-channel` 一节所述，仅调用 :cpp:func:`rmt_enable` 时，RX 信道无法接收 RMT 符号。为此，应在 :cpp:type:`rmt_receive_config_t` 中指明传入信号的基本特征：
+如 :ref:`rmt-enable-and-disable-channel` 一节所述，仅调用 :cpp:func:`rmt_enable` 时，RX 通道无法接收 RMT 符号。为此，应在 :cpp:type:`rmt_receive_config_t` 中指明传入信号的基本特征：
 
 - :cpp:member:`rmt_receive_config_t::signal_range_min_ns` 指定高电平或低电平有效脉冲的最小持续时间。如果脉冲宽度小于指定值，硬件会将其视作干扰信号并忽略。
 - :cpp:member:`rmt_receive_config_t::signal_range_max_ns` 指定高电平或低电平有效脉冲的最大持续时间。如果脉冲宽度大于指定值，接收器会将其视作 **停止信号**，并立即生成接收完成事件。
@@ -598,7 +598,7 @@ API 参考
 
 
 .. [1]
-   不同 ESP 芯片系列可能具有不同数量的 RMT 通道，详情请参阅 [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__]。驱动程序不会禁止申请更多 RMT 通道，但会在可用硬件资源不足时报错。在进行 :ref:`rmt-resource-allocation` 时，请持续检查返回值。
+   不同 ESP 芯片系列可能具有不同数量的 RMT 通道，详情请参阅 [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__]。驱动程序对通道申请数量不做限制，但当硬件资源用尽时，驱动程序将返回错误。因此，每次进行 :ref:`rmt-resource-allocation` 时，请注意检查返回值。
 
 .. [2]
-   回调函数，如 :cpp:member:`rmt_tx_event_callbacks_t::on_trans_done` 及回调函数所调用的函数也应位于 IRAM 中，用户需自行留意这一问题。
+   注意，回调函数（如 :cpp:member:`rmt_tx_event_callbacks_t::on_trans_done`）及回调函数所调用的函数也应位于 IRAM 中。

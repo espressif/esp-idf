@@ -12,9 +12,10 @@
 创建/销毁 GPIO 捆绑包
 --------------------------
 
-GPIO 捆绑包是一组 GPIO，该组 GPIO 可以在一个 CPU 周期内同时操作。一个包能够包含 GPIO 的最大数量受每个 CPU 的限制。另外，GPIO 捆绑包与派生它的 CPU 有很强的相关性。 **注意，任何对 GPIO 捆绑包操作的任务都必须运行在 GPIO 捆绑包所属的 CPU 内核。** 同理，只有那些安装在同一个 CPU 内核上的 ISR 才允许对该 GPIO 捆绑包进行操作。
+GPIO 捆绑包是一组 GPIO，该组 GPIO 可以在一个 CPU 周期内同时操作。一个包能够包含 GPIO 的最大数量受每个 CPU 的限制。另外，GPIO 捆绑包与派生它的 CPU 有很强的相关性。**注意，任何对 GPIO 捆绑包操作的任务都必须运行在 GPIO 捆绑包所属的 CPU 内核。** 同理，只有那些安装在同一个 CPU 内核上的 ISR 才允许对该 GPIO 捆绑包进行操作。
 
 .. note::
+
     专用 GPIO 更像是 CPU 外设，因此与 CPU 内核关系密切。强烈建议在 pin-to-core 任务中安装和操作 GPIO 捆绑包。例如，如果 GPIOA 连接到了 CPU0，而专用的 GPIO 指令却是从 CPU1 发出的，那么就无法控制 GPIOA。
 
 安装 GPIO 捆绑包需要调用 :cpp:func:`dedic_gpio_new_bundle` 来分配软件资源并将专用通道连接到用户选择的 GPIO。GPIO 捆绑包的配置在 :cpp:type:`dedic_gpio_bundle_config_t` 结构体中：
@@ -55,7 +56,8 @@ GPIO 捆绑包是一组 GPIO，该组 GPIO 可以在一个 CPU 周期内同时�
 如需卸载 GPIO 捆绑包，可调用 :cpp:func:`dedic_gpio_del_bundle`。
 
 .. note::
-    :cpp:func:`dedic_gpio_new_bundle` 不包含任何 GPIO pad 配置（例如上拉/下拉、驱动能力、输出/输入使能）。因此，在安装专用 GPIO 捆绑包之前，您必须使用 GPIO 驱动程序 API（如 :cpp:func:`gpio_config`）单独配置 GPIO。更多关于 GPIO 驱动的信息，请参考 :doc:`GPIO API 参考 <gpio>`。
+
+    :cpp:func:`dedic_gpio_new_bundle` 不包含任何 GPIO pad 配置（例如上拉/下拉、驱动能力、输出/输入使能）。因此，在安装专用 GPIO 捆绑包之前，必须使用 GPIO 驱动程序 API（如 :cpp:func:`gpio_config`）单独配置 GPIO。更多关于 GPIO 驱动的信息，请参考 :doc:`GPIO API 参考 <gpio>`。
 
 
 GPIO 捆绑包操作
@@ -75,6 +77,7 @@ GPIO 捆绑包操作
      - :cpp:func:`dedic_gpio_bundle_read_in`
 
 .. note::
+
     由于函数调用的开销和内部涉及的位操作，使用上述函数可能无法获得较高的 GPIO 翻转速度。用户可以尝试 :ref:`manipulate_gpios_by_writing_assembly_code` 来减少开销，但应自行注意线程安全。
 
 .. _manipulate_gpios_by_writing_assembly_code:
@@ -103,21 +106,22 @@ GPIO 捆绑包操作
 
 .. only:: esp32s2
 
-    有关支持的专用 GPIO 指令的详细信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *IO MUX 和 GPIO 矩阵 (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_CN_URL}#iomuxgpio>`__].
+    有关支持的专用 GPIO 指令的详细信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **IO MUX 和 GPIO 矩阵 (GPIO, IO_MUX)** [`PDF <{IDF_TARGET_TRM_CN_URL}#iomuxgpio>`__].
 
 .. only:: esp32s3
 
-    有关支持的专用 GPIO 指令的详细信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *处理器指令拓展 (PIE)（稍后发布）* [`PDF <{IDF_TARGET_TRM_CN_URL}#pie>`__].
+    有关支持的专用 GPIO 指令的详细信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **处理器指令拓展 (PIE)（稍后发布）** [`PDF <{IDF_TARGET_TRM_CN_URL}#pie>`__].
 
 .. only:: esp32c2 or esp32c3 or esp32c6
 
     通过汇编操作专用 GPIO 的示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals/dedicated_gpio` 目录下。示例演示了如何通过汇编操作专用 GPIO 来模拟 UART、I2C 和 SPI 总线。
 
-    有关支持的专用 GPIO 指令的详细信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *ESP-RISC-V CPU* [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+    有关支持的专用 GPIO 指令的详细信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **ESP-RISC-V CPU** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
-一些专用的 CPU 指令也包含在 `hal/dedic_gpio_cpu_ll.h` 中，作为辅助内联函数。
+一些专用的 CPU 指令也包含在 ``hal/dedic_gpio_cpu_ll.h`` 中，作为辅助内联函数。
 
 .. note::
+
     由于自定义指令在不同目标上可能会有不同的格式，在应用程序中编写汇编代码可能会让代码难以在不同的芯片架构之间移植。
 
 .. only:: SOC_DEDIC_GPIO_HAS_INTERRUPT

@@ -31,7 +31,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 
 {IDF_TARGET_I2C_ROLE:default="主机或从机", esp32c2="主机"}
 
-以下部分将指导您完成 I2C 驱动程序配置和工作的基本步骤：
+I2C 驱动程序配置和工作的基本步骤如下：
 
 1. :ref:`i2c-api-configure-driver` - 设置初始化参数（如主机模式或从机模式，SDA 和 SCL 使用的 GPIO 管脚，时钟速度等）
 2. :ref:`i2c-api-install-driver`- 激活一个 I2C 控制器的驱动，该控制器可为主机也可为从机

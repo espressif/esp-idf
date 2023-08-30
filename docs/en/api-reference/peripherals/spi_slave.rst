@@ -5,7 +5,7 @@ SPI Slave Driver
 
 SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s General Purpose SPI (GP-SPI) peripheral(s) when it functions as a slave.
 
-For more hardware information about the GP-SPI peripheral(s), see *{IDF_TARGET_NAME} Technical Reference Manual* > *SPI Controller* [`PDF <{IDF_TARGET_TRM_EN_URL}#spi>`__].
+For more hardware information about the GP-SPI peripheral(s), see **{IDF_TARGET_NAME} Technical Reference Manual** > **SPI Controller** [`PDF <{IDF_TARGET_TRM_EN_URL}#spi>`__].
 
 Terminology
 -----------
@@ -37,13 +37,13 @@ The terms used in relation to the SPI slave driver are given in the table below.
    * - QUADHD
      - Hold signal. Only used for 4-bit (qio/qout) transactions.
    * - Assertion
-     - The action of activating a line. The opposite action of returning the line back to inactive (back to idle) is called *de-assertion*.
+     - The action of activating a line. The opposite action of returning the line back to inactive (back to idle) is called **de-assertion**.
    * - Transaction
      - One instance of a Host asserting a CS line, transferring data to and from a Device, and de-asserting the CS line. Transactions are atomic, which means they can never be interrupted by another transaction.
    * - Launch Edge
-     - Edge of the clock at which the source register *launches* the signal onto the line.
+     - Edge of the clock at which the source register **launches** the signal onto the line.
    * - Latch Edge
-     - Edge of the clock at which the destination register *latches in* the signal.
+     - Edge of the clock at which the destination register **latches in** the signal.
 
 
 Driver Features
@@ -62,7 +62,7 @@ A full-duplex SPI transaction begins when the Host asserts the CS line and start
 
 The attributes of a transaction are determined by the configuration structure for an SPI peripheral acting as a slave device :cpp:type:`spi_slave_interface_config_t`, and transaction configuration structure :cpp:type:`spi_slave_transaction_t`.
 
-As not every transaction requires both writing and reading data, you can choose to configure the :cpp:type:`spi_transaction_t` structure for TX only, RX only, or TX and RX transactions. If :cpp:member:`spi_slave_transaction_t::rx_buffer` is set to NULL, the read phase will be skipped. Similarly, if :cpp:member:`spi_slave_transaction_t::tx_buffer` is set to NULL, the write phase will be skipped.
+As not every transaction requires both writing and reading data, you can choose to configure the :cpp:type:`spi_transaction_t` structure for TX only, RX only, or TX and RX transactions. If :cpp:member:`spi_slave_transaction_t::rx_buffer` is set to ``NULL``, the read phase will be skipped. Similarly, if :cpp:member:`spi_slave_transaction_t::tx_buffer` is set to ``NULL``, the write phase will be skipped.
 
 .. note::
 
@@ -215,10 +215,10 @@ The SPI slaves are designed to operate at up to {IDF_TARGET_MAX_FREQ} MHz. The d
              - Freq. limit (MHz)
            * - IO_MUX
              - 43.75
-             - <11.4
+             - < 11.4
            * - GPIO matrix
              - 68.75
-             - <7.2
+             - < 7.2
 
         Note:
         1. If the frequency reaches the maximum limitation, random errors may occur.

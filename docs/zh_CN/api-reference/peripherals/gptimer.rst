@@ -38,7 +38,7 @@
 
 不同的 ESP 芯片可能有不同数量的独立定时器组，每组内也可能有若干个独立定时器。[1]_
 
-通用定时器实例由 :cpp:type:`gptimer_handle_t` 表示。后台驱动会在资源池中管理所有可用的硬件资源，这样您便无需考虑硬件所属的定时器以及定时器组。
+通用定时器实例由 :cpp:type:`gptimer_handle_t` 表示。可用硬件资源汇集在资源池内，由后台驱动程序管理，无需考虑硬件所属的定时器以及定时器组。
 
 要安装一个定时器实例，需要提前提供配置结构体 :cpp:type:`gptimer_config_t`：
 
@@ -108,7 +108,7 @@
 
 -  :cpp:member:`gptimer_event_callbacks_t::on_alarm` 设置警报事件的回调函数。由于此函数在 ISR 上下文中调用，必须确保该函数不会试图阻塞（例如，确保仅从函数内调用具有 ``ISR`` 后缀的 FreeRTOS API）。函数原型在 :cpp:type:`gptimer_alarm_cb_t` 中有所声明。
 
-您也可以通过参数 ``user_data`` 将自己的上下文保存到 :cpp:func:`gptimer_register_event_callbacks` 中。用户数据将直接传递给回调函数。
+也可以通过参数 ``user_data``，将自己的上下文保存到 :cpp:func:`gptimer_register_event_callbacks` 中。用户数据将直接传递给回调函数。
 
 此功能将为定时器延迟安装中断服务，但不使能中断服务。所以，请在 :cpp:func:`gptimer_enable` 之前调用这一函数，否则将返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。了解详细信息，请查看章节 :ref:`enable-and-disable-timer`。
 
@@ -131,7 +131,8 @@
 ^^^^^^^^^^^^^^^^
 
 启动和停止是定时器的基本 IO 操作。调用 :cpp:func:`gptimer_start` 可以使内部计数器开始工作，而 :cpp:func:`gptimer_stop` 可以使计数器停止工作。下文说明了如何在存在或不存在警报事件的情况下启动定时器。
-调用 :cpp:func:`gptimer_start` 将使驱动程序状态从 enable 转换为 run, 反之亦然。您需要确保 start 和 stop 函数成对使用，否则，函数可能返回 :c:macro:`ESP_ERR_INVALID_STATE`。
+
+调用 :cpp:func:`gptimer_start` 将使驱动程序状态从 enable 转换为 run, 反之亦然。注意确保 start 和 stop 函数成对使用，否则，函数可能返回 :c:macro:`ESP_ERR_INVALID_STATE`。
 
 将定时器作为挂钟启动
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -315,7 +316,7 @@ IRAM 安全
 线程安全
 ^^^^^^^^
 
-驱动提供的所有 API 都是线程安全的，这意味着您可以从不同的 RTOS 任务中调用这些函数，而无需额外的互斥锁去保护。以下这些函数还被允许在中断上下文中运行。
+驱动提供的所有 API 都是线程安全的。使用时，可以直接从不同的 RTOS 任务中调用此类函数，无需额外锁保护。以下这些函数还支持在中断上下文中运行。
 
 - :cpp:func:`gptimer_start`
 - :cpp:func:`gptimer_stop`
@@ -351,7 +352,7 @@ API 参考
 .. include-build-file:: inc/timer_types.inc
 
 .. [1]
-   不同 ESP 芯片系列的通用定时器实例数量可能不同。了解详细信息，请参考《{IDF_TARGET_NAME} 技术参考手册》 > 章节定时器组 (TIMG) [`PDF <{IDF_TARGET_TRM_CN_URL}#timg>`__]。驱动程序不会禁止您申请更多的定时器，但是当所有可用的硬件资源用完时将会返回错误。在分配资源时，请务必检查返回值（例如 :cpp:func:`gptimer_new_timer`）。
+   不同 ESP 芯片系列的通用定时器实例数量可能不同。了解详细信息，请参考《{IDF_TARGET_NAME} 技术参考手册》 > 章节定时器组 (TIMG) [`PDF <{IDF_TARGET_TRM_CN_URL}#timg>`__]。驱动程序对通道申请数量不做限制，但当硬件资源用尽时，驱动程序将返回错误。在分配资源时，请务必检查返回值（例如 :cpp:func:`gptimer_new_timer`）。
 
 .. [2]
    :cpp:member:`gptimer_event_callbacks_t::on_alarm` 回调函数和这一函数调用的函数也需放在 IRAM 中，请自行处理。

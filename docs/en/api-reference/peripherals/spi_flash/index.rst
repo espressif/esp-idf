@@ -11,6 +11,7 @@ The spi_flash component contains API functions related to reading, writing, eras
 For higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`, see :doc:`/api-reference/storage/partition`
 
 .. note::
+
     ``esp_partition_*`` APIs are recommended to be used instead of the lower level ``esp_flash_*`` API functions when accessing the main SPI flash chip, since they conduct bounds checking and are guaranteed to calculate correct offsets in flash based on the information in the partition table. ``esp_flash_*`` functions can still be used directly when accessing an external (secondary) SPI flash chip.
 
 Different from the API before ESP-IDF v4.0, the functionality of ``esp_flash_*`` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
@@ -23,7 +24,7 @@ Different from the API before ESP-IDF v4.0, the functionality of ``esp_flash_*``
 
 .. note::
 
-    Flash APIs after ESP-IDF v4.0 are no longer *atomic*. If a write operation occurs during another on-going read operation, and the flash addresses of both operations overlap, the data returned from the read operation may contain both old data and new data (that was updated written by the write operation).
+    Flash APIs after ESP-IDF v4.0 are no longer **atomic**. If a write operation occurs during another on-going read operation, and the flash addresses of both operations overlap, the data returned from the read operation may contain both old data and new data (that was updated written by the write operation).
 
 .. note::
 
@@ -35,7 +36,7 @@ Support for Features of Flash Chips
 Quad/Dual Mode Chips
 ^^^^^^^^^^^^^^^^^^^^
 
-Features of different flashes are implemented in different ways and thus need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all flashes with 24-bit address are supported, because they don't need any vendor-specific commands.
+Features of different flashes are implemented in different ways and thus need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all flashes with 24-bit address are supported, because they do not need any vendor-specific commands.
 
 Quad mode (QIO/QOUT) is supported on the following chip types:
 
@@ -69,7 +70,7 @@ There are some features that are not supported by all flash chips, or not suppor
 
 .. only:: esp32s3
 
-    -  High performance mode (HPM) - means that flash works under high frequency which is higher than 80MHz.
+    -  High performance mode (HPM) - means that flash works under high frequency which is higher than 80 MHz.
 
 -  Flash unique ID - means that flash supports its unique 64-bit ID.
 
@@ -95,7 +96,7 @@ To use the ``esp_flash_*`` APIs, you need to initialise a flash chip on a certai
 
 2. Call :cpp:func:`spi_bus_add_flash_device` to attach the flash device to the bus. This function allocates memory and fills the members for the ``esp_flash_t`` structure. The CS I/O is also initialized here.
 
-3. Call :cpp:func:`esp_flash_init` to actually communicate with the chip. This will also detect the chip type, and influence the following operations.
+3. Call :cpp:func:`esp_flash_init` to actually communicate with the chip. This also detects the chip type, and influence the following operations.
 
 .. note:: Multiple flash chips can be attached to the same bus now.
 
@@ -117,7 +118,7 @@ SPI Flash Size
 
 The SPI flash size is configured by writing a field in the software bootloader image header, flashed at offset 0x1000.
 
-By default, the SPI flash size is detected by esptool.py when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
+By default, the SPI flash size is detected by ``esptool.py`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
 
@@ -131,7 +132,7 @@ Concurrency Constraints for Flash on SPI1
 
 .. attention::
 
-   The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI flash driver). Hence, calling SPI Flash API on SPI1 bus (including the main flash) will cause significant influence to the whole system. See :doc:`spi_flash_concurrency` for more details.
+   The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI flash driver). Hence, calling SPI Flash API on SPI1 bus (including the main flash) causes significant influence to the whole system. See :doc:`spi_flash_concurrency` for more details.
 
 
 SPI Flash Encryption
@@ -144,7 +145,7 @@ Refer to the :doc:`Flash Encryption documentation </security/flash-encryption>` 
 Memory Mapping API
 ------------------
 
-{IDF_TARGET_CACHE_SIZE:default="64 KB",esp32c2=16~64 KB}
+{IDF_TARGET_CACHE_SIZE:default="64 KB", esp32c2=16 ~ 64 KB}
 
 {IDF_TARGET_NAME} features memory hardware which allows regions of flash memory to be mapped into instruction and data address spaces. This mapping works only for read operations. It is not possible to modify contents of flash memory by writing to a mapped memory region.
 
@@ -163,11 +164,12 @@ Memory mapping API are declared in ``spi_flash_mmap.h`` and ``esp_partition.h``:
 Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap` are as follows:
 
 - :cpp:func:`spi_flash_mmap` must be given a {IDF_TARGET_CACHE_SIZE} aligned physical address.
-- :cpp:func:`esp_partition_mmap` may be given any arbitrary offset within the partition. It will adjust the returned pointer to mapped memory as necessary.
+- :cpp:func:`esp_partition_mmap` may be given any arbitrary offset within the partition. It adjusts the returned pointer to mapped memory as necessary.
 
 Note that since memory mapping happens in pages, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``, regardless of the partition boundary.
 
 .. note::
+    
     mmap is supported by cache, so it can only be used on main flash.
 
 SPI Flash Implementation
@@ -177,7 +179,7 @@ The ``esp_flash_t`` structure holds chip data as well as three important parts o
 
 1. The host driver, which provides the hardware support to access the chip;
 2. The chip driver, which provides compatibility service to different chips;
-3. The OS functions, provide support of some OS functions (e.g. lock, delay) in different stages (1st/2nd boot, or the app).
+3. The OS functions, provide support of some OS functions (e.g., lock, delay) in different stages (1st/2nd boot, or the app).
 
 Host Driver
 ^^^^^^^^^^^
@@ -212,7 +214,7 @@ The lock (see :ref:`spi_bus_lock`) is used to resolve the conflicts among the ac
 
 2. On the other buses, the flash driver needs to disable the ISR registered by SPI Master driver, to avoid conflicts.
 
-3. Some devices of SPI Master driver may require to use the bus monopolized during a period (especially when the device doesn't have a CS wire, or the wire is controlled by software like SDSPI driver).
+3. Some devices of SPI Master driver may require to use the bus monopolized during a period (especially when the device does not have a CS wire, or the wire is controlled by software like SDSPI driver).
 
 The delay is used by some long operations which requires the master to wait or polling periodically.
 
@@ -220,14 +222,14 @@ The top API wraps these the chip driver and OS functions into an entire componen
 
 OS functions can also help to avoid a watchdog timeout when erasing large flash areas. During this time, the CPU is occupied with the flash erasing task. This stops other tasks from being executed. Among these tasks is the idle task to feed the watchdog timer (WDT). If the configuration option :ref:`CONFIG_ESP_TASK_WDT_PANIC` is selected and the flash operation time is longer than the watchdog timeout period, the system will reboot.
 
-It's pretty hard to totally eliminate this risk, because the erasing time varies with different flash chips, making it hard to be compatible in flash drivers. Therefore, users need to pay attention to it. Please use the following guidelines:
+It is pretty hard to totally eliminate this risk, because the erasing time varies with different flash chips, making it hard to be compatible in flash drivers. Therefore, users need to pay attention to it. Please use the following guidelines:
 
 1. It is recommended to enable the :ref:`CONFIG_SPI_FLASH_YIELD_DURING_ERASE` option to allow the scheduler to re-schedule during erasing flash memory. Besides, following parameters can also be used.
 
 - Increase :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_TICKS` or decrease :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS` in menuconfig.
 - You can also increase :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` in menuconfig for a larger watchdog timeout period. However, with larger watchdog timeout period, previously detected timeouts may no longer be detected.
 
-2. Please be aware of the consequences of enabling the :ref:`CONFIG_ESP_TASK_WDT_PANIC` option when doing long-running SPI flash operations which will trigger the panic handler when it times out. However, this option can also help dealing with unexpected exceptions in your application. Please decide whether this is needed to be enabled according to actual condition.
+2. Please be aware of the consequences of enabling the :ref:`CONFIG_ESP_TASK_WDT_PANIC` option when doing long-running SPI flash operations which triggers the panic handler when it times out. However, this option can also help dealing with unexpected exceptions in your application. Please decide whether this is needed to be enabled according to actual condition.
 
 3. During your development, please carefully review the actual flash operation according to the specific requirements and time limits on erasing flash memory of your projects. Always allow reasonable redundancy based on your specific product requirements when configuring the flash erasing timeout threshold, thus improving the reliability of your product.
 

@@ -14,7 +14,7 @@ Each UART controller is independently configurable with parameters such as baud 
 
 .. only:: SOC_UART_LP_NUM
 
-    Additionally, the {IDF_TARGET_NAME} chip has one low-power (LP) UART controller. It is the cut-down version of regular UART. Usually, the LP UART controller only support basic UART functionality with a much smaller RAM size, and does not support IrDA or RS485 protocols. For a full list of difference between UART and LP UART, please refer to the *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *Features* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]).
+    Additionally, the {IDF_TARGET_NAME} chip has one low-power (LP) UART controller. It is the cut-down version of regular UART. Usually, the LP UART controller only support basic UART functionality with a much smaller RAM size, and does not support IrDA or RS485 protocols. For a full list of difference between UART and LP UART, please refer to the **{IDF_TARGET_NAME} Technical Reference Manual** > **UART Controller (UART)** > **Features** [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]).
 
 Functional Overview
 -------------------
@@ -94,7 +94,7 @@ Each of the above functions has a ``_get_`` counterpart to check the currently s
 Set Communication Pins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After setting communication parameters, configure the physical GPIO pins to which the other UART device will be connected. For this, call the function :cpp:func:`uart_set_pin` and specify the GPIO pin numbers to which the driver should route the Tx, Rx, RTS, and CTS signals. If you want to keep a currently allocated pin number for a specific signal, pass the macro :c:macro:`UART_PIN_NO_CHANGE`.
+After setting communication parameters, configure the physical GPIO pins to which the other UART device will be connected. For this, call the function :cpp:func:`uart_set_pin` and specify the GPIO pin numbers to which the driver should route the TX, RX, RTS, and CTS signals. If you want to keep a currently allocated pin number for a specific signal, pass the macro :c:macro:`UART_PIN_NO_CHANGE`.
 
 The same macro :c:macro:`UART_PIN_NO_CHANGE` should be specified for pins that will not be used.
 
@@ -110,12 +110,12 @@ Install Drivers
 
 Once the communication pins are set, install the driver by calling :cpp:func:`uart_driver_install` and specify the following parameters:
 
-- Size of Tx ring buffer
-- Size of Rx ring buffer
+- Size of TX ring buffer
+- Size of RX ring buffer
 - Event queue handle and size
 - Flags to allocate an interrupt
 
-The function will allocate the required internal resources for the UART driver.
+The function allocates the required internal resources for the UART driver.
 
 .. code-block:: c
 
@@ -138,23 +138,23 @@ Serial communication is controlled by each UART controller's finite state machin
 
 The process of sending data involves the following steps:
 
-1. Write data into Tx FIFO buffer
+1. Write data into TX FIFO buffer
 2. FSM serializes the data
 3. FSM sends the data out
 
 The process of receiving data is similar, but the steps are reversed:
 
 1. FSM processes an incoming serial stream and parallelizes it
-2. FSM writes the data into Rx FIFO buffer
-3. Read the data from Rx FIFO buffer
+2. FSM writes the data into RX FIFO buffer
+3. Read the data from RX FIFO buffer
 
-Therefore, an application will only write and read data from a specific buffer using :cpp:func:`uart_write_bytes` and :cpp:func:`uart_read_bytes` respectively, and the FSM will do the rest.
+Therefore, an application only writes and reads data from a specific buffer using :cpp:func:`uart_write_bytes` and :cpp:func:`uart_read_bytes` respectively, and the FSM does the rest.
 
 
 Transmit Data
 """""""""""""
 
-After preparing the data for transmission, call the function :cpp:func:`uart_write_bytes` and pass the data buffer's address and data length to it. The function will copy the data to the Tx ring buffer (either immediately or after enough space is available), and then exit. When there is free space in the Tx FIFO buffer, an interrupt service routine (ISR) moves the data from the Tx ring buffer to the Tx FIFO buffer in the background. The code below demonstrates the use of this function.
+After preparing the data for transmission, call the function :cpp:func:`uart_write_bytes` and pass the data buffer's address and data length to it. The function copies the data to the TX ring buffer (either immediately or after enough space is available), and then exit. When there is free space in the TX FIFO buffer, an interrupt service routine (ISR) moves the data from the TX ring buffer to the TX FIFO buffer in the background. The code below demonstrates the use of this function.
 
 .. code-block:: c
 
@@ -162,16 +162,16 @@ After preparing the data for transmission, call the function :cpp:func:`uart_wri
     char* test_str = "This is a test string.\n";
     uart_write_bytes(uart_num, (const char*)test_str, strlen(test_str));
 
-The function :cpp:func:`uart_write_bytes_with_break` is similar to :cpp:func:`uart_write_bytes` but adds a serial break signal at the end of the transmission. A 'serial break signal' means holding the Tx line low for a period longer than one data frame.
+The function :cpp:func:`uart_write_bytes_with_break` is similar to :cpp:func:`uart_write_bytes` but adds a serial break signal at the end of the transmission. A 'serial break signal' means holding the TX line low for a period longer than one data frame.
 
 .. code-block:: c
 
     // Write data to UART, end with a break signal.
     uart_write_bytes_with_break(uart_num, "test break\n",strlen("test break\n"), 100);
 
-Another function for writing data to the Tx FIFO buffer is :cpp:func:`uart_tx_chars`. Unlike :cpp:func:`uart_write_bytes`, this function will not block until space is available. Instead, it will write all data which can immediately fit into the hardware Tx FIFO, and then return the number of bytes that were written.
+Another function for writing data to the TX FIFO buffer is :cpp:func:`uart_tx_chars`. Unlike :cpp:func:`uart_write_bytes`, this function does not block until space is available. Instead, it writes all data which can immediately fit into the hardware TX FIFO, and then return the number of bytes that were written.
 
-There is a 'companion' function :cpp:func:`uart_wait_tx_done` that monitors the status of the Tx FIFO buffer and returns once it is empty.
+There is a 'companion' function :cpp:func:`uart_wait_tx_done` that monitors the status of the TX FIFO buffer and returns once it is empty.
 
 .. code-block:: c
 
@@ -183,7 +183,7 @@ There is a 'companion' function :cpp:func:`uart_wait_tx_done` that monitors the 
 Receive Data
 """"""""""""
 
-Once the data is received by the UART and saved in the Rx FIFO buffer, it needs to be retrieved using the function :cpp:func:`uart_read_bytes`. Before reading data, you can check the number of bytes available in the Rx FIFO buffer by calling :cpp:func:`uart_get_buffered_data_len`. An example of using these functions is given below.
+Once the data is received by the UART and saved in the RX FIFO buffer, it needs to be retrieved using the function :cpp:func:`uart_read_bytes`. Before reading data, you can check the number of bytes available in the RX FIFO buffer by calling :cpp:func:`uart_get_buffered_data_len`. An example of using these functions is given below.
 
 .. code-block:: c
 
@@ -194,7 +194,7 @@ Once the data is received by the UART and saved in the Rx FIFO buffer, it needs 
     ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
     length = uart_read_bytes(uart_num, data, length, 100);
 
-If the data in the Rx FIFO buffer is no longer needed, you can clear the buffer by calling :cpp:func:`uart_flush`.
+If the data in the RX FIFO buffer is no longer needed, you can clear the buffer by calling :cpp:func:`uart_flush`.
 
 
 Software Flow Control
@@ -206,7 +206,7 @@ If the hardware flow control is disabled, you can manually set the RTS and DTR s
 Communication Mode Selection
 """"""""""""""""""""""""""""
 
-The UART controller supports a number of communication modes. A mode can be selected using the function :cpp:func:`uart_set_mode`. Once a specific mode is selected, the UART driver will handle the behavior of a connected UART device accordingly. As an example, it can control the RS485 driver chip using the RTS line to allow half-duplex RS485 communication.
+The UART controller supports a number of communication modes. A mode can be selected using the function :cpp:func:`uart_set_mode`. Once a specific mode is selected, the UART driver handles the behavior of a connected UART device accordingly. As an example, it can control the RS485 driver chip using the RTS line to allow half-duplex RS485 communication.
 
 .. code-block:: bash
 
@@ -221,13 +221,13 @@ Use Interrupts
 
 There are many interrupts that can be generated depending on specific UART states or detected errors. The full list of available interrupts is provided in *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *UART Interrupts* and *UHCI Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively.
 
-The :cpp:func:`uart_driver_install` function installs the driver's internal interrupt handler to manage the Tx and Rx ring buffers and provides high-level API functions like events (see below).
+The :cpp:func:`uart_driver_install` function installs the driver's internal interrupt handler to manage the TX and RX ring buffers and provides high-level API functions like events (see below).
 
 The API provides a convenient way to handle specific interrupts discussed in this document by wrapping them into dedicated functions:
 
 - **Event detection**: There are several events defined in :cpp:type:`uart_event_type_t` that may be reported to a user application using the FreeRTOS queue functionality. You can enable this functionality when calling :cpp:func:`uart_driver_install` described in :ref:`uart-api-driver-installation`. An example of using Event detection can be found in :example:`peripherals/uart/uart_events`.
 
-- **FIFO space threshold or transmission timeout reached**: The Tx and Rx FIFO buffers can trigger an interrupt when they are filled with a specific number of characters, or on a timeout of sending or receiving data. To use these interrupts, do the following:
+- **FIFO space threshold or transmission timeout reached**: The TX and RX FIFO buffers can trigger an interrupt when they are filled with a specific number of characters, or on a timeout of sending or receiving data. To use these interrupts, do the following:
 
     - Configure respective threshold values of the buffer length and timeout by entering them in the structure :cpp:type:`uart_intr_config_t` and calling :cpp:func:`uart_intr_config`
     - Enable the interrupts using the functions :cpp:func:`uart_enable_tx_intr` and :cpp:func:`uart_enable_rx_intr`
@@ -258,7 +258,7 @@ Overview of RS485 Specific Communication 0ptions
 
 .. note::
 
-    The following section will use ``[UART_REGISTER_NAME].[UART_FIELD_BIT]`` to refer to UART register fields/bits. For more information on a specific option bit, see *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *Register Summary* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart-reg-summ>`__]. Use the register name to navigate to the register description and then find the field/bit.
+    The following section uses ``[UART_REGISTER_NAME].[UART_FIELD_BIT]`` to refer to UART register fields/bits. For more information on a specific option bit, see **{IDF_TARGET_NAME} Technical Reference Manual** > **UART Controller (UART)** > **Register Summary** [`PDF <{IDF_TARGET_TRM_EN_URL}#uart-reg-summ>`__]. Use the register name to navigate to the register description and then find the field/bit.
 
 - ``UART_RS485_CONF_REG.UART_RS485_EN``: setting this bit enables RS485 communication mode support.
 - ``UART_RS485_CONF_REG.UART_RS485TX_RX_EN``: if this bit is set, the transmitter's output signal loops back to the receiver's input signal.
@@ -272,7 +272,7 @@ The collision detection feature can work with circuit A and circuit C (see Secti
 
 The {IDF_TARGET_NAME} UART controllers themselves do not support half-duplex communication as they cannot provide automatic control of the RTS pin connected to the RE/DE input of RS485 bus driver. However, half-duplex communication can be achieved via software control of the RTS pin by the UART driver. This can be enabled by selecting the :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` mode when calling :cpp:func:`uart_set_mode`.
 
-Once the host starts writing data to the Tx FIFO buffer, the UART driver automatically asserts the RTS pin (logic 1); once the last bit of the data has been transmitted, the driver de-asserts the RTS pin (logic 0). To use this mode, the software would have to disable the hardware flow control function. This mode works with all the used circuits shown below.
+Once the host starts writing data to the TX FIFO buffer, the UART driver automatically asserts the RTS pin (logic 1); once the last bit of the data has been transmitted, the driver de-asserts the RTS pin (logic 0). To use this mode, the software would have to disable the hardware flow control function. This mode works with all the used circuits shown below.
 
 
 Interface Connection Options
@@ -394,7 +394,7 @@ API Reference
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^
 
-The UART peripherals have dedicated IO_MUX pins to which they are connected directly. However, signals can also be routed to other pins using the less direct GPIO matrix. To use direct routes, you need to know which pin is a dedicated IO_MUX pin for a UART channel. GPIO Lookup Macros simplify the process of finding and assigning IO_MUX pins. You choose a macro based on either the IO_MUX pin number, or a required UART channel name, and the macro will return the matching counterpart for you. See some examples below.
+The UART peripherals have dedicated IO_MUX pins to which they are connected directly. However, signals can also be routed to other pins using the less direct GPIO matrix. To use direct routes, you need to know which pin is a dedicated IO_MUX pin for a UART channel. GPIO Lookup Macros simplify the process of finding and assigning IO_MUX pins. You choose a macro based on either the IO_MUX pin number, or a required UART channel name, and the macro returns the matching counterpart for you. See some examples below.
 
 .. note::
 

@@ -122,9 +122,9 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 PCNT 观察点
 ^^^^^^^^^^^
 
-PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值被称为 **观察点**。观察点不能超过 :cpp:type:`pcnt_unit_config_t` 设置的范围，最小值和最大值分别为 :cpp:member:`pcnt_unit_config_t::low_limit` 和 :cpp:member:`pcnt_unit_config_t::high_limit`。当计数器到达任一观察点时，会触发一个观察事件，如果在 :cpp:func:`pcnt_unit_register_event_callbacks` 注册过事件回调函数，该事件就会通过中断通知您。关于如何注册事件回调函数，请参考 :ref:`pcnt-register-event-callbacks`。
+PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值被称为 **观察点**。观察点不能超过 :cpp:type:`pcnt_unit_config_t` 设置的范围，最小值和最大值分别为 :cpp:member:`pcnt_unit_config_t::low_limit` 和 :cpp:member:`pcnt_unit_config_t::high_limit`。当计数器到达任一观察点时，会触发一个观察事件，如果在 :cpp:func:`pcnt_unit_register_event_callbacks` 注册过事件回调函数，该事件就会通过中断发送通知。关于如何注册事件回调函数，请参考 :ref:`pcnt-register-event-callbacks`。
 
-观察点分别可以通过 :cpp:func:`pcnt_unit_add_watch_point` 和 :cpp:func:`pcnt_unit_remove_watch_point` 进行添加和删除。常用的观察点包括 **过零**, **最大/最小计数** 以及其他的阈值。可用的观察点是有限的，如果 :cpp:func:`pcnt_unit_add_watch_point` 无法获得空闲硬件资源来存储观察点，会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。不能多次添加同一个观察点，否则将返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
+观察点分别可以通过 :cpp:func:`pcnt_unit_add_watch_point` 和 :cpp:func:`pcnt_unit_remove_watch_point` 进行添加和删除。常用的观察点包括 **过零**、**最大/最小计数** 以及其他的阈值。可用的观察点是有限的，如果 :cpp:func:`pcnt_unit_add_watch_point` 无法获得空闲硬件资源来存储观察点，会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。不能多次添加同一个观察点，否则将返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
 
 建议通过 :cpp:func:`pcnt_unit_remove_watch_point` 删除未使用的观察点来回收资源。
 
@@ -146,9 +146,9 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
 注册事件回调函数
 ^^^^^^^^^^^^^^^^^^^^
 
-当 PCNT 单元的数值达到任一使能的观察点的数值时，会触发相应的事件并通过中断通知 CPU。如果您想在事件触发时执行相关函数，可通过调用 :cpp:func:`pcnt_unit_register_event_callbacks` 将函数挂载到中断服务程序 (ISR) 上。:cpp:type:`pcnt_event_callbacks_t` 列出了所有支持的事件回调函数：
+当 PCNT 单元的数值达到任一使能的观察点的数值时，会触发相应的事件并通过中断通知 CPU。如果要在事件触发时执行相关函数，可通过调用 :cpp:func:`pcnt_unit_register_event_callbacks` 将函数挂载到中断服务程序 (ISR) 上。:cpp:type:`pcnt_event_callbacks_t` 列出了所有支持的事件回调函数：
 
--  :cpp:member:`pcnt_event_callbacks_t::on_reach` 用于为观察点事件设置回调函数。由于该回调函数是在 ISR 的上下文中被调用的，必须确保该函数不会阻塞调用的任务，(例如，可确保只有以 ``ISR`` 为后缀的 FreeRTOS API 才能在函数中调用)。:cpp:type:`pcnt_watch_cb_t` 中声明了该回调函数的原型。
+-  :cpp:member:`pcnt_event_callbacks_t::on_reach` 用于为观察点事件设置回调函数。由于该回调函数是在 ISR 的上下文中被调用的，必须确保该函数不会阻塞调用的任务，（例如，可确保只有以 ``ISR`` 为后缀的 FreeRTOS API 才能在函数中调用）。:cpp:type:`pcnt_watch_cb_t` 中声明了该回调函数的原型。
 
 可通过 ``user_ctx`` 将函数上下文保存到 :cpp:func:`pcnt_unit_register_event_callbacks` 中，这些数据会直接传递给回调函数。
 
@@ -322,7 +322,8 @@ Konfig 选项 :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 可以实现以下功能：
 支持线程安全
 ^^^^^^^^^^^^^
 
-驱动保证工厂函数 :cpp:func:`pcnt_new_unit` 与 :cpp:func:`pcnt_new_channel` 是线程安全的，因此您可以从 RTOS 任务中调用这些函数而无需使用额外的电源管理锁。
+驱动保证工厂函数 :cpp:func:`pcnt_new_unit` 与 :cpp:func:`pcnt_new_channel` 是线程安全的，因此可以从 RTOS 任务中调用这些函数，而无需使用额外的电源管理锁。
+
 以下函数可以在 ISR 上下文中运行，驱动可以防止这些函数在任务和 ISR 中同时被调用。
 
 - :cpp:func:`pcnt_unit_start`
@@ -354,7 +355,7 @@ API 参考
 .. include-build-file:: inc/pcnt_types.inc
 
 .. [1]
-   在不同的 ESP 芯片系列中，PCNT 单元和通道的数量可能会有差异，具体信息请参考 [`TRM <{IDF_TARGET_TRM_CN_URL}#pcnt>`__]。驱动不会禁止用户申请更多的 PCNT 单元和通道，但是当单元和通道资源全部被占用时，再调用单元和通道会返回错误。因此分配资源时，应注意检查返回值，如 :cpp:func:`pcnt_new_unit`。
+   在不同的 ESP 芯片系列中，PCNT 单元和通道的数量可能会有差异，具体信息请参考 [`TRM <{IDF_TARGET_TRM_CN_URL}#pcnt>`__]。驱动程序对通道申请数量不做限制，但当硬件资源用尽时，驱动程序将返回错误。因此分配资源时，应注意检查返回值，如 :cpp:func:`pcnt_new_unit`。
 
 .. [2]
    :cpp:member:`pcnt_event_callbacks_t::on_reach` 回调函数和其调用的函数也应该放在 IRAM 中。

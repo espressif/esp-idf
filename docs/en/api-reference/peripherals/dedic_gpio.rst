@@ -15,6 +15,7 @@ Create/Destroy GPIO Bundle
 A GPIO bundle is a group of GPIOs, which can be manipulated at the same time in one CPU cycle. The maximal number of GPIOs that a bundle can contain is limited by each CPU. What's more, the GPIO bundle has a strong relevance to the CPU which it derives from. **Any operations on the GPIO bundle should be put inside a task which is running on the same CPU core to the GPIO bundle belongs to.** Likewise, only those ISRs who are installed on the same CPU core are allowed to do operations on that GPIO bundle.
 
 .. note::
+    
     Dedicated GPIO is more of a CPU peripheral, so it has a strong relationship with CPU core. It's highly recommended to install and operate GPIO bundle in a pin-to-core task. For example, if GPIOA is connected to CPU0, and the dedicated GPIO instruction is issued from CPU1, then it's impossible to control GPIOA.
 
 To install a GPIO bundle, one needs to call :cpp:func:`dedic_gpio_new_bundle` to allocate the software resources and connect the dedicated channels to user selected GPIOs. Configurations for a GPIO bundle are covered in :cpp:type:`dedic_gpio_bundle_config_t` structure:
@@ -55,7 +56,8 @@ The following code shows how to install a output only GPIO bundle:
 To uninstall the GPIO bundle, one needs to call :cpp:func:`dedic_gpio_del_bundle`.
 
 .. note::
-    :cpp:func:`dedic_gpio_new_bundle` doesn't cover any GPIO pad configuration (e.g. pull up/down, drive ability, output/input enable), so before installing a dedicated GPIO bundle, you have to configure the GPIO separately using GPIO driver API (e.g. :cpp:func:`gpio_config`). For more information about GPIO driver, please refer to :doc:`GPIO API Reference <gpio>`.
+
+    :cpp:func:`dedic_gpio_new_bundle` doesn't cover any GPIO pad configuration (e.g., pull up/down, drive ability, output/input enable), so before installing a dedicated GPIO bundle, you have to configure the GPIO separately using GPIO driver API (e.g., :cpp:func:`gpio_config`). For more information about GPIO driver, please refer to :doc:`GPIO API Reference <gpio>`.
 
 
 GPIO Bundle Operations
@@ -75,6 +77,7 @@ GPIO Bundle Operations
      - :cpp:func:`dedic_gpio_bundle_read_in`
 
 .. note::
+
     Using the above functions might not get a high GPIO flip speed because of the overhead of function calls and the bit operations involved inside. Users can try :ref:`manipulate_gpios_by_writing_assembly_code` instead to reduce the overhead but should take care of the thread safety by themselves.
 
 .. _manipulate_gpios_by_writing_assembly_code:
@@ -86,7 +89,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 
 1. Allocate a GPIO bundle: :cpp:func:`dedic_gpio_new_bundle`
 2. Query the mask occupied by that bundle: :cpp:func:`dedic_gpio_get_out_mask` or/and :cpp:func:`dedic_gpio_get_in_mask`
-3. Call CPU LL apis (e.g. `dedic_gpio_cpu_ll_write_mask`) or write assembly code with that mask
+3. Call CPU LL apis (e.g., `dedic_gpio_cpu_ll_write_mask`) or write assembly code with that mask
 4. The fasted way of toggling IO is to use the dedicated "set/clear" instructions:
 
     .. only:: esp32s2 or esp32s3
@@ -103,21 +106,22 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 
 .. only:: esp32s2
 
-    For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
+    For details of supported dedicated GPIO instructions, please refer to **{IDF_TARGET_NAME} Technical Reference Manual** > **IO MUX and GPIO Matrix (GPIO, IO_MUX)** [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
 .. only:: esp32s3
 
-    For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *Processor Instruction Extensions (PIE) (to be added later)* [`PDF <{IDF_TARGET_TRM_EN_URL}#pie>`__].
+    For details of supported dedicated GPIO instructions, please refer to **{IDF_TARGET_NAME} Technical Reference Manual** > **Processor Instruction Extensions (PIE) (to be added later)** [`PDF <{IDF_TARGET_TRM_EN_URL}#pie>`__].
 
 .. only:: esp32c2 or esp32c3 or esp32c6
 
     Code examples for manipulating dedicated GPIOs from assembly are provided in the :example:`peripherals/dedicated_gpio` directory of ESP-IDF examples. These examples show how to emulate a UART, an I2C and an SPI bus in assembly thanks to dedicated GPIOs.
 
-    For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *ESP-RISC-V CPU* [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__].
+    For details of supported dedicated GPIO instructions, please refer to **{IDF_TARGET_NAME} Technical Reference Manual** > **ESP-RISC-V CPU** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__].
 
 Some of the dedicated CPU instructions are also wrapped inside ``hal/dedic_gpio_cpu_ll.h`` as helper inline functions.
 
 .. note::
+
     Writing assembly code in application could make your code hard to port between targets, because those customized instructions are not guaranteed to remain the same format on different targets.
 
 .. only:: SOC_DEDIC_GPIO_HAS_INTERRUPT
@@ -142,7 +146,7 @@ Some of the dedicated CPU instructions are also wrapped inside ``hal/dedic_gpio_
             return high_task_wakeup == pdTRUE;
         }
 
-        // enable positive edge interrupt on the second GPIO in the bundle (i.e. index 1)
+        // enable positive edge interrupt on the second GPIO in the bundle (i.e., index 1)
         ESP_ERROR_CHECK(dedic_gpio_bundle_set_interrupt_and_callback(bundle, BIT(1), DEDIC_GPIO_INTR_POS_EDGE, dedic_gpio_isr_callback, sem));
 
         // wait for done semaphore

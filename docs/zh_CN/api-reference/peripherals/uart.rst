@@ -14,7 +14,7 @@
 
 .. only:: SOC_UART_LP_NUM
 
-    此外，{IDF_TARGET_NAME} 芯片还有一个满足低功耗需求的 LP UART 控制器。LP UART 是原 UART 的功能剪裁版本。它只支持基础 UART 功能，不支持 IrDA 或 RS485 协议，并且只有一块较小的 RAM 存储空间。想要全面了解的 UART 及 LP UART 功能区别，请参考 *{IDF_TARGET_NAME} 技术参考手册* > UART 控制器 (UART) > 主要特性 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]。
+    此外，{IDF_TARGET_NAME} 芯片还有一个满足低功耗需求的 LP UART 控制器。LP UART 是原 UART 的功能剪裁版本。它只支持基础 UART 功能，不支持 IrDA 或 RS485 协议，并且只有一块较小的 RAM 存储空间。想要全面了解的 UART 及 LP UART 功能区别，请参考 **{IDF_TARGET_NAME} 技术参考手册** > UART 控制器 (UART) > 主要特性 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]。
 
 功能概述
 -------------------
@@ -126,7 +126,7 @@ UART 通信参数可以在一个步骤中完成全部配置，也可以在多个
     ESP_ERROR_CHECK(uart_driver_install({IDF_TARGET_UART_EXAMPLE_PORT}, uart_buffer_size, \
                                             uart_buffer_size, 10, &uart_queue, 0));
 
-此步骤完成后，您可连接外部 UART 设备检查通信。
+此步骤完成后，可连接外部 UART 设备检查通信。
 
 
 .. _uart-api-running-uart-communication:
@@ -183,7 +183,7 @@ UART 通信参数可以在一个步骤中完成全部配置，也可以在多个
 接收数据
 """""""""""""""""
 
-一旦数据被 UART 接收并保存在 Rx FIFO 缓冲区中，就需要使用函数 :cpp:func:`uart_read_bytes` 检索数据。读取数据之前，调用 :cpp:func:`uart_get_buffered_data_len` 能够查看 Rx FIFO 缓冲区中可用的字节数。请参考以下示例。
+一旦 UART 接收了数据，并将其保存在 Rx FIFO 缓冲区中，就需要使用函数 :cpp:func:`uart_read_bytes` 检索数据。读取数据之前，调用 :cpp:func:`uart_get_buffered_data_len` 能够查看 Rx FIFO 缓冲区中可用的字节数。请参考以下示例。
 
 .. code-block:: c
 
@@ -200,7 +200,7 @@ UART 通信参数可以在一个步骤中完成全部配置，也可以在多个
 软件流控
 """"""""""""""""""""""
 
-如果硬件流控被禁用，您可使用函数 :cpp:func:`uart_set_rts` 和 :cpp:func:`uart_set_dtr` 分别手动设置 RTS 和 DTR 信号电平。
+如果硬件流控处于禁用状态，可使用函数 :cpp:func:`uart_set_rts` 和 :cpp:func:`uart_set_dtr` 分别手动设置 RTS 和 DTR 信号电平。
 
 
 通信方式选择
@@ -219,13 +219,13 @@ UART 控制器支持多种通信模式，使用函数 :cpp:func:`uart_set_mode` 
 使用中断
 ^^^^^^^^^^^^^^^^^
 
-根据特定的 UART 状态或检测到的错误，可以生成许多不同的中断。*{IDF_TARGET_NAME} 技术参考手册* > UART 控制器 (UART) > UART 中断 和 UHCI 中断 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__] 中提供了可用中断的完整列表。调用 :cpp:func:`uart_enable_intr_mask` 或 :cpp:func:`uart_disable_intr_mask` 能够分别启用或禁用特定中断。
+根据特定的 UART 状态或检测到的错误，可以生成许多不同的中断。**{IDF_TARGET_NAME} 技术参考手册** > UART 控制器 (UART) > UART 中断 和 UHCI 中断 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__] 中提供了可用中断的完整列表。调用 :cpp:func:`uart_enable_intr_mask` 或 :cpp:func:`uart_disable_intr_mask` 能够分别启用或禁用特定中断。
 
 调用 :cpp:func:`uart_driver_install` 函数可以安装驱动程序的内部中断处理程序，用以管理 Tx 和 Rx 环形缓冲区，并提供事件等高级 API 函数（见下文）。
 
 API 提供了一种便利的方法来处理本文所讨论的特定中断，即用专用函数包装中断：
 
-- **事件检测**：:cpp:type:`uart_event_type_t` 定义了多个事件，使用 FreeRTOS 队列功能能够将其报告给用户应用程序。您可调用 :ref:`uart-api-driver-installation` 中的 :cpp:func:`uart_driver_install` 函数启用此功能，请参考 :example:`peripherals/uart/uart_events` 中使用事件检测的示例。
+- **事件检测**：:cpp:type:`uart_event_type_t` 定义了多个事件，使用 FreeRTOS 队列功能能够将其报告给用户应用程序。调用 :ref:`uart-api-driver-installation` 中的 :cpp:func:`uart_driver_install` 函数，可以启用此功能，请参考 :example:`peripherals/uart/uart_events` 中使用事件检测的示例。
 
 - **达到 FIFO 空间阈值或传输超时**：Tx 和 Rx FIFO 缓冲区在填充特定数量的字符和在发送或接收数据超时的情况下将会触发中断。如要使用此类中断，请执行以下操作：
 
@@ -258,7 +258,7 @@ RS485 特定通信模式简介
 
 .. note::
 
-     下文将使用 ``[UART_REGISTER_NAME].[UART_FIELD_BIT]`` 指代 UART 寄存器字段/位。了解特定模式位的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > UART 控制器 (UART) > 寄存器摘要 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart-reg-summ>`__]。您可搜索寄存器名称导航至寄存器描述，找到相应字段/位。
+     下文将使用 ``[UART_REGISTER_NAME].[UART_FIELD_BIT]`` 指代 UART 寄存器字段/位。了解特定模式位的更多信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > UART 控制器 (UART) > 寄存器摘要 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart-reg-summ>`__]。请搜索寄存器名称导航至寄存器描述，找到相应字段/位。
 
 - ``UART_RS485_CONF_REG.UART_RS485_EN``：设置此位将启用 RS485 通信模式支持。
 - ``UART_RS485_CONF_REG.UART_RS485TX_RX_EN``：设置此位，发送器的输出信号将环回到接收器的输入信号。
@@ -394,7 +394,7 @@ API 参考
 GPIO 查找宏指令
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-UART 外设有供直接连接的专用 IO_MUX 管脚，但也可用非直接的 GPIO 矩阵将信号配置到其他管脚。如要直接连接，需要知道哪一管脚为 UART 通道的专用 IO_MUX 管脚。GPIO 查找宏简化了查找和分配 IO_MUX 管脚的过程，您可根据 IO_MUX 管脚编号或所需 UART 通道名称选择一个宏，该宏将返回匹配的对应项。请查看下列示例。
+UART 外设有供直接连接的专用 IO_MUX 管脚，但也可用非直接的 GPIO 矩阵将信号配置到其他管脚。如要直接连接，需要知道哪一管脚为 UART 通道的专用 IO_MUX 管脚。GPIO 查找宏简化了查找和分配 IO_MUX 管脚的过程，可根据 IO_MUX 管脚编号或所需 UART 通道名称选择一个宏，该宏将返回匹配的对应项。请查看下列示例。
 
 .. note::
 

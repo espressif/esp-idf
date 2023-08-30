@@ -8,8 +8,7 @@ LED Control (LEDC)
 Introduction
 ------------
 
-The LED control (LEDC) peripheral is primarily designed to control the intensity of LEDs, although it can also be used to generate PWM signals for other purposes.
-It has {IDF_TARGET_SOC_LEDC_CHANNEL_NUM} channels which can generate independent waveforms that can be used, for example, to drive RGB LED devices.
+The LED control (LEDC) peripheral is primarily designed to control the intensity of LEDs, although it can also be used to generate PWM signals for other purposes. It has {IDF_TARGET_SOC_LEDC_CHANNEL_NUM} channels which can generate independent waveforms that can be used, for example, to drive RGB LED devices.
 
 .. only:: esp32
 
@@ -87,7 +86,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - High / Low
          - Dynamic Frequency Scaling compatible
        * - RC_FAST_CLK
-         - ~8 MHz
+         - ~ 8 MHz
          - Low
          - Dynamic Frequency Scaling compatible, Light sleep compatible
 
@@ -107,7 +106,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 1 MHz
          - Dynamic Frequency Scaling compatible
        * - RC_FAST_CLK
-         - ~8 MHz
+         - ~ 8 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
          - 40 MHz
@@ -126,7 +125,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 80 MHz
          - /
        * - RC_FAST_CLK
-         - ~20 MHz
+         - ~ 20 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
          - 40 MHz
@@ -145,7 +144,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 60 MHz
          - /
        * - RC_FAST_CLK
-         - ~20 MHz
+         - ~ 20 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
          - 40 MHz
@@ -164,7 +163,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 80 MHz
          - /
        * - RC_FAST_CLK
-         - ~20 MHz
+         - ~ 20 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
          - 40 MHz
@@ -183,7 +182,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 96 MHz
          - /
        * - RC_FAST_CLK
-         - ~8 MHz
+         - ~ 8 MHz
          - Dynamic Frequency Scaling compatible, Light sleep compatible
        * - XTAL_CLK
          - 32 MHz
@@ -247,10 +246,10 @@ To set the duty cycle, use the dedicated function :cpp:func:`ledc_set_duty`. Aft
 
 Another way to set the duty cycle, as well as some other channel parameters, is by calling :cpp:func:`ledc_channel_config` covered in Section :ref:`ledc-api-configure-channel`.
 
-The range of the duty cycle values passed to functions depends on selected ``duty_resolution`` and should be from ``0`` to ``(2 ** duty_resolution) - 1``. For example, if the selected duty resolution is 10, then the duty cycle values can range from 0 to 1023. This provides the resolution of ~0.1%.
+The range of the duty cycle values passed to functions depends on selected ``duty_resolution`` and should be from ``0`` to ``(2 ** duty_resolution) - 1``. For example, if the selected duty resolution is 10, then the duty cycle values can range from 0 to 1023. This provides the resolution of ~ 0.1%.
 
 
-Change PWM Duty Cycle using Hardware
+Change PWM Duty Cycle Using Hardware
 """"""""""""""""""""""""""""""""""""
 
 The LEDC hardware provides the means to gradually transition from one duty cycle value to another. To use this functionality, enable fading with :cpp:func:`ledc_fade_func_install` and then configure it by calling one of the available fading functions:
@@ -320,7 +319,7 @@ For registration of a handler to address this interrupt, call :cpp:func:`ledc_is
 
     High speed mode enables a glitch-free changeover of timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called.
 
-    For additional details regarding speed modes, see *{IDF_TARGET_NAME} Technical Reference Manual* > *LED PWM Controller (LEDC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__].
+    For additional details regarding speed modes, see **{IDF_TARGET_NAME} Technical Reference Manual** > **LED PWM Controller (LEDC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__].
 
     .. _ledc-api-supported-range-frequency-duty-resolution:
 
@@ -331,11 +330,11 @@ For registration of a handler to address this interrupt, call :cpp:func:`ledc_is
 Supported Range of Frequency and Duty Resolutions
 -------------------------------------------------
 
-The LED PWM Controller is designed primarily to drive LEDs. It provides a large flexibility of PWM duty cycle settings. For instance, the PWM frequency of 5 kHz can have the maximum duty resolution of 13 bits. This means that the duty can be set anywhere from 0 to 100% with a resolution of ~0.012% (2 ** 13 = 8192 discrete levels of the LED intensity). Note, however, that these parameters depend on the clock signal clocking the LED PWM Controller timer which in turn clocks the channel (see :ref:`timer configuration<ledc-api-configure-timer>` and the *{IDF_TARGET_NAME} Technical Reference Manual* > *LED PWM Controller (LEDC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]).
+The LED PWM Controller is designed primarily to drive LEDs. It provides a large flexibility of PWM duty cycle settings. For instance, the PWM frequency of 5 kHz can have the maximum duty resolution of 13 bits. This means that the duty can be set anywhere from 0 to 100% with a resolution of ~ 0.012% (2 ** 13 = 8192 discrete levels of the LED intensity). Note, however, that these parameters depend on the clock signal clocking the LED PWM Controller timer which in turn clocks the channel (see :ref:`timer configuration <ledc-api-configure-timer>` and the **{IDF_TARGET_NAME} Technical Reference Manual** > **LED PWM Controller (LEDC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]).
 
 The LEDC can be used for generating signals at much higher frequencies that are sufficient enough to clock other devices, e.g., a digital camera module. In this case, the maximum available frequency is 40 MHz with duty resolution of 1 bit. This means that the duty cycle is fixed at 50% and cannot be adjusted.
 
-The LEDC API is designed to report an error when trying to set a frequency and a duty resolution that exceed the range of LEDC's hardware. For example, an attempt to set the frequency to 20 MHz and the duty resolution to 3 bits will result in the following error reported on a serial monitor:
+The LEDC API is designed to report an error when trying to set a frequency and a duty resolution that exceed the range of LEDC's hardware. For example, an attempt to set the frequency to 20 MHz and the duty resolution to 3 bits results in the following error reported on a serial monitor:
 
 .. highlight:: none
 
@@ -343,9 +342,9 @@ The LEDC API is designed to report an error when trying to set a frequency and a
 
     E (196) ledc: requested frequency and duty resolution cannot be achieved, try reducing freq_hz or duty_resolution. div_param=128
 
-In such a situation, either the duty resolution or the frequency must be reduced. For example, setting the duty resolution to 2 will resolve this issue and will make it possible to set the duty cycle at 25% steps, i.e., at 25%, 50% or 75%.
+In such a situation, either the duty resolution or the frequency must be reduced. For example, setting the duty resolution to 2 resolves this issue and makes it possible to set the duty cycle at 25% steps, i.e., at 25%, 50% or 75%.
 
-The LEDC driver will also capture and report attempts to configure frequency / duty resolution combinations that are below the supported minimum, e.g.:
+The LEDC driver also captures and reports attempts to configure frequency/duty resolution combinations that are below the supported minimum, e.g.,:
 
 ::
 
