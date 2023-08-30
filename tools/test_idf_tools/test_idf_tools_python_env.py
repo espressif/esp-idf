@@ -30,6 +30,7 @@ TOOLS_DIR = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF
 PYTHON_DIR = os.path.join(TOOLS_DIR, 'python_env')
 PYTHON_DIR_BACKUP = tempfile.mkdtemp()
 REQ_SATISFIED = 'Python requirements are satisfied'
+REQ_MISSING = "'{}' - was not found and is required by the application"
 REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
 REQ_GDBGUI = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.gdbgui.txt'))
 CONSTR = 'Constraint file: {}/espidf.constraints'.format(TOOLS_DIR)
@@ -254,17 +255,24 @@ class TestCheckPythonDependencies(BasePythonInstall):
     constraint_file: str
     backup_constraint_file: str
 
+    # similar to constraint files (see above) - creating a backup and restoring it as part of test teardown
+    requirement_core_file: str
+    backup_requirement_core_file: str
+
     @classmethod
     def setUpClass(cls):  # type: () -> None
         cls.constraint_file = idf_tools.get_constraints(idf_tools.get_idf_version(), online=False)
-        with tempfile.NamedTemporaryFile() as f:
-            cls.backup_constraint_file = f.name
-        shutil.copyfile(cls.constraint_file, cls.backup_constraint_file)
+        cls.requirement_core_file = os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt')
+        for file_path_var in ['constraint_file', 'requirement_core_file']:
+            with tempfile.NamedTemporaryFile() as f:
+                setattr(cls, f'backup_{file_path_var}', f.name)
+            shutil.copyfile(getattr(cls, file_path_var), getattr(cls, f'backup_{file_path_var}'))
 
     @classmethod
     def tearDownClass(cls):  # type: () -> None
         try:
             os.remove(cls.backup_constraint_file)
+            os.remove(cls.backup_requirement_core_file)
         except OSError:
             pass
 
@@ -274,6 +282,7 @@ class TestCheckPythonDependencies(BasePythonInstall):
 
     def tearDown(self):  # type: () -> None
         shutil.copyfile(self.backup_constraint_file, self.constraint_file)
+        shutil.copyfile(self.backup_requirement_core_file, self.requirement_core_file)
 
     def test_check_python_dependencies(self):  # type: () -> None
         # Prepare artificial constraints file containing packages from
@@ -323,6 +332,24 @@ class TestCheckPythonDependencies(BasePythonInstall):
         output = self.run_idf_tools(['check-python-dependencies'])
         self.assertIn(REQ_SATISFIED, output)
 
+    def test_missing_requirement(self):  # type: () -> None
+        # Install python env and then append foopackage to the requirements
+        # Make sure that dependency check has failed and complained about missing foopackage
+        self.run_idf_tools(['install-python-env'])
+
+        # append foopackage requirement to the existing requirements file
+        with open(self.requirement_core_file, 'a') as fd:
+            fd.write('foopackage')
+
+        # append foopackage constraint to the existing constraints file
+        with open(self.constraint_file, 'a') as fd:
+            fd.write('foopackage>0.99')
+
+        # check-python-dependencies should fail as the package was not installed yet
+        output = self.run_idf_tools(['check-python-dependencies'])
+        self.assertIn(REQ_MISSING.format('foopackage'), output)
+        self.assertNotIn(REQ_SATISFIED, output)
+
     def test_dev_version(self):  # type: () -> None
         # Install python env with core requirements, plus foopackage in dev version.
         # Add foopackage to constraints file meeting requirement
@@ -332,6 +359,10 @@ class TestCheckPythonDependencies(BasePythonInstall):
         self.run_idf_tools(['install-python-env'])
         foo_pkg = self.dump_foopackage_dev()
         self.run_in_venv(['-m', 'pip', 'install', foo_pkg])
+
+        # append foopackage requirement to the existing requirements file
+        with open(self.requirement_core_file, 'a') as fd:
+            fd.write('foopackage')
 
         # append foopackage constraint to the existing constraints file
         with open(self.constraint_file, 'r+') as fd:
