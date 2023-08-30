@@ -158,14 +158,14 @@ def test_build_dfu(idf_py: IdfPyFunc) -> None:
 def test_build_uf2(idf_py: IdfPyFunc) -> None:
     logging.info('UF2 build works')
     ret = idf_py('uf2')
-    assert 'build/uf2.bin" has been written.' in ret.stdout, 'UF2 build should work for esp32'
+    assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for esp32'
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
     ret = idf_py('uf2-app')
-    assert 'build/uf2-app.bin" has been written.' in ret.stdout, 'UF2 build should work for application binary'
+    assert 'build/uf2-app.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for application binary'
     assert_built(['build/uf2-app.bin'])
     idf_py('set-target', 'esp32s2')
     ret = idf_py('uf2')
-    assert 'build/uf2.bin" has been written.' in ret.stdout, 'UF2 build should work for esp32s2'
+    assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for esp32s2'
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
 
 

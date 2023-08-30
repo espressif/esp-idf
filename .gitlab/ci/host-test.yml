@@ -208,12 +208,6 @@ test_mkdfu:
     - cd ${IDF_PATH}/tools/test_mkdfu
     - ./test_mkdfu.py
 
-test_mkuf2:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/tools/test_mkuf2
-    - ./test_mkuf2.py
-
 test_sbom:
   extends:
     - .host_test_template
