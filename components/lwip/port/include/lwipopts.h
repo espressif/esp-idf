@@ -45,6 +45,8 @@ extern "C" {
 #define LWIP_TCPIP_CORE_LOCKING         1
 #ifdef CONFIG_LWIP_TCPIP_CORE_LOCKING_INPUT
 #define LWIP_TCPIP_CORE_LOCKING_INPUT   1
+#else
+#define LWIP_TCPIP_CORE_LOCKING_INPUT   0
 #endif
 #define LOCK_TCPIP_CORE()     do { sys_mutex_lock(&lock_tcpip_core); sys_thread_tcpip(LWIP_CORE_LOCK_MARK_HOLDER); } while(0)
 #define UNLOCK_TCPIP_CORE()   do { sys_thread_tcpip(LWIP_CORE_LOCK_UNMARK_HOLDER); sys_mutex_unlock(&lock_tcpip_core);  } while(0)
