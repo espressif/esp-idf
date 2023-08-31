@@ -153,6 +153,7 @@ static void keep_alive_task(void* arg)
             }
     }
     vQueueDelete(keep_alive_storage->q);
+    wss_keep_alive_set_user_ctx(keep_alive_storage,NULL);
     free(keep_alive_storage);
 
     vTaskDelete(NULL);
