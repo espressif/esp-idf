@@ -5,9 +5,12 @@
  */
 
 #include <string.h>
+#include <stdbool.h>
 #include "unity.h"
 #include "unity_test_utils.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 #include "sdkconfig.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
@@ -15,12 +18,13 @@
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
-static SemaphoreHandle_t test_sem;
+static StaticSemaphore_t s_test_sem_buffer;
+static SemaphoreHandle_t s_test_sem = NULL;
 
 static bool idle_hook_func(void)
 {
-    if (test_sem) {
-        xSemaphoreGive(test_sem);
+    if (s_test_sem) {
+        xSemaphoreGive(s_test_sem);
     }
     return true;
 }
@@ -29,6 +33,10 @@ static void task_delete_func(void *arg)
 {
     vTaskDelete(arg);
 }
+
+#define SEMAPHORE_COUNT_MAX 2
+#define SEMAPHORE_COUNT_INITIAL 0
+
 #endif // !CONFIG_FREERTOS_UNICORE
 
 void unity_utils_task_delete(TaskHandle_t thandle)
@@ -47,16 +55,25 @@ void unity_utils_task_delete(TaskHandle_t thandle)
     printf("Task_affinity: 0x%x, current_core: %d\n", tsk_affinity, core_id);
 
     if (tsk_affinity == tskNO_AFFINITY) {
+        // create the semaphore if not done yet, or else, make sure its count is 0
+        if (s_test_sem == NULL) {
+            s_test_sem = xSemaphoreCreateCountingStatic(SEMAPHORE_COUNT_MAX, SEMAPHORE_COUNT_INITIAL, &s_test_sem_buffer);
+        } else {
+            while (xSemaphoreTake(s_test_sem, 0) == pdTRUE) { }
+        }
+
         /* For no affinity case, we wait for idle hook to trigger on different core */
         esp_err_t ret = esp_register_freertos_idle_hook_for_cpu(idle_hook_func, !core_id);
         TEST_ASSERT_EQUAL_MESSAGE(ret, ESP_OK, "unity_utils_task_delete: failed to register idle hook");
         vTaskDelete(thandle);
-        test_sem = xSemaphoreCreateBinary();
-        TEST_ASSERT_NOT_NULL_MESSAGE(test_sem, "unity_utils_task_delete: failed to create semaphore");
-        xSemaphoreTake(test_sem, portMAX_DELAY);
+
+        // We want to make sure that the entire idle task has run (including the part that removes remaining
+        // memory of deleted tasks). Since we don't know where the idle task has been stopped, we need to
+        // wait until the idle hook has run twice. This makes sure that the entire idle task has run at least once.
+        xSemaphoreTake(s_test_sem, portMAX_DELAY);
+        xSemaphoreTake(s_test_sem, portMAX_DELAY);
+
         esp_deregister_freertos_idle_hook_for_cpu(idle_hook_func, !core_id);
-        vSemaphoreDelete(test_sem);
-        test_sem = NULL;
     } else if (tsk_affinity != core_id) {
         /* Task affinity and current core are differnt, schedule IPC call (to delete task)
          * on core where task is pinned to */
