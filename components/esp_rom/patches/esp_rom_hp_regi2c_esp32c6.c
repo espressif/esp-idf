@@ -1,13 +1,12 @@
-/**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+/*
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
 #include "soc/i2c_ana_mst_reg.h"
 #include "modem/modem_lpcon_reg.h"
-
 /**
  * BB    - 0x67 - BIT0
  * TXRF  - 0x6B - BIT1
@@ -26,13 +25,13 @@
 #define REGI2C_SAR_I2C_MST_SEL (BIT(11))
 #define REGI2C_DIG_REG_MST_SEL (BIT(12))
 
-#define REGI2C_BIAS_RD_MASK     (~BIT(6)    & I2C_MST_ANA_CONF1_M)
-#define REGI2C_BBPLL_RD_MASK    (~BIT(7)    & I2C_MST_ANA_CONF1_M)
-#define REGI2C_ULP_CAL_RD_MASK  (~BIT(8)    & I2C_MST_ANA_CONF1_M)
-#define REGI2C_SAR_I2C_RD_MASK  (~BIT(9)    & I2C_MST_ANA_CONF1_M)
-#define REGI2C_DIG_REG_RD_MASK  (~BIT(10)   & I2C_MST_ANA_CONF1_M)
+#define REGI2C_BIAS_RD_MASK     (~BIT(6)    & I2C_ANA_MST_ANA_CONF1_M)
+#define REGI2C_BBPLL_RD_MASK    (~BIT(7)    & I2C_ANA_MST_ANA_CONF1_M)
+#define REGI2C_ULP_CAL_RD_MASK  (~BIT(8)    & I2C_ANA_MST_ANA_CONF1_M)
+#define REGI2C_SAR_I2C_RD_MASK  (~BIT(9)    & I2C_ANA_MST_ANA_CONF1_M)
+#define REGI2C_DIG_REG_RD_MASK  (~BIT(10)   & I2C_ANA_MST_ANA_CONF1_M)
 
-#define I2C_ANA_MST_I2C_CTRL_REG(n) (I2C_MST_I2C0_CTRL_REG + n*4) // 0: I2C_ANA_MST_I2C0_CTRL_REG; 1: I2C_ANA_MST_I2C1_CTRL_REG
+#define I2C_ANA_MST_I2C_CTRL_REG(n) (I2C_ANA_MST_I2C0_CTRL_REG + n*4) // 0: I2C_ANA_MST_I2C0_CTRL_REG; 1: I2C_ANA_MST_I2C1_CTRL_REG
 
 #define REGI2C_RTC_BUSY           (BIT(25))
 #define REGI2C_RTC_BUSY_M         (BIT(25))
@@ -67,8 +66,8 @@
 #define REGI2C_BIAS               (0x6a)
 #define REGI2C_BIAS_HOSTID        0
 
-#define REGI2C_PMU                (0x6d)
-#define REGI2C_PMU_HOSTID         0
+#define REGI2C_DIG_REG            (0x6d)
+#define REGI2C_DIG_REG_HOSTID     0
 
 #define REGI2C_ULP_CAL            (0x61)
 #define REGI2C_ULP_CAL_HOSTID     0
@@ -86,29 +85,31 @@ void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, 
 static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
 {
     uint32_t i2c_sel = 0;
+
     REG_SET_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
+    REG_SET_BIT(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
 
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {
     case REGI2C_BBPLL  :
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BBPLL_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_BBPLL_RD_MASK);
+        i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_BBPLL_MST_SEL);
+        REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, REGI2C_BBPLL_RD_MASK);
         break;
     case REGI2C_BIAS   :
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_BIAS_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_BIAS_RD_MASK);
+        i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_BIAS_MST_SEL);
+        REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, REGI2C_BIAS_RD_MASK);
         break;
-    case REGI2C_PMU:
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_DIG_REG_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_DIG_REG_RD_MASK);
+    case REGI2C_DIG_REG:
+        i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_DIG_REG_MST_SEL);
+        REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, REGI2C_DIG_REG_RD_MASK);
         break;
     case REGI2C_ULP_CAL:
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_ULP_CAL_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_ULP_CAL_RD_MASK);
+        i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_ULP_CAL_MST_SEL);
+        REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, REGI2C_ULP_CAL_RD_MASK);
         break;
     case REGI2C_SAR_I2C:
-        i2c_sel = REG_GET_BIT(I2C_MST_ANA_CONF2_REG, REGI2C_SAR_I2C_MST_SEL);
-        REG_WRITE(I2C_MST_ANA_CONF1_REG, REGI2C_SAR_I2C_RD_MASK);
+        i2c_sel = REG_GET_BIT(I2C_ANA_MST_ANA_CONF2_REG, REGI2C_SAR_I2C_MST_SEL);
+        REG_WRITE(I2C_ANA_MST_ANA_CONF1_REG, REGI2C_SAR_I2C_RD_MASK);
         break;
     }
 
