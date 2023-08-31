@@ -102,14 +102,14 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
     bool valid = false;
 
     if (type & MMU_VADDR_DATA) {
-        valid |= (ADDRESS_IN_DRAM1_CACHE(vaddr_start) && ADDRESS_IN_DRAM1_CACHE(vaddr_end)) ||
-                (ADDRESS_IN_DROM0_CACHE(vaddr_start) && ADDRESS_IN_DROM0_CACHE(vaddr_end));
+        valid |= (SOC_ADDRESS_IN_DRAM1_CACHE(vaddr_start) && SOC_ADDRESS_IN_DRAM1_CACHE(vaddr_end)) ||
+                (SOC_ADDRESS_IN_DROM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_DROM0_CACHE(vaddr_end));
     }
 
     if (type & MMU_VADDR_INSTRUCTION) {
-        valid |= (ADDRESS_IN_IRAM0_CACHE(vaddr_start) && ADDRESS_IN_IRAM0_CACHE(vaddr_end)) ||
-                (ADDRESS_IN_IRAM1_CACHE(vaddr_start) && ADDRESS_IN_IRAM1_CACHE(vaddr_end)) ||
-                (ADDRESS_IN_IROM0_CACHE(vaddr_start) && ADDRESS_IN_IROM0_CACHE(vaddr_end));
+        valid |= (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_end)) ||
+                (SOC_ADDRESS_IN_IRAM1_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM1_CACHE(vaddr_end)) ||
+                (SOC_ADDRESS_IN_IROM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IROM0_CACHE(vaddr_end));
     }
 
     return valid;
@@ -128,9 +128,9 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
 static inline bool mmu_ll_check_valid_paddr_region(uint32_t mmu_id, uint32_t paddr_start, uint32_t len)
 {
     (void)mmu_id;
-    return (paddr_start < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM)) &&
-           (len < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM)) &&
-           ((paddr_start + len - 1) < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM));
+    return (paddr_start < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM)) &&
+           (len < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM)) &&
+           ((paddr_start + len - 1) < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM));
 }
 
 /**
@@ -151,27 +151,27 @@ static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
     uint32_t vaddr_mask = 0;
 
     //On ESP32, we only use PID0 and PID1
-    if (ADDRESS_IN_DROM0_CACHE(vaddr)) {
+    if (SOC_ADDRESS_IN_DROM0_CACHE(vaddr)) {
         offset = 0;
         shift_code = 16;
-        vaddr_mask = MMU_VADDR_MASK;
-    } else if (ADDRESS_IN_IRAM0_CACHE(vaddr)) {
+        vaddr_mask = SOC_MMU_VADDR_MASK;
+    } else if (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr)) {
         offset = 64;
         shift_code = 16;
-        vaddr_mask = MMU_VADDR_MASK;
-    } else if (ADDRESS_IN_IRAM1_CACHE(vaddr)) {
+        vaddr_mask = SOC_MMU_VADDR_MASK;
+    } else if (SOC_ADDRESS_IN_IRAM1_CACHE(vaddr)) {
         offset = 128;
         shift_code = 16;
-        vaddr_mask = MMU_VADDR_MASK;
-    } else if (ADDRESS_IN_IROM0_CACHE(vaddr)) {
+        vaddr_mask = SOC_MMU_VADDR_MASK;
+    } else if (SOC_ADDRESS_IN_IROM0_CACHE(vaddr)) {
         offset = 192;
         shift_code = 16;
-        vaddr_mask = MMU_VADDR_MASK;
-    } else if (ADDRESS_IN_DRAM1_CACHE(vaddr)) {
+        vaddr_mask = SOC_MMU_VADDR_MASK;
+    } else if (SOC_ADDRESS_IN_DRAM1_CACHE(vaddr)) {
         //PSRAM page size 32KB
         offset = MMU_LL_PSRAM_ENTRY_START_ID;
         shift_code = 15;
-        vaddr_mask = MMU_VADDR_MASK >> 1;
+        vaddr_mask = SOC_MMU_VADDR_MASK >> 1;
     } else {
         HAL_ASSERT(false);
     }
@@ -268,14 +268,14 @@ static inline uint32_t mmu_ll_read_entry(uint32_t mmu_id, uint32_t entry_id)
 __attribute__((always_inline))
 static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 {
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
     DPORT_INTERRUPT_DISABLE();
     switch (mmu_id) {
         case MMU_TABLE_CORE0:
-            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], MMU_INVALID);
+            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID);
             break;
         case MMU_TABLE_CORE1:
-            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], MMU_INVALID);
+            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID);
             break;
         default:
             HAL_ASSERT(false);
@@ -291,7 +291,7 @@ static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 __attribute__((always_inline))
 static inline void mmu_ll_unmap_all(uint32_t mmu_id)
 {
-    for (int i = 0; i < MMU_ENTRY_NUM; i++) {
+    for (int i = 0; i < SOC_MMU_ENTRY_NUM; i++) {
         mmu_ll_set_entry_invalid(mmu_id, i);
     }
 }
@@ -307,13 +307,13 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
 static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
     DPORT_INTERRUPT_DISABLE();
     uint32_t mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id]);
     DPORT_INTERRUPT_RESTORE();
 
-    return (mmu_value & MMU_INVALID) ? false : true;
+    return (mmu_value & SOC_MMU_INVALID) ? false : true;
 }
 
 /**
@@ -326,7 +326,7 @@ static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
  */
 static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t entry_id)
 {
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
     HAL_ASSERT(mmu_ll_check_entry_valid(mmu_id, entry_id));
 
     return (entry_id >= MMU_LL_PSRAM_ENTRY_START_ID) ? MMU_TARGET_PSRAM0 : MMU_TARGET_FLASH0;
@@ -343,7 +343,7 @@ static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t ent
 static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
     DPORT_INTERRUPT_DISABLE();
     uint32_t mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id]);
@@ -370,9 +370,9 @@ static inline int mmu_ll_find_entry_id_based_on_map_value(uint32_t mmu_id, uint3
 
     DPORT_INTERRUPT_DISABLE();
     if (target == MMU_TARGET_FLASH0) {
-        for (int i = 0; i < MMU_ENTRY_NUM; i++) {
+        for (int i = 0; i < SOC_MMU_ENTRY_NUM; i++) {
             uint32_t mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]);
-            if (!(mmu_value & MMU_INVALID)) {
+            if (!(mmu_value & SOC_MMU_INVALID)) {
                 if (mmu_value == mmu_val) {
                     DPORT_INTERRUPT_RESTORE();
                     return i;
@@ -383,7 +383,7 @@ static inline int mmu_ll_find_entry_id_based_on_map_value(uint32_t mmu_id, uint3
         //For PSRAM, we only use PID 0/1. Its start entry ID is MMU_LL_PSRAM_ENTRY_START_ID (1152), and 128 entries are used for PSRAM
         for (int i = MMU_LL_PSRAM_ENTRY_START_ID; i < 1280; i++) {
             uint32_t mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]);
-            if (!(mmu_value & MMU_INVALID)) {
+            if (!(mmu_value & SOC_MMU_INVALID)) {
                 if (mmu_value == mmu_val) {
                     DPORT_INTERRUPT_RESTORE();
                     return i;
