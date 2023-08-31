@@ -1,0 +1,19 @@
+CONFIG_IDF_TARGET="esp32h2"
+
+# Bluetooth Low Power Config
+CONFIG_BT_LE_SLEEP_ENABLE=y
+
+#
+# Power Management
+#
+CONFIG_PM_ENABLE=y
+CONFIG_PM_DFS_INIT_AUTO=y
+
+# XTAL Freq Config
+CONFIG_XTAL_FREQ_26=y
+CONFIG_XTAL_FREQ=26
+
+#
+# Sleep Config
+#
+CONFIG_ESP_SLEEP_POWER_DOWN_FLASH=y
