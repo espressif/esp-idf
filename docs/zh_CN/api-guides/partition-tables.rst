@@ -114,7 +114,11 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
    -  ``nvs`` (2) 是专门给 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 使用的分区。
 
       -  用于存储每台设备的 PHY 校准数据（注意，并不是 PHY 初始化数据）。
-      -  用于存储 Wi-Fi 数据（如果使用了 :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/network/esp_wifi>` 初始化函数）。
+
+      .. only:: SOC_WIFI_SUPPORTED
+
+          -  用于存储 Wi-Fi 数据（如果使用了 :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/network/esp_wifi>` 初始化函数）。
+
       -  NVS API 还可以用于其他应用程序数据。
       -  强烈建议您应为 NVS 分区分配至少 0x3000 字节空间。
       -  如果使用 NVS API 存储大量数据，请增加 NVS 分区的大小（默认是 0x6000 字节）。
