@@ -3,16 +3,9 @@
   stage: assign_test
   tags:
     - assign_test
+  dependencies: []
   variables:
     SUBMODULES_TO_FETCH: "none"
-  artifacts:
-    paths:
-      - ${TEST_DIR}/test_configs/
-      - artifact_index.json
-    when: always
-    expire_in: 1 week
-  script:
-    - run_cmd python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py $TEST_TYPE $TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_DIR/test_configs
 
 assign_integration_test:
   extends:

@@ -2,6 +2,7 @@
   image: $TARGET_TEST_ENV_IMAGE
   stage: target_test
   timeout: 1 hour
+  dependencies: []
   variables:
     GIT_DEPTH: 1
     SUBMODULES_TO_FETCH: "none"
@@ -32,6 +33,15 @@
     # Runner tags are comma separated, replace the comma with " and " for markers
     - job_tags=$(python tools/ci/python_packages/gitlab_api.py get_job_tags $CI_PROJECT_ID --job_id $CI_JOB_ID)
     - markers=$(echo $job_tags | sed -e "s/,/ and /g")
+    - if [ -n "$BUILD_JOB_NAME" ]; then
+        job_name=$BUILD_JOB_NAME;
+      else
+        job_name=${BUILD_JOB_PREFIX}$(python tools/ci/ci_get_mr_info.py target_in_tags $job_tags);
+      fi
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "$job_name" --type build_dir_without_map_and_elf_files
+    - if [ -n "$REQUIRES_ELF_FILES" ]; then
+        run_cmd python tools/ci/artifacts_handler.py download --job-name "$job_name" --type map_and_elf_files;
+      fi
     - run_cmd pytest $TEST_DIR
       -m \"${markers}\"
       --junitxml=XUNIT_RESULT.xml
@@ -45,13 +55,25 @@
   extends: .pytest_template
   variables:
     TEST_DIR: examples
+    BUILD_JOB_PREFIX: build_pytest_examples_
+
+.pytest_examples_dir_jtag_template:
+  extends: .pytest_examples_dir_template
+  needs:
+    - job: build_pytest_examples_jtag
+      artifacts: false
+  variables:
+    BUILD_JOB_NAME: build_pytest_examples_jtag
+    REQUIRES_ELF_FILES: "1"
+    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, generic ]
   parallel: 3
 
@@ -60,7 +82,8 @@ pytest_examples_esp32_esp32eco3:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, esp32eco3 ]
 
 pytest_examples_esp32_ir_transceiver:
@@ -68,7 +91,8 @@ pytest_examples_esp32_ir_transceiver:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, ir_transceiver ]
 
 pytest_examples_esp32_twai_transceiver:
@@ -76,7 +100,8 @@ pytest_examples_esp32_twai_transceiver:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, twai_transceiver ]
 
 pytest_examples_esp32_twai_network:
@@ -84,25 +109,23 @@ pytest_examples_esp32_twai_network:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, twai_network ]
 
 pytest_examples_esp32_jtag:
   extends:
-    - .pytest_examples_dir_template
+    - .pytest_examples_dir_jtag_template
     - .rules:test:example_test-esp32
-  needs:
-    - build_pytest_examples_jtag
   tags: [ esp32, jtag ]
-  variables:
-    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32_ccs811:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, ccs811 ]
 
 pytest_examples_esp32_sdio:
@@ -110,7 +133,8 @@ pytest_examples_esp32_sdio:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-sdio
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, sdio_master_slave ]
 
 pytest_examples_esp32s2_generic:
@@ -118,45 +142,40 @@ pytest_examples_esp32s2_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2
   needs:
-    - build_pytest_examples_esp32s2
+    - job: build_pytest_examples_esp32s2
+      artifacts: false
   tags: [ esp32s2, generic ]
   parallel: 3
 
 pytest_examples_esp32s2_jtag:
   extends:
-    - .pytest_examples_dir_template
+    - .pytest_examples_dir_jtag_template
     - .rules:test:example_test-esp32s2
-  needs:
-    - build_pytest_examples_jtag
   tags: [ esp32s2, jtag ]
-  variables:
-    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32s3_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3
   needs:
-    - build_pytest_examples_esp32s3
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
   tags: [ esp32s3, generic ]
   parallel: 3
 
 pytest_examples_esp32s3_usb_serial_jtag:
   extends:
-    - .pytest_examples_dir_template
+    - .pytest_examples_dir_jtag_template
     - .rules:test:example_test-esp32s3
-  needs:
-    - build_pytest_examples_jtag
   tags: [ esp32s3, usb_serial_jtag ]
-  variables:
-    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32s3_f4r8:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3
   needs:
-    - build_pytest_examples_esp32s3
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
   tags: [ esp32s3, MSPI_F4R8 ]
 
 pytest_examples_esp32c2_generic:
@@ -164,45 +183,40 @@ pytest_examples_esp32c2_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2
   needs:
-    - build_pytest_examples_esp32c2
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
   tags: [ esp32c2, generic, xtal_40mhz ]
   parallel: 3
 
 pytest_examples_esp32c2_jtag:
   extends:
-    - .pytest_examples_dir_template
+    - .pytest_examples_dir_jtag_template
     - .rules:test:example_test-esp32c2
-  needs:
-    - build_pytest_examples_jtag
   tags: [ esp32c2, jtag ]
-  variables:
-    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32c3_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, generic ]
   parallel: 3
 
 pytest_examples_esp32c3_usb_serial_jtag:
   extends:
-    - .pytest_examples_dir_template
+    - .pytest_examples_dir_jtag_template
     - .rules:test:example_test-esp32c3
-  needs:
-    - build_pytest_examples_jtag
   tags: [ esp32c3, usb_serial_jtag ]
-  variables:
-    PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32c3_flash_suspend:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, flash_suspend ]
 
 pytest_examples_esp32c6_generic:
@@ -210,7 +224,8 @@ pytest_examples_esp32c6_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c6
   needs:
-    - build_pytest_examples_esp32c6
+    - job: build_pytest_examples_esp32c6
+      artifacts: false
   tags: [ esp32c6, generic ]
 
 pytest_examples_esp32h2_generic:
@@ -218,7 +233,8 @@ pytest_examples_esp32h2_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32h2
   needs:
-    - build_pytest_examples_esp32h2
+    - job: build_pytest_examples_esp32h2
+      artifacts: false
   tags: [ esp32h2, generic ]
 
 pytest_examples_esp32_ethernet_ota:
@@ -226,7 +242,8 @@ pytest_examples_esp32_ethernet_ota:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-ethernet
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, ethernet_ota ]
 
 pytest_examples_esp32_wifi_high_traffic:
@@ -234,7 +251,8 @@ pytest_examples_esp32_wifi_high_traffic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, wifi_high_traffic ]
 
 pytest_examples_esp32_flash_encryption_wifi_high_traffic:
@@ -242,7 +260,8 @@ pytest_examples_esp32_flash_encryption_wifi_high_traffic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-include_nightly_run-rule
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, flash_encryption_wifi_high_traffic ]
 
 pytest_examples_esp32c3_flash_encryption_wifi_high_traffic:
@@ -250,7 +269,8 @@ pytest_examples_esp32c3_flash_encryption_wifi_high_traffic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-include_nightly_run-rule
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, flash_encryption_wifi_high_traffic ]
 
 pytest_examples_esp32_ethernet:
@@ -258,7 +278,8 @@ pytest_examples_esp32_ethernet:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-ethernet
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, ethernet]
 
 pytest_examples_esp32_ethernet_httpbin:
@@ -266,7 +287,8 @@ pytest_examples_esp32_ethernet_httpbin:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-ethernet
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, httpbin]
 
 pytest_examples_esp32_8mb_flash:
@@ -274,7 +296,8 @@ pytest_examples_esp32_8mb_flash:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, ethernet_flash_8m ]
 
 pytest_examples_esp32_wifi_ap:
@@ -282,7 +305,8 @@ pytest_examples_esp32_wifi_ap:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, wifi_ap ]
 
 pytest_examples_esp32c3_wifi_ap:
@@ -290,7 +314,8 @@ pytest_examples_esp32c3_wifi_ap:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-wifi
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, wifi_ap ]
 
 pytest_examples_esp32s3_wifi_ap:
@@ -298,7 +323,8 @@ pytest_examples_esp32s3_wifi_ap:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-wifi
   needs:
-    - build_pytest_examples_esp32s3
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
   tags: [ esp32s3, wifi_ap ]
 
 pytest_examples_esp32s2_wifi_ap:
@@ -306,7 +332,8 @@ pytest_examples_esp32s2_wifi_ap:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2-wifi
   needs:
-    - build_pytest_examples_esp32s2
+    - job: build_pytest_examples_esp32s2
+      artifacts: false
   tags: [ esp32s2, wifi_ap ]
 
 pytest_examples_esp32c2_wifi_ap:
@@ -314,7 +341,8 @@ pytest_examples_esp32c2_wifi_ap:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-wifi
   needs:
-    - build_pytest_examples_esp32c2
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
   tags: [ esp32c2, wifi_ap, xtal_40mhz ]
 
 pytest_examples_esp32c2_26m_wifi_ap:
@@ -322,7 +350,8 @@ pytest_examples_esp32c2_26m_wifi_ap:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-wifi
   needs:
-    - build_pytest_examples_esp32c2
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
   tags: [ esp32c2, wifi_ap, xtal_26mhz ]
 
 pytest_examples_esp32c6_wifi_ap:
@@ -330,7 +359,8 @@ pytest_examples_esp32c6_wifi_ap:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c6-wifi
   needs:
-    - build_pytest_examples_esp32c6
+    - job: build_pytest_examples_esp32c6
+      artifacts: false
   tags: [ esp32c6, wifi_ap ]
 
 pytest_examples_esp32_wifi_router:
@@ -338,7 +368,8 @@ pytest_examples_esp32_wifi_router:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, wifi_router ]
 
 pytest_examples_esp32c3_wifi_router:
@@ -346,7 +377,8 @@ pytest_examples_esp32c3_wifi_router:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-wifi
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, wifi_router ]
 
 pytest_examples_esp32s3_wifi_router:
@@ -354,7 +386,8 @@ pytest_examples_esp32s3_wifi_router:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-wifi
   needs:
-    - build_pytest_examples_esp32s3
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
   tags: [ esp32s3, wifi_router ]
 
 pytest_examples_esp32s2_wifi_router:
@@ -362,7 +395,8 @@ pytest_examples_esp32s2_wifi_router:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2-wifi
   needs:
-    - build_pytest_examples_esp32s2
+    - job: build_pytest_examples_esp32s2
+      artifacts: false
   tags: [ esp32s2, wifi_router ]
 
 pytest_examples_esp32c2_wifi_router:
@@ -370,7 +404,8 @@ pytest_examples_esp32c2_wifi_router:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-wifi
   needs:
-    - build_pytest_examples_esp32c2
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
   tags: [ esp32c2, wifi_router, xtal_40mhz ]
 
 pytest_examples_esp32c2_26m_wifi_router:
@@ -378,7 +413,8 @@ pytest_examples_esp32c2_26m_wifi_router:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-wifi
   needs:
-    - build_pytest_examples_esp32c2
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
   tags: [ esp32c2, wifi_router, xtal_26mhz ]
 
 pytest_examples_esp32c6_wifi_router:
@@ -386,16 +422,17 @@ pytest_examples_esp32c6_wifi_router:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c6-wifi
   needs:
-    - build_pytest_examples_esp32c6
+    - job: build_pytest_examples_esp32c6
+      artifacts: false
   tags: [ esp32c6, wifi_router ]
-
 
 pytest_examples_esp32_wifi_iperf:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, Example_ShieldBox_Basic ]
 
 pytest_examples_esp32_wifi_wlan:
@@ -403,7 +440,8 @@ pytest_examples_esp32_wifi_wlan:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, wifi_wlan ]
 
 pytest_examples_esp32_ethernet_router:
@@ -411,7 +449,8 @@ pytest_examples_esp32_ethernet_router:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-ethernet
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, ethernet_router ]
 
 pytest_examples_esp32_ethernet_vlan:
@@ -419,7 +458,8 @@ pytest_examples_esp32_ethernet_vlan:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-ethernet
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, ethernet_vlan ]
 
 pytest_examples_esp32_ethernet_ip101:
@@ -427,15 +467,17 @@ pytest_examples_esp32_ethernet_ip101:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, ip101 ]
 
-example_test_pytest_esp32_ethernet_bridge:
+pytest_examples_esp32_ethernet_bridge:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, eth_w5500 ]
   variables:
     PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER}"
@@ -445,7 +487,8 @@ pytest_examples_esp32_flash_encryption:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, flash_encryption ]
 
 pytest_examples_esp32_wifi_two_dut:
@@ -453,7 +496,8 @@ pytest_examples_esp32_wifi_two_dut:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, wifi_two_dut ]
 
 pytest_examples_esp32c3_wifi_two_dut:
@@ -461,7 +505,8 @@ pytest_examples_esp32c3_wifi_two_dut:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-wifi
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, wifi_two_dut ]
 
 pytest_examples_esp32s3_wifi_two_dut:
@@ -469,7 +514,8 @@ pytest_examples_esp32s3_wifi_two_dut:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-wifi
   needs:
-    - build_pytest_examples_esp32s3
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
   tags: [ esp32s3, wifi_two_dut ]
 
 pytest_examples_esp32c2_wifi_two_dut:
@@ -477,7 +523,8 @@ pytest_examples_esp32c2_wifi_two_dut:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-wifi
   needs:
-    - build_pytest_examples_esp32c2
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
 
 pytest_examples_esp32c3_flash_encryption:
@@ -485,7 +532,8 @@ pytest_examples_esp32c3_flash_encryption:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, flash_encryption ]
 
 pytest_examples_esp32c3_nvs_encr_hmac:
@@ -493,7 +541,8 @@ pytest_examples_esp32c3_nvs_encr_hmac:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-nvs_encr_hmac
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, nvs_encr_hmac ]
 
 pytest_examples_esp32s2_usb_device:
@@ -501,7 +550,8 @@ pytest_examples_esp32s2_usb_device:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2-usb
   needs:
-    - build_pytest_examples_esp32s2
+    - job: build_pytest_examples_esp32s2
+      artifacts: false
   tags: [ esp32s2, usb_device ]
 
 pytest_examples_esp32_sdmmc:
@@ -509,7 +559,8 @@ pytest_examples_esp32_sdmmc:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, sdcard_sdmode ]
 
 pytest_examples_esp32_sdspi:
@@ -517,7 +568,8 @@ pytest_examples_esp32_sdspi:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-sdio
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, sdcard_spimode ]
 
 pytest_examples_esp32s2_sdspi:
@@ -525,7 +577,8 @@ pytest_examples_esp32s2_sdspi:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2-sdio
   needs:
-    - build_pytest_examples_esp32s2
+    - job: build_pytest_examples_esp32s2
+      artifacts: false
   tags: [ esp32s2, sdcard_spimode ]
 
 pytest_examples_esp32c3_sdspi:
@@ -533,7 +586,8 @@ pytest_examples_esp32c3_sdspi:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-sdio
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, sdcard_spimode ]
 
 pytest_examples_esp32_extflash:
@@ -541,7 +595,8 @@ pytest_examples_esp32_extflash:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, external_flash ]
 
 pytest_examples_esp32_adc:
@@ -549,7 +604,8 @@ pytest_examples_esp32_adc:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-adc
   needs:
-    - build_pytest_examples_esp32
+    - job: build_pytest_examples_esp32
+      artifacts: false
   tags: [ esp32, adc ]
 
 pytest_examples_esp32s2_adc:
@@ -557,7 +613,8 @@ pytest_examples_esp32s2_adc:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2-adc
   needs:
-    - build_pytest_examples_esp32s2
+    - job: build_pytest_examples_esp32s2
+      artifacts: false
   tags: [ esp32s2, adc ]
 
 pytest_examples_esp32s3_adc:
@@ -565,7 +622,8 @@ pytest_examples_esp32s3_adc:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3-adc
   needs:
-    - build_pytest_examples_esp32s3
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
   tags: [ esp32s3, adc ]
 
 pytest_examples_esp32c3_adc:
@@ -573,7 +631,8 @@ pytest_examples_esp32c3_adc:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3-adc
   needs:
-    - build_pytest_examples_esp32c3
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
   tags: [ esp32c3, adc ]
 
 pytest_examples_esp32c2_adc:
@@ -581,7 +640,8 @@ pytest_examples_esp32c2_adc:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c2-adc
   needs:
-    - build_pytest_examples_esp32c2
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
   tags: [ esp32c2, adc, xtal_26mhz]
 
 pytest_examples_esp32c6_adc:
@@ -589,7 +649,8 @@ pytest_examples_esp32c6_adc:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c6-adc
   needs:
-    - build_pytest_examples_esp32c6
+    - job: build_pytest_examples_esp32c6
+      artifacts: false
   tags: [ esp32c6, adc ]
 
 pytest_examples_esp32h2_adc:
@@ -597,28 +658,32 @@ pytest_examples_esp32h2_adc:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32h2-adc
   needs:
-    - build_pytest_examples_esp32h2
+    - job: build_pytest_examples_esp32h2
+      artifacts: false
   tags: [ esp32h2, adc ]
 
-example_test_pytest_esp32s3_emmc:
+pytest_examples_esp32s3_emmc:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s3
   needs:
-    - build_pytest_examples_esp32s3
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
   tags: [ esp32s3, emmc ]
 
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
     TEST_DIR: components
+    BUILD_JOB_PREFIX: build_pytest_components_
 
 pytest_components_esp32_generic:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, generic ]
   parallel: 7
 
@@ -627,7 +692,8 @@ pytest_components_esp32_generic_multi_device:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, generic_multi_device ]
 
 pytest_components_esp32_wifi_two_dut:
@@ -635,7 +701,8 @@ pytest_components_esp32_wifi_two_dut:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, wifi_two_dut ]
 
 pytest_components_esp32_adc:
@@ -643,7 +710,8 @@ pytest_components_esp32_adc:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32-adc
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, adc ]
 
 pytest_components_esp32_sdio:
@@ -651,7 +719,8 @@ pytest_components_esp32_sdio:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32-sdio
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, sdio_master_slave ]
 
 pytest_components_esp32_ip101:
@@ -659,56 +728,64 @@ pytest_components_esp32_ip101:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, ip101 ]
 
 pytest_components_esp32_lan8720:
   extends:
     - .pytest_components_dir_template
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, eth_lan8720 ]
 
 pytest_components_esp32_rtl8201:
   extends:
     - .pytest_components_dir_template
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, eth_rtl8201 ]
 
 pytest_components_esp32_w5500:
   extends:
     - .pytest_components_dir_template
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, eth_w5500 ]
 
 pytest_components_esp32_ksz8851snl:
   extends:
     - .pytest_components_dir_template
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, eth_ksz8851snl ]
 
 pytest_components_esp32_dm9051:
   extends:
     - .pytest_components_dir_template
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, eth_dm9051 ]
 
 pytest_components_esp32_ksz8041:
   extends:
     - .pytest_components_dir_template
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, eth_ksz8041 ]
 
 pytest_components_esp32_dp83848:
   extends:
     - .pytest_components_dir_template
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, eth_dp83848 ]
 
 pytest_components_esp32_ethernet:
@@ -716,7 +793,8 @@ pytest_components_esp32_ethernet:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, ethernet ]
 
 pytest_components_esp32_flash_encryption:
@@ -724,7 +802,8 @@ pytest_components_esp32_flash_encryption:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, flash_encryption ]
 
 pytest_components_esp32_flash_multi:
@@ -732,7 +811,8 @@ pytest_components_esp32_flash_multi:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32-flash_multi
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, flash_multi ]
 
 pytest_components_esp32_xtal32k:
@@ -740,7 +820,8 @@ pytest_components_esp32_xtal32k:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, xtal32k ]
 
 pytest_components_esp32_no32kXtal:
@@ -748,7 +829,8 @@ pytest_components_esp32_no32kXtal:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, no32kXtal ]
 
 pytest_components_esp32_rs485_multi:
@@ -756,7 +838,8 @@ pytest_components_esp32_rs485_multi:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, multi_dut_modbus_rs485 ]
 
 pytest_components_esp32_psramv0:
@@ -764,7 +847,8 @@ pytest_components_esp32_psramv0:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, psramv0 ]
 
 pytest_components_esp32s2_generic:
@@ -772,7 +856,8 @@ pytest_components_esp32s2_generic:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s2
   needs:
-    - build_pytest_components_esp32s2
+    - job: build_pytest_components_esp32s2
+      artifacts: false
   tags: [ esp32s2, generic ]
   parallel: 5
 
@@ -781,7 +866,8 @@ pytest_components_esp32s2_generic_multi_device:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s2
   needs:
-    - build_pytest_components_esp32s2
+    - job: build_pytest_components_esp32s2
+      artifacts: false
   tags: [ esp32s2, generic_multi_device ]
 
 pytest_components_esp32s2_adc:
@@ -789,7 +875,8 @@ pytest_components_esp32s2_adc:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s2-adc
   needs:
-    - build_pytest_components_esp32s2
+    - job: build_pytest_components_esp32s2
+      artifacts: false
   tags: [ esp32s2, adc ]
 
 pytest_components_esp32s2_flash_multi:
@@ -797,7 +884,8 @@ pytest_components_esp32s2_flash_multi:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s2-flash_multi
   needs:
-    - build_pytest_components_esp32s2
+    - job: build_pytest_components_esp32s2
+      artifacts: false
   tags: [ esp32s2, flash_multi ]
 
 pytest_components_esp32s3_generic:
@@ -805,7 +893,8 @@ pytest_components_esp32s3_generic:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, generic ]
   parallel: 5
 
@@ -814,7 +903,8 @@ pytest_components_esp32s3_generic_multi_device:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, generic_multi_device ]
 
 pytest_components_esp32s3_adc:
@@ -822,7 +912,8 @@ pytest_components_esp32s3_adc:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3-adc
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, adc ]
 
 pytest_components_esp32s3_octal_psram:
@@ -830,7 +921,8 @@ pytest_components_esp32s3_octal_psram:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, octal_psram ]
 
 pytest_components_esp32s3_quad_psram:
@@ -838,7 +930,8 @@ pytest_components_esp32s3_quad_psram:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, quad_psram ]
 
 pytest_components_esp32s3_flash_encryption_f4r8:
@@ -846,7 +939,8 @@ pytest_components_esp32s3_flash_encryption_f4r8:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, flash_encryption_f4r8 ]
 
 pytest_components_esp32s3_flash_encryption_f8r8:
@@ -854,7 +948,8 @@ pytest_components_esp32s3_flash_encryption_f8r8:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, flash_encryption_f8r8 ]
 
 pytest_components_esp32s3_flash_multi:
@@ -862,7 +957,8 @@ pytest_components_esp32s3_flash_multi:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3-flash_multi
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, flash_multi ]
 
 pytest_components_esp32s3_mspi_f4r4:
@@ -870,7 +966,8 @@ pytest_components_esp32s3_mspi_f4r4:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, MSPI_F4R4 ]
 
 pytest_components_esp32s3_mspi_f4r8:
@@ -878,7 +975,8 @@ pytest_components_esp32s3_mspi_f4r8:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, MSPI_F4R8 ]
 
 pytest_components_esp32s3_mspi_f8r8:
@@ -886,7 +984,8 @@ pytest_components_esp32s3_mspi_f8r8:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, MSPI_F8R8 ]
 
 pytest_components_esp32s3_usb_serial_jtag:
@@ -902,7 +1001,8 @@ pytest_components_esp32c2_generic:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2
   needs:
-    - build_pytest_components_esp32c2
+    - job: build_pytest_components_esp32c2
+      artifacts: false
   tags: [ esp32c2, generic, xtal_40mhz ]
   parallel: 3
 
@@ -911,7 +1011,8 @@ pytest_components_esp32c2_adc:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2-adc
   needs:
-    - build_pytest_components_esp32c2
+    - job: build_pytest_components_esp32c2
+      artifacts: false
   tags: [ esp32c2, adc, xtal_26mhz ]
 
 pytest_components_esp32c2_generic_multi_device:
@@ -919,7 +1020,8 @@ pytest_components_esp32c2_generic_multi_device:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2
   needs:
-    - build_pytest_components_esp32c2
+    - job: build_pytest_components_esp32c2
+      artifacts: false
   tags: [ esp32c2, generic_multi_device, xtal_40mhz ]
 
 pytest_components_esp32c2_xtal_26mhz:
@@ -927,7 +1029,8 @@ pytest_components_esp32c2_xtal_26mhz:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2
   needs:
-    - build_pytest_components_esp32c2
+    - job: build_pytest_components_esp32c2
+      artifacts: false
   tags: [ esp32c2, generic, xtal_26mhz ]
 
 pytest_components_esp32c3_generic:
@@ -935,7 +1038,8 @@ pytest_components_esp32c3_generic:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, generic ]
   parallel: 3
 
@@ -944,7 +1048,8 @@ pytest_components_esp32c3_i2c_oled:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, i2c_oled ]
 
 pytest_components_esp32c3_generic_multi_device:
@@ -952,7 +1057,8 @@ pytest_components_esp32c3_generic_multi_device:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, generic_multi_device ]
 
 pytest_components_esp32c3_wifi_two_dut:
@@ -960,7 +1066,8 @@ pytest_components_esp32c3_wifi_two_dut:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-wifi
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, wifi_two_dut ]
 
 pytest_components_esp32c3_usb_serial_jtag:
@@ -976,7 +1083,8 @@ pytest_components_esp32s3_wifi_two_dut:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3-wifi
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, wifi_two_dut ]
 
 pytest_components_esp32c2_wifi_two_dut:
@@ -984,7 +1092,8 @@ pytest_components_esp32c2_wifi_two_dut:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c2-wifi
   needs:
-    - build_pytest_components_esp32c2
+    - job: build_pytest_components_esp32c2
+      artifacts: false
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
 
 pytest_components_esp32c3_adc:
@@ -992,7 +1101,8 @@ pytest_components_esp32c3_adc:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-adc
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, adc ]
 
 pytest_components_esp32c3_flash_encryption:
@@ -1000,7 +1110,8 @@ pytest_components_esp32c3_flash_encryption:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, flash_encryption ]
 
 pytest_components_esp32c3_nvs_encr_hmac:
@@ -1008,7 +1119,8 @@ pytest_components_esp32c3_nvs_encr_hmac:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-nvs_encr_hmac
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, nvs_encr_hmac ]
 
 pytest_components_esp32c3_flash_multi:
@@ -1016,7 +1128,8 @@ pytest_components_esp32c3_flash_multi:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-flash_multi
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, flash_multi ]
 
 pytest_components_esp32_sdmmc:
@@ -1024,7 +1137,8 @@ pytest_components_esp32_sdmmc:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, sdcard_sdmode ]
 
 pytest_components_esp32_sdspi:
@@ -1032,7 +1146,8 @@ pytest_components_esp32_sdspi:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32-sdio
   needs:
-    - build_pytest_components_esp32
+    - job: build_pytest_components_esp32
+      artifacts: false
   tags: [ esp32, sdcard_spimode ]
 
 pytest_components_esp32s2_sdspi:
@@ -1040,7 +1155,8 @@ pytest_components_esp32s2_sdspi:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s2-sdio
   needs:
-    - build_pytest_components_esp32s2
+    - job: build_pytest_components_esp32s2
+      artifacts: false
   tags: [ esp32s2, sdcard_spimode ]
 
 pytest_components_esp32c3_sdspi:
@@ -1048,7 +1164,8 @@ pytest_components_esp32c3_sdspi:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c3-sdio
   needs:
-    - build_pytest_components_esp32c3
+    - job: build_pytest_components_esp32c3
+      artifacts: false
   tags: [ esp32c3, sdcard_spimode ]
 
 pytest_components_esp32c6_generic:
@@ -1056,7 +1173,8 @@ pytest_components_esp32c6_generic:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c6
   needs:
-    - build_pytest_components_esp32c6
+    - job: build_pytest_components_esp32c6
+      artifacts: false
   tags: [ esp32c6, generic ]
   parallel: 2
 
@@ -1073,7 +1191,8 @@ pytest_components_esp32h2_generic:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32h2
   needs:
-    - build_pytest_components_esp32h2
+    - job: build_pytest_components_esp32h2
+      artifacts: false
   tags: [ esp32h2, generic ]
   parallel: 2
 
@@ -1082,7 +1201,8 @@ pytest_components_esp32h2_generic_multi_device:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32h2
   needs:
-    - build_pytest_components_esp32h2
+    - job: build_pytest_components_esp32h2
+      artifacts: false
   tags: [ esp32h2, generic_multi_device ]
 
 pytest_components_esp32h2_adc:
@@ -1090,15 +1210,17 @@ pytest_components_esp32h2_adc:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32h2-adc
   needs:
-    - build_pytest_components_esp32h2
+    - job: build_pytest_components_esp32h2
+      artifacts: false
   tags: [ esp32h2, adc ]
 
-component_ut_pytest_esp32h2_ecdsa:
+pytest_components_esp32h2_ecdsa:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32h2-ecdsa
   needs:
-    - build_pytest_components_esp32h2
+    - job: build_pytest_components_esp32h2
+      artifacts: false
   tags: [ esp32h2, ecdsa_efuse ]
 
 pytest_components_esp32h2_usb_serial_jtag:
@@ -1114,7 +1236,8 @@ pytest_components_esp32c6_generic_multi_device:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c6
   needs:
-    - build_pytest_components_esp32c6
+    - job: build_pytest_components_esp32c6
+      artifacts: false
   tags: [ esp32c6, generic_multi_device ]
 
 pytest_components_esp32c6_adc:
@@ -1122,7 +1245,8 @@ pytest_components_esp32c6_adc:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c6-adc
   needs:
-    - build_pytest_components_esp32c6
+    - job: build_pytest_components_esp32c6
+      artifacts: false
   tags: [ esp32c6, adc ]
 
 pytest_components_esp32c6_i154:
@@ -1130,7 +1254,8 @@ pytest_components_esp32c6_i154:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32c6-i154
   needs:
-    - build_pytest_components_esp32c6
+    - job: build_pytest_components_esp32c6
+      artifacts: false
   tags: [ esp32c6, ieee802154 ]
 
 pytest_examples_openthread_br:
@@ -1138,63 +1263,132 @@ pytest_examples_openthread_br:
     - .pytest_examples_dir_template
     - .rules:test:example_test-i154
   needs:
-    - build_pytest_examples_esp32s3
-    - build_pytest_examples_esp32c6
-    - build_pytest_examples_esp32h2
-  tags:
-    - esp32c6
-    - openthread_br
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
+    - job: build_pytest_examples_esp32c6
+      artifacts: false
+    - job: build_pytest_examples_esp32h2
+      artifacts: false
+  tags: [ esp32c6, openthread_br ]
+  script:
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    # get runner env config file
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # using runner tags as markers to filter the test cases
+    # Runner tags are comma separated, replace the comma with " and " for markers
+    - job_tags=$(python tools/ci/python_packages/gitlab_api.py get_job_tags $CI_PROJECT_ID --job_id $CI_JOB_ID)
+    - markers=$(echo $job_tags | sed -e "s/,/ and /g")
+    # download the artifacts, requires s3, c6, h2 chips
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_examples_esp32s3"
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_examples_esp32c6"
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_examples_esp32h2"
+    - run_cmd pytest $TEST_DIR
+      -m \"${markers}\"
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      ${PYTEST_EXTRA_FLAGS}
+      --app-info-filepattern \"list_job_*.txt\"
 
 pytest_examples_openthread_bbr:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-i154
   needs:
-    - build_pytest_examples_esp32s3
-    - build_pytest_examples_esp32c6
-    - build_pytest_examples_esp32h2
-  tags:
-    - esp32c6
-    - openthread_bbr
+    - job: build_pytest_examples_esp32s3
+      artifacts: false
+    - job: build_pytest_examples_esp32c6
+      artifacts: false
+    - job: build_pytest_examples_esp32h2
+      artifacts: false
+  tags: [ esp32c6, openthread_bbr ]
+  script:
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    # get runner env config file
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # using runner tags as markers to filter the test cases
+    # Runner tags are comma separated, replace the comma with " and " for markers
+    - job_tags=$(python tools/ci/python_packages/gitlab_api.py get_job_tags $CI_PROJECT_ID --job_id $CI_JOB_ID)
+    - markers=$(echo $job_tags | sed -e "s/,/ and /g")
+    # download the artifacts, requires s3, c6, h2 chips
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_examples_esp32s3"
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_examples_esp32c6"
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_examples_esp32h2"
+    - run_cmd pytest $TEST_DIR
+      -m \"${markers}\"
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      ${PYTEST_EXTRA_FLAGS}
+      --app-info-filepattern \"list_job_*.txt\"
 
 pytest_examples_openthread_sleep:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32h2
   needs:
-    - build_pytest_examples_esp32c6
-    - build_pytest_examples_esp32h2
+    - job: build_pytest_examples_esp32c6
+      artifacts: false
+    - job: build_pytest_examples_esp32h2
+      artifacts: false
   tags: [ esp32c6, openthread_sleep ]
+  script:
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    # get runner env config file
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # using runner tags as markers to filter the test cases
+    # Runner tags are comma separated, replace the comma with " and " for markers
+    - job_tags=$(python tools/ci/python_packages/gitlab_api.py get_job_tags $CI_PROJECT_ID --job_id $CI_JOB_ID)
+    - markers=$(echo $job_tags | sed -e "s/,/ and /g")
+    # download the artifacts, requires c6, h2 chips
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_examples_esp32c6"
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_examples_esp32h2"
+    - run_cmd pytest $TEST_DIR
+      -m \"${markers}\"
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      ${PYTEST_EXTRA_FLAGS}
+      --app-info-filepattern \"list_job_*.txt\"
 
-pytest_examples_zigbee:
+pytest_examples_esp32h2_zigbee:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32h2
   needs:
-    - build_pytest_examples_esp32h2
-  tags:
-    - esp32h2
-    - zigbee_multi_dut
+    - job: build_pytest_examples_esp32h2
+      artifacts: false
+  tags: [ esp32h2, zigbee_multi_dut ]
 
 pytest_components_esp32s3_usb_host:
   extends:
     - .pytest_components_dir_template
     - .rules:test:component_ut-esp32s3-usb
   needs:
-    - build_pytest_components_esp32s3
+    - job: build_pytest_components_esp32s3
+      artifacts: false
   tags: [ esp32s3, usb_host_flash_disk ]
 
 .pytest_test_apps_dir_template:
   extends: .pytest_template
   variables:
     TEST_DIR: tools/test_apps
+    BUILD_JOB_PREFIX: build_pytest_test_apps_
+    REQUIRES_ELF_FILES: "1"
 
 pytest_test_apps_esp32_generic:
   extends:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32
   needs:
-    - build_pytest_test_apps_esp32
+    - job: build_pytest_test_apps_esp32
+      artifacts: false
   tags: [ esp32, generic ]
 
 pytest_test_apps_esp32_jtag:
@@ -1202,8 +1396,9 @@ pytest_test_apps_esp32_jtag:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32
   needs:
-    - build_pytest_test_apps_esp32
-  tags: [ esp32, jtag]
+    - job: build_pytest_test_apps_esp32
+      artifacts: false
+  tags: [ esp32, jtag ]
   variables:
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
@@ -1212,7 +1407,8 @@ pytest_test_apps_esp32_ethernet:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32
   needs:
-    - build_pytest_test_apps_esp32
+    - job: build_pytest_test_apps_esp32
+      artifacts: false
   tags: [ esp32, ethernet ]
 
 pytest_test_apps_esp32s2_generic:
@@ -1220,7 +1416,8 @@ pytest_test_apps_esp32s2_generic:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s2
   needs:
-    - build_pytest_test_apps_esp32s2
+    - job: build_pytest_test_apps_esp32s2
+      artifacts: false
   tags: [ esp32s2, generic ]
 
 pytest_test_apps_esp32s3_generic:
@@ -1228,7 +1425,8 @@ pytest_test_apps_esp32s3_generic:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3
   needs:
-    - build_pytest_test_apps_esp32s3
+    - job: build_pytest_test_apps_esp32s3
+      artifacts: false
   tags: [ esp32s3, generic ]
 
 pytest_test_apps_esp32c2_generic:
@@ -1236,7 +1434,8 @@ pytest_test_apps_esp32c2_generic:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32c2
   needs:
-    - build_pytest_test_apps_esp32c2
+    - job: build_pytest_test_apps_esp32c2
+      artifacts: false
   tags: [ esp32c2, generic, xtal_40mhz ]
 
 pytest_test_apps_esp32c3_generic:
@@ -1244,7 +1443,8 @@ pytest_test_apps_esp32c3_generic:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32c3
   needs:
-    - build_pytest_test_apps_esp32c3
+    - job: build_pytest_test_apps_esp32c3
+      artifacts: false
   tags: [ esp32c3, generic ]
 
 pytest_test_apps_esp32c6_generic:
@@ -1252,7 +1452,8 @@ pytest_test_apps_esp32c6_generic:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32c6
   needs:
-    - build_pytest_test_apps_esp32c6
+    - job: build_pytest_test_apps_esp32c6
+      artifacts: false
   tags: [ esp32c6, generic ]
 
 pytest_test_apps_esp32h2_generic:
@@ -1260,7 +1461,8 @@ pytest_test_apps_esp32h2_generic:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32h2
   needs:
-    - build_pytest_test_apps_esp32h2
+    - job: build_pytest_test_apps_esp32h2
+      artifacts: false
   tags: [ esp32h2, generic ]
 
 pytest_test_apps_esp32s3_mspi_f8r8:
@@ -1268,7 +1470,8 @@ pytest_test_apps_esp32s3_mspi_f8r8:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3
   needs:
-    - build_pytest_test_apps_esp32s3
+    - job: build_pytest_test_apps_esp32s3
+      artifacts: false
   tags: [ esp32s3, MSPI_F8R8 ]
 
 pytest_test_apps_esp32s3_mspi_f4r8:
@@ -1276,7 +1479,8 @@ pytest_test_apps_esp32s3_mspi_f4r8:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3
   needs:
-    - build_pytest_test_apps_esp32s3
+    - job: build_pytest_test_apps_esp32s3
+      artifacts: false
   tags: [ esp32s3, MSPI_F4R8 ]
 
 pytest_test_apps_esp32s3_mspi_f4r4:
@@ -1284,7 +1488,8 @@ pytest_test_apps_esp32s3_mspi_f4r4:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3
   needs:
-    - build_pytest_test_apps_esp32s3
+    - job: build_pytest_test_apps_esp32s3
+      artifacts: false
   tags: [ esp32s3, MSPI_F4R4 ]
 
 pytest_test_apps_esp32s2_wifi_two_dut:
@@ -1292,7 +1497,8 @@ pytest_test_apps_esp32s2_wifi_two_dut:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s2-wifi
   needs:
-    - build_pytest_test_apps_esp32s2
+    - job: build_pytest_test_apps_esp32s2
+      artifacts: false
   tags: [ esp32s2, wifi_two_dut ]
 
 pytest_test_apps_esp32s3_wifi_two_dut:
@@ -1300,7 +1506,8 @@ pytest_test_apps_esp32s3_wifi_two_dut:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32s3-wifi
   needs:
-    - build_pytest_test_apps_esp32s3
+    - job: build_pytest_test_apps_esp32s3
+      artifacts: false
   tags: [ esp32s3, wifi_two_dut ]
 
 pytest_test_apps_esp32c2_wifi_two_dut:
@@ -1308,7 +1515,8 @@ pytest_test_apps_esp32c2_wifi_two_dut:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32c2-wifi
   needs:
-    - build_pytest_test_apps_esp32c2
+    - job: build_pytest_test_apps_esp32c2
+      artifacts: false
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
 
 pytest_test_apps_esp32c3_wifi_two_dut:
@@ -1316,7 +1524,8 @@ pytest_test_apps_esp32c3_wifi_two_dut:
     - .pytest_test_apps_dir_template
     - .rules:test:custom_test-esp32c3-wifi
   needs:
-    - build_pytest_test_apps_esp32c3
+    - job: build_pytest_test_apps_esp32c3
+      artifacts: false
   tags: [ esp32c3, wifi_two_dut]
 
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")

@@ -1190,6 +1190,54 @@
     - <<: *if-dev-push
       changes: *patterns-submodule
 
+.rules:build:example_test:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-example_test-ota-include_nightly_run-rule
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c2
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-example_test_esp32c6
+    - <<: *if-label-example_test_esp32h2
+    - <<: *if-label-example_test_esp32p4
+    - <<: *if-label-example_test_esp32s2
+    - <<: *if-label-example_test_esp32s3
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-downloadable-tools
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-example_test-ethernet
+    - <<: *if-dev-push
+      changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-nvs_encr_hmac
+    - <<: *if-dev-push
+      changes: *patterns-example_test-sdio
+    - <<: *if-dev-push
+      changes: *patterns-example_test-usb
+    - <<: *if-dev-push
+      changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-adc
+    - <<: *if-dev-push
+      changes: *patterns-target_test-ecdsa
+    - <<: *if-dev-push
+      changes: *patterns-target_test-wifi
+
 .rules:build:example_test-esp32:
   rules:
     - <<: *if-revert-branch

@@ -21,7 +21,7 @@ variables:
 
 # GitLab-CI environment
 
-  # XXX_ATTEMPTS variables (https://docs.gitlab.com/ce/ci/yaml/README.html#job-stages-attempts) are not defined here.
+  # XXX_ATTEMPTS variables (https://docs.gitlab.com/ee/ci/runners/configure_runners.html#job-stages-attempts) are not defined here.
   # Use values from  "CI / CD Settings" - "Variables".
 
   # GIT_STRATEGY is not defined here.
@@ -178,27 +178,6 @@ variables:
   # Show ccache statistics if enabled globally
   test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
 
-.upload_built_binaries_to_s3: &upload_built_binaries_to_s3 |
-  # upload the binary files to s3 server
-  echo -e "\e[0Ksection_start:`date +%s`:upload_binaries_to_s3_server[collapsed=true]\r\e[0KUploading binaries to s3 Server"
-  shopt -s globstar
-  # use || true to bypass the no-file error
-  zip ${CI_JOB_ID}.zip **/build*/*.bin || true
-  zip ${CI_JOB_ID}.zip **/build*/*.elf || true
-  zip ${CI_JOB_ID}.zip **/build*/*.map || true
-  zip ${CI_JOB_ID}.zip **/build*/flasher_args.json || true
-  zip ${CI_JOB_ID}.zip **/build*/flash_project_args || true
-  zip ${CI_JOB_ID}.zip **/build*/config/sdkconfig.json || true
-  zip ${CI_JOB_ID}.zip **/build*/sdkconfig || true
-  zip ${CI_JOB_ID}.zip **/build*/bootloader/*.bin || true
-  zip ${CI_JOB_ID}.zip **/build*/partition_table/*.bin || true
-  shopt -u globstar
-  mc cp ${CI_JOB_ID}.zip shiny-s3/idf-artifacts/${CI_PIPELINE_ID}/${CI_JOB_ID}.zip || true
-  echo -e "\e[0Ksection_end:`date +%s`:upload_binaries_to_s3_server\r\e[0K"
-  echo "Please download the full binary files (including *.elf and *.map files) from the following share link"
-  # would be clean up after 4 days
-  mc share download shiny-s3/idf-artifacts/${CI_PIPELINE_ID}/${CI_JOB_ID}.zip --expire=96h
-
 .before_script:minimal:
   before_script:
     - *common-before_scripts
@@ -225,11 +204,6 @@ variables:
 .after_script:build:ccache:
   after_script:
     - *show_ccache_statistics
-
-.after_script:build:ccache-upload:
-  after_script:
-    - *show_ccache_statistics
-    - *upload_built_binaries_to_s3
 
 #############
 # `default` #

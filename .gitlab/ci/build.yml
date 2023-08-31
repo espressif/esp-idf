@@ -16,7 +16,7 @@
   extends:
     - .build_template
     - .before_script:build
-    - .after_script:build:ccache-upload
+    - .after_script:build:ccache
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
@@ -25,22 +25,14 @@
       optional: true  # only MR pipelines would have this
   artifacts:
     paths:
-      - "**/build*/size.json"
+      # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
+      # Now we're uploading/downloading the binary files from our internal storage server
+      #
+      # keep the log file to help debug
       - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      # ttfw tests require elf files
-      - "**/build*/*.elf"
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      # ttfw tests require sdkconfig file
-      - "**/build*/sdkconfig"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - list_job_*.txt
+      # keep the size info to help track the binary size
       - size_info.txt
+      - "**/build*/size.json"
     when: always
     expire_in: 4 days
   script:
@@ -56,6 +48,7 @@
         examples/wifi/iperf
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
+    - upload_artifacts_to_s3
 
 .build_cmake_clang_template:
   extends:
@@ -74,41 +67,27 @@
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
+    - upload_artifacts_to_s3
 
 .build_pytest_template:
   extends:
     - .build_cmake_template
-    - .before_script:build
-  artifacts:
-    paths:
-      - "**/build*/size.json"
-      - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      # - "**/build*/*.elf"
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - list_job_*.txt
-      - size_info.txt
-    when: always
-    expire_in: 4 days
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
       -t $IDF_TARGET
+      -m \"not host_test\"
       --pytest-apps
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
+    - upload_artifacts_to_s3
 
 .build_pytest_no_jtag_template:
-  extends: .build_pytest_template
+  extends:
+    - .build_cmake_template
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -120,28 +99,11 @@
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
+    - upload_artifacts_to_s3
 
 .build_pytest_jtag_template:
   extends:
     - .build_cmake_template
-    - .before_script:build
-  artifacts:
-    paths:
-      - "**/build*/size.json"
-      - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      - "**/build*/*.elf"  # need elf for gdb
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - list_job_*.txt
-      - size_info.txt
-    when: always
-    expire_in: 4 days
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -153,6 +115,7 @@
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
+    - upload_artifacts_to_s3
 
 build_pytest_examples_esp32:
   extends:
@@ -199,17 +162,9 @@ build_pytest_examples_esp32c2:
     IDF_TARGET: esp32c2
     TEST_DIR: examples
 
-build_pytest_examples_jtag:  # for all targets
-  extends:
-    - .build_pytest_jtag_template
-    - .rules:build:example_test-esp32
-  variables:
-    IDF_TARGET: all
-    TEST_DIR: examples
-
 build_pytest_examples_esp32c6:
   extends:
-    - .build_pytest_template
+    - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32c6
   parallel: 2
   variables:
@@ -218,11 +173,19 @@ build_pytest_examples_esp32c6:
 
 build_pytest_examples_esp32h2:
   extends:
-    - .build_pytest_template
+    - .build_pytest_no_jtag_template
     - .rules:build:example_test-esp32h2
   parallel: 2
   variables:
     IDF_TARGET: esp32h2
+    TEST_DIR: examples
+
+build_pytest_examples_jtag:  # for all targets
+  extends:
+    - .build_pytest_jtag_template
+    - .rules:build:example_test
+  variables:
+    IDF_TARGET: all
     TEST_DIR: examples
 
 build_pytest_components_esp32:
@@ -302,33 +265,11 @@ build_only_components_apps:
       --parallel-index ${CI_NODE_INDEX:-1}
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-
-.build_pytest_test_apps_template:
-  extends: .build_pytest_template
-  artifacts:
-    paths:
-      - "**/build*/size.json"
-      - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      # pytest test apps requires elf files for coredump tests
-      - "**/build*/*.elf"
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      - "**/build*/bootloader/*.elf"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - "**/build*/project_description.json"
-      - list_job_*.txt
-      - size_info.txt
-    when: always
-    expire_in: 4 days
+    - upload_artifacts_to_s3
 
 build_pytest_test_apps_esp32:
   extends:
-    - .build_pytest_test_apps_template
+    - .build_pytest_template
     - .rules:build:custom_test-esp32
   variables:
     IDF_TARGET: esp32
@@ -336,7 +277,7 @@ build_pytest_test_apps_esp32:
 
 build_pytest_test_apps_esp32s2:
   extends:
-    - .build_pytest_test_apps_template
+    - .build_pytest_template
     - .rules:build:custom_test-esp32s2
   variables:
     IDF_TARGET: esp32s2
@@ -344,7 +285,7 @@ build_pytest_test_apps_esp32s2:
 
 build_pytest_test_apps_esp32s3:
   extends:
-    - .build_pytest_test_apps_template
+    - .build_pytest_template
     - .rules:build:custom_test-esp32s3
   parallel: 2
   variables:
@@ -353,7 +294,7 @@ build_pytest_test_apps_esp32s3:
 
 build_pytest_test_apps_esp32c3:
   extends:
-    - .build_pytest_test_apps_template
+    - .build_pytest_template
     - .rules:build:custom_test-esp32c3
   variables:
     IDF_TARGET: esp32c3
@@ -361,7 +302,7 @@ build_pytest_test_apps_esp32c3:
 
 build_pytest_test_apps_esp32c2:
   extends:
-    - .build_pytest_test_apps_template
+    - .build_pytest_template
     - .rules:build:custom_test-esp32c2
   variables:
     IDF_TARGET: esp32c2
@@ -369,7 +310,7 @@ build_pytest_test_apps_esp32c2:
 
 build_pytest_test_apps_esp32c6:
   extends:
-    - .build_pytest_test_apps_template
+    - .build_pytest_template
     - .rules:build:custom_test-esp32c6
   variables:
     IDF_TARGET: esp32c6
@@ -377,7 +318,7 @@ build_pytest_test_apps_esp32c6:
 
 build_pytest_test_apps_esp32h2:
   extends:
-    - .build_pytest_test_apps_template
+    - .build_pytest_template
     - .rules:build:custom_test-esp32h2
   variables:
     IDF_TARGET: esp32h2
@@ -396,6 +337,7 @@ build_only_tools_test_apps:
       --parallel-index ${CI_NODE_INDEX:-1}
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
+    - upload_artifacts_to_s3
 
 .build_template_app_template:
   extends:
