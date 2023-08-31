@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,12 @@
 #include "esp_private/crosscore_int.h"
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/esp_task_wdt_impl.h"
+
+
+#if CONFIG_IDF_TARGET_ARCH_RISCV
+#include "riscv/rvruntime-frames.h"
+#endif //CONFIG_IDF_TARGET_ARCH_RISCV
+
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 #include "esp_private/eh_frame_parser.h"
@@ -331,65 +337,6 @@ static void subscribe_idle(uint32_t core_mask)
  *
  */
 
-#if CONFIG_IDF_TARGET_ARCH_RISCV
-
-static void task_wdt_timeout_handling(int cores_fail, bool panic)
-{
-    /* For RISC-V, make sure the cores that fail is only composed of core 0. */
-    assert(cores_fail == BIT(0));
-
-    const int current_core = 0;
-    TaskSnapshot_t snapshot = { 0 };
-    BaseType_t ret = vTaskGetSnapshot(xTaskGetCurrentTaskHandle(), &snapshot);
-
-    if (p_twdt_obj->panic) {
-        assert(ret == pdTRUE);
-        ESP_EARLY_LOGE(TAG, "Aborting.");
-        esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
-        /**
-         * We cannot simply use `abort` here because the `panic` handler would
-         * interpret it as if the task watchdog ISR aborted and so, print this
-         * current ISR backtrace/context. We want to trick the `panic` handler
-         * to think the task itself is aborting.
-         * To do so, we need to get the interruptee's top of the stack. It contains
-         * its own context, saved when the interrupt occurred.
-         * We must also set the global flag that states that an abort occurred
-         * (and not a panic)
-         **/
-        g_panic_abort = true;
-        g_twdt_isr = true;
-        void *frame = (void *) snapshot.pxTopOfStack;
-#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-        ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
-#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
-        xt_unhandled_exception(frame);
-    } else {
-        /* Targets based on a RISC-V CPU cannot perform backtracing that easily.
-         * We have two options here:
-         *     - Perform backtracing at runtime.
-         *     - Let IDF monitor do the backtracing for us. Used during panic already.
-         * This could be configurable, choosing one or the other depending on
-         * CONFIG_ESP_SYSTEM_USE_EH_FRAME configuration option.
-         *
-         * In both cases, this takes time, and we are in an ISR, we must
-         * exit this handler as fast as possible, then we will simply print
-         * the interruptee's registers.
-         */
-        if (ret == pdTRUE) {
-            void *frame = (void *) snapshot.pxTopOfStack;
-#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
-            esp_eh_frame_print_backtrace(frame);
-#else // CONFIG_ESP_SYSTEM_USE_EH_FRAME
-            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) registers", current_core);
-            panic_print_registers(frame, current_core);
-            esp_rom_printf("\r\n");
-#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
-        }
-    }
-}
-
-#else // CONFIG_IDF_TARGET_ARCH_RISCV
 
 /**
  * Function simulating an abort coming from the interrupted task of the current
@@ -398,7 +345,7 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
  * in the case where the other core (than the main one) has to abort because one
  * of his tasks didn't reset the TWDT on time.
  */
-void task_wdt_timeout_abort_xtensa(bool current_core)
+void task_wdt_timeout_abort(bool current_core)
 {
     TaskSnapshot_t snapshot = { 0 };
     BaseType_t ret = pdTRUE;
@@ -408,25 +355,31 @@ void task_wdt_timeout_abort_xtensa(bool current_core)
     ret = vTaskGetSnapshot(xTaskGetCurrentTaskHandle(), &snapshot);
     assert(ret == pdTRUE);
     g_panic_abort = true;
-    /* For Xtensa, we should set this flag as late as possible, as this function may
+    /* We should set this flag as late as possible, as this function may
      * be called after a crosscore interrupt. Indeed, a higher interrupt may occur
      * after calling the crosscore interrupt, if its handler fails, this flag
      * shall not be set.
      * This flag will tell the coredump component (if activated) that yes, we are in
      * an ISR context, but it is intended, it is not because an ISR encountered an
-     * exception. If we don't set such flag, later tested by coredump, the later would
+     * exception. If we don't set such flag, later tested by coredump, the latter would
      * switch the execution frame/context we are giving it to the interrupt stack.
      * For details about this behavior in the TODO task: IDF-5694
      */
     g_twdt_isr = true;
     void *frame = (void *) snapshot.pxTopOfStack;
+
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME | CONFIG_IDF_TARGET_ARCH_XTENSA
     if (current_core) {
         ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", xPortGetCoreID());
     } else {
         ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", xPortGetCoreID());
     }
+#endif
+
     xt_unhandled_exception(frame);
 }
+
+
 
 static void task_wdt_timeout_handling(int cores_fail, bool panic)
 {
@@ -453,7 +406,7 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
         }
 #endif // !CONFIG_FREERTOS_UNICORE
         /* Current core is failing, abort right now */
-        task_wdt_timeout_abort_xtensa(true);
+        task_wdt_timeout_abort(true);
     } else {
         /* Print backtrace of the core that failed to reset the watchdog */
         if (cores_fail & BIT(current_core)) {
@@ -469,8 +422,6 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
 #endif // !CONFIG_FREERTOS_UNICORE
     }
 }
-
-#endif // CONFIG_IDF_TARGET_ARCH_RISCV
 
 
 // ---------------------- Callbacks ------------------------

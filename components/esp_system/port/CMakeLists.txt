@@ -41,6 +41,7 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
 elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
     list(APPEND srcs "arch/riscv/expression_with_stack.c"
                      "arch/riscv/panic_arch.c"
+                     "arch/riscv/debug_helpers.c"
                      "arch/riscv/debug_stubs.c")
 endif()
 
