@@ -1194,6 +1194,8 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
     BTC_TRACE_DEBUG("%s: event = %s", __FUNCTION__, dump_hf_event(event));
 
+    memset(&param, 0, sizeof(esp_hf_cb_param_t));
+
     switch (event) {
         case BTA_AG_ENABLE_EVT:
         case BTA_AG_DISABLE_EVT:
@@ -1230,7 +1232,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             }
 
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 memcpy(param.conn_stat.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda, sizeof(esp_bd_addr_t));
                 param.conn_stat.state = hf_local_param[idx].btc_hf_cb.connection_state;
                 param.conn_stat.peer_feat = 0;
@@ -1257,7 +1258,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             hf_local_param[idx].btc_hf_cb.connection_state  = ESP_HF_CONNECTION_STATE_SLC_CONNECTED;
 
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.conn_stat.state = hf_local_param[idx].btc_hf_cb.connection_state;
                 param.conn_stat.peer_feat = hf_local_param[idx].btc_hf_cb.peer_feat;
                 param.conn_stat.chld_feat = hf_local_param[idx].btc_hf_cb.chld_feat;
@@ -1278,7 +1278,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             BTC_TRACE_DEBUG("%s: BTA_AG_CLOSE_EVT," "hf_local_param[%d].btc_hf_cb.handle = %d", __FUNCTION__,
                             idx, hf_local_param[idx].btc_hf_cb.handle);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.conn_stat.state = ESP_HF_CONNECTION_STATE_DISCONNECTED;
                 param.conn_stat.peer_feat = 0;
                 param.conn_stat.chld_feat = 0;
@@ -1297,7 +1296,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
@@ -1310,7 +1308,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED_MSBC;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
@@ -1322,7 +1319,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_DISCONNECTED;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda, sizeof(esp_bd_addr_t));
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
@@ -1335,7 +1331,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.vra_rep.value = p_data->val.num;
                 memcpy(param.vra_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 btc_hf_cb_to_app(ESP_HF_BVRA_RESPONSE_EVT, &param);
@@ -1354,7 +1349,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 memcpy(param.volume_control.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.volume_control.type = (event == BTA_AG_SPK_EVT) ? ESP_HF_VOLUME_CONTROL_TARGET_SPK : ESP_HF_VOLUME_CONTROL_TARGET_MIC;
                 param.volume_control.volume = p_data->val.num;
@@ -1368,7 +1362,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 memcpy(param.unat_rep.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.unat_rep.unat = p_data->val.str;
                 btc_hf_cb_to_app(ESP_HF_UNAT_RESPONSE_EVT, &param);
@@ -1411,7 +1404,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 memcpy(param.vts_rep.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.vts_rep.code = p_data->val.str;
                 btc_hf_cb_to_app(ESP_HF_VTS_RESPONSE_EVT, &param);
@@ -1424,7 +1416,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 memcpy(param.nrec.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.nrec.state = p_data->val.num;
                 btc_hf_cb_to_app(ESP_HF_NREC_RESPONSE_EVT, &param);
@@ -1451,7 +1442,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             CHECK_HF_IDX(idx);
             do {
                 if (event == BTA_AG_AT_D_EVT) {           // dial_number_or_memory
-                    memset(&param, 0, sizeof(esp_hf_cb_param_t));
                     memcpy(param.out_call.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                     param.out_call.type = p_data->val.value;
                     param.out_call.num_or_loc = osi_malloc((strlen(p_data->val.str) + 1) * sizeof(char));
@@ -1460,7 +1450,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                     send_indicator_update(BTA_AG_IND_CALLSETUP,BTA_AG_CALLSETUP_OUTGOING);
                     osi_free(param.out_call.num_or_loc);
                 } else if (event == BTA_AG_AT_BLDN_EVT) {                    //dial_last
-                    memset(&param, 0, sizeof(esp_hf_cb_param_t));
                     memcpy(param.out_call.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                     param.out_call.num_or_loc = NULL;
                     btc_hf_cb_to_app(ESP_HF_DIAL_EVT, &param);
@@ -1509,7 +1498,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             CHECK_HF_IDX(idx);
             do {
                 BTC_TRACE_DEBUG("Set codec status %d codec %d 1=CVSD 2=MSBC", p_data->val.hdr.status, p_data->val.num);
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 memcpy(param.wbs_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.wbs_rep.codec = p_data->val.num;
                 btc_hf_cb_to_app(ESP_HF_WBS_RESPONSE_EVT, &param);
@@ -1523,7 +1511,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             CHECK_HF_IDX(idx);
             do {
                 BTC_TRACE_DEBUG("AG final seleded codec is %d 1=CVSD 2=MSBC", p_data->val.num);
-                memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 memcpy(param.bcs_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.bcs_rep.mode = p_data->val.num;
                 /* No ESP_HF_WBS_NONE case, becuase HFP 1.6 supported device can send BCS */
