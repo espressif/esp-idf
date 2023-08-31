@@ -12,10 +12,13 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_rom_caps.h"
 #include "hal/mmu_ll.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
 #include "soc/mmu.h"
+#endif
 
 #include "esp_private/esp_mmu_map_private.h"
 #include "esp_mmu_map.h"
