@@ -306,8 +306,9 @@ static void s_i2c_start_end_command(i2c_master_bus_handle_t i2c_master, i2c_oper
     i2c_master->cmd_idx++;
     portEXIT_CRITICAL_SAFE(&i2c_master->base->spinlock);
     if (i2c_operation->hw_cmd.op_code == I2C_LL_CMD_RESTART) {
+        i2c_operation_t next_transaction = i2c_master->i2c_trans.ops[i2c_master->trans_idx + 1];
 
-        if (i2c_master->i2c_trans.ops[i2c_master->trans_idx + 1].hw_cmd.op_code != I2C_LL_CMD_WRITE) {
+        if (next_transaction.hw_cmd.op_code == I2C_LL_CMD_READ) {
 #if SOC_I2C_SUPPORT_10BIT_ADDR
             if (i2c_master->addr_10bits_bus == I2C_ADDR_BIT_LEN_10) {
                 i2c_ll_hw_cmd_t hw_write_cmd = {
@@ -337,6 +338,17 @@ static void s_i2c_start_end_command(i2c_master_bus_handle_t i2c_master, i2c_oper
             };
             portENTER_CRITICAL_SAFE(&i2c_master->base->spinlock);
             i2c_ll_write_txfifo(hal->dev, addr_read, sizeof(addr_read));
+            i2c_ll_master_write_cmd_reg(hal->dev, hw_write_cmd, i2c_master->cmd_idx);
+            i2c_master->cmd_idx++;
+            portEXIT_CRITICAL_SAFE(&i2c_master->base->spinlock);
+        } else if (next_transaction.hw_cmd.op_code == I2C_LL_CMD_STOP) {
+            i2c_ll_hw_cmd_t hw_write_cmd = {
+                .ack_en = true,
+                .op_code = I2C_LL_CMD_WRITE,
+                .byte_num = 1,
+            };
+            portENTER_CRITICAL_SAFE(&i2c_master->base->spinlock);
+            i2c_ll_write_txfifo(hal->dev, addr_write, sizeof(addr_write));
             i2c_ll_master_write_cmd_reg(hal->dev, hw_write_cmd, i2c_master->cmd_idx);
             i2c_master->cmd_idx++;
             portEXIT_CRITICAL_SAFE(&i2c_master->base->spinlock);
@@ -411,7 +423,9 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
 
     // For blocking implementation, we must wait `done` interrupt to update the status.
     while (i2c_master->trans_done == false) {};
-    atomic_store(&i2c_master->status, I2C_STATUS_DONE);
+    if (i2c_master->status != I2C_STATUS_ACK_ERROR && i2c_master->status != I2C_STATUS_TIMEOUT) {
+        atomic_store(&i2c_master->status, I2C_STATUS_DONE);
+    }
     xSemaphoreGive(i2c_master->cmd_semphr);
 }
 
@@ -1035,7 +1049,7 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
 esp_err_t i2c_master_probe(i2c_master_bus_handle_t i2c_master, uint16_t address, int xfer_timeout_ms)
 {
     ESP_RETURN_ON_FALSE(i2c_master != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
-
+    i2c_hal_context_t *hal = &i2c_master->base->hal;
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
@@ -1047,8 +1061,17 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t i2c_master, uint16_t address,
         .ops = i2c_ops,
         .cmd_count = DIM(i2c_ops),
     };
+
+    // I2C probe does not have i2c device module. So set the clock parameter independently
+    // This will not influence device transaction.
+    i2c_hal_set_bus_timing(hal, 100000, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
+    i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
+    i2c_ll_update(hal->dev);
+
     s_i2c_send_commands(i2c_master, ticks_to_wait);
     if (i2c_master->status == I2C_STATUS_ACK_ERROR) {
+        // Reset the status to done, in order not influence next time transaction.
+        i2c_master->status = I2C_STATUS_DONE;
         return ESP_ERR_NOT_FOUND;
     }
     return ESP_OK;
