@@ -26,9 +26,13 @@
 
 #define DEFAULT_SSID "TEST_SSID"
 #define DEFAULT_PWD "TEST_PASS"
+#define TEST_DEFAULT_CHANNEL (6)
+#define CONNECT_TIMEOUT_MS   (8000)
+
 
 #define GOT_IP_EVENT        0x00000001
 #define DISCONNECT_EVENT    0x00000002
+#define STA_CONNECTED_EVENT    0x00000004
 
 #define EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT 0x00000001
 
@@ -50,6 +54,13 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     //do not actually connect in test case
             //;
             break;
+        case WIFI_EVENT_STA_CONNECTED:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_CONNECTED");
+            if (wifi_events) {
+                xEventGroupSetBits(wifi_events, STA_CONNECTED_EVENT);
+            }
+            break;
+
         case WIFI_EVENT_STA_DISCONNECTED:
             ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
             if (! (EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT & wifi_event_handler_flag) ) {
@@ -190,7 +201,7 @@ static void start_wifi_as_softap(void)
         .ap.ssid = DEFAULT_SSID,
         .ap.password = DEFAULT_PWD,
         .ap.ssid_len = 0,
-        .ap.channel = 1,
+        .ap.channel = TEST_DEFAULT_CHANNEL,
         .ap.authmode = WIFI_AUTH_WPA2_PSK,
         .ap.ssid_hidden = false,
         .ap.max_connection = 4,
@@ -301,7 +312,7 @@ static void wifi_connect_by_bssid(uint8_t *bssid)
     TEST_ESP_OK(esp_wifi_connect());
     ESP_LOGI(TAG, "called esp_wifi_connect()");
     bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, 1, 0, 7000/portTICK_PERIOD_MS);
-    TEST_ASSERT(bits == GOT_IP_EVENT);
+    TEST_ASSERT(bits & GOT_IP_EVENT);
 }
 
 static void test_wifi_connection_sta(void)
@@ -325,7 +336,7 @@ static void test_wifi_connection_sta(void)
     bits = xEventGroupWaitBits(wifi_events, DISCONNECT_EVENT, 1, 0, 60000 / portTICK_PERIOD_MS);
     // disconnect event not triggered
     printf("wait finish\n");
-    TEST_ASSERT(bits == 0);
+    TEST_ASSERT((bits & DISCONNECT_EVENT) == 0);
 
     stop_wifi();
 }
@@ -352,5 +363,106 @@ static void test_wifi_connection_softap(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("test wifi retain connection for 60s", "[wifi][test_env=UT_T2_1][timeout=90]", test_wifi_connection_sta, test_wifi_connection_softap);
+
+// single core have issue as WIFIBUG-92
+#if !CONFIG_FREERTOS_UNICORE
+static void wifi_connect(void)
+{
+    EventBits_t bits;
+
+    wifi_config_t w_config = {
+        .sta.ssid = DEFAULT_SSID,
+        .sta.password = DEFAULT_PWD,
+    };
+
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &w_config));
+    TEST_ESP_OK(esp_wifi_connect());
+    ESP_LOGI(TAG, "start esp_wifi_connect: %s", DEFAULT_SSID);
+    bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, pdTRUE, pdFALSE, 8000/portTICK_PERIOD_MS);
+    TEST_ASSERT(bits & GOT_IP_EVENT);
+}
+
+static void esp_wifi_connect_first_time(void)
+{
+    test_case_uses_tcpip();
+    start_wifi_as_sta();
+    // make sure softap has started
+    vTaskDelay(1000/portTICK_PERIOD_MS);
+
+    wifi_config_t w_config;
+    memset(&w_config, 0, sizeof(w_config));
+    memcpy(w_config.sta.ssid, DEFAULT_SSID, strlen(DEFAULT_SSID));
+    memcpy(w_config.sta.password, DEFAULT_PWD, strlen(DEFAULT_PWD));
+
+    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
+
+    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &w_config));
+    ESP_LOGI(TAG, "start esp_wifi_connect first time: %s", DEFAULT_SSID);
+    TEST_ESP_OK(esp_wifi_connect());
+}
+
+static void test_wifi_connect_at_scan_phase(void)
+{
+    esp_wifi_connect_first_time();
+
+    // connect when first connect in scan
+    vTaskDelay(300/portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "connect when first connect in scan");
+    TEST_ESP_ERR(ESP_ERR_WIFI_CONN, esp_wifi_connect());
+    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
+
+    stop_wifi();
+}
+
+static void test_wifi_connect_before_connected_phase(void)
+{
+
+    esp_wifi_connect_first_time();
+
+    // connect before connected
+    vTaskDelay(800/portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "connect when first connect after scan before connected");
+    TEST_ESP_ERR(ESP_ERR_WIFI_CONN, esp_wifi_connect());
+    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
+
+    stop_wifi();
+}
+
+static void test_wifi_connect_after_connected_phase(void)
+{
+    EventBits_t bits;
+
+    test_case_uses_tcpip();
+    start_wifi_as_sta();
+    wifi_event_handler_flag = 0;
+    wifi_connect();
+    xEventGroupClearBits(wifi_events, STA_CONNECTED_EVENT | DISCONNECT_EVENT);
+    ESP_LOGI(TAG, "connect after connected");
+    TEST_ESP_OK(esp_wifi_connect());
+    bits = xEventGroupWaitBits(wifi_events, STA_CONNECTED_EVENT | DISCONNECT_EVENT, pdTRUE, pdFALSE, CONNECT_TIMEOUT_MS/portTICK_PERIOD_MS);
+    // shouldn't reconnect
+    TEST_ASSERT((bits & STA_CONNECTED_EVENT) == 0);
+    // shouldn't disconnect
+    TEST_ASSERT((bits & DISCONNECT_EVENT) == 0);
+
+    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
+
+    stop_wifi();
+}
+
+static void set_wifi_softap(void)
+{
+    test_case_uses_tcpip();
+    start_wifi_as_softap();
+
+    // wait for sta connect
+    vTaskDelay(20000/portTICK_PERIOD_MS);
+    stop_wifi();
+}
+
+TEST_CASE_MULTIPLE_DEVICES("test wifi connect at scan", "[wifi][test_env=UT_T2_1]", test_wifi_connect_at_scan_phase, set_wifi_softap);
+TEST_CASE_MULTIPLE_DEVICES("test wifi connect before connected", "[wifi][test_env=UT_T2_1]", test_wifi_connect_before_connected_phase, set_wifi_softap);
+TEST_CASE_MULTIPLE_DEVICES("test wifi connect after connected", "[wifi][test_env=UT_T2_1]", test_wifi_connect_after_connected_phase, set_wifi_softap);
+#endif
 
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
