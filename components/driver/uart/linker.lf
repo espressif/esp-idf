@@ -1,0 +1,5 @@
+[mapping:uart_hal]
+archive: libhal.a
+entries:
+    if UART_ISR_IN_IRAM = y:
+        uart_hal_iram (noflash)

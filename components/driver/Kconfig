@@ -224,17 +224,7 @@ menu "Driver Configurations"
 
     endmenu # TEMP_SENSOR Configuration
 
-    menu "UART Configuration"
-
-        config UART_ISR_IN_IRAM
-            bool "Place UART ISR function into IRAM"
-            depends on !RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
-            default n
-            help
-                If this option is not selected, UART interrupt will be disabled for a long time and
-                may cause data lost when doing spi flash operation.
-
-    endmenu # UART Configuration
+    orsource "./uart/Kconfig.uart"
 
     menu "GPIO Configuration"
         config GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL

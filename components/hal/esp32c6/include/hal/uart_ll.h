@@ -1241,7 +1241,7 @@ FORCE_INLINE_ATTR void uart_ll_force_xon(uart_port_t uart_num)
  *
  * @return UART module FSM status.
  */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_fsm_status(uart_port_t uart_num)
+FORCE_INLINE_ATTR uint32_t uart_ll_get_tx_fsm_status(uart_port_t uart_num)
 {
     uart_dev_t *hw = UART_LL_GET_HW(uart_num);
     return hw->fsm_status.st_utx_out;
