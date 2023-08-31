@@ -90,7 +90,11 @@ if __name__ == '__main__':
     # evaluate markers and check versions of direct requirements
     for req in new_req_list[:]:
         if not req.marker or req.marker.evaluate():
-            version_check(req)
+            try:
+                version_check(req)
+            except PackageNotFoundError as e:
+                not_satisfied.append(f"'{e}' - was not found and is required by the application")
+                new_req_list.remove(req)
         else:
             new_req_list.remove(req)
 
@@ -102,6 +106,7 @@ if __name__ == '__main__':
             try:
                 dependency_requirements = set()
                 extras = list(requirement.extras) or ['']
+                # `requires` returns all sub-requirements including all extras - we need to filter out just required ones
                 for name in requires(requirement.name) or []:
                     sub_req = Requirement(name)
                     # check extras e.g. esptool[hsm]
