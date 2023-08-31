@@ -68,13 +68,13 @@ def corrupt_sig_block(sig_block, seed=0, corrupt_sig=True, corrupt_crc=False):
 
 
 def dut_start_secure_app(dut: Dut) -> None:
-    dut.serial.erase_flash()
+    dut.serial.erase_app_header()
     dut.serial.reset_efuses()
     dut.burn_wafer_version()
 
-    bootloader_path = os.path.join(dut.app.binary_path, 'bootloader/bootloader.bin')
-    dut.serial.bootloader_flash(bootloader_path)
-    dut.serial.flash()
+    dut.serial.bootloader_flash(os.path.join(dut.app.binary_path, 'bootloader/bootloader.bin'))
+    dut.serial.partition_table_flash(os.path.join(dut.app.binary_path, 'partition_table/partition-table.bin'))
+    dut.serial.app_flash(os.path.join(dut.app.binary_path, 'secure_boot.bin'))
 
 
 # Test secure boot flow.
@@ -85,23 +85,28 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     dut.serial.reset_efuses()
+    dut.burn_wafer_version()
 
 
 # Test efuse key index and key block combination.
 # Any key index can be written to any key block and should work
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+# Increasing the test timeout to 1200s as the test runs for 18 iterations
+# and thus the default 600s timeout is not sufficient
+@pytest.mark.timeout(1200)
 def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     for index in range(3):
-        print(index)
         for block in range(6):
             dut.serial.reset_efuses()
             dut.burn_wafer_version()
             dut.secure_boot_burn_en_bit()
             dut.secure_boot_burn_digest('test_rsa_3072_key.pem', index, block)
             dut.expect('Secure Boot is enabled', timeout=10)
+    dut.serial.reset_efuses()
+    dut.burn_wafer_version()
 
 
 # Test secure boot key revoke.
@@ -118,12 +123,17 @@ def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
         dut.serial.burn_efuse('SECURE_BOOT_KEY_REVOKE%d' % index, 1)
         dut.secure_boot_burn_digest('test_rsa_3072_key.pem', index, 0)
         dut.expect('secure boot verification failed', timeout=5)
+    dut.serial.reset_efuses()
+    dut.burn_wafer_version()
 
 
 # Test bootloader signature corruption.
 # Corrupt one byte at a time of bootloader signature and test that the verification fails
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.timeout(18000)
+# Increasing the test timeout to 18000s as the test runs for 384 iterations
+# and thus the default 600s timeout is not sufficient
 def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
@@ -149,12 +159,17 @@ def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut) -> None:
         # if we flash bootlader before burning en bit, even with no_stub = True
         # it still calls run_stub() and throws an error as it fails to start stub.
         dut.expect('Signature Check Failed', timeout=10)
+    dut.serial.reset_efuses()
+    dut.burn_wafer_version()
 
 
 # Test app signature corruption.
 # Corrupt app signature, one byte at a time, and test that the verification fails
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.timeout(18000)
+# Increasing the test timeout to 18000s as the test runs for 385 iterations
+# and thus the default 600s timeout is not sufficient
 def test_examples_security_secure_boot_corrupt_app_sig(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
