@@ -479,3 +479,5 @@ void * __hide_aliasing_typecast(void *foo);
 #define IANA_SECP384R1 20
 #define IANA_SECP521R1 21
 #endif /* COMMON_H */
+
+#define GHZ_24_MAX_CHANNEL_COUNT 14
