@@ -1,10 +1,14 @@
-FreeRTOS (Overview)
-===================
+FreeRTOS Overview
+=================
+
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
 
-FreeRTOS is an open source real-time operating system kernel that acts as the operating system for ESP-IDF applications and is integrated into ESP-IDF as a component. The FreeRTOS component in ESP-IDF contains ports of the FreeRTOS kernel for all the CPU architectures used by ESP targets (i.e., Xtensa and RISC-V). Furthermore, ESP-IDF provides different implementations of FreeRTOS in order to support SMP (Symmetric Multiprocessing) on multi-core ESP targets. This document provides an overview of the FreeRTOS component, the FreeRTOS implementations offered by ESP-IDF, and the common aspects across all implementations.
+FreeRTOS is an open source RTOS (real-time operating system) kernel that is integrated into ESP-IDF as a component. Thus, all ESP-IDF applications and many ESP-IDF components are written based on FreeRTOS. The FreeRTOS kernel is ported to all architectures (i.e., Xtensa and RISC-V) available of ESP chips.
+
+Furthermore, ESP-IDF provides different implementations of FreeRTOS in order to support SMP (Symmetric Multiprocessing) on multi-core ESP chips. This document provides an overview of the FreeRTOS component, the different FreeRTOS implementations offered by ESP-IDF, and the common aspects across all implementations.
 
 Implementations
 ---------------
@@ -14,11 +18,11 @@ The `official FreeRTOS <https://www.freertos.org/index.html>`_ (henceforth refer
 ESP-IDF FreeRTOS
 ^^^^^^^^^^^^^^^^
 
-    ESP-IDF FreeRTOS is a FreeRTOS implementation based on Vanilla FreeRTOS v10.4.3, but contains significant modifications to support SMP. ESP-IDF FreeRTOS only supports two cores at most (i.e., dual core SMP), but is more optimized for this scenario by design. For more details regarding ESP-IDF FreeRTOS and its modifications, please refer to the :doc:`freertos_idf` document.
+ESP-IDF FreeRTOS is a FreeRTOS implementation based on Vanilla FreeRTOS v10.4.3, but contains significant modifications to support SMP. ESP-IDF FreeRTOS only supports two cores at most (i.e., dual core SMP), but is more optimized for this scenario by design. For more details regarding ESP-IDF FreeRTOS and its modifications, please refer to the :doc:`freertos_idf` document.
 
-    .. note::
+.. note::
 
-        ESP-IDF FreeRTOS is currently the default FreeRTOS implementation for ESP-IDF.
+    ESP-IDF FreeRTOS is currently the default FreeRTOS implementation for ESP-IDF.
 
 .. only:: not esp32p4
 
@@ -27,11 +31,11 @@ ESP-IDF FreeRTOS
     Amazon SMP FreeRTOS
     ^^^^^^^^^^^^^^^^^^^
 
-        Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the :ref:`CONFIG_FREERTOS_SMP` option. For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
+    Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the :ref:`CONFIG_FREERTOS_SMP` option. For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
 
-        .. warning::
+    .. warning::
 
-            The Amazon SMP FreeRTOS implementation (and its port in ESP-IDF) are currently in experimental/beta state. Therefore, significant behavioral changes and breaking API changes can occur.
+        The Amazon SMP FreeRTOS implementation (and its port in ESP-IDF) are currently in experimental/beta state. Therefore, significant behavioral changes and breaking API changes can occur.
 
 Configuration
 -------------
@@ -39,9 +43,9 @@ Configuration
 Kernel Configuration
 ^^^^^^^^^^^^^^^^^^^^
 
-Vanilla FreeRTOS requires that ports and applications configure the kernel by adding various ``#define config...`` macros to ``FreeRTOSConfig.h``. Vanilla FreeRTOS supports a list of kernel configuration options which allow various kernel behaviors and features to be enabled or disabled.
+Vanilla FreeRTOS requires that ports and applications configure the kernel by adding various ``#define config...`` macro definitions to the ``FreeRTOSConfig.h`` header file. Vanilla FreeRTOS supports a list of kernel configuration options which allow various kernel behaviors and features to be enabled or disabled.
 
-**However, for all FreeRTOS ports in ESP-IDF, the ``FreeRTOSConfig.h`` file is considered private and must not be modified by users**. A large number of kernel configuration options in ``FreeRTOSConfig.h`` are hard coded as they are either required or not supported in ESP-IDF. All kernel configuration options that are configurable by the user are exposed via menuconfig under ``Component Config/FreeRTOS/Kernel``.
+**However, for all FreeRTOS ports in ESP-IDF, the FreeRTOSConfig.h header file is considered private and must not be modified by users**. A large number of kernel configuration options in ``FreeRTOSConfig.h`` are hard-coded as they are either required/not supported by ESP-IDF. All kernel configuration options that are configurable by the user are exposed via menuconfig under ``Component Config/FreeRTOS/Kernel``.
 
 For the full list of user configurable kernel options, see :doc:`/api-reference/kconfig`. The list below highlights some commonly used kernel configuration options:
 
@@ -68,7 +72,7 @@ Using FreeRTOS
 Application Entry Point
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Unlike Vanilla FreeRTOS, users of FreeRTOS in ESP-IDF **must never call** :cpp:func:`vTaskStartScheduler` and :cpp:func:`vTaskEndScheduler`. Instead, ESP-IDF starts FreeRTOS automatically. Users must define a ``void app_main(void)`` function which acts as the entry point for user's application and is automatically called on ESP-IDF startup.
+Unlike Vanilla FreeRTOS, users of FreeRTOS in ESP-IDF **must never call** :cpp:func:`vTaskStartScheduler` and :cpp:func:`vTaskEndScheduler`. Instead, ESP-IDF starts FreeRTOS automatically. Users must define a ``void app_main(void)`` function which acts as the entry point for user's application and is automatically invoked on ESP-IDF startup.
 
 - Typically, users would spawn the rest of their application's task from ``app_main``.
 - The ``app_main`` function is allowed to return at any point (i.e., before the application terminates).
@@ -91,14 +95,14 @@ During startup, ESP-IDF and the FreeRTOS kernel automatically create multiple ta
       - Affinity
       - Priority
     * - Idle Tasks (``IDLEx``)
-      - An idle task (``IDLEx``) is created for (and pinned to) each CPU, where ``x`` is the CPU's number.
+      - An idle task (``IDLEx``) is created for (and pinned to) each CPU core, where ``x`` is the CPU core's number
       - :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`
-      - CPUx
+      - Core x
       - ``0``
     * - FreeRTOS Timer Task (``Tmr Svc``)
-      - FreeRTOS will create the Timer Service/Daemon Task if any FreeRTOS Timer APIs are called by the application.
+      - FreeRTOS will create the Timer Service/Daemon Task if any FreeRTOS Timer APIs are called by the application
       - :ref:`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH`
-      - CPU0
+      - Core 0
       - :ref:`CONFIG_FREERTOS_TIMER_TASK_PRIORITY`
     * - Main Task (``main``)
       - Task that simply calls ``app_main``. This task will self delete when ``app_main`` returns
@@ -106,14 +110,14 @@ During startup, ESP-IDF and the FreeRTOS kernel automatically create multiple ta
       - :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`
       - ``1``
     * - IPC Tasks (``ipcx``)
-      - When :ref:`CONFIG_FREERTOS_UNICORE` is false, an IPC task (``ipcx``) is created for (and pinned to) each CPU. IPC tasks are used to implement the Inter-processor Call (IPC) feature.
+      - When :ref:`CONFIG_FREERTOS_UNICORE` is false, an IPC task (``ipcx``) is created for (and pinned to) each CPU core. IPC tasks are used to implement the Inter-processor Call (IPC) feature.
       - :ref:`CONFIG_ESP_IPC_TASK_STACK_SIZE`
-      - CPUx
+      - Core x
       - ``24``
     * - ESP Timer Task (``esp_timer``)
-      - ESP-IDF creates the ESP Timer Task used to process ESP Timer callbacks.
+      - ESP-IDF creates the ESP Timer Task used to process ESP Timer callbacks
       - :ref:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`
-      - CPU0
+      - Core 0
       - ``22``
 
 .. note::
@@ -129,10 +133,10 @@ ESP-IDF provides some supplemental features to FreeRTOS such as Ring Buffers, ES
 FreeRTOS Heap
 -------------
 
-Vanilla FreeRTOS provides its own `selection of heap implementations <https://www.freertos.org/a00111.html>`_. However, ESP-IDF already implements its own heap (see :doc:`/api-reference/system/mem_alloc`), thus ESP-IDF does not make use of the heap implementations provided by Vanilla FreeRTOS. All FreeRTOS ports in ESP-IDF map FreeRTOS memory allocation/free calls (e.g., ``pvPortMalloc()`` and ``pvPortFree()``) to ESP-IDF heap API (i.e., :cpp:func:`heap_caps_malloc` and :cpp:func:`heap_caps_free`). However, the FreeRTOS ports ensure that all dynamic memory allocated by FreeRTOS is placed in internal memory.
+Vanilla FreeRTOS provides its own `selection of heap implementations <https://www.freertos.org/a00111.html>`_. However, ESP-IDF already implements its own heap (see :doc:`/api-reference/system/mem_alloc`), thus ESP-IDF does not make use of the heap implementations provided by Vanilla FreeRTOS. All FreeRTOS ports in ESP-IDF map FreeRTOS memory allocation or free calls (e.g., ``pvPortMalloc()`` and ``pvPortFree()``) to ESP-IDF heap API (i.e., :cpp:func:`heap_caps_malloc` and :cpp:func:`heap_caps_free`). However, the FreeRTOS ports ensure that all dynamic memory allocated by FreeRTOS is placed in internal memory.
 
 .. note::
     If users wish to place FreeRTOS tasks/objects in external memory, users can use the following methods:
 
-    - Allocate the task/object using one of the ``...CreateWithCaps()`` API such as :cpp:func:`xTaskCreateWithCaps` and :cpp:func:`xQueueCreateWithCaps` (see :ref:`freertos-idf-additional-api` for more details).
+    - Allocate the task or object using one of the ``...CreateWithCaps()`` API, such as :cpp:func:`xTaskCreateWithCaps` and :cpp:func:`xQueueCreateWithCaps` (see :ref:`freertos-idf-additional-api` for more details).
     - Manually allocate external memory for those objects using :cpp:func:`heap_caps_malloc`, then create the objects from the allocated memory using on of the ``...CreateStatic()`` FreeRTOS functions.
