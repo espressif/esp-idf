@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@
 #include "esp_check.h"
 #include "esp_rom_gpio.h"
 #include "esp_heap_caps.h"
-#include "soc/lldesc.h"
 #include "soc/spi_periph.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
@@ -26,6 +25,14 @@
 #endif
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
+#endif
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define SPI_COMMON_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define SPI_COMMON_RCC_CLOCK_ATOMIC()
 #endif
 
 static const char *SPI_TAG = "spi";
@@ -100,7 +107,15 @@ bool spicommon_periph_claim(spi_host_device_t host, const char* source)
     bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &false_var, true);
     if (ret) {
         spi_claiming_func[host] = source;
+#if CONFIG_IDF_TARGET_ESP32P4   //deprecate clk_gate_ll start from p4, others in TODO: IDF-8159
+        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+            spi_ll_enable_bus_clock(host, true);
+            spi_ll_reset_register(host);
+            spi_ll_enable_clock(host, true);
+        }
+#else
         periph_module_enable(spi_periph_signal[host].module);
+#endif
     } else {
         ESP_EARLY_LOGE(SPI_TAG, "SPI%d already claimed by %s.", host+1, spi_claiming_func[host]);
     }
@@ -117,7 +132,15 @@ bool spicommon_periph_free(spi_host_device_t host)
 {
     bool true_var = true;
     bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &true_var, false);
-    if (ret) periph_module_disable(spi_periph_signal[host].module);
+    if (ret) {
+#if CONFIG_IDF_TARGET_ESP32P4
+        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+            spi_ll_enable_bus_clock(host, false);
+        }
+#else
+        periph_module_disable(spi_periph_signal[host].module);
+#endif
+    }
     return ret;
 }
 
@@ -218,6 +241,12 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 }
 
 #else //SOC_GDMA_SUPPORTED
+
+#if (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB)
+static esp_err_t (*spi_gdma_chan_allocator)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *) = gdma_new_ahb_channel;
+#elif (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
+static esp_err_t (*spi_gdma_chan_allocator)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *) = gdma_new_axi_channel;
+#endif
 static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
 {
     assert(is_valid_host(host_id));
@@ -231,19 +260,13 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
             .flags.reserve_sibling = 1,
             .direction = GDMA_CHANNEL_DIRECTION_TX,
         };
-        ret = gdma_new_channel(&tx_alloc_config, &ctx->tx_channel);
-        if (ret != ESP_OK) {
-            return ret;
-        }
+        ESP_RETURN_ON_ERROR(spi_gdma_chan_allocator(&tx_alloc_config, &ctx->tx_channel), SPI_TAG, "alloc gdma tx failed");
 
         gdma_channel_alloc_config_t rx_alloc_config = {
             .direction = GDMA_CHANNEL_DIRECTION_RX,
             .sibling_chan = ctx->tx_channel,
         };
-        ret = gdma_new_channel(&rx_alloc_config, &ctx->rx_channel);
-        if (ret != ESP_OK) {
-            return ret;
-        }
+        ESP_RETURN_ON_ERROR(spi_gdma_chan_allocator(&rx_alloc_config, &ctx->rx_channel), SPI_TAG, "alloc gdma rx failed");
 
         if (host_id == SPI2_HOST) {
             gdma_connect(ctx->rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 2));
@@ -802,17 +825,22 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
         bus_attr->tx_dma_chan = actual_tx_dma_chan;
         bus_attr->rx_dma_chan = actual_rx_dma_chan;
 
-        int dma_desc_ct = lldesc_get_required_num(bus_config->max_transfer_sz);
+        int dma_desc_ct = (bus_config->max_transfer_sz + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
         if (dma_desc_ct == 0) dma_desc_ct = 1; //default to 4k when max is not given
 
-        bus_attr->max_transfer_sz = dma_desc_ct * LLDESC_MAX_NUM_PER_DESC;
-        bus_attr->dmadesc_tx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
-        bus_attr->dmadesc_rx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        bus_attr->max_transfer_sz = dma_desc_ct * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+        bus_attr->dmadesc_tx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        bus_attr->dmadesc_rx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
         if (bus_attr->dmadesc_tx == NULL || bus_attr->dmadesc_rx == NULL) {
             err = ESP_ERR_NO_MEM;
             goto cleanup;
         }
         bus_attr->dma_desc_num = dma_desc_ct;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        bus_attr->internal_mem_align_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+#else
+        bus_attr->internal_mem_align_size = 4;
+#endif
     } else {
         bus_attr->dma_enabled = 0;
         bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;

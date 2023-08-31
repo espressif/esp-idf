@@ -71,6 +71,10 @@ config SOC_I2S_SUPPORTED
     bool
     default y
 
+config SOC_GPSPI_SUPPORTED
+    bool
+    default y
+
 config SOC_I2C_SUPPORTED
     bool
     default y
@@ -801,25 +805,21 @@ config SOC_SDM_CLK_SUPPORT_XTAL
 
 config SOC_SPI_PERIPH_NUM
     int
-    default 2
+    default 3
 
 config SOC_SPI_MAX_CS_NUM
     int
     default 6
 
-config SOC_MEMSPI_IS_INDEPENDENT
-    bool
-    default y
-
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 64
 
-config SOC_SPI_SUPPORT_DDRCLK
+config SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
     bool
     default y
 
-config SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
+config SOC_SPI_SUPPORT_DDRCLK
     bool
     default y
 
@@ -827,23 +827,15 @@ config SOC_SPI_SUPPORT_CD_SIG
     bool
     default y
 
-config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
+config SOC_SPI_SUPPORT_OCT
     bool
     default y
-
-config SOC_SPI_SUPPORT_SLAVE_HD_VER2
-    bool
-    default n
 
 config SOC_SPI_SUPPORT_CLK_XTAL
     bool
     default y
 
-config SOC_SPI_SUPPORT_CLK_PLL_F80M
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_CLK_RC_FAST
+config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
 

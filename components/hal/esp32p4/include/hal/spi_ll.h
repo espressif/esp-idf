@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,16 +7,15 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in hal/include/hal/readme.md
+ * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32-S3 SPI register operations
+// The LL layer for SPI register operations
 
 #pragma once
 
 #include <stdlib.h> //for abs()
 #include <string.h>
-#include "esp_attr.h"
 #include "esp_types.h"
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
@@ -24,6 +23,7 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/spi_types.h"
+#include "soc/hp_sys_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,17 +32,14 @@ extern "C" {
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_TRANS_DONE_INT_ENA | SPI_SLV_WR_DMA_DONE_INT_ENA | SPI_SLV_RD_DMA_DONE_INT_ENA | SPI_SLV_WR_BUF_DONE_INT_ENA | SPI_SLV_RD_BUF_DONE_INT_ENA)
 /// These 2 masks together will set SPI transaction to one line mode
-#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_OCT | SPI_FREAD_QUAD | SPI_FREAD_DUAL | SPI_FCMD_OCT | \
-        SPI_FCMD_QUAD | SPI_FCMD_DUAL | SPI_FADDR_OCT | SPI_FADDR_QUAD | SPI_FADDR_DUAL)
-#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_OCT | SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
-
+#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_QUAD | SPI_FREAD_DUAL | SPI_FCMD_QUAD | SPI_FCMD_DUAL | SPI_FADDR_QUAD | SPI_FADDR_DUAL)
+#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 #define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
-#define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -59,7 +56,7 @@ typedef enum {
     SPI_LL_INTR_WRBUF =         BIT(7),     ///< Has received WRBUF command. Only available in slave HD.
     SPI_LL_INTR_RDDMA =         BIT(8),     ///< Has received RDDMA command. Only available in slave HD.
     SPI_LL_INTR_WRDMA =         BIT(9),     ///< Has received WRDMA command. Only available in slave HD.
-    SPI_LL_INTR_CMD7 =          BIT(10),    ///< Has received CMD7 command. Only available in slave HD.
+    SPI_LL_INTR_CMD7  =         BIT(10),    ///< Has received CMD7 command. Only available in slave HD.
     SPI_LL_INTR_CMD8 =          BIT(11),    ///< Has received CMD8 command. Only available in slave HD.
     SPI_LL_INTR_CMD9 =          BIT(12),    ///< Has received CMD9 command. Only available in slave HD.
     SPI_LL_INTR_CMDA =          BIT(13),    ///< Has received CMDA command. Only available in slave HD.
@@ -74,7 +71,7 @@ typedef enum {
     SPI_LL_TRANS_LEN_COND_RDDMA =   BIT(3), ///< RDDMA length will be recorded
 } spi_ll_trans_len_cond_t;
 
-// SPI base command in esp32s3
+// SPI base command
 typedef enum {
      /* Slave HD Only */
     SPI_LL_BASE_CMD_HD_WRBUF    = 0x01,
@@ -88,10 +85,84 @@ typedef enum {
     SPI_LL_BASE_CMD_HD_INT1     = 0x09,
     SPI_LL_BASE_CMD_HD_INT2     = 0x0A,
 } spi_ll_base_command_t;
-
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
+
+/**
+ * Enable peripheral register clock
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+    switch (host_id)
+    {
+    case SPI2_HOST:
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_gpspi2_sys_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_gpspi2_apb_clk_en = enable;
+        break;
+    case SPI3_HOST:
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_gpspi3_sys_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_gpspi3_apb_clk_en = enable;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * Reset whole peripheral register to init value defined by HW design
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ */
+static inline void spi_ll_reset_register(spi_host_device_t host_id) {
+    switch (host_id)
+    {
+    case SPI2_HOST:
+        HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_spi2 = 1;
+        HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_spi2 = 0;
+        break;
+    case SPI3_HOST:
+        HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_spi3 = 1;
+        HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_spi3 = 0;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_reset_register(__VA_ARGS__)
+
+/**
+ * Enable functional output clock within peripheral
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
+{
+    switch (host_id)
+    {
+    case SPI2_HOST:
+        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi2_hs_clk_en = enable;
+        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi2_mst_clk_en = enable;
+        break;
+    case SPI3_HOST:
+        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi3_hs_clk_en = enable;
+        HP_SYS_CLKRST.peri_clk_ctrl117.reg_gpspi3_mst_clk_en = enable;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_enable_clock(__VA_ARGS__)
 
 /**
  * Select SPI peripheral clock source (master).
@@ -100,17 +171,27 @@ typedef enum {
  * @param clk_source clock source to select, see valid sources in type `spi_clock_source_t`
  */
 __attribute__((always_inline))
-static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source){
-    switch (clk_source)
-    {
-        case SPI_CLK_SRC_XTAL:
-            hw->clk_gate.mst_clk_sel = 0;
-            break;
-        default:
-            hw->clk_gate.mst_clk_sel = 1;
-            break;
+static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
+{
+    uint32_t clk_id = 0;
+    switch (clk_source) {
+    case SPI_CLK_SRC_XTAL:
+        clk_id = 0;
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
+
+    if (hw == &GPSPI2) {
+        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi2_clk_src_sel = clk_id;
+    } else if (hw == &GPSPI3) {
+        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi3_clk_src_sel = clk_id;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_set_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_set_clk_source(__VA_ARGS__)
 
 /**
  * Initialize SPI peripheral (master).
@@ -131,14 +212,10 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     hw->slave.val = 0;
     hw->user.val = 0;
 
-    hw->clk_gate.clk_en = 1;
-    hw->clk_gate.mst_clk_active = 1;
-    hw->clk_gate.mst_clk_sel = 1;
-
     hw->dma_conf.val = 0;
-    hw->dma_conf.tx_seg_trans_clr_en = 1;
-    hw->dma_conf.rx_seg_trans_clr_en = 1;
-    hw->dma_conf.dma_seg_trans_en = 0;
+    hw->dma_conf.slv_tx_seg_trans_clr_en = 1;
+    hw->dma_conf.slv_rx_seg_trans_clr_en = 1;
+    hw->dma_conf.dma_slv_seg_trans_en = 0;
 }
 
 /**
@@ -163,7 +240,7 @@ static inline void spi_ll_slave_init(spi_dev_t *hw)
 
     // Configure DMA In-Link to not be terminated when transaction bit counter exceeds
     hw->dma_conf.rx_eof_en = 0;
-    hw->dma_conf.dma_seg_trans_en = 0;
+    hw->dma_conf.dma_slv_seg_trans_en = 0;
 
     //Disable unneeded ints
     hw->dma_int_ena.val &= ~SPI_LL_UNUSED_INT_MASK;
@@ -188,13 +265,15 @@ static inline void spi_ll_slave_hd_init(spi_dev_t *hw)
 }
 
 /**
- * Determine and unify the default level of mosi line when bus free
+ * Check whether user-defined transaction is done.
  *
  * @param hw Beginning address of the peripheral registers.
+ *
+ * @return   True if transaction is done, otherwise false.
  */
-static inline void spi_ll_set_mosi_free_level(spi_dev_t *hw, bool level)
+static inline bool spi_ll_usr_is_done(spi_dev_t *hw)
 {
-    hw->ctrl.d_pol = level;     //set default level for MOSI only on IDLE state
+    return hw->dma_int_raw.trans_done_int;
 }
 
 /**
@@ -209,19 +288,8 @@ static inline void spi_ll_apply_config(spi_dev_t *hw)
 }
 
 /**
- * Check whether user-defined transaction is done.
- *
- * @param hw Beginning address of the peripheral registers.
- *
- * @return   True if transaction is done, otherwise false.
- */
-static inline bool spi_ll_usr_is_done(spi_dev_t *hw)
-{
-    return hw->dma_int_raw.trans_done;
-}
-
-/**
  * Trigger start of user-defined transaction.
+ * The synchronization between two clock domains is required in ESP32-S3
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -239,7 +307,7 @@ static inline void spi_ll_user_start(spi_dev_t *hw)
  */
 static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
 {
-    return hw->cmd.val;
+    return hw->cmd.usr;
 }
 
 /**
@@ -256,7 +324,7 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU TX FIFO
  *
- * On ESP32S3, this function is not seperated
+ * On P4, this function is not seperated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -269,7 +337,7 @@ static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU RX FIFO
  *
- * On ESP32S3, this function is not seperated
+ * On P4, this function is not seperated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -308,7 +376,7 @@ static inline void spi_ll_dma_rx_fifo_reset(spi_dev_t *hw)
  */
 static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
 {
-    hw->dma_int_clr.infifo_full_err = 1;
+    hw->dma_int_clr.dma_infifo_full_err_int = 1;
 }
 
 /**
@@ -318,7 +386,7 @@ static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
  */
 static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
 {
-    hw->dma_int_clr.outfifo_empty_err = 1;
+    hw->dma_int_clr.dma_outfifo_empty_err_int = 1;
 }
 
 /*------------------------------------------------------------------------------
@@ -369,11 +437,11 @@ static inline void spi_ll_dma_set_rx_eof_generation(spi_dev_t *hw, bool enable)
  */
 static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_send, size_t bitlen)
 {
-    for (size_t x = 0; x < bitlen; x += 32) {
+    for (int x = 0; x < bitlen; x += 32) {
         //Use memcpy to get around alignment issues for txdata
         uint32_t word;
         memcpy(&word, &buffer_to_send[x / 8], 4);
-        hw->data_buf[(x / 32)] = word;
+        hw->data_buf[(x / 32)].buf = word;
     }
 }
 
@@ -401,10 +469,10 @@ static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t 
 
         //read-modify-write
         if (copy_len != 4) {
-            word = hw->data_buf[byte_id / 4];    //read
+            word = hw->data_buf[byte_id / 4].buf;    //read
         }
         memcpy(((uint8_t *)&word) + offset, data, copy_len);  //modify
-        hw->data_buf[byte_id / 4] = word;                     //write
+        hw->data_buf[byte_id / 4].buf = word;                     //write
 
         data += copy_len;
         byte_id += copy_len;
@@ -421,9 +489,9 @@ static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t 
  */
 static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, size_t bitlen)
 {
-    for (size_t x = 0; x < bitlen; x += 32) {
+    for (int x = 0; x < bitlen; x += 32) {
         //Do a memcpy to get around possible alignment issues in rx_buffer
-        uint32_t word = hw->data_buf[x / 32];
+        uint32_t word = hw->data_buf[x / 32].buf;
         int len = bitlen - x;
         if (len > 32) {
             len = 32;
@@ -443,7 +511,7 @@ static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, siz
 static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t *out_data, int len)
 {
     while (len > 0) {
-        uint32_t word = hw->data_buf[byte_id / 4];
+        uint32_t word = hw->data_buf[byte_id / 4].buf;
         int offset = byte_id % 4;
         int copy_len = 4 - offset;
         if (copy_len > len) {
@@ -590,16 +658,12 @@ static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t li
     hw->user.val &= ~SPI_LL_ONE_LINE_USER_MASK;
     hw->ctrl.fcmd_dual = (line_mode.cmd_lines == 2);
     hw->ctrl.fcmd_quad = (line_mode.cmd_lines == 4);
-    hw->ctrl.fcmd_oct = (line_mode.cmd_lines == 8);
     hw->ctrl.faddr_dual = (line_mode.addr_lines == 2);
     hw->ctrl.faddr_quad = (line_mode.addr_lines == 4);
-    hw->ctrl.faddr_oct = (line_mode.addr_lines == 8);
     hw->ctrl.fread_dual = (line_mode.data_lines == 2);
     hw->user.fwrite_dual = (line_mode.data_lines == 2);
     hw->ctrl.fread_quad = (line_mode.data_lines == 4);
     hw->user.fwrite_quad = (line_mode.data_lines == 4);
-    hw->ctrl.fread_oct = (line_mode.data_lines == 8);
-    hw->user.fwrite_oct = (line_mode.data_lines == 8);
 }
 
 /**
@@ -610,7 +674,7 @@ static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t li
  */
 static inline void spi_ll_slave_set_seg_mode(spi_dev_t *hw, bool seg_trans)
 {
-    hw->dma_conf.dma_seg_trans_en = seg_trans;
+    hw->dma_conf.dma_slv_seg_trans_en = seg_trans;
 }
 
 /**
@@ -621,20 +685,12 @@ static inline void spi_ll_slave_set_seg_mode(spi_dev_t *hw, bool seg_trans)
  */
 static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
 {
-    if (hw == &GPSPI2) {
-        hw->misc.cs0_dis = (cs_id == 0) ? 0 : 1;
-        hw->misc.cs1_dis = (cs_id == 1) ? 0 : 1;
-        hw->misc.cs2_dis = (cs_id == 2) ? 0 : 1;
-        hw->misc.cs3_dis = (cs_id == 3) ? 0 : 1;
-        hw->misc.cs4_dis = (cs_id == 4) ? 0 : 1;
-        hw->misc.cs5_dis = (cs_id == 5) ? 0 : 1;
-    }
-
-    if (hw == &GPSPI3) {
-        hw->misc.cs0_dis = (cs_id == 0) ? 0 : 1;
-        hw->misc.cs1_dis = (cs_id == 1) ? 0 : 1;
-        hw->misc.cs2_dis = (cs_id == 2) ? 0 : 1;
-    }
+    hw->misc.cs0_dis = (cs_id == 0) ? 0 : 1;
+    hw->misc.cs1_dis = (cs_id == 1) ? 0 : 1;
+    hw->misc.cs2_dis = (cs_id == 2) ? 0 : 1;
+    hw->misc.cs3_dis = (cs_id == 3) ? 0 : 1;
+    hw->misc.cs4_dis = (cs_id == 4) ? 0 : 1;
+    hw->misc.cs5_dis = (cs_id == 5) ? 0 : 1;
 }
 
 /**
@@ -864,7 +920,7 @@ static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    //This is not used in esp32s3
+    //This is not used in P4
 }
 
 /**
@@ -875,7 +931,7 @@ static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    //This is not used in esp32s3
+    //This is not used in P4
 }
 
 /**
@@ -929,11 +985,11 @@ static inline void spi_ll_set_address(spi_dev_t *hw, uint64_t addr, int addrlen,
         */
         addr = HAL_SWAP32(addr);
         //otherwise only addr register is sent
-        hw->addr = addr;
+        hw->addr.val = addr;
     } else {
         // shift the address to MSB of addr register.
         // output address will be sent from MSB to LSB of addr register
-        hw->addr = addr << (32 - addrlen);
+        hw->addr.val = addr << (32 - addrlen);
     }
 }
 
@@ -958,7 +1014,6 @@ static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, b
          * more straightly.
          */
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, HAL_SPI_SWAP_DATA_TX(cmd, cmdlen));
-
     }
 }
 
@@ -1008,7 +1063,7 @@ static inline void spi_ll_enable_mosi(spi_dev_t *hw, int enable)
  */
 static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
 {
-    return hw->slave1.data_bitlen;
+    return hw->slave1.slv_data_bitlen;
 }
 
 /*------------------------------------------------------------------------------
@@ -1017,16 +1072,16 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
 //helper macros to generate code for each interrupts
 #define FOR_EACH_ITEM(op, list) do { list(op) } while(0)
 #define INTR_LIST(item)    \
-    item(SPI_LL_INTR_TRANS_DONE,    dma_int_ena.trans_done,         dma_int_raw.trans_done,         dma_int_clr.trans_done,         dma_int_set.trans_done_int_set) \
-    item(SPI_LL_INTR_RDBUF,         dma_int_ena.rd_buf_done,        dma_int_raw.rd_buf_done,        dma_int_clr.rd_buf_done,        dma_int_set.rd_buf_done_int_set) \
-    item(SPI_LL_INTR_WRBUF,         dma_int_ena.wr_buf_done,        dma_int_raw.wr_buf_done,        dma_int_clr.wr_buf_done,        dma_int_set.wr_buf_done_int_set) \
-    item(SPI_LL_INTR_RDDMA,         dma_int_ena.rd_dma_done,        dma_int_raw.rd_dma_done,        dma_int_clr.rd_dma_done,        dma_int_set.rd_dma_done_int_set) \
-    item(SPI_LL_INTR_WRDMA,         dma_int_ena.wr_dma_done,        dma_int_raw.wr_dma_done,        dma_int_clr.wr_dma_done,        dma_int_set.wr_dma_done_int_set) \
-    item(SPI_LL_INTR_SEG_DONE,      dma_int_ena.dma_seg_trans_done, dma_int_raw.dma_seg_trans_done, dma_int_clr.dma_seg_trans_done, dma_int_set.dma_seg_trans_done_int_set) \
-    item(SPI_LL_INTR_CMD7,          dma_int_ena.cmd7,               dma_int_raw.cmd7,               dma_int_clr.cmd7,               dma_int_set.cmd7_int_set) \
-    item(SPI_LL_INTR_CMD8,          dma_int_ena.cmd8,               dma_int_raw.cmd8,               dma_int_clr.cmd8,               dma_int_set.cmd8_int_set) \
-    item(SPI_LL_INTR_CMD9,          dma_int_ena.cmd9,               dma_int_raw.cmd9,               dma_int_clr.cmd9,               dma_int_set.cmd9_int_set) \
-    item(SPI_LL_INTR_CMDA,          dma_int_ena.cmda,               dma_int_raw.cmda,               dma_int_clr.cmda,               dma_int_set.cmda_int_set)
+    item(SPI_LL_INTR_TRANS_DONE,    dma_int_ena.trans_done_int,         dma_int_raw.trans_done_int,         dma_int_clr.trans_done_int,            dma_int_set.trans_done_int) \
+    item(SPI_LL_INTR_RDBUF,         dma_int_ena.slv_rd_buf_done_int,    dma_int_raw.slv_rd_buf_done_int,    dma_int_clr.slv_rd_buf_done_int,       dma_int_set.slv_rd_buf_done_int) \
+    item(SPI_LL_INTR_WRBUF,         dma_int_ena.slv_wr_buf_done_int,    dma_int_raw.slv_wr_buf_done_int,    dma_int_clr.slv_wr_buf_done_int,       dma_int_set.slv_wr_buf_done_int) \
+    item(SPI_LL_INTR_RDDMA,         dma_int_ena.slv_rd_dma_done_int,    dma_int_raw.slv_rd_dma_done_int,    dma_int_clr.slv_rd_dma_done_int,       dma_int_set.slv_rd_dma_done_int) \
+    item(SPI_LL_INTR_WRDMA,         dma_int_ena.slv_wr_dma_done_int,    dma_int_raw.slv_wr_dma_done_int,    dma_int_clr.slv_wr_dma_done_int,       dma_int_set.slv_wr_dma_done_int) \
+    item(SPI_LL_INTR_SEG_DONE,      dma_int_ena.dma_seg_trans_done_int, dma_int_raw.dma_seg_trans_done_int, dma_int_clr.dma_seg_trans_done_int,    dma_int_set.dma_seg_trans_done_int) \
+    item(SPI_LL_INTR_CMD7,          dma_int_ena.slv_cmd7_int,           dma_int_raw.slv_cmd7_int,           dma_int_clr.slv_cmd7_int,              dma_int_set.slv_cmd7_int) \
+    item(SPI_LL_INTR_CMD8,          dma_int_ena.slv_cmd8_int,           dma_int_raw.slv_cmd8_int,           dma_int_clr.slv_cmd8_int,              dma_int_set.slv_cmd8_int) \
+    item(SPI_LL_INTR_CMD9,          dma_int_ena.slv_cmd9_int,           dma_int_raw.slv_cmd9_int,           dma_int_clr.slv_cmd9_int,              dma_int_set.slv_cmd9_int) \
+    item(SPI_LL_INTR_CMDA,          dma_int_ena.slv_cmda_int,           dma_int_raw.slv_cmda_int,           dma_int_clr.slv_cmda_int,              dma_int_set.slv_cmda_int)
 
 
 static inline void spi_ll_enable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
@@ -1059,7 +1114,7 @@ static inline void spi_ll_clear_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 
 static inline bool spi_ll_get_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
-#define GET_INTR(intr_bit, _, raw_reg, ...) if (intr_mask & (intr_bit) && hw->raw_reg) return true;
+#define GET_INTR(intr_bit, _, sta_reg, ...) if (intr_mask & (intr_bit) && hw->sta_reg) return true;
     FOR_EACH_ITEM(GET_INTR, INTR_LIST);
     return false;
 #undef GET_INTR
@@ -1075,7 +1130,7 @@ static inline bool spi_ll_get_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
  */
 static inline void spi_ll_disable_int(spi_dev_t *hw)
 {
-    hw->dma_int_ena.trans_done = 0;
+    hw->dma_int_ena.trans_done_int = 0;
 }
 
 /**
@@ -1085,7 +1140,7 @@ static inline void spi_ll_disable_int(spi_dev_t *hw)
  */
 static inline void spi_ll_clear_int_stat(spi_dev_t *hw)
 {
-    hw->dma_int_clr.trans_done = 1;
+    hw->dma_int_clr.trans_done_int = 1;
 }
 
 /**
@@ -1095,7 +1150,7 @@ static inline void spi_ll_clear_int_stat(spi_dev_t *hw)
  */
 static inline void spi_ll_set_int_stat(spi_dev_t *hw)
 {
-    hw->dma_int_set.trans_done_int_set = 1;
+    hw->dma_int_set.trans_done_int = 1;
 }
 
 /**
@@ -1105,7 +1160,7 @@ static inline void spi_ll_set_int_stat(spi_dev_t *hw)
  */
 static inline void spi_ll_enable_int(spi_dev_t *hw)
 {
-    hw->dma_int_ena.trans_done = 1;
+    hw->dma_int_ena.trans_done_int = 1;
 }
 
 /*------------------------------------------------------------------------------
@@ -1113,27 +1168,27 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
  *----------------------------------------------------------------------------*/
 static inline void spi_ll_slave_hd_set_len_cond(spi_dev_t *hw, spi_ll_trans_len_cond_t cond_mask)
 {
-    hw->slave.rdbuf_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_RDBUF) ? 1 : 0;
-    hw->slave.wrbuf_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRBUF) ? 1 : 0;
-    hw->slave.rddma_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_RDDMA) ? 1 : 0;
-    hw->slave.wrdma_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRDMA) ? 1 : 0;
+    hw->slave.slv_rdbuf_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_RDBUF) ? 1 : 0;
+    hw->slave.slv_wrbuf_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRBUF) ? 1 : 0;
+    hw->slave.slv_rddma_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_RDDMA) ? 1 : 0;
+    hw->slave.slv_wrdma_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRDMA) ? 1 : 0;
 }
 
 static inline int spi_ll_slave_get_rx_byte_len(spi_dev_t *hw)
 {
-    return hw->slave1.data_bitlen / 8;
+    return hw->slave1.slv_data_bitlen / 8;
 }
 
 static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
 {
-    return hw->slave1.last_addr;
+    return hw->slave1.slv_last_addr;
 }
 
 #undef SPI_LL_RST_MASK
 #undef SPI_LL_UNUSED_INT_MASK
 
 /**
- * Get the base spi command in esp32s3
+ * Get the base spi command
  *
  * @param cmd_t           Command value
  */

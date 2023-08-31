@@ -23,7 +23,7 @@ extern "C" {
  * @brief Given a L2MEM cached address, get the corresponding non-cacheable address
  * @example 0x4FF0_0000 => 0x8FF0_0000
  */
-#define CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) ((intptr_t)(addr) + 0x40000000)
+#define CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) ((intptr_t)(addr) + SOC_NON_CACHEABLE_OFFSET)
 
 /**
  * Cache capabilities
