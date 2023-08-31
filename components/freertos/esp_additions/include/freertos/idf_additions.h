@@ -31,26 +31,23 @@
 #endif
 /* *INDENT-ON* */
 
-/* -------------------------------------------------- Task Creation ---------------------------------------------------
-* Task Creation APIs added by ESP-IDF
-*
-* Todo: Move IDF FreeRTOS SMP related additions to this header as well (see IDF-7201)
-* Todo: Add these SMP related additions to docs once they are combined with IDF FreeRTOS.
-* ------------------------------------------------------------------------------------------------------------------ */
+/* -------------------------------------------------- Task Creation ------------------------------------------------- */
 
-#if ( CONFIG_FREERTOS_SMP && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
+#if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
 
 /**
  * @brief Create a new task that is pinned to a particular core
  *
- * Helper function to create a task that is pinned to a particular core, or has
- * no affinity. In other words, the created task will have an affinity mask of:
- * - (1 << xCoreID) if it is pinned to a particular core
- * - Set to tskNO_AFFINITY if it has no affinity
+ * This function is similar to xTaskCreate(), but allows the creation of a pinned
+ * task. The task's pinned core is specified by the xCoreID argument. If xCoreID
+ * is set to tskNO_AFFINITY, then the task is unpinned and can run on any core.
+ *
+ * @note If ( configNUM_CORES == 1 ), xCoreID is ignored.
  *
  * @param pxTaskCode Pointer to the task entry function.
  * @param pcName A descriptive name for the task.
- * @param usStackDepth The size of the task stack.
+ * @param ulStackDepth The size of the task stack specified as the NUMBER OF
+ * BYTES. Note that this differs from vanilla FreeRTOS.
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
  * @param uxPriority The priority at which the task should run.
@@ -63,24 +60,30 @@
  */
     BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
                                         const char * const pcName,
-                                        const uint32_t usStackDepth,
+                                        const uint32_t ulStackDepth,
                                         void * const pvParameters,
                                         UBaseType_t uxPriority,
                                         TaskHandle_t * const pxCreatedTask,
                                         const BaseType_t xCoreID );
 
-#endif /* ( CONFIG_FREERTOS_SMP && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) ) */
+#endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
-#if ( CONFIG_FREERTOS_SMP && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
 /**
  * @brief Create a new static task that is pinned to a particular core
  *
- * This funciton is the static equivalent of xTaskCreatePinnedToCore().
+ * This function is similar to xTaskCreateStatic(), but allows the creation of a
+ * pinned task. The task's pinned core is specified by the xCoreID argument. If
+ * xCoreID is set to tskNO_AFFINITY, then the task is unpinned and can run on any
+ * core.
+ *
+ * @note If ( configNUM_CORES == 1 ), xCoreID is ignored.
  *
  * @param pxTaskCode Pointer to the task entry function.
  * @param pcName A descriptive name for the task.
- * @param ulStackDepth The size of the task stack.
+ * @param ulStackDepth The size of the task stack specified as the NUMBER OF
+ * BYTES. Note that this differs from vanilla FreeRTOS.
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
  * @param uxPriority The priority at which the task should run.
@@ -101,7 +104,7 @@
                                                 StaticTask_t * const pxTaskBuffer,
                                                 const BaseType_t xCoreID );
 
-#endif /* ( CONFIG_FREERTOS_SMP && ( configSUPPORT_STATIC_ALLOCATION == 1 ) ) */
+#endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /* ------------------------------------------------- Task Utilities ------------------------------------------------- */
 

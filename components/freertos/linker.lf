@@ -109,8 +109,6 @@ entries:
         #   - "xTaskGetSchedulerState"
         #   - "xTaskGetTickCount"
         # --------------------------------------------------------------------------------------------------------------
-        tasks:xTaskCreateStaticPinnedToCore (default)
-        tasks:xTaskCreatePinnedToCore (default)
         tasks:prvInitialiseNewTask (default)
         tasks:prvAddNewTaskToReadyList (default)
         tasks:vTaskDelete (default)

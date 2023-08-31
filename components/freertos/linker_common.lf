@@ -22,9 +22,8 @@ entries:
             tasks:prvTakeKernelLock (default)
             tasks:prvReleaseKernelLock (default)
         # Task Creation
-        if FREERTOS_SMP = y:
-            tasks:xTaskCreatePinnedToCore (default)
-            tasks:xTaskCreateStaticPinnedToCore (default)
+        tasks:xTaskCreatePinnedToCore (default)
+        tasks:xTaskCreateStaticPinnedToCore (default)
         # Task Utilities
         tasks:xTaskGetCurrentTaskHandleForCPU (default)
         tasks:xTaskGetIdleTaskHandleForCPU (default)
