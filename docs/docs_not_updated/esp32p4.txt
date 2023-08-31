@@ -181,7 +181,6 @@ api-reference/system/app_image_format.rst
 api-reference/system/himem.rst
 api-reference/system/power_management.rst
 api-reference/system/mem_alloc.rst
-api-reference/system/wdts.rst
 api-reference/system/misc_system_api.rst
 api-reference/system/bootloader_image_format.rst
 api-reference/system/inc/espefuse_summary_ESP32-P4.rst

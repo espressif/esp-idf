@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -28,12 +28,6 @@ extern "C" {
 #define TIMG_WDT_RESET_LENGTH_800_NS 5
 #define TIMG_WDT_RESET_LENGTH_1600_NS 6
 #define TIMG_WDT_RESET_LENGTH_3200_NS 7
-/* Possible values for TIMG_WDT_STGx */
-#define TIMG_WDT_STG_SEL_OFF 0
-#define TIMG_WDT_STG_SEL_INT 1
-#define TIMG_WDT_STG_SEL_RESET_CPU 2
-#define TIMG_WDT_STG_SEL_RESET_SYSTEM 3
-
 
 /** TIMG_T0CONFIG_REG register
  *  Timer 0 configuration register
