@@ -782,6 +782,15 @@ bool Storage::findEntry(nvs_opaque_iterator_t* it, const char* namespace_name)
     return nextEntry(it);
 }
 
+bool Storage::findEntryNs(nvs_opaque_iterator_t* it, uint8_t nsIndex)
+{
+    it->entryIndex = 0;
+    it->nsIndex = nsIndex;
+    it->page = mPageManager.begin();
+
+    return nextEntry(it);
+}
+
 inline bool isIterableItem(Item& item)
 {
     return (item.nsIndex != 0 &&
