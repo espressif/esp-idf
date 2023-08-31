@@ -36,6 +36,13 @@ typedef struct {
     int group_id;  /*!< GDMA group ID */
 } gdma_hal_config_t;
 
+typedef struct {
+    uint32_t init_value;     /*!< CRC initial value */
+    uint32_t crc_bit_width;  /*!< CRC bit width */
+    uint32_t poly_hex;       /*!< Polynomial Formula, in hex */
+    bool reverse_data_mask;  /*!< Reverse data mask */
+} gdma_hal_crc_config_t;
+
 /**
  * @brief GDMA HAL private data
  */
@@ -80,6 +87,11 @@ struct gdma_hal_context_t {
     void (*clear_intr)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t intr_event_mask); /// Clear the channel interrupt
     uint32_t (*read_intr_status)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir); /// Read the channel interrupt status
     uint32_t (*get_eof_desc_addr)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool is_success); /// Get the address of the descriptor with success/error EOF flag set
+#if SOC_GDMA_SUPPORT_CRC
+    void (*clear_crc)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir); /// Clear the CRC interim results
+    void (*set_crc_poly)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, const gdma_hal_crc_config_t *config); /// Set the CRC polynomial
+    uint32_t (*get_crc_result)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir); /// Get the CRC result
+#endif // SOC_GDMA_SUPPORT_CRC
 };
 
 void gdma_hal_deinit(gdma_hal_context_t *hal);
@@ -113,6 +125,21 @@ uint32_t gdma_hal_get_intr_status_reg(gdma_hal_context_t *hal, int chan_id, gdma
 uint32_t gdma_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
 
 uint32_t gdma_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool is_success);
+
+#if SOC_GDMA_SUPPORT_CRC
+void gdma_hal_build_parallel_crc_matrix(int crc_width, uint32_t crc_poly_hex, int data_width,
+                                        uint32_t *lfsr_transform_matrix, uint32_t *data_transform_matrix);
+
+uint32_t gdma_hal_get_data_mask_from_matrix(uint32_t *data_transform_matrix, int data_width, int crc_bit);
+
+uint32_t gdma_hal_get_lfsr_mask_from_matrix(uint32_t *lfsr_transform_matrix, int crc_width, int crc_bit);
+
+void gdma_hal_clear_crc(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
+
+void gdma_hal_set_crc_poly(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, const gdma_hal_crc_config_t *config);
+
+uint32_t gdma_hal_get_crc_result(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
+#endif // SOC_GDMA_SUPPORT_CRC
 
 #ifdef __cplusplus
 }

@@ -150,9 +150,66 @@ uint32_t gdma_ahb_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gd
     }
 }
 
+#if SOC_GDMA_SUPPORT_CRC
+void gdma_ahb_hal_clear_crc(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+        ahb_dma_ll_rx_crc_clear(hal->ahb_dma_dev, chan_id);
+    } else {
+        ahb_dma_ll_tx_crc_clear(hal->ahb_dma_dev, chan_id);
+    }
+}
+
+void gdma_ahb_hal_set_crc_poly(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, const gdma_hal_crc_config_t *config)
+{
+    uint32_t init_value = config->init_value;
+    uint32_t crc_bit_width = config->crc_bit_width;
+    uint32_t poly_hex = config->poly_hex;
+    // bit matrix for parallel CRC
+    uint32_t lfsr_matrix[crc_bit_width];
+    uint32_t data_matrix[GDMA_LL_PARALLEL_CRC_DATA_WIDTH];
+    uint32_t lfsr_mask = 0;
+    uint32_t data_mask = 0;
+    // build the parallel CRC matrix first, later we will extract the control mask from it
+    gdma_hal_build_parallel_crc_matrix(crc_bit_width, poly_hex, GDMA_LL_PARALLEL_CRC_DATA_WIDTH,
+                                       lfsr_matrix, data_matrix);
+    if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+        ahb_dma_ll_rx_crc_set_init_value(hal->ahb_dma_dev, chan_id, init_value);
+        ahb_dma_ll_rx_crc_set_width(hal->ahb_dma_dev, chan_id, crc_bit_width);
+        for (uint32_t i = 0; i < crc_bit_width; i++) {
+            // extract the control mask from the matrix, for each CRC bit
+            data_mask = gdma_hal_get_data_mask_from_matrix(data_matrix, GDMA_LL_PARALLEL_CRC_DATA_WIDTH, i);
+            lfsr_mask = gdma_hal_get_lfsr_mask_from_matrix(lfsr_matrix, crc_bit_width, i);
+            ahb_dma_ll_rx_crc_set_lfsr_data_mask(hal->ahb_dma_dev, chan_id, i, lfsr_mask, data_mask, config->reverse_data_mask);
+            ahb_dma_ll_rx_crc_latch_config(hal->ahb_dma_dev, chan_id);
+        }
+    } else {
+        ahb_dma_ll_tx_crc_set_init_value(hal->ahb_dma_dev, chan_id, init_value);
+        ahb_dma_ll_tx_crc_set_width(hal->ahb_dma_dev, chan_id, crc_bit_width);
+        for (uint32_t i = 0; i < crc_bit_width; i++) {
+            // extract the control mask from the matrix, for each CRC bit
+            data_mask = gdma_hal_get_data_mask_from_matrix(data_matrix, GDMA_LL_PARALLEL_CRC_DATA_WIDTH, i);
+            lfsr_mask = gdma_hal_get_lfsr_mask_from_matrix(lfsr_matrix, crc_bit_width, i);
+            ahb_dma_ll_tx_crc_set_lfsr_data_mask(hal->ahb_dma_dev, chan_id, i, lfsr_mask, data_mask, config->reverse_data_mask);
+            ahb_dma_ll_tx_crc_latch_config(hal->ahb_dma_dev, chan_id);
+        }
+    }
+}
+
+uint32_t gdma_ahb_hal_get_crc_result(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+        return ahb_dma_ll_rx_crc_get_result(hal->ahb_dma_dev, chan_id);
+    } else {
+        return ahb_dma_ll_tx_crc_get_result(hal->ahb_dma_dev, chan_id);
+    }
+}
+#endif // SOC_GDMA_SUPPORT_CRC
+
 void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 {
     hal->ahb_dma_dev = AHB_DMA_LL_GET_HW(config->group_id - GDMA_LL_AHB_GROUP_START_ID);
+    hal->priv_data = &gdma_ahb_hal_priv_data;
     hal->start_with_desc = gdma_ahb_hal_start_with_desc;
     hal->stop = gdma_ahb_hal_stop;
     hal->append = gdma_ahb_hal_append;
@@ -167,5 +224,9 @@ void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
     hal->read_intr_status = gdma_ahb_hal_read_intr_status;
     hal->get_intr_status_reg = gdma_ahb_hal_get_intr_status_reg;
     hal->get_eof_desc_addr = gdma_ahb_hal_get_eof_desc_addr;
-    hal->priv_data = &gdma_ahb_hal_priv_data;
+#if SOC_GDMA_SUPPORT_CRC
+    hal->clear_crc = gdma_ahb_hal_clear_crc;
+    hal->set_crc_poly = gdma_ahb_hal_set_crc_poly;
+    hal->get_crc_result = gdma_ahb_hal_get_crc_result;
+#endif // SOC_GDMA_SUPPORT_CRC
 }

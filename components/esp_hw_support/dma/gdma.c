@@ -48,6 +48,13 @@
 
 static const char *TAG = "gdma";
 
+#if !SOC_RCC_IS_INDEPENDENT
+// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
+#define GDMA_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define GDMA_RCC_ATOMIC()
+#endif
+
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
 #define SEARCH_REQUEST_TX_CHANNEL (1 << 1)
@@ -257,7 +264,7 @@ esp_err_t gdma_connect(gdma_channel_handle_t dma_chan, gdma_trigger_t trig_perip
     gdma_group_t *group = pair->group;
     gdma_hal_context_t *hal = &group->hal;
     bool periph_conflict = false;
-    //
+
     if (trig_periph.bus_id != SOC_GDMA_BUS_ANY) {
         ESP_RETURN_ON_FALSE(trig_periph.bus_id == group->bus_id, ESP_ERR_INVALID_ARG, TAG,
                             "peripheral and DMA system bus mismatch");
@@ -403,6 +410,57 @@ esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority)
 
     return ESP_OK;
 }
+
+#if SOC_GDMA_SUPPORT_CRC
+esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_crc_calculator_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(dma_chan && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    gdma_pair_t *pair = dma_chan->pair;
+    gdma_group_t *group = pair->group;
+    gdma_hal_context_t *hal = &group->hal;
+    switch (group->bus_id) {
+#if SOC_AHB_GDMA_SUPPORTED
+    case SOC_GDMA_BUS_AHB:
+        ESP_RETURN_ON_FALSE(config->crc_bit_width <= GDMA_LL_AHB_MAX_CRC_BIT_WIDTH, ESP_ERR_INVALID_ARG, TAG, "invalid crc bit width");
+        break;
+#endif // SOC_AHB_GDMA_SUPPORTED
+#if SOC_AXI_GDMA_SUPPORTED
+    case SOC_GDMA_BUS_AXI:
+        ESP_RETURN_ON_FALSE(config->crc_bit_width <= GDMA_LL_AXI_MAX_CRC_BIT_WIDTH, ESP_ERR_INVALID_ARG, TAG, "invalid crc bit width");
+        break;
+#endif // SOC_AXI_GDMA_SUPPORTED
+    default:
+        ESP_LOGE(TAG, "invalid bus id: %d", group->bus_id);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // clear the previous CRC result
+    gdma_hal_clear_crc(hal, pair->pair_id, dma_chan->direction);
+
+    // set polynomial and initial value
+    gdma_hal_crc_config_t hal_config = {
+        .crc_bit_width = config->crc_bit_width,
+        .poly_hex = config->poly_hex,
+        .init_value = config->init_value,
+        .reverse_data_mask = config->reverse_data_mask,
+    };
+    gdma_hal_set_crc_poly(hal, pair->pair_id, dma_chan->direction, &hal_config);
+
+    return ESP_OK;
+}
+
+esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result)
+{
+    ESP_RETURN_ON_FALSE(dma_chan && result, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    gdma_pair_t *pair = dma_chan->pair;
+    gdma_group_t *group = pair->group;
+    gdma_hal_context_t *hal = &group->hal;
+
+    *result = gdma_hal_get_crc_result(hal, pair->pair_id, dma_chan->direction);
+
+    return ESP_OK;
+}
+#endif // SOC_GDMA_SUPPORT_CRC
 
 esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_tx_event_callbacks_t *cbs, void *user_data)
 {
@@ -564,7 +622,9 @@ static void gdma_release_group_handle(gdma_group_t *group)
 
     if (do_deinitialize) {
         gdma_hal_deinit(&group->hal);
-        periph_module_disable(gdma_periph_signals.groups[group_id].module);
+        GDMA_RCC_ATOMIC() {
+            gdma_ll_enable_bus_clock(group_id, false);
+        }
         free(group);
         ESP_LOGD(TAG, "del group %d", group_id);
     }
@@ -595,7 +655,10 @@ static gdma_group_t *gdma_acquire_group_handle(int group_id, void (*hal_init)(gd
         group->group_id = group_id;
         group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
         // enable APB to access GDMA registers
-        periph_module_enable(gdma_periph_signals.groups[group_id].module);
+        GDMA_RCC_ATOMIC() {
+            gdma_ll_enable_bus_clock(group_id, true);
+            gdma_ll_reset_register(group_id);
+        }
         gdma_hal_config_t config = {
             .group_id = group_id,
         };

@@ -89,3 +89,20 @@ uint32_t gdma_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gdma_c
 {
     return hal->get_eof_desc_addr(hal, chan_id, dir, is_success);
 }
+
+#if SOC_GDMA_SUPPORT_CRC
+void gdma_hal_clear_crc(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    hal->clear_crc(hal, chan_id, dir);
+}
+
+void gdma_hal_set_crc_poly(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, const gdma_hal_crc_config_t *config)
+{
+    hal->set_crc_poly(hal, chan_id, dir, config);
+}
+
+uint32_t gdma_hal_get_crc_result(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    return hal->get_crc_result(hal, chan_id, dir);
+}
+#endif // SOC_GDMA_SUPPORT_CRC

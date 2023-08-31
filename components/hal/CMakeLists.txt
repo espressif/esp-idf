@@ -91,6 +91,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "gdma_hal_top.c")
     endif()
 
+    if(CONFIG_SOC_GDMA_SUPPORT_CRC)
+        list(APPEND srcs "gdma_hal_crc_gen.c")
+    endif()
+
     if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 1)
         list(APPEND srcs "gdma_hal_ahb_v1.c")
     endif()
