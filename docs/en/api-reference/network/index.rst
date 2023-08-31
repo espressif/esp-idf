@@ -3,20 +3,22 @@ Networking APIs
 
 :link_to_translation:`zh_CN:[中文]`
 
-Wi-Fi
-=====
+.. only:: SOC_WIFI_SUPPORTED
 
-.. toctree::
-    :maxdepth: 1
+   Wi-Fi
+   =====
 
-    esp_now
-    :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
-    esp_smartconfig
-    esp_wifi
-    esp_dpp
-    esp_nan
+   .. toctree::
+      :maxdepth: 1
 
-Code examples for the Wi-Fi API are provided in the :example:`wifi` directory of ESP-IDF examples.
+      esp_now
+      :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
+      esp_smartconfig
+      esp_wifi
+      esp_dpp
+      esp_nan
+
+   Code examples for the Wi-Fi API are provided in the :example:`wifi` directory of ESP-IDF examples.
 
 .. only:: SOC_WIFI_MESH_SUPPORT
 
