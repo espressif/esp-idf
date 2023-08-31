@@ -5,7 +5,11 @@ import pytest
 
 
 # If `test_env` is define, should not run on generic runner
-@pytest.mark.supported_targets
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c2
+@pytest.mark.esp32c3
+@pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.generic
 def test_slave_hd_single_dev(case_tester) -> None:       # type: ignore
@@ -16,7 +20,11 @@ def test_slave_hd_single_dev(case_tester) -> None:       # type: ignore
 
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
-@pytest.mark.supported_targets
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c2
+@pytest.mark.esp32c3
+@pytest.mark.esp32c6
 @pytest.mark.esp32h2
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize('count', [2,], indirect=True)

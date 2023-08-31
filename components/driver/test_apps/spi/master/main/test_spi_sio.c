@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,8 @@
  ********************************************************************************/
 #if CONFIG_IDF_TARGET_ESP32
 #define MASTER_DIN_SIGNAL    HSPID_IN_IDX
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define MASTER_DIN_SIGNAL    SPI2_D_PAD_IN_IDX
 #else
 #define MASTER_DIN_SIGNAL    FSPID_IN_IDX
 #endif
@@ -142,7 +144,7 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
 }
 #endif //#if (TEST_SPI_PERIPH_NUM >= 2)
 
-
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 /********************************************************************************
  *                             Test SIO Master
  * SIO Slave is not suported, and one unit test is limited to one feature, so,,,
@@ -326,3 +328,4 @@ void test_slave_run(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test_SIO_Mode_Multi_Board", "[spi_ms][test_env=generic_multi_device]", test_master_run, test_slave_run);
+#endif  //p4 slave support

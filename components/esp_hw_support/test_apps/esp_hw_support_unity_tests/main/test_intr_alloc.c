@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,7 +127,11 @@ void static test_isr(void*arg)
 TEST_CASE("Allocate previously freed interrupt, with different flags", "[intr_alloc]")
 {
     intr_handle_t intr;
+#if CONFIG_IDF_TARGET_ESP32P4
+    int test_intr_source = ETS_GPIO_INTR0_SOURCE;
+#else
     int test_intr_source = ETS_GPIO_INTR_SOURCE;
+#endif
     int isr_flags = ESP_INTR_FLAG_LEVEL2;
 
     TEST_ESP_OK(esp_intr_alloc(test_intr_source, isr_flags, test_isr, NULL, &intr));
@@ -179,7 +183,15 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[in
     intr_handle_t handle1, handle2;
 
     // enable SPI2
+#if CONFIG_IDF_TARGET_ESP32P4   //deprecate clk_gate_ll start from p4, others in TODO: IDF-8159
+    PERIPH_RCC_ATOMIC() {
+        spi_ll_enable_bus_clock(1, true);
+        spi_ll_reset_register(1);
+        spi_ll_enable_clock(1, true);
+    }
+#else
     periph_module_enable(spi_periph_signal[1].module);
+#endif
 
     esp_err_t r;
     r = esp_intr_alloc(spi_periph_signal[1].irq, ESP_INTR_FLAG_SHARED, int_handler1, &ctx, &handle1);

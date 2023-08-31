@@ -29,8 +29,10 @@
  before the transaction is sent, the callback will set this line to the correct state.
 */
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define LCD_HOST    HSPI_HOST
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your HardWare spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define LCD_HOST    SPI2_HOST
 
 #define PIN_NUM_MISO 25
 #define PIN_NUM_MOSI 23
@@ -40,41 +42,8 @@
 #define PIN_NUM_DC   21
 #define PIN_NUM_RST  18
 #define PIN_NUM_BCKL 5
-#elif defined CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-#define LCD_HOST    SPI2_HOST
 
-#define PIN_NUM_MISO 37
-#define PIN_NUM_MOSI 35
-#define PIN_NUM_CLK  36
-#define PIN_NUM_CS   45
-
-#define PIN_NUM_DC   4
-#define PIN_NUM_RST  5
-#define PIN_NUM_BCKL 6
-#elif defined CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
-#define LCD_HOST    SPI2_HOST
-
-#define PIN_NUM_MISO 2
-#define PIN_NUM_MOSI 7
-#define PIN_NUM_CLK  6
-#define PIN_NUM_CS   10
-
-#define PIN_NUM_DC   9
-#define PIN_NUM_RST  4
-#define PIN_NUM_BCKL 5
-
-#elif defined CONFIG_IDF_TARGET_ESP32H2
-#define LCD_HOST    SPI2_HOST
-
-#define PIN_NUM_MISO 0
-#define PIN_NUM_MOSI 5
-#define PIN_NUM_CLK  4
-#define PIN_NUM_CS   1
-
-#define PIN_NUM_DC   10
-#define PIN_NUM_RST  11
-#define PIN_NUM_BCKL 12
-#endif
+#define LCD_BK_LIGHT_ON_LEVEL   0
 
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
@@ -328,7 +297,7 @@ void lcd_init(spi_device_handle_t spi)
     }
 
     ///Enable backlight
-    gpio_set_level(PIN_NUM_BCKL, 0);
+    gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_ON_LEVEL);
 }
 
 /* To send a set of lines we have to send a command, 2 data bytes, another command, 2 more data bytes and another command

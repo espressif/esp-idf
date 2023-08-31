@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -287,8 +287,8 @@ TEST_CASE("SPI Master test", "[spi]")
     success &= spi_test(handle, 4096 - 2); //multiple descs, edge case 1
     success &= spi_test(handle, 4096 - 1); //multiple descs, edge case 2
     success &= spi_test(handle, 4096 * 3); //multiple descs
-
     master_free_device_bus(handle);
+    TEST_ASSERT(success);
 
     printf("Testing bus at 80KHz, non-DMA\n");
     handle = setup_spi_bus_loopback(80000, false);
@@ -299,19 +299,18 @@ TEST_CASE("SPI Master test", "[spi]")
     success &= spi_test(handle, 47); //small, unaligned
     success &= spi_test(handle, 63); //small
     success &= spi_test(handle, 64); //small, unaligned
-
     master_free_device_bus(handle);
+    TEST_ASSERT(success);
 
-    printf("Testing bus at 26MHz\n");
+    printf("Testing bus at 20MHz\n");
     handle = setup_spi_bus_loopback(20000000, true);
-
     success &= spi_test(handle, 128); //DMA, aligned
     success &= spi_test(handle, 4096 * 3); //DMA, multiple descs
     master_free_device_bus(handle);
+    TEST_ASSERT(success);
 
     printf("Testing bus at 900KHz\n");
     handle = setup_spi_bus_loopback(9000000, true);
-
     success &= spi_test(handle, 128); //DMA, aligned
     success &= spi_test(handle, 4096 * 3); //DMA, multiple descs
     master_free_device_bus(handle);
@@ -790,11 +789,8 @@ TEST_CASE("SPI Master DMA test: length, start, not aligned", "[spi]")
     //connect MOSI to two devices breaks the output, fix it.
     spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
 
-    memset(rx_buf, 0x66, 320);
-
     for ( int i = 0; i < 8; i ++ ) {
         memset( rx_buf, 0x66, sizeof(rx_buf));
-
         spi_transaction_t t = {};
         t.length = 8 * (i + 1);
         t.rxlength = 0;
@@ -881,12 +877,12 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
         vTaskDelay(50);
         //prepare master tx data
         int cmd_bits = (i + 1) * 2;
-        int addr_bits =
+        int addr_bits = 0;
 #ifdef CONFIG_IDF_TARGET_ESP32
-            56 - 8 * i;
+        addr_bits = 56 - 8 * i;
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
             //ESP32S2 only supportes up to 32 bits address
-            28 - 4 * i;
+        addr_bits = 28 - 4 * i;
 #endif
         int round_up = (cmd_bits + addr_bits + 7) / 8 * 8;
         addr_bits = round_up - cmd_bits;
@@ -1073,6 +1069,7 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
     master_free_device_bus(spi);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 /**
  * This test is to check when the first transaction of the HD master is to send data without receiving data via DMA,
  * then if the master could receive data correctly.
@@ -1161,8 +1158,10 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     spi_slave_free(TEST_SLAVE_HOST);
     master_free_device_bus(spi);
 }
+#endif
 #endif  //#if (TEST_SPI_PERIPH_NUM >= 2)
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
 #define FD_TEST_BUF_SIZE    32
 #define TEST_NUM            4
@@ -1338,6 +1337,7 @@ static void fd_slave(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", "[spi_ms][test_env=generic_multi_device]", fd_master, fd_slave);
 #endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
+#endif  //p4 slave support
 
 
 //NOTE: Explained in IDF-1445 | MR !14996
@@ -1491,6 +1491,7 @@ TEST_CASE("spi_speed", "[spi]")
 #endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 #endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 //****************************************spi master add device test************************************//
 //add dummy devices first
 #if CONFIG_IDF_TARGET_ESP32
@@ -1601,7 +1602,7 @@ void test_add_device_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms]", test_add_device_master, test_add_device_slave);
-
+#endif  //p4 slave support
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
 
@@ -1661,8 +1662,8 @@ TEST_CASE("test_master_isr_pin_to_core","[spi]")
 }
 #endif
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 #if CONFIG_SPI_MASTER_IN_IRAM
-
 #define TEST_MASTER_IRAM_TRANS_LEN  120
 static IRAM_ATTR void test_master_iram_post_trans_cbk(spi_transaction_t *trans)
 {
@@ -1767,3 +1768,4 @@ static void test_iram_slave_normal(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:IRAM_safe", "[spi_ms]", test_master_iram, test_iram_slave_normal);
 #endif
+#endif  //p4 slave support
