@@ -39,6 +39,7 @@ static esp_err_t get_next_empty_index(uint16_t aKey, uint8_t *index)
 
     for (uint8_t i = 0; i != UINT8_MAX; i++) {
         s_unused_pos++;
+        found = false;
         snprintf(ot_nvs_key, sizeof(ot_nvs_key), OT_KEY_INDEX_PATTERN, (uint8_t)aKey, s_unused_pos);
         ret = nvs_entry_find(OT_PART_NAME, OT_NAMESPACE, NVS_TYPE_BLOB, &nvs_it);
         while (ret == ESP_OK) {
