@@ -40,23 +40,6 @@ extern "C" {
 #define ADDRESS_IN_DRAM_FLASH(vaddr)       ADDRESS_IN_BUS(DRAM_FLASH, vaddr)
 #define ADDRESS_IN_DRAM_PSRAM(vaddr)       ADDRESS_IN_BUS(DRAM_PSRAM, vaddr)
 
-//TODO, remove these cache function dependencies
-#define CACHE_IROM_MMU_START            0
-#define CACHE_IROM_MMU_END              Cache_Get_IROM_MMU_End()
-#define CACHE_IROM_MMU_SIZE             (CACHE_IROM_MMU_END - CACHE_IROM_MMU_START)
-
-#define CACHE_DROM_MMU_START            CACHE_IROM_MMU_END
-#define CACHE_DROM_MMU_END              Cache_Get_DROM_MMU_End()
-#define CACHE_DROM_MMU_SIZE             (CACHE_DROM_MMU_END - CACHE_DROM_MMU_START)
-
-#define CACHE_DROM_MMU_MAX_END          0x400
-
-#define ICACHE_MMU_SIZE                 (0x400 * 4)
-#define DCACHE_MMU_SIZE                 (0x400 * 4)
-
-#define MMU_BUS_START(i)                0
-#define MMU_BUS_SIZE(i)                 (0x400 * 4)
-
 
 #define MMU_FLASH_VALID                 BIT(12)
 #define MMU_FLASH_INVALID               0
@@ -69,9 +52,6 @@ extern "C" {
 #define MMU_FLASH_SENSITIVE             BIT(13)
 #define MMU_PSRAM_SENSITIVE             BIT(12)
 
-
-#define CACHE_MAX_SYNC_NUM 0x400000
-#define CACHE_MAX_LOCK_NUM 0x8000
 
 /**
  * MMU entry valid bit mask for mapping value.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,42 +32,11 @@ extern "C" {
 #define ADDRESS_IN_DRAM0(vaddr)            ADDRESS_IN_BUS(DRAM0, vaddr)
 #define ADDRESS_IN_DRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(DRAM0_CACHE, vaddr)
 
-#define BUS_IRAM0_CACHE_SIZE              BUS_SIZE(IRAM0_CACHE)
-#define BUS_DRAM0_CACHE_SIZE              BUS_SIZE(DRAM0_CACHE)
-
-#define CACHE_IBUS                      0
-#define CACHE_IBUS_MMU_START            0
-#define CACHE_IBUS_MMU_END              0x800
-
-#define CACHE_DBUS                      1
-#define CACHE_DBUS_MMU_START            0
-#define CACHE_DBUS_MMU_END              0x800
-
-//TODO, remove these cache function dependencies
-#define CACHE_IROM_MMU_START            0
-#define CACHE_IROM_MMU_END              Cache_Get_IROM_MMU_End()
-#define CACHE_IROM_MMU_SIZE             (CACHE_IROM_MMU_END - CACHE_IROM_MMU_START)
-
-#define CACHE_DROM_MMU_START            CACHE_IROM_MMU_END
-#define CACHE_DROM_MMU_END              Cache_Get_DROM_MMU_End()
-#define CACHE_DROM_MMU_SIZE             (CACHE_DROM_MMU_END - CACHE_DROM_MMU_START)
-
-#define CACHE_DROM_MMU_MAX_END          0x400
-
-#define ICACHE_MMU_SIZE                 0x800
-#define DCACHE_MMU_SIZE                 0x800
-
-#define MMU_BUS_START(i)                0
-#define MMU_BUS_SIZE(i)                 0x800
-
 #define MMU_INVALID                     BIT(14)
 #define MMU_VALID                       0
 #define MMU_TYPE                        BIT(15)
 #define MMU_ACCESS_FLASH                0
 #define MMU_ACCESS_SPIRAM               BIT(15)
-
-#define CACHE_MAX_SYNC_NUM 0x400000
-#define CACHE_MAX_LOCK_NUM 0x8000
 
 /**
  * MMU entry valid bit mask for mapping value. For an entry:
@@ -140,6 +109,37 @@ extern "C" {
 #ifndef __cplusplus
 _Static_assert(SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW == SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW, "IRAM0 and DRAM0 linear address should be same");
 #endif
+
+
+/**
+ * ROM flash mmap driver needs below definitions
+ */
+#define BUS_IRAM0_CACHE_SIZE              BUS_SIZE(IRAM0_CACHE)
+#define BUS_DRAM0_CACHE_SIZE              BUS_SIZE(DRAM0_CACHE)
+
+#define CACHE_IBUS                      0
+#define CACHE_IBUS_MMU_START            0
+#define CACHE_IBUS_MMU_END              0x800
+
+#define CACHE_DBUS                      1
+#define CACHE_DBUS_MMU_START            0
+#define CACHE_DBUS_MMU_END              0x800
+
+#define CACHE_IROM_MMU_START            0
+#define CACHE_IROM_MMU_END              Cache_Get_IROM_MMU_End()
+#define CACHE_IROM_MMU_SIZE             (CACHE_IROM_MMU_END - CACHE_IROM_MMU_START)
+
+#define CACHE_DROM_MMU_START            CACHE_IROM_MMU_END
+#define CACHE_DROM_MMU_END              Cache_Get_DROM_MMU_End()
+#define CACHE_DROM_MMU_SIZE             (CACHE_DROM_MMU_END - CACHE_DROM_MMU_START)
+
+#define CACHE_DROM_MMU_MAX_END          0x400
+
+#define ICACHE_MMU_SIZE                 0x800
+#define DCACHE_MMU_SIZE                 0x800
+
+#define MMU_BUS_START(i)                0
+#define MMU_BUS_SIZE(i)                 0x800
 
 #ifdef __cplusplus
 }
