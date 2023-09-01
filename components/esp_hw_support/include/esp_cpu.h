@@ -234,12 +234,12 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_ivt_addr(const void *ivt_addr)
 }
 
 #if SOC_INT_CLIC_SUPPORTED
-//TODO: IDF-7863
-//"MTVT is only implemented in RISC-V arch"
 /**
  * @brief Set the base address of the current CPU's Interrupt Vector Table (MTVT)
  *
  * @param mtvt_addr Interrupt Vector Table's base address
+ *
+ * @note The MTVT table is only applicable when CLIC is supported
  */
 FORCE_INLINE_ATTR void esp_cpu_intr_set_mtvt_addr(const void *mtvt_addr)
 {

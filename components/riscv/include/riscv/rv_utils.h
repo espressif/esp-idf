@@ -96,7 +96,6 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(u
 
 // --------------- Interrupt Configuration -----------------
 #if SOC_INT_CLIC_SUPPORTED
-//TODO: IDF-7863
 FORCE_INLINE_ATTR void rv_utils_set_mtvt(uint32_t mtvt_val)
 {
 #define MTVT 0x307
@@ -107,8 +106,7 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvt(uint32_t mtvt_val)
 FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
 {
 #if SOC_INT_CLIC_SUPPORTED
-    //TODO: IDF-7863
-    mtvec_val |= 3;
+    mtvec_val |= 3; // Set MODE field to 3 to treat MTVT + 4*interrupt_id as the service entry address for HW vectored interrupts
 #else
     mtvec_val |= 1; // Set MODE field to treat MTVEC as a vector base address
 #endif
