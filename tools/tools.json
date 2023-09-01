@@ -674,16 +674,19 @@
       "versions": [
         {
           "linux-amd64": {
+            "rename_dist": "ninja-linux-v1.11.1.zip",
             "sha256": "b901ba96e486dce377f9a070ed4ef3f79deb45f4ffe2938f8e7ddc69cfb3df77",
             "size": 119463,
             "url": "https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-linux.zip"
           },
           "macos": {
+            "rename_dist": "ninja-mac-v1.11.1.zip",
             "sha256": "482ecb23c59ae3d4f158029112de172dd96bb0e97549c4b1ca32d8fad11f873e",
             "size": 277306,
             "url": "https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-mac.zip"
           },
           "macos-arm64": {
+            "rename_dist": "ninja-mac-v1.11.1.zip",
             "sha256": "482ecb23c59ae3d4f158029112de172dd96bb0e97549c4b1ca32d8fad11f873e",
             "size": 277306,
             "url": "https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-mac.zip"
@@ -691,6 +694,7 @@
           "name": "1.11.1",
           "status": "recommended",
           "win64": {
+            "rename_dist": "ninja-win-v1.11.1.zip",
             "sha256": "524b344a1a9a55005eaf868d991e090ab8ce07fa109f1820d40e74642e289abc",
             "size": 285922,
             "url": "https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-win.zip"
@@ -928,5 +932,5 @@
       ]
     }
   ],
-  "version": 1
+  "version": 2
 }
