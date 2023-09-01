@@ -240,7 +240,7 @@ struct ext_funcs_t ext_funcs_ro = {
     ._ecc_gen_key_pair = esp_ecc_gen_key_pair,
     ._ecc_gen_dh_key = esp_ecc_gen_dh_key,
     ._esp_reset_rpa_moudle = esp_reset_rpa_moudle,
-    ._esp_bt_track_pll_cap = bt_track_pll_cap,
+    ._esp_bt_track_pll_cap = NULL,
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
 
@@ -465,7 +465,7 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
     r_ble_rtc_wake_up_state_clr();
     esp_pm_lock_release(s_pm_lock);
 #endif // CONFIG_PM_ENABLE
-    esp_phy_disable();
+    esp_phy_disable(PHY_MODEM_BT);
     s_ble_active = false;
 }
 
@@ -474,7 +474,7 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
     if (s_ble_active) {
         return;
     }
-    esp_phy_enable();
+    esp_phy_enable(PHY_MODEM_BT);
     // need to check if need to call pm lock here
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(s_pm_lock);
@@ -750,7 +750,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         esp_pm_lock_acquire(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE
         // init phy
-        esp_phy_enable();
+        esp_phy_enable(PHY_MODEM_BT);
         s_ble_active = true;
     }
     // init bb
@@ -772,7 +772,7 @@ error:
     coex_disable();
 #endif
     if (s_ble_active) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
 #if CONFIG_PM_ENABLE
         esp_pm_lock_release(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE
@@ -792,7 +792,7 @@ esp_err_t esp_bt_controller_disable(void)
     }
 
     if (s_ble_active) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
 #if CONFIG_PM_ENABLE
         esp_pm_lock_release(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE
