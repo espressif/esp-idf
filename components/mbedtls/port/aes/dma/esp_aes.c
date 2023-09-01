@@ -485,6 +485,7 @@ cleanup:
 int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, lldesc_t *aad_desc, size_t aad_len)
 {
     lldesc_t *in_desc_head = NULL, *out_desc_head = NULL, *len_desc = NULL;
+    lldesc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
     lldesc_t stream_in_desc, stream_out_desc;
     lldesc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
     size_t lldesc_num;
@@ -534,6 +535,8 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
         lldesc_append(&in_desc_head, block_in_desc);
         lldesc_append(&out_desc_head, block_out_desc);
+
+        out_desc_tail = &block_out_desc[lldesc_num - 1];
     }
 
     /* Any leftover bytes which are appended as an additional DMA list */
@@ -545,6 +548,8 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
         lldesc_append(&in_desc_head, &stream_in_desc);
         lldesc_append(&out_desc_head, &stream_out_desc);
+
+        out_desc_tail = &stream_out_desc;
     }
 
 
@@ -583,7 +588,7 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
     aes_hal_transform_dma_gcm_start(blocks);
 
-    esp_aes_dma_wait_complete(use_intr, out_desc_head);
+    esp_aes_dma_wait_complete(use_intr, out_desc_tail);
 
     aes_hal_transform_dma_finish();
 
