@@ -129,3 +129,21 @@ TEST_CASE("I2C device add & remove check", "[i2c]")
 
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 }
+
+TEST_CASE("I2C master probe device test", "[i2c]")
+{
+    // 0x22 does not exist on the I2C bus, so it's expected to return `not found` error
+    // TODO: Add exist slave for testing probe success after i2c slave is merged.
+    i2c_master_bus_config_t i2c_mst_config_1 = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .scl_io_num = TEST_I2C_SCL_PIN,
+        .sda_io_num = TEST_I2C_SDA_PIN,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle;
+
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config_1, &bus_handle));
+    TEST_ESP_ERR(i2c_master_probe(bus_handle, 0x22, -1), ESP_ERR_NOT_FOUND);
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
