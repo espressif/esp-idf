@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
+
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,6 +125,25 @@ void esprv_intc_int_set_threshold(int priority_threshold);
  * @return uint32_t interrupt unmask
  */
 uint32_t esprv_intc_get_interrupt_unmask(void);
+
+/**
+ * @brief Check if the given interrupt is hardware vectored
+ *
+ * @param rv_int_num Interrupt number
+ *
+ * @return true if the interrupt is vectored, false if it is not.
+ */
+bool esprv_intc_int_is_vectored(int rv_int_num);
+
+/**
+ * @brief Set interrupt vectored
+ *
+ * Configure the given interrupt number to hardware vectored or non-vectored.
+ *
+ * @param rv_int_num Interrupt number
+ * @param vectored True to set it to vectored, false to set it to non-vectored
+ */
+void esprv_intc_int_set_vectored(int rv_int_num, bool vectored);
 
 #ifdef __cplusplus
 }

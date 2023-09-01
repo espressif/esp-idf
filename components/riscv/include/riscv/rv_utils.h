@@ -133,8 +133,9 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
-//TODO: IDF-7795, clic related
-#if (SOC_CPU_CORES_NUM > 1)
+
+#if SOC_INT_CLIC_SUPPORTED
+
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel(uint32_t restoreval)
 {
     REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((restoreval << (8 - NLBITS))) | 0x1f);
@@ -145,8 +146,10 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(
     uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     uint32_t old_thresh;
 
-    old_thresh = REG_READ(CLIC_INT_THRESH_REG);
-    old_thresh = old_thresh >> (24 + (8 - NLBITS));
+    old_thresh = REG_GET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH);
+    old_thresh = (old_thresh >> (8 - NLBITS));
+    /* Upper bits should already be 0, but let's be safe and keep NLBITS */
+    old_thresh &= BIT(NLBITS) - 1;
 
     REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((intlevel << (8 - NLBITS))) | 0x1f);
     /**
@@ -166,19 +169,15 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(
 
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_mask_int_level_lower_than(uint32_t intlevel)
 {
-#if SOC_INT_CLIC_SUPPORTED
     /* CLIC's set interrupt level is inclusive, i.e. it does mask the set level  */
     return rv_utils_set_intlevel(intlevel - 1);
-#else
-    return rv_utils_set_intlevel(intlevel);
-#endif /* SOC_INT_CLIC_SUPPORTED */
 }
 
-#endif  //#if (SOC_CPU_CORES_NUM > 1)
+#endif /* SOC_INT_CLIC_SUPPORTED */
+
 
 FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
 {
-//TODO: IDF-7795
 #if SOC_INT_CLIC_SUPPORTED
     unsigned intr_ena_mask = 0;
     unsigned intr_num;
@@ -194,7 +193,6 @@ FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
 
 FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(unsigned int intr_num)
 {
-//TODO: IDF-7795
 #if SOC_INT_CLIC_SUPPORTED
     REG_SET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET) , CLIC_INT_IP);
 #else

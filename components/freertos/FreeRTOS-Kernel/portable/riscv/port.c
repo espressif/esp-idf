@@ -92,6 +92,10 @@ volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS] = {0};
 __attribute__((aligned(16))) StackType_t xIsrStack[portNUM_PROCESSORS][configISR_STACK_SIZE];
 StackType_t *xIsrStackTop[portNUM_PROCESSORS] = {0};
 
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+StackType_t *xIsrStackBottom[portNUM_PROCESSORS] = {0};
+#endif
+
 /* ------------------------------------------------ FreeRTOS Portable --------------------------------------------------
  * - Provides implementation for functions required by FreeRTOS
  * - Declared in portable.h
@@ -107,9 +111,12 @@ BaseType_t xPortStartScheduler(void)
     port_uxCriticalNesting[coreID] = 0;
     port_xSchedulerRunning[coreID] = 0;
 
-    /* Initialize ISR Stack top */
+    /* Initialize ISR Stack(s) */
     for (int i = 0; i < portNUM_PROCESSORS; i++) {
         xIsrStackTop[i] = &xIsrStack[i][0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+        xIsrStackBottom[i] = &xIsrStack[i][0];
+#endif
     }
 
     /* Setup the hardware to generate the tick. */

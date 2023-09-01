@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,9 @@
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
 #endif
+
+/* For targets that uses a CLIC as their interrupt controller, CPU_INT_LINES_COUNT represents the external interrupts count */
+#define CPU_INT_LINES_COUNT 32
 
 static const char* TAG = "intr_alloc";
 
@@ -161,7 +164,7 @@ static vector_desc_t *get_desc_for_int(int intno, int cpu)
     }
 }
 
-//Returns a vector_desc entry for an source, the cpu parameter is used to tell GPIO_INT and GPIO_NMI from different CPUs
+//Returns a vector_desc entry for a source, the cpu parameter is used to tell GPIO_INT and GPIO_NMI from different CPUs
 static vector_desc_t * find_desc_for_source(int source, int cpu)
 {
     vector_desc_t *vd = vector_desc_head;
@@ -326,11 +329,11 @@ static int get_available_int(int flags, int cpu, int force, int source)
     vector_desc_t *vd = find_desc_for_source(source, cpu);
     if (vd) {
         // if existing vd found, don't need to search any more.
-        ALCHLOG("get_avalible_int: existing vd found. intno: %d", vd->intno);
+        ALCHLOG("get_available_int: existing vd found. intno: %d", vd->intno);
         if ( force != -1 && force != vd->intno ) {
-            ALCHLOG("get_avalible_int: intr forced but not matach existing. existing intno: %d, force: %d", vd->intno, force);
+            ALCHLOG("get_available_int: intr forced but does not match existing. existing intno: %d, force: %d", vd->intno, force);
         } else if (!is_vect_desc_usable(vd, flags, cpu, force)) {
-            ALCHLOG("get_avalible_int: existing vd invalid.");
+            ALCHLOG("get_available_int: existing vd invalid.");
         } else {
             best = vd->intno;
         }
@@ -348,14 +351,14 @@ static int get_available_int(int flags, int cpu, int force, int source)
         if (is_vect_desc_usable(vd, flags, cpu, force)) {
             best = vd->intno;
         } else {
-            ALCHLOG("get_avalible_int: forced vd invalid.");
+            ALCHLOG("get_avalaible_int: forced vd invalid.");
         }
         return best;
     }
 
     ALCHLOG("get_free_int: start looking. Current cpu: %d", cpu);
-    //No allocated handlers as well as forced intr, iterate over the 32 possible interrupts
-    for (x = 0; x < 32; x++) {
+    /* No allocated handlers as well as forced intr, iterate over the 32 possible interrupts */
+    for (x = 0; x < CPU_INT_LINES_COUNT; x++) {
         //Grab the vector_desc for this vector.
         vd = find_desc_for_int(x, cpu);
         if (vd == NULL) {
@@ -811,12 +814,13 @@ esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
 
 esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 {
-    if (!handle) {
+    if (handle == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
     portENTER_CRITICAL_SAFE(&spinlock);
     int source;
-    bool disabled = 1;
+    bool disabled = true;
     if (handle->shared_vector_desc) {
         handle->shared_vector_desc->disabled = 1;
         source=handle->shared_vector_desc->source;
@@ -824,8 +828,8 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
         shared_vector_desc_t *svd = handle->vector_desc->shared_vec_info;
         assert(svd != NULL);
         while(svd) {
-            if (svd->source == source && svd->disabled == 0) {
-                disabled = 0;
+            if (svd->source == source && !svd->disabled) {
+                disabled = false;
                 break;
             }
             svd = svd->next;
@@ -924,7 +928,7 @@ esp_err_t esp_intr_dump(FILE *stream)
     for (int cpu = 0; cpu < cpu_num; ++cpu) {
         fprintf(stream, "CPU %d interrupt status:\n", cpu);
         fprintf(stream, " Int  Level  Type   Status\n");
-        for (int i_num = 0; i_num < 32; ++i_num) {
+        for (int i_num = 0; i_num < CPU_INT_LINES_COUNT; ++i_num) {
             fprintf(stream, " %2d  ", i_num);
             esp_cpu_intr_desc_t intr_desc;
             esp_cpu_intr_get_desc(cpu, i_num, &intr_desc);
