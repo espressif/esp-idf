@@ -1715,6 +1715,20 @@ extern void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback);
 
 /*******************************************************************************
 **
+** Function         BTA_DmCfgCoexStatus
+**
+** Description      This function configures coexist status.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+extern void BTA_DmCfgCoexStatus(UINT8 op, UINT8 type, UINT8 status);
+#endif
+
+/*******************************************************************************
+**
 ** Function         BTA_DmGetRemoteName
 **
 ** Description      This function gets the peer device's Bluetooth name.

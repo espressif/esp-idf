@@ -54,6 +54,9 @@ enum {
     BTA_DM_API_DISABLE_EVT,
     BTA_DM_API_SET_NAME_EVT,
     BTA_DM_API_GET_NAME_EVT,
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    BTA_DM_API_CFG_COEX_ST_EVT,
+#endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
     BTA_DM_API_CONFIG_EIR_EVT,
     BTA_DM_API_PAGE_TO_SET_EVT,
@@ -243,6 +246,15 @@ typedef struct {
     BT_HDR              hdr;
     tBTA_GET_DEV_NAME_CBACK *p_cback;
 } tBTA_DM_API_GET_NAME;
+
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+typedef struct {
+    BT_HDR hdr;
+    UINT8  op;
+    UINT8  type;
+    UINT8  status;
+} tBTA_DM_API_CFG_COEX_STATUS;
+#endif
 
 /* data type for BTA_DM_API_CONFIG_EIR_EVT */
 typedef struct {
@@ -1090,6 +1102,9 @@ typedef union {
 
     tBTA_DM_API_SET_NAME set_name;
     tBTA_DM_API_GET_NAME get_name;
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    tBTA_DM_API_CFG_COEX_STATUS cfg_coex_status;
+#endif
     tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
@@ -1593,6 +1608,9 @@ extern void bta_dm_enable (tBTA_DM_MSG *p_data);
 extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
 extern void bta_dm_get_dev_name (tBTA_DM_MSG *p_data);
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+extern void bta_dm_cfg_coex_status(tBTA_DM_MSG *p_data);
+#endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_page_timeout (tBTA_DM_MSG *p_data);

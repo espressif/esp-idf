@@ -202,6 +202,31 @@ void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback)
     }
 }
 
+/*******************************************************************************
+**
+** Function         BTA_DmCfgCoexStatus
+**
+** Description      This function configures the coexist status
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+void BTA_DmCfgCoexStatus(UINT8 op, UINT8 type, UINT8 status)
+{
+    tBTA_DM_API_CFG_COEX_STATUS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CFG_COEX_STATUS *) osi_malloc(sizeof(tBTA_DM_API_CFG_COEX_STATUS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CFG_COEX_ST_EVT;
+        p_msg->op = op;
+        p_msg->type = type;
+        p_msg->status = status;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif
+
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
 void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)

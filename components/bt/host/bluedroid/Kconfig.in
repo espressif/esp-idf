@@ -40,6 +40,13 @@ config BT_BLUEDROID_MEM_DEBUG
     help
         Bluedroid memory debug
 
+config BT_BLUEDROID_ESP_COEX_VSC
+    bool "Enable Espressif Vendor-specific HCI commands for coexist status configuration"
+    depends on BT_BLUEDROID_ENABLED
+    default y
+    help
+        Enable Espressif Vendor-specific HCI commands for coexist status configuration
+
 config BT_CLASSIC_ENABLED
     bool "Classic Bluetooth"
     depends on BT_BLUEDROID_ENABLED && IDF_TARGET_ESP32

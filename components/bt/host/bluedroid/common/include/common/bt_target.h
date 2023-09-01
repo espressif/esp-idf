@@ -45,6 +45,12 @@
 /* OS Configuration from User config (eg: sdkconfig) */
 #define BT_BTU_TASK_STACK_SIZE      UC_BTU_TASK_STACK_SIZE
 
+#if (UC_BT_BLUEDROID_ESP_COEX_VSC == TRUE)
+#define ESP_COEX_VSC_INCLUDED        TRUE
+#else
+#define ESP_COEX_VSC_INCLUDED        FALSE
+#endif
+
 /******************************************************************************
 **
 ** Classic BT features

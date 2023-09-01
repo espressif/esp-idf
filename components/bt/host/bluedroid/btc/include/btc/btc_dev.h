@@ -12,7 +12,10 @@
 #include "btc/btc_task.h"
 
 typedef enum {
-    BTC_DEV_ACT_SET_DEVICE_NAME
+    BTC_DEV_ACT_SET_DEVICE_NAME,
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    BTC_DEV_ACT_CFG_COEX_STATUS,
+#endif
 } btc_dev_act_t;
 
 /* btc_dev_args_t */
@@ -21,6 +24,15 @@ typedef union {
     struct set_bt_dev_name_args {
         char *device_name;
     } set_dev_name;
+
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    // BTC_DEV_ACT_CFG_COEX_STATUS
+    struct cfg_bt_dev_coex_st_args {
+        esp_bt_dev_coex_type_t type;
+        esp_bt_dev_coex_op_t op;
+        uint8_t status;
+    } cfg_coex_status;
+#endif
 } btc_dev_args_t;
 
 void btc_dev_call_handler(btc_msg_t *msg);

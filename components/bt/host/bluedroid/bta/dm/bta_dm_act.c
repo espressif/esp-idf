@@ -694,6 +694,25 @@ void bta_dm_get_dev_name (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_cfg_coex_status
+**
+** Description      config coexistance status
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+void bta_dm_cfg_coex_status (tBTA_DM_MSG *p_data)
+{
+    BTM_ConfigCoexStatus(p_data->cfg_coex_status.op,
+                         p_data->cfg_coex_status.type,
+                         p_data->cfg_coex_status.status);
+}
+#endif
+
+/*******************************************************************************
+**
 ** Function         bta_dm_set_afh_channels
 **
 ** Description      Sets AFH channels
