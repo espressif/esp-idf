@@ -3458,10 +3458,10 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp ) PRIVILEGED_FUNCTION;
     #define prvENTER_CRITICAL_OR_SUSPEND_ALL( x )  ( { vTaskSuspendAll(); ( void ) ( x ); } )
     #define prvEXIT_CRITICAL_OR_RESUME_ALL( x )    xTaskResumeAll()
     #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus )  \
-        ( uxSavedInterruptStatus ) = portSET_INTERRUPT_MASK_FROM_ISR(); \
+        ( uxInterruptStatus ) = portSET_INTERRUPT_MASK_FROM_ISR();      \
         ( void ) ( pxLock );
     #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus )  \
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( ( uxSavedInterruptStatus ) ); \
+        portCLEAR_INTERRUPT_MASK_FROM_ISR( ( uxInterruptStatus ) );      \
         ( void ) ( pxLock );
 #endif /* configNUM_CORES > 1 */
 
