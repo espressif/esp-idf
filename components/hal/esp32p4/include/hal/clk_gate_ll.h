@@ -117,6 +117,7 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
 
 static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool enable)
 {
+    uint32_t ret;
     switch (periph) {
     case PERIPH_PVT_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_PVT_TOP;
@@ -207,7 +208,11 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     case PERIPH_SEC_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_SEC;
     case PERIPH_SHA_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_SHA;
+        ret = HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_SHA;
+        if (enable == true) {
+            ret |= HP_SYS_CLKRST_REG_RST_EN_HMAC;
+        }
+        return ret;
     case PERIPH_ECDSA_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_ECDSA;
     case PERIPH_SDMMC_MODULE:
