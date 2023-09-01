@@ -21,7 +21,9 @@
 #include "common/bt_target.h"
 #include "common/bt_defs.h"
 #include "device/bdaddr.h"
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
+#endif
 #include "esp_hf_ag_api.h"
 #include "esp_err.h"
 #include "esp_bt_main.h"
