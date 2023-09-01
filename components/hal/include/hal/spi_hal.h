@@ -30,6 +30,7 @@
 #include "soc/soc_caps.h"
 #include "hal/spi_types.h"
 #include "hal/dma_types.h"
+#include "soc/gdma_channel.h"
 #if SOC_GPSPI_SUPPORTED
 #include "hal/spi_ll.h"
 #endif

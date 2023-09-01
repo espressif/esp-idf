@@ -133,6 +133,7 @@ TEST_CASE("test fullduplex slave with only RX direction", "[spi]")
         slave_t.length = 8 * 32;
         slave_t.tx_buffer = NULL;
         slave_t.rx_buffer = slave_rxbuf;
+        slave_t.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
 
         // Colorize RX buffer with known pattern
         memset( slave_rxbuf, 0x66, sizeof(slave_rxbuf));
@@ -179,6 +180,7 @@ TEST_CASE("test fullduplex slave with only TX direction", "[spi]")
         slave_t.length = 8 * 32;
         slave_t.tx_buffer = slave_txbuf;
         slave_t.rx_buffer = NULL;
+        slave_t.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
 
         // Colorize RX buffer with known pattern
         memset( master_rxbuf, 0x66, sizeof(master_rxbuf));
@@ -226,6 +228,7 @@ TEST_CASE("test slave send unaligned", "[spi]")
         slave_t.length = 8 * 32;
         slave_t.tx_buffer = slave_txbuf + i;
         slave_t.rx_buffer = slave_rxbuf;
+        slave_t.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
 
         // Colorize RX buffers with known pattern
         memset( master_rxbuf, 0x66, sizeof(master_rxbuf));
@@ -391,7 +394,7 @@ TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][timeout=120]", 
 
 #if CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define TEST_IRAM_TRANS_NUM     8
-#define TEST_TRANS_LEN          120
+#define TEST_TRANS_LEN          64
 #define TEST_BUFFER_SZ          (TEST_IRAM_TRANS_NUM*TEST_TRANS_LEN)
 
 static void test_slave_iram_master_normal(void)
@@ -484,8 +487,8 @@ static IRAM_ATTR void test_slave_isr_iram(void)
     slvcfg.post_trans_cb = test_slave_iram_post_trans_cbk;
     TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
 
-    uint8_t *slave_iram_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    uint8_t *slave_iram_recv = heap_caps_calloc(1, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_iram_send = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_iram_recv = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_iram_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     get_tx_buffer(1001, slave_iram_exp, slave_iram_send, TEST_BUFFER_SZ);
     spi_slave_transaction_t trans_cfg[TEST_IRAM_TRANS_NUM] = {0};
@@ -522,7 +525,6 @@ static IRAM_ATTR void test_slave_isr_iram(void)
     free(slave_iram_exp);
     spi_slave_free(TEST_SPI_HOST);
 }
-
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_ISR_IRAM_disable_cache", "[spi_ms]", test_slave_iram_master_normal, test_slave_isr_iram);
 
 static uint32_t isr_trans_cnt, isr_trans_test_fail;
@@ -565,8 +567,8 @@ static IRAM_ATTR void spi_slave_trans_in_isr(void)
     slvcfg.post_trans_cb = test_trans_in_isr_post_trans_cbk;
     TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
 
-    uint8_t *slave_isr_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    uint8_t *slave_isr_recv = heap_caps_calloc(1, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_isr_send = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_isr_recv = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_isr_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     get_tx_buffer(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
     spi_slave_transaction_t trans_cfg = {
@@ -596,7 +598,6 @@ static IRAM_ATTR void spi_slave_trans_in_isr(void)
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Trans_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_slave_trans_in_isr);
 
-uint32_t dummy_data[2] = {0x38383838, 0x5b5b5b5b};
 spi_slave_transaction_t dummy_trans[2];
 static uint32_t queue_reset_isr_trans_cnt, test_queue_reset_isr_fail;
 static IRAM_ATTR void test_queue_reset_in_isr_post_trans_cbk(spi_slave_transaction_t *curr_trans)
@@ -615,8 +616,6 @@ static IRAM_ATTR void test_queue_reset_in_isr_post_trans_cbk(spi_slave_transacti
 
         if (queue_reset_isr_trans_cnt > 4) {
             // add some confusing transactions
-            dummy_data[0] ++;
-            dummy_data[1] --;
             spi_slave_queue_trans_isr(TEST_SPI_HOST, &dummy_trans[0]);
             ESP_LOG_BUFFER_HEX_ISR(DRAM_STR("Queue Hacked hahhhhh..."), dummy_trans[0].tx_buffer, dummy_trans[0].length / 8);
             spi_slave_queue_trans_isr(TEST_SPI_HOST, &dummy_trans[1]);
@@ -651,10 +650,12 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
     slvcfg.post_trans_cb = test_queue_reset_in_isr_post_trans_cbk;
     TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
 
-    uint8_t *slave_isr_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    uint8_t *slave_isr_recv = heap_caps_calloc(1, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_isr_send = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_isr_recv = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *dummy_data = heap_caps_aligned_alloc(64, 64*2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_isr_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     get_tx_buffer(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
+    get_tx_buffer(1001, dummy_data, dummy_data + 64, 64);
     spi_slave_transaction_t trans_cfg = {
         .tx_buffer = slave_isr_send,
         .rx_buffer = slave_isr_recv,
@@ -664,10 +665,10 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
 
     unity_wait_for_signal("Master ready");
     for (uint8_t i = 0; i < 2; i++) {
-        dummy_trans[i].tx_buffer = &dummy_data[i];
-        dummy_trans[i].rx_buffer = &dummy_data[i];
-        dummy_trans[i].user = &dummy_data[i];
-        dummy_trans[i].length = sizeof(uint32_t) * 8;
+        dummy_trans[i].tx_buffer = dummy_data + i * 64;
+        dummy_trans[i].rx_buffer = dummy_data + i * 64;
+        dummy_trans[i].user = dummy_data + i * 64;
+        dummy_trans[i].length = 64 * 8;
     }
     // start a trans by normal API first to trigger spi isr
     spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY);
@@ -687,7 +688,7 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
     spi_slave_free(TEST_SPI_HOST);
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Reset_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_queue_reset_in_isr);
-#endif // CONFIG_SPI_SLAVE_ISR_IN_IRAM
+#endif  // CONFIG_SPI_SLAVE_ISR_IN_IRAM
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
 
@@ -716,7 +717,7 @@ TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
 
     slave_expect = 0;
     for (int i = 0; i < TEST_ISR_CNT; i++) {
-        TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_DISABLED));
         TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
         TEST_ESP_OK(spi_slave_free(TEST_SPI_HOST));
     }
@@ -729,7 +730,7 @@ TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
 
     slave_expect = 0;
     for (int i = 0; i < TEST_ISR_CNT; i++) {
-        TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_DISABLED));
         TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
         vTaskDelay(1);  // Waiting ISR on core 1 to be done.
         TEST_ESP_OK(spi_slave_free(TEST_SPI_HOST));
@@ -737,5 +738,4 @@ TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
     printf("Test Slave ISR Assign CPU1: %d : %ld\n", TEST_ISR_CNT, slave_expect);
     TEST_ASSERT_EQUAL_UINT32(TEST_ISR_CNT, slave_expect);
 }
-
 #endif
