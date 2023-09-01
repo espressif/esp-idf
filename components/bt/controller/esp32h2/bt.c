@@ -42,7 +42,11 @@
 
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
 #include "esp_private/sleep_retention.h"
-#endif
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#include "esp_private/sleep_modem.h"
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "hci/hci_hal.h"
@@ -53,6 +57,7 @@
 
 #include "esp_private/periph_ctrl.h"
 #include "esp_sleep.h"
+#include "soc/rtc.h"
 /* Macro definition
  ************************************************************************
  */
@@ -134,7 +139,9 @@ extern uint32_t r_os_cputime_get32(void);
 extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 extern const sleep_retention_entries_config_t *esp_ble_mac_retention_link_get(uint8_t *size, uint8_t extra);
+extern void esp_ble_set_wakeup_overhead(uint32_t overhead);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+// extern void esp_ble_change_rtc_freq(uint32_t freq);
 extern void ble_lll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg,
                                         void *w_arg, uint32_t us_to_enabled);
 extern void r_ble_rtc_wake_up_state_clr(void);
@@ -452,6 +459,33 @@ static int esp_intr_free_wrapper(void **ret_handle)
     return rc;
 }
 
+void esp_bt_rtc_slow_clk_select(uint8_t slow_clk_src)
+{
+    /* Select slow clock source for BT momdule */
+    switch (slow_clk_src) {
+        case MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (320 - 1));
+        case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_XTAL32K:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using external 32.768 kHz XTAL as clock source");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_RC32K:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_EXT32K:
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz oscillator as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
+            break;
+        default:
+    }
+}
+
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 {
     if (!s_ble_active) {
@@ -503,6 +537,10 @@ static void sleep_modem_ble_mac_modem_state_deinit(void)
     sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_BLE_MAC);
 }
 
+void sleep_modem_light_sleep_overhead_set(uint32_t overhead)
+{
+    esp_ble_set_wakeup_overhead(overhead - 500);
+}
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 esp_err_t controller_sleep_init(void)
@@ -531,6 +569,11 @@ esp_err_t controller_sleep_init(void)
     assert(rc == 0);
     esp_sleep_enable_bt_wakeup();
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
+
+    rc = esp_pm_register_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
+    if (rc != ESP_OK) {
+        goto error;
+    }
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     return rc;
 
@@ -538,6 +581,7 @@ error:
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     esp_sleep_disable_bt_wakeup();
+    esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     /*lock should release first and then delete*/
     if (s_pm_lock != NULL) {
@@ -555,6 +599,7 @@ void controller_sleep_deinit(void)
     r_ble_rtc_wake_up_state_clr();
     esp_sleep_disable_bt_wakeup();
     sleep_modem_ble_mac_modem_state_deinit();
+    esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 #ifdef CONFIG_PM_ENABLE
     /* lock should be released first */
@@ -639,6 +684,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     uint8_t mac[6];
     esp_err_t ret = ESP_OK;
     ble_npl_count_info_t npl_info;
+    bool use_main_xtal = false;
 
     memset(&npl_info, 0, sizeof(ble_npl_count_info_t));
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
@@ -698,21 +744,22 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     /* Enable BT-related clocks */
     modem_clock_module_enable(PERIPH_BT_MODULE);
 #if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
-    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
-    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL, (320 - 1));
+   esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL);
 #else
 #if CONFIG_RTC_CLK_SRC_INT_RC
-    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
-    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_RC_SLOW, (5 - 1));
+    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
 #elif CONFIG_RTC_CLK_SRC_EXT_CRYS
-    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using external 32.768 kHz XTAL as clock source");
-    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_XTAL32K, (1 - 1));
+    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_XTAL32K);
+    } else {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
+        esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL);
+        use_main_xtal = true;
+    }
 #elif CONFIG_RTC_CLK_SRC_INT_RC32K
-    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
-    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_RC32K, (1 - 1));
+    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_RC32K);
 #elif CONFIG_RTC_CLK_SRC_EXT_OSC
-    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 32 kHz oscillator as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
-    modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, MODEM_CLOCK_LPCLK_SRC_EXT32K, (1 - 1));
+    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_EXT32K);
 #else
     ESP_LOGE(NIMBLE_PORT_LOG_TAG, "Unsupported clock source");
     assert(0);
@@ -733,6 +780,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", ret);
         goto modem_deint;
+    }
+
+    if (use_main_xtal) {
+        // esp_ble_change_rtc_freq(100000);
     }
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
