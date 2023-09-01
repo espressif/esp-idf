@@ -746,13 +746,13 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, int gpio_num, i2s_clock_src_t clk_sr
     bool is_apll = clk_src == I2S_CLK_SRC_APLL;
     if (gpio_num == GPIO_NUM_0) {
         gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
-        gpio_ll_iomux_pin_ctrl(is_apll ? 0xFFF6 : (is_i2s0 ? 0xFFF0 : 0xFFFF));
+        gpio_ll_set_iomux_pin_ctrl(is_apll ? 0xFFF6 : (is_i2s0 ? 0xFFF0 : 0xFFFF), 0xFFFFFFFF, 0);
     } else if (gpio_num == GPIO_NUM_1) {
         gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_CLK_OUT3);
-        gpio_ll_iomux_pin_ctrl(is_apll ? 0xF6F6 : (is_i2s0 ? 0xF0F0 : 0xF0FF));
+        gpio_ll_set_iomux_pin_ctrl(is_apll ? 0xF6F6 : (is_i2s0 ? 0xF0F0 : 0xF0FF), 0xFFFFFFFF, 0);
     } else {
         gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_CLK_OUT2);
-        gpio_ll_iomux_pin_ctrl(is_apll ? 0xFF66 : (is_i2s0 ? 0xFF00 : 0xFF0F));
+        gpio_ll_set_iomux_pin_ctrl(is_apll ? 0xFF66 : (is_i2s0 ? 0xFF00 : 0xFF0F), 0xFFFFFFFF, 0);
     }
 #else
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "mck_io_num invalid");

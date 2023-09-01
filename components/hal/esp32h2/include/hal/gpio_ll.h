@@ -535,6 +535,18 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
 }
 
 /**
+ * @brief  Control the pin in the IOMUX
+ *
+ * @param  bmap   write mask of control value
+ * @param  val    Control value
+ * @param  shift  write mask shift of control value
+ */
+static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
+{
+    SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
+}
+
+/**
  * @brief Set clock source of IO MUX module
  *
  * @param src IO MUX clock source (only a subset of soc_module_clk_t values are valid)
