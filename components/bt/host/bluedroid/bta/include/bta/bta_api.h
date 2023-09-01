@@ -3024,9 +3024,9 @@ extern void BTA_DmBleGapPeriodicAdvSetParams(UINT8 instance,
                                                          tBTA_DM_BLE_Periodic_Adv_Params *params);
 
 extern void BTA_DmBleGapPeriodicAdvCfgDataRaw(UINT8 instance, UINT16 length,
-                                                           const UINT8 *data);
+                                                           const UINT8 *data,BOOLEAN only_update_did);
 
-extern void BTA_DmBleGapPeriodicAdvEnable(BOOLEAN enable, UINT8 instance);
+extern void BTA_DmBleGapPeriodicAdvEnable(UINT8 enable, UINT8 instance);
 
 extern void BTA_DmBleGapPeriodicAdvCreateSync(tBTA_DM_BLE_Periodic_Sync_Params *params);
 

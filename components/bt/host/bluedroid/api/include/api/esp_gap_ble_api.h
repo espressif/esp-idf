@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2107,6 +2107,22 @@ esp_err_t esp_ble_gap_ext_adv_set_clear(void);
 */
 esp_err_t esp_ble_gap_periodic_adv_set_params(uint8_t instance, const esp_ble_gap_periodic_adv_params_t *params);
 
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+/**
+* @brief           This function is used to set the data used in periodic advertising PDUs.
+*
+* @param[in]       instance : identifies the advertising set whose periodic advertising parameters are being configured.
+* @param[in]       length : the length of periodic data
+* @param[in]       data : periodic data information
+* @param[in]       only_update_did : If true, only the Advertising DID of the periodic advertising will be updated, and the length and data parameters will be ignored.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t length,
+                                                                           const uint8_t *data, bool only_update_did);
+#else
 /**
 * @brief           This function is used to set the data used in periodic advertising PDUs.
 *
@@ -2120,6 +2136,21 @@ esp_err_t esp_ble_gap_periodic_adv_set_params(uint8_t instance, const esp_ble_ga
 */
 esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t length,
                                                                            const uint8_t *data);
+#endif
+
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+/**
+* @brief           This function is used to request the Controller to enable the periodic advertising for the advertising set specified
+*
+* @param[in]       instance : Used to identify an advertising set
+* @param[in]       include_adi : If true, the ADI (Advertising Data Info) field will be included in AUX_SYNC_IND PDUs
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance,bool include_adi);
+#else
 /**
 * @brief           This function is used to request the Controller to enable the periodic advertising for the advertising set specified
 *
@@ -2130,6 +2161,7 @@ esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t le
 *
 */
 esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance);
+#endif
 
 /**
 * @brief           This function is used to request the Controller to disable the periodic advertising for the advertising set specified

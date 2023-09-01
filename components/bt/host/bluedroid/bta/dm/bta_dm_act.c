@@ -5751,7 +5751,8 @@ void bta_dm_ble_gap_periodic_adv_cfg_data_raw(tBTA_DM_MSG *p_data)
 
     BTM_BlePeriodicAdvCfgDataRaw(p_data->ble_cfg_periodic_adv_data.instance,
                                  p_data->ble_cfg_periodic_adv_data.length,
-                                 p_data->ble_cfg_periodic_adv_data.data);
+                                 p_data->ble_cfg_periodic_adv_data.data,
+                                 p_data->ble_cfg_periodic_adv_data.only_update_did);
 }
 
 void bta_dm_ble_gap_periodic_adv_enable(tBTA_DM_MSG *p_data)

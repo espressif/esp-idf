@@ -984,12 +984,13 @@ typedef struct {
     UINT8                           instance;
     UINT16                          length;
     UINT8                           *data;
+    BOOLEAN                         only_update_did;
 } tBTA_DM_API_CFG_PERIODIC_ADV_DATA;
 
 typedef struct {
     BT_HDR                          hdr;
     UINT8                           instance;
-    BOOLEAN                         enable;
+    UINT8                           enable;
 } tBTA_DM_API_ENABLE_PERIODIC_ADV;
 
 typedef struct {

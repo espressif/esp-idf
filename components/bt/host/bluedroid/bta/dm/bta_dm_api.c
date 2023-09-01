@@ -2978,7 +2978,7 @@ void BTA_DmBleGapPeriodicAdvSetParams(UINT8 instance,
 }
 
 void BTA_DmBleGapPeriodicAdvCfgDataRaw(UINT8 instance, UINT16 length,
-                                                           const UINT8 *data)
+                                                           const UINT8 *data,bool only_update_did)
 {
     tBTA_DM_API_CFG_PERIODIC_ADV_DATA *p_msg;
     APPL_TRACE_API("%s, Periodic ADV config data raw.", __func__);
@@ -2990,6 +2990,7 @@ void BTA_DmBleGapPeriodicAdvCfgDataRaw(UINT8 instance, UINT16 length,
         p_msg->data = (UINT8 *)(p_msg + 1);
         memcpy(p_msg->data, data, length);
         p_msg->data = length != 0 ? (UINT8 *)(p_msg + 1) : NULL;
+        p_msg->only_update_did = only_update_did;
         //start sent the msg to the bta system control moudle
         bta_sys_sendmsg(p_msg);
     } else {
@@ -2998,7 +2999,7 @@ void BTA_DmBleGapPeriodicAdvCfgDataRaw(UINT8 instance, UINT16 length,
 
 }
 
-void BTA_DmBleGapPeriodicAdvEnable(BOOLEAN enable, UINT8 instance)
+void BTA_DmBleGapPeriodicAdvEnable(UINT8 enable, UINT8 instance)
 {
     tBTA_DM_API_ENABLE_PERIODIC_ADV *p_msg;
     APPL_TRACE_API("%s, Periodic ADV %s.", __func__, enable ? "start" : "stop");
