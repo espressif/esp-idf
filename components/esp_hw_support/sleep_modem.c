@@ -337,7 +337,7 @@ esp_err_t sleep_modem_configure(int max_freq_mhz, int min_freq_mhz, bool light_s
     return ESP_OK;
 }
 
-#define PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO 1
+#define PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO 2
 
 /* Inform peripherals of light sleep wakeup overhead time */
 static inform_out_light_sleep_overhead_cb_t s_periph_inform_out_light_sleep_overhead_cb[PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO];
