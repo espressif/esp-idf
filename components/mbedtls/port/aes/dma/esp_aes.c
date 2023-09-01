@@ -400,6 +400,10 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         //Limit max inlink descriptor length to be 16 byte aligned, require for EDMA
         lldesc_setup_link_constrained(block_out_desc, output, block_bytes, LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED, 0);
 
+        /* Setup in/out start descriptors */
+        lldesc_append(&in_desc_head, block_in_desc);
+        lldesc_append(&out_desc_head, block_out_desc);
+
         out_desc_tail = &block_out_desc[lldesc_num - 1];
     }
 
@@ -417,19 +421,12 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         lldesc_setup_link(&s_stream_in_desc, s_stream_in, AES_BLOCK_BYTES, 0);
         lldesc_setup_link(&s_stream_out_desc, s_stream_out, AES_BLOCK_BYTES, 0);
 
-        if (block_bytes > 0) {
-            /* Link with block descriptors*/
-            block_in_desc[lldesc_num - 1].empty = (uint32_t)&s_stream_in_desc;
-            block_out_desc[lldesc_num - 1].empty = (uint32_t)&s_stream_out_desc;
-        }
+        /* Link with block descriptors */
+        lldesc_append(&in_desc_head, &s_stream_in_desc);
+        lldesc_append(&out_desc_head, &s_stream_out_desc);
 
         out_desc_tail = &s_stream_out_desc;
     }
-
-    // block buffers are sent to DMA first, unless there aren't any
-    in_desc_head =  (block_bytes > 0) ? block_in_desc : &s_stream_in_desc;
-    out_desc_head = (block_bytes > 0) ? block_out_desc : &s_stream_out_desc;
-
 
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     /* Only use interrupt for long AES operations */
