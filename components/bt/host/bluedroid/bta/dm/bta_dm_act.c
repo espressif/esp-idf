@@ -46,6 +46,9 @@
 #if (GAP_INCLUDED == TRUE)
 #include "stack/gap_api.h"
 #endif
+#if (BT_CONTROLLER_INCLUDED == TRUE)
+#include "esp_bt.h"
+#endif
 
 static void bta_dm_inq_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_inq_cmpl_cb (void *p_result);
@@ -136,7 +139,6 @@ static void bta_dm_observe_discard_cb (uint32_t num_dis);
 static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle);
 extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8 *p_uuid128);
 static void bta_dm_disable_timer_cback(TIMER_LIST_ENT *p_tle);
-extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 
 const UINT16 bta_service_id_to_uuid_lkup_tbl [BTA_MAX_SERVICE_ID] = {
     UUID_SERVCLASS_PNP_INFORMATION,         /* Reserved */
@@ -4313,7 +4315,14 @@ static void bta_dm_set_eir (char *local_name)
     if (p_bta_dm_eir_cfg->bta_dm_eir_included_tx_power) {
         if (free_eir_length >= 3) {
             int min_power_level, max_power_level;
-            if (bredr_txpwr_get(&min_power_level, &max_power_level) == 0) {
+#if (BT_CONTROLLER_INCLUDED == TRUE)
+            if (esp_bredr_tx_power_get((esp_power_level_t *)&min_power_level, (esp_power_level_t *)&max_power_level) == ESP_OK) {
+#else
+            {
+                min_power_level = 0;
+                max_power_level = 0;
+                UNUSED(min_power_level);
+#endif
                 INT8 btm_tx_power[BTM_TX_POWER_LEVEL_MAX + 1] = BTM_TX_POWER;
                 p_bta_dm_eir_cfg->bta_dm_eir_inq_tx_power = btm_tx_power[max_power_level];
                 UINT8_TO_STREAM(p, 2);      /* Length field */

@@ -9,6 +9,7 @@
 #include "osi/allocator.h"
 #include "stack/bt_types.h"
 #include "common/bt_defs.h"
+#include "common/bt_target.h"
 #include "bta/bta_api.h"
 #include "bta/bta_dm_co.h"
 #include "btc/btc_task.h"
@@ -23,7 +24,9 @@
 #include "osi/mutex.h"
 #include "osi/thread.h"
 #include "osi/pkt_queue.h"
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
+#endif
 
 #if (BLE_INCLUDED == TRUE)
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
@@ -187,7 +190,11 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
 
     if (p_adv_data->include_txpower) {
         mask |= BTM_BLE_AD_BIT_TX_PWR;
+#if (BT_CONTROLLER_INCLUDED == TRUE)
         bta_adv_data->tx_power = esp_ble_tx_power_get(ESP_BLE_PWR_TYPE_ADV);
+#else
+        bta_adv_data->tx_power = 0;
+#endif
     }
 
     if (p_adv_data->min_interval > 0 && p_adv_data->max_interval > 0 &&

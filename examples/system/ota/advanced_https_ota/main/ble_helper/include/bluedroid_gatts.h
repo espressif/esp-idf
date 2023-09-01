@@ -9,7 +9,7 @@
 
 
 #include "sdkconfig.h"
-#if CONFIG_BT_BLE_ENABLED
+#if CONFIG_BT_CONTROLLER_ENABLED && CONFIG_BT_BLE_ENABLED
 
 #ifdef __cplusplus
 extern "C" {

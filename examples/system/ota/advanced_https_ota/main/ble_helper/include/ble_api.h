@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_BT_BLE_ENABLED || CONFIG_BT_NIMBLE_ENABLED
+#if CONFIG_BT_CONTROLLER_ENABLED && (CONFIG_BT_BLE_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
 esp_err_t esp_ble_helper_init(void);
 #endif
 
