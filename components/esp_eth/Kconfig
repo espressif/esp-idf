@@ -111,6 +111,13 @@ menu "Ethernet"
                     cause obvious performance loss.
         endif
 
+        config ETH_IRAM_OPTIMIZATION
+            bool "Enable IRAM optimization"
+            default n
+            help
+                If enabled, functions related to RX/TX are placed into IRAM. It can improve Ethernet throughput.
+                If disabled, all functions are placed into FLASH.
+
     endif # ETH_USE_ESP32_EMAC
 
     menuconfig ETH_USE_SPI_ETHERNET
