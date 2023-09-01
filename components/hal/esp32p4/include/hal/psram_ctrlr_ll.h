@@ -274,7 +274,6 @@ static inline void psram_ctrlr_ll_enable_rd_splice(uint32_t mspi_id, bool en)
     SPIMEM2.mem_ctrl1.mem_ar_splice_en = en;
 }
 
-
 /**
  * @brief Enable PSRAM module clock
  *
@@ -285,8 +284,31 @@ __attribute__((always_inline))
 static inline void psram_ctrlr_ll_enable_module_clock(uint32_t mspi_id, bool en)
 {
     (void)mspi_id;
-    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_pll_clk_en = en;
+    HP_SYS_CLKRST.soc_clk_ctrl0.reg_psram_sys_clk_en = en;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define psram_ctrlr_ll_enable_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; psram_ctrlr_ll_enable_module_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset PSRAM module clock
+ *
+ * @param mspi_id      mspi_id
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_reset_module_clock(uint32_t mspi_id)
+{
+    (void)mspi_id;
+    HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_axi = 1;
+    HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_axi = 0;
+    HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_apb = 1;
+    HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_dual_mspi_apb = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define psram_ctrlr_ll_reset_module_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; psram_ctrlr_ll_reset_module_clock(__VA_ARGS__)
 
 /**
  * @brief Select PSRAM clock source
@@ -317,8 +339,13 @@ static inline void psram_ctrlr_ll_select_clk_source(uint32_t mspi_id, soc_periph
         break;
     }
 
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_pll_clk_en = 1;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_clk_src_sel = clk_val;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define psram_ctrlr_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; psram_ctrlr_ll_select_clk_source(__VA_ARGS__)
 
 /**
  * @brief Set PSRAM core clock
