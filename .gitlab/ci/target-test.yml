@@ -374,6 +374,12 @@ test_app_test_005:
     - ESP32C3
     - Example_GENERIC
 
+test_app_test_006:
+  extends: .test_app_esp32s3_template
+  tags:
+    - ESP32S3
+    - Example_GENERIC
+
 test_app_test_esp32_generic:
   extends: .test_app_esp32_template
   parallel: 5

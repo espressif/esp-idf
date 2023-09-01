@@ -94,4 +94,12 @@ void bootloader_print_banner(void)
 {
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
     ESP_LOGI(TAG, "compile time " __TIME__);
+
+#if CONFIG_FREERTOS_UNICORE
+#if (SOC_CPU_CORES_NUM > 1)
+    ESP_EARLY_LOGW(TAG, "Unicore bootloader");
+#endif
+#else
+    ESP_EARLY_LOGI(TAG, "Multicore bootloader");
+#endif
 }
