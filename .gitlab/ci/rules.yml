@@ -122,12 +122,9 @@
 
 .patterns-build_macos: &patterns-build_macos
   - "tools/ci/test_configure_ci_environment.sh"
-  - "tools/ci/test_build_system_cmake.sh"
 
 .patterns-build_check: &patterns-build_check
   - "tools/test_build_system/**/*"
-  - "tools/ci/test_build_system_cmake.sh"
-  - "tools/ci/test_build_system_spaces.py"
   - "tools/ci/test_configure_ci_environment.sh"
   - "tools/gen_esp_err_to_name.py"
   - "tools/ci/check_soc_headers_leak.py"

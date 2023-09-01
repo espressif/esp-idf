@@ -237,6 +237,7 @@ def test_create_project(idf_py: IdfPyFunc, idf_copy: Path) -> None:
     assert ret.returncode == 4, 'Command create-project exit value is wrong.'
 
 
+@pytest.mark.skipif(sys.platform == 'darwin', reason='macos runner is a shell executor, it would break the file system')
 def test_create_project_with_idf_readonly(idf_copy: Path) -> None:
     def change_to_readonly(src: Path) -> None:
         for root, dirs, files in os.walk(src):
