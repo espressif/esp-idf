@@ -253,6 +253,19 @@ config BT_LE_CONTROLLER_TASK_STACK_SIZE
     help
         This configures stack size of NimBLE controller task
 
+config BT_LE_CONTROLLER_LOG_ENABLED
+    bool "Controller log enable"
+    default n
+    help
+        Enable controller log module
+
+config BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    bool "Controller log dump mode only"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
+        Only operate in dump mode
+
 config BT_LE_LL_RESOLV_LIST_SIZE
     int "BLE LL Resolving list size"
     range 1 5
