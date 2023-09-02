@@ -119,6 +119,8 @@ struct esp_lcd_panel_t {
      *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
      */
     esp_err_t (*disp_on_off)(esp_lcd_panel_t *panel, bool on_off);
+
+    void *user_data;    /*!< User data, used to store externally customized data */
 };
 
 #ifdef __cplusplus
