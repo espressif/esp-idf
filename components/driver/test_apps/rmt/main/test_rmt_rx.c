@@ -196,3 +196,40 @@ TEST_CASE("rmt rx nec with carrier", "[rmt]")
     test_rmt_rx_nec_carrier(128, true, RMT_CLK_SRC_DEFAULT);
 #endif
 }
+
+TEST_CASE("RMT RX test specifying interrupt priority", "[rmt]")
+{
+    rmt_clock_source_t clk_srcs[] = SOC_RMT_CLKS;
+    rmt_rx_channel_config_t rx_channel_cfg = {
+        .clk_src = clk_srcs[0],
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .gpio_num = 0,
+        .flags.with_dma = false,    // Interrupt will only be allocated when dma disabled
+        .flags.io_loop_back = true, // the GPIO will act like a loopback
+        .intr_priority = 3,
+    };
+    // --- Check if specifying interrupt priority works
+    printf("install rx channel\r\n");
+    rmt_channel_handle_t rx_channel = NULL;
+    TEST_ESP_OK(rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
+
+    rmt_channel_handle_t another_rx_channel = NULL;
+    rmt_rx_channel_config_t another_rx_channel_cfg = rx_channel_cfg;
+    // --- Check if rmt interrupt priority valid check works
+    another_rx_channel_cfg.intr_priority = 4;   ///< Specifying a invalid intr_priority
+    TEST_ESP_ERR(rmt_new_rx_channel(&another_rx_channel_cfg, &another_rx_channel), ESP_ERR_INVALID_ARG);
+    // --- Check if rmt interrupt priority conflict check works
+    another_rx_channel_cfg.intr_priority = 1;   ///< Specifying a conflict intr_priority
+    TEST_ESP_ERR(rmt_new_rx_channel(&another_rx_channel_cfg, &another_rx_channel), ESP_ERR_INVALID_ARG);
+    another_rx_channel_cfg.intr_priority = 0;   ///< Do not specify an intr_priority, should not conflict
+    TEST_ESP_OK(rmt_new_rx_channel(&another_rx_channel_cfg, &another_rx_channel));
+    // --- Check if channel works
+    TEST_ESP_OK(rmt_enable(rx_channel));
+    TEST_ESP_OK(rmt_enable(another_rx_channel));
+    // --- Post-test
+    TEST_ESP_OK(rmt_disable(rx_channel));
+    TEST_ESP_OK(rmt_disable(another_rx_channel));
+    TEST_ESP_OK(rmt_del_channel(rx_channel));
+    TEST_ESP_OK(rmt_del_channel(another_rx_channel));
+}

@@ -184,6 +184,11 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 #endif
     esp_err_t ret = ESP_OK;
     rmt_rx_channel_t *rx_channel = NULL;
+    // Check if priority is valid
+    if (config->intr_priority) {
+        ESP_GOTO_ON_FALSE((config->intr_priority) > 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid interrupt priority:%d", config->intr_priority);
+        ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & RMT_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err, TAG, "invalid interrupt priority:%d", config->intr_priority);
+    }
     ESP_GOTO_ON_FALSE(config && ret_chan && config->resolution_hz, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(GPIO_IS_VALID_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, err, TAG, "invalid GPIO number");
     ESP_GOTO_ON_FALSE((config->mem_block_symbols & 0x01) == 0 && config->mem_block_symbols >= SOC_RMT_MEM_WORDS_PER_CHANNEL,
@@ -227,7 +232,14 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 #endif // SOC_RMT_SUPPORT_DMA
     } else {
         // RMT interrupt is mandatory if the channel doesn't use DMA
-        int isr_flags = RMT_INTR_ALLOC_FLAG;
+        // --- install interrupt service
+        // interrupt is mandatory to run basic RMT transactions, so it's not lazy installed in `rmt_tx_register_event_callbacks()`
+        // 1-- Set user specified priority to `group->intr_priority`
+        bool priority_conflict = rmt_set_intr_priority_to_group(group, config->intr_priority);
+        ESP_GOTO_ON_FALSE(!priority_conflict, ESP_ERR_INVALID_ARG, err, TAG, "intr_priority conflict");
+        // 2-- Get interrupt allocation flag
+        int isr_flags = rmt_get_isr_flags(group);
+        // 3-- Allocate interrupt using isr_flag
         ret = esp_intr_alloc_intrstatus(rmt_periph_signals.groups[group_id].irq, isr_flags,
                                         (uint32_t)rmt_ll_get_interrupt_status_reg(hal->regs),
                                         RMT_LL_EVENT_RX_MASK(channel_id), rmt_rx_default_isr, rx_channel, &rx_channel->base.intr);
