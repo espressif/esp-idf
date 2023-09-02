@@ -208,6 +208,13 @@ config BT_NIMBLE_DEBUG
     help
         This enables extra runtime asserts and host debugging
 
+config BT_NIMBLE_DYNAMIC_SERVICE
+    bool "Enable dynamic services"
+    depends on BT_NIMBLE_ENABLED
+    help
+        This enables user to add/remove Gatt services at runtime
+
+
 config BT_NIMBLE_SVC_GAP_DEVICE_NAME
     string "BLE GAP default device name"
     depends on BT_NIMBLE_ENABLED
