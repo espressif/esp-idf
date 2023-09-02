@@ -69,7 +69,7 @@ typedef struct adc_hal_dma_ctx_t {
     dma_descriptor_t    *rx_desc;           ///< DMA descriptors
 
     /**< these will be assigned by hal layer itself */
-    dma_descriptor_t    desc_dummy_head;    ///< Dummy DMA descriptor for ``cur_desc_ptr`` to start
+    dma_descriptor_t    *desc_dummy_head;   ///< Dummy DMA descriptor for ``cur_desc_ptr`` to start
     dma_descriptor_t    *cur_desc_ptr;      ///< Pointer to the current descriptor
 
     /**< these need to be configured by `adc_hal_dma_config_t` via driver layer*/
