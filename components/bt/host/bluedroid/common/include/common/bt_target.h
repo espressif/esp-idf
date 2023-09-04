@@ -2034,6 +2034,12 @@
 #define HID_DEV_FLUSH_TO 0xffff
 #endif
 
+#if (BTA_HD_INCLUDED == TRUE) && (HID_DEV_INCLUDED == TRUE) && (BT_CLASSIC_BQB_INCLUDED == TRUE)
+#define BT_HID_DEVICE_BQB_INCLUDED      TRUE
+#else
+#define BT_HID_DEVICE_BQB_INCLUDED      FALSE
+#endif
+
 /*************************************************************************
 ** Definitions for Both HID-Host & Device
 */
