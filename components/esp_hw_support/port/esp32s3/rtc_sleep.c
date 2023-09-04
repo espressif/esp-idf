@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -26,6 +27,8 @@
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
 #include "regi2c_ctrl.h"
+
+static const DRAM_ATTR rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
 
 /**
  * Configure whether certain peripherals are powered up in sleep
@@ -111,7 +114,6 @@ void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_
 void rtc_sleep_init(rtc_sleep_config_t cfg)
 {
     if (cfg.lslp_mem_inf_fpu) {
-        rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
         rtc_sleep_pu(pu_cfg);
     }
 
@@ -220,7 +222,6 @@ __attribute__((weak)) uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t rej
 
     /* restore config if it is a light sleep */
     if (lslp_mem_inf_fpu) {
-        rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
         rtc_sleep_pu(pu_cfg);
     }
     return reject;
