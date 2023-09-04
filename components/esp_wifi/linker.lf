@@ -18,6 +18,10 @@ entries:
 entries:
     .wifislprxiram+
 
+[sections:wifi_extra_iram]
+entries:
+    .wifiextrairam+
+
 [scheme:wifi_iram]
 entries:
     wifi_iram -> iram0_text
@@ -42,6 +46,10 @@ entries:
 [scheme:wifi_slp_rx_iram]
 entries:
     wifi_slp_rx_iram -> iram0_text
+
+[scheme:wifi_extra_iram]
+entries:
+    wifi_extra_iram -> iram0_text
 
 [sections:wifi_log_error]
 entries:
@@ -70,6 +78,7 @@ entries:
     wifi_slp_rx_iram -> flash_text
     wifi_iram -> flash_text
     wifi_rx_iram -> flash_text
+    wifi_extra_iram -> flash_text
     if LOG_MAXIMUM_LEVEL <= 0:
         wifi_log_error -> rodata_noload
     else:
@@ -117,6 +126,9 @@ entries:
     if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
         * (extram_bss)
 
+    if ESP_WIFI_EXTRA_IRAM_OPT = y:
+        * (wifi_extra_iram)
+
 [mapping:net80211]
 archive: libnet80211.a
 entries:
@@ -135,9 +147,16 @@ entries:
     if ESP_WIFI_RX_IRAM_OPT || ESP_WIFI_SLP_IRAM_OPT:
         * (wifi_slp_rx_iram)
 
+    if ESP_WIFI_EXTRA_IRAM_OPT = y:
+        * (wifi_extra_iram)
+
 [mapping:esp_wifi]
 archive: libesp_wifi.a
 entries:
+    if ESP_WIFI_IRAM_OPT = y:
+        esp_adapter:coex_pti_get_wrapper (noflash)
+        wifi_netif:wifi_sta_receive (noflash)
+        wifi_netif:wifi_transmit_wrap (noflash)
     if ESP_WIFI_SLP_IRAM_OPT =y:
         esp_adapter:wifi_clock_enable_wrapper (noflash)
         esp_adapter:wifi_clock_disable_wrapper (noflash)
