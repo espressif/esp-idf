@@ -136,6 +136,9 @@ typedef struct {
     int                         keep_alive_interval; /*!< Keep-alive interval time. Default is 5 (second) */
     int                         keep_alive_count;    /*!< Keep-alive packet retry send count. Default is 3 counts */
     struct ifreq                *if_name;            /*!< The name of interface for data to go through. Use the default interface without setting */
+#if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+    void *ds_data;                          /*!< Pointer for digital signature peripheral context, see ESP-TLS Documentation for more details */
+#endif
 } esp_http_client_config_t;
 
 /**
