@@ -441,6 +441,21 @@ typedef enum {
     SDMMC_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_160M as the source clock */
 } soc_periph_sdmmc_clk_src_t;
 
+//////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
+typedef enum {
+    CLKOUT_SIG_I2S0     = 0,    /*!< I2S0 clock, depends on the i2s driver configuration */
+    CLKOUT_SIG_PLL      = 1,    /*!< PLL_CLK is the output of crystal oscillator frequency multiplier */
+    CLKOUT_SIG_RC_SLOW  = 4,    /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
+    CLKOUT_SIG_XTAL     = 5,    /*!< Main crystal oscillator clock */
+    CLKOUT_SIG_APLL     = 6,    /*!< Divided by PLL, frequency is configurable */
+    CLKOUT_SIG_REF_TICK = 12,   /*!< Divided by APB clock, usually be 1MHz */
+    CLKOUT_SIG_PLL_F80M = 13,   /*!< From PLL, usually be 80MHz */
+    CLKOUT_SIG_RC_FAST  = 14,   /*!< RC fast clock, about 8MHz */
+    CLKOUT_SIG_I2S1     = 15,   /*!< I2S1 clock, depends on the i2s driver configuration */
+    CLKOUT_SIG_INVALID  = 0xFF,
+} soc_clkout_sig_id_t;
+
+
 #ifdef __cplusplus
 }
 #endif

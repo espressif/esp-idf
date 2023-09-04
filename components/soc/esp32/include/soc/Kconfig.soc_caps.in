@@ -315,6 +315,10 @@ config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0xEF0FEA
 
+config SOC_GPIO_CLOCKOUT_BY_IO_MUX
+    bool
+    default y
+
 config SOC_I2C_NUM
     int
     default 2

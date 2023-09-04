@@ -435,6 +435,10 @@ config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x0001FFFFFC000000
 
+config SOC_GPIO_CLOCKOUT_BY_IO_MUX
+    bool
+    default y
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
