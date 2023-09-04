@@ -544,7 +544,7 @@ static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t chann
 {
     (void)adc_n;
     (void)channel;
-    return APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_atten;
+    return (adc_atten_t)(APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_atten);
 }
 
 #ifdef __cplusplus

@@ -732,7 +732,9 @@ static inline void i2c_ll_get_scl_clk_timing(i2c_dev_t *hw, int *high_period, in
 __attribute__((always_inline))
 static inline void i2c_ll_master_get_event(i2c_dev_t *hw, i2c_intr_event_t *event)
 {
-    i2c_int_status_reg_t int_sts = hw->int_status;
+    i2c_int_status_reg_t int_sts;
+    int_sts.val = hw->int_status.val;
+
     if (int_sts.arbitration_lost_int_st) {
         *event = I2C_INTR_EVENT_ARBIT_LOST;
     } else if (int_sts.nack_int_st) {
@@ -828,8 +830,8 @@ static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int hight_period, int lo
  */
 static inline void i2c_ll_get_data_mode(i2c_dev_t *hw, i2c_trans_mode_t *tx_mode, i2c_trans_mode_t *rx_mode)
 {
-    *tx_mode = hw->ctr.tx_lsb_first;
-    *rx_mode = hw->ctr.rx_lsb_first;
+    *tx_mode = (i2c_trans_mode_t)(hw->ctr.tx_lsb_first);
+    *rx_mode = (i2c_trans_mode_t)(hw->ctr.rx_lsb_first);
 }
 
 /**

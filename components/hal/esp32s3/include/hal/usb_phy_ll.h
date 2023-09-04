@@ -95,13 +95,16 @@ static inline void usb_phy_ll_ext_jtag_enable(usb_serial_jtag_dev_t *hw)
  */
 static inline void usb_phy_ll_int_load_conf(usb_wrap_dev_t *hw, bool dp_pu, bool dp_pd, bool dm_pu, bool dm_pd)
 {
-    usb_wrap_otg_conf_reg_t conf = hw->otg_conf;
+    usb_wrap_otg_conf_reg_t conf;
+    conf.val = hw->otg_conf.val;
+
     conf.pad_pull_override = 1;
     conf.dp_pullup = dp_pu;
     conf.dp_pulldown = dp_pd;
     conf.dm_pullup = dm_pu;
     conf.dm_pulldown = dm_pd;
-    hw->otg_conf = conf;
+
+    hw->otg_conf.val = conf.val;
 }
 
 /**

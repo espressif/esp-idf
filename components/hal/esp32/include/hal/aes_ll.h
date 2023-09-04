@@ -125,7 +125,7 @@ static inline void aes_ll_start_transform(void)
  */
 static inline esp_aes_state_t aes_ll_get_state(void)
 {
-    return DPORT_REG_READ(AES_IDLE_REG);
+    return (esp_aes_state_t)DPORT_REG_READ(AES_IDLE_REG);
 }
 
 #ifdef __cplusplus

@@ -31,8 +31,8 @@ static inline void dedic_gpio_ll_write_all(dedic_dev_t *dev, uint32_t value)
 static inline void dedic_gpio_ll_write_mask(dedic_dev_t *dev, uint32_t channel_mask, uint32_t value)
 {
     dedic_gpio_out_msk_reg_t d = {
+        .gpio_out_value = value,
         .gpio_out_msk = channel_mask,
-        .gpio_out_value = value
     };
     dev->gpio_out_msk.val = d.val;
 }

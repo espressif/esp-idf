@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <sys/param.h>
 #include "hal/assert.h"
 #include "hal/mpi_types.h"
 #include "soc/pcr_reg.h"
@@ -16,6 +17,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 static inline size_t mpi_ll_calculate_hardware_words(size_t words)
 {

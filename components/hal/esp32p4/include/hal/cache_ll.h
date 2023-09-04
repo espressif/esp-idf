@@ -60,15 +60,15 @@ __attribute__((always_inline))
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
     HAL_ASSERT(cache_id == 0 || cache_id == 1);
-    cache_bus_mask_t mask = 0;
+    cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
     if (vaddr_start >= SOC_DRAM_FLASH_ADDRESS_LOW && vaddr_end < SOC_DRAM_FLASH_ADDRESS_HIGH) {
-        mask |= CACHE_BUS_IBUS0;
-        mask |= CACHE_BUS_DBUS0;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_IBUS0);
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_DBUS0);
     } else if (vaddr_start >= SOC_DRAM_PSRAM_ADDRESS_LOW && vaddr_end < SOC_DRAM_PSRAM_ADDRESS_HIGH) {
-        mask |= CACHE_BUS_IBUS1;
-        mask |= CACHE_BUS_DBUS1;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_IBUS1);
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_DBUS1);
     } else {
         HAL_ASSERT(0);          //Out of region
     }

@@ -112,7 +112,7 @@ static inline void aes_ll_start_transform(void)
  */
 static inline esp_aes_state_t aes_ll_get_state(void)
 {
-    return REG_READ(AES_STATE_REG);
+    return (esp_aes_state_t)REG_READ(AES_STATE_REG);
 }
 
 

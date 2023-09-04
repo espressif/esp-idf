@@ -9,6 +9,7 @@
 #include "assert.h"
 
 /* Since IDF v5.0, C17 standard is used, which supports both _Static_assert and static_assert syntax */
+/* Please do not use `_Static_assert` for C++ compatibility */
 #define ESP_STATIC_ASSERT static_assert
 
 /* Assert at compile time if possible, runtime otherwise */

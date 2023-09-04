@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include "soc/soc_caps.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {

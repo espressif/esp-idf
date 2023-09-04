@@ -819,7 +819,6 @@ components/soc/include/soc/i2c_periph.h
 components/soc/include/soc/ledc_periph.h
 components/soc/lldesc.c
 components/spi_flash/include/spi_flash_chip_boya.h
-components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_gd.h
 components/spi_flash/include/spi_flash_chip_generic.h
 components/spi_flash/include/spi_flash_chip_issi.h

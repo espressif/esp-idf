@@ -419,7 +419,7 @@ static inline __attribute__((always_inline)) void clk_ll_32k_calibration_set_tar
  */
 static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_32k_calibration_get_target(void)
 {
-    return 0;
+    return (soc_rtc_slow_clk_src_t)0;
 }
 
 /**
@@ -439,7 +439,7 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_set_src(soc_rt
  */
 static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_rtc_slow_get_src(void)
 {
-    return 0;
+    return (soc_rtc_slow_clk_src_t)0;
 }
 
 /**
@@ -459,7 +459,7 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_fast_set_src(soc_rt
  */
 static inline __attribute__((always_inline)) soc_rtc_fast_clk_src_t clk_ll_rtc_fast_get_src(void)
 {
-    return 0;
+    return (soc_rtc_fast_clk_src_t)0;
 }
 
 /**

@@ -240,7 +240,7 @@ static inline void ecdsa_ll_set_stage(ecdsa_ll_stage_t stage)
  */
 static inline ecdsa_ll_state_t ecdsa_ll_get_state(void)
 {
-    return REG_GET_FIELD(ECDSA_STATE_REG, ECDSA_BUSY);
+    return (ecdsa_ll_state_t)(REG_GET_FIELD(ECDSA_STATE_REG, ECDSA_BUSY));
 }
 
 /**
