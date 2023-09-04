@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "soc/emac_dma_struct.h"
 #include "soc/emac_mac_struct.h"
 #include "soc/emac_ext_struct.h"
+#include "soc/dport_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,6 +142,41 @@ extern "C" {
 
 /* Enable needed interrupts (recv/recv_buf_unavailabal/normal must be enabled to make eth work) */
 #define EMAC_LL_CONFIG_ENABLE_INTR_MASK    (EMAC_LL_INTR_RECEIVE_ENABLE | EMAC_LL_INTR_NORMAL_SUMMARY_ENABLE)
+
+/**
+ * @brief Enable the bus clock for the EMAC module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void emac_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_WIFI_CLK_EN_REG);
+    reg_val &= ~DPORT_WIFI_CLK_EMAC_EN;
+    reg_val |= enable << 14;
+    DPORT_WRITE_PERI_REG(DPORT_WIFI_CLK_EN_REG, reg_val);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the EMAC module
+ *
+ * @param group_id Group ID
+ */
+static inline void emac_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    DPORT_WRITE_PERI_REG(DPORT_CORE_RST_EN_REG, DPORT_EMAC_RST);
+    DPORT_WRITE_PERI_REG(DPORT_CORE_RST_EN_REG, 0);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_reset_register(__VA_ARGS__)
 
 /************** Start of mac regs operation ********************/
 /* emacgmiiaddr */
@@ -367,8 +403,6 @@ static inline void emac_ll_set_addr(emac_mac_dev_t *mac_regs, const uint8_t *add
 }
 /*************** End of mac regs operation *********************/
 
-
-
 /************** Start of dma regs operation ********************/
 /* dmabusmode */
 static inline void emac_ll_reset(emac_dma_dev_t *dma_regs)
@@ -551,7 +585,6 @@ __attribute__((always_inline)) static inline void emac_ll_clear_all_pending_intr
     dma_regs->dmastatus.val = 0xFFFFFFFF;
 }
 
-
 /* dmatxpolldemand / dmarxpolldemand */
 static inline void emac_ll_transmit_poll_demand(emac_dma_dev_t *dma_regs, uint32_t val)
 {
@@ -563,8 +596,6 @@ static inline void emac_ll_receive_poll_demand(emac_dma_dev_t *dma_regs, uint32_
 }
 
 /*************** End of dma regs operation *********************/
-
-
 
 /************** Start of ext regs operation ********************/
 static inline void emac_ll_clock_enable_mii(emac_ext_dev_t *ext_regs)
@@ -598,7 +629,6 @@ static inline void emac_ll_clock_enable_rmii_output(emac_ext_dev_t *ext_regs)
     ext_regs->ex_clkout_conf.div_num = 0;
     ext_regs->ex_clkout_conf.h_div_num = 0;
 }
-
 
 static inline void emac_ll_pause_frame_enable(emac_ext_dev_t *ext_regs, bool enable)
 {
