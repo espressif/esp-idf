@@ -261,15 +261,15 @@ typedef UINT8 tBTA_AG_BTRH_TYPE;
 #endif
 
 /* indicator constants HFP 1.1 and later */
-#define BTA_AG_IND_CALL             0   /* position of call indicator */
-#define BTA_AG_IND_CALLSETUP        1   /* position of callsetup indicator */
-#define BTA_AG_IND_SERVICE          2   /* position of service indicator */
+#define BTA_AG_IND_CALL             1   /* position of call indicator */
+#define BTA_AG_IND_CALLSETUP        2   /* position of callsetup indicator */
+#define BTA_AG_IND_SERVICE          3   /* position of service indicator */
 /* indicator constants HFP 1.5 and later */
-#define BTA_AG_IND_SIGNAL           3   /* position of signal strength indicator */
-#define BTA_AG_IND_ROAM             4   /* position of roaming indicator */
-#define BTA_AG_IND_BATTCHG          5   /* position of battery charge indicator */
-#define BTA_AG_IND_CALLHELD         6   /* position of callheld indicator */
-#define BTA_AG_IND_BEARER           7   /* position of bearer indicator */
+#define BTA_AG_IND_SIGNAL           4   /* position of signal strength indicator */
+#define BTA_AG_IND_ROAM             5   /* position of roaming indicator */
+#define BTA_AG_IND_BATTCHG          6   /* position of battery charge indicator */
+#define BTA_AG_IND_CALLHELD         7   /* position of callheld indicator */
+#define BTA_AG_IND_BEARER           8   /* position of bearer indicator */
 typedef UINT16 tBTA_AG_IND_TYPE;
 
 /* call indicator values */
