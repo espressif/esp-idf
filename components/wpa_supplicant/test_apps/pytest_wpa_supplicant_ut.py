@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
-from idf_unity_tester import CaseTester
 from pytest_embedded import Dut
+from pytest_embedded_idf.unity_tester import CaseTester
 
 
 @pytest.mark.generic
