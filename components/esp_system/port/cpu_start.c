@@ -204,7 +204,9 @@ void IRAM_ATTR call_start_cpu1(void)
 
     esp_cpu_intr_set_ivt_addr(&_vector_table);
 #if SOC_INT_CLIC_SUPPORTED
-    //TODO: IDF-7863
+    /* When hardware vectored interrupts are enabled in CLIC,
+     * the CPU jumps to this base address + 4 * interrupt_id.
+     */
     esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
 #endif
 
@@ -400,7 +402,9 @@ void IRAM_ATTR call_start_cpu0(void)
     // Move exception vectors to IRAM
     esp_cpu_intr_set_ivt_addr(&_vector_table);
 #if SOC_INT_CLIC_SUPPORTED
-    //TODO: IDF-7863
+    /* When hardware vectored interrupts are enabled in CLIC,
+     * the CPU jumps to this base address + 4 * interrupt_id.
+     */
     esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
 #endif
 
