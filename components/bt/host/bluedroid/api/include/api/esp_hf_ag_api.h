@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,7 +76,7 @@ typedef enum
 typedef union
 {
     /**
-     * @brief  ESP_HS_CONNECTION_STATE_EVT
+     * @brief  ESP_HF_CONNECTION_STATE_EVT
      */
     struct hf_conn_stat_param {
         esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
@@ -105,7 +105,7 @@ typedef union
      * @brief ESP_HF_VOLUME_CONTROL_EVT
      */
     struct hf_volume_control_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_volume_type_t type;                /*!< Volume control target, speaker or microphone */
         int volume;                               /*!< Gain, ranges from 0 to 15 */
     } volume_control;                             /*!< AG callback param of ESP_HF_VOLUME_CONTROL_EVT */
@@ -114,7 +114,7 @@ typedef union
      * @brief ESP_HF_UNAT_RESPONSE_EVT
      */
     struct hf_unat_rep_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         char *unat;                               /*!< Unknown AT command string */
     } unat_rep;                                   /*!< AG callback param of ESP_HF_UNAT_RESPONSE_EVT */
 
@@ -166,7 +166,7 @@ typedef union
      * @brief ESP_HF_VTS_RESPONSE_EVT
      */
     struct hf_vts_rep_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         char *code;                               /*!< MTF code from HF Client */
     } vts_rep;                                    /*!< AG callback param of ESP_HF_VTS_RESPONSE_EVT */
 
@@ -174,7 +174,7 @@ typedef union
      * @brief ESP_HF_NREC_RESPONSE_EVT
      */
     struct hf_nrec_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_nrec_t state;                      /*!< NREC enabled or disabled */
     } nrec;                                       /*!< AG callback param of ESP_HF_NREC_RESPONSE_EVT */
 
@@ -196,7 +196,7 @@ typedef union
      * @brief ESP_HF_WBS_RESPONSE_EVT
      */
     struct hf_wbs_rep_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_wbs_config_t codec;                /*!< codec mode CVSD or mSBC */
     } wbs_rep;                                    /*!< AG callback param of ESP_HF_WBS_RESPONSE_EVT */
 
@@ -204,7 +204,7 @@ typedef union
      * @brief ESP_HF_BCS_RESPONSE_EVT
      */
     struct hf_bcs_rep_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_wbs_config_t mode;                 /*!< codec mode CVSD or mSBC */
     } bcs_rep;                                    /*!< AG callback param of ESP_HF_BCS_RESPONSE_EVT */
 
