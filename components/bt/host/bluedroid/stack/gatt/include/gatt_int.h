@@ -778,6 +778,8 @@ extern uint16_t gatt_get_local_mtu(void);
 extern void gatt_set_local_mtu(uint16_t mtu);
 
 extern tGATT_STATUS gatts_calculate_datebase_hash(BT_OCTET16 hash);
+extern void gatts_show_local_database(void);
+
 extern BOOLEAN gatt_sr_is_cl_change_aware(tGATT_TCB *p_tcb);
 extern void gatt_sr_init_cl_status(tGATT_TCB *p_tcb);
 extern void gatt_sr_update_cl_status(tGATT_TCB *tcb, BOOLEAN chg_aware);
