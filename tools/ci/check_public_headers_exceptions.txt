@@ -12,6 +12,7 @@ components/freertos/FreeRTOS-Kernel/include/freertos/
 components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos/
 components/freertos/FreeRTOS-Kernel-SMP/include/freertos/
 components/freertos/FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos/
+components/freertos/FreeRTOS-Kernel-V10.5.1/include/freertos/
 
 
 components/log/include/esp_log_internal.h

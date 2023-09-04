@@ -4197,6 +4197,10 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
         }
         #endif /* configUSE_IDLE_HOOK */
 
+        /* Call the esp-idf idle hook system. Todo IDF-8180 */
+        extern void esp_vApplicationIdleHook( void );
+        esp_vApplicationIdleHook();
+
         /* This conditional compilation should use inequality to 0, not equality
          * to 1.  This is to ensure portSUPPRESS_TICKS_AND_SLEEP() is called when
          * user defined low power mode  implementations require

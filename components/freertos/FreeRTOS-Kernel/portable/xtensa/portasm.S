@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
@@ -33,7 +33,13 @@
 
 #define TOPOFSTACK_OFFS                 0x00    /* StackType_t *pxTopOfStack */
 
+#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+#define pxCurrentTCB    pxCurrentTCBs
+.extern pxCurrentTCBs
+#else
 .extern pxCurrentTCB
+#endif
+
 #if XCHAL_CP_NUM > 0
 /* Offsets used to get a task's coprocessor save area (CPSA) from its TCB */
 .extern offset_pxEndOfStack

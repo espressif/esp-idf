@@ -199,6 +199,7 @@
 #define INCLUDE_xTaskResumeFromISR                 1
 #define INCLUDE_xTimerPendFunctionCall             1
 #define INCLUDE_xTaskGetSchedulerState             1
+#define INCLUDE_xTaskGetCurrentTaskHandle          1
 
 /* -------------------- Trace Macros ----------------------- */
 

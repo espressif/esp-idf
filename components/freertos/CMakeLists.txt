@@ -32,7 +32,7 @@ if(CONFIG_FREERTOS_SMP)
     set(kernel_impl "FreeRTOS-Kernel-SMP")
 else()
     if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-        message(FATAL_ERROR "FreeRTOS v10.5.1 is not buildable yet. Still under development")
+        set(kernel_impl "FreeRTOS-Kernel-V10.5.1")
     else()
         set(kernel_impl "FreeRTOS-Kernel")
     endif()
@@ -71,30 +71,54 @@ list(APPEND srcs
     "${kernel_impl}/queue.c"
     "${kernel_impl}/tasks.c"
     "${kernel_impl}/timers.c"
-    "${kernel_impl}/croutine.c"
     "${kernel_impl}/event_groups.c"
     "${kernel_impl}/stream_buffer.c")
+if(NOT CONFIG_FREERTOS_USE_KERNEL_10_5_1)
+    list(APPEND srcs "${kernel_impl}/croutine.c")
+endif()
 
 # Add port source files
-list(APPEND srcs
-    "${kernel_impl}/portable/${arch}/port.c")
-
-if(arch STREQUAL "linux")
+if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
     list(APPEND srcs
-        "${kernel_impl}/portable/${arch}/utils/wait_for_event.c")
-    if(kernel_impl STREQUAL "FreeRTOS-Kernel")
-        list(APPEND srcs
-            "${kernel_impl}/portable/${arch}/port_idf.c")
-    endif()
+        "FreeRTOS-Kernel/portable/${arch}/port.c")
 else()
     list(APPEND srcs
-        "${kernel_impl}/portable/${arch}/portasm.S")
+        "${kernel_impl}/portable/${arch}/port.c")
+endif()
+
+if(arch STREQUAL "linux")
+    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
+        list(APPEND srcs
+            "FreeRTOS-Kernel/portable/${arch}/utils/wait_for_event.c"
+            "FreeRTOS-Kernel/portable/${arch}/port_idf.c")
+    else()
+        list(APPEND srcs
+            "${kernel_impl}/portable/${arch}/utils/wait_for_event.c")
+        if(kernel_impl STREQUAL "FreeRTOS-Kernel")
+            list(APPEND srcs
+                "${kernel_impl}/portable/${arch}/port_idf.c")
+        endif()
+    endif()
+else()
+    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
+        list(APPEND srcs
+            "FreeRTOS-Kernel/portable/${arch}/portasm.S")
+    else()
+        list(APPEND srcs
+            "${kernel_impl}/portable/${arch}/portasm.S")
+    endif()
 endif()
 
 if(arch STREQUAL "xtensa")
-    list(APPEND srcs
-        "${kernel_impl}/portable/${arch}/xtensa_init.c"
-        "${kernel_impl}/portable/${arch}/xtensa_overlay_os_hook.c")
+    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
+        list(APPEND srcs
+            "FreeRTOS-Kernel/portable/${arch}/xtensa_init.c"
+            "FreeRTOS-Kernel/portable/${arch}/xtensa_overlay_os_hook.c")
+    else()
+        list(APPEND srcs
+            "${kernel_impl}/portable/${arch}/xtensa_init.c"
+            "${kernel_impl}/portable/${arch}/xtensa_overlay_os_hook.c")
+    endif()
 endif()
 
 # Add ESP-additions source files
@@ -127,9 +151,15 @@ list(APPEND include_dirs
     "${kernel_impl}/include")       # FreeRTOS headers via `#include "freertos/xxx.h"`
 
 # Add port public include directories
-list(APPEND include_dirs
-    "${kernel_impl}/portable/${arch}/include"               # For port headers via `#include "freertos/...h"`
-    "${kernel_impl}/portable/${arch}/include/freertos")     # For port headers via `#include "...h"`
+if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
+    list(APPEND include_dirs
+        "FreeRTOS-Kernel/portable/${arch}/include"               # For port headers via `#include "freertos/...h"`
+        "FreeRTOS-Kernel/portable/${arch}/include/freertos")     # For port headers via `#include "...h"`
+else()
+    list(APPEND include_dirs
+        "${kernel_impl}/portable/${arch}/include"               # For port headers via `#include "freertos/...h"`
+        "${kernel_impl}/portable/${arch}/include/freertos")     # For port headers via `#include "...h"`
+endif()
 
 # Add ESP-additions public include directories
 list(APPEND include_dirs
@@ -151,8 +181,13 @@ list(APPEND private_include_dirs
 
 # Add port private include directories
 if(arch STREQUAL "linux")
-    list(APPEND private_include_dirs
-        "${kernel_impl}/portable/${arch}/") # Linux port `#include "utils/wait_for_event.h"`
+    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
+        list(APPEND private_include_dirs
+            "FreeRTOS-Kernel/portable/${arch}/") # Linux port `#include "utils/wait_for_event.h"`
+    else()
+        list(APPEND private_include_dirs
+            "${kernel_impl}/portable/${arch}/") # Linux port `#include "utils/wait_for_event.h"`
+    endif()
 endif()
 
 # Add ESP-additions private include directories

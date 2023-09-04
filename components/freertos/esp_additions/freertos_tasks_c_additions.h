@@ -20,6 +20,11 @@
  * additional API.
  */
 
+#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+    #define pxCurrentTCB    pxCurrentTCBs
+#else
+#endif
+
 /* ------------------------------------------------- Static Asserts ------------------------------------------------- */
 
 /*
@@ -222,10 +227,23 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
                 if( pxNewTCB != NULL )
                 {
-                    /* Allocate space for the stack used by the task being created.
-                     * The base of the stack memory stored in the TCB so the task can
-                     * be deleted later if required. */
-                    pxNewTCB->pxStack = ( StackType_t * ) pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+                    #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+                    {
+                        memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+
+                        /* Allocate space for the stack used by the task being created.
+                         * The base of the stack memory stored in the TCB so the task can
+                         * be deleted later if required. */
+                        pxNewTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+                    }
+                    #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                    {
+                        /* Allocate space for the stack used by the task being created.
+                         * The base of the stack memory stored in the TCB so the task can
+                         * be deleted later if required. */
+                        pxNewTCB->pxStack = ( StackType_t * ) pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+                    }
+                    #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
 
                     if( pxNewTCB->pxStack == NULL )
                     {
@@ -239,8 +257,17 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
             {
                 StackType_t * pxStack;
 
-                /* Allocate space for the stack used by the task being created. */
-                pxStack = pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
+                #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+                {
+                    /* Allocate space for the stack used by the task being created. */
+                    pxStack = pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
+                }
+                #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                {
+                    /* Allocate space for the stack used by the task being created. */
+                    pxStack = pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
+                }
+                #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
 
                 if( pxStack != NULL )
                 {
@@ -249,6 +276,12 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
                     if( pxNewTCB != NULL )
                     {
+                        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+                        {
+                            memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+                        }
+                        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+
                         /* Store the stack location in the TCB. */
                         pxNewTCB->pxStack = pxStack;
                     }
@@ -256,7 +289,15 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                     {
                         /* The stack cannot be used as the TCB was not created.  Free
                          * it again. */
-                        vPortFree( pxStack );
+                        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+                        {
+                            vPortFreeStack( pxStack );
+                        }
+                        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                        {
+                            vPortFree( pxStack );
+                        }
+                        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
                     }
                 }
                 else
@@ -356,6 +397,13 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                 /* The memory used for the task's TCB and stack are passed into this
                  * function - use them. */
                 pxNewTCB = ( TCB_t * ) pxTaskBuffer; /*lint !e740 !e9087 Unusual cast is ok as the structures are designed to have the same alignment, and the size is checked by an assert. */
+
+                #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+                {
+                    memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+                }
+                #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+
                 pxNewTCB->pxStack = ( StackType_t * ) puxStackBuffer;
 
                 #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
@@ -892,7 +940,15 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
         else
         {
             /* We have a task; return its reentrant struct. */
-            ret = &pxCurTask->xNewLib_reent;
+            #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+            {
+                ret = &pxCurTask->xTLSBlock;
+            }
+            #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+            {
+                ret = &pxCurTask->xNewLib_reent;
+            }
+            #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
         }
 
         return ret;

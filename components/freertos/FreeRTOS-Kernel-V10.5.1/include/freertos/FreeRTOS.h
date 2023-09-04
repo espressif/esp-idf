@@ -1474,6 +1474,46 @@ typedef StaticStreamBuffer_t StaticMessageBuffer_t;
 
 #ifdef ESP_PLATFORM
 
+/* *INDENT-OFF* */
+#ifdef __cplusplus
+    extern "C" {
+#endif
+/* *INDENT-ON* */
+
+/*
+ * Default values for trace macros added by ESP-IDF and are not part of Vanilla FreeRTOS
+ */
+
+    #ifndef traceISR_EXIT_TO_SCHEDULER
+        #define traceISR_EXIT_TO_SCHEDULER()
+    #endif
+
+    #ifndef traceISR_EXIT
+        #define traceISR_EXIT()
+    #endif
+
+    #ifndef traceISR_ENTER
+        #define traceISR_ENTER( _n_ )
+    #endif
+
+    #ifndef traceQUEUE_SEMAPHORE_RECEIVE
+        #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+    #endif
+
+    #ifndef traceQUEUE_GIVE_FROM_ISR
+        #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+    #endif
+
+    #ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
+        #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
+    #endif
+
+/* *INDENT-OFF* */
+#ifdef __cplusplus
+    }
+#endif
+/* *INDENT-ON* */
+
 /*
  * Include ESP-IDF API additions implicitly for compatibility reasons.
  *

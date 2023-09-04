@@ -8,6 +8,13 @@
 #include "freertos/FreeRTOSConfig.h"
 #include "soc/soc_caps.h"
 
+#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+#define pxCurrentTCB    pxCurrentTCBs
+.extern pxCurrentTCBs
+#else
+.extern pxCurrentTCB
+#endif
+
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 #include "esp_private/hw_stack_guard.h"
 #endif

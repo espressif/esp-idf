@@ -1448,7 +1448,8 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
                 const int8_t cTxLock = queueUNLOCKED;
             #endif /* queueUSE_LOCKS == 1 */
 
-            traceQUEUE_SEND_FROM_ISR( pxQueue );
+            /* Todo: Reconcile tracing differences (IDF-8183) */
+            traceQUEUE_GIVE_FROM_ISR( pxQueue );
 
             /* A task can only have an inherited priority if it is a mutex
              * holder - and if there is a mutex holder then the mutex cannot be
@@ -1557,7 +1558,8 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
         }
         else
         {
-            traceQUEUE_SEND_FROM_ISR_FAILED( pxQueue );
+            /* Todo: Reconcile tracing differences (IDF-8183) */
+            traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue );
             xReturn = errQUEUE_FULL;
         }
     }
@@ -1782,7 +1784,8 @@ BaseType_t xQueueSemaphoreTake( QueueHandle_t xQueue,
              * must be the highest priority task wanting to access the queue. */
             if( uxSemaphoreCount > ( UBaseType_t ) 0 )
             {
-                traceQUEUE_RECEIVE( pxQueue );
+                /* Todo: Reconcile tracing differences (IDF-8183) */
+                traceQUEUE_SEMAPHORE_RECEIVE( pxQueue );
 
                 /* Semaphores are queues with a data size of zero and where the
                  * messages waiting is the semaphore's count.  Reduce the count. */
