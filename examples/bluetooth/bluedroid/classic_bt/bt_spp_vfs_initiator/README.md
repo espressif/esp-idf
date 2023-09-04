@@ -21,10 +21,9 @@ idf.py menuconfig
 
 `Component config --> Bluetooth --> Bluedroid Options --> SPP`.
 
-3. SSP is enabled as default in this example. If you prefer the legacy pairing, you can disable it in the following path.
+3. SSP is enabled as default in this example. If you prefer the legacy pairing, you shall disable it in the following path.
 
-`Component config --> Bluetooth--> Bluedroid Options --> Secure Simple Pair`.
-
+`SPP Example Configuration --> Secure Simple Pair`.
 
 ### Build and Flash
 

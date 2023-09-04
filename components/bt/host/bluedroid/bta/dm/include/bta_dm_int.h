@@ -85,13 +85,13 @@ enum {
     BTA_DM_API_QOS_SET_EVT,
 #endif /* #if (BTA_DM_QOS_INCLUDED == TRUE) */
 #if (SMP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* simple pairing events */
     BTA_DM_API_CONFIRM_EVT,
-#if (BT_SSP_INCLUDED == TRUE)
     BTA_DM_API_KEY_REQ_EVT,
-#endif ///BT_SSP_INCLUDED == TRUE
+#endif /* (CLASSIC_BT_INCLUDED == TRUE) */
     BTA_DM_API_SET_ENCRYPTION_EVT,
-#endif  ///SMP_INCLUDED == TRUE
+#endif /* (SMP_INCLUDED == TRUE) */
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     BTA_DM_API_LOC_OOB_EVT,
     BTA_DM_API_OOB_REPLY_EVT,

@@ -802,7 +802,7 @@ void BTA_DmSecureConnectionCreateOobData(void)
 ** Returns          void
 **
 *******************************************************************************/
-#if (SMP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void BTA_DmConfirm(BD_ADDR bd_addr, BOOLEAN accept)
 {
     tBTA_DM_API_CONFIRM    *p_msg;
@@ -825,7 +825,6 @@ void BTA_DmConfirm(BD_ADDR bd_addr, BOOLEAN accept)
 ** Returns          void
 **
 *******************************************************************************/
-#if (BT_SSP_INCLUDED == TRUE)
 void BTA_DmPasskeyReqReply(BOOLEAN accept, BD_ADDR bd_addr, UINT32 passkey)
 {
     tBTA_DM_API_KEY_REQ    *p_msg;
@@ -837,8 +836,7 @@ void BTA_DmPasskeyReqReply(BOOLEAN accept, BD_ADDR bd_addr, UINT32 passkey)
         bta_sys_sendmsg(p_msg);
     }
 }
-#endif ///BT_SSP_INCLUDED == TRUE
-#endif  ///SMP_INCLUDED == TRUE
+#endif ///CLASSIC_BT_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         BTA_DmAddDevice

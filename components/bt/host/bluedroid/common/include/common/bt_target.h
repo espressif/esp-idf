@@ -134,10 +134,6 @@
 #endif
 #endif  /* UC_BT_HFP_CLIENT_ENABLED */
 
-#if UC_BT_SSP_ENABLED
-#define BT_SSP_INCLUDED             TRUE
-#endif /* UC_BT_SSP_ENABLED */
-
 #if UC_BT_HID_ENABLED
 #define BT_HID_INCLUDED             TRUE
 #endif /* UC_BT_HID_ENABLED */
@@ -1429,19 +1425,6 @@
 #else
 #define SMP_LINK_TOUT_MIN               2
 #endif
-#endif
-
-/******************************************************************************
-**
-** BT_SSP
-**
-******************************************************************************/
-#ifndef BT_SSP_INCLUDED
-#define BT_SSP_INCLUDED         FALSE
-#endif
-
-#if BT_SSP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == FALSE
-#error "Can't have SSP without CLASSIC BT"
 #endif
 
 /******************************************************************************

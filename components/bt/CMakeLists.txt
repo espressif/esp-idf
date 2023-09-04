@@ -108,7 +108,8 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/stack/a2dp/include
             host/bluedroid/stack/rfcomm/include
             host/bluedroid/stack/include
-            host/bluedroid/common/include)
+            host/bluedroid/common/include
+            host/bluedroid/config/include)
 
         list(APPEND include_dirs host/bluedroid/api/include/api)
 
@@ -364,7 +365,8 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/smp/smp_keys.c"
                    "host/bluedroid/stack/smp/smp_l2c.c"
                    "host/bluedroid/stack/smp/smp_main.c"
-                   "host/bluedroid/stack/smp/smp_utils.c")
+                   "host/bluedroid/stack/smp/smp_utils.c"
+                   "host/bluedroid/config/stack_config.c")
 
 
         list(APPEND srcs "common/btc/profile/esp/blufi/bluedroid_host/esp_blufi.c")

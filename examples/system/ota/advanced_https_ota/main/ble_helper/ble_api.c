@@ -36,7 +36,8 @@ esp_err_t esp_ble_helper_init(void)
         ESP_LOGE(TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(err));
         return err;
     }
-    err = esp_bluedroid_init();
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    err = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (err) {
         ESP_LOGE(TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(err));
         return err;

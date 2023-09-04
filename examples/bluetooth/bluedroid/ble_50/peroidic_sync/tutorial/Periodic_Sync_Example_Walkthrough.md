@@ -11,7 +11,7 @@ Little info about the EXT_ADV_IND , AUX_ADV_IND and AUX_SYNC_IND with scanner su
 ADV_EXT_IND is over primary advertising channels and is used to indicate that an advertisement will be sent on a secondary advertisement channel. The information in ADV_EXT_IND will inform the scanner:
 
 * Which secondary advertising channel will be used by AUX_ADV_IND
-* Which PHY will be used by AUX_ADV_IND, 1M PHY, 2M PHY, or 1M Coded PHY  
+* Which PHY will be used by AUX_ADV_IND, 1M PHY, 2M PHY, or 1M Coded PHY
 * When AUX_ADV_IND will be presented on that specified secondary advertising channel
 
 If the scanner is capable of periodic advertising, it will enable its receiver at a specific channel and PHY at a specific time slot.
@@ -50,7 +50,7 @@ With this information, the scanner can synchronize with the advertiser and they 
 ```
 
 These `includes` are required for the FreeRTOS and underlaying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“bt.h”`, `“esp_bt_main.h”`, `"esp_gap_ble_api.h"` and `“esp_gattc_api.h”`, which expose the BLE APIs required to implement this example.
- 
+
 * `esp_bt.h`: configures the BT controller and VHCI from the host side.
 * `esp_bt_main.h`: initializes and enables the Bluedroid stack.
 * `esp_gap_ble_api.h`: implements the GAP configuration, such as advertising and connection parameters.
@@ -86,7 +86,8 @@ void app_main(void)
         ESP_LOGE(LOG_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (ret) {
         ESP_LOGE(LOG_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -138,7 +139,7 @@ Next, the controller is enabled in BLE Mode.
 ```c
 ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
 ```
-> The controller should be enabled in `ESP_BT_MODE_BTDM`, if you want to use the dual mode (BLE + 
+> The controller should be enabled in `ESP_BT_MODE_BTDM`, if you want to use the dual mode (BLE +
 BT).
 
 There are four Bluetooth modes supported:
@@ -151,7 +152,8 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-ret = esp_bluedroid_init();
+esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
 ret = esp_bluedroid_enable();
 ```
 The main function ends by registering the GAP and GATT event handlers, as well as the Application Profile and set the maximum supported MTU size.
@@ -195,7 +197,7 @@ typedef struct {
     esp_ble_ext_scan_cfg_t uncoded_cfg;       /*!< ext scan uncoded config parameters */
     esp_ble_ext_scan_cfg_t coded_cfg;         /*!< ext scan coded config parameters */
 } esp_ble_ext_scan_params_t;
-   
+
  /**
  * @brief ext scan config
  */
@@ -217,7 +219,7 @@ t: 0x0010 (10 ms)
     //Time Range: 2.5 msec to 10240 msec
 
  } esp_ble_ext_scan_cfg_t;
- 
+
 ```
 An it is initialized as :
 
@@ -247,7 +249,7 @@ typedef struct {
 hat can be skipped */
     uint16_t sync_timeout;              /*!< synchronization timeout */
 } esp_ble_gap_periodic_adv_sync_params_t;
-   
+
 ```
 An it is initialized as:
 ```c
@@ -257,7 +259,7 @@ static esp_ble_gap_periodic_adv_sync_params_t periodic_adv_sync_params = {
      .addr_type = BLE_ADDR_TYPE_RANDOM,
      .skip = 10,
      .sync_timeout = 1000,
- };   
+ };
 ```
  The BLE scan parameters are configured so that the type of scanning is active (includes reading he scanning response), it is of public type, allows any advertising device to be read and has a scanning interval of 80 ms (1.25 ms * 0x40) and a scanning window of 80 ms (1.25 ms * 0x40).
 
@@ -334,9 +336,9 @@ dv_sync_estab.status);
         ESP_LOGI(LOG_TAG, "periodic adv report, sync handle %d data status %d data len %d rssi %d
 ", param->period_adv_report.params.sync_handle,
    param->period_adv_report.params.data_status,
-                                                                                              
+
    param->period_adv_report.params.data_length,
-                                                                                                 
+
    param->period_adv_report.params.rssi);
         break;
 

@@ -241,7 +241,8 @@ void bt_test_init(void)
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
     ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
-    ESP_ERROR_CHECK(esp_bluedroid_init());
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_bluedroid_init_with_cfg(&bluedroid_cfg));
     ESP_ERROR_CHECK(esp_bluedroid_enable());
 }
 

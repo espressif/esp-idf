@@ -75,10 +75,8 @@ static void bta_dm_acl_link_stat_cback(tBTM_ACL_LINK_STAT_EVENT_DATA *p_data);
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
 /* Extended Inquiry Response */
-#if (BT_SSP_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
-static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data);
-#endif /* (BT_SSP_INCLUDED == TRUE) */
 #if (CLASSIC_BT_INCLUDED == TRUE)
+static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data);
 static void bta_dm_set_eir (char *local_name);
 #endif
 #if (SDP_INCLUDED == TRUE)
@@ -230,7 +228,7 @@ const tBTM_APPL_INFO bta_security = {
     &bta_dm_new_link_key_cback,
     &bta_dm_authentication_complete_cback,
     &bta_dm_bond_cancel_complete_cback,
-#if (BT_SSP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
     &bta_dm_sp_cback,
 #else
     NULL,
@@ -1406,7 +1404,7 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app
 ** Returns          void
 **
 *******************************************************************************/
-#if (SMP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void bta_dm_confirm(tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS res = BTM_NOT_AUTHORIZED;
@@ -1416,7 +1414,6 @@ void bta_dm_confirm(tBTA_DM_MSG *p_data)
     }
     BTM_ConfirmReqReply(res, p_data->confirm.bd_addr);
 }
-#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1428,7 +1425,6 @@ void bta_dm_confirm(tBTA_DM_MSG *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-#if (SMP_INCLUDED == TRUE && BT_SSP_INCLUDED)
 void bta_dm_key_req(tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS res = BTM_NOT_AUTHORIZED;
@@ -1438,7 +1434,7 @@ void bta_dm_key_req(tBTA_DM_MSG *p_data)
     }
     BTM_PasskeyReqReply(res, p_data->key_req.bd_addr, p_data->key_req.passkey);
 }
-#endif  ///SMP_INCLUDED == TRUE && BT_SSP_INCLUDED
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -2967,7 +2963,6 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
 
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
-#if (BT_SSP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_pinname_cback
@@ -3019,7 +3014,6 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
         bta_dm_cb.p_sec_cback(event, &sec_event);
     }
 }
-#endif /// BT_SSP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -3142,7 +3136,7 @@ static UINT8 bta_dm_authentication_complete_cback(BD_ADDR bd_addr, DEV_CLASS dev
     return BTM_SUCCESS;
 }
 
-#if (BT_SSP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_sp_cback
@@ -3166,11 +3160,9 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
     /* TODO_SP */
     switch (event) {
     case BTM_SP_IO_REQ_EVT:
-#if (BT_SSP_INCLUDED == TRUE)
         /* translate auth_req */
         bta_dm_co_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
                          &p_data->io_req.oob_data, &p_data->io_req.auth_req, p_data->io_req.is_orig);
-#endif
 #if BTM_OOB_INCLUDED == FALSE
         status = BTM_SUCCESS;
 #endif
@@ -3178,10 +3170,8 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
         APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req, p_data->io_req.oob_data);
         break;
     case BTM_SP_IO_RSP_EVT:
-#if (BT_SSP_INCLUDED == TRUE)
         bta_dm_co_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
                          p_data->io_rsp.oob_data, p_data->io_rsp.auth_req );
-#endif
         break;
 
     case BTM_SP_CFM_REQ_EVT:
@@ -3193,12 +3183,10 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
         sec_event.cfm_req.rmt_io_caps = p_data->cfm_req.rmt_io_caps;
 
         /* continue to next case */
-#if (BT_SSP_INCLUDED == TRUE)
     /* Passkey entry mode, mobile device with output capability is very
         unlikely to receive key request, so skip this event */
     case BTM_SP_KEY_REQ_EVT:
     case BTM_SP_KEY_NOTIF_EVT:
-#endif
         if (BTM_SP_CFM_REQ_EVT == event) {
             /* Due to the switch case falling through below to BTM_SP_KEY_NOTIF_EVT,
                call remote name request using values from cfm_req */
@@ -3315,7 +3303,7 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
     APPL_TRACE_EVENT("dm status: %d", status);
     return status;
 }
-#endif /* (BT_SSP_INCLUDED == TRUE) */
+#endif /* (CLASSIC_BT_INCLUDED == TRUE) */
 
 #endif  ///SMP_INCLUDED == TRUE
 
@@ -4741,7 +4729,6 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
     switch (event) {
     case BTM_LE_IO_REQ_EVT: {
-        // #if (BT_SSP_INCLUDED == TRUE)
         bta_dm_co_ble_io_req(bda,
                              &p_data->io_req.io_cap,
                              &p_data->io_req.oob_data,
@@ -4749,7 +4736,6 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
                              &p_data->io_req.max_key_size,
                              &p_data->io_req.init_keys,
                              &p_data->io_req.resp_keys);
-        // #endif
 #if BTM_OOB_INCLUDED == FALSE
         status = BTM_SUCCESS;
 #endif

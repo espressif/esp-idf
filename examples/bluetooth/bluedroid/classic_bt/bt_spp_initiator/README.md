@@ -21,9 +21,9 @@ idf.py menuconfig
 
 `Component config --> Bluetooth --> Bluedroid Options --> SPP`.
 
-3. SSP is enabled as default in this example. If you prefer the legacy pairing, you can disable it in the following path.
+3. SSP is enabled as default in this example. If you prefer the legacy pairing, you shall disable it in the following path.
 
-`Component config --> Bluetooth--> Bluedroid Options --> Secure Simple Pair`.
+`SPP Example Configuration --> Secure Simple Pair`.
 
 
 ### Build and Flash
@@ -76,7 +76,7 @@ The log in terminal will indicate you to input the passkey to initiate the conne
 
 ```
 I (2244) SPP_INITIATOR_DEMO: ESP_BT_GAP_DISC_RES_EVT
-I (2244) SPP_INITIATOR_DEMO: ...... 
+I (2244) SPP_INITIATOR_DEMO: ......
 I (2394) SPP_INITIATOR_DEMO: ESP_BT_GAP_DISC_RES_EVT
 I (2404) SPP_INITIATOR_DEMO: ......
 I (2404) SPP_INITIATOR_DEMO: ESP_SPP_ACCEPTOR
@@ -93,7 +93,7 @@ The log in terminal will indicate you to confirm the number to initiate the conn
 
 ```
 I (2342) SPP_INITIATOR_DEMO: ESP_BT_GAP_DISC_RES_EVT
-I (2342) SPP_INITIATOR_DEMO: 30 ae a4 80 18 32 
+I (2342) SPP_INITIATOR_DEMO: 30 ae a4 80 18 32
 I (2342) SPP_INITIATOR_DEMO: ESP_SPP_ACCEPTOR
 I (2352) SPP_INITIATOR_DEMO: ESP_BT_GAP_DISC_STATE_CHANGED_EVT
 I (3212) SPP_INITIATOR_DEMO: ESP_SPP_DISCOVERY_COMP_EVT status=0 scn_num=1

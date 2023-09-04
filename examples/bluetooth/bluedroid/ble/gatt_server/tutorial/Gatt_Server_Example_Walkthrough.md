@@ -62,7 +62,8 @@ The entry point to this example is the app_main() function:
         ESP_LOGE(GATTS_TAG, "%s enable controller failed", __func__);
         return;
     }
-    ret = esp_bluedroid_init();
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
     if (ret) {
         ESP_LOGE(GATTS_TAG, "%s init bluetooth failed", __func__);
         return;
@@ -114,7 +115,7 @@ esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 ret = esp_bt_controller_init(&bt_cfg);
 ```
 
-Next, the controller is enabled in BLE Mode. 
+Next, the controller is enabled in BLE Mode.
 
 ```c
 ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
@@ -131,7 +132,8 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-ret = esp_bluedroid_init();
+esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
 ret = esp_bluedroid_enable();
 ```
 The Bluetooth stack is up and running at this point in the program flow, however the functionality of the application has not been defined yet. The functionality is defined by reacting to events such as what happens when another device tries to read or write parameters and establish a connection. The two main managers of events are the GAP and GATT event handlers. The application needs to register a callback function for each event handler in order to let the application know which functions are going to handle the GAP and GATT events:
@@ -297,7 +299,7 @@ Once the advertising data have been set, the GAP event `ESP_GAP_BLE_ADV_DATA_SET
 
 ```c
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
-{   
+{
     switch (event) {
 #ifdef CONFIG_SET_RAW_ADV_DATA
     case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
@@ -482,16 +484,16 @@ case ESP_GATTS_CREATE_EVT:
      ESP_LOGI(GATTS_TAG, "CREATE_SERVICE_EVT, status %d, service_handle %d", param->create.status, param->create.service_handle);
      gl_profile_tab[PROFILE_A_APP_ID].service_handle = param->create.service_handle;
      gl_profile_tab[PROFILE_A_APP_ID].char_uuid.len = ESP_UUID_LEN_16;
-     gl_profile_tab[PROFILE_A_APP_ID].char_uuid.uuid.uuid16 = GATTS_CHAR_UUID_TEST_A;  
+     gl_profile_tab[PROFILE_A_APP_ID].char_uuid.uuid.uuid16 = GATTS_CHAR_UUID_TEST_A;
 
      esp_ble_gatts_start_service(gl_profile_tab[PROFILE_A_APP_ID].service_handle);
      a_property = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY;
-     esp_err_t add_char_ret =  
-     esp_ble_gatts_add_char(gl_profile_tab[PROFILE_A_APP_ID].service_handle,  
-                            &gl_profile_tab[PROFILE_A_APP_ID].char_uuid,  
-                            ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,  
-                            a_property,  
-                            &gatts_demo_char1_val,  
+     esp_err_t add_char_ret =
+     esp_ble_gatts_add_char(gl_profile_tab[PROFILE_A_APP_ID].service_handle,
+                            &gl_profile_tab[PROFILE_A_APP_ID].char_uuid,
+                            ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
+                            a_property,
+                            &gatts_demo_char1_val,
                             NULL);
     if (add_char_ret){
         ESP_LOGE(GATTS_TAG, "add char failed, error code =%x",add_char_ret);
@@ -559,22 +561,22 @@ The attribute handle returned by the event is stored in the profile table and th
          const uint8_t *prf_char;
 
          ESP_LOGI(GATTS_TAG, "ADD_CHAR_EVT, status %d,  attr_handle %d, service_handle %d",
-                 param->add_char.status, param->add_char.attr_handle, param->add_char.service_handle);  
+                 param->add_char.status, param->add_char.attr_handle, param->add_char.service_handle);
                  gl_profile_tab[PROFILE_A_APP_ID].char_handle = param->add_char.attr_handle;
-                 gl_profile_tab[PROFILE_A_APP_ID].descr_uuid.len = ESP_UUID_LEN_16;  
-                 gl_profile_tab[PROFILE_A_APP_ID].descr_uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;  
-                 esp_err_t get_attr_ret = esp_ble_gatts_get_attr_value(param->add_char.attr_handle, &length, &prf_char);         
-         if (get_attr_ret == ESP_FAIL){  
+                 gl_profile_tab[PROFILE_A_APP_ID].descr_uuid.len = ESP_UUID_LEN_16;
+                 gl_profile_tab[PROFILE_A_APP_ID].descr_uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
+                 esp_err_t get_attr_ret = esp_ble_gatts_get_attr_value(param->add_char.attr_handle, &length, &prf_char);
+         if (get_attr_ret == ESP_FAIL){
 	           ESP_LOGE(GATTS_TAG, "ILLEGAL HANDLE");
          }
          ESP_LOGI(GATTS_TAG, "the gatts demo char length = %x", length);
          for(int i = 0; i < length; i++){
              ESP_LOGI(GATTS_TAG, "prf_char[%x] = %x",i,prf_char[i]);
-         }       
-         esp_err_t add_descr_ret = esp_ble_gatts_add_char_descr(  
-                                 gl_profile_tab[PROFILE_A_APP_ID].service_handle,  
-                                 &gl_profile_tab[PROFILE_A_APP_ID].descr_uuid,  
-                                 ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,  
+         }
+         esp_err_t add_descr_ret = esp_ble_gatts_add_char_descr(
+                                 gl_profile_tab[PROFILE_A_APP_ID].service_handle,
+                                 &gl_profile_tab[PROFILE_A_APP_ID].descr_uuid,
+                                 ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
                                  NULL,NULL);
          if (add_descr_ret){
             ESP_LOGE(GATTS_TAG, "add char descr failed, error code = %x", add_descr_ret);
@@ -588,7 +590,7 @@ Once the descriptor is added, the `ESP_GATTS_ADD_CHAR_DESCR_EVT` event is trigge
 ```c
     case ESP_GATTS_ADD_CHAR_DESCR_EVT:
          ESP_LOGI(GATTS_TAG, "ADD_DESCR_EVT, status %d, attr_handle %d, service_handle %d",
-                  param->add_char.status, param->add_char.attr_handle,  
+                  param->add_char.status, param->add_char.attr_handle,
                   param->add_char.service_handle);
          break;
 ```
@@ -601,22 +603,22 @@ An `ESP_GATTS_CONNECT_EVT` is triggered when a client has connected to the GATT 
 Profile A connection event:
 
 ```c
-case ESP_GATTS_CONNECT_EVT: {  
-     esp_ble_conn_update_params_t conn_params = {0};  
+case ESP_GATTS_CONNECT_EVT: {
+     esp_ble_conn_update_params_t conn_params = {0};
      memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
      /* For the IOS system, please reference the apple official documents about the ble connection parameters restrictions. */
-     conn_params.latency = 0;  
-     conn_params.max_int = 0x30;    // max_int = 0x30*1.25ms = 40ms  
-     conn_params.min_int = 0x10;    // min_int = 0x10*1.25ms = 20ms   
-     conn_params.timeout = 400;     // timeout = 400*10ms = 4000ms  
-     ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d",  
-             param->connect.conn_id,  
-             param->connect.remote_bda[0],  
-             param->connect.remote_bda[1],  
-             param->connect.remote_bda[2],  
-             param->connect.remote_bda[3],  
-             param->connect.remote_bda[4],  
-             param->connect.remote_bda[5],  
+     conn_params.latency = 0;
+     conn_params.max_int = 0x30;    // max_int = 0x30*1.25ms = 40ms
+     conn_params.min_int = 0x10;    // min_int = 0x10*1.25ms = 20ms
+     conn_params.timeout = 400;     // timeout = 400*10ms = 4000ms
+     ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d",
+             param->connect.conn_id,
+             param->connect.remote_bda[0],
+             param->connect.remote_bda[1],
+             param->connect.remote_bda[2],
+             param->connect.remote_bda[3],
+             param->connect.remote_bda[4],
+             param->connect.remote_bda[5],
              param->connect.is_connected);
  	 gl_profile_tab[PROFILE_A_APP_ID].conn_id = param->connect.conn_id;
 	 //start sent the update connection parameters to the peer device.
@@ -628,15 +630,15 @@ case ESP_GATTS_CONNECT_EVT: {
 Profile B connection event:
 
 ```c
-case ESP_GATTS_CONNECT_EVT:  
-     ESP_LOGI(GATTS_TAG, "CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d",  
-              param->connect.conn_id,  
-              param->connect.remote_bda[0],  
-              param->connect.remote_bda[1],  
-              param->connect.remote_bda[2],  
-              param->connect.remote_bda[3],  
-              param->connect.remote_bda[4],  
-              param->connect.remote_bda[5],  
+case ESP_GATTS_CONNECT_EVT:
+     ESP_LOGI(GATTS_TAG, "CONNECT_EVT, conn_id %d, remote %02x:%02x:%02x:%02x:%02x:%02x:, is_conn %d",
+              param->connect.conn_id,
+              param->connect.remote_bda[0],
+              param->connect.remote_bda[1],
+              param->connect.remote_bda[2],
+              param->connect.remote_bda[3],
+              param->connect.remote_bda[4],
+              param->connect.remote_bda[5],
               param->connect.is_connected);
 	  gl_profile_tab[PROFILE_B_APP_ID].conn_id = param->connect.conn_id;
 	  break;
@@ -675,19 +677,19 @@ In this example, a response is constructed with dummy data and sent back to the 
 
 ```c
 case ESP_GATTS_READ_EVT: {
-     ESP_LOGI(GATTS_TAG, "GATT_READ_EVT, conn_id %d, trans_id %d, handle %d",  
-              param->read.conn_id, param->read.trans_id, param->read.handle);  
-              esp_gatt_rsp_t rsp;  
-              memset(&rsp, 0, sizeof(esp_gatt_rsp_t));  
-              rsp.attr_value.handle = param->read.handle;  
-              rsp.attr_value.len = 4;  
-              rsp.attr_value.value[0] = 0xde;  
-              rsp.attr_value.value[1] = 0xed;  
-              rsp.attr_value.value[2] = 0xbe;  
-              rsp.attr_value.value[3] = 0xef;  
-              esp_ble_gatts_send_response(gatts_if,  
-                                          param->read.conn_id,  
-                                          param->read.trans_id,  
+     ESP_LOGI(GATTS_TAG, "GATT_READ_EVT, conn_id %d, trans_id %d, handle %d",
+              param->read.conn_id, param->read.trans_id, param->read.handle);
+              esp_gatt_rsp_t rsp;
+              memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
+              rsp.attr_value.handle = param->read.handle;
+              rsp.attr_value.len = 4;
+              rsp.attr_value.value[0] = 0xde;
+              rsp.attr_value.value[1] = 0xed;
+              rsp.attr_value.value[2] = 0xbe;
+              rsp.attr_value.value[3] = 0xef;
+              esp_ble_gatts_send_response(gatts_if,
+                                          param->read.conn_id,
+                                          param->read.trans_id,
                                           ESP_GATT_OK, &rsp);
      break;
     }
@@ -714,7 +716,7 @@ There are two types of write events implemented in this example, write character
 When a write event is triggered, this example prints logging messages, and then executes the `example_write_event_env()` function.
 
 ```c
-case ESP_GATTS_WRITE_EVT: {                          
+case ESP_GATTS_WRITE_EVT: {
      ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
      if (!param->write.is_prep){
         ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
@@ -727,12 +729,12 @@ case ESP_GATTS_WRITE_EVT: {
                     uint8_t notify_data[15];
                     for (int i = 0; i < sizeof(notify_data); ++i)
                     {
-                         notify_data[i] = i%0xff;  
+                         notify_data[i] = i%0xff;
                      }
                      //the size of notify_data[] need less than MTU size
-                     esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id,  
-                                                 gl_profile_tab[PROFILE_B_APP_ID].char_handle,  
-                                                 sizeof(notify_data),  
+                     esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id,
+                                                 gl_profile_tab[PROFILE_B_APP_ID].char_handle,
+                                                 sizeof(notify_data),
                                                  notify_data, false);
                 }
             }else if (descr_value == 0x0002){
@@ -744,9 +746,9 @@ case ESP_GATTS_WRITE_EVT: {
                          indicate_data[i] = i % 0xff;
                       }
                       //the size of indicate_data[] need less than MTU size
-                     esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id,  
-                                                 gl_profile_tab[PROFILE_B_APP_ID].char_handle,  
-                                                 sizeof(indicate_data),  
+                     esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id,
+                                                 gl_profile_tab[PROFILE_B_APP_ID].char_handle,
+                                                 sizeof(indicate_data),
                                                  indicate_data, true);
                 }
              }
@@ -762,7 +764,7 @@ case ESP_GATTS_WRITE_EVT: {
 }
 ```
 
-<div align="center"> <img src="image/GATT_Server_Figure_2.png" width = "650" alt="Message flow for Write Long Characteristic" align=center /> </div> 
+<div align="center"> <img src="image/GATT_Server_Figure_2.png" width = "650" alt="Message flow for Write Long Characteristic" align=center /> </div>
 
 The `example_write_event_env()` function contains the logic for the write long characteristic procedure:
 
@@ -793,7 +795,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
             gatt_rsp->attr_value.offset = param->write.offset;
             gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
             memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
-            esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id,  
+            esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
                                                                  param->write.trans_id, status, gatt_rsp);
             if (response_err != ESP_OK){
                ESP_LOGE(GATTS_TAG, "Send response error");
@@ -817,7 +819,7 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
 When the client sends a Write Request or a Prepare Write Request, the server shall respond. However, if the client sends a Write Without Response command, the server does not need to reply back a response. This is checked in the write procedure by examining the value of the `write.need_rsp parameter`. If a response is needed, the procedure continues doing the response preparation, if not present, the client does not need a response and therefore the procedure is ended.
 
 ```c
-void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env,  
+void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare_write_env,
                              esp_ble_gatts_cb_param_t *param){
     esp_gatt_status_t status = ESP_GATT_OK;
     if (param->write.need_rsp){
@@ -851,10 +853,10 @@ In order to use the prepare buffer, some memory space is allocated for it. In ca
 
 ```c
 if (prepare_write_env->prepare_buf == NULL) {
-    prepare_write_env->prepare_buf =  
-    (uint8_t*)malloc(PREPARE_BUF_MAX_SIZE*sizeof(uint8_t));  
+    prepare_write_env->prepare_buf =
+    (uint8_t*)malloc(PREPARE_BUF_MAX_SIZE*sizeof(uint8_t));
     prepare_write_env->prepare_len = 0;
-    if (prepare_write_env->prepare_buf == NULL) {  
+    if (prepare_write_env->prepare_buf == NULL) {
        ESP_LOGE(GATTS_TAG, "Gatt_server prep no mem");
        status = ESP_GATT_NO_RESOURCES;
     }
@@ -883,7 +885,7 @@ gatt_rsp->attr_value.handle = param->write.handle;
 gatt_rsp->attr_value.offset = param->write.offset;
 gatt_rsp->attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
 memcpy(gatt_rsp->attr_value.value, param->write.value, param->write.len);
-esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id,  
+esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
                                                      param->write.trans_id, status, gatt_rsp);
 if (response_err != ESP_OK){
 	ESP_LOGE(GATTS_TAG, "Send response error");
@@ -897,17 +899,17 @@ Finally, the incoming data is copied to the buffer created and its length is inc
 
 ```c
 memcpy(prepare_write_env->prepare_buf + param->write.offset,
-       param->write.value,  
+       param->write.value,
        param->write.len);
 prepare_write_env->prepare_len += param->write.len;
 ```
 The client finishes the long write sequence by sending an Executive Write Request. This command triggers an `ESP_GATTS_EXEC_WRITE_EVT` event. The server handles this event by sending a response and executing the `example_exec_write_event_env()` function:
 
 ```c
-case ESP_GATTS_EXEC_WRITE_EVT:  
-     ESP_LOGI(GATTS_TAG,"ESP_GATTS_EXEC_WRITE_EVT");  
-     esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);  
-     example_exec_write_event_env(&a_prepare_write_env, param);  
+case ESP_GATTS_EXEC_WRITE_EVT:
+     ESP_LOGI(GATTS_TAG,"ESP_GATTS_EXEC_WRITE_EVT");
+     esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
+     example_exec_write_event_env(&a_prepare_write_env, param);
      break;
 ```
 Let’s take a look at the Executive Write function:
@@ -931,9 +933,9 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
 The executive write is used to either confirm or cancel the write procedure done before, by the Long Characteristic Write procedure. In order to do this, the function checks for the `exec_write_flag` in the parameters received with the event. If the flag equals the execute flag represented by `exec_write_flag`, the write is confirmed and the buffer is printed in the log; if not, then it means the write is canceled and all the data that has been written is deleted.
 
 ```c
-if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){  
-   esp_log_buffer_hex(GATTS_TAG,  
-                      prepare_write_env->prepare_buf,  
+if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_EXEC){
+   esp_log_buffer_hex(GATTS_TAG,
+                      prepare_write_env->prepare_buf,
                       prepare_write_env->prepare_len);
  }
 else{

@@ -1185,9 +1185,11 @@ void  btm_sec_rmt_name_request_complete (UINT8 *bd_addr, UINT8 *bd_name, UINT8 s
 void  btm_sec_rmt_host_support_feat_evt (UINT8 *p);
 void  btm_io_capabilities_req (UINT8 *p);
 void  btm_io_capabilities_rsp (UINT8 *p);
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void  btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p);
 void  btm_keypress_notif_evt (UINT8 *p);
 void  btm_simple_pair_complete (UINT8 *p);
+#endif /* (CLASSIC_BT_INCLUDED == TRUE) */
 void  btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_type);
 void  btm_sec_link_key_request (UINT8 *p_bda);
 void  btm_sec_pin_code_request (UINT8 *p_bda);

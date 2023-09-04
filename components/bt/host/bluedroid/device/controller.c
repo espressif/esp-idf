@@ -29,6 +29,7 @@
 #include "stack/btm_ble_api.h"
 #include "device/version.h"
 #include "osi/future.h"
+#include "config/stack_config.h"
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\xff\xff\xff" };
 #else
@@ -172,13 +173,10 @@ static void start_up(void)
     // Inform the controller what page 0 features we support, based on what
     // it told us it supports. We need to do this first before we request the
     // next page, because the controller's response for page 1 may be
-    // dependent on what we configure from page 0
-#if (BT_SSP_INCLUDED == TRUE)
-    controller_param.simple_pairing_supported = HCI_SIMPLE_PAIRING_SUPPORTED(controller_param.features_classic[0].as_array);
-#else
-    controller_param.simple_pairing_supported = false;
-#endif
-
+    // dependent on what we configure from page 0 and host SSP configuration
+    controller_param.simple_pairing_supported = HCI_SIMPLE_PAIRING_SUPPORTED(
+                                                    controller_param.features_classic[0].as_array) &&
+                                                (bluedriod_config_get()->get_ssp_enabled());
     if (controller_param.simple_pairing_supported) {
         response = AWAIT_COMMAND(controller_param.packet_factory->make_write_simple_pairing_mode(HCI_SP_MODE_ENABLED));
         controller_param.packet_parser->parse_generic_command_complete(response);

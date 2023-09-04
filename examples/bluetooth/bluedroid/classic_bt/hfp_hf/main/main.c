@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -116,7 +116,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
         break;
     }
 
-#if (CONFIG_BT_SSP_ENABLED == true)
+#if (CONFIG_EXAMPLE_SSP_ENABLED == true)
     case ESP_BT_GAP_CFM_REQ_EVT:
         ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
@@ -161,24 +161,27 @@ void app_main(void)
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
 
-    esp_err_t err;
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    if ((err = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
+    if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s initialize controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if ((err = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
+    if ((ret = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if ((err = esp_bluedroid_init()) != ESP_OK) {
+    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+#if (CONFIG_EXAMPLE_SSP_ENABLED == false)
+    bluedroid_cfg.ssp_en = false;
+#endif
+    if ((ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
-    if ((err = esp_bluedroid_enable()) != ESP_OK) {
+    if ((ret = esp_bluedroid_enable()) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s enable bluedroid failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
@@ -235,6 +238,13 @@ static void bt_hf_client_hdl_stack_evt(uint16_t event, void *p_param)
         esp_bt_gap_register_callback(esp_bt_gap_cb);
         esp_hf_client_register_callback(bt_app_hf_client_cb);
         esp_hf_client_init();
+
+#if (CONFIG_EXAMPLE_SSP_ENABLED == true)
+    /* Set default parameters for Secure Simple Pairing */
+    esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
+    esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IO;
+    esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
+#endif
 
         esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
         esp_bt_pin_code_t pin_code;

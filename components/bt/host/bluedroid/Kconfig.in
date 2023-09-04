@@ -135,14 +135,6 @@ choice BT_HID_ROLE
             This enables the BT HID Device
 endchoice
 
-config BT_SSP_ENABLED
-    bool "Secure Simple Pairing"
-    depends on BT_CLASSIC_ENABLED
-    default y
-    help
-        This enables the Secure Simple Pairing. If disable this option,
-        Bluedroid will only support Legacy Pairing
-
 config BT_BLE_ENABLED
     bool "Bluetooth Low Energy"
     depends on BT_BLUEDROID_ENABLED
