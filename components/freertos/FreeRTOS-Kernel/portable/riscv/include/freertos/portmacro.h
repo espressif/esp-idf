@@ -641,6 +641,12 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
     uint32_t threshold = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
 #if SOC_INT_CLIC_SUPPORTED
     threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
+
+    /* When CLIC is supported, the lowest interrupt threshold level is 0.
+     * Therefore, an interrupt threshold level above 0 would mean that we
+     * are either in a critical section or in an ISR.
+     */
+    return (threshold == 0);
 #endif /* SOC_INT_CLIC_SUPPORTED */
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
      * and exit critical code, will recover threshold value (1). so threshold <= 1
