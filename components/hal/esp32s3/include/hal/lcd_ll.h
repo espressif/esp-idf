@@ -13,6 +13,7 @@
 #include "soc/lcd_cam_struct.h"
 #include "hal/assert.h"
 #include "hal/lcd_types.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -595,6 +596,35 @@ static inline volatile void *lcd_ll_get_interrupt_status_reg(lcd_cam_dev_t *dev)
 {
     return &dev->lc_dma_int_st;
 }
+
+/**
+ * @brief Enable or disable the bus clock for the LCD module
+ *
+ * @param set_bit True to set bit, false to clear bit
+ */
+static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en1.lcd_cam_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define lcd_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the LCD module
+ */
+static inline void lcd_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en1.lcd_cam_rst = 0x01;
+    SYSTEM.perip_rst_en1.lcd_cam_rst = 0x00;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define lcd_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }

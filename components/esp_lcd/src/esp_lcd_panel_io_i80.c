@@ -144,7 +144,12 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_FALSE(bus_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free i80 bus slot");
     bus->bus_id = bus_id;
     // enable APB to access LCD registers
-    periph_module_enable(lcd_periph_signals.buses[bus_id].module);
+    PERIPH_RCC_ACQUIRE_ATOMIC(lcd_periph_signals.panels[bus_id].module, ref_count) {
+        if (ref_count == 0) {
+            lcd_ll_enable_bus_clock(bus_id, true);
+            lcd_ll_reset_register(bus_id);
+        }
+    }
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&bus->hal, bus_id);
     // reset peripheral and FIFO
@@ -199,7 +204,11 @@ err:
             gdma_del_channel(bus->dma_chan);
         }
         if (bus->bus_id >= 0) {
-            periph_module_disable(lcd_periph_signals.buses[bus->bus_id].module);
+            PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_signals.panels[bus->bus_id].module, ref_count) {
+                if (ref_count == 0) {
+                    lcd_ll_enable_bus_clock(bus->bus_id, false);
+                }
+            }
             lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus->bus_id);
         }
         if (bus->format_buffer) {
@@ -220,7 +229,11 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     ESP_GOTO_ON_FALSE(LIST_EMPTY(&bus->device_list), ESP_ERR_INVALID_STATE, err, TAG, "device list not empty");
     int bus_id = bus->bus_id;
     lcd_com_remove_device(LCD_COM_DEVICE_TYPE_I80, bus_id);
-    periph_module_disable(lcd_periph_signals.buses[bus_id].module);
+    PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_signals.panels[bus_id].module, ref_count) {
+        if (ref_count == 0) {
+            lcd_ll_enable_bus_clock(bus_id, false);
+        }
+    }
     gdma_disconnect(bus->dma_chan);
     gdma_del_channel(bus->dma_chan);
     esp_intr_free(bus->intr);

@@ -178,7 +178,11 @@ static esp_err_t lcd_rgb_panel_destory(esp_rgb_panel_t *rgb_panel)
 {
     lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     if (rgb_panel->panel_id >= 0) {
-        periph_module_disable(lcd_periph_signals.panels[rgb_panel->panel_id].module);
+        PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_signals.panels[rgb_panel->panel_id].module, ref_count) {
+            if (ref_count == 0) {
+                lcd_ll_enable_bus_clock(rgb_panel->panel_id, false);
+            }
+        }
         lcd_com_remove_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel->panel_id);
     }
     for (size_t i = 0; i < rgb_panel->num_fbs; i++) {
@@ -283,8 +287,12 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->panel_id = panel_id;
 
     // enable APB to access LCD registers
-    periph_module_enable(lcd_periph_signals.panels[panel_id].module);
-    periph_module_reset(lcd_periph_signals.panels[panel_id].module);
+    PERIPH_RCC_ACQUIRE_ATOMIC(lcd_periph_signals.panels[panel_id].module, ref_count) {
+        if (ref_count == 0) {
+            lcd_ll_enable_bus_clock(panel_id, true);
+            lcd_ll_reset_register(panel_id);
+        }
+    }
 
     // allocate frame buffers + bounce buffers
     ESP_GOTO_ON_ERROR(lcd_rgb_panel_alloc_frame_buffers(rgb_panel_config, rgb_panel), err, TAG, "alloc frame buffers failed");
