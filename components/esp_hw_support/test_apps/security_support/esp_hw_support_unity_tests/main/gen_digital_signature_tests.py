@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -16,12 +16,13 @@ from cryptography.hazmat.primitives.asymmetric.rsa import _modinv as modinv  # t
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.utils import int_to_bytes
 
-supported_targets = {'esp32s2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32h2'}
+supported_targets = {'esp32s2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4'}
 supported_key_size = {'esp32s2':[4096, 3072, 2048, 1024],
                       'esp32c3':[3072, 2048, 1024],
                       'esp32s3':[4096, 3072, 2048, 1024],
                       'esp32c6':[3072, 2048, 1024],
-                      'esp32h2':[3072, 2048, 1024]}
+                      'esp32h2':[3072, 2048, 1024],
+                      'esp32p4':[4096, 3072, 2048, 1024]}
 
 NUM_HMAC_KEYS = 3
 NUM_MESSAGES = 10

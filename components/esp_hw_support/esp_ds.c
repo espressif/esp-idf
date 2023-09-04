@@ -48,6 +48,9 @@
 #include "esp32h2/rom/digital_signature.h"
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/digital_signature.h"
+#endif
 
 struct esp_ds_context {
     const ets_ds_data_t *data;

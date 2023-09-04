@@ -47,6 +47,11 @@ typedef enum {
 #include "esp32h2/rom/digital_signature.h"
 #include "esp32h2/rom/aes.h"
 #include "esp32h2/rom/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/efuse.h"
+#include "esp32p4/rom/digital_signature.h"
+#include "esp32p4/rom/aes.h"
+#include "esp32p4/rom/sha.h"
 #endif
 
 #define ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL           (0x1) /*!< HMAC peripheral problem */
@@ -467,7 +472,7 @@ TEST(ds, digital_signature_blocking_operation)
 
         ds_r = esp_ds_finish_sign(signature, &ds_data);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
-#elif CONFIG_IDF_TARGET_ESP32C3
+#else
         esp_err_t ds_r = esp_ds_sign(test_messages[0],
                                      &ds_data,
                                      t->hmac_key_idx + 1,
@@ -498,14 +503,11 @@ TEST(ds, digital_signature_invalid_data)
 
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
-        ds_r = esp_ds_finish_sign(signature, &ds_data);
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-        TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
-#elif CONFIG_IDF_TARGET_ESP32C3
-        TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
-#endif
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS / 8);
 
+        ds_r = esp_ds_finish_sign(signature, &ds_data);
+        TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
+
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS / 8);
         ds_data.iv[bit / 8] ^= 1 << (bit % 8);
     }
 
@@ -517,12 +519,10 @@ TEST(ds, digital_signature_invalid_data)
 
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
+
         ds_r = esp_ds_finish_sign(signature, &ds_data);
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
-#elif CONFIG_IDF_TARGET_ESP32C3
-        TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
-#endif
+
         TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS / 8);
 
         ds_data.c[bit / 8] ^= 1 << (bit % 8);

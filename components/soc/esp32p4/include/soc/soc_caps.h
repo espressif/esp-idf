@@ -58,8 +58,8 @@
 // #define SOC_AES_SUPPORTED               1  //TODO: IDF-6519
 #define SOC_MPI_SUPPORTED               1
 // #define SOC_SHA_SUPPORTED               1  //TODO: IDF-7541
-// #define SOC_HMAC_SUPPORTED              1  //TODO: IDF-7543
-// #define SOC_DIG_SIGN_SUPPORTED          1  //TODO: IDF-6518
+#define SOC_HMAC_SUPPORTED              1
+#define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 #define SOC_FLASH_ENC_SUPPORTED         1
@@ -147,10 +147,9 @@
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 
-// TODO: IDF-5360 (Copy from esp32c3, need check)
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */
-#define SOC_DS_SIGNATURE_MAX_BIT_LEN (3072)
+#define SOC_DS_SIGNATURE_MAX_BIT_LEN (4096)
 
 /** Initialization vector (IV) length for the RSA key parameter message digest (MD) in bytes. */
 #define SOC_DS_KEY_PARAM_MD_IV_LENGTH (16)
