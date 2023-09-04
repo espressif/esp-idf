@@ -3615,6 +3615,9 @@ TRexBool trex_getsubexp(TRex* exp, int n, TRexMatch *subexp)
 static void arg_str_resetfn(struct arg_str *parent)
 {
     ARG_TRACE(("%s:resetfn(%p)\n", __FILE__, parent));
+    for (int i = 0; i < parent->count; i++) {
+        parent->sval[i] = "";
+    }
     parent->count = 0;
 }
 
