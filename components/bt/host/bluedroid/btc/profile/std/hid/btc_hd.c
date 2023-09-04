@@ -52,7 +52,7 @@ typedef enum { BTC_HD_DUMMY_REQ_EVT = 0 } btc_hd_req_evt_t;
 /*******************************************************************************
  *  Static variables
  ******************************************************************************/
-btc_hd_cb_t btc_hd_cb;
+btc_hd_cb_t btc_hd_cb = {0};
 
 // static tBTA_HD_APP_INFO app_info;
 // static tBTA_HD_QOS_INFO in_qos;
@@ -242,7 +242,7 @@ static void btc_hd_init(void)
  * Returns          void
  *
  ******************************************************************************/
-static void btc_hd_unregister_app(void);
+static void btc_hd_unregister_app(bool need_deinit);
 static void btc_hd_deinit(void)
 {
     BTC_TRACE_API("%s", __func__);
@@ -261,12 +261,12 @@ static void btc_hd_deinit(void)
         }
 
         btc_hd_cb.service_dereg_active = FALSE;
-        btc_hd_cb.status = BTC_HD_DISABLING;
         // unresgister app will also relase the connection
         // and disable after receiving unregister event from lower layer
         if (is_hidd_app_register()) {
-            btc_hd_unregister_app();
+            btc_hd_unregister_app(true);
         } else {
+            btc_hd_cb.status = BTC_HD_DISABLING;
             BTC_TRACE_WARNING("%s disabling hid device service now", __func__);
             BTA_HdDisable();
         }
@@ -297,6 +297,10 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
         if (!is_hidd_init()) {
             BTC_TRACE_ERROR("%s HD has not been initiated, shall init first!", __func__);
             ret = ESP_HIDD_NEED_INIT;
+            break;
+        } else if (btc_hd_cb.status == BTC_HD_DISABLING) {
+            BTC_TRACE_ERROR("%s: deinit is in progress!", __func__);
+            ret = ESP_HIDD_BUSY;
             break;
         }
 
@@ -359,7 +363,7 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
  * Returns          void
  *
  ******************************************************************************/
-static void btc_hd_unregister_app(void)
+static void btc_hd_unregister_app(bool need_deinit)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidd_status_t ret = ESP_HIDD_SUCCESS;
@@ -367,6 +371,10 @@ static void btc_hd_unregister_app(void)
         if (!is_hidd_init()) {
             BTC_TRACE_ERROR("%s HD has not been initiated, shall init first!", __func__);
             ret = ESP_HIDD_NEED_INIT;
+            break;
+        } else if (btc_hd_cb.status == BTC_HD_DISABLING) {
+            BTC_TRACE_ERROR("%s: deinit is in progress!", __func__);
+            ret = ESP_HIDD_BUSY;
             break;
         }
 
@@ -382,11 +390,16 @@ static void btc_hd_unregister_app(void)
             break;
         }
         btc_hd_cb.service_dereg_active = TRUE;
+
+        if (need_deinit) {
+            btc_hd_cb.status = BTC_HD_DISABLING;
+        }
+
         BTA_HdUnregisterApp();
     } while(0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
+        esp_hidd_cb_param_t param = {0};
         param.unregister_app.status = ret;
         btc_hd_cb_to_app(ESP_HIDD_UNREGISTER_APP_EVT, &param);
     }
@@ -405,10 +418,31 @@ static void btc_hd_connect(BD_ADDR bd_addr)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidd_status_t ret = ESP_HIDD_SUCCESS;
+
     do {
-        if (!is_hidd_init()) {
+        switch (btc_hd_cb.status) {
+        case BTC_HD_DISABLED:
             BTC_TRACE_ERROR("%s HD has not been initiated, shall init first!", __func__);
             ret = ESP_HIDD_NEED_INIT;
+            break;
+        case BTC_HD_DISABLING:
+            BTC_TRACE_ERROR("%s: deinit is in progress!", __func__);
+            ret = ESP_HIDD_BUSY;
+            break;
+        case BTC_HD_CONNECTING:
+        case BTC_HD_DISCONNECTING:
+            BTC_TRACE_ERROR("%s: busy now, status:%d, try later!", __func__, btc_hd_cb.status);
+            ret = ESP_HIDD_BUSY;
+            break;
+        case BTC_HD_CONNECTED:
+            BTC_TRACE_ERROR("%s: already connect to the other HID host!", __func__);
+            ret = ESP_HIDD_NO_RES;
+            break;
+        default:
+            break;
+        }
+
+        if (ret != ESP_HIDD_SUCCESS) {
             break;
         }
 
@@ -418,17 +452,12 @@ static void btc_hd_connect(BD_ADDR bd_addr)
             break;
         }
 
-        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
-            BTC_TRACE_ERROR("%s: already connect to the other HID host!", __func__);
-            ret = ESP_HIDD_NO_RES;
-            break;
-        }
-
         BTA_HdConnect(bd_addr);
+        btc_hd_cb.status = BTC_HD_CONNECTING;
     } while (0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
+        esp_hidd_cb_param_t param = {0};
         param.open.status = ret;
         param.open.conn_status = ESP_HIDD_CONN_STATE_DISCONNECTED;
         memcpy(param.open.bd_addr, bd_addr, BD_ADDR_LEN);
@@ -449,10 +478,32 @@ static void btc_hd_disconnect(void)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidd_status_t ret = ESP_HIDD_SUCCESS;
+
     do {
-        if (!is_hidd_init()) {
+        switch (btc_hd_cb.status) {
+        case BTC_HD_DISABLED:
             BTC_TRACE_ERROR("%s HD has not been initiated, shall init first!", __func__);
             ret = ESP_HIDD_NEED_INIT;
+            break;
+        case BTC_HD_DISABLING:
+            BTC_TRACE_ERROR("%s: deinit is in progress!", __func__);
+            ret = ESP_HIDD_BUSY;
+            break;
+        case BTC_HD_CONNECTING:
+        case BTC_HD_DISCONNECTING:
+            BTC_TRACE_ERROR("%s: busy now, status:%d, try later!", __func__, btc_hd_cb.status);
+            ret = ESP_HIDD_BUSY;
+            break;
+        case BTC_HD_ENABLED:
+        case BTC_HD_DISCONNECTED:
+            BTC_TRACE_ERROR("%s: no connection!", __func__);
+            ret = ESP_HIDD_NO_CONNECTION;
+            break;
+        default:
+            break;
+        }
+
+        if (ret != ESP_HIDD_SUCCESS) {
             break;
         }
 
@@ -462,17 +513,12 @@ static void btc_hd_disconnect(void)
             break;
         }
 
-        if (btc_hd_cb.status != BTC_HD_CONNECTED) {
-            BTC_TRACE_ERROR("%s: already disconnected!", __func__);
-            ret = ESP_HIDD_NO_CONNECTION;
-            break;
-        }
-
         BTA_HdDisconnect();
+        btc_hd_cb.status = BTC_HD_DISCONNECTING;
     } while (0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
+        esp_hidd_cb_param_t param = {0};
         param.close.status = ret;
         param.close.conn_status = ESP_HIDD_CONN_STATE_DISCONNECTED;
         btc_hd_cb_to_app(ESP_HIDD_CLOSE_EVT, &param);
@@ -490,14 +536,40 @@ static void btc_hd_disconnect(void)
  ******************************************************************************/
 static void btc_hd_send_report(esp_hidd_report_type_t type, uint8_t id, uint16_t len, uint8_t *p_data)
 {
-    tBTA_HD_REPORT report;
-
     BTC_TRACE_API("%s: type=%d id=%d len=%d", __func__, type, id, len);
+    tBTA_HD_REPORT report = {0};
     esp_hidd_status_t ret = ESP_HIDD_SUCCESS;
+
     do {
-        if (!is_hidd_init()) {
+        switch (btc_hd_cb.status) {
+        case BTC_HD_DISABLED:
             BTC_TRACE_ERROR("%s HD has not been initiated, shall init first!", __func__);
             ret = ESP_HIDD_NEED_INIT;
+            break;
+        case BTC_HD_DISABLING:
+            BTC_TRACE_ERROR("%s: deinit is in progress!", __func__);
+            ret = ESP_HIDD_BUSY;
+            break;
+        case BTC_HD_CONNECTING:
+        case BTC_HD_DISCONNECTING:
+            BTC_TRACE_ERROR("%s: busy now, status:%d, try later!", __func__, btc_hd_cb.status);
+            ret = ESP_HIDD_BUSY;
+            break;
+        case BTC_HD_ENABLED:
+        case BTC_HD_DISCONNECTED:
+            if (type == ESP_HIDD_REPORT_TYPE_INTRDATA) {
+                BTC_TRACE_WARNING("%s: no connection, try to reconnect!", __func__);
+                btc_hd_cb.status = BTC_HD_CONNECTING;
+            } else {
+                BTC_TRACE_ERROR("%s: no connection!", __func__);
+                ret = ESP_HIDD_NO_CONNECTION;
+            }
+            break;
+        default:
+            break;
+        }
+
+        if (ret != ESP_HIDD_SUCCESS) {
             break;
         }
 
@@ -506,6 +578,7 @@ static void btc_hd_send_report(esp_hidd_report_type_t type, uint8_t id, uint16_t
             ret = ESP_HIDD_NEED_REG;
             break;
         }
+
         if (type == ESP_HIDD_REPORT_TYPE_INTRDATA) {
             report.type = ESP_HIDD_REPORT_TYPE_INPUT;
             report.use_intr = TRUE;
@@ -522,7 +595,7 @@ static void btc_hd_send_report(esp_hidd_report_type_t type, uint8_t id, uint16_t
     } while (0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
+        esp_hidd_cb_param_t param = {0};
         param.send_report.status = ret;
         param.send_report.reason = 0;
         param.send_report.report_type = report.type;
@@ -556,11 +629,18 @@ static void btc_hd_report_error(uint8_t error)
             ret = ESP_HIDD_NEED_REG;
             break;
         }
+
+        if (btc_hd_cb.status != BTC_HD_CONNECTED) {
+            BTC_TRACE_ERROR("%s: no connection!", __func__);
+            ret = ESP_HIDD_NO_CONNECTION;
+            break;
+        }
+
         BTA_HdReportError(error);
     } while (0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
+        esp_hidd_cb_param_t param = {0};
         param.report_err.status = ret;
         param.report_err.reason = 0;
         btc_hd_cb_to_app(ESP_HIDD_REPORT_ERR_EVT, &param);
@@ -580,10 +660,27 @@ static void btc_hd_virtual_cable_unplug(void)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidd_status_t ret = ESP_HIDD_SUCCESS;
+
     do {
-        if (!is_hidd_init()) {
+        switch (btc_hd_cb.status) {
+        case BTC_HD_DISABLED:
             BTC_TRACE_ERROR("%s HD has not been initiated, shall init first!", __func__);
             ret = ESP_HIDD_NEED_INIT;
+            break;
+        case BTC_HD_DISABLING:
+            BTC_TRACE_ERROR("%s: deinit is in progress!", __func__);
+            ret = ESP_HIDD_BUSY;
+            break;
+        case BTC_HD_CONNECTING:
+        case BTC_HD_DISCONNECTING:
+            BTC_TRACE_ERROR("%s: busy now, status:%d, try later!", __func__, btc_hd_cb.status);
+            ret = ESP_HIDD_BUSY;
+            break;
+        default:
+            break;
+        }
+
+        if (ret != ESP_HIDD_SUCCESS) {
             break;
         }
 
@@ -592,13 +689,18 @@ static void btc_hd_virtual_cable_unplug(void)
             ret = ESP_HIDD_NEED_REG;
             break;
         }
+
         BTA_HdVirtualCableUnplug();
+
+        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
+            btc_hd_cb.status = BTC_HD_DISCONNECTING;
+        }
     } while (0);
 
     if (ret != ESP_HIDD_SUCCESS) {
-        esp_hidd_cb_param_t param;
-        param.report_err.status = ret;
-        param.report_err.reason = 0;
+        esp_hidd_cb_param_t param = {0};
+        param.vc_unplug.status = ret;
+        param.vc_unplug.conn_status = ESP_HIDD_CONN_STATE_DISCONNECTED;
         btc_hd_cb_to_app(ESP_HIDD_VC_UNPLUG_EVT, &param);
     }
 }
@@ -630,7 +732,7 @@ void btc_hd_call_handler(btc_msg_t *msg)
         btc_hd_register_app(arg->register_app.app_param, arg->register_app.in_qos, arg->register_app.out_qos);
         break;
     case BTC_HD_UNREGISTER_APP_EVT:
-        btc_hd_unregister_app();
+        btc_hd_unregister_app(false);
         break;
     case BTC_HD_CONNECT_EVT:
         btc_hd_connect(arg->connect.bd_addr);
@@ -750,16 +852,15 @@ void btc_hd_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_HD_CLOSE_EVT:
-        if (btc_hd_cb.forced_disc && p_data->conn.conn_status == BTA_HD_CONN_STATE_DISCONNECTED) {
-            bt_bdaddr_t *addr = (bt_bdaddr_t *)&p_data->conn.bda;
-            BTC_TRACE_WARNING("remote device was forcefully disconnected");
-            btc_hd_remove_device(*addr);
-            btc_hd_cb.forced_disc = FALSE;
-            break;
-        }
-
-        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
-            btc_hd_cb.status = BTC_HD_ENABLED;
+        if (p_data->conn.conn_status == BTA_HD_CONN_STATE_DISCONNECTED) {
+            btc_hd_cb.status = BTC_HD_DISCONNECTED;
+            if (btc_hd_cb.forced_disc) {
+                bt_bdaddr_t *addr = (bt_bdaddr_t *)&p_data->conn.bda;
+                BTC_TRACE_WARNING("remote device was forcefully disconnected");
+                btc_hd_remove_device(*addr);
+                btc_hd_cb.forced_disc = FALSE;
+                break;
+            }
         }
 
         param.close.status = p_data->conn.status;
@@ -809,8 +910,9 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             btc_hd_remove_device(*bd_addr);
         }
 
-        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
-            btc_hd_cb.status = BTC_HD_ENABLED;
+        if (btc_hd_cb.status == BTC_HD_DISCONNECTING || btc_hd_cb.status == BTC_HD_CONNECTING ||
+            btc_hd_cb.status == BTC_HD_CONNECTED) {
+            btc_hd_cb.status = BTC_HD_DISCONNECTED;
             param.close.status = p_data->conn.status;
             param.close.conn_status = p_data->conn.conn_status;
             btc_hd_cb_to_app(ESP_HIDD_CLOSE_EVT, &param);
