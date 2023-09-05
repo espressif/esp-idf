@@ -1,5 +1,3 @@
-mqtt_client.h:line: warning: Compound esp_mqtt_client_config_t::outbox_config_t is not documented.
-mqtt_client.h:line: warning: Member outbox (variable) of class esp_mqtt_client_config_t is not documented.
 semphr.h:line: warning: argument 'pxStaticSemaphore' of command @param is not found in the argument list of xSemaphoreCreateCounting(uxMaxCount, uxInitialCount)
 task.h:line: warning: argument 'pxTaskDefinition' of command @param is not found in the argument list of vTaskAllocateMPURegions(TaskHandle_t xTask, const MemoryRegion_t *const pxRegions)
 task.h:line: warning: argument 'pxCreatedTask' of command @param is not found in the argument list of vTaskAllocateMPURegions(TaskHandle_t xTask, const MemoryRegion_t *const pxRegions)
