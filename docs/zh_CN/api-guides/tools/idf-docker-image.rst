@@ -126,7 +126,7 @@ Docker 也支持以交互方式进行构建，以调试构建问题或测试自�
 
 .. code-block:: bash
 
-    docker run --rm -v <host_path>:/<container_path> -w /<container_path> espressif/idf idf.py --port rfc2217://host.docker.internal:4000?ign_set_control flash
+    docker run --rm -v <host_path>:/<container_path> -w /<container_path> espressif/idf idf.py --port 'rfc2217://host.docker.internal:4000?ign_set_control' flash
 
 请确保将 ``<host_path>`` 正确设置为主机上的项目路径，并使用 ``-w`` 选项将 ``<container_path>`` 设置为容器内的工作目录。``host.docker.internal`` 为特殊的 Docker DNS 名称，用于访问主机。如有需要，可以将其替换为主机的 IP 地址。
 
