@@ -213,7 +213,6 @@ typedef struct esp_tls_cfg {
     esp_tls_proto_ver_t tls_version;        /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
 } esp_tls_cfg_t;
 
-#ifdef CONFIG_ESP_TLS_SERVER
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
 /**
  * @brief Data structures necessary to support TLS session tickets according to RFC5077
@@ -228,7 +227,7 @@ typedef struct esp_tls_server_session_ticket_ctx {
 } esp_tls_server_session_ticket_ctx_t;
 #endif
 
-
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
 /**
  * @brief tls handshake callback
  * Can be used to configure per-handshake attributes for the TLS connection.
@@ -239,7 +238,11 @@ typedef struct esp_tls_server_session_ticket_ctx {
  *         or a specific MBEDTLS_ERR_XXX code, which will cause the handhsake to abort
  */
 typedef mbedtls_ssl_hs_cb_t esp_tls_handshake_callback;
+#endif
 
+/**
+ * @brief ESP-TLS Server configuration parameters
+ */
 typedef struct esp_tls_cfg_server {
     const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
                                                      If HTTP2/ALPN support is required, a list
@@ -341,7 +344,6 @@ esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg);
  * @param cfg server configuration as esp_tls_cfg_server_t
  */
 void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg);
-#endif /* ! CONFIG_ESP_TLS_SERVER */
 
 typedef struct esp_tls esp_tls_t;
 
@@ -681,7 +683,6 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void);
  */
 const int *esp_tls_get_ciphersuites_list(void);
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
-#ifdef CONFIG_ESP_TLS_SERVER
 /**
  * @brief      Create TLS/SSL server session
  *
@@ -707,7 +708,6 @@ int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls
  * @param[in]  tls  pointer to esp_tls_t
  */
 void esp_tls_server_session_delete(esp_tls_t *tls);
-#endif /* ! CONFIG_ESP_TLS_SERVER */
 
 /**
  * @brief Creates a plain TCP connection, returning a valid socket fd on success or an error handle
