@@ -39,6 +39,13 @@ menu "OpenThread"
             string "OpenThread network name"
             default "OpenThread-ESP"
 
+        config OPENTHREAD_MESH_LOCAL_PREFIX
+            string "OpenThread mesh local prefix, format <address>/<plen>"
+            default "fd00:db8:a0:0::/64"
+            help
+                A string in the format "<address>/<plen>", where `<address>` is an IPv6
+                address and `<plen>` is a prefix length. For example "fd00:db8:a0:0::/64"
+
         config OPENTHREAD_NETWORK_CHANNEL
             int "OpenThread network channel"
             range 11 26

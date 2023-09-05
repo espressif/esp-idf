@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -86,6 +86,11 @@ static void ot_task_worker(void *aContext)
     // Run the main loop
 #if CONFIG_OPENTHREAD_CLI
     esp_openthread_cli_create_task();
+#endif
+#if CONFIG_OPENTHREAD_AUTO_START
+    otOperationalDatasetTlvs dataset;
+    otError error = otDatasetGetActiveTlvs(esp_openthread_get_instance(), &dataset);
+    ESP_ERROR_CHECK(esp_openthread_auto_start((error == OT_ERROR_NONE) ? &dataset : NULL));
 #endif
     esp_openthread_launch_mainloop();
 
