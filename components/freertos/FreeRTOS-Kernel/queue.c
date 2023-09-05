@@ -43,6 +43,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+/* Include private IDF API additions for critical thread safety macros */
+#include "esp_private/freertos_idf_additions_priv.h"
 
 #if ( configUSE_CO_ROUTINES == 1 )
     #include "croutine.h"

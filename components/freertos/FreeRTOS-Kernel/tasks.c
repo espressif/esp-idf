@@ -46,6 +46,8 @@
 #include "task.h"
 #include "timers.h"
 #include "stack_macros.h"
+/* Include private IDF API additions for critical thread safety macros */
+#include "esp_private/freertos_idf_additions_priv.h"
 
 #ifdef ESP_PLATFORM
     #undef _REENT_INIT_PTR
@@ -502,28 +504,6 @@ PRIVILEGED_DATA static volatile BaseType_t xSwitchingContext[ configNUM_CORES ] 
 
 /*-----------------------------------------------------------*/
 
-/* Callback function prototypes. --------------------------*/
-#if ( configCHECK_FOR_STACK_OVERFLOW > 0 )
-
-    extern void vApplicationStackOverflowHook( TaskHandle_t xTask,
-                                               char * pcTaskName );
-
-#endif
-
-#if ( configUSE_TICK_HOOK > 0 )
-
-    extern void vApplicationTickHook( void ); /*lint !e526 Symbol not defined as it is an application callback. */
-
-#endif
-
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-    extern void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
-                                               StackType_t ** ppxIdleTaskStackBuffer,
-                                               uint32_t * pulIdleTaskStackSize ); /*lint !e526 Symbol not defined as it is an application callback. */
-
-#endif
-
 /* File private functions. --------------------------------*/
 
 /**
@@ -728,64 +708,6 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
 /*-----------------------------------------------------------*/
 
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-    TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
-                                                const char * const pcName,
-                                                const uint32_t ulStackDepth,
-                                                void * const pvParameters,
-                                                UBaseType_t uxPriority,
-                                                StackType_t * const puxStackBuffer,
-                                                StaticTask_t * const pxTaskBuffer,
-                                                const BaseType_t xCoreID )
-    {
-        TCB_t * pxNewTCB;
-        TaskHandle_t xReturn;
-
-        configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
-        configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
-        configASSERT( ( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) ) || ( xCoreID == tskNO_AFFINITY ) );
-
-        #if ( configASSERT_DEFINED == 1 )
-            {
-                /* Sanity check that the size of the structure used to declare a
-                 * variable of type StaticTask_t equals the size of the real task
-                 * structure. */
-                volatile size_t xSize = sizeof( StaticTask_t );
-                configASSERT( xSize == sizeof( TCB_t ) );
-                ( void ) xSize; /* Prevent lint warning when configASSERT() is not used. */
-            }
-        #endif /* configASSERT_DEFINED */
-
-        if( ( pxTaskBuffer != NULL ) && ( puxStackBuffer != NULL ) )
-        {
-            /* The memory used for the task's TCB and stack are passed into this
-             * function - use them. */
-            pxNewTCB = ( TCB_t * ) pxTaskBuffer; /*lint !e740 !e9087 Unusual cast is ok as the structures are designed to have the same alignment, and the size is checked by an assert. */
-            pxNewTCB->pxStack = ( StackType_t * ) puxStackBuffer;
-
-            #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
-                {
-                    /* Tasks can be created statically or dynamically, so note this
-                     * task was created statically in case the task is later deleted. */
-                    pxNewTCB->ucStaticallyAllocated = tskSTATICALLY_ALLOCATED_STACK_AND_TCB;
-                }
-            #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
-
-            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, xCoreID );
-            prvAddNewTaskToReadyList( pxNewTCB );
-        }
-        else
-        {
-            xReturn = NULL;
-        }
-
-        return xReturn;
-    }
-
-#endif /* SUPPORT_STATIC_ALLOCATION */
-/*-----------------------------------------------------------*/
-
 #if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
 
     BaseType_t xTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
@@ -883,100 +805,6 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
     }
 
 #endif /* portUSING_MPU_WRAPPERS */
-/*-----------------------------------------------------------*/
-
-#if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
-
-    BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
-                                        const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-                                        const configSTACK_DEPTH_TYPE usStackDepth,
-                                        void * const pvParameters,
-                                        UBaseType_t uxPriority,
-                                        TaskHandle_t * const pxCreatedTask,
-                                        const BaseType_t xCoreID )
-    {
-        TCB_t * pxNewTCB;
-        BaseType_t xReturn;
-
-        /* If the stack grows down then allocate the stack then the TCB so the stack
-         * does not grow into the TCB.  Likewise if the stack grows up then allocate
-         * the TCB then the stack. */
-        #if ( portSTACK_GROWTH > 0 )
-            {
-                /* Allocate space for the TCB.  Where the memory comes from depends on
-                 * the implementation of the port malloc function and whether or not static
-                 * allocation is being used. */
-                pxNewTCB = ( TCB_t * ) pvPortMalloc( sizeof( TCB_t ) );
-
-                if( pxNewTCB != NULL )
-                {
-                    /* Allocate space for the stack used by the task being created.
-                     * The base of the stack memory stored in the TCB so the task can
-                     * be deleted later if required. */
-                    pxNewTCB->pxStack = ( StackType_t * ) pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-
-                    if( pxNewTCB->pxStack == NULL )
-                    {
-                        /* Could not allocate the stack.  Delete the allocated TCB. */
-                        vPortFree( pxNewTCB );
-                        pxNewTCB = NULL;
-                    }
-                }
-            }
-        #else /* portSTACK_GROWTH */
-            {
-                StackType_t * pxStack;
-
-                /* Allocate space for the stack used by the task being created. */
-                pxStack = pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
-
-                if( pxStack != NULL )
-                {
-                    /* Allocate space for the TCB. */
-                    pxNewTCB = ( TCB_t * ) pvPortMalloc( sizeof( TCB_t ) ); /*lint !e9087 !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack, and the first member of TCB_t is always a pointer to the task's stack. */
-
-                    if( pxNewTCB != NULL )
-                    {
-                        /* Store the stack location in the TCB. */
-                        pxNewTCB->pxStack = pxStack;
-                    }
-                    else
-                    {
-                        /* The stack cannot be used as the TCB was not created.  Free
-                         * it again. */
-                        vPortFree( pxStack );
-                    }
-                }
-                else
-                {
-                    pxNewTCB = NULL;
-                }
-            }
-        #endif /* portSTACK_GROWTH */
-
-        if( pxNewTCB != NULL )
-        {
-            #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e9029 !e731 Macro has been consolidated for readability reasons. */
-                {
-                    /* Tasks can be created statically or dynamically, so note this
-                     * task was created dynamically in case it is later deleted. */
-                    pxNewTCB->ucStaticallyAllocated = tskDYNAMICALLY_ALLOCATED_STACK_AND_TCB;
-                }
-            #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
-
-            prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
-            prvAddNewTaskToReadyList( pxNewTCB );
-            xReturn = pdPASS;
-        }
-        else
-        {
-            xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
-        }
-
-        return xReturn;
-    }
-
-#endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 /*-----------------------------------------------------------*/
 
 static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
@@ -1528,15 +1356,6 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_xTaskDelayUntil == 1 )
-    #ifdef ESP_PLATFORM
-        /* backward binary compatibility - remove later */
-        #undef vTaskDelayUntil
-        void vTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
-                              const TickType_t xTimeIncrement )
-        {
-            xTaskDelayUntil( pxPreviousWakeTime, xTimeIncrement );
-        }
-    #endif // ESP_PLATFORM
 
     BaseType_t xTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
                                 const TickType_t xTimeIncrement )
@@ -3014,12 +2833,6 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
         return xIdleTaskHandle[ xPortGetCoreID() ];
     }
 
-    TaskHandle_t xTaskGetIdleTaskHandleForCPU( UBaseType_t cpuid )
-    {
-        configASSERT( cpuid < configNUM_CORES );
-        configASSERT( ( xIdleTaskHandle[ cpuid ] != NULL ) );
-        return xIdleTaskHandle[ cpuid ];
-    }
 #endif /* INCLUDE_xTaskGetIdleTaskHandle */
 /*----------------------------------------------------------*/
 
@@ -3367,90 +3180,6 @@ BaseType_t xTaskIncrementTick( void )
 
     return xSwitchRequired;
 }
-
-#if ( configNUM_CORES > 1 )
-    BaseType_t xTaskIncrementTickOtherCores( void )
-    {
-        /* Minor optimization. This function can never switch cores mid
-         * execution */
-        BaseType_t xCoreID = xPortGetCoreID();
-        BaseType_t xSwitchRequired = pdFALSE;
-
-        /* This function should never be called by Core 0. */
-        configASSERT( xCoreID != 0 );
-
-        /* Called by the portable layer each time a tick interrupt occurs.
-         * Increments the tick then checks to see if the new tick value will cause any
-         * tasks to be unblocked. */
-        traceTASK_INCREMENT_TICK( xTickCount );
-
-        if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) 0U )
-        {
-            /* We need take the kernel lock here as we are about to access
-             * kernel data structures. */
-            taskENTER_CRITICAL_ISR( &xKernelLock );
-
-            /* A task being unblocked cannot cause an immediate context switch
-             * if preemption is turned off. */
-            #if ( configUSE_PREEMPTION == 1 )
-                {
-                    /* Check if core 0 calling xTaskIncrementTick() has
-                     * unblocked a task that can be run. */
-                    if( uxTopReadyPriority > pxCurrentTCB[ xCoreID ]->uxPriority )
-                    {
-                        xSwitchRequired = pdTRUE;
-                    }
-                    else
-                    {
-                        mtCOVERAGE_TEST_MARKER();
-                    }
-                }
-            #endif /* if ( configUSE_PREEMPTION == 1 ) */
-
-            /* Tasks of equal priority to the currently running task will share
-             * processing time (time slice) if preemption is on, and the application
-             * writer has not explicitly turned time slicing off. */
-            #if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
-                {
-                    if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCB[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
-                    {
-                        xSwitchRequired = pdTRUE;
-                    }
-                    else
-                    {
-                        mtCOVERAGE_TEST_MARKER();
-                    }
-                }
-            #endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
-
-            /* Release the previously taken kernel lock as we have finished
-             * accessing the kernel data structures. */
-            taskEXIT_CRITICAL_ISR( &xKernelLock );
-
-            #if ( configUSE_PREEMPTION == 1 )
-                {
-                    if( xYieldPending[ xCoreID ] != pdFALSE )
-                    {
-                        xSwitchRequired = pdTRUE;
-                    }
-                    else
-                    {
-                        mtCOVERAGE_TEST_MARKER();
-                    }
-                }
-            #endif /* configUSE_PREEMPTION */
-        }
-
-        #if ( configUSE_TICK_HOOK == 1 )
-            {
-                vApplicationTickHook();
-            }
-        #endif
-
-        return xSwitchRequired;
-    }
-#endif /* ( configNUM_CORES > 1 ) */
-
 /*-----------------------------------------------------------*/
 
 #if ( configUSE_APPLICATION_TASK_TAG == 1 )
@@ -4008,20 +3737,6 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 }
 /*-----------------------------------------------------------*/
 
-#if ( configNUM_CORES > 1 )
-    void vTaskTakeKernelLock( void )
-    {
-        /* We call the tasks.c critical section macro to take xKernelLock */
-        taskENTER_CRITICAL( &xKernelLock );
-    }
-
-    void vTaskReleaseKernelLock( void )
-    {
-        /* We call the tasks.c critical section macro to release xKernelLock */
-        taskEXIT_CRITICAL( &xKernelLock );
-    }
-#endif /* configNUM_CORES > 1 */
-
 void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
                                         const TickType_t xItemValue )
 {
@@ -4032,7 +3747,7 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
 
         /* THIS FUNCTION MUST BE CALLED WITH THE KERNEL LOCK ALREADY TAKEN.
          * It is used by the event flags implementation, thus those functions
-         * should call vTaskTakeKernelLock() before calling this function. */
+         * should call prvTakeKernelLock() before calling this function. */
     #else /* configNUM_CORES > 1 */
 
         /* THIS FUNCTION MUST BE CALLED WITH THE SCHEDULER SUSPENDED.  It is used by
@@ -4442,79 +4157,42 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
 #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
 
-    #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
-
-        void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet,
-                                                              BaseType_t xIndex,
-                                                              void * pvValue,
-                                                              TlsDeleteCallbackFunction_t xDelCallback )
+    void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
+                                            BaseType_t xIndex,
+                                            void * pvValue )
+    {
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 )
+        {
+            /* TLSP Deletion Callbacks are enabled. Call the TLSPDC funciton
+             * instead with a NULL callback. */
+            vTaskSetThreadLocalStoragePointerAndDelCallback( xTaskToSet, xIndex, pvValue, NULL );
+        }
+        #else /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
         {
             TCB_t * pxTCB;
 
-            /* If TLSP deletion callbacks are enabled, then
-             * configNUM_THREAD_LOCAL_STORAGE_POINTERS is doubled in size so
-             * that the latter half of the pvThreadLocalStoragePointers stores
-             * the deletion callbacks. */
-            if( xIndex < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) )
-            {
-                #if ( configNUM_CORES > 1 )
+            #if ( configNUM_CORES > 1 )
 
-                    /* For SMP, we need to take the kernel lock here as we
-                     * another core could also update this task's TLSP at the
-                     * same time. */
-                    taskENTER_CRITICAL( &xKernelLock );
-                #endif /* ( configNUM_CORES > 1 ) */
-
-                pxTCB = prvGetTCBFromHandle( xTaskToSet );
-                /* Store the TLSP by indexing the first half of the array */
-                pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
-                /* Store the TLSP deletion callback by indexing the second half
-                 * of the array. */
-                pxTCB->pvThreadLocalStoragePointers[ ( xIndex + ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ) ] = ( void * ) xDelCallback;
-
-                #if ( configNUM_CORES > 1 )
-                    /* Release the previously taken kernel lock. */
-                    taskEXIT_CRITICAL( &xKernelLock );
-                #endif /* configNUM_CORES > 1 */
-            }
-        }
-
-        void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
-                                                BaseType_t xIndex,
-                                                void * pvValue )
-        {
-            vTaskSetThreadLocalStoragePointerAndDelCallback( xTaskToSet, xIndex, pvValue, ( TlsDeleteCallbackFunction_t ) NULL );
-        }
-
-
-    #else /* if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 ) */
-        void vTaskSetThreadLocalStoragePointer( TaskHandle_t xTaskToSet,
-                                                BaseType_t xIndex,
-                                                void * pvValue )
-        {
-            TCB_t * pxTCB;
+                /* For SMP, we need to take the kernel lock here as we
+                 * another core could also update this task's TLSP at the
+                 * same time. */
+                taskENTER_CRITICAL( &xKernelLock );
+            #endif /* ( configNUM_CORES > 1 ) */
 
             if( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS )
             {
-                #if ( configNUM_CORES > 1 )
-
-                    /* For SMP, we need to take the kernel lock here as we
-                     * another core could also update this task's TLSP at the
-                     * same time. */
-                    taskENTER_CRITICAL( &xKernelLock );
-                #endif /* ( configNUM_CORES > 1 ) */
-
                 pxTCB = prvGetTCBFromHandle( xTaskToSet );
                 configASSERT( pxTCB != NULL );
                 pxTCB->pvThreadLocalStoragePointers[ xIndex ] = pvValue;
-
-                #if ( configNUM_CORES > 1 )
-                    /* Release the previously taken kernel lock. */
-                    taskEXIT_CRITICAL( &xKernelLock );
-                #endif /* configNUM_CORES > 1 */
             }
+
+            #if ( configNUM_CORES > 1 )
+                /* Release the previously taken kernel lock. */
+                taskEXIT_CRITICAL( &xKernelLock );
+            #endif /* configNUM_CORES > 1 */
         }
-    #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
+        #endif /* configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS == 1 */
+    }
 
 #endif /* configNUM_THREAD_LOCAL_STORAGE_POINTERS */
 /*-----------------------------------------------------------*/
@@ -4773,16 +4451,6 @@ static void prvCheckTasksWaitingTermination( void )
 #endif /* configUSE_TRACE_FACILITY */
 /*-----------------------------------------------------------*/
 
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
-{
-    TCB_t * pxTCB;
-
-    pxTCB = prvGetTCBFromHandle( xTask );
-
-    return pxTCB->xCoreID;
-}
-/*-----------------------------------------------------------*/
-
 #if ( configUSE_TRACE_FACILITY == 1 )
 
     static UBaseType_t prvListTasksWithinSingleList( TaskStatus_t * pxTaskStatusArray,
@@ -4905,20 +4573,6 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 
 #endif /* INCLUDE_uxTaskGetStackHighWaterMark */
 /*-----------------------------------------------------------*/
-#if ( INCLUDE_pxTaskGetStackStart == 1 )
-
-    uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
-    {
-        TCB_t * pxTCB;
-        uint8_t * uxReturn;
-
-        pxTCB = prvGetTCBFromHandle( xTask );
-        uxReturn = ( uint8_t * ) pxTCB->pxStack;
-
-        return uxReturn;
-    }
-
-#endif /* INCLUDE_pxTaskGetStackStart */
 
 #if ( INCLUDE_vTaskDelete == 1 )
 
@@ -5006,7 +4660,7 @@ static void prvResetNextTaskUnblockTime( void )
 }
 /*-----------------------------------------------------------*/
 
-#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) || ( configNUM_CORES > 1 ) )
+#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
 
     TaskHandle_t xTaskGetCurrentTaskHandle( void )
     {
@@ -5016,19 +4670,6 @@ static void prvResetNextTaskUnblockTime( void )
         state = portSET_INTERRUPT_MASK_FROM_ISR();
         xReturn = pxCurrentTCB[ xPortGetCoreID() ];
         portCLEAR_INTERRUPT_MASK_FROM_ISR( state );
-
-        return xReturn;
-    }
-
-    TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid )
-    {
-        TaskHandle_t xReturn = NULL;
-
-        /*Xtensa-specific: the pxCurrentPCB pointer is atomic so we shouldn't need a lock. */
-        if( cpuid < configNUM_CORES )
-        {
-            xReturn = pxCurrentTCB[ cpuid ];
-        }
 
         return xReturn;
     }
@@ -5772,16 +5413,6 @@ TickType_t uxTaskResetEventItemValue( void )
 
 #if ( configUSE_TASK_NOTIFICATIONS == 1 )
 
-    #ifdef ESP_PLATFORM /* IDF-3851 */
-        /* included here for backward binary compatibility */
-        #undef ulTaskNotifyTake
-        uint32_t ulTaskNotifyTake( BaseType_t xClearCountOnExit,
-                                   TickType_t xTicksToWait )
-        {
-            return ulTaskGenericNotifyTake( tskDEFAULT_INDEX_TO_NOTIFY, xClearCountOnExit, xTicksToWait );
-        }
-    #endif // ESP-PLATFORM
-
     uint32_t ulTaskGenericNotifyTake( UBaseType_t uxIndexToWait,
                                       BaseType_t xClearCountOnExit,
                                       TickType_t xTicksToWait )
@@ -5853,18 +5484,6 @@ TickType_t uxTaskResetEventItemValue( void )
 /*-----------------------------------------------------------*/
 
 #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-
-    #ifdef ESP_PLATFORM /* IDF-3851 */
-        /* included for backward compatibility */
-        #undef xTaskNotifyWait
-        BaseType_t xTaskNotifyWait( uint32_t ulBitsToClearOnEntry,
-                                    uint32_t ulBitsToClearOnExit,
-                                    uint32_t * pulNotificationValue,
-                                    TickType_t xTicksToWait )
-        {
-            return xTaskGenericNotifyWait( tskDEFAULT_INDEX_TO_NOTIFY, ulBitsToClearOnEntry, ulBitsToClearOnExit, pulNotificationValue, xTicksToWait );
-        }
-    #endif // ESP-PLATFORM
 
     BaseType_t xTaskGenericNotifyWait( UBaseType_t uxIndexToWait,
                                        uint32_t ulBitsToClearOnEntry,
@@ -6533,9 +6152,3 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
     #endif
 
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
-
-/* If timers.c is not referenced anywhere, don't create the timer task to save RAM */
-BaseType_t __attribute__( ( weak ) ) xTimerCreateTimerTask( void )
-{
-    return pdPASS;
-}

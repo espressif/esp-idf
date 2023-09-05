@@ -17,14 +17,19 @@ entries:
     #     to always keep it in IRAM
     # ------------------------------------------------------------------------------------------------------------------
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
+        # Kernel Control
+        if FREERTOS_SMP = n && FREERTOS_UNICORE = n:
+            tasks:prvTakeKernelLock (default)
+            tasks:prvReleaseKernelLock (default)
         # Task Creation
-        if FREERTOS_SMP = y:
-            tasks:xTaskCreatePinnedToCore (default)
-            tasks:xTaskCreateStaticPinnedToCore (default)
+        tasks:xTaskCreatePinnedToCore (default)
+        tasks:xTaskCreateStaticPinnedToCore (default)
         # Task Utilities
         tasks:xTaskGetCurrentTaskHandleForCPU (default)
         tasks:xTaskGetIdleTaskHandleForCPU (default)
+        tasks:xTaskGetCurrentTaskHandleForCPU (default)
         tasks:xTaskGetAffinity (default)
+        tasks:pxTaskGetStackStart (default)
         tasks:prvTaskPriorityRaise (default)
         tasks:prvTaskPriorityRestore (default)
         # TLSP Deletion Callbacks
@@ -35,6 +40,12 @@ entries:
         tasks:pxGetNextTaskList (default)
         tasks:pxTaskGetNext (default)
         tasks:uxTaskGetSnapshotAll (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # freertos_compatibility.c
+    # Placement Rules: Functions always in flash as they are never called from an ISR
+    # ------------------------------------------------------------------------------------------------------------------
+    freertos_compatibility (default)
 
     # ------------------------------------------------------------------------------------------------------------------
     # idf_additions.c

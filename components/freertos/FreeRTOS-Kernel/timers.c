@@ -44,6 +44,8 @@
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
+/* Include private IDF API additions for critical thread safety macros */
+#include "esp_private/freertos_idf_additions_priv.h"
 
 #if ( INCLUDE_xTimerPendFunctionCall == 1 ) && ( configUSE_TIMERS == 0 )
     #error configUSE_TIMERS must be set to 1 to make the xTimerPendFunctionCall() function available.

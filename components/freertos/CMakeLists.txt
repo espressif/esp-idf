@@ -99,12 +99,8 @@ endif()
 
 # Add ESP-additions source files
 list(APPEND srcs
+    "esp_additions/freertos_compatibility.c"
     "esp_additions/idf_additions.c")
-
-if(kernel_impl STREQUAL "FreeRTOS-Kernel")
-    list(APPEND srcs
-        "esp_additions/freertos_compatibility.c")
-endif()
 
 if(arch STREQUAL "linux")
     # Check if we need to address the FreeRTOS EINTR coexistence with linux system calls if we're building without

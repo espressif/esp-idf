@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 /*
@@ -45,6 +45,8 @@
 #include "task.h"
 #include "timers.h"
 #include "event_groups.h"
+/* Include private IDF API additions for critical thread safety macros */
+#include "esp_private/freertos_idf_additions_priv.h"
 
 /* Lint e961, e750 and e9021 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
@@ -566,8 +568,8 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
     #if ( configNUM_CORES > 1 )
 
         /* We are about to traverse a task list which is a kernel data structure.
-         * Thus we need to call vTaskTakeKernelLock() to take the kernel lock. */
-        vTaskTakeKernelLock();
+         * Thus we need to call prvTakeKernelLock() to take the kernel lock. */
+        prvTakeKernelLock();
     #endif /* configNUM_CORES > 1 */
     {
         traceEVENT_GROUP_SET_BITS( xEventGroup, uxBitsToSet );
@@ -642,7 +644,7 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
     }
     #if ( configNUM_CORES > 1 )
         /* Release the previously taken kernel lock. */
-        vTaskReleaseKernelLock();
+        prvReleaseKernelLock();
     #endif /* configNUM_CORES > 1 */
     ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxEventBits->xEventGroupLock ) );
 
@@ -659,8 +661,8 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
     #if ( configNUM_CORES > 1 )
 
         /* We are about to traverse a task list which is a kernel data structure.
-         * Thus we need to call vTaskTakeKernelLock() to take the kernel lock. */
-        vTaskTakeKernelLock();
+         * Thus we need to call prvTakeKernelLock() to take the kernel lock. */
+        prvTakeKernelLock();
     #endif /* configNUM_CORES > 1 */
     {
         traceEVENT_GROUP_DELETE( xEventGroup );
@@ -675,7 +677,7 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
     }
     #if ( configNUM_CORES > 1 )
         /* Release the previously taken kernel lock. */
-        vTaskReleaseKernelLock();
+        prvReleaseKernelLock();
     #endif /* configNUM_CORES > 1 */
     prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxEventBits->xEventGroupLock ) );
 

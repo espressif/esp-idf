@@ -31,26 +31,23 @@
 #endif
 /* *INDENT-ON* */
 
-/* -------------------------------------------------- Task Creation ---------------------------------------------------
-* Task Creation APIs added by ESP-IDF
-*
-* Todo: Move IDF FreeRTOS SMP related additions to this header as well (see IDF-7201)
-* Todo: Add these SMP related additions to docs once they are combined with IDF FreeRTOS.
-* ------------------------------------------------------------------------------------------------------------------ */
+/* -------------------------------------------------- Task Creation ------------------------------------------------- */
 
-#if ( CONFIG_FREERTOS_SMP && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
+#if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
 
 /**
  * @brief Create a new task that is pinned to a particular core
  *
- * Helper function to create a task that is pinned to a particular core, or has
- * no affinity. In other words, the created task will have an affinity mask of:
- * - (1 << xCoreID) if it is pinned to a particular core
- * - Set to tskNO_AFFINITY if it has no affinity
+ * This function is similar to xTaskCreate(), but allows the creation of a pinned
+ * task. The task's pinned core is specified by the xCoreID argument. If xCoreID
+ * is set to tskNO_AFFINITY, then the task is unpinned and can run on any core.
+ *
+ * @note If ( configNUM_CORES == 1 ), xCoreID is ignored.
  *
  * @param pxTaskCode Pointer to the task entry function.
  * @param pcName A descriptive name for the task.
- * @param usStackDepth The size of the task stack.
+ * @param ulStackDepth The size of the task stack specified as the NUMBER OF
+ * BYTES. Note that this differs from vanilla FreeRTOS.
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
  * @param uxPriority The priority at which the task should run.
@@ -63,24 +60,30 @@
  */
     BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
                                         const char * const pcName,
-                                        const uint32_t usStackDepth,
+                                        const uint32_t ulStackDepth,
                                         void * const pvParameters,
                                         UBaseType_t uxPriority,
                                         TaskHandle_t * const pxCreatedTask,
                                         const BaseType_t xCoreID );
 
-#endif /* ( CONFIG_FREERTOS_SMP && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) ) */
+#endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
-#if ( CONFIG_FREERTOS_SMP && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
 /**
  * @brief Create a new static task that is pinned to a particular core
  *
- * This funciton is the static equivalent of xTaskCreatePinnedToCore().
+ * This function is similar to xTaskCreateStatic(), but allows the creation of a
+ * pinned task. The task's pinned core is specified by the xCoreID argument. If
+ * xCoreID is set to tskNO_AFFINITY, then the task is unpinned and can run on any
+ * core.
+ *
+ * @note If ( configNUM_CORES == 1 ), xCoreID is ignored.
  *
  * @param pxTaskCode Pointer to the task entry function.
  * @param pcName A descriptive name for the task.
- * @param ulStackDepth The size of the task stack.
+ * @param ulStackDepth The size of the task stack specified as the NUMBER OF
+ * BYTES. Note that this differs from vanilla FreeRTOS.
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
  * @param uxPriority The priority at which the task should run.
@@ -101,47 +104,37 @@
                                                 StaticTask_t * const pxTaskBuffer,
                                                 const BaseType_t xCoreID );
 
-#endif /* ( CONFIG_FREERTOS_SMP && ( configSUPPORT_STATIC_ALLOCATION == 1 ) ) */
+#endif /* configSUPPORT_STATIC_ALLOCATION */
 
-/* ------------------------------------------------- Task Utilities ----------------------------------------------------
- * Todo: Move IDF FreeRTOS SMP related additions to this header as well (see IDF-7201)
- * ------------------------------------------------------------------------------------------------------------------ */
-
-#if CONFIG_FREERTOS_SMP
+/* ------------------------------------------------- Task Utilities ------------------------------------------------- */
 
 /**
- * @brief Get the handle of the task running on a certain core
+ * @brief Get the handle of idle task for the given core.
+ *
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)
+ *
+ * @note If CONFIG_FREERTOS_SMP is enabled, please call xTaskGetIdleTaskHandle()
+ * instead.
+ * @param xCoreID The core to query
+ * @return Handle of the idle task for the queried core
+ */
+TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID );
+
+/**
+ * @brief Get the handle of the task currently running on a certain core
  *
  * Because of the nature of SMP processing, there is no guarantee that this
  * value will still be valid on return and should only be used for debugging
  * purposes.
  *
- * [refactor-todo] Mark this function as deprecated, call
- * xTaskGetCurrentTaskHandleCPU() instead
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)
  *
+ * @note If CONFIG_FREERTOS_SMP is enabled, please call xTaskGetCurrentTaskHandleCPU()
+ * instead.
  * @param xCoreID The core to query
  * @return Handle of the current task running on the queried core
  */
-    TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID );
-
-#endif /* CONFIG_FREERTOS_SMP */
-
-#if CONFIG_FREERTOS_SMP
-
-/**
- * @brief Get the handle of idle task for the given CPU.
- *
- * [refactor-todo] Mark this function as deprecated, call
- * xTaskGetIdleTaskHandle() instead
- *
- * @param xCoreID The core to query
- * @return Handle of the idle task for the queried core
- */
-    TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID );
-
-#endif /* CONFIG_FREERTOS_SMP */
-
-#if CONFIG_FREERTOS_SMP
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID );
 
 /**
  * @brief Get the current core affinity of a particular task
@@ -150,35 +143,44 @@
  * pinned to a particular core, the core ID is returned. If the task is not
  * pinned to a particular core, tskNO_AFFINITY is returned.
  *
- * [refactor-todo] Mark this function as deprecated, call vTaskCoreAffinityGet()
- * instead
+ * If CONFIG_FREERTOS_UNICORE is enabled, this function simply returns 0.
  *
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)(IDF-8164)
+ *
+ * @note If CONFIG_FREERTOS_SMP is enabled, please call vTaskCoreAffinityGet()
+ * instead.
  * @param xTask The task to query
  * @return The tasks coreID or tskNO_AFFINITY
  */
-    BaseType_t xTaskGetAffinity( TaskHandle_t xTask );
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask );
 
-#endif /* CONFIG_FREERTOS_SMP */
-
-/* --------------------------------------------- TLSP Deletion Callbacks -----------------------------------------------
- * TLSP Deletion Callback API Additions
+/**
+ * Returns the start of the stack associated with xTask.
  *
- * Todo: Move IDF FreeRTOS TLSP Deletion Callback related additions to this header as well (see IDF-7201)
- * Todo: Add these SMP related additions to docs once they are combined with IDF FreeRTOS.
- * ------------------------------------------------------------------------------------------------------------------ */
+ * Returns the lowest stack memory address, regardless of whether the stack
+ * grows up or down.
+ *
+ * [refactor-todo] Change return type to StackType_t (IDF-8158)
+ *
+ * @param xTask Handle of the task associated with the stack returned.
+ * Set xTask to NULL to return the stack of the calling task.
+ *
+ * @return A pointer to the start of the stack.
+ */
+uint8_t * pxTaskGetStackStart( TaskHandle_t xTask );
 
-#if ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+/* --------------------------------------------- TLSP Deletion Callbacks -------------------------------------------- */
+
+#if CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 
 /**
  * Prototype of local storage pointer deletion callback.
  */
     typedef void (* TlsDeleteCallbackFunction_t)( int,
                                                   void * );
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 
-#endif /* ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS ) */
-
-
-#if ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+#if CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 
 /**
  * Set local storage pointer and deletion callback.
@@ -207,7 +209,7 @@
                                                           void * pvValue,
                                                           TlsDeleteCallbackFunction_t pvDelCallback );
 
-#endif /* ( CONFIG_FREERTOS_SMP && CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS ) */
+#endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 
 /* -------------------------------------------- Creation With Memory Caps ----------------------------------------------
  * Helper functions to create various FreeRTOS objects (e.g., queues, semaphores) with specific memory capabilities

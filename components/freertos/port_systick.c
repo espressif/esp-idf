@@ -9,6 +9,10 @@
 #include <stdlib.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#if ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
+    /* Required for xTaskIncrementTickOtherCores() */
+    #include "esp_private/freertos_idf_additions_priv.h"
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
 
 #if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
     #if CONFIG_FREERTOS_CORETIMER_0
