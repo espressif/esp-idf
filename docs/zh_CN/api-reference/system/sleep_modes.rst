@@ -220,7 +220,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
     外部唤醒 (``ext1``)
     ^^^^^^^^^^^^^^^^^^^^^^
 
-    RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。从以下两个逻辑函数中任选其一，均可触发唤醒：
+    RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。从以下两个逻辑函数中任选其一，均可触发普通 ext1 唤醒：
 
     .. only:: esp32
 
@@ -248,13 +248,17 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
         gpio_pullup_dis(gpio_num);
         gpio_pulldown_en(gpio_num);
 
+    可调用 :cpp:func:`esp_sleep_enable_ext1_wakeup` 函数来启用普通 ext1 唤醒。
+
+    .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+
+        除了上述提到的普通 ext1 唤醒之外，当前的 RTC 控制器也包含更强大的逻辑，可以使用多个 RTC GPIO 并根据自定义的 RTC IO 唤醒电平位图来唤醒。这可以通过:cpp:func:`esp_sleep_enable_ext1_wakeup_with_level_mask` 函数来进行配置。
+
     .. warning::
 
         - 使用 EXT1 唤醒源时，用于唤醒的 IO pad 将被配置为 RTC IO。因此，在将该 pad 用作数字 GPIO 之前，请调用 :cpp:func:`rtc_gpio_deinit` 函数对其进行重新配置。
 
         - RTC 外设在默认情况下配置为断电，此时，唤醒 IO 在进入睡眠状态前将被设置为保持状态。因此，从 Light-sleep 状态唤醒芯片后，请调用 ``rtc_gpio_hold_dis`` 来禁用保持功能，以便对管脚进行重新配置。对于 Deep-sleep 唤醒，此问题已经在应用启动阶段解决。
-
-    可调用 :cpp:func:`esp_sleep_enable_ext1_wakeup` 函数来启用此唤醒源。
 
 .. only:: SOC_ULP_SUPPORTED
 
