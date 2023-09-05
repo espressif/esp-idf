@@ -117,7 +117,7 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
     .. only:: SOC_WIFI_SUPPORTED
 
-        - NVS is used to store WiFi data if the :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/network/esp_wifi>` initialisation function is used.
+        - NVS is used to store Wi-Fi data if the :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/network/esp_wifi>` initialization function is used.
 
     - The NVS API can also be used for other application data.
     - It is strongly recommended that you include an NVS partition of at least 0x3000 bytes in your project.
