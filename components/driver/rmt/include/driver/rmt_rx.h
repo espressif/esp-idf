@@ -40,6 +40,8 @@ typedef struct {
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
         uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
     } flags;                      /*!< RX channel config flags */
+    int intr_priority;            /*!< RMT interrupt priority,
+                                       if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } rmt_rx_channel_config_t;
 
 /**
