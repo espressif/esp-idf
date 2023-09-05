@@ -291,7 +291,7 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
     esp_err_t err;
     if (datatype == ItemType::BLOB) {
         err = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item);
-        if(err == ESP_OK && findPage != nullptr) {
+        if(err == ESP_OK) {
             matchedTypePageFound = true;
         }
     } else {
@@ -302,7 +302,7 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
         }
 #else
         err = findItem(nsIndex, ItemType::ANY, key, findPage, item);
-        if(err == ESP_OK && findPage != nullptr && datatype == item.datatype) {
+        if(err == ESP_OK && datatype == item.datatype) {
             matchedTypePageFound = true;
         }
 #endif

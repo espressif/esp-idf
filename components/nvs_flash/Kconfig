@@ -30,8 +30,9 @@ menu "NVS"
         bool "Enable legacy nvs_set function behavior when same key is reused with different data types"
         default n
         help
-            Enabling this will switch the nvs_set family of functions to the legacy mode. When called with same
-            key and different data type, existing value stored in NVS remains active and as a side effect, the
-            new value is also stored into NVS, although not accessible using respective nvs_get function. Use only
-            if your application relies on this NVS API behaviour.
+            Enabling this option will switch the nvs_set() family of functions to the legacy mode:
+            when called repeatedly with the same key but different data type, the existing value
+            in the NVS remains active and the new value is just stored, actually not accessible through
+            corresponding nvs_get() call for the key given. Use this option only when your application
+            relies on such NVS API behaviour.
 endmenu
