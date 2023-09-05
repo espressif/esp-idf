@@ -597,6 +597,20 @@ esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_host_set_cclk_always_on(int slot, bool cclk_always_on)
+{
+    if (!(slot == 0 || slot == 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (cclk_always_on) {
+        SDMMC.clkena.cclk_low_power &= ~BIT(slot);
+    } else {
+        SDMMC.clkena.cclk_low_power |= BIT(slot);
+    }
+    sdmmc_host_clock_update_command(slot);
+    return ESP_OK;
+}
+
 static void sdmmc_host_dma_init(void)
 {
     SDMMC.ctrl.dma_enable = 1;
