@@ -1,18 +1,24 @@
 Event Task Matrix (ETM)
 =======================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Introduction
 ------------
 
-Normally, if a peripheral X needs to notify peripheral Y of a particular event, this could only be done via a CPU interrupt from peripheral X (where the CPU notifies peripheral Y on behalf of peripheral X). However, in time critical applications, the latency introduced by CPU interrupts is non-negligible. The Event Task Matrix (ETM) module allows subset of peripherals to notify each other of events directly (i.e., without CPU intervention). This allows precise (and low latency) synchronization between peripherals, and lessens the CPU's work load (as the CPU no longer needs handle these events).
+Normally, if a peripheral X needs to notify peripheral Y of a particular event, this could only be done via a CPU interrupt from peripheral X, where the CPU notifies peripheral Y on behalf of peripheral X. However, in time-critical applications, the latency introduced by CPU interrupts is non-negligible.
+
+With the help of the Event Task Matrix (ETM) module, some peripherals can directly notify other peripherals of events through pre-set connections without the intervention of CPU interrupts. This allows precise and low latency synchronization between peripherals, and lessens the CPU's workload as the CPU no longer needs to handle these events.
 
 .. blockdiag:: /../_static/diagrams/etm/etm_channel.diag
     :caption: ETM channels Overview
     :align: center
 
-The ETM module has multiple programmable channels, they're used to connect a particular **Event** to a particular **Task**. When an event is activated, the ETM channel will trigger the corresponding task automatically. Peripherals that support ETM functionality will provide their or unique set of events and tasks to be connected by the ETM. An ETM channel can connect any event to any task (even looping back an event to a task of on the same peripheral). However, an ETM channel can only connect one event to one task any time (i.e., 1 to 1 relation). If you want to use different events to trigger the same task, you can set up more ETM channels.
+The ETM module has multiple programmable channels, they are used to connect a particular **Event** to a particular **Task**. When an event is activated, the ETM channel will trigger the corresponding task automatically.
 
-Typically, with the help of ETM module, you can implement features like:
+Peripherals that support ETM functionality provide their or unique set of events and tasks to be connected by the ETM. An ETM channel can connect any event to any task, even looping back an event to a task on the same peripheral. However, an ETM channel can only connect one event to one task at a time (i.e., 1 to 1 relation). If you want to use different events to trigger the same task, you can set up more ETM channels.
+
+Typically, with the help of the ETM module, you can implement features like:
 
 -  Toggle the GPIO when a timer alarm event happens
 -  Start an ADC conversion when a pulse edge is detected on a GPIO
@@ -22,19 +28,19 @@ Functional Overview
 
 The following sections of this document cover the typical steps to configure and use the ETM module.
 
-- :ref:`etm-channel-allocation` - describes how to install and uninstall ETM channel
-- :ref:`etm-event` - describes how to allocate a new ETM event handle or fetch an existing handle from various peripherals
-- :ref:`etm-task` - describes how to allocate a new ETM task handle or fetch an existing handle from various peripherals
-- :ref:`etm-channel-control` - describes common ETM channel control functions
-- :ref:`etm-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
-- :ref:`etm-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior
+- :ref:`etm-channel-allocation` - describes how to install and uninstall the ETM channel.
+- :ref:`etm-event` - describes how to allocate a new ETM event handle or fetch an existing handle from various peripherals.
+- :ref:`etm-task` - describes how to allocate a new ETM task handle or fetch an existing handle from various peripherals.
+- :ref:`etm-channel-control` - describes common ETM channel control functions.
+- :ref:`etm-thread-safety` - lists which APIs are guaranteed to be thread-safe by the driver.
+- :ref:`etm-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
 
 .. _etm-channel-allocation:
 
 ETM Channel Allocation
 ^^^^^^^^^^^^^^^^^^^^^^
 
-There're many identical ETM channels in {IDF_TARGET_NAME} [1]_, each channel is represented by :cpp:type:`esp_etm_channel_handle_t` in the software. The ETM core driver manages all available hardware resources in a pool, so that you don't need to care about which channel is in use and which is not. The ETM core driver will allocate a channel for you when you call :cpp:func:`esp_etm_new_channel` and delete it when you call :cpp:func:`esp_etm_del_channel`. All requirements needed for allocating a channel are provided in :cpp:type:`esp_etm_channel_config_t`.
+There are many identical ETM channels in {IDF_TARGET_NAME} [1]_, and each channel is represented by :cpp:type:`esp_etm_channel_handle_t` in the software. The ETM core driver manages all available hardware resources in a pool so that you do not need to care about which channel is in use and which is not. The ETM core driver will allocate a channel for you when you call :cpp:func:`esp_etm_new_channel` and delete it when you call :cpp:func:`esp_etm_del_channel`. All requirements needed for allocating a channel are provided in :cpp:type:`esp_etm_channel_config_t`.
 
 Before deleting an ETM channel, please disable it by :cpp:func:`esp_etm_channel_disable` in advance or make sure it has not been enabled yet by :cpp:func:`esp_etm_channel_enable`.
 
@@ -43,16 +49,16 @@ Before deleting an ETM channel, please disable it by :cpp:func:`esp_etm_channel_
 ETM Event
 ^^^^^^^^^
 
-ETM Event abstracts the event source and is represented by :cpp:type:`esp_etm_event_handle_t` in the software. ETM event can be generated from a variety of peripherals, thus the way to get the event handle differs from peripherals. When an ETM event is no longer used, you should call :cpp:func:`esp_etm_channel_connect` with a ``NULL`` event handle to disconnect it and then call :cpp:func:`esp_etm_del_event` to free the event resource.
+ETM Event abstracts the event source, masking the details of specific event sources, and is represented by :cpp:type:`esp_etm_event_handle_t` in the software, allowing applications to handle different types of events more easily. ETM events can be generated from a variety of peripherals, thus the way to get the event handle differs from peripherals. When an ETM event is no longer used, you should call :cpp:func:`esp_etm_channel_connect` with a ``NULL`` event handle to disconnect it and then call :cpp:func:`esp_etm_del_event` to free the event resource.
 
 GPIO Events
 ~~~~~~~~~~~
 
 GPIO **edge** event is the most common event type, it can be generated by any GPIO pin. You can call :cpp:func:`gpio_new_etm_event` to create a GPIO event handle, with the configurations provided in :cpp:type:`gpio_etm_event_config_t`:
 
-- :cpp:member:`gpio_etm_event_config_t::edge` decides which edge will trigger the event, supported edge types are listed in the :cpp:type:`gpio_etm_event_edge_t`.
+- :cpp:member:`gpio_etm_event_config_t::edge` decides which edge to trigger the event, supported edge types are listed in the :cpp:type:`gpio_etm_event_edge_t`.
 
-You need to build a connection between the GPIO ETM event handle and the GPIO number. So you should call :cpp:func:`gpio_etm_event_bind_gpio` afterwards. Please note, only the ETM event handle that created by :cpp:func:`gpio_new_etm_event` can set a GPIO number. Calling this function with other kind of ETM event will return :c:macro:`ESP_ERR_INVALID_ARG` error. Needless to say, this function won't help do the GPIO initialization, you still need to call :cpp:func:`gpio_config` to set the property like direction, pull up/down mode separately.
+You need to build a connection between the GPIO ETM event handle and the GPIO number. So you should call :cpp:func:`gpio_etm_event_bind_gpio` afterwards. Please note, only the ETM event handle that created by :cpp:func:`gpio_new_etm_event` can set a GPIO number. Calling this function with other kinds of ETM events returns :c:macro:`ESP_ERR_INVALID_ARG` error. Needless to say, this function does not help with the GPIO initialization, you still need to call :cpp:func:`gpio_config` to set the property like direction, pull up/down mode separately.
 
 Other Peripheral Events
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,25 +66,25 @@ Other Peripheral Events
 .. list::
 
     :SOC_SYSTIMER_SUPPORT_ETM: - You can call :cpp:func:`esp_systick_new_etm_alarm_event` to get the ETM event from RTOS Systick, one per CPU core.
-    :SOC_SYSTIMER_SUPPORT_ETM: - Refer to :doc:`ESP Timer </api-reference/system/esp_timer>` for how to get the ETM event handle from esp_timer.
-    :SOC_TIMER_SUPPORT_ETM: - Refer to :doc:`GPTimer </api-reference/peripherals/gptimer>` for how to get the ETM event handle from GPTimer.
-    :SOC_GDMA_SUPPORT_ETM: - Refer to :doc:`Async Memory Copy </api-reference/system/async_memcpy>` for how to get the ETM event handle from async memcpy.
+    :SOC_SYSTIMER_SUPPORT_ETM: - Refer to :doc:`/api-reference/system/esp_timer` for how to get the ETM event handle from esp_timer.
+    :SOC_TIMER_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/gptimer` for how to get the ETM event handle from GPTimer.
+    :SOC_GDMA_SUPPORT_ETM: - Refer to :doc:`/api-reference/system/async_memcpy` for how to get the ETM event handle from async memcpy.
 
 .. _etm-task:
 
 ETM Task
 ^^^^^^^^
 
-ETM Task abstracts the task action and is represented by :cpp:type:`esp_etm_task_handle_t` in the software. ETM task can be assigned to a variety of peripherals, thus the way to get the task handle differs from peripherals. When an ETM task is no longer used, you should call :cpp:func:`esp_etm_channel_connect` with a ``NULL`` task handle to disconnect it and then call :cpp:func:`esp_etm_del_task` to free the task resource.
+ETM Task abstracts the task action and is represented by :cpp:type:`esp_etm_task_handle_t` in the software, allowing tasks to be managed and represented in the same way. ETM tasks can be assigned to a variety of peripherals, thus the way to get the task handle differs from peripherals. When an ETM task is no longer used, you should call :cpp:func:`esp_etm_channel_connect` with a ``NULL`` task handle to disconnect it and then call :cpp:func:`esp_etm_del_task` to free the task resource.
 
 GPIO Tasks
 ~~~~~~~~~~
 
-GPIO task is the most common task type, one GPIO task can even manage multiple GPIOs. When tha task gets activated by the ETM channel, all managed GPIOs can set/clear/toggle at the same time. You can call :cpp:func:`gpio_new_etm_task` to create a GPIO task handle, with the configurations provided in :cpp:type:`gpio_etm_task_config_t`:
+GPIO task is the most common task type, one GPIO task can even manage multiple GPIOs. When the task gets activated by the ETM channel, all managed GPIOs can set/clear/toggle at the same time. You can call :cpp:func:`gpio_new_etm_task` to create a GPIO task handle, with the configurations provided in :cpp:type:`gpio_etm_task_config_t`:
 
-- :cpp:member:`gpio_etm_task_config_t::action` decides what the GPIO action would be taken by the ETM task. Supported actions are listed in the :cpp:type:`gpio_etm_task_action_t`.
+- :cpp:member:`gpio_etm_task_config_t::action` decides what GPIO action would be taken by the ETM task. Supported actions are listed in the :cpp:type:`gpio_etm_task_action_t`.
 
-To build a connection between the GPIO ETM task and the GPIO number, you should call :cpp:func:`gpio_etm_task_add_gpio`. You can call this function by several times if you want the task handle to manage more GPIOs. Please note, only the ETM task handle that created by :cpp:func:`gpio_new_etm_task` can manage a GPIO. Calling this function with other kind of ETM task will return :c:macro:`ESP_ERR_INVALID_ARG` error. Needless to say, this function won't help do the GPIO initialization, you still need to call :cpp:func:`gpio_config` to set the property like direction, pull up/down mode separately.
+To build a connection between the GPIO ETM task and the GPIO number, you should call :cpp:func:`gpio_etm_task_add_gpio`. You can call this function by several times if you want the task handle to manage more GPIOs. Please note, only the ETM task handle that created by :cpp:func:`gpio_new_etm_task` can manage a GPIO. Calling this function with other kinds of ETM tasks returns :c:macro:`ESP_ERR_INVALID_ARG` error. Needless to say, this function does not help with the GPIO initialization, you still need to call :cpp:func:`gpio_config` to set the property like direction, pull up/down mode separately.
 
 Before you call :cpp:func:`esp_etm_del_task` to delete the GPIO ETM task, make sure that all previously added GPIOs are removed by :cpp:func:`gpio_etm_task_rm_gpio` in advance.
 
@@ -97,7 +103,7 @@ ETM Channel Control
 Connect Event and Task
 ~~~~~~~~~~~~~~~~~~~~~~
 
-An ETM event has no association with an ETM task, until they're connected to the same ETM channel by calling :cpp:func:`esp_etm_channel_connect`. Specially, calling the function with a ``NULL`` task/event handle, means to disconnect the channel from any task or event. Note that, this function can be called either before or after the channel is enabled. But calling this function at runtime to change the connection can be dangerous, because the channel may be in the middle of a cycle, and the new connection may not take effect immediately.
+An ETM event has no association with an ETM task, until they are connected to the same ETM channel by calling :cpp:func:`esp_etm_channel_connect`. Especially, calling the function with a ``NULL`` task/event handle means disconnecting the channel from any task or event. Note that, this function can be called either before or after the channel is enabled. But calling this function at runtime to change the connection can be dangerous, because the channel may be in the middle of a cycle, and the new connection may not take effect immediately.
 
 Enable and Disable Channel
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,18 +130,18 @@ The digital ID printed in the dump information is defined in the ``soc/soc_etm_s
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory functions like :cpp:func:`esp_etm_new_channel` and :cpp:func:`gpio_new_etm_task` are guaranteed to be thread safe by the driver, which means, you can call it from different RTOS tasks without protection by extra locks.
+The factory functions like :cpp:func:`esp_etm_new_channel` and :cpp:func:`gpio_new_etm_task` are guaranteed to be thread-safe by the driver, which means, you can call them from different RTOS tasks without protection by extra locks.
 
-No functions are allowed to run within ISR environment.
+No functions are allowed to run within the ISR environment.
 
-Other functions that take :cpp:type:`esp_etm_channel_handle_t`, :cpp:type:`esp_etm_task_handle_t` and :cpp:type:`esp_etm_event_handle_t` as the first positional parameter, are not treated as thread safe, which means you should avoid calling them from multiple tasks.
+Other functions that take :cpp:type:`esp_etm_channel_handle_t`, :cpp:type:`esp_etm_task_handle_t` and :cpp:type:`esp_etm_event_handle_t` as the first positional parameter, are not treated as thread-safe, which means you should avoid calling them from multiple tasks.
 
 .. _etm-kconfig-options:
 
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_ETM_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enable this option will increase the firmware binary size as well.
+- :ref:`CONFIG_ETM_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option increases the firmware binary size as well.
 
 API Reference
 -------------
@@ -145,4 +151,4 @@ API Reference
 .. include-build-file:: inc/esp_systick_etm.inc
 
 .. [1]
-   Different ESP chip series might have different numbers of ETM channels. For more details, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > Chapter *Event Task Matrix (ETM)* [`PDF <{IDF_TARGET_TRM_EN_URL}#evntaskmatrix>`__]. The driver will not forbid you from applying for more channels, but it will return error when all available hardware resources are used up. Please always check the return value when doing channel allocation (i.e. :cpp:func:`esp_etm_new_channel`).
+   Different ESP chip series might have different numbers of ETM channels. For more details, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > Chapter **Event Task Matrix (ETM)** [`PDF <{IDF_TARGET_TRM_EN_URL}#evntaskmatrix>`__]. The driver does not forbid you from applying for more channels, but it will return an error when all available hardware resources are used up. Please always check the return value when doing channel allocation (i.e., :cpp:func:`esp_etm_new_channel`).
