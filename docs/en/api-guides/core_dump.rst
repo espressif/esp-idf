@@ -1,99 +1,87 @@
 Core Dump
 =========
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
-ESP-IDF provides support to generate core dumps on unrecoverable software errors. This useful technique allows post-mortem analysis of software state at the moment of failure.
-Upon the crash system enters panic state, prints some information and halts or reboots depending configuration. User can choose to generate core dump in order to analyse
-the reason of failure on PC later on. Core dump contains snapshots of all tasks in the system at the moment of failure. Snapshots include tasks control blocks (TCB) and stacks.
-So it is possible to find out what task, at what instruction (line of code) and what callstack of that task lead to the crash. It is also possible dumping variables content on
-demand if previously attributed accordingly.
-ESP-IDF provides special commands to help users to retrieve and analyse core dumps:
+A core dump is a set of software state information that is automatically saved by the panic handler when a fatal error occurs. Core dumps are useful for conducting post-mortem analysis of the software's state at the moment of failure. ESP-IDF provides support for generating core dumps.
 
-* ``idf.py coredump-info`` - prints crashed task's registers, callstack, list of available tasks in the system, memory regions and contents of memory stored in core dump (TCBs and stacks)
-* ``idf.py coredump-debug`` - creates core dump ELF file and runs GDB debug session with this file. User can examine memory, variables and tasks states manually. Note that since not all memory is saved in core dump only values of variables allocated on stack will be meaningful
+A core dump contains snapshots of all tasks in the system at the moment of failure, where each snapshot includes a task's control block (TCB) and stack. By analyzing the task snapshots, it is possible to find out what task, at what instruction (line of code), and what call stack of that task lead to the crash. It is also possible to dump the contents of variables on demand, provided those variables are assigned special core dump attributes.
 
-For more information about core dump internals see the - :doc:`Core dump internals <core_dump_internals>`
+Core dump data is saved to a core dump file according to a particular format, see :doc:`Core dump internals <core_dump_internals>` for more details. However, ESP-IDF's ``idf.py`` command provides special subcommands to decode and analyze the core dump file.
 
 Configurations
 --------------
 
-There are a number of core dump related configuration options which user can choose in project configuration menu (``idf.py menuconfig``).
+Destination
+^^^^^^^^^^^
 
-**Core dump data destination (Components -> Core dump -> Data destination)**
+The :ref:`CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART` option enables or disables core dump, and selects the core dump destination if enabled. When a crash occurs, the generated core dump file can either be saved to flash, or output to a connected host over UART.
 
-   * Save core dump to Flash (Flash)
-   * Print core dump to UART (UART)
-   * Disable core dump generation (None)
+Format & Size
+^^^^^^^^^^^^^
 
-**Core dump data format (Components -> Core dump -> Core dump data format)**
+The :ref:`CONFIG_ESP_COREDUMP_DATA_FORMAT` option controls the format of the core dump file, namely ELF format or Binary format.
 
-   * ELF format (Executable and Linkable Format file for core dump)
-   * Binary format (Basic binary format for core dump)
+The ELF format contains extended features and allows more information regarding erroneous tasks and crashed software to be saved. However, using the ELF format causes the core dump file to be larger. This format is recommended for new software designs and is flexible enough to be extended in future revisions to save more information.
 
-   The ELF format contains extended features and allow to save more information about broken tasks and crashed software but it requires more space in the flash memory.
-   This format of core dump is recommended for new software designs and is flexible enough to extend saved information for future revisions.
+The Binary format is kept for compatibility reasons. Binary format core dump files are smaller while provide better performance.
 
-   The Binary format is kept for compatibility reasons, it uses less space in the memory to keep data and provides better performance.
+The :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` option configures the number of task snapshots saved by the core dump.
 
-**Core dump data integrity check (Components -> Core dump -> Core dump data integrity check)**
+Core dump data integrity checking is supported via the ``Components`` > ``Core dump`` > ``Core dump data integrity check`` option.
 
-   .. only:: esp32
+.. only:: esp32
 
-      * Use CRC32 for core dump integrity verification
-      * Use SHA256 for core dump integrity verification (only work in ELF format)
+    Data Integrity Check
+    ^^^^^^^^^^^^^^^^^^^^
 
-      The CRC32 option provides better calculation performance and consumes less memory for storage.
+    Core dump files include a checksum, which can be used to verify the integrity of the core dump file, i.e., the file has not been corrupted. The :ref:`CONFIG_ESP_COREDUMP_CHECKSUM` option controls the type of checksum, namely CRC32 or SHA256 (only supported in the ELF format).
 
-      The SHA256 hash algorithm provides greater probability of detecting corruption than a CRC32 with multiple bit errors.
+    The CRC32 option provides better calculation performance and consumes less memory for storage.
 
-   .. only:: not esp32
+    The SHA256 hash algorithm provides a greater probability of detecting corruption than a CRC32 with multiple-bit errors.
 
-      * Use CRC32 for core dump integrity verification
+Reserved Stack Size
+^^^^^^^^^^^^^^^^^^^
 
-**Maximum number of tasks snapshots in core dump (Components -> Core dump -> Maximum number of tasks)**
+Core dump routines run from a separate stack due to core dump itself needing to parse and save all other task stacks. The :ref:`CONFIG_ESP_COREDUMP_STACK_SIZE` option controls the size of the core dump's stack in number of bytes.
 
-**Delay before core dump is printed to UART (Components -> Core dump -> Delay before print to UART)**
+Setting this option to 0 bytes will cause the core dump routines to run from the ISR stack, thus saving a bit of memory. Setting the option greater than zero will cause a separate stack to be instantiated.
 
-   The value is in ms.
+.. note::
 
-**Handling of UART core dumps in IDF Monitor (Components -> Core dump -> Delay before print to UART)**
+   If a separate stack is used, the recommended stack size should be larger than 800 bytes to ensure that the core dump routines themselves do not cause a stack overflow.
 
-   The value is base64 encoded.
+Core Dump to Flash
+------------------
 
-   * Decode and show summary (info_corefile)
-   * Don't decode
+When the core dump file is saved to flash, the file is saved to a special core dump partition in flash. Specifying the core dump partition will reserve space on the flash chip to store the core dump file.
 
-**Reserved stack size (Components -> Core dump -> Reserved stack size)**
+The core dump partition is automatically declared when using the default partition table provided by ESP-IDF. However, when using a custom partition table, you need to declare the core dump partition, as illustrated below:
 
-   Size of the memory to be reserved for core dump stack. If 0 core dump process will run on the stack of crashed task/ISR, otherwise special stack will be allocated.
-   To ensure that core dump itself will not overflow task/ISR stack set this to the value above 800.
+.. code-block:: none
 
-Save core dump to flash
------------------------
-
-When this option is selected core dumps are saved to special partition on flash. When using default partition table files which are provided with ESP-IDF it automatically
-allocates necessary space on flash, But if user wants to use its own layout file together with core dump feature it should define separate partition for core dump
-as it is shown below::
-
-   # Name,   Type, SubType, Offset,  Size
-   # Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
-   nvs,      data, nvs,     0x9000,  0x6000
-   phy_init, data, phy,     0xf000,  0x1000
-   factory,  app,  factory, 0x10000, 1M
-   coredump, data, coredump,,        64K
+    # Name,   Type, SubType, Offset,  Size
+    # Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
+    nvs,      data, nvs,     0x9000,  0x6000
+    phy_init, data, phy,     0xf000,  0x1000
+    factory,  app,  factory, 0x10000, 1M
+    coredump, data, coredump,,        64K
 
 .. important::
-    If :doc:`Flash Encryption <../security/flash-encryption>` is enabled on the device then please add `encrypted` flag to the coredump partition::
+
+    If :doc:`../security/flash-encryption` is enabled on the device, please add an ``encrypted`` flag to the core dump partition declaration.
+
+    .. code-block:: none
 
         coredump, data, coredump,,       64K, encrypted
 
-There are no special requirements for partition name. It can be chosen according to the user application needs, but partition type should be 'data' and
-sub-type should be 'coredump'. Also when choosing partition size note that core dump data structure introduces constant overhead of 20 bytes and per-task overhead of 12 bytes.
-This overhead does not include size of TCB and stack for every task. So partition size should be at least 20 + max tasks number x (12 + TCB size + max task stack size) bytes.
+There are no special requirements for the partition name. It can be chosen according to the application's needs, but the partition type should be ``data`` and the sub-type should be ``coredump``. Also, when choosing partition size, note that the core dump file introduces a constant overhead of 20 bytes and a per-task overhead of 12 bytes. This overhead does not include the size of TCB and stack for every task. So the partition size should be at least ``20 + max tasks number x (12 + TCB size + max task stack size)`` bytes.
 
-The example of generic command to analyze core dump from flash is:
+An example of the generic command to analyze core dump from flash is:
 
 .. code-block:: bash
 
@@ -105,11 +93,69 @@ or
 
     idf.py coredump-debug
 
-Print core dump to UART
------------------------
+Core Dump to UART
+-----------------
 
-When this option is selected base64-encoded core dumps are printed on UART upon system panic. In this case user should save core dump text body to some file manually and
-then run the following command:
+When the core dump file is output to UART, the output file is Base64-encoded. The :ref:`CONFIG_ESP_COREDUMP_DECODE` option allows for selecting whether the output file is automatically decoded by the ESP-IDF monitor or kept encoded for manual decoding.
+
+Automatic Decoding
+^^^^^^^^^^^^^^^^^^
+
+If :ref:`CONFIG_ESP_COREDUMP_DECODE` is set to automatically decode the UART core dump, ESP-IDF monitor will automatically decode the data, translate any function addresses to source code lines, and display it in the monitor. The output to ESP-IDF monitor would resemble the following output:
+
+The :ref:`CONFIG_ESP_COREDUMP_UART_DELAY` allows for an optional delay to be added before the core dump file is output to UART.
+
+.. code-block:: none
+
+    ===============================================================
+    ==================== ESP32 CORE DUMP START ====================
+
+    Crashed task handle: 0x3ffc5640, name: 'main', GDB name: 'process 1073501760'
+
+    ================== CURRENT THREAD REGISTERS ===================
+    exccause       0x1d (StoreProhibitedCause)
+    excvaddr       0x0
+    epc1           0x40027657
+    epc2           0x0
+    ...
+    ==================== CURRENT THREAD STACK =====================
+    #0  0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
+    #1  0x40028970 in esp_system_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/port/esp_system_chip.c:93
+    ...
+    ======================== THREADS INFO =========================
+    Id   Target Id          Frame
+    * 1    process 1073501760 0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
+    2    process 1073503644 vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /home/User/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:161
+    ...
+    ==================== THREAD 1 (TCB: 0x3ffc5640, name: 'main') =====================
+    #0  0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
+    #1  0x40028970 in esp_system_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/port/esp_system_chip.c:93
+    ...
+    ==================== THREAD 2 (TCB: 0x3ffc5d9c, name: 'IDLE') =====================
+    #0  vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /home/User/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:161
+    #1  0x40000000 in ?? ()
+    ...
+    ======================= ALL MEMORY REGIONS ========================
+    Name   Address   Size   Attrs
+    ...
+    .iram0.vectors 0x40024000 0x403 R XA
+    .dram0.data 0x3ffbf1c0 0x2c0c RW A
+    ...
+    ===================== ESP32 CORE DUMP END =====================
+    ===============================================================
+
+Manual Decoding
+^^^^^^^^^^^^^^^
+
+If you set :ref:`CONFIG_ESP_COREDUMP_DECODE` to no decoding, then the raw  Base64-encoded body of core dump is output to UART between the following header and footer of the UART output:
+
+.. code-block:: none
+
+    ================= CORE DUMP START =================
+    <body of Base64-encoded core dump, save it to file on disk>
+    ================= CORE DUMP END ===================
+
+It is advised to manually save the core dump text body to a file. The ``CORE DUMP START`` and ``CORE DUMP END`` lines must not be included in a core dump text file. The saved text can the be decoded using the following command:
 
 .. code-block:: bash
 
@@ -121,57 +167,59 @@ or
 
     idf.py coredump-debug -c </path/to/saved/base64/text>
 
-Base64-encoded body of core dump will be between the following header and footer::
 
-   ================= CORE DUMP START =================
-   <body of base64-encoded core dump, save it to file on disk>
-   ================= CORE DUMP END ===================
+Core Dump Commands
+------------------
 
-The ``CORE DUMP START`` and ``CORE DUMP END`` lines must not be included in core dump text file.
+ESP-IDF provides special commands to help to retrieve and analyze core dumps:
+
+* ``idf.py coredump-info`` - prints crashed task's registers, call stack, list of available tasks in the system, memory regions, and contents of memory stored in core dump (TCBs and stacks).
+* ``idf.py coredump-debug`` - creates core dump ELF file and runs GDB debug session with this file. You can examine memory, variables, and task states manually. Note that since not all memory is saved in the core dump, only the values of variables allocated on the stack are meaningful.
+
 
 ROM Functions in Backtraces
 ---------------------------
 
-It is possible situation that at the moment of crash some tasks or/and crashed task itself have one or more ROM functions in their callstacks.
-Since ROM is not part of the program ELF it will be impossible for GDB to parse such callstacks, because it tries to analyse functions' prologues to accomplish that.
-In that case callstack printing will be broken with error message at the first ROM function.
-To overcome this issue, `ROM ELF <https://github.com/espressif/esp-rom-elfs/releases>`_ provided by Espressif is loaded automatically based on the target and its revision. More details about ROM ELFs can be found `here <https://github.com/espressif/esp-rom-elfs/blob/master/README.md>`_.
+It is a possible that at the moment of a crash, some tasks and/or the crashed task itself have one or more ROM functions in their call stacks. Since ROM is not part of the program ELF, it is impossible for GDB to parse such call stacks due to GDB analyzing functions' prologues to decode backtraces. Thus, call stack parsing will break with an error message upon the first ROM function that is encountered.
 
-Dumping variables on demand
+To overcome this issue, the `ROM ELF <https://github.com/espressif/esp-rom-elfs/releases>`_ provided by Espressif is loaded automatically by ESP-IDF monitor based on the target and its revision. More details about ROM ELFs can be found in `esp-rom-elfs <https://github.com/espressif/esp-rom-elfs/blob/master/README.md>`_.
+
+
+Dumping Variables on Demand
 ---------------------------
 
-Sometimes you want to read the last value of a variable to understand the root cause of a crash.
-Core dump supports retrieving variable data over GDB by attributing special notations declared variables.
+Sometimes you want to read the last value of a variable to understand the root cause of a crash. Core dump supports retrieving variable data over GDB by applying special attributes to declared variables.
 
-Supported notations and RAM regions
+
+Supported Notations and RAM Regions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list::
 
-   * ``COREDUMP_DRAM_ATTR`` places variable into DRAM area which will be included into dump.
-   :SOC_RTC_FAST_MEM_SUPPORTED or SOC_RTC_SLOW_MEM_SUPPORTED: * ``COREDUMP_RTC_ATTR`` places variable into RTC area which will be included into dump.
-   :SOC_RTC_FAST_MEM_SUPPORTED: * ``COREDUMP_RTC_FAST_ATTR`` places variable into RTC_FAST area which will be included into dump.
+   * ``COREDUMP_DRAM_ATTR`` places the variable into the DRAM area, which is included in the dump.
+   :SOC_RTC_FAST_MEM_SUPPORTED or SOC_RTC_SLOW_MEM_SUPPORTED: * ``COREDUMP_RTC_ATTR`` places the variable into the RTC area, which is included in the dump.
+   :SOC_RTC_FAST_MEM_SUPPORTED: * ``COREDUMP_RTC_FAST_ATTR`` places the variable into the RTC_FAST area, which is included in the dump.
 
 Example
 ^^^^^^^
 
 1. In :ref:`project-configuration-menu`, enable :ref:`COREDUMP TO FLASH <CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART>`, then save and exit.
 
-2. In your project, create a global variable in DRAM area as such as:
+2. In your project, create a global variable in the DRAM area, such as:
 
 .. code-block:: bash
 
    // uint8_t global_var;
    COREDUMP_DRAM_ATTR uint8_t global_var;
 
-3. In main application, set the variable to any value and ``assert(0)`` to cause a crash.
+3. In the main application, set the variable to any value and ``assert(0)`` to cause a crash.
 
 .. code-block:: bash
 
    global_var = 25;
    assert(0);
 
-4. Build, flash and run the application on a target device and wait for the dumping information.
+4. Build, flash, and run the application on a target device and wait for the dumping information.
 
 5. Run the command below to start core dumping in GDB, where ``PORT`` is the device USB port:
 
@@ -189,7 +237,7 @@ Example
 Running ``idf.py coredump-info`` and ``idf.py coredump-debug``
 --------------------------------------------------------------
 
-``idf.py coredump-info --help`` and ``idf.py coredump-debug --help`` commands can be used to get more details on usage
+``idf.py coredump-info --help`` and ``idf.py coredump-debug --help`` commands can be used to get more details on usage.
 
 Related Documents
 ^^^^^^^^^^^^^^^^^
