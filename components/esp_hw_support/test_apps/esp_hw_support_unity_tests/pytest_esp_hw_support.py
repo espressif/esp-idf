@@ -16,4 +16,4 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_esp_hw_support(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=120)
+    dut.run_all_single_board_cases(timeout=180)

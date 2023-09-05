@@ -415,11 +415,7 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto] [ds]")
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1, &esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
         ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
-#elif CONFIG_IDF_TARGET_ESP32C3
-        TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
-#endif
         TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS / 8);
 
         ds_data.iv[bit / 8] ^= 1 << (bit % 8);
@@ -435,11 +431,7 @@ TEST_CASE("Digital Signature Invalid Data (FPGA only)", "[hw_crypto] [ds]")
         esp_err_t ds_r = esp_ds_start_sign(test_messages[0], &ds_data, t->hmac_key_idx + 1, &esp_ds_ctx);
         TEST_ASSERT_EQUAL(ESP_OK, ds_r);
         ds_r = esp_ds_finish_sign(signature, esp_ds_ctx);
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
         TEST_ASSERT_EQUAL(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
-#elif CONFIG_IDF_TARGET_ESP32C3
-        TEST_ASSERT_EQUAL(ESP32C3_ERR_HW_CRYPTO_DS_INVALID_DIGEST, ds_r);
-#endif
         TEST_ASSERT_EQUAL_HEX8_ARRAY(zero, signature, DS_MAX_BITS / 8);
 
         ds_data.c[bit / 8] ^= 1 << (bit % 8);
