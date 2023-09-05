@@ -1049,13 +1049,20 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
 esp_err_t i2c_master_probe(i2c_master_bus_handle_t i2c_master, uint16_t address, int xfer_timeout_ms)
 {
     ESP_RETURN_ON_FALSE(i2c_master != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
+    TickType_t ticks_to_wait = (xfer_timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(xfer_timeout_ms);
+    if (xSemaphoreTake(i2c_master->bus_lock_mux, ticks_to_wait) != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    i2c_master->cmd_idx = 0;
+    i2c_master->trans_idx = 0;
+    i2c_master->trans_done = false;
     i2c_hal_context_t *hal = &i2c_master->base->hal;
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
     };
 
-    TickType_t ticks_to_wait = (xfer_timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(xfer_timeout_ms);
     i2c_master->i2c_trans = (i2c_transaction_t) {
         .device_address = address,
         .ops = i2c_ops,
@@ -1072,8 +1079,10 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t i2c_master, uint16_t address,
     if (i2c_master->status == I2C_STATUS_ACK_ERROR) {
         // Reset the status to done, in order not influence next time transaction.
         i2c_master->status = I2C_STATUS_DONE;
+        xSemaphoreGive(i2c_master->bus_lock_mux);
         return ESP_ERR_NOT_FOUND;
     }
+    xSemaphoreGive(i2c_master->bus_lock_mux);
     return ESP_OK;
 }
 
