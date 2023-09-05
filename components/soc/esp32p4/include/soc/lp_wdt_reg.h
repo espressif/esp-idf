@@ -11,9 +11,6 @@
 extern "C" {
 #endif
 
-/* The value that needs to be written to LP_WDT_SWD_WPROTECT_REG to write-enable the swd registers */
-//TODO: IDF-7539
-#define LP_WDT_SWD_WKEY_VALUE 0x50D83AA1
 
 /** LP_WDT_CONFIG0_REG register
  *  need_des
