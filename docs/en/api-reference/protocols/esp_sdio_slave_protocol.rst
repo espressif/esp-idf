@@ -1,9 +1,11 @@
 Communication with ESP SDIO Slave
 =================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This document describes the process of initialization of an ESP SDIO Slave device and then provides details on the ESP SDIO Slave protocol - a non-standard protocol that allows an SDIO Host to communicate with an ESP SDIO slave.
 
-The ESP SDIO Slave protocol was created to implement the communication between SDIO host and slave, because the SDIO specification only shows how to access the custom region of a card (by sending CMD52 and CMD53 to Functions 1-7) without any details regarding the underlying hardware implementation.
+The ESP SDIO Slave protocol was created to implement the communication between SDIO host and slave, because the SDIO specification only shows how to access the custom region of a card (by sending CMD52 and CMD53 to functions 1-7) without any details regarding the underlying hardware implementation.
 
 .. _esp_sdio_slave_caps:
 
@@ -31,7 +33,7 @@ The services provided by the SDIO Slave peripheral of the {IDF_TARGET_NAME} chip
    * - :ref:`Shared registers <esp_sdio_slave_shared_registers>`
      - 56\*
 
-- \* Not including the interrupt registers
+\* Not including the interrupt registers
 
 
 .. _esp_slave_init:
@@ -120,12 +122,12 @@ ESP SDIO Slave Protocol
 The ESP SDIO Slave protocol is based on the SDIO Specification's I/O Read/Write commands, i.e., CMD52 and CMD53. The protocol offers the following services:
 
 - Sending FIFO and receiving FIFO
-- 52 8-bit R/W registers shared by host and slave (For details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **SDIO Slave Controller** > **Register Summary** > SDIO SLC Host registers [`PDF <{IDF_TARGET_TRM_EN_URL}#sdioslave-reg-summ>`__]
+- 52 8-bit R/W registers shared by host and slave (For details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *SDIO Slave Controller* > *Register Summary* > SDIO SLC Host registers [`PDF <{IDF_TARGET_TRM_EN_URL}#sdioslave-reg-summ>`__])
 - 16 general purpose interrupt sources, 8 from host to slave and 8 from slave to host
 
 To begin communication, the host needs to enable the I/O Function 1 in the slave and access its registers as described below.
 
-Check the code example :example:`peripherals/sdio`.
+Check the code example: :example:`peripherals/sdio`
 
 The :doc:`ESP Serial Slave Link </api-reference/protocols/esp_serial_slave_link>` component implements the logic of this protocol for ESP32 SDIO Host when communicating with an ESP32 SDIO slave.
 
@@ -165,18 +167,18 @@ FIFO (Sending and Receiving)
 
 The address of CMD53 is related to the length requested to read from or write to the slave in a single transfer, as demonstrated by the equation below:
 
-    *requested length = 0x1F800-address*
+    *requested length = 0x1F800 - address*
 
-The slave responds with data that has a length equal to the length field of CMD53. In cases where the data is longer than the **requested length**, the data will be zero filled (when sending) or discarded (when receiving). This includes both the block and the byte mode of CMD53.
+The slave responds to data that has a length equal to the length field of CMD53. In cases where the data is longer than the **requested length**, the data will be zero filled (when sending) or discarded (when receiving). This includes both the block and the byte mode of CMD53.
 
 .. note::
 
-    The function number should be set to 1, OP Code should be set to 1 (for CMD53).
+    The function number should be set to 1, and OP Code should be set to 1 (for CMD53).
 
-    In order to achieve higher efficiency when accessing the FIFO by an arbitrary length, the block and byte modes of CMD53 can be used in combination. For example, given that the block size is set to 512 by default, you can write/get 1031 bytes of data from the FIFO by doing the following:
+    In order to achieve higher efficiency when accessing the FIFO by an arbitrary length, the block and byte modes of CMD53 can be used in combination. For example, given that the block size is set to 512 by default, you can write or get 1031 bytes of data from the FIFO by doing the following:
 
-    1. Send CMD53 in block mode, block count=2 (1024 bytes) to address 0x1F3F9=0x1F800-**1031**.
-    2. Then send CMD53 in byte mode, byte count=8 (or 7 if your controller supports that) to address 0x1F7F9=0x1F800-**7**.
+    1. Send CMD53 in block mode, block count = 2 (1024 bytes) to address 0x1F3F9=0x1F800-**1031**.
+    2. Then send CMD53 in byte mode, byte count = 8 (or 7 if your controller supports that) to address 0x1F7F9=0x1F800-**7**.
 
 .. _esp_sdio_slave_interrupts:
 
@@ -197,9 +199,9 @@ Receiving FIFO
 To write to the slave's receiving FIFO, the host should complete the following steps:
 
 1. **Read the TOKEN1 field (bits 27-16) of the register TOKEN_RDATA (0x044)**. The buffer number remaining is TOKEN1 minus the number of buffers used by host.
-2. **Make sure the buffer number is sufficient** (**buffer_size** x **buffer_num** is greater than the data to write, **buffer_size** is pre-defined between the host and the slave before the communication starts). Otherwise, keep returning to Step 1 until the buffer size is sufficient.
-3. **Write to the FIFO address with CMD53**. Note that the **requested length** should not exceed the length calculated at Step 2, and the FIFO address is related to **requested length**.
-4. **Calculate used buffers**. Note that a partially used buffer at the tail is counted as used.
+2. **Make sure the buffer number is sufficient** (*buffer_size* x *buffer_num* is greater than the data to write, *buffer_size* is pre-defined between the host and the slave before the communication starts). Otherwise, keep returning to step 1 until the buffer size is sufficient.
+3. **Write to the FIFO address with CMD53**. Note that the *requested length* should not exceed the length calculated at step 2, and the FIFO address is related to *requested length*.
+4. **Calculate used buffers**. Note that a partially-used buffer at the tail is counted as used.
 
 .. _esp_sdio_slave_send_fifo:
 
