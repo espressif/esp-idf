@@ -19,7 +19,7 @@
 #define MSG_BUFF_SIZE   (256)
 
 
-static const char *TAG = "ICMPv6_PING";
+static const char *TAG = "icmpv6_ping";
 
 /* types of ipv6 addresses to be displayed on ipv6 events */
 static const char *s_ipv6_addr_types[] = {

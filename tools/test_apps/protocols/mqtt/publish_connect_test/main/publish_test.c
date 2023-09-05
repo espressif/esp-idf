@@ -19,7 +19,7 @@
 #include "mqtt_client.h"
 #include "sdkconfig.h"
 
-static const char *TAG = "PUBLISH_TEST";
+static const char *TAG = "publish_test";
 
 static EventGroupHandle_t mqtt_event_group;
 const static int CONNECTED_BIT = BIT0;

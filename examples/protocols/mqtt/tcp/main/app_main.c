@@ -30,7 +30,7 @@
 #include "esp_log.h"
 #include "mqtt_client.h"
 
-static const char *TAG = "MQTT_EXAMPLE";
+static const char *TAG = "mqtt_example";
 
 
 static void log_error_if_nonzero(const char *message, int error_code)
@@ -151,10 +151,10 @@ void app_main(void)
 
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("mqtt_client", ESP_LOG_VERBOSE);
-    esp_log_level_set("MQTT_EXAMPLE", ESP_LOG_VERBOSE);
-    esp_log_level_set("TRANSPORT_BASE", ESP_LOG_VERBOSE);
+    esp_log_level_set("mqtt_example", ESP_LOG_VERBOSE);
+    esp_log_level_set("transport_base", ESP_LOG_VERBOSE);
     esp_log_level_set("esp-tls", ESP_LOG_VERBOSE);
-    esp_log_level_set("TRANSPORT", ESP_LOG_VERBOSE);
+    esp_log_level_set("transport", ESP_LOG_VERBOSE);
     esp_log_level_set("outbox", ESP_LOG_VERBOSE);
 
     ESP_ERROR_CHECK(nvs_flash_init());
