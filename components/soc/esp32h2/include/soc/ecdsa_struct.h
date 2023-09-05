@@ -19,8 +19,8 @@ extern "C" {
 typedef union {
     struct {
         /** work_mode : R/W; bitpos: [0]; default: 0;
-         *  The work mode bits of ECDSA Accelerator. 0: Signature Generate Mode. 1: Signature
-         *  Verify Mode.
+         *  The work mode bits of ECDSA Accelerator. 0: Signature Verify Mode. 1: Signature
+         *  Generate Mode.
          */
         uint32_t work_mode:1;
         /** ecc_curve : R/W; bitpos: [1]; default: 0;
