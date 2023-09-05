@@ -248,10 +248,10 @@ static void IRAM_ATTR esp_reset_rpa_moudle(void)
 static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn,
                                          uint32_t param1, uint32_t param2)
 {
+    BT_ASSERT_PRINT("BLE assert: line %d in function %s, param: 0x%x, 0x%x", ln, fn, param1, param2);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     esp_ble_controller_log_dump_all(true);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    BT_ASSERT_PRINT("BLE assert: line %d in function %s, param: 0x%x, 0x%x", ln, fn, param1, param2);
     assert(0);
 }
 
