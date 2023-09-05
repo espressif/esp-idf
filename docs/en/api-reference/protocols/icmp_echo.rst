@@ -1,6 +1,8 @@
 ICMP Echo
 =========
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
@@ -8,7 +10,7 @@ ICMP (Internet Control Message Protocol) is used for diagnostic or control purpo
 
 During a ping session, the source host firstly sends out an ICMP echo request packet and wait for an ICMP echo reply with specific times. In this way, it also measures the round-trip time for the messages. After receiving a valid ICMP echo reply, the source host will generate statistics about the IP link layer (e.g., packet loss, elapsed time, etc).
 
-It is common that IoT device needs to check whether a remote server is alive or not. The device should show the warnings to users when it got offline. It can be achieved by creating a ping session and sending/parsing ICMP echo packets periodically.
+It is common that IoT device needs to check whether a remote server is alive or not. The device should show the warnings to users when it got offline. It can be achieved by creating a ping session and sending or parsing ICMP echo packets periodically.
 
 To make this internal procedure much easier for users, ESP-IDF provides some out-of-box APIs.
 
@@ -24,7 +26,7 @@ Example method to create a new ping session and register callbacks:
     static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
     {
         // optionally, get callback arguments
-        // const char* str = (const char*) args; 
+        // const char* str = (const char*) args;
         // printf("%s\r\n", str); // "foo"
         uint8_t ttl;
         uint16_t seqno;
@@ -116,5 +118,3 @@ API Reference
 -------------
 
 .. include-build-file:: inc/ping_sock.inc
-
-
