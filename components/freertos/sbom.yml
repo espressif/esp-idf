@@ -1,0 +1,15 @@
+name: 'freertos'
+version: '10.2.1'
+cpe: cpe:2.3:o:amazon:freertos:{}:*:*:*:*:*:*:*
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: Amazon Web Services'
+description: An open-source, real-time operating system (RTOS) with additional features and patches from Espressif.
+cve-exclude-list:
+  - cve: CVE-2021-43997
+    reason: This vulnerability only affects ARMv7-M and ARMv8-M ports of FreeRTOS and hence does not affect Espressif SoCs which are not based on these architectures.
+  - cve: CVE-2021-32020
+    reason: This vulnerability only affects native FreeRTOS heap allocation schemes and ESP-IDF uses its own scheme for dynamic memory management.
+  - cve: CVE-2021-31571
+    reason: The fix for this vulnerability has been incorporated in the FreeRTOS kernel being used in ESP-IDF v4.3. For details, refer https://www.espressif.com/sites/default/files/advisory_downloads/AR2021-005%20Security%20Advisory%20on%20BadAlloc%20Vulnerabilities.pdf.
+  - cve: CVE-2021-31572
+    reason: The fix for this vulnerability has been incorporated in the FreeRTOS kernel being used in ESP-IDF v4.3. For details, refer https://www.espressif.com/sites/default/files/advisory_downloads/AR2021-005%20Security%20Advisory%20on%20BadAlloc%20Vulnerabilities.pdf.
