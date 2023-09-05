@@ -16,8 +16,8 @@ extern "C" {
  */
 #define ECDSA_CONF_REG (DR_REG_ECDSA_BASE + 0x4)
 /** ECDSA_WORK_MODE : R/W; bitpos: [0]; default: 0;
- *  The work mode bits of ECDSA Accelerator. 0: Signature Generate Mode. 1: Signature
- *  Verify Mode.
+ *  The work mode bits of ECDSA Accelerator. 0: Signature Verify mode. 1: Signature
+ *  Generate Mode.
  */
 #define ECDSA_WORK_MODE    (BIT(0))
 #define ECDSA_WORK_MODE_M  (ECDSA_WORK_MODE_V << ECDSA_WORK_MODE_S)
