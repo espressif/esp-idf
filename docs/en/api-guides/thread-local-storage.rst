@@ -1,67 +1,55 @@
 Thread Local Storage
 ====================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
-Thread-local storage (TLS) is a mechanism by which variables are allocated such that there 
-is one instance of the variable per extant thread. ESP-IDF provides three ways to make use 
-of such variables:
+Thread-local storage (TLS) is a mechanism by which variables are allocated such that there is one instance of the variable per extant thread. ESP-IDF provides three ways to make use of such variables:
 
- - :ref:`freertos-native`: ESP-IDF FreeRTOS native API.
- - :ref:`pthread-api`: ESP-IDF's pthread API.
- - :ref:`c11-std`: C11 standard introduces special keyword to declare variables as thread local.
+- :ref:`freertos-native`: ESP-IDF FreeRTOS native APIs.
+- :ref:`pthread-api`: ESP-IDF pthread APIs.
+- :ref:`c11-std`: C11 standard introduces special keywords to declare variables as thread local.
 
 .. _freertos-native:
 
-FreeRTOS Native API
+FreeRTOS Native APIs
 --------------------
 
-The ESP-IDF FreeRTOS provides the following API to manage thread local variables:
+The ESP-IDF FreeRTOS provides the following APIs to manage thread local variables:
 
- - :cpp:func:`vTaskSetThreadLocalStoragePointer`
- - :cpp:func:`pvTaskGetThreadLocalStoragePointer`
- - :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback`
+- :cpp:func:`vTaskSetThreadLocalStoragePointer`
+- :cpp:func:`pvTaskGetThreadLocalStoragePointer`
+- :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback`
 
-In this case maximum number of variables that can be allocated is limited by
-:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` configuration value. Variables are kept in the task control block (TCB)
-and accessed by their index. Note that index 0 is reserved for ESP-IDF internal uses.
+In this case, the maximum number of variables that can be allocated is limited by :ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS`. Variables are kept in the task control block (TCB) and accessed by their index. Note that index 0 is reserved for ESP-IDF internal uses.
 
-Using that API user can allocate thread local variables of an arbitrary size and assign them to any number of tasks.
-Different tasks can have different sets of TLS variables.
+Using the APIs above, you can allocate thread local variables of an arbitrary size, and assign them to any number of tasks. Different tasks can have different sets of TLS variables.
 
-If size of the variable is more then 4 bytes then user is responsible for allocating/deallocating memory for it.
-Variable's deallocation is initiated by FreeRTOS when task is deleted, but user must provide function (callback)
-to do proper cleanup.
+If size of the variable is more then 4 bytes, then you need to allocate/deallocate memory for it. Variable's deallocation is initiated by FreeRTOS when task is deleted, but user must provide callback function to do proper cleanup.
 
 .. _pthread-api:
 
-Pthread API
+Pthread APIs
 ----------------
 
-The ESP-IDF provides the following :doc:`pthread API </api-reference/system/pthread>` to manage thread local variables:
+The ESP-IDF provides the following :doc:`/api-reference/system/pthread` to manage thread local variables:
 
- - :cpp:func:`pthread_key_create`
- - :cpp:func:`pthread_key_delete`
- - :cpp:func:`pthread_getspecific`
- - :cpp:func:`pthread_setspecific`
+- :cpp:func:`pthread_key_create`
+- :cpp:func:`pthread_key_delete`
+- :cpp:func:`pthread_getspecific`
+- :cpp:func:`pthread_setspecific`
 
-This API has all benefits of the one above, but eliminates some its limits. The number of variables is
-limited only by size of available memory on the heap.
-Due to the dynamic nature this API introduces additional performance overhead compared to the native one.
+These APIs have all benefits of the ones above, but eliminates some their limits. The number of variables is limited only by size of available memory on the heap. Due to the dynamic nature, this APIs introduce additional performance overhead compared to the native one.
 
 .. _c11-std:
 
 C11 Standard
 ------------
 
-The ESP-IDF FreeRTOS supports thread local variables according to C11 standard (ones specified with ``__thread`` keyword).
-For details on this GCC feature please see https://gcc.gnu.org/onlinedocs/gcc-5.5.0/gcc/Thread-Local.html#Thread-Local.
-Storage for that kind of variables is allocated on the task's stack.
-Note that area for all such variables in the program will be allocated on the stack of
-every task in the system even if that task does not use such variables at all. For example
-ESP-IDF system tasks (like ``ipc``, ``timer`` tasks etc.) will also have that extra stack space allocated.
-So this feature should be used with care. There is a tradeoff: C11 thread local variables are quite handy
-to use in programming and can be accessed using minimal CPU instructions, but this benefit goes
-with the cost of additional stack usage for all tasks in the system.
-Due to static nature of variables allocation all tasks in the system have the same sets of C11 thread local variables.
+The ESP-IDF FreeRTOS supports thread local variables according to C11 standard, ones specified with ``__thread`` keyword. For details on this feature, please refer to the `GCC documentation <https://gcc.gnu.org/onlinedocs/gcc-5.5.0/gcc/Thread-Local.html#Thread-Local>`_.
+
+Storage for that kind of variables is allocated on the task stack. Note that area for all such variables in the program is allocated on the stack of every task in the system even if that task does not use such variables at all. For example, ESP-IDF system tasks (e.g., ``ipc``, ``timer`` tasks etc.) will also have that extra stack space allocated. Thus feature should be used with care.
+
+Using C11 thread local variables comes at a trade-off. One one hand, they are quite handy to use in programming and can be accessed using minimal CPU instructions. However, this benefit comes at the cost of additional stack usage for all tasks in the system. Due to static nature of variables allocation, all tasks in the system have the same sets of C11 thread local variables.
