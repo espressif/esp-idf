@@ -70,6 +70,7 @@ Interrupt , a high-priority interrupt, is used for several things:
 #define TIMG1_WDT_STG1_HOLD_OFFSET          TIMG1_REG_OFFSET(TIMG_WDTCONFIG3_REG(1))
 #define TIMG1_WDT_FEED_OFFSET               TIMG1_REG_OFFSET(TIMG_WDTFEED_REG(1))
 #define UART0_DATA_REG                      (0x3FF40078)
+#define TIMG_WDT_WKEY_VALUE                 0x50D83AA1
 #define ETS_TG1_WDT_LEVEL_INTR_SOURCE       20
 
     .macro wdt_clr_intr_status  dev

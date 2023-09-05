@@ -41,6 +41,7 @@
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/lpwdt_ll.h"
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
 

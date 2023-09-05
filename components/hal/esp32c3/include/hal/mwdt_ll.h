@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,25 @@ extern "C" {
 
 /* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
 #define MWDT_LL_DEFAULT_CLK_PRESCALER 40000
+
+/* The value that needs to be written to TIMG_WDT_WKEY to write-enable the wdt registers */
+#define TIMG_WDT_WKEY_VALUE 0x50D83AA1
+
+/* Possible values for TIMG_WDT_STGx */
+#define TIMG_WDT_STG_SEL_OFF 0
+#define TIMG_WDT_STG_SEL_INT 1
+#define TIMG_WDT_STG_SEL_RESET_CPU 2
+#define TIMG_WDT_STG_SEL_RESET_SYSTEM 3
+
+/* Possible values for TIMG_WDT_CPU_RESET_LENGTH and TIMG_WDT_SYS_RESET_LENGTH */
+#define TIMG_WDT_RESET_LENGTH_100_NS    0
+#define TIMG_WDT_RESET_LENGTH_200_NS    1
+#define TIMG_WDT_RESET_LENGTH_300_NS    2
+#define TIMG_WDT_RESET_LENGTH_400_NS    3
+#define TIMG_WDT_RESET_LENGTH_500_NS    4
+#define TIMG_WDT_RESET_LENGTH_800_NS    5
+#define TIMG_WDT_RESET_LENGTH_1600_NS   6
+#define TIMG_WDT_RESET_LENGTH_3200_NS   7
 
 //Type check wdt_stage_action_t
 ESP_STATIC_ASSERT(WDT_STAGE_ACTION_OFF == TIMG_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");

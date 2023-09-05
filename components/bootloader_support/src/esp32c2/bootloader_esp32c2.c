@@ -39,6 +39,7 @@
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "hal/rwdt_ll.h"
 
 static const char *TAG = "boot.esp32c2";
 

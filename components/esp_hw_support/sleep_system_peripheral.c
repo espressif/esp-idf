@@ -28,6 +28,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/interrupt_matrix_reg.h"
+#include "hal/mwdt_ll.h"
 
 static __attribute__((unused)) const char *TAG = "sleep_sys_periph";
 

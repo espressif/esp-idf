@@ -38,6 +38,7 @@
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "hal/rwdt_ll.h"
 #include "xtensa/config/core.h"
 #include "xt_instr_macros.h"
 

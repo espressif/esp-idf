@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,21 @@ extern "C" {
 #include "hal/efuse_ll.h"
 #include "esp_attr.h"
 #include "esp_assert.h"
+
+/* The value that needs to be written to RTC_CNTL_WDT_WKEY to write-enable the wdt registers */
+#define RTC_CNTL_WDT_WKEY_VALUE 0x50D83AA1
+/* The value that needs to be written to RTC_CNTL_SWD_WPROTECT_REG to write-enable the wdt registers */
+#define RTC_CNTL_SWD_WKEY_VALUE 0x8F1D312A
+
+/* Possible values for RTC_CNTL_WDT_CPU_RESET_LENGTH and RTC_CNTL_WDT_SYS_RESET_LENGTH */
+#define RTC_WDT_RESET_LENGTH_100_NS    0
+#define RTC_WDT_RESET_LENGTH_200_NS    1
+#define RTC_WDT_RESET_LENGTH_300_NS    2
+#define RTC_WDT_RESET_LENGTH_400_NS    3
+#define RTC_WDT_RESET_LENGTH_500_NS    4
+#define RTC_WDT_RESET_LENGTH_800_NS    5
+#define RTC_WDT_RESET_LENGTH_1600_NS   6
+#define RTC_WDT_RESET_LENGTH_3200_NS   7
 
 //Type check wdt_stage_action_t
 ESP_STATIC_ASSERT(WDT_STAGE_ACTION_OFF == RTC_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
