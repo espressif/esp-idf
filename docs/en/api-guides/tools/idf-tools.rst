@@ -52,7 +52,7 @@ Most of the tools downloaded by the tools installer are GitHub Release Assets, w
 
 If GitHub downloads are inaccessible or slow to access, a GitHub assets mirror can be configured.
 
-To use Espressif's download server, set the environment variable ``IDF_GITHUB_ASSETS`` to ``dl.espressif.com/github_assets``. When the install process is downloading a tool from ``github.com``, the URL will be rewritten to use this server instead.
+To use Espressif's download server, set the environment variable ``IDF_GITHUB_ASSETS`` to ``dl.espressif.com/github_assets``, or ``dl.espressif.cn/github_assets`` for faster download in China. When the install process is downloading a tool from ``github.com``, the URL will be rewritten to use this server instead.
 
 Any mirror server can be used provided the URL matches the ``github.com`` download URL format. For any GitHub asset URL that the install process downloads, it will replace ``https://github.com`` with ``https://${IDF_GITHUB_ASSETS}``.
 

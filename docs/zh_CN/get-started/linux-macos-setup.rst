@@ -204,6 +204,15 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
     export IDF_GITHUB_ASSETS="dl.espressif.com/github_assets"
     ./install.sh
 
+.. note::
+    推荐国内用户使用国内的下载服务器，以加快下载速度。
+
+    .. code-block:: bash
+
+        cd ~/esp/esp-idf
+        export IDF_GITHUB_ASSETS="dl.espressif.cn/github_assets"
+        ./install.sh
+
 自定义工具安装路径
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

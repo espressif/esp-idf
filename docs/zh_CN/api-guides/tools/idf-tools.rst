@@ -52,7 +52,7 @@ GitHub 资源镜像
 
 如果无法访问 GitHub 下载或访问速度较慢，可以配置一个 GitHub 资源镜像。
 
-要使用乐鑫下载服务器，请将环境变量  ``IDF_GITHUB_ASSETS`` 设置为 ``dl.espressif.com/github_assets``。安装过程中，当从 ``github.com`` 下载工具时，URL 将重写为使用乐鑫下载服务器。
+要使用乐鑫下载服务器，请将环境变量  ``IDF_GITHUB_ASSETS`` 设置为 ``dl.espressif.com/github_assets``，在国内下载时，也可设置为 ``dl.espressif.cn/github_assets`` 加快下载速度。安装过程中，当从 ``github.com`` 下载工具时，URL 将重写为使用乐鑫下载服务器。
 
 只要 URL 与 ``github.com`` 的下载 URL 格式匹配，任何镜像服务器均可使用，安装过程中下载的 GitHub 资源 URL 将把 ``https://github.com`` 替换为 ``https://${IDF_GITHUB_ASSETS}``。
 
