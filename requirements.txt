@@ -17,7 +17,7 @@ cryptography>=2.1.4,<35
 cffi<1.15;python_version<'3.6'
 pyparsing>=2.0.3,<2.4.0
 pyelftools>=0.22
-idf-component-manager~=1.0
+idf-component-manager~=1.1
 packaging<21.0; python_version<"3.6"
 urllib3<1.25,>=1.21.1; python_version == "3.4"
 
