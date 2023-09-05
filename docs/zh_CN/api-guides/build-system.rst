@@ -144,6 +144,7 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 .. _example-project-structure:
 
+
 示例项目
 ========
 
@@ -154,6 +155,9 @@ ESP-IDF 适用于 Python 3.8 以上版本。
     - myProject/
                  - CMakeLists.txt
                  - sdkconfig
+                 - bootloader_components/ - boot_component/ - CMakeLists.txt
+                                                            - Kconfig
+                                                            - src1.c
                  - components/ - component1/ - CMakeLists.txt
                                              - Kconfig
                                              - src1.c
@@ -172,6 +176,8 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 - 顶层项目 CMakeLists.txt 文件，这是 CMake 用于学习如何构建项目的主要文件，可以在这个文件中设置项目全局的 CMake 变量。顶层项目 CMakeLists.txt 文件会导入 :idf_file:`/tools/cmake/project.cmake` 文件，由它负责实现构建系统的其余部分。该文件最后会设置项目的名称，并定义该项目。
 
 - "sdkconfig" 项目配置文件，执行 ``idf.py menuconfig`` 时会创建或更新此文件，文件中保存了项目中所有组件（包括 ESP-IDF 本身）的配置信息。 ``sdkconfig`` 文件可能会也可能不会被添加到项目的源码管理系统中。
+
+- 可选的 "bootloader_components" 目录中包含了需要在引导加载项目中进行编译和链接的组件。并不是每个项目都需要这种自定义组件，但此类组件在引导加载程序需要修改以嵌入新功能时可能很有用。
 
 - 可选的 "components" 目录中包含了项目的部分自定义组件，并不是每个项目都需要这种自定义组件，但它有助于构建可复用的代码或者导入第三方（不属于 ESP-IDF）的组件。或者，你也可以在顶层 CMakeLists.txt 中设置 ``EXTRA_COMPONENT_DIRS`` 变量以查找其他指定位置处的组件。
 
@@ -226,6 +232,8 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 - ``EXTRA_COMPONENT_DIRS``：用于搜索组件的其它可选目录列表。路径可以是相对于项目目录的相对路径，也可以是绝对路径。
 
 - ``COMPONENTS``：要构建进项目中的组件名称列表，默认为 ``COMPONENT_DIRS`` 目录下检索到的所有组件。使用此变量可以“精简”项目以缩短构建时间。请注意，如果一个组件通过 ``COMPONENT_REQUIRES`` 指定了它依赖的另一个组件，则会自动将其添加到 ``COMPONENTS`` 中，所以 ``COMPONENTS`` 列表可能会非常短。
+
+- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：引导加载程序编译时应忽略的组件列表，位于 ``bootloader_components/`` 目录中。使用这一变量可以将一个组件有条件地包含在项目中。
 
 以上变量中的路径可以是绝对路径，或者是相对于项目目录的相对路径。
 
@@ -438,7 +446,9 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 
 如果组件仅支持某些硬件目标（``IDF_TARGET`` 的值），则可以在 ``idf_component_register`` 中指定 ``REQUIRED_IDF_TARGETS`` 来声明这个需求。在这种情况下，如果构建系统导入了不支持当前硬件目标的组件时就会报错。
 
-.. 注解:: 在 CMake 中，``REQUIRES`` 和 ``PRIV_REQUIRES`` 是 CMake 函数 ``target_link_libraries(... PUBLIC ...)`` 和 ``target_link_libraries(... PRIVATE ...)`` 的近似包装。
+.. 注解::
+
+  在 CMake 中，``REQUIRES`` 和 ``PRIV_REQUIRES`` 是 CMake 函数 ``target_link_libraries(... PUBLIC ...)`` 和 ``target_link_libraries(... PRIVATE ...)`` 的近似包装。
 
 
 .. _example component requirements:
@@ -719,6 +729,40 @@ KConfig.projbuild
 请参考 :example:`build_system/wrappers` 示例，了解其详细原理。更多细节请参阅 :idf_file:`examples/build_system/wrappers/README.md`。
 
 
+覆盖默认引导加载程序
+--------------------------
+
+由于 ESP-IDF 中存在可选目录 ``bootloader_components``，因此可以覆盖默认的 ESP-IDF 引导加载程序。覆盖前，应定义一个 ``bootloader_components/main`` 组件，使项目目录如下所示：
+
+    - myProject/
+                 - CMakeLists.txt
+                 - sdkconfig
+                 - bootloader_components/ - main/ - CMakeLists.txt
+                                                  - Kconfig
+                                                  - my_bootloader.c
+                 - main/       - CMakeLists.txt
+                               - app_main.c
+
+                 - build/
+
+
+此处的 ``my_bootloader.c`` 文件会成为新引导加载程序的源代码，这意味着它需要执行所有必要的操作来设置并从 flash 中加载 ``main`` 应用程序。
+
+还可以根据特定的条件来替换引导加载程序，例如替换指定目标芯片的引导加载程序。这可以通过 ``BOOTLOADER_IGNORE_EXTRA_COMPONENT`` CMake 变量实现，该列表会让 ESP-IDF 引导加载项目忽略 ``bootloader_components`` 中的指定组件，不对其进行编译。例如，如果希望使用 ESP32 目标芯片的默认引导加载程序，``myProject/CMakeLists.txt`` 应如下所示::
+
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+    if(${IDF_TARGET} STREQUAL "esp32")
+        set(BOOTLOADER_IGNORE_EXTRA_COMPONENT "main")
+    endif()
+
+    project(main)
+
+值得注意的是，这还可以用于除 ``main`` 之外的其他引导加载程序组件。在任何情况下，都不能指定前缀 ``bootloader_component``。
+
+请参考 :example:`custom_bootloader/bootloader_override` 查看覆盖默认引导加载程序的示例。
+
+
 .. _config_only_component:
 
 仅配置组件
@@ -756,6 +800,7 @@ CMake 调试
 
 
 .. _component_cmakelists_example:
+
 
 组件 CMakeLists 示例
 ====================

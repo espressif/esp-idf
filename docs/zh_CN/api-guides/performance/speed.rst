@@ -82,6 +82,7 @@
     :esp32: - 设置 :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` 为 80 MHz。该值为默认值 40 MHz 的两倍，这意味着从 flash 加载或执行代码的速度也将翻倍。在更改此设置之前，应事先确认连接 {IDF_TARGET_NAME} 和 flash 的板或模块在温度限制范围内支持 80 MHz 的操作。相关信息参见硬件数据手册。
     - 设置 :ref:`CONFIG_ESPTOOLPY_FLASHMODE` 为 QIO 或 QOUT 模式（四线 I/O 模式）。相较于默认的 DIO 模式，在这两种模式下，从 flash 加载或执行代码的速度几乎翻倍。如果两种模式都支持，QIO 会稍微快于 QOUT。请注意，flash 芯片以及 {IDF_TARGET_NAME} 与 flash 芯片之间的电气连接都必须支持四线 I/O 模式，否则 SoC 将无法正常工作。
     - 设置 :ref:`CONFIG_COMPILER_OPTIMIZATION` 为 ``Optimize for performance (-O2)`` 。相较于默认设置，这可能会略微增加二进制文件大小，但几乎必然会提高某些代码的性能。请注意，如果代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本未发现的错误。
+    :SOC_ASSIST_DEBUG_SUPPORTED: - 将 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 设置为禁用。这可能会小幅提升某些代码的性能，且在设备中断多次的情况下尤为明显。
     :esp32: - 如果应用程序是基于 ESP32 rev. 3 (ECO3) 的项目并且使用 PSRAM，设置 :ref:`CONFIG_ESP32_REV_MIN` 为 ``3`` 将禁用 PSRAM 的错误修复工作，可以减小代码大小并提高整体性能。
     :SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。尽管 {IDF_TARGET_NAME} 具备单精度浮点运算器，但是浮点运算总是慢于整数运算。因此可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
     :not SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。{IDF_TARGET_NAME} 通过软件模拟进行浮点运算，因此速度非常慢。可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
@@ -89,6 +90,7 @@
 
 减少日志开销
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 尽管标准输出会先存储在缓冲区中，但缓冲区缺少可用空间时，应用程序将数据输出到日志的速度可能会受限。这点在程序启动并输出大量日志时尤为明显，但也可能随时发生。为解决这一问题，可以采取以下几种方法：
 
 .. list::
