@@ -1,5 +1,6 @@
 ESP32-PICO-KIT V4/V4.1 入门指南
 =======================================================
+
 :link_to_translation:`en:[English]`
 
 本指南介绍了如何开始使用 ESP32-PICO-KIT V4/V4.1 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
@@ -14,7 +15,7 @@ ESP32-PICO-KIT V4/V4.1 入门指南
 * USB 2.0 线（A 型转 Micro-B 型）
 * PC（Windows、Linux 或 macOS）
 
-您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
+你可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
 
 概述
@@ -39,6 +40,7 @@ ESP32-PICO-KIT 集成了 USB 转 UART 桥接电路，允许开发人员直接通
 
     1. ESP32-PICO-D4 开发板目前有两种版本，分别采用排针与排母。本指南默认以排针版本为例。
     2. 每排未引出至排针的 3 个管脚已连接至 ESP32-PICO-D4 SiP 模组的内置 flash 模块。更多信息，请见 `相关文档`_ 中的模组技术规格书。
+
 
 功能概述
 --------
@@ -188,6 +190,7 @@ No.     Name               Type    Function
     3. 该管脚已连接至开发板的 USB 桥接器芯片。
     4. ESP32-PICO-KIT 内置 SPI flash 的工作电压为 3.3 V。因此，strapping 管脚 MTDI 在模组上电复位过程中应保持低电平。如连接该管脚，请确保该管脚在复位中不要保持高电平。
 
+
 管脚布局
 ^^^^^^^^^^^
 .. figure:: ../../../_static/esp32-pico-kit-v4-pinout.png
@@ -197,12 +200,13 @@ No.     Name               Type    Function
 
     ESP32-PICO-KIT 管脚布局（点击放大）
 
+
 应用程序开发
 ------------
 
 ESP32-PICO-KIT 上电前，请首先确认开发板完好无损。
 
-现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至你的开发板。
 
 
 开发板尺寸

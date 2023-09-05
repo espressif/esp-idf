@@ -6,7 +6,7 @@ ESP32-S3-DevKitC-1 v1.1
 
 更早版本：:doc:`user-guide-devkitc-1-v1.0`
 
-本指南将帮助您快速上手 ESP32-S3-DevKitC-1，并提供该款开发板的详细信息。
+本指南将帮助你快速上手 ESP32-S3-DevKitC-1，并提供该款开发板的详细信息。
 
 ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE 模组 ESP32-S3-WROOM-1、ESP32-S3-WROOM-1U 或 ESP32-S3-WROOM-2。
 
@@ -105,7 +105,7 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
 软件设置
 ^^^^^^^^
 
-请前往 :doc:`../../get-started/index`，在 :ref:`get-started-step-by-step` 小节查看如何快速设置开发环境，将应用程序烧录至您的开发板。
+请前往 :doc:`../../get-started/index`，在 :ref:`get-started-step-by-step` 小节查看如何快速设置开发环境，将应用程序烧录至你的开发板。
 
 
 内含组件和包装
@@ -170,6 +170,7 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
 
   上表中，QD 指代 Quad SPI，OT 指代 Octal SPI。
 
+
 零售订单
 ^^^^^^^^
 
@@ -186,14 +187,11 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
 批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
 
-
 硬件参考
 ========
 
-
 功能框图
 --------
-
 
 ESP32-S3-DevKitC-1 的主要组件和连接方式如下图所示。
 
@@ -208,11 +206,12 @@ ESP32-S3-DevKitC-1 的主要组件和连接方式如下图所示。
 电源选项
 ^^^^^^^^
 
-您可从以下三种供电方式中任选其一给开发板供电：
+以下任一供电方式均可给开发板供电：
 
 - USB 转 UART 接口供电或 ESP32-S3 USB 接口供电（选择其一或同时供电），默认供电方式（推荐）
 - 5V 和 G (GND) 排针供电
 - 3V3 和 G (GND) 排针供电
+
 
 .. _user-guide-s3-devkitc-1-v1.1-header-blocks:
 
@@ -292,7 +291,6 @@ J3
 
 管脚布局
 ^^^^^^^^^^^
-
 
 .. figure:: ../../../_static/ESP32-S3_DevKitC-1_pinlayout_v1.1.jpg
     :align: center

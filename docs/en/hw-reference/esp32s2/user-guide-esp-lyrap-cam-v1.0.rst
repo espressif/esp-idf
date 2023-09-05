@@ -88,7 +88,6 @@ See Section :ref:`user-guide-esp32-s2-kaluga-1-kit-v1.2-software-setup` of the E
 Hardware Reference
 ==================
 
-
 Block Diagram
 -------------
 

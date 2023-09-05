@@ -1,5 +1,6 @@
 ESP-WROVER-KIT V3 Getting Started Guide
 =======================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 This guide shows how to get started with the ESP-WROVER-KIT V3 development board and also provides information about its functionality and configuration options. For the description of other ESP-WROVER-KIT versions, please check :doc:`../../hw-reference/index`.
@@ -9,7 +10,7 @@ What You Need
 -------------
 
 * :ref:`ESP-WROVER-KIT V3 board <get-started-esp-wrover-kit-v3-board-front>`
-* USB 2.0 cable（A to Micro-B）
+* USB 2.0 cable (A to Micro-B)
 * Computer running Windows, Linux, or macOS
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
@@ -80,7 +81,7 @@ The table below provides description in the following manner:
     :widths: 25 75
     :header-rows: 1
 
-    * - Key Component 
+    * - Key Component
       - Description
     * - 32.768 kHz
       - External precision 32.768 kHz crystal oscillator serves as a clock with low-power consumption while the chip is in Deep-sleep mode.
@@ -123,6 +124,7 @@ The table below provides description in the following manner:
     * - LCD
       - Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v3-board-back`.
 
+
 .. _get-started-esp-wrover-kit-v3-setup-options:
 
 Setup Options
@@ -144,17 +146,17 @@ JP14     |jp14|            Enable RTS/CTS flow control for serial communication
 Allocation of ESP32 Pins
 ------------------------
 
-Some pins / terminals of ESP32 are allocated for use with the onboard or external hardware. If that hardware is not used, e.g., nothing is plugged into the Camera (JP4) header, then these GPIOs can be used for other purposes.
+Some pins/terminals of ESP32 are allocated for use with the onboard or external hardware. If that hardware is not used, e.g., nothing is plugged into the Camera (JP4) header, then these GPIOs can be used for other purposes.
 
 Some of the pins, such as GPIO0 or GPIO2, have multiple functions and some of them are shared among onboard and external peripheral devices. Certain combinations of peripherals cannot work together. For example, it is not possible to do JTAG debugging of an application that is using SD card, because several pins are shared by JTAG and the SD card slot.
 
-In other cases, peripherals can coexist under certain conditions. This is applicable to, for example, LCD screen and SD card that share only a single pin GPIO21. This pin is used to provide D/C (Data / Control) signal for the LCD as well as the CD (Card Detect) signal read from the SD card slot. If the card detect functionality is not essential, then it may be disabled by removing R167, so both LCD and SD may operate together.
+In other cases, peripherals can coexist under certain conditions. This is applicable to, for example, LCD screen and SD card that share only a single pin GPIO21. This pin is used to provide D/C (Data/Control) signal for the LCD as well as the CD (Card Detect) signal read from the SD card slot. If the card detect functionality is not essential, then it may be disabled by removing R167, so both LCD and SD may operate together.
 
 For more details on which pins are shared among which peripherals, please refer to the table in the next section.
 
 
-Main I/O Connector / JP1
-^^^^^^^^^^^^^^^^^^^^^^^^
+Main I/O Connector/JP1
+^^^^^^^^^^^^^^^^^^^^^^
 
 The JP1 connector consists of 14x2 male pins whose functions are shown in the middle two "I/O" columns of the table below. The two "Shared With" columns on both sides describe where else on the board a certain GPIO is used.
 
@@ -203,23 +205,23 @@ Legend:
 
 .. note::
 
-    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-soldering them to positions R12 / R24.
+    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the oscillator to JP1 by desoldering the zero-ohm resistors from positions R11/R23 and re-soldering them to positions R12/R24.
 
 
 .. _get-started-esp-wrover-kit-v3-spi-flash-header:
 
-SPI Flash / JP13
-^^^^^^^^^^^^^^^^
+SPI Flash/JP13
+^^^^^^^^^^^^^^
 
 ====  =============
 .     ESP32 Pin
 ====  =============
-1     CLK / GPIO6
-2     SD0 / GPIO7
-3     SD1 / GPIO8
-4     SD2 / GPIO9
-5     SD3 / GPIO10
-6     CMD / GPIO11
+1     CLK/GPIO6
+2     SD0/GPIO7
+3     SD1/GPIO8
+4     SD2/GPIO9
+5     SD3/GPIO10
+6     CMD/GPIO11
 ====  =============
 
 .. important::
@@ -229,23 +231,23 @@ SPI Flash / JP13
 
 .. _get-started-esp-wrover-kit-v3-jtag-header:
 
-JTAG / JP8
+JTAG/JP8
 ^^^^^^^^^^
 
 ====  ==============  =============
 .     ESP32 Pin       JTAG Signal
 ====  ==============  =============
 1     EN              TRST_N
-2     MTMS / GPIO14   TMS
-3     MTDO / GPIO15   TDO
-4     MTDI / GPIO12   TDI
-5     MTCK / GPIO13   TCK
+2     MTMS/GPIO14     TMS
+3     MTDO/GPIO15     TDO
+4     MTDI/GPIO12     TDI
+5     MTCK/GPIO13     TCK
 ====  ==============  =============
 
 
 .. _get-started-esp-wrover-kit-v3-camera-header:
 
-Camera / JP4
+Camera/JP4
 ^^^^^^^^^^^^
 
 ====  ==========  =============================
@@ -253,22 +255,22 @@ Camera / JP4
 ====  ==========  =============================
  1    n/a         3.3V
  2    n/a         Ground
- 3    GPIO27      SIO_C / SCCB Clock
- 4    GPIO26      SIO_D / SCCB Data
- 5    GPIO25      VSYNC / Vertical Sync
- 6    GPIO23      HREF / Horizontal Reference
- 7    GPIO22      PCLK / Pixel Clock
- 8    GPIO21      XCLK / System Clock
- 9    GPIO35      D7 / Pixel Data Bit 7
-10    GPIO34      D6 / Pixel Data Bit 6
-11    GPIO39      D5 / Pixel Data Bit 5
-12    GPIO36      D4 / Pixel Data Bit 4
-13    GPIO19      D3 / Pixel Data Bit 3
-14    GPIO18      D2 / Pixel Data Bit 2
-15    GPIO5       D1 / Pixel Data Bit 1
-16    GPIO4       D0 / Pixel Data Bit 0
-17    GPIO0       RESET / Camera Reset
-18    n/a         PWDN / Camera Power Down
+ 3    GPIO27      SIO_C/SCCB Clock
+ 4    GPIO26      SIO_D/SCCB Data
+ 5    GPIO25      VSYNC/Vertical Sync
+ 6    GPIO23      HREF/Horizontal Reference
+ 7    GPIO22      PCLK/Pixel Clock
+ 8    GPIO21      XCLK/System Clock
+ 9    GPIO35      D7/Pixel Data Bit 7
+10    GPIO34      D6/Pixel Data Bit 6
+11    GPIO39      D5/Pixel Data Bit 5
+12    GPIO36      D4/Pixel Data Bit 4
+13    GPIO19      D3/Pixel Data Bit 3
+14    GPIO18      D2/Pixel Data Bit 2
+15    GPIO5       D1/Pixel Data Bit 1
+16    GPIO4       D0/Pixel Data Bit 0
+17    GPIO0       RESET/Camera Reset
+18    n/a         PWDN/Camera Power Down
 ====  ==========  =============================
 
 * Signals D0 .. D7 denote camera data bus
@@ -296,10 +298,10 @@ microSD Card
 ====  ==============  ===============
 .     ESP32 Pin       microSD Signal
 ====  ==============  ===============
-1     MTDI / GPIO12   DATA2
-2     MTCK / GPIO13   CD / DATA3
-3     MTDO / GPIO15   CMD
-4     MTMS / GPIO14   CLK
+1     MTDI/GPIO12     DATA2
+2     MTCK/GPIO13     CD/DATA3
+3     MTDO/GPIO15     CMD
+4     MTMS/GPIO14     CLK
 5     GPIO2           DATA0
 6     GPIO4           DATA1
 7     GPIO21          CD
@@ -308,8 +310,8 @@ microSD Card
 
 .. _get-started-esp-wrover-kit-v3-lcd-connector:
 
-LCD / U5
-^^^^^^^^
+LCD/U5
+^^^^^^
 
 ====  ==============  ===============
 .     ESP32 Pin       LCD Signal
@@ -350,6 +352,7 @@ Power up from USB port    Enable UART communication
 Do not install any other jumpers.
 
 Turn the **Power Switch** to ON, the **5V Power On LED** should light up.
+
 
 Now to Development
 ^^^^^^^^^^^^^^^^^^

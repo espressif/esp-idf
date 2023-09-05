@@ -1,5 +1,5 @@
 ESP32-DevKitC V2 Getting Started Guide
-==============================================
+======================================
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -10,7 +10,7 @@ What You Need
 -------------
 
 * :ref:`ESP32-DevKitC V2 board <get-started-esp32-devkitc-v2-board-front-make>`
-* USB A / micro USB B cable
+* USB A/micro USB B cable
 * Computer running Windows, Linux, or macOS
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
@@ -48,7 +48,7 @@ The following figure and the table below describe the key components, interfaces
     * - EN
       - Reset button.
     * - Boot
-      - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port. 
+      - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
     * - Micro USB Port
       - USB interface. Power supply for the board as well as the communication interface between a computer and ESP32-WROOM-32.
     * - I/O
@@ -61,8 +61,8 @@ Power Supply Options
 There are three mutually exclusive ways to provide power to the board:
 
 * Micro USB port, default power supply
-* 5V / GND header pins
-* 3V3 / GND header pins
+* 5V and GND header pins
+* 3V3 and GND header pins
 
 .. warning::
 

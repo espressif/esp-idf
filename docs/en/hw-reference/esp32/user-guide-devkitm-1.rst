@@ -1,6 +1,6 @@
-===================
- ESP32-DevKitM-1
-===================
+===============
+ESP32-DevKitM-1
+===============
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -28,13 +28,13 @@ The document consists of the following major sections:
 
 
 Getting Started
-===================
+===============
 
 This section describes how to get started with ESP32-DevKitM-1. It begins with a few introductory sections about the ESP32-DevKitM-1, then Section `Start Application Development`_ provides instructions on how to do the initial hardware setup and then how to flash firmware onto the ESP32-DevKitM-1.
 
 
 Overview
--------------
+--------
 
 This is a small and convenient development board that features:
 
@@ -46,10 +46,10 @@ This is a small and convenient development board that features:
 
 
 Contents and Packaging
---------------------------
+----------------------
 
-Retail orders
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retail Orders
+^^^^^^^^^^^^^
 
 If you order a few samples, each ESP32-DevKitM-1 comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
@@ -57,14 +57,15 @@ For retail orders, please go to https://www.espressif.com/en/contact-us/get-samp
 
 
 Wholesale Orders
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 If you order in bulk, the boards come in large cardboard boxes.
 
 For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
+
 Description of Components
-----------------------------
+-------------------------
 
 The following figure and the table below describe the key components, interfaces and controls of the ESP32-DevKitM-1 board. We take the board with a ESP32-MINI-1 module as an example in the following sections.
 
@@ -101,15 +102,14 @@ The following figure and the table below describe the key components, interfaces
       - All available GPIO pins (except for the SPI bus for flash) are broken out to the pin headers on the board. Users can program ESP32 chip to enable multiple functions.
 
 
-
 Start Application Development
-----------------------------------
+-----------------------------
 
 Before powering up your ESP32-DevKitM-1, please make sure that it is in good condition with no obvious signs of damage.
 
 
 Required Hardware
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 - ESP32-DevKitM-1
 - USB 2.0 cable (Standard-A to Micro-B)
@@ -117,7 +117,7 @@ Required Hardware
 
 
 Software Setup
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an application example onto your ESP32-DevKitM-1.
 
@@ -125,11 +125,12 @@ Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-starte
 
     ESP32-DevKitM-1 boards manufactured before December 2, 2021 have a single core module installed. To verify what module you have, please check module marking information in `PCN-2021-021 <https://www.espressif.com/sites/default/files/pcn_downloads/PCN-2021-021%20ESP32-U4WDH%20%E5%8D%87%E7%BA%A7%E4%B8%BA%E5%8F%8C%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E4%BA%A7%E5%93%81.pdf>`_ . If your board has a single core module installed, please enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in :ref:`menuconfig <get-started-configure>` before flashing your applications.
 
+
 Hardware Reference
-======================
+==================
 
 Block Diagram
-----------------------
+-------------
 
 A block diagram below shows the components of ESP32-DevKitM-1 and their interconnections.
 
@@ -142,7 +143,7 @@ A block diagram below shows the components of ESP32-DevKitM-1 and their intercon
 
 
 Power Source Select
-----------------------
+-------------------
 
 There are three mutually exclusive ways to provide power to the board:
 
@@ -157,7 +158,7 @@ There are three mutually exclusive ways to provide power to the board:
 
 
 Pin Descriptions
--------------------
+----------------
 
 The table below provides the Name and Function of pins on both sides of the board. For peripheral pin configurations, please refer to `ESP32 Datasheet`_.
 
@@ -302,8 +303,9 @@ The table below provides the Name and Function of pins on both sides of the boar
 .. [1] P: Power supply; I: Input; O: Output.
 .. [2] MTDI, GPIO0, GPIO2, MTDO, and GPIO5 are strapping pins. These pins are used to control several chip functions depending on binary voltage values applied to the pins during chip power-up or system reset. For description and application of the strapping pins, please refer to `ESP32 Datasheet`_ > Section *Strapping Pins*.
 
+
 Pin Layout
-^^^^^^^^^^^
+^^^^^^^^^^
 
 .. figure:: ../../../_static/ESP32_DevKitM-1_pinlayout.png
     :align: center
@@ -313,14 +315,15 @@ Pin Layout
 
     ESP32-DevKitM-1 (click to enlarge)
 
+
 Hardware Revision Details
-============================
+=========================
 
 No previous versions available.
 
 
 Related Documents
-============================
+=================
 
 * `ESP32-MINI-1 & ESP32-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-mini-1_datasheet_en.pdf>`_ (PDF)
 * `ESP32-DevKitM-1 Schematics <https://dl.espressif.com/dl/schematics/SCH_ESP32-DEVKITM-1_V1_20200910A.pdf>`_ (PDF)

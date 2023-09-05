@@ -1,6 +1,6 @@
-===================
+==================
 ESP32-S2-DevKitC-1
-===================
+==================
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -22,10 +22,12 @@ The document consists of the following major sections:
 - `Hardware Revision Details`_: Revision history, known issues, and links to user guides for previous versions (if any) of ESP32-S2-DevKitC-1.
 - `Related Documents`_: Links to related documentation.
 
+
 Getting Started
 ===============
 
 This section provides a brief introduction of ESP32-S2-DevKitC-1, instructions on how to do the initial hardware setup and how to flash firmware onto it.
+
 
 Description of Components
 -------------------------
@@ -74,6 +76,7 @@ Start Application Development
 
 Before powering up your ESP32-S2-DevKitC-1, please make sure that it is in good condition with no obvious signs of damage.
 
+
 Required Hardware
 ^^^^^^^^^^^^^^^^^
 
@@ -85,15 +88,18 @@ Required Hardware
 
   Be sure to use an appropriate USB cable. Some cables are for charging only and do not provide the needed data lines nor work for programming the boards.
 
+
 Hardware Setup
 ^^^^^^^^^^^^^^
 
 Connect the board with the computer using **USB-to-UART Port** or **ESP32-S2 USB Port**. In subsequent steps, **USB-to-UART Port** will be used by default.
 
+
 Software Setup
 ^^^^^^^^^^^^^^
 
 Please proceed to `ESP-IDF Get Started <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html>`_, where Section `Installation Step by Step <https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html#get-started-step-by-step>`_ will quickly help you set up the development environment and then flash an application example into your ESP32-S2-DevKitC-1.
+
 
 Contents and Packaging
 ----------------------
@@ -151,12 +157,14 @@ The development board has a variety of variants to choose from, as shown in the 
 
 .. [#] The ESP32-S2-SOLO-2 and ESP32-S2-SOLO-2U modules use chip revision v1.0, and the rest use chip revision v0.0. For more information about chip revisions, please refer to `ESP32-S2 Series SoC Errata`_.
 
-Retail orders
+
+Retail Orders
 ^^^^^^^^^^^^^
 
 If you order a few samples, each ESP32-S2-DevKitC-1 comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
 For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
+
 
 Wholesale Orders
 ^^^^^^^^^^^^^^^^
@@ -164,6 +172,7 @@ Wholesale Orders
 If you order in bulk, the boards come in large cardboard boxes.
 
 For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
+
 
 Hardware Reference
 ==================
@@ -181,6 +190,7 @@ The block diagram below shows the components of ESP32-S2-DevKitC-1 and their int
 
     ESP32-S2-DevKitC-1 (click to enlarge)
 
+
 Power Supply Options
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -190,15 +200,18 @@ There are three mutually exclusive ways to provide power to the board:
 - 5V and G (GND) pins
 - 3V3 and G (GND) pins
 
+
 .. _user-guide-s2-devkitc-1-v1-header-blocks:
 
 Header Block
--------------
+------------
 
 The two tables below provide the **Name** and **Function** of the pin headers on both sides of the board (J1 and J3). The pin header names are shown in :ref:`user-guide-s2-devkitc-1-v1-board-front`. The numbering is the same as in the `ESP32-S2-DevKitC-1 Schematic`_ (PDF).
 
+
 J1
 ^^^
+
 ===  =========  ==========  ==========================================================================
 No.  Name       Type [#]_    Function
 ===  =========  ==========  ==========================================================================
@@ -229,6 +242,7 @@ No.  Name       Type [#]_    Function
 
 J3
 ^^^
+
 ===  ====  =====   ============================================================
 No.  Name  Type    Function
 ===  ====  =====   ============================================================
@@ -259,8 +273,10 @@ No.  Name  Type    Function
 .. [#] P: Power supply; I: Input; O: Output; T: High impedance.
 .. [#] GPIO18 is not pulled up on boards with an ESP32-S2-SOLO-2 or ESP32-S2-SOLO-2U module.
 
+
 Pin Layout
-^^^^^^^^^^^
+^^^^^^^^^^
+
 .. figure:: ../../../_static/esp32-s2-devkitc-1-v1-pinout.png
     :align: center
     :scale: 45%
@@ -269,10 +285,12 @@ Pin Layout
 
     ESP32-S2-DevKitC-1 Pin Layout (click to enlarge)
 
+
 Hardware Revision Details
 =========================
 
 This is the first revision of this board released.
+
 
 Related Documents
 =================

@@ -1,14 +1,14 @@
 ESP32-PICO-DevKitM-2
-*********************
+********************
 
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
-===========
+========
 
 ESP32-PICO-DevKitM-2 is an ESP32-based development board produced by `Espressif <https://espressif.com>`_.
 
-The core of this board is `ESP32-PICO-MINI-02(02U) <https://www.espressif.com/en/products/modules>`_ module with complete Wi-Fi and Bluetooth functionalities. The development board features a USB-to-UART Bridge circuit which allows developers to connect the board to a computer's USB port for flashing and debugging.
+The core of this board is `ESP32-PICO-MINI-02(02U) <https://www.espressif.com/en/products/modules>`_ module with complete Wi-Fi and Bluetooth® functionalities. The development board features a USB-to-UART Bridge circuit which allows developers to connect the board to a computer's USB port for flashing and debugging.
 
 All the IO signals and system power on ESP32-PICO-MINI-02(02U) are led out to two rows of 18 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, all header pads are populated with two rows of male pin headers.
 
@@ -30,19 +30,21 @@ This guide covers:
 
 - `Getting Started`_: Provides an overview of the ESP32-PICO-DevKitM-2 and software setup instructions to get started.
 - `Contents and Packaging`_: Provides information about packaging and contents for retail and wholesale orders.
-- `Hardware Reference`_: Provides more detailed information about the ESP32-PICO-DevKitM-2’s hardware.
+- `Hardware Reference`_: Provides more detailed information about the ESP32-PICO-DevKitM-2's hardware.
 - `Hardware Revision Details`_: Covers revision history, known issues, and links to user guides for previous versions (if any) of the ESP32-PICO-DevKitM-2.
 - `Related Documents`_: Gives links to related documentation.
+
 
 Getting Started
 ===============
 
 This section describes how to get started with the ESP32-PICO-DevKitM-2. It begins with a few introductory sections about the ESP32-PICO-DevKitM-2, then Section `Start Application Development`_ provides instructions on how to flash firmware onto the ESP32-PICO-DevKitM-2.
 
+
 .. _get-started-pico-devkitm-2-board-front:
 
 Description of Components
------------------------------
+-------------------------
 
 The following figure and the table below describe the key components, interfaces, and controls of the ESP32-PICO-DevKitM-2 board. We take the board with a ESP32-PICO-MINI-02 module as an example in the following sections.
 
@@ -79,47 +81,53 @@ Below is the description of the items identified in the figure starting from the
    * - EN Button
      - Reset button.
 
+
 Start Application Development
 -----------------------------
 
 Before powering up your ESP32-PICO-DevKitM-2, please make sure that the board is in good condition with no obvious signs of damage.
 
+
 Required Hardware
-""""""""""""""""""""""""
+"""""""""""""""""
 
 - 1 x ESP32-PICO-DevKitM-2
 - 1 x USB 2.0 A to Micro B cable
 - 1 x Computer running Windows, Linux, or macOS
 
+
 .. _user-guide-pico-devkitm-2-software-setup:
 
 Software Setup
-""""""""""""""""""""""""
+""""""""""""""
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment.
 
+
 Contents and Packaging
-=======================
+======================
 
 Retail Orders
----------------
+-------------
 
 If you order one or several samples of the board, each ESP32-PICO-DevKitM-2 development board comes in an individual package.
 
 For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
+
 Wholesale Orders
-------------------
+----------------
 
 If you order in bulk, the boards come in large cardboard boxes.
 
 For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
+
 Hardware Reference
-=======================
+==================
 
 Block Diagram
-------------------
+-------------
 
 The block diagram below shows the main components of ESP32-PICO-DevKitM-2 and their interconnections.
 
@@ -130,6 +138,7 @@ The block diagram below shows the main components of ESP32-PICO-DevKitM-2 and th
     :figclass: align-center
 
     ESP32-PICO-DevKitM-2 Block Diagram (click to enlarge)
+
 
 Power Supply Options
 --------------------
@@ -150,8 +159,9 @@ Pin Descriptions
 
 The two tables below provide the **Name** and **Function** of I/O header pins on both sides of the board, see :ref:`get-started-pico-devkitm-2-board-front`. The pin numbering and header names are the same as in the schematic given in `Related Documents`_.
 
+
 Header J2
-""""""""""""
+"""""""""
 
 .. list-table::
    :widths: 5 5 5 35
@@ -236,7 +246,7 @@ Header J2
 
 
 Header J3
-"""""""""""""
+"""""""""
 
 .. list-table::
    :widths: 5 5 5 35
@@ -328,10 +338,11 @@ Header J3
     2. 32.768 kHz crystal oscillator:
        a) input
        b) output
-    3. The operating voltage of ESP32-PICO-DevKitM-2’s embedded SPI flash is 3.3 V. Therefore, the strapping pin MTDI should be pulled down during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
+    3. The operating voltage of ESP32-PICO-DevKitM-2's embedded SPI flash is 3.3 V. Therefore, the strapping pin MTDI should be pulled down during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
+
 
 Pin Layout
-""""""""""""
+""""""""""
 .. figure:: ../../../_static/esp32-pico-devkitm-2-pinout.png
     :align: center
     :scale: 50%
@@ -340,13 +351,15 @@ Pin Layout
 
     ESP32-PICO-DevKitM-2 Pin Layout (click to enlarge)
 
+
 Hardware Revision Details
 =========================
 
 No previous versions available.
 
+
 Related Documents
-=========================
+=================
 
 * `ESP32-PICO-MINI-02 & ESP32-PICO-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-pico-mini-02_datasheet_en.pdf>`_ (PDF)
 * `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_

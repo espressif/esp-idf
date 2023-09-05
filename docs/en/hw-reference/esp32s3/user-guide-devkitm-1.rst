@@ -1,12 +1,12 @@
-===================
+==================
 ESP32-S3-DevKitM-1
-===================
+==================
 
 :link_to_translation:`zh_CN:[中文]`
 
 This user guide will help you get started with ESP32-S3-DevKitM-1 and will also provide more in-depth information.
 
-The ESP32-S3-DevKitM-1 is an entry-level development board equipped with either ESP32-S3-MINI-1 or ESP32-S3-MINI-1U, a module named for its small size. This board integrates complete Wi-Fi and Bluetooth Low Energy functions.
+The ESP32-S3-DevKitM-1 is an entry-level development board equipped with either ESP32-S3-MINI-1 or ESP32-S3-MINI-1U, a module named for its small size. This board integrates complete Wi-Fi and Bluetooth® Low Energy functions.
 
 Most of the I/O pins on the module are broken out to the pin headers on both sides of this board for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-S3-DevKitM-1 on a breadboard.
 
@@ -53,7 +53,7 @@ The key components of the board are described in a counter-clockwise direction, 
    * - Key Component
      - Description
    * - ESP32-S3-MINI-1/1U
-     - ESP32-S3-MINI-1 and ESP32-S3-MINI-1U are two general-purpose Wi-Fi and Bluetooth LE combo modules that have a rich set of peripherals. ESP32-S3-MINI-1 comes with a PCB antenna. ESP32-S3-MINI-1U comes with an external antenna connector. At the core of the modules is ESP32-S3FN8, a chip equipped with an 8 MB flash. Since flash is packaged in the chip, rather than integrated into the module, ESP32-S3-MINI-1/1U has a smaller package size.
+     - ESP32-S3-MINI-1 and ESP32-S3-MINI-1U are two general-purpose Wi-Fi and Bluetooth Low Energy combo modules that have a rich set of peripherals. ESP32-S3-MINI-1 comes with a PCB antenna. ESP32-S3-MINI-1U comes with an external antenna connector. At the core of the modules is ESP32-S3FN8, a chip equipped with an 8 MB flash. Since flash is packaged in the chip, rather than integrated into the module, ESP32-S3-MINI-1/1U has a smaller package size.
    * - 5 V to 3.3 V LDO
      - Power regulator that converts a 5 V supply into a 3.3 V output.
    * - Pin Headers
@@ -97,6 +97,7 @@ Hardware Setup
 
 Connect the board with the computer using **USB-to-UART Port** or **ESP32-S3 USB Port**. In subsequent steps, **USB-to-UART Port** will be used by default.
 
+
 Software Setup
 ^^^^^^^^^^^^^^
 
@@ -122,14 +123,11 @@ If you order in bulk, the boards come in large cardboard boxes.
 For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 
-
 Hardware Reference
 ==================
 
-
 Block Diagram
 -------------
-
 
 The block diagram below shows the components of ESP32-S3-DevKitM-1 and their interconnections.
 
@@ -143,7 +141,7 @@ The block diagram below shows the components of ESP32-S3-DevKitM-1 and their int
 
 
 Power Supply Options
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 There are three mutually exclusive ways to provide power to the board:
 
@@ -151,10 +149,11 @@ There are three mutually exclusive ways to provide power to the board:
 - 5V and G (GND) pins
 - 3V3 and G (GND) pins
 
+
 .. _user-guide-s3-devkitm-1-v1-header-blocks:
 
 Header Block
--------------
+------------
 
 The two tables below provide the **Name** and **Function** of the pins on both sides of the board (J1 and J3). The pin names are shown in :ref:`user-guide-s3-devkitm-1-v1-board-front`. The numbering is the same as in the `Board Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-S3-DEVKITM-1_V1_20210310A.pdf>`_ (PDF).
 
@@ -229,8 +228,7 @@ For description of function names, please refer to `ESP32-S3 Datasheet <https://
 
 
 Pin Layout
-^^^^^^^^^^^
-
+^^^^^^^^^^
 
 .. figure:: ../../../_static/ESP32-S3_DevKitM-1_pinlayout.jpg
     :align: center

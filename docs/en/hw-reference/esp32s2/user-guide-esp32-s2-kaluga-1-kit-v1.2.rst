@@ -55,7 +55,6 @@ This guide covers:
 Getting Started
 ===============
 
-
 This section describes how to get started with the ESP32-S2-Kaluga-1. It begins with a few introductory sections about the ESP32-S2-Kaluga-1, then Section `Start Application Development`_ provides instructions on how to do the initial hardware setup and then how to flash firmware onto the ESP32-S2-Kaluga-1.
 
 
@@ -217,7 +216,7 @@ The programming guide and application examples for your ESP32-S2-Kaluga-1 kit ca
 Contents and Packaging
 ----------------------
 
-Retail orders
+Retail Orders
 ^^^^^^^^^^^^^
 
 If you order one or several samples of the kit, each ESP32-S2-Kaluga-1 development kit comes in an individual package containing:
@@ -249,7 +248,6 @@ For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales
 
 Hardware Reference
 ==================
-
 
 Block Diagram
 -------------
@@ -325,7 +323,7 @@ Also, all extension boards and the :ref:`JTAG interface <jtag-debugging-tip-jtag
 * Debugging an application that is using an extension board
 
 
-Known issues
+Known Issues
 ============
 
 .. list-table::

@@ -1,5 +1,6 @@
-ESP32-PICO-KIT V4 / V4.1 Getting Started Guide
-==============================================
+ESP32-PICO-KIT V4/V4.1 Getting Started Guide
+============================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 This guide shows how to get started with the ESP32-PICO-KIT V4/V4.1 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../../hw-reference/index`.
@@ -22,7 +23,7 @@ Overview
 
 ESP32-PICO-KIT is an ESP32-based mini development board produced by `Espressif <https://espressif.com>`_.
 
-The core of this board is ESP32-PICO-D4 - a System-in-Package (SiP) module with complete Wi-Fi and Bluetooth functionalities. Compared to other ESP32 modules, ESP32-PICO-D4 integrates the following peripheral components in one single package, which otherwise would need to be installed separately:
+The core of this board is ESP32-PICO-D4 - a System-in-Package (SiP) module with complete Wi-Fi and Bluetooth® functionalities. Compared to other ESP32 modules, ESP32-PICO-D4 integrates the following peripheral components in one single package, which otherwise would need to be installed separately:
 
 - 40 MHz crystal oscillator
 - 4 MB flash
@@ -39,6 +40,7 @@ All the IO signals and system power on ESP32-PICO-D4 are led out to two rows of 
 
     1. There are two versions of ESP32-PICO-KIT boards, respectively with male headers and female headers. In this guide, the male header version is taken as an example.
     2. The 2 x 3 pads not populated with pin headers are connected to the flash memory embedded in the ESP32-PICO-D4 SiP module. For more details, see module's datasheet in `Related Documents`_.
+
 
 Functionality Overview
 ----------------------
@@ -186,16 +188,18 @@ No.     Name               Type    Function
     1. This pin is connected to the flash pin of ESP32-PICO-D4.
     2. 32.768 kHz crystal oscillator: a) input, b) output.
     3. This pin is connected to the pin of the USB bridge chip on the board.
-    4. The operating voltage of ESP32-PICO-KIT’s embedded SPI flash is 3.3 V. Therefore, the strapping pin MTDI should hold bit zero during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
+    4. The operating voltage of ESP32-PICO-KIT's embedded SPI flash is 3.3 V. Therefore, the strapping pin MTDI should hold bit zero during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
+
 
 Pin Layout
-^^^^^^^^^^^
+^^^^^^^^^^
 .. figure:: ../../../_static/esp32-pico-kit-v4-pinout.png
     :align: center
     :scale: 43%
     :alt: ESP32-PICO-KIT (click to enlarge)
 
     ESP32-PICO-KIT Pin Layout (click to enlarge)
+
 
 Start Application Development
 -----------------------------

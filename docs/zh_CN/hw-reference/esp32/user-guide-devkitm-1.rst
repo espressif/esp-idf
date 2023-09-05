@@ -1,5 +1,5 @@
 ===================
- ESP32-DevKitM-1
+ESP32-DevKitM-1
 ===================
 
 :link_to_translation:`en: [English]`
@@ -63,6 +63,7 @@ ESP32-DevKitM-1 开发板是一款小巧实用的开发板，具备以下特色�
 
 批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
+
 组件介绍
 -----------
 
@@ -101,7 +102,6 @@ ESP32-DevKitM-1 开发板的主要组件、接口及控制方式见下图。下�
       - 所有可用 GPIO 管脚（除 Flash 的 SPI 总线）均已引出至开发板的排针。用户可对 ESP32 芯片编程，开发多种功能
 
 
-
 应用程序开发
 ---------------
 
@@ -119,11 +119,12 @@ ESP32-DevKitM-1 上电前，请首先确认开发板完好无损。
 软件设置
 ^^^^^^^^^^^
 
-现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至你的开发板。
 
 .. attention::
 
-  对于2021年12月2日之前生产的ESP32-DevKitM-1， 其搭载的模组为单核 MCU 模组。请查看 `PCN-2021-021 <https://www.espressif.com/sites/default/files/pcn_downloads/PCN-2021-021%20ESP32-U4WDH%20%E5%8D%87%E7%BA%A7%E4%B8%BA%E5%8F%8C%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E4%BA%A7%E5%93%81.pdf>`_ 以确定开发板上搭载的模组是否为单核模组。对于搭载单核模组的开发板，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
+  对于 2021 年 12 月 2 日之前生产的 ESP32-DevKitM-1，其搭载的模组为单核 MCU 模组。请查看 `PCN-2021-021 <https://www.espressif.com/sites/default/files/pcn_downloads/PCN-2021-021%20ESP32-U4WDH%20%E5%8D%87%E7%BA%A7%E4%B8%BA%E5%8F%8C%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E4%BA%A7%E5%93%81.pdf>`_ 以确定开发板上搭载的模组是否为单核模组。对于搭载单核模组的开发板，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中启用单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
+
 
 硬件参考
 ===========
@@ -302,6 +303,7 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
 .. [1] P：电源；I：输入；O：输出。
 .. [2] MTDI、GPIO0、GPIO2、MTDO 和 GPIO5 为 Strapping 管脚。在芯片上电和系统复位过程中，Strapping 管脚根据管脚的二进制电压值控制芯片功能。Strapping 管脚的具体描述和应用，请参考 `《ESP32 技术规格书》`_ > 章节 Strapping 管脚。
 
+
 管脚布局
 ^^^^^^^^
 
@@ -312,6 +314,7 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
     :figclass: align-center
 
     ESP32-DevKitM-1 （点击放大）
+
 
 硬件修订历史
 ===============

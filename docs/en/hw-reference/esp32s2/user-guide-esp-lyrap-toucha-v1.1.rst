@@ -90,7 +90,6 @@ See Section :ref:`user-guide-esp32-s2-kaluga-1-kit-software-setup` of the ESP32-
 Hardware Reference
 ==================
 
-
 Block Diagram
 -------------
 

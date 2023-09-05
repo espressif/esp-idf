@@ -23,7 +23,7 @@ Overview
 
 ESP32-Ethernet-Kit is an ESP32-based development board produced by `Espressif <https://espressif.com>`_.
 
-It consists of two development boards, the Ethernet board A and the PoE board B. The :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.1-layout>` contains Bluetooth / Wi-Fi dual-mode ESP32-WROVER-B module and IP101GRI, a Single Port 10/100 Fast Ethernet Transceiver (PHY). The `PoE board (B)`_ provides power over Ethernet functionality. The A board can work independently, without the board B installed.
+It consists of two development boards, the Ethernet board A and the PoE board B. The :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.1-layout>` contains Bluetooth®/Wi-Fi dual-mode ESP32-WROVER-B module and IP101GRI, a Single Port 10/100 Fast Ethernet Transceiver (PHY). The `PoE board (B)`_ provides power over Ethernet functionality. The A board can work independently, without the board B installed.
 
 .. _get-started-esp32-ethernet-kit-v1.1:
 
@@ -101,7 +101,7 @@ The table below provides description starting from the picture's top right corne
   * - Board B Connectors
     - A pair male and female header pins for mounting the `PoE board (B)`_.
   * - IP101GRI (PHY)
-    - The physical layer (PHY) connection to the Ethernet cable is implemented using the `IP101GRI <http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf>`_ chip. The connection between PHY and ESP32 is done through the reduced media-independent interface (RMII), a variant of the media-independent interface `(MII) <https://en.wikipedia.org/wiki/Media-independent_interface>`_ standard. The PHY supports the IEEE 802.3 / 802.3u standard of 10/100 Mbps.
+    - The physical layer (PHY) connection to the Ethernet cable is implemented using the `IP101GRI <http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf>`_ chip. The connection between PHY and ESP32 is done through the reduced media-independent interface (RMII), a variant of the media-independent interface `(MII) <https://en.wikipedia.org/wiki/Media-independent_interface>`_ standard. The PHY supports the IEEE 802.3/802.3u standard of 10/100 Mbps.
   * - RJ45 Port
     - Ethernet network data transmission port.
   * - Magnetics Module
@@ -178,7 +178,7 @@ DIP SW   GPIO Pin
 RMII Clock Selection
 ^^^^^^^^^^^^^^^^^^^^
 
-The ethernet MAC and PHY under RMII working mode need a common 50 MHz reference clock (i.e. RMII clock) that can be provided either externally, or generated from internal ESP32 APLL. 
+The ethernet MAC and PHY under RMII working mode need a common 50 MHz reference clock (i.e., RMII clock) that can be provided either externally, or generated from internal ESP32 APLL.
 
 .. note::
 
@@ -214,7 +214,7 @@ Another option is to source the RMII Clock from internal ESP32 APLL, see figure 
 
     RMII Clock from ESP Internal APLL
 
-To implement this option, users need to remove or add some RC components on the board. For details please refer to `ESP32-Ethernet-Kit V1.1 Ethernet board (A) schematic`_, sheet 2, location D2. Please note that if the APLL is already used for other purposes (e.g. I2S peripheral), then you have no choice but use an external RMII clock.
+To implement this option, users need to remove or add some RC components on the board. For details please refer to `ESP32-Ethernet-Kit V1.1 Ethernet board (A) schematic`_, sheet 2, location D2. Please note that if the APLL is already used for other purposes (e.g., I2S peripheral), then you have no choice but use an external RMII clock.
 
 
 GPIO Allocation
@@ -295,7 +295,7 @@ This header contains GPIOs that may be used for other purposes depending on scen
 
 .. note::
 
-    1. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-B module and therefore not available for use. If you need to use these pins, please solder a module without PSRAM memory inside, e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
+    1. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-B module and therefore not available for use. If you need to use these pins, please solder a module without PSRAM memory inside, e.g., the ESP32-WROOM-32D or ESP32-SOLO-1.
 
     2. Functionality depends on the settings of the `Function Switch`_.
 
@@ -335,9 +335,9 @@ GPIO Allocation Summary
 
 .. note::
 
-    1. To prevent the power-on state of the GPIO0 from being affected by the clock output on the PHY side, the RESET_N signal to PHY defaults to low, turning the clock output off. After power-on you can control RESET_N with GPIO5 to turn the clock output on. See also `RMII Clock Sourced Externally by PHY`_. For PHYs that cannot turn off the clock output through RESET_N, it is recommended to use a crystal module that can be disabled / enabled externally. Similarly like when using RESET_N, the oscillator module should be disabled by default and turned on by ESP32 after power-up. For a reference design please see `ESP32-Ethernet-Kit V1.1 Ethernet board (A) schematic`_.
+    1. To prevent the power-on state of the GPIO0 from being affected by the clock output on the PHY side, the RESET_N signal to PHY defaults to low, turning the clock output off. After power-on you can control RESET_N with GPIO5 to turn the clock output on. See also `RMII Clock Sourced Externally by PHY`_. For PHYs that cannot turn off the clock output through RESET_N, it is recommended to use a crystal module that can be disabled/enabled externally. Similarly like when using RESET_N, the oscillator module should be disabled by default and turned on by ESP32 after power-up. For a reference design please see `ESP32-Ethernet-Kit V1.1 Ethernet board (A) schematic`_.
 
-    2. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-B module and therefore not available for use. If you need to use these pins, please solder a module without PSRAM memory inside, e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
+    2. The ESP32 pins GPIO16 and GPIO17 are not broken out to the ESP32-WROVER-B module and therefore not available for use. If you need to use these pins, please solder a module without PSRAM memory inside, e.g., the ESP32-WROOM-32D or ESP32-SOLO-1.
 
 
 Start Application Development

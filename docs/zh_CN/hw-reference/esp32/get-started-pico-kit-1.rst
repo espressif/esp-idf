@@ -43,10 +43,12 @@ ESP32-PICO-KIT-1 为用户提供了基于 ESP32 芯片应用开发的硬件，�
 - `硬件版本`_：介绍硬件历史版本（如有），已知问题（如有），并提供链接至历史版本开发板的入门指南（如有）；
 - `相关文档`_：提供相关文档的链接。
 
+
 快速入门
 ========
 
 本节介绍了如何快速上手 ESP32-PICO-KIT-1。首先对 ESP32-PICO-KIT-1 开发板进行了简要介绍，然后在 `应用开发`_ 小节介绍如何将固件烧录至开发板。
+
 
 .. _get-started-pico-kit-1-board-front:
 
@@ -89,10 +91,12 @@ ESP32-PICO-KIT-1 开发板的主要组件、接口及控制方式见下图。
    * - EN 按键
      - 复位按键。
 
+
 应用开发
 ---------
 
 上电前，请确保 ESP32-PICO-KIT-1 完好无损。
+
 
 所需硬件
 """"""""
@@ -100,6 +104,7 @@ ESP32-PICO-KIT-1 开发板的主要组件、接口及控制方式见下图。
 - 1 x ESP32-PICO-KIT-1 开发板
 - 1 x USB 2.0 A 转 Micro B 数据线
 - 1 x PC，运行 Windows、Linux 或 macOS 系统
+
 
 .. _user-guide-pico-kit-1-software-setup:
 
@@ -127,6 +132,7 @@ ESP32-PICO-KIT-1 开发板的主要组件、接口及控制方式见下图。
 
 批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
+
 硬件参考
 ========
 
@@ -142,6 +148,7 @@ ESP32-PICO-KIT-1 的主要组件和连接方式如下图所示。
     :figclass: align-center
 
     ESP32-PICO-KIT-1 功能框图（点击放大）
+
 
 供电选项
 ---------
@@ -161,6 +168,7 @@ ESP32-PICO-KIT-1 的主要组件和连接方式如下图所示。
 --------
 
 :ref:`get-started-pico-kit-1-board-front` 中所示的开发板两侧 I/O 管脚，其具体名称和功能见下表。管脚名称和编号与 `相关文档`_ 中原理图保持一致。
+
 
 Header J2
 """"""""""""
@@ -353,10 +361,12 @@ Header J3
 
     ESP32-PICO-KIT-1 管脚布局（点击放大）
 
+
 硬件版本
 =========
 
 该开发板为最新硬件，尚未有历史版本。
+
 
 相关文档
 =========

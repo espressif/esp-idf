@@ -34,7 +34,6 @@ This section describes how to get started with ESP32-DevKitS(-R). It begins with
 Overview
 --------
 
-
 ESP32-DevKitS(-R) is Espressif's flashing board designed specifically for ESP32. It can be used to flash an ESP32 module without soldering the module to the power supply and signal lines. With a module mounted, ESP32-DevKitS(-R) can also be used as a mini development board like ESP32-DevKitC.
 
 ESP32-DevKitS and ESP32-DevKitS-R boards vary only in layout of spring pins to fit the following ESP32 modules.
@@ -121,7 +120,6 @@ Please mount a module of your choice onto your ESP32-DevKitS(-R) according to th
 - Check whether all spring pins are inserted into castellated holes. If there are some misaligned spring pins, place them into castellated holes with tweezers.
 
 
-
 Software Setup
 ^^^^^^^^^^^^^^
 
@@ -161,7 +159,7 @@ Board Dimensions
 Contents and Packaging
 ----------------------
 
-Retail orders
+Retail Orders
 ^^^^^^^^^^^^^
 
 If you order a few samples, each ESP32-DevKitS(-R) comes in an individual package in either antistatic bag or any packaging depending on a retailer.
@@ -180,7 +178,6 @@ For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales
 Hardware Reference
 ==================
 
-
 Block Diagram
 -------------
 
@@ -193,7 +190,6 @@ A block diagram below shows the components of ESP32-DevKitS(-R) and their interc
     :figclass: align-center
 
     ESP32-DevKitS(-R) (click to enlarge)
-
 
 
 Power Supply Options

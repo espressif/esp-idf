@@ -6,7 +6,7 @@ ESP32-C3-DevKitC-02
 
 This user guide will help you get started with ESP32-C3-DevKitC-02 and will also provide more in-depth information.
 
-ESP32-C3-DevKitC-02 is an entry-level development board based on `ESP32-C3-WROOM-02 <https://www.espressif.com/sites/default/files/documentation/esp32-c3-wroom-02_datasheet_en.pdf>`_, a general-purpose module with 4 MB SPI flash. This board integrates complete Wi-Fi and Bluetooth LE functions.
+ESP32-C3-DevKitC-02 is an entry-level development board based on `ESP32-C3-WROOM-02 <https://www.espressif.com/sites/default/files/documentation/esp32-c3-wroom-02_datasheet_en.pdf>`_, a general-purpose module with 4 MB SPI flash. This board integrates complete Wi-Fi and Bluetooth® Low Energy functions.
 
 Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-C3-DevKitC-02 on a breadboard.
 
@@ -24,10 +24,12 @@ The document consists of the following major sections:
 - `Hardware Revision Details`_: Revision history, known issues, and links to user guides for previous versions (if any) of ESP32-C3-DevKitC-02.
 - `Related Documents`_: Links to related documentation.
 
+
 Getting Started
 ===============
 
 This section provides a brief introduction of ESP32-C3-DevKitC-02, instructions on how to do the initial hardware setup and how to flash firmware onto it.
+
 
 Description of Components
 -------------------------
@@ -50,7 +52,7 @@ The key components of the board are described in a counter-clockwise direction.
    * - Key Component
      - Description
    * - ESP32-C3-WROOM-02
-     - ESP32-C3-WROOM-02 from Espressif is a powerful and general-purpose module that offers Wi-Fi and Bluetooth LE coexistence. It has a PCB antenna and a 4 MB SPI flash.
+     - ESP32-C3-WROOM-02 from Espressif is a powerful and general-purpose module that offers Wi-Fi and Bluetooth Low Energy coexistence. It has a PCB antenna and a 4 MB SPI flash.
    * - 5 V to 3.3 V LDO
      - Power regulator that converts a 5 V supply into a 3.3 V output.
    * - 5 V Power On LED
@@ -74,6 +76,7 @@ Start Application Development
 
 Before powering up your ESP32-C3-DevKitC-02, please make sure that it is in good condition with no obvious signs of damage.
 
+
 Required Hardware
 ^^^^^^^^^^^^^^^^^
 
@@ -85,15 +88,17 @@ Required Hardware
 
   Be sure to use an appropriate USB cable. Some cables are for charging only and do not provide the needed data lines nor work for programming the boards.
 
+
 Software Setup
 ^^^^^^^^^^^^^^
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an application example into your ESP32-C3-DevKitC-02.
 
+
 Contents and Packaging
 ----------------------
 
-Retail orders
+Retail Orders
 ^^^^^^^^^^^^^
 
 If you order a few samples, each ESP32-C3-DevKitC-02 comes in an individual package in either antistatic bag or any packaging depending on your retailer.
@@ -107,6 +112,7 @@ Wholesale Orders
 If you order in bulk, the boards come in large cardboard boxes.
 
 For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
+
 
 Hardware Reference
 ==================
@@ -124,6 +130,7 @@ The block diagram below shows the components of ESP32-C3-DevKitC-02 and their in
 
     ESP32-C3-DevKitC-02 (click to enlarge)
 
+
 Power Supply Options
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -135,6 +142,7 @@ There are three mutually exclusive ways to provide power to the board:
 
 It is recommended to use the first option: Micro-USB Port.
 
+
 .. _user-guide-c3-devkitc-02-v1-header-blocks:
 
 Header Block
@@ -142,8 +150,10 @@ Header Block
 
 The two tables below provide the **Name** and **Function** of the pin headers on both sides of the board (J1 and J3). The pin header names are shown in :ref:`user-guide-c3-devkitc-02-v1-board-front`. The numbering is the same as in the `ESP32-C3-DevKitC-02 Schematic`_ (PDF).
 
+
 J1
 ^^^
+
 ===  ====  ==========  ===================================
 No.  Name  Type [1]_    Function
 ===  ====  ==========  ===================================
@@ -164,8 +174,10 @@ No.  Name  Type [1]_    Function
 15   G     G           Ground
 ===  ====  ==========  ===================================
 
+
 J3
 ^^^
+
 ===  ====  ==========  ====================================
 No.  Name  Type [1]_   Function
 ===  ====  ==========  ====================================
@@ -189,8 +201,10 @@ No.  Name  Type [1]_   Function
 .. [1] P: Power supply; I: Input; O: Output; T: High impedance.
 .. [2] GPIO2, GPIO8, and GPIO9 are strapping pins of the ESP32-C3 chip. These pins are used to control several chip functions depending on binary voltage values applied to the pins during chip power-up or system reset. For description and application of the strapping pins, please refer to Section Strapping Pins in `ESP32-C3 Datasheet`_.
 
+
 Pin Layout
-^^^^^^^^^^^
+^^^^^^^^^^
+
 .. figure:: ../../../_static/esp32-c3-devkitc-02-v1-pinout.png
     :align: center
     :scale: 50%
@@ -199,13 +213,16 @@ Pin Layout
 
     ESP32-C3-DevKitC-02 Pin Layout (click to enlarge)
 
+
 Hardware Revision Details
 =========================
 
 No previous versions available.
 
+
 Related Documents
 =================
+
 * `Build Secure and Cost-effective Connected Devices with ESP32-C3 <http://c3.espressif.com/>`_
 * `ESP32-C3 Datasheet`_ (PDF)
 * `ESP32-C3-WROOM-02 Datasheet`_ (PDF)

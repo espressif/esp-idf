@@ -1,5 +1,6 @@
 ESP-WROVER-KIT V2 Getting Started Guide
 =======================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 This guide shows how to get started with the ESP-WROVER-KIT V2 development board and also provides information about its functionality and configuration options. For the description of other ESP-WROVER-KIT versions, please check :doc:`../../hw-reference/index`.
@@ -9,7 +10,7 @@ What You Need
 -------------
 
 * ESP-WROVER-KIT V2 board
-* USB 2.0 cable（A to Micro-B）
+* USB 2.0 cable (A to Micro-B)
 * Computer running Windows, Linux, or macOS
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
@@ -168,6 +169,7 @@ Power up from USB port    Enable UART communication
 Do not install any other jumpers.
 
 Turn the **Power Switch** to ON, the **5V Power On LED** should light up.
+
 
 Now to Development
 ^^^^^^^^^^^^^^^^^^

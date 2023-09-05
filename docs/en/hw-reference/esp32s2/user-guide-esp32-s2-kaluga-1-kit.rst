@@ -56,7 +56,6 @@ This guide covers:
 Getting Started
 ===============
 
-
 This section describes how to get started with the ESP32-S2-Kaluga-1. It begins with a few introductory sections about the ESP32-S2-Kaluga-1, then Section `Start Application Development`_ provides instructions on how to do the initial hardware setup and then how to flash firmware onto the ESP32-S2-Kaluga-1.
 
 
@@ -230,7 +229,7 @@ A Board Support Package can be found in `IDF Component Registry <https://compone
 Contents and Packaging
 ----------------------
 
-Retail orders
+Retail Orders
 ^^^^^^^^^^^^^
 
 If you order one or several samples of the kit, each ESP32-S2-Kaluga-1 development kit comes in an individual package.
@@ -272,7 +271,6 @@ For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales
 
 Hardware Reference
 ==================
-
 
 Block Diagram
 -------------
@@ -358,10 +356,10 @@ ESP32-S2-Kaluga-1 Kit v1.3
 
 * The following pins re-assigned to fix the download issue
 
-  * Camera D2： GPIO36
-  * Camera D3： GPIO37
-  * AU_I2S1_SDI： GPIO34
-  * AU_WAKE_INT： GPIO46
+  * Camera D2: GPIO36
+  * Camera D3: GPIO37
+  * AU_I2S1_SDI: GPIO34
+  * AU_WAKE_INT: GPIO46
 
 * RGB pin header moved to the board's edge
 * All dip switches moved to the flip side for convenient operation

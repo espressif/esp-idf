@@ -4,7 +4,7 @@ ESP32-C3-DevKitM-1
 
 :link_to_translation:`en: [English]`
 
-本指南将帮助您快速上手 ESP32-C3-DevKitM-1，并提供该款开发板的详细信息。
+本指南将帮助你快速上手 ESP32-C3-DevKitM-1，并提供该款开发板的详细信息。
 
 ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 `ESP32-C3-MINI-1 <https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_cn.pdf>`_ 模组。该款开发板具备完整的 Wi-Fi 和低功耗蓝牙功能。
 
@@ -24,10 +24,12 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
 - `硬件版本`_：介绍硬件历史版本和已知问题，并提供链接至历史版本开发板的入门指南（如有）。
 - `相关文档`_：列出了相关文档的链接。
 
+
 入门指南
 ========
 
 本小节将简要介绍 ESP32-C3-DevKitM-1，说明如何在 ESP32-C3-DevKitM-1 上烧录固件及相关准备工作。
+
 
 组件介绍
 --------
@@ -74,21 +76,24 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
 
 通电前，请确保 ESP32-C3-DevKitM-1 完好无损。
 
+
 必备硬件
 ^^^^^^^^
 
 - ESP32-C3-DevKitM-1
 - USB 2.0 数据线（标准 A 型转 Micro-B 型）
-- 电脑 （Windows、Linux 或 macOS）
+- 电脑（Windows、Linux 或 macOS）
 
 .. 注解::
 
   请确保使用适当的 USB 数据线。部分数据线仅可用于充电，无法用于数据传输和编程。
 
+
 软件设置
 ^^^^^^^^
 
 请前往 :doc:`../../get-started/index`，在 :ref:`get-started-step-by-step` 小节查看如何快速设置开发环境，将应用程序烧录至 ESP32-C3-DevKitM-1。
+
 
 内含组件和包装
 --------------
@@ -108,6 +113,7 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
 
 批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
+
 硬件参考
 ========
 
@@ -124,10 +130,11 @@ ESP32-C3-DevKitM-1 的主要组件和连接方式如下图所示。
 
     ESP32-C3-DevKitM-1 （点击放大）
 
+
 电源选项
 ^^^^^^^^
 
-您可从以下三种供电方式中任选其一给 ESP32-C3-DevKitM-1 供电：
+以下任一供电方式均可为 ESP32-C3-DevKitM-1 供电：
 
 - Micro-USB 接口供电（默认）
 - 5V 和 GND 排针供电
@@ -135,15 +142,18 @@ ESP32-C3-DevKitM-1 的主要组件和连接方式如下图所示。
 
 建议选择第一种供电方式：Micro-USB 接口供电。
 
+
 .. _user-guide-c3-devkitm-1-v1-header-blocks:
 
 排针
 ----
 
-下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-c3-devkitm-1-v1-board-front` 所示，排针的序号与 `ESP32-C3-DevKitM-1 原理图`_ (PDF)一致。
+下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-c3-devkitm-1-v1-board-front` 所示，排针的序号与 `ESP32-C3-DevKitM-1 原理图`_ (PDF) 一致。
+
 
 J1
 ^^^
+
 ====  ====  ==========  ================================
 序号  名称   类型 [1]_    功能
 ====  ====  ==========  ================================
@@ -164,8 +174,10 @@ J1
 15    GND   G           接地
 ====  ====  ==========  ================================
 
+
 J3
 ^^^
+
 ====  ====  ==========  ================================
 序号  名称   类型 [1]_    功能
 ====  ====  ==========  ================================
@@ -189,8 +201,10 @@ J3
 .. [1] P：电源；I：输入；O：输出；T：可设置为高阻。
 .. [2] GPIO2、GPIO8、GPIO9 为 ESP32-C3FN4 芯片的 Strapping 管脚。在芯片上电和系统复位过程中，Strapping 管脚根据管脚的二进制电压值控制芯片功能。Strapping 管脚的具体描述和应用，请参考 `ESP32-C3 技术规格书`_ 的 Strapping 管脚章节。
 
+
 管脚布局
 ^^^^^^^^
+
 .. figure:: ../../../_static/esp32-c3-devkitm-1-v1-pinout.png
     :align: center
     :scale: 45%
@@ -198,13 +212,16 @@ J3
 
     ESP32-C3-DevKitM-1 管脚布局（点击放大）
 
+
 硬件版本
 ==========
 
 该开发板为最新硬件，尚未有历史版本。
 
+
 相关文档
 ========
+
 * `使用 ESP32-C3 构建安全高性价比的互联设备 <http://c3.espressif.com/>`_
 * `ESP32-C3 技术规格书`_ (PDF)
 * `ESP32-C3-MINI-1 规格书`_ (PDF)

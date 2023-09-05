@@ -10,7 +10,7 @@ ESP-LyraP-LCD32 v1.1
 
 目前，ESP-LyraP-CAM v1.1 扩展板正在搭配 :doc:`user-guide-esp32-s2-kaluga-1-kit-v1.2` 销售。
 
-ESP-LyraP-LCD32 可为您的主板增加 LCD 图像显示功能。
+ESP-LyraP-LCD32 可为你的主板增加 LCD 图像显示功能。
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrap-lcd32-v1.1-3d.png
     :align: center
@@ -33,7 +33,7 @@ ESP-LyraP-LCD32 可为您的主板增加 LCD 图像显示功能。
 概述
 ====
 
-ESP-LyraP-LCD32 可为您的主板增加了一块 3.2" LCD 图形显示屏（320 x 240 分辨率）。该显示屏通过 SPI 总线连接到 ESP32-S2。
+ESP-LyraP-LCD32 可为你的主板增加一块 3.2" LCD 图形显示屏（320 x 240 分辨率）。该显示屏通过 SPI 总线连接到 ESP32-S2。
 
 
 组件描述

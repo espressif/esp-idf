@@ -10,7 +10,7 @@ What You Need
 -------------
 
 * :ref:`ESP32-DevKitC V4 board <get-started-esp32-devkitc-board-front>`
-* USB A / micro USB B cable
+* USB A/micro USB B cable
 * Computer running Windows, Linux, or macOS
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
@@ -77,24 +77,25 @@ The following figure and the table below describe the key components, interfaces
       - Most of the pins on the ESP module are broken out to the pin headers on the board. You can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 
 
-
 Power Supply Options
 --------------------
 
 There are three mutually exclusive ways to provide power to the board:
 
 * Micro USB port, default power supply
-* 5V / GND header pins
-* 3V3 / GND header pins
+* 5V and GND header pins
+* 3V3 and GND header pins
 
 .. warning::
 
     The power supply must be provided using **one and only one of the options above**, otherwise the board and/or the power supply source can be damaged.
 
+
 Header Block
 ------------
 
 The two tables below provide the **Name** and **Function** of I/O header pins on both sides of the board, as shown in :ref:`get-started-esp32-devkitc-board-front`.
+
 
 J2
 ^^^
@@ -121,6 +122,7 @@ No.  Name  Type [1]_   Function
 18   CMD   I/O         GPIO11, CMD [2]_
 19   5V    P           5 V power supply
 ===  ====  ==========  ===============================================
+
 
 J3
 ^^^
@@ -149,8 +151,9 @@ No.  Name  Type [1]_   Function
 ===  ====  ==========  ===============================================
 
 .. [1] P: Power supply; I: Input; O: Output.
-.. [2] The pins D0, D1, D2, D3, CMD and CLK are used internally for communication between ESP32 and SPI flash memory. They are grouped on both sides near the USB connector. Avoid using these pins, as it may disrupt access to the SPI flash memory / SPI RAM.
+.. [2] The pins D0, D1, D2, D3, CMD and CLK are used internally for communication between ESP32 and SPI flash memory. They are grouped on both sides near the USB connector. Avoid using these pins, as it may disrupt access to the SPI flash memory/SPI RAM.
 .. [3] The pins GPIO16 and GPIO17 are available for use only on the boards with the modules ESP32-WROOM and ESP32-SOLO-1. The boards with ESP32-WROVER modules have the pins reserved for internal use.
+
 
 Pin Layout
 ^^^^^^^^^^^
@@ -182,7 +185,7 @@ In case these issues occur, please remove the component. The figure below shows 
 
 
 Start Application Development
-------------------------------
+-----------------------------
 
 Before powering up your ESP32-DevKitC V4, please make sure that the board is in good condition with no obvious signs of damage.
 
