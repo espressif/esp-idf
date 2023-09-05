@@ -303,7 +303,8 @@ void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *conf
 {
     hal->desc_dummy_head.next = hal->rx_desc;
     hal->dev = config->dev;
-    hal->desc_max_num = config->desc_max_num;
+    hal->eof_desc_num = config->eof_desc_num;
+    hal->eof_step = config->eof_step;
     hal->dma_chan = config->dma_chan;
     hal->eof_num = config->eof_num;
 }
@@ -325,23 +326,33 @@ void adc_hal_digi_init(adc_hal_context_t *hal)
 #endif
 }
 
-static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)
+static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t per_eof_size, uint32_t eof_step, uint32_t eof_num)
 {
     HAL_ASSERT(((uint32_t)data_buf % 4) == 0);
-    HAL_ASSERT((size % 4) == 0);
+    HAL_ASSERT((per_eof_size % 4) == 0);
     uint32_t n = 0;
 
-    while (num--) {
-        desc[n] = (dma_descriptor_t) {
-            .dw0.size = size,
-            .dw0.length = 0,
-            .dw0.suc_eof = 0,
-            .dw0.owner = 1,
-            .buffer = data_buf,
-            .next = &desc[n+1]
-        };
-        data_buf += size;
-        n++;
+    while (eof_num--) {
+        uint32_t eof_size = per_eof_size;
+
+        for (int i = 0; i < eof_step; i++) {
+            uint32_t this_len = eof_size;
+            if (this_len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+                this_len = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+            }
+
+            desc[n] = (dma_descriptor_t) {
+                .dw0.size = this_len,
+                .dw0.length = 0,
+                .dw0.suc_eof = 0,
+                .dw0.owner = 1,
+                .buffer = data_buf,
+                .next = &desc[n+1]
+            };
+            eof_size -= this_len;
+            data_buf += this_len;
+            n++;
+        }
     }
     desc[n-1].next = NULL;
 }
@@ -380,18 +391,39 @@ bool adc_hal_check_event(adc_hal_context_t *hal, uint32_t mask)
 }
 #endif  //#if !SOC_GDMA_SUPPORTED
 
-adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc)
+adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_dma_ctx_t *hal, const intptr_t eof_desc_addr, uint8_t **buffer, uint32_t *len)
 {
     HAL_ASSERT(hal->cur_desc_ptr);
+
     if (!hal->cur_desc_ptr->next) {
         return ADC_HAL_DMA_DESC_NULL;
     }
+
     if ((intptr_t)hal->cur_desc_ptr == eof_desc_addr) {
         return ADC_HAL_DMA_DESC_WAITING;
     }
 
     hal->cur_desc_ptr = hal->cur_desc_ptr->next;
     *cur_desc = hal->cur_desc_ptr;
+
+    uint8_t *buffer_start = NULL;
+    uint32_t eof_len = 0;
+    dma_descriptor_t *eof_desc = hal->cur_desc_ptr;
+
+    //Find the eof list start
+    eof_desc = eof_desc->next;
+    buffer_start = eof_desc->buffer;
+    eof_len += eof_desc->dw0.length;
+
+    //Find the eof list end
+    for (int i = 1; i < hal->eof_step; i++) {
+        eof_desc = eof_desc->next;
+        eof_len += eof_desc->dw0.length;
+    }
+
+    hal->cur_desc_ptr = eof_desc;
+    *buffer = buffer_start;
+    *len = eof_len;
 
     return ADC_HAL_DMA_DESC_VALID;
 }
