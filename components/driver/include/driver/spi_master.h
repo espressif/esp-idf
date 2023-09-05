@@ -303,6 +303,9 @@ esp_err_t spi_device_polling_end(spi_device_handle_t handle, TickType_t ticks_to
  * @param trans_desc Description of transaction to execute
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_TIMEOUT       if the device cannot get control of the bus
+ *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
+ *         - ESP_ERR_INVALID_STATE if previous transactions of same device are not finished
  *         - ESP_OK                on success
  */
 esp_err_t spi_device_polling_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc);
