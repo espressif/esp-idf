@@ -137,8 +137,9 @@ static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *bu
  * should be configured before this is called.
  *
  * @param dev Beginning address of the peripheral registers.
+ * @param pe_ops Is page program/erase operation or not. (not used in gpspi)
  */
-static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
+static inline void gpspi_flash_ll_user_start(spi_dev_t *dev,  bool pe_ops)
 {
     dev->cmd.update = 1;
     while (dev->cmd.update);

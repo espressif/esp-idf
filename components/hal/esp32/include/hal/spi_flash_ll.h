@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -201,7 +201,7 @@ static inline void spi_flash_ll_program_page(spi_dev_t *dev, const void *buffer,
  *
  * @param dev Beginning address of the peripheral registers.
  */
-static inline void spi_flash_ll_user_start(spi_dev_t *dev)
+static inline void spi_flash_ll_user_start(spi_dev_t *dev, bool pe_ops)
 {
     dev->cmd.usr = 1;
 }
@@ -397,16 +397,6 @@ static inline void spi_flash_ll_set_cs_setup(spi_dev_t *dev, uint32_t cs_setup_t
 {
     dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
     dev->ctrl2.setup_time = cs_setup_time - 1;
-}
-
-/**
- * @brief Set lock for SPI0 so that spi0 can request new cache request after a cache transfer.
- *
- * @param dev Beginning address of the peripheral registers.
- */
-static inline void spi_flash_ll_set_pe_bit(spi_dev_t *dev)
-{
-    // Not supported on esp32
 }
 
 /**
