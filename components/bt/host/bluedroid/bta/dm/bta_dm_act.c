@@ -4324,13 +4324,24 @@ static void bta_dm_set_eir (char *local_name)
         }
     }
 
-    if ( free_eir_length ) {
+    /* If there is no other data to be sent in the EIR packet, the Host shall
+     * send a name tag with zero length and the type field set to indicate
+     * that this is the complete name (i.e., total of 2 octets with length =
+     * 1).
+     */
+    if (eir_type_num == 0) {
+        UINT8_TO_STREAM(p, 1);
+        UINT8_TO_STREAM(p, BTM_EIR_COMPLETE_LOCAL_NAME_TYPE);
+        free_eir_length -= 2;
+    }
+
+    if (free_eir_length) {
         UINT8_TO_STREAM(p, 0);    /* terminator of significant part */
     }
 
     tBTM_STATUS btm_status = BTM_WriteEIR( p_buf, p_bta_dm_eir_cfg->bta_dm_eir_fec_required );
 
-    if ( btm_status == BTM_MODE_UNSUPPORTED) {
+    if (btm_status == BTM_MODE_UNSUPPORTED) {
         status = BTA_WRONG_MODE;
     } else if (btm_status != BTM_SUCCESS) {
         status = BTA_FAILURE;
