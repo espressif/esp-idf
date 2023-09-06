@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,18 +13,18 @@
 #include <xtensa/config/system.h>
 #include <xtensa/hal.h>
 
-/* esp_test_ipc_isr_asm(void *arg)
+/* esp_test_ipc_isr_callback(void *arg)
  *
  * It should be called by the CALLX0 command from the handler of High-priority interrupt.
  * Only these registers [a2, a3, a4] can be used here.
  */
     .section    .iram1, "ax"
     .align      4
-    .global     esp_test_ipc_isr_asm
-    .type       esp_test_ipc_isr_asm, @function
+    .global     esp_test_ipc_isr_callback
+    .type       esp_test_ipc_isr_callback, @function
 // Args:
 // a2 - void* arg
-esp_test_ipc_isr_asm:
+esp_test_ipc_isr_callback:
     movi    a3, 0xa5a5
     s32i    a3, a2, 0
     ret
