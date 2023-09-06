@@ -374,7 +374,7 @@ LCD
 - The way to register RGB panel event callbacks has been moved from the :cpp:type:`esp_lcd_rgb_panel_config_t` into a separate API :cpp:func:`esp_lcd_rgb_panel_register_event_callbacks`. However, the event callback signature is not changed.
 - Previous ``relax_on_idle`` flag in :cpp:type:`esp_lcd_rgb_panel_config_t` has been renamed into :cpp:member:`esp_lcd_rgb_panel_config_t::refresh_on_demand`, which expresses the same meaning but with a clear name.
 - If the RGB LCD is created with the ``refresh_on_demand`` flag enabled, the driver will not start a refresh in the :cpp:func:`esp_lcd_panel_draw_bitmap`. Now users have to call :cpp:func:`esp_lcd_rgb_panel_refresh` to refresh the screen by themselves.
-- :cpp:type:`esp_lcd_color_space_t` is deprecated, please use :cpp:type:`lcd_color_space_t` to describe the color space, and use :cpp:type:`lcd_color_rgb_endian_t` to describe the data order of RGB color.
+- :cpp:type:`esp_lcd_color_space_t` is deprecated, please use :cpp:type:`lcd_color_space_t` to describe the color space, and use :cpp:type:`lcd_rgb_element_order_t` to describe the data order of RGB color.
 
 .. only:: SOC_MCPWM_SUPPORTED
 
