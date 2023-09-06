@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,12 +89,40 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spihost[host_id] = host;
     host->int_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     host->dma_enabled = (config->dma_chan != SPI_DMA_DISABLED);
+    host->append_mode = append_mode;
 
     if (host->dma_enabled) {
         ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
         if (ret != ESP_OK) {
             goto cleanup;
         }
+
+        //Malloc for all the DMA descriptors
+        int dma_desc_ct = (bus_config->max_transfer_sz + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+        if (dma_desc_ct == 0) {
+            dma_desc_ct = 1; //default to 4k when max is not given
+        }
+        host->hal.dma_desc_num = dma_desc_ct;
+
+        lldesc_t *orig_dmadesc_tx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        lldesc_t *orig_dmadesc_rx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        host->hal.dmadesc_tx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * dma_desc_ct, MALLOC_CAP_DEFAULT);
+        host->hal.dmadesc_rx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * dma_desc_ct, MALLOC_CAP_DEFAULT);
+        if (!(host->hal.dmadesc_tx && host->hal.dmadesc_rx && orig_dmadesc_tx && orig_dmadesc_rx)) {
+            ret = ESP_ERR_NO_MEM;
+            goto cleanup;
+        }
+        //Pair each desc to each possible trans
+        for (int i = 0; i < dma_desc_ct; i ++) {
+            host->hal.dmadesc_tx[i].desc = &orig_dmadesc_tx[i];
+            host->hal.dmadesc_rx[i].desc = &orig_dmadesc_rx[i];
+        }
+
+        //Get the actual SPI bus transaction size in bytes.
+        host->max_transfer_sz = dma_desc_ct * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+    } else {
+        //We're limited to non-DMA transfers: the SPI work registers can hold 64 bytes at most.
+        host->max_transfer_sz = 0;
     }
 
     ret = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &host->flags);
@@ -104,7 +132,6 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     gpio_set_direction(config->spics_io_num, GPIO_MODE_INPUT);
     spicommon_cs_initialize(host_id, config->spics_io_num, 0,
                             !(bus_config->flags & SPICOMMON_BUSFLAG_NATIVE_PINS));
-    host->append_mode = append_mode;
 
     spi_slave_hd_hal_config_t hal_config = {
         .host_id = host_id,
@@ -118,23 +145,6 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
         .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
     };
-
-    if (host->dma_enabled) {
-        //Malloc for all the DMA descriptors
-        uint32_t total_desc_size = spi_slave_hd_hal_get_total_desc_size(&host->hal, bus_config->max_transfer_sz);
-        host->hal.dmadesc_tx = heap_caps_malloc(total_desc_size, MALLOC_CAP_DMA);
-        host->hal.dmadesc_rx = heap_caps_malloc(total_desc_size, MALLOC_CAP_DMA);
-        if (!host->hal.dmadesc_tx || !host->hal.dmadesc_rx) {
-            ret = ESP_ERR_NO_MEM;
-            goto cleanup;
-        }
-
-        //Get the actual SPI bus transaction size in bytes.
-        host->max_transfer_sz = spi_salve_hd_hal_get_max_bus_size(&host->hal);
-    } else {
-        //We're limited to non-DMA transfers: the SPI work registers can hold 64 bytes at most.
-        host->max_transfer_sz = 0;
-    }
 
     //Init the hal according to the hal_config set above
     spi_slave_hd_hal_init(&host->hal, &hal_config);
@@ -232,21 +242,21 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
     if (host->rx_ret_queue) vQueueDelete(host->rx_ret_queue);
     if (host->tx_cnting_sem) vSemaphoreDelete(host->tx_cnting_sem);
     if (host->rx_cnting_sem) vSemaphoreDelete(host->rx_cnting_sem);
-    if (host) {
-        free(host->hal.dmadesc_tx);
-        free(host->hal.dmadesc_rx);
-        esp_intr_free(host->intr);
-        esp_intr_free(host->intr_dma);
+    esp_intr_free(host->intr);
+    esp_intr_free(host->intr_dma);
 #ifdef CONFIG_PM_ENABLE
-        if (host->pm_lock) {
-            esp_pm_lock_release(host->pm_lock);
-            esp_pm_lock_delete(host->pm_lock);
-        }
-#endif
+    if (host->pm_lock) {
+        esp_pm_lock_release(host->pm_lock);
+        esp_pm_lock_delete(host->pm_lock);
     }
+#endif
 
     spicommon_periph_free(host_id);
     if (host->dma_enabled) {
+        free(host->hal.dmadesc_tx->desc);
+        free(host->hal.dmadesc_rx->desc);
+        free(host->hal.dmadesc_tx);
+        free(host->hal.dmadesc_rx);
         spicommon_dma_chan_free(host_id);
     }
     free(host);

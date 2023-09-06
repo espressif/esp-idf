@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,12 +63,10 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
     hal->tx_dma_chan = hal_config->tx_dma_chan;
     hal->rx_dma_chan = hal_config->rx_dma_chan;
     hal->append_mode = hal_config->append_mode;
-    hal->rx_cur_desc = hal->dmadesc_rx;
     hal->tx_cur_desc = hal->dmadesc_tx;
-    STAILQ_NEXT(&hal->tx_dummy_head.desc, qe) = &hal->dmadesc_tx->desc;
-    hal->tx_dma_head = &hal->tx_dummy_head;
-    STAILQ_NEXT(&hal->rx_dummy_head.desc, qe) = &hal->dmadesc_rx->desc;
-    hal->rx_dma_head = &hal->rx_dummy_head;
+    hal->rx_cur_desc = hal->dmadesc_rx;
+    hal->tx_dma_head = hal->dmadesc_tx + hal->dma_desc_num -1;
+    hal->rx_dma_head = hal->dmadesc_rx + hal->dma_desc_num -1;
 
     //Configure slave
     if (hal_config->dma_enabled) {
@@ -119,26 +117,9 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
     spi_ll_slave_set_seg_mode(hal->dev, true);
 }
 
-uint32_t spi_salve_hd_hal_get_max_bus_size(spi_slave_hd_hal_context_t *hal)
-{
-    return hal->dma_desc_num * LLDESC_MAX_NUM_PER_DESC;
-}
-
-uint32_t spi_slave_hd_hal_get_total_desc_size(spi_slave_hd_hal_context_t *hal, uint32_t bus_size)
-{
-    //See how many dma descriptors we need
-    int dma_desc_ct = (bus_size + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
-    if (dma_desc_ct == 0) {
-        dma_desc_ct = 1; //default to 4k when max is not given
-    }
-    hal->dma_desc_num = dma_desc_ct;
-
-    return hal->dma_desc_num * sizeof(spi_slave_hd_hal_desc_append_t);
-}
-
 void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, size_t len)
 {
-    lldesc_setup_link(&hal->dmadesc_rx->desc, out_buf, len, true);
+    lldesc_setup_link(hal->dmadesc_rx->desc, out_buf, len, true);
 
     spi_ll_dma_rx_fifo_reset(hal->dev);
     spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
@@ -147,12 +128,12 @@ void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, s
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD7);
 
     spi_ll_dma_rx_enable(hal->dev, 1);
-    spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, &hal->dmadesc_rx->desc);
+    spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, hal->dmadesc_rx->desc);
 }
 
 void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len)
 {
-    lldesc_setup_link(&hal->dmadesc_tx->desc, data, len, false);
+    lldesc_setup_link(hal->dmadesc_tx->desc, data, len, false);
 
     spi_ll_dma_tx_fifo_reset(hal->dev);
     spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
@@ -161,7 +142,7 @@ void spi_slave_hd_hal_txdma(spi_slave_hd_hal_context_t *hal, uint8_t *data, size
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD8);
 
     spi_ll_dma_tx_enable(hal->dev, 1);
-    spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, &hal->dmadesc_tx->desc);
+    spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, hal->dmadesc_tx->desc);
 }
 
 static spi_ll_intr_t get_event_intr(spi_slave_hd_hal_context_t *hal, spi_event_t ev)
@@ -257,66 +238,43 @@ int spi_slave_hd_hal_get_rxlen(spi_slave_hd_hal_context_t *hal)
 
 int spi_slave_hd_hal_rxdma_seg_get_len(spi_slave_hd_hal_context_t *hal)
 {
-    lldesc_t *desc = &hal->dmadesc_rx->desc;
+    lldesc_t *desc = hal->dmadesc_rx->desc;
     return lldesc_get_received_len(desc, NULL);
 }
 
 bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans)
 {
-    if ((uint32_t)&hal->tx_dma_head->desc == spi_dma_ll_get_out_eof_desc_addr(hal->dma_out, hal->tx_dma_chan)) {
+    uint32_t desc_now = spi_dma_ll_get_out_eof_desc_addr(hal->dma_out, hal->tx_dma_chan);
+    if ((uint32_t)hal->tx_dma_head->desc == desc_now) {
         return false;
     }
 
-    hal->tx_dma_head = (spi_slave_hd_hal_desc_append_t *)STAILQ_NEXT(&hal->tx_dma_head->desc, qe);
+    //find used paired desc-trans by desc addr
+    hal->tx_dma_head++;
+    if (hal->tx_dma_head >= hal->dmadesc_tx + hal->dma_desc_num) {
+        hal->tx_dma_head = hal->dmadesc_tx;
+    }
     *out_trans = hal->tx_dma_head->arg;
     hal->tx_recycled_desc_cnt++;
-
     return true;
 }
 
 bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, size_t *out_len)
 {
-    if ((uint32_t)&hal->rx_dma_head->desc == spi_dma_ll_get_in_suc_eof_desc_addr(hal->dma_in, hal->rx_dma_chan)) {
+    uint32_t desc_now = spi_dma_ll_get_in_suc_eof_desc_addr(hal->dma_in, hal->rx_dma_chan);
+    if ((uint32_t)hal->rx_dma_head->desc == desc_now) {
         return false;
     }
 
-    hal->rx_dma_head = (spi_slave_hd_hal_desc_append_t *)STAILQ_NEXT(&hal->rx_dma_head->desc, qe);
-    *out_trans = hal->rx_dma_head->arg;
-    *out_len = hal->rx_dma_head->desc.length;
-    hal->rx_recycled_desc_cnt++;
-
-    return true;
-}
-
-static void spi_slave_hd_hal_link_append_desc(spi_slave_hd_hal_desc_append_t *dmadesc, const void *data, int len, bool isrx, void *arg)
-{
-    HAL_ASSERT(len <= LLDESC_MAX_NUM_PER_DESC);     //TODO: Add support for transaction with length larger than 4092, IDF-2660
-    int n = 0;
-    while (len) {
-        int dmachunklen = len;
-        if (dmachunklen > LLDESC_MAX_NUM_PER_DESC) {
-            dmachunklen = LLDESC_MAX_NUM_PER_DESC;
-        }
-        if (isrx) {
-            //Receive needs DMA length rounded to next 32-bit boundary
-            dmadesc[n].desc.size = (dmachunklen + 3) & (~3);
-            dmadesc[n].desc.length = (dmachunklen + 3) & (~3);
-        } else {
-            dmadesc[n].desc.size = dmachunklen;
-            dmadesc[n].desc.length = dmachunklen;
-        }
-        dmadesc[n].desc.buf = (uint8_t *)data;
-        dmadesc[n].desc.eof = 0;
-        dmadesc[n].desc.sosf = 0;
-        dmadesc[n].desc.owner = 1;
-        dmadesc[n].desc.qe.stqe_next = &dmadesc[n + 1].desc;
-        dmadesc[n].arg = arg;
-        len -= dmachunklen;
-        data += dmachunklen;
-        n++;
+    //find used paired desc-trans by desc addr
+    hal->rx_dma_head++;
+    if (hal->rx_dma_head >= hal->dmadesc_rx + hal->dma_desc_num) {
+        hal->rx_dma_head = hal->dmadesc_rx;
     }
-    dmadesc[n - 1].desc.eof = 1; //Mark last DMA desc as end of stream.
-    dmadesc[n - 1].desc.qe.stqe_next = NULL;
+    *out_trans = hal->rx_dma_head->arg;
+    *out_len = hal->rx_dma_head->desc->length;
+    hal->rx_recycled_desc_cnt++;
+    return true;
 }
 
 esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len, void *arg)
@@ -329,7 +287,8 @@ esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
         return ESP_ERR_INVALID_STATE;
     }
 
-    spi_slave_hd_hal_link_append_desc(hal->tx_cur_desc, data, len, false, arg);
+    lldesc_setup_link(hal->tx_cur_desc->desc, data, len, false);
+    hal->tx_cur_desc->arg = arg;
 
     if (!hal->tx_dma_started) {
         hal->tx_dma_started = true;
@@ -339,10 +298,10 @@ esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
         spi_ll_outfifo_empty_clr(hal->dev);
         spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
         spi_ll_dma_tx_enable(hal->dev, 1);
-        spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, &hal->tx_cur_desc->desc);
+        spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, hal->tx_cur_desc->desc);
     } else {
         //there is already a consecutive link
-        STAILQ_NEXT(&hal->tx_dma_tail->desc, qe) = &hal->tx_cur_desc->desc;
+        STAILQ_NEXT(hal->tx_dma_tail->desc, qe) = hal->tx_cur_desc->desc;
         hal->tx_dma_tail = hal->tx_cur_desc;
         spi_dma_ll_tx_restart(hal->dma_out, hal->tx_dma_chan);
     }
@@ -369,7 +328,8 @@ esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
         return ESP_ERR_INVALID_STATE;
     }
 
-    spi_slave_hd_hal_link_append_desc(hal->rx_cur_desc, data, len, false, arg);
+    lldesc_setup_link(hal->rx_cur_desc->desc, data, len, false);
+    hal->rx_cur_desc->arg = arg;
 
     if (!hal->rx_dma_started) {
         hal->rx_dma_started = true;
@@ -379,10 +339,10 @@ esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t
         spi_ll_dma_rx_fifo_reset(hal->dma_in);
         spi_ll_infifo_full_clr(hal->dev);
         spi_ll_dma_rx_enable(hal->dev, 1);
-        spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, &hal->rx_cur_desc->desc);
+        spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, hal->rx_cur_desc->desc);
     } else {
         //there is already a consecutive link
-        STAILQ_NEXT(&hal->rx_dma_tail->desc, qe) = &hal->rx_cur_desc->desc;
+        STAILQ_NEXT(hal->rx_dma_tail->desc, qe) = hal->rx_cur_desc->desc;
         hal->rx_dma_tail = hal->rx_cur_desc;
         spi_dma_ll_rx_restart(hal->dma_in, hal->rx_dma_chan);
     }

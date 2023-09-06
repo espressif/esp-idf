@@ -62,7 +62,7 @@ extern "C" {
  *        this structure inherits DMA descriptor, with a pointer to the transaction descriptor passed from users.
  */
 typedef struct {
-    lldesc_t      desc;                             ///< DMA descriptor
+    lldesc_t      *desc;                            ///< DMA descriptor
     void          *arg;                             ///< This points to the transaction descriptor user passed in
 } spi_slave_hd_hal_desc_append_t;
 
@@ -105,13 +105,11 @@ typedef struct {
     spi_slave_hd_hal_desc_append_t  *tx_cur_desc;           ///< Current TX DMA descriptor that could be linked (set up).
     spi_slave_hd_hal_desc_append_t  *tx_dma_head;           ///< Head of the linked TX DMA descriptors which are not used by hardware
     spi_slave_hd_hal_desc_append_t  *tx_dma_tail;           ///< Tail of the linked TX DMA descriptors which are not used by hardware
-    spi_slave_hd_hal_desc_append_t  tx_dummy_head;          ///< Dummy descriptor for ``tx_dma_head`` to start
     uint32_t                        tx_used_desc_cnt;       ///< Number of the TX descriptors that have been setup
     uint32_t                        tx_recycled_desc_cnt;   ///< Number of the TX descriptors that could be recycled
     spi_slave_hd_hal_desc_append_t  *rx_cur_desc;           ///< Current RX DMA descriptor that could be linked (set up).
     spi_slave_hd_hal_desc_append_t  *rx_dma_head;           ///< Head of the linked RX DMA descriptors which are not used by hardware
     spi_slave_hd_hal_desc_append_t  *rx_dma_tail;           ///< Tail of the linked RX DMA descriptors which are not used by hardware
-    spi_slave_hd_hal_desc_append_t  rx_dummy_head;          ///< Dummy descriptor for ``rx_dma_head`` to start
     uint32_t                        rx_used_desc_cnt;       ///< Number of the RX descriptors that have been setup
     uint32_t                        rx_recycled_desc_cnt;   ///< Number of the RX descriptors that could be recycled
 
@@ -128,23 +126,6 @@ typedef struct {
  * @param hal_config Configuration of the HAL
  */
 void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_hal_config_t *hal_config);
-
-/**
- * @brief Get the size of one DMA descriptor
- *
- * @param hal       Context of the HAL layer
- * @param bus_size  SPI bus maximum transfer size, in bytes.
- * @return          Total size needed for all the DMA descriptors
- */
-uint32_t spi_slave_hd_hal_get_total_desc_size(spi_slave_hd_hal_context_t *hal, uint32_t bus_size);
-
-/**
- * @brief Get the actual bus size
- *
- * @param hal       Context of the HAL layer
- * @return          Actual bus transaction size
- */
-uint32_t spi_salve_hd_hal_get_max_bus_size(spi_slave_hd_hal_context_t *hal);
 
 /**
  * @brief Check and clear signal of one event
