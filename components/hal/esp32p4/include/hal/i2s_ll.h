@@ -48,66 +48,73 @@ typedef struct {
 } i2s_ll_mclk_div_t;
 
 /**
+ * @brief Enable the bus clock for I2S module
+ *
+ * @param i2s_id The port id of I2S
+ * @param enable Set true to enable the buf clock
+ */
+static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
+{
+    switch (i2s_id) {
+        case 0:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s0_apb_clk_en = enable;
+            return;
+        case 1:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s1_apb_clk_en = enable;
+            return;
+        case 2:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s2_apb_clk_en = enable;
+            return;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the I2S module
+ *
+ * @param i2s_id The port id of I2S
+ */
+static inline void i2s_ll_reset_register(int i2s_id)
+{
+    switch (i2s_id) {
+        case 0:
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s0_apb = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s0_apb = 0;
+            return;
+        case 1:
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s1_apb = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s1_apb = 0;
+            return;
+        case 2:
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s2_apb = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s2_apb = 0;
+            return;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_reset_register(__VA_ARGS__)
+
+/**
  * @brief I2S module general init, enable I2S clock.
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param enable set true to enable the core clock
  */
-static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
+static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
 {
-    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
-    switch (I2S_LL_GET_ID(hw)) {
-        case 0:
-            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s0_apb_clk_en = 1;
-            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s0_apb = 0;
-            break;
-        case 1:
-            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s1_apb_clk_en = 1;
-            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s1_apb = 0;
-            break;
-        case 2:
-            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s2_apb_clk_en = 1;
-            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s2_apb = 0;
-            break;
-        default:
-            // Never reach
-            HAL_ASSERT(false);
-    }
+    (void)hw;
+    (void)enable;
+    // No need to do anything
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_clock(__VA_ARGS__)
-
-/**
- * @brief I2S module disable I2S clock.
- *
- * @param hw Peripheral I2S hardware instance address.
- */
-static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
-{
-    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
-    switch (I2S_LL_GET_ID(hw)) {
-        case 0:
-            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s0_apb_clk_en = 0;
-            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s0_apb = 1;
-            break;
-        case 1:
-            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s1_apb_clk_en = 0;
-            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s1_apb = 1;
-            break;
-        case 2:
-            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s2_apb_clk_en = 0;
-            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s2_apb = 1;
-            break;
-        default:
-            // Never reach
-            HAL_ASSERT(false);
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_disable_clock(__VA_ARGS__)
+#define i2s_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_core_clock(__VA_ARGS__)
 
 /**
  * @brief Enable I2S tx module clock

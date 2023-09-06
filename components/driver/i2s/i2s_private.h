@@ -36,12 +36,16 @@ extern "C" {
 #endif //CONFIG_I2S_ISR_IRAM_SAFE
 #define I2S_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 
+#if SOC_SYS_DIGI_CLKRST_REG_SHARED
+#define I2S_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2S_CLOCK_SRC_ATOMIC()
+#endif
+
 #if !SOC_RCC_IS_INDEPENDENT
-#define I2S_RCC_ATOMIC()        PERIPH_RCC_ATOMIC()
-#define I2S_RCC_ENV_DECLARE     (void)__DECLARE_RCC_ATOMIC_ENV
+#define I2S_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
 #define I2S_RCC_ATOMIC()
-#define I2S_RCC_ENV_DECLARE
 #endif
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")

@@ -37,37 +37,54 @@ extern "C" {
 #define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
 #define I2S_LL_DEFAULT_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
 
+
+/**
+ * @brief Enable the bus clock for I2S module
+ *
+ * @param i2s_id The port id of I2S
+ * @param enable Set true to enable the buf clock
+ */
+static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
+{
+    (void)i2s_id;
+    SYSTEM.perip_clk_en0.reg_i2s1_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_bus_clock(__VA_ARGS__)
+
+
+/**
+ * @brief Reset the I2S module
+ *
+ * @param i2s_id The port id of I2S
+ */
+static inline void i2s_ll_reset_register(int i2s_id)
+{
+    (void)i2s_id;
+    SYSTEM.perip_rst_en0.reg_i2s1_rst = 1;
+    SYSTEM.perip_rst_en0.reg_i2s1_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_reset_register(__VA_ARGS__)
+
 /**
  * @brief I2S module general init, enable I2S clock.
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param enable set true to enable the core clock
  */
-static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
+static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
 {
-    SYSTEM.perip_clk_en0.reg_i2s1_clk_en = 1;
-    SYSTEM.perip_rst_en0.reg_i2s1_rst = 0;
-    hw->tx_clkm_conf.clk_en = 1;
+    hw->tx_clkm_conf.clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_clock(__VA_ARGS__)
-
-/**
- * @brief I2S module disable I2S clock.
- *
- * @param hw Peripheral I2S hardware instance address.
- */
-static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
-{
-    hw->tx_clkm_conf.clk_en = 0;
-    SYSTEM.perip_clk_en0.reg_i2s1_clk_en = 0;
-    SYSTEM.perip_rst_en0.reg_i2s1_rst = 1;
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_disable_clock(__VA_ARGS__)
+#define i2s_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_core_clock(__VA_ARGS__)
 
 /**
  * @brief Enable I2S tx module clock
@@ -99,11 +116,6 @@ static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
     hw->tx_clkm_conf.tx_clk_active = 0;
 }
 
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-// i2s_ll_tx_disable_clock don't need RCC ENV actually, but still defined here for compatiblity
-#define i2s_ll_tx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_tx_disable_clock(__VA_ARGS__)
-
 /**
  * @brief Disable I2S rx module clock
  *
@@ -113,11 +125,6 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 {
     hw->rx_clkm_conf.rx_clk_active = 0;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-// i2s_ll_rx_disable_clock don't need RCC ENV actually, but still defined here for compatiblity
-#define i2s_ll_rx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_rx_disable_clock(__VA_ARGS__)
 
 /**
  * @brief I2S mclk use tx module clock

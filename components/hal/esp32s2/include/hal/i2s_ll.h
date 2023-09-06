@@ -83,52 +83,72 @@ static inline void i2s_ll_dma_enable_eof_on_fifo_empty(i2s_dev_t *hw, bool en)
 }
 
 /**
+ * @brief Enable the bus clock for I2S module
+ *
+ * @param i2s_id The port id of I2S
+ * @param enable Set true to enable the buf clock
+ */
+static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
+{
+    if (enable) {
+        if (i2s_id == 0) {
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
+        } else {
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S1_CLK_EN);
+        }
+    } else {
+        if (i2s_id == 0) {
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
+        } else {
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S1_CLK_EN);
+        }
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the I2S module
+ *
+ * @param i2s_id The port id of I2S
+ */
+static inline void i2s_ll_reset_register(int i2s_id)
+{
+    if (i2s_id == 0) {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+    } else {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S1_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S1_RST);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_reset_register(__VA_ARGS__)
+
+/**
  * @brief I2S module general init, enable I2S clock.
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param enable set true to enable the core clock
  */
-static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
+static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
 {
-    if (hw == &I2S0) {
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
-    } else {
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S1_CLK_EN);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S1_RST);
-    }
-    if (hw->clkm_conf.clk_en == 0) {
+    if (enable && !hw->clkm_conf.clk_en) {
         hw->clkm_conf.clk_sel = 2;
         hw->clkm_conf.clk_en = 1;
         hw->conf2.val = 0;
-    }
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_clock(__VA_ARGS__)
-
-/**
- * @brief I2S module disable clock.
- *
- * @param hw Peripheral I2S hardware instance address.
- */
-static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
-{
-    if (hw->clkm_conf.clk_en == 1) {
+    } else if (!enable && hw->clkm_conf.clk_en) {
         hw->clkm_conf.clk_en = 0;
     }
-    if (hw == &I2S0) {
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
-    } else {
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S1_CLK_EN);
-        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S1_RST);
-    }
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define i2s_ll_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_disable_clock(__VA_ARGS__)
+#define i2s_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_core_clock(__VA_ARGS__)
 
 /**
  * @brief I2S tx msb right enable

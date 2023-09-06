@@ -77,8 +77,7 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    I2S_RCC_ATOMIC() {
-        I2S_RCC_ENV_DECLARE;
+    I2S_CLOCK_SRC_ATOMIC() {
         if (handle->dir == I2S_DIR_TX) {
             i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
         } else {

@@ -19,6 +19,7 @@
 #include "hal/dac_ll.h"
 #include "hal/adc_ll.h"
 #include "hal/hal_utils.h"
+#include "hal/clk_tree_ll.h"
 #include "soc/lldesc.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
@@ -75,9 +76,9 @@ static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll){
     uint32_t digi_ctrl_freq; // Digital controller clock
     if (is_apll) {
         /* Theoretical frequency range (due to the limitation of DAC, the maximum frequency may not reach):
-         * SOC_APLL_MAX_HZ: 119.24 Hz ~ 67.5 MHz
-         * SOC_APLL_MIN_HZ: 5.06 Hz ~ 2.65 MHz */
-        digi_ctrl_freq = s_dac_set_apll_freq(freq_hz < 120 ? SOC_APLL_MIN_HZ :SOC_APLL_MAX_HZ);
+         * CLK_LL_APLL_MAX_HZ: 119.24 Hz ~ 67.5 MHz
+         * CLK_LL_APLL_MIN_HZ: 5.06 Hz ~ 2.65 MHz */
+        digi_ctrl_freq = s_dac_set_apll_freq(freq_hz < 120 ? CLK_LL_APLL_MIN_HZ :CLK_LL_APLL_MAX_HZ);
         ESP_RETURN_ON_FALSE(digi_ctrl_freq, ESP_ERR_INVALID_ARG, TAG, "set APLL coefficients failed");
     } else {
         digi_ctrl_freq = APB_CLK_FREQ;

@@ -47,7 +47,7 @@ static const char *TAG = "DAC_DMA";
 static uint32_t s_dac_set_apll_freq(uint32_t mclk)
 {
     /* Calculate the expected APLL  */
-    int div = (int)((SOC_APLL_MIN_HZ / mclk) + 1);
+    int div = (int)((CLK_LL_APLL_MIN_HZ / mclk) + 1);
     /* apll_freq = mclk * div
      * when div = 1, hardware will still divide 2
      * when div = 0, hardware will divide 255

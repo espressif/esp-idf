@@ -39,25 +39,39 @@ extern "C" {
 #define I2S_LL_DEFAULT_CLK_FREQ   I2S_LL_PLL_F96M_CLK_FREQ  // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
 
 /**
- * @brief I2S module general init, enable I2S clock.
  *
- * @param hw Peripheral I2S hardware instance address.
+ * @param i2s_id The port id of I2S
+ * @param enable Set true to enable the buf clock
  */
-static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
+static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
 {
-    PCR.i2s_conf.i2s_clk_en = 1;
+    (void)i2s_id;
+    PCR.i2s_conf.i2s_clk_en = enable;
+}
+
+/**
+ * @brief Reset the I2S module
+ *
+ * @param i2s_id The port id of I2S
+ */
+static inline void i2s_ll_reset_register(int i2s_id)
+{
+    (void)i2s_id;
+    PCR.i2s_conf.i2s_rst_en = 1;
     PCR.i2s_conf.i2s_rst_en = 0;
 }
 
 /**
- * @brief I2S module disable I2S clock.
+ * @brief I2S module general init, enable I2S clock.
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param enable set true to enable the core clock
  */
-static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
+static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
 {
-    PCR.i2s_conf.i2s_clk_en = 0;
-    PCR.i2s_conf.i2s_rst_en = 1;
+    (void)hw;
+    (void)enable;
+    // No need to do anything
 }
 
 /**

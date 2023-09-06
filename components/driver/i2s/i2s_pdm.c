@@ -70,8 +70,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    I2S_RCC_ATOMIC() {
-        I2S_RCC_ENV_DECLARE;
+    I2S_CLOCK_SRC_ATOMIC() {
         i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
     }
 #if SOC_I2S_HW_VERSION_2
@@ -357,8 +356,7 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
-    I2S_RCC_ATOMIC() {
-        I2S_RCC_ENV_DECLARE;
+    I2S_CLOCK_SRC_ATOMIC() {
         i2s_hal_set_rx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);

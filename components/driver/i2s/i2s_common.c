@@ -36,6 +36,7 @@
 #include "driver/adc_i2s_legacy.h"
 #endif
 #if SOC_I2S_SUPPORTS_APLL
+#include "hal/clk_tree_ll.h"
 #include "clk_ctrl_os.h"
 #endif
 
@@ -401,7 +402,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     handle->dma.buf_size = bufsize;
 
 #if SOC_GDMA_TRIG_PERIPH_I2S0_BUS == SOC_GDMA_BUS_AHB
-    uint32_t alignment = 32;
+    uint32_t alignment = 64;
     uint32_t desc_size = alignment;
 #else
     uint32_t alignment = 4;
@@ -448,14 +449,14 @@ err:
 static uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
 {
     /* Calculate the expected APLL  */
-    int mclk_div = (int)((SOC_APLL_MIN_HZ / mclk_freq_hz) + 1);
+    int mclk_div = (int)((CLK_LL_APLL_MIN_HZ / mclk_freq_hz) + 1);
     /* apll_freq = mclk * div
         * when div = 1, hardware will still divide 2
         * when div = 0, the final mclk will be unpredictable
         * So the div here should be at least 2 */
     mclk_div = mclk_div < 2 ? 2 : mclk_div;
     uint32_t expt_freq = mclk_freq_hz * mclk_div;
-    if (expt_freq > SOC_APLL_MAX_HZ) {
+    if (expt_freq > CLK_LL_APLL_MAX_HZ) {
         ESP_LOGE(TAG, "The required APLL frequency exceed its maximum value");
         return 0;
     }
@@ -867,7 +868,7 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     bool is_bound = true;
 
 #if SOC_I2S_HW_VERSION_2
-    I2S_RCC_ATOMIC() {
+    I2S_CLOCK_SRC_ATOMIC() {
         if (dir == I2S_DIR_TX) {
             i2s_ll_tx_disable_clock(handle->controller->hal.dev);
         } else {
@@ -1202,7 +1203,9 @@ esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name)
         g_i2s.comp_name[id] = comp_name;
         /* Enable module clock */
         I2S_RCC_ATOMIC() {
-            i2s_ll_enable_clock(I2S_LL_GET_HW(id));
+            i2s_ll_enable_bus_clock(id, true);
+            i2s_ll_reset_register(id);
+            i2s_ll_enable_core_clock(I2S_LL_GET_HW(id), true);
         }
     } else {
         occupied_comp =  g_i2s.comp_name[id];
@@ -1224,7 +1227,8 @@ esp_err_t i2s_platform_release_occupation(int id)
         g_i2s.comp_name[id] = NULL;
         /* Disable module clock */
         I2S_RCC_ATOMIC() {
-            i2s_ll_disable_clock(I2S_LL_GET_HW(id));
+            i2s_ll_enable_bus_clock(id, false);
+            i2s_ll_enable_core_clock(I2S_LL_GET_HW(id), false);
         }
     } else {
         ret = ESP_ERR_INVALID_STATE;

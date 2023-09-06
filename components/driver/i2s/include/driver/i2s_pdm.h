@@ -35,8 +35,8 @@ extern "C" {
     .slot_mode = mono_or_stereo, \
     .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
                  I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
-    .hpf_en = true, \
-    .hpf_cut_off_freq_hz = 35.5, \
+    .hp_en = true, \
+    .hp_cut_off_freq_hz = 35.5, \
     .amplify_num = 1, \
 }
 #else
@@ -81,7 +81,10 @@ typedef struct {
 #if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
     bool                    hp_en;              /*!< High pass filter enable */
     float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
-    uint32_t                amplify_num;        /*!< The amplification number of the final conversion result, range 1~15, default 1 */
+    uint32_t                amplify_num;        /*!< The amplification number of the final conversion result.
+                                                 *   The data that have converted from PDM to PCM module, will time 'amplify_num' additionally to amplify the final result.
+                                                 *   Note that it's only a multiplier of the digital PCM data, not the gain of the analog signal
+                                                 *   range 1~15, default 1 */
 #endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
 
 } i2s_pdm_rx_slot_config_t;
@@ -331,8 +334,8 @@ typedef struct {
     i2s_pdm_sig_scale_t     sinc_scale;         /*!< Sinc filter scaling value */
 #if SOC_I2S_HW_VERSION_2
     i2s_pdm_tx_line_mode_t  line_mode;          /*!< PDM TX line mode, one-line codec, one-line dac, two-line dac mode can be selected */
-    bool                    hpf_en;              /*!< High pass filter enable */
-    float                   hpf_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
+    bool                    hp_en;              /*!< High pass filter enable */
+    float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
     uint32_t                sd_dither;          /*!< Sigma-delta filter dither */
     uint32_t                sd_dither2;         /*!< Sigma-delta filter dither2 */
 #endif // SOC_I2S_HW_VERSION_2
