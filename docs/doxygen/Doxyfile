@@ -148,6 +148,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_ds.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_types.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_random.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_sleep.h \

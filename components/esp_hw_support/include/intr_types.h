@@ -5,22 +5,20 @@
  */
 #pragma once
 
+#warning "This header is deprecated. Please use esp_intr_types.h instead"
+
+#include "esp_intr_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief Interrupt core ID type
- *
- * This type represents on which core your ISR is registered
- */
-typedef enum {
-    INTR_CPU_ID_AUTO,       ///< Register intr ISR to core automatically, this means the core on which you call `esp_intr_alloc`
-    INTR_CPU_ID_0,          ///< Register intr ISR to core 0.
-    INTR_CPU_ID_1,          ///< Register intr ISR to core 1.
-} intr_cpu_id_t;
-
-#define INTR_CPU_CONVERT_ID(cpu_id)     ((cpu_id) - 1)
+/// @brief legacy type compatibility
+typedef esp_intr_cpu_affinity_t intr_cpu_id_t;
+#define INTR_CPU_CONVERT_ID ESP_INTR_CPU_AFFINITY_TO_CORE_ID
+#define INTR_CPU_ID_AUTO ESP_INTR_CPU_AFFINITY_AUTO
+#define INTR_CPU_ID_0 ESP_INTR_CPU_AFFINITY_0
+#define INTR_CPU_ID_1 ESP_INTR_CPU_AFFINITY_1
 
 #ifdef __cplusplus
 }

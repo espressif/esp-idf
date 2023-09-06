@@ -95,7 +95,7 @@ Several handlers can be assigned to a same source, given that all handlers are a
 Sources attached to non-shared interrupt do not support this feature.
 
 .. only:: not SOC_CPU_HAS_FLEXIBLE_INTC
-  
+
   By default, when ``ESP_INTR_FLAG_SHARED`` flag is specified, the interrupt allocator will allocate only Level 1 interrupts. Use ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` to also allow allocating shared interrupts at Level 2 and Level 3.
 
 Though the framework supports this feature, you have to use it **very carefully**. There usually exist two ways to stop an interrupt from being triggered: **disable the source** or **mask peripheral interrupt status**. ESP-IDF only handles enabling and disabling of the source itself, leaving status and mask bits to be handled by users.
@@ -103,7 +103,7 @@ Though the framework supports this feature, you have to use it **very carefully*
 **Status bits shall either be masked before the handler responsible for it is disabled, either be masked and then properly handled in another enabled interrupt**.
 
 .. note::
-  
+
   Leaving some status bits unhandled without masking them, while disabling the handlers for them, will cause the interrupt(s) to be triggered indefinitely, resulting therefore in a system crash.
 
 Troubleshooting Interrupt Allocation
@@ -150,4 +150,5 @@ If you have confirmed that the application is indeed running out of interrupts, 
 API Reference
 -------------
 
+.. include-build-file:: inc/esp_intr_types.inc
 .. include-build-file:: inc/esp_intr_alloc.inc

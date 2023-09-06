@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -222,14 +222,14 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     }
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
-    if(bus_config->isr_cpu_id > INTR_CPU_ID_AUTO) {
+    if (bus_config->isr_cpu_id > ESP_INTR_CPU_AFFINITY_AUTO) {
         spihost[host]->intr_flags = bus_config->intr_flags;
-        SPI_CHECK(bus_config->isr_cpu_id <= INTR_CPU_ID_1, "invalid core id", ESP_ERR_INVALID_ARG);
+        SPI_CHECK(bus_config->isr_cpu_id <= ESP_INTR_CPU_AFFINITY_1, "invalid core id", ESP_ERR_INVALID_ARG);
         spi_ipc_param_t ipc_args = {
             .host = spihost[host],
             .err = &err,
         };
-        esp_ipc_call_blocking(INTR_CPU_CONVERT_ID(bus_config->isr_cpu_id), ipc_isr_reg_to_core, (void *)&ipc_args);
+        esp_ipc_call_blocking(ESP_INTR_CPU_AFFINITY_TO_CORE_ID(bus_config->isr_cpu_id), ipc_isr_reg_to_core, (void *)&ipc_args);
     } else
 #endif
     {

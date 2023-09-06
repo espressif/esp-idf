@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,6 @@
 #include "esp_private/spi_slave_internal.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
-
 
 #if (TEST_SPI_PERIPH_NUM >= 2)
 //These will only be enabled on chips with 2 or more SPI peripherals
@@ -267,7 +266,6 @@ TEST_CASE("test slave send unaligned", "[spi]")
 
 #endif // #if (TEST_SPI_PERIPH_NUM >= 2)
 
-
 #if (TEST_SPI_PERIPH_NUM == 1)
 //These tests are for chips which only have 1 SPI controller
 /********************************************************************************
@@ -390,7 +388,6 @@ static void unaligned_test_slave(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][timeout=120]", unaligned_test_master, unaligned_test_slave);
 #endif  //#if (TEST_SPI_PERIPH_NUM == 1)
-
 
 #if CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define TEST_IRAM_TRANS_NUM     8
@@ -528,7 +525,6 @@ static IRAM_ATTR void test_slave_isr_iram(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_ISR_IRAM_disable_cache", "[spi_ms]", test_slave_iram_master_normal, test_slave_isr_iram);
 
-
 static uint32_t isr_trans_cnt, isr_trans_test_fail;
 static IRAM_ATTR void test_trans_in_isr_post_trans_cbk(spi_slave_transaction_t *curr_trans)
 {
@@ -599,7 +595,6 @@ static IRAM_ATTR void spi_slave_trans_in_isr(void)
     spi_slave_free(TEST_SPI_HOST);
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Trans_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_slave_trans_in_isr);
-
 
 uint32_t dummy_data[2] = {0x38383838, 0x5b5b5b5b};
 spi_slave_transaction_t dummy_trans[2];
@@ -694,15 +689,15 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Reset_in_ISR", "[spi_ms]", test_slave_iram_master_normal, spi_queue_reset_in_isr);
 #endif // CONFIG_SPI_SLAVE_ISR_IN_IRAM
 
-
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
 
 #define TEST_ISR_CNT    100
-static void test_slave_isr_core_setup_cbk(spi_slave_transaction_t *curr_trans){
+static void test_slave_isr_core_setup_cbk(spi_slave_transaction_t *curr_trans)
+{
     *((int *)curr_trans->user) += esp_cpu_get_core_id();
 }
 
-TEST_CASE("test_slave_isr_pin_to_core","[spi]")
+TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
 {
     uint32_t slave_send;
     uint32_t slave_recive;
@@ -729,9 +724,8 @@ TEST_CASE("test_slave_isr_pin_to_core","[spi]")
     // by default the esp_intr_alloc is called on ESP_MAIN_TASK_AFFINITY_CPU0 now
     TEST_ASSERT_EQUAL_UINT32(0, slave_expect);
 
-
     //-------------------------------------CPU1---------------------------------------
-    buscfg.isr_cpu_id = INTR_CPU_ID_1;
+    buscfg.isr_cpu_id = ESP_INTR_CPU_AFFINITY_1;
 
     slave_expect = 0;
     for (int i = 0; i < TEST_ISR_CNT; i++) {
