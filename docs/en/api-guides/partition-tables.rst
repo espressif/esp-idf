@@ -125,11 +125,11 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
   - There are other predefined data subtypes for data storage supported by ESP-IDF. These include:
 
-    - ``coredump`` (0x03) is for storing core dumps while using a custom partition table CSV file. See :doc:`Core Dump </api-guides/core_dump>` for more details.
-    - ``efuse`` (0x05) is for emulating eFuse bits using :ref:`Virtual eFuses <virtual-efuses>`.
-    - ``undefined`` (0x06) is implicitly used for data partitions with unspecified (empty) subtype, however it is possible to explicitly mark them as undefined as well.
-    - ``fat`` (0x81) is for :doc:`FAT filesystem </api-reference/storage/fatfs>`.
-    - ``spiffs`` (0x82) is for :doc:`SPIFFS filesystem </api-reference/storage/spiffs>`.
+    - ``coredump`` (0x03) is for storing core dumps while using a custom partition table CSV file. See :doc:`/api-guides/core_dump` for more details.
+    - ``efuse`` (0x05) is for emulating eFuse bits using :ref:`virtual-efuses`.
+    - ``undefined`` (0x06) is implicitly used for data partitions with unspecified (empty) subtype, but it is possible to explicitly mark them as undefined as well.
+    - ``fat`` (0x81) is for :doc:`/api-reference/storage/fatfs`.
+    - ``spiffs`` (0x82) is for :doc:`/api-reference/storage/spiffs`.
     - ``littlefs`` (0x83) is for `LittleFS filesystem <https://github.com/littlefs-project/littlefs>`_. See :example:`storage/littlefs` example for more details.
 
 .. Comment: ``esphttpd`` (0x80) was not added to the list because there is no docs section for it and it is not clear whether user should use it explicitly.
