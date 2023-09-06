@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "esp_bt_device.h"
@@ -146,7 +138,7 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params)
     if (ESP_BLE_IS_VALID_PARAM(params->min_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(params->max_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(params->timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
-        (params->latency <= ESP_BLE_CONN_LATENCY_MAX || params->latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+        (params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
         ((params->timeout * 10) >= ((1 + params->latency) * ((params->max_int * 5) >> 1))) && params->min_int <= params->max_int) {
 
         msg.sig = BTC_SIG_API_CALL;
@@ -362,7 +354,7 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
     if (ESP_BLE_IS_VALID_PARAM(min_conn_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(max_conn_int, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
         ESP_BLE_IS_VALID_PARAM(supervision_tout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
-        (slave_latency <= ESP_BLE_CONN_LATENCY_MAX || slave_latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+        (slave_latency <= ESP_BLE_CONN_LATENCY_MAX) &&
         ((supervision_tout * 10) >= ((1 + slave_latency) * ((max_conn_int * 5) >> 1))) && min_conn_int <= max_conn_int) {
 
         msg.sig = BTC_SIG_API_CALL;
@@ -1028,8 +1020,13 @@ esp_err_t esp_ble_gap_periodic_adv_set_params(uint8_t instance, const esp_ble_ga
 
 }
 
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t length,
+                                                                           const uint8_t *data, bool only_update_did)
+#else
 esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t length,
                                                                            const uint8_t *data)
+#endif
 {
     btc_msg_t msg;
     btc_ble_5_gap_args_t arg;
@@ -1043,13 +1040,22 @@ esp_err_t esp_ble_gap_config_periodic_adv_data_raw(uint8_t instance, uint16_t le
     arg.periodic_adv_cfg_data.instance = instance;
     arg.periodic_adv_cfg_data.len = length;
     arg.periodic_adv_cfg_data.data = (uint8_t *)data;
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+    arg.periodic_adv_cfg_data.only_update_did = only_update_did;
+#else
+    arg.periodic_adv_cfg_data.only_update_did = false;
+#endif
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), btc_gap_ble_arg_deep_copy,
                 btc_gap_ble_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
 
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance,bool include_adi)
+#else
 esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance)
+#endif
 {
     btc_msg_t msg;
     btc_ble_5_gap_args_t arg;
@@ -1060,6 +1066,11 @@ esp_err_t esp_ble_gap_periodic_adv_start(uint8_t instance)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_PERIODIC_ADV_START;
 
+    #if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+    arg.periodic_adv_start.include_adi = include_adi;
+    #else
+    arg.periodic_adv_start.include_adi = false;
+    #endif
     arg.periodic_adv_start.instance = instance;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
@@ -1274,7 +1285,7 @@ esp_err_t esp_ble_gap_prefer_ext_connect_params_set(esp_bd_addr_t addr,
         if (ESP_BLE_IS_VALID_PARAM(phy_1m_conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(phy_1m_conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(phy_1m_conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
-            (phy_1m_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX || phy_1m_conn_params->latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+            (phy_1m_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((phy_1m_conn_params->supervision_timeout * 10) >= ((1 + phy_1m_conn_params->latency) * ((phy_1m_conn_params->interval_max * 5) >> 1))) &&
             (phy_1m_conn_params->interval_min <= phy_1m_conn_params->interval_max)) {
 
@@ -1298,7 +1309,7 @@ esp_err_t esp_ble_gap_prefer_ext_connect_params_set(esp_bd_addr_t addr,
         if (ESP_BLE_IS_VALID_PARAM(phy_2m_conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(phy_2m_conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(phy_2m_conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
-            (phy_2m_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX || phy_2m_conn_params->latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+            (phy_2m_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((phy_2m_conn_params->supervision_timeout * 10) >= ((1 + phy_2m_conn_params->latency) * ((phy_2m_conn_params->interval_max * 5) >> 1))) &&
             (phy_2m_conn_params->interval_min <= phy_2m_conn_params->interval_max)) {
 
@@ -1322,7 +1333,7 @@ esp_err_t esp_ble_gap_prefer_ext_connect_params_set(esp_bd_addr_t addr,
         if (ESP_BLE_IS_VALID_PARAM(phy_coded_conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(phy_coded_conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
             ESP_BLE_IS_VALID_PARAM(phy_coded_conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
-            (phy_coded_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX || phy_coded_conn_params->latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+            (phy_coded_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX) &&
             ((phy_coded_conn_params->supervision_timeout * 10) >= ((1 + phy_coded_conn_params->latency) * ((phy_coded_conn_params->interval_max * 5) >> 1))) &&
             (phy_coded_conn_params->interval_min <= phy_coded_conn_params->interval_max)) {
 
