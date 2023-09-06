@@ -68,11 +68,17 @@ esp_err_t sleep_sys_periph_tee_apm_retention_init(void)
     #define N_REGS_APM()    (((HP_APM_CLOCK_GATE_REG - DR_REG_HP_APM_BASE) / 4) + 1)
 
     const static sleep_retention_entries_config_t tee_apm_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(0), DR_REG_TEE_BASE, DR_REG_TEE_BASE, N_REGS_TEE(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },         /* tee */
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(1), DR_REG_HP_APM_BASE, DR_REG_HP_APM_BASE, N_REGS_APM(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }    /* apm */
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(0), DR_REG_HP_APM_BASE, DR_REG_HP_APM_BASE, N_REGS_APM(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* apm */
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TEEAPM_LINK(1), DR_REG_TEE_BASE,    DR_REG_TEE_BASE,    N_REGS_TEE(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* tee */
     };
 
-    esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_2, SLEEP_RETENTION_MODULE_TEE_APM);
+    esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_4, SLEEP_RETENTION_MODULE_TEE_APM);
+    if (err == ESP_OK) {
+        const static sleep_retention_entries_config_t regs_highpri_retention[] = {
+            [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_TEEAPM_LINK(2), TEE_M4_MODE_CTRL_REG, 0x0, 0xffffffff, 1, 0), .owner = ENTRY(2) }
+        };
+        err = sleep_retention_entries_create(regs_highpri_retention, ARRAY_SIZE(regs_highpri_retention), REGDMA_LINK_PRI_2, SLEEP_RETENTION_MODULE_TEE_APM);
+    }
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (TEE/APM) retention");
     ESP_LOGI(TAG, "TEE/APM sleep retention initialization");
     return ESP_OK;
