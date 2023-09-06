@@ -287,6 +287,18 @@ config SOC_BRANCH_PREDICTOR_SUPPORTED
     bool
     default y
 
+config SOC_CPU_HAS_FPU
+    bool
+    default y
+
+config SOC_CPU_HAS_FPU_EXT_ILL_BUG
+    bool
+    default y
+
+config SOC_CPU_COPROC_NUM
+    int
+    default 2
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 4

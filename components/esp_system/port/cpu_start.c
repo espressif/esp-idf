@@ -191,16 +191,6 @@ void IRAM_ATTR call_start_cpu1(void)
     );
 #endif  //#ifdef __riscv
 
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7770
-    //set mstatus.fs=2'b01, floating-point unit in the initialization state
-    asm volatile(
-        "li t0, 0x2000\n"
-        "csrrs t0, mstatus, t0\n"
-        :::"t0"
-    );
-#endif  //#if CONFIG_IDF_TARGET_ESP32P4
-
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
 #endif  //#if SOC_BRANCH_PREDICTOR_SUPPORTED
@@ -386,16 +376,6 @@ void IRAM_ATTR call_start_cpu0(void)
         ".option pop"
     );
 #endif
-
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7770
-    //set mstatus.fs=2'b01, floating-point unit in the initialization state
-    asm volatile(
-        "li t0, 0x2000\n"
-        "csrrs t0, mstatus, t0\n"
-        :::"t0"
-    );
-#endif  //#if CONFIG_IDF_TARGET_ESP32P4
 
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
