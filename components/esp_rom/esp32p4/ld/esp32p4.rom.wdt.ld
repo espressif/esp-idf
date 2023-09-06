@@ -6,7 +6,7 @@
 /* ROM function interface esp32p4.rom.wdt.ld for esp32p4
  *
  *
- * Generated from ./target/esp32p4/interface-esp32p4.yml md5sum d91797f41641e3e0180293939810e553
+ * Generated from ./target/esp32p4/interface-esp32p4.yml md5sum f6516bd9708d890f63db87f8aed53ca7
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
