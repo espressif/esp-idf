@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -408,6 +408,21 @@ bt_status_t btc_hf_disconnect_audio(bt_bdaddr_t *bd_addr)
         return BT_STATUS_SUCCESS;
     }
     return BT_STATUS_FAIL;
+}
+
+static bt_status_t btc_hf_pkt_stat_nums_get(UINT16 sync_conn_handle)
+{
+    bt_status_t status = BT_STATUS_FAIL;
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    int idx = btc_hf_latest_connected_idx();
+    CHECK_HF_SLC_CONNECTED(idx);
+
+    if (idx != BTC_HF_INVALID_IDX) {
+        BTA_AgPktStatsNumsGet(hf_local_param[idx].btc_hf_cb.handle, sync_conn_handle);
+        status = BT_STATUS_SUCCESS;
+    }
+#endif /*#if (BTM_SCO_HCI_INCLUDED == TRUE) */
+    return status;
 }
 
 /************************************************************************************
@@ -1175,8 +1190,13 @@ void btc_hf_call_handler(btc_msg_t *msg)
         case BTC_HF_REGISTER_DATA_CALLBACK_EVT:
         {
             btc_hf_reg_data_cb(arg->reg_data_cb.recv, arg->reg_data_cb.send);
-        }
             break;
+        }
+        case BTC_HF_REQUEST_PKT_STAT_EVT:
+        {
+            btc_hf_pkt_stat_nums_get(arg->pkt_sync_hd.sync_conn_handle);
+            break;
+        }
 
         default:
             BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
@@ -1298,6 +1318,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
             } while(0);
             break;
@@ -1310,6 +1331,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_CONNECTED_MSBC;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
@@ -1321,6 +1343,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 param.audio_stat.state = ESP_HF_AUDIO_STATE_DISCONNECTED;
                 memcpy(param.audio_stat.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda, sizeof(esp_bd_addr_t));
+                param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 btc_hf_cb_to_app(ESP_HF_AUDIO_STATE_EVT, &param);
             } while(0);
             break;
@@ -1349,7 +1372,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memcpy(param.volume_control.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                memcpy(param.volume_control.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.volume_control.type = (event == BTA_AG_SPK_EVT) ? ESP_HF_VOLUME_CONTROL_TARGET_SPK : ESP_HF_VOLUME_CONTROL_TARGET_MIC;
                 param.volume_control.volume = p_data->val.num;
                 btc_hf_cb_to_app(ESP_HF_VOLUME_CONTROL_EVT, &param);
@@ -1362,7 +1385,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memcpy(param.unat_rep.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                memcpy(param.unat_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.unat_rep.unat = p_data->val.str;
                 btc_hf_cb_to_app(ESP_HF_UNAT_RESPONSE_EVT, &param);
             } while (0);
@@ -1371,31 +1394,46 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_AT_CBC_EVT:
         {
-            btc_hf_cb_to_app(ESP_HF_IND_UPDATE_EVT, NULL);
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            memcpy(param.ind_upd.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+            btc_hf_cb_to_app(ESP_HF_IND_UPDATE_EVT, &param);
             break;
         }
 
         case BTA_AG_AT_CIND_EVT:
         {
-            btc_hf_cb_to_app(ESP_HF_CIND_RESPONSE_EVT, NULL);
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            memcpy(param.cind_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+            btc_hf_cb_to_app(ESP_HF_CIND_RESPONSE_EVT, &param);
             break;
         }
 
         case BTA_AG_AT_COPS_EVT:
         {
-            btc_hf_cb_to_app(ESP_HF_COPS_RESPONSE_EVT, NULL);
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            memcpy(param.cops_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+            btc_hf_cb_to_app(ESP_HF_COPS_RESPONSE_EVT, &param);
             break;
         }
 
         case BTA_AG_AT_CLCC_EVT:
         {
-            btc_hf_cb_to_app(ESP_HF_CLCC_RESPONSE_EVT, NULL);
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            memcpy(param.clcc_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+            btc_hf_cb_to_app(ESP_HF_CLCC_RESPONSE_EVT, &param);
             break;
         }
 
         case BTA_AG_AT_CNUM_EVT:
         {
-            btc_hf_cb_to_app(ESP_HF_CNUM_RESPONSE_EVT, NULL);
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            memcpy(param.cnum_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+            btc_hf_cb_to_app(ESP_HF_CNUM_RESPONSE_EVT, &param);
             break;
         }
 
@@ -1404,7 +1442,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memcpy(param.vts_rep.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                memcpy(param.vts_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.vts_rep.code = p_data->val.str;
                 btc_hf_cb_to_app(ESP_HF_VTS_RESPONSE_EVT, &param);
             } while(0);
@@ -1416,7 +1454,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             idx = p_data->hdr.handle - 1;
             CHECK_HF_IDX(idx);
             do {
-                memcpy(param.nrec.remote_bda, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+                memcpy(param.nrec.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.nrec.state = p_data->val.num;
                 btc_hf_cb_to_app(ESP_HF_NREC_RESPONSE_EVT, &param);
             } while(0);
@@ -1425,13 +1463,19 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
         case BTA_AG_AT_A_EVT:
         {
-            btc_hf_cb_to_app(ESP_HF_ATA_RESPONSE_EVT, NULL);
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            memcpy(param.ata_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+            btc_hf_cb_to_app(ESP_HF_ATA_RESPONSE_EVT, &param);
             break;
         }
 
         case BTA_AG_AT_CHUP_EVT:
         {
-            btc_hf_cb_to_app(ESP_HF_CHUP_RESPONSE_EVT, NULL);
+            idx = p_data->hdr.handle - 1;
+            CHECK_HF_IDX(idx);
+            memcpy(param.chup_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
+            btc_hf_cb_to_app(ESP_HF_CHUP_RESPONSE_EVT, &param);
             break;
         }
 
@@ -1519,6 +1563,12 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             break;
         }
 #endif
+        case BTA_AG_PKT_NUMS_GET_EVT:
+        {
+            memcpy(&param.pkt_nums, &p_data->pkt_num, sizeof(struct ag_pkt_status_nums));
+            btc_hf_cb_to_app(ESP_HF_PKT_STAT_NUMS_GET_EVT, &param);
+            break;
+        }
         default:
             BTC_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;

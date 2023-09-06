@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,7 @@ typedef enum
     ESP_HF_DIAL_EVT,                          /*!< Origin an outgoing call with specific number or the dial the last number */
     ESP_HF_WBS_RESPONSE_EVT,                  /*!< Codec Status */
     ESP_HF_BCS_RESPONSE_EVT,                  /*!< Final Codec Choice */
+    ESP_HF_PKT_STAT_NUMS_GET_EVT,             /*!< Request number of packet different status */
 } esp_hf_cb_event_t;
 
 /// Dial type of ESP_HF_DIAL_EVT
@@ -76,7 +77,7 @@ typedef enum
 typedef union
 {
     /**
-     * @brief  ESP_HS_CONNECTION_STATE_EVT
+     * @brief  ESP_HF_CONNECTION_STATE_EVT
      */
     struct hf_conn_stat_param {
         esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
@@ -91,6 +92,7 @@ typedef union
     struct hf_audio_stat_param {
         esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_audio_state_t state;               /*!< Audio connection state */
+        uint16_t sync_conn_handle;                /*!< (e)SCO connection handle */
     } audio_stat;                                 /*!< AG callback param of ESP_HF_AUDIO_STATE_EVT */
 
     /**
@@ -105,7 +107,7 @@ typedef union
      * @brief ESP_HF_VOLUME_CONTROL_EVT
      */
     struct hf_volume_control_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_volume_type_t type;                /*!< Volume control target, speaker or microphone */
         int volume;                               /*!< Gain, ranges from 0 to 15 */
     } volume_control;                             /*!< AG callback param of ESP_HF_VOLUME_CONTROL_EVT */
@@ -114,7 +116,7 @@ typedef union
      * @brief ESP_HF_UNAT_RESPONSE_EVT
      */
     struct hf_unat_rep_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         char *unat;                               /*!< Unknown AT command string */
     } unat_rep;                                   /*!< AG callback param of ESP_HF_UNAT_RESPONSE_EVT */
 
@@ -166,7 +168,7 @@ typedef union
      * @brief ESP_HF_VTS_RESPONSE_EVT
      */
     struct hf_vts_rep_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         char *code;                               /*!< MTF code from HF Client */
     } vts_rep;                                    /*!< AG callback param of ESP_HF_VTS_RESPONSE_EVT */
 
@@ -174,7 +176,7 @@ typedef union
      * @brief ESP_HF_NREC_RESPONSE_EVT
      */
     struct hf_nrec_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_nrec_t state;                      /*!< NREC enabled or disabled */
     } nrec;                                       /*!< AG callback param of ESP_HF_NREC_RESPONSE_EVT */
 
@@ -196,7 +198,7 @@ typedef union
      * @brief ESP_HF_WBS_RESPONSE_EVT
      */
     struct hf_wbs_rep_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_wbs_config_t codec;                /*!< codec mode CVSD or mSBC */
     } wbs_rep;                                    /*!< AG callback param of ESP_HF_WBS_RESPONSE_EVT */
 
@@ -204,9 +206,22 @@ typedef union
      * @brief ESP_HF_BCS_RESPONSE_EVT
      */
     struct hf_bcs_rep_param {
-        esp_bd_addr_t remote_bda;                 /*!< Remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< Remote bluetooth device address */
         esp_hf_wbs_config_t mode;                 /*!< codec mode CVSD or mSBC */
     } bcs_rep;                                    /*!< AG callback param of ESP_HF_BCS_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_PKT_STAT_NUMS_GET_EVT
+     */
+    struct ag_pkt_status_nums {
+        uint32_t rx_total;        /*!< the total number of packets received */
+        uint32_t rx_correct;      /*!< the total number of packets data correctly received */
+        uint32_t rx_err;          /*!< the total number of packets data with possible invalid */
+        uint32_t rx_none;         /*!< the total number of packets data no received */
+        uint32_t rx_lost;         /*!< the total number of packets data partially lost */
+        uint32_t tx_total;        /*!< the total number of packets send */
+        uint32_t tx_discarded;    /*!< the total number of packets send lost */
+    } pkt_nums;                   /*!< AG callback param of ESP_HF_PKT_STAT_NUMS_GET_EVT */
 
 } esp_hf_cb_param_t;                              /*!< HFP AG callback param compound*/
 
@@ -637,6 +652,22 @@ esp_err_t esp_hf_ag_end_call(esp_bd_addr_t remote_addr, int num_active, int num_
  */
 esp_err_t esp_hf_ag_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_t send);
 
+/**
+ *
+ * @brief           Get the number of packets received and sent
+ *
+ *                  This function is only used in the case that Voice Over HCI is enabled and the audio state is connected.
+ *                  When the operation is completed, the callback function will be called with ESP_HF_PKT_STAT_NUMS_GET_EVT.
+ *
+ * @param[in]       sync_conn_handle: the (e)SCO connection handle
+ *
+ * @return
+ *                  - ESP_OK: if the request is sent successfully
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_hf_ag_pkt_stat_nums_get(uint16_t sync_conn_handle);
 
 /**
  * @brief           Trigger the lower-layer to fetch and send audio data.
