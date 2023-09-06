@@ -44,6 +44,7 @@
 #include "hal/clk_tree_ll.h"
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
+#include "hal/lpwdt_ll.h"
 #include "modem/modem_lpcon_reg.h"
 
 static const char *TAG = "boot.esp32c6";

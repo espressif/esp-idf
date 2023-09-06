@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -10,22 +10,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// TODO: IDF-5730 (better to rename and move to wdt_types.h?)
-/* The value that needs to be written to LP_WDT_WPROTECT_REG to write-enable the wdt registers */
-#define RTC_CNTL_WDT_WKEY_VALUE 0x50D83AA1
-/* The value that needs to be written to LP_WDT_SWD_WPROTECT_REG to write-enable the swd registers */
-#define LP_WDT_SWD_WKEY_VALUE 0x50D83AA1
-
-/* Possible values for RTC_CNTL_WDT_CPU_RESET_LENGTH and RTC_CNTL_WDT_SYS_RESET_LENGTH */
-#define RTC_WDT_RESET_LENGTH_100_NS    0
-#define RTC_WDT_RESET_LENGTH_200_NS    1
-#define RTC_WDT_RESET_LENGTH_300_NS    2
-#define RTC_WDT_RESET_LENGTH_400_NS    3
-#define RTC_WDT_RESET_LENGTH_500_NS    4
-#define RTC_WDT_RESET_LENGTH_800_NS    5
-#define RTC_WDT_RESET_LENGTH_1600_NS   6
-#define RTC_WDT_RESET_LENGTH_3200_NS   7
 
 /** LP_WDT_CONFIG0_REG register
  *  need_des
