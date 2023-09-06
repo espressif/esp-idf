@@ -377,23 +377,6 @@ static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer
     return rc;
 }
 
-#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
-{
-    if (!end) {
-        for (int i = 0; i < len; i++) {
-            esp_rom_printf("%02x,", addr[i]);
-        }
-
-    } else {
-        for (int i = 0; i < len; i++) {
-            esp_rom_printf("%02x,", addr[i]);
-        }
-        esp_rom_printf("\n");
-    }
-}
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 static void hci_uart_start_tx_wrapper(int uart_no)
 {
@@ -1174,11 +1157,25 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
 }
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
+{
+    for (int i = 0; i < len; i++) {
+        esp_rom_printf("%02x,", addr[i]);
+    }
+    if (end) {
+        esp_rom_printf("\n");
+    }
+}
+
 void esp_ble_controller_log_dump_all(bool output)
 {
+    portMUX_TYPE spinlock;
+
+    portENTER_CRITICAL_SAFE(&spinlock);
     BT_ASSERT_PRINT("\r\n[DUMP_START:");
     ble_log_async_output_dump_all(output);
     BT_ASSERT_PRINT("]\r\n");
+    portEXIT_CRITICAL_SAFE(&spinlock);
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
