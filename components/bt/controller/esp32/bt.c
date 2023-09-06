@@ -220,6 +220,7 @@ extern void bredr_sco_datapath_set(uint8_t data_path);
 extern void btdm_controller_scan_duplicate_list_clear(void);
 /* Shutdown */
 extern void esp_bt_controller_shutdown(void);
+extern void sdk_config_set_bt_pll_track_enable(bool enable);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -1676,6 +1677,8 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
         btdm_controller_enable_sleep(true);
     }
+
+    sdk_config_set_bt_pll_track_enable(true);
 
     // inititalize bluetooth baseband
     btdm_check_and_init_bb();
