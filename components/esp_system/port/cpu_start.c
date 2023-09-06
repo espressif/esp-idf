@@ -504,7 +504,7 @@ void IRAM_ATTR call_start_cpu0(void)
         esp_restart();
     }
 
-#if CONFIG_ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+#if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
 #if CONFIG_APP_BUILD_TYPE_ELF_RAM
     // For RAM loadable ELF case, we don't need to reserve IROM/DROM as instructions and data
     // are all in internal RAM. If the RAM loadable ELF has any requirement to memory map the
@@ -521,7 +521,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
-#endif // CONFIG_ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
+#endif // ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
 
 #if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
     bool efuse_opflash_en = efuse_ll_get_flash_type();

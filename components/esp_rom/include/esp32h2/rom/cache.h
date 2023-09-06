@@ -605,7 +605,7 @@ uint32_t Cache_Get_DROM_MMU_End(void);
 void Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
 
 #define Cache_Dbus_MMU_Set(ext_ram, vaddr, paddr, psize, num, fixed) \
-    Cache_MSPI_MMU_Set(ets_efuse_cache_encryption_enabled() ? MMU_SENSITIVE : 0, ext_ram, vaddr, paddr, psize, num, fixed)
+    Cache_MSPI_MMU_Set(ets_efuse_cache_encryption_enabled() ? SOC_MMU_SENSITIVE : 0, ext_ram, vaddr, paddr, psize, num, fixed)
 
 #ifdef __cplusplus
 }

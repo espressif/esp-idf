@@ -101,11 +101,11 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
     bool valid = false;
 
     if (type & MMU_VADDR_DATA) {
-        valid |= ((vaddr_start >= DROM0_ADDRESS_LOW) && (vaddr_end < DROM0_ADDRESS_HIGH)) || ((vaddr_start >= DPORT_CACHE_ADDRESS_LOW) && (vaddr_end < DRAM0_CACHE_ADDRESS_HIGH));
+        valid |= ((vaddr_start >= SOC_DROM0_ADDRESS_LOW) && (vaddr_end < SOC_DROM0_ADDRESS_HIGH)) || ((vaddr_start >= SOC_DPORT_CACHE_ADDRESS_LOW) && (vaddr_end < SOC_DRAM0_CACHE_ADDRESS_HIGH));
     }
 
     if (type & MMU_VADDR_INSTRUCTION) {
-        valid |= ((vaddr_start >= IRAM0_CACHE_ADDRESS_LOW) && (vaddr_end < IRAM1_ADDRESS_HIGH));
+        valid |= ((vaddr_start >= SOC_IRAM0_CACHE_ADDRESS_LOW) && (vaddr_end < SOC_IRAM1_ADDRESS_HIGH));
     }
 
     return valid;
@@ -124,9 +124,9 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
 static inline bool mmu_ll_check_valid_paddr_region(uint32_t mmu_id, uint32_t paddr_start, uint32_t len)
 {
     (void)mmu_id;
-    return (paddr_start < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM)) &&
-           (len < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM)) &&
-           ((paddr_start + len - 1) < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM));
+    return (paddr_start < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM)) &&
+           (len < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM)) &&
+           ((paddr_start + len - 1) < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM));
 }
 
 /**
@@ -144,23 +144,23 @@ static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
     (void)mmu_id;
     uint32_t offset = 0;
 
-    if (ADDRESS_IN_DROM0(vaddr)) {
+    if (SOC_ADDRESS_IN_DROM0(vaddr)) {
         offset = PRO_CACHE_IBUS2_MMU_START / 4;
-    } else if (ADDRESS_IN_IRAM0_CACHE(vaddr)) {
+    } else if (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr)) {
         offset = PRO_CACHE_IBUS0_MMU_START / 4;
-    } else if (ADDRESS_IN_IRAM1(vaddr)) {
+    } else if (SOC_ADDRESS_IN_IRAM1(vaddr)) {
         offset = PRO_CACHE_IBUS1_MMU_START / 4;
-    } else if (ADDRESS_IN_DPORT_CACHE(vaddr)) {
+    } else if (SOC_ADDRESS_IN_DPORT_CACHE(vaddr)) {
         offset = PRO_CACHE_DBUS2_MMU_START / 4;
-    } else if (ADDRESS_IN_DRAM1(vaddr)) {
+    } else if (SOC_ADDRESS_IN_DRAM1(vaddr)) {
         offset = PRO_CACHE_DBUS1_MMU_START / 4;
-    } else if (ADDRESS_IN_DRAM0_CACHE(vaddr)) {
+    } else if (SOC_ADDRESS_IN_DRAM0_CACHE(vaddr)) {
         offset = PRO_CACHE_DBUS0_MMU_START / 4;
     } else {
         HAL_ASSERT(false);
     }
 
-    return offset + ((vaddr & MMU_VADDR_MASK) >> 16);
+    return offset + ((vaddr & SOC_MMU_VADDR_MASK) >> 16);
 }
 
 /**
@@ -193,10 +193,10 @@ __attribute__((always_inline))
 static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32_t mmu_val, mmu_target_t target)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
-    uint32_t target_code = (target == MMU_TARGET_FLASH0) ? MMU_ACCESS_FLASH : MMU_ACCESS_SPIRAM;
-    *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = mmu_val | target_code | MMU_VALID;
+    uint32_t target_code = (target == MMU_TARGET_FLASH0) ? SOC_MMU_ACCESS_FLASH : SOC_MMU_ACCESS_SPIRAM;
+    *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = mmu_val | target_code | SOC_MMU_VALID;
 }
 
 /**
@@ -210,7 +210,7 @@ __attribute__((always_inline))
 static inline uint32_t mmu_ll_read_entry(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
     return *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4);
 }
@@ -225,9 +225,9 @@ __attribute__((always_inline))
 static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
-    *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = MMU_INVALID;
+    *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = SOC_MMU_INVALID;
 }
 
 /**
@@ -238,7 +238,7 @@ static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 __attribute__((always_inline))
 static inline void mmu_ll_unmap_all(uint32_t mmu_id)
 {
-    for (int i = 0; i < MMU_ENTRY_NUM; i++) {
+    for (int i = 0; i < SOC_MMU_ENTRY_NUM; i++) {
         mmu_ll_set_entry_invalid(mmu_id, i);
     }
 }
@@ -254,9 +254,9 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
 static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
-    return (*(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) & MMU_INVALID) ? false : true;
+    return (*(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) & SOC_MMU_INVALID) ? false : true;
 }
 
 /**
@@ -271,7 +271,7 @@ static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t ent
 {
     HAL_ASSERT(mmu_ll_check_entry_valid(mmu_id, entry_id));
 
-    if ((*(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4)) & MMU_ACCESS_FLASH) {
+    if ((*(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4)) & SOC_MMU_ACCESS_FLASH) {
         return MMU_TARGET_FLASH0;
     } else {
         return MMU_TARGET_PSRAM0;
@@ -291,7 +291,7 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
 {
     (void)mmu_id;
 
-    return ((*(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4)) & MMU_VALID_VAL_MASK) << 16;
+    return ((*(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4)) & SOC_MMU_VALID_VAL_MASK) << 16;
 }
 
 /**
@@ -308,10 +308,10 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
 static inline int mmu_ll_find_entry_id_based_on_map_value(uint32_t mmu_id, uint32_t mmu_val, mmu_target_t target)
 {
     (void)mmu_id;
-    for (int i = 0; i < MMU_ENTRY_NUM; i++) {
+    for (int i = 0; i < SOC_MMU_ENTRY_NUM; i++) {
         if (mmu_ll_check_entry_valid(mmu_id, i)) {
             if (mmu_ll_get_entry_target(mmu_id, i) == target) {
-                if (((*(uint32_t *)(DR_REG_MMU_TABLE + i * 4)) & MMU_VALID_VAL_MASK) == mmu_val) {
+                if (((*(uint32_t *)(DR_REG_MMU_TABLE + i * 4)) & SOC_MMU_VALID_VAL_MASK) == mmu_val) {
                     return i;
                 }
             }

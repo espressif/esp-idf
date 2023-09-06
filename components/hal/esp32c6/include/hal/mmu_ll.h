@@ -106,7 +106,7 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
     (void)mmu_id;
     (void)type;
     uint32_t vaddr_end = vaddr_start + len - 1;
-    return (ADDRESS_IN_IRAM0_CACHE(vaddr_start) && ADDRESS_IN_IRAM0_CACHE(vaddr_end)) || (ADDRESS_IN_DRAM0_CACHE(vaddr_start) && ADDRESS_IN_DRAM0_CACHE(vaddr_end));
+    return (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_end)) || (SOC_ADDRESS_IN_DRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_DRAM0_CACHE(vaddr_end));
 }
 
 /**
@@ -122,9 +122,9 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
 static inline bool mmu_ll_check_valid_paddr_region(uint32_t mmu_id, uint32_t paddr_start, uint32_t len)
 {
     (void)mmu_id;
-    return (paddr_start < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM)) &&
-           (len < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM)) &&
-           ((paddr_start + len - 1) < (mmu_ll_get_page_size(mmu_id) * MMU_MAX_PADDR_PAGE_NUM));
+    return (paddr_start < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM)) &&
+           (len < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM)) &&
+           ((paddr_start + len - 1) < (mmu_ll_get_page_size(mmu_id) * SOC_MMU_MAX_PADDR_PAGE_NUM));
 }
 
 /**
@@ -158,7 +158,7 @@ static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
         default:
             HAL_ASSERT(shift_code);
     }
-    return ((vaddr & MMU_VADDR_MASK) >> shift_code);
+    return ((vaddr & SOC_MMU_VADDR_MASK) >> shift_code);
 }
 
 /**
@@ -211,10 +211,10 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
     (void)target;
     uint32_t mmu_raw_value;
     if (mmu_ll_cache_encryption_enabled()) {
-        mmu_val |= MMU_SENSITIVE;
+        mmu_val |= SOC_MMU_SENSITIVE;
     }
 
-    mmu_raw_value = mmu_val | MMU_VALID;
+    mmu_raw_value = mmu_val | SOC_MMU_VALID;
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
     REG_WRITE(SPI_MEM_MMU_ITEM_CONTENT_REG(0), mmu_raw_value);
 }
@@ -234,12 +234,12 @@ __attribute__((always_inline)) static inline uint32_t mmu_ll_read_entry(uint32_t
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
     mmu_raw_value = REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0));
     if (mmu_ll_cache_encryption_enabled()) {
-        mmu_raw_value &= ~MMU_SENSITIVE;
+        mmu_raw_value &= ~SOC_MMU_SENSITIVE;
     }
-    if (!(mmu_raw_value & MMU_VALID)) {
+    if (!(mmu_raw_value & SOC_MMU_VALID)) {
         return 0;
     }
-    ret = mmu_raw_value & MMU_VALID_VAL_MASK;
+    ret = mmu_raw_value & SOC_MMU_VALID_VAL_MASK;
     return ret;
 }
 
@@ -253,7 +253,7 @@ __attribute__((always_inline)) static inline void mmu_ll_set_entry_invalid(uint3
 {
     (void)mmu_id;
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
-    REG_WRITE(SPI_MEM_MMU_ITEM_CONTENT_REG(0), MMU_INVALID);
+    REG_WRITE(SPI_MEM_MMU_ITEM_CONTENT_REG(0), SOC_MMU_INVALID);
 }
 
 /**
@@ -264,7 +264,7 @@ __attribute__((always_inline)) static inline void mmu_ll_set_entry_invalid(uint3
 __attribute__((always_inline))
 static inline void mmu_ll_unmap_all(uint32_t mmu_id)
 {
-    for (int i = 0; i < MMU_ENTRY_NUM; i++) {
+    for (int i = 0; i < SOC_MMU_ENTRY_NUM; i++) {
         mmu_ll_set_entry_invalid(mmu_id, i);
     }
 }
@@ -280,10 +280,10 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
 static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
-    return (REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & MMU_VALID) ? true : false;
+    return (REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & SOC_MMU_VALID) ? true : false;
 }
 
 /**
@@ -311,7 +311,7 @@ static inline mmu_target_t mmu_ll_get_entry_target(uint32_t mmu_id, uint32_t ent
 static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+    HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
@@ -333,7 +333,7 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
     }
 
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
-    return (REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & MMU_VALID_VAL_MASK) << shift_code;
+    return (REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & SOC_MMU_VALID_VAL_MASK) << shift_code;
 }
 
 /**
@@ -350,11 +350,11 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
 static inline int mmu_ll_find_entry_id_based_on_map_value(uint32_t mmu_id, uint32_t mmu_val, mmu_target_t target)
 {
     (void)mmu_id;
-    for (int i = 0; i < MMU_ENTRY_NUM; i++) {
+    for (int i = 0; i < SOC_MMU_ENTRY_NUM; i++) {
         if (mmu_ll_check_entry_valid(mmu_id, i)) {
             if (mmu_ll_get_entry_target(mmu_id, i) == target) {
                 REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), i);
-                if ((REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & MMU_VALID_VAL_MASK) == mmu_val) {
+                if ((REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0)) & SOC_MMU_VALID_VAL_MASK) == mmu_val) {
                     return i;
                 }
             }

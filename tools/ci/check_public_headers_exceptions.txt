@@ -256,7 +256,6 @@ components/soc/esp32c6/include/soc/mmu.h
 components/soc/esp32h2/include/soc/ext_mem_defs.h
 components/soc/esp32h2/include/soc/mmu.h
 components/soc/esp32p4/include/soc/ext_mem_defs.h
-components/soc/esp32p4/include/soc/mmu.h
 components/spi_flash/include/esp_private/spi_flash_os.h
 
 ### To be fixed: files which don't compile for esp32s2 target:

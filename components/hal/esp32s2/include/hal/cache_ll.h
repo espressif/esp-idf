@@ -420,33 +420,33 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
 
     cache_bus_mask_t mask = 0;
     uint32_t vaddr_end = vaddr_start + len - 1;
-    if (vaddr_start >= IRAM1_ADDRESS_LOW) {
+    if (vaddr_start >= SOC_IRAM1_ADDRESS_LOW) {
         mask |= CACHE_BUS_IBUS1;
-    } else if (vaddr_start >= IRAM0_CACHE_ADDRESS_LOW) {
+    } else if (vaddr_start >= SOC_IRAM0_CACHE_ADDRESS_LOW) {
         mask |= CACHE_BUS_IBUS0;
-        mask |= (vaddr_end >= IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
-    } else if (vaddr_start >= DRAM0_CACHE_ADDRESS_LOW) {
+        mask |= (vaddr_end >= SOC_IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
+    } else if (vaddr_start >= SOC_DRAM0_CACHE_ADDRESS_LOW) {
         mask |= CACHE_BUS_DBUS0;
-        mask |= (vaddr_end >= IRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS0 : 0;
-        mask |= (vaddr_end >= IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
-    } else if (vaddr_start >= DRAM1_ADDRESS_LOW) {
+        mask |= (vaddr_end >= SOC_IRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS0 : 0;
+        mask |= (vaddr_end >= SOC_IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
+    } else if (vaddr_start >= SOC_DRAM1_ADDRESS_LOW) {
         mask |= CACHE_BUS_DBUS1;
-        mask |= (vaddr_end >= DRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_DBUS0 : 0;
-        mask |= (vaddr_end >= IRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS0 : 0;
-        mask |= (vaddr_end >= IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
-    } else if (vaddr_start >= DPORT_CACHE_ADDRESS_LOW) {
+        mask |= (vaddr_end >= SOC_DRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_DBUS0 : 0;
+        mask |= (vaddr_end >= SOC_IRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS0 : 0;
+        mask |= (vaddr_end >= SOC_IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
+    } else if (vaddr_start >= SOC_DPORT_CACHE_ADDRESS_LOW) {
         mask |= CACHE_BUS_DBUS2;
-        mask |= (vaddr_end >= DRAM1_ADDRESS_LOW) ? CACHE_BUS_DBUS1 : 0;
-        mask |= (vaddr_end >= DRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_DBUS0 : 0;
-        mask |= (vaddr_end >= IRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS0 : 0;
-        mask |= (vaddr_end >= IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
-    } else if (vaddr_start >= DROM0_ADDRESS_LOW) {
+        mask |= (vaddr_end >= SOC_DRAM1_ADDRESS_LOW) ? CACHE_BUS_DBUS1 : 0;
+        mask |= (vaddr_end >= SOC_DRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_DBUS0 : 0;
+        mask |= (vaddr_end >= SOC_IRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS0 : 0;
+        mask |= (vaddr_end >= SOC_IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
+    } else if (vaddr_start >= SOC_DROM0_ADDRESS_LOW) {
         mask |= CACHE_BUS_IBUS2;
-        mask |= (vaddr_end >= DPORT_CACHE_ADDRESS_LOW) ? CACHE_BUS_DBUS2 : 0;
-        mask |= (vaddr_end >= DRAM1_ADDRESS_LOW) ? CACHE_BUS_DBUS1 : 0;
-        mask |= (vaddr_end >= DRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_DBUS0 : 0;
-        mask |= (vaddr_end >= IRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS0 : 0;
-        mask |= (vaddr_end >= IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
+        mask |= (vaddr_end >= SOC_DPORT_CACHE_ADDRESS_LOW) ? CACHE_BUS_DBUS2 : 0;
+        mask |= (vaddr_end >= SOC_DRAM1_ADDRESS_LOW) ? CACHE_BUS_DBUS1 : 0;
+        mask |= (vaddr_end >= SOC_DRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_DBUS0 : 0;
+        mask |= (vaddr_end >= SOC_IRAM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS0 : 0;
+        mask |= (vaddr_end >= SOC_IRAM1_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
     } else {
         abort();
     }

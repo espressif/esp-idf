@@ -224,7 +224,7 @@ void Cache_MMU_Init(void);
   * @brief Set ICache mmu mapping.
   *        Please do not call this function in your SDK application.
   *
-  * @param  uint32_t ext_ram : MMU_ACCESS_FLASH for flash, MMU_ACCESS_SPIRAM for spiram, MMU_INVALID for invalid.
+  * @param  uint32_t ext_ram : SOC_MMU_ACCESS_FLASH for flash, SOC_MMU_ACCESS_SPIRAM for spiram, SOC_MMU_INVALID for invalid.
   *
   * @param  uint32_t vaddr : virtual address in CPU address space.
   *                              Can be Iram0,Iram1,Irom0,Drom0 and AHB buses address.
@@ -251,7 +251,7 @@ int Cache_Ibus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr,  uint32
   * @brief Set DCache mmu mapping.
   *        Please do not call this function in your SDK application.
   *
-  * @param  uint32_t ext_ram : MMU_ACCESS_FLASH for flash, MMU_ACCESS_SPIRAM for spiram, MMU_INVALID for invalid.
+  * @param  uint32_t ext_ram : SOC_MMU_ACCESS_FLASH for flash, SOC_MMU_ACCESS_SPIRAM for spiram, SOC_MMU_INVALID for invalid.
   *
   * @param  uint32_t vaddr : virtual address in CPU address space.
   *                              Can be DRam0, DRam1, DRom0, DPort and AHB buses address.

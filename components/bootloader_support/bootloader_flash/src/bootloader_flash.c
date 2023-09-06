@@ -151,9 +151,9 @@ static const char *TAG = "bootloader_flash";
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
 #if CONFIG_IDF_TARGET_ESP32P4
 //TODO: IDF-7918
-#define MMAP_MMU_SIZE     (DRAM_FLASH_ADDRESS_HIGH - DRAM_FLASH_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
+#define MMAP_MMU_SIZE     (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_DRAM_FLASH_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
 #else
-#define MMAP_MMU_SIZE     (DRAM0_CACHE_ADDRESS_HIGH - DRAM0_CACHE_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
+#define MMAP_MMU_SIZE     (SOC_DRAM0_CACHE_ADDRESS_HIGH - SOC_DRAM0_CACHE_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
 #endif
 #define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMAP_MMU_SIZE - SPI_FLASH_MMU_PAGE_SIZE)
 #define FLASH_READ_VADDR MMU_BLOCK63_VADDR

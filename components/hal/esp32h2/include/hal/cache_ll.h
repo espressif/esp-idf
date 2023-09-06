@@ -168,7 +168,7 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
     cache_bus_mask_t mask = 0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
-    if (vaddr_start >= IRAM0_CACHE_ADDRESS_LOW && vaddr_end < IRAM0_CACHE_ADDRESS_HIGH) {
+    if (vaddr_start >= SOC_IRAM0_CACHE_ADDRESS_LOW && vaddr_end < SOC_IRAM0_CACHE_ADDRESS_HIGH) {
         //h2 the I/D bus memory are shared, so we always return `CACHE_BUS_IBUS0 | CACHE_BUS_DBUS0`
         mask |= CACHE_BUS_IBUS0 | CACHE_BUS_DBUS0;
     } else {

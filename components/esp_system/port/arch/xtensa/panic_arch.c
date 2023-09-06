@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -200,7 +200,7 @@ static inline void print_cache_err_details(const void *f)
             panic_print_str("Icache reject error occurred while accessing the address 0x");
             panic_print_hex(vaddr);
 
-            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & MMU_INVALID) {
+            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & SOC_MMU_INVALID) {
                 panic_print_str(" (invalid mmu entry)");
             }
             panic_print_str("\r\n");
@@ -235,7 +235,7 @@ static inline void print_cache_err_details(const void *f)
             panic_print_str("Dcache reject error occurred while accessing the address 0x");
             panic_print_hex(vaddr);
 
-            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & MMU_INVALID) {
+            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & SOC_MMU_INVALID) {
                 panic_print_str(" (invalid mmu entry)");
             }
             panic_print_str("\r\n");
@@ -245,7 +245,7 @@ static inline void print_cache_err_details(const void *f)
             panic_print_str("MMU entry fault error occurred while accessing the address 0x");
             panic_print_hex(vaddr);
 
-            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & MMU_INVALID) {
+            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & SOC_MMU_INVALID) {
                 panic_print_str(" (invalid mmu entry)");
             }
             panic_print_str("\r\n");
@@ -347,7 +347,7 @@ static inline void print_cache_err_details(const void *f)
             panic_print_str("MMU entry fault error occurred while accessing the address 0x");
             panic_print_hex(vaddr);
 
-            if (REG_READ(EXTMEM_CACHE_MMU_FAULT_CONTENT_REG) & MMU_INVALID) {
+            if (REG_READ(EXTMEM_CACHE_MMU_FAULT_CONTENT_REG) & SOC_MMU_INVALID) {
                 panic_print_str(" (invalid mmu entry)");
             }
             panic_print_str("\r\n");
