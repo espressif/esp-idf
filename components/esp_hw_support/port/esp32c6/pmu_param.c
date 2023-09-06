@@ -211,7 +211,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .xpd             = 1,   \
         .slp_mem_dbias   = 0, \
         .slp_logic_dbias = 0, \
-        .dbias           = 0x19 \
+        .dbias           = HP_CALI_DBIAS \
     }, \
     .regulator1 = {             \
         .drv_b           = 0x0 \
@@ -231,7 +231,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .xpd             = 1,   \
         .slp_mem_dbias   = 0, \
         .slp_logic_dbias = 0, \
-        .dbias           = 0x1a \
+        .dbias           = HP_CALI_DBIAS \
     }, \
     .regulator1 = {             \
         .drv_b           = 0x0 \
