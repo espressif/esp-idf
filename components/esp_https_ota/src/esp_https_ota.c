@@ -53,6 +53,7 @@ struct esp_https_ota_handle {
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;
     void *decrypt_user_ctx;
+    uint16_t enc_img_header_size;
 #endif
 };
 
@@ -323,6 +324,11 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         }
 
         https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+        /* In case of pre ecnrypted OTA, actual image size of OTA binary includes header size
+        which stored in variable enc_img_header_size*/
+        https_ota_handle->image_length -= ota_config->enc_img_header_size;
+#endif
         esp_http_client_close(https_ota_handle->http_client);
 
         if (https_ota_handle->image_length > https_ota_handle->max_http_request_size) {
@@ -349,6 +355,11 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 
     if (!https_ota_handle->partial_http_download) {
         https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+        /* In case of pre ecnrypted OTA, actual image size of OTA binary includes header size
+        which stored in variable enc_img_header_size*/
+        https_ota_handle->image_length -= ota_config->enc_img_header_size;
+#endif
     }
 
     https_ota_handle->update_partition = NULL;
@@ -376,6 +387,7 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     }
     https_ota_handle->decrypt_cb = ota_config->decrypt_cb;
     https_ota_handle->decrypt_user_ctx = ota_config->decrypt_user_ctx;
+    https_ota_handle->enc_img_header_size = ota_config->enc_img_header_size;
 #endif
     https_ota_handle->ota_upgrade_buf_size = alloc_size;
     https_ota_handle->bulk_flash_erase = ota_config->bulk_flash_erase;
@@ -584,10 +596,14 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
         if (handle->state == ESP_HTTPS_OTA_IN_PROGRESS && handle->image_length > handle->binary_file_len) {
             esp_http_client_close(handle->http_client);
             char *header_val = NULL;
+            int header_size = 0;
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+            header_size = handle->enc_img_header_size;
+#endif
             if ((handle->image_length - handle->binary_file_len) > handle->max_http_request_size) {
-                asprintf(&header_val, "bytes=%d-%d", handle->binary_file_len, (handle->binary_file_len + handle->max_http_request_size - 1));
+                asprintf(&header_val, "bytes=%d-%d", handle->binary_file_len + header_size, (handle->binary_file_len + header_size + handle->max_http_request_size - 1));
             } else {
-                asprintf(&header_val, "bytes=%d-", handle->binary_file_len);
+                asprintf(&header_val, "bytes=%d-", handle->binary_file_len + header_size);
             }
             if (header_val == NULL) {
                 ESP_LOGE(TAG, "Failed to allocate memory for HTTP header");

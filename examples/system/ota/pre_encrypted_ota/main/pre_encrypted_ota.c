@@ -74,6 +74,7 @@ static esp_err_t _decrypt_cb(decrypt_cb_arg_t *args, void *user_ctx)
     if (err != ESP_OK && err != ESP_ERR_NOT_FINISHED) {
         return err;
     }
+
     static bool is_image_verified = false;
     if (pargs.data_out_len > 0) {
         args->data_out = pargs.data_out;
@@ -143,6 +144,7 @@ void pre_encrypted_ota_task(void *pvParameter)
 #endif
         .decrypt_cb = _decrypt_cb,
         .decrypt_user_ctx = (void *)decrypt_handle,
+        .enc_img_header_size = esp_encrypted_img_get_header_size(),
     };
 
     esp_https_ota_handle_t https_ota_handle = NULL;
