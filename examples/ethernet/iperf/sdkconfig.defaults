@@ -21,3 +21,6 @@ CONFIG_ESP_TASK_WDT_EN=n
 
 # Enable lwIP IRAM optimization
 CONFIG_LWIP_IRAM_OPTIMIZATION=y
+
+# Enable Ethernet IRAM optimization
+CONFIG_ETH_IRAM_OPTIMIZATION=y
