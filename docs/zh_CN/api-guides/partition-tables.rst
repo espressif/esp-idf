@@ -127,13 +127,22 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
       -  用于存储加密密钥（如果启用了 `NVS 加密` 功能）。
       -  此分区应至少设定为 4096 字节。
 
-  - ESP-IDF 还支持其它预定义的子类型用于数据存储，包括 :doc:`FAT 文件系统 </api-reference/storage/fatfs>` (:cpp:enumerator:`ESP_PARTITION_SUBTYPE_DATA_FAT`), :doc:`SPIFFS </api-reference/storage/spiffs>` (:cpp:enumerator:`ESP_PARTITION_SUBTYPE_DATA_SPIFFS`) 等。
+  - ESP-IDF 还支持其他用于数据存储的预定义子类型，包括：
+  
+    - ``coredump`` (0x03) 用于在使用自定义分区表 CSV 文件时存储核心转储，详情请参阅 :doc:`/api-guides/core_dump`。
+    - ``efuse`` (0x05) 使用 :ref:`虚拟 eFuse <virtual-efuses>` 模拟 eFuse 位。
+    - ``undefined`` (0x06) 隐式用于未指定子类型（即子类型为空）的数据分区，但也可显式将其标记为未定义。
+    - ``fat`` (0x81) 用于 :doc:`/api-reference/storage/fatfs`。
+    - ``spiffs`` (0x82) 用于 :doc:`/api-reference/storage/spiffs`。
+    - ``littlefs`` (0x83) 用于 `LittleFS 文件系统 <https://github.com/littlefs-project/littlefs>`_，详情可参阅 :example:`storage/littlefs` 示例。
 
-  其它数据子类型已预留给 esp-idf 未来使用。
+.. Comment: ``esphttpd`` (0x80) was not added to the list because there is no docs section for it and it is not clear whether user should use it explicitly.
 
-* 如果分区类型是由应用程序定义的任意值（0x40-0xFE），那么 ``subtype`` 字段可以是由应用程序选择的任何值（0x00-0xFE）。
+  其它数据子类型已预留给 ESP-IDF 未来使用。
 
-请注意如果用 C++ 编写，应用程序定义的子类型值需要转换为 :cpp:type:`esp_partition_type_t`，从而与 :ref:`分区 API<api-reference-partition-table>` 一起使用。
+* 如果分区类型是由应用程序定义的任意值 (0x40-0xFE)，那么 ``subtype`` 字段可以是由应用程序选择的任何值 (0x00-0xFE)。
+
+  请注意，如果用 C++ 编写，应用程序定义的子类型值需要转换为 :cpp:type:`esp_partition_type_t`，从而与 :ref:`分区 API <api-reference-partition-table>` 一起使用。
 
 额外分区 SubType 字段
 ~~~~~~~~~~~~~~~~~~~~~~~~

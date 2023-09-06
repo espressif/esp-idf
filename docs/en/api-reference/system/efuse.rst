@@ -461,6 +461,8 @@ There is an example test :example_file:`system/efuse/CMakeLists.txt` which adds 
 Debug eFuse & Unit Tests
 ------------------------
 
+.. _virtual-efuses:
+
 Virtual eFuses
 ^^^^^^^^^^^^^^
 
