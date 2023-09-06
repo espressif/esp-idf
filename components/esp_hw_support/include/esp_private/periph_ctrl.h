@@ -34,7 +34,7 @@ extern "C" {
  *
  * @note User code protected by this macro should be as short as possible, because it's a critical section
  * @note This macro will decrease the reference lock of that peripheral.
- *       You can get the value before the increment from the `rc_name` local variable
+ *       You can get the value after the decrease from the `rc_name` local variable
  */
 #define PERIPH_RCC_RELEASE_ATOMIC(periph, rc_name)                \
     for (uint8_t rc_name, i = 1, __DECLARE_RCC_RC_ATOMIC_ENV;     \
