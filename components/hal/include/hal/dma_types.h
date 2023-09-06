@@ -44,6 +44,7 @@ ESP_STATIC_ASSERT(sizeof(dma_descriptor_t) == 12, "dma_descriptor_t should occup
 #define DMA_DESCRIPTOR_BUFFER_OWNER_CPU (0)   /*!< DMA buffer is allowed to be accessed by CPU */
 #define DMA_DESCRIPTOR_BUFFER_OWNER_DMA (1)   /*!< DMA buffer is allowed to be accessed by DMA engine */
 #define DMA_DESCRIPTOR_BUFFER_MAX_SIZE (4095) /*!< Maximum size of the buffer that can be attached to descriptor */
+#define DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED  (4095-3)  /*!< Maximum size of the buffer that can be attached to descriptor, and aligned to 4B */
 
 #ifdef __cplusplus
 }
