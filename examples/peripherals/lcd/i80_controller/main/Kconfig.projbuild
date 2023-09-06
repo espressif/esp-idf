@@ -68,4 +68,16 @@ menu "Example Configuration"
             bool "FT5X06"
     endchoice
 
+    choice EXAMPLE_LCD_IMAGE_SOURCE
+        prompt "LCD image source from"
+        default EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM
+        help
+            Select LCD image source
+
+        config EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM
+            bool "File system"
+
+        config EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
+            bool "Embedded binary"
+    endchoice
 endmenu

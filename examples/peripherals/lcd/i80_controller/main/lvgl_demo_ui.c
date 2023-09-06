@@ -1,19 +1,22 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
 #include <math.h>
+#include "sdkconfig.h"
 #include "lvgl.h"
 
 #ifndef PI
 #define PI  (3.14159f)
 #endif
 
+#if CONFIG_EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
 // LVGL image declare
 LV_IMG_DECLARE(esp_logo)
 LV_IMG_DECLARE(esp_text)
+#endif // CONFIG_EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
 
 typedef struct {
     lv_obj_t *scr;
@@ -21,16 +24,15 @@ typedef struct {
 } my_timer_context_t;
 
 static my_timer_context_t my_tim_ctx;
-static lv_obj_t * btn;
+static lv_obj_t *btn;
 static lv_obj_t *arc[3];
-static lv_obj_t *img_logo;
+static lv_obj_t *img_logo = NULL;
 static lv_obj_t *img_text = NULL;
 static lv_color_t arc_color[] = {
     LV_COLOR_MAKE(232, 87, 116),
     LV_COLOR_MAKE(126, 87, 162),
     LV_COLOR_MAKE(90, 202, 228),
 };
-
 
 static void anim_timer_cb(lv_timer_t *timer)
 {
@@ -57,7 +59,11 @@ static void anim_timer_cb(lv_timer_t *timer)
 
         // Create new image and make it transparent
         img_text = lv_img_create(scr);
+#if CONFIG_EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM
+        lv_img_set_src(img_text, "S:/spiffs/esp_text.png");
+#elif CONFIG_EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
         lv_img_set_src(img_text, &esp_text);
+#endif
         lv_obj_set_style_img_opa(img_text, 0, 0);
     }
 
@@ -117,9 +123,9 @@ static void start_animation(lv_obj_t *scr)
     lv_obj_add_state(btn, LV_STATE_DISABLED);
 }
 
-static void btn_cb(lv_event_t * e)
+static void btn_cb(lv_event_t *e)
 {
-    lv_obj_t * scr = lv_event_get_user_data(e);
+    lv_obj_t *scr = lv_event_get_user_data(e);
     start_animation(scr);
 }
 
@@ -129,10 +135,13 @@ void example_lvgl_demo_ui(lv_disp_t *disp)
 
     // Create image
     img_logo = lv_img_create(scr);
+#if CONFIG_EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM
+    lv_img_set_src(img_logo, "S:/spiffs/esp_logo.png");
+#elif CONFIG_EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
     lv_img_set_src(img_logo, &esp_logo);
-
+#endif
     btn = lv_btn_create(scr);
-    lv_obj_t * lbl = lv_label_create(btn);
+    lv_obj_t *lbl = lv_label_create(btn);
     lv_label_set_text_static(lbl, LV_SYMBOL_REFRESH" SHOW AGAIN");
     lv_obj_set_style_text_font(lbl, &lv_font_montserrat_20, 0);
     lv_obj_align(btn, LV_ALIGN_BOTTOM_LEFT, 30, -30);
