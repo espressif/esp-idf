@@ -250,6 +250,32 @@ bool pmu_sleep_finish(void);
 void pmu_init(void);
 
 /**
+ * @brief Initialize PVT related parameters
+ */
+void pvt_auto_dbias_init(void);
+
+/**
+ * @brief Enable or disable PVT functions
+ */
+void pvt_func_enable(bool enable);
+
+/**
+ * @brief Initialize charge pump related parameters
+ */
+void charge_pump_init(void);
+
+/**
+ * @brief Enable or disable charge pump functions
+ */
+void charge_pump_enable(bool enable);
+
+/**
+ * @brief Get Hp_dbias from register
+ */
+uint32_t get_pvt_dbias(void);
+
+
+/**
  * @brief Enable or disable system clock in PMU HP sleep state
  *
  * This API only used for fix BLE 40 MHz low power clock source issue

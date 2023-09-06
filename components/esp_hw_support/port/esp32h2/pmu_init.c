@@ -13,6 +13,7 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
+#include "esp_rom_sys.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_pmu.h"
 #include "soc/regi2c_bias.h"
@@ -193,9 +194,6 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
 void pmu_init()
 {
     /* No peripheral reg i2c power up required on the target */
-
-    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG, 0);
-    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_DIG_DREG, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG_SLP, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_DIG_DREG_SLP, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_RTC_REG, 0);
@@ -215,4 +213,12 @@ void pmu_init()
     pmu_lp_system_init_default(PMU_instance());
 
     pmu_power_domain_force_default(PMU_instance());
+
+    pvt_auto_dbias_init();
+    charge_pump_init();
+
+    //HP dbias initialization
+    pvt_func_enable(1);
+    charge_pump_enable(1);
+    esp_rom_delay_us(1000);
 }

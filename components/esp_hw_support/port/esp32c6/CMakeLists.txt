@@ -6,6 +6,7 @@ set(srcs "rtc_clk_init.c"
          "rtc_time.c"
          "chip_info.c"
          "ocode_init.c"
+         "pmu_pvt_pump.c"
          )
 
 if(NOT BOOTLOADER_BUILD)
