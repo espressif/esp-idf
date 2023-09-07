@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "esp_random.h"
 #include "esp_log.h"
+#include "Partition.h"
 #include "WL_Flash.h"
 #include <stdlib.h>
 #include "crc32.h"
@@ -37,7 +38,7 @@ WL_Flash::~WL_Flash()
     free(this->temp_buff);
 }
 
-esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *flash_drv)
+esp_err_t WL_Flash::config(wl_config_t *cfg, Partition *partition)
 {
     ESP_LOGV(TAG, "%s partition_start_addr=0x%08x, wl_partition_size=0x%08x, wl_page_size=0x%08x, flash_sector_size=0x%08x, wl_update_rate=0x%08x, wl_pos_update_record_size=0x%08x, version=0x%08x, wl_temp_buff_size=0x%08x", __func__,
              (uint32_t) cfg->wl_partition_start_addr,
@@ -59,8 +60,8 @@ esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *flash_drv)
     if (cfg == NULL) {
         result = ESP_ERR_INVALID_ARG;
     }
-    this->flash_drv = flash_drv;
-    if (flash_drv == NULL) {
+    this->partition = partition;
+    if (partition == NULL) {
         result = ESP_ERR_INVALID_ARG;
     }
     if ((this->cfg.flash_sector_size % this->cfg.wl_temp_buff_size) != 0) {
@@ -118,10 +119,10 @@ esp_err_t WL_Flash::init()
     // If flow will be interrupted by error, then this flag will be false
     this->initialized = false;
     // Init states if it is first time...
-    this->flash_drv->read(this->addr_state1, &this->state, sizeof(wl_state_t));
+    this->partition->read(this->addr_state1, &this->state, sizeof(wl_state_t));
     wl_state_t sa_copy;
     wl_state_t *state_copy = &sa_copy;
-    result = this->flash_drv->read(this->addr_state2, state_copy, sizeof(wl_state_t));
+    result = this->partition->read(this->addr_state2, state_copy, sizeof(wl_state_t));
     WL_RESULT_CHECK(result);
 
     int check_size = WL_STATE_CRC_LEN_V2;
@@ -149,19 +150,19 @@ esp_err_t WL_Flash::init()
             WL_RESULT_CHECK(result);
         } else {
             if (crc1 != crc2) {// we did not update second structure.
-                result = this->flash_drv->erase_range(this->addr_state2, this->state_size);
+                result = this->partition->erase_range(this->addr_state2, this->state_size);
                 WL_RESULT_CHECK(result);
-                result = this->flash_drv->write(this->addr_state2, &this->state, sizeof(wl_state_t));
+                result = this->partition->write(this->addr_state2, &this->state, sizeof(wl_state_t));
                 WL_RESULT_CHECK(result);
 
                 for (size_t i = 0; i < ((this->cfg.wl_partition_size / this->cfg.flash_sector_size)); i++) {
                     bool pos_bits;
-                    result = this->flash_drv->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+                    result = this->partition->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
                     WL_RESULT_CHECK(result);
                     pos_bits = this->OkBuffSet(i);
                     if (pos_bits == true) {
                         //this->fillOkBuff(i);
-                        result = this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+                        result = this->partition->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
                         WL_RESULT_CHECK(result);
                     }
                 }
@@ -184,41 +185,41 @@ esp_err_t WL_Flash::init()
     } else {
         // recover broken state
         if (crc1 == this->state.crc32) {// we have to recover state 2
-            result = this->flash_drv->erase_range(this->addr_state2, this->state_size);
+            result = this->partition->erase_range(this->addr_state2, this->state_size);
             WL_RESULT_CHECK(result);
-            result = this->flash_drv->write(this->addr_state2, &this->state, sizeof(wl_state_t));
+            result = this->partition->write(this->addr_state2, &this->state, sizeof(wl_state_t));
             WL_RESULT_CHECK(result);
 
             for (size_t i = 0; i < ((this->cfg.wl_partition_size / this->cfg.flash_sector_size)); i++) {
                 bool pos_bits;
-                result = this->flash_drv->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+                result = this->partition->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
                 WL_RESULT_CHECK(result);
                 pos_bits = this->OkBuffSet(i);
                 if (pos_bits == true) {
-                    result = this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+                    result = this->partition->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
                     WL_RESULT_CHECK(result);
                 }
             }
-            result = this->flash_drv->read(this->addr_state2, &this->state, sizeof(wl_state_t));
+            result = this->partition->read(this->addr_state2, &this->state, sizeof(wl_state_t));
             WL_RESULT_CHECK(result);
         } else { // we have to recover state 1
-            result = this->flash_drv->erase_range(this->addr_state1, this->state_size);
+            result = this->partition->erase_range(this->addr_state1, this->state_size);
             WL_RESULT_CHECK(result);
-            result = this->flash_drv->write(this->addr_state1, state_copy, sizeof(wl_state_t));
+            result = this->partition->write(this->addr_state1, state_copy, sizeof(wl_state_t));
             WL_RESULT_CHECK(result);
 
             for (size_t i = 0; i < ((this->cfg.wl_partition_size / this->cfg.flash_sector_size)); i++) {
                 bool pos_bits;
-                result = this->flash_drv->read(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+                result = this->partition->read(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
 
                 WL_RESULT_CHECK(result);
                 pos_bits = this->OkBuffSet(i);
                 if (pos_bits == true) {
-                    result = this->flash_drv->write(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+                    result = this->partition->write(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
                     WL_RESULT_CHECK(result);
                 }
             }
-            result = this->flash_drv->read(this->addr_state1, &this->state, sizeof(wl_state_t));
+            result = this->partition->read(this->addr_state1, &this->state, sizeof(wl_state_t));
             WL_RESULT_CHECK(result);
             this->state.wl_dummy_sec_pos = this->state.wl_part_max_sec_pos - 1;
         }
@@ -247,7 +248,7 @@ esp_err_t WL_Flash::recoverPos()
     for (size_t i = 0; i < this->state.wl_part_max_sec_pos; i++) {
         bool pos_bits;
         position = i;
-        result = this->flash_drv->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+        result = this->partition->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
         pos_bits = this->OkBuffSet(i);
         WL_RESULT_CHECK(result);
         ESP_LOGV(TAG, "%s - check pos: result=0x%08x, position= %i, pos_bits= 0x%08x", __func__, (uint32_t)result, (uint32_t)position, (uint32_t)pos_bits);
@@ -285,19 +286,19 @@ esp_err_t WL_Flash::initSections()
 
     this->state.crc32 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, WL_STATE_CRC_LEN_V2);
 
-    result = this->flash_drv->erase_range(this->addr_state1, this->state_size);
+    result = this->partition->erase_range(this->addr_state1, this->state_size);
     WL_RESULT_CHECK(result);
-    result = this->flash_drv->write(this->addr_state1, &this->state, sizeof(wl_state_t));
+    result = this->partition->write(this->addr_state1, &this->state, sizeof(wl_state_t));
     WL_RESULT_CHECK(result);
     // write state copy
-    result = this->flash_drv->erase_range(this->addr_state2, this->state_size);
+    result = this->partition->erase_range(this->addr_state2, this->state_size);
     WL_RESULT_CHECK(result);
-    result = this->flash_drv->write(this->addr_state2, &this->state, sizeof(wl_state_t));
+    result = this->partition->write(this->addr_state2, &this->state, sizeof(wl_state_t));
     WL_RESULT_CHECK(result);
 
-    result = this->flash_drv->erase_range(this->addr_cfg, this->cfg_size);
+    result = this->partition->erase_range(this->addr_cfg, this->cfg_size);
     WL_RESULT_CHECK(result);
-    result = this->flash_drv->write(this->addr_cfg, &this->cfg, sizeof(wl_config_t));
+    result = this->partition->write(this->addr_cfg, &this->cfg, sizeof(wl_config_t));
     WL_RESULT_CHECK(result);
 
     ESP_LOGD(TAG, "%s - this->state->wl_max_sec_erase_cycle_count= 0x%08x, this->state->wl_part_max_sec_pos= 0x%08x", __func__, this->state.wl_max_sec_erase_cycle_count, this->state.wl_part_max_sec_pos);
@@ -327,7 +328,7 @@ esp_err_t WL_Flash::updateV1_V2()
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
     wl_state_t sa_copy;
     wl_state_t *state_copy = &sa_copy;
-    result = this->flash_drv->read(this->addr_state2, state_copy, sizeof(wl_state_t));
+    result = this->partition->read(this->addr_state2, state_copy, sizeof(wl_state_t));
     WL_RESULT_CHECK(result);
     uint32_t crc2 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_copy, check_size);
 
@@ -344,7 +345,7 @@ esp_err_t WL_Flash::updateV1_V2()
 
         for (size_t i = 0; i < this->state.wl_part_max_sec_pos; i++) {
             uint8_t pos_bits;
-            result = this->flash_drv->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, &pos_bits, 1);
+            result = this->partition->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, &pos_bits, 1);
             WL_RESULT_CHECK(result);
             ESP_LOGV(TAG, "%s- result= 0x%08x, pos= %i, pos_bits= 0x%08x", __func__, (uint32_t)result, (uint32_t)pos, (uint32_t)pos_bits);
             pos = i;
@@ -364,28 +365,28 @@ esp_err_t WL_Flash::updateV1_V2()
         memset(this->state.reserved, 0, sizeof(this->state.reserved));
         this->state.crc32 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, WL_STATE_CRC_LEN_V2);
 
-        result = this->flash_drv->erase_range(this->addr_state1, this->state_size);
+        result = this->partition->erase_range(this->addr_state1, this->state_size);
         WL_RESULT_CHECK(result);
-        result = this->flash_drv->write(this->addr_state1, &this->state, sizeof(wl_state_t));
+        result = this->partition->write(this->addr_state1, &this->state, sizeof(wl_state_t));
         WL_RESULT_CHECK(result);
 
         memset(this->temp_buff, 0, this->cfg.wl_pos_update_record_size);
         for (uint32_t i = 0 ; i <= pos; i++) {
             this->fillOkBuff(i);
-            result = this->flash_drv->write(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+            result = this->partition->write(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
             WL_RESULT_CHECK(result);
         }
 
-        result = this->flash_drv->erase_range(this->addr_state2, this->state_size);
+        result = this->partition->erase_range(this->addr_state2, this->state_size);
         WL_RESULT_CHECK(result);
-        result = this->flash_drv->write(this->addr_state2, &this->state, sizeof(wl_state_t));
+        result = this->partition->write(this->addr_state2, &this->state, sizeof(wl_state_t));
         WL_RESULT_CHECK(result);
         ESP_LOGD(TAG, "%s - wl_dummy_sec_move_count= 0x%08x, pos= 0x%08x", __func__, this->state.wl_dummy_sec_move_count, this->state.wl_dummy_sec_pos);
 
         memset(this->temp_buff, 0, this->cfg.wl_pos_update_record_size);
         for (uint32_t i = 0 ; i <= pos; i++) {
             this->fillOkBuff(i);
-            result = this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
+            result = this->partition->write(this->addr_state2 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
             WL_RESULT_CHECK(result);
         }
         this->state.wl_dummy_sec_pos = pos;
@@ -437,7 +438,7 @@ esp_err_t WL_Flash::updateWL()
     }
     data_addr = this->cfg.wl_partition_start_addr + data_addr * this->cfg.wl_page_size;
     this->dummy_addr = this->cfg.wl_partition_start_addr + this->state.wl_dummy_sec_pos * this->cfg.wl_page_size;
-    result = this->flash_drv->erase_range(this->dummy_addr, this->cfg.wl_page_size);
+    result = this->partition->erase_range(this->dummy_addr, this->cfg.wl_page_size);
     if (result != ESP_OK) {
         ESP_LOGE(TAG, "%s - erase wl dummy sector result= 0x%08x", __func__, result);
         this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
@@ -446,13 +447,13 @@ esp_err_t WL_Flash::updateWL()
 
     size_t copy_count = this->cfg.wl_page_size / this->cfg.wl_temp_buff_size;
     for (size_t i = 0; i < copy_count; i++) {
-        result = this->flash_drv->read(data_addr + i * this->cfg.wl_temp_buff_size, this->temp_buff, this->cfg.wl_temp_buff_size);
+        result = this->partition->read(data_addr + i * this->cfg.wl_temp_buff_size, this->temp_buff, this->cfg.wl_temp_buff_size);
         if (result != ESP_OK) {
             ESP_LOGE(TAG, "%s - not possible to read buffer, will try next time, result= 0x%08x", __func__, result);
             this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
             return result;
         }
-        result = this->flash_drv->write(this->dummy_addr + i * this->cfg.wl_temp_buff_size, this->temp_buff, this->cfg.wl_temp_buff_size);
+        result = this->partition->write(this->dummy_addr + i * this->cfg.wl_temp_buff_size, this->temp_buff, this->cfg.wl_temp_buff_size);
         if (result != ESP_OK) {
             ESP_LOGE(TAG, "%s - not possible to write buffer, will try next time, result= 0x%08x", __func__, result);
             this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
@@ -465,14 +466,14 @@ esp_err_t WL_Flash::updateWL()
     uint32_t byte_pos = this->state.wl_dummy_sec_pos * this->cfg.wl_pos_update_record_size;
     this->fillOkBuff(this->state.wl_dummy_sec_pos);
     // write state to mem. We updating only affected bits
-    result |= this->flash_drv->write(this->addr_state1 + sizeof(wl_state_t) + byte_pos, this->temp_buff, this->cfg.wl_pos_update_record_size);
+    result |= this->partition->write(this->addr_state1 + sizeof(wl_state_t) + byte_pos, this->temp_buff, this->cfg.wl_pos_update_record_size);
     if (result != ESP_OK) {
         ESP_LOGE(TAG, "%s - update position 1 result= 0x%08x", __func__, result);
         this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
         return result;
     }
     this->fillOkBuff(this->state.wl_dummy_sec_pos);
-    result |= this->flash_drv->write(this->addr_state2 + sizeof(wl_state_t) + byte_pos, this->temp_buff, this->cfg.wl_pos_update_record_size);
+    result |= this->partition->write(this->addr_state2 + sizeof(wl_state_t) + byte_pos, this->temp_buff, this->cfg.wl_pos_update_record_size);
     if (result != ESP_OK) {
         ESP_LOGE(TAG, "%s - update position 2 result= 0x%08x", __func__, result);
         this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
@@ -490,13 +491,13 @@ esp_err_t WL_Flash::updateWL()
         // write main state
         this->state.crc32 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, WL_STATE_CRC_LEN_V2);
 
-        result = this->flash_drv->erase_range(this->addr_state1, this->state_size);
+        result = this->partition->erase_range(this->addr_state1, this->state_size);
         WL_RESULT_CHECK(result);
-        result = this->flash_drv->write(this->addr_state1, &this->state, sizeof(wl_state_t));
+        result = this->partition->write(this->addr_state1, &this->state, sizeof(wl_state_t));
         WL_RESULT_CHECK(result);
-        result = this->flash_drv->erase_range(this->addr_state2, this->state_size);
+        result = this->partition->erase_range(this->addr_state2, this->state_size);
         WL_RESULT_CHECK(result);
-        result = this->flash_drv->write(this->addr_state2, &this->state, sizeof(wl_state_t));
+        result = this->partition->write(this->addr_state2, &this->state, sizeof(wl_state_t));
         WL_RESULT_CHECK(result);
         ESP_LOGD(TAG, "%s - wl_dummy_sec_move_count= 0x%08x, wl_dummy_sec_pos= 0x%08x, ", __func__, this->state.wl_dummy_sec_move_count, this->state.wl_dummy_sec_pos);
     }
@@ -548,7 +549,7 @@ esp_err_t WL_Flash::erase_sector(size_t sector)
     result = this->updateWL();
     WL_RESULT_CHECK(result);
     size_t virt_addr = this->calcAddr(sector * this->cfg.flash_sector_size);
-    result = this->flash_drv->erase_sector((this->cfg.wl_partition_start_addr + virt_addr) / this->cfg.flash_sector_size);
+    result = this->partition->erase_sector((this->cfg.wl_partition_start_addr + virt_addr) / this->cfg.flash_sector_size);
     WL_RESULT_CHECK(result);
     return result;
 }
@@ -580,11 +581,11 @@ esp_err_t WL_Flash::write(size_t dest_addr, const void *src, size_t size)
     uint32_t count = (size - 1) / this->cfg.wl_page_size;
     for (size_t i = 0; i < count; i++) {
         size_t virt_addr = this->calcAddr(dest_addr + i * this->cfg.wl_page_size);
-        result = this->flash_drv->write(this->cfg.wl_partition_start_addr + virt_addr, &((uint8_t *)src)[i * this->cfg.wl_page_size], this->cfg.wl_page_size);
+        result = this->partition->write(this->cfg.wl_partition_start_addr + virt_addr, &((uint8_t *)src)[i * this->cfg.wl_page_size], this->cfg.wl_page_size);
         WL_RESULT_CHECK(result);
     }
     size_t virt_addr_last = this->calcAddr(dest_addr + count * this->cfg.wl_page_size);
-    result = this->flash_drv->write(this->cfg.wl_partition_start_addr + virt_addr_last, &((uint8_t *)src)[count * this->cfg.wl_page_size], size - count * this->cfg.wl_page_size);
+    result = this->partition->write(this->cfg.wl_partition_start_addr + virt_addr_last, &((uint8_t *)src)[count * this->cfg.wl_page_size], size - count * this->cfg.wl_page_size);
     WL_RESULT_CHECK(result);
     return result;
 }
@@ -600,18 +601,18 @@ esp_err_t WL_Flash::read(size_t src_addr, void *dest, size_t size)
     for (size_t i = 0; i < count; i++) {
         size_t virt_addr = this->calcAddr(src_addr + i * this->cfg.wl_page_size);
         ESP_LOGV(TAG, "%s - real_addr= 0x%08x, size= 0x%08x", __func__, (uint32_t) (this->cfg.wl_partition_start_addr + virt_addr), (uint32_t) size);
-        result = this->flash_drv->read(this->cfg.wl_partition_start_addr + virt_addr, &((uint8_t *)dest)[i * this->cfg.wl_page_size], this->cfg.wl_page_size);
+        result = this->partition->read(this->cfg.wl_partition_start_addr + virt_addr, &((uint8_t *)dest)[i * this->cfg.wl_page_size], this->cfg.wl_page_size);
         WL_RESULT_CHECK(result);
     }
     size_t virt_addr_last = this->calcAddr(src_addr + count * this->cfg.wl_page_size);
-    result = this->flash_drv->read(this->cfg.wl_partition_start_addr + virt_addr_last, &((uint8_t *)dest)[count * this->cfg.wl_page_size], size - count * this->cfg.wl_page_size);
+    result = this->partition->read(this->cfg.wl_partition_start_addr + virt_addr_last, &((uint8_t *)dest)[count * this->cfg.wl_page_size], size - count * this->cfg.wl_page_size);
     WL_RESULT_CHECK(result);
     return result;
 }
 
-Flash_Access *WL_Flash::get_drv()
+Partition *WL_Flash::get_part()
 {
-    return this->flash_drv;
+    return this->partition;
 }
 wl_config_t *WL_Flash::get_cfg()
 {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,9 +177,9 @@ esp_err_t wl_unmount(wl_handle_t handle)
         // We have to flush state of the component
         result = s_instances[handle].instance->flush();
         // We use placement new in wl_mount, so call destructor directly
-        Flash_Access *drv = s_instances[handle].instance->get_drv();
-        drv->~Flash_Access();
-        free(drv);
+        Partition *part = s_instances[handle].instance->get_part();
+        part->~Partition();
+        free(part);
         s_instances[handle].instance->~WL_Flash();
         free(s_instances[handle].instance);
         s_instances[handle].instance = NULL;

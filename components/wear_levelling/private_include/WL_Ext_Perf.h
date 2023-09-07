@@ -6,6 +6,7 @@
 #ifndef _WL_Ext_Perf_H_
 #define _WL_Ext_Perf_H_
 
+#include "Partition.h"
 #include "WL_Flash.h"
 #include "WL_Ext_Cfg.h"
 
@@ -15,7 +16,7 @@ public:
     WL_Ext_Perf();
     ~WL_Ext_Perf() override;
 
-    esp_err_t config(WL_Config_s *cfg, Flash_Access *flash_drv) override;
+    esp_err_t config(WL_Config_s *cfg, Partition *partition) override;
     esp_err_t init() override;
 
     size_t get_flash_size() override;
