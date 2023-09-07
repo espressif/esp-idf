@@ -1,11 +1,12 @@
 Linker Script Generation
 ========================
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
 
-There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash, writable data in RAM, etc. However, it is sometimes necessary to change these default placements.
+There are several :ref:`memory regions <memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash, writable data in RAM, etc. However, it is sometimes necessary to change these default placements.
 
 For example, it may be necessary to place:
 
@@ -56,7 +57,7 @@ In the component's ``CMakeLists.txt`` file, specify argument ``LDFRAGMENTS`` in 
                            )
 
 
-Specifying placements
+Specifying Placements
 ^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to specify placements at the following levels of granularity:
@@ -67,7 +68,7 @@ It is possible to specify placements at the following levels of granularity:
 
 .. _ldgen-placing-object-files :
 
-Placing object files
+Placing Object Files
 """"""""""""""""""""
 
 Suppose the entirety of ``my_src1.o`` is performance-critical, so it is desirable to place it in RAM. On the other hand, the entirety of ``my_src2.o`` contains symbols needed coming out of deep sleep, so it needs to be put under RTC memory.
@@ -82,9 +83,9 @@ In the linker fragment file, we can write:
         my_src1 (noflash)     # places all my_src1 code/read-only data under IRAM/DRAM
         my_src2 (rtc)         # places all my_src2 code/ data and read-only data under RTC fast memory/RTC slow memory
 
-What happens to ``my_src3.o``? Since it is not specified, default placements are used for ``my_src3.o``. More on default placements :ref:`here<ldgen-default-placements>`.
+What happens to ``my_src3.o``? Since it is not specified, default placements are used for ``my_src3.o``. More on default placements :ref:`here <ldgen-default-placements>`.
 
-Placing symbols
+Placing Symbols
 """"""""""""""""
 
 Continuing our example, suppose that among functions defined under ``object1.o``, only ``my_function1`` is performance-critical; and under ``object2.o``, only ``my_function2`` needs to execute after the chip comes out of deep sleep. This could be accomplished by writing:
@@ -105,7 +106,7 @@ The default placements are used for the rest of the functions in ``my_src1.o`` a
 
     There are :ref:`limitations<ldgen-symbol-granularity-placements>` in placing code/data at symbol granularity. In order to ensure proper placements, an alternative would be to group relevant code and data into source files, and :ref:`use object-granularity placements<ldgen-placing-object-files>`.
 
-Placing entire archive
+Placing Entire Archive
 """""""""""""""""""""""
 
 In this example, suppose that the entire component archive needs to be placed in RAM. This can be written as:
@@ -129,7 +130,7 @@ Similarly, this places the entire component in RTC memory:
 
 .. _ldgen-conditional-placements:
 
-Configuration-dependent placements
+Configuration-Dependent Placements
 """"""""""""""""""""""""""""""""""
 
 Suppose that the entire component library should only have special placement when a certain condition is true; for example, when ``CONFIG_PERFORMANCE_MODE == y``. This could be written as:
@@ -182,14 +183,15 @@ Nesting condition-checking is also possible. The following is equivalent to the 
 
 .. _ldgen-default-placements:
 
-The 'default' placements
+The 'default' Placements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Up until this point, the term  'default placements' has been mentioned as fallback placements when the placement rules ``rtc`` and ``noflash`` are not specified. It is important to note that the tokens ``noflash`` or ``rtc`` are not merely keywords, but are actually entities called fragments, specifically :ref:`schemes<ldgen-scheme-fragment>`.
+Up until this point, the term  'default placements' has been mentioned as fallback placements when the placement rules ``rtc`` and ``noflash`` are not specified. It is important to note that the tokens ``noflash`` or ``rtc`` are not merely keywords, but are actually entities called fragments, specifically :ref:`schemes <ldgen-scheme-fragment>`.
 
-In the same manner as ``rtc`` and ``noflash`` are schemes, there exists a ``default`` scheme which defines what the default placement rules should be. As the name suggests, it is where code and data are usually placed, i.e. code/constants is placed in flash, variables placed in RAM, etc.  More on the default scheme :ref:`here<ldgen-default-scheme>`.
+In the same manner as ``rtc`` and ``noflash`` are schemes, there exists a ``default`` scheme which defines what the default placement rules should be. As the name suggests, it is where code and data are usually placed, i.e., code/constants is placed in flash, variables placed in RAM, etc.  More on the default scheme :ref:`here <ldgen-default-scheme>`.
 
 .. note::
+
     For an example of an ESP-IDF component using the linker script generation mechanism, see :component_file:`freertos/CMakeLists.txt`. ``freertos`` uses this to place its object files to the instruction RAM for performance reasons.
 
 This marks the end of the quick start guide. The following text discusses the internals of the mechanism in a little bit more detail. The following sections should be helpful in creating custom placements or modifying default behavior.
@@ -197,7 +199,7 @@ This marks the end of the quick start guide. The following text discusses the in
 Linker Script Generation Internals
 ----------------------------------
 
-Linking is the last step in the process of turning C/C++ source files into an executable. It is performed by the toolchain's linker, and accepts linker scripts which specify code/data placements, among other things. With the linker script generation mechanism, this process is no different, except that the linker script passed to the linker is dynamically generated from: (1) the collected :ref:`linker fragment files<ldgen-linker-fragment-files>` and (2) :ref:`linker script template<ldgen-linker-script-template>`.
+Linking is the last step in the process of turning C/C++ source files into an executable. It is performed by the toolchain's linker, and accepts linker scripts which specify code/data placements, among other things. With the linker script generation mechanism, this process is no different, except that the linker script passed to the linker is dynamically generated from: (1) the collected :ref:`linker fragment files <ldgen-linker-fragment-files>` and (2) :ref:`linker script template <ldgen-linker-script-template>`.
 
 .. note::
 
@@ -208,7 +210,7 @@ Linking is the last step in the process of turning C/C++ source files into an ex
 Linker Fragment Files
 ^^^^^^^^^^^^^^^^^^^^^
 
-As mentioned in the quick start guide, fragment files are simple text files with the ``.lf`` extension containing the desired placements. This is a simplified description of what fragment files contain, however. What fragment files actually contain are 'fragments'. Fragments are entities which contain pieces of information which, when put together, form placement rules that tell where to place sections of object files in the output binary. There are three types of fragments: :ref:`sections<ldgen-sections-fragment>`, :ref:`scheme<ldgen-scheme-fragment>` and :ref:`mapping<ldgen-mapping-fragment>`.
+As mentioned in the quick start guide, fragment files are simple text files with the ``.lf`` extension containing the desired placements. This is a simplified description of what fragment files contain, however. What fragment files actually contain are 'fragments'. Fragments are entities which contain pieces of information which, when put together, form placement rules that tell where to place sections of object files in the output binary. There are three types of fragments: :ref:`sections <ldgen-sections-fragment>`, :ref:`scheme <ldgen-scheme-fragment>` and :ref:`mapping <ldgen-mapping-fragment>`.
 
 Grammar
 """""""
@@ -229,8 +231,8 @@ The three fragment types share a common grammar:
 - name: The name of the fragment, should be unique for the specified fragment type.
 - key, value: Contents of the fragment; each fragment type may support different keys and different grammars for the key values.
 
-    - For :ref:`sections<ldgen-sections-fragment>` and :ref:`scheme<ldgen-scheme-fragment>`, the only supported key is ``entries``
-    - For :ref:`mappings<ldgen-mapping-fragment>`, both ``archive`` and ``entries`` are supported.
+    - For :ref:`sections <ldgen-sections-fragment>` and :ref:`scheme <ldgen-scheme-fragment>`, the only supported key is ``entries``
+    - For :ref:`mappings <ldgen-mapping-fragment>`, both ``archive`` and ``entries`` are supported.
 
 .. note::
 
@@ -304,7 +306,7 @@ Types
 
 **Sections**
 
-Sections fragments defines a list of object file sections that the GCC compiler emits. It may be a default section (e.g. ``.text``, ``.data``) or it may be user defined section through the ``__attribute__`` keyword.
+Sections fragments defines a list of object file sections that the GCC compiler emits. It may be a default section (e.g., ``.text``, ``.data``) or it may be user defined section through the ``__attribute__`` keyword.
 
 The use of an optional '+' indicates the inclusion of the section in the list, as well as sections that start with it. This is the preferred method over listing both explicitly.
 
@@ -378,12 +380,12 @@ built-in schemes referenced in the quick start guide are also defined in this fi
 
 **Mapping**
 
-Mapping fragments define what scheme fragment to use for mappable entities, i.e. object files, function names, variable names, archives.
+Mapping fragments define what scheme fragment to use for mappable entities, i.e., object files, function names, variable names, archives.
 
 .. code-block:: none
 
     [mapping:name]
-    archive: archive                # output archive file name, as built (i.e. libxxx.a)
+    archive: archive                # output archive file name, as built (i.e., libxxx.a)
     entries:
         object:symbol (scheme)      # symbol granularity
         object (scheme)             # object granularity
@@ -516,7 +518,7 @@ On Symbol-Granularity Placements
 Symbol granularity placements is possible due to compiler flags ``-ffunction-sections`` and ``-ffdata-sections``. ESP-IDF compiles with these flags by default.
 If the user opts to remove these flags, then the symbol-granularity placements will not work. Furthermore, even with the presence of these flags, there are still other limitations to keep in mind due to the dependence on the compiler's emitted output sections.
 
-For example, with ``-ffunction-sections``, separate sections are emitted for each function; with section names predictably constructed i.e. ``.text.{func_name}`` and ``.literal.{func_name}``. This is not the case for string literals within the function, as they go to pooled or generated section names.
+For example, with ``-ffunction-sections``, separate sections are emitted for each function; with section names predictably constructed i.e., ``.text.{func_name}`` and ``.literal.{func_name}``. This is not the case for string literals within the function, as they go to pooled or generated section names.
 
 With ``-fdata-sections``, for global scope data the compiler predictably emits either ``.data.{var_name}``, ``.rodata.{var_name}`` or ``.bss.{var_name}``; and so ``Type I`` mapping entry works for these.
 However, this is not the case for static data declared in function scope, as the generated section name is a result of mangling the variable name with some other information.
@@ -610,5 +612,5 @@ Migrate to ESP-IDF v5.0 Linker Script Fragment Files Grammar
 The old grammar supported in ESP-IDF v3.x would be dropped in ESP-IDF v5.0. Here are a few notes on how to migrate properly:
 
 1. Now indentation is enforced and improperly indented fragment files would generate a runtime parse exception. This was not enforced in the old version but previous documentation and examples demonstrate properly indented grammar.
-2. Migrate the old condition entry to the ``if...elif...else`` structure for conditionals. You can refer to the :ref:`earlier chapter<ldgen-conditional-placements>` for detailed grammar.
+2. Migrate the old condition entry to the ``if...elif...else`` structure for conditionals. You can refer to the :ref:`earlier chapter <ldgen-conditional-placements>` for detailed grammar.
 3. mapping fragments now requires a name like other fragment types.

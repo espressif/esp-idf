@@ -1,14 +1,14 @@
-*************************
-ESP-IDF Component Manager
-*************************
+*********************
+IDF Component Manager
+*********************
 
 :link_to_translation:`zh_CN:[中文]`
 
-The ESP-IDF Component Manager is a tool that downloads dependencies for any ESP-IDF CMake project. The download happens automatically during a run of CMake. It can source components either from the `component registry <https://components.espressif.com>`__ or from a Git repository.
+The IDF Component Manager is a tool that downloads dependencies for any ESP-IDF CMake project. The download happens automatically during a run of CMake. It can source components either from the `component registry <https://components.espressif.com>`__ or from a Git repository.
 
 A list of components can be found on `<https://components.espressif.com/>`__.
 
-For detailed information about the ESP-IDF Component Manager, see the `ESP-IDF Component Manager and ESP Component Registry Documentation <https://docs.espressif.com/projects/idf-component-manager/en/latest/>`__.
+For detailed information about the IDF Component Manager, see the `IDF Component Manager and ESP Component Registry Documentation <https://docs.espressif.com/projects/idf-component-manager/en/latest/>`__.
 
 Using with a Project
 ====================
@@ -21,7 +21,7 @@ Dependencies for each component in the project are defined in a separate manifes
 
 When a new manifest is added to one of the components in the project, it is necessary to reconfigure the project manually by running ``idf.py reconfigure``. The build will then track changes in ``idf_component.yml`` manifests and automatically trigger CMake when necessary.
 
-To add a dependency to a component (e.g., ``my_component``) in your ESP-IDF project, you can run the command ``idf.py add-dependency DEPENDENCY``. The ``DEPENDENCY`` argument represents an additional component managed by the ESP-IDF Component Manager that ``my_component`` depends on. It is defined in the format ``namespace/name=1.0.0``, where `namespace/name` is the name of the component and `=1.0.0` is a version range of the component, see the `Versioning Documentation <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/versioning.html>`__. By default, dependencies are added to the main component. You can either explicitly specify a directory where the manifest is located using the ``--path`` option, or specify the component in your ``components`` folder using ``--component=my_component``. The ``add-dependency`` command can be run in the following ways:
+To add a dependency to a component (e.g., ``my_component``) in your ESP-IDF project, you can run the command ``idf.py add-dependency DEPENDENCY``. The ``DEPENDENCY`` argument represents an additional component managed by the IDF Component Manager that ``my_component`` depends on. It is defined in the format ``namespace/name=1.0.0``, where `namespace/name` is the name of the component and `=1.0.0` is a version range of the component, see the `Versioning Documentation <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/versioning.html>`__. By default, dependencies are added to the main component. You can either explicitly specify a directory where the manifest is located using the ``--path`` option, or specify the component in your ``components`` folder using ``--component=my_component``. The ``add-dependency`` command can be run in the following ways:
 
 - ``idf.py add-dependency example/cmp`` adds a dependency on the most recent version of ``example/cmp`` to the main component
 - ``idf.py add-dependency --component=my_component example/cmp<=3.3.3`` adds a dependency on the version ``<=3.3.3`` of ``example/cmp`` to the component ``my_component`` in the ``components`` directory

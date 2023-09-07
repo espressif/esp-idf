@@ -4,6 +4,7 @@
 
 Configure |devkit-name| JTAG Interface
 ======================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 All versions of |devkit-name| boards have built-in JTAG functionality. Putting it to work requires setting jumpers or DIP switches to enable JTAG functionality, and configuring USB drivers. Please refer to step by step instructions below.
@@ -32,7 +33,7 @@ Install and configure USB drivers, so OpenOCD is able to communicate with JTAG i
 Windows
 """""""
 
-1.  Using standard USB A / micro USB B cable connect |devkit-name| to the computer. Switch the |devkit-name| on.
+1.  Using standard USB A/micro USB B cable connect |devkit-name| to the computer. Switch the |devkit-name| on.
 
 2.  Wait until USB ports of |devkit-name| are recognized by Windows and drives are installed. If they do not install automatically, then download them from https://ftdichip.com/drivers/d2xx-drivers/ and install manually.
 
@@ -61,7 +62,7 @@ Now |devkit-name|'s JTAG interface should be available to the OpenOCD. To carry 
 Linux
 """""
 
-1.  Using standard USB A / micro USB B cable connect |devkit-name| board to the computer. Power on the board.
+1.  Using standard USB A/micro USB B cable connect |devkit-name| board to the computer. Power on the board.
 
 .. highlight:: none
 
@@ -98,7 +99,7 @@ On macOS, using FT2232 for JTAG and serial port at the same time needs some addi
 
 1. Manually unload the FTDI serial port driver before starting OpenOCD, start OpenOCD, then load the serial port driver.
 
-2. Modify FTDI driver configuration so that it doesn't load itself for channel A of FT2232 chip, which is the channel used for JTAG on |devkit-name|.
+2. Modify FTDI driver configuration so that it does not load itself for channel A of FT2232 chip, which is the channel used for JTAG on |devkit-name|.
 
 Manually unloading the driver
 .............................
@@ -146,9 +147,13 @@ Modifying FTDI driver
 
 In a nutshell, this approach requires modification to FTDI driver configuration file, which prevents the driver from being loaded for channel B of FT2232H.
 
-.. note:: Other boards may use channel A for JTAG, so use this option with caution.
+.. note::
 
-.. warning:: This approach also needs signature verification of drivers to be disabled, so may not be acceptable for all users.
+    Other boards may use channel A for JTAG, so use this option with caution.
+
+.. warning::
+
+    This approach also needs signature verification of drivers to be disabled, so may not be acceptable for all users.
 
 
 1. Open FTDI driver configuration file using a text editor (note ``sudo``)::

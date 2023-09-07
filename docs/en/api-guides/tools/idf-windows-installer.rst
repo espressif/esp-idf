@@ -1,4 +1,4 @@
-ESP-IDF Windows Installer
+IDF Windows Installer
 =========================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -45,7 +45,7 @@ When running the installer from the command line, it detaches its process from t
 Custom Python and Custom Location of Python Wheels
 --------------------------------------------------
 
-The ESP-IDF installer is using by default embedded Python with reference to the Python Wheel mirror.
+The IDF installer is using by default embedded Python with reference to the Python Wheel mirror.
 
 The following parameters allow to select custom Python and custom location of Python wheels:
 

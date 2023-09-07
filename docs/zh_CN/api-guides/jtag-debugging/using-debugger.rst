@@ -1,5 +1,6 @@
 使用调试器
 ----------
+
 :link_to_translation:`en:[English]`
 
 本节介绍以下几种配置和运行调试器的方法：
@@ -40,7 +41,7 @@
 
 安装完成后，按照以下步骤配置调试会话。请注意，一些配置参数是通用的，有些则针对特定项目。我们会通过配置 "blink" 示例项目的调试环境来进行展示，请先按照 `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_ 介绍的方法将该示例项目添加到 Eclipse 的工作空间。示例项目 :example:`get-started/blink` 的源代码可以在 ESP-IDF 仓库的 :idf:`examples` 目录下找到。
 
-1. 在 Eclipse 中，进入 ``Run`` > ``Debug Configuration``，会出现一个新的窗口。在窗口的左侧窗格中，双击 ``GDB Hardware Debugging``(或者选择 ``GDB Hardware Debugging`` 然后按下 ``New`` 按钮）来新建一个配置。
+1. 在 Eclipse 中，进入 ``Run`` > ``Debug Configuration``，会出现一个新的窗口。在窗口的左侧窗格中，双击 ``GDB Hardware Debugging`` （或者选择 ``GDB Hardware Debugging`` 然后按下 ``New`` 按钮）来新建一个配置。
 
 2. 在右边显示的表单中，``Name:`` 一栏中输入配置的名称，例如： “Blink checking”。
 

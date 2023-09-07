@@ -61,7 +61,7 @@ The :ref:`first-stage-bootloader` in ROM reads the :ref:`second-stage-bootloader
 Log Level
 ---------
 
-The default bootloader log level is "Info". By setting the :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` option, it's possible to increase or decrease this level. This log level is separate from the log level used in the app (see :doc:`/api-reference/system/log`).
+The default bootloader log level is "Info". By setting the :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` option, it is possible to increase or decrease this level. This log level is separate from the log level used in the app (see :doc:`/api-reference/system/log`).
 
 Reducing bootloader log verbosity can improve the overall project boot time by a small amount.
 
@@ -110,7 +110,7 @@ In addition, the following configuration options control the reset condition:
 Boot from Test Firmware
 ------------------------
 
-It's possible to write a special firmware app for testing in production, and boot this firmware when needed. The project partition table will need a dedicated app partition entry for this testing app, type ``app`` and subtype ``test`` (see :doc:`/api-guides/partition-tables`).
+It is possible to write a special firmware app for testing in production, and boot this firmware when needed. The project partition table will need a dedicated app partition entry for this testing app, type ``app`` and subtype ``test`` (see :doc:`/api-guides/partition-tables`).
 
 Implementing a dedicated test app firmware requires creating a totally separate ESP-IDF project for the test app (each project in ESP-IDF only builds one app). The test app can be developed and tested independently of the main project, and then integrated at production testing time as a pre-compiled .bin file which is flashed to the address of the main project's test app partition.
 

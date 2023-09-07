@@ -104,6 +104,7 @@ The table below shows whether the Bluetooth modules are supported in a specific 
 
 The following sections briefly describe each layer and provide quick links to the related documents and application examples.
 
+
 ESP Bluetooth Controller
 ------------------------
 
@@ -111,6 +112,7 @@ At the bottom layer is ESP Bluetooth Controller, which encompasses various modul
 
 - :doc:`API reference <../api-reference/bluetooth/controller_vhci>`
 - :example:`Application examples <bluetooth/hci>`
+
 
 Hosts
 -----
@@ -123,10 +125,11 @@ There are two hosts, ESP-Bluedroid and ESP-NimBLE. The major difference between 
 
   - ESP-Bluedroid supports both Classic Bluetooth and Bluetooth LE, while ESP-NimBLE only supports Bluetooth LE.
 
+
 ESP-Bluedroid
 ^^^^^^^^^^^^^
 
-ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Bluedroid. It consists of two layers: the Bluetooth Upper Layer (BTU) and the Bluetooth Transport Controller layer (BTC). The BTU layer is responsible for processing bottom layer Bluetooth protocols such as L2CAP, GATT/ATT, SMP, GAP, and other profiles. The BTU layer provides an interface prefixed with "bta". The BTC layer is mainly responsible for providing a supported interface, prefixed with “esp”, to the application layer, processing GATT-based profiles and handling miscellaneous tasks. All the APIs are located in the ESP_API layer. Developers should use the Bluetooth APIs prefixed with “esp".
+ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Bluedroid. It consists of two layers: the Bluetooth Upper Layer (BTU) and the Bluetooth Transport Controller layer (BTC). The BTU layer is responsible for processing bottom layer Bluetooth protocols such as L2CAP, GATT/ATT, SMP, GAP, and other profiles. The BTU layer provides an interface prefixed with "bta". The BTC layer is mainly responsible for providing a supported interface, prefixed with "esp", to the application layer, processing GATT-based profiles and handling miscellaneous tasks. All the APIs are located in the ESP_API layer. Developers should use the Bluetooth APIs prefixed with "esp".
 
 .. only:: esp32
 
@@ -147,6 +150,7 @@ ESP-Bluedroid is a modified version of the native Android Bluetooth stack, Blued
 
 - :example:`Application examples <bluetooth/bluedroid>`
 
+
 ESP-NimBLE
 ^^^^^^^^^^
 
@@ -162,10 +166,12 @@ ESP-NimBLE supports Bluetooth LE only. Classic Bluetooth is not supported.
 
 - :example:`Application examples <bluetooth/nimble>`
 
+
 Profiles
 --------
 
 Above the host stacks are the profile implementations by Espressif and some common profiles. Depending on your configuration, these profiles can run on ESP-Bluedroid or ESP-NimBLE.
+
 
 .. only:: SOC_BLE_MESH_SUPPORTED
 
@@ -177,6 +183,7 @@ Above the host stacks are the profile implementations by Espressif and some comm
   - :doc:`ESP-BLE-MESH documentation <esp-ble-mesh/ble-mesh-index>`: feature list, get started, architecture, description of application examples, frequently asked questions, etc.
   - :example:`Application examples <bluetooth/esp_ble_mesh>`
 
+
 .. only:: SOC_BLUFI_SUPPORTED
 
   BluFi
@@ -186,6 +193,7 @@ Above the host stacks are the profile implementations by Espressif and some comm
 
   - :doc:`BluFi documentation <blufi>`
   - :example:`Application examples <bluetooth/blufi>`
+
 
 Applications
 ------------

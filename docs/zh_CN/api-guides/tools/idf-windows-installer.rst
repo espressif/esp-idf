@@ -1,4 +1,4 @@
-ESP-IDF Windows 安装程序
+IDF Windows 安装程序
 ===========================
 
 :link_to_translation:`en:[English]`
@@ -6,7 +6,7 @@ ESP-IDF Windows 安装程序
 命令行参数
 ----------
 
-ESP-IDF Windows 安装程序 ``esp-idf-tools-setup`` 提供以下命令行参数：
+IDF Windows 安装程序 ``esp-idf-tools-setup`` 提供以下命令行参数：
 
 * ``/CONFIG=[PATH]`` - 指定 ``ini`` 配置文件的路径，覆盖安装程序的默认配置。默认值：``config.ini``。
 * ``/GITCLEAN=[yes|no]`` - 在以离线模式安装时，执行 ``git clean`` 命令，并删除未跟踪的目录。默认值：``yes``。
@@ -45,7 +45,7 @@ ESP-IDF Windows 安装程序 ``esp-idf-tools-setup`` 提供以下命令行参数
 自定义 Python 版本及 Python Wheel 位置
 --------------------------------------------------
 
-ESP-IDF 安装程序默认使用嵌入的 Python 版本，并参考预定义的 Python Wheel 镜像获取所需软件包。
+IDF 安装程序默认使用嵌入的 Python 版本，并参考预定义的 Python Wheel 镜像获取所需软件包。
 
 以下参数支持自定义 Python 版本及 Python Wheel 位置：
 

@@ -15,10 +15,12 @@ ESP-IDF 支持以下 C++ 功能：
 - :doc:`thread-local-storage` （``thread_local`` 关键字）
 - 除部分 :ref:`cplusplus_limitations`，所有由 GCC 实现的 C++ 功能均受支持。有关由 GCC 所实现功能的详细信息，请参阅 `GCC 文档 <https://gcc.gnu.org/projects/cxx-status.html>`_。
 
+
 ``esp-idf-cxx`` 组件
 -------------------------
 
 `esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ 组件为一些 ESP-IDF 中的功能提供了更高级别的 C++ API，该组件可以从 `ESP-IDF 组件注册表 <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ 中获取。
+
 
 C++ 语言标准
 ---------------------
@@ -34,6 +36,7 @@ C++ 语言标准
 
 如果组件的公共头文件也需要以该语言标准编译，请使用 ``PUBLIC`` 而非 ``PRIVATE``。
 
+
 .. _cplusplus_multithreading:
 
 多线程
@@ -47,6 +50,7 @@ C++ 语言标准
 
     `std::jthread <https://en.cppreference.com/w/cpp/thread/jthread>`_ 的析构函数只能从 :ref:`posix_thread_api` 或 `C++ 线程库 API <https://en.cppreference.com/w/cpp/thread>`_ 创建的任务中安全地调用。
 
+
 .. _cplusplus_exceptions:
 
 异常处理
@@ -59,6 +63,7 @@ ESP-IDF 默认禁用对 C++ 异常处理的支持，可以用 :ref:`CONFIG_COMPI
 C++ 异常处理应 **仅** 应用于异常情况，即意外情况及罕见情况，如发生频率低于 1% 的事件。**请勿** 将 C++ 异常处理用于流程控制，详情请参阅下文的资源使用部分。有关使用 C++ 异常处理的更多详情，请参阅 `ISO C++ FAQ <https://isocpp.org/wiki/faq/exceptions>`_ 和 `CPP 核心指南 <https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-errors>`_。
 
 有关 C++ 异常处理的示例，请参阅 :example:`cxx/exceptions`。
+
 
 C++ 异常处理及所需资源
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -78,6 +83,7 @@ C++ 异常处理及所需资源
 
 如果抛出异常，解开栈代码的速度要比返回错误代码慢好几个数量级。所增加的运行时长取决于应用程序的要求和错误处理的实现方式（例如，是否需要用户输入或发送消息到云端）。因此，在实时关键的代码路径中，不应使用会抛出异常的代码。
 
+
 .. _cplusplus_rtti:
 
 运行时类型信息 (RTTI)
@@ -94,6 +100,7 @@ ESP-IDF 默认禁用对 RTTI 的支持，可以用 :ref:`CONFIG_COMPILER_CXX_RTT
 -----------------
 
 以下部分提供了在 C++ 中开发 ESP-IDF 应用程序的一些技巧。
+
 
 组合 C 和 C++ 代码
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -153,6 +160,7 @@ ESP-IDF 希望应用程序入口点 ``app_main`` 以 C 链接定义。当 ``app_
     {
     }
 
+
 .. _cplusplus_designated_initializers:
 
 指定初始化器
@@ -171,6 +179,7 @@ ESP-IDF 支持 ``iostream`` 功能，但应注意：
 1. ESP-IDF 在构建过程中通常会删除未使用的代码。然而，在使用 iostreams 的情况下，仅在其中一个源文件包含 ``<iostream>`` 头文件就会使二进制文件增加大约 200 kB。
 2. ESP-IDF 默认使用简单的非阻塞机制来处理标准输入流 (``stdin``)。要获得 ``std::cin`` 的常规行为，应用程序必须初始化 UART 驱动程序，并启用阻塞模式，详情请参阅 :example_file:`common_components/protocol_examples_common/stdin_out.c`。
 
+
 .. _cplusplus_limitations:
 
 限制
@@ -180,6 +189,7 @@ ESP-IDF 支持 ``iostream`` 功能，但应注意：
 - 当与模板函数一起使用时，会忽略各种节属性（例如 ``IRAM_ATTR``）。
 - vtable 位于 flash 中，在禁用 flash 缓存时无法访问。因此，在 :ref:`iram-safe-interrupt-handlers` 中应避免调用虚拟函数。目前尚无法使用链接器脚本生成器调整 vtable 的放置位置。
 - 不支持 C++ 文件系统 (``std::filesystem``) 功能。
+
 
 注意事项
 -------------

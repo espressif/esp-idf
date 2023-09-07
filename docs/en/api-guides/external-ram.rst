@@ -8,6 +8,7 @@ Support for External RAM
 
 Introduction
 ============
+
 {IDF_TARGET_PSRAM_VADDR_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="32 MB"}
 
 {IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to use up to {IDF_TARGET_PSRAM_VADDR_SIZE} of virtual addresses for external PSRAM (Psuedostatic RAM) memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
@@ -27,7 +28,7 @@ Hardware
 
 .. note::
 
-    Espressif produces both modules and system-in-package chips that integrate compatible PSRAM and flash and are ready to mount on a product PCB. Consult the Espressif website for more information. If you're using a custom PSRAM chip, ESP-IDF SDK might not be compatible with it.
+    Espressif produces both modules and system-in-package chips that integrate compatible PSRAM and flash and are ready to mount on a product PCB. Consult the Espressif website for more information. If you are using a custom PSRAM chip, ESP-IDF SDK might not be compatible with it.
 
 For specific details about connecting the SoC or module pins to an external PSRAM chip, consult the SoC or module datasheet.
 
@@ -141,7 +142,7 @@ Remaining external RAM can also be added to the capability heap allocator using 
 
     - The corresponding virtual memory range of those instructions will also be re-mapped to PSRAM.
 
-    If :ref:`CONFIG_SPIRAM_RODATA` is also enabled, the cache won't be disabled during an SPI1 flash operation. You don't need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
+    If :ref:`CONFIG_SPIRAM_RODATA` is also enabled, the cache will not be disabled during an SPI1 flash operation. You do not need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
 
     .. _external_ram_config_rodata:
 
@@ -156,7 +157,7 @@ Remaining external RAM can also be added to the capability heap allocator using 
 
     - The corresponding virtual memory range of those rodata will also be re-mapped to PSRAM.
 
-    If :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` is also enabled, the cache won't be disabled during an SPI1 flash operation. You don't need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
+    If :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` is also enabled, the cache will not be disabled during an SPI1 flash operation. You do not need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
 
 Restrictions
 ============
@@ -176,7 +177,7 @@ External RAM use has the following restrictions:
       - The bandwidth that DMA accesses external RAM is very limited, especially when CPU is trying to access the external RAM at the same time.
       - You can configure :ref:`CONFIG_SPIRAM_SPEED` as 120 MHz for an octal PSRAM. The bandwidth will be improved. However there are still restrictions for this option. See :ref:`All Supported PSRAM Modes and Speeds <flash-psram-combination>` for more details.
 
-* External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
+* External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal ram. However, when accessing large chunks of data (> 32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
 
 * In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs.
 

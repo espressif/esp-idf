@@ -20,7 +20,7 @@ ESP-BLE-MESH 的实现和认证基于最新的 `Mesh Profile v1.0.1 <https://www
 
     .. note::
 
-      如果您在寻找 ESP32 基于 Wi-Fi 的 mesh 方案，请查阅乐鑫的另一款产品 ESP-WIFI-MESH。更多相关信息及文档，请参见 :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`。
+      如果你在寻找 ESP32 基于 Wi-Fi 的 mesh 方案，请查阅乐鑫的另一款产品 ESP-WIFI-MESH。更多相关信息及文档，请参见 :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`。
 
 
 .. _getting-started-with-ble-mesh:
@@ -28,11 +28,11 @@ ESP-BLE-MESH 的实现和认证基于最新的 `Mesh Profile v1.0.1 <https://www
 ESP-BLE-MESH 快速入门
 =====================
 
-该章节旨在帮助您基于乐鑫的 ESP32 开发板搭建 ESP-BLE-MESH 网络。
+该章节旨在帮助你基于乐鑫的 ESP32 开发板搭建 ESP-BLE-MESH 网络。
 
 我们将会展示如何搭建并运行一个包含 3 个节点的小型 ESP-BLE-MESH 网络，其中包含设备配网、节点配置，以及向特定节点上的 Generic OnOff Server Model 发送开关灯命令。
 
-如果您是第一次接触 ESP-IDF，请参见 esp-idf :doc:`../../get-started/index` 来设置开发环境，编译、烧写和运行示例应用程序。
+如果你是第一次接触 ESP-IDF，请参见 esp-idf :doc:`../../get-started/index` 来设置开发环境，编译、烧写和运行示例应用程序。
 
 
 硬件及软件准备
@@ -56,7 +56,7 @@ ESP-BLE-MESH 快速入门
 安装
 ----
 
-以下详细步骤可指导您完成安装过程。
+以下详细步骤可指导你完成安装过程。
 
 
 .. _get-started-ble-mesh-check-hardware:
@@ -64,11 +64,11 @@ ESP-BLE-MESH 快速入门
 步骤 1. 检查硬件
 """""""""""""""""
 
-`ESP32-DevKitC`_ 和 `ESP-WROVER-KIT`_ 开发板均支持 ESP-BLE-MESH。您可以通过 menuconfig: :code:`idf.py menuconfig` > ``Example Configuration`` > ``Board selection for ESP-BLE-MESH`` 选择特定的开发板。
+`ESP32-DevKitC`_ 和 `ESP-WROVER-KIT`_ 开发板均支持 ESP-BLE-MESH。你可以通过 menuconfig: :code:`idf.py menuconfig` > ``Example Configuration`` > ``Board selection for ESP-BLE-MESH`` 选择特定的开发板。
 
 .. note::
 
-  如果您打算使用 `ESP32-DevKitC`_ 开发板，请将 RGB 灯焊接至 GPIO 管脚 25、26 和 27。
+  如果你打算使用 `ESP32-DevKitC`_ 开发板，请将 RGB 灯焊接至 GPIO 管脚 25、26 和 27。
 
 
 步骤 2. 配置软件

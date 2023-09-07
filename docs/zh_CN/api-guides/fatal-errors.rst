@@ -1,5 +1,6 @@
 严重错误
 ========
+
 :link_to_translation:`en:[English]`
 
 .. _Overview:
@@ -31,7 +32,7 @@
 紧急处理程序
 ------------
 
-:ref:`Overview` 中列举的所有错误都会由 *紧急处理程序（Panic Handler）* 负责处理。
+:ref:`Overview` 中列举的所有错误都会由 *紧急处理程序 (Panic Handler)* 负责处理。
 
 紧急处理程序首先会将出错原因打印到控制台，例如 CPU 异常的错误信息通常会类似于
 
@@ -163,7 +164,7 @@
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    在某些情况下，例如中断看门狗超时，紧急处理程序会额外打印 CPU 寄存器（EPC1-EPC4）的值，以及另一个 CPU 的寄存器值和代码回溯。
+    在某些情况下，例如中断看门狗超时，紧急处理程序会额外打印 CPU 寄存器 (EPC1-EPC4) 的值，以及另一个 CPU 的寄存器值和代码回溯。
 
     回溯行包含了当前任务中每个堆栈帧的 PC:SP 对（PC 是程序计数器，SP 是堆栈指针）。如果在 ISR 中发生了严重错误，回溯会同时包括被中断任务的 PC:SP 对，以及 ISR 中的 PC:SP 对。
 
@@ -237,10 +238,10 @@
 
         Backtrace: 0x42009e9a:0x3fc92120 0x42009ea6:0x3fc92120 0x42009ec2:0x3fc92130 0x42024620:0x3fc92150 0x40387d7c:0x3fc92160 0xfffffffe:0x3fc92170
 
-    这些 ``PC:SP`` 对代表当前任务每一个栈帧的程序计数器值（Program Counter）和栈顶地址（Stack Pointer）。
+    这些 ``PC:SP`` 对代表当前任务每一个栈帧的程序计数器值 (Program Counter) 和栈顶地址 (Stack Pointer)。
 
 
-    :ref:`CONFIG_ESP_SYSTEM_USE_EH_FRAME` 选项的主要优点是，回溯信息可以由程序自己解析生成并打印 (而不依靠 :doc:`IDF 监视器 <tools/idf-monitor>`)。但是该选项会导致编译后的二进制文件更大（增幅可达 20% 甚至 100%）。此外，该选项会将调试信息也保存在二进制文件里。因此，强烈不建议用户在量产/生产版本中启用该选项。
+    :ref:`CONFIG_ESP_SYSTEM_USE_EH_FRAME` 选项的主要优点是，回溯信息可以由程序自己解析生成并打印（而不依靠 :doc:`tools/idf-monitor`）。但是该选项会导致编译后的二进制文件更大（增幅可达 20% 甚至 100%）。此外，该选项会将调试信息也保存在二进制文件里。因此，强烈不建议用户在量产/生产版本中启用该选项。
 
 若要查找发生严重错误的代码位置，请查看 "Backtrace" 的后面几行，发生严重错误的代码显示在顶行，后续几行显示的是调用堆栈。
 
@@ -303,7 +304,9 @@ Guru Meditation 错误
 
 本节将对打印在 ``Guru Meditation Error: Core panic'ed`` 后面括号中的致错原因进行逐一解释。
 
-.. note:: 想要了解 "Guru Meditation" 的历史渊源，请参阅 `维基百科 <https://en.wikipedia.org/wiki/Guru_Meditation>`_ 。
+.. note::
+
+  想要了解 "Guru Meditation" 的历史渊源，请参阅 `维基百科 <https://en.wikipedia.org/wiki/Guru_Meditation>`_ 。
 
 
 |ILLEGAL_INSTR_MSG|
@@ -399,7 +402,7 @@ Interrupt wdt timeout on CPU0 / CPU1
     ESP-IDF 中使用 {IDF_TARGET_NAME} 的权限控制功能来防止以下类型的内存访问：
 
     * 程序加载后向指令 RAM 写入代码
-    * 从数据 RAM （用于堆、静态 .data 和 .bss 区域）执行代码
+    * 从数据 RAM（用于堆、静态 .data 和 .bss 区域）执行代码
 
     该类操作对于大多数程序来说并不必要，禁止此类操作往往使软件漏洞更难被利用。依赖动态加载或自修改代码的应用程序可以使用 :ref:`CONFIG_ESP_SYSTEM_MEMPROT_FEATURE` 选项来禁用此项保护。
 
@@ -552,7 +555,9 @@ FreeRTOS 堆栈检查
     idf_component_get_property(lib component_name COMPONENT_LIB)
     target_compile_options(${lib} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
-.. 注意:: 关于 :ref:`构建属性 <cmake-build-properties>` 和 :ref:`组件属性 <cmake-component-properties>` 的更多信息，请查看构建系统文档。
+.. 注意::
+
+  关于 :ref:`构建属性 <cmake-build-properties>` 和 :ref:`组件属性 <cmake-component-properties>` 的更多信息，请查看构建系统文档。
 
 要为同一组件的 CMakeLists.txt 中的特定组件（``component_name``）使能 UBSAN，在文件末尾添加以下内容::
 

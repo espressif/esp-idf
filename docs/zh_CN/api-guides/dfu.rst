@@ -11,6 +11,7 @@
 - :ref:`api_guide_dfu_build` 章节介绍了如何使用 ESP-IDF 构建固件。
 - :ref:`api_guide_dfu_flash` 章节介绍了如何烧录固件。
 
+
 USB 连接
 --------------
 
@@ -37,7 +38,7 @@ USB 连接
 
 .. warning::
 
-    一些连接线采用非标准颜色连接，有时调换下 D+ 和 D- 的连接，驱动程序就能正常工作。如果无法检测到您的设备，请尝试下调换 D+ 和 D- 的连接线。
+    一些连接线采用非标准颜色连接，有时调换下 D+ 和 D- 的连接，驱动程序就能正常工作。如果无法检测到你的设备，请尝试下调换 D+ 和 D- 的连接线。
 
 .. only:: esp32s3
 
@@ -60,7 +61,9 @@ USB 连接
     idf.py dfu
 
 .. note::
-    在运行 ``idf.py dfu`` 命令前，请记得通过 ``idf.py set-target`` 命令设置目标芯片。否则，您创建的镜像可能不是针对目标芯片，或者收到类似 ``unknown target 'dfu'`` 的错误消息。
+
+    在运行 ``idf.py dfu`` 命令前，请记得通过 ``idf.py set-target`` 命令设置目标芯片。否则，你创建的镜像可能不是针对目标芯片，或者收到类似 ``unknown target 'dfu'`` 的错误消息。
+
 
 .. _api_guide_dfu_flash:
 
@@ -84,9 +87,11 @@ USB 连接
     idf.py dfu-flash --path 1-2
 
 .. note::
+
     供应商和产品标识符的设置是基于使用 ``idf.py set-target`` 命令时所选的目标芯片，在调用 ``idf.py dfu-flash`` 时无法选择。
 
 请参考 :ref:`api_guide_dfu_flash_errors` 及其解决方案。
+
 
 .. _api_guide_dfu_flash_udev:
 
@@ -100,23 +105,27 @@ Udev 是 Linux 内核的设备管理器，允许用户在没有 ``sudo`` 的情�
     SUBSYSTEMS=="usb", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="00??", GROUP="plugdev", MODE="0666"
 
 .. note::
-    请检查 ``groups`` 命令的输出。用户必须是上面指定的 `GROUP` 的成员。您可以为此使用其他现有的组（例如，在某些系统上使用 `uucp` 而不是 `plugdev`）或为此创建一个新的组。
 
-您可以选择重启计算机使之前的设置生效，或者手动运行 ``sudo udevadm trigger``，强制 Udev 触发新规则。
+    请检查 ``groups`` 命令的输出。用户必须是上面指定的 `GROUP` 的成员。你可以为此使用其他现有的组（例如，在某些系统上使用 `uucp` 而不是 `plugdev`）或为此创建一个新的组。
+
+你可以选择重启计算机使之前的设置生效，或者手动运行 ``sudo udevadm trigger``，强制 Udev 触发新规则。
+
 
 .. _api_guide_dfu_flash_win:
 
 USB 驱动（仅限 Windows）
 -------------------------------
 
-``dfu-util`` 使用 `libusb` 来访问设备。您需要在 Windows 上使用 `WinUSB` 驱动程序注册设备。
+``dfu-util`` 使用 `libusb` 来访问设备。你需要在 Windows 上使用 `WinUSB` 驱动程序注册设备。
 
 更多详细信息，请参考 `libusb wiki <https://github.com/libusb/libusb/wiki/Windows#How_to_use_libusb_on_Windows>`_。
 
 可以通过 `Zadig 工具 <https://zadig.akeo.ie/>`_ 安装驱动程序。请确保在运行该工具之前设备处于下载模式，并确保在安装驱动程序之前检测到 {IDF_TARGET_NAME} 设备。Zadig 工具可能会检测到 {IDF_TARGET_NAME} 的多个 USB 接口。请只为没有安装驱动的接口（可能是接口 2）安装 WinUSB 驱动，不要重新安装其他接口驱动。
 
 .. warning::
+
     不建议在 Windows 的设备管理器中手动安装驱动程序，可能会造成无法正常烧录。
+
 
 .. _api_guide_dfu_flash_errors:
 
@@ -125,13 +134,14 @@ USB 驱动（仅限 Windows）
 
 - 出现 ``dfu-util: command not found`` 错误可能是因为该工具尚未安装或是无法在终端使用。检查是否已经安装该工具的一种简单方法是运行 ``dfu-util --version`` 命令。请参考 :ref:`get-started-get-prerequisites` 安装 ``dfu-util``。
 
-- 出现 ``No DFU capable USB device available`` 错误的原因可能是在 Windows 上没有正确安装 USB 驱动程序（请参考 :ref:`api_guide_dfu_flash_win`），或是未在 Linux 上设置 Udev 规则（请参考 :ref:`api_guide_dfu_flash_udev`)，或是设备未处于引导加载程序模式。
+- 出现 ``No DFU capable USB device available`` 错误的原因可能是在 Windows 上没有正确安装 USB 驱动程序（请参考 :ref:`api_guide_dfu_flash_win`），或是未在 Linux 上设置 Udev 规则（请参考 :ref:`api_guide_dfu_flash_udev`），或是设备未处于引导加载程序模式。
 
 - 在 Windows 上使用 ``dfu-util`` 第一次烧录失败，并出现 ``Lost device after RESET?`` 错误信息。出现此问题时，请重新烧录一次，再次烧录应该会成功。
+
 
 .. only:: SOC_SUPPORTS_SECURE_DL_MODE
 
     安全下载模式
     --------------------
 
-    启用安全下载模式后，DFU 不再可用。请参见 :doc:`Flash 加密 <../security/flash-encryption>`，了解详细信息。
+    启用安全下载模式后，DFU 不再可用。请参见 :doc:`../security/flash-encryption`，了解详细信息。

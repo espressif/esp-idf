@@ -95,7 +95,7 @@ ESP-BLE-MESH Terminology
     - PB-ADV transfers packets generated during the provisioning process over the advertising channels. This way can only be used for provisioning when provisioner and unprovisioned device both support PB-ADV.
   * - PB-GATT
     - PB-GATT is a provisioning bearer used to provision a device using Proxy PDUs to encapsulate Provisioning PDUs within the Mesh Provisioning Service.
-    - PB-GATT uses connection channels to transfer packets generated during the provisioning process. If an unprovisioned device wants to be provisioned through this method, it needs to implement the related Mesh Provisioning Service. Unprovisioned devices which don't implement such service cannot be provisioned into mesh network through PB-GATT bearer.
+    - PB-GATT uses connection channels to transfer packets generated during the provisioning process. If an unprovisioned device wants to be provisioned through this method, it needs to implement the related Mesh Provisioning Service. Unprovisioned devices which do not implement such service cannot be provisioned into mesh network through PB-GATT bearer.
   * - Provisioning
     - Provisioning is a process of adding an unprovisioned device to a mesh network, managed by a Provisioner.
     - The process of provisioning turns the "unprovisioned device" into a "node", making it a member of the ESP-BLE-MESH network.
@@ -150,7 +150,7 @@ ESP-BLE-MESH Terminology
     - Detailed Explanation
   * - Device Key (DevKey)
     - There is also a device key, which is a special application key that is unique to each node, is known only to the node and a Configuration Client, and is used to secure communications between the node and a Configuration Client.
-    - The device key enables you to provision the devices, configure the nodes. The device key is used to encrypt Configuration Messages, i.e. the message transferred between the Provisioner and the node when the device is configured.
+    - The device key enables you to provision the devices, configure the nodes. The device key is used to encrypt Configuration Messages, i.e., the message transferred between the Provisioner and the node when the device is configured.
   * - Application Key (AppKey)
     - Application keys are used to secure communications at the upper transport layer.
     - Application key is used for decryption of application data before delivering application data to application layer and encryption of them during the delivery of application layer. Some nodes in the network have a specific purpose and can restrict access to potentially sensitive data based on the needs of the application. With specific application keys, these nodes are associated with specific applications. Generally speaking, the fields using different application keys include security (access control of buildings, machine rooms and CEO offices), lighting (plant, exterior building and sidewalks) and HVAC systems. Application keys are bound to Network keys. This means application keys are only used in a context of a Network key they are bound to. An application key shall only be bound to a single Network key.
@@ -168,10 +168,10 @@ ESP-BLE-MESH Terminology
   * - Term
     - Official Definition
     - Detailed Explanation
-  * - Reassembly / Segmentation
+  * - Reassembly/Segmentation
     - Segmentation and reassembly (SAR) is a method of communication network, which is divided into small units before transmitting packets and reassembled in a proper order at the communication receiving end.
     - The lower transport layer will automatically segment the message whose size is too big. The receiving end will return a response message, and the transmitting end will send the data packet again that the receiving end does not receive according to the response message. This is automatically completed by the lower transport layer. Unsegmented messages have at most 15 bytes, of which 4 bytes are transMIC, so the remaining is 11 bytes; in the case of segmentation, there are 12 valid bytes in the first several packets, and 8 in the last one. Special case: A shorter packet requires mandatory segmentation from lower transport layer, in which case the valid byte is 8 bytes.
-  * - Unacknowledged / Acknowledged
+  * - Unacknowledged/Acknowledged
     - There are two types of messages: Unacknowledged or Acknowledged
     - Based on the whether or not the receiving end needs to send the response message, the messages sent are divided into two kinds. The sending end should set the maximum number of retransmission.
 

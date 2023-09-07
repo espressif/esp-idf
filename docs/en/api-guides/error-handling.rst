@@ -1,7 +1,8 @@
-.. highlight:: c
+.. code-block:: c
 
 Error Handling
 ==============
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
@@ -24,7 +25,8 @@ This guide explains ESP-IDF error handling mechanisms related to recoverable err
 
 For instructions on diagnosing unrecoverable errors, see :doc:`Fatal Errors <fatal-errors>`.
 
-Error codes
+
+Error Codes
 -----------
 
 The majority of ESP-IDF-specific functions use :cpp:type:`esp_err_t` type to return error codes. :cpp:type:`esp_err_t` is a signed integer type. Success (no error) is indicated with ``ESP_OK`` code, which is defined as zero.
@@ -34,7 +36,7 @@ Various ESP-IDF header files define possible error codes using preprocessor defi
 For the complete list of error codes, see :doc:`Error Code Reference <../api-reference/error-codes>`.
 
 
-Converting error codes to error messages
+Converting Error Codes to Error Messages
 ----------------------------------------
 
 For each error code defined in ESP-IDF components, :cpp:type:`esp_err_t` value can be converted to an error code name using :cpp:func:`esp_err_to_name` or :cpp:func:`esp_err_to_name_r` functions. For example, passing ``0x101`` to :cpp:func:`esp_err_to_name` will return "ESP_ERR_NO_MEM" string. Such strings can be used in log output to make it easier to understand which error has happened.
@@ -43,9 +45,10 @@ Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret t
 
 This feature is enabled by default, but can be disabled to reduce application binary size. See :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
 
+
 .. _esp-error-check-macro:
 
-``ESP_ERROR_CHECK`` macro
+``ESP_ERROR_CHECK`` Macro
 -------------------------
 
 :c:macro:`ESP_ERROR_CHECK` macro serves similar purpose as ``assert``, except that it checks :cpp:type:`esp_err_t` value rather than a ``bool`` condition. If the argument of :c:macro:`ESP_ERROR_CHECK` is not equal :c:macro:`ESP_OK`, then an error message is printed on the console, and ``abort()`` is called.
@@ -60,7 +63,7 @@ Error message will typically look like this::
 
     Backtrace: 0x40086e7c:0x3ffb4ff0 0x40087328:0x3ffb5010 0x400d1fdf:0x3ffb5030 0x400d0816:0x3ffb5050
 
-.. note:: If :doc:`IDF monitor <tools/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
+.. note:: If :doc:`ESP-IDF monitor <tools/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
 
 - The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occured is printed as well.
 
@@ -71,38 +74,43 @@ Error message will typically look like this::
 
 .. _esp-error-check-without-abort-macro:
 
-``ESP_ERROR_CHECK_WITHOUT_ABORT`` macro
+``ESP_ERROR_CHECK_WITHOUT_ABORT`` Macro
 ---------------------------------------
 
-:c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro serves similar purpose as ``ESP_ERROR_CHECK``, except that it won't call ``abort()``.
+:c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro serves similar purpose as ``ESP_ERROR_CHECK``, except that it will not call ``abort()``.
+
 
 .. _esp-return-on-error-macro:
 
-``ESP_RETURN_ON_ERROR`` macro
+``ESP_RETURN_ON_ERROR`` Macro
 -----------------------------
 
 :c:macro:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns.
 
+
 .. _esp-goto-on-error-macro:
 
-``ESP_GOTO_ON_ERROR`` macro
+``ESP_GOTO_ON_ERROR`` Macro
 ---------------------------
 
 :c:macro:`ESP_GOTO_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message, sets the local variable `ret` to the code, and then exits by jumping to `goto_tag`.
 
+
 .. _esp-return-on-false-macro:
 
-``ESP_RETURN_ON_FALSE`` macro
+``ESP_RETURN_ON_FALSE`` Macro
 -----------------------------
 
 :c:macro:`ESP_RETURN_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message and returns with the supplied `err_code`.
 
+
 .. _esp-goto-on-false-macro:
 
-``ESP_GOTO_ON_FALSE`` macro
+``ESP_GOTO_ON_FALSE`` Macro
 ---------------------------
 
 :c:macro:`ESP_GOTO_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message, sets the local variable `ret` to the supplied `err_code`, and then exits by jumping to `goto_tag`.
+
 
 .. _check_macros_examples:
 
@@ -133,9 +141,10 @@ Some examples::
 
      If the option :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` in Kconfig is enabled, the err message will be discarded, while the other action works as is.
 
-     The ``ESP_RETURN_XX`` and ``ESP_GOTO_xx`` macros can't be called from ISR. While there are ``xx_ISR`` versions for each of them, e.g., `ESP_RETURN_ON_ERROR_ISR`, these macros could be used in ISR.
+     The ``ESP_RETURN_XX`` and ``ESP_GOTO_xx`` macros cannot be called from ISR. While there are ``xx_ISR`` versions for each of them, e.g., `ESP_RETURN_ON_ERROR_ISR`, these macros could be used in ISR.
 
-Error handling patterns
+
+Error Handling Patterns
 -----------------------
 
 1. Attempt to recover. Depending on the situation, we may try the following methods:
@@ -167,7 +176,7 @@ Error handling patterns
         if (err != ESP_OK) {
             // Clean up
             free(card);
-            // Propagate the error to the upper layer (e.g. to notify the user).
+            // Propagate the error to the upper layer (e.g., to notify the user).
             // Alternatively, application can define and return custom error code.
             return err;
         }

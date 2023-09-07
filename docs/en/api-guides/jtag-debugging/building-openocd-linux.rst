@@ -1,12 +1,13 @@
 ***************************************
 Building OpenOCD from Sources for Linux
 ***************************************
+
 :link_to_translation:`zh_CN:[中文]`
 
 The following instructions are alternative to downloading binary OpenOCD from `Espressif GitHub <https://github.com/espressif/openocd-esp32/releases>`_. To quickly setup the binary OpenOCD, instead of compiling it yourself, backup and proceed to section :ref:`jtag-debugging-setup-openocd`.
 
 
-.. highlight:: bash
+.. code-block:: bash
 
 Download Sources of OpenOCD
 ===========================
@@ -57,7 +58,7 @@ Proceed with configuring and building OpenOCD::
     ./configure
     make
 
-Optionally you can add ``sudo make install`` step at the end. Skip it, if you have an existing OpenOCD (from e.g. another development platform), as it may get overwritten.
+Optionally you can add ``sudo make install`` step at the end. Skip it, if you have an existing OpenOCD (from e.g., another development platform), as it may get overwritten.
 
 .. note::
 

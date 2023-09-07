@@ -1,10 +1,12 @@
 调试示例
 ========
+
 :link_to_translation:`en:[English]`
 
 本节将介绍如何在 :ref:`Eclipse <jtag-debugging-examples-eclipse>` 和 :ref:`命令行 <jtag-debugging-examples-command-line>` 中使用 GDB 进行调试的示例。
 
-.. highlight:: none
+.. code-block:: none
+
 
 .. _jtag-debugging-examples-eclipse:
 
@@ -179,6 +181,7 @@
 
 要修改内存的数值，请在 “Monitor” 选项卡中找到待修改的内存地址，如前面观察的结果一样，输入特定比特翻转后的值。当按下回车键后，将立即看到 LED 的状态发生了改变。
 
+
 .. _jtag-debugging-examples-eclipse-06:
 
 观察和设置程序变量
@@ -227,12 +230,11 @@
 使用命令行的调试示例
 --------------------
 
-请检查您的目标板是否已经准备好，并加载了 :example:`get-started/blink` 示例代码，然后按照 :ref:`jtag-debugging-using-debugger-command-line` 中介绍的步骤配置和启动调试器，最后选择让应用程序在 ``app_main()`` 建立的断点处停止运行 ::
+请检查你的目标板是否已经准备好，并加载了 :example:`get-started/blink` 示例代码，然后按照 :ref:`jtag-debugging-using-debugger-command-line` 中介绍的步骤配置和启动调试器，最后选择让应用程序在 ``app_main()`` 建立的断点处停止运行 ::
 
 	Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
 	43	    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 	(gdb)
-
 
 
 本小节的示例
@@ -343,7 +345,7 @@
 
 线程列表显示了每个线程最后一个被调用的函数以及所在的 C 源文件名（如果存在的话）。
 
-您可以通过输入 ``thread N`` 进入特定的线程，其中 ``N`` 是线程 ID。我们进入 5 号线程来看一下它是如何工作的::
+你可以通过输入 ``thread N`` 进入特定的线程，其中 ``N`` 是线程 ID。我们进入 5 号线程来看一下它是如何工作的::
 
 	(gdb) thread 5
 	[Switching to thread 5 (Thread 1073410208)]
@@ -444,7 +446,7 @@
 	52	        asm("waiti 0");
 	(gdb)
 
-在上图所示的情况下，应用程序已经在 ``freertos_hooks.c`` 文件的第 52 行暂停运行，现在您可以通过输入 ``c`` 再次将其恢复运行或者进行如下所述的一些调试工作。
+在上图所示的情况下，应用程序已经在 ``freertos_hooks.c`` 文件的第 52 行暂停运行，现在你可以通过输入 ``c`` 再次将其恢复运行或者进行如下所述的一些调试工作。
 
 
 .. _jtag-debugging-examples-command-line-04:
@@ -629,7 +631,8 @@
 调试 FreeRTOS 对象
 ^^^^^^^^^^^^^^^^^^
 
-该部分内容或许可以帮助您调试 FreeRTOS 任务交互。
+该部分内容或许可以帮助你调试 FreeRTOS 任务交互。
+
 需要调试 FreeRTOS 任务交互的用户可使用 GDB 命令 ``freertos``。该命令并非 GDB 原生命令，而是来自于 Python 扩展模块 `freertos-gdb <https://pypi.org/project/freertos-gdb>`_，其包含一系列子命令::
 
     (gdb) freertos
@@ -655,7 +658,7 @@
 获得命令的帮助信息
 ^^^^^^^^^^^^^^^^^^
 
-目前所介绍的都是些非常基础的命令，目的在于让您快速上手 JTAG 调试。如果想获得特定命令的语法和功能相关的信息，请在 ``(gdb)`` 提示符下输入 ``help`` 和命令名::
+目前所介绍的都是些非常基础的命令，目的在于让你快速上手 JTAG 调试。如果想获得特定命令的语法和功能相关的信息，请在 ``(gdb)`` 提示符下输入 ``help`` 和命令名::
 
     (gdb) help next
     Step program, proceeding through subroutine calls.

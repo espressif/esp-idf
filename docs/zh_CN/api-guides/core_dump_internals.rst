@@ -1,4 +1,4 @@
-核心转储图像文件详解
+核心转储镜像文件详解
 --------------------------
 
 :link_to_translation:`en:[English]`
@@ -13,21 +13,22 @@
 
 .. figure:: ../../_static/core_dump_format_elf.png
     :align: center
-    :alt: 核心转储 ELF 图像文件格式
+    :alt: 核心转储 ELF 镜像文件格式
     :figclass: align-center
 
-    核心转储 ELF 图像文件格式
+    核心转储 ELF 镜像文件格式
 
 .. figure:: ../../_static/core_dump_format_bin.png
     :align: center
-    :alt: 核心转储二进制图像文件格式
+    :alt: 核心转储二进制镜像文件格式
     :figclass: align-center
 
-    核心转储二进制图像文件格式
+    核心转储二进制镜像文件格式
 
 .. note::
 
-    上图仅展示当前版本图像的文件格式，在未来的发布版本中可能会发生变化。
+    上图仅展示当前版本镜像的文件格式，在未来的发布版本中可能会发生变化。
+
 
 核心转储实现
 --------------------------

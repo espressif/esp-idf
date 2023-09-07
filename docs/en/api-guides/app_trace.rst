@@ -1,5 +1,6 @@
-Application Level Tracing library
+Application Level Tracing Library
 =================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
@@ -56,10 +57,12 @@ There are two additional menuconfig options not mentioned above:
 
 4. *UART TX message size* (:ref:`CONFIG_APPTRACE_UART_TX_MSG_SIZE`). The maximum size of the single message to transfer.
 
+
 How to Use This Library
 -----------------------
 
 This library provides APIs for transferring arbitrary data between the host and {IDF_TARGET_NAME}. When enabled in menuconfig, the target application tracing module is initialized automatically at the system startup, so all what the user needs to do is to call corresponding APIs to send, receive or flush the data.
+
 
 .. _app_trace-application-specific-tracing:
 
@@ -216,7 +219,7 @@ Start command syntax:
 
 Command usage examples:
 
-.. highlight:: none
+.. code-block:: none
 
 1. Collect 2048 bytes of tracing data to the file ``trace.log``. The file will be saved in the ``openocd-esp32`` directory.
 
@@ -256,7 +259,6 @@ Command usage examples:
 
 
 .. _app_trace-logging-to-host:
-
 
 Logging to Host
 ^^^^^^^^^^^^^^^
@@ -317,6 +319,7 @@ Optional arguments:
     Show this help message and exit.
 ``--no-errors``, ``-n``
     Do not print errors.
+
 
 .. _app_trace-system-behaviour-analysis-with-segger-systemview:
 
@@ -393,7 +396,7 @@ Start command syntax:
 
 Command usage examples:
 
-.. highlight:: none
+.. code-block:: none
 
 1.  Collect SystemView tracing data to files ``pro-cpu.SVDat`` and ``app-cpu.SVDat``. The files will be saved in ``openocd-esp32`` directory.
 
@@ -427,7 +430,7 @@ Good instructions on how to install, configure, and visualize data in Impulse fr
 
 .. note::
 
-    ESP-IDF uses its own mapping for SystemView FreeRTOS events IDs, so users need to replace the original file mapping ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` with ``$IDF_PATH/tools/esp_app_trace/SYSVIEW_FreeRTOS.txt``. Also, contents of that IDF-specific file should be used when configuring SystemView serializer using the above link.
+    ESP-IDF uses its own mapping for SystemView FreeRTOS events IDs, so users need to replace the original file mapping ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` with ``$IDF_PATH/tools/esp_app_trace/SYSVIEW_FreeRTOS.txt``. Also, contents of that ESP-IDF-specific file should be used when configuring SystemView serializer using the above link.
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
@@ -469,6 +472,7 @@ Generally, using Gcov to compile and run programs on the host will undergo these
 
 3. Gcov or Gcovr can be used to generate a code coverage based on the ``.gcno``, ``.gcda``, and source files. Gcov will generate a text-based coverage report for each source file in the form of a ``.gcov`` file, whilst Gcovr will generate a coverage report in HTML format.
 
+
 Gcov and Gcovr in ESP-IDF
 """""""""""""""""""""""""""
 
@@ -477,6 +481,7 @@ Using Gcov in ESP-IDF is complicated due to the fact that the program is running
 1. :ref:`app_trace-gcov-setup-project`
 2. :ref:`app_trace-gcov-dumping-data`
 3. :ref:`app_trace-gcov-generate-report`
+
 
 .. _app_trace-gcov-setup-project:
 
@@ -493,6 +498,7 @@ In order to obtain code coverage data in a project, one or more source files wit
 
 When a source file is compiled with the ``--coverage`` option (e.g., ``gcov_example.c``), the compiler will generate the ``gcov_example.gcno`` file in the project's build directory.
 
+
 Project Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -500,6 +506,7 @@ Before building a project with source code coverage, make sure that the followin
 
 - Enable the application tracing module by selecting ``Trace Memory`` for the :ref:`CONFIG_APPTRACE_DESTINATION1` option.
 - Enable Gcov to the host via the :ref:`CONFIG_APPTRACE_GCOV_ENABLE`.
+
 
 .. _app_trace-gcov-dumping-data:
 
@@ -519,10 +526,12 @@ ESP-IDF supports two methods of dumping code coverage data form the target to th
 * Instant Run-Time Dumpgit
 * Hard-coded Dump
 
+
 Instant Run-Time Dump
 ~~~~~~~~~~~~~~~~~~~~~
 
 An Instant Run-Time Dump is triggered by calling the ``{IDF_TARGET_NAME} gcov`` OpenOCD command (via a telnet session). Once called, OpenOCD will immediately preempt the {IDF_TARGET_NAME}'s current state and execute a built-in ESP-IDF Gcov debug stub function. The debug stub function will handle the dumping of data to the host. Upon completion, the {IDF_TARGET_NAME} will resume its current state.
+
 
 Hard-coded Dump
 ~~~~~~~~~~~~~~~
@@ -546,6 +555,7 @@ The following GDB script will add a breakpoint at :cpp:func:`esp_gcov_dump`, the
 .. note::
     Note that all OpenOCD commands should be invoked in GDB as: ``mon <oocd_command>``.
 
+
 .. _app_trace-gcov-generate-report:
 
 Generating Coverage Report
@@ -554,6 +564,7 @@ Generating Coverage Report
 Once the code coverage data has been dumped, the ``.gcno``, ``.gcda`` and the source files can be used to generate a code coverage report. A code coverage report is simply a report indicating the number of times each line in a source file has been executed.
 
 Both Gcov and Gcovr can be used to generate code coverage reports. Gcov is provided along with the Xtensa toolchain, whilst Gcovr may need to be installed separately. For details on how to use Gcov or Gcovr, refer to `Gcov documentation <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ and `Gcovr documentation <https://gcovr.com/>`_.
+
 
 Adding Gcovr Build Target to Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

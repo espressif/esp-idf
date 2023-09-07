@@ -4,9 +4,9 @@ IDF Monitor
 
 :link_to_translation:`zh_CN:[中文]`
 
-IDF Monitor uses the esp-idf-monitor_ package as a serial terminal program which relays serial data to and from the target device's serial port. It also provides some IDF-specific features.
+IDF Monitor uses the esp-idf-monitor_ package as a serial terminal program which relays serial data to and from the target device's serial port. It also provides some ESP-IDF-specific features.
 
-IDF Monitor can be launched from an IDF project by running ``idf.py monitor``.
+IDF Monitor can be launched from an ESP-IDF project by running ``idf.py monitor``.
 
 Keyboard Shortcuts
 ==================
@@ -20,61 +20,61 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
    * - Keyboard Shortcut
      - Action
      - Description
-   * - Ctrl+]
+   * - Ctrl + ]
      - Exit the program
      -
-   * - Ctrl+T
+   * - Ctrl + T
      - Menu escape key
      - Press and follow it by one of the keys given below.
-   * - * Ctrl+T
+   * - * Ctrl + T
      - Send the menu character itself to remote
      -
-   * - * Ctrl+]
+   * - * Ctrl + ]
      - Send the exit character itself to remote
      -
-   * - * Ctrl+P
+   * - * Ctrl + P
      - Reset target into bootloader to pause app via RTS line
      - Resets the target, into bootloader via the RTS line (if connected), so that the board runs nothing. Useful when you need to wait for another device to startup.
-   * - * Ctrl+R
+   * - * Ctrl + R
      - Reset target board via RTS
      - Resets the target board and re-starts the application via the RTS line (if connected).
-   * - * Ctrl+F
+   * - * Ctrl + F
      - Build and flash the project
      - Pauses idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.
-   * - * Ctrl+A (or A)
+   * - * Ctrl + A (or A)
      - Build and flash the app only
      - Pauses idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed. Target ``encrypted-app-flash`` is run if idf_monitor was started with argument ``-E``.
-   * - * Ctrl+Y
+   * - * Ctrl + Y
      - Stop/resume log output printing on screen
      - Discards all incoming serial data while activated. Allows to quickly pause and examine log output without quitting the monitor.
-   * - * Ctrl+L
+   * - * Ctrl + L
      - Stop/resume log output saved to file
      - Creates a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).
-   * - * Ctrl+I (or I)
+   * - * Ctrl + I (or I)
      - Stop/resume printing timestamps
      - IDF Monitor can print a timestamp in the beginning of each line. The timestamp format can be changed by the ``--timestamp-format`` command line argument.
-   * - * Ctrl+H (or H)
+   * - * Ctrl + H (or H)
      - Display all keyboard shortcuts
      -
-   * - * Ctrl+X (or X)
+   * - * Ctrl + X (or X)
      - Exit the program
      -
-   * - Ctrl+C
+   * - Ctrl + C
      - Interrupt running application
      - Pauses IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME option to be enabled.
 
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
 
 
-IDF-specific features
-=====================
+ESP-IDF-specific Features
+=========================
 
 Automatic Address Decoding
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Whenever the chip outputs a hexadecimal address that points to executable code, IDF monitor looks up the location in the source code (file name and line number) and prints the location on the next line in yellow.
 
-.. highlight:: none
+.. code-block:: none
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -226,7 +226,7 @@ The ROM ELF file is automatically loaded from a location based on the ``IDF_PATH
     Set environment variable ``ESP_MONITOR_DECODE`` to ``0`` or call esp_idf_monitor with specific command line option: ``python -m esp_idf_monitor --disable-address-decoding`` to disable address decoding.
 
 Target Reset on Connection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, IDF Monitor will reset the target when connecting to it. The reset of the target chip is performed using the DTR and RTS serial lines. To prevent IDF Monitor from automatically resetting the target on connection, call IDF Monitor with the ``--no-reset`` option (e.g., ``idf.py monitor --no-reset``).
 
@@ -247,6 +247,7 @@ Furthermore, the panic handler can be configured to run GDBStub on a crash by se
 In both cases (i.e., sending the ``Ctrl+C`` message, or receiving the special string pattern), IDF Monitor will automatically launch GDB in order to allow the user to send debugging commands. After GDB exits, the target is reset via the RTS serial line. If this line is not connected, users can reset their target (by pressing the board's Reset button).
 
 .. note::
+
     In the background, IDF Monitor runs the following command to launch GDB::
 
         {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf :idf_target:`Hello NAME chip`
@@ -259,10 +260,11 @@ IDF monitor can be invoked as ``idf.py monitor --print-filter="xyz"``, where ``-
 
 Restrictions on what to print can be specified as a series of ``<tag>:<log_level>`` items where ``<tag>`` is the tag string and ``<log_level>`` is a character from the set ``{N, E, W, I, D, V, *}`` referring to a level for :doc:`logging <../../api-reference/system/log>`.
 
-For example, ``PRINT_FILTER="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e. ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to Verbose level.
+For example, ``PRINT_FILTER="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e., ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to Verbose level.
 
 .. note::
-   Use primary logging to disable at compilation the outputs you do not need through the :doc:`logging library<../../api-reference/system/log>`. Output filtering with IDF monitor is a secondary solution which can be useful for adjusting the filtering options without recompiling the application.
+
+   Use primary logging to disable at compilation the outputs you do not need through the :doc:`logging library <../../api-reference/system/log>`. Output filtering with ESP- monitor is a secondary solution which can be useful for adjusting the filtering options without recompiling the application.
 
 Your app tags must not contain spaces, asterisks ``*``, or colons ``:`` to be compatible with the output filtering feature.
 
@@ -315,7 +317,7 @@ Known Issues with IDF Monitor
 =============================
 
 Issues Observed on Windows
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Arrow keys, as well as some other keys, do not work in GDB due to Windows Console limitations.
 - Occasionally, when "idf.py" exits, it might stall for up to 30 seconds before IDF Monitor resumes.

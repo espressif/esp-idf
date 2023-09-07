@@ -1,5 +1,5 @@
 ********************
-ESP-IDF Docker 镜像
+IDF Docker 镜像
 ********************
 
 :link_to_translation:`en:[English]`
@@ -9,7 +9,7 @@ ESP-IDF Docker 镜像
 
 .. highlight:: bash
 
-ESP-IDF Docker 镜像 (``espressif/idf``) 为使用特定版本的 ESP-IDF 自动化构建应用程序和库而设计。
+IDF Docker 镜像 (``espressif/idf``) 为使用特定版本的 ESP-IDF 自动化构建应用程序和库而设计。
 
 该镜像包含以下内容：
 

@@ -127,7 +127,7 @@ IROM（代码从 flash 中运行）
 
 .. only:: esp32
 
-    允许从 flash 中执行代码的 Flash MMU 机制可参考 {IDF_TARGET_NAME} 技术参考手册* > *存储器管理和保护单元 (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_CN_URL}#mpummu>`__]。
+    允许从 flash 中执行代码的 flash MMU 机制可参考 {IDF_TARGET_NAME} 技术参考手册* > *存储器管理和保护单元 (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_CN_URL}#mpummu>`__]。
 
 在 :doc:`启动 <startup>` 过程中，从 IRAM 中运行的引导加载程序配置 MMU flash 缓存，将应用程序的指令代码区域映射到指令空间。通过 MMU 访问的 flash 使用一些内部 SRAM 进行缓存，访问缓存的 flash 数据与访问其他类型的内部存储器一样快。
 
@@ -168,7 +168,7 @@ DROM（数据存储在 flash 中）
 
         .. note::
 
-            对于 {IDF_TARGET_NAME}， RTC 存储器已被重新重命名为 LP（低功耗）存储器。在与 {IDF_TARGET_NAME} 相关的 IDF 代码、文档以及技术参考手册中，可能会出现这两个术语混用的情况。
+            对于 {IDF_TARGET_NAME}，RTC 存储器已被重新重命名为 LP（低功耗）存储器。在与 {IDF_TARGET_NAME} 相关的 IDF 代码、文档以及技术参考手册中，可能会出现这两个术语混用的情况。
 
 
     RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。

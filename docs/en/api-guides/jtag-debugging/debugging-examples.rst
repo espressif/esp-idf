@@ -1,17 +1,19 @@
 Debugging Examples
 ==================
+
 :link_to_translation:`zh_CN:[中文]`
 
 This section describes debugging with GDB from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
 
-.. highlight:: none
+.. code-block:: none
+
 
 .. _jtag-debugging-examples-eclipse:
 
 Eclipse
 -------
 
-Verify if your target is ready and loaded with :example:`get-started/blink` example. Configure and start debugger following steps in section :ref:`jtag-debugging-using-debugger-eclipse`. Pick up where target was left by debugger, i.e. having the application halted at breakpoint established at ``app_main()``.
+Verify if your target is ready and loaded with :example:`get-started/blink` example. Configure and start debugger following steps in section :ref:`jtag-debugging-using-debugger-eclipse`. Pick up where target was left by debugger, i.e., having the application halted at breakpoint established at ``app_main()``.
 
 .. figure:: ../../../_static/debug-perspective.jpg
     :align: center
@@ -21,7 +23,7 @@ Verify if your target is ready and loaded with :example:`get-started/blink` exam
     Debug Perspective in Eclipse
 
 
-Examples in this section
+Examples in This Section
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. :ref:`jtag-debugging-examples-eclipse-01`
@@ -35,7 +37,7 @@ Examples in this section
 
 .. _jtag-debugging-examples-eclipse-01:
 
-Navigating through the code, call stack and threads
+Navigating Through the Code, Call Stack and Threads
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the target is halted, debugger shows the list of threads in "Debug" window. The line of code where program halted is highlighted in another window below, as shown on the following picture. The LED stops blinking.
@@ -47,7 +49,7 @@ When the target is halted, debugger shows the list of threads in "Debug" window.
 
     Target halted during debugging
 
-Specific thread where the program halted is expanded showing the call stack. It represents function calls that lead up to the highlighted line of code, where the target halted. The first line of call stack under Thread #1 contains the last called function ``app_main()``, that in turn was called from function ``main_task()`` shown in a line below. Each line of the stack also contains the file name and line number where the function was called. By clicking / highlighting the stack entries, in window below, you will see contents of this file.
+Specific thread where the program halted is expanded showing the call stack. It represents function calls that lead up to the highlighted line of code, where the target halted. The first line of call stack under Thread #1 contains the last called function ``app_main()``, that in turn was called from function ``main_task()`` shown in a line below. Each line of the stack also contains the file name and line number where the function was called. By clicking/highlighting the stack entries, in window below, you will see contents of this file.
 
 By expanding threads you can navigate throughout the application. Expand Thread #5 that contains much longer call stack. You will see there, besides function calls, numbers like ``0x4000000c``. They represent addresses of binary code not provided in source form.
 
@@ -65,10 +67,10 @@ Go back to the ``app_main()`` in Thread #1 to familiar code of ``blink.c`` file 
 
 .. _jtag-debugging-examples-eclipse-02:
 
-Setting and clearing breakpoints
+Setting and Clearing Breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When debugging, we would like to be able to stop the application at critical lines of code and then examine the state of specific variables, memory and registers / peripherals. To do so we are using breakpoints. They provide a convenient way to quickly get to and halt the application at specific line.
+When debugging, we would like to be able to stop the application at critical lines of code and then examine the state of specific variables, memory and registers/peripherals. To do so we are using breakpoints. They provide a convenient way to quickly get to and halt the application at specific line.
 
 Let's establish two breakpoints when the state of LED changes. Basing on code listing above, this happens at lines 33 and 36. To do so, hold the "Control" on the keyboard and double clink on number ``33`` in file ``blink.c`` file. A dialog will open where you can confirm your selection by pressing "OK" button. If you do not like to see the dialog just double click the line number. Set another breakpoint in line 36.
 
@@ -97,7 +99,7 @@ Read more about breakpoints under :ref:`jtag-debugging-tip-breakpoints` and :ref
 
 .. _jtag-debugging-examples-eclipse-03:
 
-Halting the target manually
+Halting the Target Manually
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When debugging, you may resume application and enter code waiting for some event or staying in infinite loop without any break points defined. In such case, to go back to debugging mode, you can break program execution manually by pressing "Suspend" button.
@@ -116,7 +118,7 @@ In particular case above, the application has been halted in line 52 of code in 
 
 .. _jtag-debugging-examples-eclipse-04:
 
-Stepping through the code
+Stepping Through the Code
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is also possible to step through the code using "Step Into (F5)" and "Step Over (F6)" commands. The difference is that "Step Into (F5)" is entering inside subroutines calls, while "Step Over (F6)" steps over the call, treating it as a single source line.
@@ -148,7 +150,7 @@ See :ref:`jtag-debugging-tip-why-next-works-as-step` for potential limitation of
 
 .. _jtag-debugging-examples-eclipse-05:
 
-Checking and setting memory
+Checking and Setting Memory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To display or set contents of memory use "Memory" tab at the bottom of "Debug" perspective.
@@ -179,9 +181,10 @@ You should see one bit being flipped over at memory location ``0x3FF44004`` (and
 
 To set memory use the same "Monitor" tab and the same memory location. Type in alternate bit pattern as previously observed. Immediately after pressing enter you will see LED changing the state.
 
+
 .. _jtag-debugging-examples-eclipse-06:
 
-Watching and setting program variables
+Watching and Setting Program Variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A common debugging tasks is checking the value of a program variable as the program runs. To be able to demonstrate this functionality, update file ``blink.c`` by adding a declaration of a global variable ``int i`` above definition of function ``blink_task``. Then add ``i++`` inside ``while(1)`` of this function to get ``i`` incremented on each blink.
@@ -207,7 +210,7 @@ To modify ``i`` enter a new number in "Value" column. After pressing "Resume (F8
 
 .. _jtag-debugging-examples-eclipse-07:
 
-Setting conditional breakpoints
+Setting Conditional Breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here comes more interesting part. You may set a breakpoint to halt the program execution, if certain condition is satisfied. Right click on the breakpoint to open a context menu and select "Breakpoint Properties". Change the selection under "Type:" to "Hardware" and enter a "Condition:" like ``i == 2``.
@@ -234,8 +237,7 @@ Verify if your target is ready and loaded with :example:`get-started/blink` exam
     (gdb)
 
 
-
-Examples in this section
+Examples in This Section
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. :ref:`jtag-debugging-examples-command-line-01`
@@ -250,7 +252,7 @@ Examples in this section
 
 .. _jtag-debugging-examples-command-line-01:
 
-Navigating through the code, call stack and threads
+Navigating Through the Code, Call Stack and Threads
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When you see the ``(gdb)`` prompt, the application is halted. LED should not be blinking.
@@ -268,7 +270,7 @@ To find out where exactly the code is halted, enter ``l`` or ``list``, and debug
     (gdb)
 
 
-Check how code listing works by entering, e.g. ``l 30, 40`` to see particular range of lines of code.
+Check how code listing works by entering, e.g., ``l 30, 40`` to see particular range of lines of code.
 
 You can use ``bt`` or ``backtrace`` to see what function calls lead up to this code::
 
@@ -277,7 +279,7 @@ You can use ``bt`` or ``backtrace`` to see what function calls lead up to this c
     #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
     (gdb)
 
-Line #0 of output provides the last function call before the application halted, i.e. ``app_main ()`` we have listed previously. The ``app_main ()`` was in turn called by function ``main_task`` from line 339 of code located in file ``cpu_start.c``.
+Line #0 of output provides the last function call before the application halted, i.e., ``app_main ()`` we have listed previously. The ``app_main ()`` was in turn called by function ``main_task`` from line 339 of code located in file ``cpu_start.c``.
 
 To get to the context of ``main_task`` in file ``cpu_start.c``, enter ``frame  N``, where N = 1, because the ``main_task`` is listed under #1)::
 
@@ -371,10 +373,10 @@ Using ``bt``, ``i threads``, ``thread N`` and ``list`` commands we are now able 
 
 .. _jtag-debugging-examples-command-line-02:
 
-Setting and clearing breakpoints
+Setting and Clearing Breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When debugging, we would like to be able to stop the application at critical lines of code and then examine the state of specific variables, memory and registers / peripherals. To do so we are using breakpoints. They provide a convenient way to quickly get to and halt the application at specific line.
+When debugging, we would like to be able to stop the application at critical lines of code and then examine the state of specific variables, memory and registers/peripherals. To do so we are using breakpoints. They provide a convenient way to quickly get to and halt the application at specific line.
 
 Let's establish two breakpoints when the state of LED changes. Basing on code listing above this happens at lines 33 and 36. Breakpoints may be established using command ``break M`` where M is the code line number::
 
@@ -426,7 +428,7 @@ Read more about breakpoints under :ref:`jtag-debugging-tip-breakpoints` and :ref
 
 .. _jtag-debugging-examples-command-line-03:
 
-Halting and resuming the application
+Halting and Resuming the Application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When debugging, you may resume application and enter code waiting for some event or staying in infinite loop without any break points defined. In such case, to go back to debugging mode, you can break program execution manually by entering Ctrl+C.
@@ -449,7 +451,7 @@ In particular case above, the application has been halted in line 52 of code in 
 
 .. _jtag-debugging-examples-command-line-04:
 
-Stepping through the code
+Stepping Through the Code
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is also possible to step through the code using ``step`` and ``next`` commands (in short ``s`` and ``n``). The difference is that ``step`` is entering inside subroutines calls, while ``next`` steps over the call, treating it as a single source line.
@@ -506,7 +508,7 @@ See :ref:`jtag-debugging-tip-why-next-works-as-step` for potential limitation of
 
 .. _jtag-debugging-examples-command-line-05:
 
-Checking and setting memory
+Checking and Setting Memory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Displaying the contents of memory is done with command ``x``. With additional parameters you may vary the format and count of memory locations displayed. Run ``help x`` to see more details. Companion command to ``x`` is ``set`` that let you write values to the memory.
@@ -554,7 +556,7 @@ You should see the LED to turn on immediately after entering ``set {unsigned int
 
 .. _jtag-debugging-examples-command-line-06:
 
-Watching and setting program variables
+Watching and Setting Program Variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A common debugging tasks is checking the value of a program variable as the program runs. To be able to demonstrate this functionality, update file ``blink.c`` by adding a declaration of a global variable ``int i`` above definition of function ``blink_task``. Then add ``i++`` inside ``while(1)`` of this function to get ``i`` incremented on each blink.
@@ -598,7 +600,7 @@ You may have up to two watchpoints, see :ref:`jtag-debugging-tip-breakpoints`.
 
 .. _jtag-debugging-examples-command-line-07:
 
-Setting conditional breakpoints
+Setting Conditional Breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here comes more interesting part. You may set a breakpoint to halt the program execution, if certain condition is satisfied. Delete existing breakpoints and try this::
@@ -630,6 +632,7 @@ Debugging FreeRTOS Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This part might be interesting when you are debugging FreeRTOS tasks interactions.
+
 Users that need to use the FreeRTOS task interactions can use the GDB ``freertos`` command. The ``freertos`` command is not native to GDB and comes from the `freertos-gdb <https://pypi.org/project/freertos-gdb>`_ Python extension module. The ``freertos`` command contains a series of sub-commands as demonstrated in the code snippet::
 
     (gdb) freertos
@@ -652,7 +655,7 @@ For a more detailed description of this extension, please refer to https://pypi.
     Users only need to have Python 3.6 (or above) that contains a Python shared library.
 
 
-Obtaining help on commands
+Obtaining Help on Commands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Commands presented so for should provide are very basis and intended to let you quickly get started with JTAG debugging. Check help what are the other commands at you disposal. To obtain help on syntax and functionality of particular command, being at ``(gdb)`` prompt type ``help`` and command name::
@@ -668,7 +671,7 @@ Commands presented so for should provide are very basis and intended to let you 
 By typing just ``help``, you will get top level list of command classes, to aid you drilling down to more details. Optionally refer to available GDB cheat sheets, for instance https://darkdust.net/files/GDB%20Cheat%20Sheet.pdf. Good to have as a reference (even if not all commands are applicable in an embedded environment).
 
 
-Ending debugger session
+Ending Debugger Session
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 To quit debugger enter ``q``::

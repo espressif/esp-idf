@@ -1,5 +1,6 @@
 BluFi
 ^^^^^
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
@@ -32,7 +33,7 @@ The following uses Station as an example to illustrate the core parts of the pro
 
 7. When receiving this control frame, {IDF_TARGET_NAME} will be able to encrypt and decrypt the communication data using the shared key and the security configuration.
 
-8. The mobile phone sends the data frame defined in the section of :ref:`frame_formats`，with the Wi-Fi configuration information to {IDF_TARGET_NAME}, including SSID, password, etc.
+8. The mobile phone sends the data frame defined in the section of :ref:`frame_formats`,with the Wi-Fi configuration information to {IDF_TARGET_NAME}, including SSID, password, etc.
 
 9. The mobile phone sends a control frame of Wi-Fi connection request to {IDF_TARGET_NAME}. When receiving this control frame, {IDF_TARGET_NAME} will regard the communication of essential information as done and get ready to connect to the Wi-Fi.
 
@@ -155,7 +156,7 @@ The format of ACK Frame:
 
    * The data frame supports to be encrypted and verified.
 
-1.1 Control Frame (Binary: 0x0 b’00)
+1.1 Control Frame (Binary: 0x0 b'00)
 
 .. list-table::   
    :header-rows: 1    
@@ -233,7 +234,7 @@ The format of ACK Frame:
 
  
 
-1.2 Data Frame (Binary: 0x1 b’01)
+1.2 Data Frame (Binary: 0x1 b'01)
 
 .. list-table::      
    :header-rows: 1      
@@ -488,6 +489,6 @@ UUID
 
 BluFi Service UUID: 0xFFFF, 16 bit
 
-BluFi (the mobile -> {IDF_TARGET_NAME}): 0xFF01, writable
+BluFi (the mobile > {IDF_TARGET_NAME}): 0xFF01, writable
 
-Blufi ({IDF_TARGET_NAME} -> the mobile phone): 0xFF02, readable and callable
+Blufi ({IDF_TARGET_NAME} > the mobile phone): 0xFF02, readable and callable

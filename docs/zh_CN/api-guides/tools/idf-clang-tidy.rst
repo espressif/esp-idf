@@ -1,14 +1,14 @@
 ******************
-ESP-IDF clang-tidy
+IDF clang-tidy
 ******************
 
 :link_to_translation:`en:[English]`
 
-ESP-IDF clang-tidy 是使用 `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`__ 对当前应用程序进行静态分析的工具。
+IDF clang-tidy 是使用 `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`__ 对当前应用程序进行静态分析的工具。
 
 .. warning::
 
-   ESP-IDF clang-tidy 的功能及其依赖的工具链尚在开发中，最终版本发布前可能有重大变更。
+   IDF clang-tidy 的功能及其依赖的工具链尚在开发中，最终版本发布前可能有重大变更。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 

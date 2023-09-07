@@ -1,5 +1,6 @@
 BluFi
 ^^^^^
+
 :link_to_translation:`en:[English]`
 
 概览
@@ -18,13 +19,13 @@ BluFi 配网流程包含配置 SoftAP 和配置 Station 两部分。
 
 下面以配置 Station 为例，介绍了广播、连接、服务发现、协商共享密钥、传输数据、回传连接状态等关键步骤。
 
-1. {IDF_TARGET_NAME} 开启 GATT Server 模式，发送带有特定 *advertising data* 的广播。该广播不属于 BluFi Profile，您可以按需对其进行自定义。
+1. {IDF_TARGET_NAME} 开启 GATT Server 模式，发送带有特定 *advertising data* 的广播。该广播不属于 BluFi Profile，可以按需对其进行自定义。
 
 2. 使用手机应用程序搜索到该广播后，手机将作为 GATT Client 连接 {IDF_TARGET_NAME}。该步骤对具体使用哪款手机应用程序并无特殊要求。
 
 3. 成功建立 GATT 连接后，手机会向 {IDF_TARGET_NAME} 发送数据帧进行密钥协商（详见 :ref:`frame_formats` ）。
 
-4. {IDF_TARGET_NAME} 收到密钥协商的数据帧后，会按照您自定义的协商方法进行解析。
+4. {IDF_TARGET_NAME} 收到密钥协商的数据帧后，会按照自定义的协商方法进行解析。
 
 5. 手机与 {IDF_TARGET_NAME} 进行密钥协商。协商过程可使用 DH/RSA/ECC 等加密算法。
 
@@ -125,7 +126,7 @@ BluFi 中定义的帧格式
 
 通常情况下，控制帧不包含数据位，ACK 帧类型除外。
 
-ACK 帧格式（8 bit）：
+ACK 帧格式 (8 bit)：
 
 .. list-table::   
    :header-rows: 1    
@@ -233,7 +234,7 @@ ACK 帧格式（8 bit）：
 
 
 
-1.2 数据帧 (二进制：0x1 b’01)
+1.2 数据帧（二进制：0x1 b’01）
 
 .. list-table::      
    :header-rows: 1      
@@ -488,6 +489,6 @@ UUID
 
 BluFi Service UUID： 0xFFFF，16 bit
 
-BluFi （手机 -> {IDF_TARGET_NAME}）特性：0xFF01，主要权限：可写
+BluFi（手机 > {IDF_TARGET_NAME}） 特性：0xFF01，主要权限：可写
 
-BluFi （{IDF_TARGET_NAME} -> 手机）特性：0xFF02，主要权限：可读可通知
+BluFi （{IDF_TARGET_NAME} > 手机）特性：0xFF02，主要权限：可读可通知

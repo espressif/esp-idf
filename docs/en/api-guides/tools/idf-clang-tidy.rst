@@ -1,10 +1,10 @@
 ******************
-ESP-IDF Clang-Tidy
+IDF Clang-Tidy
 ******************
 
 :link_to_translation:`zh_CN:[中文]`
 
-The ESP-IDF Clang Tidy is a tool that uses `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`__ to run static analysis on your current app.
+The IDF Clang Tidy is a tool that uses `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`__ to run static analysis on your current app.
 
 .. warning::
 

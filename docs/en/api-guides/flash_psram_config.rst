@@ -14,7 +14,7 @@ Term               Definition
 **SDR**            Single Data Rate
 **DDR**            Double Data Rate
 **line mode**      Number of signals used to transfer data in the data phase of SPI transactions. e.g., for 4-bit-mode, the speed of the data phase would be 4 bit per clock cycle.
-**FxRx**           F stands for Flash, R stands for PSRAM, x stands for line mode. e.g. F4R4 stands for an {IDF_TARGET_NAME} with Quad Flash and Quad PSRAM
+**FxRx**           F stands for Flash, R stands for PSRAM, x stands for line mode. e.g., F4R4 stands for an {IDF_TARGET_NAME} with Quad Flash and Quad PSRAM
 =============      ===========================
 
 .. note::
@@ -24,7 +24,7 @@ Term               Definition
 
 .. _flash-psram-configuration:
 
-How to configure Flash and PSRAM
+How to Configure Flash and PSRAM
 --------------------------------
 
 ``idf.py menuconfig`` is used to open the configuration menu.
@@ -72,7 +72,7 @@ All Supported Modes and Speeds
 
 .. note::
 
-    For MSPI DDR mode, the data are sampled on both the positive edge and the negative edge. e.g.: if a Flash is set to 80 MHz and DDR mode, then the final speed of the Flash is 160 MHz. This is faster than the Flash setting to 120 Mhz and STR mode.
+    For MSPI DDR mode, the data are sampled on both the positive edge and the negative edge. e.g., if a Flash is set to 80 MHz and DDR mode, then the final speed of the Flash is 160 MHz. This is faster than the Flash setting to 120 Mhz and STR mode.
 
 .. important::
 
@@ -84,7 +84,7 @@ All Supported Modes and Speeds
 
     Risks:
 
-    If your chip powers on at a certain temperature, then after the temperature increases or decreases over 20 celsius degree, the accesses to / from PSRAM / Flash will crash randomly. Flash access crash will lead to program crash.
+    If your chip powers on at a certain temperature, then after the temperature increases or decreases over 20 celsius degree, the accesses to/from PSRAM/Flash will crash randomly. Flash access crash will lead to program crash.
 
     Note 20 celsius degree is not a totally correct number. This value may changes among chips.
 
@@ -113,9 +113,9 @@ F4R8 Hardware
 ======= =============== ======= ============
  Group   Flash mode      Group   PSRAM mode
 ======= =============== ======= ============
- A       120 MHz SDR     A       120MHz DDR
- B       80 MHz  SDR     B       80MHz DDR
- C       40 MHz  SDR     C       40MHz DDR
+ A       120 MHz SDR     A       120 MHz DDR
+ B       80 MHz  SDR     B       80 MHz DDR
+ C       40 MHz  SDR     C       40 MHz DDR
  C       20 MHz  SDR     C
  D                       D       disable
 ======= =============== ======= ============
@@ -130,9 +130,9 @@ F4R4 Hardware
 ====== =============== ====== ============
  Type   Flash           Type   PSRAM
 ====== =============== ====== ============
- A      120 MHz         A      120MHz
- B      80 MHz          B      80MHz
- C      40 MHz          C      40MHz
+ A      120 MHz         A      120 MHz
+ B      80 MHz          B      80 MHz
+ C      40 MHz          C      40 MHz
  C      20 MHz          C
  D                      D      disable
 ====== =============== ====== ============
@@ -144,7 +144,7 @@ F4R4 Hardware
 
 .. _flash-psram-error:
 
-Error handling
+Error Handling
 --------------
 
 1. If a board with Octal Flash resets before the second-stage bootloader:

@@ -8,6 +8,7 @@
 
 简介
 ============
+
 {IDF_TARGET_PSRAM_VADDR_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="32 MB"}
 
 {IDF_TARGET_NAME} 提供了好几百 KB 的片上 RAM，可以满足大部分需求。但有些场景可能需要更多 RAM，因此 {IDF_TARGET_NAME} 另外提供了高达 {IDF_TARGET_PSRAM_VADDR_SIZE} 的虚拟地址，供片外 PSRAM（伪静态随机存储器）存储器使用。片外 RAM 已经集成到内存映射中，在某些范围内与片上 RAM 使用方式相同。
@@ -37,7 +38,7 @@
 配置片外 RAM
 ========================
 
-ESP-IDF 完全支持将片外 RAM 集成到您的应用程序中。在启动并完成片外 RAM 初始化后，可以将 ESP-IDF 配置为用多种方式处理片外 RAM：
+ESP-IDF 完全支持将片外 RAM 集成到你的应用程序中。在启动并完成片外 RAM 初始化后，可以将 ESP-IDF 配置为用多种方式处理片外 RAM：
 
 .. list::
 
@@ -200,7 +201,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
     可以为存储在外部 RAM 中的数据启用自动加密功能。启用该功能后，通过缓存读写的任何数据将被外部存储器加密硬件自动加密/解密。
 
-    只要启用了 flash 加密功能，就会启用这个功能。关于如何启用 flash 加密以及其工作原理，请参考 :doc:`Flash 加密 </security/flash-encryption>`。
+    只要启用了 flash 加密功能，就会启用这个功能。关于如何启用 flash 加密以及其工作原理，请参考 :doc:`/security/flash-encryption`。
 
 
 .. only:: esp32
