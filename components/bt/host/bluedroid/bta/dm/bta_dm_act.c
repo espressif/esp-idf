@@ -5704,6 +5704,21 @@ void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data)
     }
 }
 
+void bta_dm_ble_gap_dtm_tx_start(tBTA_DM_MSG *p_data)
+{
+    BTM_BleTransmitterTest(p_data->dtm_tx_start.tx_channel, p_data->dtm_tx_start.len_of_data, p_data->dtm_tx_start.pkt_payload, p_data->dtm_tx_start.p_dtm_cmpl_cback);
+}
+
+void bta_dm_ble_gap_dtm_rx_start(tBTA_DM_MSG *p_data)
+{
+    BTM_BleReceiverTest(p_data->dtm_rx_start.rx_channel, p_data->dtm_rx_start.p_dtm_cmpl_cback);
+}
+
+void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data)
+{
+    BTM_BleTestEnd(p_data->dtm_stop.p_dtm_cmpl_cback);
+}
+
 void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
 {
     if (BTM_BleClearAdv(p_data->ble_clear_adv.p_clear_adv_cback) == FALSE) {
@@ -5714,6 +5729,18 @@ void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
 }
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
+{
+    BTM_BleEnhancedTransmitterTest(p_data->dtm_enh_tx_start.tx_channel, p_data->dtm_enh_tx_start.len_of_data,
+                                    p_data->dtm_enh_tx_start.pkt_payload, p_data->dtm_enh_tx_start.phy, p_data->dtm_enh_tx_start.p_dtm_cmpl_cback);
+}
+
+void bta_dm_ble_gap_dtm_enhance_rx_start(tBTA_DM_MSG *p_data)
+{
+    BTM_BleEnhancedReceiverTest(p_data->dtm_enh_rx_start.rx_channel, p_data->dtm_enh_rx_start.phy,
+                                    p_data->dtm_enh_rx_start.modulation_index, p_data->dtm_enh_rx_start.p_dtm_cmpl_cback);
+}
+
 void bta_dm_ble_gap_read_phy(tBTA_DM_MSG *p_data)
 {
     //tBTM_STATUS btm_status = 0;

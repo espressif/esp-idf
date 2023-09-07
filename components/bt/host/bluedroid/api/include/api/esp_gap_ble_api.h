@@ -208,6 +208,8 @@ typedef enum {
     ESP_GAP_BLE_PERIODIC_ADV_SET_INFO_TRANS_COMPLETE_EVT,        /*!< when periodic advertising set info transfer complete, the event comes */
     ESP_GAP_BLE_SET_PAST_PARAMS_COMPLETE_EVT,                    /*!< when set periodic advertising sync transfer params complete, the event comes */
     ESP_GAP_BLE_PERIODIC_ADV_SYNC_TRANS_RECV_EVT,                /*!< when periodic advertising sync transfer received, the event comes */
+    // DTM
+    ESP_GAP_BLE_DTM_TEST_UPDATE_EVT,                             /*!< when direct test mode state changes, the event comes */
     // BLE_INCLUDED
     ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT,                          /*!< When clear advertising complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
@@ -341,7 +343,45 @@ typedef enum {
     ESP_BLE_SM_MAX_PARAM,
 } esp_ble_sm_param_t;
 
+typedef enum {
+    /// DTM TX start event
+    DTM_TX_START_EVT  = 0x00,
+    ///DTM RX start event
+    DTM_RX_START_EVT,
+    ///DTM test end event
+    DTM_TEST_STOP_EVT,
+} esp_ble_dtm_update_evt_t;
+
+typedef enum {
+    BLE_DTM_PKT_PAYLOAD_0x00,       /*!< PRBS9 sequence ‘11111111100000111101...’ (in transmission order) as described in [Vol 6] Part F, Section 4.1.5 */
+    BLE_DTM_PKT_PAYLOAD_0x01,       /*!< Repeated ‘11110000’ (in transmission order) sequence as described in [Vol 6] Part F, Section 4.1.5 */
+    BLE_DTM_PKT_PAYLOAD_0x02,       /*!< Repeated ‘10101010’ (in transmission order) sequence as described in [Vol 6] Part F, Section 4.1.5 */
+    BLE_DTM_PKT_PAYLOAD_0x03,       /*!< PRBS15 sequence as described in [Vol 6] Part F, Section 4.1.5 */
+    BLE_DTM_PKT_PAYLOAD_0x04,       /*!< Repeated ‘11111111’ (in transmission order) sequence */
+    BLE_DTM_PKT_PAYLOAD_0x05,       /*!< Repeated ‘00000000’ (in transmission order) sequence */
+    BLE_DTM_PKT_PAYLOAD_0x06,       /*!< Repeated ‘00001111’ (in transmission order) sequence */
+    BLE_DTM_PKT_PAYLOAD_0x07,       /*!< Repeated ‘01010101’ (in transmission order) sequence */
+    BLE_DTM_PKT_PAYLOAD_MAX,        /*!< 0x08 ~ 0xFF, Reserved for future use */
+} esp_ble_dtm_pkt_payload_t;
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
+/**
+* @brief DTM TX parameters
+*/
+typedef struct
+{
+    uint8_t                         tx_channel;            /*!<  channel for sending test data, tx_channel = (Frequency -2402)/2, tx_channel range:0x00-0x27, Frequency range: 2402 MHz to 2480 MHz */
+    uint8_t                         len_of_data;           /*!<  length in bytes of payload data in each packet */
+    esp_ble_dtm_pkt_payload_t       pkt_payload;           /*!<  packet payload type. value range: 0x00-0x07 */
+} esp_ble_dtm_tx_t;
+/**
+* @brief DTM RX parameters
+*/
+typedef struct
+{
+    uint8_t          rx_channel;            /*!<  channel for test data reception, rx_channel = (Frequency -2402)/2, tx_channel range:0x00-0x27, Frequency range: 2402 MHz to 2480 MHz */
+} esp_ble_dtm_rx_t;
+
 /// Advertising parameters
 typedef struct {
     uint16_t                adv_int_min;        /*!< Minimum advertising interval for
@@ -933,6 +973,27 @@ typedef struct {
     uint8_t adv_clk_accuracy;                     /*!< periodic advertising clock accuracy */
 } esp_ble_gap_periodic_adv_sync_estab_t;
 
+/**
+* @brief DTM TX parameters
+*/
+typedef struct
+{
+    uint8_t                     tx_channel;            /*!<  channel for sending test data, tx_channel = (Frequency -2402)/2, tx_channel range:0x00-0x27, Frequency range: 2402 MHz to 2480 MHz */
+    uint8_t                     len_of_data;           /*!<  length in bytes of payload data in each packet */
+    esp_ble_dtm_pkt_payload_t   pkt_payload;           /*!<  packet payload type. value range: 0x00-0x07 */
+    esp_ble_gap_phy_t           phy;                   /*!<  the phy type used by the transmitter, coded phy with S=2:0x04 */
+} esp_ble_dtm_enh_tx_t;
+
+/**
+* @brief DTM RX parameters
+*/
+typedef struct
+{
+    uint8_t             rx_channel;            /*!<  channel for test data reception, rx_channel = (Frequency -2402)/2, tx_channel range:0x00-0x27, Frequency range: 2402 MHz to 2480 MHz */
+    esp_ble_gap_phy_t   phy;                   /*!<  the phy type used by the receiver, 1M phy: 0x01, 2M phy:0x02, coded phy:0x03 */
+    uint8_t             modulation_idx;        /*!<  modulation index, 0x00:standard modulation index, 0x01:stable modulation index */
+} esp_ble_dtm_enh_rx_t;
+
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
@@ -1402,6 +1463,14 @@ typedef union {
         uint8_t adv_clk_accuracy;           /*!< Periodic advertising clock accuracy */
     } past_received;                        /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_SYNC_TRANS_RECV_EVT */
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_DTM_TEST_UPDATE_EVT
+     */
+    struct ble_dtm_state_update_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate DTM operation success status */
+        esp_ble_dtm_update_evt_t update_evt;        /*!< DTM state change event, 0x00: DTM TX start, 0x01: DTM RX start, 0x02:DTM end */
+        uint16_t num_of_pkt;                        /*!< number of packets received, only valid if update_evt is DTM_TEST_STOP_EVT and shall be reported as 0 for a transmitter */
+    } dtm_state_update;                             /*!< Event parameter of ESP_GAP_BLE_DTM_TEST_UPDATE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -2397,12 +2466,76 @@ esp_err_t esp_ble_gap_set_periodic_adv_sync_trans_params(esp_bd_addr_t addr,
                                                          const esp_ble_gap_past_params_t *params);
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
+
 /**
-* @brief           This function is used to clear legacy advertising
+* @brief           This function is used to start a test where the DUT generates reference packets
+*                  at a fixed interval.
+*
+* @param[in]       tx_params : DTM Transmitter parameters
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_dtm_tx_start(const esp_ble_dtm_tx_t *tx_params);
+
+/**
+* @brief           This function is used to start a test where the DUT receives test reference packets
+*                  at a fixed interval.
+*
+* @param[in]       rx_params : DTM Receiver parameters
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_dtm_rx_start(const esp_ble_dtm_rx_t *rx_params);
+#endif //#if (BLE_42_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+/**
+* @brief           This function is used to start a test where the DUT generates reference packets
+*                  at a fixed interval.
+*
+* @param[in]       tx_params : DTM Transmitter parameters
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_dtm_enh_tx_start(const esp_ble_dtm_enh_tx_t *tx_params);
+
+/**
+* @brief           This function is used to start a test where the DUT receives test reference packets
+*                  at a fixed interval.
+*
+* @param[in]       rx_params : DTM Receiver parameters
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_dtm_enh_rx_start(const esp_ble_dtm_enh_rx_t *rx_params);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+/**
+* @brief           This function is used to stop any test which is in progress
 *
 *
 * @return            - ESP_OK : success
 *                    - other  : failed
+*
+*/
+esp_err_t esp_ble_dtm_stop(void);
+
+/**
+* @brief           This function is used to clear legacy advertising
+*
+*
+* @return           - ESP_OK : success
+*                   - other  : failed
 *
 */
 esp_err_t esp_ble_gap_clear_advertising(void);
