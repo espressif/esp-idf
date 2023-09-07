@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "soc/soc_caps.h"
 
 // ESP32H2 should use the PLIC controller as the interrupt controller instead of INTC (SOC_INT_PLIC_SUPPORTED = y)
+#define INTERRUPT_CURRENT_CORE_INT_THRESH_REG   INTERRUPT_CORE0_CPU_INT_THRESH_REG
 #define INTERRUPT_CORE0_CPU_INT_ENABLE_REG PLIC_MXINT_ENABLE_REG
 #define INTERRUPT_CORE0_CPU_INT_THRESH_REG PLIC_MXINT_THRESH_REG
 #define INTERRUPT_CORE0_CPU_INT_CLEAR_REG  PLIC_MXINT_CLEAR_REG

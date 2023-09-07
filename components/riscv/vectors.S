@@ -230,7 +230,7 @@ _interrupt_handler:
 
 #if !SOC_INT_HW_NESTED_SUPPORTED
     /* Save the interrupt threshold level */
-    li      t0, INTERRUPT_CORE0_CPU_INT_THRESH_REG
+    li      t0, INTERRUPT_CURRENT_CORE_INT_THRESH_REG
     lw      s3, 0(t0)
 
     /* Increase interrupt threshold level */
@@ -241,7 +241,7 @@ _interrupt_handler:
     add     t1, t2, t1       /* t1 = INTC_INT_PRIO_REG + 4 * mcause */
     lw      t2, 0(t1)        /* t2 = INTC_INT_PRIO_REG[mcause] */
     addi    t2, t2, 1        /* t2 = t2 +1 */
-    sw      t2, 0(t0)        /* INTERRUPT_CORE0_CPU_INT_THRESH_REG = t2 */
+    sw      t2, 0(t0)        /* INTERRUPT_CURRENT_CORE_INT_THRESH_REG = t2 */
     fence
 #endif // !SOC_INT_HW_NESTED_SUPPORTED
 
@@ -281,7 +281,7 @@ _interrupt_handler:
 
 #if !SOC_INT_HW_NESTED_SUPPORTED
     /* restore the interrupt threshold level */
-    li      t0, INTERRUPT_CORE0_CPU_INT_THRESH_REG
+    li      t0, INTERRUPT_CURRENT_CORE_INT_THRESH_REG
     sw      s3, 0(t0)
     fence
 #endif // !SOC_INT_HW_NESTED_SUPPORTED

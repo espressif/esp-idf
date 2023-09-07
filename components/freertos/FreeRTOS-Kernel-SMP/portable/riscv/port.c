@@ -9,6 +9,7 @@
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
+#include "soc/interrupt_reg.h"
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "riscv/rvruntime-frames.h"
@@ -122,8 +123,8 @@ UBaseType_t ulPortSetInterruptMask(void)
 {
     int ret;
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    ret = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
-    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
+    ret = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
+    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
     /**
      * In theory, this function should not return immediately as there is a
@@ -141,7 +142,7 @@ UBaseType_t ulPortSetInterruptMask(void)
 
 void vPortClearInterruptMask(UBaseType_t mask)
 {
-    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, mask);
+    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, mask);
     /**
      * The delay between the moment we unmask the interrupt threshold register
      * and the moment the potential requested interrupt is triggered is not

@@ -638,7 +638,7 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 
 FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
-    uint32_t threshold = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
+    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
 #if SOC_INT_CLIC_SUPPORTED
     threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
 
