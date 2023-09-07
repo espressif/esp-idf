@@ -12,8 +12,12 @@ static volatile uint16_t s_phy_modem_flag = 0;
 
 extern void phy_param_track_tot(bool en_wifi, bool en_ble_154);
 static esp_timer_handle_t phy_track_pll_timer;
+#if CONFIG_WIFI_ENABLED
 static volatile int64_t s_wifi_prev_timestamp;
+#endif
+#if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED
 static volatile int64_t s_bt_154_prev_timestamp;
+#endif
 #define PHY_TRACK_PLL_PERIOD_IN_US 1000000
 
 #if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED || CONFIG_WIFI_ENABLED

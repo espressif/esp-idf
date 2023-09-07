@@ -747,7 +747,7 @@ static void btdm_sleep_enter_phase2_wrapper(void)
 {
     if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
         if (s_lp_stat.phy_enabled) {
-            esp_phy_disable();
+            esp_phy_disable(PHY_MODEM_BT);
             s_lp_stat.phy_enabled = 0;
         } else {
             assert(0);
@@ -776,7 +776,7 @@ static void btdm_sleep_exit_phase3_wrapper(void)
 
     if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
         if (s_lp_stat.phy_enabled == 0) {
-            esp_phy_enable();
+            esp_phy_enable(PHY_MODEM_BT);
             s_lp_stat.phy_enabled = 1;
         }
     }
@@ -1442,7 +1442,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     /* Enable PHY when enabling controller to reduce power dissipation after controller init
      * Notice the init order: esp_phy_enable() -> bt_bb_v2_init_cmplx() -> coex_pti_v2()
      */
-    esp_phy_enable();
+    esp_phy_enable(PHY_MODEM_BT);
     s_lp_stat.phy_enabled = 1;
 
 #if CONFIG_SW_COEXIST_ENABLE
@@ -1494,7 +1494,7 @@ error:
     coex_disable();
 #endif
     if (s_lp_stat.phy_enabled) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
         s_lp_stat.phy_enabled = 0;
     }
     return ret;
@@ -1516,7 +1516,7 @@ esp_err_t esp_bt_controller_disable(void)
     coex_disable();
 #endif
     if (s_lp_stat.phy_enabled) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
         s_lp_stat.phy_enabled = 0;
     }
 
