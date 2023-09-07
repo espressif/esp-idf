@@ -1,7 +1,8 @@
 # Increase main task stack size
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=7168
 
-# Enable filesystem
+# Enable filesystem for console commands history storage
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_example.csv"
 CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
@@ -10,10 +11,15 @@ CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
 CONFIG_FREERTOS_USE_TRACE_FACILITY=y
 CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
 
+# --------------------------------
+# Performance optimization options
+# --------------------------------
+# `lwIP` and `iperf` tasks have serial dependency to each other (i.e. `iperf` must wait for `lwIP`
+# to process the packets). Therefore, you don't gain much performance improvement when running
+# multi core mode. On the other hand, IRAM optimizations have greater effect for single core mode.
+
 # Run FreeRTOS only on the first core
 CONFIG_FREERTOS_UNICORE=y
-
-CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 # Disable watch dog
 CONFIG_ESP_INT_WDT=n
