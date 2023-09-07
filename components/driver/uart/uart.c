@@ -159,6 +159,12 @@ static uart_context_t uart_context[UART_NUM_MAX] = {
 #if SOC_UART_HP_NUM > 2
     UART_CONTEX_INIT_DEF(UART_NUM_2),
 #endif
+#if SOC_UART_HP_NUM > 3
+    UART_CONTEX_INIT_DEF(UART_NUM_3),
+#endif
+#if SOC_UART_HP_NUM > 4
+    UART_CONTEX_INIT_DEF(UART_NUM_4),
+#endif
 #if (SOC_UART_LP_NUM >= 1)
     UART_CONTEX_INIT_DEF(LP_UART_NUM_0),
 #endif
@@ -643,7 +649,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         ESP_RETURN_ON_FALSE((rts_io_num < 0 || (GPIO_IS_VALID_OUTPUT_GPIO(rts_io_num))), ESP_FAIL, UART_TAG, "rts_io_num error");
         ESP_RETURN_ON_FALSE((cts_io_num < 0 || (GPIO_IS_VALID_GPIO(cts_io_num))), ESP_FAIL, UART_TAG, "cts_io_num error");
     }
-#if (SOC_UART_LP_NUM >= 1)
+#if (SOC_UART_LP_NUM >= 1 && !SOC_LP_GPIO_MATRIX_SUPPORTED)
     else { // LP_UART has its fixed IOs
         const uart_periph_sig_t *pins = uart_periph_signal[uart_num].pins;
         ESP_RETURN_ON_FALSE((tx_io_num < 0 || (tx_io_num == pins[SOC_UART_TX_PIN_IDX].default_gpio)), ESP_FAIL, UART_TAG, "tx_io_num error");
@@ -655,31 +661,76 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 
     /* In the following statements, if the io_num is negative, no need to configure anything. */
     if (tx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, tx_io_num, SOC_UART_TX_PIN_IDX)) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
+        if (uart_num < SOC_UART_HP_NUM) {
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
         gpio_set_level(tx_io_num, 1);
         esp_rom_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
+        }
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+        else {
+            //TODO:IDF-7815
+            rtc_gpio_set_direction(tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
+            rtc_gpio_init(tx_io_num);
+            rtc_gpio_iomux_func_sel(tx_io_num, 1);
+            LP_GPIO.func10_out_sel_cfg.reg_gpio_func10_out_sel  = uart_periph_signal[uart_num].pins[SOC_UART_TX_PIN_IDX].signal;
+        }
+#endif
     }
 
     if (rx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX)) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
-        gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
-        gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
-        esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
+        if (uart_num < SOC_UART_HP_NUM) {
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
+            gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
+            gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
+            esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
+        }
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+        else {
+            //TODO:IDF-7815
+            rtc_gpio_set_direction(rx_io_num, RTC_GPIO_MODE_INPUT_ONLY);
+            rtc_gpio_init(rx_io_num);
+            rtc_gpio_iomux_func_sel(rx_io_num, 1);
+            LP_GPIO.func2_in_sel_cfg.reg_gpio_sig2_in_sel = 1;
+            LP_GPIO.func2_in_sel_cfg.reg_gpio_func2_in_sel = 11;
+        }
+#endif
     }
 
     if (rts_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rts_io_num, SOC_UART_RTS_PIN_IDX)) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rts_io_num], PIN_FUNC_GPIO);
-        gpio_set_direction(rts_io_num, GPIO_MODE_OUTPUT);
-        esp_rom_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
+        if (uart_num < SOC_UART_HP_NUM) {
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rts_io_num], PIN_FUNC_GPIO);
+            gpio_set_direction(rts_io_num, GPIO_MODE_OUTPUT);
+            esp_rom_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
+        }
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+        else {
+            //TODO:IDF-7815
+            rtc_gpio_set_direction(rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
+            rtc_gpio_init(rts_io_num);
+            rtc_gpio_iomux_func_sel(rts_io_num, 1);
+            LP_GPIO.func10_out_sel_cfg.reg_gpio_func12_out_sel  = uart_periph_signal[uart_num].pins[SOC_UART_RTS_PIN_IDX].signal;
+        }
+#endif
     }
 
     if (cts_io_num >= 0  && !uart_try_set_iomux_pin(uart_num, cts_io_num, SOC_UART_CTS_PIN_IDX)) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[cts_io_num], PIN_FUNC_GPIO);
-        gpio_set_pull_mode(cts_io_num, GPIO_PULLUP_ONLY);
-        gpio_set_direction(cts_io_num, GPIO_MODE_INPUT);
-        esp_rom_gpio_connect_in_signal(cts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), 0);
+        if (uart_num < SOC_UART_HP_NUM) {
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[cts_io_num], PIN_FUNC_GPIO);
+            gpio_set_pull_mode(cts_io_num, GPIO_PULLUP_ONLY);
+            gpio_set_direction(cts_io_num, GPIO_MODE_INPUT);
+            esp_rom_gpio_connect_in_signal(cts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), 0);
+        }
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+        else {
+            //TODO:IDF-7815
+            rtc_gpio_set_direction(cts_io_num, RTC_GPIO_MODE_INPUT_ONLY);
+            rtc_gpio_init(cts_io_num);
+            rtc_gpio_iomux_func_sel(cts_io_num, 1);
+            LP_GPIO.func2_in_sel_cfg.reg_gpio_sig3_in_sel = 1;
+            LP_GPIO.func2_in_sel_cfg.reg_gpio_func3_in_sel = 13;
+        }
+#endif
     }
-
     return ESP_OK;
 }
 

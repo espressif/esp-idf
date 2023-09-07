@@ -208,6 +208,7 @@
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
+// #define SOC_LP_GPIO_MATRIX_SUPPORTED    (1)
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 16
 #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1   /* This macro indicates that the target has separate RTC IOMUX hardware feature,
@@ -470,11 +471,13 @@
 /*-------------------------- MEMPROT CAPS ------------------------------------*/
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-// ESP32-P4 has 2 UARTs
-#define SOC_UART_NUM                    (2)
-#define SOC_UART_HP_NUM                 (2)
+// ESP32-P4 has 6 UARTs (5 HP UART, and 1 LP UART)
+// The RTC GPIO and sigmap is not supported yet, so make SOC_UART_NUM->5 to avoid lp-uart build errors
+#define SOC_UART_NUM                    (5)
+#define SOC_UART_HP_NUM                 (5)
 // #define SOC_UART_LP_NUM                 (1U)
 #define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
+#define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
 #define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
 #define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */

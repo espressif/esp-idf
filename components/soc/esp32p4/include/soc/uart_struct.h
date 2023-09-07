@@ -19,8 +19,7 @@ typedef union {
         /** rxfifo_rd_byte : RO; bitpos: [7:0]; default: 0;
          *  UART $n accesses FIFO via this register.
          */
-        uint32_t rxfifo_rd_byte:8;
-        uint32_t reserved_8:24;
+        uint32_t rxfifo_rd_byte:32;
     };
     uint32_t val;
 } uart_fifo_reg_t;
@@ -1216,7 +1215,7 @@ typedef union {
 } uart_id_reg_t;
 
 
-typedef struct {
+typedef struct uart_dev_t{
     volatile uart_fifo_reg_t fifo;
     volatile uart_int_raw_reg_t int_raw;
     volatile uart_int_st_reg_t int_st;
@@ -1246,12 +1245,12 @@ typedef struct {
     volatile uart_mem_tx_status_reg_t mem_tx_status;
     volatile uart_mem_rx_status_reg_t mem_rx_status;
     volatile uart_fsm_status_reg_t fsm_status;
-    volatile uart_pospulse_reg_t pospulse;
-    volatile uart_negpulse_reg_t negpulse;
-    volatile uart_lowpulse_reg_t lowpulse;
-    volatile uart_highpulse_reg_t highpulse;
-    volatile uart_rxd_cnt_reg_t rxd_cnt;
-    volatile uart_clk_conf_reg_t clk_conf;
+    volatile uart_pospulse_reg_t pospulse;      /* LP_UART instance has this register reserved */
+    volatile uart_negpulse_reg_t negpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
+    volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
+    volatile uart_clk_conf_reg_t clk_conf;      /* UART0/1/2/3/4 instance have this register reserved, configure in corresponding PCR registers */
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;
@@ -1261,6 +1260,10 @@ typedef struct {
 
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;
+extern uart_dev_t UART2;
+extern uart_dev_t UART3;
+extern uart_dev_t UART4;
+extern uart_dev_t LP_UART;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(uart_dev_t) == 0xa0, "Invalid size of uart_dev_t structure");

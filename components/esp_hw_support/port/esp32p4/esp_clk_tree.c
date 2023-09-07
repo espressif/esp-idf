@@ -25,6 +25,12 @@ uint32_t *freq_value)
     case SOC_MOD_CLK_XTAL:
         clk_src_freq = 40 * MHZ;
         break;
+    case SOC_MOD_CLK_XTAL_D2:
+        clk_src_freq = (40* MHZ) >> 1;
+        break;
+    case SOC_MOD_CLK_LP_PLL:
+        clk_src_freq = 8 * MHZ;
+        break;
     default:
         break;
     }

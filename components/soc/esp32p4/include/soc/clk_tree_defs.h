@@ -151,7 +151,10 @@ typedef enum {
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */
     SOC_MOD_CLK_APLL,                          /*!< Audio PLL is sourced from PLL, and its frequency is configurable through APLL configuration registers */
+    // For LP peripherals
+    SOC_MOD_CLK_XTAL_D2,                       /*!< XTAL_D2_CLK comes from the external 40MHz crystal, passing a div of 2 to the LP peripherals */
     SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
+    SOC_MOD_CLK_LP_PLL,
 } soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER//////////////////////////////////////////////////////////////
@@ -254,7 +257,6 @@ typedef enum {
 
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
-//TODO: IDF-6511
 /**
  * @brief Type of UART clock source, reserved for the legacy UART driver
  */
@@ -262,8 +264,22 @@ typedef enum {
     UART_SCLK_PLL_F80M = SOC_MOD_CLK_PLL_F80M,           /*!< UART source clock is PLL_F80M */
     UART_SCLK_RTC = SOC_MOD_CLK_RC_FAST,                /*!< UART source clock is RC_FAST */
     UART_SCLK_XTAL = SOC_MOD_CLK_XTAL,                  /*!< UART source clock is XTAL */
+#if SOC_CLK_TREE_SUPPORTED
     UART_SCLK_DEFAULT = SOC_MOD_CLK_PLL_F80M,           /*!< UART source clock default choice is PLL_F80M */
+#else
+    UART_SCLK_DEFAULT = SOC_MOD_CLK_XTAL,               /*!< UART source clock default choice is XTAL for FPGA environment */
+#endif
 } soc_periph_uart_clk_src_legacy_t;
+
+/**
+ * @brief Type of LP_UART clock source
+ */
+typedef enum {
+    LP_UART_SCLK_LP_FAST = SOC_MOD_CLK_RTC_FAST,        /*!< LP_UART source clock is LP(RTC)_FAST */
+    LP_UART_SCLK_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock is XTAL_D2 */
+    LP_UART_SCLK_LP_PLL  = SOC_MOD_CLK_LP_PLL,          /*!< LP_UART source clock is LP_PLL (8M PLL) */
+    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_XTAL_D2,        /*!< LP_UART source clock default choice is XTAL_D2 */
+} soc_periph_lp_uart_clk_src_t;
 
 //////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////
 
