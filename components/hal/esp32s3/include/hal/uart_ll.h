@@ -131,9 +131,9 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
  */
 FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
-#define DIV_UP(a, b)    ((float)((a) + (b) - 1) / (b))
+#define DIV_UP(a, b)    ((uint64_t)((a) + (b) - 1) / (b))
     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
-    int sclk_div = DIV_UP(sclk_freq, max_div * baud) + 0.5;
+    uint32_t sclk_div = DIV_UP(sclk_freq, max_div * baud);
 
     if (sclk_div == 0)
         sclk_div = 1;
