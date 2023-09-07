@@ -23,6 +23,9 @@
 #include "esp_log.h"
 #include "esp_check.h"
 
+#define ST7789_CMD_RAMCTRL               0xb0
+#define ST7789_DATA_LITTLE_ENDIAN_BIT    (1 << 3)
+
 static const char *TAG = "lcd_panel.st7789";
 
 static esp_err_t panel_st7789_del(esp_lcd_panel_t *panel);
@@ -43,8 +46,10 @@ typedef struct {
     int x_gap;
     int y_gap;
     uint8_t fb_bits_per_pixel;
-    uint8_t madctl_val; // save current value of LCD_CMD_MADCTL register
-    uint8_t colmod_cal; // save surrent value of LCD_CMD_COLMOD register
+    uint8_t madctl_val;    // save current value of LCD_CMD_MADCTL register
+    uint8_t colmod_cal;    // save surrent value of LCD_CMD_COLMOD register
+    uint8_t ramctl_val_1;
+    uint8_t ramctl_val_2;
 } st7789_panel_t;
 
 esp_err_t esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel)
@@ -92,6 +97,13 @@ esp_err_t esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported pixel width");
         break;
+    }
+
+    st7789->ramctl_val_1 = 0x00;
+    st7789->ramctl_val_2 = 0xf0;    // Use big endian by default
+    if ((panel_dev_config->data_endian) == LCD_RGB_DATA_ENDIAN_LITTLE) {
+        // Use little endian
+        st7789->ramctl_val_2 |= ST7789_DATA_LITTLE_ENDIAN_BIT;
     }
 
     st7789->io = io;
@@ -166,6 +178,9 @@ static esp_err_t panel_st7789_init(esp_lcd_panel_t *panel)
     esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD, (uint8_t[]) {
         st7789->colmod_cal,
     }, 1);
+    esp_lcd_panel_io_tx_param(io, ST7789_CMD_RAMCTRL, (uint8_t[]) {
+        st7789->ramctl_val_1, st7789->ramctl_val_2
+    }, 2);
 
     return ESP_OK;
 }

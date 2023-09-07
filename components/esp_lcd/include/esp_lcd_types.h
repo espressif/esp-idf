@@ -28,8 +28,8 @@ typedef enum {
 } esp_lcd_color_space_t __attribute__((deprecated));
 
 // Ensure binary compatibility with lcd_color_rgb_endian_t
-ESP_STATIC_ASSERT((lcd_color_rgb_endian_t)ESP_LCD_COLOR_SPACE_RGB == LCD_RGB_ENDIAN_RGB, "ESP_LCD_COLOR_SPACE_RGB is not compatible with LCD_RGB_ENDIAN_RGB");
-ESP_STATIC_ASSERT((lcd_color_rgb_endian_t)ESP_LCD_COLOR_SPACE_BGR == LCD_RGB_ENDIAN_BGR, "ESP_LCD_COLOR_SPACE_BGR is not compatible with LCD_RGB_ENDIAN_BGR");
+ESP_STATIC_ASSERT((lcd_rgb_element_order_t)ESP_LCD_COLOR_SPACE_RGB == LCD_RGB_ELEMENT_ORDER_RGB, "ESP_LCD_COLOR_SPACE_RGB is not compatible with LCD_RGB_ORDER_RGB");
+ESP_STATIC_ASSERT((lcd_rgb_element_order_t)ESP_LCD_COLOR_SPACE_BGR == LCD_RGB_ELEMENT_ORDER_BGR, "ESP_LCD_COLOR_SPACE_BGR is not compatible with LCD_RGB_ORDER_BGR");
 /** @endcond */
 
 #ifdef __cplusplus

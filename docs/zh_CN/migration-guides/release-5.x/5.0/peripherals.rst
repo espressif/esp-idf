@@ -374,7 +374,7 @@ LCD
 - 更新后，用于注册 RGB 面板的事件回调函数已从 :cpp:type:`esp_lcd_rgb_panel_config_t` 更新为单独的 API :cpp:func:`esp_lcd_rgb_panel_register_event_callbacks`。但是，事件回调签名仍保持不变。
 - 更新后， :cpp:type:`esp_lcd_rgb_panel_config_t` 中的标志位 ``relax_on_idle`` 被重命名为 :cpp:member:`esp_lcd_rgb_panel_config_t::refresh_on_demand`，后者虽表达了同样的含义，但是其命名更有意义。
 - 更新后，如果创建 RGB LCD 时，标志位 ``refresh_on_demand`` 使能，驱动不会在 :cpp:func:`esp_lcd_panel_draw_bitmap` 中进行刷新，用户需要调用 :cpp:func:`esp_lcd_rgb_panel_refresh` 来刷新屏幕。
-- 更新后，:cpp:type:`esp_lcd_color_space_t` 已被弃用，请使用 :cpp:type:`lcd_color_space_t` 来描述色彩空间，使用 :cpp:type:`lcd_color_rgb_endian_t` 来描述 RGB 颜色的排列顺序。
+- 更新后，:cpp:type:`esp_lcd_color_space_t` 已被弃用，请使用 :cpp:type:`lcd_color_space_t` 来描述色彩空间，使用 :cpp:type:`lcd_rgb_element_order_t` 来描述 RGB 颜色的排列顺序。
 
 .. only:: SOC_MCPWM_SUPPORTED
 
