@@ -43,6 +43,8 @@
 #include "task.h"
 #include "timers.h"
 #include "event_groups.h"
+/* Include private IDF API additions for critical thread safety macros */
+#include "esp_private/freertos_idf_additions_priv.h"
 
 /* Lint e961, e750 and e9021 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
@@ -77,6 +79,8 @@ typedef struct EventGroupDef_t
     #if ( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) )
         uint8_t ucStaticallyAllocated; /*< Set to pdTRUE if the event group is statically allocated to ensure no attempt is made to free the memory. */
     #endif
+
+    portMUX_TYPE xEventGroupLock; /* Spinlock required for SMP critical sections */
 } EventGroup_t;
 
 /*-----------------------------------------------------------*/
@@ -131,6 +135,9 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
             }
             #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
+            /* Initialize the event group's spinlock. */
+            portMUX_INITIALIZE( &pxEventBits->xEventGroupLock );
+
             traceEVENT_GROUP_CREATE( pxEventBits );
         }
         else
@@ -182,6 +189,9 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
             }
             #endif /* configSUPPORT_STATIC_ALLOCATION */
 
+            /* Initialize the event group's spinlock. */
+            portMUX_INITIALIZE( &pxEventBits->xEventGroupLock );
+
             traceEVENT_GROUP_CREATE( pxEventBits );
         }
         else
@@ -213,7 +223,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
     }
     #endif
 
-    vTaskSuspendAll();
+    prvENTER_CRITICAL_OR_SUSPEND_ALL( &( pxEventBits->xEventGroupLock ) );
     {
         uxOriginalBitValue = pxEventBits->uxEventBits;
 
@@ -256,7 +266,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
             }
         }
     }
-    xAlreadyYielded = xTaskResumeAll();
+    xAlreadyYielded = prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxEventBits->xEventGroupLock ) );
 
     if( xTicksToWait != ( TickType_t ) 0 )
     {
@@ -278,7 +288,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
         if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
         {
             /* The task timed out, just return the current event bit value. */
-            taskENTER_CRITICAL();
+            taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
             {
                 uxReturn = pxEventBits->uxEventBits;
 
@@ -295,7 +305,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
                     mtCOVERAGE_TEST_MARKER();
                 }
             }
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 
             xTimeoutOccurred = pdTRUE;
         }
@@ -340,7 +350,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
     }
     #endif
 
-    vTaskSuspendAll();
+    prvENTER_CRITICAL_OR_SUSPEND_ALL( &( pxEventBits->xEventGroupLock ) );
     {
         const EventBits_t uxCurrentEventBits = pxEventBits->uxEventBits;
 
@@ -408,7 +418,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
             traceEVENT_GROUP_WAIT_BITS_BLOCK( xEventGroup, uxBitsToWaitFor );
         }
     }
-    xAlreadyYielded = xTaskResumeAll();
+    xAlreadyYielded = prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxEventBits->xEventGroupLock ) );
 
     if( xTicksToWait != ( TickType_t ) 0 )
     {
@@ -429,7 +439,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
 
         if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
         {
-            taskENTER_CRITICAL();
+            taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
             {
                 /* The task timed out, just return the current event bit value. */
                 uxReturn = pxEventBits->uxEventBits;
@@ -454,7 +464,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
 
                 xTimeoutOccurred = pdTRUE;
             }
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
         }
         else
         {
@@ -485,7 +495,7 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
     configASSERT( xEventGroup );
     configASSERT( ( uxBitsToClear & eventEVENT_BITS_CONTROL_BYTES ) == 0 );
 
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
     {
         traceEVENT_GROUP_CLEAR_BITS( xEventGroup, uxBitsToClear );
 
@@ -496,7 +506,7 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
         /* Clear the bits. */
         pxEventBits->uxEventBits &= ~uxBitsToClear;
     }
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 
     return uxReturn;
 }
@@ -552,7 +562,14 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
 
     pxList = &( pxEventBits->xTasksWaitingForBits );
     pxListEnd = listGET_END_MARKER( pxList ); /*lint !e826 !e740 !e9087 The mini list structure is used as the list end to save RAM.  This is checked and valid. */
-    vTaskSuspendAll();
+
+    prvENTER_CRITICAL_OR_SUSPEND_ALL( &( pxEventBits->xEventGroupLock ) );
+    #if ( configNUMBER_OF_CORES > 1 )
+
+        /* We are about to traverse a task list which is a kernel data structure.
+         * Thus we need to call prvTakeKernelLock() to take the kernel lock. */
+        prvTakeKernelLock();
+    #endif /* configNUMBER_OF_CORES > 1 */
     {
         traceEVENT_GROUP_SET_BITS( xEventGroup, uxBitsToSet );
 
@@ -624,7 +641,12 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
          * bit was set in the control word. */
         pxEventBits->uxEventBits &= ~uxBitsToClear;
     }
-    ( void ) xTaskResumeAll();
+    #if ( configNUMBER_OF_CORES > 1 )
+        /* Release the previously taken kernel lock. */
+        prvReleaseKernelLock();
+    #endif /* configNUMBER_OF_CORES > 1 */
+    ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxEventBits->xEventGroupLock ) );
+
 
     return pxEventBits->uxEventBits;
 }
@@ -639,7 +661,13 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
 
     pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
 
-    vTaskSuspendAll();
+    prvENTER_CRITICAL_OR_SUSPEND_ALL( &( pxEventBits->xEventGroupLock ) );
+    #if ( configNUMBER_OF_CORES > 1 )
+
+        /* We are about to traverse a task list which is a kernel data structure.
+         * Thus we need to call prvTakeKernelLock() to take the kernel lock. */
+        prvTakeKernelLock();
+    #endif /* configNUMBER_OF_CORES > 1 */
     {
         traceEVENT_GROUP_DELETE( xEventGroup );
 
@@ -651,7 +679,11 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
             vTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
         }
     }
-    ( void ) xTaskResumeAll();
+    #if ( configNUMBER_OF_CORES > 1 )
+        /* Release the previously taken kernel lock. */
+        prvReleaseKernelLock();
+    #endif /* configNUMBER_OF_CORES > 1 */
+    prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxEventBits->xEventGroupLock ) );
 
     #if ( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 0 ) )
     {

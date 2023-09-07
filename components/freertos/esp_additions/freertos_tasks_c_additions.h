@@ -487,12 +487,12 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
              * access kernel data structures. For single core, a critical section is
              * not required as this is not called from an interrupt and the current
              * TCB will always be the same for any individual execution thread. */
-            taskENTER_CRITICAL_SMP_ONLY();
+            taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
             {
                 xReturn = pxCurrentTCBs[ xCoreID ];
             }
             /* Release the previously taken kernel lock. */
-            taskEXIT_CRITICAL_SMP_ONLY();
+            taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
         }
         #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
         {
@@ -532,12 +532,12 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY();
+        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             ulRunTimeCounter = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter;
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY();
+        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 
         return ulRunTimeCounter;
     }
@@ -564,12 +564,12 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         {
             /* For SMP, we need to take the kernel lock here as we are about
              * to access kernel data structures. */
-            taskENTER_CRITICAL_SMP_ONLY();
+            taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
             {
                 ulReturn = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter / ulTotalTime;
             }
             /* Release the previously taken kernel lock. */
-            taskEXIT_CRITICAL_SMP_ONLY();
+            taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
         }
         else
         {

@@ -74,8 +74,6 @@ The following APIs have been added to support SMP
 
 ### API Modifications
 
-#### SMP Modifications
-
 Added the following macros that abstract away single-core and SMP differences:
 
 - `taskYIELD_CORE()` triggers a particular core to yield
@@ -122,9 +120,26 @@ The following functions were modified to accommodate SMP behavior:
 - `prvAddCurrentTaskToDelayedList()`
   - Added extra check to see if current blocking task has already been deleted by the other core.
 
-#### Single-Core Modifications
+### Critical Section Changes
 
+- Granular Locks: The following objects are now given their own spinlocks
+  - Kernel objects (i.e., `tasks.c`): `xKernelLock`
+  - Each queue: `xQueueLock`
+  - Queue Registry: `xQueueRegistryLock`
+  - Each event group: `xEventGroupLock`
+  - Each stream buffer: `xStreamBufferLock`
+  - All timers: `xTimerLock`
+- Critical sections now target the appropriate spinlocks
+- Added missing critical sections for SMP (see `..._SMP_ONLY()` critical section calls)
+- Queues no longer use queue locks (see `queueUSE_LOCKS`)
+  - Queues now just use critical sections and skips queue locking
+  - Queue functions can now execute within a single critical section block
 
 ## Single Core Differences
 
 List of differences between Vanilla FreeRTOS V10.5.1 and building the dual-core SMP kernel with `congigNUMBER_OF_CORES == 1`.
+
+- `prvAddNewTaskToReadyList()`
+  - Extended critical section so that SMP can check for yields while still inside critical section
+- `vTaskStepTick()`
+  - Extended critical section so that SMP can access `xTickCount` while still inside critical section

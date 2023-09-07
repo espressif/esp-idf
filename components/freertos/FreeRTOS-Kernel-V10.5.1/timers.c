@@ -42,6 +42,8 @@
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
+/* Include private IDF API additions for critical thread safety macros */
+#include "esp_private/freertos_idf_additions_priv.h"
 
 #if ( INCLUDE_xTimerPendFunctionCall == 1 ) && ( configUSE_TIMERS == 0 )
     #error configUSE_TIMERS must be set to 1 to make the xTimerPendFunctionCall() function available.
@@ -146,6 +148,10 @@
 /* A queue that is used to send commands to the timer service task. */
     PRIVILEGED_DATA static QueueHandle_t xTimerQueue = NULL;
     PRIVILEGED_DATA static TaskHandle_t xTimerTaskHandle = NULL;
+
+/* Spinlock required in SMP when accessing the timers. For now we use a single lock
+ * Todo: Each timer could possible have its own lock for increased granularity. */
+    PRIVILEGED_DATA static portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
 
 /*lint -restore */
 
@@ -462,7 +468,7 @@
         Timer_t * pxTimer = xTimer;
 
         configASSERT( xTimer );
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             if( xAutoReload != pdFALSE )
             {
@@ -473,7 +479,7 @@
                 pxTimer->ucStatus &= ( ( uint8_t ) ~tmrSTATUS_IS_AUTORELOAD );
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
     }
 /*-----------------------------------------------------------*/
 
@@ -483,7 +489,7 @@
         BaseType_t xReturn;
 
         configASSERT( xTimer );
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             if( ( pxTimer->ucStatus & tmrSTATUS_IS_AUTORELOAD ) == 0 )
             {
@@ -496,7 +502,7 @@
                 xReturn = pdTRUE;
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
 
         return xReturn;
     }
@@ -639,7 +645,7 @@
         TickType_t xTimeNow;
         BaseType_t xTimerListsWereSwitched;
 
-        vTaskSuspendAll();
+        prvENTER_CRITICAL_OR_SUSPEND_ALL( &xTimerLock );
         {
             /* Obtain the time now to make an assessment as to whether the timer
              * has expired or not.  If obtaining the time causes the lists to switch
@@ -653,7 +659,7 @@
                 /* The tick count has not overflowed, has the timer expired? */
                 if( ( xListWasEmpty == pdFALSE ) && ( xNextExpireTime <= xTimeNow ) )
                 {
-                    ( void ) xTaskResumeAll();
+                    ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &xTimerLock );
                     prvProcessExpiredTimer( xNextExpireTime, xTimeNow );
                 }
                 else
@@ -673,7 +679,7 @@
 
                     vQueueWaitForMessageRestricted( xTimerQueue, ( xNextExpireTime - xTimeNow ), xListWasEmpty );
 
-                    if( xTaskResumeAll() == pdFALSE )
+                    if( prvEXIT_CRITICAL_OR_RESUME_ALL( &xTimerLock ) == pdFALSE )
                     {
                         /* Yield to wait for either a command to arrive, or the
                          * block time to expire.  If a command arrived between the
@@ -689,7 +695,7 @@
             }
             else
             {
-                ( void ) xTaskResumeAll();
+                ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &xTimerLock );
             }
         }
     }
@@ -967,7 +973,7 @@
         /* Check that the list from which active timers are referenced, and the
          * queue used to communicate with the timer service, have been
          * initialised. */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             if( xTimerQueue == NULL )
             {
@@ -1009,7 +1015,7 @@
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
     }
 /*-----------------------------------------------------------*/
 
@@ -1021,7 +1027,7 @@
         configASSERT( xTimer );
 
         /* Is the timer in the list of active timers? */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             if( ( pxTimer->ucStatus & tmrSTATUS_IS_ACTIVE ) == 0 )
             {
@@ -1032,7 +1038,7 @@
                 xReturn = pdTRUE;
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
 
         return xReturn;
     } /*lint !e818 Can't be pointer to const due to the typedef. */
@@ -1045,11 +1051,11 @@
 
         configASSERT( xTimer );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             pvReturn = pxTimer->pvTimerID;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
 
         return pvReturn;
     }
@@ -1062,11 +1068,11 @@
 
         configASSERT( xTimer );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             pxTimer->pvTimerID = pvNewID;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
     }
 /*-----------------------------------------------------------*/
 
