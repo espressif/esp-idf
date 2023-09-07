@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "bta/bta_gatts_co.h"
+#include "btc/btc_storage.h"
+#include "btc/btc_ble_storage.h"
 // #include "btif_util.h"
 
 #if (defined(BTIF_INCLUDED) && BTIF_INCLUDED == TRUE)
@@ -159,5 +161,91 @@ BOOLEAN bta_gatts_co_load_handle_range(UINT8 index,
 
     return FALSE;
 }
-#endif
-#endif
+
+#if (SMP_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         bta_gatts_co_cl_feat_save
+**
+** Description      This callout function is executed by GATTS when GATT server
+**                  client support feature is requested to write to NV.
+**
+** Parameter        remote_addr - remote device address
+**                  feature - pointer of client support feature
+**
+** Returns          void.
+**
+*******************************************************************************/
+void bta_gatts_co_cl_feat_save(BD_ADDR remote_addr, UINT8 *feature)
+{
+    bt_bdaddr_t bd_addr;
+
+    memcpy(bd_addr.address, remote_addr, BD_ADDR_LEN);
+    btc_storage_set_gatt_cl_supp_feat(&bd_addr, feature, 1);
+}
+
+/*******************************************************************************
+**
+** Function         bta_gatts_co_db_hash_save
+**
+** Description      This callout function is executed by GATTS when GATT server
+**                  client status is requested to write to NV.
+**
+** Parameter        remote_addr - remote device address
+**                  db_hash - pointer of GATT service datebase hash
+**
+** Returns          void.
+**
+*******************************************************************************/
+void bta_gatts_co_db_hash_save(BD_ADDR remote_addr, BT_OCTET16 db_hash)
+{
+    bt_bdaddr_t bd_addr;
+
+    memcpy(bd_addr.address, remote_addr, BD_ADDR_LEN);
+    btc_storage_set_gatt_db_hash(&bd_addr, db_hash, BT_OCTET16_LEN);
+}
+
+/*******************************************************************************
+**
+** Function         bta_gatts_co_cl_feat_load
+**
+** Description      This callout function is executed by GATTS when GATT server
+**                  client status is requested to load from NV.
+**
+** Parameter        remote_addr - remote device address
+**                  feature - pointer of GATT service datebase hash
+**
+** Returns          void.
+**
+*******************************************************************************/
+void bta_gatts_co_cl_feat_load(BD_ADDR remote_addr, UINT8 *feature)
+{
+    bt_bdaddr_t bd_addr;
+
+    memcpy(bd_addr.address, remote_addr, BD_ADDR_LEN);
+    btc_storage_get_gatt_cl_supp_feat(&bd_addr, feature, 1);
+}
+
+/*******************************************************************************
+**
+** Function         bta_gatts_co_db_hash_load
+**
+** Description      This callout function is executed by GATTS when GATT server
+**                  client status is requested to load from NV.
+**
+** Parameter        remote_addr - remote device address
+**                  db_hash - pointer of GATT service datebase hash
+**
+** Returns          void.
+**
+*******************************************************************************/
+void bta_gatts_co_db_hash_load(BD_ADDR remote_addr, BT_OCTET16 db_hash)
+{
+    bt_bdaddr_t bd_addr;
+
+    memcpy(bd_addr.address, remote_addr, BD_ADDR_LEN);
+    btc_storage_get_gatt_db_hash(&bd_addr, db_hash, BT_OCTET16_LEN);
+}
+#endif // #if (SMP_INCLUDED == TRUE)
+#endif // #if (GATTS_INCLUDED == TRUE)
+#endif // #if (BLE_INCLUDED == TRUE)

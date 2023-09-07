@@ -1090,6 +1090,9 @@ tGATT_TCB *gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
             p_tcb->transport = transport;
         }
         memcpy(p_tcb->peer_bda, bda, BD_ADDR_LEN);
+#if (GATTS_INCLUDED == TRUE)
+        gatt_sr_init_cl_status(p_tcb);
+#endif  ///GATTS_INCLUDED == TRUE
     }
     return p_tcb;
 }
@@ -2909,5 +2912,37 @@ BOOLEAN gatt_update_listen_mode(void)
 
     return rt;
 
+}
+
+char *gatt_uuid_to_str(const tBT_UUID *uuid)
+{
+    static char dst[48] = {0};
+    const UINT8 *u8p;
+
+    memset(dst, 0, sizeof(dst));
+
+    switch (uuid->len) {
+    case LEN_UUID_16:
+        sprintf(dst, "0x%04x", uuid->uu.uuid16);
+        break;
+    case LEN_UUID_32:
+        sprintf(dst, "0x%08x", uuid->uu.uuid32);
+        break;
+    case LEN_UUID_128:
+        u8p = uuid->uu.uuid128;
+
+        sprintf(dst, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
+                     "%02x%02x%02x%02x%02x%02x",
+                u8p[15], u8p[14], u8p[13], u8p[12],
+                u8p[11], u8p[10],  u8p[9],  u8p[8],
+                 u8p[7],  u8p[6],  u8p[5],  u8p[4],
+                 u8p[3],  u8p[2],  u8p[1],  u8p[0]);
+        break;
+    default:
+        dst[0] = '\0';
+        break;
+    }
+
+    return dst;
 }
 #endif
