@@ -134,8 +134,7 @@ endif()
 
 # net_sockets.c should only be compiled if BSD socket functions are available.
 # Do this by checking if lwip component is included into the build.
-idf_build_get_property(build_components BUILD_COMPONENTS)
-if(lwip IN_LIST build_components)
+if(CONFIG_LWIP_ENABLE)
     list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/net_sockets.c")
     idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
     target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${lwip_lib})
