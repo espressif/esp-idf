@@ -196,17 +196,7 @@ extern "C" {
 
 #define BLE_LL_CONN_DEF_AUTH_PYLD_TMO_N     (3000)
 
-#if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
-#define RTC_FREQ_N                          (100000) /* in Hz */
-#else
-#if CONFIG_RTC_CLK_SRC_INT_RC
-#define RTC_FREQ_N                          (30000) /* in Hz */
-#elif CONFIG_RTC_CLK_SRC_EXT_CRYS
 #define RTC_FREQ_N                          (32768) /* in Hz */
-#else
-#define RTC_FREQ_N                          (32000) /* in Hz */
-#endif
-#endif /* CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL */
 
 #define BLE_LL_TX_PWR_DBM_N                 (9)
 
