@@ -9,7 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
-#include "hal/i2s_types.h"
+#include "hal/i2s_hal.h"
 #include "driver/i2s_types.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
@@ -36,7 +36,7 @@ extern "C" {
 #endif //CONFIG_I2S_ISR_IRAM_SAFE
 #define I2S_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 
-#if SOC_SYS_DIGI_CLKRST_REG_SHARED
+#if SOC_PERIPH_CLK_CTRL_SHARED
 #define I2S_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
 #define I2S_CLOCK_SRC_ATOMIC()
@@ -58,6 +58,28 @@ typedef enum {
     I2S_CHAN_STATE_READY,                   /*!< i2s channel is disabled (initialized) */
     I2S_CHAN_STATE_RUNNING,                 /*!< i2s channel is idling (initialized and enabled) */
 } i2s_state_t;
+
+/**
+ * @brief Group of I2S callbacks
+ * @note The callbacks are all running under ISR environment
+ * @note When CONFIG_I2S_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ *       The variables used in the function should be in the SRAM as well.
+ * @note Declare the internal type to remove the dependency of `i2s_common.h`
+ */
+typedef struct {
+    i2s_isr_callback_t on_recv;             /**< Callback of data received event, only for rx channel
+                                             *   The event data includes DMA buffer address and size that just finished receiving data
+                                             */
+    i2s_isr_callback_t on_recv_q_ovf;       /**< Callback of receiving queue overflowed event, only for rx channel
+                                             *   The event data includes buffer size that has been overwritten
+                                             */
+    i2s_isr_callback_t on_sent;             /**< Callback of data sent event, only for tx channel
+                                             *   The event data includes DMA buffer address and size that just finished sending data
+                                             */
+    i2s_isr_callback_t on_send_q_ovf;       /**< Callback of sending queue overflowed event, only for tx channel
+                                             *   The event data includes buffer size that has been overwritten
+                                             */
+} i2s_event_callbacks_internal_t;
 
 /**
  * @brief i2s channel level configurations
@@ -103,7 +125,7 @@ struct i2s_channel_obj_t {
     i2s_dma_t               dma;            /*!< i2s dma object */
     i2s_state_t             state;          /*!< i2s driver state. Ensuring the driver working in a correct sequence */
     /* Stored configurations */
-    int                     intr_flags;
+    int                     intr_prio_flags;/*!< i2s interrupt priority flags */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of wether APLL enabled */
@@ -117,7 +139,7 @@ struct i2s_channel_obj_t {
     esp_pm_lock_handle_t    pm_lock;        /*!< Power management lock, to avoid apb clock frequency changes while i2s is working */
 #endif
     QueueHandle_t           msg_queue;      /*!< Message queue handler, used for transporting data between interrupt and read/write task */
-    i2s_event_callbacks_t   callbacks;      /*!< Callback functions */
+    i2s_event_callbacks_internal_t   callbacks;      /*!< Callback functions */
     void                    *user_data;     /*!< User data for callback functions */
     void      (*start)(i2s_chan_handle_t);  /*!< start tx/rx channel */
     void      (*stop)(i2s_chan_handle_t);   /*!< stop tx/rx channel */
@@ -133,7 +155,7 @@ typedef struct {
     const char              *comp_name[SOC_I2S_NUM];    /*!< The component name that occupied i2s controller */
 } i2s_platform_t;
 
-extern i2s_platform_t g_i2s;
+extern i2s_platform_t g_i2s;  /*!< Global i2s instance for driver internal use */
 
 /**
  * @brief Initialize I2S DMA interrupt
@@ -200,7 +222,7 @@ uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
  * @param is_input      Is input gpio
  * @param is_invert     Is invert gpio
  */
-void i2s_gpio_check_and_set(gpio_num_t gpio, uint32_t signal_idx, bool is_input, bool is_invert);
+void i2s_gpio_check_and_set(int gpio, uint32_t signal_idx, bool is_input, bool is_invert);
 
 /**
  * @brief Check gpio validity and output mclk signal
@@ -213,7 +235,7 @@ void i2s_gpio_check_and_set(gpio_num_t gpio, uint32_t signal_idx, bool is_input,
  *      - ESP_OK                Set mclk output gpio success
  *      - ESP_ERR_INVALID_ARG   Invalid GPIO number
  */
-esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, i2s_clock_src_t clk_src, bool is_invert);
+esp_err_t i2s_check_set_mclk(i2s_port_t id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
 
 /**
  * @brief Attach data out signal and data in signal to a same gpio
@@ -222,7 +244,7 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num, i2s_clock_src_t
  * @param out_sig_idx   Data out signal index
  * @param in_sig_idx    Data in signal index
  */
-void i2s_gpio_loopback_set(gpio_num_t gpio, uint32_t out_sig_idx, uint32_t in_sig_idx);
+void i2s_gpio_loopback_set(int gpio, uint32_t out_sig_idx, uint32_t in_sig_idx);
 
 #ifdef __cplusplus
 }

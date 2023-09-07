@@ -48,7 +48,6 @@
 // #define SOC_EFUSE_SUPPORTED             1  //TODO: IDF-7512
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
-// #define SOC_I2S_SUPPORTED               1  //TODO: IDF-6508
 #define SOC_RMT_SUPPORTED               1
 #define SOC_I2S_SUPPORTED               1
 // #define SOC_RMT_SUPPORTED               1  //TODO: IDF-7476
@@ -154,7 +153,6 @@
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 
-// TODO: IDF-5360 (Copy from esp32c3, need check)
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */
 #define SOC_DS_SIGNATURE_MAX_BIT_LEN (4096)
@@ -514,7 +512,6 @@
 #define SOC_PM_PAU_LINK_NUM             (4)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-#define SOC_SYS_DIGI_CLKRST_REG_SHARED            (1)
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (0)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (0)
 

@@ -3,7 +3,6 @@ api-guides/coexist
 api-guides/cplusplus
 api-guides/dfu
 api-guides/index
-api-reference/peripherals/i2s
 api-reference/peripherals/spi_features
 api-reference/peripherals/sdio_slave
 api-reference/peripherals/adc_calibration

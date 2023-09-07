@@ -52,6 +52,7 @@
 #include "esp_pm.h"
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
+#include "esp_private/i2s_platform.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 
@@ -62,7 +63,7 @@ static const char *TAG = "i2s(legacy)";
 #define I2S_ENTER_CRITICAL(i2s_num)              portENTER_CRITICAL(&i2s_spinlock[i2s_num])
 #define I2S_EXIT_CRITICAL(i2s_num)               portEXIT_CRITICAL(&i2s_spinlock[i2s_num])
 
-#if SOC_SYS_DIGI_CLKRST_REG_SHARED
+#if SOC_PERIPH_CLK_CTRL_SHARED
 #define I2S_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
 #define I2S_CLOCK_SRC_ATOMIC()
@@ -150,9 +151,6 @@ typedef struct {
     uint32_t          total_slot;     /*!< Total slot number */
 } i2s_obj_t;
 
-// Record the component name that using I2S peripheral
-static const char *comp_using_i2s[SOC_I2S_NUM] = {[0 ... SOC_I2S_NUM - 1] = NULL};
-
 // Global I2S object pointer
 static i2s_obj_t *p_i2s[SOC_I2S_NUM] = {
     [0 ... SOC_I2S_NUM - 1] = NULL,
@@ -162,11 +160,6 @@ static i2s_obj_t *p_i2s[SOC_I2S_NUM] = {
 static portMUX_TYPE i2s_spinlock[SOC_I2S_NUM] = {
     [0 ... SOC_I2S_NUM - 1] = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED,
 };
-
-
-__attribute__((weak)) esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name);
-
-__attribute__((weak)) esp_err_t i2s_platform_release_occupation(int id);
 
 /*-------------------------------------------------------------
                     I2S DMA operation
@@ -1905,42 +1898,6 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
     gpio_matrix_out_check_and_set(pin->data_out_num, i2s_periph_signal[i2s_num].data_out_sig, 0, 0);
     gpio_matrix_in_check_and_set(pin->data_in_num, i2s_periph_signal[i2s_num].data_in_sig, 0);
     return ESP_OK;
-}
-
-esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name)
-{
-    esp_err_t ret = ESP_ERR_NOT_FOUND;
-    ESP_RETURN_ON_FALSE(id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
-    portENTER_CRITICAL(&i2s_spinlock[id]);
-    if (!comp_using_i2s[id]) {
-        ret = ESP_OK;
-        comp_using_i2s[id] = comp_name;
-        I2S_RCC_ATOMIC() {
-            i2s_ll_enable_bus_clock(id, true);
-            i2s_ll_reset_register(id);
-            i2s_ll_enable_core_clock(I2S_LL_GET_HW(id), true);
-        }
-    }
-    portEXIT_CRITICAL(&i2s_spinlock[id]);
-    return ret;
-}
-
-esp_err_t i2s_platform_release_occupation(int id)
-{
-    esp_err_t ret = ESP_ERR_INVALID_STATE;
-    ESP_RETURN_ON_FALSE(id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
-    portENTER_CRITICAL(&i2s_spinlock[id]);
-    if (comp_using_i2s[id]) {
-        ret = ESP_OK;
-        comp_using_i2s[id] = NULL;
-        /* Disable module clock */
-        I2S_RCC_ATOMIC() {
-            i2s_ll_enable_bus_clock(id, false);
-            i2s_ll_enable_core_clock(I2S_LL_GET_HW(id), false);
-        }
-    }
-    portEXIT_CRITICAL(&i2s_spinlock[id]);
-    return ret;
 }
 
 /**

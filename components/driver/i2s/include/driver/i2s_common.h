@@ -25,7 +25,7 @@ extern "C" {
     .dma_desc_num = 6, \
     .dma_frame_num = 240, \
     .auto_clear = false, \
-    .intr_flags = 0, \
+    .intr_priority = 0, \
 }
 
 #define I2S_GPIO_UNUSED         GPIO_NUM_NC         /*!< Used in i2s_gpio_config_t for signals which are not used */
@@ -64,7 +64,7 @@ typedef struct {
                                              *   it should be the multiple of '3' when the data bit width is 24.
                                              */
     bool                auto_clear;         /*!< Set to auto clear DMA TX buffer, i2s will always send zero automatically if no data to send */
-    int                 intr_flags;         /*!< Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info */
+    int                 intr_priority;      /*!< I2S interrupt priority, range [0, 7], if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } i2s_chan_config_t;
 
 /**
