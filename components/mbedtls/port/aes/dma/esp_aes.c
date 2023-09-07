@@ -400,6 +400,10 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         //Limit max inlink descriptor length to be 16 byte aligned, require for EDMA
         lldesc_setup_link_constrained(block_out_desc, output, block_bytes, LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED, 0);
 
+        /* Setup in/out start descriptors */
+        lldesc_append(&in_desc_head, block_in_desc);
+        lldesc_append(&out_desc_head, block_out_desc);
+
         out_desc_tail = &block_out_desc[lldesc_num - 1];
     }
 
@@ -417,19 +421,12 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         lldesc_setup_link(&s_stream_in_desc, s_stream_in, AES_BLOCK_BYTES, 0);
         lldesc_setup_link(&s_stream_out_desc, s_stream_out, AES_BLOCK_BYTES, 0);
 
-        if (block_bytes > 0) {
-            /* Link with block descriptors*/
-            block_in_desc[lldesc_num - 1].empty = (uint32_t)&s_stream_in_desc;
-            block_out_desc[lldesc_num - 1].empty = (uint32_t)&s_stream_out_desc;
-        }
+        /* Link with block descriptors */
+        lldesc_append(&in_desc_head, &s_stream_in_desc);
+        lldesc_append(&out_desc_head, &s_stream_out_desc);
 
         out_desc_tail = &s_stream_out_desc;
     }
-
-    // block buffers are sent to DMA first, unless there aren't any
-    in_desc_head =  (block_bytes > 0) ? block_in_desc : &s_stream_in_desc;
-    out_desc_head = (block_bytes > 0) ? block_out_desc : &s_stream_out_desc;
-
 
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     /* Only use interrupt for long AES operations */
@@ -495,6 +492,7 @@ cleanup:
 int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, lldesc_t *aad_desc, size_t aad_len)
 {
     lldesc_t *in_desc_head = NULL, *out_desc_head = NULL, *len_desc = NULL;
+    lldesc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
     lldesc_t stream_in_desc, stream_out_desc;
     lldesc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
     size_t lldesc_num;
@@ -544,6 +542,8 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
         lldesc_append(&in_desc_head, block_in_desc);
         lldesc_append(&out_desc_head, block_out_desc);
+
+        out_desc_tail = &block_out_desc[lldesc_num - 1];
     }
 
     /* Any leftover bytes which are appended as an additional DMA list */
@@ -555,6 +555,8 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
         lldesc_append(&in_desc_head, &stream_in_desc);
         lldesc_append(&out_desc_head, &stream_out_desc);
+
+        out_desc_tail = &stream_out_desc;
     }
 
 
@@ -593,7 +595,7 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
     aes_hal_transform_dma_gcm_start(blocks);
 
-    if (esp_aes_dma_wait_complete(use_intr, out_desc_head) < 0) {
+    if (esp_aes_dma_wait_complete(use_intr, out_desc_tail) < 0) {
         ESP_LOGE(TAG, "esp_aes_dma_wait_complete failed");
         ret = -1;
         goto cleanup;
