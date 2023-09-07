@@ -102,6 +102,8 @@ extern void vPortExitCritical( void );
 #define portENABLE_INTERRUPTS()                 portCLEAR_INTERRUPT_MASK()
 #define portENTER_CRITICAL(mux)                 {(void)mux;  vPortEnterCritical();}
 #define portEXIT_CRITICAL(mux)                  {(void)mux;  vPortExitCritical();}
+#define portENTER_CRITICAL_SAFE(mux)            {(void)mux;  vPortEnterCritical();}
+#define portEXIT_CRITICAL_SAFE(mux)             {(void)mux;  vPortExitCritical();}
 #define portENTER_CRITICAL_ISR(mux)             portENTER_CRITICAL(mux)
 #define portEXIT_CRITICAL_ISR(mux)              portEXIT_CRITICAL(mux)
 
