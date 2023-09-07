@@ -244,6 +244,7 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
     :SOC_WIFI_SUPPORTED: * 关于提高 Wi-Fi 网速，参见 :ref:`How-to-improve-Wi-Fi-performance` 和 :ref:`wifi-buffer-usage` 。
     * 关于提高 lwIP TCP/IP（Wi-Fi 和以太网）网速，参见 :ref:`lwip-performance` 。
     :SOC_WIFI_SUPPORTED: * 示例 :example:`wifi/iperf` 包含了一种针对 Wi-Fi TCP/IP 吞吐量进行了大量优化的配置。将文件 :example_file:`wifi/iperf/sdkconfig.defaults` 、 :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` 和 :example_file:`wifi/iperf/sdkconfig.ci.99` 的内容追加到项目的 ``sdkconfig`` 文件中，即可添加所有相关选项。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
+    :SOC_EMAC_SUPPORTED: * 示例 :example:`ethernet/iperf` 中的配置针对以太网 TCP/IP 吞吐量进行了大量优化。如需了解详情，请查看 :example_file:`ethernet/iperf/sdkconfig.defaults`。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
 
 提高 I/O 性能
 ----------------------------------
