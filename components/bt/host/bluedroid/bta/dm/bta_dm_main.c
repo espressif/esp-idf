@@ -204,6 +204,8 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_ext_scan,                /* BTA_DM_API_START_EXT_SCAN_EVT */
     bta_dm_ble_gap_set_prefer_ext_conn_params, /* BTA_DM_API_SET_PERF_EXT_CONN_PARAMS_EVT */
     NULL,                                   /* BTA_DM_API_EXT_CONN_EVT */
+    bta_dm_ble_gap_dtm_enhance_tx_start,    /* BTA_DM_API_DTM_ENH_TX_START_EVT */
+    bta_dm_ble_gap_dtm_enhance_rx_start,    /* BTA_DM_API_DTM_ENH_RX_START_EVT */
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
     bta_dm_ble_gap_periodic_adv_recv_enable, /* BTA_DM_API_PERIODIC_ADV_RECV_ENABLE_EVT */
@@ -212,6 +214,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_set_periodic_adv_sync_trans_params, /* BTA_DM_API_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS_EVT */
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #if BLE_INCLUDED == TRUE
+    bta_dm_ble_gap_dtm_tx_start, /* BTA_DM_API_DTM_TX_START_EVT */
+    bta_dm_ble_gap_dtm_rx_start, /* BTA_DM_API_DTM_RX_START_EVT */
+    bta_dm_ble_gap_dtm_stop, /* BTA_DM_API_DTM_STOP_EVT */
     bta_dm_ble_gap_clear_adv, /* BTA_DM_API_BLE_CLEAR_ADV_EVT */
 #endif
 };
