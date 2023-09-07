@@ -35,6 +35,24 @@ typedef struct {
 } temp_sensor_config_t;
 
 /**
+ * @brief tsens dac offset, internal use only
+ */
+typedef struct {
+    int index;      /*!< temperature dac offset index */
+    int offset;     /*!< temperature dac offset */
+    int set_val;    /*!< temperature dac set value */
+    int range_min;  /*!< temperature current range minimum */
+    int range_max;  /*!< temperature current range maximum */
+    int error_max;  /*!< temperature current range error */
+} tsens_dac_offset_t;
+
+extern const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX];
+
+#define TSENS_ADC_FACTOR  (0.4386)
+#define TSENS_DAC_FACTOR  (27.88)
+#define TSENS_SYS_OFFSET  (20.52)
+
+/**
  * @brief temperature sensor default setting.
  */
 #define TSENS_CONFIG_DEFAULT() {.dac_offset = TSENS_DAC_L2, \

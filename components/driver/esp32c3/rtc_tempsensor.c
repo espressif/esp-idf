@@ -21,24 +21,15 @@
 #include "regi2c_ctrl.h"
 #include "esp32c3/rom/ets_sys.h"
 #include "esp_efuse_rtc_calib.h"
+#include "esp_private/sar_periph_ctrl.h"
 
 static const char *TAG = "tsens";
 
 #define TSENS_XPD_WAIT_DEFAULT 0xFF   /* Set wait cycle time(8MHz) from power up to reset enable. */
-#define TSENS_ADC_FACTOR  (0.4386)
-#define TSENS_DAC_FACTOR  (27.88)
-#define TSENS_SYS_OFFSET  (20.52)
+#define TEMPERATURE_SENSOR_MEASURE_MAX    (125)
+#define TEMPERATURE_SENSOR_MEASURE_MIN    (-40)
 
-typedef struct {
-    int index;
-    int offset;
-    int set_val;
-    int range_min;
-    int range_max;
-    int error_max;
-} tsens_dac_offset_t;
-
-static const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
+const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
     /*     DAC     Offset reg_val  min  max  error */
     {TSENS_DAC_L0,   -2,     5,    50,  125,   3},
     {TSENS_DAC_L1,   -1,     7,    20,  100,   2},
@@ -69,7 +60,7 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, dac_offset[tsens.dac_offset].set_val);
     APB_SARADC.apb_tsens_ctrl.tsens_clk_div = tsens.clk_div;
     APB_SARADC.apb_tsens_ctrl2.tsens_xpd_wait = TSENS_XPD_WAIT_DEFAULT;
-    APB_SARADC.apb_tsens_ctrl2.tsens_xpd_force = 1;
+    temp_sensor_sync_tsens_idx(tsens.dac_offset);
     ESP_LOGD(TAG, "Config temperature range [%d°C ~ %d°C], error < %d°C",
              dac_offset[tsens.dac_offset].range_min,
              dac_offset[tsens.dac_offset].range_max,
@@ -102,14 +93,14 @@ esp_err_t temp_sensor_start(void)
     }
     REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 1;
-    APB_SARADC.apb_tsens_ctrl.tsens_pu = 1;
+    temperature_sensor_power_acquire();
     tsens_hw_state = TSENS_HW_STATE_STARTED;
     return ESP_OK;
 }
 
 esp_err_t temp_sensor_stop(void)
 {
-    APB_SARADC.apb_tsens_ctrl.tsens_pu = 0;
+    temperature_sensor_power_release();
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 0;
     tsens_hw_state = TSENS_HW_STATE_CONFIGURED;
     return ESP_OK;
@@ -135,12 +126,12 @@ static void read_delta_t_from_efuse(void)
     ESP_LOGD(TAG, "s_deltaT = %f", s_deltaT);
 }
 
-static float parse_temp_sensor_raw_value(uint32_t tsens_raw, const int dac_offset)
+static float parse_temp_sensor_raw_value(int16_t tsens_raw)
 {
     if (isnan(s_deltaT)) { //suggests that the value is not initialized
         read_delta_t_from_efuse();
     }
-    float result = (TSENS_ADC_FACTOR * (float)tsens_raw - TSENS_DAC_FACTOR * dac_offset - TSENS_SYS_OFFSET) - s_deltaT / 10.0;
+    float result = tsens_raw - s_deltaT / 10.0;
     return result;
 }
 
@@ -148,18 +139,16 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
 {
     ESP_RETURN_ON_FALSE(celsius != NULL, ESP_ERR_INVALID_ARG, TAG, "celsius points to nothing");
     temp_sensor_config_t tsens;
-    uint32_t tsens_out = 0;
-    esp_err_t ret = temp_sensor_get_config(&tsens);
-    if (ret == ESP_OK) {
-        ret = temp_sensor_read_raw(&tsens_out);
-        ESP_LOGV(TAG, "tsens_out %d", tsens_out);
-        ESP_RETURN_ON_FALSE(ret == ESP_OK, ret, TAG, "failed to read raw data");
-        const tsens_dac_offset_t *dac = &dac_offset[tsens.dac_offset];
-        *celsius = parse_temp_sensor_raw_value(tsens_out, dac->offset);
-        if (*celsius < dac->range_min || *celsius > dac->range_max) {
-            ESP_LOGW(TAG, "Exceeding the temperature range!");
-            ret = ESP_ERR_INVALID_STATE;
-        }
+        temp_sensor_get_config(&tsens);
+    bool range_changed;
+    int16_t tsens_out = temp_sensor_get_raw_value(&range_changed);
+    *celsius = parse_temp_sensor_raw_value(tsens_out);
+    if (*celsius < TEMPERATURE_SENSOR_MEASURE_MIN || *celsius > TEMPERATURE_SENSOR_MEASURE_MAX) {
+        ESP_LOGE(TAG, "Exceeding temperature measure range.");
+        return ESP_ERR_INVALID_STATE;
     }
-    return ret;
+    if (range_changed) {
+        temp_sensor_get_config(&tsens);
+    }
+    return ESP_OK;
 }
