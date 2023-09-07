@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -1351,12 +1352,12 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
 {
     Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
     configASSERT(pxRingbuffer);
-    printf("Rb size:%d\tfree: %d\trptr: %d\tfreeptr: %d\twptr: %d, aptr: %d\n",
-           pxRingbuffer->xSize, prvGetFreeSize(pxRingbuffer),
-           pxRingbuffer->pucRead - pxRingbuffer->pucHead,
-           pxRingbuffer->pucFree - pxRingbuffer->pucHead,
-           pxRingbuffer->pucWrite - pxRingbuffer->pucHead,
-           pxRingbuffer->pucAcquire - pxRingbuffer->pucHead);
+    printf("Rb size:%" PRId32 "\tfree: %" PRId32 "\trptr: %" PRId32 "\tfreeptr: %" PRId32 "\twptr: %" PRId32 ", aptr: %" PRId32 "\n",
+           (int32_t)pxRingbuffer->xSize, (int32_t)prvGetFreeSize(pxRingbuffer),
+           (int32_t)(pxRingbuffer->pucRead - pxRingbuffer->pucHead),
+           (int32_t)(pxRingbuffer->pucFree - pxRingbuffer->pucHead),
+           (int32_t)(pxRingbuffer->pucWrite - pxRingbuffer->pucHead),
+           (int32_t)(pxRingbuffer->pucAcquire - pxRingbuffer->pucHead));
 }
 
 BaseType_t xRingbufferGetStaticBuffer(RingbufHandle_t xRingbuffer, uint8_t **ppucRingbufferStorage, StaticRingbuffer_t **ppxStaticRingbuffer)
