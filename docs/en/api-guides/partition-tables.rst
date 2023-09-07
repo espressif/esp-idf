@@ -1,5 +1,6 @@
 Partition Tables
 ================
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
@@ -142,7 +143,7 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
 * If the partition type is any application-defined value (range 0x40-0xFE), then ``subtype`` field can be any value chosen by the application (range 0x00-0xFE).
 
-  Note that when writing in C++, an application-defined subtype value requires casting to type :cpp:type:`esp_partition_subtype_t` in order to use it with the :ref:`partition API<api-reference-partition-table>`.
+  Note that when writing in C++, an application-defined subtype value requires casting to type :cpp:type:`esp_partition_subtype_t` in order to use it with the :ref:`partition API <api-reference-partition-table>`.
 
 Extra Partition SubTypes
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -198,7 +199,7 @@ The ESP-IDF build system will automatically check if generated binaries fit in t
 Currently these checks are performed for the following binaries:
 
 * Bootloader binary must fit in space before partition table (see :ref:`bootloader-size`).
-* App binary should fit in at least one partition of type "app". If the app binary doesn't fit in any app partition, the build will fail. If it only fits in some of the app partitions, a warning is printed about this.
+* App binary should fit in at least one partition of type "app". If the app binary does not fit in any app partition, the build will fail. If it only fits in some of the app partitions, a warning is printed about this.
 
 .. note::
 
@@ -228,13 +229,13 @@ A manual flashing command is also printed as part of ``idf.py partition-table`` 
 
 .. note::
 
-  Note that updating the partition table doesn't erase data that may have been stored according to the old partition table. You can use ``idf.py erase-flash`` (or ``esptool.py erase_flash``) to erase the entire flash contents.
+  Note that updating the partition table does not erase data that may have been stored according to the old partition table. You can use ``idf.py erase-flash`` (or ``esptool.py erase_flash``) to erase the entire flash contents.
 
 
-Partition Tool (parttool.py)
-----------------------------
+Partition Tool (``parttool.py``)
+--------------------------------
 
-The component `partition_table` provides a tool :component_file:`parttool.py<partition_table/parttool.py>` for performing partition-related operations on a target device. The following operations can be performed using the tool:
+The component `partition_table` provides a tool :component_file:`parttool.py <partition_table/parttool.py>` for performing partition-related operations on a target device. The following operations can be performed using the tool:
 
   - reading a partition and saving the contents to a file (read_partition)
   - writing the contents of a file to a partition (write_partition)

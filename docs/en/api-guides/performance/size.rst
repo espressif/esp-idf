@@ -449,7 +449,7 @@ lwIP IPv4
 
   .. note::
 
-      Before disabling IPv4 support, please note that IPv6 only network environments are not ubiquitous and must be supported in the local network, e.g. by your internet service provider or using constrained local network settings.
+      Before disabling IPv4 support, please note that IPv6 only network environments are not ubiquitous and must be supported in the local network, e.g., by your internet service provider or using constrained local network settings.
 
 .. _newlib-nano-formatting:
 
@@ -460,7 +460,7 @@ By default, ESP-IDF uses Newlib "full" formatting for I/O functions (``printf()`
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 
-    Enabling the config option :ref:`CONFIG_NEWLIB_NANO_FORMAT` will switch Newlib to the “Nano” formatting mode. This is smaller in code size, and a large part of the implementation is compiled into the {IDF_TARGET_NAME} ROM, so it does not need to be included in the binary at all.
+    Enabling the config option :ref:`CONFIG_NEWLIB_NANO_FORMAT` will switch Newlib to the "Nano" formatting mode. This is smaller in code size, and a large part of the implementation is compiled into the {IDF_TARGET_NAME} ROM, so it does not need to be included in the binary at all.
 
     The exact difference in binary size depends on which features the firmware uses, but 25 KB ~ 50 KB is typical.
 
@@ -505,7 +505,7 @@ These include:
 - :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
 - :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
 - Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed
-- Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e. :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`)
+- Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`)
 
 The help text for each option has some more information for reference.
 

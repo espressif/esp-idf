@@ -1,4 +1,4 @@
-Downloadable ESP-IDF Tools
+Downloadable IDF Tools
 ==========================
 
 :link_to_translation:`zh_CN:[中文]`

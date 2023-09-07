@@ -1,4 +1,4 @@
-ESP-IDF Frontend - idf.py
+IDF Frontend - ``idf.py``
 *************************
 
 :link_to_translation:`zh_CN:[中文]`
@@ -19,7 +19,7 @@ Commands
 ========
 
 Start a New Project: ``create-project``
-------------------------------------------
+---------------------------------------
 
 .. code-block:: bash
 
@@ -28,7 +28,7 @@ Start a New Project: ``create-project``
 This command creates a new ESP-IDF project. Additionally, the folder where the project will be created in can be specified by the ``--path`` option.
 
 Create a New Component: ``create-component``
------------------------------------------------
+--------------------------------------------
 
 .. code-block:: bash
 
@@ -39,7 +39,7 @@ This command creates a new component, which will have a minimum set of files nec
 .. _selecting-idf-target:
 
 Select the Target Chip: ``set-target``
------------------------------------------
+--------------------------------------
 
 ESP-IDF supports multiple targets (chips). A full list of supported targets in your version of ESP-IDF can be seen by running ``idf.py --list-targets``.
 
@@ -68,14 +68,14 @@ To specify the default value of ``IDF_TARGET`` for a given project, please add t
 If the target has not been set by any of these methods, the build system will default to ``esp32`` target.
 
 Start the Graphical Configuration Tool: ``menuconfig``
---------------------------------------------------------
+------------------------------------------------------
 
 .. code-block:: bash
 
   idf.py menuconfig
 
 Build the Project: ``build``
--------------------------------
+----------------------------
 
 .. code-block:: bash
 
@@ -92,7 +92,7 @@ Building is incremental, so if no source files or configuration has changed sinc
 Additionally, the command can be run with ``app``, ``bootloader`` and ``partition-table`` arguments to build only the app, bootloader or partition table as applicable.
 
 Remove the Build Output: ``clean``
--------------------------------------
+----------------------------------
 
 .. code-block:: bash
 
@@ -101,7 +101,7 @@ Remove the Build Output: ``clean``
 This command removes the project build output files from the build directory, and the project will be fully rebuilt on next build. Using this command does not remove the CMake configuration output inside the build folder.
 
 Delete the Entire Build Contents: ``fullclean``
---------------------------------------------------
+-----------------------------------------------
 
 .. code-block:: bash
 
@@ -110,7 +110,7 @@ Delete the Entire Build Contents: ``fullclean``
 This command deletes the entire "build" directory contents, which includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes **all** files in the build directory, so use with care. Project configuration is not deleted.
 
 Flash the Project: ``flash``
--------------------------------
+----------------------------
 
 .. code-block:: bash
 
@@ -150,7 +150,7 @@ Advanced Commands
 =================
 
 Open the Documentation: ``docs``
------------------------------------
+--------------------------------
 
 .. code-block:: bash
 
@@ -159,7 +159,7 @@ Open the Documentation: ``docs``
 This command opens the documentation for the projects target and ESP-IDF version in the browser.
 
 Show Size: ``size``
------------------------
+-------------------
 
 .. code-block:: bash
 
@@ -186,16 +186,16 @@ Options
 - ``--output-file`` optionally specifies the name of the file to print the command output to instead of the standard output.
 
 Reconfigure the Project: ``reconfigure``
--------------------------------------------
+----------------------------------------
 
 .. code-block:: bash
 
   idf.py reconfigure
 
-This command forces CMake_ to be rerun regardless of whether it is necessary. It's unnecessary during normal usage, but can be useful after adding/removing files from the source tree, or when modifying CMake cache variables. For example, ``idf.py -DNAME='VALUE' reconfigure`` can be used to set variable ``NAME`` in CMake cache to value ``VALUE``.
+This command forces CMake_ to be rerun regardless of whether it is necessary. It is unnecessary during normal usage, but can be useful after adding/removing files from the source tree, or when modifying CMake cache variables. For example, ``idf.py -DNAME='VALUE' reconfigure`` can be used to set variable ``NAME`` in CMake cache to value ``VALUE``.
 
 Clean the Python Byte Code: ``python-clean``
------------------------------------------------
+--------------------------------------------
 
 .. code-block:: bash
 
@@ -204,7 +204,7 @@ Clean the Python Byte Code: ``python-clean``
 This command deletes generated python byte code from the ESP-IDF directory. The byte code may cause issues when switching between ESP-IDF and Python versions. It is advised to run this target after switching versions of Python.
 
 Generate a UF2 Binary: ``uf2``
----------------------------------
+------------------------------
 
 .. code-block:: bash
 

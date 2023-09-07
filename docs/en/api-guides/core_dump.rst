@@ -12,6 +12,7 @@ A core dump contains snapshots of all tasks in the system at the moment of failu
 
 Core dump data is saved to a core dump file according to a particular format, see :doc:`Core dump internals <core_dump_internals>` for more details. However, ESP-IDF's ``idf.py`` command provides special subcommands to decode and analyze the core dump file.
 
+
 Configurations
 --------------
 
@@ -19,6 +20,7 @@ Destination
 ^^^^^^^^^^^
 
 The :ref:`CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART` option enables or disables core dump, and selects the core dump destination if enabled. When a crash occurs, the generated core dump file can either be saved to flash, or output to a connected host over UART.
+
 
 Format & Size
 ^^^^^^^^^^^^^
@@ -44,6 +46,7 @@ Core dump data integrity checking is supported via the ``Components`` > ``Core d
 
     The SHA256 hash algorithm provides a greater probability of detecting corruption than a CRC32 with multiple-bit errors.
 
+
 Reserved Stack Size
 ^^^^^^^^^^^^^^^^^^^
 
@@ -54,6 +57,7 @@ Setting this option to 0 bytes will cause the core dump routines to run from the
 .. note::
 
    If a separate stack is used, the recommended stack size should be larger than 800 bytes to ensure that the core dump routines themselves do not cause a stack overflow.
+
 
 Core Dump to Flash
 ------------------
@@ -93,10 +97,12 @@ or
 
     idf.py coredump-debug
 
+
 Core Dump to UART
 -----------------
 
 When the core dump file is output to UART, the output file is Base64-encoded. The :ref:`CONFIG_ESP_COREDUMP_DECODE` option allows for selecting whether the output file is automatically decoded by the ESP-IDF monitor or kept encoded for manual decoding.
+
 
 Automatic Decoding
 ^^^^^^^^^^^^^^^^^^
@@ -143,6 +149,7 @@ The :ref:`CONFIG_ESP_COREDUMP_UART_DELAY` allows for an optional delay to be add
     ...
     ===================== ESP32 CORE DUMP END =====================
     ===============================================================
+
 
 Manual Decoding
 ^^^^^^^^^^^^^^^
@@ -200,6 +207,7 @@ Supported Notations and RAM Regions
    :SOC_RTC_FAST_MEM_SUPPORTED or SOC_RTC_SLOW_MEM_SUPPORTED: * ``COREDUMP_RTC_ATTR`` places the variable into the RTC area, which is included in the dump.
    :SOC_RTC_FAST_MEM_SUPPORTED: * ``COREDUMP_RTC_FAST_ATTR`` places the variable into the RTC_FAST area, which is included in the dump.
 
+
 Example
 ^^^^^^^
 
@@ -234,10 +242,12 @@ Example
    (gdb) p global_var
    $1 = 25 '\031'
 
+
 Running ``idf.py coredump-info`` and ``idf.py coredump-debug``
 --------------------------------------------------------------
 
 ``idf.py coredump-info --help`` and ``idf.py coredump-debug --help`` commands can be used to get more details on usage.
+
 
 Related Documents
 ^^^^^^^^^^^^^^^^^

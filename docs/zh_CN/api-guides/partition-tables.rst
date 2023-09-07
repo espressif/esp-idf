@@ -1,5 +1,6 @@
 分区表
 ======
+
 :link_to_translation:`en:[English]`
 
 概述
@@ -76,9 +77,9 @@ Type 字段
 
 Type 字段可以指定为 app (0x00) 或者 data (0x01)，也可以直接使用数字 0-254（或者十六进制 0x00-0xFE）。注意，0x00-0x3F 不得使用（预留给 esp-idf 的核心功能）。
 
-如果您的应用程序需要以 ESP-IDF 尚未支持的格式存储数据，请在 0x40-0xFE 内添加一个自定义分区类型。
+如果你的应用程序需要以 ESP-IDF 尚未支持的格式存储数据，请在 0x40-0xFE 内添加一个自定义分区类型。
 
-参考 :cpp:type:`esp_partition_type_t` 关于 ``app``和 ``data`` 分区的枚举定义。
+参考 :cpp:type:`esp_partition_type_t` 关于 ``app`` 和 ``data`` 分区的枚举定义。
 
 如果用 C++ 编写，那么指定一个应用程序定义的分区类型，需要在 :cpp:type:`esp_partition_type_t` 中使用整数，从而与 :ref:`分区 API<api-reference-partition-table>` 一起使用。例如::
 
@@ -99,7 +100,7 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
    -  ``factory`` (0x00) 是默认的 app 分区。启动加载器将默认加载该应用程序。但如果存在类型为 data/ota 分区，则启动加载器将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
 
       -  OTA 升级永远都不会更新 factory 分区中的内容。
-      -  如果您希望在 OTA 项目中预留更多 flash，可以删除 factory 分区，转而使用 ota_0 分区。
+      -  如果你希望在 OTA 项目中预留更多 flash，可以删除 factory 分区，转而使用 ota_0 分区。
 
    -  ota_0 (0x10) … ota_15 (0x1F) 为 OTA 应用程序分区，启动加载器将根据 OTA 数据分区中的数据来决定加载哪个 OTA 应用程序分区中的程序。在使用 OTA 功能时，应用程序应至少拥有 2 个 OTA 应用程序分区（``ota_0`` 和 ``ota_1``）。更多详细信息，请参考 :doc:`OTA 文档 </api-reference/system/ota>` 。
    -  ``test`` (0x20) 为预留的子类型，用于工厂测试流程。如果没有其他有效 app 分区，test 将作为备选启动分区使用。也可以配置启动加载器在每次启动时读取 GPIO，如果 GPIO 被拉低则启动该分区。详细信息请查阅 :ref:`bootloader_boot_from_test_firmware`。
@@ -110,7 +111,7 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
    -  ``phy`` (1) 分区用于存放 PHY 初始化数据，从而保证可以为每个设备单独配置 PHY，而非必须采用固件中的统一 PHY 初始化数据。
 
       -  默认配置下，phy 分区并不启用，而是直接将 phy 初始化数据编译至应用程序中，从而节省分区表空间（直接将此分区删掉）。
-      -  如果需要从此分区加载 phy 初始化数据，请打开项目配置菜单（``idf.py menuconfig``），并且使能 {IDF_TARGET_ESP_PHY_REF} 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
+      -  如果需要从此分区加载 phy 初始化数据，请打开项目配置菜单（``idf.py menuconfig``），并且使能 {IDF_TARGET_ESP_PHY_REF} 选项。此时，还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
    -  ``nvs`` (2) 是专门给 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 使用的分区。
 
       -  用于存储每台设备的 PHY 校准数据（注意，并不是 PHY 初始化数据）。
@@ -120,7 +121,7 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
           -  用于存储 Wi-Fi 数据（如果使用了 :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/network/esp_wifi>` 初始化函数）。
 
       -  NVS API 还可以用于其他应用程序数据。
-      -  强烈建议您应为 NVS 分区分配至少 0x3000 字节空间。
+      -  强烈建议为 NVS 分区分配至少 0x3000 字节空间。
       -  如果使用 NVS API 存储大量数据，请增加 NVS 分区的大小（默认是 0x6000 字节）。
    -  ``nvs_keys`` (4) 是 NVS 秘钥分区。详细信息，请参考 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 文档。
 
@@ -128,7 +129,7 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
       -  此分区应至少设定为 4096 字节。
 
   - ESP-IDF 还支持其他用于数据存储的预定义子类型，包括：
-  
+
     - ``coredump`` (0x03) 用于在使用自定义分区表 CSV 文件时存储核心转储，详情请参阅 :doc:`/api-guides/core_dump`。
     - ``efuse`` (0x05) 使用 :ref:`虚拟 eFuse <virtual-efuses>` 模拟 eFuse 位。
     - ``undefined`` (0x06) 隐式用于未指定子类型（即子类型为空）的数据分区，但也可显式将其标记为未定义。
@@ -160,12 +161,12 @@ app 分区的偏移地址必须要与 0x10000 (64 K) 对齐，如果将偏移字
 
 app 分区的大小和偏移地址可以采用十进制数、以 0x 为前缀的十六进制数，且支持 K 或 M 的倍数单位（分别代表 1024 和 1024*1024 字节）。
 
-如果您希望允许分区表中的分区采用任意起始偏移量 (:ref:`CONFIG_PARTITION_TABLE_OFFSET`)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。注意，此时，如果您更改了分区表中任意分区的偏移地址，则其他分区的偏移地址也会跟着改变。这种情况下，如果您之前还曾设定某个分区采用固定偏移地址，则可能造成分区表冲突，从而导致报错。
+如果你希望允许分区表中的分区采用任意起始偏移量 (:ref:`CONFIG_PARTITION_TABLE_OFFSET`)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。注意，此时，如果你更改了分区表中任意分区的偏移地址，则其他分区的偏移地址也会跟着改变。这种情况下，如果你之前还曾设定某个分区采用固定偏移地址，则可能造成分区表冲突，从而导致报错。
 
 Flags 字段
 ~~~~~~~~~~
 
-当前仅支持 ``encrypted`` 标记。如果 Flags 字段设置为 ``encrypted``，且已启用 :doc:`Flash 加密 </security/flash-encryption>` 功能，则该分区将会被加密。
+当前仅支持 ``encrypted`` 标记。如果 Flags 字段设置为 ``encrypted``，且已启用 :doc:`/security/flash-encryption` 功能，则该分区将会被加密。
 
 .. note::
 
@@ -176,7 +177,7 @@ Flags 字段
 
 烧写到 {IDF_TARGET_NAME} 中的分区表采用二进制格式，而不是 CSV 文件本身。此时，:component_file:`partition_table/gen_esp32part.py` 工具可以实现 CSV 和二进制文件之间的转换。
 
-如果您在项目配置菜单（``idf.py menuconfig``）中设置了分区表 CSV 文件的名称，然后构建项目或执行 ``idf.py partition-table``。这时，转换将在编译过程中自动完成。
+如果你在项目配置菜单（``idf.py menuconfig``）中设置了分区表 CSV 文件的名称，然后构建项目或执行 ``idf.py partition-table``。这时，转换将在编译过程中自动完成。
 
 手动将 CSV 文件转换为二进制文件::
 
@@ -186,7 +187,7 @@ Flags 字段
 
    python gen_esp32part.py binary_partitions.bin input_partitions.csv
 
-在标准输出（stdout）上，打印二进制分区表的内容（运行  ``idf.py partition-table`` 时展示的信息摘要也是这样生成的）::
+在标准输出 (stdout) 上，打印二进制分区表的内容（运行  ``idf.py partition-table`` 时展示的信息摘要也是这样生成的）::
 
    python gen_esp32part.py binary_partitions.bin
 
@@ -228,18 +229,18 @@ MD5 校验和
 
 .. note::
 
-   分区表的更新并不会擦除根据旧分区表存储的数据。此时，您可以使用 ``idf.py erase-flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
+   分区表的更新并不会擦除根据旧分区表存储的数据。此时，可以使用 ``idf.py erase-flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
 
 
-分区工具 (parttool.py)
-----------------------
+分区工具 (``parttool.py``)
+---------------------------
 
 `partition_table` 组件中有分区工具 :component_file:`parttool.py<partition_table/parttool.py>`，可以在目标设备上完成分区相关操作。该工具有如下用途：
 
   - 读取分区，将内容存储到文件中 (read_partition)
   - 将文件中的内容写至分区 (write_partition)
   - 擦除分区 (erase_partition)
-  - 检索特定分区的名称、偏移、大小和 flag（“加密”） 标志等信息 (get_partition_info)
+  - 检索特定分区的名称、偏移、大小和 flag（“加密”）标志等信息 (get_partition_info)
 
 用户若想通过编程方式完成相关操作，可从另一个 Python 脚本导入并使用分区工具，或者从 Shell 脚本调用分区工具。前者可使用工具的 Python API，后者可使用命令行界面。
 

@@ -88,7 +88,7 @@ ESP-BLE-MESH 常见问题手册
 
     - Device UUID
     - OOB Info
-    - URL Hash (可选的)
+    - URL Hash（可选的）
 
 1.12 这些信息可以用于设备识别吗？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -385,7 +385,7 @@ ESP-BLE-MESH 常见问题手册
 
     - 模型分为两种，客户端模型和服务器模型。客户端模型可以获取并设置服务器模型的状态。
 
-    - 模型也可以分为 SIG 模型和自定义模型。 SIG 模型的所有行为都由官方定义，而自定义模型的行为均由用户定义。
+    - 模型也可以分为 SIG 模型和自定义模型。SIG 模型的所有行为都由官方定义，而自定义模型的行为均由用户定义。
 
 2.2 每个模型对应的消息格式是不是固定的？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -536,11 +536,11 @@ ESP-BLE-MESH 常见问题手册
 
     应使能 menuconfig 中的一些配置来支持 PSRAM。
 
-        - :code:`{IDF_TARGET_NAME}-specific --> Support for external,SPI-connected RAM --> Try to allocate memories of Wi-Fi and LWIP...`
-        - :code:`Bluetooth --> Bluedriod Enable --> BT/BLE will first malloc the memory from the PSRAM`
-        - :code:`Bluetooth --> Bluedriod Enable --> Use dynamic memory allocation in BT/BLE stack.`
-        - :code:`Bluetooth --> Blutooth controller --> BLE full scan feature supported.`
-        - :code:`Wi-Fi --> Software controls Wi-Fi/Bluetooth coexistence --> Wi-Fi`
+        - ``{IDF_TARGET_NAME}-specific`` > ``Support for external,SPI-connected RAM`` > ``Try to allocate memories of Wi-Fi and LWIP...``
+        - ``Bluetooth`` > ``Bluedroid Enable`` > ``BT/BLE will first malloc the memory from the PSRAM``
+        - ``Bluetooth`` > ``Bluedroid Enable`` > ``Use dynamic memory allocation in BT/BLE stack``
+        - ``Bluetooth`` > ``Bluetooth controller`` > ``BLE full scan feature supported``
+        - ``Wi-Fi`` > ``Software controls Wi-Fi/Bluetooth coexistence`` > ``Wi-Fi``
 
 
 .. _ble-mesh-faq-fast-provisioning:
@@ -563,7 +563,7 @@ ESP-BLE-MESH 常见问题手册
 
     每完成一次快速配网后、开始新一次快速配网前，APP 会存有上次配网的数据，因此 APP 中显示的节点地址的数量比现有的节点地址更多。
 
-4.4 在 EspBleMesh App 中输入的 ** count ** 值有什么用途？
+4.4 在 EspBleMesh App 中输入的 **count** 值有什么用途？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     此 **count** 值提供给 App 配置的代理节点，以决定何时提前开始 Proxy 广播信息。
@@ -584,39 +584,39 @@ ESP-BLE-MESH 常见问题手册
 5. Log 帮助
 -----------
 
-当 ESP-BLE-MESH 协议栈底层出现错误或者警告时，您可以在这儿找到这些错误和警告的含义。
+当 ESP-BLE-MESH 协议栈底层出现错误或者警告时，可以在这儿找到这些错误和警告的含义。
 
-5.1 :code:`ran out of retransmit attempts` 代表什么？
+5.1 ``ran out of retransmit attempts`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     节点发送分段消息时，由于某些原因，接收端未收到完整的消息。节点会重传消息。当重传次数达到最大重传数时，会出现该警告，当前最大重传数为 4。
 
-5.2 :code:`Duplicate found in Network Message Cache` 代表什么？
+5.2 ``Duplicate found in Network Message Cache`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     当节点收到一条消息时，它会把该消息与网络缓存中存储的消息进行比较。如果在缓存中找到相同的消息，这意味着之前已接受过该消息，则该消息会被丢弃。
 
-5.3 :code:`Incomplete timer expired` 代表什么？
+5.3  ``Incomplete timer expired`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     当节点在一定时间段（比如 10 秒）内未收到分段消息的所有段时，则 Incomplete 计时器到时，并且出现该警告。
 
-5.4 :code:`No matching TX context for ack` 代表什么？
+5.4 ``No matching TX context for ack`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     当节点收到一个分段 ack 且不能找到任何自己发送的与该 ack 相关的消息时，会出现该警告。
 
-5.5 :code:`No free slots for new incoming segmented messages` 代表什么？
+5.5  ``No free slots for new incoming segmented messages`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     当节点没有空间来接收新的分段消息时，会出现该警告。用户可以通过配置 :ref:`CONFIG_BLE_MESH_RX_SEG_MSG_COUNT` 扩大空间。
 
-5.6 :code:`Model not bound to AppKey 0x0000` 代表什么？
+5.6  ``Model not bound to AppKey 0x0000`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     当节点发送带有模型的消息且该模型尚未绑定到索引为 0x000 的应用密钥时，会出现该报错。
 
-5.7 :code:`Busy sending message to DST xxxx` 代表什么？
+5.7  ``Busy sending message to DST xxxx`` 代表什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
    该错误表示节点的客户端模型已将消息发送给目标节点，并且正在等待响应，用户无法将消息发送到单播地址相同的同一节点。接收到相应的响应或计时器到时后，可以发送另一条消息。

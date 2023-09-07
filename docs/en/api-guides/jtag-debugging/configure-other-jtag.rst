@@ -1,5 +1,6 @@
 Configure Other JTAG Interfaces
 ===============================
+
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE"}

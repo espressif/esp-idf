@@ -41,7 +41,7 @@ ESP-BLE-MESH architecture includes five key parts:
 
 - ``Features``
 
-  - Include several ESP-BLE-MESH features, e.g. Low Power feature, Friend feature, Relay feature, etc.
+  - Include several ESP-BLE-MESH features, e.g., Low Power feature, Friend feature, Relay feature, etc.
 
 - ``Mesh Bearer Layer``
 
@@ -182,7 +182,7 @@ Functions of each layer are shown in Table 1.3:
 
 The ``Applications`` in the protocol stack architecture implement the corresponding functions by calling the API provided by the ESP-BLE-MESH protocol stack and processing the Event reported by the protocol stack. There are some common applications, such as gateway, lighting and etc.
 
-Interaction between application layer（``Applications``）and ``API / Event``
+Interaction between application layer (``Applications``) and ``API/Event``
 
 - Application layer calls API
 

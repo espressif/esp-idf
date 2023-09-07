@@ -1,13 +1,14 @@
 ******************************
 Espressif Wireshark User Guide
 ******************************
+
 :link_to_translation:`zh_CN:[中文]`
 
 ===========
 1. Overview
 ===========
 
-1.1 What is Wireshark?
+1.1 What Is Wireshark?
 ======================
 
 `Wireshark <https://www.wireshark.org>`_ (originally named "Ethereal") is a network packet analyzer that captures network packets and displays the packet data as detailed as possible. It uses WinPcap as its interface to directly capture network traffic going through a network interface controller (NIC).
@@ -60,13 +61,13 @@ The main features of Wireshark are as follows:
 
 * Calculates statistics
 
-* … and a lot more!
+* ... and a lot more!
 
 
-1.4 Wireshark Can or Can't Do
+1.4 Wireshark Can or Cannot Do
 ==============================
 
-* **Live capture from different network media**. 
+* **Live capture from different network media**.
   
   Wireshark can capture traffic from different network media, including wireless LAN. 
 
@@ -92,7 +93,7 @@ The main features of Wireshark are as follows:
 
 
 ==========================
-2. Where to Get Wireshark
+1. Where to Get Wireshark
 ==========================
 
 You can get Wireshark from the official website: https://www.wireshark.org/download.html  
@@ -109,7 +110,7 @@ Wireshark can run on various operating systems. Please download the correct vers
 
 **a) Start Wireshark**
 
-On Linux, you can run the shell script provided below. It starts Wireshark, then configures NIC and the channel for packet capture. 
+On Linux, you can run the shell script provided below. It starts Wireshark, then configures NIC and the channel for packet capture.
 
 :: 
 
@@ -242,5 +243,5 @@ On Linux, go to *File* -> *Export Packet Dissections* -> *As Plain Text File* to
 
 Please note that *All packets*, *Displayed* and *All expanded* must be selected.
 
-By default, Wireshark saves the captured packet in a libpcap file. You can also save the file in other formats, e.g. txt, to analyze it in other tools.
+By default, Wireshark saves the captured packet in a libpcap file. You can also save the file in other formats, e.g., txt, to analyze it in other tools.
 

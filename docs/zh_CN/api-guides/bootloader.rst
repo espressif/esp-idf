@@ -47,7 +47,7 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
    ESP-IDF V5.1 之前的版本构建的引导加载程序不支持 :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM`。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，不应使用该选项。
 
 
-配置 SPI Flash
+配置 SPI flash
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 每个 ESP-IDF 应用程序或引导加载程序的二进制文件中都包含一个文件头，其中内置了 :ref:`CONFIG_ESPTOOLPY_FLASHMODE`、:ref:`CONFIG_ESPTOOLPY_FLASHFREQ`、和 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`。这些是用于在启动时配置 SPI flash。

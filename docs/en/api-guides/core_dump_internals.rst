@@ -29,6 +29,7 @@ Here is an overview of the core dump layout:
 
     The format of the image file shown in the above pictures represents the current version of the image and can be changed in future releases.
 
+
 Overview of Implementation
 --------------------------
 

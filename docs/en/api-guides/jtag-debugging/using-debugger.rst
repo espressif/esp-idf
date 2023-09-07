@@ -1,5 +1,6 @@
 Using Debugger
 --------------
+
 :link_to_translation:`zh_CN:[中文]`
 
 This section covers the steps to configure and run a debugger using various methods, including:
@@ -42,7 +43,7 @@ After installation is complete, follow these steps to configure the debugging se
 
 1.  In Eclipse, go to ``Run`` > ``Debug Configuration``. A new window will open. In the left pane of the window, double-click ``GDB Hardware Debugging`` (or select ``GDB Hardware Debugging`` and press the ``New`` button) to create a new configuration.
 
-2.  In a form that will show up on the right, enter the ``Name:`` of this configuration, e.g. "Blink checking".
+2.  In a form that will show up on the right, enter the ``Name:`` of this configuration, e.g., "Blink checking".
 
 3.  On the ``Main`` tab below, under ``Project:``, press the ``Browse`` button and select the ``blink`` project.
 
@@ -128,7 +129,7 @@ Command Line
 
 .. highlight:: bash
 
-2.  Open a new terminal session and go to the directory that contains the project for debugging, e.g.
+2.  Open a new terminal session and go to the directory that contains the project for debugging, e.g.,
 
     ::
 
@@ -149,7 +150,7 @@ Command Line
 
     Save this file in the current directory.
 
-    For more details on what's inside ``gdbinit`` file, see :ref:`jtag-debugging-tip-debugger-startup-commands`
+    For more details on what is inside ``gdbinit`` file, see :ref:`jtag-debugging-tip-debugger-startup-commands`
 
 .. highlight:: bash
 
@@ -216,7 +217,7 @@ If you are not sure how to use GDB, check :ref:`jtag-debugging-examples-command-
 
 .. _jtag-debugging-with-idf-py:
 
-idf.py debug targets
+Idf.py Debug Targets
 ^^^^^^^^^^^^^^^^^^^^
 
 It is also possible to execute the described debugging tools conveniently from ``idf.py``. These commands are supported:
@@ -245,7 +246,7 @@ It is also possible to execute the described debugging tools conveniently from `
 
 4.  ``idf.py gdbgui``
 
-    Starts `gdbgui <https://www.gdbgui.com>`_ debugger frontend enabling out-of-the-box debugging in a browser window. To enable this option, run the install script with the "--enable-gdbgui" argument, e.g. ``install.sh --enable-gdbgui``.
+    Starts `gdbgui <https://www.gdbgui.com>`_ debugger frontend enabling out-of-the-box debugging in a browser window. To enable this option, run the install script with the "--enable-gdbgui" argument, e.g., ``install.sh --enable-gdbgui``.
 
 
     You can combine these debugging actions on a single command line, allowing for convenient setup of blocking and non-blocking actions in one step. ``idf.py`` implements a simple logic to move the background actions (such as openocd) to the beginning and the interactive ones (such as gdb, monitor) to the end of the action list.

@@ -1,5 +1,6 @@
 Fatal Errors
 ============
+
 :link_to_translation:`zh_CN:[中文]`
 
 .. _Overview:
@@ -59,7 +60,7 @@ Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTE
 
 - Silent reboot (``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT``)
 
-  Don't print registers or backtrace, restart the chip immediately.
+  Do not print registers or backtrace, restart the chip immediately.
 
 - Invoke GDB Stub (``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``)
 
@@ -303,7 +304,9 @@ Guru Meditation Errors
 
 This section explains the meaning of different error causes, printed in parens after the ``Guru Meditation Error: Core panic'ed`` message.
 
-.. note:: See the `Guru Meditation Wikipedia article <https://en.wikipedia.org/wiki/Guru_Meditation>`_ for historical origins of "Guru Meditation".
+.. note::
+
+  See the `Guru Meditation Wikipedia article <https://en.wikipedia.org/wiki/Guru_Meditation>`_ for historical origins of "Guru Meditation".
 
 
 |ILLEGAL_INSTR_MSG|
@@ -354,19 +357,19 @@ This CPU exception indicates that the instruction which was executed was not a v
 
     - If the application has attempted to write to a read-only memory region, such as IROM or DROM.
 
-    Unhandled debug exception
+    Unhandled Debug Exception
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
     This CPU exception happens when the instruction ``BREAK`` is executed.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    Instruction address misaligned
+    Instruction Address Misaligned
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     This CPU exception indicates that the address of the instruction to execute is not 2-byte aligned.
 
-    Instruction access fault, Load access fault, Store access fault
+    Instruction Access Fault, Load Access Fault, Store Access Fault
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     This CPU exception happens when application attempts to execute, read from or write to an invalid memory location. The address which was written/read is found in ``MTVAL`` register in the register dump. If this address is zero, it usually means that application attempted to dereference a NULL pointer. If this address is close to zero, it usually means that application attempted to access member of a structure, but the pointer to the structure was NULL. If this address is something else (garbage value, not in ``0x3fxxxxxx`` - ``0x6xxxxxxx`` range), it likely means that the pointer used to access the data was either not initialized or was corrupted.
@@ -376,7 +379,7 @@ This CPU exception indicates that the instruction which was executed was not a v
 
     This CPU exception happens when the instruction ``EBREAK`` is executed. See also :ref:`FreeRTOS-End-Of-Stack-Watchpoint`.
 
-    Load address misaligned, Store address misaligned
+    Load Address Misaligned, Store Address Misaligned
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     Application has attempted to read or write memory location, and address alignment did not match load/store size. For example, 32-bit load can only be done from 4-byte aligned address, and 16-bit load can only be done from a 2-byte aligned address.
@@ -393,7 +396,7 @@ In some situations, ESP-IDF will temporarily disable access to external SPI Flas
 
 .. only:: SOC_MEMPROT_SUPPORTED
 
-    Memory protection fault
+    Memory Protection Fault
     ^^^^^^^^^^^^^^^^^^^^^^^
 
     {IDF_TARGET_NAME} Permission Control feature is used in ESP-IDF to prevent the following types of memory access:
@@ -527,7 +530,7 @@ Undefined Behavior Sanitizer (UBSAN) Checks
 Undefined behavior sanitizer (UBSAN) is a compiler feature which adds run-time checks for potentially incorrect operations, such as:
 
 - overflows (multiplication overflow, signed integer overflow)
-- shift base or exponent errors (e.g. shift by more than 32 bits)
+- shift base or exponent errors (e.g., shift by more than 32 bits)
 - integer conversion errors
 
 See `GCC documentation <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`_ of ``-fsanitize=undefined`` option for the complete list of supported checks.
@@ -552,7 +555,9 @@ To enable UBSAN for a specific component (``component_name``) from the project's
     idf_component_get_property(lib component_name COMPONENT_LIB)
     target_compile_options(${lib} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
-.. note:: See the build system documentation for more information about :ref:`build properties<cmake-build-properties>` and :ref:`component properties<cmake-component-properties>`.
+.. note::
+
+  See the build system documentation for more information about :ref:`build properties <cmake-build-properties>` and :ref:`component properties <cmake-component-properties>`.
 
 To enable UBSAN for a specific component (``component_name``) from ``CMakeLists.txt`` of the same component, add the following at the end of the file::
 

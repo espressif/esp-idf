@@ -5,6 +5,7 @@ Deep Sleep Wake Stubs
 
 Deep sleep wake stub code is loaded into "RTC Fast Memory" and any data which it uses must also be loaded into RTC memory. RTC memory regions hold their contents during deep sleep.
 
+
 Rules for Wake Stubs
 --------------------
 
@@ -22,6 +23,7 @@ Wake stub code must be carefully written:
 
 * Wake stub code is a part of the main esp-idf app. During normal running of esp-idf, functions can call the wake stub functions or access RTC memory. It is as if these were regular parts of the app.
 
+
 Implementing A Stub
 -------------------
 
@@ -34,6 +36,7 @@ It is not necessary to implement ``esp_wake_deep_sleep()`` in your app in order 
 If you want to swap between different deep sleep stubs at runtime, it is also possible to do this by calling the ``esp_set_deep_sleep_wake_stub()`` function. This is not necessary if you only use the default ``esp_wake_deep_sleep()`` function.
 
 All of these functions are declared in the ``esp_sleep.h`` header under components/{IDF_TARGET_PATH_NAME}.
+
 
 Loading Code Into RTC Memory
 ----------------------------
@@ -101,6 +104,7 @@ The second way is a better option if you need to use strings, or write other mor
 
 To reduce wake-up time use the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option, see more information in :doc:`Fast boot from Deep Sleep <bootloader>`.
 
+
 CRC Check For Wake Stubs
 ------------------------
 
@@ -115,6 +119,7 @@ CRC Check For Wake Stubs
 .. note::
 
     When the `CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` option is enabled, all the RTC fast memory except the wake stubs area is added to the heap.
+
 
 Example
 -------

@@ -1,5 +1,6 @@
 应用层跟踪库
 ============
+
 :link_to_translation:`en:[English]`
 
 概述
@@ -56,10 +57,12 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 
 4. *UART TX message size* (：ref:`CONFIG_APPTRACE_UART_TX_MSG_size`)。要传输的单条消息的最大尺寸。
 
+
 如何使用此库
 --------------
 
 该库提供了用于在主机和 {IDF_TARGET_NAME} 之间传输任意数据的 API。在 menuconfig 中启用该库后，目标应用程序的跟踪模块会在系统启动时自动初始化。因此，用户需要做的就是调用相应的 API 来发送、接收或者刷新数据。
+
 
 .. _app_trace-application-specific-tracing:
 
@@ -257,7 +260,6 @@ Start 子命令的语法：
 
 .. _app_trace-logging-to-host:
 
-
 记录日志到主机
 ^^^^^^^^^^^^^^
 
@@ -318,6 +320,7 @@ Log Trace Processor 命令选项
 ``--no-errors``, ``-n``
     不打印错误信息。
 
+
 .. _app_trace-system-behaviour-analysis-with-segger-systemview:
 
 基于 SEGGER SystemView 的系统行为分析
@@ -335,7 +338,7 @@ ESP-IDF 中另一个基于应用层跟踪库的实用功能是系统级跟踪，
 
 2. *{IDF_TARGET_NAME} timer to use as SystemView timestamp source* （:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`）。选择 SystemView 事件使用的时间戳来源。在单核模式下，使用 {IDF_TARGET_NAME} 内部的循环计数器生成时间戳，其最大的工作频率是 240 MHz（时间戳粒度大约为 4 ns）。在双核模式下，使用工作在 40 MHz 的外部定时器，因此时间戳粒度为 25 ns。
 
-3. 可以单独启用或禁用的 SystemView 事件集合(``CONFIG_APPTRACE_SV_EVT_XXX``)：
+3. 可以单独启用或禁用的 SystemView 事件集合 (``CONFIG_APPTRACE_SV_EVT_XXX``)：
 
     - Trace Buffer Overflow Event
     - ISR Enter Event
@@ -383,13 +386,13 @@ Start 子命令语法：
 ``poll_period``
     跟踪数据的轮询周期（单位：毫秒）。如果该值大于 0，则命令以非阻塞的模式运行。默认为 1 毫秒。
 ``trace_size``
-    最多要收集的数据量（单位：字节）。当收到指定数量的数据后，将停止跟踪。默认值是 -1 （禁用跟踪大小停止触发器）。
+    最多要收集的数据量（单位：字节）。当收到指定数量的数据后，将停止跟踪。默认值是 -1（禁用跟踪大小停止触发器）。
 ``stop_tmo``
     空闲超时（单位：秒）。如果指定的时间内没有数据，将停止跟踪。默认值是 -1（禁用跟踪超时停止触发器）。
 
 .. note::
 
-    如果 ``poll_period`` 为 0，则在跟踪停止之前，OpenOCD 的 telnet 命令行将不可用。您需要复位板卡或者在 OpenOCD 的窗口（非 telnet 会话窗口）输入 Ctrl+C 命令来手动停止跟踪。另一个办法是设置 ``trace_size``，等到收集满指定数量的数据后自动停止跟踪。
+    如果 ``poll_period`` 为 0，则在跟踪停止之前，OpenOCD 的 telnet 命令行将不可用。你需要复位板卡，或者在 OpenOCD 的窗口（非 telnet 会话窗口）输入 Ctrl+C 命令，手动停止跟踪。另一个办法是设置 ``trace_size``，等到收集满指定数量的数据后自动停止跟踪。
 
 命令使用示例：
 
@@ -448,7 +451,7 @@ Start 子命令语法：
 
     .. note::
 
-        如果您在可视化方面遇到了问题（未显示数据或者缩放操作异常），您可以尝试删除当前的信号层次结构，再双击必要的文件或端口。Eclipse 会请求您创建新的信号层次结构。
+        如果你在可视化方面遇到了问题（未显示数据或者缩放操作异常），可以尝试删除当前的信号层次结构，再双击必要的文件或端口。Eclipse 会请求创建新的信号层次结构。
 
 
 .. _app_trace-gcov-source-code-coverage:
@@ -469,6 +472,7 @@ Gcov 和 Gcovr 简介
 
 3. Gcov 或 Gcovr 可用于生成基于 ``.gcno``、``.gcda`` 和源文件的代码覆盖。Gcov 将以 ``.gcov`` 文件的形式为每个源文件生成基于文本的覆盖报告，而 Gcovr 将以 HTML 格式生成覆盖报告。
 
+
 ESP-IDF 中的 Gcov 和 Gcovr 应用
 """""""""""""""""""""""""""""""""
 
@@ -477,6 +481,7 @@ ESP-IDF 中的 Gcov 和 Gcovr 应用
 1. :ref:`app_trace-gcov-setup-project`
 2. :ref:`app_trace-gcov-dumping-data`
 3. :ref:`app_trace-gcov-generate-report`
+
 
 .. _app_trace-gcov-setup-project:
 
@@ -493,6 +498,7 @@ ESP-IDF 中的 Gcov 和 Gcovr 应用
 
 当一个源文件用 ``--coverage`` 选项编译时（例如 ``gcov_example.c``），编译器会在项目的构建目录下生成 ``gcov_example.gcno`` 文件。
 
+
 项目配置
 ~~~~~~~~~~~~~~~~~
 
@@ -501,6 +507,7 @@ ESP-IDF 中的 Gcov 和 Gcovr 应用
 - 通过 :ref:`CONFIG_APPTRACE_DESTINATION1` 选项选择 ``Trace Memory`` 来启用应用程序跟踪模块。
 - 通过 :ref:`CONFIG_APPTRACE_GCOV_ENABLE` 选项启用 Gcov 主机。
 
+
 .. _app_trace-gcov-dumping-data:
 
 转储代码覆盖数据
@@ -508,7 +515,7 @@ ESP-IDF 中的 Gcov 和 Gcovr 应用
 
 一旦项目使用 ``--coverage`` 选项编译并烧录到目标机上，在应用程序运行时，代码覆盖数据将存储在目标机内部（即在跟踪存储器中）。将代码覆盖率数据从目标机转移到主机上的过程称为转储。
 
-覆盖率数据的转储通过 OpenOCD 进行（关于如何设置和运行 OpenOCD，请参考 :doc:`JTAG调试 <../api-guides/jtag-debugging/index>`）。由于该过程需要通过向 OpenOCD 发出命令来触发转储，因此必须打开 telnet 会话，以向 OpenOCD 发出这些命令（运行 ``telnet localhost 4444``）。GDB 也可以代替 telnet 来向 OpenOCD 发出命令，但是所有从 GDB 发出的命令都需要以 ``mon <oocd_command>`` 为前缀。
+覆盖率数据的转储通过 OpenOCD 进行（关于如何设置和运行 OpenOCD，请参考 :doc:`JTAG 调试 <../api-guides/jtag-debugging/index>`）。由于该过程需要通过向 OpenOCD 发出命令来触发转储，因此必须打开 telnet 会话，以向 OpenOCD 发出这些命令（运行 ``telnet localhost 4444``）。GDB 也可以代替 telnet 来向 OpenOCD 发出命令，但是所有从 GDB 发出的命令都需要以 ``mon <oocd_command>`` 为前缀。
 
 当目标机转储代码覆盖数据时，``.gcda`` 文件存储在项目的构建目录中。例如，如果 ``main`` 组件的 ``gcov_example_main.c`` 在编译时使用了 ``--coverage`` 选项，那么转储代码覆盖数据将在 ``build/esp-idf/main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda`` 中生成 ``gcov_example_main.gcda`` 文件。注意，编译过程中产生的 ``.gcno`` 文件也放在同一目录下。
 
@@ -519,10 +526,12 @@ ESP-IDF 支持两种将代码覆盖数据从目标机转储到主机的方法：
 * 运行中实时转储
 * 硬编码转储
 
+
 运行中实时转储
 ~~~~~~~~~~~~~~~~~~~~~
 
 通过 telnet 会话调用 OpenOCD 命令 ``{IDF_TARGET_NAME} gcov`` 来触发运行时的实时转储。一旦被调用，OpenOCD 将立即抢占 {IDF_TARGET_NAME} 的当前状态，并执行内置的 ESP-IDF Gcov 调试存根函数。调试存根函数将数据转储到主机。完成后，{IDF_TARGET_NAME} 将恢复当前状态。
+
 
 硬编码转储
 ~~~~~~~~~~~~~~~
@@ -546,6 +555,7 @@ GDB 可以用来在 :cpp:func:`esp_gcov_dump` 上设置断点，然后使用 ``g
 .. note::
     注意，所有的 OpenOCD 命令都应该在 GDB 中以 ``mon <oocd_command>`` 方式调用。
 
+
 .. _app_trace-gcov-generate-report:
 
 生成代码覆盖报告
@@ -555,12 +565,13 @@ GDB 可以用来在 :cpp:func:`esp_gcov_dump` 上设置断点，然后使用 ``g
 
 Gcov 和 Gcovr 都可以用来生成代码覆盖报告。安装 Xtensa 工具链时会一起安装 Gcov，但 Gcovr 可能需要单独安装。关于如何使用 Gcov 或 Gcovr，请参考 `Gcov 文档 <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ 和 `Gcovr 文档 <https://gcovr.com/>`_。
 
+
 在工程中添加 Gcovr 构建目标
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 用户可以在自己的工程中定义额外的构建目标，从而通过一个简单的构建命令即可更方便地生成报告。
 
-请在您工程的 ``CMakeLists.txt`` 文件中添加以下内容：
+请在工程的 ``CMakeLists.txt`` 文件中添加以下内容：
 
 .. code-block:: none
 
@@ -568,7 +579,7 @@ Gcov 和 Gcovr 都可以用来生成代码覆盖报告。安装 Xtensa 工具链
     idf_create_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
     idf_clean_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
 
-您可使用以下命令:
+可使用以下命令:
 
     * ``cmake --build build/ --target gcovr-report``：在 ``$(BUILD_DIR_BASE)/coverage_report/html`` 目录下生成 HTML 格式代码覆盖报告。
     * ``cmake --build build/ --target cov-data-clean``：删除所有代码覆盖数据文件。

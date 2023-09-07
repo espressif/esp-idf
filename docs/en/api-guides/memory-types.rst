@@ -58,7 +58,7 @@ IRAM (Instruction RAM)
 
 .. only:: esp32
 
-    ESP-IDF allocates part of the Internal SRAM0 region for instruction RAM. The region is defined in *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Embedded Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__]. Except for the first 64 KB block which is used for PRO and APP MMU caches, the rest of this memory range (i.e. from ``0x40080000`` to ``0x400A0000``) is used to store parts of the application which need to run from RAM.
+    ESP-IDF allocates part of the Internal SRAM0 region for instruction RAM. The region is defined in *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Embedded Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__]. Except for the first 64 KB block which is used for PRO and APP MMU caches, the rest of this memory range (i.e., from ``0x40080000`` to ``0x400A0000``) is used to store parts of the application which need to run from RAM.
 
 .. only:: esp32s2
 
@@ -90,7 +90,7 @@ Some code is automatically placed into the IRAM region using the linker script.
 
 If some specific application code needs to be placed into IRAM, it can be done by using the :doc:`linker-script-generation` feature and adding a linker script fragment file to your component that targets at the entire source files or functions with the ``noflash`` placement. See the :doc:`linker-script-generation` docs for more information.
 
-Alternatively, it's possible to specify IRAM placement in the source code using the ``IRAM_ATTR`` macro::
+Alternatively, it is possible to specify IRAM placement in the source code using the ``IRAM_ATTR`` macro::
 
 	#include "esp_attr.h"
 
@@ -101,7 +101,7 @@ Alternatively, it's possible to specify IRAM placement in the source code using 
 
 There are some possible issues with placement in IRAM, that may cause problems with IRAM-safe interrupt handlers:
 
-* Strings or constants inside an ``IRAM_ATTR`` function may not be placed in RAM automatically. It's possible to use ``DRAM_ATTR`` attributes to mark these, or using the linker script method will cause these to be automatically placed correctly.
+* Strings or constants inside an ``IRAM_ATTR`` function may not be placed in RAM automatically. It is possible to use ``DRAM_ATTR`` attributes to mark these, or using the linker script method will cause these to be automatically placed correctly.
 
   .. code-block:: c
 
@@ -115,7 +115,7 @@ Note that knowing which data should be marked with ``DRAM_ATTR`` can be hard, th
 
 * GCC optimizations that automatically generate jump tables or switch/case lookup tables place these tables in flash. IDF by default builds all files with ``-fno-jump-tables -fno-tree-switch-conversion`` flags to avoid this.
 
-Jump table optimizations can be re-enabled for individual source files that don't need to be placed in IRAM. For instructions on how to add the ``-fno-jump-tables -fno-tree-switch-conversion`` options when compiling individual source files, see :ref:`component_build_control`.
+Jump table optimizations can be re-enabled for individual source files that do not need to be placed in IRAM. For instructions on how to add the ``-fno-jump-tables -fno-tree-switch-conversion`` options when compiling individual source files, see :ref:`component_build_control`.
 
 
 .. _irom:
@@ -134,7 +134,7 @@ During :doc:`startup`, the bootloader (which runs from IRAM) configures the MMU 
 
 .. _drom:
 
-DROM (data stored in flash)
+DROM (Data Stored in flash)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. highlight:: c
@@ -147,7 +147,7 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
 
 .. only:: SOC_RTC_SLOW_MEM_SUPPORTED
 
-    RTC Slow memory
+    RTC Slow Memory
     ^^^^^^^^^^^^^^^
 
     Global and static variables used by code which runs from RTC memory must be placed into RTC Slow memory. For example :doc:`deep sleep <deep-sleep-stub>` variables can be placed here instead of RTC FAST memory, or code and variables accessed by the :doc:`/api-reference/system/ulp`.
@@ -161,7 +161,7 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
 
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-    RTC FAST memory
+    RTC FAST Memory
     ^^^^^^^^^^^^^^^
 
     .. only:: esp32c6 or esp32h2
@@ -189,7 +189,7 @@ DMA-Capable Requirement
 
 .. highlight:: c
 
-Most peripheral DMA controllers (e.g. SPI, sdmmc, etc.) have requirements that sending/receiving buffers should be placed in DRAM and word-aligned. We suggest to place DMA buffers in static variables rather than in the stack. Use macro ``DMA_ATTR`` to declare global/local static variables like::
+Most peripheral DMA controllers (e.g., SPI, sdmmc, etc.) have requirements that sending/receiving buffers should be placed in DRAM and word-aligned. We suggest to place DMA buffers in static variables rather than in the stack. Use macro ``DMA_ATTR`` to declare global/local static variables like::
 
     DMA_ATTR uint8_t buffer[]="I want to send something";
 

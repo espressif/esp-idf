@@ -1,5 +1,6 @@
 RF Coexistence
 ==================
+
 :link_to_translation:`zh_CN:[中文]`
 
 Overview
@@ -10,6 +11,7 @@ Overview
 
 Supported Coexistence Scenario for {IDF_TARGET_NAME}
 ---------------------------------------------------------------------
+
 .. only:: esp32c3 or esp32s3 or esp32 or esp32c6
 
   .. table:: Supported Features of Wi-Fi and BLE Coexistence
@@ -74,6 +76,7 @@ Supported Coexistence Scenario for {IDF_TARGET_NAME}
   C1: supported but the performance is unstable
   X: not supported
   S: supported and performance is stable in STA mode, otherwise not supported
+
 
 Coexistence Mechanism and Policy
 ------------------------------------------------
@@ -153,6 +156,7 @@ Dynamic Priority
 
 The coexistence module assigns different priorities to different status of Wi-Fi and Bluetooth. And the priority for each status is dynamic. For example, in every N BLE Advertising events, there is always one event with high priority. If a high-priority BLE Advertising event occurs within the Wi-Fi time slice, the right to use the RF may be preempted by BLE.
 
+
 .. only:: SOC_WIFI_SUPPORTED
 
     Wi-Fi Connectionless Modules Coexistence
@@ -164,6 +168,7 @@ The coexistence module assigns different priorities to different status of Wi-Fi
 
     Please refer to :ref:`connectionless module power save <connectionless-module-power-save>` to get more detail.
 
+
 How to Use the Coexistence Feature
 --------------------------------------
 
@@ -171,6 +176,7 @@ Coexistence API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For most coexistence cases, {IDF_TARGET_NAME} will switch the coexistence status automatically without calling API. However, {IDF_TARGET_NAME} provides two APIs for the coexistence of BLE MESH and Wi-Fi. When the status of BLE MESH changes, call :code:`esp_coex_status_bit_clear` to clear the previous status first and then call :code:`esp_coex_status_bit_set` to set the current status.
+
 
 BLE MESH Coexistence Status
 """"""""""""""""""""""""""""""""""
@@ -185,7 +191,7 @@ As the firmware of Wi-Fi and Bluetooth are not aware of the current scenario of 
 Coexistence API Error Codes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All coexistence APIs have custom return values, i.e. error codes. These error codes can be categorized as:
+All coexistence APIs have custom return values, i.e., error codes. These error codes can be categorized as:
 
   - No error. For example, the return value ESP_OK siginifies the API returned successfully.
   - Recoverable errors. For example, the return value ESP_ERR_INVALID_ARG signifies API parameter errors.

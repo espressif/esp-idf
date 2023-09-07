@@ -1,6 +1,6 @@
-********************
-ESP-IDF Docker Image
-********************
+****************
+IDF Docker Image
+****************
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -9,7 +9,7 @@ ESP-IDF Docker Image
 
 .. highlight:: bash
 
-ESP-IDF Docker image (``espressif/idf``) is intended for building applications and libraries with specific versions of ESP-IDF when doing automated builds.
+IDF Docker image (``espressif/idf``) is intended for building applications and libraries with specific versions of ESP-IDF when doing automated builds.
 
 The image contains:
 
@@ -142,7 +142,7 @@ The Docker file in ESP-IDF repository provides several build arguments which can
 - ``IDF_CLONE_SHALLOW``: If this argument is set to a non-empty value, ``--depth=1 --shallow-submodules`` arguments are be used when performing ``git clone``. This significantly reduces the amount of data downloaded and the size of the resulting Docker image. However, if switching to a different branch in such a "shallow" repository is necessary, an additional ``git fetch origin <branch>`` command must be executed first.
 - ``IDF_INSTALL_TARGETS``: Comma-separated list of ESP-IDF targets to install toolchains for, or ``all`` to install toolchains for all targets. Selecting specific targets reduces the amount of data downloaded and the size of the resulting Docker image. The default is ``all``.
 
-To use these arguments, pass them via the ``--build-arg`` command line option. For example, the following command builds a Docker image with a shallow clone of ESP-IDF v4.4.1 and tools for ESP32-C3 only：
+To use these arguments, pass them via the ``--build-arg`` command line option. For example, the following command builds a Docker image with a shallow clone of ESP-IDF v4.4.1 and tools for ESP32-C3 only:
 
 .. code-block:: bash
 

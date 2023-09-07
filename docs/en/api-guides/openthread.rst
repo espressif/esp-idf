@@ -5,7 +5,7 @@ OpenThread
 
 `OpenThread <https://github.com/openthread/openthread>`_ is an IP stack running on the 802.15.4 MAC layer which features mesh network and low power consumption.
 
-Modes of the OpenThread stack
+Modes of the OpenThread Stack
 -----------------------------
 
 OpenThread can run under the following modes on Espressif chips:

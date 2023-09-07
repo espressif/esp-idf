@@ -1,16 +1,16 @@
 *************************
-ESP-IDF 组件管理器
+IDF 组件管理器
 *************************
 
 :link_to_translation:`en:[English]`
 
-ESP-IDF 组件管理器工具用于下载 ESP-IDF CMake 项目的依赖项，该下载在 CMake 运行期间自动完成。ESP-IDF 组件管理器可以从 `组件注册表 <https://components.espressif.com>`__ 或 Git 仓库获取组件。
+IDF 组件管理器工具用于下载 ESP-IDF CMake 项目的依赖项，该下载在 CMake 运行期间自动完成。IDF 组件管理器可以从 `组件注册表 <https://components.espressif.com>`__ 或 Git 仓库获取组件。
 
 要获取组件列表，请参阅 `<https://components.espressif.com/>`__.
 
-有关 ESP-IDF 组件管理器的详细信息，请参阅 `ESP-IDF 组件管理器及 ESP 组件注册表文档 <https://docs.espressif.com/projects/idf-component-manager/en/latest/>`__。
+有关 IDF 组件管理器的详细信息，请参阅 `IDF 组件管理器及 ESP 组件注册表文档 <https://docs.espressif.com/projects/idf-component-manager/en/latest/>`__。
 
-在项目中使用 ESP-IDF 组件管理器
+在项目中使用 IDF 组件管理器
 ===================================
 
 项目中各组件的依赖项定义在单独的清单文件中，命名为 ``idf_component.yml``，位于组件根目录。运行 ``idf.py create-manifest`` 可以为组件创建清单文件模板。默认情况下将为 main 组件创建清单文件。使用 ``--path`` 选项，可以显式指定创建清单文件的目录路径。使用 ``--component=my_component`` 选项可以指定组件名称，这样系统将会在 ``components`` 文件夹下为该组件创建清单文件。``create-manifest`` 命令支持以下运行方式：
@@ -21,7 +21,7 @@ ESP-IDF 组件管理器工具用于下载 ESP-IDF CMake 项目的依赖项，该
 
 在向项目的某个组件添加新的清单时，必须先运行 ``idf.py reconfigure``，手动重新配置项目。随后，构建过程将跟踪 ``idf_component.yml`` 清单的变更，并在必要时自动触发 CMake。
 
-要为 ESP-IDF 项目中的组件（如 ``my_component``）添加依赖项，可以运行命令 ``idf.py add-dependency DEPENDENCY``。``DEPENDENCY`` 参数代表一个由 ESP-IDF 组件管理器管理的额外组件，而 ``my_component`` 也依赖于这个组件。``DEPENDENCY`` 参数的格式为 ``namespace/name=1.0.0``，`namespace/name` 代表组件名称，`=1.0.0` 是组件的版本范围，详情请参阅 `版本文档 <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/versioning.html>`__。默认情况下，依赖项会添加到 main 组件。通过使用 ``--path`` 选项，可以显式指定包含清单的目录，也可以使用 ``--component=my_component``，在 ``components`` 文件夹中指定组件。``add-dependency`` 命令支持以下运行方式：
+要为 ESP-IDF 项目中的组件（如 ``my_component``）添加依赖项，可以运行命令 ``idf.py add-dependency DEPENDENCY``。``DEPENDENCY`` 参数代表一个由 IDF 组件管理器管理的额外组件，而 ``my_component`` 也依赖于这个组件。``DEPENDENCY`` 参数的格式为 ``namespace/name=1.0.0``，`namespace/name` 代表组件名称，`=1.0.0` 是组件的版本范围，详情请参阅 `版本文档 <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/versioning.html>`__。默认情况下，依赖项会添加到 main 组件。通过使用 ``--path`` 选项，可以显式指定包含清单的目录，也可以使用 ``--component=my_component``，在 ``components`` 文件夹中指定组件。``add-dependency`` 命令支持以下运行方式：
 
 - ``idf.py add-dependency example/cmp`` 为 main 组件添加依赖项，依赖项为 ``example/cmp`` 的最新版本
 - ``idf.py add-dependency --component=my_component example/cmp<=3.3.3`` 将依赖项添加到位于 ``components`` 目录下名为 ``my_component`` 的组件中，依赖项为版本号 ``<=3.3.3`` 的 ``example/cmp``

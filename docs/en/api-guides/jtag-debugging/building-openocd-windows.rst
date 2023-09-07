@@ -1,6 +1,7 @@
 *****************************************
 Building OpenOCD from Sources for Windows
 *****************************************
+
 :link_to_translation:`zh_CN:[中文]`
 
 .. note::
@@ -80,7 +81,7 @@ Once the build is completed, the OpenOCD binary will be placed in ``~/esp/openoc
 You can then optionally call ``make install``. This will copy the OpenOCD binary to a user specified location.
 
 - This location can be specified when OpenOCD is configured, or by setting ``export DESTDIR="/custom/install/dir"`` before calling ``make install``.
-- If you have an existing OpenOCD (from e.g. another development platform), you may want to skip this call as your existing OpenOCD may get overwritten.
+- If you have an existing OpenOCD (from e.g., another development platform), you may want to skip this call as your existing OpenOCD may get overwritten.
 
 .. note::
 

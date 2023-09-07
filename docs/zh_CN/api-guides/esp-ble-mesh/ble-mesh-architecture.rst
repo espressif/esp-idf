@@ -20,7 +20,7 @@ ESP-BLE-MESH 架构
 1. ESP-BLE-MESH 架构概览
 ------------------------
 
-目前，ESP-BLE-MESH 已经实现了 Mesh Profile 的大多数功能及 Mesh Model 规范中定义的所有 Client Model。未支持的功能/模型尚在开发中，会尽快提供。 ESP-BLE-MESH 已通过 Bluetooth SIG 蓝牙技术联盟的 `认证 <https://launchstudio.bluetooth.com/ListingDetails/76255>`__。
+目前，ESP-BLE-MESH 已经实现了 Mesh Profile 的大多数功能及 Mesh Model 规范中定义的所有 Client Model。未支持的功能/模型尚在开发中，会尽快提供。ESP-BLE-MESH 已通过 Bluetooth SIG 蓝牙技术联盟的 `认证 <https://launchstudio.bluetooth.com/ListingDetails/76255>`__。
 
 .. figure:: ../../../_static/esp-ble-mesh-architecture.png
   :align: center
@@ -91,7 +91,7 @@ ESP-BLE-MESH 架构主要由以下 5 大部分组成：
 协议栈架构中的 ``Mesh Provisioning`` 实现了如下功能：
 
 - 对未配网设备的配网。
-- Mesh 网络资源的分配 (单播地址、网络索引和网络秘钥)。
+- Mesh 网络资源的分配（单播地址、网络索引和网络秘钥）。
 - 配网期间对 4 种验证方法的支持。
 - 更多功能，请参见 :doc:`ble-mesh-feature-list`。
 

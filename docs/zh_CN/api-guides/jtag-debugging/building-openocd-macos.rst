@@ -1,11 +1,12 @@
 ******************************
 MacOS 环境下从源码编译 OpenOCD
 ******************************
+
 :link_to_translation:`en:[English]`
 
 除了从 `Espressif 官方 <https://github.com/espressif/openocd-esp32/releases>`_ 直接下载 OpenOCD 可执行文件，你还可以选择从源码编译得到 OpenOCD。如果想要快速设置 OpenOCD 而不是自行编译，请备份好当前文件，前往 :ref:`jtag-debugging-setup-openocd` 章节查阅。
 
-.. highlight:: bash
+.. code-block:: bash
 
 下载 OpenOCD 源码
 =================
@@ -48,7 +49,7 @@ MacOS 环境下从源码编译 OpenOCD
 
     * 如果 OpenOCD 存在子模块问题，请 ``cd`` 到 ``openocd-esp32`` 目录，并输入 ``git submodule update --init`` 命令。
     * 如果 ``./configure`` 成功运行，JTAG 被使能的信息会被打印在 ``OpenOCD configuration summary`` 下面。
-    * 如果您的设备信息未显示在日志中，请根据 ``../openocd-esp32/doc/INSTALL.txt`` 文中的描述使用 ``./configure`` 启用它。
+    * 如果你的设备信息未显示在日志中，请根据 ``../openocd-esp32/doc/INSTALL.txt`` 文中的描述使用 ``./configure`` 启用它。
     * 有关编译 OpenOCD 的详细信息，请参阅 ``openocd-esp32/README.OSX``。
 
 一旦 ``make`` 过程成功结束，OpenOCD 的可执行文件会被保存到 ``~/esp/openocd-esp32/src/openocd`` 目录中。

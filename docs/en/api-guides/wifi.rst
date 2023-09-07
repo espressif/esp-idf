@@ -9,6 +9,7 @@ Wi-Fi Driver
 
 {IDF_TARGET_NAME} Wi-Fi Feature List
 ------------------------------------
+
 The following features are supported:
 
 .. only:: esp32 or esp32s2 or esp32c3 or esp32s3
@@ -68,33 +69,40 @@ How To Write a Wi-Fi Application
 
 Preparation
 +++++++++++
+
 Generally, the most effective way to begin your own Wi-Fi application is to select an example which is similar to your own application, and port the useful part into your project. It is not a MUST, but it is strongly recommended that you take some time to read this article first, especially if you want to program a robust Wi-Fi application.
 
 This article is supplementary to the Wi-Fi APIs/Examples. It describes the principles of using the Wi-Fi APIs, the limitations of the current Wi-Fi API implementation, and the most common pitfalls in using Wi-Fi. This article also reveals some design details of the Wi-Fi driver. We recommend you to select an :example:`example <wifi>`.
 
 Setting Wi-Fi Compile-time Options
 ++++++++++++++++++++++++++++++++++++
+
 Refer to `Wi-Fi Menuconfig`_.
 
 Init Wi-Fi
 +++++++++++
+
 Refer to `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_ and `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_.
 
 Start/Connect Wi-Fi
 ++++++++++++++++++++
+
 Refer to `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_ and `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_.
 
 Event-Handling
 ++++++++++++++
-Generally, it is easy to write code in "sunny-day" scenarios, such as `WIFI_EVENT_STA_START`_ and `WIFI_EVENT_STA_CONNECTED`_. The hard part is to write routines in "rainy-day" scenarios, such as `WIFI_EVENT_STA_DISCONNECTED`_. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi Event Description`_, `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, and `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_. See also the :doc:`overview of the Event Loop Library in ESP-IDF<../api-reference/system/esp_event>`.
+
+Generally, it is easy to write code in "sunny-day" scenarios, such as `WIFI_EVENT_STA_START`_ and `WIFI_EVENT_STA_CONNECTED`_. The hard part is to write routines in "rainy-day" scenarios, such as `WIFI_EVENT_STA_DISCONNECTED`_. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi Event Description`_, `{IDF_TARGET_NAME} Wi-Fi station General Scenario`_, and `{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_. See also the :doc:`overview of the Event Loop Library in ESP-IDF <../api-reference/system/esp_event>`.
 
 Write Error-Recovery Routines Correctly at All Times
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 Just like the handling of "rainy-day" scenarios, a good error-recovery routine is also fundamental to robust Wi-Fi applications. Refer to `{IDF_TARGET_NAME} Wi-Fi API Error Code`_.
 
 
 {IDF_TARGET_NAME} Wi-Fi API Error Code
 --------------------------------------
+
 All of the {IDF_TARGET_NAME} Wi-Fi APIs have well-defined return values, namely, the error code. The error code can be categorized into:
 
  - No errors, e.g., :c:macro:`ESP_OK` means that the API returns successfully.
@@ -126,6 +134,7 @@ Initializing or getting the entire structure is very important, because most of 
 
 {IDF_TARGET_NAME} Wi-Fi Programming Model
 -----------------------------------------
+
 The {IDF_TARGET_NAME} Wi-Fi programming model is depicted as follows:
 
 .. blockdiag::
@@ -180,10 +189,12 @@ Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/s
 
 WIFI_EVENT_WIFI_READY
 ++++++++++++++++++++++++++++++++++++
+
 The Wi-Fi driver will never generate this event, which, as a result, can be ignored by the application event callback. This event may be removed in future releases.
 
 WIFI_EVENT_SCAN_DONE
 ++++++++++++++++++++++++++++++++++++
+
 The scan-done event is triggered by :cpp:func:`esp_wifi_scan_start()` and will arise in the following scenarios:
 
   - The scan is completed, e.g., the target AP is found successfully, or all channels have been scanned.
@@ -200,18 +211,22 @@ Refer to `{IDF_TARGET_NAME} Wi-Fi Scan`_ for a more detailed description.
 
 WIFI_EVENT_STA_START
 ++++++++++++++++++++++++++++++++++++
+
 If :cpp:func:`esp_wifi_start()` returns :c:macro:`ESP_OK` and the current Wi-Fi mode is station or station/AP, then this event will arise. Upon receiving this event, the event task will initialize the LwIP network interface (netif). Generally, the application event callback needs to call :cpp:func:`esp_wifi_connect()` to connect to the configured AP.
 
 WIFI_EVENT_STA_STOP
 ++++++++++++++++++++++++++++++++++++
+
 If :cpp:func:`esp_wifi_stop()` returns :c:macro:`ESP_OK` and the current Wi-Fi mode is station or station/AP, then this event will arise. Upon receiving this event, the event task will release the station's IP address, stop the DHCP client, remove TCP/UDP-related connections, and clear the LwIP station netif, etc. The application event callback generally does not need to do anything.
 
 WIFI_EVENT_STA_CONNECTED
 ++++++++++++++++++++++++++++++++++++
+
 If :cpp:func:`esp_wifi_connect()` returns :c:macro:`ESP_OK` and the station successfully connects to the target AP, the connection event will arise. Upon receiving this event, the event task starts the DHCP client and begins the DHCP process of getting the IP address. Then, the Wi-Fi driver is ready for sending and receiving data. This moment is good for beginning the application work, provided that the application does not depend on LwIP, namely the IP address. However, if the application is LwIP-based, then you need to wait until the *got ip* event comes in.
 
 WIFI_EVENT_STA_DISCONNECTED
 ++++++++++++++++++++++++++++++++++++
+
 This event can be generated in the following scenarios:
 
   - When :cpp:func:`esp_wifi_disconnect()` or :cpp:func:`esp_wifi_stop()` is called and the station is already connected to the AP.
@@ -236,6 +251,7 @@ In above scenarios, ideally, the application sockets and the network layer shoul
 
 IP_EVENT_STA_GOT_IP
 ++++++++++++++++++++++++++++++++++++
+
 This event arises when the DHCP client successfully gets the IPV4 address from the DHCP server, or when the IPV4 address is changed. The event means that everything is ready and the application can begin its tasks (e.g., creating sockets).
 
 The IPV4 may be changed because of the following reasons:
@@ -250,10 +266,12 @@ The socket is based on the IPV4 address, which means that, if the IPV4 changes, 
 
 IP_EVENT_GOT_IP6
 ++++++++++++++++++++++++++++++++++++
+
 This event arises when the IPV6 SLAAC support auto-configures an address for the {IDF_TARGET_NAME}, or when this address changes. The event means that everything is ready and the application can begin its tasks, e.g., creating sockets.
 
 IP_EVENT_STA_LOST_IP
 ++++++++++++++++++++++++++++++++++++
+
 This event arises when the IPV4 address becomes invalid.
 
 IP_EVENT_STA_LOST_IP does not arise immediately after the Wi-Fi disconnects. Instead, it starts an IPV4 address lost timer. If the IPV4 address is got before ip lost timer expires, IP_EVENT_STA_LOST_IP does not happen. Otherwise, the event arises when the IPV4 address lost timer expires.
@@ -262,18 +280,22 @@ Generally, the application can ignore this event, because it is just a debug eve
 
 WIFI_EVENT_AP_START
 ++++++++++++++++++++++++++++++++++++
+
 Similar to `WIFI_EVENT_STA_START`_.
 
 WIFI_EVENT_AP_STOP
 ++++++++++++++++++++++++++++++++++++
+
 Similar to `WIFI_EVENT_STA_STOP`_.
 
 WIFI_EVENT_AP_STACONNECTED
 ++++++++++++++++++++++++++++++++++++
+
 Every time a station is connected to {IDF_TARGET_NAME} AP, the `WIFI_EVENT_AP_STACONNECTED`_ will arise. Upon receiving this event, the event task will do nothing, and the application callback can also ignore it. However, you may want to do something, for example, to get the info of the connected STA.
 
 WIFI_EVENT_AP_STADISCONNECTED
 ++++++++++++++++++++++++++++++++++++
+
 This event can happen in the following scenarios:
 
   - The application calls :cpp:func:`esp_wifi_disconnect()`, or :cpp:func:`esp_wifi_deauth_sta()`, to manually disconnect the station.
@@ -300,6 +322,7 @@ The `WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START`_ will arise at the st
 
 {IDF_TARGET_NAME} Wi-Fi Station General Scenario
 ------------------------------------------------
+
 Below is a "big scenario" which describes some small scenarios in station mode:
 
 .. seqdiag::
@@ -358,6 +381,7 @@ Below is a "big scenario" which describes some small scenarios in station mode:
 
 1. Wi-Fi/LwIP Init Phase
 ++++++++++++++++++++++++++++++
+
  - s1.1: The main task calls :cpp:func:`esp_netif_init()` to create an LwIP core task and initialize LwIP-related work.
 
  - s1.2: The main task calls :cpp:func:`esp_event_loop_create()` to create a system Event task and initialize an application event's callback function. In the scenario above, the application event's callback function does nothing but relaying the event to the application task.
@@ -372,6 +396,7 @@ Step 1.1 ~ 1.5 is a recommended sequence that initializes a Wi-Fi-/LwIP-based ap
 
 2. Wi-Fi Configuration Phase
 +++++++++++++++++++++++++++++++
+
 Once the Wi-Fi driver is initialized, you can start configuring the Wi-Fi driver. In this scenario, the mode is station, so you may need to call :cpp:func:`esp_wifi_set_mode` (WIFI_MODE_STA) to configure the Wi-Fi mode as station. You can call other `esp_wifi_set_xxx` APIs to configure more settings, such as the protocol mode, the country code, and the bandwidth. Refer to `{IDF_TARGET_NAME} Wi-Fi Configuration`_.
 
 Generally, the Wi-Fi driver should be configured before the Wi-Fi connection is set up. But this is **NOT** mandatory, which means that you can configure the Wi-Fi connection anytime, provided that the Wi-Fi driver is initialized successfully. However, if the configuration does not need to change after the Wi-Fi connection is set up, you should configure the Wi-Fi driver at this stage, because the configuration APIs (such as :cpp:func:`esp_wifi_set_protocol()`) will cause the Wi-Fi to reconnect, which may not be desirable.
@@ -380,12 +405,14 @@ If the Wi-Fi NVS flash is enabled by menuconfig, all Wi-Fi configuration in this
 
 3. Wi-Fi Start Phase
 ++++++++++++++++++++++++++++++++
+
  - s3.1: Call :cpp:func:`esp_wifi_start()` to start the Wi-Fi driver.
  - s3.2: The Wi-Fi driver posts `WIFI_EVENT_STA_START`_ to the event task; then, the event task will do some common things and will call the application event callback function.
  - s3.3: The application event callback function relays the `WIFI_EVENT_STA_START`_ to the application task. We recommend that you call :cpp:func:`esp_wifi_connect()`. However, you can also call :cpp:func:`esp_wifi_connect()` in other phrases after the `WIFI_EVENT_STA_START`_ arises.
 
 4. Wi-Fi Connect Phase
 +++++++++++++++++++++++++++++++++
+
  - s4.1: Once :cpp:func:`esp_wifi_connect()` is called, the Wi-Fi driver will start the internal scan/connection process.
 
  - s4.2: If the internal scan/connection process is successful, the `WIFI_EVENT_STA_CONNECTED`_ will be generated. In the event task, it starts the DHCP client, which will finally trigger the DHCP process.
@@ -403,6 +430,7 @@ In step 4.2, the Wi-Fi connection may fail because, for example, the password is
 
 6. Wi-Fi Disconnect Phase
 +++++++++++++++++++++++++++++++++
+
  - s6.1: When the Wi-Fi connection is disrupted, e.g., the AP is powered off or the RSSI is poor, `WIFI_EVENT_STA_DISCONNECTED`_ will arise. This event may also arise in phase 3. Here, the event task will notify the LwIP task to clear/remove all UDP/TCP connections. Then, all application sockets will be in a wrong status. In other words, no socket can work properly when this event happens.
  - s6.2: In the scenario described above, the application event callback function relays `WIFI_EVENT_STA_DISCONNECTED`_ to the application task. The recommended actions are: 1) call :cpp:func:`esp_wifi_connect()` to reconnect the Wi-Fi, 2) close all sockets, and 3) re-create them if necessary. For details, please refer to `WIFI_EVENT_STA_DISCONNECTED`_.
 
@@ -423,6 +451,7 @@ In step 4.2, the Wi-Fi connection may fail because, for example, the password is
 
 {IDF_TARGET_NAME} Wi-Fi AP General Scenario
 ---------------------------------------------
+
 Below is a "big scenario" which describes some small scenarios in AP mode:
 
  .. seqdiag::
@@ -604,6 +633,7 @@ Scan-Done Event Handling Phase
 
 Scan All APs on All Channels (Background)
 ++++++++++++++++++++++++++++++++++++++++++
+
 Scenario:
 
 .. seqdiag::
@@ -640,6 +670,7 @@ The scenario above is an all-channel background scan. Compared to `Scan All APs 
 
 Scan for Specific AP on All Channels
 +++++++++++++++++++++++++++++++++++++++
+
 Scenario:
 
 .. seqdiag::
@@ -690,6 +721,7 @@ If the block parameter of :cpp:func:`esp_wifi_scan_start()` is true, then the sc
 
 Parallel Scan
 +++++++++++++
+
 Two application tasks may call :cpp:func:`esp_wifi_scan_start()` at the same time, or the same application task calls :cpp:func:`esp_wifi_scan_start()` before it gets a scan-done event. Both scenarios can happen. **However, the Wi-Fi driver does not support multiple concurrent scans adequately. As a result, concurrent scans should be avoided.** Support for concurrent scan will be enhanced in future releases, as the {IDF_TARGET_NAME}'s Wi-Fi functionality improves continuously.
 
 Scan When Wi-Fi Is Connecting
@@ -1170,7 +1202,7 @@ The table below shows the Wi-Fi reason-code may related to wrong password.
      - This may related to wrong password in the two scenarios:
 
        - Setting password when STA connecting to an unencrypted AP.
-       - Doesn't setting password when STA connecting to an encrypted AP.
+       - Does not set password when STA connecting to an encrypted AP.
    * - HANDSHAKE_TIMEOUT
      - 204
      - Four-way handshake fails.
@@ -1664,7 +1696,7 @@ Detailed information on creating certificates and how to run wpa2_enterprise exa
 
     Multiple NAN devices in the vicinity will form a NAN cluster which allows them to communicate with each other. NAN devices in a cluster synchronise their clocks and listen to each other periodically on Channel 6. Devices can advertise (Publish) or seek for (Subscribe) services within their NAN Cluster using Service Discovery protocols. Matching of services is done by service name and optionally matching filters. Once a Subscriber gets a match with a Publisher, it can either send a message (Follow-up) or establish a datapath (NDP) with the Publisher. After NDP is setup both devices will obtain an IPv6 address and can use it for communication.
 
-    Please note that NAN Datapath security is not supported i.e. the data packets will go out unencrypted. NAN uses a separate interface for Discovery and Datapath, which is other than that used for STA and AP. NAN operates in standalone mode, which means co-existence with STA or AP interface is not supported.
+    Please note that NAN Datapath security is not supported i.e., the data packets will go out unencrypted. NAN uses a separate interface for Discovery and Datapath, which is other than that used for STA and AP. NAN operates in standalone mode, which means co-existence with STA or AP interface is not supported.
 
     Refer to ESP-IDF examples :idf_file:`examples/wifi/wifi_aware/nan_publisher/README.md` and :idf_file:`examples/wifi/wifi_aware/nan_subscriber/README.md` to setup a NAN Publisher and Subscriber.
 
@@ -1810,14 +1842,14 @@ At the start of `Interval` time, RF, PHY, BB would be turned on and kept for `Wi
     |        | 1 - maximum | default mode                                        | used periodically (Window < Interval) / used all time (Window ≥ Interval) |
     +--------+-------------+-----------------------------------------------------+---------------------------------------------------------------------------+
 
-Default mode
+Default Mode
 *******************************
 
 If `Interval` is ``ESP_WIFI_CONNECTIONLESS_INTERVAL_DEFAULT_MODE`` with non-zero `Window`, Connectionless Modules Power-saving would work in default mode.
 
 In default mode, RF, PHY, BB would be kept on if no coexistence with non-Wi-Fi protocol.
 
-With coexistence, RF, PHY, BB resources are allocated by coexistence module to Wi-Fi connectionless module and non-Wi-Fi module， using time-division method. In default mode, Wi-Fi connectionless module is allowed to use RF, BB, PHY periodically under a stable performance.
+With coexistence, RF, PHY, BB resources are allocated by coexistence module to Wi-Fi connectionless module and non-Wi-Fi module, using time-division method. In default mode, Wi-Fi connectionless module is allowed to use RF, BB, PHY periodically under a stable performance.
 
 Its recommended to configure Connectionless Modules Power-saving to default mode if there is Wi-Fi connectionless module coexists with non-Wi-Fi module.
 
@@ -2236,15 +2268,15 @@ Generally, following steps can be taken to configure the multiple antennas:
 
     When imaginary part and real part data of sub-carrier are used, please refer to the table below.
 
-    +----------------+-------------------+------------------------------+-------------------------+
-    | PHY standard   | Sub-carrier range | Pilot sub-carrier            | Sub-carrier(total/data) |
-    +================+===================+==============================+=========================+
-    | 802.11a/g      | -26 to +26        | -21, -7, +7, +21             | 52 total, 48 usable     |
-    +----------------+-------------------+------------------------------+-------------------------+
-    | 802.11n, 20MHz | -28 to +28        | -21, -7, +7, +21             | 56 total, 52 usable     |
-    +----------------+-------------------+------------------------------+-------------------------+
-    | 802.11n, 40MHz | -57 to +57        | -53, -25, -11, +11, +25, +53 | 114 total, 108 usable   |
-    +----------------+-------------------+------------------------------+-------------------------+
+    +-----------------+-------------------+------------------------------+--------------------------+
+    | PHY standard    | Sub-carrier range | Pilot sub-carrier            | Sub-carrier (total/data) |
+    +=================+===================+==============================+==========================+
+    | 802.11a/g       | -26 to +26        | -21, -7, +7, +21             | 52 total, 48 usable      |
+    +-----------------+-------------------+------------------------------+--------------------------+
+    | 802.11n, 20 MHz | -28 to +28        | -21, -7, +7, +21             | 56 total, 52 usable      |
+    +-----------------+-------------------+------------------------------+--------------------------+
+    | 802.11n, 40 MHz | -57 to +57        | -53, -25, -11, +11, +25, +53 | 114 total, 108 usable    |
+    +-----------------+-------------------+------------------------------+--------------------------+
 
     .. note::
 
@@ -3657,6 +3689,7 @@ The diagram shows the configuration of the Wi-Fi internal buffer.
 
 Wi-Fi NVS Flash
 +++++++++++++++++++++
+
 If the Wi-Fi NVS flash is enabled, all Wi-Fi configurations set via the Wi-Fi APIs will be stored into flash, and the Wi-Fi driver will start up with these configurations the next time it powers on/reboots. However, the application can choose to disable the Wi-Fi NVS flash if it does not need to store the configurations into persistent memory, or has its own persistent storage, or simply due to debugging reasons, etc.
 
 Wi-Fi Aggregate MAC Protocol Data Unit (AMPDU)

@@ -1,5 +1,6 @@
 Application Startup Flow
 ========================
+
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
@@ -18,7 +19,7 @@ This process is explained in detail in the following sections.
 
 .. _first-stage-bootloader:
 
-First stage bootloader
+First Stage Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. only:: not CONFIG_FREERTOS_UNICORE
@@ -59,7 +60,7 @@ Startup code called from the reset vector determines the boot mode by checking `
 
 .. _second-stage-bootloader:
 
-Second stage bootloader
+Second Stage Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 In ESP-IDF, the binary image which resides at offset {IDF_TARGET_BOOTLOADER_OFFSET} in flash is the second stage bootloader. Second stage bootloader source code is available in :idf:`components/bootloader` directory of ESP-IDF. Second stage bootloader is used in ESP-IDF to add flexibility to flash layout (using partition tables), and allow for various flows associated with flash encryption, secure boot, and over-the-air updates (OTA) to take place.
@@ -83,7 +84,7 @@ Once all segments are processed - meaning code is loaded and flash MMU is set up
 
 .. _application-startup:
 
-Application startup
+Application Startup
 ^^^^^^^^^^^^^^^^^^^
 
 Application startup covers everything that happens after the app starts executing and before the ``app_main`` function starts running inside the main task. This is split into three stages:
@@ -126,7 +127,7 @@ This port-layer initialization function initializes the basic C Runtime Environm
 System Initialization
 ---------------------
 
-The main system initialization function is ``start_cpu0``. By default, this function is weak-linked to the function ``start_cpu0_default``. This means that it's possible to override this function to add some additional initialization steps.
+The main system initialization function is ``start_cpu0``. By default, this function is weak-linked to the function ``start_cpu0_default``. This means that it is possible to override this function to add some additional initialization steps.
 
 The primary system initialization stage includes:
 
@@ -146,7 +147,7 @@ Secondary system initialization allows individual components to be initialized. 
 
 .. _app-main-task:
 
-Running the main task
+Running the Main Task
 ---------------------
 
 After all other components are initialized, the main task is created and the FreeRTOS scheduler starts running.
@@ -163,7 +164,7 @@ Unlike normal FreeRTOS tasks (or embedded C ``main`` functions), the ``app_main`
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
-    Second core startup
+    Second Core Startup
     -------------------
 
     A similar but simpler startup process happens on the APP CPU:

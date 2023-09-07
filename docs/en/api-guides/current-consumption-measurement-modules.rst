@@ -5,10 +5,11 @@ Current Consumption Measurement of Modules
 
 You may want to know the current consumption of a `module <https://www.espressif.com/en/products/modules>`__ in deep-sleep mode, :doc:`other power-saving modes </api-reference/system/sleep_modes>`, and active mode to develop some applications sensitive to power consumption. This section introduces how to measure the current consumption of a module running such an application.
 
+
 Notes to Measurement
 --------------------
 
-Can we use a Development Board?
+Can We Use a Development Board?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. only:: esp32c6
@@ -27,6 +28,7 @@ Can we use a Development Board?
 
     For {IDF_TARGET_NAME}, using a development board directly to measure current consumption of the corresponding module is not recommended, as some circuits still consume power on the board even when you flash the chip with the :example:`deep_sleep <system/deep_sleep>` example. Therefore, you need to cut off the power supply circuit to the module to measure the module's current. This method is inconvenient and increases measurement costs.
 
+
 How to Choose an Appropriate Ammeter?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -36,6 +38,7 @@ Additionally, ordinary ammeters have a relatively high internal resistance, resu
 
 Therefore, an ammeter suitable for measuring current in deep-sleep mode should have low internal resistance and, ideally, switch current ranges dynamically. We recommend two options: the `Joulescope ammeter <https://www.joulescope.com/>`__ and the `Power Profiler Kit II from Nordic <https://www.nordicsemi.com/Products/Development-hardware/Power-Profiler-Kit-2.?lang=en>`__.
 
+
 Joulescope Ammeter
 """"""""""""""""""
 
@@ -43,10 +46,12 @@ The Joulescope ammeter combines high-speed sampling and rapid dynamic current ra
 
 Joulescope has no display screen. You need to connect it to a PC to visualize the current waveforms of the measured module. For specific instructions, please follow the documentation provided by the manufacturer.
 
+
 Nordic Power Profiler Kit II
 """"""""""""""""""""""""""""
 
 The Nordic Power Profiler Kit II has an advanced analog measurement unit with a high dynamic measurement range. This allows for accurate power consumption measurements for the entire range typically seen in low-power embedded applications, all the way from single μAs to 1 A. The resolution varies between 100 nA and 1 mA, depending on the measurement range, and is high enough to detect small spikes often seen in low-power optimized systems.
+
 
 Hardware Connection
 -------------------
@@ -102,6 +107,7 @@ Please connect the pins of **UART TX**, **UART RX**, **SPI Boot**, **Enable**, a
 
 For details of the pin names, please refer to the `datasheet of specific module <https://www.espressif.com/en/support/download/documents/modules>`__.
 
+
 Measurement Steps
 -----------------
 
@@ -119,7 +125,7 @@ You can refer to the following steps to measure the current in deep-sleep mode.
 
 .. only:: esp32
 
-    For modules with an external resistor on GPIO12 (such as ESP32-WROVER-E/IE), you should call :cpp:func:`rtc_gpio_isolate` before going into deep sleep. This is to isolate the GPIO12 pin from external circuits to further minimize current consumption. Please note, for other modules, you don't have to call this function, otherwise, you may get abnormal results.
+    For modules with an external resistor on GPIO12 (such as ESP32-WROVER-E/IE), you should call :cpp:func:`rtc_gpio_isolate` before going into deep sleep. This is to isolate the GPIO12 pin from external circuits to further minimize current consumption. Please note, for other modules, you do not have to call this function, otherwise, you may get abnormal results.
 
 - By default, the module will be woken up every 20 seconds (you can change the timing by modifying the code of this example). To check if the example runs as expected, you can monitor the module operation by running ``idf.py -p PORT monitor`` (please replace PORT with your serial port name).
 

@@ -11,6 +11,7 @@ Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of the {
 - Section :ref:`api_guide_dfu_build` describes how to build firmware for DFU with ESP-IDF.
 - Section :ref:`api_guide_dfu_flash` deals with flashing the firmware.
 
+
 USB Connection
 --------------
 
@@ -41,7 +42,7 @@ The necessary connections for the {IDF_TARGET_NAME}'s internal USB PHY (transcei
 
 .. only:: esp32s3
 
-    By default, the :doc:`USB_SERIAL_JTAG<usb-serial-jtag-console>` module is connected to the {IDF_TARGET_NAME}'s internal USB PHY, while the USB OTG peripheral can be used only if an external USB PHY is connected. Since DFU is provided via the USB OTG peripheral, it cannot be used through the internal PHY in this configuration.
+    By default, the :doc:`USB_SERIAL_JTAG <usb-serial-jtag-console>` module is connected to the {IDF_TARGET_NAME}'s internal USB PHY, while the USB OTG peripheral can be used only if an external USB PHY is connected. Since DFU is provided via the USB OTG peripheral, it cannot be used through the internal PHY in this configuration.
 
     However, users can permanently switch the internal USB PHY to work with USB OTG peripheral instead of USB_SERIAL_JTAG by burning the ``USB_PHY_SEL`` eFuse. See *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] for more details about USB_SERIAL_JTAG and USB OTG.
 
@@ -60,7 +61,9 @@ The command below will create a DFU image named ``dfu.bin`` that is placed in th
     idf.py dfu
 
 .. note::
+
     Do not forget to set the target chip by ``idf.py set-target`` before running ``idf.py dfu``. Otherwise, you might create an image for a different chip or receive an error message like ``unknown target 'dfu'``.
+
 
 .. _api_guide_dfu_flash:
 
@@ -84,9 +87,11 @@ Consequently, the desired device can be selected for flashing by the ``--path`` 
     idf.py dfu-flash --path 1-2
 
 .. note::
+
     The vendor and product identificators are set based on the selected chip target by the ``idf.py set-target`` command and they are not selectable during the ``idf.py dfu-flash`` call.
 
 See :ref:`api_guide_dfu_flash_errors` and their solutions.
+
 
 .. _api_guide_dfu_flash_udev:
 
@@ -100,9 +105,11 @@ Create file ``/etc/udev/rules.d/40-dfuse.rules`` with the following content::
     SUBSYSTEMS=="usb", ATTRS{idVendor}=="303a", ATTRS{idProduct}=="00??", GROUP="plugdev", MODE="0666"
 
 .. note::
+
     Please check the output of the command ``groups``. The user has to be a member of the `GROUP` specified above. You may use some other existing groups for this purpose (e.g., `uucp` on some systems instead of `plugdev`) or create a new group for this purpose.
 
 Restart your computer so the previous setting could take into affect or run ``sudo udevadm trigger`` to force manually udev to trigger your new rule.
+
 
 .. _api_guide_dfu_flash_win:
 
@@ -116,18 +123,21 @@ Please see the `libusb wiki <https://github.com/libusb/libusb/wiki/Windows#How_t
 The drivers can be installed by the `Zadig tool <https://zadig.akeo.ie/>`_. Please make sure that the device is in download mode before you run the tool and that it detects the {IDF_TARGET_NAME} device before you install the drivers. The Zadig tool might detect several USB interfaces of {IDF_TARGET_NAME}. Please install the WinUSB driver only for the interface where there is no driver installed (probably it is Interface 2) and do not re-install the driver for the other interface.
 
 .. warning::
+
     The manual installation of the driver in Device Manager of Windows is not recommended because the flashing might not work properly.
+
 
 .. _api_guide_dfu_flash_errors:
 
 Common Errors and Known Issues
 ------------------------------
 
-- ``dfu-util: command not found`` might indicate that the tool hasn't been installed or is not available from the terminal. An easy way of checking the tool is running ``dfu-util --version``. Please see :ref:`get-started-get-prerequisites` for installing ``dfu-util``.
+- ``dfu-util: command not found`` might indicate that the tool has not been installed or is not available from the terminal. An easy way of checking the tool is running ``dfu-util --version``. Please see :ref:`get-started-get-prerequisites` for installing ``dfu-util``.
 
-- The reason for ``No DFU capable USB device available`` could be that the USB driver wasn't properly installed on Windows (see :ref:`api_guide_dfu_flash_win`), udev rule was not setup on Linux (see :ref:`api_guide_dfu_flash_udev`) or the device isn't in bootloader mode.
+- The reason for ``No DFU capable USB device available`` could be that the USB driver was not properly installed on Windows (see :ref:`api_guide_dfu_flash_win`), udev rule was not setup on Linux (see :ref:`api_guide_dfu_flash_udev`) or the device is not in bootloader mode.
 
 - Flashing with ``dfu-util`` on Windows fails on the first attempt with error ``Lost device after RESET?``. Please retry the flashing and it should succeed the next time.
+
 
 .. only:: SOC_SUPPORTS_SECURE_DL_MODE
 

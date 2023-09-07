@@ -1,5 +1,6 @@
 Tips and Quirks
 ---------------
+
 :link_to_translation:`zh_CN:[中文]`
 
 This section provides collection of all tips and quirks referred to from various parts of this guide.
@@ -25,7 +26,7 @@ Emulating part of hardware breakpoints using software flash ones means that the 
 Flash Mappings vs SW Flash Breakpoints
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to set/clear software breakpoints in flash, OpenOCD needs to know their flash addresses. To accomplish conversion from the {IDF_TARGET_NAME} address space to the flash one, OpenOCD uses mappings of program's code regions resided in flash. Those mappings are kept in the image header which is prepended to program binary data (code and data segments) and is specific to every application image written to the flash. So to support software flash breakpoints OpenOCD should know where application image under debugging is resided in the flash. By default OpenOCD reads partition table at 0x8000 and uses mappings from the first found application image, but there can be the cases when it will not work, e.g. partition table is not at standard flash location or even there can be multiple images: one factory and two OTA and you may want to debbug any of them. To cover all possible debugging scenarios OpenOCD supports special command which can be used to set arbitrary location of application image to debug. The command has the following format:
+In order to set/clear software breakpoints in flash, OpenOCD needs to know their flash addresses. To accomplish conversion from the {IDF_TARGET_NAME} address space to the flash one, OpenOCD uses mappings of program's code regions resided in flash. Those mappings are kept in the image header which is prepended to program binary data (code and data segments) and is specific to every application image written to the flash. So to support software flash breakpoints OpenOCD should know where application image under debugging is resided in the flash. By default OpenOCD reads partition table at 0x8000 and uses mappings from the first found application image, but there can be the cases when it will not work, e.g., partition table is not at standard flash location or even there can be multiple images: one factory and two OTA and you may want to debbug any of them. To cover all possible debugging scenarios OpenOCD supports special command which can be used to set arbitrary location of application image to debug. The command has the following format:
 
 ``esp appimage_offset <offset>``
 
@@ -105,7 +106,7 @@ In order to achieve higher data rates and minimize number of dropped packets it 
 
 .. _jtag-debugging-tip-debugger-startup-commands:
 
-What is the Meaning of Debugger's Startup Commands?
+What Is the Meaning of Debugger's Startup Commands?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient/appropriate line and start debugging.
@@ -192,7 +193,7 @@ The board can be reset by entering ``mon reset`` or ``mon reset halt`` into GDB.
 
 .. _jtag-debugging-tip-jtag-pins-reconfigured:
 
-Can JTAG Pins be Used for Other Purposes?
+Can JTAG Pins Be Used for Other Purposes?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
