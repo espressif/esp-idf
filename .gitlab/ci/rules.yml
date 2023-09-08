@@ -353,6 +353,9 @@
 .if-dev-push: &if-dev-push
   if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
 
+.if-merge_request: &if-merge_request
+  if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
 .if-schedule: &if-schedule
   if: '$CI_PIPELINE_SOURCE == "schedule"'
 
@@ -394,28 +397,13 @@
     - <<: *if-protected-no_label
       when: always
 
-.rules:dev:
-  rules:
-    - <<: *if-trigger
-    - <<: *if-dev-push
-
 .rules:mr:
   rules:
-    - <<: *if-dev-push
+    - <<: *if-merge_request
 
 .rules:tag:release:
   rules:
     - <<: *if-tag-release
-
-.rules:ref:master-schedule:
-  rules:
-    - <<: *if-ref-master
-    - <<: *if-schedule
-
-.rules:ref:master-always:
-  rules:
-    - <<: *if-ref-master
-      when: always
 
 ### Patterns ###
 .rules:patterns:python-cache:
@@ -1535,27 +1523,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
-.rules:build:integration_test:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build
-    - <<: *if-label-integration_test
-    - <<: *if-label-integration_test_ble
-    - <<: *if-label-integration_test_wifi
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-build_components
-    - <<: *if-dev-push
-      changes: *patterns-build_system
-    - <<: *if-dev-push
-      changes: *patterns-integration_test-ble
-    - <<: *if-dev-push
-      changes: *patterns-integration_test-wifi
-    - <<: *if-dev-push
-      changes: *patterns-target_test-wifi
-
 .rules:build:macos:
   rules:
     - <<: *if-revert-branch
@@ -2625,52 +2592,6 @@
     - <<: *if-label-host_test
     - <<: *if-dev-push
       changes: *patterns-host_test
-
-.rules:test:integration_test:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-integration_test
-    - <<: *if-label-integration_test_ble
-    - <<: *if-label-integration_test_wifi
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-integration_test-ble
-    - <<: *if-dev-push
-      changes: *patterns-integration_test-wifi
-    - <<: *if-dev-push
-      changes: *patterns-target_test-wifi
-
-.rules:test:integration_test_ble:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-integration_test
-    - <<: *if-label-integration_test_ble
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-integration_test-ble
-
-.rules:test:integration_test_wifi:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-integration_test
-    - <<: *if-label-integration_test_wifi
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-integration_test-wifi
-    - <<: *if-dev-push
-      changes: *patterns-target_test-wifi
 
 .rules:test:submodule:
   rules:

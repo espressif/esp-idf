@@ -23,10 +23,12 @@
     - [Grammar](#grammar)
     - [Special Rules](#special-rules)
   - [Upload/Download Artifacts to Internal Minio Server](#uploaddownload-artifacts-to-internal-minio-server)
-    - [Env Vars](#env-vars)
-    - [Artifacts Types and File Patterns](#artifacts-types-and-file-patterns)
-    - [Upload](#upload)
-    - [Download](#download)
+    - [Users Without Access to Minio](#users-without-access-to-minio)
+    - [Users With Access to Minio](#users-with-access-to-minio)
+      - [Env Vars for Minio](#env-vars-for-minio)
+      - [Artifacts Types and File Patterns](#artifacts-types-and-file-patterns)
+      - [Upload](#upload)
+      - [Download](#download)
 
 ## General Workflow
 
@@ -143,10 +145,11 @@ check if there's a suitable `.if-<if-anchor-you-need>` anchor
 1. if there is, create a rule following [`rules` Template Naming Rules](#rules-template-naming-rules).For detail information, please refer to [GitLab Documentation `rules-if`](https://docs.gitlab.com/ee/ci/yaml/README.html#rulesif). Here's an example.
 
     ```yaml
-    .rules:dev:
+    .rules:patterns:python-files:
       rules:
-        - <<: *if-trigger
+        - <<: *if-protected
         - <<: *if-dev-push
+          changes: *patterns-python-files
     ```
 
 2. if there isn't

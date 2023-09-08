@@ -22,7 +22,7 @@ check_pre_commit_master_release:
 check_pre_commit_MR:
   extends:
     - .check_pre_commit_template
-    - .rules:dev
+    - .rules:mr
   script:
     - fetch_submodules
     - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs pre-commit run --files
