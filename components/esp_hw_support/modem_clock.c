@@ -74,7 +74,6 @@ static void IRAM_ATTR modem_clock_wifi_bb_configure(modem_clock_context_t *ctx, 
 #if SOC_BT_SUPPORTED
 static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_syscon_ll_enable_etm_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_modem_sec_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ble_timer_clock(ctx->hal->syscon_dev, enable);
 }
@@ -90,7 +89,6 @@ static void IRAM_ATTR modem_clock_ble_bb_configure(modem_clock_context_t *ctx, b
 #if SOC_IEEE802154_SUPPORTED
 static void IRAM_ATTR modem_clock_ieee802154_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_syscon_ll_enable_etm_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ieee802154_apb_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ieee802154_mac_clock(ctx->hal->syscon_dev, enable);
 }
@@ -283,22 +281,32 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 #define COEXIST_CLOCK_DEPS      (BIT(MODEM_CLOCK_COEXIST))
 #define PHY_CLOCK_DEPS          (BIT(MODEM_CLOCK_I2C_MASTER) | BIT(MODEM_CLOCK_FE))
 #define I2C_ANA_MST_CLOCK_DEPS  (BIT(MODEM_CLOCK_I2C_MASTER))
+#define MODEM_ETM_CLOCK_DEPS    (BIT(MODEM_CLOCK_ETM))
 
 static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 {
     uint32_t deps = 0;
-    if (module == PERIPH_ANA_I2C_MASTER_MODULE) {deps = I2C_ANA_MST_CLOCK_DEPS;}
-    if (module == PERIPH_PHY_MODULE) {deps = PHY_CLOCK_DEPS;}
-    else if (module == PERIPH_COEX_MODULE) { deps = COEXIST_CLOCK_DEPS; }
+    switch (module) {
+        case PERIPH_ANA_I2C_MASTER_MODULE:  deps = I2C_ANA_MST_CLOCK_DEPS;  break;
+        case PERIPH_PHY_MODULE:             deps = PHY_CLOCK_DEPS;          break;
+#if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
+        case PERIPH_COEX_MODULE:            deps = COEXIST_CLOCK_DEPS;      break;
+#endif
 #if SOC_WIFI_SUPPORTED
-    else if (module == PERIPH_WIFI_MODULE) { deps = WIFI_CLOCK_DEPS; }
+        case PERIPH_WIFI_MODULE:            deps = WIFI_CLOCK_DEPS;         break;
 #endif
 #if SOC_BT_SUPPORTED
-    else if (module == PERIPH_BT_MODULE) { deps = BLE_CLOCK_DEPS; }
+        case PERIPH_BT_MODULE:              deps = BLE_CLOCK_DEPS;          break;
 #endif
 #if SOC_IEEE802154_SUPPORTED
-    else if (module == PERIPH_IEEE802154_MODULE) { deps = IEEE802154_CLOCK_DEPS; }
+        case PERIPH_IEEE802154_MODULE:      deps = IEEE802154_CLOCK_DEPS;   break;
 #endif
+#if SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
+        case PERIPH_MODEM_ETM_MODULE:       deps = MODEM_ETM_CLOCK_DEPS;    break;
+#endif
+        default:
+            assert(0);
+    }
     return deps;
 }
 
