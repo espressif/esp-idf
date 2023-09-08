@@ -12,8 +12,10 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "hal/ecdsa_types.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +30,7 @@ typedef struct {
     ecdsa_k_mode_t k_mode;          /* Source of K */
     ecdsa_sha_mode_t sha_mode;      /* Source of SHA that needs to be signed */
     int efuse_key_blk;              /* Efuse block to use as ECDSA key (The purpose of the efuse block must be ECDSA_KEY) */
+    bool use_km_key;                /* Use an ECDSA key from the Key Manager peripheral */
 } ecdsa_hal_config_t;
 
 /**
@@ -59,6 +62,19 @@ void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *k, const u
  */
 int ecdsa_hal_verify_signature(ecdsa_hal_config_t *conf, const uint8_t *hash, const uint8_t *r, const uint8_t *s,
                                const uint8_t *pub_x, const uint8_t *pub_y, uint16_t len);
+
+#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+/**
+ * @brief Export public key coordinates of an ECDSA private key
+ *
+ * @param conf Configuration for ECDSA operation, see ``ecdsa_hal_config_t``
+ * @param pub_x X coordinate of public key
+ * @param pub_y Y coordinate of public key
+ * @param len Length of pub_x and pub_y buffers (32 bytes for SECP256R1, 24 for SECP192R1)
+ */
+void ecdsa_hal_export_pubkey(ecdsa_hal_config_t *conf, uint8_t *pub_x, uint8_t *pub_y, uint16_t len);
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
+
 #ifdef __cplusplus
 }
 #endif

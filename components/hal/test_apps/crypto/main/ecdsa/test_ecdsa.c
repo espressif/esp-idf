@@ -106,7 +106,7 @@ static void test_ecdsa_corrupt_data(bool is_p256, uint8_t* sha, uint8_t* r_le, u
 
 }
 
-static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le)
+static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key)
 {
     uint8_t sha_le[32] = {0};
     uint8_t zeroes[32] = {0};
@@ -116,15 +116,20 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
         .mode = ECDSA_MODE_SIGN_GEN,
         .k_mode = ECDSA_K_USE_TRNG,
         .sha_mode = ECDSA_Z_USER_PROVIDED,
+        .use_km_key = use_km_key,
     };
 
     if (is_p256) {
         conf.curve = ECDSA_CURVE_SECP256R1;
-        conf.efuse_key_blk = 6;
+        if (use_km_key == 0) {
+            conf.efuse_key_blk = 6;
+        }
         len = 32;
     } else {
         conf.curve = ECDSA_CURVE_SECP192R1;
-        conf.efuse_key_blk = 5;
+        if (use_km_key == 0) {
+            conf.efuse_key_blk = 5;
+        }
         len = 24;
     }
 
@@ -140,15 +145,56 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
     ecdsa_disable_and_reset();
 }
 
-static void test_ecdsa_sign_and_verify(bool is_p256, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y)
+static void test_ecdsa_sign_and_verify(bool is_p256, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key)
 {
     uint8_t r_le[32] = {0};
     uint8_t s_le[32] = {0};
 
-    test_ecdsa_sign(is_p256, sha, r_le, s_le);
-
+    test_ecdsa_sign(is_p256, sha, r_le, s_le, use_km_key);
     TEST_ASSERT_EQUAL(0, test_ecdsa_verify(is_p256, sha, r_le, s_le, pub_x, pub_y));
 }
+
+#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+static void test_ecdsa_export_pubkey(bool is_p256, bool use_km_key)
+{
+    uint8_t pub_x[32] = {0};
+    uint8_t pub_y[32] = {0};
+    uint16_t len;
+
+    ecdsa_hal_config_t conf = {
+        .mode = ECDSA_MODE_EXPORT_PUBKEY,
+        .use_km_key = use_km_key,
+    };
+
+    if (is_p256) {
+        conf.curve = ECDSA_CURVE_SECP256R1;
+        if (use_km_key == 0) {
+            conf.efuse_key_blk = 6;
+        }
+        len = 32;
+    } else {
+        conf.curve = ECDSA_CURVE_SECP192R1;
+        if (use_km_key == 0) {
+            conf.efuse_key_blk = 5;
+        }
+        len = 24;
+    }
+
+    ecdsa_enable_and_reset();
+    ecdsa_hal_export_pubkey(&conf, pub_x, pub_y, len);
+
+    if (is_p256) {
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa256_pub_x, pub_x, len);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa256_pub_y, pub_y, len);
+    } else {
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa192_pub_x, pub_x, len);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa192_pub_y, pub_y, len);
+    }
+
+    ecdsa_disable_and_reset();
+}
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
+
 
 TEST_GROUP(ecdsa);
 
@@ -172,7 +218,7 @@ TEST(ecdsa, ecdsa_SECP192R1_signature_verification)
 
 TEST(ecdsa, ecdsa_SECP192R1_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y);
+    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, 0);
 }
 
 
@@ -190,7 +236,7 @@ TEST(ecdsa, ecdsa_SECP256R1_signature_verification)
 
 TEST(ecdsa, ecdsa_SECP256R1_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(1, sha, ecdsa256_pub_x, ecdsa256_pub_y);
+    test_ecdsa_sign_and_verify(1, sha, ecdsa256_pub_x, ecdsa256_pub_y, 0);
 }
 
 
@@ -198,6 +244,18 @@ TEST(ecdsa, ecdsa_SECP256R1_corrupt_signature)
 {
     test_ecdsa_corrupt_data(1, sha, ecdsa256_r, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y);
 }
+
+#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+TEST(ecdsa, ecdsa_SECP192R1_export_pubkey)
+{
+    test_ecdsa_export_pubkey(0, 0);
+}
+
+TEST(ecdsa, ecdsa_SECP256R1_export_pubkey)
+{
+    test_ecdsa_export_pubkey(1, 0);
+}
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 
 TEST_GROUP_RUNNER(ecdsa)
 {
@@ -207,4 +265,8 @@ TEST_GROUP_RUNNER(ecdsa)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_signature_verification)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_sign_and_verify)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_corrupt_signature)
+#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_export_pubkey)
+    RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_export_pubkey)
+#endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 }

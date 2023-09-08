@@ -62,6 +62,8 @@
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
+#define SOC_ECDSA_SUPPORTED             1
+// #define SOC_KEY_MANAGER_SUPPORTED       1  //TODO: IDF-7925
 #define SOC_FLASH_ENC_SUPPORTED         1
 // #define SOC_SECURE_BOOT_SUPPORTED       1  //TODO: IDF-7544
 // #define SOC_BOD_SUPPORTED               1  //TODO: IDF-7519
@@ -336,6 +338,9 @@
 #define SOC_SHA_SUPPORT_SHA1            (1)
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
+
+/*--------------------------- ECDSA CAPS ---------------------------------------*/
+#define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)
 
 #ifdef SDMMC_DEFAULT_IOMUX
 #define SOC_SDMMC_USE_IOMUX 1
