@@ -24,80 +24,81 @@ extern "C" {
 
 #include "esp32p4/rom/ets_sys.h"
 
-
-// TODO: IDF-5730 (better to rename and move to wdt_types.h?)
 /* The value that needs to be written to LP_WDT_WPROTECT_REG to write-enable the wdt registers */
-#define RTC_CNTL_WDT_WKEY_VALUE 0x50D83AA1
+#define LP_WDT_WKEY_VALUE 0x50D83AA1
 /* The value that needs to be written to LP_WDT_SWD_WPROTECT_REG to write-enable the swd registers */
 #define LP_WDT_SWD_WKEY_VALUE 0x50D83AA1
 
 /* Possible values for RTC_CNTL_WDT_CPU_RESET_LENGTH and RTC_CNTL_WDT_SYS_RESET_LENGTH */
-#define RTC_WDT_RESET_LENGTH_100_NS    0
-#define RTC_WDT_RESET_LENGTH_200_NS    1
-#define RTC_WDT_RESET_LENGTH_300_NS    2
-#define RTC_WDT_RESET_LENGTH_400_NS    3
-#define RTC_WDT_RESET_LENGTH_500_NS    4
-#define RTC_WDT_RESET_LENGTH_800_NS    5
-#define RTC_WDT_RESET_LENGTH_1600_NS   6
-#define RTC_WDT_RESET_LENGTH_3200_NS   7
+#define LP_WDT_RESET_LENGTH_100_NS    0
+#define LP_WDT_RESET_LENGTH_200_NS    1
+#define LP_WDT_RESET_LENGTH_300_NS    2
+#define LP_WDT_RESET_LENGTH_400_NS    3
+#define LP_WDT_RESET_LENGTH_500_NS    4
+#define LP_WDT_RESET_LENGTH_800_NS    5
+#define LP_WDT_RESET_LENGTH_1600_NS   6
+#define LP_WDT_RESET_LENGTH_3200_NS   7
 
 
-// TODO: IDF-7539
-// //Type check wdt_stage_action_t
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_OFF == RTC_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_INT == RTC_WDT_STG_SEL_INT, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_CPU == RTC_WDT_STG_SEL_RESET_CPU, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_SYSTEM == RTC_WDT_STG_SEL_RESET_SYSTEM, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_RTC == RTC_WDT_STG_SEL_RESET_RTC, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
-// //Type check wdt_reset_sig_length_t
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_100ns == RTC_WDT_RESET_LENGTH_100_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_200ns == RTC_WDT_RESET_LENGTH_200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_300ns == RTC_WDT_RESET_LENGTH_300_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_400ns == RTC_WDT_RESET_LENGTH_400_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_500ns == RTC_WDT_RESET_LENGTH_500_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_800ns == RTC_WDT_RESET_LENGTH_800_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_1_6us == RTC_WDT_RESET_LENGTH_1600_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
-// ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_3_2us == RTC_WDT_RESET_LENGTH_3200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+#define LP_WDT_STG_SEL_OFF             0
+#define LP_WDT_STG_SEL_INT             1
+#define LP_WDT_STG_SEL_RESET_CPU       2
+#define LP_WDT_STG_SEL_RESET_SYSTEM    3
+#define LP_WDT_STG_SEL_RESET_RTC       4
+
+
+//Type check wdt_stage_action_t
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_OFF == LP_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_INT == LP_WDT_STG_SEL_INT, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_CPU == LP_WDT_STG_SEL_RESET_CPU, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_SYSTEM == LP_WDT_STG_SEL_RESET_SYSTEM, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+ESP_STATIC_ASSERT(WDT_STAGE_ACTION_RESET_RTC == LP_WDT_STG_SEL_RESET_RTC, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
+//Type check wdt_reset_sig_length_t
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_100ns == LP_WDT_RESET_LENGTH_100_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_200ns == LP_WDT_RESET_LENGTH_200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_300ns == LP_WDT_RESET_LENGTH_300_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_400ns == LP_WDT_RESET_LENGTH_400_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_500ns == LP_WDT_RESET_LENGTH_500_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_800ns == LP_WDT_RESET_LENGTH_800_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_1_6us == LP_WDT_RESET_LENGTH_1600_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
+ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_3_2us == LP_WDT_RESET_LENGTH_3200_NS, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_reset_sig_length_t");
 
 /**
- * @brief Enable the RWDT
+ * @brief Enable the LP WDT
  *
  * @param hw Start address of the peripheral registers.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_enable(lp_wdt_dev_t *hw)
 {
-    // hw->wdtconfig0.wdt_en = 1;
-    abort();
+    hw->config0.wdt_en = 1;
 }
 
 /**
- * @brief Disable the RWDT
+ * @brief Disable the LP WDT
  *
  * @param hw Start address of the peripheral registers.
  * @note This function does not disable the flashboot mode. Therefore, given that
- *       the MWDT is disabled using this function, a timeout can still occur
+ *       the lp_wdt is disabled using this function, a timeout can still occur
  *       if the flashboot mode is simultaneously enabled.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_disable(lp_wdt_dev_t *hw)
 {
-    // hw->wdtconfig0.wdt_en = 0;
-    abort();
+    hw->config0.wdt_en = 0;
 }
 
 /**
- * @brief Check if the RWDT is enabled
+ * @brief Check if the LP WDT is enabled
  *
  * @param hw Start address of the peripheral registers.
- * @return True if RTC WDT is enabled
+ * @return True if LP WDT is enabled
  */
 FORCE_INLINE_ATTR bool lpwdt_ll_check_if_enabled(lp_wdt_dev_t *hw)
 {
-    // return (hw->wdtconfig0.wdt_en) ? true : false;
-    abort();
+    return (hw->config0.wdt_en) ? true : false;
 }
 
 /**
- * @brief Configure a particular stage of the RWDT
+ * @brief Configure a particular stage of the LP WDT
  *
  * @param hw Start address of the peripheral registers.
  * @param stage Which stage to configure
@@ -114,57 +115,55 @@ FORCE_INLINE_ATTR bool lpwdt_ll_check_if_enabled(lp_wdt_dev_t *hw)
  *       - If Efuse value is 2, any multiple of 8 between [8,8*UINT32_MAX]
  *       - If Efuse value is 3, any multiple of 16 between [16,16*UINT32_MAX]
  */
-FORCE_INLINE_ATTR void lpwdt_ll_config_stage(lp_wdt_dev_t *hw, wdt_stage_t stage, uint32_t timeout_ticks, wdt_stage_action_t behavior)
+FORCE_INLINE_ATTR void
+lpwdt_ll_config_stage(lp_wdt_dev_t *hw, wdt_stage_t stage, uint32_t timeout_ticks, wdt_stage_action_t behavior)
 {
-    // switch (stage) {
-    // case WDT_STAGE0:
-    //     hw->wdtconfig0.wdt_stg0 = behavior;
-    //     //Account of implicty multiplier applied to stage 0 timeout tick config value
-    //     hw->wdtconfig1 = timeout_ticks >> (1 + REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_WDT_DELAY_SEL));
-    //     break;
-    // case WDT_STAGE1:
-    //     hw->wdtconfig0.wdt_stg1 = behavior;
-    //     hw->wdtconfig2 = timeout_ticks;
-    //     break;
-    // case WDT_STAGE2:
-    //     hw->wdtconfig0.wdt_stg2 = behavior;
-    //     hw->wdtconfig3 = timeout_ticks;
-    //     break;
-    // case WDT_STAGE3:
-    //     hw->wdtconfig0.wdt_stg3 = behavior;
-    //     hw->wdtconfig4 = timeout_ticks;
-    //     break;
-    // default:
-    //     abort();
-    // }
-    abort();
+    switch (stage) {
+        case WDT_STAGE0:
+            hw->config0.wdt_stg0 = behavior;
+            hw->config1.wdt_stg0_hold = timeout_ticks;
+            break;
+        case WDT_STAGE1:
+            hw->config0.wdt_stg1 = behavior;
+            hw->config2.wdt_stg1_hold = timeout_ticks;
+            break;
+        case WDT_STAGE2:
+            hw->config0.wdt_stg2 = behavior;
+            hw->config3.wdt_stg2_hold = timeout_ticks;
+            break;
+        case WDT_STAGE3:
+            hw->config0.wdt_stg3 = behavior;
+            hw->config4.wdt_stg3_hold = timeout_ticks;
+            break;
+        default:
+            break;
+    }
 }
 
 /**
- * @brief Disable a particular stage of the RWDT
+ * @brief Disable a particular stage of the LP WDT
  *
  * @param hw Start address of the peripheral registers.
  * @param stage Which stage to disable
  */
 FORCE_INLINE_ATTR void lpwdt_ll_disable_stage(lp_wdt_dev_t *hw, wdt_stage_t stage)
 {
-    // switch (stage) {
-    // case WDT_STAGE0:
-    //     hw->wdtconfig0.wdt_stg0 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE1:
-    //     hw->wdtconfig0.wdt_stg1 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE2:
-    //     hw->wdtconfig0.wdt_stg2 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // case WDT_STAGE3:
-    //     hw->wdtconfig0.wdt_stg3 = WDT_STAGE_ACTION_OFF;
-    //     break;
-    // default:
-    //     abort();
-    // }
-    abort();
+    switch (stage) {
+        case WDT_STAGE0:
+            hw->config0.wdt_stg0 = WDT_STAGE_ACTION_OFF;
+            break;
+        case WDT_STAGE1:
+            hw->config0.wdt_stg1 = WDT_STAGE_ACTION_OFF;
+            break;
+        case WDT_STAGE2:
+            hw->config0.wdt_stg2 = WDT_STAGE_ACTION_OFF;
+            break;
+        case WDT_STAGE3:
+            hw->config0.wdt_stg3 = WDT_STAGE_ACTION_OFF;
+            break;
+        default:
+            abort();
+    }
 }
 
 /**
@@ -175,8 +174,7 @@ FORCE_INLINE_ATTR void lpwdt_ll_disable_stage(lp_wdt_dev_t *hw, wdt_stage_t stag
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_cpu_reset_length(lp_wdt_dev_t *hw, wdt_reset_sig_length_t length)
 {
-    // hw->wdtconfig0.wdt_cpu_reset_length = length;
-    abort();
+    hw->config0.wdt_cpu_reset_length = length;
 }
 
 /**
@@ -187,24 +185,22 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_cpu_reset_length(lp_wdt_dev_t *hw, wdt_reset
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_sys_reset_length(lp_wdt_dev_t *hw, wdt_reset_sig_length_t length)
 {
-    // hw->wdtconfig0.wdt_sys_reset_length = length;
-    abort();
+    hw->config0.wdt_sys_reset_length = length;
 }
 
 /**
- * @brief Enable/Disable the RWDT flashboot mode.
+ * @brief Enable/Disable the LP_WDT flashboot mode.
  *
  * @param hw Start address of the peripheral registers.
- * @param enable True to enable RWDT flashboot mode, false to disable RWDT flashboot mode.
+ * @param enable True to enable LP_WDT flashboot mode, false to disable LP_WDT flashboot mode.
  *
  * @note Flashboot mode is independent and can trigger a WDT timeout event if the
- *       WDT's enable bit is set to 0. Flashboot mode for RWDT is automatically enabled
+ *       WDT's enable bit is set to 0. Flashboot mode for LP_WDT is automatically enabled
  *       on flashboot, and should be disabled by software when flashbooting completes.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_flashboot_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // hw->wdtconfig0.wdt_flashboot_mod_en = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_flashboot_mod_en = (enable) ? 1 : 0;
 }
 
 /**
@@ -215,63 +211,54 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_flashboot_en(lp_wdt_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_procpu_reset_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // hw->wdtconfig0.wdt_chip_reset_en = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_procpu_reset_en = (enable) ? 1 : 0;
 }
+
 
 /**
  * @brief Enable/Disable the CPU1 to be reset on WDT_STAGE_ACTION_RESET_CPU
  *
- * @param hw Start address of the peripheral registers.
+ R* @param hw Start address of the peripheral registers.
  * @param enable True to enable CPU1 to be reset, false to disable.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_appcpu_reset_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // hw->wdtconfig0.wdt_chip_reset_en = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_appcpu_reset_en = (enable) ? 1 : 0;
 }
 
 /**
- * @brief Enable/Disable the RWDT pause during sleep functionality
+ * @brief Enable/Disable the LPWDT pause during sleep functionality
  *
  * @param hw Start address of the peripheral registers.
  * @param enable True to enable, false to disable.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_pause_in_sleep_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // hw->wdtconfig0.wdt_pause_in_slp = (enable) ? 1 : 0;
-    abort();
+    hw->config0.wdt_pause_in_slp = (enable) ? 1 : 0;
 }
 
 /**
- * @brief Enable/Disable chip reset on RWDT timeout.
- *
- * A chip reset also resets the analog portion of the chip. It will appear as a
- * POWERON reset rather than an RTC reset.
- *
- * @param hw Start address of the peripheral registers.
- * @param enable True to enable, false to disable.
+ * @brief No register for enabling analog reset at timeout on P4, we keep an empty function to
+ *        provide the same HAL interface as other targets.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_chip_reset_en(lp_wdt_dev_t *hw, bool enable)
 {
-    // hw->wdtconfig0.wdt_chip_reset_en = (enable) ? 1 : 0;
-    abort();
+    (void)hw;
+    (void)enable;
 }
 
 /**
- * @brief Set width of chip reset signal
- *
- * @param hw Start address of the peripheral registers.
- * @param width Width of chip reset signal in terms of number of RTC_SLOW_CLK cycles
+ * @brief No register for setting reset width on P4, we keep an empty function to
+ *        provide the same HAL interface as other targets.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_chip_reset_width(lp_wdt_dev_t *hw, uint32_t width)
 {
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wdtconfig0, wdt_chip_reset_width, width);
-    abort();
+    (void)hw;
+    (void)width;
 }
 
 /**
- * @brief Feed the RWDT
+ * @brief Feed the LPWDT
  *
  * Resets the current timer count and current stage.
  *
@@ -279,65 +266,59 @@ FORCE_INLINE_ATTR void lpwdt_ll_set_chip_reset_width(lp_wdt_dev_t *hw, uint32_t 
  */
 FORCE_INLINE_ATTR void lpwdt_ll_feed(lp_wdt_dev_t *hw)
 {
-    // hw->wdtfeed.wdt_feed = 1;
-    abort();
+    hw->feed.feed = 1;
 }
 
 /**
- * @brief Enable write protection of the RWDT registers
+ * @brief Enable write protection of the LPWDT registers
  *
  * @param hw Start address of the peripheral registers.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_write_protect_enable(lp_wdt_dev_t *hw)
 {
-    // hw->wdtwprotect = 0;
-    abort();
+    hw->wprotect.wdt_wkey = 0;
 }
 
 /**
- * @brief Disable write protection of the RWDT registers
+ * @brief Disable write protection of the LPWDT registers
  *
  * @param hw Start address of the peripheral registers.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_write_protect_disable(lp_wdt_dev_t *hw)
 {
-    // hw->wdtwprotect = TIMG_WDT_WKEY_VALUE;
-    abort();
+    hw->wprotect.wdt_wkey = LP_WDT_WKEY_VALUE;
 }
 
 /**
- * @brief Enable the RWDT interrupt.
+ * @brief Enable the LPWDT interrupt.
  *
  * @param hw Start address of the peripheral registers.
  * @param enable True to enable RWDT interrupt, false to disable.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_set_intr_enable(lp_wdt_dev_t *hw, bool enable)
 {
-    // hw->int_ena.wdt = (enable) ? 1 : 0;
-    abort();
+    hw->int_ena.lp_wdt_int_ena = (enable) ? 1 : 0;
 }
 
 /**
- * @brief Check if the RWDT interrupt has been triggered
+ * @brief Check if the LPWDT interrupt has been triggered
  *
  * @param hw Start address of the peripheral registers.
  * @return True if the RWDT interrupt was triggered
  */
 FORCE_INLINE_ATTR bool lpwdt_ll_check_intr_status(lp_wdt_dev_t *hw)
 {
-    // return (hw->int_swd_st.wdt) ? true : false;
-    abort();
+    return (hw->int_st.lp_wdt_int_st) ? true : false;
 }
 
 /**
- * @brief Clear the RWDT interrupt status.
+ * @brief Clear the LPWDT interrupt status.
  *
  * @param hw Start address of the peripheral registers.
  */
 FORCE_INLINE_ATTR void lpwdt_ll_clear_intr_status(lp_wdt_dev_t *hw)
 {
-    // hw->int_clr.wdt = 1;
-    abort();
+    hw->int_clr.lp_wdt_int_clr = 1;
 }
 
 #ifdef __cplusplus
