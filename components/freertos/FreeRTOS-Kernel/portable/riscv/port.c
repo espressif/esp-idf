@@ -41,6 +41,7 @@
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
+#include "soc/interrupt_reg.h"
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "riscv/rvruntime-frames.h"
@@ -367,8 +368,8 @@ UBaseType_t xPortSetInterruptMaskFromISR(void)
 
 #if !SOC_INT_CLIC_SUPPORTED
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    prev_int_level = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
-    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
+    prev_int_level = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
+    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 #else
     /* When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
@@ -391,7 +392,7 @@ UBaseType_t xPortSetInterruptMaskFromISR(void)
 void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level)
 {
 #if !SOC_INT_CLIC_SUPPORTED
-    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, prev_int_level);
+    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, prev_int_level);
 #else
     rv_utils_restore_intlevel(prev_int_level);
 #endif /* SOC_INIT_CLIC_SUPPORTED */

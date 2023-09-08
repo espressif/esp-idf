@@ -681,7 +681,6 @@ components/soc/esp32c3/include/soc/gpio_struct.h
 components/soc/esp32c3/include/soc/i2c_reg.h
 components/soc/esp32c3/include/soc/i2c_struct.h
 components/soc/esp32c3/include/soc/interrupt_core0_reg.h
-components/soc/esp32c3/include/soc/interrupt_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
 components/soc/esp32c3/include/soc/nrx_reg.h
 components/soc/esp32c3/include/soc/reset_reasons.h
