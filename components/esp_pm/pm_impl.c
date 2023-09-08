@@ -874,7 +874,7 @@ void esp_pm_impl_waiti(void)
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 
-#define PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO 1
+#define PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO 2
 
 /* Inform peripherals of light sleep wakeup overhead time */
 static inform_out_light_sleep_overhead_cb_t s_periph_inform_out_light_sleep_overhead_cb[PERIPH_INFORM_OUT_LIGHT_SLEEP_OVERHEAD_NO];
