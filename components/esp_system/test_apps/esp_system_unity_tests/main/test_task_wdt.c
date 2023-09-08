@@ -13,10 +13,11 @@
 #include "esp_rom_sys.h"
 #include "esp_task_wdt.h"
 #include "test_utils.h"
+#include "soc/rtc.h"
 
 #define TASK_WDT_TIMEOUT_MS     1000
 
-static bool timeout_flag;
+static volatile bool timeout_flag;
 
 void esp_task_wdt_isr_user_handler(void)
 {
@@ -39,6 +40,41 @@ TEST_CASE("Task WDT task timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
+
+#if SOC_MWDT_SUPPORT_XTAL
+
+#if CONFIG_IDF_TARGET_ESP32H2
+#define TEST_CPU_FREQUENCY_MHZ 48
+#else
+#define TEST_CPU_FREQUENCY_MHZ 40
+#endif
+
+TEST_CASE("Task WDT task timeout - CPU Frequency changed", "[task_wdt]")
+{
+    rtc_cpu_freq_config_t old_config, new_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+
+    TEST_ASSERT(rtc_clk_cpu_freq_mhz_to_config(TEST_CPU_FREQUENCY_MHZ, &new_config));
+    rtc_clk_cpu_freq_set_config(&new_config);
+
+    timeout_flag = false;
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = TASK_WDT_TIMEOUT_MS,
+        .idle_core_mask = 0,
+        .trigger_panic = false,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_add(NULL));
+    /* Short delay to allow timeout to occur, if WDT depends on any of the clocks changed
+       then the timeout should be slower and test will fail */
+    esp_rom_delay_us(TASK_WDT_TIMEOUT_MS * 1000);
+    TEST_ASSERT_EQUAL(true, timeout_flag);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
+
+    rtc_clk_cpu_freq_set_config(&old_config);
+}
+#endif //SOC_MWDT_SUPPORT_XTAL
 
 TEST_CASE("Task WDT inactive when no task to watch", "[task_wdt]")
 {
