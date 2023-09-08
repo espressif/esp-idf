@@ -1645,6 +1645,15 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
     }
 }
 
+esp_err_t esp_http_client_set_auth_data(esp_http_client_handle_t client, const char *auth_data, int len)
+{
+    if (client == NULL || auth_data == NULL || len <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    http_utils_append_string(&client->auth_header, auth_data, len);
+    return ESP_OK;
+}
+
 void esp_http_client_add_auth(esp_http_client_handle_t client)
 {
     if (client == NULL) {
