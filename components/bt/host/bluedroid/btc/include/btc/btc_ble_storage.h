@@ -85,8 +85,6 @@ bt_status_t btc_storage_set_ble_dev_type(bt_bdaddr_t *bd_addr, bool flush);
 
 bt_status_t btc_storage_remove_ble_dev_type(bt_bdaddr_t *remote_bd_addr, bool flush);
 
-bt_status_t btc_storage_load_bonded_ble_devices(void);
-
 bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev, int dev_num);
 
 int btc_storage_get_num_ble_bond_devices(void);

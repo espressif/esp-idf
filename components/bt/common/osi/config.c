@@ -254,6 +254,32 @@ bool config_remove_section(config_t *config, const char *section)
     return list_remove(config->sections, sec);
 }
 
+bool config_update_newest_section(config_t *config, const char *section)
+{
+    assert(config != NULL);
+    assert(section != NULL);
+
+    list_node_t *first_node = list_begin(config->sections);
+    if (first_node == NULL) {
+        return false;
+    }
+    section_t *first_sec = list_node(first_node);
+    if (strcmp(first_sec->name, section) == 0) {
+        return true;
+    }
+
+    for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {
+        section_t *sec = list_node(node);
+        if (strcmp(sec->name, section) == 0) {
+            list_delete(config->sections, sec);
+            list_prepend(config->sections, sec);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool config_remove_key(config_t *config, const char *section, const char *key)
 {
     assert(config != NULL);
