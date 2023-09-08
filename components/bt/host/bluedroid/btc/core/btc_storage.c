@@ -39,7 +39,7 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     bt_bdaddr_t bd_addr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
 
-    /* device not in bond list and exceed the maximum number of bonded devices, delete the first bonded device */
+    /* device not in bond list and exceed the maximum number of bonded devices, delete the inactive bonded device */
     if (btc_storage_get_num_all_bond_devices() >= BTM_SEC_MAX_DEVICE_RECORDS && !btc_config_has_section(bdstr)) {
         const btc_config_section_iter_t *iter = btc_config_section_begin();
         const btc_config_section_iter_t *remove_iter = iter;
@@ -145,30 +145,31 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
                 btc_config_exist(name, BTC_STORAGE_SC_SUPPORT) && btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
                 /* load bt device */
                 status = _btc_storage_in_fetch_bonded_bt_device(name, add);
-            } else {
+            }
+            if (btc_config_exist(name, BTC_BLE_STORAGE_DEV_TYPE_STR)) {
 #if (BLE_INCLUDED == TRUE)
                 /* load ble device */
                 status = _btc_storage_in_fetch_bonded_ble_device(name, add);
 #endif  ///BLE_INCLUDED == TRUE
             }
         } else {
-                /* delete the exceeded device info from nvs */
-                remove_iter = iter;
-                while (remove_iter != btc_config_section_end()) {
-                    const char *remove_section = btc_config_section_name(remove_iter);
-                    if (!string_is_bdaddr(remove_section)) {
-                        remove_iter = btc_config_section_next(remove_iter);
-                        continue;
-                    }
+            /* delete the exceeded device info from nvs */
+            remove_iter = iter;
+            while (remove_iter != btc_config_section_end()) {
+                const char *remove_section = btc_config_section_name(remove_iter);
+                if (!string_is_bdaddr(remove_section)) {
                     remove_iter = btc_config_section_next(remove_iter);
-                    /* delete config info */
-                    if (btc_config_remove_section(remove_section)) {
-                        BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the exceed device info : %s", remove_section);
-                    }
+                    continue;
                 }
-                /* write into nvs */
-                btc_config_flush();
-                break;
+                remove_iter = btc_config_section_next(remove_iter);
+                /* delete config info */
+                if (btc_config_remove_section(remove_section)) {
+                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the exceed device info : %s", remove_section);
+                }
+            }
+            /* write into nvs */
+            btc_config_flush();
+            break;
         }
     }
     btc_config_unlock();
@@ -305,6 +306,32 @@ bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int *d
     btc_config_unlock();
 
     return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+**
+** Function         btc_storage_update_active_device
+**
+** Description      BTC storage API - Once an ACL link is established and remote
+**                  bd_addr is already stored in NVRAM, update the config and update
+**                  the remote device to be the newest active device, The updates will
+**                  not be stored into NVRAM immediately.
+**
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    bool ret = false;
+    BTC_TRACE_DEBUG("Update active device: Remote device:%s\n", bdstr);
+
+    btc_config_lock();
+    ret = btc_config_update_newest_section(bdstr);
+    btc_config_unlock();
+
+    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 #if (defined BTC_HH_INCLUDED && BTC_HH_INCLUDED == TRUE)

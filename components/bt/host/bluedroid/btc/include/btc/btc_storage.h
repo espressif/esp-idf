@@ -89,6 +89,31 @@ int btc_storage_get_num_bt_bond_devices(void);
 *******************************************************************************/
 bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int *dev_num);
 
+/*******************************************************************************
+**
+** Function         btc_storage_get_num_all_bond_devices
+**
+** Description      BTC storage API - get all the num of the bonded device from NVRAM
+**
+** Returns          the num of the bonded device
+**
+*******************************************************************************/
+int btc_storage_get_num_all_bond_devices(void);
+
+/*******************************************************************************
+**
+** Function         btc_storage_update_active_device
+**
+** Description      BTC storage API - Once an ACL link is established and remote
+**                  bd_addr is already stored in NVRAM, update the config and update
+**                  the remote device to be the newest active device. The updates will
+**                  not be stored into NVRAM immediately.
+**
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr);
+
 #if (defined BTC_HH_INCLUDED && BTC_HH_INCLUDED == TRUE)
 /*******************************************************************************
  *
@@ -166,18 +191,7 @@ bt_status_t btc_storage_set_hidd(bt_bdaddr_t *remote_bd_addr);
  ******************************************************************************/
 bt_status_t btc_storage_remove_hidd(bt_bdaddr_t *remote_bd_addr);
 #endif //(defined BTC_HD_INCLUDED && BTC_HD_INCLUDED == TRUE)
+#endif /* BTC_STORAGE_H */
 #ifdef __cplusplus
 }
 #endif
-/*******************************************************************************
-**
-** Function         btc_storage_get_num_all_bond_devices
-**
-** Description      BTC storage API - get all the num of the bonded device from NVRAM
-**
-** Returns          the num of the bonded device
-**
-*******************************************************************************/
-int btc_storage_get_num_all_bond_devices(void);
-
-#endif /* BTC_STORAGE_H */

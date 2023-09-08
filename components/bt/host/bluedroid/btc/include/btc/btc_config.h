@@ -28,6 +28,7 @@ bool btc_config_get_bin(const char *section, const char *key, uint8_t *value, si
 bool btc_config_set_bin(const char *section, const char *key, const uint8_t *value, size_t length);
 bool btc_config_remove(const char *section, const char *key);
 bool btc_config_remove_section(const char *section);
+bool btc_config_update_newest_section(const char *section);
 
 size_t btc_config_get_bin_length(const char *section, const char *key);
 
