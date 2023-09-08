@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,6 +78,18 @@ esp_err_t esp_bt_dev_set_device_name(const char *name);
  *                  - ESP_FAIL : others
  */
 esp_err_t esp_bt_dev_coex_status_config(esp_bt_dev_coex_type_t type, esp_bt_dev_coex_op_t op, uint8_t status);
+
+/**
+ * @brief           This function is used to update the path name of bluetooth bond keys saved in the NVS module
+ *                  and need to be called before esp_bluedroid_init().
+ * @param[in]       file_path: the name of config file path, the length of file_path should be less than NVS_NS_NAME_MAX_SIZE
+ *
+ * @return
+ *                   - ESP_OK: success
+ *                   - other: failed
+ *
+ */
+esp_err_t esp_bt_config_file_path_update(const char *file_path);
 
 #ifdef __cplusplus
 }

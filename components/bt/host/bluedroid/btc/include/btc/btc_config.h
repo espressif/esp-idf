@@ -47,4 +47,5 @@ bool btc_get_device_type(const BD_ADDR bd_addr, int *p_device_type);
 void btc_config_lock(void);
 void btc_config_unlock(void);
 
+int btc_config_file_path_update(const char *file_path);
 #endif
