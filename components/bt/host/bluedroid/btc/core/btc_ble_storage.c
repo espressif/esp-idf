@@ -22,7 +22,7 @@ static void _btc_storage_save(void)
 {
     uint16_t addr_section_count = 0;
     bt_bdaddr_t bd_addr;
-    uint32_t device_type = 0;
+
     const btc_config_section_iter_t *need_remove_iter = NULL;
     const btc_config_section_iter_t *iter = btc_config_section_begin();
 
@@ -802,53 +802,6 @@ bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, 
     }
 
     return BT_STATUS_FAIL;
-}
-
-static bt_status_t btc_storage_in_fetch_bonded_ble_devices(int add)
-{
-    bt_status_t status = BT_STATUS_FAIL;
-    uint32_t device_type = 0;
-
-    btc_config_lock();
-    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
-            iter = btc_config_section_next(iter)) {
-        const char *name = btc_config_section_name(iter);
-
-        if (!string_is_bdaddr(name) ||
-            !btc_config_get_int(name, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
-            ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
-            continue;
-        }
-        BTC_TRACE_DEBUG("%s, name = %s", __func__, name);
-        if (_btc_storage_in_fetch_bonded_ble_device(name, add) != BT_STATUS_SUCCESS) {
-            BTC_TRACE_DEBUG("Remote device:%s, no link key or ble key found", name);
-        } else {
-            status = BT_STATUS_SUCCESS;
-        }
-    }
-    btc_config_unlock();
-
-    return status;
-}
-
-/*******************************************************************************
-**
-** Function         btc_storage_load_bonded_devices
-**
-** Description      btc storage API - Loads all the bonded devices from NVRAM
-**                  and adds to the BTA.
-**                  Additionally, this API also invokes the adaper_properties_cb
-**                  and remote_device_properties_cb for each of the bonded devices.
-**
-** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
-**
-*******************************************************************************/
-bt_status_t btc_storage_load_bonded_ble_devices(void)
-{
-    bt_status_t status;
-    status = btc_storage_in_fetch_bonded_ble_devices(1);
-    BTC_TRACE_DEBUG("Storage load rslt %d\n", status);
-    return status;
 }
 
 bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev, int dev_num)

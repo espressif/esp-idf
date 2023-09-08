@@ -96,4 +96,18 @@ bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int *d
 *******************************************************************************/
 int btc_storage_get_num_all_bond_devices(void);
 
+/*******************************************************************************
+**
+** Function         btc_storage_update_active_device
+**
+** Description      BTC storage API - Once an ACL link is established and remote
+**                  bd_addr is already stored in NVRAM, update the config and update
+**                  the remote device to be the newest active device. The updates will
+**                  not be stored into NVRAM immediately.
+**
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr);
+
 #endif /* BTC_STORAGE_H */
