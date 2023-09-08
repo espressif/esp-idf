@@ -19,6 +19,6 @@ idf_component_register(SRCS "commands.c"
                             "split_argv.c"
                             "linenoise/linenoise.c"
                             ${argtable_srcs}
-                    INCLUDE_DIRS "."
+                    INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
                     REQUIRES vfs
                     PRIV_REQUIRES driver)

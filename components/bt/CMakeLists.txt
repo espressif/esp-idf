@@ -1,3 +1,64 @@
+# API headers that are used in the docs are also compiled
+# even if CONFIG_BT_ENABLED=n as long as CONFIG_IDF_DOC_BUILD=y
+
+if(CONFIG_IDF_TARGET_ESP32)
+    set(target_specific_include_dirs include/esp32/include)
+
+elseif(CONFIG_IDF_TARGET_ESP32C3)
+    set(target_specific_include_dirs include/esp32c3/include)
+
+elseif(CONFIG_IDF_TARGET_ESP32S3)
+    set(target_specific_include_dirs include/esp32c3/include)
+
+elseif(CONFIG_IDF_TARGET_ESP32C2)
+    set(target_specific_include_dirs include/esp32c2/include)
+
+elseif(CONFIG_IDF_TARGET_ESP32C6)
+    set(target_specific_include_dirs include/esp32c6/include)
+
+elseif(CONFIG_IDF_TARGET_ESP32H2)
+    set(target_specific_include_dirs include/esp32h2/include)
+endif()
+
+set(common_include_dirs
+    common/api/include/api
+    common/btc/profile/esp/blufi/include
+    common/btc/profile/esp/include
+)
+
+set(ble_mesh_include_dirs
+    "esp_ble_mesh/common/include"
+    "esp_ble_mesh/common/tinycrypt/include"
+    "esp_ble_mesh/core"
+    "esp_ble_mesh/core/include"
+    "esp_ble_mesh/core/storage"
+    "esp_ble_mesh/btc/include"
+    "esp_ble_mesh/models/common/include"
+    "esp_ble_mesh/models/client/include"
+    "esp_ble_mesh/models/server/include"
+    "esp_ble_mesh/api/core/include"
+    "esp_ble_mesh/api/models/include"
+    "esp_ble_mesh/api"
+    "esp_ble_mesh/v1.1/api/core/include"
+    "esp_ble_mesh/v1.1/api/models/include"
+    "esp_ble_mesh/v1.1/btc/include"
+    "esp_ble_mesh/v1.1/include"
+)
+
+set(bluedroid_include_dirs host/bluedroid/api/include/api)
+
+set(nimble_hci_include_dirs host/nimble/esp-hci/include)
+
+if(CONFIG_IDF_DOC_BUILD)
+    list(APPEND include_dirs
+         ${target_specific_include_dirs}
+         ${common_include_dirs}
+         ${ble_mesh_include_dirs}
+         ${bluedroid_include_dirs}
+         ${nimble_hci_include_dirs})
+endif()
+
+
 if(CONFIG_BT_ENABLED)
 
     set(srcs "")
@@ -7,29 +68,24 @@ if(CONFIG_BT_ENABLED)
         list(APPEND srcs "controller/esp32/bt.c"
                          "controller/esp32/hli_api.c"
                          "controller/esp32/hli_vectors.S")
-        list(APPEND include_dirs include/esp32/include)
 
     elseif(CONFIG_IDF_TARGET_ESP32C3)
         list(APPEND srcs "controller/esp32c3/bt.c")
-        list(APPEND include_dirs include/esp32c3/include)
 
     elseif(CONFIG_IDF_TARGET_ESP32S3)
         list(APPEND srcs "controller/esp32c3/bt.c")
-        list(APPEND include_dirs include/esp32c3/include)
 
     elseif(CONFIG_IDF_TARGET_ESP32C2)
         list(APPEND srcs "controller/esp32c2/bt.c")
-        list(APPEND include_dirs include/esp32c2/include)
 
     elseif(CONFIG_IDF_TARGET_ESP32C6)
         list(APPEND srcs "controller/esp32c6/bt.c")
-        list(APPEND include_dirs include/esp32c6/include)
 
     elseif(CONFIG_IDF_TARGET_ESP32H2)
         list(APPEND srcs "controller/esp32h2/bt.c")
-        list(APPEND include_dirs include/esp32h2/include)
     endif()
 
+    list(APPEND include_dirs ${target_specific_include_dirs})
 
     # Common
     list(APPEND include_dirs common/osi/include)
@@ -39,12 +95,7 @@ if(CONFIG_BT_ENABLED)
             common/include
             porting/mem/
         )
-    list(APPEND include_dirs
-         common/api/include/api
-         common/btc/profile/esp/blufi/include
-         common/btc/profile/esp/include
-        )
-
+    list(APPEND include_dirs ${common_include_dirs})
 
     list(APPEND srcs "common/btc/core/btc_alarm.c"
          "common/api/esp_blufi_api.c"
@@ -111,7 +162,7 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/common/include
             host/bluedroid/config/include)
 
-        list(APPEND include_dirs host/bluedroid/api/include/api)
+        list(APPEND include_dirs ${bluedroid_include_dirs})
 
         list(APPEND srcs "host/bluedroid/api/esp_a2dp_api.c"
                    "host/bluedroid/api/esp_avrc_api.c"
@@ -378,23 +429,7 @@ if(CONFIG_BT_ENABLED)
     endif()
 
     if(CONFIG_BLE_MESH)
-        list(APPEND include_dirs
-                    "esp_ble_mesh/common/include"
-                    "esp_ble_mesh/common/tinycrypt/include"
-                    "esp_ble_mesh/core"
-                    "esp_ble_mesh/core/include"
-                    "esp_ble_mesh/core/storage"
-                    "esp_ble_mesh/btc/include"
-                    "esp_ble_mesh/models/common/include"
-                    "esp_ble_mesh/models/client/include"
-                    "esp_ble_mesh/models/server/include"
-                    "esp_ble_mesh/api/core/include"
-                    "esp_ble_mesh/api/models/include"
-                    "esp_ble_mesh/api"
-                    "esp_ble_mesh/v1.1/api/core/include"
-                    "esp_ble_mesh/v1.1/api/models/include"
-                    "esp_ble_mesh/v1.1/btc/include"
-                    "esp_ble_mesh/v1.1/include")
+        list(APPEND include_dirs ${ble_mesh_include_dirs})
 
         list(APPEND srcs "esp_ble_mesh/api/core/esp_ble_mesh_ble_api.c"
                     "esp_ble_mesh/api/core/esp_ble_mesh_common_api.c"
@@ -665,9 +700,7 @@ if(CONFIG_BT_ENABLED)
             list(APPEND srcs
                 "host/nimble/esp-hci/src/esp_nimble_hci.c"
             )
-            list(APPEND include_dirs
-                host/nimble/esp-hci/include
-            )
+            list(APPEND include_dirs ${nimble_hci_include_dirs})
         endif()
 
         list(APPEND srcs

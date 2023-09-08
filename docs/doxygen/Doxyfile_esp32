@@ -7,3 +7,10 @@ INPUT += \
          $(PROJECT_PATH)/components/ulp/ulp_common/include/$(IDF_TARGET)/ulp_common_defs.h \
          $(PROJECT_PATH)/components/ulp/ulp_fsm/include/$(IDF_TARGET)/ulp.h \
          $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt.h \
+         $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
+         $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
+         $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_masks.h \
+         $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
+         $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
+         $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
+         $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
