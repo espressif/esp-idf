@@ -335,7 +335,7 @@ typedef enum {
 typedef enum {
     MWDT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     MWDT_CLK_SRC_APB = SOC_MOD_CLK_APB,             /*!< Select APB as the source clock */
-    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,         /*!< Select APB as the default clock choice */
+    MWDT_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,         /*!< Select APB as the default clock choice */
 } soc_periph_mwdt_clk_src_t;
 
 //////////////////////////////////////////////////LEDC/////////////////////////////////////////////////////////////////
