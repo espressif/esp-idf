@@ -38,7 +38,17 @@
   - "tools/ci/get_supported_examples.sh"
 
 .patterns-build_components: &patterns-build_components
-  - "components/**/*"
+  # components files except "test*/" "host*/" folders
+  # ?? to include folders less than 4 characters
+  - "components/*/???[!t]*/**/*"
+  - "components/*/??[!s]?*/**/*"
+  - "components/*/???/**/*"
+  - "components/*/??/**/*"
+  - "components/*/*"
+  - "components/*"
+  # Add folders excluded by "???[!t]" and "??[!s]?"
+  # pre-commit: tools/ci/check_rules_components_patterns.py
+  - "components/bt/host/**/*"
 
 .patterns-downloadable-tools: &patterns-downloadable-tools
   - "tools/idf_tools.py"
@@ -79,32 +89,36 @@
 
 .patterns-component_ut: &patterns-component_ut
   - "tools/ci/python_packages/gitlab_api.py"
-  - "tools/ci/python_packages/tiny_test_fw/**/*"
-  - "tools/ci/python_packages/ttfw_idf/**/*"
   - "tools/ci/python_packages/common_test_methods.py"
   - "tools/test_apps/configs/sdkconfig.debug_helpers"
 
   - "components/**/*"
 
-.patterns-target_test-i154: &patterns-target_test-i154
-  - "components/esp_phy/**/*"
+.patterns-component_ut-i154: &patterns-component_ut-i154
+  - "components/{esp_phy,esp_coex}/???[!t]*/**/*"
+  - "components/{esp_phy,esp_coex}/??[!s]?*/**/*"
+  - "components/{esp_phy,esp_coex}/???/**/*"
+  - "components/{esp_phy,esp_coex}/*"
   - "components/ieee802154/**/*"
-  - "components/esp_coex/**/*"
 
 .patterns-example_test-i154: &patterns-example_test-i154
-  - "components/esp_netif/**/*"
-  - "components/lwip/**/*"
-  - "components/openthread/**/*"
+  - "components/{esp_netif,ieee802154,lwip,openthread}/???[!t]*/**/*"
+  - "components/{esp_netif,ieee802154,lwip,openthread}/??[!s]?*/**/*"
+  - "components/{esp_netif,ieee802154,lwip,openthread}/???/**/*"
+  - "components/{esp_netif,ieee802154,lwip,openthread}/??/**/*"
+  - "components/{esp_netif,ieee802154,lwip,openthread}/*"
   - "examples/common_components/iperf/**/*"
   - "examples/openthread/**/*"
 
 .patterns-target_test-wifi: &patterns-target_test-wifi
-  - "components/esp_netif/**/*"
-  - "components/lwip/**/*"
+  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/???[!t]*/**/*"
+  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/??[!s]?*/**/*"
+  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/???/**/*"
+  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/??/**/*"
+  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/*"
+
+.patterns-component_ut-wifi: &patterns-component_ut-wifi
   - "components/esp_wifi/**/*"
-  - "components/esp_phy/**/*"
-  - "components/wpa_supplicant/**/*"
-  - "components/esp_coex/**/*"
 
 .patterns-integration_test-ble: &patterns-integration_test-ble
   - "tools/ci/python_packages/gitlab_api.py"
@@ -114,7 +128,9 @@
   - "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"
   - "components/bt/host/nimble/nimble"
   - "components/esp_phy/lib"
-  - "components/esp_coex/**/*"
+  - "components/esp_coex/??[!s][!t]*/**/*"
+  - "components/esp_coex/???/**/*"
+  - "components/esp_coex/*"
 
 .patterns-integration_test-wifi: &patterns-integration_test-wifi
   - "tools/ci/python_packages/gitlab_api.py"
@@ -212,17 +228,13 @@
 .patterns-danger-npm: &patterns-danger-npm
   - ".gitlab/dangerjs/package-lock.json"
 
-# for jobs: example_test*flash_encryption_wifi_high_traffic
+# for jobs: flash_encryption_wifi_high_traffic
 .patterns-example_test-ota-nightly_run: &patterns-example_test-ota-nightly_run
   - "examples/system/ota/**/*"
   - "examples/common_components/protocol_examples_common/**/*"
-  - "components/app_update/**/*"
+  - "components/app_update/include/*"
+  - "components/app_update/*"
   - "components/esp_https_ota/**/*"
-
-# for jobs: example_test_005
-.patterns-example_test-bt: &patterns-example_test-bt
-  - "components/bt/host/nimble/nimble"
-  - "examples/bluetooth/nimble/**/*"
 
 # for jobs: example_test*ethernet*
 .patterns-example_test-ethernet: &patterns-example_test-ethernet
@@ -232,21 +244,24 @@
   - "examples/system/ota/**/*"
   - "examples/ethernet/iperf/**/*"
   - "examples/network/vlan_support/**/*"
-  - "components/esp_eth/**/*"
+  - "components/esp_eth/??[!s][!t]*/**/*"
+  - "components/esp_eth/???/**/*"
+  - "components/esp_eth/*"
   - "components/esp_netif/esp_netif_handlers.c"
 
-# for jobs: example_test_002, example_test*wifi*
+# for jobs: example_test*wifi*
 .patterns-example_test-wifi: &patterns-example_test-wifi
   - "tools/ci/python_packages/common_test_methods.py"
   - "examples/common_components/protocol_examples_common/**/*"
   - "examples/protocols/**/*"
   - "examples/wifi/**/*"
   - "examples/network/simple_sniffer/**/*"
-  # components
+
   - "components/mbedtls/port/dynamic/*"
-  # for cases with wifi_high_traffic marker
+  # ota
   - "examples/system/ota/**/*"
-  - "components/app_update/**/*"
+  - "components/app_update/include/*"
+  - "components/app_update/*"
   - "components/esp_https_ota/**/*"
 
 # for jobs: custom_test*wifi*
@@ -263,7 +278,9 @@
   - "components/driver/include/driver/sdspi*.h"
   - "components/driver/include/driver/sdio*.h"
   - "components/driver/include/driver/sdmmc*.h"
-  - "components/sdmmc/**/*"
+  - "components/sdmmc/??[!s][!t]*/**/*"
+  - "components/sdmmc/???/**/*"
+  - "components/sdmmc/*"
   - "examples/peripherals/sdio/**/*"
 
 # for jobs: component_ut_pytest_sdio related
@@ -296,17 +313,12 @@
   - "components/hal/spi_flash*.c"
   - "components/hal/include/hal/spi_flash*.h"
 
-# for jobs: UT_C3_FLASH
-.patterns-unit_test-flash_multi: &patterns-unit_test-flash_multi
-  - "components/spi_flash/**/*"
-  - "components/hal/spi_flash*.c"
-  - "components/hal/include/hal/spi_flash*.h"
-
 # for jobs: USB host and device examples
 .patterns-example_test-usb: &patterns-example_test-usb
   - "components/hal/usb*.c"
   - "components/hal/esp32s*/include/hal/usb*.h"
-  - "components/usb/**/*"
+  - "components/usb/*include/**/*"
+  - "components/usb/*"
   - "examples/peripherals/usb/host/**/**/**/*"
   - "examples/peripherals/usb/device/**/**/*"
 
@@ -318,16 +330,24 @@
 
 # for jobs: *_pytest_esp32x_adc:
 .patterns-target_test-adc: &patterns-target_test-adc
+  - "components/{esp_adc,driver,hal,esp_hw_support,efuse}/???[!t]*/**/*"
+  - "components/{esp_adc,driver,hal,esp_hw_support,efuse}/??[!s]?*/**/*"
+  - "components/{esp_adc,driver,hal,esp_hw_support,efuse}/???/**/*"
+  - "components/{esp_adc,driver,hal,esp_hw_support,efuse}/??/**/*"
+  - "components/{esp_adc,driver,hal,esp_hw_support,efuse}/*"
+
+.patterns-component_ut-adc: &patterns-component_ut-adc
   - "components/esp_adc/**/*"
-  - "components/driver/**/*"
-  - "components/hal/**/*"
-  - "components/esp_hw_support/**/*"
-  - "components/efuse/**/*"
+
+.patterns-example_test-adc: &patterns-example_test-adc
   - "examples/peripherals/adc/**/*"
 
 .patterns-target_test-ecdsa: &patterns-target_test-ecdsa
-  - "components/hal/**/*"
-  - "components/efuse/**/*"
+  - "components/{hal,efuse}/???[!t]*/**/*"
+  - "components/{hal,efuse}/??[!s]?*/**/*"
+  - "components/{hal,efuse}/???/**/*"
+  - "components/{hal,efuse}/??/**/*"
+  - "components/{hal,efuse}/*"
   - "components/mbedtls/port/ecdsa/*"
 
 .patterns-component_ut-nvs_encr_hmac: &patterns-component_ut-nvs_encr_hmac
@@ -335,8 +355,11 @@
   - "components/nvs_sec_provider/**/*"
 
 .patterns-example_test-nvs_encr_hmac: &patterns-example_test-nvs_encr_hmac
-  - "components/nvs_flash/**/*"
-  - "components/nvs_sec_provider/**/*"
+  - "components/{nvs_flash,nvs_sec_provider}/???[!t]*/**/*"
+  - "components/{nvs_flash,nvs_sec_provider}/??[!s]?*/**/*"
+  - "components/{nvs_flash,nvs_sec_provider}/???/**/*"
+  - "components/{nvs_flash,nvs_sec_provider}/??/**/*"
+  - "components/{nvs_flash,nvs_sec_provider}/*"
   - "examples/security/nvs_encryption_hmac/**/*"
 
 ##############
@@ -690,7 +713,11 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
@@ -698,13 +725,13 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -727,7 +754,11 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
@@ -735,13 +766,13 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -763,7 +794,11 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
@@ -771,13 +806,13 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -799,7 +834,11 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
@@ -807,13 +846,13 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -835,7 +874,11 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
@@ -843,13 +886,13 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -871,7 +914,11 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
@@ -879,13 +926,13 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -907,7 +954,11 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
@@ -915,13 +966,13 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -943,7 +994,11 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
@@ -951,13 +1006,13 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -992,8 +1047,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32:
@@ -1019,8 +1072,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1048,8 +1099,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32c3:
@@ -1075,8 +1124,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1104,8 +1151,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32h2:
@@ -1131,8 +1176,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1160,8 +1203,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32s3:
@@ -1187,8 +1228,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1229,7 +1268,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1246,8 +1285,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1271,7 +1308,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1288,8 +1325,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1314,7 +1349,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1331,8 +1366,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1356,7 +1389,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1373,8 +1406,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1398,7 +1429,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1415,8 +1446,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1440,7 +1469,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1457,8 +1486,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1482,7 +1509,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1499,8 +1526,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1524,7 +1549,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1541,8 +1566,6 @@
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1641,13 +1664,19 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-i154
     - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
     - <<: *if-dev-push
       changes: *patterns-custom_test
     - <<: *if-dev-push
@@ -1657,7 +1686,7 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-bt
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
@@ -1679,13 +1708,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1717,13 +1742,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1748,13 +1769,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1778,13 +1795,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1808,13 +1821,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1838,13 +1847,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1868,13 +1873,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1898,13 +1899,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1928,13 +1925,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -1958,13 +1951,9 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
     - <<: *if-dev-push
       changes: *patterns-unit_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test-flash_multi
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
 
@@ -2007,6 +1996,8 @@
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:component_ut-esp32-flash_multi:
@@ -2035,19 +2026,6 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
 
-.rules:test:component_ut-esp32-wifi:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-target_test-wifi
-
 .rules:test:component_ut-esp32c2:
   rules:
     - <<: *if-revert-branch
@@ -2074,6 +2052,8 @@
     - <<: *if-label-component_ut_esp32c2
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:component_ut-esp32c2-wifi:
@@ -2086,6 +2066,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32c2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -2114,6 +2096,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
@@ -2167,6 +2151,8 @@
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
+    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:test:component_ut-esp32c6:
@@ -2195,6 +2181,8 @@
     - <<: *if-label-component_ut_esp32c6
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:component_ut-esp32c6-i154:
@@ -2208,7 +2196,7 @@
     - <<: *if-label-component_ut_esp32c6
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-target_test-i154
+      changes: *patterns-component_ut-i154
 
 .rules:test:component_ut-esp32h2:
   rules:
@@ -2235,6 +2223,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32h2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
@@ -2276,6 +2266,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
@@ -2331,6 +2323,8 @@
     - <<: *if-label-component_ut_esp32s3
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-component_ut-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:component_ut-esp32s3-flash_multi:
@@ -2369,6 +2363,8 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32s3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-component_ut-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -2549,6 +2545,8 @@
     - <<: *if-label-example_test_esp32
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-example_test-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:example_test-esp32-ethernet:
@@ -2627,6 +2625,8 @@
     - <<: *if-label-example_test_esp32c2
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-example_test-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:example_test-esp32c2-wifi:
@@ -2669,6 +2669,8 @@
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32c3
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
@@ -2748,6 +2750,8 @@
     - <<: *if-label-example_test_esp32c6
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-example_test-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:example_test-esp32c6-wifi:
@@ -2791,6 +2795,8 @@
     - <<: *if-label-example_test_esp32h2
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-example_test-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:example_test-esp32s2:
@@ -2818,6 +2824,8 @@
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
@@ -2888,6 +2896,8 @@
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-target_test
     - <<: *if-dev-push
+      changes: *patterns-example_test-adc
+    - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
 .rules:test:example_test-esp32s3-wifi:
@@ -2916,8 +2926,6 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
-    - <<: *if-dev-push
-      changes: *patterns-target_test-i154
 
 .rules:test:host_test:
   rules:

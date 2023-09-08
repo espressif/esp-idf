@@ -127,6 +127,14 @@ repos:
         additional_dependencies:
           - PyYAML == 5.3.1
         pass_filenames: false
+      - id: check-rules-components-patterns
+        name: check patterns-build_components in rules.yml
+        entry: tools/ci/check_rules_components_patterns.py
+        language: python
+        files: 'components/.+|.gitlab/ci/rules.yml'
+        additional_dependencies:
+          - PyYAML == 5.3.1
+        pass_filenames: false
       - id: check-generated-soc-caps-kconfig
         name: Check soc caps kconfig files are generated (based on components/soc/IDF_TARGET/include/soc/soc_caps.h)
         entry: tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/*/include/soc/' 'components/esp_rom/*/' 'components/spi_flash/*/'

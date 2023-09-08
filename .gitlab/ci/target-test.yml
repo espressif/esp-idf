@@ -638,7 +638,7 @@ pytest_components_esp32_generic_multi_device:
 pytest_components_esp32_wifi_two_dut:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32-wifi
+    - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, wifi_two_dut ]
