@@ -151,6 +151,7 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
     esp_flash_io_mode_t io_mode = ((spi_flash_hal_context_t*)host)->base_io_mode;
     uint16_t command;
     uint8_t dummy_bitlen;
+    bool pe_ops = false;
 
     command = trans->command;
     dummy_bitlen = trans->dummy_bitlen;
@@ -171,9 +172,9 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
 
     spi_flash_ll_set_miso_bitlen(dev, trans->miso_len * 8);
     if ((trans->flags & SPI_FLASH_TRANS_FLAG_PE_CMD) != 0) {
-        spi_flash_ll_set_pe_bit(dev);
+        pe_ops = true;
     }
-    spi_flash_ll_user_start(dev);
+    spi_flash_ll_user_start(dev, pe_ops);
     host->driver->poll_cmd_done(host);
     if (trans->miso_len > 0) {
         spi_flash_ll_get_buffer_data(dev, trans->miso_data, trans->miso_len);
@@ -189,7 +190,7 @@ esp_err_t spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t
     //filled with ones by the function below
     spi_flash_ll_set_usr_address(dev, address, bitlen & (~7));
     spi_flash_ll_set_miso_bitlen(dev, read_len * 8);
-    spi_flash_ll_user_start(dev);
+    spi_flash_ll_user_start(dev, false);
     host->driver->poll_cmd_done(host);
     if (read_len > 0) {
         spi_flash_ll_get_buffer_data(dev, buffer, read_len);
