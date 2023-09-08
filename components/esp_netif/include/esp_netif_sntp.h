@@ -44,16 +44,16 @@ typedef void (*esp_sntp_time_cb_t)(struct timeval *tv);
  *
  */
 #define ESP_NETIF_SNTP_DEFAULT_CONFIG_MULTIPLE(servers_in_list, list_of_servers)   {   \
-            .smooth_sync = false,                   \
-            .server_from_dhcp = false,              \
-            .wait_for_sync = true,                  \
-            .start = true,                          \
-            .sync_cb = NULL,                        \
-            .renew_servers_after_new_IP = false,    \
-            .ip_event_to_renew = 0,                 \
-            .index_of_first_server = 0,             \
-            .num_of_servers = (servers_in_list),    \
-            .servers = list_of_servers,             \
+            .smooth_sync = false,                       \
+            .server_from_dhcp = false,                  \
+            .wait_for_sync = true,                      \
+            .start = true,                              \
+            .sync_cb = NULL,                            \
+            .renew_servers_after_new_IP = false,        \
+            .ip_event_to_renew = IP_EVENT_STA_GOT_IP,   \
+            .index_of_first_server = 0,                 \
+            .num_of_servers = (servers_in_list),        \
+            .servers = list_of_servers,                 \
 }
 
 /**
