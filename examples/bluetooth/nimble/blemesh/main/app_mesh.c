@@ -44,8 +44,15 @@ static int recent_test_id = STANDARD_TEST_ID;
 
 #define FAULT_ARR_SIZE 2
 
-static bool has_reg_fault = true;
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
+#ifndef max
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
+static bool has_reg_fault = true;
 
 static struct bt_mesh_cfg_srv cfg_srv = {
     .relay = BT_MESH_RELAY_DISABLED,
