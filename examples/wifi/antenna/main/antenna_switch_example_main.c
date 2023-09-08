@@ -175,7 +175,7 @@ void app_main(void)
     ESP_LOGI(TAG, "GPIO: [0].pin = %d, [1].pin = %d",ant_gpio_config.gpio_cfg[0].gpio_num, ant_gpio_config.gpio_cfg[1].gpio_num);
 
     wifi_antenna_auto_switch_config_t wifi_antenna_auto_switch_config;
-    wifi_antenna_auto_switch_config.ant_num = 3;
+    wifi_antenna_auto_switch_config.ant_num = ANT_TOTAL_THREE;
     wifi_antenna_auto_switch_config.ant_zero = 0;
     wifi_antenna_auto_switch_config.ant_one = 1;
     wifi_antenna_auto_switch_config.ant_two = 3;
