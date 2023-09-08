@@ -580,6 +580,9 @@ typedef struct {
     bool first_word_invalid;   /**< first four bytes of the CSI data is invalid or not, true indicates the first four bytes is invalid due to hardware limition */
     int8_t *buf;               /**< valid buffer of CSI data */
     uint16_t len;              /**< valid length of CSI data */
+    uint8_t *hdr;              /**< header of the wifi packet */
+    uint8_t *payload;          /**< payload of the wifi packet */
+    uint16_t payload_len;      /**< payload len of the wifi packet */
 } wifi_csi_info_t;
 
 /**
