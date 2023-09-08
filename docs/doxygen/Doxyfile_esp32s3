@@ -3,3 +3,4 @@ INPUT += \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
          $(PROJECT_PATH)/components/ulp/ulp_common/include/$(IDF_TARGET)/ulp_common_defs.h \
          $(PROJECT_PATH)/components/ulp/ulp_fsm/include/$(IDF_TARGET)/ulp.h \
+         $(PROJECT_PATH)/components/bt/include/esp32c3/include/esp_bt.h \
