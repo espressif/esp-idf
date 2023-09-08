@@ -46,6 +46,10 @@
 #include "hci/hci_hal.h"
 #endif
 
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#include "esp_private/sleep_modem.h"
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -139,6 +143,9 @@ extern uint32_t r_os_cputime_get32(void);
 extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
 extern void r_ble_lll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg, void *w_arg, uint32_t us_to_enabled);
 extern void r_ble_rtc_wake_up_state_clr(void);
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+extern void esp_ble_set_wakeup_overhead(uint32_t overhead);
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 extern int os_msys_init(void);
 extern void os_msys_buf_free(void);
 extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
@@ -459,6 +466,13 @@ static int esp_intr_free_wrapper(void **ret_handle)
     return rc;
 }
 
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+void sleep_modem_light_sleep_overhead_set(uint32_t overhead)
+{
+    esp_ble_set_wakeup_overhead(overhead);
+}
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 {
     if (!s_ble_active) {
@@ -504,32 +518,40 @@ esp_err_t controller_sleep_init(void)
     if (rc != ESP_OK) {
         goto error;
     }
-
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     esp_sleep_enable_bt_wakeup();
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
 
+    rc = esp_pm_register_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
+    if (rc != ESP_OK) {
+        goto error;
+    }
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
     return rc;
 
 error:
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    esp_sleep_disable_bt_wakeup();
+    esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     /*lock should release first and then delete*/
     if (s_pm_lock != NULL) {
         esp_pm_lock_delete(s_pm_lock);
         s_pm_lock = NULL;
     }
-
-    esp_sleep_disable_bt_wakeup();
-
 #endif //CONFIG_PM_ENABLE
     return rc;
 }
 
 void controller_sleep_deinit(void)
 {
-#ifdef CONFIG_PM_ENABLE
+#ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
     r_ble_rtc_wake_up_state_clr();
     esp_sleep_disable_bt_wakeup();
     esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_AUTO);
-
+    esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#ifdef CONFIG_PM_ENABLE
     /*lock should release first and then delete*/
     esp_pm_lock_delete(s_pm_lock);
     s_pm_lock = NULL;
