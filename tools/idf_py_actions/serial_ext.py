@@ -29,6 +29,7 @@ PORT = {
     'help': 'Serial port.',
     'scope': 'global',
     'envvar': 'ESPPORT',
+    'type': click.Path(),
     'default': None,
 }
 
