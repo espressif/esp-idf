@@ -107,6 +107,11 @@ void config_set_string(config_t *config, const char *section, const char *key, c
 // Neither |config| nor |section| may be NULL.
 bool config_remove_section(config_t *config, const char *section);
 
+// Updates |section| to be the first section in |config|. Return true if |section| is in
+// |config| and updated successfully, false otherwise.
+// Neither |config| nor |section| may be NULL.
+bool config_update_newest_section(config_t *config, const char *section);
+
 // Removes one specific |key| residing in |section| of the |config|. Returns true
 // if the section and key were found and the key was removed, false otherwise.
 // None of |config|, |section|, or |key| may be NULL.
