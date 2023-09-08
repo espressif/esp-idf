@@ -412,6 +412,7 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
 {
     HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
 
+    uint32_t paddr_base = 0;
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
@@ -432,13 +433,15 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
     }
     if (mmu_id == MMU_LL_FLASH_MMU_ID) {
         REG_WRITE(SPI_MEM_C_MMU_ITEM_INDEX_REG, entry_id);
-        return (REG_READ(SPI_MEM_C_MMU_ITEM_CONTENT_REG) & SOC_MMU_FLASH_VALID_VAL_MASK) << shift_code;
+        paddr_base = (REG_READ(SPI_MEM_C_MMU_ITEM_CONTENT_REG) & SOC_MMU_FLASH_VALID_VAL_MASK) << shift_code;
     } else if (mmu_id == MMU_LL_PSRAM_MMU_ID) {
         REG_WRITE(SPI_MEM_S_MMU_ITEM_INDEX_REG, entry_id);
-        return (REG_READ(SPI_MEM_S_MMU_ITEM_CONTENT_REG) & SOC_MMU_PSRAM_VALID_VAL_MASK) << shift_code;
+        paddr_base = (REG_READ(SPI_MEM_S_MMU_ITEM_CONTENT_REG) & SOC_MMU_PSRAM_VALID_VAL_MASK) << shift_code;
     } else {
         HAL_ASSERT(false);
     }
+
+    return paddr_base;
 }
 
 /**
