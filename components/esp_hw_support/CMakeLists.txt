@@ -34,7 +34,8 @@ if(NOT BOOTLOADER_BUILD)
                      "sar_periph_ctrl_common.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
-                     "port/esp_clk_tree_common.c")
+                     "port/esp_clk_tree_common.c"
+                     "dma/esp_dma_utils.c")
 
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")
@@ -50,6 +51,8 @@ if(NOT BOOTLOADER_BUILD)
 
     # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
     list(APPEND priv_requires driver esp_timer)
+
+    list(APPEND priv_requires esp_mm)
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")
