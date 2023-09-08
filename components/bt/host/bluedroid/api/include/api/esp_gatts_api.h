@@ -464,6 +464,7 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle);
 /**
  * @brief           Send indicate or notify to GATT client.
  *                  Set param need_confirm as false will send notification, otherwise indication.
+ *                  Note: the size of indicate or notify data need less than MTU size,see "esp_ble_gattc_send_mtu_req".
  *
  * @param[in]       gatts_if: GATT server access interface
  * @param[in]       conn_id - connection id to indicate.

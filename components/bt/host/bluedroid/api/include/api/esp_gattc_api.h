@@ -359,6 +359,7 @@ esp_err_t esp_ble_gattc_send_mtu_req (esp_gatt_if_t gattc_if, uint16_t conn_id);
  * @brief           This function is called to get service from local cache.
  *                  This function report service search result by a callback
  *                  event, and followed by a service search complete event.
+ *                  Note: 128-bit base UUID will automatically be converted to a 16-bit UUID in the search results. Other types of UUID remain unchanged.
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID.

@@ -139,7 +139,7 @@ static bool cacheOpen(BD_ADDR bda, bool to_save, UINT8 *index)
     return ((status == ESP_OK) ? true : false);
 }
 
-static void cacheReset(BD_ADDR bda)
+static void cacheReset(BD_ADDR bda, BOOLEAN update)
 {
     char fname[255] = {0};
     getFilename(fname, bda);
@@ -177,8 +177,15 @@ static void cacheReset(BD_ADDR bda)
         for(UINT8 i = index; i < (num - 1); i++) {
             memcpy(&cache_env->cache_addr[i], &cache_env->cache_addr[i+1], sizeof(cache_addr_info_t));
         }
+        //clear the last cache when delete a addr
+        memset(&cache_env->cache_addr[num-1], 0, sizeof(cache_addr_info_t));
         //reduced the number address counter also
         cache_env->num_addr--;
+
+        //don't need to update addr list to nvs flash
+        if (!update) {
+            return;
+        }
 
         //update addr list to nvs flash
         if(cache_env->num_addr > 0) {
@@ -376,7 +383,7 @@ void bta_gattc_co_cache_close(BD_ADDR server_bda, UINT16 conn_id)
 *******************************************************************************/
 void bta_gattc_co_cache_reset(BD_ADDR server_bda)
 {
-    cacheReset(server_bda);
+    cacheReset(server_bda, TRUE);
 }
 
 void bta_gattc_co_cache_addr_init(void)
@@ -520,26 +527,29 @@ void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, hash_key_t hash_key)
     UINT8 index = 0;
     UINT8 new_index = cache_env->num_addr;
     UINT8 *p_buf = osi_malloc(MAX_ADDR_LIST_CACHE_BUF);
-    // check the address list has the same hash key or not
-    if (bta_gattc_co_find_hash_in_cache(hash_key) != INVALID_ADDR_NUM) {
-        APPL_TRACE_DEBUG("%s(), the hash key already in the cache list.", __func__);
-        if ((index = bta_gattc_co_find_addr_in_cache(bd_addr)) != INVALID_ADDR_NUM) {
-            APPL_TRACE_DEBUG("%s(), the hash bd_addr already in the cache list, index = %x", __func__, index);
-            //if the bd_addr already in the address list, update the hash key in it.
-            memcpy(cache_env->cache_addr[index].addr, bd_addr, sizeof(BD_ADDR));
-            memcpy(cache_env->cache_addr[index].hash_key, hash_key, sizeof(hash_key_t));
-        } else {
-            //if the bd_addr didn't in the address list, added the bd_addr to the last of the address list.
-            memcpy(cache_env->cache_addr[new_index].hash_key, hash_key, sizeof(hash_key_t));
-            memcpy(cache_env->cache_addr[new_index].addr, bd_addr, sizeof(BD_ADDR));
-            cache_env->num_addr++;
-        }
+    if (p_buf == NULL) {
+        APPL_TRACE_ERROR("%s malloc failed!", __func__);
+        return;
+    }
 
+    // check the address list has the same address or not
+    // for the same address, it's hash key may be change due to service change
+    if ((index = bta_gattc_co_find_addr_in_cache(bd_addr)) != INVALID_ADDR_NUM) {
+        APPL_TRACE_DEBUG("%s the bd_addr already in the cache list, index = %x", __func__, index);
+        //if the bd_addr already in the address list, update the hash key in it.
+        memcpy(cache_env->cache_addr[index].addr, bd_addr, sizeof(BD_ADDR));
+        memcpy(cache_env->cache_addr[index].hash_key, hash_key, sizeof(hash_key_t));
     } else {
-        APPL_TRACE_DEBUG("%s(), num = %d", __func__, new_index + 1);
+        if (cache_env->num_addr >= MAX_DEVICE_IN_CACHE) {
+            APPL_TRACE_WARNING("%s cache list full and remove the oldest addr info", __func__);
+            cacheReset(cache_env->cache_addr[0].addr, FALSE);
+        }
+        new_index = cache_env->num_addr;
+        assert(new_index < MAX_DEVICE_IN_CACHE);
         memcpy(cache_env->cache_addr[new_index].addr, bd_addr, sizeof(BD_ADDR));
         memcpy(cache_env->cache_addr[new_index].hash_key, hash_key, sizeof(hash_key_t));
         cache_env->num_addr++;
+        APPL_TRACE_DEBUG("%s(), num = %d", __func__, cache_env->num_addr);
     }
 
     nvs_handle_t *fp = &cache_env->addr_fp;
@@ -567,10 +577,10 @@ void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, hash_key_t hash_key)
             APPL_TRACE_ERROR("%s, Line = %d, nvs flash open fail, err_code = %x", __func__, __LINE__, err_code);
         }
     }
+
     //free the buffer after used.
     osi_free(p_buf);
     return;
-
 }
 
 BOOLEAN bta_gattc_co_cache_new_assoc_list(BD_ADDR src_addr, UINT8 index)
