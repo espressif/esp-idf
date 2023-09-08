@@ -51,44 +51,6 @@ fast_template_app:
     BUILD_COMMAND_ARGS: "-p"
 #------------------------------------------------------------------------------
 
-.build_ssc_template:
-  extends:
-    - .build_template
-    - .rules:build:integration_test
-  artifacts:
-    paths:
-      - SSC/ssc_bin
-    expire_in: 1 week
-  script:
-    - retry_failed git clone $SSC_REPOSITORY
-    - python $CHECKOUT_REF_SCRIPT SSC SSC
-    - cd SSC
-    - MAKEFLAGS= ./ci_build_ssc.sh $TARGET_NAME
-
-build_ssc_esp32:
-  extends: .build_ssc_template
-  parallel: 3
-  variables:
-    TARGET_NAME: "ESP32"
-
-build_ssc_esp32s2:
-  extends: .build_ssc_template
-  parallel: 2
-  variables:
-    TARGET_NAME: "ESP32S2"
-
-build_ssc_esp32c3:
-  extends: .build_ssc_template
-  parallel: 3
-  variables:
-    TARGET_NAME: "ESP32C3"
-
-build_ssc_esp32s3:
-  extends: .build_ssc_template
-  parallel: 3
-  variables:
-    TARGET_NAME: "ESP32S3"
-
 .build_esp_idf_tests_cmake_template:
   extends: .build_template
   dependencies:  # set dependencies to null to avoid missing artifacts issue
