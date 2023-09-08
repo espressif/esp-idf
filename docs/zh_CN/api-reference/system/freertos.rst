@@ -95,7 +95,7 @@ ESP-IDF FreeRTOS
       - 亲和性
       - 优先级
     * - 空闲任务 (``IDLEx``)
-      - 为每个 CPU 核创建并固定一个空闲任务 (``IDLEx``)，其中 ``x`` 是 CPU 核的编号
+      - 为每个 CPU 核创建并固定一个空闲任务 (``IDLEx``)，其中 ``x`` 是 CPU 核的编号。 当启用单核配置时，``x`` 将被删除。
       - :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`
       - Core x
       - ``0``
