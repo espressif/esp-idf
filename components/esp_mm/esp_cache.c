@@ -6,17 +6,24 @@
 
 #include <sys/param.h>
 #include <inttypes.h>
+#include <string.h>
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 #include "esp_rom_caps.h"
 #include "soc/soc_caps.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "esp_cache.h"
+#include "esp_private/esp_cache_private.h"
 #include "esp_private/critical_section.h"
 
 static const char *TAG = "cache";
+
+#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
 DEFINE_CRIT_SECTION_LOCK_STATIC(s_spinlock);
 
 
@@ -73,4 +80,68 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     }
 
     return ESP_OK;
+}
+
+
+esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, size_t *actual_size)
+{
+    ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+
+    uint32_t cache_level = CACHE_LL_LEVEL_INT_MEM;
+    uint32_t heap_caps = 0;
+    uint32_t data_cache_line_size = 0;
+    void *ptr = NULL;
+
+    if (flags & ESP_CACHE_MALLOC_FLAG_PSRAM) {
+        cache_level = CACHE_LL_LEVEL_EXT_MEM;
+        heap_caps |= MALLOC_CAP_SPIRAM;
+    } else {
+        heap_caps |= MALLOC_CAP_INTERNAL;
+        if (flags & ESP_CACHE_MALLOC_FLAG_DMA) {
+            heap_caps |= MALLOC_CAP_DMA;
+        }
+    }
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, cache_level);
+#else
+    if (cache_level == CACHE_LL_LEVEL_EXT_MEM) {
+        data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, cache_level);
+    } else {
+        data_cache_line_size = 4;
+    }
+#endif
+
+    size = ALIGN_UP_BY(size, data_cache_line_size);
+    ptr = heap_caps_aligned_alloc(data_cache_line_size, size, heap_caps);
+    ESP_RETURN_ON_FALSE_ISR(ptr, ESP_ERR_NO_MEM, TAG, "no enough heap memory for (%"PRId32")B alignment", data_cache_line_size);
+
+    *out_ptr = ptr;
+    if (actual_size) {
+        *actual_size = size;
+    }
+
+    return ESP_OK;
+}
+
+
+esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, size_t *actual_size)
+{
+    ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+
+    esp_err_t ret = ESP_FAIL;
+    size_t size_bytes = 0;
+    bool ovf = false;
+
+    ovf = __builtin_mul_overflow(n, size, &size_bytes);
+    ESP_RETURN_ON_FALSE_ISR(!ovf, ESP_ERR_INVALID_ARG, TAG, "wrong size, total size overflow");
+
+    void *ptr = NULL;
+    ret = esp_cache_aligned_malloc(size_bytes, flags, &ptr, actual_size);
+    if (ret == ESP_OK) {
+        memset(ptr, 0, size_bytes);
+        *out_ptr = ptr;
+    }
+
+    return ret;
 }
