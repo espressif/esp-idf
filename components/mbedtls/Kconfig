@@ -253,6 +253,22 @@ menu "mbedTLS"
             help
                 Enable PKCS #7 core for using PKCS #7-formatted signatures.
 
+        config MBEDTLS_SSL_CID_PADDING_GRANULARITY
+            int "Record plaintext padding"
+            default 16
+            range 0 32
+            depends on MBEDTLS_SSL_PROTO_TLS1_3 || MBEDTLS_SSL_DTLS_CONNECTION_ID
+            help
+                Controls the use of record plaintext padding in TLS 1.3 and
+                when using the Connection ID extension in DTLS 1.2.
+
+                The padding will always be chosen so that the length of the
+                padded plaintext is a multiple of the value of this option.
+
+                Notes:
+                    A value of 1 means that no padding will be used for outgoing records.
+                    On systems lacking division instructions, a power of two should be preferred.
+
         menu "DTLS-based configurations"
             depends on MBEDTLS_SSL_PROTO_DTLS
 
@@ -278,22 +294,6 @@ menu "mbedTLS"
                 depends on MBEDTLS_SSL_DTLS_CONNECTION_ID
                 help
                     Maximum length of CIDs used for outgoing DTLS messages
-
-            config MBEDTLS_SSL_CID_PADDING_GRANULARITY
-                int "Record plaintext padding (for DTLS 1.2)"
-                default 16
-                range 0 32
-                depends on MBEDTLS_SSL_DTLS_CONNECTION_ID
-                help
-                    Controls the use of record plaintext padding when
-                    using the Connection ID extension in DTLS 1.2.
-
-                    The padding will always be chosen so that the length of the
-                    padded plaintext is a multiple of the value of this option.
-
-                    Notes:
-                        A value of 1 means that no padding will be used for outgoing records.
-                        On systems lacking division instructions, a power of two should be preferred.
 
             config MBEDTLS_SSL_DTLS_SRTP
                 bool "Enable support for negotiation of DTLS-SRTP (RFC 5764)"
