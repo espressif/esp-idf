@@ -76,6 +76,7 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     mcpwm_capture_timer_config_t cap_timer_config = {
         .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
         .group_id = 0,
+        .resolution_hz = 8 * 1000 * 1000,
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
 
@@ -118,6 +119,7 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     uint32_t clk_src_res;
     TEST_ESP_OK(mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res));
     clk_src_res /= 1000; // convert to kHz
+    printf("timer resolution:%"PRIu32"KHz\r\n", clk_src_res);
     TEST_ASSERT_UINT_WITHIN(1000, 10000, (cap_value[1] - cap_value[0]) * 1000 / clk_src_res);
 
     printf("uninstall capture channel and timer\r\n");

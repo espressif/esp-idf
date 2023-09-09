@@ -183,6 +183,13 @@ To allocate a capture timer, you can call the :cpp:func:`mcpwm_new_capture_timer
 
 - :cpp:member:`mcpwm_capture_timer_config_t::group_id` sets the MCPWM group ID. The ID should belong to [0, :c:macro:`SOC_MCPWM_GROUPS` - 1] range.
 - :cpp:member:`mcpwm_capture_timer_config_t::clk_src` sets the clock source of the capture timer.
+- :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` The driver internally will set a proper divider based on the clock source and the resolution. If it is set to ``0``, the driver will pick an appropriate resolution on its own, and you can subsequently view the current timer resolution via :cpp:func:`mcpwm_capture_timer_get_resolution`.
+
+.. only:: not SOC_MCPWM_CAPTURE_CLK_FROM_GROUP 
+
+    .. note::
+
+        In {IDF_TARGET_NAME}, :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` parameter is invalid, the capture timer resolution is always equal to the :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB`.
 
 The :cpp:func:`mcpwm_new_capture_timer` will return a pointer to the allocated capture timer object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there is no free capture timer left in the MCPWM group, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 

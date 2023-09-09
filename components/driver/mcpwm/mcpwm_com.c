@@ -126,10 +126,9 @@ int mcpwm_get_intr_priority_flag(mcpwm_group_t *group)
 esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src)
 {
     esp_err_t ret = ESP_OK;
-    uint32_t periph_src_clk_hz = 0;
     bool clock_selection_conflict = false;
     bool do_clock_init = false;
-    // check if we need to update the group clock source, group clock source is shared by all mcpwm objects
+    // check if we need to update the group clock source, group clock source is shared by all mcpwm modules
     portENTER_CRITICAL(&group->spinlock);
     if (group->clk_src == 0) {
         group->clk_src = clk_src;
@@ -142,7 +141,6 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
                         "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
 
     if (do_clock_init) {
-        ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), TAG, "get clock source freq failed");
 
 #if CONFIG_PM_ENABLE
         sprintf(group->pm_lock_name, "mcpwm_%d", group->group_id); // e.g. mcpwm_0
@@ -152,9 +150,77 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
 #endif // CONFIG_PM_ENABLE
 
         mcpwm_ll_group_set_clock_source(group->hal.dev, clk_src);
-        mcpwm_ll_group_set_clock_prescale(group->hal.dev, MCPWM_PERIPH_CLOCK_PRE_SCALE);
-        group->resolution_hz = periph_src_clk_hz / MCPWM_PERIPH_CLOCK_PRE_SCALE;
-        ESP_LOGD(TAG, "group (%d) clock resolution:%"PRIu32"Hz", group->group_id, group->resolution_hz);
     }
     return ret;
+}
+
+esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t* ret_module_prescale)
+{
+    ESP_RETURN_ON_FALSE(group && expect_module_resolution_hz && module_prescale_max, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    uint32_t periph_src_clk_hz = 0;
+    int group_id = group->group_id;
+    uint32_t group_resolution_hz = 0;
+    uint32_t group_prescale = group->prescale > 0 ? group->prescale : MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE;     // range: 1~256, 0 means not calculated
+    uint32_t module_prescale = 0;       // range: 1~256 (for timer) or 1~16 (for carrier) or 1 (for capture)
+
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(group->clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), TAG, "get clock source freq failed");
+
+    // calc the group prescale
+
+    group_resolution_hz = periph_src_clk_hz / group_prescale;
+    module_prescale = group_resolution_hz / expect_module_resolution_hz;
+
+    // default prescale cannot match
+    // try to ensure accurate division. If none of the division factors can be guaranteed to be integers, then allocate the clock frequency to the highest divisor
+    uint32_t fit_module_prescale = 0;
+    uint32_t fit_group_prescale = 0;
+    if (!(module_prescale >= 1 && module_prescale <= module_prescale_max)) {
+        group_prescale = 0;
+        while (++group_prescale <= MCPWM_LL_MAX_GROUP_PRESCALE) {
+            group_resolution_hz = periph_src_clk_hz / group_prescale;
+            module_prescale = group_resolution_hz / expect_module_resolution_hz;
+            if (module_prescale >= 1 && module_prescale <= module_prescale_max) {
+                // maintain the first value found during the search that satisfies the division requirement (highest frequency), applicable for cases where integer division is not possible."
+                fit_module_prescale = fit_module_prescale ? fit_module_prescale : module_prescale;
+                fit_group_prescale = fit_group_prescale ? fit_group_prescale : group_prescale;
+                // find accurate division
+                if (group_resolution_hz == expect_module_resolution_hz * module_prescale) {
+                    fit_module_prescale = module_prescale;
+                    fit_group_prescale = group_prescale;
+                    break;
+                }
+            }
+        }
+        module_prescale = fit_module_prescale;
+        group_prescale = fit_group_prescale;
+        group_resolution_hz = periph_src_clk_hz / group_prescale;
+    }
+
+    ESP_LOGD(TAG, "group (%d) calc prescale:%"PRIu32", module calc prescale:%"PRIu32"", group_id, group_prescale, module_prescale);
+    ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= MCPWM_LL_MAX_GROUP_PRESCALE, ESP_ERR_INVALID_STATE, TAG,
+                        "set group prescale failed, group clock cannot match the resolution");
+
+    // check if we need to update the group prescale, group prescale is shared by all mcpwm modules
+    bool prescale_conflict = false;
+    portENTER_CRITICAL(&group->spinlock);
+    if (group->prescale == 0) {
+        group->prescale = group_prescale;
+        group->resolution_hz = group_resolution_hz;
+        mcpwm_ll_group_set_clock_prescale(group->hal.dev, group_prescale);
+    } else {
+        prescale_conflict = (group->prescale != group_prescale);
+    }
+    portEXIT_CRITICAL(&group->spinlock);
+
+    ESP_RETURN_ON_FALSE(!prescale_conflict, ESP_ERR_INVALID_STATE, TAG,
+                        "group prescale conflict, already is %"PRIu32" but attempt to %"PRIu32"", group->prescale, group_prescale);
+
+    ESP_LOGD(TAG, "group (%d) clock resolution:%"PRIu32"Hz", group_id, group->resolution_hz);
+
+    // set module resolution
+    if (ret_module_prescale) {
+        *ret_module_prescale = module_prescale;
+    }
+
+    return ESP_OK;
 }

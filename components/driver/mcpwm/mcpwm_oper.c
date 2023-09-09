@@ -194,7 +194,10 @@ esp_err_t mcpwm_operator_apply_carrier(mcpwm_oper_handle_t oper, const mcpwm_car
         mcpwm_carrier_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_CARRIER_CLK_SRC_DEFAULT;
         ESP_RETURN_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), TAG, "set group clock failed");
 
-        uint8_t prescale = group->resolution_hz / 8 / config->frequency_hz;
+        uint32_t prescale = 0;
+        ESP_RETURN_ON_ERROR(mcpwm_set_prescale(group, config->frequency_hz, MCPWM_LL_MAX_CARRIER_PRESCALE * 8, &prescale), TAG, "set prescale failed");
+        // here div 8 because the duty has 3 register bits
+        prescale /= 8;
         ESP_RETURN_ON_FALSE(prescale > 0 && prescale <= MCPWM_LL_MAX_CARRIER_PRESCALE, ESP_ERR_INVALID_STATE, TAG, "group clock cannot match the frequency");
         mcpwm_ll_carrier_set_prescale(hal->dev, oper_id, prescale);
         real_frequency = group->resolution_hz / 8 / prescale;

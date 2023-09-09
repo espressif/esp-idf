@@ -183,6 +183,13 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 
 - :cpp:member:`mcpwm_capture_timer_config_t::group_id` 设置 MCPWM 组 ID，范围为 [0, :c:macro:`SOC_MCPWM_GROUPS` - 1]。
 - :cpp:member:`mcpwm_capture_timer_config_t::clk_src` 设置捕获定时器的时钟源。
+- :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` 设置捕获定时器的预期分辨率。内部驱动将根据时钟源和分辨率设置合适的分频器。设置为 ``0`` 时，驱动会自己选取一个适当的分辨率，后续你可以通过 :cpp:func:`mcpwm_capture_timer_get_resolution` 查看当前定时器的分辨率。
+
+.. only:: not SOC_MCPWM_CAPTURE_CLK_FROM_GROUP 
+
+    .. note::
+
+        在 {IDF_TARGET_NAME} 中，:cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` 参数无效，捕获定时器的分辨率始终等于 :cpp:enumerator:`MCPWM_CAPTURE_CLK_SRC_APB`。
 
 分配成功后，:cpp:func:`mcpwm_new_capture_timer` 将返回一个指向已分配捕获定时器的指针。否则，函数将返回错误代码。具体来说，当 MCPWM 组中没有空闲捕获定时器时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。[1]_
 
@@ -739,7 +746,7 @@ MCPWM 操作器具有载波子模块，可以根据需要（例如隔离式数�
 调用 :cpp:func:`mcpwm_operator_apply_carrier`，并提供配置结构体 :cpp:type:`mcpwm_carrier_config_t`，配置载波子模块：
 
 - :cpp:member:`mcpwm_carrier_config_t::clk_src` 设置载波的时钟源。
-- :cpp:member:`mcpwm_carrier_config_t::frequency_hz` 表示载波频率，单位为赫兹。
+- :cpp:member:`mcpwm_carrier_config_t::frequency_hz` 表示载波频率，单位为赫兹。内部驱动将根据时钟源和载波频率设置合适的分频器。
 - :cpp:member:`mcpwm_carrier_config_t::duty_cycle` 表示载波的占空比。需注意，支持的占空比选项并不连续，驱动程序将根据配置查找最接近的占空比。
 - :cpp:member:`mcpwm_carrier_config_t::first_pulse_duration_us` 表示第一个脉冲的脉宽，单位为微秒。该脉冲的分辨率由 :cpp:member:`mcpwm_carrier_config_t::frequency_hz` 中的配置决定。第一个脉冲的脉宽不能为零，且至少为一个载波周期。脉宽越长，电感传导越快。
 - :cpp:member:`mcpwm_carrier_config_t::invert_before_modulate` 和 :cpp:member:`mcpwm_carrier_config_t::invert_after_modulate` 设置是否在调制前和调制后取反载波输出。
@@ -900,7 +907,7 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 
 函数 :cpp:func:`mcpwm_capture_channel_register_event_callbacks` 中的 ``user_data`` 参数用于保存用户上下文，将直接传递至各个回调函数。
 
-此函数会延迟安装 MCPWM 故障的中断服务。中断服务只能通过 :cpp:type:`mcpwm_del_capture_channel` 移除。
+此函数会延迟安装 MCPWM 捕获的中断服务。中断服务只能通过 :cpp:type:`mcpwm_del_capture_channel` 移除。
 
 启用或禁用捕获通道
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

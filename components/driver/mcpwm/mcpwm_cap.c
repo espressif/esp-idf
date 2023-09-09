@@ -17,6 +17,7 @@
 #include "esp_attr.h"
 #include "esp_check.h"
 #include "esp_private/esp_clk.h"
+#include "esp_clk_tree.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_memory_utils.h"
@@ -100,12 +101,25 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
 #if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     // capture timer clock source is same as the MCPWM group
     ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), err, TAG, "set group clock failed");
+    uint32_t periph_src_clk_hz = 0;
+    ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), err, TAG, "get clock source freq failed");
+    ESP_LOGD(TAG, "periph_src_clk_hz %"PRIu32"", periph_src_clk_hz);
+    // when resolution_hz set to zero, use default resolution_hz
+    uint32_t resolution_hz = config->resolution_hz ? config->resolution_hz : periph_src_clk_hz / MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE;
+
+    ESP_GOTO_ON_ERROR(mcpwm_set_prescale(group, resolution_hz, MCPWM_LL_MAX_CAPTURE_TIMER_PRESCALE, NULL), err, TAG, "set prescale failed");
     cap_timer->resolution_hz = group->resolution_hz;
+    if (cap_timer->resolution_hz != resolution_hz) {
+        ESP_LOGW(TAG, "adjust cap_timer resolution to %"PRIu32"Hz", cap_timer->resolution_hz);
+    }
 #else
     // capture timer has independent clock source selection
     switch (clk_src) {
     case MCPWM_CAPTURE_CLK_SRC_APB:
         cap_timer->resolution_hz = esp_clk_apb_freq();
+        if (config->resolution_hz) {
+            ESP_LOGW(TAG, "cap_timer resolution is not adjustable in current target, still %"PRIu32"Hz", cap_timer->resolution_hz);
+        }
 #if CONFIG_PM_ENABLE
         ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "mcpwm_cap_timer", &cap_timer->pm_lock);
         ESP_GOTO_ON_ERROR(ret, err, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");

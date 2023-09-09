@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,10 +43,12 @@ extern "C" {
 #define MCPWM_LL_EVENT_CAPTURE(cap)          (1 << ((cap) + 27))
 
 // Maximum values due to limited register bit width
+#define MCPWM_LL_MAX_GROUP_PRESCALE          256
 #define MCPWM_LL_MAX_TIMER_PRESCALE          256
 #define MCPWM_LL_MAX_CARRIER_PRESCALE        16
 #define MCPWM_LL_MAX_CARRIER_ONESHOT         16
 #define MCPWM_LL_MAX_CAPTURE_PRESCALE        256
+#define MCPWM_LL_MAX_CAPTURE_TIMER_PRESCALE  1
 #define MCPWM_LL_MAX_DEAD_DELAY              65536
 #define MCPWM_LL_MAX_COUNT_VALUE             65536
 
@@ -97,10 +99,11 @@ static inline void mcpwm_ll_group_enable_clock(mcpwm_dev_t *mcpwm, bool en)
  * @param mcpwm Peripheral instance address
  * @param pre_scale Prescale value
  */
-static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int pre_scale)
+static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int prescale)
 {
-    // group clock: PWM_clk = CLK_160M / (prescale + 1)
-    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->clk_cfg, clk_prescale, pre_scale - 1);
+    // group clock: PWM_clk = CLK_160M / (prescale)
+    HAL_ASSERT(prescale <= 256 && prescale > 0);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->clk_cfg, clk_prescale, prescale - 1);
 }
 
 /**
