@@ -468,7 +468,7 @@ esp_err_t esp_ble_mesh_time_scene_client_set_state(esp_ble_mesh_client_common_pa
 #define ESP_BLE_MESH_TIME_NONE          0x00    /*!< Time Role - None */
 #define ESP_BLE_MESH_TIME_AUTHORITY     0x01    /*!< Time Role - Mesh Time Authority */
 #define ESP_BLE_MESH_TIME_RELAY         0x02    /*!< Time Role - Mesh Time Relay */
-#define ESP_BLE_MESH_TIME_CLINET        0x03    /*!< Time Role - Mesh Time Client */
+#define ESP_BLE_MESH_TIME_CLIENT        0x03    /*!< Time Role - Mesh Time Client */
 
 #define ESP_BLE_MESH_SCENE_SUCCESS      0x00    /*!< Scene operation - Success */
 #define ESP_BLE_MESH_SCENE_REG_FULL     0x01    /*!< Scene operation - Scene Register Full */
@@ -482,7 +482,7 @@ typedef struct {
         uint8_t  uncertainty;               /*!< The value of the Uncertainty field */
         uint8_t  time_zone_offset_curr;     /*!< The value of the Time Zone Offset Current field */
         uint8_t  time_zone_offset_new;      /*!< The value of the Time Zone Offset New state */
-        uint8_t  tai_zone_change[5];        /*!< The value of the TAI of Zone Chaneg field */
+        uint8_t  tai_zone_change[5];        /*!< The value of the TAI of Zone Change field */
         uint16_t time_authority : 1,        /*!< The value of the Time Authority bit */
                  tai_utc_delta_curr : 15;   /*!< The value of the TAI-UTC Delta Current state */
         uint16_t tai_utc_delta_new : 15;    /*!< The value of the TAI-UTC Delta New state */

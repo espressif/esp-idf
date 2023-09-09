@@ -34,6 +34,16 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_networking_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_provisioning_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_proxy_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_agg_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_brc_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_cm_data_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_df_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_lcd_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_odp_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_prb_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_rpr_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_sar_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/core/include/esp_ble_mesh_srpl_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_config_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_generic_model_api.h \
@@ -41,6 +51,7 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_lighting_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/v1.1/api/models/include/esp_ble_mesh_mbt_model_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \

@@ -10,7 +10,7 @@
 #include "btc_ble_mesh_ble.h"
 #include "adv.h"
 #include "scan.h"
-#include "mesh_bearer_adapt.h"
+#include "mesh/adapter.h"
 #include "esp_ble_mesh_ble_api.h"
 
 #if CONFIG_BLE_MESH_BLE_COEX_SUPPORT

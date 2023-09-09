@@ -19,7 +19,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "mesh_util.h"
+#include "mesh/utils.h"
 
 #ifdef __cplusplus
 extern "C" {

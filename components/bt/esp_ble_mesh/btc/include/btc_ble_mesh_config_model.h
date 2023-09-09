@@ -47,7 +47,8 @@ void btc_ble_mesh_config_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
 
 void btc_ble_mesh_config_client_arg_deep_free(btc_msg_t *msg);
 
-void btc_ble_mesh_config_client_publish_callback(uint32_t opcode, struct bt_mesh_model *model,
+void btc_ble_mesh_config_client_publish_callback(uint32_t opcode,
+                                                 struct bt_mesh_model *model,
                                                  struct bt_mesh_msg_ctx *ctx,
                                                  struct net_buf_simple *buf);
 
@@ -63,7 +64,8 @@ typedef enum {
     BTC_BLE_MESH_EVT_CONFIG_SERVER_MAX,
 } btc_ble_mesh_config_server_evt_t;
 
-void bt_mesh_config_server_cb_evt_to_btc(uint8_t evt_type, struct bt_mesh_model *model,
+void bt_mesh_config_server_cb_evt_to_btc(uint8_t evt_type,
+                                         struct bt_mesh_model *model,
                                          struct bt_mesh_msg_ctx *ctx,
                                          const uint8_t *val, size_t len);
 

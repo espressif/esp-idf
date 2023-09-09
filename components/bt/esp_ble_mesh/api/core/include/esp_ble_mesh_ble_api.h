@@ -76,7 +76,7 @@ typedef void (* esp_ble_mesh_ble_cb_t)(esp_ble_mesh_ble_cb_event_t event,
 /**
  * @brief       Register BLE scanning callback.
  *
- * @param[in]   callback: Pointer to the BLE scaning callback function.
+ * @param[in]   callback: Pointer to the BLE scanning callback function.
  *
  * @return      ESP_OK on success or error code otherwise.
  *

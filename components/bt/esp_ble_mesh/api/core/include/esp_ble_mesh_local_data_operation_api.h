@@ -200,6 +200,24 @@ esp_err_t esp_ble_mesh_node_add_local_app_key(const uint8_t app_key[16], uint16_
 esp_err_t esp_ble_mesh_node_bind_app_key_to_local_model(uint16_t element_addr, uint16_t company_id,
                                                         uint16_t model_id, uint16_t app_idx);
 
+/**
+ * @brief       This function used to enable directed forwarding and directed forwarding relay on self.
+ *
+ * @param[in]   net_idx: NetKey Index.
+ * @param[in]   directed_forwarding: Enable or Disable directed forwarding.
+ * @param[in]   directed_forwarding_relay: Enable or Disable directed forwarding relay.
+ *
+ * @note        If the directed forwarding was set to disable, the directed forwarding relay
+ *              must also be set to disable.
+ *
+ * @return      ESP_OK on success or error code otherwise.
+ *
+*/
+#if CONFIG_BLE_MESH_DF_SRV
+esp_err_t esp_ble_mesh_enable_directed_forwarding(uint16_t net_idx, bool directed_forwarding,
+                                                  bool directed_forwarding_relay);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
