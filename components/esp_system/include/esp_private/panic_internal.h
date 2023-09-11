@@ -26,6 +26,10 @@
 extern "C" {
 #endif
 
+#ifndef ESP_UNUSED
+#define ESP_UNUSED(x) ((void)(x))
+#endif
+
 extern bool g_panic_abort;
 
 extern void *g_exc_frames[SOC_CPU_CORES_NUM];
@@ -70,10 +74,10 @@ void panic_print_str(const char *str);
 void panic_print_dec(int d);
 void panic_print_hex(int h);
 #else
-#define panic_print_char(c)
-#define panic_print_str(str)
-#define panic_print_dec(d)
-#define panic_print_hex(h)
+#define panic_print_char(c)     ESP_UNUSED(c)
+#define panic_print_str(str)    ESP_UNUSED(str)
+#define panic_print_dec(d)      ESP_UNUSED(d)
+#define panic_print_hex(h)      ESP_UNUSED(h)
 #endif
 
 void __attribute__((noreturn)) panic_abort(const char *details);
