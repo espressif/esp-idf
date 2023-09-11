@@ -505,3 +505,9 @@ config BT_NIMBLE_BLUFI_ENABLE
     default n
     help
         Set this option to enable blufi functionality.
+
+config BT_NIMBLE_HIGH_DUTY_ADV_ITVL
+    bool "Enable BLE high duty advertising interval feature"
+    depends on BT_NIMBLE_ENABLED
+    help
+        This enable BLE high duty advertising interval feature
