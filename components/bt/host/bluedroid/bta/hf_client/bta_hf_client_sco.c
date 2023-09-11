@@ -155,6 +155,7 @@ void bta_hf_client_cback_sco(UINT8 event)
     tBTA_HF_CLIENT_HDR    evt;
 
     memset(&evt, 0, sizeof(evt));
+    evt.sync_conn_handle = BTM_ReadScoHandle(bta_hf_client_cb.scb.sco_idx);
 
     /* call app cback */
     (*bta_hf_client_cb.p_cback)(event, (tBTA_HF_CLIENT_HDR *) &evt);
@@ -237,7 +238,29 @@ static void bta_hf_client_sco_conn_rsp(tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
     BTM_EScoConnRsp(p_data->sco_inx, hci_status, &resp);
 }
 
-#if (BTM_SCO_HCI_INCLUDED == TRUE )
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         bta_hf_client_pkt_stat_nums
+**
+** Description      Get the packet status number
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_hf_client_pkt_stat_nums(tBTA_HF_CLIENT_DATA *p_data)
+{
+    tBTA_SCO_PKT_STAT_NUMS pkt_stat_nums;
+    uint16_t sync_conn_handle = p_data->pkt_stat.sync_conn_handle;
+    BTM_PktStatNumsGet(sync_conn_handle, (tBTM_SCO_PKT_STAT_NUMS *) &pkt_stat_nums);
+
+    /* call app cback */
+    if (bta_hf_client_cb.p_cback) {
+        (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT, (void*) &pkt_stat_nums);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         bta_hf_client_ci_sco_data
@@ -254,6 +277,7 @@ void bta_hf_client_ci_sco_data(tBTA_HF_CLIENT_DATA *p_data)
     bta_hf_client_sco_event(BTA_HF_CLIENT_SCO_CI_DATA_E);
 }
 #endif
+
 /*******************************************************************************
 **
 ** Function         bta_hf_client_sco_connreq_cback

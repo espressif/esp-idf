@@ -113,6 +113,7 @@ typedef UINT8 tBTA_HF_CLIENT_AT_RESULT_TYPE;
 #define BTA_HF_CLIENT_BINP_EVT              20 /* binp number event */
 #define BTA_HF_CLIENT_RING_INDICATION       21 /* HF Client ring indication */
 #define BTA_HF_CLIENT_DISABLE_EVT           30 /* HF Client disabled */
+#define BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT 31 /* HF Client packet status nums */
 
 typedef UINT8 tBTA_HF_CLIENT_EVT;
 
@@ -163,6 +164,7 @@ typedef UINT8 tBTA_HF_CLIENT_AT_CMD_TYPE;
 /* data associated with most non-AT events */
 /* placeholder, if not needed should be removed*/
 typedef struct {
+    UINT16       sync_conn_handle;
 } tBTA_HF_CLIENT_HDR;
 
 /* data associated with BTA_HF_CLIENT_REGISTER_EVT */
@@ -232,6 +234,17 @@ typedef struct {
     UINT16                     value;
 } tBTA_HF_CLIENT_VAL;
 
+/* data associated with BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT */
+typedef struct {
+    UINT32 rx_total;
+    UINT32 rx_correct;
+    UINT32 rx_err;
+    UINT32 rx_none;
+    UINT32 rx_lost;
+    UINT32 tx_total;
+    UINT32 tx_discarded;
+} tBTA_SCO_PKT_STAT_NUMS;
+
 /* union of data associated with AG callback */
 typedef union {
     tBTA_HF_CLIENT_HDR              hdr;
@@ -245,6 +258,7 @@ typedef union {
     tBTA_HF_CLIENT_AT_RESULT        result;
     tBTA_HF_CLIENT_CLCC             clcc;
     tBTA_HF_CLIENT_CNUM             cnum;
+    tBTA_SCO_PKT_STAT_NUMS          pkt_num;
 } tBTA_HF_CLIENT;
 
 typedef UINT32 tBTA_HF_CLIENT_FEAT;
@@ -380,6 +394,18 @@ void BTA_HfClientAudioClose(UINT16 handle);
 void BTA_HfClientSendAT(UINT16 handle, tBTA_HF_CLIENT_AT_CMD_TYPE at, UINT32 val1, UINT32 val2, const char *str);
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
+/*******************************************************************************
+**
+** Function         BTA_HfClientPktStatsNumsGet
+**
+** Description      Get the Number of packets status received and send
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_HfClientPktStatsNumsGet(UINT16 sync_conn_handle);
+
 void BTA_HfClientCiData(void);
 #endif /*#if (BTM_SCO_HCI_INCLUDED == TRUE ) */
 

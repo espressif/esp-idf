@@ -342,7 +342,7 @@ static void bta_ag_sco_read_cback(UINT16 sco_inx, BT_HDR *p_data, tBTM_SCO_DATA_
 {
     if (status != BTM_SCO_DATA_CORRECT)
     {
-        APPL_TRACE_WARNING("bta_ag_sco_read_cback: status(%d)", status);
+        APPL_TRACE_DEBUG("bta_ag_sco_read_cback: status(%d)", status);
     }
 
     /* Callout function must free the data. */
@@ -475,6 +475,7 @@ static void bta_ag_cback_sco(tBTA_AG_SCB *p_scb, UINT8 event)
 
     sco.handle = bta_ag_scb_to_idx(p_scb);
     sco.app_id = p_scb->app_id;
+    sco.sync_conn_handle = BTM_ReadScoHandle(p_scb->sco_idx);
 
     /* call close cback */
     (*bta_ag_cb.p_cback)(event, (tBTA_AG *) &sco);
@@ -1476,6 +1477,32 @@ void bta_ag_sco_codec_nego(tBTA_AG_SCB *p_scb, BOOLEAN result)
         bta_ag_sco_event(p_scb, BTA_AG_SCO_CLOSE_E);
 }
 #endif
+
+/*******************************************************************************
+**
+** Function         bta_ag_pkt_stat_nums
+**
+** Description      Get the number of packet states
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_ag_pkt_stat_nums(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
+{
+    UNUSED(p_scb);
+
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    tBTA_AG_PKT_STAT_NUMS pkt_stat_nums;
+    uint16_t sync_conn_handle = p_data->pkt_stat.sync_conn_handle;
+    BTM_PktStatNumsGet(sync_conn_handle, (tBTM_SCO_PKT_STAT_NUMS *) &pkt_stat_nums);
+
+    /* call app cback */
+    if (bta_ag_cb.p_cback) {
+        (*bta_ag_cb.p_cback)(BTA_AG_PKT_NUMS_GET_EVT, (tBTA_AG*) &pkt_stat_nums);
+    }
+#endif
+}
 
 /*******************************************************************************
 **

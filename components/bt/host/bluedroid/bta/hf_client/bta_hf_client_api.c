@@ -299,7 +299,28 @@ void BTA_HfClientSendAT(UINT16 handle, tBTA_HF_CLIENT_AT_CMD_TYPE at, UINT32 val
         bta_sys_sendmsg(p_buf);
     }
 }
-#if (BTM_SCO_HCI_INCLUDED == TRUE )
+
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_HfClientPktStatsNumsGet
+**
+** Description      Get the packet ststus numbers received and send for a specific (e)SCO connection handle.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_HfClientPktStatsNumsGet(UINT16 sync_conn_handle)
+{
+    tBTA_HF_CLIENT_PKT_STAT_GET *p_buf;
+    if ((p_buf = (tBTA_HF_CLIENT_PKT_STAT_GET *) osi_malloc(sizeof(tBTA_HF_CLIENT_PKT_STAT_GET))) != NULL) {
+        p_buf->hdr.event = BTA_HF_CLIENT_PKT_NUMS_GET_EVT;
+        p_buf->sync_conn_handle = sync_conn_handle;
+        bta_sys_sendmsg(p_buf);
+    }
+}
+
 void BTA_HfClientCiData(void)
 {
     BT_HDR *p_buf;

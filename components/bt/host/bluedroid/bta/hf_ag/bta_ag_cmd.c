@@ -146,6 +146,14 @@ enum
     BTA_AG_HF_CMD_BAC
 };
 
+/* dialing type of BTA_AG_HF_CMD_D */
+enum
+{
+    BTA_AG_HF_DIAL_NUM = 0,
+    BTA_AG_HF_DIAL_VOIP,
+    BTA_AG_HF_DIAL_MEM,
+};
+
 /* HFP AT command interpreter table */
 const tBTA_AG_AT_CMD bta_ag_hfp_cmd[] =
 {
@@ -856,6 +864,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
 
         case BTA_AG_HF_CMD_D:
         {
+            UINT16 src = 0;
+            UINT16 dst = 0;
             /* Do not send OK for Dial cmds Let application decide whether to send OK or ERROR*/
             /* if mem dial cmd, make sure string contains only digits */
             if(p_arg[0] == '>') {
@@ -863,6 +873,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                     event = 0;
                     bta_ag_send_error(p_scb, BTA_AG_ERR_INV_CHAR_IN_DSTR);
                 }
+                val.value = BTA_AG_HF_DIAL_MEM;
+                src = 1;
             } else if (p_arg[0] == 'V') {
                 /* ATDV : Dial VoIP Call */
                 /* We do not check string. Code will be added later if needed. */
@@ -870,12 +882,24 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                     event = 0;
                     bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
                 }
+                val.value = BTA_AG_HF_DIAL_VOIP;
             } else {
             /* If dial cmd, make sure string contains only dial digits
             ** Dial digits are 0-9, A-C, *, #, + */
                 if(!utl_isdialstr(p_arg)) {
                     event = 0;
                     bta_ag_send_error(p_scb, BTA_AG_ERR_INV_CHAR_IN_DSTR);
+                }
+                val.value = BTA_AG_HF_DIAL_NUM;
+            }
+            if (event != 0) {
+                while ((val.str[dst] = p_arg[src]) != '\0') {
+                    if (val.str[dst] == ';') {
+                        val.str[dst] = '\0';
+                        break;
+                    }
+                    src++;
+                    dst++;
                 }
             }
             break;

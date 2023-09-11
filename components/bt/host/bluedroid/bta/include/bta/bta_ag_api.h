@@ -158,6 +158,8 @@ typedef UINT8 tBTA_AG_RES;
 #endif
 #define BTA_AG_AUDIO_MSBC_OPEN_EVT 32 /* Audio connection with mSBC codec open */
 
+#define BTA_AG_PKT_NUMS_GET_EVT 33 /* AG packet status nums */
+
 /* Values below are for HFP only */
 #define BTA_AG_AT_A_EVT         10 /* Answer a incoming call */
 #define BTA_AG_AT_D_EVT         11 /* Place a call using number or memory dial */
@@ -261,15 +263,15 @@ typedef UINT8 tBTA_AG_BTRH_TYPE;
 #endif
 
 /* indicator constants HFP 1.1 and later */
-#define BTA_AG_IND_CALL             0   /* position of call indicator */
-#define BTA_AG_IND_CALLSETUP        1   /* position of callsetup indicator */
-#define BTA_AG_IND_SERVICE          2   /* position of service indicator */
+#define BTA_AG_IND_CALL             1   /* position of call indicator */
+#define BTA_AG_IND_CALLSETUP        2   /* position of callsetup indicator */
+#define BTA_AG_IND_SERVICE          3   /* position of service indicator */
 /* indicator constants HFP 1.5 and later */
-#define BTA_AG_IND_SIGNAL           3   /* position of signal strength indicator */
-#define BTA_AG_IND_ROAM             4   /* position of roaming indicator */
-#define BTA_AG_IND_BATTCHG          5   /* position of battery charge indicator */
-#define BTA_AG_IND_CALLHELD         6   /* position of callheld indicator */
-#define BTA_AG_IND_BEARER           7   /* position of bearer indicator */
+#define BTA_AG_IND_SIGNAL           4   /* position of signal strength indicator */
+#define BTA_AG_IND_ROAM             5   /* position of roaming indicator */
+#define BTA_AG_IND_BATTCHG          6   /* position of battery charge indicator */
+#define BTA_AG_IND_CALLHELD         7   /* position of callheld indicator */
+#define BTA_AG_IND_BEARER           8   /* position of bearer indicator */
 typedef UINT16 tBTA_AG_IND_TYPE;
 
 /* call indicator values */
@@ -327,6 +329,7 @@ typedef struct
     UINT16              handle;
     UINT8               app_id;
     tBTA_AG_STATUS      status;
+    UINT16              sync_conn_handle;
 } tBTA_AG_HDR;
 
 /* data associated with BTA_AG_REGISTER_EVT */
@@ -405,6 +408,17 @@ typedef struct {
     char                       number[BTA_AG_NUMBER_LEN + 1];
 } tBTA_AG_CNUM;
 
+/* data associated with BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT */
+typedef struct {
+    UINT32 rx_total;
+    UINT32 rx_correct;
+    UINT32 rx_err;
+    UINT32 rx_none;
+    UINT32 rx_lost;
+    UINT32 tx_total;
+    UINT32 tx_discarded;
+} tBTA_AG_PKT_STAT_NUMS;
+
 /* union of data associated with AG callback */
 typedef union
 {
@@ -421,6 +435,7 @@ typedef union
     tBTA_AG_AT_RESULT        result;
     tBTA_AG_CLCC             clcc;
     tBTA_AG_CNUM             cnum;
+    tBTA_AG_PKT_STAT_NUMS    pkt_num;
 } tBTA_AG;
 
 /* AG callback */
@@ -581,6 +596,18 @@ void BTA_AgSetCodec(UINT16 handle, tBTA_AG_PEER_CODEC codec);
 
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
+/*******************************************************************************
+**
+** Function         BTA_AgPktStatsNumsGet
+**
+** Description      Get the Number of packets status received
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AgPktStatsNumsGet(UINT16 handle, UINT16 sync_conn_handle);
+
 /*******************************************************************************
 **
 ** Function         BTA_AgCiData
