@@ -550,10 +550,12 @@ static void IRAM_ATTR esp_empty_wrapper(void)
 static void esp_phy_enable_wrapper(void)
 {
     esp_phy_enable(PHY_MODEM_WIFI);
+    phy_wifi_enable_set(1);
 }
 
 static void esp_phy_disable_wrapper(void)
 {
+    phy_wifi_enable_set(0);
     esp_phy_disable(PHY_MODEM_WIFI);
 }
 
