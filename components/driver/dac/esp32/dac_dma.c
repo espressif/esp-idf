@@ -97,7 +97,7 @@ static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll)
     ESP_LOGD(TAG, "[sclk] %"PRIu32" [mclk] %"PRIu32" [mclk_div] %"PRIu32" [bclk] %"PRIu32" [bclk_div] %"PRIu32, sclk, mclk, mclk_div, bclk, bclk_div);
 
     i2s_ll_tx_clk_set_src(s_ddp->periph_dev, is_apll ? I2S_CLK_SRC_APLL : I2S_CLK_SRC_DEFAULT);
-    i2s_ll_mclk_div_t mclk_div_coeff = {};
+    hal_utils_clk_div_t mclk_div_coeff = {};
     i2s_hal_calc_mclk_precise_division(sclk, mclk, &mclk_div_coeff);
     i2s_ll_tx_set_mclk(s_ddp->periph_dev, &mclk_div_coeff);
     i2s_ll_tx_set_bck_div_num(s_ddp->periph_dev, bclk_div);

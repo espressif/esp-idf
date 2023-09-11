@@ -1,0 +1,7 @@
+components/hal/test_apps/hal_utils:
+  enable:
+    - if: IDF_TARGET == "linux"
+  disable:
+    - if: IDF_TARGET == "linux"
+      temporary: true
+      reason: env not ready

@@ -180,7 +180,7 @@ static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuo
     uint32_t bclk_div = 16;
     uint32_t bclk = sample_freq_hz * 2;
     uint32_t mclk = bclk * bclk_div;
-    i2s_ll_mclk_div_t mclk_div = {};
+    hal_utils_clk_div_t mclk_div = {};
     i2s_hal_calc_mclk_precise_division(I2S_BASE_CLK, mclk, &mclk_div);
     i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
     i2s_ll_rx_set_bck_div_num(hal->dev, bclk_div);
