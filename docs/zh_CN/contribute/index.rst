@@ -63,4 +63,3 @@ Pull Request 准备好待合并时，首先会合并到我们的内部 git 系�
     contributor-agreement
     copyright-guide
     esp-idf-tests-with-pytest
-

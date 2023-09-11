@@ -90,6 +90,7 @@ The following optimizations improve the execution of nearly all code, including 
 
 Reduce Logging Overhead
 ^^^^^^^^^^^^^^^^^^^^^^^
+
 Although standard output is buffered, it is possible for an application to be limited by the rate at which it can print data to log output once buffers are full. This is particularly relevant for startup time if a lot of output is logged, but such problem can happen at other times as well. There are multiple ways to solve this problem:
 
 .. list::

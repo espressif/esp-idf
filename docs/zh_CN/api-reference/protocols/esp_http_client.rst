@@ -52,7 +52,9 @@ HTTPS 请求
 
 ESP HTTP 客户端支持使用 **mbedTLS** 的 SSL 连接，需将 ``url`` 配置为以 ``https`` 开头，或将 ``transport_type`` 设置为 ``HTTP_TRANSPORT_OVER_SSL``。可以通过 :ref:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` 来配置 HTTPS 支持（默认启用）。
 
-.. note:: 在发起 HTTPS 请求时，如需服务器验证，首先需要向 ``esp_http_client_config_t`` 配置中的 ``cert_pem`` 成员提供额外的根证书（PEM 格式）。用户还可以通过 ``esp_http_client_config_t`` 配置中的 ``crt_bundle_attach`` 成员，使用 ``ESP x509 Certificate Bundle`` 进行服务器验证。
+.. note::
+
+    在发起 HTTPS 请求时，如需服务器验证，首先需要向 ``esp_http_client_config_t`` 配置中的 ``cert_pem`` 成员提供额外的根证书（PEM 格式）。用户还可以通过 ``esp_http_client_config_t`` 配置中的 ``crt_bundle_attach`` 成员，使用 ``ESP x509 Certificate Bundle`` 进行服务器验证。
 
 如需了解上文备注中的实现细节，请参考应用示例中的函数 ``https_with_url`` 和 ``https_with_hostname_path``。
 
