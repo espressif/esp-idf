@@ -115,7 +115,7 @@ TEST_CASE("esp_timer_etm_event", "[etm]")
     TEST_ESP_OK(esp_timer_start_periodic(periodic_timer, 500000));
 
     // should see a 1Hz square wave on the GPIO
-    vTaskDelay(pdMS_TO_TICKS(1200));
+    esp_rom_delay_us(1200000);
 
     // check the final GPIO level
     TEST_ASSERT_EQUAL(1, gpio_get_level(output_gpio));
