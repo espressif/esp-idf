@@ -185,6 +185,7 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_ASSOC_EVT             39 /* GATTC association address event */
 #define BTA_GATTC_GET_ADDR_LIST_EVT     40 /* GATTC get address list in the cache event */
 #define BTA_GATTC_DIS_SRVC_CMPL_EVT     41 /* GATTC discover service complete */
+#define BTA_GATTC_READ_MULTI_VAR_EVT    42 /* GATTC read multiple variable event */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
@@ -1136,6 +1137,21 @@ extern void BTA_GATTC_ExecuteWrite  (UINT16 conn_id, BOOLEAN is_execute);
 extern void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
                                    tBTA_GATT_AUTH_REQ auth_req);
 
+/*******************************************************************************
+**
+** Function         BTA_GATTC_ReadMultiple
+**
+** Description      This function is called to read multiple variable length characteristic or
+**                  characteristic descriptors.
+**
+** Parameters       conn_id - connection ID.
+**                    p_read_multi - read multiple parameters.
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_GATTC_ReadMultipleVariable(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
+                            tBTA_GATT_AUTH_REQ auth_req);
 
 /*******************************************************************************
 **
@@ -1542,6 +1558,16 @@ void BTA_GATTS_SendServiceChangeIndication(tBTA_GATTS_IF server_if, BD_ADDR remo
 extern void BTA_GATTS_Listen(tBTA_GATTS_IF server_if, BOOLEAN start,
                              BD_ADDR_PTR target_bda);
 
+/*******************************************************************************
+**
+** Function         BTA_GATTS_ShowLocalDatabase
+**
+** Description      print local service database.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_GATTS_ShowLocalDatabase(void);
 
 extern void bta_gattc_clcb_dealloc_by_conn_id(UINT16 conn_id);
 

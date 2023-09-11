@@ -286,6 +286,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/gatt/gatt_db.c"
                    "host/bluedroid/stack/gatt/gatt_main.c"
                    "host/bluedroid/stack/gatt/gatt_sr.c"
+                   "host/bluedroid/stack/gatt/gatt_sr_hash.c"
                    "host/bluedroid/stack/gatt/gatt_utils.c"
                    "host/bluedroid/stack/hcic/hciblecmds.c"
                    "host/bluedroid/stack/hcic/hcicmds.c"

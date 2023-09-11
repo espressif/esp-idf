@@ -1444,6 +1444,40 @@ void bta_dm_oob_reply(tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_sc_oob_reply
+**
+** Description      This function is called to provide the OOB data for
+**                  SMP in response to BLE secure connection OOB request.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_sc_oob_reply(tBTA_DM_MSG *p_data)
+{
+#if (BLE_INCLUDED)
+    BTM_BleSecureConnectionOobDataReply(p_data->sc_oob_reply.bd_addr, p_data->sc_oob_reply.c, p_data->sc_oob_reply.r);
+#endif
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_sc_create_oob_data
+**
+** Description      This function is called to create the OOB data for
+**                  SMP when secure connection.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_sc_create_oob_data(tBTA_DM_MSG *p_data)
+{
+#if (BLE_INCLUDED)
+    BTM_BleSecureConnectionCreateOobData();
+#endif
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ci_io_req_act
 **
 ** Description      respond to the IO capabilities request from BTM
@@ -4723,6 +4757,17 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
         bta_dm_cb.p_sec_cback(BTA_DM_BLE_OOB_REQ_EVT, &sec_event);
         break;
 
+    case BTM_LE_SC_OOB_REQ_EVT:
+        bdcpy(sec_event.ble_req.bd_addr, bda);
+        bta_dm_cb.p_sec_cback(BTA_DM_BLE_SC_OOB_REQ_EVT, &sec_event);
+        break;
+
+    case BTM_LE_SC_LOC_OOB_EVT:
+        memcpy(sec_event.local_oob_data.local_oob_c, p_data->local_oob_data.commitment, BT_OCTET16_LEN);
+        memcpy(sec_event.local_oob_data.local_oob_r, p_data->local_oob_data.randomizer, BT_OCTET16_LEN);
+        bta_dm_cb.p_sec_cback(BTA_DM_BLE_SC_CR_LOC_OOB_EVT, &sec_event);
+        break;
+
     case BTM_LE_NC_REQ_EVT:
         bdcpy(sec_event.key_notif.bd_addr, bda);
         BCM_STRNCPY_S((char *)sec_event.key_notif.bd_name,bta_dm_get_remname(), (BD_NAME_LEN));
@@ -5768,6 +5813,37 @@ void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data)
 }
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+void bta_dm_ble_gap_periodic_adv_recv_enable(tBTA_DM_MSG *p_data)
+{
+    BTM_BlePeriodicAdvRecvEnable(p_data->ble_periodic_adv_recv_enable.sync_handle,
+                                 p_data->ble_periodic_adv_recv_enable.enable);
+}
+
+void bta_dm_ble_gap_periodic_adv_sync_trans(tBTA_DM_MSG *p_data)
+{
+    BTM_BlePeriodicAdvSyncTrans(p_data->ble_periodic_adv_sync_trans.addr,
+                                p_data->ble_periodic_adv_sync_trans.service_data,
+                                p_data->ble_periodic_adv_sync_trans.sync_handle);
+}
+
+void bta_dm_ble_gap_periodic_adv_set_info_trans(tBTA_DM_MSG *p_data)
+{
+    BTM_BlePeriodicAdvSetInfoTrans(p_data->ble_periodic_adv_set_info_trans.addr,
+                                   p_data->ble_periodic_adv_set_info_trans.service_data,
+                                   p_data->ble_periodic_adv_set_info_trans.adv_hanlde);
+}
+
+void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPeriodicAdvSyncTransParams(p_data->ble_set_past_params.addr,
+                                         p_data->ble_set_past_params.params.mode,
+                                         p_data->ble_set_past_params.params.skip,
+                                         p_data->ble_set_past_params.params.sync_timeout,
+                                         p_data->ble_set_past_params.params.cte_type);
+}
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_setup_storage

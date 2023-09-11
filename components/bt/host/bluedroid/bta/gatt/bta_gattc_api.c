@@ -565,6 +565,42 @@ void BTA_GATTC_ReadMultiple(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
 
 /*******************************************************************************
 **
+** Function         BTA_GATTC_ReadMultipleVariable
+**
+** Description      This function is called to read multiple variable length characteristic or
+**                  characteristic descriptors.
+**
+** Parameters       conn_id - connection ID.
+**                    p_read_multi - pointer to the read multiple parameter.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_GATTC_ReadMultipleVariable(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_multi,
+                            tBTA_GATT_AUTH_REQ auth_req)
+{
+    tBTA_GATTC_API_READ_MULTI  *p_buf;
+    UINT16 len = (UINT16)(sizeof(tBTA_GATTC_API_READ_MULTI));
+
+    if ((p_buf = (tBTA_GATTC_API_READ_MULTI *) osi_malloc(len)) != NULL) {
+        memset(p_buf, 0, len);
+
+        p_buf->hdr.event = BTA_GATTC_API_READ_MULTI_VAR_EVT;
+        p_buf->hdr.layer_specific = conn_id;
+        p_buf->auth_req = auth_req;
+        p_buf->num_attr = p_read_multi->num_attr;
+        p_buf->cmpl_evt = BTA_GATTC_READ_MULTI_VAR_EVT;
+        if (p_buf->num_attr > 0) {
+            memcpy(p_buf->handles, p_read_multi->handles, sizeof(UINT16) * p_read_multi->num_attr);
+	    }
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+
+/*******************************************************************************
+**
 ** Function         BTA_GATTC_Read_by_type
 **
 ** Description      This function is called to read a attribute value by uuid
@@ -1103,4 +1139,83 @@ void BTA_GATTC_Broadcast(tBTA_GATTC_IF client_if, BOOLEAN start)
     return;
 }
 
+/* Add For BLE PTS */
+uint8_t BTA_GATTC_AutoDiscoverEnable(uint8_t enable)
+{
+    APPL_TRACE_DEBUG("%s enable %d", __func__, enable);
+
+    bta_gattc_cb.auto_disc = ((enable > 0) ? true : false);
+    GATTC_AutoDiscoverEnable(enable);
+
+    return 0;
+}
+
+typedef struct {
+    UINT16 len;
+    union {
+        UINT16    uuid16;
+        UINT32    uuid32;
+        UINT8     uuid128[LEN_UUID_128];
+    } uuid;
+} __attribute__((packed)) tAPP_UUID;
+
+uint8_t BTA_GATTC_Discover(uint8_t gatt_if, uint16_t conn_id, void *uuid, uint8_t disc_type, uint16_t s_handle, uint16_t e_handle)
+{
+    tGATT_STATUS status;
+    tGATT_DISC_PARAM param;
+    tAPP_UUID *app_uuid = (tAPP_UUID *)uuid;
+
+    conn_id = (UINT16)((((UINT8)conn_id) << 8) | gatt_if);
+    memset(&param, 0, sizeof(tGATT_DISC_PARAM));
+
+    if (disc_type == GATT_DISC_SRVC_ALL || disc_type == GATT_DISC_SRVC_BY_UUID) {
+        param.s_handle = 1;
+        param.e_handle = 0xFFFF;
+    } else {
+        param.s_handle = s_handle;
+        param.e_handle = e_handle;
+    }
+
+    if (app_uuid) {
+        param.service.len = app_uuid->len;
+        if (app_uuid->len == LEN_UUID_16) {
+            param.service.uu.uuid16 = app_uuid->uuid.uuid16;
+        } else if (app_uuid->len == LEN_UUID_32) {
+            param.service.uu.uuid32 = app_uuid->uuid.uuid32;
+        } else if (app_uuid->len == LEN_UUID_128) {
+            memcpy(param.service.uu.uuid128, app_uuid->uuid.uuid128, LEN_UUID_128);
+        } else {
+            APPL_TRACE_ERROR("%s invalid uuid len %u", __func__, app_uuid->len);
+        }
+    }
+
+    status = GATTC_Discover (conn_id, disc_type, &param);
+    if (status != GATT_SUCCESS) {
+        APPL_TRACE_ERROR("%s status %x", __func__, status);
+        return -1;
+    }
+
+    return 0;
+}
+
+uint8_t BTA_GATTC_ReadLongChar(uint8_t gatt_if, uint16_t conn_id, uint16_t handle, uint16_t offset, uint8_t auth_req)
+{
+    tGATT_STATUS status;
+    tGATT_READ_PARAM read_param;
+
+    conn_id = (UINT16)((((UINT8)conn_id) << 8) | gatt_if);
+    memset (&read_param, 0, sizeof(tGATT_READ_PARAM));
+    read_param.partial.handle = handle;
+    read_param.partial.offset = offset;
+    read_param.partial.auth_req = auth_req;
+
+    status = GATTC_Read(conn_id, GATT_READ_PARTIAL, &read_param);
+    if (status != GATT_SUCCESS) {
+        APPL_TRACE_ERROR("%s status %x", __func__, status);
+        return -1;
+    }
+
+    return 0;
+}
+/* End BLE PTS */
 #endif /* defined(GATTC_INCLUDED) && (GATTC_INCLUDED == TRUE) */

@@ -88,6 +88,20 @@ bt_status_t btc_storage_load_bonded_ble_devices(void);
 bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev, int dev_num);
 
 int btc_storage_get_num_ble_bond_devices(void);
-
 #endif  ///SMP_INCLUDED == TRUE
+
+#define BTC_BLE_STORAGE_GATT_CL_SUPP_FEAT_STR       "GATT_CL_SUPP_FEAT"
+#define BTC_BLE_STORAGE_GATT_DB_HASH_STR            "GATT_DB_HASH"
+
+bt_status_t btc_storage_get_gatt_cl_supp_feat(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len);
+
+bt_status_t btc_storage_set_gatt_cl_supp_feat(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len);
+
+bt_status_t btc_storage_remove_gatt_cl_supp_feat(bt_bdaddr_t *remote_bd_addr);
+
+bt_status_t btc_storage_get_gatt_db_hash(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len);
+
+bt_status_t btc_storage_set_gatt_db_hash(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len);
+
+bt_status_t btc_storage_remove_gatt_db_hash(bt_bdaddr_t *remote_bd_addr);
 #endif  ///__BTC_BLE_STORAGE_H__
