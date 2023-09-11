@@ -133,6 +133,10 @@ typedef struct {
     size_t                      client_key_len;      /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
     const char                  *client_key_password;      /*!< Client key decryption password string */
     size_t                      client_key_password_len;   /*!< String length of the password pointed to by client_key_password */
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+    bool                        use_ecdsa_peripheral;       /*!< Use ECDSA peripheral to use private key. */
+    uint8_t                     ecdsa_key_efuse_blk;        /*!< The efuse block where ECDSA key is stored. */
+#endif
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */

@@ -58,6 +58,10 @@ struct esp_tls {
 
     mbedtls_pk_context clientkey;                                               /*!< Container for the private key of the client
                                                                                      certificate */
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+    bool use_ecdsa_peripheral;                                                  /*!< Use the ECDSA peripheral for the private key operations. */
+    uint8_t ecdsa_efuse_blk;                                                    /*!< The efuse block number where the ECDSA key is stored. */
+#endif
 #ifdef CONFIG_ESP_TLS_SERVER
     mbedtls_x509_crt servercert;                                                /*!< Container for the X.509 server certificate */
 
