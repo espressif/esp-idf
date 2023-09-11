@@ -1398,6 +1398,7 @@ UT_S2_SDSPI:
 
 UT_C2:
   extends: .unit_test_esp32c2_template
+  parallel: 2
   tags:
     - ESP32C2_IDF
     - UT_T1_1
@@ -1419,6 +1420,7 @@ UT_C3_SDSPI:
 
 UT_C6:
   extends: .unit_test_esp32c6_template
+  parallel: 2
   tags:
     - ESP32C6_IDF
     - UT_T1_1
