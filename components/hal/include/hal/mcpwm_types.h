@@ -109,8 +109,8 @@ typedef enum {
  * @brief MCPWM comparator specific events that supported by the ETM module
  */
 typedef enum {
-    MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD, /* !< The count value of the timer that PWM operator connects is equal to the value of comparator */
-    MCPWM_ETM_COMPARATOR_EVENT_MAX,       /*!< Maximum number of comparator events */
+    MCPWM_CMPR_ETM_EVENT_EQUAL, /*!< The count value equals the value of comparator */
+    MCPWM_CMPR_ETM_EVENT_MAX,   /*!< Maximum number of comparator events */
 } mcpwm_comparator_etm_event_type_t;
 
 #ifdef __cplusplus

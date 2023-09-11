@@ -74,7 +74,7 @@ TEST_CASE("mcpwm_comparator_etm_event", "[etm]")
     esp_etm_event_handle_t mcpwm_etm_event1 = NULL;
     esp_etm_event_handle_t mcpwm_etm_event2 = NULL;
     mcpwm_cmpr_etm_event_config_t mcpwm_cmpr_event_config = {
-        .event_type = MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD,
+        .event_type = MCPWM_CMPR_ETM_EVENT_EQUAL,
     };
     TEST_ESP_OK(mcpwm_comparator_new_etm_event(comparator_a, &mcpwm_cmpr_event_config, &mcpwm_etm_event1));
 

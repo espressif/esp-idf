@@ -62,23 +62,25 @@ extern "C" {
 #define MCPWM_LL_BRAKE_MODE_TO_REG_VAL(mode)  ((uint8_t[]) {0, 1}[(mode)])
 
 // MCPWM ETM comparator event table
-#define MCPWM_LL_ETM_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)                                        \
-    (uint32_t [2][MCPWM_ETM_COMPARATOR_EVENT_MAX]){{                                                               \
-                            [MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD] = MCPWM0_EVT_OP0_TEA + oper_id + 3 * cmpr_id,   \
-                        },                                                                                         \
-                        {                                                                                          \
-                            [MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD] = MCPWM1_EVT_OP0_TEA + oper_id + 3 * cmpr_id,   \
-                        },                                                                                         \
+#define MCPWM_LL_ETM_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)            \
+    (uint32_t[2][MCPWM_CMPR_ETM_EVENT_MAX]){                                           \
+        {                                                                              \
+            [MCPWM_CMPR_ETM_EVENT_EQUAL] = MCPWM0_EVT_OP0_TEA + oper_id + 3 * cmpr_id, \
+        },                                                                             \
+        {                                                                              \
+            [MCPWM_CMPR_ETM_EVENT_EQUAL] = MCPWM1_EVT_OP0_TEA + oper_id + 3 * cmpr_id, \
+        },                                                                             \
     }[group][event]
 
 // MCPWM ETM event comparator event table
-#define MCPWM_LL_ETM_EVENT_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)                                  \
-    (uint32_t [2][MCPWM_ETM_COMPARATOR_EVENT_MAX]){{                                                               \
-                            [MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD] = MCPWM0_EVT_OP0_TEE1 + oper_id + 3 * cmpr_id,  \
-                        },                                                                                         \
-                        {                                                                                          \
-                            [MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD] = MCPWM1_EVT_OP0_TEE1 + oper_id + 3 * cmpr_id,  \
-                        },                                                                                         \
+#define MCPWM_LL_ETM_EVENT_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)       \
+    (uint32_t[2][MCPWM_CMPR_ETM_EVENT_MAX]){                                            \
+        {                                                                               \
+            [MCPWM_CMPR_ETM_EVENT_EQUAL] = MCPWM0_EVT_OP0_TEE1 + oper_id + 3 * cmpr_id, \
+        },                                                                              \
+        {                                                                               \
+            [MCPWM_CMPR_ETM_EVENT_EQUAL] = MCPWM1_EVT_OP0_TEE1 + oper_id + 3 * cmpr_id, \
+        },                                                                              \
     }[group][event]
 
 /**
@@ -1658,9 +1660,9 @@ static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int channel
 static inline void mcpwm_ll_etm_enable_comparator_event(mcpwm_dev_t *mcpwm, int operator_id, int cmpr_id, bool en)
 {
     if (en) {
-        mcpwm->evt_en.val |= 1 << (operator_id + 3 * cmpr_id + 9) ;
+        mcpwm->evt_en.val |= 1 << (operator_id + 3 * cmpr_id + 9);
     } else {
-        mcpwm->evt_en.val &= ~(1 << (operator_id + 3 * cmpr_id + 9)) ;
+        mcpwm->evt_en.val &= ~(1 << (operator_id + 3 * cmpr_id + 9));
     }
 }
 
@@ -1675,9 +1677,9 @@ static inline void mcpwm_ll_etm_enable_comparator_event(mcpwm_dev_t *mcpwm, int 
 static inline void mcpwm_ll_etm_enable_evt_comparator_event(mcpwm_dev_t *mcpwm, int operator_id, int evt_cmpr_id, bool en)
 {
     if (en) {
-        mcpwm->evt_en2.val |= 1 << (operator_id + 3 * evt_cmpr_id) ;
+        mcpwm->evt_en2.val |= 1 << (operator_id + 3 * evt_cmpr_id);
     } else {
-        mcpwm->evt_en2.val &= ~(1 << (operator_id + 3 * evt_cmpr_id)) ;
+        mcpwm->evt_en2.val &= ~(1 << (operator_id + 3 * evt_cmpr_id));
     }
 }
 

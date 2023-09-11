@@ -137,6 +137,7 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
     if(CONFIG_SOC_MCPWM_SUPPORT_ETM)
         list(APPEND srcs "mcpwm/mcpwm_etm.c")
     endif()
+    list(APPEND ldfragments "mcpwm/linker.lf")
 endif()
 
 # PCNT related source files

@@ -61,9 +61,9 @@ extern "C" {
 #define MCPWM_LL_BRAKE_MODE_TO_REG_VAL(mode)  ((uint8_t[]) {0, 1}[(mode)])
 
 // MCPWM ETM comparator event table
-#define MCPWM_LL_ETM_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)                                        \
-    (uint32_t [1][MCPWM_ETM_COMPARATOR_EVENT_MAX]){{                                                               \
-                            [MCPWM_ETM_EVENT_CMPR_EQUAL_THRESHOLD] = MCPWM_EVT_OP0_TEA + oper_id + 3 * cmpr_id,    \
+#define MCPWM_LL_ETM_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)                           \
+    (uint32_t [1][MCPWM_CMPR_ETM_EVENT_MAX]){{                                                        \
+                            [MCPWM_CMPR_ETM_EVENT_EQUAL] = MCPWM_EVT_OP0_TEA + oper_id + 3 * cmpr_id, \
     }}[group][event]
 
 /**
