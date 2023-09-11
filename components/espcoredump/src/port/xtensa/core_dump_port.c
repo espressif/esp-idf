@@ -413,7 +413,7 @@ bool esp_core_dump_check_task(core_dump_task_header_t *task)
                                         sol_frame->a1);
         } else {
     // to avoid warning that 'exc_frame' is unused when ESP_COREDUMP_LOG_PROCESS does nothing
-    #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+    #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_LOGS
             XtExcFrame *exc_frame = (XtExcFrame *)task->stack_start;
             ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x) EXIT/PC/PS/A0/SP %x %x %x %x %x",
                                         task->tcb_addr,
