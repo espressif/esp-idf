@@ -46,6 +46,10 @@
 #include "driver/i2s_common.h"
 #include "i2s_private.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp_clock_output.h"
+#endif
+
 #include "clk_ctrl_os.h"
 #include "esp_clk_tree.h"
 #include "esp_intr_alloc.h"
@@ -152,6 +156,11 @@ static esp_err_t i2s_destroy_controller_obj(i2s_controller_t **i2s_obj)
                         ESP_ERR_INVALID_STATE, TAG,
                         "there still have channels under this i2s controller");
     int id = (*i2s_obj)->id;
+#if CONFIG_IDF_TARGET_ESP32
+    if ((*i2s_obj)->mclk_out_hdl) {
+        esp_clock_output_stop((*i2s_obj)->mclk_out_hdl);
+    }
+#endif
 #if SOC_I2S_HW_VERSION_1
     i2s_ll_enable_dma((*i2s_obj)->hal.dev, false);
 #endif
@@ -739,20 +748,11 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, int gpio_num, i2s_clock_src_t clk_sr
         return ESP_OK;
     }
 #if CONFIG_IDF_TARGET_ESP32
-    ESP_RETURN_ON_FALSE((gpio_num == GPIO_NUM_0 || gpio_num == GPIO_NUM_1 || gpio_num == GPIO_NUM_3),
-                        ESP_ERR_INVALID_ARG, TAG,
-                        "ESP32 only support to set GPIO0/GPIO1/GPIO3 as mclk signal, error GPIO number:%d", gpio_num);
     bool is_i2s0 = id == I2S_NUM_0;
     bool is_apll = clk_src == I2S_CLK_SRC_APLL;
-    if (gpio_num == GPIO_NUM_0) {
-        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
-        gpio_ll_set_iomux_pin_ctrl(is_apll ? 0xFFF6 : (is_i2s0 ? 0xFFF0 : 0xFFFF), 0xFFFFFFFF, 0);
-    } else if (gpio_num == GPIO_NUM_1) {
-        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_CLK_OUT3);
-        gpio_ll_set_iomux_pin_ctrl(is_apll ? 0xF6F6 : (is_i2s0 ? 0xF0F0 : 0xF0FF), 0xFFFFFFFF, 0);
-    } else {
-        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_CLK_OUT2);
-        gpio_ll_set_iomux_pin_ctrl(is_apll ? 0xFF66 : (is_i2s0 ? 0xFF00 : 0xFF0F), 0xFFFFFFFF, 0);
+    if (g_i2s.controller[id]->mclk_out_hdl == NULL) {
+        soc_clkout_sig_id_t clkout_sig = is_apll ? CLKOUT_SIG_APLL : (is_i2s0 ? CLKOUT_SIG_I2S0 : CLKOUT_SIG_I2S1);
+        ESP_RETURN_ON_ERROR(esp_clock_output_start(clkout_sig, gpio_num, &(g_i2s.controller[id]->mclk_out_hdl)), TAG, "mclk configure failed");
     }
 #else
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "mck_io_num invalid");
