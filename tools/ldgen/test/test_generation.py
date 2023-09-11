@@ -782,6 +782,31 @@ entries:
         with self.assertRaises(GenerationException):
             self.generation.generate(self.entities)
 
+    def test_same_entity_conflicting_section(self):
+        # Test same entity being mapped by scheme conflicting with another.
+        #
+        # custom_rtc = .text -> rtc_text
+        # noflash = .text -> iram0_text, .rodata -> dram0_data
+        #
+        # This operation should fail.
+        mapping = u"""
+[sections:custom_text]
+entries:
+    .text+
+    .literal+
+
+[scheme:custom_rtc]
+entries:
+    custom_text -> rtc_text
+
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (noflash)                              #1
+    croutine (custom_rtc)                           #2
+"""
+        self.test_same_entity_conflicting_scheme(mapping)
+
     def test_complex_mapping_case(self, alt=None):
         # Test a complex case where an object is mapped using
         # one scheme, but a specific symbol in that object is mapped
