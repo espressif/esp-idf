@@ -9,7 +9,10 @@ Resources
     :maxdepth: 2
 
     third-party-tools/platformio
+    third-party-tools/clion
+    third-party-tools/visualgdb
 
+For inquiries related to these third-party tools, we recommend seeking assistance from the respective tool's support channels or user communities.
 
 Useful Links
 ############
