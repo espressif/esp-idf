@@ -7,12 +7,14 @@
 // The LL layer for UART register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
 
-
 #pragma once
+
+#include <stdlib.h>
 #include "hal/uart_types.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
-#include "hal/clk_tree_ll.h"
+#include "soc/clk_tree_defs.h"
+#include "hal/misc.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -168,7 +170,7 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
     // an integer part and a fractional part.
     hw->clk_div.div_int = clk_div >> 4;
     hw->clk_div.div_frag = clk_div & 0xf;
-    hw->clk_conf.sclk_div_num = sclk_div - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
 #undef DIV_UP
 }
 
@@ -184,7 +186,8 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
 {
     typeof(hw->clk_div) div_reg;
     div_reg.val = hw->clk_div.val;
-    return ((sclk_freq << 4)) / (((div_reg.div_int << 4) | div_reg.div_frag) * (hw->clk_conf.sclk_div_num + 1));
+    return ((sclk_freq << 4)) /
+        (((div_reg.div_int << 4) | div_reg.div_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));
 }
 
 /**
@@ -469,7 +472,7 @@ FORCE_INLINE_ATTR void uart_ll_set_tx_idle_num(uart_dev_t *hw, uint32_t idle_num
 FORCE_INLINE_ATTR void uart_ll_tx_break(uart_dev_t *hw, uint32_t break_num)
 {
     if (break_num > 0) {
-        hw->txbrk_conf.tx_brk_num = break_num;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->txbrk_conf, tx_brk_num, break_num);
         hw->conf0.txd_brk = 1;
     } else {
         hw->conf0.txd_brk = 0;
@@ -536,8 +539,8 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
         hw->flow_conf.sw_flow_con_en = 1;
         hw->swfc_conf1.xon_threshold = flow_ctrl->xon_thrd;
         hw->swfc_conf0.xoff_threshold = flow_ctrl->xoff_thrd;
-        hw->swfc_conf1.xon_char = flow_ctrl->xon_char;
-        hw->swfc_conf0.xoff_char = flow_ctrl->xoff_char;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xon_char, flow_ctrl->xon_char);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0, xoff_char, flow_ctrl->xoff_char);
     } else {
         hw->flow_conf.sw_flow_con_en = 0;
         hw->flow_conf.xonoff_del = 0;
@@ -559,11 +562,11 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
  */
 FORCE_INLINE_ATTR void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_char)
 {
-    hw->at_cmd_char.data = cmd_char->cmd_char;
-    hw->at_cmd_char.char_num = cmd_char->char_num;
-    hw->at_cmd_postcnt.post_idle_num = cmd_char->post_idle;
-    hw->at_cmd_precnt.pre_idle_num = cmd_char->pre_idle;
-    hw->at_cmd_gaptout.rx_gap_tout = cmd_char->gap_tout;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char, data, cmd_char->cmd_char);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char, char_num, cmd_char->char_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_postcnt, post_idle_num, cmd_char->post_idle);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_precnt, pre_idle_num, cmd_char->pre_idle);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_gaptout, rx_gap_tout, cmd_char->gap_tout);
 }
 
 /**
@@ -752,8 +755,8 @@ FORCE_INLINE_ATTR void uart_ll_set_mode(uart_dev_t *hw, uart_mode_t mode)
  */
 FORCE_INLINE_ATTR void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, uint8_t *char_num)
 {
-    *cmd_char = hw->at_cmd_char.data;
-    *char_num = hw->at_cmd_char.char_num;
+    *cmd_char = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char, data);
+    *char_num = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char, char_num);
 }
 
 /**
