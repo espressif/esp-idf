@@ -333,6 +333,23 @@ wps_build_ic_appie_wps_ar(void)
     }
 }
 
+static bool ap_supports_sae(struct wps_scan_ie *scan)
+{
+    struct wpa_ie_data rsn_info;
+
+    if (!scan->rsn) {
+        return false;
+    }
+
+    wpa_parse_wpa_ie_rsn(scan->rsn, scan->rsn[1] + 2, &rsn_info);
+
+    if (rsn_info.key_mgmt & WPA_KEY_MGMT_SAE) {
+        return true;
+    }
+
+    return false;
+}
+
 static bool
 wps_parse_scan_result(struct wps_scan_ie *scan)
 {
@@ -402,10 +419,17 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
             os_memcpy(sm->ssid[0], (char *)&scan->ssid[2], (int)scan->ssid[1]);
             sm->ssid_len[0] = scan->ssid[1];
             if (scan->bssid && memcmp(sm->bssid, scan->bssid, ETH_ALEN) != 0) {
-                wpa_printf(MSG_INFO, "sm BSSid: "MACSTR " scan BSSID " MACSTR "\n",
+                wpa_printf(MSG_INFO, "sm BSSid: "MACSTR " scan BSSID " MACSTR,
                            MAC2STR(sm->bssid), MAC2STR(scan->bssid));
                 sm->discover_ssid_cnt++;
                 os_memcpy(sm->bssid, scan->bssid, ETH_ALEN);
+                if (ap_supports_sae(scan)) {
+                    wpa_printf(MSG_INFO, "AP supports SAE, get password in passphrase");
+                    sm->dev->config_methods |= WPS_CONFIG_DISPLAY | WPS_CONFIG_VIRT_DISPLAY;
+                    sm->wps->wps->config_methods |= WPS_CONFIG_DISPLAY | WPS_CONFIG_VIRT_DISPLAY;
+                    /* Reset assoc req, probe reset not needed */
+                    wps_build_ic_appie_wps_ar();
+                }
             }
             wpa_printf(MSG_DEBUG, "wps discover [%s]", (char *)sm->ssid);
             sm->channel = scan->chan;
@@ -552,7 +576,7 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
     int frag_len;
     u16 be_tot_len = 0;
 
-    if (!sm) {
+    if (!sm || !res) {
         return ESP_FAIL;
     }
 
@@ -599,9 +623,7 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
             return ESP_FAIL;
         }
         if (flag & WPS_MSG_FLAG_MORE) {
-            if (res) {
-                *res = WPS_FRAGMENT;
-            }
+            *res = WPS_FRAGMENT;
             return ESP_OK;
         }
     } else { //not frag msg
@@ -619,13 +641,9 @@ int wps_process_wps_mX_req(u8 *ubuf, int len, enum wps_process_res *res)
 
     eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
 
-    if (res) {
-        *res = wps_enrollee_process_msg(sm->wps, expd->opcode, wps_buf);
-    } else {
-        wps_enrollee_process_msg(sm->wps, expd->opcode, wps_buf);
-    }
+    *res = wps_enrollee_process_msg(sm->wps, expd->opcode, wps_buf);
 
-    if (res && *res == WPS_FAILURE) {
+    if (*res == WPS_FAILURE) {
         sm->state = WPA_FAIL;
     }
 
@@ -667,7 +685,6 @@ int wps_send_wps_mX_rsp(u8 id)
     wpabuf_put_u8(eap_buf, opcode);
     wpabuf_put_u8(eap_buf, 0x00); /* flags */
     wpabuf_put_data(eap_buf, wpabuf_head_u8(wps_buf), wpabuf_len(wps_buf));
-
 
     wpabuf_free(wps_buf);
 
@@ -1013,22 +1030,17 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
             break;
         case EAP_TYPE_EXPANDED:
             wpa_printf(MSG_DEBUG, "=========expanded plen[%" PRId32 "], %d===========", plen, sizeof(*ehdr));
-            if (ehdr->identifier == sm->current_identifier) {
-                ret = 0;
-                wpa_printf(MSG_DEBUG, "wps: ignore overlap identifier");
-                goto out;
-            }
             sm->current_identifier = ehdr->identifier;
 
             tmp = (u8 *)(ehdr + 1) + 1;
             ret = wps_process_wps_mX_req(tmp, plen - sizeof(*ehdr) - 1, &res);
-            if (ret == 0 && res != WPS_FAILURE && res != WPS_FRAGMENT) {
+            if (ret == ESP_OK && res != WPS_FAILURE && res != WPS_FRAGMENT) {
                 ret = wps_send_wps_mX_rsp(ehdr->identifier);
-                if (ret == 0) {
+                if (ret == ESP_OK) {
                     wpa_printf(MSG_DEBUG, "sm->wps->state = %d", sm->wps->state);
                     wps_start_msg_timer();
                 }
-            } else if (ret == 0 && res == WPS_FRAGMENT) {
+            } else if (ret == ESP_OK && res == WPS_FRAGMENT) {
                 wpa_printf(MSG_DEBUG, "wps frag, continue...");
                 ret = ESP_OK;
             } else {
