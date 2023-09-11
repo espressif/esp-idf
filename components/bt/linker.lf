@@ -24,12 +24,13 @@ entries:
 [mapping:bt]
 archive: libbt.a
 entries:
-    * (bt_start_end);
-        bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),
-        bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_common),
-        data -> dram0_data  ALIGN(4) ALIGN(4, post) SURROUND(bt_data)
     if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
         * (extram_bss)
+    else:
+        * (bt_start_end);
+            bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),
+            bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_common),
+            data -> dram0_data  ALIGN(4) ALIGN(4, post) SURROUND(bt_data)
 
 [mapping:btdm]
 archive: libbtdm_app.a
