@@ -68,9 +68,9 @@ typedef enum
 /// Dial type of ESP_HF_DIAL_EVT
 typedef enum
 {
-    ESP_HF_DIAL_MEM = 0,                      /*!< Dial with a memory position */
+    ESP_HF_DIAL_NUM = 0,                      /*!< Dial with a phone number */
     ESP_HF_DIAL_VOIP,                         /*!< Dial with VoIP */
-    ESP_HF_DIAL_NUM,                          /*!< Dial with a phone number */
+    ESP_HF_DIAL_MEM,                          /*!< Dial with a memory position */
 } esp_hf_dial_type_t;
 
 /// HFP AG callback parameters
