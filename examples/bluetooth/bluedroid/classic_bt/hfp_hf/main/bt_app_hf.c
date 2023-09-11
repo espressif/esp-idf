@@ -1,10 +1,8 @@
 /*
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express esp_hf_ag_apiied.
-*/
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -49,6 +47,7 @@ const char *c_hf_evt_str[] = {
     "INBAND_RING_TONE_EVT",              /*!< in-band ring tone settings */
     "LAST_VOICE_TAG_NUMBER_EVT",         /*!< requested number from AG event */
     "RING_IND_EVT",                      /*!< ring indication event */
+    "PKT_STAT_EVT",                      /*!< requested number of packet status event */
 };
 
 // esp_hf_client_connection_state_t
@@ -229,7 +228,7 @@ static void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz)
 /* callback for HF_CLIENT */
 void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
 {
-    if (event <= ESP_HF_CLIENT_RING_IND_EVT) {
+    if (event <= ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT) {
         ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
     } else {
         ESP_LOGE(BT_HF_TAG, "APP HFP invalid event %d", event);
@@ -394,7 +393,11 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
                     (param->binp.number == NULL) ? "NULL" : param->binp.number);
             break;
         }
-
+        case ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT:
+        {
+            ESP_LOGE(BT_HF_TAG, "ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT: %d", event);
+            break;
+        }
         default:
             ESP_LOGE(BT_HF_TAG, "HF_CLIENT EVT: %d", event);
             break;
