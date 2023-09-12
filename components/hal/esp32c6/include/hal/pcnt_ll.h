@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
 #include "hal/pcnt_types.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -433,6 +434,27 @@ static inline void pcnt_ll_enable_glitch_filter(pcnt_dev_t *hw, uint32_t unit, b
 static inline volatile void *pcnt_ll_get_intr_status_reg(pcnt_dev_t *hw)
 {
     return &hw->int_st.val;
+}
+
+/**
+ * @brief Enable or disable the bus clock for the PCNT module
+ *
+ * @param set_bit True to set bit, false to clear bit
+ */
+static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    PCR.pcnt_conf.pcnt_clk_en = enable;
+}
+
+/**
+ * @brief Reset the PCNT module
+ */
+static inline void pcnt_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    PCR.pcnt_conf.pcnt_rst_en = 1;
+    PCR.pcnt_conf.pcnt_rst_en = 0;
 }
 
 #ifdef __cplusplus

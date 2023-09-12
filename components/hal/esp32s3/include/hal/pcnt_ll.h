@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
 #include "hal/pcnt_types.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -434,6 +435,35 @@ static inline volatile void *pcnt_ll_get_intr_status_reg(pcnt_dev_t *hw)
 {
     return &hw->int_st.val;
 }
+
+/**
+ * @brief Enable or disable the bus clock for the PCNT module
+ *
+ * @param set_bit True to set bit, false to clear bit
+ */
+static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en0.pcnt_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define pcnt_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; pcnt_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the PCNT module
+ */
+static inline void pcnt_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en0.pcnt_rst = 1;
+    SYSTEM.perip_rst_en0.pcnt_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define pcnt_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; pcnt_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }
