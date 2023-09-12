@@ -11,3 +11,4 @@
     storage
     networking
     system
+    wifi
