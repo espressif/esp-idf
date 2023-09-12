@@ -70,7 +70,10 @@ class GenerationTest(unittest.TestCase):
             self.entities.add_sections_info(objdump)
 
         with open('data/linker_script.ld') as linker_script:
-            self.linker_script = LinkerScript(linker_script)
+            self.linker_script_expect = LinkerScript(linker_script)
+
+        with open('data/linker_script.ld') as linker_script:
+            self.linker_script_actual = LinkerScript(linker_script)
 
     @staticmethod
     def create_fragment_file(contents, name='test_fragment.lf'):
@@ -84,11 +87,11 @@ class GenerationTest(unittest.TestCase):
         self.generation.add_fragments_from_file(fragment_file)
 
     def write(self, expected, actual):
-        self.linker_script.fill(expected)
-        self.linker_script.write(open('expected.ld', 'w'))
+        self.linker_script_expect.fill(expected)
+        self.linker_script_expect.write(open('expected.ld', 'w'))
 
-        self.linker_script.fill(actual)
-        self.linker_script.write(open('actual.ld', 'w'))
+        self.linker_script_actual.fill(actual)
+        self.linker_script_actual.write(open('actual.ld', 'w'))
 
     def generate_default_rules(self):
         rules = collections.defaultdict(list)
