@@ -24,7 +24,7 @@ extern "C" {
 #include "hal/misc.h"
 
 /* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
-#define MWDT_LL_DEFAULT_CLK_PRESCALER 24000
+#define MWDT_LL_DEFAULT_CLK_PRESCALER 16000
 
 //Type check wdt_stage_action_t
 _Static_assert(WDT_STAGE_ACTION_OFF == TIMG_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with wdt_stage_action_t");
