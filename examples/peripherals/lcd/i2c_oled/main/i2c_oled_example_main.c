@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -141,5 +141,10 @@ void app_main(void)
     lv_disp_set_rotation(disp, LV_DISP_ROT_NONE);
 
     ESP_LOGI(TAG, "Display LVGL Scroll Text");
-    example_lvgl_demo_ui(disp);
+    // Lock the mutex due to the LVGL APIs are not thread-safe
+    if (lvgl_port_lock(0)) {
+        example_lvgl_demo_ui(disp);
+        // Release the mutex
+        lvgl_port_unlock();
+    }
 }

@@ -5,7 +5,11 @@
 
 [esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd.html) supports RGB interfaced LCD panel, with one or two frame buffer(s) managed by the driver itself.
 
-This example shows the general process of installing an RGB panel driver, and displays a scatter chart on the screen based on the LVGL library. For more information about porting the LVGL library, please refer to [official porting guide](https://docs.lvgl.io/master/porting/index.html). This example uses two kinds of **buffering mode** based on the number of frame buffers:
+This example shows the general process of installing an RGB panel driver, and displays a scatter chart on the screen based on the LVGL library.
+
+This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_timer.html) to generate the ticks needed by LVGL and uses a dedicated task to run the `lv_timer_handler()`. Since the LVGL APIs are not thread-safe, this example uses a mutex which be invoked before the call of `lv_timer_handler()` and released after it. The same mutex needs to be used in other tasks and threads around every LVGL (lv_...) related function call and code. For more porting guides, please refer to [LVGL porting doc](https://docs.lvgl.io/master/porting/index.html).
+
+This example uses two kinds of **buffering mode** based on the number of frame buffers:
 
 | Number of Frame Buffers | LVGL buffering mode | Way to avoid tear effect                                                                                    |
 |-------------------------|---------------------|-------------------------------------------------------------------------------------------------------------|
@@ -89,6 +93,8 @@ I (906) example: Initialize LVGL library
 I (916) example: Allocate separate LVGL draw buffers from PSRAM
 I (916) example: Register display driver to LVGL
 I (926) example: Install LVGL tick timer
+I (926) example: Create LVGL task
+I (926) example: Starting LVGL task
 I (926) example: Display LVGL Scatter Chart
 ...
 ```
