@@ -167,6 +167,12 @@ menu "FreeRTOS"
                 Enable backward compatibility with APIs prior to FreeRTOS v8.0.0. (see
                 configENABLE_BACKWARD_COMPATIBILITY documentation for more details).
 
+        config FREERTOS_TIMER_SERVICE_TASK_NAME
+            string "configTIMER_SERVICE_TASK_NAME"
+            default "Tmr Svc"
+            help
+                Sets the timer task's name (see configTIMER_SERVICE_TASK_NAME documentation for more details).
+
         config FREERTOS_TIMER_TASK_PRIORITY
             int "configTIMER_TASK_PRIORITY"
             range 1 25
