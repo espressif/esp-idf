@@ -955,8 +955,8 @@ static esp_err_t verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_i
     if (memcmp(data->image_digest, image_hash, HASH_LEN) != 0) {
         ESP_LOGE(TAG, "Image hash failed - image is corrupt");
         bootloader_debug_buffer(data->image_digest, HASH_LEN, "Expected hash");
-#ifdef CONFIG_IDF_ENV_FPGA
-        ESP_LOGW(TAG, "Ignoring invalid SHA-256 as running on FPGA");
+#if CONFIG_IDF_ENV_FPGA || CONFIG_IDF_ENV_BRINGUP
+        ESP_LOGW(TAG, "Ignoring invalid SHA-256 as running on FPGA / doing bringup");
         return ESP_OK;
 #endif
         return ESP_ERR_IMAGE_INVALID;

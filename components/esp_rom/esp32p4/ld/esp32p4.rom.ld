@@ -6,7 +6,7 @@
 /* ROM function interface esp32p4.rom.ld for esp32p4
  *
  *
- * Generated from ./target/esp32p4/interface-esp32p4.yml md5sum d91797f41641e3e0180293939810e553
+ * Generated from ./target/esp32p4/interface-esp32p4.yml md5sum f6516bd9708d890f63db87f8aed53ca7
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -20,7 +20,7 @@
 /* Functions */
 rtc_get_reset_reason = 0x4fc00018;
 rtc_get_wakeup_cause = 0x4fc0001c;
-rtc_unhold_all_pads = 0x4fc00020;
+pmu_enable_unhold_pads = 0x4fc00020;
 ets_printf = 0x4fc00024;
 ets_install_putc1 = 0x4fc00028;
 ets_install_putc2 = 0x4fc0002c;
@@ -318,25 +318,27 @@ ets_clk_get_cpu_freq = 0x4fc00560;
  ***************************************/
 
 /* Functions */
-gpio_input_get = 0x4fc00564;
-gpio_input_get_high = 0x4fc00568;
+gpio_set_output_level = 0x4fc00564;
+gpio_get_input_level = 0x4fc00568;
 gpio_matrix_in = 0x4fc0056c;
 gpio_matrix_out = 0x4fc00570;
-gpio_output_disable = 0x4fc00574;
-gpio_output_enable = 0x4fc00578;
-gpio_output_set = 0x4fc0057c;
-gpio_output_set_high = 0x4fc00580;
-gpio_pad_hold = 0x4fc00584;
-gpio_pad_input_disable = 0x4fc00588;
-gpio_pad_input_enable = 0x4fc0058c;
-gpio_pad_pulldown = 0x4fc00590;
-gpio_pad_pullup = 0x4fc00594;
-gpio_pad_select_gpio = 0x4fc00598;
-gpio_pad_set_drv = 0x4fc0059c;
-gpio_pad_unhold = 0x4fc005a0;
-gpio_pin_wakeup_disable = 0x4fc005a4;
-gpio_pin_wakeup_enable = 0x4fc005a8;
-gpio_bypass_matrix_in = 0x4fc005ac;
+gpio_bypass_matrix_in = 0x4fc00574;
+gpio_output_disable = 0x4fc00578;
+gpio_output_enable = 0x4fc0057c;
+gpio_pad_input_disable = 0x4fc00580;
+gpio_pad_input_enable = 0x4fc00584;
+gpio_pad_pulldown = 0x4fc00588;
+gpio_pad_pullup = 0x4fc0058c;
+gpio_pad_select_gpio = 0x4fc00590;
+gpio_pad_set_drv = 0x4fc00594;
+gpio_pad_unhold = 0x4fc00598;
+gpio_pad_hold = 0x4fc0059c;
+gpio_lppad_select_mux = 0x4fc005a0;
+gpio_ded_pad_set_drv = 0x4fc005a4;
+gpio_ded_pad_pullup = 0x4fc005a8;
+gpio_ded_pad_pulldown = 0x4fc005ac;
+gpio_ded_pad_hold = 0x4fc005b0;
+gpio_ded_pad_unhold = 0x4fc005b4;
 
 
 /***************************************
@@ -344,18 +346,18 @@ gpio_bypass_matrix_in = 0x4fc005ac;
  ***************************************/
 
 /* Functions */
-esprv_intc_int_set_priority = 0x4fc005b0;
-esprv_intc_int_set_threshold = 0x4fc005b4;
-esprv_intc_int_enable = 0x4fc005b8;
-esprv_intc_int_disable = 0x4fc005bc;
-esprv_intc_int_set_type = 0x4fc005c0;
-PROVIDE( intr_handler_set = 0x4fc005c4 );
-intr_matrix_set = 0x4fc005c8;
-ets_intr_lock = 0x4fc005cc;
-ets_intr_unlock = 0x4fc005d0;
-ets_isr_attach = 0x4fc005d4;
-ets_isr_mask = 0x4fc005d8;
-ets_isr_unmask = 0x4fc005dc;
+esprv_intc_int_set_priority = 0x4fc005b8;
+esprv_intc_int_set_threshold = 0x4fc005bc;
+esprv_intc_int_enable = 0x4fc005c0;
+esprv_intc_int_disable = 0x4fc005c4;
+esprv_intc_int_set_type = 0x4fc005c8;
+PROVIDE( intr_handler_set = 0x4fc005cc );
+intr_matrix_set = 0x4fc005d0;
+ets_intr_lock = 0x4fc005d4;
+ets_intr_unlock = 0x4fc005d8;
+ets_isr_attach = 0x4fc005dc;
+ets_isr_mask = 0x4fc005e0;
+ets_isr_unmask = 0x4fc005e4;
 
 
 /***************************************
@@ -363,52 +365,52 @@ ets_isr_unmask = 0x4fc005dc;
  ***************************************/
 
 /* Functions */
-md5_vector = 0x4fc005e0;
-MD5Init = 0x4fc005e4;
-MD5Update = 0x4fc005e8;
-MD5Final = 0x4fc005ec;
-crc32_le = 0x4fc005f0;
-crc16_le = 0x4fc005f4;
-crc8_le = 0x4fc005f8;
-crc32_be = 0x4fc005fc;
-crc16_be = 0x4fc00600;
-crc8_be = 0x4fc00604;
-esp_crc8 = 0x4fc00608;
-ets_sha_enable = 0x4fc0060c;
-ets_sha_disable = 0x4fc00610;
-ets_sha_get_state = 0x4fc00614;
-ets_sha_init = 0x4fc00618;
-ets_sha_process = 0x4fc0061c;
-ets_sha_starts = 0x4fc00620;
-ets_sha_update = 0x4fc00624;
-ets_sha_finish = 0x4fc00628;
-ets_sha_clone = 0x4fc0062c;
-ets_hmac_enable = 0x4fc00630;
-ets_hmac_disable = 0x4fc00634;
-ets_hmac_calculate_message = 0x4fc00638;
-ets_hmac_calculate_downstream = 0x4fc0063c;
-ets_hmac_invalidate_downstream = 0x4fc00640;
-ets_jtag_enable_temporarily = 0x4fc00644;
-ets_aes_enable = 0x4fc00648;
-ets_aes_disable = 0x4fc0064c;
-ets_aes_setkey = 0x4fc00650;
-ets_aes_block = 0x4fc00654;
-ets_aes_setkey_dec = 0x4fc00658;
-ets_aes_setkey_enc = 0x4fc0065c;
-ets_bigint_enable = 0x4fc00660;
-ets_bigint_disable = 0x4fc00664;
-ets_bigint_multiply = 0x4fc00668;
-ets_bigint_modmult = 0x4fc0066c;
-ets_bigint_modexp = 0x4fc00670;
-ets_bigint_wait_finish = 0x4fc00674;
-ets_bigint_getz = 0x4fc00678;
-ets_ds_enable = 0x4fc0067c;
-ets_ds_disable = 0x4fc00680;
-ets_ds_start_sign = 0x4fc00684;
-ets_ds_is_busy = 0x4fc00688;
-ets_ds_finish_sign = 0x4fc0068c;
-ets_ds_encrypt_params = 0x4fc00690;
-ets_mgf1_sha256 = 0x4fc00694;
+md5_vector = 0x4fc005e8;
+MD5Init = 0x4fc005ec;
+MD5Update = 0x4fc005f0;
+MD5Final = 0x4fc005f4;
+crc32_le = 0x4fc005f8;
+crc16_le = 0x4fc005fc;
+crc8_le = 0x4fc00600;
+crc32_be = 0x4fc00604;
+crc16_be = 0x4fc00608;
+crc8_be = 0x4fc0060c;
+esp_crc8 = 0x4fc00610;
+ets_sha_enable = 0x4fc00614;
+ets_sha_disable = 0x4fc00618;
+ets_sha_get_state = 0x4fc0061c;
+ets_sha_init = 0x4fc00620;
+ets_sha_process = 0x4fc00624;
+ets_sha_starts = 0x4fc00628;
+ets_sha_update = 0x4fc0062c;
+ets_sha_finish = 0x4fc00630;
+ets_sha_clone = 0x4fc00634;
+ets_hmac_enable = 0x4fc00638;
+ets_hmac_disable = 0x4fc0063c;
+ets_hmac_calculate_message = 0x4fc00640;
+ets_hmac_calculate_downstream = 0x4fc00644;
+ets_hmac_invalidate_downstream = 0x4fc00648;
+ets_jtag_enable_temporarily = 0x4fc0064c;
+ets_aes_enable = 0x4fc00650;
+ets_aes_disable = 0x4fc00654;
+ets_aes_setkey = 0x4fc00658;
+ets_aes_block = 0x4fc0065c;
+ets_aes_setkey_dec = 0x4fc00660;
+ets_aes_setkey_enc = 0x4fc00664;
+ets_bigint_enable = 0x4fc00668;
+ets_bigint_disable = 0x4fc0066c;
+ets_bigint_multiply = 0x4fc00670;
+ets_bigint_modmult = 0x4fc00674;
+ets_bigint_modexp = 0x4fc00678;
+ets_bigint_wait_finish = 0x4fc0067c;
+ets_bigint_getz = 0x4fc00680;
+ets_ds_enable = 0x4fc00684;
+ets_ds_disable = 0x4fc00688;
+ets_ds_start_sign = 0x4fc0068c;
+ets_ds_is_busy = 0x4fc00690;
+ets_ds_finish_sign = 0x4fc00694;
+ets_ds_encrypt_params = 0x4fc00698;
+ets_mgf1_sha256 = 0x4fc0069c;
 /* Data (.data, .bss, .rodata) */
 crc32_le_table_ptr = 0x4fc1fff8;
 crc16_le_table_ptr = 0x4fc1fff4;
@@ -423,35 +425,35 @@ crc8_be_table_ptr = 0x4fc1ffe4;
  ***************************************/
 
 /* Functions */
-ets_efuse_read = 0x4fc00698;
-ets_efuse_program = 0x4fc0069c;
-ets_efuse_clear_program_registers = 0x4fc006a0;
-ets_efuse_write_key = 0x4fc006a4;
-ets_efuse_get_read_register_address = 0x4fc006a8;
-ets_efuse_get_key_purpose = 0x4fc006ac;
-ets_efuse_key_block_unused = 0x4fc006b0;
-ets_efuse_find_unused_key_block = 0x4fc006b4;
-ets_efuse_rs_calculate = 0x4fc006b8;
-ets_efuse_count_unused_key_blocks = 0x4fc006bc;
-ets_efuse_secure_boot_enabled = 0x4fc006c0;
-ets_efuse_secure_boot_aggressive_revoke_enabled = 0x4fc006c4;
-ets_efuse_cache_encryption_enabled = 0x4fc006c8;
-ets_efuse_download_modes_disabled = 0x4fc006cc;
-ets_efuse_find_purpose = 0x4fc006d0;
-ets_efuse_force_send_resume = 0x4fc006d4;
-ets_efuse_get_flash_delay_us = 0x4fc006d8;
-ets_efuse_get_uart_print_control = 0x4fc006dc;
-ets_efuse_direct_boot_mode_disabled = 0x4fc006e0;
-ets_efuse_security_download_modes_enabled = 0x4fc006e4;
-ets_efuse_jtag_disabled = 0x4fc006e8;
-ets_efuse_usb_print_is_disabled = 0x4fc006ec;
-ets_efuse_usb_download_mode_disabled = 0x4fc006f0;
-ets_efuse_usb_device_disabled = 0x4fc006f4;
-ets_efuse_get_km_huk_gen_state = 0x4fc006f8;
-ets_efuse_get_km_deploy_only_once = 0x4fc006fc;
-ets_efuse_get_force_use_km_key = 0x4fc00700;
-ets_efuse_xts_key_length_256 = 0x4fc00704;
-ets_efuse_get_km_key_lock = 0x4fc00708;
+ets_efuse_read = 0x4fc006a0;
+ets_efuse_program = 0x4fc006a4;
+ets_efuse_clear_program_registers = 0x4fc006a8;
+ets_efuse_write_key = 0x4fc006ac;
+ets_efuse_get_read_register_address = 0x4fc006b0;
+ets_efuse_get_key_purpose = 0x4fc006b4;
+ets_efuse_key_block_unused = 0x4fc006b8;
+ets_efuse_find_unused_key_block = 0x4fc006bc;
+ets_efuse_rs_calculate = 0x4fc006c0;
+ets_efuse_count_unused_key_blocks = 0x4fc006c4;
+ets_efuse_secure_boot_enabled = 0x4fc006c8;
+ets_efuse_secure_boot_aggressive_revoke_enabled = 0x4fc006cc;
+ets_efuse_cache_encryption_enabled = 0x4fc006d0;
+ets_efuse_download_modes_disabled = 0x4fc006d4;
+ets_efuse_find_purpose = 0x4fc006d8;
+ets_efuse_force_send_resume = 0x4fc006dc;
+ets_efuse_get_flash_delay_us = 0x4fc006e0;
+ets_efuse_get_uart_print_control = 0x4fc006e4;
+ets_efuse_direct_boot_mode_disabled = 0x4fc006e8;
+ets_efuse_security_download_modes_enabled = 0x4fc006ec;
+ets_efuse_jtag_disabled = 0x4fc006f0;
+ets_efuse_usb_print_is_disabled = 0x4fc006f4;
+ets_efuse_usb_download_mode_disabled = 0x4fc006f8;
+ets_efuse_usb_device_disabled = 0x4fc006fc;
+ets_efuse_get_km_huk_gen_state = 0x4fc00700;
+ets_efuse_get_km_deploy_only_once = 0x4fc00704;
+ets_efuse_get_force_use_km_key = 0x4fc00708;
+ets_efuse_xts_key_length_256 = 0x4fc0070c;
+ets_efuse_get_km_key_lock = 0x4fc00710;
 
 
 /***************************************
@@ -459,9 +461,9 @@ ets_efuse_get_km_key_lock = 0x4fc00708;
  ***************************************/
 
 /* Functions */
-esp_rom_check_recover_key = 0x4fc0070c;
-esp_rom_km_huk_conf = 0x4fc00710;
-esp_rom_km_huk_risk = 0x4fc00714;
+esp_rom_check_recover_key = 0x4fc00714;
+esp_rom_km_huk_conf = 0x4fc00718;
+esp_rom_km_huk_risk = 0x4fc0071c;
 
 
 /***************************************
@@ -469,13 +471,13 @@ esp_rom_km_huk_risk = 0x4fc00714;
  ***************************************/
 
 /* Functions */
-ets_emsa_pss_verify = 0x4fc00718;
-ets_rsa_pss_verify = 0x4fc0071c;
-ets_ecdsa_verify = 0x4fc00720;
-ets_secure_boot_verify_bootloader_with_keys = 0x4fc00724;
-ets_secure_boot_verify_signature = 0x4fc00728;
-ets_secure_boot_read_key_digests = 0x4fc0072c;
-ets_secure_boot_revoke_public_key_digest = 0x4fc00730;
+ets_emsa_pss_verify = 0x4fc00720;
+ets_rsa_pss_verify = 0x4fc00724;
+ets_ecdsa_verify = 0x4fc00728;
+ets_secure_boot_verify_bootloader_with_keys = 0x4fc0072c;
+ets_secure_boot_verify_signature = 0x4fc00730;
+ets_secure_boot_read_key_digests = 0x4fc00734;
+ets_secure_boot_revoke_public_key_digest = 0x4fc00738;
 
 
 /***************************************
@@ -483,10 +485,10 @@ ets_secure_boot_revoke_public_key_digest = 0x4fc00730;
  ***************************************/
 
 /* Functions */
-usb_serial_device_rx_one_char = 0x4fc008a8;
-usb_serial_device_rx_one_char_block = 0x4fc008ac;
-usb_serial_device_tx_flush = 0x4fc008b0;
-usb_serial_device_tx_one_char = 0x4fc008b4;
+usb_serial_device_rx_one_char = 0x4fc008b0;
+usb_serial_device_rx_one_char_block = 0x4fc008b4;
+usb_serial_device_tx_flush = 0x4fc008b8;
+usb_serial_device_tx_one_char = 0x4fc008bc;
 
 
 /***************************************
@@ -494,11 +496,11 @@ usb_serial_device_tx_one_char = 0x4fc008b4;
  ***************************************/
 
 /* Functions */
-Uart_Init_USB = 0x4fc008b8;
-usb_serial_otg_rx_one_char = 0x4fc008bc;
-usb_serial_otg_rx_one_char_block = 0x4fc008c0;
-usb_serial_otg_tx_flush = 0x4fc008c4;
-usb_serial_otg_tx_one_char = 0x4fc008c8;
+Uart_Init_USB = 0x4fc008c0;
+usb_serial_otg_rx_one_char = 0x4fc008c4;
+usb_serial_otg_rx_one_char_block = 0x4fc008c8;
+usb_serial_otg_tx_flush = 0x4fc008cc;
+usb_serial_otg_tx_one_char = 0x4fc008d0;
 /* Data (.data, .bss, .rodata) */
 uart_acm_dev = 0x4ff3ffd4;
 
@@ -508,99 +510,99 @@ uart_acm_dev = 0x4ff3ffd4;
  ***************************************/
 
 /* Functions */
-cdc_acm_class_handle_req = 0x4fc008cc;
-cdc_acm_init = 0x4fc008d0;
-cdc_acm_fifo_fill = 0x4fc008d4;
-cdc_acm_rx_fifo_cnt = 0x4fc008d8;
-cdc_acm_fifo_read = 0x4fc008dc;
-cdc_acm_irq_tx_enable = 0x4fc008e0;
-cdc_acm_irq_tx_disable = 0x4fc008e4;
-cdc_acm_irq_state_enable = 0x4fc008e8;
-cdc_acm_irq_state_disable = 0x4fc008ec;
-cdc_acm_irq_tx_ready = 0x4fc008f0;
-cdc_acm_irq_rx_enable = 0x4fc008f4;
-cdc_acm_irq_rx_disable = 0x4fc008f8;
-cdc_acm_irq_rx_ready = 0x4fc008fc;
-cdc_acm_irq_is_pending = 0x4fc00900;
-cdc_acm_irq_callback_set = 0x4fc00904;
-cdc_acm_line_ctrl_set = 0x4fc00908;
-cdc_acm_line_ctrl_get = 0x4fc0090c;
-cdc_acm_poll_out = 0x4fc00910;
-chip_usb_dw_did_persist = 0x4fc00914;
-chip_usb_dw_init = 0x4fc00918;
-chip_usb_detach = 0x4fc0091c;
-chip_usb_dw_prepare_persist = 0x4fc00920;
-chip_usb_get_persist_flags = 0x4fc00924;
-chip_usb_set_persist_flags = 0x4fc00928;
-cpio_start = 0x4fc0092c;
-cpio_feed = 0x4fc00930;
-cpio_done = 0x4fc00934;
-cpio_destroy = 0x4fc00938;
-dfu_flash_init = 0x4fc0093c;
-dfu_flash_erase = 0x4fc00940;
-dfu_flash_program = 0x4fc00944;
-dfu_flash_read = 0x4fc00948;
-dfu_flash_attach = 0x4fc0094c;
-dfu_cpio_callback = 0x4fc00950;
-dfu_updater_get_err = 0x4fc00954;
-dfu_updater_clear_err = 0x4fc00958;
-dfu_updater_enable = 0x4fc0095c;
-dfu_updater_begin = 0x4fc00960;
-dfu_updater_feed = 0x4fc00964;
-dfu_updater_end = 0x4fc00968;
-dfu_updater_set_raw_addr = 0x4fc0096c;
-dfu_updater_flash_read = 0x4fc00970;
-usb_dc_prepare_persist = 0x4fc00974;
-usb_dw_isr_handler = 0x4fc00978;
-usb_dc_attach = 0x4fc0097c;
-usb_dc_detach = 0x4fc00980;
-usb_dc_reset = 0x4fc00984;
-usb_dc_set_address = 0x4fc00988;
-usb_dc_ep_check_cap = 0x4fc0098c;
-usb_dc_ep_configure = 0x4fc00990;
-usb_dc_ep_set_stall = 0x4fc00994;
-usb_dc_ep_clear_stall = 0x4fc00998;
-usb_dc_ep_halt = 0x4fc0099c;
-usb_dc_ep_is_stalled = 0x4fc009a0;
-usb_dc_ep_enable = 0x4fc009a4;
-usb_dc_ep_disable = 0x4fc009a8;
-usb_dc_ep_flush = 0x4fc009ac;
-usb_dc_ep_write_would_block = 0x4fc009b0;
-usb_dc_ep_write = 0x4fc009b4;
-usb_dc_ep_read_wait = 0x4fc009b8;
-usb_dc_ep_read_continue = 0x4fc009bc;
-usb_dc_ep_read = 0x4fc009c0;
-usb_dc_ep_set_callback = 0x4fc009c4;
-usb_dc_set_status_callback = 0x4fc009c8;
-usb_dc_ep_mps = 0x4fc009cc;
-usb_dc_check_poll_for_interrupts = 0x4fc009d0;
-mac_addr_to_serial_str_desc = 0x4fc009d4;
-usb_set_current_descriptor = 0x4fc009d8;
-usb_get_descriptor = 0x4fc009dc;
-usb_dev_resume = 0x4fc009e0;
-usb_dev_get_configuration = 0x4fc009e4;
-usb_set_config = 0x4fc009e8;
-usb_deconfig = 0x4fc009ec;
-usb_enable = 0x4fc009f0;
-usb_disable = 0x4fc009f4;
-usb_write_would_block = 0x4fc009f8;
-usb_write = 0x4fc009fc;
-usb_read = 0x4fc00a00;
-usb_ep_set_stall = 0x4fc00a04;
-usb_ep_clear_stall = 0x4fc00a08;
-usb_ep_read_wait = 0x4fc00a0c;
-usb_ep_read_continue = 0x4fc00a10;
-usb_transfer_ep_callback = 0x4fc00a14;
-usb_transfer = 0x4fc00a18;
-usb_cancel_transfer = 0x4fc00a1c;
-usb_transfer_sync = 0x4fc00a20;
-usb_dfu_set_detach_cb = 0x4fc00a24;
-dfu_class_handle_req = 0x4fc00a28;
-dfu_status_cb = 0x4fc00a2c;
-dfu_custom_handle_req = 0x4fc00a30;
-usb_dfu_init = 0x4fc00a34;
-usb_dfu_force_detach = 0x4fc00a38;
-usb_dev_deinit = 0x4fc00a3c;
-usb_dw_ctrl_deinit = 0x4fc00a40;
+cdc_acm_class_handle_req = 0x4fc008d4;
+cdc_acm_init = 0x4fc008d8;
+cdc_acm_fifo_fill = 0x4fc008dc;
+cdc_acm_rx_fifo_cnt = 0x4fc008e0;
+cdc_acm_fifo_read = 0x4fc008e4;
+cdc_acm_irq_tx_enable = 0x4fc008e8;
+cdc_acm_irq_tx_disable = 0x4fc008ec;
+cdc_acm_irq_state_enable = 0x4fc008f0;
+cdc_acm_irq_state_disable = 0x4fc008f4;
+cdc_acm_irq_tx_ready = 0x4fc008f8;
+cdc_acm_irq_rx_enable = 0x4fc008fc;
+cdc_acm_irq_rx_disable = 0x4fc00900;
+cdc_acm_irq_rx_ready = 0x4fc00904;
+cdc_acm_irq_is_pending = 0x4fc00908;
+cdc_acm_irq_callback_set = 0x4fc0090c;
+cdc_acm_line_ctrl_set = 0x4fc00910;
+cdc_acm_line_ctrl_get = 0x4fc00914;
+cdc_acm_poll_out = 0x4fc00918;
+chip_usb_dw_did_persist = 0x4fc0091c;
+chip_usb_dw_init = 0x4fc00920;
+chip_usb_detach = 0x4fc00924;
+chip_usb_dw_prepare_persist = 0x4fc00928;
+chip_usb_get_persist_flags = 0x4fc0092c;
+chip_usb_set_persist_flags = 0x4fc00930;
+cpio_start = 0x4fc00934;
+cpio_feed = 0x4fc00938;
+cpio_done = 0x4fc0093c;
+cpio_destroy = 0x4fc00940;
+dfu_flash_init = 0x4fc00944;
+dfu_flash_erase = 0x4fc00948;
+dfu_flash_program = 0x4fc0094c;
+dfu_flash_read = 0x4fc00950;
+dfu_flash_attach = 0x4fc00954;
+dfu_cpio_callback = 0x4fc00958;
+dfu_updater_get_err = 0x4fc0095c;
+dfu_updater_clear_err = 0x4fc00960;
+dfu_updater_enable = 0x4fc00964;
+dfu_updater_begin = 0x4fc00968;
+dfu_updater_feed = 0x4fc0096c;
+dfu_updater_end = 0x4fc00970;
+dfu_updater_set_raw_addr = 0x4fc00974;
+dfu_updater_flash_read = 0x4fc00978;
+usb_dc_prepare_persist = 0x4fc0097c;
+usb_dw_isr_handler = 0x4fc00980;
+usb_dc_attach = 0x4fc00984;
+usb_dc_detach = 0x4fc00988;
+usb_dc_reset = 0x4fc0098c;
+usb_dc_set_address = 0x4fc00990;
+usb_dc_ep_check_cap = 0x4fc00994;
+usb_dc_ep_configure = 0x4fc00998;
+usb_dc_ep_set_stall = 0x4fc0099c;
+usb_dc_ep_clear_stall = 0x4fc009a0;
+usb_dc_ep_halt = 0x4fc009a4;
+usb_dc_ep_is_stalled = 0x4fc009a8;
+usb_dc_ep_enable = 0x4fc009ac;
+usb_dc_ep_disable = 0x4fc009b0;
+usb_dc_ep_flush = 0x4fc009b4;
+usb_dc_ep_write_would_block = 0x4fc009b8;
+usb_dc_ep_write = 0x4fc009bc;
+usb_dc_ep_read_wait = 0x4fc009c0;
+usb_dc_ep_read_continue = 0x4fc009c4;
+usb_dc_ep_read = 0x4fc009c8;
+usb_dc_ep_set_callback = 0x4fc009cc;
+usb_dc_set_status_callback = 0x4fc009d0;
+usb_dc_ep_mps = 0x4fc009d4;
+usb_dc_check_poll_for_interrupts = 0x4fc009d8;
+mac_addr_to_serial_str_desc = 0x4fc009dc;
+usb_set_current_descriptor = 0x4fc009e0;
+usb_get_descriptor = 0x4fc009e4;
+usb_dev_resume = 0x4fc009e8;
+usb_dev_get_configuration = 0x4fc009ec;
+usb_set_config = 0x4fc009f0;
+usb_deconfig = 0x4fc009f4;
+usb_enable = 0x4fc009f8;
+usb_disable = 0x4fc009fc;
+usb_write_would_block = 0x4fc00a00;
+usb_write = 0x4fc00a04;
+usb_read = 0x4fc00a08;
+usb_ep_set_stall = 0x4fc00a0c;
+usb_ep_clear_stall = 0x4fc00a10;
+usb_ep_read_wait = 0x4fc00a14;
+usb_ep_read_continue = 0x4fc00a18;
+usb_transfer_ep_callback = 0x4fc00a1c;
+usb_transfer = 0x4fc00a20;
+usb_cancel_transfer = 0x4fc00a24;
+usb_transfer_sync = 0x4fc00a28;
+usb_dfu_set_detach_cb = 0x4fc00a2c;
+dfu_class_handle_req = 0x4fc00a30;
+dfu_status_cb = 0x4fc00a34;
+dfu_custom_handle_req = 0x4fc00a38;
+usb_dfu_init = 0x4fc00a3c;
+usb_dfu_force_detach = 0x4fc00a40;
+usb_dev_deinit = 0x4fc00a44;
+usb_dw_ctrl_deinit = 0x4fc00a48;
 /* Data (.data, .bss, .rodata) */
 s_usb_osglue = 0x4ff3ffc8;
