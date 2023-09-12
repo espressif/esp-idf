@@ -70,7 +70,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_LCD_IMAGE_SOURCE
         prompt "LCD image source from"
-        default EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM
+        default EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY
         help
             Select LCD image source
 
