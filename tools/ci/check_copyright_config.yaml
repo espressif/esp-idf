@@ -195,6 +195,7 @@ ignore:
     - components/http_parser/
     - components/wpa_supplicant/src/
     - '!components/wpa_supplicant/esp_supplicant/'
+    - components/wpa_supplicant/esp_supplicant/src/crypto/fastpbkdf2*
     - components/bt/host/bluedroid/
     - '!components/bt/host/bluedroid/api/'
     - '!components/bt/host/bluedroid/btc/'

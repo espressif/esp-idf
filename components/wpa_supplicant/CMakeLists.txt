@@ -96,6 +96,7 @@ endif()
 
 if(CONFIG_ESP_WIFI_MBEDTLS_CRYPTO)
     set(crypto_src
+    "esp_supplicant/src/crypto/fastpbkdf2.c"
     "esp_supplicant/src/crypto/crypto_mbedtls.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-bignum.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-rsa.c"
@@ -229,6 +230,7 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_IEEE80211W
     CONFIG_SHA256
     CONFIG_NO_RADIUS
+    CONFIG_FAST_PBKDF2
     )
 
 if(CONFIG_ESP_WIFI_ENABLE_WPA3_SAE)
