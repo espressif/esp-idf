@@ -13,18 +13,33 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Enumeration of phase 2 authentication types for EAP-TTLS.
+ *
+ * This enumeration defines the supported phase 2 authentication methods
+ * that can be used in the EAP-TTLS (Extensible Authentication Protocol -
+ * Tunneled Transport Layer Security) protocol for the second authentication
+ * phase.
+ */
 typedef enum {
-    ESP_EAP_TTLS_PHASE2_EAP,
-    ESP_EAP_TTLS_PHASE2_MSCHAPV2,
-    ESP_EAP_TTLS_PHASE2_MSCHAP,
-    ESP_EAP_TTLS_PHASE2_PAP,
-    ESP_EAP_TTLS_PHASE2_CHAP
+    ESP_EAP_TTLS_PHASE2_EAP,        /**< EAP (Extensible Authentication Protocol) */
+    ESP_EAP_TTLS_PHASE2_MSCHAPV2,   /**< MS-CHAPv2 (Microsoft Challenge Handshake Authentication Protocol - Version 2) */
+    ESP_EAP_TTLS_PHASE2_MSCHAP,     /**< MS-CHAP (Microsoft Challenge Handshake Authentication Protocol) */
+    ESP_EAP_TTLS_PHASE2_PAP,        /**< PAP (Password Authentication Protocol) */
+    ESP_EAP_TTLS_PHASE2_CHAP        /**< CHAP (Challenge Handshake Authentication Protocol) */
 } esp_eap_ttls_phase2_types;
 
+/**
+ * @brief Configuration settings for EAP-FAST
+ *        (Extensible Authentication Protocol - Flexible Authentication via Secure Tunneling).
+ *
+ * This structure defines the configuration options that can be used to customize the behavior of the
+ * EAP-FAST authentication protocol, specifically for Fast Provisioning and PAC (Protected Access Credential) handling.
+ */
 typedef struct {
-    int fast_provisioning;        /* Enables or disables Fast Provisioning in EAP-FAST */
-    int fast_max_pac_list_len;    /* Maximum length of the PAC (Protected Access Credential) list */
-    bool fast_pac_format_binary;  /* Set to true for binary format PAC, false for ASCII format PAC */
+    int fast_provisioning;        /**< Enable or disable Fast Provisioning in EAP-FAST (0 = disabled, 1 = enabled) */
+    int fast_max_pac_list_len;    /**< Maximum length of the PAC (Protected Access Credential) list */
+    bool fast_pac_format_binary;  /**< Set to true for binary format PAC, false for ASCII format PAC */
 } esp_eap_fast_config;
 
 
