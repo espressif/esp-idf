@@ -43,10 +43,12 @@ extern "C" {
 #define MCPWM_LL_EVENT_CAPTURE(cap)          (1 << ((cap) + 27))
 
 // Maximum values due to limited register bit width
+#define MCPWM_LL_MAX_GROUP_PRESCALE          256
 #define MCPWM_LL_MAX_TIMER_PRESCALE          256
 #define MCPWM_LL_MAX_CARRIER_PRESCALE        16
 #define MCPWM_LL_MAX_CARRIER_ONESHOT         16
 #define MCPWM_LL_MAX_CAPTURE_PRESCALE        256
+#define MCPWM_LL_MAX_CAPTURE_TIMER_PRESCALE  1
 #define MCPWM_LL_MAX_DEAD_DELAY              65536
 #define MCPWM_LL_MAX_COUNT_VALUE             65536
 
@@ -103,13 +105,14 @@ static inline void mcpwm_ll_group_enable_clock(mcpwm_dev_t *mcpwm, bool en)
  * @brief Set the MCPWM group clock prescale
  *
  * @param mcpwm Peripheral instance address
- * @param pre_scale Prescale value
+ * @param prescale Prescale value
  */
-static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int pre_scale)
+static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int prescale)
 {
     (void)mcpwm; // only one MCPWM instance
-    // group clock: PWM_clk = source_clock / (prescale + 1)
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.pwm_clk_conf, pwm_div_num, pre_scale - 1);
+    // group clock: PWM_clk = source_clock / (prescale)
+    HAL_ASSERT(prescale <= 256 && prescale > 0);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.pwm_clk_conf, pwm_div_num, prescale - 1);
 }
 
 /**
