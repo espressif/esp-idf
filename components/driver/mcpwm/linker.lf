@@ -1,0 +1,5 @@
+[mapping:mcpwm_driver]
+archive: libdriver.a
+entries:
+    if MCPWM_CTRL_FUNC_IN_IRAM = y:
+        mcpwm_cmpr: mcpwm_comparator_set_compare_value (noflash)

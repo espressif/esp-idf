@@ -44,6 +44,8 @@ typedef struct mcpwm_timer_t mcpwm_timer_t;
 typedef struct mcpwm_cap_timer_t mcpwm_cap_timer_t;
 typedef struct mcpwm_oper_t mcpwm_oper_t;
 typedef struct mcpwm_cmpr_t mcpwm_cmpr_t;
+typedef struct mcpwm_oper_cmpr_t mcpwm_oper_cmpr_t;
+typedef struct mcpwm_evt_cmpr_t mcpwm_evt_cmpr_t;
 typedef struct mcpwm_gen_t mcpwm_gen_t;
 typedef struct mcpwm_fault_t mcpwm_fault_t;
 typedef struct mcpwm_gpio_fault_t mcpwm_gpio_fault_t;
@@ -107,7 +109,10 @@ struct mcpwm_oper_t {
     portMUX_TYPE spinlock; // spin lock
     intr_handle_t intr;    // interrupt handle
     mcpwm_gen_t *generators[SOC_MCPWM_GENERATORS_PER_OPERATOR];    // mcpwm generator array
-    mcpwm_cmpr_t *comparators[SOC_MCPWM_COMPARATORS_PER_OPERATOR]; // mcpwm comparator array
+    mcpwm_oper_cmpr_t *comparators[SOC_MCPWM_COMPARATORS_PER_OPERATOR]; // mcpwm operator comparator array
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    mcpwm_evt_cmpr_t *event_comparators[SOC_MCPWM_EVENT_COMPARATORS_PER_OPERATOR]; // mcpwm event comparator array
+#endif
     mcpwm_trigger_source_t triggers[SOC_MCPWM_TRIGGERS_PER_OPERATOR];                 // mcpwm trigger array, can be either a fault or a sync
     mcpwm_soft_fault_t *soft_fault;                                // mcpwm software fault
     mcpwm_operator_brake_mode_t brake_mode_on_soft_fault;          // brake mode on software triggered fault
@@ -120,14 +125,30 @@ struct mcpwm_oper_t {
     void *user_data;                     // user data which would be passed to the trip zone callback
 };
 
+typedef enum {
+    MCPWM_OPERATOR_COMPARATOR, // operator comparator, can affect generator's behaviour
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    MCPWM_EVENT_COMPARATOR,    // event comparator, can only generate ETM event
+#endif
+} mcpwm_comparator_type_t;
+
 struct mcpwm_cmpr_t {
     int cmpr_id;                       // comparator ID, index from 0
     mcpwm_oper_t *oper;                // which operator that the comparator resides in
-    intr_handle_t intr;                // interrupt handle
     portMUX_TYPE spinlock;             // spin lock
     uint32_t compare_ticks;            // compare value of this comparator
+    mcpwm_comparator_type_t type;      // comparator type
+};
+
+struct mcpwm_oper_cmpr_t {
+    mcpwm_cmpr_t base;                 // base class
+    intr_handle_t intr;                // interrupt handle
     mcpwm_compare_event_cb_t on_reach; // ISR callback function  which would be invoked on timer counter reaches compare value
     void *user_data;                   // user data which would be passed to the comparator callbacks
+};
+
+struct mcpwm_evt_cmpr_t {
+    mcpwm_cmpr_t base; // base class
 };
 
 struct mcpwm_gen_t {
@@ -239,7 +260,7 @@ void mcpwm_release_group_handle(mcpwm_group_t *group);
 esp_err_t mcpwm_check_intr_priority(mcpwm_group_t *group, int intr_priority);
 int mcpwm_get_intr_priority_flag(mcpwm_group_t *group);
 esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src);
-esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t* ret_module_prescale);
+esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t *ret_module_prescale);
 
 #ifdef __cplusplus
 }

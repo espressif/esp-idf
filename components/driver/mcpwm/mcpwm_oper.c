@@ -91,8 +91,8 @@ esp_err_t mcpwm_new_operator(const mcpwm_operator_config_t *config, mcpwm_oper_h
     ESP_GOTO_ON_FALSE(config->group_id < SOC_MCPWM_GROUPS && config->group_id >= 0, ESP_ERR_INVALID_ARG,
                       err, TAG, "invalid group ID:%d", config->group_id);
     if (config->intr_priority) {
-        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG,
-                            TAG, "invalid interrupt priority:%d", config->intr_priority);
+        ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
+                          TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
     oper = heap_caps_calloc(1, sizeof(mcpwm_oper_t), MCPWM_MEM_ALLOC_CAPS);
@@ -146,6 +146,11 @@ esp_err_t mcpwm_del_operator(mcpwm_oper_handle_t oper)
         ESP_RETURN_ON_FALSE(!oper->generators[i], ESP_ERR_INVALID_STATE, TAG, "generator still in working");
     }
     ESP_RETURN_ON_FALSE(!oper->soft_fault, ESP_ERR_INVALID_STATE, TAG, "soft fault still in working");
+#if SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    for (int i = 0; i < SOC_MCPWM_EVENT_COMPARATORS_PER_OPERATOR; i++) {
+        ESP_RETURN_ON_FALSE(!oper->event_comparators[i], ESP_ERR_INVALID_STATE, TAG, "event comparator still in working");
+    }
+#endif
     mcpwm_group_t *group = oper->group;
     int oper_id = oper->oper_id;
     mcpwm_hal_context_t *hal = &group->hal;

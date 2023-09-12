@@ -69,6 +69,7 @@ GPIO **边沿** 事件是最常见的事件类型，任何 GPIO 管脚均可触�
     :SOC_SYSTIMER_SUPPORT_ETM: - 要了解如何从 esp_timer 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/system/esp_timer`。
     :SOC_TIMER_SUPPORT_ETM: - 要了解如何从 GPTimer 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/gptimer`。
     :SOC_GDMA_SUPPORT_ETM: - 要了解如何从 async memcpy 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/system/async_memcpy`。
+    :SOC_MCPWM_SUPPORT_ETM: - 要了解如何从 MCPWM 中获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/mcpwm`。
 
 .. _etm-task:
 

@@ -547,6 +547,10 @@ config SOC_MCPWM_COMPARATORS_PER_OPERATOR
     int
     default 2
 
+config SOC_MCPWM_EVENT_COMPARATORS_PER_OPERATOR
+    int
+    default 2
+
 config SOC_MCPWM_GENERATORS_PER_OPERATOR
     int
     default 2
@@ -576,6 +580,10 @@ config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
     default y
 
 config SOC_MCPWM_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
     bool
     default y
 
