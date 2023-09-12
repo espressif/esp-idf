@@ -112,7 +112,7 @@ esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
         dataset.mComponents.mIsPanIdPresent = true;
         len = strlen(CONFIG_OPENTHREAD_NETWORK_NAME);
         assert(len <= OT_NETWORK_NAME_MAX_SIZE);
-        memcpy(dataset.mNetworkName.m8, CONFIG_OPENTHREAD_NETWORK_NAME, len);
+        memcpy(dataset.mNetworkName.m8, CONFIG_OPENTHREAD_NETWORK_NAME, len + 1);
         dataset.mComponents.mIsNetworkNamePresent = true;
 
         // Extended Pan ID
