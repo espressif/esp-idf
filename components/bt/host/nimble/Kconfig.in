@@ -445,10 +445,18 @@ config BT_NIMBLE_MAX_CONN_REATTEMPT
     help
         Defines maximum number of connection reattempts.
 
+config BT_NIMBLE_50_FEATURE_SUPPORT
+    bool "Enable BLE 5 feature"
+    depends on BT_NIMBLE_ENABLED
+    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+    default n if IDF_TARGET_ESP32
+    help
+        Enable BLE 5 features
+
 config BT_NIMBLE_EXT_ADV
     bool "Enable extended advertising."
     default n
-    depends on BT_NIMBLE_ENABLED && BT_SOC_SUPPORT_5_0
+    depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
     help
         Enable this option to do extended advertising. Extended advertising
         will be supported from BLE 5.0 onwards.
