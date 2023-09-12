@@ -101,7 +101,7 @@ If you want to use :cpp:func:`select` with a file descriptor belonging to a non-
 :cpp:func:`end_select` is called to stop/deinitialize/free the environment which was setup by :cpp:func:`start_select`.
 
 .. note::
-    
+
     :cpp:func:`end_select` might be called without a previous :cpp:func:`start_select` call in some rare circumstances. :cpp:func:`end_select` should fail gracefully if this is the case (i.e., should not crash but return an error instead).
 
 Please refer to the reference implementation for the UART peripheral in :component_file:`vfs/vfs_uart.c` and most particularly to the functions :cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select`, and :cpp:func:`uart_end_select` for more information.
@@ -177,7 +177,7 @@ VFS does not impose any limit on total file path length, but it does limit the F
 File Descriptors
 ----------------
 
-File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in newlib's ``sys/types.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
+File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in ``sys/select.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
 
 
 Standard IO Streams (stdin, stdout, stderr)
