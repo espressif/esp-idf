@@ -1163,13 +1163,17 @@ _xt_coproc_exc:
     bnone   a2,  a0, .L_xt_coproc_done      /* if no match then done     */
     and     a2,  a2, a0                     /* a2 = which CPs to restore */
     extui   a2,  a2, 0, 8                   /* extract low 8 bits        */
+#if portNUM_PROCESSORS == 1
     s32i    a6,  sp, XT_STK_A6              /* save extra needed regs    */
     s32i    a7,  sp, XT_STK_A7
+#endif /* portNUM_PROCESSORS == 1 */
     s32i    a13, sp, XT_STK_A13
     s32i    a14, sp, XT_STK_A14
     call0   _xt_coproc_restorecs            /* restore CP registers      */
+#if portNUM_PROCESSORS == 1
     l32i    a6,  sp, XT_STK_A6              /* restore saved registers   */
     l32i    a7,  sp, XT_STK_A7
+#endif /* portNUM_PROCESSORS == 1 */
     l32i    a13, sp, XT_STK_A13
     l32i    a14, sp, XT_STK_A14
     j       .L_xt_coproc_done
