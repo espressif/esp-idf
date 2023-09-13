@@ -144,7 +144,6 @@ To manage the Python version more generally via the command line, check out the 
 
 .. _example-project-structure:
 
-
 Example Project
 ===============
 
