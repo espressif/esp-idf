@@ -94,6 +94,45 @@ typedef enum {
 ////////////////////////////////////////MCPWM Group Specific////////////////////////////////////////////////////////////
 
 /**
+ * @brief Enable the bus clock for MCPWM module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void mcpwm_ll_enable_bus_clock(int group_id, bool enable)
+{
+    if (group_id == 0) {
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_mcpwm0_apb_clk_en = enable;
+    } else {
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_mcpwm1_apb_clk_en = enable;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mcpwm_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the MCPWM module
+ *
+ * @param group_id Group ID
+ */
+static inline void mcpwm_ll_reset_register(int group_id)
+{
+    if (group_id == 0) {
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_pwm0 = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_pwm0 = 0;
+    } else {
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_pwm1 = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_pwm1 = 0;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mcpwm_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_reset_register(__VA_ARGS__)
+
+/**
  * @brief Set the clock source for MCPWM
  *
  * @param mcpwm Peripheral instance address
@@ -123,6 +162,10 @@ static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, soc_modul
     }
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mcpwm_ll_group_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_set_clock_source(__VA_ARGS__)
+
 /**
  * @brief Enable MCPWM module clock
  *
@@ -137,6 +180,10 @@ static inline void mcpwm_ll_group_enable_clock(mcpwm_dev_t *mcpwm, bool en)
         HP_SYS_CLKRST.peri_clk_ctrl20.reg_mcpwm1_clk_en = en;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mcpwm_ll_group_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_enable_clock(__VA_ARGS__)
 
 /**
  * @brief Set the MCPWM group clock prescale
@@ -154,6 +201,10 @@ static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int pre
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl20, reg_mcpwm1_clk_div_num, prescale - 1);
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mcpwm_ll_group_set_clock_prescale(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_group_set_clock_prescale(__VA_ARGS__)
 
 /**
  * @brief Enable update MCPWM active registers from shadow registers

@@ -20,6 +20,18 @@
 #include "hal/mcpwm_ll.h"
 #include "mcpwm_private.h"
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define MCPWM_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define MCPWM_CLOCK_SRC_ATOMIC()
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define MCPWM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define MCPWM_RCC_ATOMIC()
+#endif
+
 static const char *TAG = "mcpwm";
 
 typedef struct {
@@ -46,8 +58,10 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
             group->intr_priority = -1;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             // enable APB to access MCPWM registers
-            periph_module_enable(mcpwm_periph_signals.groups[group_id].module);
-            periph_module_reset(mcpwm_periph_signals.groups[group_id].module);
+            MCPWM_RCC_ATOMIC() {
+                mcpwm_ll_enable_bus_clock(group_id, true);
+                mcpwm_ll_reset_register(group_id);
+            }
             // initialize HAL context
             mcpwm_hal_init_config_t hal_config = {
                 .group_id = group_id
@@ -57,7 +71,11 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
             // disable all interrupts and clear pending status
             mcpwm_ll_intr_enable(hal->dev, UINT32_MAX, false);
             mcpwm_ll_intr_clear_status(hal->dev, UINT32_MAX);
-            mcpwm_ll_group_enable_clock(hal->dev, true);
+
+            // enable function clock
+            MCPWM_CLOCK_SRC_ATOMIC() {
+                mcpwm_ll_group_enable_clock(group->hal.dev, true);
+            }
         }
     } else { // group already install
         group = s_platform.groups[group_id];
@@ -84,10 +102,14 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
     if (s_platform.group_ref_counts[group_id] == 0) {
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL; // deregister from platfrom
-        mcpwm_ll_group_enable_clock(group->hal.dev, false);
+        MCPWM_CLOCK_SRC_ATOMIC() {
+            mcpwm_ll_group_enable_clock(group->hal.dev, false);
+        }
         // hal layer deinitialize
         mcpwm_hal_deinit(&group->hal);
-        periph_module_disable(mcpwm_periph_signals.groups[group_id].module);
+        MCPWM_RCC_ATOMIC() {
+            mcpwm_ll_enable_bus_clock(group_id, false);
+        }
         free(group);
     }
     _lock_release(&s_platform.mutex);
@@ -149,12 +171,14 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
         ESP_LOGD(TAG, "install NO_LIGHT_SLEEP lock for MCPWM group(%d)", group->group_id);
 #endif // CONFIG_PM_ENABLE
 
-        mcpwm_ll_group_set_clock_source(group->hal.dev, clk_src);
+        MCPWM_CLOCK_SRC_ATOMIC() {
+            mcpwm_ll_group_set_clock_source(group->hal.dev, clk_src);
+        }
     }
     return ret;
 }
 
-esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t* ret_module_prescale)
+esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t *ret_module_prescale)
 {
     ESP_RETURN_ON_FALSE(group && expect_module_resolution_hz && module_prescale_max, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     uint32_t periph_src_clk_hz = 0;
@@ -206,7 +230,9 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
     if (group->prescale == 0) {
         group->prescale = group_prescale;
         group->resolution_hz = group_resolution_hz;
-        mcpwm_ll_group_set_clock_prescale(group->hal.dev, group_prescale);
+        MCPWM_CLOCK_SRC_ATOMIC() {
+            mcpwm_ll_group_set_clock_prescale(group->hal.dev, group_prescale);
+        }
     } else {
         prescale_conflict = (group->prescale != group_prescale);
     }
