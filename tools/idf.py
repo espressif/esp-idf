@@ -39,9 +39,15 @@ try:
                                       debug_print_idf_version, get_target, merge_action_lists, print_warning)
     if os.getenv('IDF_COMPONENT_MANAGER') != '0':
         from idf_component_manager import idf_extensions
-except ImportError:
+except ImportError as e:
     # For example, importing click could cause this.
-    print('Please use idf.py only in an ESP-IDF shell environment.', file=sys.stderr)
+    print((f'Cannot import module "{e.name}". This usually means that "idf.py" was not '
+           f'spawned within an ESP-IDF shell environment or the python virtual '
+           f'environment used by "idf.py" is corrupted.\n'
+           f'Please use idf.py only in an ESP-IDF shell environment. If problem persists, '
+           f'please try to install ESP-IDF tools again as described in the Get Started guide.'),
+          file=sys.stderr)
+
     sys.exit(1)
 
 # Use this Python interpreter for any subprocesses we launch
