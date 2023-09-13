@@ -1,20 +1,12 @@
 name: DangerJS Pull Request review
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, edited, reopened, synchronize]
-    branches:
-      - '*'
-  workflow_dispatch:
 
 permissions:
-  actions: read
-  checks: read
-  contents: read
-  issues: write
   pull-requests: write
-  security-events: read
-  statuses: write
+  contents: write
 
 jobs:
   danger-check:
@@ -23,7 +15,10 @@ jobs:
       run:
         working-directory: .github/dangerjs
     steps:
-    - uses: actions/checkout@v3
+    - name: Check out PR head
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Setup NodeJS environment
       uses: actions/setup-node@v3
