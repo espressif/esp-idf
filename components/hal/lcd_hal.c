@@ -56,7 +56,7 @@ uint32_t lcd_hal_cal_pclk_freq(lcd_hal_context_t *hal, uint32_t src_freq_hz, uin
         b /= d;
     }
 
-    HAL_EARLY_LOGD("lcd_hal", "n=%d,a=%d,b=%d,mo=%d", n, a, b, mo);
+    HAL_EARLY_LOGD("lcd_hal", "n=%"PRIu32",a=%"PRIu32",b=%"PRIu32",mo=%"PRIu32"", n, a, b, mo);
 
     lcd_ll_set_group_clock_coeff(hal->dev, n, a, b);
     lcd_ll_set_pixel_clock_prescale(hal->dev, mo);
