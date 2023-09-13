@@ -118,7 +118,7 @@ static uint32_t cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t c
     s_cpu_retention.retent.tagmem.icache.enable = (code_seg_size != 0) ? 1 : 0;
     icache_tagmem_blk_gs = s_cpu_retention.retent.tagmem.icache.vld_size ? s_cpu_retention.retent.tagmem.icache.vld_size : sets * waysgrp;
     icache_tagmem_blk_gs = ALIGNUP(4, icache_tagmem_blk_gs);
-    ESP_LOGD(TAG, "I-cache size:%d KiB, line size:%d B, ways:%d, sets:%d, index:%d, tag block groups:%d", (imode.cache_size>>10),
+    ESP_LOGD(TAG, "I-cache size:%"PRIu32" KiB, line size:%d B, ways:%d, sets:%"PRIu32", index:%"PRIu32", tag block groups:%"PRIu32"", (imode.cache_size>>10),
             imode.cache_line_size, imode.cache_ways, sets, index, icache_tagmem_blk_gs);
 
     /* calculate/prepare d-cache tag memory retention parameters */
@@ -142,7 +142,7 @@ static uint32_t cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t c
 #endif
     dcache_tagmem_blk_gs = s_cpu_retention.retent.tagmem.dcache.vld_size ? s_cpu_retention.retent.tagmem.dcache.vld_size : sets * waysgrp;
     dcache_tagmem_blk_gs = ALIGNUP(4, dcache_tagmem_blk_gs);
-    ESP_LOGD(TAG, "D-cache size:%d KiB, line size:%d B, ways:%d, sets:%d, index:%d, tag block groups:%d", (dmode.cache_size>>10),
+    ESP_LOGD(TAG, "D-cache size:%"PRIu32" KiB, line size:%d B, ways:%d, sets:%"PRIu32", index:%"PRIu32", tag block groups:%"PRIu32"", (dmode.cache_size>>10),
             dmode.cache_line_size, dmode.cache_ways, sets, index, dcache_tagmem_blk_gs);
 
     /* For I or D cache tagmem retention, backup and restore are performed through

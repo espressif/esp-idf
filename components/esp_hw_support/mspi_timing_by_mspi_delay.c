@@ -413,15 +413,15 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
     if (consecutive_length <= 2 || consecutive_length >= 6) {
         //tuning is FAIL, select default point, and generate a warning
         best_point = configs->default_config_id;
-        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %d", best_point);
+        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
     } else if (consecutive_length <= 4) {
         //consecutive length :  3 or 4
         best_point = end - 1;
-        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %d", best_point);
+        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     } else {
         //consecutive point list length equals 5
         best_point = end - 2;
-        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %d", best_point);
+        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     }
 
     return best_point;
@@ -449,13 +449,13 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
             max_freq = temp_max_freq;
             best_point = current_point;
         }
-        ESP_EARLY_LOGD(TAG, "sample point %d, max pll is %d mhz, min pll is %d\n", current_point, temp_max_freq, temp_min_freq);
+        ESP_EARLY_LOGD(TAG, "sample point %"PRIu32", max pll is %"PRIu32" mhz, min pll is %"PRIu32"\n", current_point, temp_max_freq, temp_min_freq);
     }
     if (max_freq == 0) {
-        ESP_EARLY_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %d", end + 1 - consecutive_length);
+        ESP_EARLY_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %"PRIu32"", end + 1 - consecutive_length);
         best_point = end + 1 - consecutive_length;
     } else {
-        ESP_EARLY_LOGD(TAG, "freq scan success, max pll is %dmhz, best point is index %d", max_freq, best_point);
+        ESP_EARLY_LOGD(TAG, "freq scan success, max pll is %"PRIu32"mhz, best point is index %"PRIu32"", max_freq, best_point);
     }
 
     return best_point;
@@ -477,11 +477,11 @@ static uint32_t s_select_best_tuning_config_str(const mspi_timing_config_t *conf
     if (consecutive_length <= 2|| consecutive_length >= 5) {
         //tuning is FAIL, select default point, and generate a warning
         best_point = configs->default_config_id;
-        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %d", best_point);
+        ESP_EARLY_LOGW(TAG, "tuning fail, best point is fallen back to index %"PRIu32"", best_point);
     } else {
         //consecutive length :  3 or 4
         best_point = end - consecutive_length / 2;
-        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %d", best_point);
+        ESP_EARLY_LOGD(TAG, "tuning success, best point is index %"PRIu32"", best_point);
     }
 
     return best_point;
@@ -507,7 +507,7 @@ uint32_t mspi_timing_flash_select_best_tuning_config(const void *configs, uint32
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
     uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, true);
-    ESP_EARLY_LOGI(TAG, "Flash timing tuning index: %d", best_point);
+    ESP_EARLY_LOGI(TAG, "Flash timing tuning index: %"PRIu32"", best_point);
 
     return best_point;
 }
@@ -516,7 +516,7 @@ uint32_t mspi_timing_psram_select_best_tuning_config(const void *configs, uint32
 {
     const mspi_timing_config_t *timing_configs = (const mspi_timing_config_t *)configs;
     uint32_t best_point = s_select_best_tuning_config(timing_configs, consecutive_length, end, reference_data, is_ddr, false);
-    ESP_EARLY_LOGI(TAG, "PSRAM timing tuning index: %d", best_point);
+    ESP_EARLY_LOGI(TAG, "PSRAM timing tuning index: %"PRIu32"", best_point);
 
     return best_point;
 }

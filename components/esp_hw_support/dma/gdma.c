@@ -364,7 +364,7 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
     }
     if (psram_alignment > data_cache_line_size) {
         ESP_RETURN_ON_FALSE(((psram_alignment % data_cache_line_size) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "psram_alignment(%d) should be multiple of the data_cache_line_size(%d)",
+                            TAG, "psram_alignment(%d) should be multiple of the data_cache_line_size(%"PRIu32")",
                             psram_alignment, data_cache_line_size);
     }
 
