@@ -132,7 +132,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - **Description**
          - **Bit Depth**
        * - ``XTS_KEY_LENGTH_256``
-         - Controls actual number of eFuse bits used to derive final 256-bit AES key. Possible values: ``0`` use all 256 bits of the eFuse block for the key, ``1`` use the lower 128 bits of the eFuse block for the key (the higher 128 bits are reserved for Secure Boot key). For 128 bits option, the final AES key is derived as SHA256(EFUSE_KEY0_FE_128BIT).
+         - Controls actual number of eFuse bits used to derive final 256-bit AES key. Possible values: ``1`` use all 256 bits of the eFuse block for the key, ``0`` use the lower 128 bits of the eFuse block for the key (the higher 128 bits are reserved for Secure Boot key). For 128 bits option, the final AES key is derived as SHA256(EFUSE_KEY0_FE_128BIT).
          - 1
        * - ``BLOCK_KEY0``
          - AES key storage
