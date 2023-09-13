@@ -111,6 +111,10 @@ The :cpp:func:`mcpwm_new_comparator` will return a pointer to the allocated comp
 
 On the contrary, calling the :cpp:func:`mcpwm_del_comparator` function will free the allocated comparator object.
 
+.. only:: SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+
+    There's another kind of comparator called "Event Comparator", which **can not** control the final PWM directly but only generates the ETM events at a configurable time stamp. You can allocate an event comparator by calling the :cpp:func:`mcpwm_new_event_comparator` function. This function will return the same handle type as :cpp:func:`mcpwm_new_comparator`, but with a different configuration structure :cpp:type:`mcpwm_event_comparator_config_t`. For more information, please refer to :ref:`mcpwm-etm-event-and-task`.
+
 MCPWM Generators
 ~~~~~~~~~~~~~~~~
 
@@ -187,7 +191,7 @@ To allocate a capture timer, you can call the :cpp:func:`mcpwm_new_capture_timer
 - :cpp:member:`mcpwm_capture_timer_config_t::clk_src` sets the clock source of the capture timer.
 - :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` The driver internally will set a proper divider based on the clock source and the resolution. If it is set to ``0``, the driver will pick an appropriate resolution on its own, and you can subsequently view the current timer resolution via :cpp:func:`mcpwm_capture_timer_get_resolution`.
 
-.. only:: not SOC_MCPWM_CAPTURE_CLK_FROM_GROUP 
+.. only:: not SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
 
     .. note::
 
@@ -279,6 +283,12 @@ The parameter ``user_data`` of :cpp:func:`mcpwm_comparator_register_event_callba
 
 This function will lazy the installation of interrupt service for the MCPWM comparator, whereas the service can only be removed in :cpp:type:`mcpwm_del_comparator`.
 
+.. only:: SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+
+    .. note::
+
+        It is not supported to register event callbacks for an **Event Comparator** because it can not generate any interrupt.
+
 Set Compare Value
 ~~~~~~~~~~~~~~~~~
 
@@ -335,7 +345,7 @@ One generator can set action on fault based trigger events, by calling :cpp:func
 
 When no free trigger slot is left in the operator to which the generator belongs, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
-The trigger only support GPOI fault. when the input is not a GPIO fault, this function will return the :c:macro:`ESP_ERR_NOT_SUPPORTED` error. 
+The trigger only support GPOI fault. when the input is not a GPIO fault, this function will return the :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 
 There is a helper macro :c:macro:`MCPWM_GEN_FAULT_EVENT_ACTION` to simplify the construction of a trigger event action entry.
 
@@ -1026,6 +1036,7 @@ API Reference
 .. include-build-file:: inc/mcpwm_fault.inc
 .. include-build-file:: inc/mcpwm_sync.inc
 .. include-build-file:: inc/mcpwm_cap.inc
+.. include-build-file:: inc/mcpwm_etm.inc
 .. include-build-file:: inc/components/driver/mcpwm/include/driver/mcpwm_types.inc
 .. include-build-file:: inc/components/hal/include/hal/mcpwm_types.inc
 

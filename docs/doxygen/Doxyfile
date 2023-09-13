@@ -95,6 +95,7 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/ledc/include/driver/ledc.h \
     $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_cap.h \
     $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_cmpr.h \
+    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_etm.h \
     $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_fault.h \
     $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_gen.h \
     $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_oper.h \
