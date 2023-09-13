@@ -201,6 +201,28 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
     * An example of mutual authentication with the DS peripheral can be found at :example:`ssl mutual auth<protocols/mqtt/ssl_mutual_auth>` which internally uses (ESP-TLS) for the TLS connection.
 
+.. only:: SOC_ECDSA_SUPPORTED
+
+    ECDSA Peripheral with ESP-TLS
+    -----------------------------
+
+    ESP-TLS provides support for using the ECDSA peripheral with {IDF_TARGET_NAME}. The use of ECDSA peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the efuse for using the ECDSA peripheral. Please refer to `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ documentation for programming the ECDSA key in the efuse.
+    To use ECDSA peripheral with ESP-TLS, set ``use_ecdsa_peripheral`` to `true` and set ``ecdsa_key_efuse_blk`` to the efuse block id in which ECDSA private key is stored in the :cpp:type:`esp_tls_cfg_t` config structure.
+    This will enable the use of ECDSA peripheral for private key operations. As the client private key is already present in the eFuse, it need not be supplied to the :cpp:type:`esp_tls_cfg_t` structure.
+
+    .. code-block:: c
+
+        #include "esp_tls.h"
+        esp_tls_cfg_t cfg = {
+            .use_ecdsa_peripheral = true,
+            .ecdsa_key_efuse_blk = /* efuse block with ecdsa private key */,
+        };
+
+    .. note::
+
+        When using ECDSA peripheral with TLS, only ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` ciphersuite is supported. If using TLS v1.3, ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` ciphersuite is supported.
+
+
 TLS Ciphersuites
 ------------------------------------
 
