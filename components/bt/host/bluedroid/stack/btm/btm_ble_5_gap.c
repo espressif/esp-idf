@@ -717,14 +717,14 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
     do {
         UINT8 send_data_len = (rem_len > BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) ? BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX : rem_len;
 
-        if (len <= BTM_BLE_EXT_ADV_DATA_LEN_MAX) {
+        if (len <= BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) {
             if (!only_update_did) {
                 operation = BTM_BLE_ADV_DATA_OP_COMPLETE;
             }
         } else {
             if (rem_len == len) {
                 operation = BTM_BLE_ADV_DATA_OP_FIRST_FRAG;
-            } else if (rem_len <= BTM_BLE_EXT_ADV_DATA_LEN_MAX) {
+            } else if (rem_len <= BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) {
                 operation = BTM_BLE_ADV_DATA_OP_LAST_FRAG;
             } else {
 	        operation = BTM_BLE_ADV_DATA_OP_INTERMEDIATE_FRAG;
