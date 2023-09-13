@@ -101,7 +101,7 @@ If you want to use :cpp:func:`select` with a file descriptor belonging to a non-
 :cpp:func:`end_select` is called to stop/deinitialize/free the environment which was setup by :cpp:func:`start_select`.
 
 .. note::
-    
+
     :cpp:func:`end_select` might be called without a previous :cpp:func:`start_select` call in some rare circumstances. :cpp:func:`end_select` should fail gracefully if this is the case (i.e., should not crash but return an error instead).
 
 Please refer to the reference implementation for the UART peripheral in :component_file:`vfs/vfs_uart.c` and most particularly to the functions :cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select`, and :cpp:func:`uart_end_select` for more information.
@@ -180,8 +180,8 @@ File Descriptors
 File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in newlib's ``sys/types.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
 
 
-Standard IO Streams (stdin, stdout, stderr)
--------------------------------------------
+Standard IO Streams (``stdin``, ``stdout``, ``stderr``)
+-------------------------------------------------------
 
 If the menuconfig option ``UART for console output`` is not set to ``None``, then ``stdin``, ``stdout``, and ``stderr`` are configured to read from, and write to, a UART. It is possible to use UART0 or UART1 for standard IO. By default, UART0 is used with 115200 baud rate; TX pin is GPIO1; RX pin is GPIO3. These parameters can be changed in menuconfig.
 
@@ -216,8 +216,8 @@ Such a design has the following consequences:
 - Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` closes the ``FILE`` stream object, which will affect all other tasks.
 - To change the default ``stdin``, ``stdout``, ``stderr`` streams for new tasks, modify ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``) before creating the task.
 
-Event fds
--------------------------------------------
+``eventfd()``
+-------------
 
 ``eventfd()`` call is a powerful tool to notify a ``select()`` based loop of custom events. The ``eventfd()`` implementation in ESP-IDF is generally the same as described in `man(2) eventfd <https://man7.org/linux/man-pages/man2/eventfd.2.html>`_ except for:
 

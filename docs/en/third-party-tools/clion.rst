@@ -3,7 +3,7 @@
 CLion
 #####
 
-What is CLion?
+What Is CLion?
 ~~~~~~~~~~~~~~
 
 `CLion <https://www.jetbrains.com/clion/>`__ is a cross-platform integrated Development Environment (IDE) for C and C++ programming. CLion also provides dedicated support for ESP-IDF, allowing developers to seamlessly work with the ESP-IDF framework.

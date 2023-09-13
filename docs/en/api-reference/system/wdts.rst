@@ -131,7 +131,7 @@ The following config options control TWDT configuration. They are all enabled by
   Configuration
   """""""""""""
 
-  - When the external 32KHz crystal or oscillator is selected (:ref:`CONFIG_RTC_CLK_SRC`) the XTWDT can be enabled via the :ref:`CONFIG_ESP_XT_WDT` configuration option.
+  - When the external 32 KHz crystal or oscillator is selected (:ref:`CONFIG_RTC_CLK_SRC`) the XTWDT can be enabled via the :ref:`CONFIG_ESP_XT_WDT` configuration option.
   - The timeout is configured by setting the :ref:`CONFIG_ESP_XT_WDT_TIMEOUT` option.
   - The automatic backup clock functionality is enabled via the ref:`CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE` configuration option.
 

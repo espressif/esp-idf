@@ -15,7 +15,7 @@ As shown in the diagram, the following three API functions for the packet data p
 * :cpp:func:`esp_netif_free_rx_buffer()`
 * :cpp:func:`esp_netif_receive()`
 
-The first two functions for transmitting and freeing the rx buffer are provided as callbacks, i.e.， they get called from esp-netif (and its underlying TCP/IP stack) and I/O driver provides their implementation.
+The first two functions for transmitting and freeing the rx buffer are provided as callbacks, i.e., they get called from esp-netif (and its underlying TCP/IP stack) and I/O driver provides their implementation.
 
 The receiving function on the other hand gets called from the I/O driver, so that the driver's code simply calls :cpp:func:`esp_netif_receive()` on a new data received event.
 

@@ -213,7 +213,7 @@ Figures below show serial port for ESP32 DevKitC and ESP32 WROVER KIT
 Check Port on Linux and macOS
 -----------------------------
 
-To check the device name for the serial port of your {IDF_TARGET_NAME} board (or external converter dongle), run this command two times, first with the board / dongle unplugged, then with plugged in. The port which appears the second time is the one you need:
+To check the device name for the serial port of your {IDF_TARGET_NAME} board (or external converter dongle), run this command two times, first with the board/dongle unplugged, then with plugged in. The port which appears the second time is the one you need:
 
 Linux ::
 

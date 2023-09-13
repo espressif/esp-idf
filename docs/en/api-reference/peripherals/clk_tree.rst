@@ -7,7 +7,7 @@ Clock Tree
 
 {IDF_TARGET_RC_FAST_ADJUSTED_FREQ: default="8.5", esp32c3="17.5", esp32s3="17.5", esp32c2="17.5", esp32c6="17.5"}
 
-{IDF_TARGET_XTAL_FREQ: default="40", esp32="2~40", esp32c2="40/26", esp32h2="32"}
+{IDF_TARGET_XTAL_FREQ: default="40", esp32="2 ~ 40", esp32c2="40/26", esp32h2="32"}
 
 {IDF_TARGET_RC_SLOW_VAGUE_FREQ: default="136", esp32="150", esp32s2="90"}
 

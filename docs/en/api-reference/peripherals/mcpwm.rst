@@ -187,7 +187,7 @@ To allocate a capture timer, you can call the :cpp:func:`mcpwm_new_capture_timer
 - :cpp:member:`mcpwm_capture_timer_config_t::clk_src` sets the clock source of the capture timer.
 - :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` The driver internally will set a proper divider based on the clock source and the resolution. If it is set to ``0``, the driver will pick an appropriate resolution on its own, and you can subsequently view the current timer resolution via :cpp:func:`mcpwm_capture_timer_get_resolution`.
 
-.. only:: not SOC_MCPWM_CAPTURE_CLK_FROM_GROUP 
+.. only:: not SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
 
     .. note::
 
@@ -209,7 +209,7 @@ The :cpp:func:`mcpwm_new_capture_channel` will return a pointer to the allocated
 
 On the contrary, calling :cpp:func:`mcpwm_del_capture_channel` and :cpp:func:`mcpwm_del_capture_timer` will free the allocated capture channel and timer object accordingly.
 
-MCPWM interrupt priority
+MCPWM Interrupt Priority
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 MCPWM allows configuring interrupts separately for timer, operator, comparator, fault, and capture events. The interrupt priority is determined by the respective ``config_t::intr_priority``. Additionally, events within the same MCPWM group share a common interrupt source. When registering multiple interrupt events, the interrupt priorities need to remain consistent.
@@ -335,7 +335,7 @@ One generator can set action on fault based trigger events, by calling :cpp:func
 
 When no free trigger slot is left in the operator to which the generator belongs, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error. [1]_
 
-The trigger only support GPOI fault. when the input is not a GPIO fault, this function will return the :c:macro:`ESP_ERR_NOT_SUPPORTED` error. 
+The trigger only support GPOI fault. when the input is not a GPIO fault, this function will return the :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 
 There is a helper macro :c:macro:`MCPWM_GEN_FAULT_EVENT_ACTION` to simplify the construction of a trigger event action entry.
 

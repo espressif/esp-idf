@@ -162,7 +162,7 @@ To be able to use the ESP-NETIF L2 TAP interface, it needs to be enabled in Kcon
 
 ``open()``
 ^^^^^^^^^^
-Once the ESP-NETIF L2 TAP is registered, it can be opened at path name “/dev/net/tap”. The same path name can be opened multiple times up to :ref:`CONFIG_ESP_NETIF_L2_TAP_MAX_FDS` and multiple file descriptors with a different configuration may access the Data Link Layer frames.
+Once the ESP-NETIF L2 TAP is registered, it can be opened at path name "/dev/net/tap". The same path name can be opened multiple times up to :ref:`CONFIG_ESP_NETIF_L2_TAP_MAX_FDS` and multiple file descriptors with a different configuration may access the Data Link Layer frames.
 
 The ESP-NETIF L2 TAP can be opened with the ``O_NONBLOCK`` file status flag to make sure the ``read()`` does not block. Note that the ``write()`` may block in the current implementation when accessing a Network interface since it is a shared resource among multiple ESP-NETIF L2 TAP file descriptors and IP stack, and there is currently no queuing mechanism deployed. The file status flag can be retrieved and modified using ``fcntl()``.
 
@@ -231,7 +231,7 @@ A raw Data Link Layer frame can be sent to Network Interface via opened and conf
     * - 6 B
       - 6 B
       - 2 B
-      - 0-1486 B 
+      - 0-1486 B
 
 In other words, there is no additional frame processing performed by the ESP-NETIF L2 TAP interface. It only checks the Ethernet type of the frame is the same as the filter configured in the file descriptor. If the Ethernet type is different, an error is returned and the frame is not sent. Note that the ``write()`` may block in the current implementation when accessing a Network interface since it is a shared resource among multiple ESP-NETIF L2 TAP file descriptors and IP stack, and there is currently no queuing mechanism deployed.
 
@@ -328,7 +328,7 @@ Then we start the service normally with  :cpp:func:`esp_netif_sntp_start()`.
 ESP-NETIF Programmer's Manual
 -----------------------------
 
-Please refer to the following example to understand the initialization process of the default interface: 
+Please refer to the following example to understand the initialization process of the default interface:
 
 
 .. only:: SOC_WIFI_SUPPORTED

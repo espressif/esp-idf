@@ -201,7 +201,7 @@ The verification of signed OTA updates can be performed even without enabling ha
 OTA Tool ``otatool.py``
 -----------------------
 
-The component ``app_update`` provides a tool :component_file:`otatool.py<app_update/otatool.py>` for performing OTA partition-related operations on a target device. The following operations can be performed using the tool:
+The component ``app_update`` provides a tool :component_file:`otatool.py <app_update/otatool.py>` for performing OTA partition-related operations on a target device. The following operations can be performed using the tool:
 
   - read contents of otadata partition (read_otadata)
   - erase otadata partition, effectively resetting device to factory app (erase_otadata)

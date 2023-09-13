@@ -171,8 +171,8 @@ ESP-IDF 希望应用程序入口点 ``app_main`` 以 C 链接定义。当 ``app_
 C 和 C++ 语言对于指定初始化器有不同的规则。例如，C++23（当前在 ESP-IDF 中默认使用）不支持无序指定初始化、嵌套指定初始化、混合使用指定初始化器和常规初始化器，而对数组进行指定初始化。因此，当将 ESP-IDF 的 C 示例移植到 C++ 时，可能需要对结构体初始化器进行一些更改。详细信息请参阅 `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_。
 
 
-iostream
-^^^^^^^^
+``iostream``
+^^^^^^^^^^^^
 
 ESP-IDF 支持 ``iostream`` 功能，但应注意：
 

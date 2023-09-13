@@ -17,7 +17,7 @@ Please see the :doc:`ble-mesh-architecture` for information about the implementa
 ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.1, users can refer `here <https://launchstudio.bluetooth.com/ListingDetails/94304>`_ for the certification details of ESP-BLE-MESH.
 
 .. only:: SOC_WIFI_MESH_SUPPORT
-    
+
     .. note::
 
       If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-WIFI-MESH. For more information and documentation see :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`.
@@ -223,9 +223,9 @@ ESP-BLE-MESH Examples
 
 * :example_file:`ESP-BLE-MESH and Wi-Fi Coexistence <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - an example that demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of {IDF_TARGET_NAME}. Simply put, users can use the Wi-Fi while operating Bluetooth, see :example:`example code <bluetooth/esp_ble_mesh/wifi_coexist>`.
 
-* ESP-BLE-MESH Remote Provisioning(v1.1) - :example_file:`Client, Server and device <bluetooth/esp_ble_mesh/remote_provisioning/tutorial/BLE_Mesh_Remote_Provisioning_Example_Walkthrough.md>` - this example is used to demonstrate the new remote provisioning feature introduced in the Mesh Protocol v1.1, see :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>`, :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>` and :example:`example device code <bluetooth/esp_ble_mesh/remote_provisioning/unprov_dev>`.
+* ESP-BLE-MESH Remote Provisioning (v1.1) - :example_file:`Client, Server and device <bluetooth/esp_ble_mesh/remote_provisioning/tutorial/BLE_Mesh_Remote_Provisioning_Example_Walkthrough.md>` - this example is used to demonstrate the new remote provisioning feature introduced in the Mesh Protocol v1.1, see :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>`, :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>` and :example:`example device code <bluetooth/esp_ble_mesh/remote_provisioning/unprov_dev>`.
 
-* ESP-BLE-MESH Directed Forwarding(v1.1) - :example_file:`Client and Server <bluetooth/esp_ble_mesh/directed_forwarding/tutorial/BLE_Mesh_Directed_Forwarding_Example_Walkthrough.md>` - this example is used to demonstrate the new directed forwarding feature introduced in the Mesh Protocol v1.1. Only nodes along the path will forward the directed messages, while other nodes will not actively participate in forwarding, see :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>` and :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>`.
+* ESP-BLE-MESH Directed Forwarding (v1.1) - :example_file:`Client and Server <bluetooth/esp_ble_mesh/directed_forwarding/tutorial/BLE_Mesh_Directed_Forwarding_Example_Walkthrough.md>` - this example is used to demonstrate the new directed forwarding feature introduced in the Mesh Protocol v1.1. Only nodes along the path will forward the directed messages, while other nodes will not actively participate in forwarding, see :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>` and :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>`.
 
 
 .. _esp-ble-mesh-demo-videos:
