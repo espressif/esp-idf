@@ -1,3 +1,1 @@
-.. code-block:: none
-
-   TO BE UPDATED IDF-7759
+.. include:: ../../../en/api-reference/system/inc/espefuse_summary_ESP32-P4.rst

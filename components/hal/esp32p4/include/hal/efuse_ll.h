@@ -18,8 +18,6 @@ extern "C" {
 
 // Always inline these functions even no gcc optimization is applied.
 
-//TODO: IDF-7549
-
 /******************* eFuse fields *************************/
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_crypt_cnt(void)
@@ -67,7 +65,7 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_ver
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    return EFUSE.rd_sys_part1_data4.val;
+    return 0;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
