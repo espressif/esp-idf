@@ -13,7 +13,7 @@
 #include "esp_rom_sys.h"
 #include "esp_sleep.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6) // TODO IDF-6770
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7528
 
 static void timer_cb1(void *arg)
 {
@@ -53,4 +53,4 @@ TEST_CASE("Test the periodic timer does not handle lost events during light slee
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
 }
 
-#endif //#!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C6)
+#endif //#!TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)

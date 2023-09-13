@@ -128,6 +128,9 @@ void systimer_hal_set_steps_per_tick(systimer_hal_context_t *hal, int clock_sour
 
 /**
  * @brief Set Systimer clock source
+ *
+ * Use this function as - PERIPH_RCC_ATOMIC(){ systimer_hal_set_clock_source(hal, clk_src); }
+ * due to Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
  */
 void systimer_hal_set_clock_source(systimer_hal_context_t *hal, systimer_clock_source_t clk_src);
 
