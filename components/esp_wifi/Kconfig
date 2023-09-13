@@ -572,4 +572,13 @@ menu "Wi-Fi"
         help
             Select this to enable unity test for DPP.
 
+    config ESP_WIFI_ENTERPRISE_SUPPORT
+        bool "Enable enterprise option"
+        default y
+        help
+            Select this to enable/disable enterprise connection support.
+
+            disabling this will reduce binary size.
+            disabling this will disable the use of any esp_wifi_sta_wpa2_ent_* (as APIs will be meaningless)
+
 endmenu # Wi-Fi
