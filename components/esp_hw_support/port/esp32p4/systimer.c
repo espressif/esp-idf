@@ -7,9 +7,12 @@
 #include "esp_private/systimer.h"
 
 /**
- * //TODO: IDF-7487
  * @brief systimer's clock source is fixed to XTAL (40MHz), and has a fixed fractional divider (2.5).
  *        So the resolution of the systimer is 40MHz/2.5 = 16MHz.
+ *
+ * FPGA esp32p4 image:
+ *  - v10.0.0 (old) has 20MHz
+ *  - v12.0.0 has 16MHz
  */
 
 uint64_t systimer_ticks_to_us(uint64_t ticks)

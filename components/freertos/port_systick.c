@@ -21,7 +21,7 @@
         #define SYSTICK_INTR_ID     (ETS_INTERNAL_TIMER1_INTR_SOURCE + ETS_INTERNAL_INTR_SOURCE_OFF)
     #endif
 #else /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
-        #define SYSTICK_INTR_ID     (ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE)
+        #define SYSTICK_INTR_ID     (ETS_SYSTIMER_TARGET0_INTR_SOURCE)
 #endif /* CONFIG_FREERTOS_SYSTICK_USES_CCOUNT */
 
 BaseType_t xPortSysTickHandler(void);
@@ -69,16 +69,7 @@ void vSystimerSetup(void)
     static systimer_hal_context_t systimer_hal;
     /* set system timer interrupt vector */
 
-    /**
-     * TODO: IDF-7487
-     * ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE is renamed to ETS_SYSTIMER_TARGET0_INTR_SOURCE.
-     * It's said that this interrupt is never an edge type, for previous all chips. You may need to check this and unify the name.
-     */
-#if !CONFIG_IDF_TARGET_ESP32P4
-    ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL));
-#else
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL));
-#endif
 
     if (cpuid == 0) {
         periph_module_enable(PERIPH_SYSTIMER_MODULE);

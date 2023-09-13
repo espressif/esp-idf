@@ -85,10 +85,13 @@ typedef enum {
     ETS_TG1_WDT_EDGE_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, WATCHDOG, EDGE*/
     ETS_TG1_LACT_EDGE_INTR_SOURCE,              /**< interrupt of TIMER_GROUP0, LACT, EDGE*/
     ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalied Access, LEVEL*/
-    ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE,      /**< interrupt of system timer 0, EDGE*/
-    ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE,      /**< interrupt of system timer 1, EDGE*/
-    ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE,      /**< interrupt of system timer 2, EDGE*/
-    ETS_ASSIST_DEBUG_INTR_SOURCE,               /**< interrupt of Assist debug module, LEVEL*/
+    ETS_SYSTIMER_TARGET0_INTR_SOURCE,           /**< interrupt of system timer 0 */
+    ETS_SYSTIMER_TARGET1_INTR_SOURCE,           /**< interrupt of system timer 1 */
+    ETS_SYSTIMER_TARGET2_INTR_SOURCE,           /**< interrupt of system timer 2 */
+    ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET0_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET0_INTR_SOURCE */
+    ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET1_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET1_INTR_SOURCE */
+    ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET2_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET2_INTR_SOURCE */
+    ETS_ASSIST_DEBUG_INTR_SOURCE = 74,          /**< interrupt of Assist debug module, LEVEL*/
     ETS_PMS_PRO_IRAM0_ILG_INTR_SOURCE,          /**< interrupt of illegal IRAM1 access, LEVEL*/
     ETS_PMS_PRO_DRAM0_ILG_INTR_SOURCE,          /**< interrupt of illegal DRAM0 access, LEVEL*/
     ETS_PMS_PRO_DPORT_ILG_INTR_SOURCE,          /**< interrupt of illegal DPORT access, LEVEL*/
