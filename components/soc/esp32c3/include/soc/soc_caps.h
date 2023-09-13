@@ -339,6 +339,9 @@
 #define SOC_TIMER_GROUP_SUPPORT_APB       (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 
+/*--------------------------- WATCHDOG CAPS ---------------------------------------*/
+#define SOC_MWDT_SUPPORT_XTAL              (1)
+
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1UL
 #define SOC_TWAI_CLK_SUPPORT_APB        1

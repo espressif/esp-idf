@@ -24,7 +24,7 @@ extern "C" {
 #include "hal/misc.h"
 
 /* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
-#define MWDT_LL_DEFAULT_CLK_PRESCALER 40000
+#define MWDT_LL_DEFAULT_CLK_PRESCALER 20000
 
 /* The value that needs to be written to TIMG_WDT_WKEY to write-enable the wdt registers */
 #define TIMG_WDT_WKEY_VALUE 0x50D83AA1

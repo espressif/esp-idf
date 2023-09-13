@@ -256,6 +256,9 @@
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (1U)
 
+/*--------------------------- WATCHDOG CAPS ---------------------------------------*/
+#define SOC_MWDT_SUPPORT_XTAL              (1)
+
 /*-------------------------- eFuse CAPS----------------------------*/
 #define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
 #define SOC_EFUSE_DIS_PAD_JTAG 1
