@@ -65,7 +65,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 # Secure Boot tests (For internal use only)
 
-Purpose of the example test cases (`example_test.py`) is to test the secure boot implementation and detect if it is broken. It consists of positive and negative test cases.
+Purpose of the test case (`pytest_secure_boot.py`) is to test the secure boot implementation and detect if it is broken. It consists of positive and negative test cases.
 
 ### Hardware required
 
