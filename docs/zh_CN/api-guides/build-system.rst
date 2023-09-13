@@ -144,7 +144,6 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 .. _example-project-structure:
 
-
 示例项目
 ========
 
@@ -1058,7 +1057,7 @@ ExternalProject 的依赖与构建清理
 依赖于硬件目标的 sdkconfig 默认值
 ---------------------------------
 
-除了 ``sdkconfig.defaults`` 之外，构建系统还将从 ``sdkconfig.defaults.TARGET_NAME`` 文件加载默认值，其中 ``IDF_TARGET`` 的值为 ``TARGET_NAME``。例如，对于 ``ESP32`` 这个硬件目标，sdkconfig 的默认值会首先从 ``sdkconfig.defaults`` 获取，然后再从 ``sdkconfig.defaults.esp32`` 获取。
+当且仅当 ``sdkconfig.defaults`` 文件存在时，构建系统还将尝试从 ``sdkconfig.defaults.TARGET_NAME`` 文件中加载默认值，其中 ``IDF_TARGET`` 的值为 ``TARGET_NAME``。例如，对于 ``esp32`` 这个目标芯片，sdkconfig 的默认值会首先从 ``sdkconfig.defaults`` 获取，然后再从 ``sdkconfig.defaults.esp32`` 获取。当没有通用的默认设置时，仍需创建一个空的 ``sdkconfig.defaults`` 文件，以便构建系统可以识别任何其他与目标芯片相关的 ``sdkconfig.defaults.TARGET_NAME`` 文件。
 
 如果使用 ``SDKCONFIG_DEFAULTS`` 覆盖默认文件的名称，则硬件目标的默认文件名也会从 ``SDKCONFIG_DEFAULTS`` 值中派生。如果 ``SDKCONFIG_DEFAULTS`` 中有多个文件，硬件目标文件会在引入该硬件目标文件的文件之后应用， 而 ``SDKCONFIG_DEFAULTS`` 中所有其它后续文件则会在硬件目标文件之后应用 。
 
