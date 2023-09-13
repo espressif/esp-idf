@@ -140,8 +140,7 @@ build:integration_test:
   matrix:
     - *target_test
     - *all_targets
-    - - bt        # example_test_005
-      - wifi      # pytest*wifi*
+    - - wifi      # pytest*wifi*
       - ethernet  # pytest*ethernet*
       - sdio      # pytest*sdio*
       - usb       # USB Device & Host tests
