@@ -170,6 +170,12 @@ menu "Hardware Settings"
             help
                 Enable esp sleep debug.
 
+        config ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS
+            bool "Allow to enable internal pull-up/downs for the Deep-Sleep wakeup IOs"
+            default y
+            help
+                When using rtc gpio wakeup source during deepsleep without external pull-up/downs, you may want to
+                make use of the internal ones.
     endmenu
 
     menu "ESP_SLEEP_WORKAROUND"
