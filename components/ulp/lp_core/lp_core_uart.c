@@ -13,6 +13,7 @@
 #include "hal/rtc_io_types.h"
 #include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/uart_private.h"
 
 #define LP_UART_PORT_NUM    LP_UART_NUM_0
 #define LP_UART_TX_IDLE_NUM_DEFAULT     (0U)
@@ -52,7 +53,9 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     }
 
     /* Override protocol parameters from the configuration */
-    uart_hal_set_baudrate(&hal, cfg->uart_proto_cfg.baud_rate, sclk_freq);
+    UART_CLK_ATOMIC() {
+        uart_hal_set_baudrate(&hal, cfg->uart_proto_cfg.baud_rate, sclk_freq);
+    }
     uart_hal_set_parity(&hal, cfg->uart_proto_cfg.parity);
     uart_hal_set_data_bit_num(&hal, cfg->uart_proto_cfg.data_bits);
     uart_hal_set_stop_bits(&hal, cfg->uart_proto_cfg.stop_bits);

@@ -87,6 +87,9 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
     case 1:
         *source_clk = (soc_module_clk_t)LP_UART_SCLK_XTAL_D2;
         break;
+    case 2:
+        *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_PLL;
+        break;
     }
 }
 
@@ -96,7 +99,7 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
  * @param  hw Address offset of the LP UART peripheral registers
  * @param  src_clk Source clock for the LP UART peripheral
  */
-static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_clk_src_t src_clk)
+FORCE_INLINE_ATTR void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_clk_src_t src_clk)
 {
     (void)hw;
     switch (src_clk) {
@@ -106,13 +109,16 @@ static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_
     case LP_UART_SCLK_XTAL_D2:
         LPPERI.core_clk_sel.lp_uart_clk_sel = 1;
         break;
+    case LP_UART_SCLK_LP_PLL:
+        LPPERI.core_clk_sel.lp_uart_clk_sel = 2;
+        break;
     default:
         // Invalid LP_UART clock source
         HAL_ASSERT(false);
     }
 }
 
-/// LPPERI.core_clk_sel  is a shared register, so this function must be used in an atomic way
+// LPPERI.core_clk_sel is a shared register, so this function must be used in an atomic way
 #define lp_uart_ll_set_source_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_set_source_clk(__VA_ARGS__)
 
 /**
@@ -121,13 +127,13 @@ static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_
  * @param hw_id LP UART instance ID
  * @param enable True to enable, False to disable
  */
-static inline void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
+FORCE_INLINE_ATTR void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
 {
     (void)hw_id;
     LPPERI.clk_en.ck_en_lp_uart = enable;
 }
 
-/// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
+// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
 #define lp_uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
@@ -135,17 +141,18 @@ static inline void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
  *
  * @param hw_id LP UART instance ID
  */
-static inline void lp_uart_ll_reset_register(int hw_id)
+FORCE_INLINE_ATTR void lp_uart_ll_reset_register(int hw_id)
 {
     (void)hw_id;
     LPPERI.reset_en.rst_en_lp_uart = 1;
     LPPERI.reset_en.rst_en_lp_uart = 0;
 }
 
-/// LPPERI.reset_en is a shared register, so this function must be used in an atomic way
+// LPPERI.reset_en is a shared register, so this function must be used in an atomic way
 #define lp_uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_reset_register(__VA_ARGS__)
 
 /*************************************** General LL functions ******************************************/
+
 /**
  * @brief Sync the update to UART core clock domain
  *
@@ -186,6 +193,8 @@ FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
         abort();
     }
 }
+// HP_SYS_CLKRST.hp_rst_en1 is a shared register, so this function must be used in an atomic way
+#define uart_ll_set_reset_core(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_set_reset_core(__VA_ARGS__)
 
 /**
  * @brief  Enable the UART clock.
@@ -199,35 +208,22 @@ FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
 {
     if ((hw) == &UART0) {
         HP_SYS_CLKRST.peri_clk_ctrl110.reg_uart0_clk_en = 1;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart0_sys_clk_en = 1;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart0_apb_clk_en = 1;
     } else if ((hw) == &UART1) {
         HP_SYS_CLKRST.peri_clk_ctrl111.reg_uart1_clk_en = 1;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart1_sys_clk_en = 1;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart1_apb_clk_en = 1;
     } else if ((hw) == &UART2) {
         HP_SYS_CLKRST.peri_clk_ctrl112.reg_uart2_clk_en = 1;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart2_sys_clk_en = 1;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart2_apb_clk_en = 1;
     } else if ((hw) == &UART3) {
         HP_SYS_CLKRST.peri_clk_ctrl113.reg_uart3_clk_en = 1;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart3_sys_clk_en = 1;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart3_apb_clk_en = 1;
     } else if ((hw) == &UART4) {
         HP_SYS_CLKRST.peri_clk_ctrl114.reg_uart4_clk_en = 1;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en = 1;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en = 1;
     } else {
         // LP_UART reset shares the same register with other LP peripherals
         // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
         abort();
     }
 }
+// HP_SYS_CLKRST.peri_clk_ctrlxxx are shared registers, so this function must be used in an atomic way
+#define uart_ll_sclk_enable(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_sclk_enable(__VA_ARGS__)
 
 /**
  * @brief  Disable the UART clock.
@@ -240,35 +236,97 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
 {
     if ((hw) == &UART0) {
         HP_SYS_CLKRST.peri_clk_ctrl110.reg_uart0_clk_en = 0;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart0_sys_clk_en = 0;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart0_apb_clk_en = 0;
     } else if ((hw) == &UART1) {
         HP_SYS_CLKRST.peri_clk_ctrl111.reg_uart1_clk_en = 0;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart1_sys_clk_en = 0;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart1_apb_clk_en = 0;
     } else if ((hw) == &UART2) {
         HP_SYS_CLKRST.peri_clk_ctrl112.reg_uart2_clk_en = 0;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart2_sys_clk_en = 0;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart2_apb_clk_en = 0;
     } else if ((hw) == &UART3) {
         HP_SYS_CLKRST.peri_clk_ctrl113.reg_uart3_clk_en = 0;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart3_sys_clk_en = 0;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart3_apb_clk_en = 0;
     } else if ((hw) == &UART4) {
         HP_SYS_CLKRST.peri_clk_ctrl114.reg_uart4_clk_en = 0;
-        //To do: call these two in clk_gate_ll.h
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en = 0;
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en = 0;
     } else {
         // LP_UART reset shares the same register with other LP peripherals
         // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
         abort();
     }
 }
+// HP_SYS_CLKRST.peri_clk_ctrlxxx are shared registers, so this function must be used in an atomic way
+#define uart_ll_sclk_disable(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_sclk_disable(__VA_ARGS__)
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num)
+    {
+    case 0:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart0_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart0_sys_clk_en = enable;
+        break;
+    case 1:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart1_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart1_sys_clk_en = enable;
+        break;
+    case 2:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart2_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart2_sys_clk_en = enable;
+        break;
+    case 3:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart3_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart3_sys_clk_en = enable;
+        break;
+    case 4:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en = enable;
+        break;
+    default:
+        // LP_UART
+        abort();
+        break;
+    }
+}
+// HP_SYS_CLKRST.soc_clk_ctrlx are shared registers, so this function must be used in an atomic way
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+FORCE_INLINE_ATTR void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num)
+    {
+    case 0:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb = 0;
+        break;
+    case 1:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart1_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart1_apb = 0;
+        break;
+    case 2:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart2_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart2_apb = 0;
+        break;
+    case 3:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart3_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart3_apb = 0;
+        break;
+    case 4:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb = 0;
+        break;
+    default:
+        // LP_UART
+        abort();
+        break;
+    }
+}
+//  HP_SYS_CLKRST.hp_rst_en1 is a shared register, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Set the UART source clock.
@@ -307,11 +365,11 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
     } else if ((hw) == &UART4) {
         HP_SYS_CLKRST.peri_clk_ctrl114.reg_uart4_clk_src_sel = sel_value;
     } else {
-        // LP_UART reset shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
         abort();
     }
 }
+//HP_SYS_CLKRST.peri_clk_ctrlxxx are shared registers, so this function must be used in an atomic way
+#define uart_ll_set_sclk(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_set_sclk(__VA_ARGS__)
 
 /**
  * @brief  Get the UART source clock type.
@@ -364,36 +422,36 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
  */
 FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
-    if ((hw) == &LP_UART){
-        uint32_t clk_div = ((sclk_freq) << 4) / (baud);
-        hw->clkdiv_sync.clkdiv = clk_div >> 4;
-        hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
-    } else {
 #define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
-            const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
-            int sclk_div = DIV_UP(sclk_freq, max_div * baud);
-
-            uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
-            // The baud rate configuration register is divided into
-            // an integer part and a fractional part.
-            hw->clkdiv_sync.clkdiv = clk_div >> 4;
-            hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
-            //needs force u32 write
-            if ((hw) == &UART0) {
-                HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl111, reg_uart0_sclk_div_num, sclk_div - 1);
-            } else if ((hw) == &UART1){
-                HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl112, reg_uart1_sclk_div_num, sclk_div - 1);
-            } else if ((hw) == &UART2){
-                HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl113, reg_uart2_sclk_div_num, sclk_div - 1);
-            } else if ((hw) == &UART3){
-                HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl114, reg_uart3_sclk_div_num, sclk_div - 1);
-            } else {
-                HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl115, reg_uart4_sclk_div_num, sclk_div - 1);
-            }
-        }
+    const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
+    int sclk_div = DIV_UP(sclk_freq, max_div * baud);
+    uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
+    // The baud rate configuration register is divided into
+    // an integer part and a fractional part.
+    hw->clkdiv_sync.clkdiv = clk_div >> 4;
+    hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
+    //needs force u32 write
+    if ((hw) == &UART0) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl111, reg_uart0_sclk_div_num, sclk_div - 1);
+    } else if ((hw) == &UART1) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl112, reg_uart1_sclk_div_num, sclk_div - 1);
+    } else if ((hw) == &UART2) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl113, reg_uart2_sclk_div_num, sclk_div - 1);
+    } else if ((hw) == &UART3) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl114, reg_uart3_sclk_div_num, sclk_div - 1);
+    } else if ((hw) == &UART4) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl115, reg_uart4_sclk_div_num, sclk_div - 1);
+    } else {
+        //LP UART
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
+    }
 #undef DIV_UP
     uart_ll_update(hw);
 }
+#if !BOOTLOADER_BUILD
+//HP_SYS_CLKRST.peri_clk_ctrlxxx are shared registers, so this function must be used in an atomic way
+#define uart_ll_set_baudrate(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_set_baudrate(__VA_ARGS__)
+#endif
 
 /**
  * @brief  Get the current baud-rate.
@@ -410,13 +468,13 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
     int sclk_div = 0;
     if ((hw) == &UART0) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl111, reg_uart0_sclk_div_num) + 1;
-    } else if ((hw) == &UART1){
+    } else if ((hw) == &UART1) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl112, reg_uart1_sclk_div_num) + 1;
-    } else if ((hw) == &UART2){
+    } else if ((hw) == &UART2) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl113, reg_uart2_sclk_div_num) + 1;
-    } else if ((hw) == &UART3){
+    } else if ((hw) == &UART3) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl114, reg_uart3_sclk_div_num) + 1;
-    } else if ((hw) == &UART4){
+    } else if ((hw) == &UART4) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl115, reg_uart4_sclk_div_num) + 1;
     } else {
         return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag));

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "esp_attr.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
+#include "soc/dport_reg.h"
 #include "hal/uart_types.h"
 
 #ifdef __cplusplus
@@ -54,6 +55,64 @@ typedef enum {
     UART_INTR_RS485_CLASH      = (0x1<<17),
     UART_INTR_CMD_CHAR_DET     = (0x1<<18),
 } uart_intr_t;
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
+    switch (uart_num)
+    {
+    case 0:
+        reg_val = reg_val & (~DPORT_UART_CLK_EN);
+        reg_val = reg_val | (enable << 2);
+        break;
+    case 1:
+        reg_val = reg_val & (~DPORT_UART1_CLK_EN);
+        reg_val = reg_val | (enable << 5);
+        break;
+    case 2:
+        reg_val = reg_val & (~DPORT_UART2_CLK_EN);
+        reg_val = reg_val | (enable << 23);
+        break;
+    default:
+        abort();
+        break;
+    }
+    DPORT_WRITE_PERI_REG(DPORT_PERIP_CLK_EN_REG, reg_val);
+}
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num)
+    {
+    case 0:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART_RST);
+        break;
+    case 1:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART1_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART1_RST);
+        break;
+    case 2:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART2_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART2_RST);
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Set the UART source clock.
