@@ -33,6 +33,7 @@ import contextlib
 import copy
 import datetime
 import errno
+import fnmatch
 import functools
 import hashlib
 import json
@@ -195,7 +196,16 @@ class Platforms:
         return Platforms.get(found_alias)
 
 
-CURRENT_PLATFORM = Platforms.get(PYTHON_PLATFORM)
+def parse_platform_arg(platform_str):  # type: (str) -> str
+    platform = Platforms.get(platform_str)
+    if platform is None:
+        fatal(f'unknown platform: {platform}')
+        raise SystemExit(1)
+    return platform
+
+
+CURRENT_PLATFORM = parse_platform_arg(PYTHON_PLATFORM)
+
 
 EXPORT_SHELL = 'shell'
 EXPORT_KEY_VALUE = 'key-value'
@@ -388,6 +398,8 @@ def unpack(filename, destination):  # type: (str, str) -> None
         archive_obj = tarfile.open(filename, 'r:gz')  # type: Union[TarFile, ZipFile]
     elif filename.endswith(('.tar.xz')):
         archive_obj = tarfile.open(filename, 'r:xz')
+    elif filename.endswith(('.tar.bz2')):
+        archive_obj = tarfile.open(filename, 'r:bz2')
     elif filename.endswith('zip'):
         archive_obj = ZipFile(filename)
     else:
@@ -721,6 +733,13 @@ class IDFTool(object):
 
     def get_supported_targets(self):  # type: ()  -> list[str]
         return self._current_options.supported_targets  # type: ignore
+
+    def is_supported_for_any_of_targets(self, targets):  # type: (list[str]) -> bool
+        """
+        Checks whether the tool is suitable for at least one of the specified targets.
+        """
+        supported_targets = self.get_supported_targets()
+        return (any(item in targets for item in supported_targets) or supported_targets == ['all'])
 
     def compatible_with_platform(self):  # type: () -> bool
         return any([v.compatible_with_platform() for v in self.versions.values()])
@@ -1403,24 +1422,66 @@ def get_python_env_path() -> Tuple[str, str, str, str]:
     return idf_python_env_path, idf_python_export_path, virtualenv_python, idf_version
 
 
-def add_and_check_targets(idf_env_obj, targets_str):  # type: (IDFEnv, str) -> list[str]
+def parse_tools_arg(tools_str):  # type: (List[str]) -> List[str]
     """
-    Define targets from targets_str, check that the target names are valid and add them to idf_env_obj
+    Base parsing "tools" argumets: all, required, etc
+    """
+    if not tools_str:
+        return ['required']
+    else:
+        return tools_str
+
+
+def expand_tools_arg(tools_spec, overall_tools, targets):  # type: (list[str], OrderedDict, list[str]) -> list[str]
+    """ Expand list of tools 'tools_spec' in according:
+        - a tool is in the 'overall_tools' list
+        - consider metapackages like "required" and "all"
+        - process wildcards in tool names
+        - a tool supports chips from 'targets'
+    """
+    tools = []
+    # Filtering tools if they are in overall_tools
+    # Processing wildcards if possible
+    for tool_pattern in tools_spec:
+        tools.extend([k for k, _ in overall_tools.items() if fnmatch.fnmatch(k,tool_pattern) and k not in tools])
+
+    # Processing "metapackage"
+    if 'required' in tools_spec:
+        tools.extend([k for k, v in overall_tools.items() if v.get_install_type() == IDFTool.INSTALL_ALWAYS and k not in tools])
+
+    elif 'all' in tools_spec:
+        tools.extend([k for k, v in overall_tools.items() if v.get_install_type() != IDFTool.INSTALL_NEVER and k not in tools])
+
+    # Filtering by ESP_targets
+    tools = [k for k in tools if overall_tools[k].is_supported_for_any_of_targets(targets)]
+    return tools
+
+
+def parse_targets_arg(targets_str):  # type: (str) -> List[str]
+    """
+    Parse and check if targets_str is a valid list of targets and return a target list
     """
     targets_from_tools_json = get_all_targets_from_tools_json()
     invalid_targets = []
 
     targets_str = targets_str.lower()
     targets = targets_str.replace('-', '').split(',')
-    if targets != ['all']:
+    if targets == ['all']:
+        return targets_from_tools_json
+    else:
         invalid_targets = [t for t in targets if t not in targets_from_tools_json]
         if invalid_targets:
             warn('Targets: "{}" are not supported. Only allowed options are: {}.'.format(', '.join(invalid_targets), ', '.join(targets_from_tools_json)))
             raise SystemExit(1)
-        idf_env_obj.get_active_idf_record().extend_targets(targets)
-    else:
-        idf_env_obj.get_active_idf_record().extend_targets(targets_from_tools_json)
+        return targets
 
+
+def add_and_check_targets(idf_env_obj, targets_str):  # type: (IDFEnv, str) -> list[str]
+    """
+    Define targets from targets_str, check that the target names are valid and add them to idf_env_obj
+    """
+    targets = parse_targets_arg(targets_str)
+    idf_env_obj.get_active_idf_record().extend_targets(targets)
     return idf_env_obj.get_active_idf_record().targets
 
 
@@ -1797,12 +1858,7 @@ def apply_github_assets_option(idf_download_url):  # type: (str) -> str
 
 
 def get_tools_spec_and_platform_info(selected_platform, targets, tools_spec,
-                                     quiet=False):  # type: (Optional[str], list[str], list[str], bool) -> Tuple[list[str], Dict[str, IDFTool]]
-    selected_platform = Platforms.get(selected_platform)
-    if selected_platform is None:
-        fatal(f'unknown platform: {selected_platform}')
-        raise SystemExit(1)
-
+                                     quiet=False):  # type: (str, list[str], list[str], bool) -> Tuple[list[str], Dict[str, IDFTool]]
     # If this function is not called from action_download, but is used just for detecting active tools, info about downloading is unwanted.
     global global_quiet
     try:
@@ -1814,21 +1870,8 @@ def get_tools_spec_and_platform_info(selected_platform, targets, tools_spec,
             tool_for_platform = tool_obj.copy_for_platform(selected_platform)
             tools_info_for_platform[name] = tool_for_platform
 
-        if not tools_spec or 'required' in tools_spec:
-            # Downloading tools for all ESP_targets required by the operating system.
-            tools_spec = [k for k, v in tools_info_for_platform.items() if v.get_install_type() == IDFTool.INSTALL_ALWAYS]
-            # Filtering tools user defined list of ESP_targets
-            if 'all' not in targets:
-                def is_tool_selected(tool):  # type: (IDFTool) -> bool
-                    supported_targets = tool.get_supported_targets()
-                    return (any(item in targets for item in supported_targets) or supported_targets == ['all'])
-                tools_spec = [k for k in tools_spec if is_tool_selected(tools_info[k])]
-            info('Downloading tools for {}: {}'.format(selected_platform, ', '.join(tools_spec)))
-
-        # Downloading tools for all ESP_targets (MacOS, Windows, Linux)
-        elif 'all' in tools_spec:
-            tools_spec = [k for k, v in tools_info_for_platform.items() if v.get_install_type() != IDFTool.INSTALL_NEVER]
-            info('Downloading tools for {}: {}'.format(selected_platform, ', '.join(tools_spec)))
+        tools_spec = expand_tools_arg(tools_spec, tools_info_for_platform, targets)
+        info('Downloading tools for {}: {}'.format(selected_platform, ', '.join(tools_spec)))
     finally:
         global_quiet = old_global_quiet
 
@@ -1836,10 +1879,11 @@ def get_tools_spec_and_platform_info(selected_platform, targets, tools_spec,
 
 
 def action_download(args):  # type: ignore
-    tools_spec = args.tools
+    tools_spec = parse_tools_arg(args.tools)
+
     targets = []  # type: list[str]
-    # Downloading tools required for defined ESP_targets
-    if 'required' in tools_spec:
+    # Saving IDFEnv::targets for selected ESP_targets if all tools have been specified
+    if 'required' in tools_spec or 'all' in tools_spec:
         idf_env_obj = IDFEnv.get_idf_env()
         targets = add_and_check_targets(idf_env_obj, args.targets)
         try:
@@ -1848,9 +1892,13 @@ def action_download(args):  # type: ignore
             if args.targets in targets:
                 targets.remove(args.targets)
             warn('Downloading tools for targets was not successful with error: {}'.format(err))
+    # Taking into account ESP_targets but not saving them for individual tools (specified list of tools)
+    else:
+        targets = parse_targets_arg(args.targets)
 
-    tools_spec, tools_info_for_platform = get_tools_spec_and_platform_info(args.platform, targets, args.tools)
+    platform = parse_platform_arg(args.platform)
 
+    tools_spec, tools_info_for_platform = get_tools_spec_and_platform_info(platform, targets, tools_spec)
     for tool_spec in tools_spec:
         if '@' not in tool_spec:
             tool_name = tool_spec
@@ -1872,18 +1920,17 @@ def action_download(args):  # type: ignore
         tool_spec = '{}@{}'.format(tool_name, tool_version)
 
         info('Downloading {}'.format(tool_spec))
-        _idf_tool_obj = tool_obj.versions[tool_version].get_download_for_platform(args.platform)
+        _idf_tool_obj = tool_obj.versions[tool_version].get_download_for_platform(platform)
         _idf_tool_obj.url = get_idf_download_url_apply_mirrors(args, _idf_tool_obj.url)
 
         tool_obj.download(tool_version)
 
 
 def action_install(args):  # type: ignore
-    tools_info = load_tools_info()
-    tools_spec = args.tools  # type: ignore
+    tools_spec = parse_tools_arg(args.tools)
+
     targets = []  # type: list[str]
-    info('Current system platform: {}'.format(CURRENT_PLATFORM))
-    # No single tool '<tool_name>@<version>' was defined, install whole toolchains
+    # Saving IDFEnv::targets for selected ESP_targets if all tools have been specified
     if 'required' in tools_spec or 'all' in tools_spec:
         idf_env_obj = IDFEnv.get_idf_env()
         targets = add_and_check_targets(idf_env_obj, args.targets)
@@ -1894,23 +1941,14 @@ def action_install(args):  # type: ignore
                 targets.remove(args.targets)
             warn('Installing targets was not successful with error: {}'.format(err))
         info('Selected targets are: {}'.format(', '.join(targets)))
+    # Taking into account ESP_targets but not saving them for individual tools (specified list of tools)
+    else:
+        targets = parse_targets_arg(args.targets)
 
-        # Installing tools for defined ESP_targets
-        if 'required' in tools_spec:
-            tools_spec = [k for k, v in tools_info.items() if v.get_install_type() == IDFTool.INSTALL_ALWAYS]
-            # If only some ESP_targets are defined, filter tools for those
-            if len(get_all_targets_from_tools_json()) != len(targets):
-                def is_tool_selected(tool):  # type: (IDFTool) -> bool
-                    supported_targets = tool.get_supported_targets()
-                    return (any(item in targets for item in supported_targets) or supported_targets == ['all'])
-                tools_spec = [k for k in tools_spec if is_tool_selected(tools_info[k])]
-            info('Installing tools: {}'.format(', '.join(tools_spec)))
-
-        # Installing all available tools for all operating systems (MacOS, Windows, Linux)
-        else:
-            tools_spec = [k for k, v in tools_info.items() if v.get_install_type() != IDFTool.INSTALL_NEVER]
-            info('Installing tools: {}'.format(', '.join(tools_spec)))
-
+    info('Current system platform: {}'.format(CURRENT_PLATFORM))
+    tools_info = load_tools_info()
+    tools_spec = expand_tools_arg(tools_spec, tools_info, targets)
+    info('Installing tools: {}'.format(', '.join(tools_spec)))
     for tool_spec in tools_spec:
         if '@' not in tool_spec:
             tool_name = tool_spec
@@ -2556,6 +2594,7 @@ def main(argv):  # type: (list[str]) -> None
     install.add_argument('tools', metavar='TOOL', nargs='*', default=['required'],
                          help='Tools to install. ' +
                          'To install a specific version use <tool_name>@<version> syntax. ' +
+                         'To install tools by pattern use wildcards in <tool_name_pattern> . ' +
                          'Use empty or \'required\' to install required tools, not optional ones. ' +
                          'Use \'all\' to install all tools, including the optional ones.')
     install.add_argument('--targets', default='all', help='A comma separated list of desired chip targets for installing.' +
@@ -2566,6 +2605,7 @@ def main(argv):  # type: (list[str]) -> None
     download.add_argument('tools', metavar='TOOL', nargs='*', default=['required'],
                           help='Tools to download. ' +
                           'To download a specific version use <tool_name>@<version> syntax. ' +
+                          'To download tools by pattern use wildcards in <tool_name_pattern> . ' +
                           'Use empty or \'required\' to download required tools, not optional ones. ' +
                           'Use \'all\' to download all tools, including the optional ones.')
     download.add_argument('--targets', default='all', help='A comma separated list of desired chip targets for installing.' +
