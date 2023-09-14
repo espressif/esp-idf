@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+#define EXTERNAL_COEXIST_WIRE_1 0
+#define EXTERNAL_COEXIST_WIRE_2 1
+#define EXTERNAL_COEXIST_WIRE_3 2
+#define EXTERNAL_COEXIST_WIRE_4 3
 /**
  * @brief coex prefer value
  */
@@ -26,10 +30,10 @@ typedef enum {
 } esp_coex_prefer_t;
 
 typedef enum {
-    EXTERN_COEX_WIRE_1 = 0,
-    EXTERN_COEX_WIRE_2,
-    EXTERN_COEX_WIRE_3,
-    EXTERN_COEX_WIRE_4,
+    EXTERN_COEX_WIRE_1 = EXTERNAL_COEXIST_WIRE_1,
+    EXTERN_COEX_WIRE_2 = EXTERNAL_COEXIST_WIRE_2,
+    EXTERN_COEX_WIRE_3 = EXTERNAL_COEXIST_WIRE_3,
+    EXTERN_COEX_WIRE_4 = EXTERNAL_COEXIST_WIRE_4,
     EXTERN_COEX_WIRE_NUM,
 } external_coex_wire_t;
 
@@ -49,19 +53,19 @@ typedef enum {
 typedef struct {
     union {
         uint32_t in_pin0 __attribute__((deprecated("Use 'request' instead")));
-        gpio_num_t request; /**< request gpio signal from slave to master */
+        gpio_num_t request; /**< request gpio signal from follower to leader */
     };
     union {
         uint32_t in_pin1 __attribute__((deprecated("Use 'priority' instead")));
-        gpio_num_t priority; /**< request gpio signal priority from slave to master */
+        gpio_num_t priority; /**< request gpio signal priority from follower to leader */
     };
     union {
         uint32_t out_pin0 __attribute__((deprecated("Use 'grant' instead")));
-        gpio_num_t grant; /**< grant gpio signal from master to slave */
+        gpio_num_t grant; /**< grant gpio signal from leader to follower */
     };
     union {
         uint32_t out_pin1 __attribute__((deprecated("Use 'tx_line' instead")));
-        gpio_num_t tx_line; /**< tx_line gpio signal from master to slave, indicates whether the master's WiFi is transmitting or not*/
+        gpio_num_t tx_line; /**< tx_line gpio signal from leader to follower, indicates whether the leader's WiFi is transmitting or not*/
     };
 } esp_external_coex_gpio_set_t;
 
