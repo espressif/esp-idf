@@ -87,9 +87,9 @@ GPIO 捆绑包操作
 
 高阶用户可以通过编写汇编代码或调用 CPU 低层 API 来操作 GPIO。常见步骤为：
 
-1. 分配一个 GPIO 捆绑包： :cpp:func:`dedic_gpio_new_bundle`
+1. 分配一个 GPIO 捆绑包：:cpp:func:`dedic_gpio_new_bundle`
 2. 查询该包占用的掩码：:cpp:func:`dedic_gpio_get_out_mask` 和/或 :cpp:func:`dedic_gpio_get_in_mask`
-3. 调用 CPU LL apis (如 `cpu_ll_write_dedic_gpio_mask`) 或使用该掩码编写汇编代码
+3. 调用 CPU LL apis（如 `cpu_ll_write_dedic_gpio_mask`）或使用该掩码编写汇编代码
 4. 切换 IO 的最快捷方式是使用专用的“设置/清除”指令：
 
     .. only:: esp32s2 or esp32s3

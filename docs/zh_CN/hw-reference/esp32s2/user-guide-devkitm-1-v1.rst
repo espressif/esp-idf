@@ -218,7 +218,7 @@ ESP32-S2-DevKitM-1 的主要组件和连接方式如下图所示。
 排针
 ----
 
-下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-devkitm-1-v1-board-front` 所示，排针的序号与 `ESP32-S2-DevKitM-1 原理图 <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Schematics.pdf>`_ (PDF)一致。
+下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-devkitm-1-v1-board-front` 所示，排针的序号与 `ESP32-S2-DevKitM-1 原理图 <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Schematics.pdf>`_ (PDF) 一致。
 
 
 J1

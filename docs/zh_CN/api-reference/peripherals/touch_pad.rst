@@ -118,7 +118,7 @@
         * - T13
           - GPIO13
         * - T14
-          - GPIO14    
+          - GPIO14
 
 使用 :cpp:func:`touch_pad_set_fsm_mode` 选择触摸传感器测量（由 FSM 操作）是由硬件定时器自动启动，还是由软件自动启动。如果选择软件模式，请使用 :cpp:func:`touch_pad_sw_start` 启动 FSM。
 
@@ -185,7 +185,7 @@
 * 触摸传感器充放电参数：
 
     * 电压门限：:cpp:func:`touch_pad_set_voltage`
-    * 速率（斜率） :cpp:func:`touch_pad_set_cnt_mode`
+    * 速率（斜率）：:cpp:func:`touch_pad_set_cnt_mode`
 
 .. only:: SOC_TOUCH_VERSION_1
 

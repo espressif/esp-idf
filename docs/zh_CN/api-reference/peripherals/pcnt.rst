@@ -81,7 +81,7 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 
 -  :cpp:member:`pcnt_chan_config_t::edge_gpio_num` 与 :cpp:member:`pcnt_chan_config_t::level_gpio_num` 用于指定 **边沿** 信号和 **电平** 信号对应的 GPIO 编号。请注意，这两个参数未被使用时，可以设置为 `-1`，即成为 **虚拟 IO** 。对于一些简单的脉冲计数应用，电平信号或边沿信号是固定的（即不会发生改变），可将其设置为虚拟 IO，然后该信号会被连接到一个固定的高/低逻辑电平，这样就可以在通道分配时回收一个 GPIO，节省一个 GPIO 管脚资源。
 -  :cpp:member:`pcnt_chan_config_t::virt_edge_io_level` 与 :cpp:member:`pcnt_chan_config_t::virt_level_io_level` 用于指定 **边沿** 信号和 **电平** 信号的虚拟 IO 电平，以保证这些控制信号处于确定状态。请注意，只有在 :cpp:member:`pcnt_chan_config_t::edge_gpio_num` 或 :cpp:member:`pcnt_chan_config_t::level_gpio_num` 设置为 `-1` 时，这两个参数才有效。
--  :cpp:member:`pcnt_chan_config_t::invert_edge_input` 与 :cpp:member:`pcnt_chan_config_t::invert_level_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。
+-  :cpp:member:`pcnt_chan_config_t::invert_edge_input` 与 :cpp:member:`pcnt_chan_config_t::invert_level_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵（不是 PCNT 单元）执行。
 -  :cpp:member:`pcnt_chan_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过调用位于同一 GPIO 上的函数 :cpp:func:`gpio_set_level` 来模拟脉冲信号。
 
 调用函数 :cpp:func:`pcnt_new_channel`，将 :cpp:type:`pcnt_chan_config_t` 作为输入值并调用 :cpp:func:`pcnt_new_unit` 返回的 PCNT 单元句柄，可对 PCNT 通道进行分配和初始化。如果该函数正常运行，会返回一个 PCNT 通道句柄。如果没有可用的 PCNT 通道（PCNT 通道资源全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 通道总数记录在 :c:macro:`SOC_PCNT_CHANNELS_PER_UNIT`，以供参考。注意，为某个单元安装 PCNT 通道时，应确保该单元处于初始状态，否则函数 :cpp:func:`pcnt_new_channel` 会返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
@@ -227,7 +227,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 .. only:: not SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
-    .. _pcnt-enable-disable-unit:  
+    .. _pcnt-enable-disable-unit:
 
 使能和禁用单元
 ^^^^^^^^^^^^^^^^^
@@ -291,7 +291,7 @@ PCNT 内部的硬件计数器会在计数达到高/低门限的时候自动清�
 电源管理
 ^^^^^^^^^^
 
-使能电源管理 (即 :ref:`CONFIG_PM_ENABLE` 开启) 后，在进入 Light-sleep 模式之前，系统会调整 APB 的频率。这会改变 PCNT 毛刺滤波器的参数，从而可能导致有效信号被滤除。
+使能电源管理（即 :ref:`CONFIG_PM_ENABLE` 开启）后，在进入 Light-sleep 模式之前，系统会调整 APB 的频率。这会改变 PCNT 毛刺滤波器的参数，从而可能导致有效信号被滤除。
 
 驱动通过获取 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 类型的电源管理锁来防止系统修改 APB 频率。每当通过 :cpp:func:`pcnt_unit_set_glitch_filter` 使能毛刺滤波器时，驱动可以保证系统在 :cpp:func:`pcnt_unit_enable` 使能 PCNT 单元后获取电源管理锁。而系统调用 :cpp:func:`pcnt_unit_disable` 之后，驱动会释放电源管理锁。
 
@@ -306,7 +306,7 @@ Konfig 选项 :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 可以实现以下功能：
 
 1. 即使缓存被禁用也可以使能中断服务
 2. 将 ISR 使用的所有函数都放入 IRAM 中 [2]_
-3. 将驱动对象放入 DRAM (防止驱动对象被意外映射到 PSRAM 中)
+3. 将驱动对象放入 DRAM（防止驱动对象被意外映射到 PSRAM 中）
 
 这样，在缓存被禁用时，中断也可运行，但是这也会增加 IRAM 的消耗。
 
@@ -338,7 +338,7 @@ Konfig 选项 :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 可以实现以下功能：
 支持的 Kconfig 选项
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` 用于确定 PCNT 控制函数的位置 (放在 IRAM 还是 flash 中)，请参考 :ref:`pcnt-iram-safe` 获取更多信息。
+- :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` 用于确定 PCNT 控制函数的位置（放在 IRAM 还是 flash 中），请参考 :ref:`pcnt-iram-safe` 获取更多信息。
 - :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 用于控制当缓存禁用时，默认的 ISR 句柄是否可以工作，请参考 :ref:`pcnt-iram-safe` 获取更多信息。
 - :ref:`CONFIG_PCNT_ENABLE_DEBUG_LOG` 用于使能调试日志输出，而这会增大固件二进制文件。
 

@@ -251,7 +251,7 @@ Git 工作流
 
 更多详情，请前往 GitHub 查看完整 `标签列表`_。
 
-例如，在 Linux 或 macOS 系统中，可以运行以下命令更新至ESP-IDF v3.1，随时关注该分支上的 Bugfix 版本发布（如 ``v3.1.1`` 等）：
+例如，在 Linux 或 macOS 系统中，可以运行以下命令更新至 ESP-IDF v3.1，随时关注该分支上的 Bugfix 版本发布（如 ``v3.1.1`` 等）：
 
 .. code-block:: bash
 

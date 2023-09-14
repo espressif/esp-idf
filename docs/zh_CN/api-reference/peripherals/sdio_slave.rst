@@ -195,7 +195,7 @@ SDIO 从机驱动程序的相关术语如下：
 
 1. 调用 ``sdio_slave_recv_register_buf`` 注册缓冲区，并获取已注册缓冲区的句柄。驱动程序会为链接到硬件的链表描述符所需的缓冲区分配内存。这些缓冲区的大小应与接收缓冲区大小相等。
 2. 将缓冲区句柄传递给 ``sdio_slave_recv_load_buf``，将缓冲区加载到驱动程序中。
-3. 调用 ``sdio_slave_recv`` 或 ``sdio_slave_recv_packet`` 获取接收到的数据。如果需要采取非阻塞式调用，可以设置 ``wait`` 为0。
+3. 调用 ``sdio_slave_recv`` 或 ``sdio_slave_recv_packet`` 获取接收到的数据。如果需要采取非阻塞式调用，可以设置 ``wait`` 为 0。
 
    这两个 API 的区别在于，``sdio_slave_recv_packet`` 会提供更多有关数据包的信息，数据包可以由多个缓冲区组成。
 
