@@ -3,87 +3,91 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+static const char* TAG = "nvs_page_host_test";
+
 #include <stdio.h>
 #include "unity.h"
 #include "test_fixtures.hpp"
-
-extern "C" {
-#include "Mockesp_partition.h"
-}
+#include "esp_log.h"
 
 using namespace std;
 using namespace nvs;
 
 void test_Page_load_reading_header_fails()
 {
-    PartitionMock mock(0, 4096);
+    PartitionEmulationFixture fix;
+    /*
     esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_ERR_INVALID_ARG);
+    */
+
+    /*
+    At the moment we cannot simulate esp_partition_read_raw call failure
+    */
+
     Page page;
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, page.state());
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, page.load(&mock, 0));
-
-    Mockesp_partition_Verify();
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, page.load(&fix.part, 0));
 }
 
 void test_Page_load_reading_data_fails()
 {
     uint8_t header[64];
     std::fill_n(header, sizeof(header)/sizeof(header[0]), UINT8_MAX);
-    PartitionMock mock(0, 4096);
+
+    PartitionEmulationFixture fix;
+    fix.erase_all();
+    fix.write_raw(0, header, sizeof(header));
+
+    /*
     esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
     esp_partition_read_raw_ReturnArrayThruPtr_dst(header, 32);
     esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_FAIL);
+    */
+
+    /*
+    At the moment we cannot simulate esp_partition_read_raw call failure
+    */
+
     Page page;
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, page.state());
-    TEST_ASSERT_EQUAL(ESP_FAIL, page.load(&mock, 0));
-
-    Mockesp_partition_Verify();
+    TEST_ASSERT_EQUAL(ESP_FAIL, page.load(&fix.part, 0));
 }
 
 void test_Page_load__uninitialized_page_has_0xfe()
 {
-    PartitionMockFixture fix;
+    PartitionEmulationFixture fix;
     Page page;
 
-    fix.raw_header[511] = 0xfe;
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(fix.raw_header, 32);
-
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(fix.raw_header, 512);
+    uint8_t uninitialized_symbol = 0xfe;
+    fix.write_raw(511, &uninitialized_symbol, sizeof(uninitialized_symbol));
 
     // Page::load() should return ESP_OK, but state has to be corrupt
-    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
 
     TEST_ASSERT_EQUAL(Page::PageState::CORRUPT, page.state());
-
-    Mockesp_partition_Verify();
 }
 
 void test_Page_load__initialized_corrupt_header()
 {
-    PartitionMockFixture fix;
+    PartitionEmulationFixture fix;
     Page page;
 
     uint8_t raw_header_corrupt [] = {0xfe, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xc3, 0x16, 0xdd, 0xdc};
 
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(raw_header_corrupt, 32);
+    fix.write_raw(0, raw_header_corrupt, sizeof(raw_header_corrupt));
 
     // Page::load() should return ESP_OK, but state has to be corrupt
-    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
 
     TEST_ASSERT_EQUAL(Page::PageState::CORRUPT, page.state());
-
-    Mockesp_partition_Verify();
 }
 
 void test_Page_load__corrupt_entry_table()
 {
-    PartitionMockFixture fix;
+    PartitionEmulationFixture fix;
 
     // valid header
     uint8_t raw_header_valid [32] = {0xfe, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -96,67 +100,88 @@ void test_Page_load__corrupt_entry_table()
                 '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', 1, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
     uint8_t raw_header[4] = {0xff, 0xff, 0xff, 0xff};
+
     std::fill_n(raw_entry_table, sizeof(raw_entry_table)/sizeof(raw_entry_table[0]), 0);
-    raw_entry_table[0] = 0xfa;
-
-    // read page header
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(raw_header_valid, 32);
-
-    // read entry table
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(raw_entry_table, 32);
-
-    // read next free entry's header
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(raw_header, 4);
-
-    // read namespace entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(ns_entry, 32);
-
-    // we expect a raw word write from the partition in order to change the entry bits to erased (0)
-    esp_partition_write_raw_ExpectAndReturn(&fix.part_mock.partition, 32, nullptr, 4, ESP_OK);
-    esp_partition_write_raw_IgnoreArg_src();
-
     // corrupt entry table as well as crc of corresponding item
     raw_entry_table[0] = 0xf6;
+
+    // Expected sequence of data blocks read by page.load
+    fix.write_raw(  0, raw_header_valid, sizeof(raw_header_valid));
+    fix.write_raw( 32, raw_entry_table,  sizeof(raw_entry_table));
+    fix.write_raw(128, raw_header,       sizeof(raw_header));
+    fix.write_raw( 64, ns_entry,         sizeof(ns_entry));
 
     Page page;
 
     // Page::load() should return ESP_OK, but state has to be corrupt
-    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
 
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, page.state());
     TEST_ASSERT_EQUAL(1, page.getUsedEntryCount());
-
-    Mockesp_partition_Verify();
 }
 
 void test_Page_load_success()
 {
-    PartitionMockFixture fix;
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(fix.raw_header, 32);
+    PartitionEmulationFixture fix;
+
+    const size_t nvs_page_size = 512;
+    const size_t nvs_header_size = 32;
+
+    uint8_t raw_header[nvs_page_size];
+
+    std::fill_n(raw_header, sizeof(raw_header)/sizeof(raw_header[0]), UINT8_MAX);
+
+    // Expected sequence of data blocks read by page.load
+    fix.write_raw(0, raw_header, nvs_header_size);
     for (int i = 0; i < 8; i++) {
-        esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-        esp_partition_read_raw_ReturnArrayThruPtr_dst(fix.raw_header, 512);
+        fix.write_raw(i * nvs_page_size, raw_header, sizeof(raw_header));
     }
+
     Page page;
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, page.state());
-    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
     TEST_ASSERT_EQUAL(Page::PageState::UNINITIALIZED, page.state());
 }
 
 void test_Page_load_full_page()
 {
-    NVSFullPageFixture fix(0, 1, NVS_DEFAULT_PART_NAME, false);
+    PartitionEmulationFixture fix;
 
-    TEST_ASSERT_EQUAL(Page::PageState::INVALID, fix.page.state());
-    TEST_ASSERT_EQUAL(ESP_OK, fix.page.load(&fix.part_mock, 0));
-    TEST_ASSERT_EQUAL(Page::PageState::FULL, fix.page.state());
+    // valid header
+    uint8_t raw_header_valid [32] = {0xfc, 0xff, 0xff, 0xff, 0x01, 0x00, 0x00, 0x00, 0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xa3, 0x48, 0x9f, 0x38};
+
+    // entry table with just one entry free
+    uint8_t raw_entry_table [32];
+
+    // namespace entry
+    uint8_t ns_entry [32] = {0x00, 0x01, 0x01, 0xff, 0x68, 0xc5, 0x3f, 0x0b, 't', 'e', 's', 't', '_', 'n', 's', '\0',
+                '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', 1, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+    // one value entry
+    uint8_t value_entry [32] = {0x01, 0x01, 0x01, 0xff, 0x3d, 0xf3, 0x99, 0xe5, 't', 'e', 's', 't', '_', 'v', 'a', 'l',
+                'u', 'e', '\0', '\0', '\0', '\0', '\0', '\0', 47, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+    // entry_table with all elements deleted except the namespace entry written and the last entry free
+    std::fill_n(raw_entry_table, sizeof(raw_entry_table)/sizeof(raw_entry_table[0]), 0);
+    raw_entry_table[0] = 0x0a;
+    raw_entry_table[31] = 0xFC;
+
+
+    // Expected sequence of data blocks read by page.load
+    fix.write_raw(  0, raw_header_valid, sizeof(raw_header_valid));
+    fix.write_raw( 32, raw_entry_table,  sizeof(raw_entry_table));
+    fix.write_raw( 64, ns_entry,         sizeof(ns_entry));
+    fix.write_raw( 96, value_entry,      sizeof(value_entry));
+
+    Page page;
+
+    TEST_ASSERT_EQUAL(Page::PageState::INVALID, page.state());
+    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
+    TEST_ASSERT_EQUAL(Page::PageState::FULL, page.state());
 }
+
 void test_Page_load__seq_number_0()
 {
     NVSValidPageFixture fix;
@@ -170,9 +195,10 @@ void test_Page_erase__write_fail()
 {
     NVSValidPageFixture fix;
 
-    esp_partition_erase_range_ExpectAndReturn(&fix.part_mock.partition, 0, 4096, ESP_FAIL);
+    // fail at 1st attempt to call esp_partition_erase_range
+    fix.fail_erase_at(1);
 
-    TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.erase());
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.erase());
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, fix.page.state());
 }
 
@@ -180,44 +206,44 @@ void test_Page_erase__success()
 {
     NVSValidPageFixture fix;
 
-    esp_partition_erase_range_ExpectAndReturn(&fix.part_mock.partition, 0, 4096, ESP_OK);
-
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.erase());
     TEST_ASSERT_EQUAL(Page::PageState::UNINITIALIZED, fix.page.state());
 }
 
 void test_Page_write__initialize_write_failure()
 {
-    PartitionMockFixture fix;
+    PartitionEmulationFixture fix;
+
+    // Make partition empty - uninitialized
+    fix.erase_all();
+
     uint8_t write_data = 47;
 
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(fix.raw_header, 32);
-    for (int i = 0; i < 8; i++) {
-        esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-        esp_partition_read_raw_ReturnArrayThruPtr_dst(fix.raw_header, 512);
-    }
-    esp_partition_write_raw_ExpectAnyArgsAndReturn(ESP_FAIL);
+    // Emulate failed attempt to write data to the flash after writeItem is called
+    fix.fail_write_at(1);
 
     Page page;
 
-    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
     TEST_ASSERT_EQUAL(Page::PageState::UNINITIALIZED, page.state());
 
-    TEST_ASSERT_EQUAL(ESP_FAIL, page.writeItem(1, nvs::ItemType::U8, "test", &write_data, sizeof(write_data)));
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, page.writeItem(1, nvs::ItemType::U8, "test", &write_data, sizeof(write_data)));
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, page.state());
 }
 
 void test_Page_write__write_data_fails()
 {
     NVSPageFixture fix;
+
     uint8_t write_data = 47;
-    esp_partition_write_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_write_ExpectAnyArgsAndReturn(ESP_FAIL);
+
+    // It is expected, that 2 write calls will be made
+    // Emulate failed second attempt to write data to the flash after writeItem is called
+    fix.fail_write_at(2);
 
     TEST_ASSERT_EQUAL(Page::PageState::UNINITIALIZED, fix.page.state());
 
-    TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.writeItem(1, nvs::ItemType::U8, "test", &write_data, sizeof(write_data)));
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.writeItem(1, nvs::ItemType::U8, "test", &write_data, sizeof(write_data)));
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, fix.page.state());
 }
@@ -231,19 +257,10 @@ void test_page_write__write_correct_entry_state()
     // mark first entry as written
     raw_result[0] = 0xfe;
 
-    // initialize page
-    esp_partition_write_raw_ExpectAnyArgsAndReturn(ESP_OK);
-
-    // write entry
-    esp_partition_write_ExpectAnyArgsAndReturn(ESP_OK);
-
-    // write entry state
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, 1, 32, raw_result, 4, 4, ESP_OK);
-
     TEST_ASSERT_EQUAL(Page::PageState::UNINITIALIZED, fix.page.state());
-
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, nvs::ItemType::U8, "test_key", &write_data, sizeof(write_data)));
-
+    // Test whether partition memory space contains indication of first entry written
+    TEST_ASSERT_EQUAL(ESP_OK, fix.compare_raw(32, raw_result, sizeof(raw_result)));
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 }
 
@@ -254,19 +271,10 @@ void test_Page_write__write_correct_data()
     uint8_t raw_result [32] = {0x01, 0x01, 0x01, 0xff, 0x98, 0x6f, 0x21, 0xfd, 't', 'e', 's', 't', '_', 'k', 'e', 'y',
             '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', 47, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
-    // initialize page
-    esp_partition_write_raw_ExpectAnyArgsAndReturn(ESP_OK);
-
-    // write entry
-    esp_partition_write_ExpectWithArrayAndReturn(&fix.part_mock.partition, 1, 64, raw_result, 32, 32, ESP_OK);
-
-    // write entry state
-    esp_partition_write_raw_ExpectAnyArgsAndReturn(ESP_OK);
-
     TEST_ASSERT_EQUAL(Page::PageState::UNINITIALIZED, fix.page.state());
-
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, nvs::ItemType::U8, "test_key", &write_data, sizeof(write_data)));
-
+    // Test whether partition memory space contains value entry
+    TEST_ASSERT_EQUAL(ESP_OK, fix.compare_raw(64, raw_result, sizeof(raw_result)));
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 }
 
@@ -280,9 +288,13 @@ void test_Page_readItem__read_entry_fails()
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 
     uint8_t read_value = 0;
-
+    /*
     esp_partition_read_ExpectAnyArgsAndReturn(ESP_FAIL);
+    */
 
+    /*
+    At the moment we do not have simulation of failed flash read
+    */
     TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.readItem(NVSValidPageFixture::NS_INDEX, "test_value", read_value));
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, fix.page.state());
@@ -301,25 +313,15 @@ void test_Page_readItem__read_corrupted_entry()
 
     uint8_t read_value = 0;
 
-    // corrupting entry
-    fix.value_entry[0] = 0x0;
-
-    // first read the entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
-    // Page::eraseEntryAndSpan() reads entry again
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
-    // erasing entry by setting bit in entry table (0xfa -> 0xf2)
-    uint8_t raw_result [4] = {0xf2, 0x00, 0x00, 0x00};
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, 1, 32, raw_result, 4, 4, ESP_OK);
+    // prepare corrupted entry in flash memory
+    uint8_t corrupted_value_entry = 0x0;
+    fix.write_raw( 96, &corrupted_value_entry, sizeof(corrupted_value_entry));
 
     TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, fix.page.readItem(NVSValidPageFixture::NS_INDEX, "test_value", read_value));
-
+    // check that repair mechanism of corrupted entry caused erasing entry by setting bit in entry table (0xfa -> 0xf2)
+    uint8_t raw_result [4] = {0xf2, 0x00, 0x00, 0x00};
+    TEST_ASSERT_EQUAL(ESP_OK, fix.compare_raw(32, raw_result, sizeof(raw_result)));
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
-
     TEST_ASSERT_EQUAL(1, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(123, fix.page.getErasedEntryCount());
 }
@@ -336,13 +338,21 @@ void test_Page_readItem__read_corrupted_second_read_fail()
 
     // corrupting entry
     fix.value_entry[0] = 0x0;
+    fix.write_raw(96, fix.value_entry, sizeof(fix.value_entry));
 
+    /*
     // first read the entry
     esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
     esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
 
     // Page::eraseEntryAndSpan() reads entry again
     esp_partition_read_ExpectAnyArgsAndReturn(ESP_FAIL);
+    */
+
+    /*
+    It is expected that readItem will call esp_partition_read function twice
+    We cannot simulate the second read attempt failure at the moment
+    */
 
     TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.readItem(NVSValidPageFixture::NS_INDEX, "test_value", read_value));
 
@@ -361,20 +371,14 @@ void test_Page_readItem__read_corrupted_erase_fail()
 
     // corrupting entry
     fix.value_entry[0] = 0x0;
+    // prepare corrupt entry for reading
+    fix.write_raw( 96, fix.value_entry, sizeof(fix.value_entry));
 
-    // first read the entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
+    // emulate write failure as nvs will try to invalidate the corupt entry
+    // by setting bit in entry table (0xfa -> 0xf2)
+    fix.fail_write_at(1);
 
-    // Page::eraseEntryAndSpan() reads entry again
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
-    // erasing entry by setting bit in entry table (0xfa -> 0xf2)
-    uint8_t raw_result [4] = {0xf2, 0x00, 0x00, 0x00};
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, 1, 32, raw_result, 4, 4, ESP_FAIL);
-
-    TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.readItem(NVSValidPageFixture::NS_INDEX, "test_value", read_value));
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.readItem(NVSValidPageFixture::NS_INDEX, "test_value", read_value));
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, fix.page.state());
 }
@@ -388,9 +392,6 @@ void test_Page_readItem__read_entry_suceeds()
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 
     uint8_t read_value = 0;
-
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
 
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.readItem(NVSValidPageFixture::NS_INDEX, "test_value", read_value));
 
@@ -413,9 +414,17 @@ void test_Page_readItem__blob_read_data_fails()
     uint8_t chunk_start = 0;
     uint8_t read_data [32];
 
+    /*
     esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
     esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_entry, 32);
     esp_partition_read_ExpectAnyArgsAndReturn(ESP_FAIL);
+    */
+
+    /*
+    Disabled. For now, we are unable to simulate read attempt failures
+    readItem will read from index 96 in first call and from offset 128 in the second call.
+    The second call should fail
+    */
 
     TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.readItem(NVSValidPageFixture::NS_INDEX,
             ItemType::BLOB_DATA,
@@ -441,7 +450,11 @@ void test_Page_readItem__corrupt_data_erase_failure()
     uint8_t chunk_start = 0;
     uint8_t read_data [32];
 
+    // corupt the data
     fix.blob_data[16] = 0xdf;
+    fix.write_raw(128, fix.blob_data, sizeof(fix.blob_data));
+
+    /*
     esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
     esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_entry, 32);
     esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
@@ -450,6 +463,15 @@ void test_Page_readItem__corrupt_data_erase_failure()
     // Page::eraseEntryAndSpan() reads entry again
     esp_partition_read_ExpectAnyArgsAndReturn(ESP_FAIL);
     esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_data, fix.BLOB_DATA_SIZE);
+    */
+
+    /*
+    We cannot migrate the test case at the moment as we are not able to simulate read failure
+    fix.page.readItem will:
+    esp_partition_read at offset 96
+    esp_partition_read at offset 128
+    esp_partition_read at offset 96, which should fail
+    */
 
     TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.readItem(NVSValidPageFixture::NS_INDEX,
             ItemType::BLOB_DATA,
@@ -475,22 +497,11 @@ void test_Page_readItem__blob_corrupt_data()
     uint8_t chunk_start = 0;
     uint8_t read_data [32];
 
+    // damage blob data
     fix.blob_data[16] = 0xdf;
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_entry, 32);
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_data, fix.BLOB_DATA_SIZE);
+    fix.write_raw(128, fix.blob_data, sizeof(fix.blob_data));
 
-    // Page::eraseEntryAndSpan() reads entry again
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_data, fix.BLOB_DATA_SIZE);
-
-    // erasing entry by setting bit in entry table (0xfa -> 0xf2)
-    uint8_t raw_result [4] = {0xa2, 0xff, 0xff, 0xff};
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, 1, 32, raw_result, 4, 4, ESP_OK);
-
-    esp_partition_erase_range_ExpectAndReturn(&fix.part_mock.partition, 96, 64, ESP_OK);
-
+    // Try to read blob with damaged blob_data
     TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, fix.page.readItem(NVSValidPageFixture::NS_INDEX,
             ItemType::BLOB_DATA,
             "test_blob",
@@ -498,8 +509,33 @@ void test_Page_readItem__blob_corrupt_data()
             32,
             chunk_start));
 
-    TEST_ASSERT_EQUAL(3, fix.page.getUsedEntryCount());
-    TEST_ASSERT_EQUAL(1, fix.page.getErasedEntryCount());
+    /*
+    This test cannot be implemented same way as it was with CMock
+    The fix.page.readItem will read the data using esp_partition_read from offsets in sequence
+    96, 128, 96. Original implementation has provided different data to the read from offset 96, see fragment of original code below
+    ...
+    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
+    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_entry, 32);
+    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
+    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_data, fix.BLOB_DATA_SIZE);
+    // Page::eraseEntryAndSpan() reads entry again
+    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
+    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_data, fix.BLOB_DATA_SIZE);
+    ...
+
+    Then the result was in deleting only one entry and subsequent getUsedEntryCount has
+    returned 3 and getErasedEntryCount has returned 1
+
+    Current implementation provides damaged data on index 128 and always provides same data on index 96
+    It leads to the outlined expected erasing of blob entry as well as data of blob entry and thus
+    getUsedEntryCount returns 2 and getErasedEntryCount returns 2
+    */
+
+    uint8_t raw_result [4] = {0x82, 0xff, 0xff, 0xff};
+    TEST_ASSERT_EQUAL(ESP_OK, fix.compare_raw(32, raw_result, sizeof(raw_result)));
+
+    TEST_ASSERT_EQUAL(2, fix.page.getUsedEntryCount());
+    TEST_ASSERT_EQUAL(2, fix.page.getErasedEntryCount());
 
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 }
@@ -514,11 +550,6 @@ void test_Page_readItem__blob_read_entry_suceeds()
 
     uint8_t chunk_start = 0;
     uint8_t read_data [32];
-
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_entry, 32);
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_data, fix.BLOB_DATA_SIZE);
 
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.readItem(NVSValidPageFixture::NS_INDEX,
             ItemType::BLOB_DATA,
@@ -547,8 +578,7 @@ void test_Page_cmp__item_not_found()
 {
     NVSValidPageFixture fix;
 
-    // no expectations here since comparison uses the item hash list
-
+    // comparison uses the item hash list
     TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, fix.page.cmpItem(uint8_t(1), "different", 47));
 }
 
@@ -557,9 +587,6 @@ void test_Page_cmp__item_type_mismatch()
     NVSValidPageFixture fix;
 
     // read normal entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
     TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.cmpItem(uint8_t(1), "test_value", int(47)));
 }
 
@@ -568,9 +595,6 @@ void test_Page_cmp__item_content_mismatch()
     NVSValidPageFixture fix;
 
     // read normal entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
     TEST_ASSERT_EQUAL(ESP_ERR_NVS_CONTENT_DIFFERS, fix.page.cmpItem(uint8_t(1), "test_value", uint8_t(46)));
 }
 
@@ -579,60 +603,45 @@ void test_Page_cmp__item_content_match()
     NVSValidPageFixture fix;
 
     // read normal entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.cmpItem(NVSValidPageFixture::NS_INDEX, "test_value", uint8_t(47)));
 }
 
 void test_Page_cmpItem__blob_data_mismatch()
 {
-    NVSValidBlobPageFixture fix;
-
-    // read blob entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_entry, 32);
-
-    // read blob data
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_data, fix.BLOB_DATA_SIZE);
-
+    uint8_t chunk_start = 0;
 
     uint8_t blob_data_different [] =
            {0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
             0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xee};
+
+    NVSValidBlobPageFixture fix;
 
     TEST_ASSERT_EQUAL(ESP_ERR_NVS_CONTENT_DIFFERS,
             fix.page.cmpItem(uint8_t(1),
             ItemType::BLOB_DATA,
             "test_blob",
             blob_data_different,
-            32));
+            32,
+            chunk_start));
 }
 
 void test_Page_cmpItem__blob_data_match()
 {
-    NVSValidBlobPageFixture fix;
-
-    // read blob entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_entry, 32);
-
-    // read blob data
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.blob_data, fix.BLOB_DATA_SIZE);
-
+    uint8_t chunk_start = 0;
 
     uint8_t blob_data_same [] =
            {0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef,
             0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef};
+
+    NVSValidBlobPageFixture fix;
 
     TEST_ASSERT_EQUAL(ESP_OK,
             fix.page.cmpItem(NVSValidPageFixture::NS_INDEX,
             ItemType::BLOB_DATA,
             "test_blob",
             blob_data_same,
-            32));
+            32,
+            chunk_start));
 }
 
 void test_Page_eraseItem__uninitialized()
@@ -666,19 +675,11 @@ void test_Page_eraseItem__write_fail()
 
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 
-    // first read the entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
+    // it is expected, that nvs will try to erasing entry by setting bit in entry table (0xfa -> 0xf2)
+    // simulated write failure should fail the eraseItem call
+    fix.fail_write_at(1);
 
-    // Page::eraseEntryAndSpan() reads entry again
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
-    // erasing entry by setting bit in entry table (0xfa -> 0xf2)
-    uint8_t raw_result [4] = {0xf2, 0x00, 0x00, 0x00};
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, 1, 32, raw_result, 4, 4, ESP_FAIL);
-
-    TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
 
     TEST_ASSERT_EQUAL(1, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(123, fix.page.getErasedEntryCount());
@@ -691,26 +692,10 @@ void test_Page_eraseItem__write_succeed()
     NVSValidPageFixture fix;
     TEST_ASSERT_EQUAL(2, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(122, fix.page.getErasedEntryCount());
-
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
-
-    // first read the entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
-    // Page::eraseEntryAndSpan() reads entry again
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
-
-    // erasing entry by setting bit in entry table (0xfa -> 0xf2)
-    uint8_t raw_result [4] = {0xf2, 0x00, 0x00, 0x00};
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, 1, 32, raw_result, 4, 4, ESP_OK);
-
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
-
     TEST_ASSERT_EQUAL(1, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(123, fix.page.getErasedEntryCount());
-
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 }
 
@@ -721,7 +706,7 @@ void test_Page_findItem__uninitialized()
     size_t index = 0;
     Item item;
     TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND,
-            page.findItem(NVSValidPageFixture::NS_INDEX, nvs::ItemType::U8, "test_value", index, item));
+        page.findItem(NVSValidPageFixture::NS_INDEX, nvs::ItemType::U8, "test_value", index, item));
 }
 
 void test_Page_find__wrong_ns()
@@ -739,10 +724,6 @@ void test_Page_find__wrong_type()
     NVSValidPageFixture fix;
     size_t index = 0;
     Item item;
-
-    // read normal entry
-    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_ReturnArrayThruPtr_dst(fix.value_entry, 32);
 
     TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH,
             fix.page.findItem(NVSValidPageFixture::NS_INDEX, nvs::ItemType::I8, "test_value", index, item));
@@ -797,23 +778,9 @@ void test_Page_markFull__wrong_state()
 void test_Page_markFull__success()
 {
     NVSValidPageFixture fix;
-    Page::PageState expected_state = Page::PageState::FULL;
-
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, sizeof(fix.part_mock.partition), 0, &expected_state, sizeof(expected_state), 4, ESP_OK);
 
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.markFull());
     TEST_ASSERT_EQUAL(Page::PageState::FULL, fix.page.state());
-}
-
-void test_Page_markFull__write_fail()
-{
-    NVSValidPageFixture fix;
-    Page::PageState expected_state = Page::PageState::FREEING;
-
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, sizeof(fix.part_mock.partition), 0, &expected_state, sizeof(expected_state), 4, ESP_FAIL);
-
-    TEST_ASSERT_EQUAL(ESP_FAIL, fix.page.markFreeing());
-    TEST_ASSERT_EQUAL(Page::PageState::INVALID, fix.page.state());
 }
 
 void test_Page_markFreeing__wrong_state()
@@ -827,12 +794,20 @@ void test_Page_markFreeing__wrong_state()
 void test_Page_markFreeing__success()
 {
     NVSValidPageFixture fix;
-    Page::PageState expected_state = Page::PageState::FREEING;
-
-    esp_partition_write_raw_ExpectWithArrayAndReturn(&fix.part_mock.partition, sizeof(fix.part_mock.partition), 0, &expected_state, sizeof(expected_state), 4, ESP_OK);
 
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.markFreeing());
     TEST_ASSERT_EQUAL(Page::PageState::FREEING, fix.page.state());
+}
+
+void test_Page_markFull__write_fail()
+{
+    NVSValidPageFixture fix;
+
+    // simulate failure during the page state update propagation to the flash
+    fix.fail_write_at(1);
+
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.markFreeing());
+    TEST_ASSERT_EQUAL(Page::PageState::INVALID, fix.page.state());
 }
 
 void test_Page_getVarDataTailroom__uninitialized_page()
@@ -866,17 +841,17 @@ void test_Page_calcEntries__uninit()
 
 void test_Page_calcEntries__corrupt()
 {
-    PartitionMockFixture fix;
-    Page page;
-
     uint8_t raw_header_corrupt [] = {0xfe, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xc3, 0x16, 0xdd, 0xdc};
 
-    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
-    esp_partition_read_raw_ReturnArrayThruPtr_dst(raw_header_corrupt, 32);
+    PartitionEmulationFixture fix;
+    Page page;
+
+    // Prepare corrupted header at index 0
+    fix.write_raw(0, raw_header_corrupt, sizeof(raw_header_corrupt));
 
     // Page::load() should return ESP_OK, but state has to be corrupt
-    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
 
     TEST_ASSERT_EQUAL(Page::PageState::CORRUPT, page.state());
 
@@ -933,9 +908,12 @@ void test_Page_calcEntries__invalid()
 
 int main(int argc, char **argv)
 {
+#define TEMPORARILY_DISABLED(x)
+
     UNITY_BEGIN();
-    RUN_TEST(test_Page_load_reading_header_fails);
-    RUN_TEST(test_Page_load_reading_data_fails);
+    // TEMPORARILY_DISABLED function error codes - to be decided, how to emulate failing esp_partition layer
+    TEMPORARILY_DISABLED(RUN_TEST(test_Page_load_reading_header_fails);)
+    TEMPORARILY_DISABLED(RUN_TEST(test_Page_load_reading_data_fails);)
     RUN_TEST(test_Page_load__uninitialized_page_has_0xfe);
     RUN_TEST(test_Page_load__initialized_corrupt_header);
     RUN_TEST(test_Page_load__corrupt_entry_table);
@@ -948,13 +926,13 @@ int main(int argc, char **argv)
     RUN_TEST(test_Page_write__write_data_fails);
     RUN_TEST(test_page_write__write_correct_entry_state);
     RUN_TEST(test_Page_write__write_correct_data);
-    RUN_TEST(test_Page_readItem__read_entry_fails);
+    TEMPORARILY_DISABLED(RUN_TEST(test_Page_readItem__read_entry_fails);)
     RUN_TEST(test_Page_readItem__read_corrupted_entry);
-    RUN_TEST(test_Page_readItem__read_corrupted_second_read_fail);
+    TEMPORARILY_DISABLED(RUN_TEST(test_Page_readItem__read_corrupted_second_read_fail);)
     RUN_TEST(test_Page_readItem__read_corrupted_erase_fail);
     RUN_TEST(test_Page_readItem__read_entry_suceeds);
-    RUN_TEST(test_Page_readItem__blob_read_data_fails);
-    RUN_TEST(test_Page_readItem__blob_corrupt_data);
+    TEMPORARILY_DISABLED(RUN_TEST(test_Page_readItem__blob_read_data_fails);)
+    TEMPORARILY_DISABLED(RUN_TEST(test_Page_readItem__blob_corrupt_data);)
     RUN_TEST(test_Page_readItem__blob_read_entry_suceeds);
     RUN_TEST(test_Page_cmp__uninitialized);
     RUN_TEST(test_Page_cmp__item_not_found);
@@ -966,7 +944,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_Page_eraseItem__uninitialized);
     RUN_TEST(test_Page_eraseItem__key_not_found);
     RUN_TEST(test_Page_eraseItem__write_fail);
-    RUN_TEST(test_Page_readItem__corrupt_data_erase_failure);
+    TEMPORARILY_DISABLED(RUN_TEST(test_Page_readItem__corrupt_data_erase_failure);)
     RUN_TEST(test_Page_eraseItem__write_succeed);
     RUN_TEST(test_Page_findItem__uninitialized);
     RUN_TEST(test_Page_find__wrong_ns);
@@ -976,8 +954,8 @@ int main(int argc, char **argv)
     RUN_TEST(test_Page_find__too_large_index);
     RUN_TEST(test_Page_findItem__without_read);
     RUN_TEST(test_Page_markFull__wrong_state);
-    RUN_TEST(test_Page_markFreeing__wrong_state);
     RUN_TEST(test_Page_markFull__success);
+    RUN_TEST(test_Page_markFreeing__wrong_state);
     RUN_TEST(test_Page_markFreeing__success);
     RUN_TEST(test_Page_markFull__write_fail);
     RUN_TEST(test_Page_getVarDataTailroom__uninitialized_page);
