@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1908,11 +1908,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BTC_TRACE_DEBUG("BTC_GAP_BLE_CFG_PERIODIC_ADV_DATA_RAW");
         BTA_DmBleGapPeriodicAdvCfgDataRaw(arg_5->periodic_adv_cfg_data.instance,
                                           arg_5->periodic_adv_cfg_data.len,
-                                          (const UINT8 *)arg_5->periodic_adv_cfg_data.data);
+                                          (const UINT8 *)arg_5->periodic_adv_cfg_data.data,
+                                          arg_5->periodic_adv_cfg_data.only_update_did);
         break;
     case BTC_GAP_BLE_PERIODIC_ADV_START:
         BTC_TRACE_DEBUG("BTC_GAP_BLE_PERIODIC_ADV_START");
-        BTA_DmBleGapPeriodicAdvEnable(TRUE, arg_5->periodic_adv_start.instance);
+        BTA_DmBleGapPeriodicAdvEnable(((arg_5->periodic_adv_start.include_adi)<<1)|0x01, arg_5->periodic_adv_start.instance);
         break;
     case BTC_GAP_BLE_PERIODIC_ADV_STOP:
         BTC_TRACE_DEBUG("BTC_GAP_BLE_PERIODIC_ADV_STOP");
