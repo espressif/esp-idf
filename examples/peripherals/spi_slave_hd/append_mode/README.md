@@ -1,4 +1,4 @@
-# SPI Halfduplex Slave Append Mode Example
+# SPI Slave Halfduplex: Append Mode Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 

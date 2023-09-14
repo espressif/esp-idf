@@ -1374,6 +1374,7 @@ static void test_slave_fd_dma(void)
                         .tx_buffer = slave_send,
                         .rx_buffer = slave_recive,
                         .length = test_trans_len * 8,
+                        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
@@ -1589,6 +1590,7 @@ static void test_slave_hd_dma(void)
                     spi_slave_hd_data_t *ret_trans, slave_trans = {
                         .data = slave_send,
                         .len = test_trans_len,
+                        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_trans, portMAX_DELAY));
@@ -1690,6 +1692,7 @@ static void test_slave_hd_no_dma(void)
                     spi_slave_hd_data_t *ret_trans, slave_trans = {
                         .data = slave_send,
                         .len = test_trans_len,
+                        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_trans, portMAX_DELAY));
@@ -1826,6 +1829,7 @@ static void test_slave_sio_dma(void)
                         .length = TEST_STEP_LEN * 8,
                         .tx_buffer = slave_send,
                         .rx_buffer = slave_recive,
+                        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans, portMAX_DELAY));
