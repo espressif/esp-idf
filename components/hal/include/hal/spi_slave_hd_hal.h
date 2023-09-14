@@ -46,7 +46,9 @@
 #include "esp_types.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
+#include "soc/gdma_channel.h"
 #include "hal/spi_types.h"
+#include "hal/dma_types.h"
 #if SOC_GPSPI_SUPPORTED
 #include "hal/spi_ll.h"
 #endif
@@ -57,13 +59,24 @@ extern "C" {
 
 #if SOC_GPSPI_SUPPORTED
 
+//NOTE!! If both A and B are not defined, '#if (A==B)' is true, because GCC use 0 stand for undefined symbol
+#if !defined(SOC_GDMA_TRIG_PERIPH_SPI2_BUS)
+typedef dma_descriptor_align4_t spi_dma_desc_t;
+#else
+#if defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
+typedef dma_descriptor_align8_t spi_dma_desc_t;
+#elif defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB)
+typedef dma_descriptor_align4_t spi_dma_desc_t;
+#endif
+#endif
+
 /**
  * @brief Type of dma descriptor with appended members
  *        this structure inherits DMA descriptor, with a pointer to the transaction descriptor passed from users.
  */
 typedef struct {
-    lldesc_t      *desc;                            ///< DMA descriptor
-    void          *arg;                             ///< This points to the transaction descriptor user passed in
+    spi_dma_desc_t  *desc;                            ///< DMA descriptor
+    void            *arg;                             ///< This points to the transaction descriptor user passed in
 } spi_slave_hd_hal_desc_append_t;
 
 /// Configuration of the HAL
@@ -253,9 +266,10 @@ int spi_slave_hd_hal_get_last_addr(spi_slave_hd_hal_context_t *hal);
  *
  * @param hal            Context of the HAL layer
  * @param out_trans      Pointer to the caller-defined transaction
+ * @param real_buff_addr Actually data buffer head the HW used
  * @return               1: Transaction is finished; 0: Transaction is not finished
  */
-bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans);
+bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, void **real_buff_addr);
 
 /**
  * @brief Return the finished RX transaction
@@ -266,10 +280,11 @@ bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, voi
  *
  * @param hal            Context of the HAL layer
  * @param out_trans      Pointer to the caller-defined transaction
+ * @param real_buff_addr Actually data buffer head the HW used
  * @param out_len        Actual number of bytes of received data
  * @return               1: Transaction is finished; 0: Transaction is not finished
  */
-bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, size_t *out_len);
+bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, void **real_buff_addr, size_t *out_len);
 
 /**
  * @brief Load the TX DMA descriptors without stopping the DMA

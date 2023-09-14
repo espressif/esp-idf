@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -224,6 +224,7 @@ static void test_hd_start(spi_device_handle_t *spi, int freq, const spitest_para
     ctx->tx_data = (spi_slave_hd_data_t) {
         .data = &ctx->slave_rddma_buf[pos],
         .len = len,
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     esp_err_t err = spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ctx->tx_data, portMAX_DELAY);
     TEST_ESP_OK(err);
@@ -231,6 +232,7 @@ static void test_hd_start(spi_device_handle_t *spi, int freq, const spitest_para
     ctx->rx_data = (spi_slave_hd_data_t) {
         .data = ctx->slave_wrdma_buf,
         .len = TEST_DMA_MAX_SIZE,
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     err = spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ctx->rx_data, portMAX_DELAY);
     TEST_ESP_OK(err);
@@ -269,6 +271,7 @@ void test_wrdma(testhd_context_t* ctx, const spitest_param_set_t *cfg, spi_devic
     ctx->rx_data = (spi_slave_hd_data_t) {
         .data = ctx->slave_wrdma_buf,
         .len = TEST_DMA_MAX_SIZE,
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     esp_err_t err = spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ctx->rx_data, portMAX_DELAY);
     TEST_ESP_OK(err);
@@ -302,6 +305,7 @@ void test_rddma(testhd_context_t* ctx, const spitest_param_set_t* cfg, spi_devic
     ctx->tx_data = (spi_slave_hd_data_t) {
         .data = &ctx->slave_rddma_buf[pos],
         .len = len,
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     esp_err_t err = spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ctx->tx_data, portMAX_DELAY);
     TEST_ESP_OK(err);
@@ -415,6 +419,14 @@ static void test_hd_loop(const void* arg1, void* arg2)
             TEST_ASSERT_EQUAL_HEX8_ARRAY(&slave_mem, recv_buffer, REG_REGION_SIZE);
         }
 
+        //To release the re-malloced buffer remain in slave trans queue if possible
+        printf("clean tx %d rx %d\n", context->tx_data.len, context->rx_data.len);
+        TEST_ESP_OK(essl_spi_rddma(spi, context->master_rddma_buf, context->tx_data.len, TEST_SEG_SIZE, 0));
+        TEST_ESP_OK(essl_spi_wrdma(spi, context->master_wrdma_buf, context->rx_data.len, TEST_SEG_SIZE, 0));
+        spi_slave_hd_data_t* ret_trans;
+        TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
+        TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
+
         master_free_device_bus(spi);
         spi_slave_hd_deinit(TEST_SLAVE_HOST);
     }
@@ -434,8 +446,8 @@ static const ptest_func_t hd_test_func = {
 static int test_freq_hd[] = {
     // 100*1000,
     // 10 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    // 20 * 1000 * 1000, //maximum freq MISO stable before next latch edge
-    40 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    20 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    // 40 * 1000 * 1000, //maximum freq MISO stable before next latch edge
     0,
 };
 
@@ -520,19 +532,23 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
         {
             .data = slave_recv_buf,
             .len = (trans_len[0] + 3) & (~3),
+            .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
         },
         {
             .data = slave_recv_buf + send_buf_size,
             .len = (trans_len[1] + 3) & (~3),
+            .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
         },
         //send
         {
             .data = slave_send_buf,
             .len = trans_len[0],
+            .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
         },
         {
             .data = slave_send_buf + send_buf_size,
             .len = trans_len[1],
+            .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
         },
     };
 
@@ -925,15 +941,17 @@ void slave_run_append(void)
         ESP_LOG_BUFFER_HEX_LEVEL("slave exp", slave_exp, trans_len, ESP_LOG_DEBUG);
         spitest_cmp_or_dump(slave_exp, ret_trans->data, trans_len);
 
-        // append one more transaction
-        int new_append_len = trans_len << 4;
-        if (new_append_len > TEST_TRANS_LEN) {
-            new_append_len = TEST_TRANS_LEN;
+        if (trans_num <= TEST_APPEND_CACHE_SIZE) {
+            // append one more transaction
+            int new_append_len = trans_len << 4;
+            if (new_append_len > TEST_TRANS_LEN) {
+                new_append_len = TEST_TRANS_LEN;
+            }
+            memset(ret_trans->data, 0, ret_trans->trans_len);
+            ret_trans->len = new_append_len;
+            ret_trans->trans_len = 0;
+            TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, ret_trans, portMAX_DELAY));
         }
-        memset(ret_trans->data, 0, ret_trans->trans_len);
-        ret_trans->len = new_append_len;
-        ret_trans->trans_len = 0;
-        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, ret_trans, portMAX_DELAY));
     }
     printf("================Master Tx Done==================\n\n");
     free(slave_exp);
@@ -958,15 +976,17 @@ void slave_run_append(void)
         ESP_LOGI("slave", "trasacted len: %d", ret_trans->len);
         ESP_LOG_BUFFER_HEX_LEVEL("slave tx", ret_trans->data, ret_trans->len, ESP_LOG_DEBUG);
 
-        // append one more transaction
-        int new_append_len = 16 << (trans_num + 4);
-        if (new_append_len > TEST_TRANS_LEN) {
-            new_append_len = TEST_TRANS_LEN;
+        if (trans_num <= TEST_APPEND_CACHE_SIZE) {
+            // append one more transaction
+            int new_append_len = 16 << (trans_num + 4);
+            if (new_append_len > TEST_TRANS_LEN) {
+                new_append_len = TEST_TRANS_LEN;
+            }
+            ret_trans->len = new_append_len;
+            ret_trans->trans_len = 0;
+            prepare_data(ret_trans->data, ret_trans->len, -3);
+            TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, ret_trans, portMAX_DELAY));
         }
-        ret_trans->len = new_append_len;
-        ret_trans->trans_len = 0;
-        prepare_data(ret_trans->data, ret_trans->len, -3);
-        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, ret_trans, portMAX_DELAY));
     }
     printf("================Master Rx Done==================\n");
     for (int i = 0; i < TEST_APPEND_CACHE_SIZE; i++) free(slave_tx_trans[i].data);

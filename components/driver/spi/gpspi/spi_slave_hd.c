@@ -5,6 +5,7 @@
  */
 
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_memory_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -12,9 +13,12 @@
 #include "freertos/ringbuf.h"
 #include "driver/gpio.h"
 #include "esp_private/spi_common_internal.h"
+#include "esp_private/esp_cache_private.h"
 #include "driver/spi_slave_hd.h"
 #include "hal/spi_slave_hd_hal.h"
-
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "esp_cache.h"
+#endif
 
 #if (SOC_SPI_PERIPH_NUM == 2)
 #define VALID_HOST(x) ((x) == SPI2_HOST)
@@ -23,8 +27,15 @@
 #endif
 #define SPIHD_CHECK(cond,warn,ret) do{if(!(cond)){ESP_LOGE(TAG, warn); return ret;}} while(0)
 
+/// struct to hold private transaction data (like tx and rx buffer for DMA).
+typedef struct {
+    spi_slave_hd_data_t  *trans;    //original trans
+    void *aligned_buffer;           //actually trans buffer (re-malloced if needed)
+} spi_slave_hd_trans_priv_t;
+
 typedef struct {
     bool dma_enabled;
+    uint16_t internal_mem_align_size;
     int max_transfer_sz;
     uint32_t flags;
     portMUX_TYPE int_spinlock;
@@ -45,8 +56,8 @@ typedef struct {
     QueueHandle_t tx_cnting_sem;
     QueueHandle_t rx_cnting_sem;
 
-    spi_slave_hd_data_t *tx_desc;
-    spi_slave_hd_data_t *rx_desc;
+    spi_slave_hd_trans_priv_t tx_curr_trans;
+    spi_slave_hd_trans_priv_t rx_curr_trans;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -103,9 +114,9 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
             dma_desc_ct = 1; //default to 4k when max is not given
         }
         host->hal.dma_desc_num = dma_desc_ct;
+        spi_dma_desc_t *orig_dmadesc_tx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        spi_dma_desc_t *orig_dmadesc_rx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
 
-        lldesc_t *orig_dmadesc_tx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
-        lldesc_t *orig_dmadesc_rx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
         host->hal.dmadesc_tx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * dma_desc_ct, MALLOC_CAP_DEFAULT);
         host->hal.dmadesc_rx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * dma_desc_ct, MALLOC_CAP_DEFAULT);
         if (!(host->hal.dmadesc_tx && host->hal.dmadesc_rx && orig_dmadesc_tx && orig_dmadesc_rx)) {
@@ -120,8 +131,15 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 
         //Get the actual SPI bus transaction size in bytes.
         host->max_transfer_sz = dma_desc_ct * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        size_t alignment;
+        esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, &alignment);
+        host->internal_mem_align_size = alignment;
+#else
+        host->internal_mem_align_size = 4;
+#endif
     } else {
-        //We're limited to non-DMA transfers: the SPI work registers can hold 64 bytes at most.
+        //We're limited to non-DMA transfers: the SPI work registers can hold (72 for S2, 64 for others) bytes at most.
         host->max_transfer_sz = 0;
     }
 
@@ -130,8 +148,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         goto cleanup;
     }
     gpio_set_direction(config->spics_io_num, GPIO_MODE_INPUT);
-    spicommon_cs_initialize(host_id, config->spics_io_num, 0,
-                            !(bus_config->flags & SPICOMMON_BUSFLAG_NATIVE_PINS));
+    spicommon_cs_initialize(host_id, config->spics_io_num, 0, !(bus_config->flags & SPICOMMON_BUSFLAG_NATIVE_PINS));
 
     spi_slave_hd_hal_config_t hal_config = {
         .host_id = host_id,
@@ -159,11 +176,11 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 #endif //CONFIG_PM_ENABLE
 
     //Create Queues and Semaphores
-    host->tx_ret_queue = xQueueCreate(config->queue_size, sizeof(spi_slave_hd_data_t *));
-    host->rx_ret_queue = xQueueCreate(config->queue_size, sizeof(spi_slave_hd_data_t *));
+    host->tx_ret_queue = xQueueCreate(config->queue_size, sizeof(spi_slave_hd_trans_priv_t));
+    host->rx_ret_queue = xQueueCreate(config->queue_size, sizeof(spi_slave_hd_trans_priv_t));
     if (!host->append_mode) {
-        host->tx_trans_queue = xQueueCreate(config->queue_size, sizeof(spi_slave_hd_data_t *));
-        host->rx_trans_queue = xQueueCreate(config->queue_size, sizeof(spi_slave_hd_data_t *));
+        host->tx_trans_queue = xQueueCreate(config->queue_size, sizeof(spi_slave_hd_trans_priv_t));
+        host->rx_trans_queue = xQueueCreate(config->queue_size, sizeof(spi_slave_hd_trans_priv_t));
         if (!host->tx_trans_queue || !host->rx_trans_queue) {
             ret = ESP_ERR_NO_MEM;
             goto cleanup;
@@ -305,10 +322,10 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
     bool rx_done = false;
 
     portENTER_CRITICAL_ISR(&host->int_spinlock);
-    if (host->tx_desc && spi_slave_hd_hal_check_disable_event(hal, SPI_EV_SEND)) {
+    if (host->tx_curr_trans.trans && spi_slave_hd_hal_check_disable_event(hal, SPI_EV_SEND)) {
         tx_done = true;
     }
-    if (host->rx_desc && spi_slave_hd_hal_check_disable_event(hal, SPI_EV_RECV)) {
+    if (host->rx_curr_trans.trans && spi_slave_hd_hal_check_disable_event(hal, SPI_EV_RECV)) {
         rx_done = true;
     }
     portEXIT_CRITICAL_ISR(&host->int_spinlock);
@@ -318,50 +335,56 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
         if (callback->cb_sent) {
             spi_slave_hd_event_t ev = {
                 .event = SPI_EV_SEND,
-                .trans = host->tx_desc,
+                .trans = host->tx_curr_trans.trans,
             };
             BaseType_t cb_awoken = pdFALSE;
             ret_queue = callback->cb_sent(callback->arg, &ev, &cb_awoken);
             awoken |= cb_awoken;
         }
         if (ret_queue) {
-            ret = xQueueSendFromISR(host->tx_ret_queue, &host->tx_desc, &awoken);
+            ret = xQueueSendFromISR(host->tx_ret_queue, &host->tx_curr_trans, &awoken);
             // The return queue is full. All the data remian in send_queue + ret_queue should not be more than the queue length.
             assert(ret == pdTRUE);
         }
-        host->tx_desc = NULL;
+        host->tx_curr_trans.trans = NULL;
     }
     if (rx_done) {
         bool ret_queue = true;
-        host->rx_desc->trans_len = spi_slave_hd_hal_rxdma_seg_get_len(hal);
+        host->rx_curr_trans.trans->trans_len = spi_slave_hd_hal_rxdma_seg_get_len(hal);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE   //invalidate here to let user access rx data in post_cb if possible
+        uint16_t alignment = host->internal_mem_align_size;
+        uint32_t buff_len = (host->rx_curr_trans.trans->len + alignment - 1) & (~(alignment - 1));
+        esp_err_t ret = esp_cache_msync((void *)host->rx_curr_trans.aligned_buffer, buff_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        assert(ret == ESP_OK);
+#endif
         if (callback->cb_recv) {
             spi_slave_hd_event_t ev = {
                 .event = SPI_EV_RECV,
-                .trans = host->rx_desc,
+                .trans = host->rx_curr_trans.trans,
             };
             BaseType_t cb_awoken = pdFALSE;
             ret_queue = callback->cb_recv(callback->arg, &ev, &cb_awoken);
             awoken |= cb_awoken;
         }
         if (ret_queue) {
-            ret = xQueueSendFromISR(host->rx_ret_queue, &host->rx_desc, &awoken);
+            ret = xQueueSendFromISR(host->rx_ret_queue, &host->rx_curr_trans, &awoken);
             // The return queue is full. All the data remian in send_queue + ret_queue should not be more than the queue length.
             assert(ret == pdTRUE);
         }
-        host->rx_desc = NULL;
+        host->rx_curr_trans.trans = NULL;
     }
 
     bool tx_sent = false;
     bool rx_sent = false;
-    if (!host->tx_desc) {
-        ret = xQueueReceiveFromISR(host->tx_trans_queue, &host->tx_desc, &awoken);
+    if (!host->tx_curr_trans.trans) {
+        ret = xQueueReceiveFromISR(host->tx_trans_queue, &host->tx_curr_trans, &awoken);
         if (ret == pdTRUE) {
-            spi_slave_hd_hal_txdma(hal, host->tx_desc->data, host->tx_desc->len);
+            spi_slave_hd_hal_txdma(hal, host->tx_curr_trans.aligned_buffer, host->tx_curr_trans.trans->len);
             tx_sent = true;
             if (callback->cb_send_dma_ready) {
                 spi_slave_hd_event_t ev = {
                     .event = SPI_EV_SEND_DMA_READY,
-                    .trans = host->tx_desc,
+                    .trans = host->tx_curr_trans.trans,
                 };
                 BaseType_t cb_awoken = pdFALSE;
                 callback->cb_send_dma_ready(callback->arg, &ev, &cb_awoken);
@@ -369,15 +392,15 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
             }
         }
     }
-    if (!host->rx_desc) {
-        ret = xQueueReceiveFromISR(host->rx_trans_queue, &host->rx_desc, &awoken);
+    if (!host->rx_curr_trans.trans) {
+        ret = xQueueReceiveFromISR(host->rx_trans_queue, &host->rx_curr_trans, &awoken);
         if (ret == pdTRUE) {
-            spi_slave_hd_hal_rxdma(hal, host->rx_desc->data, host->rx_desc->len);
+            spi_slave_hd_hal_rxdma(hal, host->rx_curr_trans.aligned_buffer, host->rx_curr_trans.trans->len);
             rx_sent = true;
             if (callback->cb_recv_dma_ready) {
                 spi_slave_hd_event_t ev = {
                     .event = SPI_EV_RECV_DMA_READY,
-                    .trans = host->rx_desc,
+                    .trans = host->rx_curr_trans.trans,
                 };
                 BaseType_t cb_awoken = pdFALSE;
                 callback->cb_recv_dma_ready(callback->arg, &ev, &cb_awoken);
@@ -406,10 +429,10 @@ static IRAM_ATTR void spi_slave_hd_append_tx_isr(void *arg)
     BaseType_t awoken = pdFALSE;
     BaseType_t ret __attribute__((unused));
 
-    spi_slave_hd_data_t *trans_desc;
+    spi_slave_hd_trans_priv_t ret_priv_trans;
     while (1) {
         bool trans_finish = false;
-        trans_finish = spi_slave_hd_hal_get_tx_finished_trans(hal, (void **)&trans_desc);
+        trans_finish = spi_slave_hd_hal_get_tx_finished_trans(hal, (void **)&ret_priv_trans.trans, &ret_priv_trans.aligned_buffer);
         if (!trans_finish) {
             break;
         }
@@ -418,7 +441,7 @@ static IRAM_ATTR void spi_slave_hd_append_tx_isr(void *arg)
         if (callback->cb_sent) {
             spi_slave_hd_event_t ev = {
                 .event = SPI_EV_SEND,
-                .trans = trans_desc,
+                .trans = ret_priv_trans.trans,
             };
             BaseType_t cb_awoken = pdFALSE;
             ret_queue = callback->cb_sent(callback->arg, &ev, &cb_awoken);
@@ -426,7 +449,7 @@ static IRAM_ATTR void spi_slave_hd_append_tx_isr(void *arg)
         }
 
         if (ret_queue) {
-            ret = xQueueSendFromISR(host->tx_ret_queue, &trans_desc, &awoken);
+            ret = xQueueSendFromISR(host->tx_ret_queue, &ret_priv_trans, &awoken);
             assert(ret == pdTRUE);
 
             ret = xSemaphoreGiveFromISR(host->tx_cnting_sem, &awoken);
@@ -444,21 +467,27 @@ static IRAM_ATTR void spi_slave_hd_append_rx_isr(void *arg)
     BaseType_t awoken = pdFALSE;
     BaseType_t ret __attribute__((unused));
 
-    spi_slave_hd_data_t *trans_desc;
+
+    spi_slave_hd_trans_priv_t ret_priv_trans;
     size_t trans_len;
     while (1) {
         bool trans_finish = false;
-        trans_finish = spi_slave_hd_hal_get_rx_finished_trans(hal, (void **)&trans_desc, &trans_len);
+        trans_finish = spi_slave_hd_hal_get_rx_finished_trans(hal, (void **)&ret_priv_trans.trans, &ret_priv_trans.aligned_buffer, &trans_len);
         if (!trans_finish) {
             break;
         }
-        trans_desc->trans_len = trans_len;
-
+        ret_priv_trans.trans->trans_len = trans_len;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE   //invalidate here to let user access rx data in post_cb if possible
+        uint16_t alignment = host->internal_mem_align_size;
+        uint32_t buff_len = (ret_priv_trans.trans->len + alignment - 1) & (~(alignment - 1));
+        esp_err_t ret = esp_cache_msync((void *)ret_priv_trans.aligned_buffer, buff_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        assert(ret == ESP_OK);
+#endif
         bool ret_queue = true;
         if (callback->cb_recv) {
             spi_slave_hd_event_t ev = {
                 .event = SPI_EV_RECV,
-                .trans = trans_desc,
+                .trans = ret_priv_trans.trans,
             };
             BaseType_t cb_awoken = pdFALSE;
             ret_queue = callback->cb_recv(callback->arg, &ev, &cb_awoken);
@@ -466,7 +495,7 @@ static IRAM_ATTR void spi_slave_hd_append_rx_isr(void *arg)
         }
 
         if (ret_queue) {
-            ret = xQueueSendFromISR(host->rx_ret_queue, &trans_desc, &awoken);
+            ret = xQueueSendFromISR(host->rx_ret_queue, &ret_priv_trans, &awoken);
             assert(ret == pdTRUE);
 
             ret = xSemaphoreGiveFromISR(host->rx_cnting_sem, &awoken);
@@ -514,22 +543,64 @@ static IRAM_ATTR void spi_slave_hd_intr_append(void *arg)
     }
 }
 
+static void s_spi_slave_hd_destroy_priv_trans(spi_host_device_t host, spi_slave_hd_trans_priv_t *priv_trans, spi_slave_chan_t chan)
+{
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    spi_slave_hd_data_t *orig_trans = priv_trans->trans;
+    if (priv_trans->aligned_buffer != orig_trans->data) {
+        if (chan == SPI_SLAVE_CHAN_RX) {
+            memcpy(orig_trans->data, priv_trans->aligned_buffer, orig_trans->trans_len);
+        }
+        free(priv_trans->aligned_buffer);
+    }
+#endif  //SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+}
+
+static esp_err_t s_spi_slave_hd_setup_priv_trans(spi_host_device_t host, spi_slave_hd_trans_priv_t *priv_trans, spi_slave_chan_t chan)
+{
+    spi_slave_hd_data_t *orig_trans = priv_trans->trans;
+
+    priv_trans->aligned_buffer = orig_trans->data;
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    uint16_t alignment = spihost[host]->internal_mem_align_size;
+    uint32_t byte_len = orig_trans->len;
+
+    if (((uint32_t)orig_trans->data) | (byte_len & (alignment - 1))) {
+        ESP_RETURN_ON_FALSE(orig_trans->flags & SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, TAG, "data buffer addr&len not align to %d, or not dma_capable", alignment);
+        byte_len = (byte_len + alignment - 1) & (~(alignment - 1));  // up align to alignment
+        ESP_LOGD(TAG, "Re-allocate %s buffer of len %ld for DMA", (chan == SPI_SLAVE_CHAN_TX)?"TX":"RX", byte_len);
+        priv_trans->aligned_buffer = heap_caps_aligned_alloc(64, byte_len, MALLOC_CAP_DMA);
+        if (priv_trans->aligned_buffer == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    if (chan == SPI_SLAVE_CHAN_TX) {
+        memcpy(priv_trans->aligned_buffer, orig_trans->data, orig_trans->len);
+        esp_err_t ret = esp_cache_msync((void *)priv_trans->aligned_buffer, byte_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        ESP_RETURN_ON_FALSE(ESP_OK == ret, ESP_ERR_INVALID_STATE, TAG, "mem sync c2m(writeback) fail");
+    }
+#endif  //SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    return ESP_OK;
+}
+
 static esp_err_t get_ret_queue_result(spi_host_device_t host_id, spi_slave_chan_t chan, spi_slave_hd_data_t **out_trans, TickType_t timeout)
 {
     spi_slave_hd_slot_t *host = spihost[host_id];
-    spi_slave_hd_data_t *trans;
+    spi_slave_hd_trans_priv_t hd_priv_trans;
     BaseType_t ret;
 
     if (chan == SPI_SLAVE_CHAN_TX) {
-        ret = xQueueReceive(host->tx_ret_queue, &trans, timeout);
+        ret = xQueueReceive(host->tx_ret_queue, &hd_priv_trans, timeout);
     } else {
-        ret = xQueueReceive(host->rx_ret_queue, &trans, timeout);
+        ret = xQueueReceive(host->rx_ret_queue, &hd_priv_trans, timeout);
     }
     if (ret == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
 
-    *out_trans = trans;
+    s_spi_slave_hd_destroy_priv_trans(host_id, &hd_priv_trans, chan);
+    *out_trans = hd_priv_trans.trans;
     return ESP_OK;
 }
 
@@ -543,14 +614,17 @@ esp_err_t spi_slave_hd_queue_trans(spi_host_device_t host_id, spi_slave_chan_t c
     SPIHD_CHECK(trans->len <= host->max_transfer_sz && trans->len > 0, "Invalid buffer size", ESP_ERR_INVALID_ARG);
     SPIHD_CHECK(chan == SPI_SLAVE_CHAN_TX || chan == SPI_SLAVE_CHAN_RX, "Invalid channel", ESP_ERR_INVALID_ARG);
 
+    spi_slave_hd_trans_priv_t hd_priv_trans = {.trans = trans};
+    SPIHD_CHECK( ESP_OK == s_spi_slave_hd_setup_priv_trans(host_id, &hd_priv_trans, chan), "No mem to allocate new cache buffer", ESP_ERR_NO_MEM);
+
     if (chan == SPI_SLAVE_CHAN_TX) {
-        BaseType_t ret = xQueueSend(host->tx_trans_queue, &trans, timeout);
+        BaseType_t ret = xQueueSend(host->tx_trans_queue, &hd_priv_trans, timeout);
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
         tx_invoke(host);
     } else { //chan == SPI_SLAVE_CHAN_RX
-        BaseType_t ret = xQueueSend(host->rx_trans_queue, &trans, timeout);
+        BaseType_t ret = xQueueSend(host->rx_trans_queue, &hd_priv_trans, timeout);
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
@@ -594,18 +668,21 @@ esp_err_t spi_slave_hd_append_trans(spi_host_device_t host_id, spi_slave_chan_t 
     SPIHD_CHECK(trans->len <= host->max_transfer_sz && trans->len > 0, "Invalid buffer size", ESP_ERR_INVALID_ARG);
     SPIHD_CHECK(chan == SPI_SLAVE_CHAN_TX || chan == SPI_SLAVE_CHAN_RX, "Invalid channel", ESP_ERR_INVALID_ARG);
 
+    spi_slave_hd_trans_priv_t hd_priv_trans = {.trans = trans};
+    SPIHD_CHECK( ESP_OK == s_spi_slave_hd_setup_priv_trans(host_id, &hd_priv_trans, chan), "No mem to allocate new cache buffer", ESP_ERR_NO_MEM);
+
     if (chan == SPI_SLAVE_CHAN_TX) {
         BaseType_t ret = xSemaphoreTake(host->tx_cnting_sem, timeout);
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
-        err = spi_slave_hd_hal_txdma_append(hal, trans->data, trans->len, trans);
+        err = spi_slave_hd_hal_txdma_append(hal, hd_priv_trans.aligned_buffer, trans->len, trans);
     } else {
         BaseType_t ret = xSemaphoreTake(host->rx_cnting_sem, timeout);
         if (ret == pdFALSE) {
             return ESP_ERR_TIMEOUT;
         }
-        err = spi_slave_hd_hal_rxdma_append(hal, trans->data, trans->len, trans);
+        err = spi_slave_hd_hal_rxdma_append(hal, hd_priv_trans.aligned_buffer, trans->len, trans);
     }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Wait until the DMA finishes its transaction");

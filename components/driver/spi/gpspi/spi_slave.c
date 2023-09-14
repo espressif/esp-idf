@@ -184,7 +184,9 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         if (dma_desc_ct == 0) dma_desc_ct = 1; //default to 4k when max is not given
         spihost[host]->max_transfer_sz = dma_desc_ct * SPI_MAX_DMA_LEN;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, (size_t *)&spihost[host]->internal_mem_align_size);
+        size_t alignment;
+        esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, &alignment);
+        spihost[host]->internal_mem_align_size = alignment;
 #else
         spihost[host]->internal_mem_align_size = 4;
 #endif

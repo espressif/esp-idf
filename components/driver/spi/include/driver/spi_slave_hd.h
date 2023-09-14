@@ -23,11 +23,14 @@ extern "C"
 #error The SPI peripheral does not support this feature
 #endif
 
+#define SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO   (1<<0)    ///< Automatically re-malloc dma buffer if user buffer doesn't meet hardware alignment or dma_capable, this process may lose some memory and performance
+
 /// Descriptor of data to send/receive
 typedef struct {
     uint8_t* data;                              ///< Buffer to send, must be DMA capable
     size_t   len;                               ///< Len of data to send/receive. For receiving the buffer length should be multiples of 4 bytes, otherwise the extra part will be truncated.
     size_t   trans_len;                         ///< For RX direction, it indicates the data actually received. For TX direction, it is meaningless.
+    uint32_t flags;                             ///< Bitwise OR of SPI_SLAVE_HD_TRANS_* flags
     void*    arg;                               ///< Extra argument indiciating this data
 } spi_slave_hd_data_t;
 
