@@ -252,10 +252,14 @@ esp_err_t esp_task_wdt_deinit(void)
     //Disable hardware timer
     wdt_hal_deinit(&twdt_context);
 
-    ESP_ERROR_CHECK(esp_intr_free(twdt_config->intr_handle));  //Unregister interrupt
-    free(twdt_config);                      //Free twdt_config
+    /* Need to exit critical section to free interrupt (potential IPC call), store and clear config before exiting */
+    twdt_config_t *twdt_config_temp = twdt_config;
     twdt_config = NULL;
     portEXIT_CRITICAL(&twdt_spinlock);
+
+    ESP_ERROR_CHECK(esp_intr_free(twdt_config_temp->intr_handle));  //Unregister interrupt
+    free(twdt_config_temp);                                         //Free twdt_config
+
     return ESP_OK;
 }
 
