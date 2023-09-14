@@ -114,6 +114,8 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
     const size_t task_count = sizeof(ctx)/sizeof(ctx[0]);
     for (int i = 0; i < task_count; ++i) {
         xSemaphoreTake(done, portMAX_DELAY);
+    }
+    for (int i = 0; i < task_count; ++i) {
         TEST_ASSERT_FALSE(ctx[i].fail);
     }
     vSemaphoreDelete(done);
