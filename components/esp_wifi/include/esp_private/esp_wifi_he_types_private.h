@@ -235,10 +235,10 @@ typedef struct {
     int64_t tx_start_time;
     int64_t tx_seqno_time;
     int64_t tx_muedca_time;
-    int64_t tx_max_muedca_time;
-    int64_t tx_min_muedca_time;
-    int64_t tx_tot_muedca_time;
-    int64_t muedca_times;
+    uint32_t tx_max_muedca_time;
+    uint32_t tx_min_muedca_time;
+    uint32_t tx_tot_muedca_time;
+    uint32_t muedca_times;
     uint32_t tx_muedca_enable; /* count TX times within mu-timer working */
     uint32_t collision;
     uint32_t timeout;
