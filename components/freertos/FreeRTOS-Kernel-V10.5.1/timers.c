@@ -252,14 +252,16 @@
                 StackType_t * pxTimerTaskStackBuffer = NULL;
                 uint32_t ulTimerTaskStackSize;
 
+                /* Timer tasks is always pinned to core 0. Todo: IDF-7906 */
                 vApplicationGetTimerTaskMemory( &pxTimerTaskTCBBuffer, &pxTimerTaskStackBuffer, &ulTimerTaskStackSize );
-                xTimerTaskHandle = xTaskCreateStatic( prvTimerTask,
-                                                      configTIMER_SERVICE_TASK_NAME,
-                                                      ulTimerTaskStackSize,
-                                                      NULL,
-                                                      ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
-                                                      pxTimerTaskStackBuffer,
-                                                      pxTimerTaskTCBBuffer );
+                xTimerTaskHandle = xTaskCreateStaticPinnedToCore( prvTimerTask,
+                                                                  configTIMER_SERVICE_TASK_NAME,
+                                                                  ulTimerTaskStackSize,
+                                                                  NULL,
+                                                                  ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
+                                                                  pxTimerTaskStackBuffer,
+                                                                  pxTimerTaskTCBBuffer,
+                                                                  0 );
 
                 if( xTimerTaskHandle != NULL )
                 {
@@ -268,12 +270,14 @@
             }
             #else /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
             {
-                xReturn = xTaskCreate( prvTimerTask,
-                                       configTIMER_SERVICE_TASK_NAME,
-                                       configTIMER_TASK_STACK_DEPTH,
-                                       NULL,
-                                       ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
-                                       &xTimerTaskHandle );
+                /* Timer tasks is always pinned to core 0. Todo: IDF-7906 */
+                xReturn = xTaskCreatePinnedToCore( prvTimerTask,
+                                                   configTIMER_SERVICE_TASK_NAME,
+                                                   configTIMER_TASK_STACK_DEPTH,
+                                                   NULL,
+                                                   ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
+                                                   &xTimerTaskHandle,
+                                                   0 );
             }
             #endif /* configSUPPORT_STATIC_ALLOCATION */
         }

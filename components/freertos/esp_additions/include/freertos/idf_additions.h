@@ -31,6 +31,7 @@
 #endif
 /* *INDENT-ON* */
 
+
 /* -------------------------------------------------- Task Creation ------------------------------------------------- */
 
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
@@ -109,6 +110,35 @@
 /* ------------------------------------------------- Task Utilities ------------------------------------------------- */
 
 /**
+ * @brief Get the current core ID of a particular task
+ *
+ * Helper function to get the core ID of a particular task. If the task is
+ * pinned to a particular core, the core ID is returned. If the task is not
+ * pinned to a particular core, tskNO_AFFINITY is returned.
+ *
+ * If CONFIG_FREERTOS_UNICORE is enabled, this function simply returns 0.
+ *
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)(IDF-8164)
+ *
+ * @note If CONFIG_FREERTOS_SMP is enabled, please call vTaskCoreAffinityGet()
+ * instead.
+ * @note In IDF FreerTOS when configNUMBER_OF_CORES == 1, this function will
+ * always return 0,
+ * @param xTask The task to query
+ * @return The task's core ID or tskNO_AFFINITY
+ */
+BaseType_t xTaskGetCoreID( TaskHandle_t xTask );
+
+/** @cond */
+/* Todo: Deprecate this API in favor of xTaskGetIdleTaskHandleForCore (IDF-8163) */
+static inline __attribute__( ( always_inline ) )
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+{
+    return xTaskGetCoreID( xTask );
+}
+/** @endcond */
+
+/**
  * @brief Get the handle of idle task for the given core.
  *
  * [refactor-todo] See if this needs to be deprecated (IDF-8145)
@@ -118,7 +148,16 @@
  * @param xCoreID The core to query
  * @return Handle of the idle task for the queried core
  */
-TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID );
+TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID );
+
+/** @cond */
+/* Todo: Deprecate this API in favor of xTaskGetIdleTaskHandleForCore (IDF-8163) */
+static inline __attribute__( ( always_inline ) )
+TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
+{
+    return xTaskGetIdleTaskHandleForCore( xCoreID );
+}
+/** @endcond */
 
 /**
  * @brief Get the handle of the task currently running on a certain core
@@ -134,25 +173,42 @@ TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID );
  * @param xCoreID The core to query
  * @return Handle of the current task running on the queried core
  */
-TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID );
+TaskHandle_t xTaskGetCurrentTaskHandleForCore( BaseType_t xCoreID );
+
+/** @cond */
+/* Todo: Deprecate this API in favor of xTaskGetCurrentTaskHandleForCore (IDF-8163) */
+static inline __attribute__( ( always_inline ) )
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
+{
+    return xTaskGetCurrentTaskHandleForCore( xCoreID );
+}
+/** @endcond */
+
+#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
 
 /**
- * @brief Get the current core affinity of a particular task
+ * @brief Get the total execution of a particular core's idle task
  *
- * Helper function to get the core affinity of a particular task. If the task is
- * pinned to a particular core, the core ID is returned. If the task is not
- * pinned to a particular core, tskNO_AFFINITY is returned.
+ * This function is equivalent to ulTaskGetIdleRunTimeCounter() but queries the
+ * idle task of a particular core.
  *
- * If CONFIG_FREERTOS_UNICORE is enabled, this function simply returns 0.
- *
- * [refactor-todo] See if this needs to be deprecated (IDF-8145)(IDF-8164)
- *
- * @note If CONFIG_FREERTOS_SMP is enabled, please call vTaskCoreAffinityGet()
- * instead.
- * @param xTask The task to query
- * @return The tasks coreID or tskNO_AFFINITY
+ * @param xCoreID Core ID of the idle task to query
+ * @return The total run time of the idle task
  */
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask );
+    configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimeCounterForCore( BaseType_t xCoreID );
+
+/**
+ * @brief Get the percentage run time of a particular core's idle task
+ *
+ * This function is equivalent to ulTaskGetIdleRunTimePercent() but queries the
+ * idle task of a particular core.
+ *
+ * @param xCoreID Core ID of the idle task to query
+ * @return The percentage run time of the idle task
+ */
+    configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimePercentForCore( BaseType_t xCoreID );
+
+#endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
 
 /**
  * Returns the start of the stack associated with xTask.

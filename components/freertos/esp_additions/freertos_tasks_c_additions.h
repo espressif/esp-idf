@@ -405,48 +405,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
 /* ------------------------------------------------- Task Utilities ------------------------------------------------- */
 
-#if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
-
-    TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
-    {
-        configASSERT( xCoreID >= 0 && xCoreID < configNUM_CORES );
-        configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
-        return ( TaskHandle_t ) xIdleTaskHandle[ xCoreID ];
-    }
-
-#endif /* INCLUDE_xTaskGetIdleTaskHandle */
-/*----------------------------------------------------------*/
-
-#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
-
-    TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
-    {
-        TaskHandle_t xReturn;
-
-        #if CONFIG_FREERTOS_SMP
-        {
-            xReturn = xTaskGetCurrentTaskHandleCPU( xCoreID );
-        }
-        #else /* CONFIG_FREERTOS_SMP */
-        {
-            if( xCoreID < configNUM_CORES )
-            {
-                xReturn = pxCurrentTCB[ xCoreID ];
-            }
-            else
-            {
-                xReturn = NULL;
-            }
-        }
-        #endif /* CONFIG_FREERTOS_SMP */
-
-        return xReturn;
-    }
-
-#endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
-/*----------------------------------------------------------*/
-
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 {
     BaseType_t xReturn;
 
@@ -472,11 +431,10 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
         #else /* CONFIG_FREERTOS_SMP */
             TCB_t * pxTCB;
 
+            /* Todo: Remove xCoreID for single core builds (IDF-7894) */
             pxTCB = prvGetTCBFromHandle( xTask );
-            /* Simply read the xCoreID member of the TCB */
-            taskENTER_CRITICAL( &xKernelLock );
+
             xReturn = pxTCB->xCoreID;
-            taskEXIT_CRITICAL_ISR( &xKernelLock );
         #endif /* CONFIG_FREERTOS_SMP */
     }
     #else /* configNUM_CORES > 1 */
@@ -489,6 +447,140 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
     return xReturn;
 }
 /*----------------------------------------------------------*/
+
+#if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
+
+    TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID )
+    {
+        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+        {
+            /* If xTaskGetIdleTaskHandle() is called before the scheduler has been
+             * started, then xIdleTaskHandle will be NULL. */
+            configASSERT( ( xCoreID < configNUMBER_OF_CORES ) && ( xCoreID != tskNO_AFFINITY ) );
+            configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
+            return xIdleTaskHandle[ xCoreID ];
+        }
+        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+        {
+            configASSERT( xCoreID >= 0 && xCoreID < configNUM_CORES );
+            configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
+            return ( TaskHandle_t ) xIdleTaskHandle[ xCoreID ];
+        }
+        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+    }
+
+#endif /* INCLUDE_xTaskGetIdleTaskHandle */
+/*----------------------------------------------------------*/
+
+#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
+
+    TaskHandle_t xTaskGetCurrentTaskHandleForCore( BaseType_t xCoreID )
+    {
+        TaskHandle_t xReturn;
+
+        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+        {
+            configASSERT( xCoreID < configNUMBER_OF_CORES );
+            configASSERT( xCoreID != tskNO_AFFINITY );
+
+            /* For SMP, we need to take the kernel lock here as we are about to
+             * access kernel data structures. For single core, a critical section is
+             * not required as this is not called from an interrupt and the current
+             * TCB will always be the same for any individual execution thread. */
+            taskENTER_CRITICAL_SMP_ONLY();
+            {
+                xReturn = pxCurrentTCBs[ xCoreID ];
+            }
+            /* Release the previously taken kernel lock. */
+            taskEXIT_CRITICAL_SMP_ONLY();
+        }
+        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+        {
+            #if CONFIG_FREERTOS_SMP
+            {
+                xReturn = xTaskGetCurrentTaskHandleCPU( xCoreID );
+            }
+            #else /* CONFIG_FREERTOS_SMP */
+            {
+                if( xCoreID < configNUM_CORES )
+                {
+                    xReturn = pxCurrentTCB[ xCoreID ];
+                }
+                else
+                {
+                    xReturn = NULL;
+                }
+            }
+            #endif /* CONFIG_FREERTOS_SMP */
+        }
+        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+
+        return xReturn;
+    }
+
+#endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
+/*----------------------------------------------------------*/
+
+#if ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+
+    configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimeCounterForCore( BaseType_t xCoreID )
+    {
+        uint32_t ulRunTimeCounter;
+
+        configASSERT( xCoreID < configNUMBER_OF_CORES );
+        configASSERT( xCoreID != tskNO_AFFINITY );
+
+        /* For SMP, we need to take the kernel lock here as we are about to
+         * access kernel data structures. */
+        taskENTER_CRITICAL_SMP_ONLY();
+        {
+            ulRunTimeCounter = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter;
+        }
+        /* Release the previously taken kernel lock. */
+        taskEXIT_CRITICAL_SMP_ONLY();
+
+        return ulRunTimeCounter;
+    }
+
+#endif /* ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+/*----------------------------------------------------------*/
+
+#if ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+
+    configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimePercentForCore( BaseType_t xCoreID )
+    {
+        configRUN_TIME_COUNTER_TYPE ulTotalTime, ulReturn;
+
+        configASSERT( xCoreID < configNUMBER_OF_CORES );
+        configASSERT( xCoreID != tskNO_AFFINITY );
+
+        ulTotalTime = portGET_RUN_TIME_COUNTER_VALUE();
+
+        /* For percentage calculations. */
+        ulTotalTime /= ( configRUN_TIME_COUNTER_TYPE ) 100;
+
+        /* Avoid divide by zero errors. */
+        if( ulTotalTime > ( configRUN_TIME_COUNTER_TYPE ) 0 )
+        {
+            /* For SMP, we need to take the kernel lock here as we are about
+             * to access kernel data structures. */
+            taskENTER_CRITICAL_SMP_ONLY();
+            {
+                ulReturn = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter / ulTotalTime;
+            }
+            /* Release the previously taken kernel lock. */
+            taskEXIT_CRITICAL_SMP_ONLY();
+        }
+        else
+        {
+            ulReturn = 0;
+        }
+
+        return ulReturn;
+    }
+
+#endif /* ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 &&  ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+/*-----------------------------------------------------------*/
 
 uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
 {

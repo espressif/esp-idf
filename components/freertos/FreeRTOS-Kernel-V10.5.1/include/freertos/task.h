@@ -170,6 +170,7 @@ typedef struct xTASK_STATUS
         StackType_t * pxEndOfStack;               /* Points to the end address of the task's stack area. */
     #endif
     configSTACK_DEPTH_TYPE usStackHighWaterMark;  /* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
+    BaseType_t xCoreID;                           /*!< Core this task is pinned to (0, 1, or tskNO_AFFINITY). If configNUMBER_OF_CORES == 1, this will always be 0. */
 } TaskStatus_t;
 
 /* Possible return values for eTaskConfirmSleepModeStatus(). */
@@ -188,6 +189,14 @@ typedef enum
  * \ingroup TaskUtils
  */
 #define tskIDLE_PRIORITY    ( ( UBaseType_t ) 0U )
+
+/**
+ * Macro representing and unpinned (i.e., "no affinity") task in xCoreID parameters
+ *
+ * \ingroup Tasks
+ */
+#define tskNO_AFFINITY      ( ( BaseType_t ) 0x7FFFFFFF )
+/* Todo: Update tskNO_AFFINITY value to -1 (IDF-7908) */
 
 /**
  * task. h
@@ -294,6 +303,9 @@ typedef enum
  * support can alternatively create an MPU constrained task using
  * xTaskCreateRestricted().
  *
+ * @note If configNUMBER_OF_CORES > 1, this function will create an unpinned
+ * task (see tskNO_AFFINITY for more details).
+ *
  * @param pxTaskCode Pointer to the task entry function.  Tasks
  * must be implemented to never return (i.e. continuous loop).
  *
@@ -301,10 +313,8 @@ typedef enum
  * facilitate debugging.  Max length defined by configMAX_TASK_NAME_LEN - default
  * is 16.
  *
- * @param usStackDepth The size of the task stack specified as the number of
- * variables the stack can hold - not the number of bytes.  For example, if
- * the stack is 16 bits wide and usStackDepth is defined as 100, 200 bytes
- * will be allocated for stack storage.
+ * @param usStackDepth The size of the task stack specified as the NUMBER OF
+ * BYTES. Note that this differs from vanilla FreeRTOS.
  *
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
@@ -320,6 +330,9 @@ typedef enum
  *
  * @return pdPASS if the task was successfully created and added to a ready
  * list, otherwise an error code defined in the file projdefs.h
+ *
+ * @note If program uses thread local variables (ones specified with "__thread"
+ * keyword) then storage for them will be allocated on the task's stack.
  *
  * Example usage:
  * @code{c}
@@ -356,13 +369,39 @@ typedef enum
  * \ingroup Tasks
  */
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+    static inline __attribute__( ( always_inline ) )
     BaseType_t xTaskCreate( TaskFunction_t pxTaskCode,
                             const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
                             const configSTACK_DEPTH_TYPE usStackDepth,
                             void * const pvParameters,
                             UBaseType_t uxPriority,
-                            TaskHandle_t * const pxCreatedTask ) PRIVILEGED_FUNCTION;
-#endif
+                            TaskHandle_t * const pxCreatedTask ) PRIVILEGED_FUNCTION
+    {
+        /*
+         * The idf_additions.h has not been included here yet due to inclusion
+         * order. Thus we manually declare the function here.
+         */
+        extern BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
+                                                   const char * const pcName,
+                                                   const configSTACK_DEPTH_TYPE usStackDepth,
+                                                   void * const pvParameters,
+                                                   UBaseType_t uxPriority,
+                                                   TaskHandle_t * const pvCreatedTask,
+                                                   const BaseType_t xCoreID );
+
+        /*
+         * Call the "PinnedToCore" version with tskNO_AFFINITY to create
+         * an unpinned task.
+         */
+        return xTaskCreatePinnedToCore( pxTaskCode,
+                                        pcName,
+                                        usStackDepth,
+                                        pvParameters,
+                                        uxPriority,
+                                        pxCreatedTask,
+                                        tskNO_AFFINITY );
+    }
+#endif /* configSUPPORT_DYNAMIC_ALLOCATION == 1 */
 
 /**
  * task. h
@@ -388,6 +427,9 @@ typedef enum
  * memory.  xTaskCreateStatic() therefore allows a task to be created without
  * using any dynamic memory allocation.
  *
+ * @note If configNUMBER_OF_CORES > 1, this function will create an unpinned
+ * task (see tskNO_AFFINITY for more details).
+ *
  * @param pxTaskCode Pointer to the task entry function.  Tasks
  * must be implemented to never return (i.e. continuous loop).
  *
@@ -395,10 +437,8 @@ typedef enum
  * facilitate debugging.  The maximum length of the string is defined by
  * configMAX_TASK_NAME_LEN in FreeRTOSConfig.h.
  *
- * @param ulStackDepth The size of the task stack specified as the number of
- * variables the stack can hold - not the number of bytes.  For example, if
- * the stack is 32-bits wide and ulStackDepth is defined as 100 then 400 bytes
- * will be allocated for stack storage.
+ * @param ulStackDepth The size of the task stack specified as the NUMBER OF
+ * BYTES. Note that this differs from vanilla FreeRTOS.
  *
  * @param pvParameters Pointer that will be used as the parameter for the task
  * being created.
@@ -417,6 +457,9 @@ typedef enum
  * will be created and a handle to the created task is returned.  If either
  * puxStackBuffer or pxTaskBuffer are NULL then the task will not be created and
  * NULL is returned.
+ *
+ * @note If program uses thread local variables (ones specified with "__thread"
+ * keyword) then storage for them will be allocated on the task's stack.
  *
  * Example usage:
  * @code{c}
@@ -473,13 +516,41 @@ typedef enum
  * \ingroup Tasks
  */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    static inline __attribute__( ( always_inline ) )
     TaskHandle_t xTaskCreateStatic( TaskFunction_t pxTaskCode,
                                     const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
                                     const uint32_t ulStackDepth,
                                     void * const pvParameters,
                                     UBaseType_t uxPriority,
                                     StackType_t * const puxStackBuffer,
-                                    StaticTask_t * const pxTaskBuffer ) PRIVILEGED_FUNCTION;
+                                    StaticTask_t * const pxTaskBuffer ) PRIVILEGED_FUNCTION
+    {
+        /*
+         * The idf_additions.h has not been included here yet due to inclusion
+         * order. Thus we manually declare the function here.
+         */
+        extern TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
+                                                           const char * const pcName,
+                                                           const uint32_t ulStackDepth,
+                                                           void * const pvParameters,
+                                                           UBaseType_t uxPriority,
+                                                           StackType_t * const pxStackBuffer,
+                                                           StaticTask_t * const pxTaskBuffer,
+                                                           const BaseType_t xCoreID );
+
+        /*
+         * Call the "PinnedToCore" version with tskNO_AFFINITY to create
+         * an unpinned task.
+         */
+        return xTaskCreateStaticPinnedToCore( pxTaskCode,
+                                              pcName,
+                                              ulStackDepth,
+                                              pvParameters,
+                                              uxPriority,
+                                              puxStackBuffer,
+                                              pxTaskBuffer,
+                                              tskNO_AFFINITY );
+    }
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
@@ -1737,8 +1808,8 @@ BaseType_t xTaskCallApplicationTaskHook( TaskHandle_t xTask,
  * xTaskGetIdleTaskHandle() is only available if
  * INCLUDE_xTaskGetIdleTaskHandle is set to 1 in FreeRTOSConfig.h.
  *
- * Simply returns the handle of the idle task.  It is not valid to call
- * xTaskGetIdleTaskHandle() before the scheduler has been started.
+ * Simply returns the handle of the idle task of the current core.  It is not
+ * valid to call xTaskGetIdleTaskHandle() before the scheduler has been started.
  */
 TaskHandle_t xTaskGetIdleTaskHandle( void ) PRIVILEGED_FUNCTION;
 
@@ -1978,6 +2049,9 @@ void vTaskGetRunTimeStats( char * pcWriteBuffer ) PRIVILEGED_FUNCTION; /*lint !e
  * Note the amount of idle time is only a good measure of the slack time in a
  * system if there are no other tasks executing at the idle priority, tickless
  * idle is not used, and configIDLE_SHOULD_YIELD is set to 0.
+ *
+ * @note If configNUMBER_OF_CORES > 1, calling this function will query the idle
+ * task of the current core.
  *
  * @return The total run time of the idle task or the percentage of the total
  * run time consumed by the idle task.  This is the amount of time the
@@ -2954,6 +3028,9 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp ) PRIVILEGED_FUNCTION;
  *     or
  *   + Time slicing is in use and there is a task of equal priority to the
  *     currently running task.
+ *
+ * Note: If configNUMBER_OF_CORES > 1, this function must only be called by
+ * core 0. Other cores should call xTaskIncrementTickOtherCores() instead.
  */
 BaseType_t xTaskIncrementTick( void ) PRIVILEGED_FUNCTION;
 

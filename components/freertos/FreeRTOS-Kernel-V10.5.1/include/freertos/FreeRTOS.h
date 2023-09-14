@@ -135,6 +135,24 @@
  * within FreeRTOSConfig.h.
  */
 
+#ifndef configNUMBER_OF_CORES
+    #error Missing definition:  configNUMBER_OF_CORES must be defined in FreeRTOSConfig.h
+#endif
+
+#if ( configNUMBER_OF_CORES > 1 )
+    #ifndef portGET_CORE_ID
+        #error "Missing definition: portGET_CORE_ID() must be defined if in portmacro.h if configNUMBER_OF_CORES > 1"
+    #endif
+    #ifndef portYIELD_CORE
+        #error "Missing definition: portYIELD_CORE() must be defined if in portmacro.h if configNUMBER_OF_CORES > 1"
+    #endif
+#elif ( configNUMBER_OF_CORES == 1 )
+    #undef portGET_CORE_ID
+    #define portGET_CORE_ID()    0
+#else
+    #error configNUMBER_OF_CORES must be defined to either 1 or > 1.
+#endif /* if ( configNUMBER_OF_CORES > 1 ) */
+
 #ifndef configMINIMAL_STACK_SIZE
     #error Missing definition:  configMINIMAL_STACK_SIZE must be defined in FreeRTOSConfig.h.  configMINIMAL_STACK_SIZE defines the size (in words) of the stack allocated to the idle task.  Refer to the demo project provided for your port for a suitable value.
 #endif
@@ -1007,6 +1025,10 @@
     #error configUSE_MUTEXES must be set to 1 to use recursive mutexes
 #endif
 
+#if ( ( configNUMBER_OF_CORES > 1 ) && ( configUSE_PORT_OPTIMISED_TASK_SELECTION != 0 ) )
+    #error configUSE_PORT_OPTIMISED_TASK_SELECTION is not supported in SMP
+#endif
+
 #ifndef configINITIAL_TICK_COUNT
     #define configINITIAL_TICK_COUNT    0
 #endif
@@ -1267,6 +1289,8 @@ typedef struct xSTATIC_TCB
     UBaseType_t uxDummy5;
     void * pxDummy6;
     uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ];
+    /* Todo: Remove xCoreID for single core builds (IDF-7894) */
+    BaseType_t xDummyCoreID;
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         void * pxDummy8;
     #endif
@@ -1440,5 +1464,30 @@ typedef StaticStreamBuffer_t StaticMessageBuffer_t;
     }
 #endif
 /* *INDENT-ON* */
+
+/*-----------------------------------------------------------
+* IDF Compatibility
+*----------------------------------------------------------*/
+
+#ifdef ESP_PLATFORM
+
+/*
+ * Include ESP-IDF API additions implicitly for compatibility reasons.
+ *
+ * ESP-IDF API additions were previously added directly to FreeRTOS headers
+ * (e.g., task.h, queue.h). These APIs have now been moved to
+ * idf_additions.h.
+ *
+ * To ensure there are no breaking changes, we include idf_additions.h
+ * implicitly here so that those API additions are still accessible. Given
+ * that FreeRTOS.h must be included first before calling any FreeRTOS API,
+ * any existing source code can continue using these relocated APIs without
+ * any additional header inclusions via this implicit inclusion.
+ *
+ * Todo: Deprecate this implicit inclusion by ESP-IDF v6.0 (IDF-8126)
+ */
+    #include "freertos/idf_additions.h"
+
+#endif /* ESP_PLATFORM */
 
 #endif /* INC_FREERTOS_H */
