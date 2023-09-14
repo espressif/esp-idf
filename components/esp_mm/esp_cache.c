@@ -37,7 +37,8 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     ESP_RETURN_ON_FALSE_ISR(!ovf, ESP_ERR_INVALID_ARG, TAG, "wrong size, total size overflow");
 
     bool both_dir = (flags & ESP_CACHE_MSYNC_FLAG_DIR_C2M) && (flags & ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-    ESP_RETURN_ON_FALSE_ISR(!both_dir, ESP_ERR_INVALID_ARG, TAG, "both C2M and M2C directions are selected, you should only select one");
+    bool both_type = (flags & ESP_CACHE_MSYNC_FLAG_TYPE_DATA) && (flags & ESP_CACHE_MSYNC_FLAG_TYPE_INST);
+    ESP_RETURN_ON_FALSE_ISR(!both_dir && !both_type, ESP_ERR_INVALID_ARG, TAG, "both C2M and M2C directions, or both data and instruction type are selected, you should only select one direction or one type");
 
     uint32_t vaddr = (uint32_t)addr;
     bool valid = false;
@@ -46,10 +47,14 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     valid = cache_hal_vaddr_to_cache_level_id(vaddr, size, &cache_level, &cache_id);
     ESP_RETURN_ON_FALSE_ISR(valid, ESP_ERR_INVALID_ARG, TAG, "invalid addr or null pointer");
 
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, cache_level);
+    cache_type_t cache_type = CACHE_TYPE_DATA;
+    if (flags & ESP_CACHE_MSYNC_FLAG_TYPE_INST) {
+        cache_type = CACHE_TYPE_INSTRUCTION;
+    }
+    uint32_t cache_line_size = cache_hal_get_cache_line_size(cache_type, cache_level);
     if ((flags & ESP_CACHE_MSYNC_FLAG_UNALIGNED) == 0) {
-        bool aligned_addr = (((uint32_t)addr % data_cache_line_size) == 0) && ((size % data_cache_line_size) == 0);
-        ESP_RETURN_ON_FALSE_ISR(aligned_addr, ESP_ERR_INVALID_ARG, TAG, "start address: 0x%x, or the size: 0x%x is(are) not aligned with the data cache line size (0x%x)B", (uint32_t)addr, size, data_cache_line_size);
+        bool aligned_addr = (((uint32_t)addr % cache_line_size) == 0) && ((size % cache_line_size) == 0);
+        ESP_RETURN_ON_FALSE_ISR(aligned_addr, ESP_ERR_INVALID_ARG, TAG, "start address: 0x%x, or the size: 0x%x is(are) not aligned with cache line size (0x%x)B", (uint32_t)addr, size, cache_line_size);
     }
 
     if (flags & ESP_CACHE_MSYNC_FLAG_DIR_M2C) {
@@ -62,6 +67,9 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
         assert(valid);
     } else {
         ESP_EARLY_LOGV(TAG, "C2M DIR");
+        if (flags & ESP_CACHE_MSYNC_FLAG_TYPE_INST) {
+            ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_ARG, TAG, "C2M direction doesn't support instruction type");
+        }
 
 #if SOC_CACHE_WRITEBACK_SUPPORTED
 
