@@ -21,6 +21,7 @@
 #include "esp_async_memcpy_priv.h"
 #include "hal/dma_types.h"
 #include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "rom/cache.h"
 
 static const char *TAG = "async_mcp.gdma";
@@ -161,13 +162,20 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     portMUX_INITIALIZE(&mcp_gdma->spin_lock);
     atomic_init(&mcp_gdma->fsm, MCP_FSM_IDLE);
     mcp_gdma->gdma_bus_id = gdma_bus_id;
+
+    uint32_t psram_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, CACHE_LL_LEVEL_EXT_MEM);
+    uint32_t sram_cache_line_size = 0;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    sram_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, CACHE_LL_LEVEL_INT_MEM);
+#endif
+
     // if the psram_trans_align is configured to zero, we should fall back to use the data cache line size
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA);
-    size_t psram_trans_align = MAX(data_cache_line_size, config->psram_trans_align);
-    size_t trans_align = MAX(config->sram_trans_align, psram_trans_align);
+    size_t psram_trans_align = MAX(psram_cache_line_size, config->psram_trans_align);
+    size_t sram_trans_align = MAX(sram_cache_line_size, config->sram_trans_align);
+    size_t trans_align = MAX(sram_trans_align, psram_trans_align);
     mcp_gdma->max_single_dma_buffer = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, trans_align);
     mcp_gdma->psram_trans_align = psram_trans_align;
-    mcp_gdma->sram_trans_align = config->sram_trans_align;
+    mcp_gdma->sram_trans_align = sram_trans_align;
     mcp_gdma->parent.del = mcp_gdma_del;
     mcp_gdma->parent.memcpy = mcp_gdma_memcpy;
 #if SOC_GDMA_SUPPORT_ETM
@@ -322,6 +330,7 @@ static bool check_buffer_aligned(async_memcpy_gdma_context_t *mcp_gdma, void *sr
 {
     bool valid = true;
     uint32_t align_mask = 0;
+
     if (esp_ptr_external_ram(dst)) {
         if (mcp_gdma->psram_trans_align) {
             align_mask = mcp_gdma->psram_trans_align - 1;
@@ -331,12 +340,7 @@ static bool check_buffer_aligned(async_memcpy_gdma_context_t *mcp_gdma, void *sr
             align_mask = mcp_gdma->sram_trans_align - 1;
         }
     }
-#if CONFIG_IDF_TARGET_ESP32P4
-    uint32_t data_cache_line_mask = cache_hal_get_cache_line_size(CACHE_TYPE_DATA) - 1;
-    if (data_cache_line_mask > align_mask) {
-        align_mask = data_cache_line_mask;
-    }
-#endif
+
     // destination address must be cache line aligned
     valid = valid && (((uint32_t)dst & align_mask) == 0);
     valid = valid && ((n & align_mask) == 0);
