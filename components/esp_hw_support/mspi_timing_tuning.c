@@ -15,6 +15,7 @@
 #include "soc/soc.h"
 #include "hal/spi_flash_hal.h"
 #include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "mspi_timing_config.h"
 #include "mspi_timing_by_mspi_delay.h"
@@ -473,7 +474,7 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
      * for preventing concurrent from MSPI to external memory
      */
 #if SOC_CACHE_FREEZE_SUPPORTED
-    cache_hal_freeze(CACHE_TYPE_ALL);
+    cache_hal_freeze(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
     if (switch_down) {
@@ -485,7 +486,7 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
     }
 
 #if SOC_CACHE_FREEZE_SUPPORTED
-    cache_hal_unfreeze(CACHE_TYPE_ALL);
+    cache_hal_unfreeze(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 }
 

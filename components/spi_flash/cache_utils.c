@@ -360,17 +360,17 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
-    cache_hal_suspend(CACHE_TYPE_ALL);
+    cache_hal_suspend(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 }
 
 void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
-    cache_hal_resume(CACHE_TYPE_ALL);
+    cache_hal_resume(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 }
 
 bool IRAM_ATTR spi_flash_cache_enabled(void)
 {
-    return cache_hal_is_cache_enabled(CACHE_TYPE_ALL);
+    return cache_hal_is_cache_enabled(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 }
 
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -918,15 +918,15 @@ void esp_config_l2_cache_mode(void)
 {
     cache_size_t cache_size;
     cache_line_size_t cache_line_size;
-#if CONFIG_ESP32P4_L2_CACHE_128KB
+#if CONFIG_CACHE_L2_CACHE_128KB
     cache_size = CACHE_SIZE_128K;
-#elif CONFIG_ESP32P4_L2_CACHE_256KB
+#elif CONFIG_CACHE_L2_CACHE_256KB
     cache_size = CACHE_SIZE_256K;
 #else
     cache_size = CACHE_SIZE_512K;
 #endif
 
-#if CONFIG_ESP32P4_L2_CACHE_LINE_64B
+#if CONFIG_CACHE_L2_CACHE_LINE_64B
     cache_line_size = CACHE_LINE_SIZE_64B;
 #else
     cache_line_size = CACHE_LINE_SIZE_128B;

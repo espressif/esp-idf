@@ -45,6 +45,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "gdma_priv.h"
 #include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 
 static const char *TAG = "gdma";
 
@@ -357,7 +358,7 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
     ESP_RETURN_ON_FALSE((sram_alignment & (sram_alignment - 1)) == 0, ESP_ERR_INVALID_ARG,
                         TAG, "invalid sram alignment: %zu", sram_alignment);
 
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA);
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, CACHE_LL_LEVEL_EXT_MEM);
     if (psram_alignment == 0) {
         // fall back to use the same size of the psram data cache line size
         psram_alignment = data_cache_line_size;

@@ -118,6 +118,16 @@ static bool s_is_overlapped(uint32_t block_start, uint32_t block_end, uint32_t n
 
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+static cache_bus_mask_t s_get_bus_mask(uint32_t vaddr_start, uint32_t len)
+{
+#if CACHE_LL_EXT_MEM_VIA_L2CACHE
+    return cache_ll_l2_get_bus(0, vaddr_start, len);
+#else
+    return cache_ll_l1_get_bus(0, vaddr_start, len);
+#endif
+}
+
 static void s_reserve_irom_region(mem_region_t *hw_mem_regions, int region_nums)
 {
     /**
@@ -133,7 +143,7 @@ static void s_reserve_irom_region(mem_region_t *hw_mem_regions, int region_nums)
 
     irom_len_to_reserve += (uint32_t)&_instruction_reserved_start - ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
     irom_len_to_reserve = ALIGN_UP_BY(irom_len_to_reserve, CONFIG_MMU_PAGE_SIZE);
-    cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)&_instruction_reserved_start, irom_len_to_reserve);
+    cache_bus_mask_t bus_mask = s_get_bus_mask((uint32_t)&_instruction_reserved_start, irom_len_to_reserve);
 
     for (int i = 0; i < SOC_MMU_LINEAR_ADDRESS_REGION_NUM; i++) {
         if (bus_mask & hw_mem_regions[i].bus_id) {
@@ -161,7 +171,7 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
 
     drom_len_to_reserve += (uint32_t)&_rodata_reserved_start - ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
     drom_len_to_reserve = ALIGN_UP_BY(drom_len_to_reserve, CONFIG_MMU_PAGE_SIZE);
-    cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)&_rodata_reserved_start, drom_len_to_reserve);
+    cache_bus_mask_t bus_mask = s_get_bus_mask((uint32_t)&_rodata_reserved_start, drom_len_to_reserve);
 
     for (int i = 0; i < SOC_MMU_LINEAR_ADDRESS_REGION_NUM; i++) {
         if (bus_mask & hw_mem_regions[i].bus_id) {

@@ -24,7 +24,9 @@
 #include "bootloader_flash.h"
 #include "bootloader_init.h"
 #include "hal/mmu_hal.h"
+#include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 
 #define FLASH_IO_MATRIX_DUMMY_40M   0
 #define FLASH_IO_MATRIX_DUMMY_80M   0
@@ -157,12 +159,12 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
         size = 2;
     }
 
-    cache_hal_disable(CACHE_TYPE_ALL);
+    cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
-    cache_hal_enable(CACHE_TYPE_ALL);
+    cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)

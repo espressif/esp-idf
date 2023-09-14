@@ -12,10 +12,6 @@
 #include "soc/soc_caps.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
-#if CONFIG_IDF_TARGET_ESP32P4
-//TODO: IDF-7516
-#include "esp32p4/rom/cache.h"
-#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 #   include "soc/spi_struct.h"
@@ -128,6 +124,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/opi_flash.h"
@@ -205,7 +202,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
     Cache_Read_Disable(0);
     Cache_Flush(0);
 #else
-    cache_hal_disable(CACHE_TYPE_ALL);
+    cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif
 
     //---------------Do mapping------------------------
@@ -238,15 +235,10 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
 #else
-#if CONFIG_IDF_TARGET_ESP32P4
-    /**
-     * TODO: IDF-7516
-     * we need to invalidate l1 dcache to make each mmap clean
-     * to that vaddr
-     */
-    Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE, MMU_BLOCK0_VADDR, actual_mapped_len);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, MMU_BLOCK0_VADDR, actual_mapped_len);
 #endif
-    cache_hal_enable(CACHE_TYPE_ALL);
+    cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif
 
     mapped = true;
@@ -263,7 +255,7 @@ void bootloader_munmap(const void *mapping)
         Cache_Flush(0);
         mmu_init(0);
 #else
-        cache_hal_disable(CACHE_TYPE_ALL);
+        cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
         mmu_hal_unmap_all();
 #endif
         mapped = false;
@@ -291,7 +283,7 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
     Cache_Read_Disable(0);
     Cache_Flush(0);
 #else
-    cache_hal_disable(CACHE_TYPE_ALL);
+    cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif
 
     esp_rom_spiflash_result_t r = esp_rom_spiflash_read(src_addr, dest, size);
@@ -299,7 +291,7 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
 #else
-    cache_hal_enable(CACHE_TYPE_ALL);
+    cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif
 
     return spi_to_esp_err(r);
@@ -322,7 +314,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
             Cache_Read_Disable(0);
             Cache_Flush(0);
 #else
-            cache_hal_disable(CACHE_TYPE_ALL);
+            cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif
 
             //---------------Do mapping------------------------
@@ -341,11 +333,10 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #if CONFIG_IDF_TARGET_ESP32
             Cache_Read_Enable(0);
 #else
-#if CONFIG_IDF_TARGET_ESP32P4
-            //TODO: IDF-7516
-            Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE, FLASH_READ_VADDR, actual_mapped_len);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+            cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, MMU_BLOCK0_VADDR, actual_mapped_len);
 #endif
-            cache_hal_enable(CACHE_TYPE_ALL);
+            cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif
         }
         map_ptr = (uint32_t *)(FLASH_READ_VADDR + (word_src - map_at));
@@ -468,9 +459,9 @@ void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t fla
         assert(false);
         break;
     }
-    cache_hal_disable(CACHE_TYPE_ALL);
+    cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
     esp_rom_opiflash_cache_mode_config(flash_mode, &cache_rd);
-    cache_hal_enable(CACHE_TYPE_ALL);
+    cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 }
 #endif
 

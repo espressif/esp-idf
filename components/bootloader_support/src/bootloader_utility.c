@@ -836,7 +836,7 @@ static void set_cache_and_start_app(
     Cache_Read_Disable(0);
     Cache_Flush(0);
 #else
-    cache_hal_disable(CACHE_TYPE_ALL);
+    cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif
     //reset MMU table first
     mmu_hal_unmap_all();
@@ -896,7 +896,7 @@ static void set_cache_and_start_app(
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)
     Cache_Read_Enable(0);
 #else
-    cache_hal_enable(CACHE_TYPE_ALL);
+    cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
 #endif
 
     ESP_LOGD(TAG, "start: 0x%08"PRIx32, entry_addr);

@@ -14,7 +14,7 @@ static uint32_t s_cache_status[2];
  * There's a bug that Cache_Read_Disable requires a call to Cache_Flush
  * before Cache_Read_Enable, even if cached data was not modified.
  */
-void cache_hal_suspend(cache_type_t type)
+void cache_hal_suspend(cache_type_t type, uint32_t cache_level)
 {
     s_cache_status[0] = cache_ll_l1_get_enabled_bus(0);
     cache_ll_l1_disable_cache(0);
@@ -25,7 +25,7 @@ void cache_hal_suspend(cache_type_t type)
 }
 
 
-void cache_hal_resume(cache_type_t type)
+void cache_hal_resume(cache_type_t type, uint32_t cache_level)
 {
     cache_ll_l1_enable_cache(0);
     cache_ll_l1_enable_bus(0, s_cache_status[0]);
@@ -36,11 +36,31 @@ void cache_hal_resume(cache_type_t type)
 }
 
 
-bool cache_hal_is_cache_enabled(cache_type_t type)
+bool cache_hal_is_cache_enabled(cache_type_t type, uint32_t cache_level)
 {
     bool result = cache_ll_l1_is_cache_enabled(0, CACHE_TYPE_ALL);
 #if !CONFIG_FREERTOS_UNICORE
     result = result && cache_ll_l1_is_cache_enabled(1, CACHE_TYPE_ALL);
 #endif
     return result;
+}
+
+bool cache_hal_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32_t len, uint32_t *out_level, uint32_t *out_id)
+{
+    if (!out_level || !out_id) {
+        return false;
+    }
+    return cache_ll_vaddr_to_cache_level_id(vaddr_start, len, out_level, out_id);
+}
+
+uint32_t cache_hal_get_cache_line_size(cache_type_t type, uint32_t cache_level)
+{
+    HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
+    return 4;
+}
+
+bool cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size)
+{
+    //esp32 doesn't support invalidate certain addr
+    abort();
 }

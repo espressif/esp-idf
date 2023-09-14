@@ -43,6 +43,7 @@
 #include "regi2c_ctrl.h"    //For `REGI2C_ANA_CALI_PD_WORKAROUND`, temp
 
 #include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
@@ -403,7 +404,7 @@ static int s_cache_suspend_cnt = 0;
 static void IRAM_ATTR suspend_cache(void) {
     s_cache_suspend_cnt++;
     if (s_cache_suspend_cnt == 1) {
-        cache_hal_suspend(CACHE_TYPE_ALL);
+        cache_hal_suspend(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
     }
 }
 
@@ -412,7 +413,7 @@ static void IRAM_ATTR resume_cache(void) {
     s_cache_suspend_cnt--;
     assert(s_cache_suspend_cnt >= 0 && DRAM_STR("cache resume doesn't match suspend ops"));
     if (s_cache_suspend_cnt == 0) {
-        cache_hal_resume(CACHE_TYPE_ALL);
+        cache_hal_resume(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
     }
 }
 
