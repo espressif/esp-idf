@@ -19,7 +19,7 @@ __verbose() {
 
 __script_dir(){
     # shellcheck disable=SC2169,SC2169,SC2039,SC3010,SC3028  # unreachable with 'dash'
-    if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [ `uname -s` = "Darwin" ]; then
         # convert possibly relative path to absolute
         script_dir="$(__realpath "${self_path}")"
         # resolve any ../ references to make the path shorter
