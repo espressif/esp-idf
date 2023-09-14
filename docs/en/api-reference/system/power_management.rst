@@ -92,13 +92,7 @@ Dynamic Frequency Scaling and Peripheral Drivers
 
 When DFS is enabled, the APB frequency can be changed multiple times within a single RTOS tick. The APB frequency change does not affect the operation of some peripherals, while other peripherals may have issues. For example, Timer Group peripheral timers keeps counting, however, the speed at which they count changes proportionally to the APB frequency.
 
-The following peripherals work normally even when the APB frequency is changing:
-
-- **UART**: if ``REF_TICK`` or XTAL is used as a clock source. See :cpp:member:`uart_config_t::source_clk`.
-- **LEDC**: if ``REF_TICK`` is used as a clock source. See :cpp:func:`ledc_timer_config` function.
-- **RMT**: if ``REF_TICK`` or XTAL is used as a clock source. See :cpp:member:`rmt_config_t::flags` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
-- **GPTimer**: if APB is used as the clock source. See :cpp:member:`gptimer_config_t::clk_src`.
-- **TSENS**: if XTAL or ``RTC_8M`` is used as a clock source. So, APB frequency changing will not influence it.
+Peripheral clock sources such as ``REF_TICK``, ``XTAL``, ``RC_FAST`` (i.e. ``RTC_8M``), their frequencies will not be inflenced by APB frequency. And therefore, to ensure the peripheral behaves consistently during DFS, it is recommanded to select one of these clocks as the peripheral clock source. For more specific guidelines, please refer to the "Power Management" section of each peripheral's "API Reference > Peripherals API" page.
 
 Currently, the following peripheral drivers are aware of DFS and use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 
@@ -112,6 +106,7 @@ The following drivers hold the ``ESP_PM_APB_FREQ_MAX`` lock while the driver is 
 .. list::
 
     - **SPI slave**: between calls to :cpp:func:`spi_slave_initialize` and :cpp:func:`spi_slave_free`.
+    - **GPTimer**: between calls to :cpp:func:`gptimer_enable` and :cpp:func:`gptimer_disable`.
     - **Ethernet**: between calls to :cpp:func:`esp_eth_driver_install` and :cpp:func:`esp_eth_driver_uninstall`.
     - **WiFi**: between calls to :cpp:func:`esp_wifi_start` and :cpp:func:`esp_wifi_stop`. If modem sleep is enabled, the lock will be released for the periods of time when radio is disabled.
     :SOC_TWAI_SUPPORTED: - **TWAI**: between calls to :cpp:func:`twai_driver_install` and :cpp:func:`twai_driver_uninstall` (only when the clock source is set to :cpp:enumerator:`TWAI_CLK_SRC_APB`).
