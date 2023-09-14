@@ -71,7 +71,7 @@
 
 # sort-order-reset
 
-/components/app_trace/                @esp-idf-codeowners/tools
+/components/app_trace/                @esp-idf-codeowners/debugging
 /components/app_update/               @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
 /components/bootloader*/              @esp-idf-codeowners/system @esp-idf-codeowners/security
 /components/bootloader_support/bootloader_flash/    @esp-idf-codeowners/peripherals
@@ -88,7 +88,7 @@
 /components/esp_common/               @esp-idf-codeowners/system
 /components/esp_eth/                  @esp-idf-codeowners/network
 /components/esp_event/                @esp-idf-codeowners/system
-/components/esp_gdbstub/              @esp-idf-codeowners/tools
+/components/esp_gdbstub/              @esp-idf-codeowners/debugging
 /components/esp_hid/                  @esp-idf-codeowners/bluetooth
 /components/esp_http_client/          @esp-idf-codeowners/app-utilities
 /components/esp_http_server/          @esp-idf-codeowners/app-utilities
@@ -110,7 +110,7 @@
 /components/esp_timer/                @esp-idf-codeowners/system
 /components/esp-tls/                  @esp-idf-codeowners/app-utilities
 /components/esp_wifi/                 @esp-idf-codeowners/wifi
-/components/espcoredump/              @esp-idf-codeowners/tools
+/components/espcoredump/              @esp-idf-codeowners/debugging
 /components/esptool_py/               @esp-idf-codeowners/tools
 /components/fatfs/                    @esp-idf-codeowners/storage
 /components/fatfs/**/*.py             @esp-idf-codeowners/tools
@@ -126,12 +126,12 @@
 /components/lwip/                     @esp-idf-codeowners/lwip
 /components/mbedtls/                  @esp-idf-codeowners/app-utilities/mbedtls @esp-idf-codeowners/security
 /components/mqtt/                     @esp-idf-codeowners/network
-/components/newlib/                   @esp-idf-codeowners/system @esp-idf-codeowners/tools
+/components/newlib/                   @esp-idf-codeowners/system @esp-idf-codeowners/toolchain
 /components/nvs_flash/                @esp-idf-codeowners/storage
 /components/nvs_sec_provider/         @esp-idf-codeowners/storage @esp-idf-codeowners/security
 /components/openthread/               @esp-idf-codeowners/ieee802154
 /components/partition_table/          @esp-idf-codeowners/system
-/components/perfmon/                  @esp-idf-codeowners/tools
+/components/perfmon/                  @esp-idf-codeowners/debugging
 /components/protobuf-c/               @esp-idf-codeowners/app-utilities
 /components/protocomm/                @esp-idf-codeowners/app-utilities/provisioning
 /components/pthread/                  @esp-idf-codeowners/system
@@ -152,6 +152,7 @@
 /components/xtensa/                   @esp-idf-codeowners/system
 
 /docs/                                  @esp-idf-codeowners/docs
+/docs/en/api-guides/jtag-debugging/     @esp-idf-codeowners/debugging
 /docs/**/api-reference/bluetooth/       @esp-idf-codeowners/bluetooth
 /docs/**/api-reference/network/         @esp-idf-codeowners/network @esp-idf-codeowners/wifi
 /docs/**/api-reference/peripherals/     @esp-idf-codeowners/peripherals
@@ -192,7 +193,10 @@
 /tools/catch/                 @esp-idf-codeowners/ci
 /tools/ci/                    @esp-idf-codeowners/ci
 /tools/cmake/                 @esp-idf-codeowners/build-config
+/tools/cmake/toolchain-*.cmake      @esp-idf-codeowners/toolchain
+/tools/esp_app_trace/         @esp-idf-codeowners/debugging
 /tools/esp_prov/              @esp-idf-codeowners/app-utilities
+/tools/gdb_panic_server.py    @esp-idf-codeowners/debugging
 /tools/kconfig*/              @esp-idf-codeowners/build-config
 /tools/ldgen/                 @esp-idf-codeowners/build-config
 /tools/mass_mfg/              @esp-idf-codeowners/app-utilities
@@ -209,6 +213,8 @@
 /tools/test_apps/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 /tools/test_build_system/     @esp-idf-codeowners/tools @esp-idf-codeowners/build-config
+
+/tools/tools.json             @esp-idf-codeowners/tools @esp-idf-codeowners/toolchain @esp-idf-codeowners/debugging
 
 /tools/unit-test-app/         @esp-idf-codeowners/system @esp-idf-codeowners/tools
 
