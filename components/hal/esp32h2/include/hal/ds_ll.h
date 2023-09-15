@@ -17,11 +17,31 @@
 
 #include "soc/hwcrypto_reg.h"
 #include "soc/soc_caps.h"
+#include "soc/pcr_struct.h"
 #include "hal/ds_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Enable the bus clock for Digital Signature peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void ds_ll_enable_bus_clock(bool enable)
+{
+    PCR.ds_conf.ds_clk_en = enable;
+}
+
+/**
+ * @brief Reset the Digital Signature peripheral module
+ */
+static inline void ds_ll_reset_register(void)
+{
+    PCR.ds_conf.ds_rst_en = 1;
+    PCR.ds_conf.ds_rst_en = 0;
+}
 
 static inline void ds_ll_start(void)
 {

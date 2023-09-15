@@ -18,6 +18,7 @@
 #include "soc/system_reg.h"
 
 #if !CONFIG_IDF_TARGET_ESP32S2
+#include "hal/ds_ll.h"
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
 #include "esp_private/periph_ctrl.h"
@@ -75,7 +76,11 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     }
 
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(true);
+        ds_ll_reset_register();
+    }
 
     hmac_hal_start();
 
@@ -137,7 +142,10 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     // Read back result (bit swapped)
     hmac_hal_read_result_256(hmac);
 
-    periph_module_disable(PERIPH_DS_MODULE);
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(false);
+    }
+
     periph_module_disable(PERIPH_SHA_MODULE);
 
     HMAC_RCC_ATOMIC() {

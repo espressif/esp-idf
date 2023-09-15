@@ -139,20 +139,28 @@ static void ds_acquire_enable(void)
     }
 
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(true);
+        ds_ll_reset_register();
+    }
+
     hmac_hal_start();
 }
 
 static void ds_disable_release(void)
 {
     ds_hal_finish();
-    periph_module_disable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(false);
+    }
+
     periph_module_disable(PERIPH_SHA_MODULE);
 
     HMAC_RCC_ATOMIC() {
         hmac_ll_enable_bus_clock(false);
     }
-
 }
 
 

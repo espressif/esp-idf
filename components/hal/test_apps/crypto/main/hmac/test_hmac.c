@@ -41,6 +41,7 @@ static esp_err_t hmac_jtag_disable(void)
 
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
+#include "hal/ds_ll.h"
 #include "esp_private/periph_ctrl.h"
 
 #define SHA256_BLOCK_SZ 64
@@ -78,7 +79,11 @@ static esp_err_t hmac_calculate(hmac_key_id_t key_id, const void *message, size_
     }
 
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(true);
+        ds_ll_reset_register();
+    }
 
     hmac_hal_start();
 
@@ -130,7 +135,10 @@ static esp_err_t hmac_calculate(hmac_key_id_t key_id, const void *message, size_
 
     hmac_hal_read_result_256(hmac);
 
-    periph_module_disable(PERIPH_DS_MODULE);
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(false);
+    }
+
     periph_module_disable(PERIPH_SHA_MODULE);
 
     HMAC_RCC_ATOMIC() {
