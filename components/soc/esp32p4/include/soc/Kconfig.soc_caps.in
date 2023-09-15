@@ -1043,6 +1043,10 @@ config SOC_CLK_RC32K_SUPPORTED
     bool
     default y
 
+config SOC_PERIPH_CLK_CTRL_SHARED
+    bool
+    default y
+
 config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     bool
     default y

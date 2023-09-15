@@ -77,6 +77,30 @@ typedef enum {
 ////////////////////////////////////////MCPWM Group Specific////////////////////////////////////////////////////////////
 
 /**
+ * @brief Enable the bus clock for MCPWM module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void mcpwm_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    PCR.pwm_conf.pwm_clk_en = enable;
+}
+
+/**
+ * @brief Reset the MCPWM module
+ *
+ * @param group_id Group ID
+ */
+static inline void mcpwm_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    PCR.pwm_conf.pwm_rst_en = 1;
+    PCR.pwm_conf.pwm_rst_en = 0;
+}
+
+/**
  * @brief Set the clock source for MCPWM
  *
  * @param mcpwm Peripheral instance address

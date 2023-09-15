@@ -111,6 +111,10 @@ MCPWM 比较器
 
 反之，调用 :cpp:func:`mcpwm_del_comparator` 函数将释放已分配的比较器。
 
+.. only:: SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+
+    MCPWM 中还有另外一种比较器 —— “事件比较器”，它不能直接控制 PWM 的输出，只能用来产生 EMT 子系统中使用到的事件。事件比较器能够设置的阈值也是可配的。调用 :cpp:func:`mcpwm_new_event_comparator` 函数可以申请一个事件比较器，该函数返回的句柄类型和 :cpp:func:`mcpwm_new_comparator` 函数一样，但是需要的配置结构体是不同的。事件比较器的配置位于 :cpp:type:`mcpwm_event_comparator_config_t`。更多相关内容请参阅 :ref:`mcpwm-etm-event-and-task`。
+
 MCPWM 生成器
 ~~~~~~~~~~~~~~~~
 
@@ -187,7 +191,7 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 - :cpp:member:`mcpwm_capture_timer_config_t::clk_src` 设置捕获定时器的时钟源。
 - :cpp:member:`mcpwm_capture_timer_config_t::resolution_hz` 设置捕获定时器的预期分辨率。内部驱动将根据时钟源和分辨率设置合适的分频器。设置为 ``0`` 时，驱动会自己选取一个适当的分辨率，后续你可以通过 :cpp:func:`mcpwm_capture_timer_get_resolution` 查看当前定时器的分辨率。
 
-.. only:: not SOC_MCPWM_CAPTURE_CLK_FROM_GROUP 
+.. only:: not SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
 
     .. note::
 
@@ -278,6 +282,12 @@ MCPWM 比较器可以在定时器计数器等于比较值时发送通知。若�
 函数 :cpp:func:`mcpwm_comparator_register_event_callbacks` 中的 ``user_data`` 参数用于保存用户上下文，将直接传递至各个回调函数。
 
 此函数会延迟安装 MCPWM 比较器的中断服务。中断服务只能通过 :cpp:type:`mcpwm_del_comparator` 移除。
+
+.. only:: SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+
+    .. note::
+
+        对于事件比较器，你无法通过该函数来注册回调函数，因为事件比较器触发产生任何中断事件。
 
 设置比较值
 ~~~~~~~~~~~~~~~~~
@@ -1026,6 +1036,7 @@ API Reference
 .. include-build-file:: inc/mcpwm_fault.inc
 .. include-build-file:: inc/mcpwm_sync.inc
 .. include-build-file:: inc/mcpwm_cap.inc
+.. include-build-file:: inc/mcpwm_etm.inc
 .. include-build-file:: inc/components/driver/mcpwm/include/driver/mcpwm_types.inc
 .. include-build-file:: inc/components/hal/include/hal/mcpwm_types.inc
 

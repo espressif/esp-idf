@@ -111,13 +111,9 @@ api-reference/peripherals/gpio.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/dac.rst
 api-reference/peripherals/spi_slave.rst
-api-reference/peripherals/etm.rst
 api-reference/peripherals/i2s.rst
-api-reference/peripherals/gptimer.rst
-api-reference/peripherals/pcnt.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/lcd.rst
-api-reference/peripherals/mcpwm.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/secure_element.rst
 api-reference/peripherals/ledc.rst
@@ -167,7 +163,6 @@ api-reference/system/ulp-lp-core.rst
 api-reference/system/ulp.rst
 api-reference/system/esp_function_with_shared_stack.rst
 api-reference/system/ulp_instruction_set.rst
-api-reference/system/async_memcpy.rst
 api-reference/system/random.rst
 api-reference/system/esp_event.rst
 api-reference/system/system_time.rst

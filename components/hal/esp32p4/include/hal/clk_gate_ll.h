@@ -72,10 +72,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return HP_SYS_CLKRST_REG_I3C_MST_CLK_EN;
     case PERIPH_CAM_MODULE:
         return HP_SYS_CLKRST_REG_CAM_CLK_EN;
-    case PERIPH_MCPWM0_MODULE:
-        return HP_SYS_CLKRST_REG_MCPWM0_APB_CLK_EN;
-    case PERIPH_MCPWM1_MODULE:
-        return HP_SYS_CLKRST_REG_MCPWM1_APB_CLK_EN;
     case PERIPH_SYSTIMER_MODULE:
         return HP_SYS_CLKRST_REG_SYSTIMER_CLK_EN;
     case PERIPH_LEDC_MODULE:
@@ -104,8 +100,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return HP_SYS_CLKRST_REG_CRYPTO_ECDSA_CLK_EN;
     case PERIPH_ISP_MODULE:
         return HP_SYS_CLKRST_REG_ISP_CLK_EN;
-    case PERIPH_PCNT_MODULE:
-        return HP_SYS_CLKRST_REG_PCNT_APB_CLK_EN;
     default:
         return 0;
     }
@@ -155,10 +149,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_I2C1;
     case PERIPH_RMT_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_RMT;
-    case PERIPH_MCPWM0_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_PWM0;
-    case PERIPH_MCPWM1_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_PWM1;
     case PERIPH_TWAI0_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_CAN0;
     case PERIPH_TWAI1_MODULE:
@@ -167,8 +157,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_CAN2;
     case PERIPH_LEDC_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_LEDC;
-    case PERIPH_PCNT_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_PCNT;
     case PERIPH_PARLIO_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_PARLIO | HP_SYS_CLKRST_REG_RST_EN_PARLIO_RX | HP_SYS_CLKRST_REG_RST_EN_PARLIO_TX;
     case PERIPH_I2S0_MODULE:
@@ -263,10 +251,6 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_I3C_MODULE:
     case PERIPH_CAM_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL119_REG;
-    case PERIPH_MCPWM0_MODULE:
-    case PERIPH_MCPWM1_MODULE:
-    case PERIPH_PCNT_MODULE:
-        return HP_SYS_CLKRST_SOC_CLK_CTRL2_REG;
     case PERIPH_SYSTIMER_MODULE:
     case PERIPH_LEDC_MODULE:
     case PERIPH_RMT_MODULE:
@@ -316,13 +300,10 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_I2C1_MODULE:
         return HP_SYS_CLKRST_HP_RST_EN1_REG;
     case PERIPH_RMT_MODULE:
-    case PERIPH_MCPWM0_MODULE:
-    case PERIPH_MCPWM1_MODULE:
     case PERIPH_TWAI0_MODULE:
     case PERIPH_TWAI1_MODULE:
     case PERIPH_TWAI2_MODULE:
     case PERIPH_LEDC_MODULE:
-    case PERIPH_PCNT_MODULE:
     case PERIPH_PARLIO_MODULE:
     case PERIPH_I2S0_MODULE:
         return HP_SYS_CLKRST_HP_RST_EN1_REG;

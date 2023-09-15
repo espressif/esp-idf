@@ -111,6 +111,10 @@ The :cpp:func:`mcpwm_new_comparator` will return a pointer to the allocated comp
 
 On the contrary, calling the :cpp:func:`mcpwm_del_comparator` function will free the allocated comparator object.
 
+.. only:: SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+
+    There's another kind of comparator called "Event Comparator", which **can not** control the final PWM directly but only generates the ETM events at a configurable time stamp. You can allocate an event comparator by calling the :cpp:func:`mcpwm_new_event_comparator` function. This function will return the same handle type as :cpp:func:`mcpwm_new_comparator`, but with a different configuration structure :cpp:type:`mcpwm_event_comparator_config_t`. For more information, please refer to :ref:`mcpwm-etm-event-and-task`.
+
 MCPWM Generators
 ~~~~~~~~~~~~~~~~
 
@@ -278,6 +282,12 @@ The callback function provides event-specific data of type :cpp:type:`mcpwm_comp
 The parameter ``user_data`` of :cpp:func:`mcpwm_comparator_register_event_callbacks` function is used to save your own context. It is passed to the callback function directly.
 
 This function will lazy the installation of interrupt service for the MCPWM comparator, whereas the service can only be removed in :cpp:type:`mcpwm_del_comparator`.
+
+.. only:: SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+
+    .. note::
+
+        It is not supported to register event callbacks for an **Event Comparator** because it can not generate any interrupt.
 
 Set Compare Value
 ~~~~~~~~~~~~~~~~~
@@ -1026,6 +1036,7 @@ API Reference
 .. include-build-file:: inc/mcpwm_fault.inc
 .. include-build-file:: inc/mcpwm_sync.inc
 .. include-build-file:: inc/mcpwm_cap.inc
+.. include-build-file:: inc/mcpwm_etm.inc
 .. include-build-file:: inc/components/driver/mcpwm/include/driver/mcpwm_types.inc
 .. include-build-file:: inc/components/hal/include/hal/mcpwm_types.inc
 

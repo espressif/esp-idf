@@ -27,7 +27,7 @@ PCNT 的功能从以下几个方面进行说明：
     - :ref:`pcnt-watch-points` - 说明如何配置观察点，即当计数达到某个数值时，命令 PCNT 单元触发某个事件。
     - :ref:`pcnt-register-event-callbacks` - 说明如何将您的代码挂载到观察点事件的回调函数上。
     - :ref:`pcnt-set-glitch-filter` - 说明如何使能毛刺滤波器并设置其时序参数。
-    :SOC_PCNT_SUPPORT_CLEAR_SIGNAL: - :ref:`pcnt-set-clear-signal` - 说明如何使能清零信号并设置其参数。
+    :SOC_PCNT_SUPPORT_CLEAR_SIGNAL: - :ref:`pcnt-set-clear-signal` - 说明如何使能外部清零信号并设置其参数。
     - :ref:`pcnt-enable-disable-unit` - 说明如何使能和关闭 PCNT 单元。
     - :ref:`pcnt-unit-io-control` - 说明 PCNT 单元的 IO 控制功能，例如使能毛刺滤波器，开启和停用 PCNT 单元，获取和清除计数。
     - :ref:`pcnt-power-management` - 说明哪些功能会阻止芯片进入低功耗模式。
@@ -205,16 +205,16 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
     .. _pcnt-set-clear-signal:
 
-    设置清零信号
+    使用外部清零信号
     ^^^^^^^^^^^^^^^^
 
     PCNT 单元的可以接收来自 GPIO 的清零信号，:cpp:type:`pcnt_clear_signal_config_t` 中列出了清零信号的配置参数：
 
-        -  :cpp:member:`pcnt_clear_signal_config_t::zero_input_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高，使能下拉输入。
-        -  :cpp:member:`pcnt_clear_signal_config_t::invert_zero_input` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。翻转时使能上拉输入。
-        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过调用位于同一 GPIO 上的函数 :cpp:func:`gpio_set_level` 来模拟脉冲清零信号。
+        -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高，使能下拉输入。
+        -  :cpp:member:`pcnt_clear_signal_config_t::invert_clear_signal` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。驱动会使能上拉输入，以确保信号在未连接时保持高电平。
+        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` 仅用于调试，它可以使能 GPIO 的输入和输出路径。这样，就可以通过 :cpp:func:`gpio_set_level` 函数来模拟外部输入的清零信号。
 
-    该信号作用与调用 :cpp:func:`pcnt_unit_clear_count` 相同，但不受软件延迟的限制，适用于对延迟要求较高的场合。
+    该输入信号的作用与调用 :cpp:func:`pcnt_unit_clear_count` 函数相同，但它不受软件延迟的限制，更适用于需要低延迟的场合。请注意，该信号的翻转频率不能太高。
 
     .. code:: c
 
