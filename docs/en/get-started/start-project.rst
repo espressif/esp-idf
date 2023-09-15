@@ -360,7 +360,7 @@ When flashing, you will see the output log similar to the following:
         Leaving...
         Hard resetting via RTS pin...
 
-If there are no issues by the end of the flash process, the board will reboot and start up the “hello_world” application.
+If there are no issues by the end of the flash process, the board will reboot and start up the "hello_world" application.
 
 If you would like to use the Eclipse or VS Code IDE instead of running ``idf.py``, check out `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_, `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_.
 
@@ -447,12 +447,12 @@ Now you are ready to try some other :idf:`examples`, or go straight to developin
 Additional Tips
 ===============
 
-Permission issues /dev/ttyUSB0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Permission Issues ``/dev/ttyUSB0``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-With some Linux distributions, you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the {IDF_TARGET_NAME}. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
+With some Linux distributions, you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the {IDF_TARGET_NAME}. :ref:`This can be solved by adding the current user to the dialout group <linux-dialout-group>`.
 
-Python compatibility
+Python Compatibility
 ~~~~~~~~~~~~~~~~~~~~
 
 ESP-IDF supports Python 3.8 or newer. It is recommended to upgrade your operating system to a recent version satisfying this requirement. Other options include the installation of Python from `sources <https://www.python.org/downloads/>`_ or the use of a Python version management system such as `pyenv <https://github.com/pyenv/pyenv>`_.

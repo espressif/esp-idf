@@ -37,7 +37,7 @@ To re-enable the entropy source temporarily during app startup, or for an applic
     Secondary Entropy
     -----------------
 
-    {IDF_TARGET_NAME} RNG contains a secondary entropy source, based on sampling an asynchronous 8MHz internal oscillator (see the Technical Reference Manual for details). This entropy source is always enabled in ESP-IDF and continuously mixed into the RNG state by hardware. In testing, this secondary entropy source was sufficient to pass the `Dieharder`_ random number test suite without the main entropy source enabled (test input was created by concatenating short samples from a continuously resetting {IDF_TARGET_NAME}). However, it is currently only guaranteed that true random numbers are produced when the main entropy source is also enabled as described above.
+    {IDF_TARGET_NAME} RNG contains a secondary entropy source, based on sampling an asynchronous 8 MHz internal oscillator (see the Technical Reference Manual for details). This entropy source is always enabled in ESP-IDF and continuously mixed into the RNG state by hardware. In testing, this secondary entropy source was sufficient to pass the `Dieharder`_ random number test suite without the main entropy source enabled (test input was created by concatenating short samples from a continuously resetting {IDF_TARGET_NAME}). However, it is currently only guaranteed that true random numbers are produced when the main entropy source is also enabled as described above.
 
 API Reference
 -------------
@@ -45,8 +45,8 @@ API Reference
 .. include-build-file:: inc/esp_random.inc
 .. include-build-file:: inc/bootloader_random.inc
 
-Getrandom
----------
+``getrandom()``
+---------------
 
 A compatible version of the Linux ``getrandom()`` function is also provided for ease of porting:
 
@@ -62,8 +62,8 @@ The ``flags`` argument is ignored, this function is always non-blocking but the 
 
 Return value is -1 (with ``errno`` set to ``EFAULT``) if the ``buf`` argument is NULL, and equal to ``buflen`` otherwise.
 
-getentropy
-----------
+``getentropy()``
+----------------
 
 A compatible version of the Linux ``getentropy()`` function is also provided for ease of porting:
 

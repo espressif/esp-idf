@@ -45,7 +45,7 @@ The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the sta
 
 1. SDIO reset
 
-    CMD52 (Write 0x6=0x8)
+    CMD52 (Write 0x6 = 0x8)
 
 2. SD reset
 
@@ -63,9 +63,9 @@ The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the sta
 
     **Example:**
 
-        Arg of R4 after first CMD5 (arg=0x00000000) is 0xXXFFFF00.
+        Arg of R4 after first CMD5 (arg = 0x00000000) is 0xXXFFFF00.
 
-        Keep sending CMD5 with arg=0x00FFFF00 until the R4 shows card ready (arg bit 31=1).
+        Keep sending CMD5 with arg = 0x00FFFF00 until the R4 shows card ready (arg bit 31 = 1).
 
 5. Set address
 
@@ -83,35 +83,35 @@ The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the sta
 
 7. Select 4-bit mode (optional)
 
-    CMD52 (Write 0x07=0x02)
+    CMD52 (Write 0x07 = 0x02)
 
 8. Enable func1
 
-    CMD52 (Write 0x02=0x02)
+    CMD52 (Write 0x02 = 0x02)
 
 9. Enable SDIO interrupt (required if interrupt line (DAT1) is used)
 
-    CMD52 (Write 0x04=0x03)
+    CMD52 (Write 0x04 = 0x03)
 
 10. Set Func0 blocksize (optional, default value is 512 (0x200))
 
-     CMD52/53 (Read 0x10~0x11)
+     CMD52/53 (Read 0x10 ~ 0x11)
 
-     CMD52/53 (Write 0x10=0x00)
+     CMD52/53 (Write 0x10 = 0x00)
 
-     CMD52/53 (Write 0x11=0x02)
+     CMD52/53 (Write 0x11 = 0x02)
 
-     CMD52/53 (Read 0x10~0x11, read to check the final value)
+     CMD52/53 (Read 0x10 ~ 0x11, read to check the final value)
 
 11. Set Func1 blocksize (optional, default value is 512 (0x200))
 
-     CMD52/53 (Read 0x110~0x111)
+     CMD52/53 (Read 0x110 ~ 0x111)
 
-     CMD52/53 (Write 0x110=0x00)
+     CMD52/53 (Write 0x110 = 0x00)
 
-     CMD52/53 (Write 0x111=0x02)
+     CMD52/53 (Write 0x111 = 0x02)
 
-     CMD52/53 (Read 0x110~0x111, read to check the final value)
+     CMD52/53 (Read 0x110 ~ 0x111, read to check the final value)
 
 
 .. _esp_slave_protocol_layer:
@@ -177,8 +177,8 @@ The slave responds to data that has a length equal to the length field of CMD53.
 
     In order to achieve higher efficiency when accessing the FIFO by an arbitrary length, the block and byte modes of CMD53 can be used in combination. For example, given that the block size is set to 512 by default, you can write or get 1031 bytes of data from the FIFO by doing the following:
 
-    1. Send CMD53 in block mode, block count = 2 (1024 bytes) to address 0x1F3F9=0x1F800-**1031**.
-    2. Then send CMD53 in byte mode, byte count = 8 (or 7 if your controller supports that) to address 0x1F7F9=0x1F800-**7**.
+    1. Send CMD53 in block mode, block count = 2 (1024 bytes) to address 0x1F3F9 = 0x1F800 - **1031**.
+    2. Then send CMD53 in byte mode, byte count = 8 (or 7 if your controller supports that) to address 0x1F7F9 = 0x1F800 - **7**.
 
 .. _esp_sdio_slave_interrupts:
 

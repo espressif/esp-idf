@@ -3,7 +3,7 @@
 VisualGDB
 #########
 
-What is VisualGDB?
+What Is VisualGDB?
 ~~~~~~~~~~~~~~~~~~
 
 `VisualGDB <https://visualgdb.com/>`__ is a powerful extension for Microsoft Visual Studio that provides advanced development tools and features for embedded systems, including support for the ESP-IDF framework. VisualGDB allows you to leverage the familiar and feature-rich Visual Studio environment for your ESP-IDF projects, enabling efficient coding, debugging, and deployment.

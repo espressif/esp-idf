@@ -11,7 +11,7 @@ PlatformIO
 .. contents::
     :local:
 
-What is PlatformIO?
+What Is PlatformIO?
 ~~~~~~~~~~~~~~~~~~~
 
 `PlatformIO <https://platformio.org/?utm_source=docs.espressif.com>`__

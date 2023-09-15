@@ -18,8 +18,8 @@ Application developers can open a terminal-based project configuration menu with
 
 After being updated, this configuration is saved in the ``sdkconfig`` file under the project root directory. Based on ``sdkconfig``, application build targets will generate the ``sdkconfig.h`` file under the build directory, and will make the ``sdkconfig`` options available to the project build system and source files.
 
-Using sdkconfig.defaults
-========================
+Using ``sdkconfig.defaults``
+============================
 
 In some cases, for example, when the ``sdkconfig`` file is under revision control, it may be inconvenient for the build system to change the ``sdkconfig`` file. The build system offers a solution to prevent it from happening, which is to create the ``sdkconfig.defaults`` file. This file is never touched by the build system, and can be created manually or automatically. It contains all the options which matter to the given application and are different from the default ones. The format is the same as that of the ``sdkconfig`` file. ``sdkconfig.defaults`` can be created manually when one remembers all the changed configuration, or it can be generated automatically by running the ``idf.py save-defconfig`` command.
 

@@ -36,14 +36,14 @@ The easiest way to install ESP-IDF's prerequisites is to download one of ESP-IDF
 .. _Windows Installer Download: https://dl.espressif.com/dl/esp-idf/?idf=4.4
 
 
-What is the usecase for Online and Offline Installer
+What Is the Usecase for Online and Offline Installer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Online Installer is very small and allows the installation of all available releases of ESP-IDF. The installer downloads only necessary dependencies including `Git For Windows`_  during the installation process. The installer stores downloaded files in the cache directory ``%userprofile%\.espressif``
 
 Offline Installer does not require any network connection. The installer contains all required dependencies including `Git For Windows`_ .
 
-Components of the installation
+Components of the Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The installer deploys the following components:

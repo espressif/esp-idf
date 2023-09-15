@@ -171,7 +171,7 @@ However, unlike interrupt transactions, isochronous transactions are not retried
 
 Thus, isochronous transfers in Host Mode Scatter/Gather DMA have the following peculiarities:
 
-- A QTD must be allocated for each (micro) frame. However, non-service service period QTDs should be left blank (i.e., only ever Nth QTD should be filled if the channel's service period is every Nth (micro)frame).
+- A QTD must be allocated for each (micro)frame. However, non-service service period QTDs should be left blank (i.e., only ever Nth QTD should be filled if the channel's service period is every Nth (micro)frame).
 - **Each filled QTD must represent a single transaction instead of a transfer**.
 - Because isochronous transactions are not retried on failure, the status each completed QTD must be checked.
 

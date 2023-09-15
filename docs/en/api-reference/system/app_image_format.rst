@@ -90,8 +90,8 @@ Application Description
 The ``DROM`` segment of the application binary starts with the :cpp:type:`esp_app_desc_t` structure which carries specific fields describing the application:
 
  * ``magic_word`` - the magic word for the esp_app_desc structure.
- * ``secure_version`` - see :doc:`Anti-rollback</api-reference/system/ota>`.
- * ``version`` - see :doc:`App version</api-reference/system/misc_system_api>`. ``*``
+ * ``secure_version`` - see :doc:`Anti-rollback </api-reference/system/ota>`.
+ * ``version`` - see :doc:`App version </api-reference/system/misc_system_api>`. ``*``
  * ``project_name`` is filled from ``PROJECT_NAME``. ``*``
  * ``time`` and ``date`` - compile time and date.
  * ``idf_ver`` - version of ESP-IDF. ``*``

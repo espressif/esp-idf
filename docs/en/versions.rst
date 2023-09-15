@@ -106,7 +106,7 @@ During the Service period, bugfixes releases are more frequent. In some cases, s
 
 During the Maintenance period, the version is still supported but only bugfixes for high severity issues or security issues will be applied.
 
-Using an “In Service” version is recommended when starting a new project.
+Using an "In Service" version is recommended when starting a new project.
 
 Users are encouraged to upgrade all projects to a newer ESP-IDF release before the support period finishes and the release becomes End of Life (EOL). It is our policy to not continue fixing bugs in End of Life releases.
 
@@ -127,7 +127,7 @@ The local ESP-IDF version can be checked by using idf.py::
 
 The ESP-IDF version is also compiled into the firmware and can be accessed (as a string) via the macro ``IDF_VER``. The default ESP-IDF bootloader will print the version on boot (the version information is not always updated if the code in the GitHub repo is updated, it only changes if there is a clean build or if that particular source file is recompiled).
 
-If writing code that needs to support multiple ESP-IDF versions, the version can be checked at compile time using :ref:`compile-time macros<idf-version-h>`.
+If writing code that needs to support multiple ESP-IDF versions, the version can be checked at compile time using :ref:`compile-time macros <idf-version-h>`.
 
 Examples of ESP-IDF versions:
 
@@ -160,7 +160,7 @@ The development (Git) workflow of the Espressif ESP-IDF team is as follows:
 - Once testing is nearly complete a new release candidate is tagged on the release branch, for example ``v3.1-rc1``. This is still a pre-release version.
 - If no more significant bugs are found or reported, then the final Major or Minor Version is tagged, for example ``v3.1``. This version appears on the `Releases page`_.
 - As bugs are reported in released versions, the fixes will continue to be committed to the same release branch.
-- Regular bugfix releases are made from the same release branch. After manual testing is complete, a bugfix release is tagged (i.e. ``v3.1.1``) and appears on the `Releases page`_.
+- Regular bugfix releases are made from the same release branch. After manual testing is complete, a bugfix release is tagged (i.e., ``v3.1.1``) and appears on the `Releases page`_.
 
 
 .. _updating:
