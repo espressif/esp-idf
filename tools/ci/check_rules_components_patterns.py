@@ -8,6 +8,8 @@ Check patterns-build_components including all components files except 'test*/'
 
 import glob
 import os
+import subprocess
+from functools import lru_cache
 from typing import List, Set
 
 import yaml
@@ -16,17 +18,28 @@ from idf_ci_utils import IDF_PATH
 RULES_FILE = os.path.join(IDF_PATH, '.gitlab', 'ci', 'rules.yml')
 
 
+@lru_cache(1)
+def get_component_git_files() -> Set[str]:
+    output = subprocess.check_output(['git', 'ls-files', 'components/'], cwd=IDF_PATH).decode()
+    component_git_files = set((_l.strip() for _l in output.strip().splitlines()))
+    assert component_git_files, 'Can not list git files'
+    return component_git_files
+
+
 def get_component_files_from_patterns(patterns: List[str]) -> Set[str]:
     files: Set[str] = set()
     for pattern in patterns:
+        # NOTE: version 3.11: Added the include_hidden parameter.
         # NOTE: version 3.10: Added the root_dir and dir_fd parameters.
-        files = files | set(glob.iglob(pattern, recursive=True))
+        try:
+            _files = set(glob.iglob(pattern, root_dir=IDF_PATH, recursive=True, include_hidden=True))  # type: ignore
+        except TypeError:
+            _files = set(glob.iglob(pattern, recursive=True))
+        files = files | _files
+
+    # ignore files not in git repo
+    files &= get_component_git_files()
     return files
-
-
-def get_components_submodule_files(submodules: List[str]) -> Set[str]:
-    patterns = [f'{submodule}/**/*' for submodule in submodules]
-    return get_component_files_from_patterns(patterns)
 
 
 def get_components_test_files() -> Set[str]:
@@ -62,18 +75,9 @@ def main() -> None:
         patterns_components = [f'{p}/**/*' if p in submodules else p for p in patterns_components]
 
     # get different components files
-    submodule_files = get_components_submodule_files(submodules)
     rules_files = get_component_files_from_patterns(patterns_components)
-
-    # first check submodules in rules_files
-    if check_submodule_res := submodule_files.difference(rules_files):
-        # only show one file in the failure message
-        print(f'Found submodule should in .patterns-build_components but not: {check_submodule_res.pop()}')
-        exit(1)
-
-    rules_files = rules_files.difference(submodule_files)
-    components_test_files = get_components_test_files().difference(submodule_files)
-    components_build_files = get_all_components_files().difference(submodule_files).difference(components_test_files)
+    components_test_files = get_components_test_files()
+    components_build_files = get_all_components_files().difference(components_test_files)
 
     if check_test_files := components_test_files & rules_files:
         # rules should not include test files
