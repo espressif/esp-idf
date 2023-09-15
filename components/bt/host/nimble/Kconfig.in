@@ -424,7 +424,7 @@ config BT_NIMBLE_HS_STOP_TIMEOUT_MS
 config BT_NIMBLE_HOST_BASED_PRIVACY
     bool "Enable host based privacy for random address."
     default n
-    depends on BT_NIMBLE_ENABLED && !IDF_TARGET_ESP32
+    depends on BT_NIMBLE_ENABLED && IDF_TARGET_ESP32
     help
         Use this option to do host based Random Private Address resolution.
         If this option is disabled then controller based privacy is used.
