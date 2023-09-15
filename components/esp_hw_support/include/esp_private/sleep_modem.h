@@ -178,6 +178,16 @@ esp_err_t sleep_modem_wifi_modem_state_init(void);
  * This function deinit wifi modem state.
  */
 void sleep_modem_wifi_modem_state_deinit(void);
+
+/**
+ * @brief Function to check Wi-Fi modem state to skip light sleep.
+ *
+ * This function is to check if light sleep should skip by Wi-Fi modem state .
+  * @return
+  *   - true skip light sleep
+  *   - false not skip light sleep
+ */
+bool sleep_modem_wifi_modem_state_skip_light_sleep(void);
 #endif
 
 #ifdef __cplusplus
