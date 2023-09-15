@@ -111,11 +111,11 @@
   - "examples/openthread/**/*"
 
 .patterns-target_test-wifi: &patterns-target_test-wifi
-  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/???[!t]*/**/*"
-  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/??[!s]?*/**/*"
-  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/???/**/*"
-  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/??/**/*"
-  - "components/{esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/*"
+  - "components/{esp_wifi,esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/???[!t]*/**/*"
+  - "components/{esp_wifi,esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/??[!s]?*/**/*"
+  - "components/{esp_wifi,esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/???/**/*"
+  - "components/{esp_wifi,esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/??/**/*"
+  - "components/{esp_wifi,esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/*"
 
 .patterns-component_ut-wifi: &patterns-component_ut-wifi
   - "components/esp_wifi/**/*"
