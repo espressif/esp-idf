@@ -4143,8 +4143,9 @@ static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
     .struct_model_op_size                           = sizeof(struct bt_mesh_model_op),
     .struct_model_op_off_min_len                    = offsetof(struct bt_mesh_model_op, min_len),
     .struct_model_op_off_func                       = offsetof(struct bt_mesh_model_op, func),
-#if 0
+
     .struct_model_cb_size                           = sizeof(struct bt_mesh_model_cb),
+#if CONFIG_BLE_MESH_DEINIT
     .struct_model_cb_off_deinit                     = offsetof(struct bt_mesh_model_cb, deinit),
 #endif
     .struct_send_cb_size                            = sizeof(struct bt_mesh_send_cb),

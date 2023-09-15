@@ -1132,7 +1132,10 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
         bt_mesh_net_local();
 
         err = 0;
-        goto done;
+        /* If it is a group address, it still needs to be relayed */
+        if (BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+            goto done;
+        }
     }
 
     if ((bearer & BLE_MESH_ADV_BEARER) &&

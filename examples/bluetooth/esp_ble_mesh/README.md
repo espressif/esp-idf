@@ -8,7 +8,7 @@ Note: To use examples in this directory, you need to have Bluetooth enabled in c
 
 # Example Layout
 
-This directory includes examples to demonstrate ESP-BLE-MESH functionality based on [Zephyr Bluetooth Mesh stack](https://github.com/zephyrproject-rtos/zephyr/tree/master/subsys/bluetooth/mesh).
+This directory includes some examples to demonstrate ESP-BLE-MESH functionality based on [Zephyr Bluetooth Mesh stack](https://github.com/zephyrproject-rtos/zephyr/tree/master/subsys/bluetooth/mesh).
 
 ## fast_provisioning
 
@@ -71,6 +71,44 @@ See [vendor_server](vendor_models/vendor_server) folder for more details.
 This example shows how ESP32 acts as a BLE Mesh Fast Provisioning Server and coexists with Wi-Fi iperf functionality.
 
 See [wifi_coexist](wifi_coexist) folder for more details.
+
+## directed_forwarding (v1.1)
+
+This example shows how the ESP32 acts as a Directed Forwarding node to establish paths and directed forwarding messages.
+
+### df_client
+
+This example shows how ESP32 acts as a BLE Mesh Provisioner with a Directed Forwarding Client model in the Primary Element.
+
+See [df_client](directed_forwarding/df_client) folder for more details.
+
+### df_server
+
+This example shows how ESP32 acts as a BLE Mesh Node with a Directed Forwarding Server model in the Primary Element.
+
+See [df_server](directed_forwarding/df_server) folder for more details.
+
+## remote_provisioning (v1.1)
+
+This example shows how the ESP32 acts as an Remote Provisioning Server assistant provisioner to provisioning devices out of single-hop.
+
+### rpr_client
+
+This example shows how ESP32 acts as a BLE Mesh Provisioner with a Remote Provisioning Client model in the Primary Element.
+
+See [rpr_client](remote_provisioning/rpr_client) folder for more details.
+
+### rpr_server
+
+This example shows how ESP32 acts as a BLE Mesh Node with a Remote Provisioning Server model in the Primary Element.
+
+See [rpr_server](remote_provisioning/rpr_server) folder for more details.
+
+### unprov_dev
+
+This example shows how ESP32 acts as an unprovisioning device.
+
+See [unprov_dev](remote_provisioning/unprov_dev) folder for more details.
 
 # More
 

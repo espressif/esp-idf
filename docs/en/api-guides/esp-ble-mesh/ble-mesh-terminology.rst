@@ -229,10 +229,10 @@ ESP-BLE-MESH Terminology
   * - Mesh Private Beacon Client model
     - The model is used to support the functionality of a node that can configure the Mesh Private beacons functionality of another node.
     - The Mesh Private Beacon Client model is a root model and a main model that does not extend any other models. The Mesh Private Beacon Client model may operate on states defined by the Mesh Private Beacon Server model using Mesh Private Beacon messages.
-  * - On-Demend Private Proxy Server model
+  * - On-Demand Private Proxy Server model
     - The model is used to support the configuration of the advertising with Private Network Identity type functionality of a node.
     - The On-Demand Private Proxy Server model is a main model that extends the Mesh Private Beacon Server model and corresponds with the Solicitation PDU RPL Configuration Server model.
-  * - On-Demend Private Proxy Client model
+  * - On-Demand Private Proxy Client model
     - The model is used to support the functionality of a node that can configure the advertising with Private Network Identity type functionality of another node.
     - The On-Demand Private Proxy Client model is a root model and a main model that does not extend any other models. The On-Demand Private Proxy Client model may operate on states defined by the On-Demand Private Proxy Server model using On-Demand Private Proxy messages.
   * - SAR Configuration Server model
@@ -273,7 +273,7 @@ ESP-BLE-MESH Terminology
   * - Key Refresh procedure
     - This procedure is used when the security of one or more network keys and/or one or more of the application keys has been compromised or could be compromised.
     - Key Refresh Procedure is used to update network key and application key of ESP-BLE-MESH network. Key Refresh Procedure is used when the security of one or more network keys and/or one or more application keys is threatened or potentially threatened. Keys are usually updated after some nodes in the network are removed.
-  * - IV (Initialisation Vector) Update Procedure
+  * - IV (Initialization Vector) Update Procedure
     - A node can also use an IV Update procedure to signal to peer nodes that it is updating the IV Index.
     - The IV Update procedure is used to update the value of ESP-BLE-MESH network's IV Index. This value is related to the random number required for message encryption. To ensure that the value of the random number is not repeated, this value is periodically incremented. IV Index is a 32-bit value and a shared network resource. For example, all nodes in a mesh network share the same IV Index value. Starting from 0x00000000, the IV Index increments during the IV Update procedure and maintained by a specific process, ensuring the IV Index shared in the mesh network is the same. This can be done when the node believes that it has the risk of exhausting its sequence number, or when it determines that another node is nearly exhausting its sequence number. Note: The update time must not be less than 96 hours. It can be triggered when a secure network beacon is received, or when the node determines that its sequence number is greater than a certain value.
 

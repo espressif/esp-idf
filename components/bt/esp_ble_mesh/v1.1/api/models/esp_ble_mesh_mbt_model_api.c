@@ -20,7 +20,7 @@ extern int bt_mesh_get_transfer_progress(void *model, uint16_t unicast_addr,
                                          uint8_t *block_percent, uint8_t *chunk_percent);
 extern int bt_mesh_get_blob_reception_progress(void *model, uint8_t *reception_progress);
 
-esp_err_t esp_ble_mesh_register_blob_transfer_client_callback(esp_ble_mesh_mbt_client_cb_t callback)
+esp_err_t esp_ble_mesh_register_mbt_client_callback(esp_ble_mesh_mbt_client_cb_t callback)
 {
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 

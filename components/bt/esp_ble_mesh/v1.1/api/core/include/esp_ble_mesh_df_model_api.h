@@ -624,7 +624,7 @@ typedef enum {
 
 /** Parameters of directed forwarding table entry change */
 typedef struct {
-    esp_ble_mesh_df_table_action_t action;              /*!< Action of directed forarding table */
+    esp_ble_mesh_df_table_action_t action;              /*!< Action of directed forwarding table */
     /** Union of directed forwarding table information */
     union {
         /** Structure of directed forwarding table add and remove */
@@ -633,7 +633,7 @@ typedef struct {
             esp_ble_mesh_uar_t path_target;             /*!< Primary element address of the Path Target */
 
             esp_ble_mesh_uar_t *dep_origin_data;        /*!< List of the primary element addresses of the dependent nodes of the Path Origin */
-            uint32_t dep_origin_num;                    /*!< Number of entries in the Dependent_Origin_Listfield of the message */
+            uint32_t dep_origin_num;                    /*!< Number of entries in the Dependent_Origin_List field of the message */
 
             esp_ble_mesh_uar_t *dep_target_data;        /*!< List of the primary element addresses of the dependent nodes of the Path Target */
             uint32_t dep_target_num;                    /*!< Number of entries in the Dependent_Target_List field of the message */

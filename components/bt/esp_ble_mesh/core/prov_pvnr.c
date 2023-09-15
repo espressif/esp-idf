@@ -368,7 +368,9 @@ static int provisioner_start_prov_pb_adv(const uint8_t uuid[16], const bt_mesh_a
     }
 
     for (i = 0; i < CONFIG_BLE_MESH_PBA_SAME_TIME; i++) {
-        if (!bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_ACTIVE)) {
+        if (!bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_ACTIVE) &&
+            !bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_CLOSING)
+            ) {
             memcpy(prov_links[i].uuid, uuid, 16);
             prov_links[i].oob_info = oob_info;
             if (addr) {
@@ -1177,9 +1179,9 @@ static void prov_capabilities(struct bt_mesh_prov_link *link,
 
     algorithms = net_buf_simple_pull_be16(buf);
     BT_INFO("Algorithms:        0x%04x", algorithms);
-    if (algorithms != BIT(PROV_ALG_P256_CMAC_AES128)
+    if (!(algorithms & BIT(PROV_ALG_P256_CMAC_AES128))
 #if CONFIG_BLE_MESH_PROV_EPA
-    &&  algorithms != BIT(PROV_ALG_P256_HMAC_SHA256)
+    && !(algorithms & BIT(PROV_ALG_P256_HMAC_SHA256))
 #endif
         ) {
         BT_ERR("Invalid algorithms 0x%04x", algorithms);
