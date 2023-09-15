@@ -233,7 +233,7 @@ void IRAM_ATTR call_start_cpu1(void)
 #endif
 
     s_cpu_up[1] = true;
-    ESP_EARLY_LOGI(TAG, "App cpu up.");
+    ESP_EARLY_LOGD(TAG, "App cpu up");
 
     // Clear interrupt matrix for APP CPU core
     core_intr_matrix_clear();
@@ -271,7 +271,7 @@ static void start_other_core(void)
         abort();
     }
 
-    ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
+    ESP_EARLY_LOGD(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
 #if CONFIG_IDF_TARGET_ESP32 && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     Cache_Flush(1);
@@ -315,7 +315,6 @@ static void start_other_core(void)
         for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
             cpus_up &= s_cpu_up[i];
         }
-        //TODO: IDF-7891, check mixing logs
         esp_rom_delay_us(100);
     }
 }
@@ -571,7 +570,7 @@ void IRAM_ATTR call_start_cpu0(void)
     s_cpu_up[0] = true;
 #endif
 
-    ESP_EARLY_LOGI(TAG, "Pro cpu up.");
+    ESP_EARLY_LOGD(TAG, "Pro cpu up");
 
 #if SOC_CPU_CORES_NUM > 1 // there is no 'single-core mode' for natively single-core processors
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
