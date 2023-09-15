@@ -36,7 +36,6 @@ static const char *TAG = "transport_ws";
 #define WS_MASK                     0x80
 #define WS_SIZE16                   126
 #define WS_SIZE64                   127
-#define MAX_WEBSOCKET_HEADER_SIZE   16
 #define WS_RESPONSE_OK              101
 #define WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN 125
 
@@ -366,6 +365,92 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
     return ret;
 }
 
+// This method is similar to _ws_write() but it assumes, that the first 16 bytes of the buffer should not be sent and
+// should rather be used for the required websocket header itself. This is done to have a single TCP packet for header
+// and payload and to avoid copying and allocating additional resources. The first 16 bytes should not be initialized
+// in any specific way, and the return value (length) will also include the 16 byte extra buffer.
+static int _ws_write_optimized(esp_transport_handle_t t, int opcode, int mask_flag, const char *b, int len, int timeout_ms)
+{
+    assert(len >= MAX_WEBSOCKET_HEADER_SIZE);
+
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    char *buffer = (char *)b;
+    char *ws_header;
+//    char *mask;
+    int header_len = 0; //, i;
+
+    int poll_write;
+    if ((poll_write = esp_transport_poll_write(ws->parent, timeout_ms)) <= 0) {
+        ESP_LOGE(TAG, "Error transport_poll_write");
+        return poll_write;
+    }
+
+    int len2 = len - MAX_WEBSOCKET_HEADER_SIZE;
+    if (len2 <= 125) {
+        ws_header = buffer+MAX_WEBSOCKET_HEADER_SIZE-2-4;
+        ws_header[header_len++] = opcode;
+        ws_header[header_len++] = (uint8_t)(len2 | mask_flag);
+    } else if (len2 < 65536) {
+        ws_header = buffer+MAX_WEBSOCKET_HEADER_SIZE-4-4;
+        ws_header[header_len++] = opcode;
+        ws_header[header_len++] = WS_SIZE16 | mask_flag;
+        ws_header[header_len++] = (uint8_t)(len2 >> 8);
+        ws_header[header_len++] = (uint8_t)(len2 & 0xFF);
+    } else {
+        ws_header = buffer+MAX_WEBSOCKET_HEADER_SIZE-10-4;
+        ws_header[header_len++] = opcode;
+        ws_header[header_len++] = WS_SIZE64 | mask_flag;
+        /* Support maximum 4 bytes length */
+        ws_header[header_len++] = 0; //(uint8_t)((len >> 56) & 0xFF);
+        ws_header[header_len++] = 0; //(uint8_t)((len >> 48) & 0xFF);
+        ws_header[header_len++] = 0; //(uint8_t)((len >> 40) & 0xFF);
+        ws_header[header_len++] = 0; //(uint8_t)((len >> 32) & 0xFF);
+        ws_header[header_len++] = (uint8_t)((len2 >> 24) & 0xFF);
+        ws_header[header_len++] = (uint8_t)((len2 >> 16) & 0xFF);
+        ws_header[header_len++] = (uint8_t)((len2 >> 8) & 0xFF);
+        ws_header[header_len++] = (uint8_t)((len2 >> 0) & 0xFF);
+    }
+
+    if (mask_flag) {
+        ws_header[header_len++] = 0;
+        ws_header[header_len++] = 0;
+        ws_header[header_len++] = 0;
+        ws_header[header_len++] = 0;
+//        mask = &ws_header[header_len];
+//        mask = 0;
+//        ssize_t rc;
+//        if ((rc = getrandom(ws_header + header_len, 4, 0)) < 0) {
+//            ESP_LOGD(TAG, "getrandom() returned %zd", rc);
+//            return -1;
+//        }
+//        header_len += 4;
+
+//        for (i = MAX_WEBSOCKET_HEADER_SIZE; i < len; ++i) {
+//            buffer[i] = (buffer[i] ^ mask[i % 4]);
+//        }
+    }
+
+//    if (esp_transport_write(ws->parent, ws_header, len - MAX_WEBSOCKET_HEADER_SIZE + header_len, timeout_ms) != header_len) {
+//        ESP_LOGE(TAG, "Error write header");
+//        return -1;
+//    }
+//    if (len == 0) {
+//        return 0;
+//    }
+
+    int ret = esp_transport_write(ws->parent, ws_header, len - MAX_WEBSOCKET_HEADER_SIZE + header_len, timeout_ms);
+    ESP_LOGI(TAG, "len=%d header_len=%d total_size=%d sent=%d", len, header_len, len - MAX_WEBSOCKET_HEADER_SIZE + header_len, ret);
+    // in case of masked transport we have to revert back to the original data, as ws layer
+    // does not create its own copy of data to be sent
+    if (mask_flag) {
+//        mask = &ws_header[header_len - 4];
+//        for (i = 0; i < len; ++i) {
+//            buffer[i] = (buffer[i] ^ mask[i % 4]);
+//        }
+    }
+    return ret + (ws_header - buffer);
+}
+
 int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t opcode, const char *b, int len, int timeout_ms)
 {
     uint8_t op_code = ws_get_bin_opcode(opcode);
@@ -375,6 +460,17 @@ int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t o
     }
     ESP_LOGD(TAG, "Sending raw ws message with opcode %d", op_code);
     return _ws_write(t, op_code, WS_MASK, b, len, timeout_ms);
+}
+
+int esp_transport_ws_send_raw_optimized(esp_transport_handle_t t, ws_transport_opcodes_t opcode, const char *b, int len, int timeout_ms)
+{
+    uint8_t op_code = ws_get_bin_opcode(opcode);
+    if (t == NULL) {
+        ESP_LOGE(TAG, "Transport must be a valid ws handle");
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGD(TAG, "Sending raw ws message with opcode %d", op_code);
+    return _ws_write_optimized(t, op_code, WS_MASK, b, len, timeout_ms);
 }
 
 static int ws_write(esp_transport_handle_t t, const char *b, int len, int timeout_ms)

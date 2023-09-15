@@ -416,14 +416,14 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
     }
 
     /* Send off header */
-    if (sess->send_fn(hd, fd, (const char *)header_buf, tx_len, 0) < 0) {
+    if (sess->send_fn(hd, fd, (const char *)header_buf, tx_len, MSG_MORE) < 0) {
         ESP_LOGW(TAG, LOG_FMT("Failed to send WS header"));
         return ESP_FAIL;
     }
 
     /* Send off payload */
     if(frame->len > 0 && frame->payload != NULL) {
-        if (sess->send_fn(hd, fd, (const char *)frame->payload, frame->len, 0) < 0) {
+        if (sess->send_fn(hd, fd, (const char *)frame->payload, frame->len, MSG_MORE) < 0) {
             ESP_LOGW(TAG, LOG_FMT("Failed to send WS payload"));
             return ESP_FAIL;
         }
