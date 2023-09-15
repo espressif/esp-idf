@@ -222,10 +222,7 @@ static esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
     esp_err_t result = ESP_OK;
 
     periph_module_enable(PERIPH_AES_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_HMAC_MODULE);
-    periph_module_enable(PERIPH_RSA_MODULE);
 
     ets_ds_data_t *ds_data = (ets_ds_data_t *) data;
     const ets_ds_p_data_t *ds_plain_data = (const ets_ds_p_data_t *) p_data;
@@ -236,10 +233,7 @@ static esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
         result = ESP_ERR_INVALID_ARG;
     }
 
-    periph_module_disable(PERIPH_RSA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_DS_MODULE);
     periph_module_disable(PERIPH_AES_MODULE);
 
     return result;

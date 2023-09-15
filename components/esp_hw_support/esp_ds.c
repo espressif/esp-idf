@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -414,12 +414,12 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
 
     esp_err_t result = ESP_OK;
 
-    esp_crypto_ds_lock_acquire();
+    // The `esp_ds_encrypt_params` operation does not use the Digital Signature peripheral,
+    // but just the AES and SHA peripherals, so acquiring locks just for these peripherals
+    // would be enough rather than acquiring a lock for the Digital Signature peripheral.
+    esp_crypto_sha_aes_lock_acquire();
     periph_module_enable(PERIPH_AES_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_HMAC_MODULE);
-    periph_module_enable(PERIPH_RSA_MODULE);
 
     ets_ds_data_t *ds_data = (ets_ds_data_t *) data;
     const ets_ds_p_data_t *ds_plain_data = (const ets_ds_p_data_t *) p_data;
@@ -430,12 +430,9 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
         result = ESP_ERR_INVALID_ARG;
     }
 
-    periph_module_disable(PERIPH_RSA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_DS_MODULE);
     periph_module_disable(PERIPH_AES_MODULE);
-    esp_crypto_ds_lock_release();
+    esp_crypto_sha_aes_lock_release();
 
     return result;
 }
