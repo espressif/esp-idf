@@ -104,8 +104,6 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
     ESP_GOTO_ON_FALSE(tsens != NULL, ESP_ERR_NO_MEM, err, TAG, "no mem for temp sensor");
     tsens->clk_src = tsens_config->clk_src;
 
-    periph_module_enable(PERIPH_TEMPSENSOR_MODULE);
-    periph_module_reset(PERIPH_TEMPSENSOR_MODULE);
     ESP_GOTO_ON_ERROR(temperature_sensor_attribute_table_sort(), err, TAG, "Table sort failed");
     ESP_GOTO_ON_ERROR(temperature_sensor_choose_best_range(tsens, tsens_config), err, TAG, "Cannot select the correct range");
 
@@ -114,7 +112,6 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
              tsens->tsens_attribute->range_max,
              tsens->tsens_attribute->error_max);
 
-    regi2c_saradc_enable();
     temperature_sensor_ll_set_range(tsens->tsens_attribute->reg_val);
 
     tsens->fsm = TEMP_SENSOR_FSM_INIT;
@@ -134,7 +131,6 @@ esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens)
         free(s_tsens_attribute_copy);
     }
     s_tsens_attribute_copy = NULL;
-    regi2c_saradc_disable();
 
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     temperature_sensor_ll_enable_intr(false);
@@ -143,7 +139,6 @@ esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens)
     }
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 
-    periph_module_disable(PERIPH_TEMPSENSOR_MODULE);
     free(tsens);
     return ESP_OK;
 }
@@ -178,7 +173,6 @@ esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens)
     temperature_sensor_ll_sample_enable(true);
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 
-    temperature_sensor_ll_clk_enable(true);
     temperature_sensor_ll_clk_sel(tsens->clk_src);
     temperature_sensor_power_acquire();
     tsens->fsm = TEMP_SENSOR_FSM_ENABLE;
