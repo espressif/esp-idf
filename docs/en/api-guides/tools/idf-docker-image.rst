@@ -106,7 +106,7 @@ On host install and start ``esp_rfc2217_server``:
 
 Now the device attached to the host can be flashed from inside a Docker container by using::
 
-    docker run --rm -v <host_path>:/<container_path> -w /<container_path> espressif/idf idf.py --port rfc2217://host.docker.internal:4000?ign_set_control flash
+    docker run --rm -v <host_path>:/<container_path> -w /<container_path> espressif/idf idf.py --port 'rfc2217://host.docker.internal:4000?ign_set_control' flash
 
 Please make sure that ``<host_path>`` is properly set to your project path on the host and ``<container_path>`` is set as a working directory inside the container with the ``-w`` option. The ``host.docker.internal`` is a special Docker DNS name to access the host. This can be replaced with host IP if necessary.
 
