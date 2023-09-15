@@ -216,6 +216,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         'help': 'Serial port.',
         'scope': 'global',
         'envvar': 'ESPPORT',
+        'type': click.Path(),
         'default': None,
     }
 
