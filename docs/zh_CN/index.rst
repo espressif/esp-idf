@@ -13,7 +13,7 @@ ESP-IDF 编程指南
 
 .. only:: html
 
-    本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。如需了解其他芯片，请在页面左上方的下拉菜单中选择您的目标芯片。
+    本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。如需了解其他芯片，请在页面左上方的下拉菜单中选择你的目标芯片。
 
 .. only:: latex
 

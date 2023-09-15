@@ -109,7 +109,7 @@ NVS 加密：基于 HMAC 外设的方案
     - 如果找到用于 :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP` 的密钥，该密钥也会用于 XTS 加密密钥的生成。
     - 如果指定的 eFuse 块被 :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP` 以外目的的密钥占用，则会引发错误。
 
-    - 然后，API :cpp:func:`nvs_flash_init` 使用 :component_file:`nvs_flash/include/nvs_flash.h` 提供的 :cpp:func:`nvs_flash_generate_keys_v2` API 函数，自动生成所需的 NVS 密钥。该密钥还可用于读取安全配置（参见 :cpp:func:`nvs_flash_read_security_cfg_v2`） 并通过 :cpp:func:`nvs_flash_secure_init_partition` 初始化自定义的加密 NVS 分区。
+    - 然后，API :cpp:func:`nvs_flash_init` 使用 :component_file:`nvs_flash/include/nvs_flash.h` 提供的 :cpp:func:`nvs_flash_generate_keys_v2` API 函数，自动生成所需的 NVS 密钥。该密钥还可用于读取安全配置（参见 :cpp:func:`nvs_flash_read_security_cfg_v2`）并通过 :cpp:func:`nvs_flash_secure_init_partition` 初始化自定义的加密 NVS 分区。
 
     - API 函数 :cpp:func:`nvs_flash_secure_init` 和 :cpp:func:`nvs_flash_secure_init_partition` 不会内部生成密钥。使用这些 API 函数初始化加密的 NVS 分区时，可在启动后用 API 函数 :cpp:func:`nvs_flash_generate_keys_v2` 生成密钥，或使用 :cpp:func:`nvs_flash_read_security_cfg_v2` 获取并填充 NVS 安全配置结构 :cpp:type:`nvs_sec_cfg_t`，将其输入到上述 API 中。
 

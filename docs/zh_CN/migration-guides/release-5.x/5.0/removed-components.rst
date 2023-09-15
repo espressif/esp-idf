@@ -51,7 +51,7 @@ ESP-IDF v4.x 版本中已不再使用以下组件，这些组件已弃用：
 
 .. note::
 
-    不再支持 ``esp_adc_cal`` 组件。 新的 adc 校准驱动在 ``esp_adc`` 组件中。旧版 adc 校准驱动已被迁移进 ``esp_adc`` 组件中。 要使用旧版 ``esp_adc_cal`` 驱动接口，你应该在 CMakeLists.txt 文件的组件依赖列表中增加 esp_adc 。更多细节请查看 :doc:`Peripherals Migration Guide </migration-guides/release-5.x/5.0/peripherals>`。
+    不再支持 ``esp_adc_cal`` 组件。 新的 adc 校准驱动在 ``esp_adc`` 组件中。旧版 adc 校准驱动已被迁移进 ``esp_adc`` 组件中。 要使用旧版 ``esp_adc_cal`` 驱动接口，你应该在 CMakeLists.txt 文件的组件依赖列表中增加 esp_adc。更多细节请查看 :doc:`Peripherals Migration Guide </migration-guides/release-5.x/5.0/peripherals>`。
 
 版本更新后无需目标组件，因此以下目标组件也已经从 ESP-IDF 中删除：
 

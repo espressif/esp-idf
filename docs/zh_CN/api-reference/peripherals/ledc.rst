@@ -65,7 +65,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
 频率和占空比分辨率相互关联。PWM 频率越高，占空比分辨率越低，反之亦然。如果 API 不是用来改变 LED 亮度，而是用于其它目的，这种相互关系可能会很重要。更多信息详见 :ref:`ledc-api-supported-range-frequency-duty-resolution` 一节。
 
-时钟源同样可以限制PWM频率。选择的时钟源频率越高，可以配置的PWM频率上限就越高。
+时钟源同样可以限制 PWM 频率。选择的时钟源频率越高，可以配置的 PWM 频率上限就越高。
 
 .. only:: esp32
 
@@ -196,7 +196,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
     .. only:: not SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 
-        1. 如果 {IDF_TARGET_NAME} 的定时器选用了 ``RC_FAST_CLK`` 作为其时钟源，LEDC的输出 PWM 信号频率可能会与设定值有一定偏差。由于 {IDF_TARGET_NAME} 的硬件限制，驱动无法通过内部校准得知这个时钟源的实际频率。因此驱动默认使用其理论频率进行计算。
+        1. 如果 {IDF_TARGET_NAME} 的定时器选用了 ``RC_FAST_CLK`` 作为其时钟源，LEDC 的输出 PWM 信号频率可能会与设定值有一定偏差。由于 {IDF_TARGET_NAME} 的硬件限制，驱动无法通过内部校准得知这个时钟源的实际频率。因此驱动默认使用其理论频率进行计算。
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 

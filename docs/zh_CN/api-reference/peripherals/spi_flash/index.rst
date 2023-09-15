@@ -1,4 +1,4 @@
-SPI Flash API
+SPI flash API
 =================
 
 :link_to_translation:`en:[English]`
@@ -18,7 +18,7 @@ spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 
 .. note::
 
-    大多数 ``esp_flash_*`` API 使用 SPI1，SPI2 等外设而非通过 SPI0 上的 cache。这使得它们不仅能访问主 flash，也能访问外部 flash 。
+    大多数 ``esp_flash_*`` API 使用 SPI1，SPI2 等外设而非通过 SPI0 上的 cache。这使得它们不仅能访问主 flash，也能访问外部 flash。
 
     而由于 cache 的限制，所有经过 cache 的操作都只能对主 flash 进行。这些操作的地址同样受到 cache 能力的限制。Cache 无法访问外部 flash 或者高于它能力的地址段。这些 cache 操作包括：mmap、加密读写、执行代码或者访问在 flash 中的变量。
 
@@ -30,10 +30,10 @@ spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射
 
     仅有主 flash 芯片支持加密操作，外接（经 SPI1 使用其他不同片选访问，或经其它 SPI 总线访问）的 flash 芯片则不支持加密操作。硬件的限制也决定了仅有主 flash 支持从 cache 当中读取。
 
-Flash 功能支持情况
+flash 功能支持情况
 -----------------------------------
 
-支持的 Flash 列表
+支持的 flash 列表
 ^^^^^^^^^^^^^^^^^^^^^
 
 不同厂家的 flash 特性有不同的操作方式，因此需要特殊的驱动支持。当前驱动支持大多数厂家 flash 24 位地址范围内的快速/慢速读，以及二线模式 (DIO/DOUT)，因为他们不需要任何厂家的自定义命令。
@@ -50,9 +50,9 @@ Flash 功能支持情况
 
 .. note::
 
-    只有 {IDF_TARGET_NAME} 支持上述某个 flash 时，芯片的驱动才默认支持这款 flash。可使用 menuconfig 中的 ``Component config`` > ``SPI Flash driver`` > ``Auto-detect flash chips`` 选项来使能/禁用某个 flash。
+    只有 {IDF_TARGET_NAME} 支持上述某个 flash 时，芯片的驱动才默认支持这款 flash。可使用 menuconfig 中的 ``Component config`` > ``SPI flash driver`` > ``Auto-detect flash chips`` 选项来使能/禁用某个 flash。
 
-Flash 可选的功能
+flash 可选的功能
 ^^^^^^^^^^^^^^^^^^^^
 
 .. toctree::
@@ -64,15 +64,15 @@ Flash 可选的功能
 
 .. only:: esp32s3
 
-    -  OPI flash - 表示 Flash 支持 8 线模式。
+    -  OPI flash - 表示 flash 支持 8 线模式。
 
 -  32 比特地址的 flash 支持 - 通常意味着拥有大于 16 MB 内存空间的大容量 flash 需要更长的地址去访问。
 
 .. only:: esp32s3
 
-    -  高性能 (HPM) 模式 - 表示 flash 工作频率大于 80MHz 。
+    -  高性能 (HPM) 模式 - 表示 flash 工作频率大于 80 MHz。
 
--  flash 的私有 ID (unique ID) - 表示 flash 支持它自己的 64-bit 独有 ID 。
+-  flash 的私有 ID (unique ID) - 表示 flash 支持它自己的 64-bit 独有 ID。
 
 .. only:: esp32c3
 
@@ -87,7 +87,7 @@ Flash 可选的功能
 
    自定义 flash 芯片驱动 <spi_flash_override_driver>
 
-初始化 Flash 设备
+初始化 flash 设备
 ---------------------------
 
 在使用 ``esp_flash_*`` API 之前，需要在 SPI 总线上初始化芯片，步骤如下：
@@ -100,7 +100,7 @@ Flash 可选的功能
 
 .. note:: 当前，已支持多个 flash 芯片连接到同一总线。
 
-SPI Flash 访问 API
+SPI flash 访问 API
 --------------------
 
 如下所示为处理 flash 中数据的函数集：
@@ -113,7 +113,7 @@ SPI Flash 访问 API
 
 一般来说，请尽量避免对主 SPI flash 芯片直接使用原始 SPI flash 函数。如需对主 SPI flash 芯片进行操作，请使用 :ref:`分区专用函数 <flash-partition-apis>`。
 
-SPI Flash 容量
+SPI flash 容量
 --------------
 
 SPI flash 容量由引导加载程序镜像头部（烧录偏移量为 0x1000）的一个字段进行配置。
@@ -122,7 +122,7 @@ SPI flash 容量由引导加载程序镜像头部（烧录偏移量为 0x1000）
 
 如需在运行时覆盖已配置的 flash 容量，请配置 ``g_rom_flashchip`` 结构中的 ``chip_size``。``esp_flash_*`` 函数使用此容量（于软件和 ROM 中）进行边界检查。
 
-SPI1 Flash 并发约束
+SPI1 flash 并发约束
 -----------------------------------------
 
 .. toctree::
@@ -135,7 +135,7 @@ SPI1 Flash 并发约束
     指令/数据 cache（用以执行固件）与 SPI1 外设（由像 SPI flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，在 SPI1 总线上调用 SPI flash API（包括访问主 flash）会对整个系统造成显著的影响。请参阅 :doc:`spi_flash_concurrency`，查看详细信息。
 
 
-SPI Flash 加密
+SPI flash 加密
 --------------------
 
 SPI flash 内容支持加密，并在硬件层进行透明解密。
@@ -149,11 +149,11 @@ SPI flash 内容支持加密，并在硬件层进行透明解密。
 
 {IDF_TARGET_NAME} 的内存硬件可以将 flash 部分区域映射到指令地址空间和数据地址空间。此映射仅用于读操作，不能通过写入 flash 映射的存储区域来改变 flash 中的内容。
 
-Flash 在 {IDF_TARGET_CACHE_SIZE} 页进行映射。内存映射硬件既可将 flash 映射到数据地址空间，也能映射到指令地址空间。请查看技术参考手册，了解内存映射硬件的详细信息及有关限制。
+flash 在 {IDF_TARGET_CACHE_SIZE} 页进行映射。内存映射硬件既可将 flash 映射到数据地址空间，也能映射到指令地址空间。请查看技术参考手册，了解内存映射硬件的详细信息及有关限制。
 
 请注意，有些页被用于将应用程序映射到内存中，因此实际可用的页会少于硬件提供的总数。
 
-启用 :doc:`Flash 加密 </security/flash-encryption>` 时，使用内存映射区域从 flash 读取数据是解密 flash 的唯一方法，解密需在硬件层进行。
+启用 :doc:`flash 加密 </security/flash-encryption>` 时，使用内存映射区域从 flash 读取数据是解密 flash 的唯一方法，解密需在硬件层进行。
 
 内存映射 API 在 ``spi_flash_mmap.h`` 和 ``esp_partition.h`` 中声明：
 
@@ -169,10 +169,10 @@ Flash 在 {IDF_TARGET_CACHE_SIZE} 页进行映射。内存映射硬件既可将 
 内存映射以页为单位，即使传递给 ``esp_partition_mmap`` 的是一个分区，分区外的数据也是也是可以被读取到的，不会受到分区边界的影响。
 
 .. note::
-    
+
     由于 mmap 是由 cache 支持的，因此，mmap 也仅能用在主 flash 上。
 
-SPI Flash 实现
+SPI flash 实现
 --------------
 
 ``esp_flash_t`` 结构体包含芯片数据和该 API 的三个重要部分：
@@ -247,7 +247,7 @@ OS 函数层目前支持访问锁和延迟的方法。
 
 执行 flash 操作时，CPU A 和 CPU B 仍然可以执行中断操作。默认中断代码均存储于 RAM 中，如果新添加了中断分配 API，则应添加一个标志位以请求在 flash 操作期间禁用该新分配的中断。
 
-Flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_flash_op_complete``，用以通知 CPU B 上的任务可以重新启用 cache 并释放 CPU。接着，CPU A 上的函数也重新启用 cache，并将控制权返还给调用者。
+flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_flash_op_complete``，用以通知 CPU B 上的任务可以重新启用 cache 并释放 CPU。接着，CPU A 上的函数也重新启用 cache，并将控制权返还给调用者。
 
 另外，所有 API 函数均受互斥量 ``s_flash_op_mutex`` 保护。
 
@@ -268,7 +268,7 @@ Flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
     spi_flash_idf_vs_rom
 
 
-SPI Flash API 参考
+SPI flash API 参考
 -------------------------
 
 .. include-build-file:: inc/esp_flash_spi_init.inc
@@ -278,7 +278,7 @@ SPI Flash API 参考
 .. include-build-file:: inc/esp_flash_err.inc
 .. include-build-file:: inc/esp_spi_flash_counters.inc
 
-Flash 加密 API 参考
+flash 加密 API 参考
 -----------------------------
 
 .. include-build-file:: inc/esp_flash_encrypt.inc

@@ -81,7 +81,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 .. _external_ram_config_malloc:
 
 
-调用 malloc() 分配片外 RAM
+调用 ``malloc()`` 分配片外 RAM
 ---------------------------------
 
 在 :ref:`CONFIG_SPIRAM_USE` 中选择 ``Make RAM allocatable using malloc() as well`` 选项，该选项为默认选项。
