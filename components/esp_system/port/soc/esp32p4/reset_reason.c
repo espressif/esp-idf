@@ -30,25 +30,29 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
         }
         return ESP_RST_SW;
 
-    case RESET_REASON_CORE_DEEP_SLEEP:
+    case RESET_REASON_SYS_PMU_PWR_DOWN:
+    case RESET_REASON_CPU_PMU_PWR_DOWN:
+        /* Check when doing sleep bringup TODO 	IDF-7529 */
         return ESP_RST_DEEPSLEEP;
 
-    case RESET_REASON_CORE_MWDT0:
-        return ESP_RST_TASK_WDT;
-
-    case RESET_REASON_CORE_MWDT1:
-        return ESP_RST_INT_WDT;
-
-    case RESET_REASON_CORE_RTC_WDT:
-    case RESET_REASON_SYS_RTC_WDT:
+    case RESET_REASON_SYS_HP_WDT:
+    case RESET_REASON_SYS_LP_WDT:
     case RESET_REASON_SYS_SUPER_WDT:
-    case RESET_REASON_CPU0_RTC_WDT:
-    case RESET_REASON_CPU0_MWDT0:
-    case RESET_REASON_CPU0_MWDT1:
+    case RESET_REASON_CHIP_LP_WDT:
+    case RESET_REASON_CORE_HP_WDT:
+    case RESET_REASON_CORE_LP_WDT:
+        /* Code is the same for INT vs Task WDT */
         return ESP_RST_WDT;
 
     case RESET_REASON_SYS_BROWN_OUT:
         return ESP_RST_BROWNOUT;
+
+    case RESET_REASON_CORE_USB_UART:
+    case RESET_REASON_CORE_USB_JTAG:
+        return ESP_RST_USB;
+
+    case RESET_REASON_CPU_JTAG:
+        return ESP_RST_JTAG;
 
     default:
         return ESP_RST_UNKNOWN;

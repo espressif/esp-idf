@@ -71,46 +71,46 @@ typedef enum {
 } SLEEP_MODE;
 
 typedef enum {
-    NO_MEAN                =  0,
-    POWERON_RESET          =  1,    /**<1, Vbat power on reset*/
-    RTC_SW_SYS_RESET       =  3,    /**<3, Software reset digital core (hp system)*/
-    DEEPSLEEP_RESET        =  5,    /**<5, Deep Sleep reset digital core (hp system)*/
-    SDIO_RESET             =  6,    /**<6, Reset by SLC module, reset digital core (hp system)*/
-    TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core (hp system)*/
-    TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core (hp system)*/
-    RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core (hp system)*/
-    TG0WDT_CPU_RESET       = 11,    /**<11, Time Group0 reset CPU*/
-    RTC_SW_CPU_RESET       = 12,    /**<12, Software reset CPU*/
-    RTCWDT_CPU_RESET       = 13,    /**<13, RTC Watch dog Reset CPU*/
-    RTCWDT_BROWN_OUT_RESET = 15,    /**<15, Reset when the vdd voltage is not stable*/
-    RTCWDT_RTC_RESET       = 16,    /**<16, RTC Watch dog reset digital core and rtc module*/
-    TG1WDT_CPU_RESET       = 17,    /**<17, Time Group1 reset CPU*/
-    SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
-    EFUSE_RESET            = 20,    /**<20, efuse reset digital core (hp system)*/
-    USB_UART_CHIP_RESET    = 21,    /**<21, usb uart reset digital core (hp system)*/
-    USB_JTAG_CHIP_RESET    = 22,    /**<22, usb jtag reset digital core (hp system)*/
-    JTAG_RESET             = 24,    /**<24, jtag reset CPU*/
+    NO_MEAN = 0,
+    POWERON_RESET = 1,          /**<1, Vbat power on reset*/
+    SW_SYS_RESET = 3,           /**<3, Software reset digital core*/
+    PMU_SYS_PWR_DOWN_RESET = 5, /**<5, PMU HP system power down reset*/
+    PMU_CPU_PWR_DOWN_RESET = 6, /**<6, PMU HP CPU power down reset*/
+    HP_SYS_HP_WDT_RESET = 7,    /**<7, HP system reset from HP watchdog*/
+    HP_SYS_LP_WDT_RESET = 9,    /**<9, HP system reset from LP watchdog*/
+    HP_CORE_HP_WDT_RESET = 11,  /**<11, HP core reset from HP watchdog*/
+    HP_CORE_SYS_RESET = 12,     /**<12, HP core software reset*/
+    HP_CORE_LP_SYS_RESET = 13,  /**<13, HP core reset from LP watchdog*/
+    BROWN_OUT_RESET = 15,       /**<15, Reset when the vdd voltage is not stable*/
+    LP_WDT_CHIP_RESET = 16,     /**<16, Reset chip when LP watchdog trigger*/
+    SUPER_WDT_RESET = 18,       /**<18, super watchdog reset*/
+    GLITCH_RTC_RESET = 19,      /**<19, glitch reset*/
+    EFUSE_CRC_ERR_RESET = 20,   /**<20, efuse ecc error reset*/
+    HP_SDIO_RESET = 21,         /**<21, hp sdio chip reset*/
+    HP_USB_JTAG_RESET = 22,     /**<22, hp usb jtag reset*/
+    HP_USB_UART_RESET = 23,     /**<23, hp usb uart reset*/
+    JTAG_RESET = 24,            /**<24, jtag reset*/
 } RESET_REASON;
 
 // Check if the reset reason defined in ROM is compatible with soc/reset_reasons.h
 ESP_STATIC_ASSERT((soc_reset_reason_t)POWERON_RESET == RESET_REASON_CHIP_POWER_ON, "POWERON_RESET != RESET_REASON_CHIP_POWER_ON");
-ESP_STATIC_ASSERT((soc_reset_reason_t)RTC_SW_SYS_RESET == RESET_REASON_CORE_SW, "RTC_SW_SYS_RESET != RESET_REASON_CORE_SW");
-ESP_STATIC_ASSERT((soc_reset_reason_t)DEEPSLEEP_RESET == RESET_REASON_CORE_DEEP_SLEEP, "DEEPSLEEP_RESET != RESET_REASON_CORE_DEEP_SLEEP");
-ESP_STATIC_ASSERT((soc_reset_reason_t)TG0WDT_SYS_RESET == RESET_REASON_CORE_MWDT0, "TG0WDT_SYS_RESET != RESET_REASON_CORE_MWDT0");
-ESP_STATIC_ASSERT((soc_reset_reason_t)TG1WDT_SYS_RESET == RESET_REASON_CORE_MWDT1, "TG1WDT_SYS_RESET != RESET_REASON_CORE_MWDT1");
-ESP_STATIC_ASSERT((soc_reset_reason_t)RTCWDT_SYS_RESET == RESET_REASON_CORE_RTC_WDT, "RTCWDT_SYS_RESET != RESET_REASON_CORE_RTC_WDT");
-ESP_STATIC_ASSERT((soc_reset_reason_t)TG0WDT_CPU_RESET == RESET_REASON_CPU0_MWDT0, "TG0WDT_CPU_RESET != RESET_REASON_CPU0_MWDT0");
-ESP_STATIC_ASSERT((soc_reset_reason_t)RTC_SW_CPU_RESET == RESET_REASON_CPU0_SW, "RTC_SW_CPU_RESET != RESET_REASON_CPU0_SW");
-ESP_STATIC_ASSERT((soc_reset_reason_t)RTCWDT_CPU_RESET == RESET_REASON_CPU0_RTC_WDT, "RTCWDT_CPU_RESET != RESET_REASON_CPU0_RTC_WDT");
-ESP_STATIC_ASSERT((soc_reset_reason_t)RTCWDT_BROWN_OUT_RESET == RESET_REASON_SYS_BROWN_OUT, "RTCWDT_BROWN_OUT_RESET != RESET_REASON_SYS_BROWN_OUT");
-ESP_STATIC_ASSERT((soc_reset_reason_t)RTCWDT_RTC_RESET == RESET_REASON_SYS_RTC_WDT, "RTCWDT_RTC_RESET != RESET_REASON_SYS_RTC_WDT");
-ESP_STATIC_ASSERT((soc_reset_reason_t)TG1WDT_CPU_RESET == RESET_REASON_CPU0_MWDT1, "TG1WDT_CPU_RESET != RESET_REASON_CPU0_MWDT1");
+ESP_STATIC_ASSERT((soc_reset_reason_t)SW_SYS_RESET == RESET_REASON_CORE_SW, "SW_SYS_RESET != RESET_REASON_CORE_SW");
+ESP_STATIC_ASSERT((soc_reset_reason_t)PMU_SYS_PWR_DOWN_RESET == RESET_REASON_SYS_PMU_PWR_DOWN, "PMU_SYS_PWR_DOWN_RESET != RESET_REASON_CORE_DEEP_SLEEP");
+ESP_STATIC_ASSERT((soc_reset_reason_t)PMU_CPU_PWR_DOWN_RESET == RESET_REASON_CPU_PMU_PWR_DOWN, "PMU_CPU_PWR_DOWN_RESET != RESET_REASON_CORE_SDIO");
+ESP_STATIC_ASSERT((soc_reset_reason_t)HP_SYS_HP_WDT_RESET == RESET_REASON_SYS_HP_WDT, "HP_SYS_HP_WDT_RESET != RESET_REASON_CORE_MWDT0");
+ESP_STATIC_ASSERT((soc_reset_reason_t)HP_SYS_LP_WDT_RESET == RESET_REASON_SYS_LP_WDT, "HP_SYS_LP_WDT_RESET != RESET_REASON_SYS_LP_WDT");
+ESP_STATIC_ASSERT((soc_reset_reason_t)HP_CORE_HP_WDT_RESET == RESET_REASON_CORE_HP_WDT, "RTCWDT_SYS_RESET != RESET_REASON_CORE_HP_WDT");
+ESP_STATIC_ASSERT((soc_reset_reason_t)HP_CORE_SYS_RESET == RESET_REASON_CPU0_SW, "HP_CORE_SYS_RESET != RESET_REASON_CPU0_SW");
+ESP_STATIC_ASSERT((soc_reset_reason_t)HP_CORE_LP_SYS_RESET == RESET_REASON_CORE_LP_WDT, "HP_CORE_LP_SYS_RESET != RESET_REASON_CORE_LP_WDT");
+ESP_STATIC_ASSERT((soc_reset_reason_t)BROWN_OUT_RESET  == RESET_REASON_SYS_BROWN_OUT, "BROWN_OUT_RESET != RESET_REASON_SYS_BROWN_OUT");
+ESP_STATIC_ASSERT((soc_reset_reason_t)LP_WDT_CHIP_RESET == RESET_REASON_CHIP_LP_WDT, "LP_WDT_CHIP_RESET != RESET_REASON_CHIP_LP_WDT");
+ESP_STATIC_ASSERT((soc_reset_reason_t)GLITCH_RTC_RESET == RESET_REASON_SYS_CLK_GLITCH, "GLITCH_RTC_RESET != RESET_REASON_SYS_CLK_GLITCH");
+ESP_STATIC_ASSERT((soc_reset_reason_t)EFUSE_CRC_ERR_RESET == RESET_REASON_CORE_EFUSE_CRC, "EFUSE_RESET != RESET_REASON_CORE_EFUSE_CRC");
 ESP_STATIC_ASSERT((soc_reset_reason_t)SUPER_WDT_RESET == RESET_REASON_SYS_SUPER_WDT, "SUPER_WDT_RESET != RESET_REASON_SYS_SUPER_WDT");
-ESP_STATIC_ASSERT((soc_reset_reason_t)EFUSE_RESET == RESET_REASON_CORE_EFUSE_CRC, "EFUSE_RESET != RESET_REASON_CORE_EFUSE_CRC");
-// ESP32P4-TODO
-//_Static_assert((soc_reset_reason_t)USB_UART_CHIP_RESET == RESET_REASON_CORE_USB_UART, "USB_UART_CHIP_RESET != RESET_REASON_CORE_USB_UART");
-//_Static_assert((soc_reset_reason_t)USB_JTAG_CHIP_RESET == RESET_REASON_CORE_USB_JTAG, "USB_JTAG_CHIP_RESET != RESET_REASON_CORE_USB_JTAG");
-//_Static_assert((soc_reset_reason_t)JTAG_RESET == RESET_REASON_CPU0_JTAG, "JTAG_RESET != RESET_REASON_CPU0_JTAG");
+ESP_STATIC_ASSERT((soc_reset_reason_t)HP_USB_JTAG_RESET == RESET_REASON_CORE_USB_JTAG, "HP_USB_JTAG_RESET != RESET_REASON_CORE_USB_JTAG");
+ESP_STATIC_ASSERT((soc_reset_reason_t)HP_USB_UART_RESET == RESET_REASON_CORE_USB_UART, "HP_USB_UART_RESET != RESET_REASON_CORE_USB_UART");
+ESP_STATIC_ASSERT((soc_reset_reason_t)JTAG_RESET == RESET_REASON_CPU_JTAG, "JTAG_RESET != RESET_REASON_CPU_JTAG");
+
 
 typedef enum {
     NO_SLEEP        = 0,
