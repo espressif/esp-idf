@@ -16,9 +16,11 @@ extern "C" {
 #if SOC_RCC_IS_INDEPENDENT
 #define MPI_RCC_ATOMIC()
 #define ECC_RCC_ATOMIC()
+#define HMAC_RCC_ATOMIC()
 #else /* !SOC_RCC_IS_INDEPENDENT */
 #define MPI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #define ECC_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#define HMAC_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #endif /* SOC_RCC_IS_INDEPENDENT */
 
 #ifdef __cplusplus

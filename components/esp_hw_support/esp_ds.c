@@ -14,6 +14,7 @@
 #include "esp_timer.h"
 #include "esp_ds.h"
 #include "esp_crypto_lock.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_hmac.h"
 #include "esp_memory_utils.h"
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -26,6 +27,7 @@
 #include "hal/ds_hal.h"
 #include "hal/ds_ll.h"
 #include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
 #endif /* !CONFIG_IDF_TARGET_ESP32S2 */
 
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -258,7 +260,11 @@ static void ds_acquire_enable(void)
     esp_crypto_mpi_lock_acquire();
 #endif
     // We also enable SHA and HMAC here. SHA is used by HMAC, HMAC is used by DS.
-    periph_module_enable(PERIPH_HMAC_MODULE);
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(true);
+        hmac_ll_reset_register();
+    }
+
     periph_module_enable(PERIPH_SHA_MODULE);
     periph_module_enable(PERIPH_DS_MODULE);
 
@@ -271,7 +277,10 @@ static void ds_disable_release(void)
 
     periph_module_disable(PERIPH_DS_MODULE);
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
+
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(false);
+    }
 
 #if CONFIG_IDF_TARGET_ESP32S3
     esp_crypto_mpi_lock_release();

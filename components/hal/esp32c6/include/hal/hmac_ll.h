@@ -13,9 +13,11 @@
 #pragma once
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "soc/system_reg.h"
 #include "soc/hwcrypto_reg.h"
+#include "soc/pcr_struct.h"
 #include "hal/hmac_types.h"
 
 #define SHA256_BLOCK_SZ 64
@@ -29,6 +31,25 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Enable the bus clock for HMAC peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void hmac_ll_enable_bus_clock(bool enable)
+{
+    PCR.hmac_conf.hmac_clk_en = enable;
+}
+
+/**
+ * @brief Reset the HMAC peripheral module
+ */
+static inline void hmac_ll_reset_register(void)
+{
+    PCR.hmac_conf.hmac_rst_en = 1;
+    PCR.hmac_conf.hmac_rst_en = 0;
+}
 
 /**
  * Makes the peripheral ready for use, after enabling it.

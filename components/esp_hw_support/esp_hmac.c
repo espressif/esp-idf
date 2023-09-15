@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,11 +13,13 @@
 #include "esp_hmac.h"
 #include "esp_log.h"
 #include "esp_crypto_lock.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "soc/hwcrypto_reg.h"
 #include "soc/system_reg.h"
 
 #if !CONFIG_IDF_TARGET_ESP32S2
 #include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
 #include "esp_private/periph_ctrl.h"
 #endif
 
@@ -67,7 +69,11 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     esp_crypto_hmac_lock_acquire();
 
     // We also enable SHA and DS here. SHA is used by HMAC, DS will otherwise hold SHA in reset state.
-    periph_module_enable(PERIPH_HMAC_MODULE);
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(true);
+        hmac_ll_reset_register();
+    }
+
     periph_module_enable(PERIPH_SHA_MODULE);
     periph_module_enable(PERIPH_DS_MODULE);
 
@@ -133,7 +139,10 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
 
     periph_module_disable(PERIPH_DS_MODULE);
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
+
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(false);
+    }
 
     esp_crypto_hmac_lock_release();
 
