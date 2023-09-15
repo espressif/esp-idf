@@ -207,11 +207,19 @@ menu "OpenThread"
         help
             Select this option to enable border router features in OpenThread.
 
+    config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
+        bool 'Allocate message pool buffer from PSRAM'
+        depends on OPENTHREAD_ENABLED && (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
+        default n
+        help
+            If enabled, the message pool is managed by platform defined logic.
+
     config OPENTHREAD_NUM_MESSAGE_BUFFERS
         int "The number of openthread message buffers"
         depends on OPENTHREAD_ENABLED
         default 65
-        range 50 100
+        range 10 100 if !OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
+        range 10 8191 if OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
 
     config OPENTHREAD_DNS64_CLIENT
         bool "Use dns64 client"

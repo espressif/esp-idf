@@ -11,7 +11,6 @@
 #include "esp_log.h"
 #include "esp_openthread_alarm.h"
 #include "esp_openthread_common_macro.h"
-#include "esp_openthread_flash.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_radio.h"
 #include "esp_openthread_spi_slave.h"
