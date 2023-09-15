@@ -472,9 +472,10 @@
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-P4 has 6 UARTs (5 HP UART, and 1 LP UART)
-// The RTC GPIO and sigmap is not supported yet, so make SOC_UART_NUM->5 to avoid lp-uart build errors
 #define SOC_UART_NUM                    (5)
 #define SOC_UART_HP_NUM                 (5)
+// TODO: 7815
+// The RTC GPIO and sigmap is not supported yet, so make SOC_UART_NUM->5 to avoid lp-uart build errors
 // #define SOC_UART_LP_NUM                 (1U)
 #define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
 #define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */

@@ -266,19 +266,6 @@ static inline void periph_ll_wifi_module_disable_clk_set_rst(void)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 0);
 }
 
-FORCE_INLINE_ATTR bool periph_ll_uart_enabled(uint32_t uart_num)
-{
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? DPORT_UART_RST :
-                            (uart_num == 1) ? DPORT_UART1_RST :
-                            (uart_num == 2) ? DPORT_UART2_RST : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? DPORT_UART_CLK_EN :
-                            (uart_num == 1) ? DPORT_UART1_CLK_EN :
-                            (uart_num == 2) ? DPORT_UART2_CLK_EN : 0);
-    return DPORT_REG_GET_BIT(DPORT_PERIP_RST_EN_REG, uart_rst_bit) == 0 &&
-        DPORT_REG_GET_BIT(DPORT_PERIP_CLK_EN_REG, uart_en_bit) != 0;
-}
-
 #ifdef __cplusplus
 }
 #endif

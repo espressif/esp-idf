@@ -53,7 +53,7 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     }
 
     /* Override protocol parameters from the configuration */
-    UART_CLK_ATOMIC() {
+    UART_SCLK_ATOMIC() {
         uart_hal_set_baudrate(&hal, cfg->uart_proto_cfg.baud_rate, sclk_freq);
     }
     uart_hal_set_parity(&hal, cfg->uart_proto_cfg.parity);

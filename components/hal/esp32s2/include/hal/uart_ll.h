@@ -11,6 +11,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/uart_types.h"
 #include "soc/uart_reg.h"
@@ -54,6 +55,24 @@ typedef enum {
     UART_INTR_CMD_CHAR_DET     = (0x1<<18),
     UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
+
+/**
+ * @brief Check if UART is enabled or disabled.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return true: enabled; false: disabled
+ */
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
+{
+    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
+    uint32_t uart_rst_bit = ((uart_num == 0) ? DPORT_UART_RST :
+                            (uart_num == 1) ? DPORT_UART1_RST : 0);
+    uint32_t uart_en_bit  = ((uart_num == 0) ? DPORT_UART_CLK_EN :
+                            (uart_num == 1) ? DPORT_UART1_CLK_EN : 0);
+    return DPORT_REG_GET_BIT(DPORT_PERIP_RST_EN_REG, uart_rst_bit) == 0 &&
+        DPORT_REG_GET_BIT(DPORT_PERIP_CLK_EN_REG, uart_en_bit) != 0;
+}
 
 /**
  * @brief Enable the bus clock for uart

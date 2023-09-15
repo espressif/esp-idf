@@ -883,17 +883,16 @@ typedef union {
         /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
          *  The  denominator of the frequency divider factor.
          */
-        uint32_t sclk_div_b:6;
+        uint32_t sclk_div_b:6;      //HP UART's sclk_div_b is in hp_sys_clkrst_struct.h
         /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
          *  The numerator of the frequency divider factor.
          */
-        uint32_t sclk_div_a:6;
+        uint32_t sclk_div_a:6;      //HP UART's sclk_div_a is in hp_sys_clkrst_struct.h
         /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
          *  The integral part of the frequency divider factor.
          *  It is only used by LP UART
-         *  HP UART's sclk_div_num is in hp_sys_clkrst_struct.h
          */
-        uint32_t sclk_div_num:8;
+        uint32_t sclk_div_num:8;    //HP UART's sclk_div_num is in hp_sys_clkrst_struct.h
         uint32_t reserved_20:4;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
          *  Set this bit to enable UART Tx clock.

@@ -154,6 +154,52 @@ FORCE_INLINE_ATTR void lp_uart_ll_reset_register(int hw_id)
 /*************************************** General LL functions ******************************************/
 
 /**
+ * @brief Check if UART is enabled or disabled.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return true: enabled; false: disabled
+ */
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
+{
+    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
+    bool uart_rst_en = false;
+    bool uart_apb_en = false;
+    bool uart_sys_en = false;
+    switch (uart_num)
+    {
+    case 0:
+        uart_rst_en = HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb;
+        uart_apb_en = HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart0_apb_clk_en;
+        uart_sys_en = HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart0_sys_clk_en;
+        break;
+    case 1:
+        uart_rst_en = HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart1_apb;
+        uart_apb_en = HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart1_apb_clk_en;
+        uart_sys_en = HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart1_sys_clk_en;
+        break;
+    case 2:
+        uart_rst_en = HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart2_apb;
+        uart_apb_en = HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart2_apb_clk_en;
+        uart_sys_en = HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart2_sys_clk_en;
+        break;
+    case 3:
+        uart_rst_en = HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart3_apb;
+        uart_apb_en = HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart3_apb_clk_en;
+        uart_sys_en = HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart3_sys_clk_en;
+        break;
+    case 4:
+        uart_rst_en = HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb;
+        uart_apb_en = HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en;
+        uart_sys_en = HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en;
+        break;
+    default:
+        break;
+    }
+    return (!uart_rst_en && uart_apb_en && uart_sys_en);
+}
+
+/**
  * @brief Sync the update to UART core clock domain
  *
  * @param hw Beginning address of the peripheral registers.
@@ -176,7 +222,6 @@ FORCE_INLINE_ATTR void uart_ll_update(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
 {
-
     if ((hw) == &UART0) {
         HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_core = core_rst_en;
     } else if ((hw) == &UART1) {
@@ -188,8 +233,7 @@ FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
     } else if ((hw) == &UART4) {
         HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_core = core_rst_en;
     } else {
-        // LP_UART reset shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Not going to implement LP_UART reset in this function, it will have its own LL function
         abort();
     }
 }
@@ -217,8 +261,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
     } else if ((hw) == &UART4) {
         HP_SYS_CLKRST.peri_clk_ctrl114.reg_uart4_clk_en = 1;
     } else {
-        // LP_UART reset shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Not going to implement LP_UART reset in this function, it will have its own LL function
         abort();
     }
 }
@@ -245,8 +288,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
     } else if ((hw) == &UART4) {
         HP_SYS_CLKRST.peri_clk_ctrl114.reg_uart4_clk_en = 0;
     } else {
-        // LP_UART reset shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Not going to implement LP_UART reset in this function, it will have its own LL function
         abort();
     }
 }
@@ -282,8 +324,10 @@ FORCE_INLINE_ATTR void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enabl
         HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en = enable;
         HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en = enable;
         break;
+    case 5:
+        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_enable_bus_clock
+        break;;
     default:
-        // LP_UART
         abort();
         break;
     }
@@ -319,8 +363,10 @@ FORCE_INLINE_ATTR void uart_ll_reset_register(uart_port_t uart_num)
         HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb = 1;
         HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb = 0;
         break;
+    case 5:
+        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_reset_register
+        break;;
     default:
-        // LP_UART
         abort();
         break;
     }
@@ -365,6 +411,7 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
     } else if ((hw) == &UART4) {
         HP_SYS_CLKRST.peri_clk_ctrl114.reg_uart4_clk_src_sel = sel_value;
     } else {
+        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_set_source_clk
         abort();
     }
 }
@@ -424,7 +471,9 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
 {
 #define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
-    int sclk_div = DIV_UP(sclk_freq, max_div * baud);
+    uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
+    if (sclk_div == 0) abort();
+
     uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
@@ -477,7 +526,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
     } else if ((hw) == &UART4) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl115, reg_uart4_sclk_div_num) + 1;
     } else {
-        return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag));
+        sclk_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1;
     }
     return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * sclk_div);
 }
