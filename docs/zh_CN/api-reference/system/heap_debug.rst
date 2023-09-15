@@ -298,7 +298,7 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 .. only:: not CONFIG_IDF_TARGET_ARCH_RISCV
 
-    每个跟踪条目记录的调用栈深度可以在项目配置菜单下进行配置，选择 ``Heap Memory Debugging`` > ``Enable heap tracing`` > ``Heap tracing stack depth``。每个内存分配最多可以记录 10 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
+    每个跟踪条目记录的调用栈深度可以在项目配置菜单下进行配置，选择 ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
 
 最后，将打印“泄漏”的总字节数（即在跟踪期间分配但未释放的总字节数），以及它所代表的总分配次数。
 
