@@ -95,26 +95,26 @@ __attribute__((always_inline))
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
     HAL_ASSERT(cache_id == 0 || cache_id == 1);
-    cache_bus_mask_t mask = 0;
+    cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
     if (vaddr_start >= SOC_IROM0_CACHE_ADDRESS_HIGH) {
         HAL_ASSERT(false);      //out of range
     } else if (vaddr_start >= SOC_IROM0_CACHE_ADDRESS_LOW) {
-        mask |= CACHE_BUS_IBUS2;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_IBUS2);
     } else if (vaddr_start >= SOC_IRAM1_CACHE_ADDRESS_LOW) {
-        mask |= CACHE_BUS_IBUS1;
-        mask |= (vaddr_end >= SOC_IROM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS2 : 0;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_IBUS1);
+        mask = (cache_bus_mask_t)(mask | ((vaddr_end >= SOC_IROM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS2 : 0));
     } else if (vaddr_start >= SOC_IRAM0_CACHE_ADDRESS_LOW) {
-        mask |= CACHE_BUS_IBUS0;
-        mask |= (vaddr_end >= SOC_IRAM1_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0;
-        mask |= (vaddr_end >= SOC_IROM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS2 : 0;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_IBUS0);
+        mask = (cache_bus_mask_t)(mask | ((vaddr_end >= SOC_IRAM1_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS1 : 0));
+        mask = (cache_bus_mask_t)(mask | ((vaddr_end >= SOC_IROM0_CACHE_ADDRESS_LOW) ? CACHE_BUS_IBUS2 : 0));
     } else if (vaddr_start >= SOC_DRAM1_CACHE_ADDRESS_LOW) {
         HAL_ASSERT(vaddr_end < SOC_DRAM1_CACHE_ADDRESS_HIGH);  //out of range, vaddr should be consecutive, see `ext_mem_defs.h`
-        mask |= CACHE_BUS_DBUS1;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_DBUS1);
     } else if (vaddr_start >= SOC_DROM0_CACHE_ADDRESS_LOW) {
         HAL_ASSERT(vaddr_end < SOC_DROM0_CACHE_ADDRESS_HIGH);  //out of range, vaddr should be consecutive, see `ext_mem_defs.h`
-        mask |= CACHE_BUS_DBUS0;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_DBUS0);
     } else {
         HAL_ASSERT(false);
     }
@@ -139,21 +139,21 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 
     uint32_t bus_mask = 0;
     if (cache_id == 0) {
-        bus_mask |= (mask & CACHE_BUS_IBUS0) ? DPORT_PRO_CACHE_MASK_IRAM0 : 0;
-        bus_mask |= (mask & CACHE_BUS_IBUS1) ? DPORT_PRO_CACHE_MASK_IRAM1 : 0;
-        bus_mask |= (mask & CACHE_BUS_IBUS2) ? DPORT_PRO_CACHE_MASK_IROM0 : 0;
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS0) ? DPORT_PRO_CACHE_MASK_IRAM0 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS1) ? DPORT_PRO_CACHE_MASK_IRAM1 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS2) ? DPORT_PRO_CACHE_MASK_IROM0 : 0);
 
-        bus_mask |= (mask & CACHE_BUS_DBUS0) ? DPORT_PRO_CACHE_MASK_DROM0 : 0;
-        bus_mask |= (mask & CACHE_BUS_DBUS1) ? DPORT_PRO_CACHE_MASK_DRAM1 : 0;
+        bus_mask = bus_mask | ((mask & CACHE_BUS_DBUS0) ? DPORT_PRO_CACHE_MASK_DROM0 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_DBUS1) ? DPORT_PRO_CACHE_MASK_DRAM1 : 0);
 
         DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, bus_mask);
     } else {
-        bus_mask |= (mask & CACHE_BUS_IBUS0) ? DPORT_APP_CACHE_MASK_IRAM0 : 0;
-        bus_mask |= (mask & CACHE_BUS_IBUS1) ? DPORT_APP_CACHE_MASK_IRAM1 : 0;
-        bus_mask |= (mask & CACHE_BUS_IBUS2) ? DPORT_APP_CACHE_MASK_IROM0 : 0;
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS0) ? DPORT_APP_CACHE_MASK_IRAM0 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS1) ? DPORT_APP_CACHE_MASK_IRAM1 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS2) ? DPORT_APP_CACHE_MASK_IROM0 : 0);
 
-        bus_mask |= (mask & CACHE_BUS_DBUS0) ? DPORT_APP_CACHE_MASK_DROM0 : 0;
-        bus_mask |= (mask & CACHE_BUS_DBUS1) ? DPORT_APP_CACHE_MASK_DRAM1 : 0;
+        bus_mask = bus_mask | ((mask & CACHE_BUS_DBUS0) ? DPORT_APP_CACHE_MASK_DROM0 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_DBUS1) ? DPORT_APP_CACHE_MASK_DRAM1 : 0);
 
         DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, bus_mask);
     }
@@ -169,24 +169,24 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 __attribute__((always_inline))
 static inline cache_bus_mask_t cache_ll_l1_get_enabled_bus(uint32_t cache_id)
 {
-    cache_bus_mask_t mask = 0;
+    cache_bus_mask_t mask = (cache_bus_mask_t)0;
     HAL_ASSERT(cache_id == 0 || cache_id == 1);
     if (cache_id == 0) {
         uint32_t bus_mask= DPORT_REG_READ(DPORT_PRO_CACHE_CTRL1_REG);
-        mask |= (!(bus_mask & DPORT_PRO_CACHE_MASK_IRAM0)) ? CACHE_BUS_IBUS0 : 0;
-        mask |= (!(bus_mask & DPORT_PRO_CACHE_MASK_IRAM1)) ? CACHE_BUS_IBUS1 : 0;
-        mask |= (!(bus_mask & DPORT_PRO_CACHE_MASK_IROM0)) ? CACHE_BUS_IBUS2 : 0;
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_IRAM0)) ? CACHE_BUS_IBUS0 : 0));
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_IRAM1)) ? CACHE_BUS_IBUS1 : 0));
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_IROM0)) ? CACHE_BUS_IBUS2 : 0));
 
-        mask |= (!(bus_mask & DPORT_PRO_CACHE_MASK_DROM0)) ? CACHE_BUS_DBUS0 : 0;
-        mask |= (!(bus_mask & DPORT_PRO_CACHE_MASK_DRAM1)) ? CACHE_BUS_DBUS1 : 0;
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_DROM0)) ? CACHE_BUS_DBUS0 : 0));
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_PRO_CACHE_MASK_DRAM1)) ? CACHE_BUS_DBUS1 : 0));
     } else {
         uint32_t bus_mask= DPORT_REG_READ(DPORT_APP_CACHE_CTRL1_REG);
-        mask |= (!(bus_mask & DPORT_APP_CACHE_MASK_IRAM0)) ? CACHE_BUS_IBUS0 : 0;
-        mask |= (!(bus_mask & DPORT_APP_CACHE_MASK_IRAM1)) ? CACHE_BUS_IBUS1 : 0;
-        mask |= (!(bus_mask & DPORT_APP_CACHE_MASK_IROM0)) ? CACHE_BUS_IBUS2 : 0;
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_APP_CACHE_MASK_IRAM0)) ? CACHE_BUS_IBUS0 : 0));
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_APP_CACHE_MASK_IRAM1)) ? CACHE_BUS_IBUS1 : 0));
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_APP_CACHE_MASK_IROM0)) ? CACHE_BUS_IBUS2 : 0));
 
-        mask |= (!(bus_mask & DPORT_APP_CACHE_MASK_DROM0)) ? CACHE_BUS_DBUS0 : 0;
-        mask |= (!(bus_mask & DPORT_APP_CACHE_MASK_DRAM1)) ? CACHE_BUS_DBUS1 : 0;
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_APP_CACHE_MASK_DROM0)) ? CACHE_BUS_DBUS0 : 0));
+        mask = (cache_bus_mask_t)(mask | ((!(bus_mask & DPORT_APP_CACHE_MASK_DRAM1)) ? CACHE_BUS_DBUS1 : 0));
     }
     return mask;
 }
@@ -206,21 +206,21 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
 
     uint32_t bus_mask = 0;
     if (cache_id == 0) {
-        bus_mask |= (mask & CACHE_BUS_IBUS0) ? DPORT_PRO_CACHE_MASK_IRAM0 : 0;
-        bus_mask |= (mask & CACHE_BUS_IBUS1) ? DPORT_PRO_CACHE_MASK_IRAM1 : 0;
-        bus_mask |= (mask & CACHE_BUS_IBUS2) ? DPORT_PRO_CACHE_MASK_IROM0 : 0;
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS0) ? DPORT_PRO_CACHE_MASK_IRAM0 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS1) ? DPORT_PRO_CACHE_MASK_IRAM1 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS2) ? DPORT_PRO_CACHE_MASK_IROM0 : 0);
 
-        bus_mask |= (mask & CACHE_BUS_DBUS0) ? DPORT_PRO_CACHE_MASK_DROM0 : 0;
-        bus_mask |= (mask & CACHE_BUS_DBUS1) ? DPORT_PRO_CACHE_MASK_DRAM1 : 0;
+        bus_mask = bus_mask | ((mask & CACHE_BUS_DBUS0) ? DPORT_PRO_CACHE_MASK_DROM0 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_DBUS1) ? DPORT_PRO_CACHE_MASK_DRAM1 : 0);
 
         DPORT_REG_SET_BIT(DPORT_PRO_CACHE_CTRL1_REG, bus_mask);
     } else {
-        bus_mask |= (mask & CACHE_BUS_IBUS0) ? DPORT_APP_CACHE_MASK_IRAM0 : 0;
-        bus_mask |= (mask & CACHE_BUS_IBUS1) ? DPORT_APP_CACHE_MASK_IRAM1 : 0;
-        bus_mask |= (mask & CACHE_BUS_IBUS2) ? DPORT_APP_CACHE_MASK_IROM0 : 0;
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS0) ? DPORT_APP_CACHE_MASK_IRAM0 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS1) ? DPORT_APP_CACHE_MASK_IRAM1 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_IBUS2) ? DPORT_APP_CACHE_MASK_IROM0 : 0);
 
-        bus_mask |= (mask & CACHE_BUS_DBUS0) ? DPORT_APP_CACHE_MASK_DROM0 : 0;
-        bus_mask |= (mask & CACHE_BUS_DBUS1) ? DPORT_APP_CACHE_MASK_DRAM1 : 0;
+        bus_mask = bus_mask | ((mask & CACHE_BUS_DBUS0) ? DPORT_APP_CACHE_MASK_DROM0 : 0);
+        bus_mask = bus_mask | ((mask & CACHE_BUS_DBUS1) ? DPORT_APP_CACHE_MASK_DRAM1 : 0);
 
         DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, bus_mask);
     }

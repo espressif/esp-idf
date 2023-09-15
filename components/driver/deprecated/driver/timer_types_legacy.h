@@ -51,7 +51,6 @@ typedef enum {
 #endif
     TIMER_INTR_NONE = 0
 } timer_intr_t;
-FLAG_ATTR(timer_intr_t)
 
 /**
  * @brief Timer count direction

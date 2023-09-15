@@ -15,6 +15,7 @@
 #include "soc/clk_tree_defs.h"
 #include "hal/i2c_types.h"
 #include "esp_attr.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -780,7 +781,8 @@ static inline void i2c_ll_set_scl_clk_timing(i2c_dev_t *hw, int high_period, int
 __attribute__((always_inline))
 static inline void i2c_ll_slave_get_event(i2c_dev_t *hw, i2c_intr_event_t *event)
 {
-    typeof(hw->int_status) int_sts = hw->int_status;
+    typeof(hw->int_status) int_sts;
+    int_sts.val = hw->int_status.val;
     if (int_sts.tx_fifo_empty) {
         *event = I2C_INTR_EVENT_TXFIFO_EMPTY;
     } else if (int_sts.trans_complete) {
@@ -803,7 +805,8 @@ static inline void i2c_ll_slave_get_event(i2c_dev_t *hw, i2c_intr_event_t *event
 __attribute__((always_inline))
 static inline void i2c_ll_master_get_event(i2c_dev_t *hw, i2c_intr_event_t *event)
 {
-    typeof(hw->int_status) int_sts = hw->int_status;
+    typeof(hw->int_status) int_sts;
+    int_sts.val = hw->int_status.val;
     if (int_sts.arbitration_lost) {
         *event = I2C_INTR_EVENT_ARBIT_LOST;
     } else if (int_sts.ack_err) {
@@ -959,8 +962,8 @@ static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int hight_period, int lo
  */
 static inline void i2c_ll_get_data_mode(i2c_dev_t *hw, i2c_trans_mode_t *tx_mode, i2c_trans_mode_t *rx_mode)
 {
-    *tx_mode = hw->ctr.tx_lsb_first;
-    *rx_mode = hw->ctr.rx_lsb_first;
+    *tx_mode = (i2c_trans_mode_t)(hw->ctr.tx_lsb_first);
+    *rx_mode = (i2c_trans_mode_t)(hw->ctr.rx_lsb_first);
 }
 
 /**

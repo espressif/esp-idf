@@ -1632,7 +1632,8 @@ static inline uint32_t mcpwm_ll_group_get_clock_prescale(mcpwm_dev_t *mcpwm)
 
 static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id)
 {
-    mcpwm_timer_cfg0_reg_t cfg0 = mcpwm->timer[timer_id].timer_cfg0;
+    mcpwm_timer_cfg0_reg_t cfg0;
+    cfg0.val = mcpwm->timer[timer_id].timer_cfg0.val;
     return cfg0.timer_prescale + 1;
 }
 

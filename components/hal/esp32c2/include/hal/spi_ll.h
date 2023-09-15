@@ -63,7 +63,6 @@ typedef enum {
     SPI_LL_INTR_CMDA =          BIT(13),    ///< Has received CMDA command. Only available in slave HD.
     SPI_LL_INTR_SEG_DONE =      BIT(14),
 } spi_ll_intr_t;
-FLAG_ATTR(spi_ll_intr_t)
 
 // Flags for conditions under which the transaction length should be recorded
 typedef enum {
@@ -72,7 +71,6 @@ typedef enum {
     SPI_LL_TRANS_LEN_COND_WRDMA =   BIT(2), ///< WRDMA length will be recorded
     SPI_LL_TRANS_LEN_COND_RDDMA =   BIT(3), ///< RDDMA length will be recorded
 } spi_ll_trans_len_cond_t;
-FLAG_ATTR(spi_ll_trans_len_cond_t)
 
 // SPI base command in esp32c2
 typedef enum {

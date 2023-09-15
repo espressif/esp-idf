@@ -259,7 +259,7 @@ static inline mspi_timing_ll_flash_mode_t mspi_timing_ll_get_flash_mode(uint8_t 
             return MSPI_TIMING_LL_FLASH_SLOW_MODE;
         default:
             HAL_ASSERT(false);
-            return 0;
+            return (mspi_timing_ll_flash_mode_t)0;
     }
 
 }

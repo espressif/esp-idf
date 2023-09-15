@@ -168,13 +168,13 @@ __attribute__((always_inline))
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
     HAL_ASSERT(cache_id == 0);
-    cache_bus_mask_t mask = 0;
+    cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
     if (vaddr_start >= SOC_IRAM0_CACHE_ADDRESS_LOW && vaddr_end < SOC_IRAM0_CACHE_ADDRESS_HIGH) {
-        mask |= CACHE_BUS_IBUS0;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_IBUS0);
     } else if (vaddr_start >= SOC_DRAM0_CACHE_ADDRESS_LOW && vaddr_end < SOC_DRAM0_CACHE_ADDRESS_HIGH) {
-        mask |= CACHE_BUS_DBUS0;
+        mask = (cache_bus_mask_t)(mask | CACHE_BUS_DBUS0);
     } else {
         HAL_ASSERT(0);          //Out of region
     }
@@ -198,11 +198,11 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
-    ibus_mask |= (mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_IBUS : 0;
+    ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_IBUS : 0);
     REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, ibus_mask);
 
     uint32_t dbus_mask = 0;
-    dbus_mask |= (mask & CACHE_BUS_DBUS0) ? EXTMEM_ICACHE_SHUT_DBUS : 0;
+    dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? EXTMEM_ICACHE_SHUT_DBUS : 0);
     REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, dbus_mask);
 }
 
@@ -220,11 +220,11 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2| CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
     uint32_t ibus_mask = 0;
-    ibus_mask |= (mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_IBUS : 0;
+    ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_ICACHE_SHUT_IBUS : 0);
     REG_SET_BIT(EXTMEM_ICACHE_CTRL1_REG, ibus_mask);
 
     uint32_t dbus_mask = 0;
-    dbus_mask |= (mask & CACHE_BUS_DBUS0) ? EXTMEM_ICACHE_SHUT_DBUS : 0;
+    dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? EXTMEM_ICACHE_SHUT_DBUS : 0);
     REG_SET_BIT(EXTMEM_ICACHE_CTRL1_REG, dbus_mask);
 }
 

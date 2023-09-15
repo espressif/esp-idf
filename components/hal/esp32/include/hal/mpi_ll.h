@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <sys/param.h>
 #include "hal/assert.h"
 #include "hal/mpi_types.h"
 #include "soc/dport_reg.h"
@@ -16,6 +17,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /* Round up number of words to nearest
    512 bit (16 word) block count.
