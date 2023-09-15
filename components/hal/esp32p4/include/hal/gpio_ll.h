@@ -247,18 +247,17 @@ static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO0-15
         LP_IOMUX.lp_pad_hys.reg_lp_gpio_hys |= bit_mask;
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low |= (bit_mask >> 16);
+            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low |= (bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
             // GPIO 48-56
-            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high |= (bit_mask >> (32 + 16));
+            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high |= (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
 }
@@ -271,18 +270,17 @@ static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t 
   */
 static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO0-15
         LP_IOMUX.lp_pad_hys.reg_lp_gpio_hys &= ~bit_mask;
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low &= ~(bit_mask >> 16);
+            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low &= ~(bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
             // GPIO 48-56
-            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high &= ~(bit_mask >> (32 + 16));
+            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high &= ~(bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
 }
@@ -443,18 +441,19 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO 0-15
-        LP_IOMUX.lp_pad_hold.reg_lp_gpio_hold |= bit_mask;
+        uint32_t hold_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold);
+        hold_mask |= bit_mask;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold, hold_mask);
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low |= (bit_mask >> 16);
+            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low |= (bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
             // GPIO 48-56
-            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high |= (bit_mask >> (32 + 16));
+            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high |= (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
 }
@@ -467,18 +466,19 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO 0-15
-        LP_IOMUX.lp_pad_hold.reg_lp_gpio_hold &= ~bit_mask;
+        uint32_t hold_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold);
+        hold_mask &= ~bit_mask;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold, hold_mask);
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low &= ~(bit_mask >> 16);
+            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low &= ~(bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
             // GPIO 48-56
-            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high &= ~(bit_mask >> (32 + 16));
+            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high &= ~(bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
 }
@@ -498,18 +498,17 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO 0-15
         abort();
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            return !!(HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low & (bit_mask >> 16));
+            return !!(HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low & (bit_mask >> SOC_RTCIO_PIN_COUNT));
         } else {
             // GPIO 48-56
-            return !!(HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high & (bit_mask >> (32 + 16)));
+            return !!(HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high & (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT)));
         }
     }
 }

@@ -5,6 +5,7 @@
  */
 
 #include "soc/rtc_periph.h"
+#include "soc/rtc_io_reg.h"
 
 const int rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     RTCIO_GPIO0_CHANNEL,    //GPIO0

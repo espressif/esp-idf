@@ -15,32 +15,32 @@ void rtcio_hal_set_direction(int rtcio_num, rtc_gpio_mode_t mode)
 {
     switch (mode) {
     case RTC_GPIO_MODE_INPUT_ONLY:
-        rtcio_ll_output_mode_set(rtcio_num, RTCIO_OUTPUT_NORMAL);
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_NORMAL);
         rtcio_ll_output_disable(rtcio_num);
         rtcio_ll_input_enable(rtcio_num);
         break;
     case RTC_GPIO_MODE_OUTPUT_ONLY:
-        rtcio_ll_output_mode_set(rtcio_num, RTCIO_OUTPUT_NORMAL);
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_NORMAL);
         rtcio_ll_output_enable(rtcio_num);
         rtcio_ll_input_disable(rtcio_num);
         break;
     case RTC_GPIO_MODE_INPUT_OUTPUT:
-        rtcio_ll_output_mode_set(rtcio_num, RTCIO_OUTPUT_NORMAL);
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_NORMAL);
         rtcio_ll_output_enable(rtcio_num);
         rtcio_ll_input_enable(rtcio_num);
         break;
     case RTC_GPIO_MODE_DISABLED:
-        rtcio_ll_output_mode_set(rtcio_num, RTCIO_OUTPUT_NORMAL);
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_NORMAL);
         rtcio_ll_output_disable(rtcio_num);
         rtcio_ll_input_disable(rtcio_num);
         break;
     case RTC_GPIO_MODE_OUTPUT_OD:
-        rtcio_ll_output_mode_set(rtcio_num, RTCIO_OUTPUT_OD);
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_OD);
         rtcio_ll_output_enable(rtcio_num);
         rtcio_ll_input_disable(rtcio_num);
         break;
     case RTC_GPIO_MODE_INPUT_OUTPUT_OD:
-        rtcio_ll_output_mode_set(rtcio_num, RTCIO_OUTPUT_OD);
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_OD);
         rtcio_ll_output_enable(rtcio_num);
         rtcio_ll_input_enable(rtcio_num);
         break;

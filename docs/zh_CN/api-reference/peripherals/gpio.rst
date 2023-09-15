@@ -13,13 +13,20 @@ GPIO 汇总
 
 .. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
-    当 GPIO 连接到 RTC 低功耗和模拟子系统时，{IDF_TARGET_NAME} 芯片还单独支持 RTC GPIO。可在以下情况时使用这些管脚功能：
+    .. only:: not SOC_LP_PERIPHERALS_SUPPORTED
+
+        当 GPIO 连接到 RTC 低功耗和模拟子系统时，{IDF_TARGET_NAME} 芯片还单独支持 RTC GPIO。可在以下情况时使用这些管脚功能：
+
+    .. only:: SOC_LP_PERIPHERALS_SUPPORTED
+
+        当 GPIO 连接到 RTC 低功耗、模拟子系统、低功耗外设时，{IDF_TARGET_NAME} 芯片还单独支持 RTC GPIO。可在以下情况时使用这些管脚功能：
 
     .. list::
 
         - 处于 Deep-sleep 模式时
         :SOC_ULP_SUPPORTED and not esp32c6: - :doc:`超低功耗协处理器 (ULP) <../../api-reference/system/ulp>` 运行时
         - 使用 ADC/DAC 等模拟功能时
+        :SOC_LP_PERIPHERALS_SUPPORTED: - 使用低功耗外设时，例如： LP_UART ， LP_I2C 等
 
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM

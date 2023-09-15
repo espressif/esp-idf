@@ -13,13 +13,20 @@ GPIO Summary
 
 .. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
-    There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when:
+    .. only:: not SOC_LP_PERIPHERALS_SUPPORTED
+
+        There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when:
+    
+    .. only:: SOC_LP_PERIPHERALS_SUPPORTED
+
+        There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power, analog subsystem, and Low-Power(LP) peripherals. These pin functions can be used when:
 
     .. list::
 
         - In Deep-sleep mode
         :SOC_ULP_SUPPORTED and not esp32c6: - The :doc:`Ultra Low Power co-processor <../../api-reference/system/ulp>` is running
-        - Analog functions such as ADC/DAC/etc are in use.
+        - Analog functions such as ADC/DAC/etc are in use
+        :SOC_LP_PERIPHERALS_SUPPORTED: - LP peripherals, such as LP_UART, LP_I2C, are in use
 
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM

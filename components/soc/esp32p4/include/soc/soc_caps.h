@@ -71,6 +71,8 @@
 // #define SOC_PMU_SUPPORTED               1  //TODO: IDF-7531
 // #define SOC_PAU_SUPPORTED               1  //TODO: IDF-7531
 // #define SOC_LP_TIMER_SUPPORTED          1  //TODO: IDF-7532
+#define SOC_LP_GPIO_MATRIX_SUPPORTED    1
+#define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_SPIRAM_SUPPORTED            1
 // #define SOC_ULP_SUPPORTED               1  //TODO: IDF-7534
 // #define SOC_SDMMC_HOST_SUPPORTED        1  //TODO: IDF-6502
@@ -189,7 +191,7 @@
 // On ESP32-P4, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 // GPIO0~15 on ESP32P4 can support chip deep sleep wakeup
-// #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1) // TODO: IDF-7480
+#define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 
 #define SOC_GPIO_VALID_GPIO_MASK        (0x01FFFFFFFFFFFFFF)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
@@ -204,10 +206,13 @@
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-// #define SOC_RTCIO_PIN_COUNT                 16  //TODO: IDF-7480
-// #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1  //TODO: IDF-7480
-// #define SOC_RTCIO_HOLD_SUPPORTED            1  //TODO: IDF-7480
-// #define SOC_RTCIO_WAKE_SUPPORTED            1  //TODO: IDF-7480
+#define SOC_RTCIO_PIN_COUNT                 16
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1   /* This macro indicates that the target has separate RTC IOMUX hardware feature,
+                                                 * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
+                                                 * when the pins are switched to RTC function.
+                                                 */
+#define SOC_RTCIO_HOLD_SUPPORTED            1
+#define SOC_RTCIO_WAKE_SUPPORTED            1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */

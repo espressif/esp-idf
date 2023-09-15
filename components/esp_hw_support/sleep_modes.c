@@ -1389,7 +1389,7 @@ static void ext0_wakeup_prepare(void)
 {
     int rtc_gpio_num = s_config.ext0_rtc_gpio_num;
     rtcio_hal_ext0_set_wakeup_pin(rtc_gpio_num, s_config.ext0_trigger_level);
-    rtcio_hal_function_select(rtc_gpio_num, RTCIO_FUNC_RTC);
+    rtcio_hal_function_select(rtc_gpio_num, RTCIO_LL_FUNC_RTC);
     rtcio_hal_input_enable(rtc_gpio_num);
 }
 #endif // SOC_PM_SUPPORT_EXT0_WAKEUP
@@ -1462,7 +1462,7 @@ static void ext1_wakeup_prepare(void)
         }
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         // Route pad to RTC
-        rtcio_hal_function_select(rtc_pin, RTCIO_FUNC_RTC);
+        rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_RTC);
         // set input enable in sleep mode
         rtcio_hal_input_enable(rtc_pin);
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
@@ -1477,7 +1477,7 @@ static void ext1_wakeup_prepare(void)
         * a pathway to EXT1. */
 
         // Route pad to DIGITAL
-        rtcio_hal_function_select(rtc_pin, RTCIO_FUNC_DIGITAL);
+        rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_DIGITAL);
         // set input enable
         gpio_ll_input_enable(&GPIO, gpio);
         // hold rtc_pin to use it during sleep state
