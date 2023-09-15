@@ -167,7 +167,7 @@ bool s_get_cache_state(uint32_t cache_level, cache_type_t type)
 }
 #endif  //#if CACHE_LL_ENABLE_DISABLE_STATE_SW
 
-void cache_hal_disable(cache_type_t type, uint32_t cache_level)
+void cache_hal_disable(uint32_t cache_level, cache_type_t type)
 {
     HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
 
@@ -178,7 +178,7 @@ void cache_hal_disable(cache_type_t type, uint32_t cache_level)
 #endif
 }
 
-void cache_hal_enable(cache_type_t type, uint32_t cache_level)
+void cache_hal_enable(uint32_t cache_level, cache_type_t type)
 {
     HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
 
@@ -193,7 +193,7 @@ void cache_hal_enable(cache_type_t type, uint32_t cache_level)
 #endif
 }
 
-void cache_hal_suspend(cache_type_t type, uint32_t cache_level)
+void cache_hal_suspend(uint32_t cache_level, cache_type_t type)
 {
     HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
 
@@ -204,7 +204,7 @@ void cache_hal_suspend(cache_type_t type, uint32_t cache_level)
 #endif
 }
 
-void cache_hal_resume(cache_type_t type, uint32_t cache_level)
+void cache_hal_resume(uint32_t cache_level, cache_type_t type)
 {
     HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
 
@@ -219,7 +219,7 @@ void cache_hal_resume(cache_type_t type, uint32_t cache_level)
 #endif
 }
 
-bool cache_hal_is_cache_enabled(cache_type_t type, uint32_t cache_level)
+bool cache_hal_is_cache_enabled(uint32_t cache_level, cache_type_t type)
 {
     bool enabled = false;
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
@@ -269,14 +269,14 @@ bool cache_hal_writeback_addr(uint32_t vaddr, uint32_t size)
 #endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
 
 #if SOC_CACHE_FREEZE_SUPPORTED
-void cache_hal_freeze(cache_type_t type, uint32_t cache_level)
+void cache_hal_freeze(uint32_t cache_level, cache_type_t type)
 {
     HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
 
     cache_ll_freeze_cache(cache_level, type, CACHE_LL_ID_ALL);
 }
 
-void cache_hal_unfreeze(cache_type_t type, uint32_t cache_level)
+void cache_hal_unfreeze(uint32_t cache_level, cache_type_t type)
 {
     HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
 
@@ -284,7 +284,7 @@ void cache_hal_unfreeze(cache_type_t type, uint32_t cache_level)
 }
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
-uint32_t cache_hal_get_cache_line_size(cache_type_t type, uint32_t cache_level)
+uint32_t cache_hal_get_cache_line_size(uint32_t cache_level, cache_type_t type)
 {
     HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
 

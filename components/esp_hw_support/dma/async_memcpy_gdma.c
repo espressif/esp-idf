@@ -163,10 +163,10 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     atomic_init(&mcp_gdma->fsm, MCP_FSM_IDLE);
     mcp_gdma->gdma_bus_id = gdma_bus_id;
 
-    uint32_t psram_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, CACHE_LL_LEVEL_EXT_MEM);
+    uint32_t psram_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     uint32_t sram_cache_line_size = 0;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    sram_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, CACHE_LL_LEVEL_INT_MEM);
+    sram_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
 #endif
 
     // if the psram_trans_align is configured to zero, we should fall back to use the data cache line size

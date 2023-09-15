@@ -202,7 +202,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
     Cache_Read_Disable(0);
     Cache_Flush(0);
 #else
-    cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 
     //---------------Do mapping------------------------
@@ -238,7 +238,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, MMU_BLOCK0_VADDR, actual_mapped_len);
 #endif
-    cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 
     mapped = true;
@@ -255,7 +255,7 @@ void bootloader_munmap(const void *mapping)
         Cache_Flush(0);
         mmu_init(0);
 #else
-        cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+        cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
         mmu_hal_unmap_all();
 #endif
         mapped = false;
@@ -283,7 +283,7 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
     Cache_Read_Disable(0);
     Cache_Flush(0);
 #else
-    cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 
     esp_rom_spiflash_result_t r = esp_rom_spiflash_read(src_addr, dest, size);
@@ -291,7 +291,7 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
 #else
-    cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 
     return spi_to_esp_err(r);
@@ -314,7 +314,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
             Cache_Read_Disable(0);
             Cache_Flush(0);
 #else
-            cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+            cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 
             //---------------Do mapping------------------------
@@ -336,7 +336,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
             cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, MMU_BLOCK0_VADDR, actual_mapped_len);
 #endif
-            cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+            cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
         }
         map_ptr = (uint32_t *)(FLASH_READ_VADDR + (word_src - map_at));
@@ -459,9 +459,9 @@ void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t fla
         assert(false);
         break;
     }
-    cache_hal_disable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
     esp_rom_opiflash_cache_mode_config(flash_mode, &cache_rd);
-    cache_hal_enable(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 #endif
 

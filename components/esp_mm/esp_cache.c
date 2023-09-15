@@ -51,7 +51,7 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     if (flags & ESP_CACHE_MSYNC_FLAG_TYPE_INST) {
         cache_type = CACHE_TYPE_INSTRUCTION;
     }
-    uint32_t cache_line_size = cache_hal_get_cache_line_size(cache_type, cache_level);
+    uint32_t cache_line_size = cache_hal_get_cache_line_size(cache_level, cache_type);
     if ((flags & ESP_CACHE_MSYNC_FLAG_UNALIGNED) == 0) {
         bool aligned_addr = (((uint32_t)addr % cache_line_size) == 0) && ((size % cache_line_size) == 0);
         ESP_RETURN_ON_FALSE_ISR(aligned_addr, ESP_ERR_INVALID_ARG, TAG, "start address: 0x%x, or the size: 0x%x is(are) not aligned with cache line size (0x%x)B", (uint32_t)addr, size, cache_line_size);
@@ -111,10 +111,10 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, 
     }
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, cache_level);
+    data_cache_line_size = cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
 #else
     if (cache_level == CACHE_LL_LEVEL_EXT_MEM) {
-        data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA, cache_level);
+        data_cache_line_size = cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
     } else {
         data_cache_line_size = 4;
     }

@@ -474,7 +474,7 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
      * for preventing concurrent from MSPI to external memory
      */
 #if SOC_CACHE_FREEZE_SUPPORTED
-    cache_hal_freeze(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_freeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
     if (switch_down) {
@@ -486,7 +486,7 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
     }
 
 #if SOC_CACHE_FREEZE_SUPPORTED
-    cache_hal_unfreeze(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_unfreeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 }
 

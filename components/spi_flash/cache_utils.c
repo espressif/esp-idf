@@ -360,17 +360,17 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
-    cache_hal_suspend(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
-    cache_hal_resume(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 bool IRAM_ATTR spi_flash_cache_enabled(void)
 {
-    return cache_hal_is_cache_enabled(CACHE_TYPE_ALL, CACHE_LL_LEVEL_EXT_MEM);
+    return cache_hal_is_cache_enabled(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 #if CONFIG_IDF_TARGET_ESP32S2
