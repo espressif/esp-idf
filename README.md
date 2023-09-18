@@ -120,6 +120,8 @@ This can be combined with other targets, ie `idf.py -p PORT erase-flash flash` w
 
 * Documentation for the latest version: https://docs.espressif.com/projects/esp-idf/. This documentation is built from the [docs directory](docs) of this repository.
 
+* [Beginner's Guide to Key Concepts and Resources of ESP-IDF](https://youtu.be/J8zc8mMNKtc?feature=shared)
+
 * The [esp32.com forum](https://esp32.com/) is a place to ask questions and find community resources.
 
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.

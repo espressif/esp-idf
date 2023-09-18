@@ -120,6 +120,8 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 
 * 最新版的文档：https://docs.espressif.com/projects/esp-idf/ ，该文档是由本仓库 [docs 目录](docs) 构建得到。
 
+* [初学者指南：主要概念和资源](https://www.bilibili.com/video/BV1114y1r7du/) 
+
 * 可以前往 [esp32.com 论坛](https://esp32.com/) 提问，挖掘社区资源。
 
 * 如果你在使用中发现了错误或者需要新的功能，请先[查看 GitHub Issues](https://github.com/espressif/esp-idf/issues)，确保该问题没有重复提交。
