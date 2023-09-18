@@ -8,6 +8,7 @@
 
 #include "esp_log.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_heap_caps.h"
 #include "memory_checks.h"
 #include "unity_fixture.h"
 
@@ -69,7 +70,7 @@ static void mpi_mul_mpi_mod_hw_op(void)
 #else
         mpi_hal_start_op(MPI_MODMULT);
 #endif
-        uint32_t* Z_p = (uint32_t*)calloc(test_cases_Z_words[i], sizeof(uint32_t));
+        uint32_t* Z_p = (uint32_t*)heap_caps_calloc(test_cases_Z_words[i], sizeof(uint32_t), MALLOC_CAP_INTERNAL);
         mpi_hal_read_result_hw_op(Z_p, test_cases_Z_words[i], test_cases_Z_words[i]);
 
         printf("Test Case %d: ", i+1);
@@ -82,7 +83,7 @@ static void mpi_mul_mpi_mod_hw_op(void)
 
         TEST_ASSERT_EQUAL_HEX32_ARRAY_MESSAGE(test_cases_Z_p[i], Z_p, test_cases_Z_words[i], "Result");
         printf("PASS\n");
-        free(Z_p);
+        heap_caps_free(Z_p);
     }
     esp_mpi_disable_hardware_hw_op();
 }
@@ -118,7 +119,7 @@ static void mpi_exp_mpi_mod_hw_op(void)
 
         mpi_hal_enable_search(false);
 #endif
-        uint32_t* Z_p = (uint32_t*)calloc(exp_test_cases_m_words[i], sizeof(uint32_t));
+        uint32_t* Z_p = (uint32_t*)heap_caps_calloc(exp_test_cases_m_words[i], sizeof(uint32_t), MALLOC_CAP_INTERNAL);
         /* Read back the result */
         mpi_hal_read_result_hw_op(Z_p, exp_test_cases_m_words[i], exp_test_cases_m_words[i]);
         esp_mpi_disable_hardware_hw_op();
@@ -133,7 +134,7 @@ static void mpi_exp_mpi_mod_hw_op(void)
 
         TEST_ASSERT_EQUAL_HEX32_ARRAY_MESSAGE(exp_test_cases_Z_p[i], Z_p, exp_test_cases_m_words[i], "Result");
         printf("PASS\n");
-        free(Z_p);
+        heap_caps_free(Z_p);
     }
 }
 

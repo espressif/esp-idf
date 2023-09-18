@@ -20,6 +20,16 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(ecc);
 #endif
 
+#if CONFIG_SOC_AES_SUPPORTED
+    RUN_TEST_GROUP(aes);
+#endif
+
+#if CONFIG_SOC_SHA_SUPPORTED
+#if !CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG
+    RUN_TEST_GROUP(sha);
+#endif /* !CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG*/
+#endif
+
 #if CONFIG_IDF_ENV_FPGA
 
 #if CONFIG_SOC_HMAC_SUPPORTED
