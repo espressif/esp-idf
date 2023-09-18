@@ -1,7 +1,16 @@
 | Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
-# WPA2 Enterprise Example
+
+# Understanding different WiFi enterprise modes:
+
+**WPA2 Enterprise**: WPA2-Enterprise is an advanced Wi-Fi security mode primarily used in business environments. It employs a RADIUS server for user-based authentication, supporting various EAP methods like EAP-TLS and EAP-PEAP. This mode enhances security by requiring individual user credentials, establishes secure encryption keys, and allows for efficient user management. It's a scalable and robust solution ideal for large-scale networks seeking strong protection against unauthorized access.
+
+**WPA3 Enterprise**: WPA2-Enterprise + PMF mandatory + CA certificate validaion(required)
+
+**WPA3 Enterprise(192 bit)**: WPA3 Enterprise + AES256 Keys(GCMP256/CCMP256) + BIP256 + RSA3096/EC certs + NSA SuiteB ciphers in EAP authentication.
+
+# WiFi Enterprise Example
 
 This example shows how ESP32 connects to AP with Wi-Fi enterprise encryption. The example does the following steps:
 
@@ -9,8 +18,8 @@ This example shows how ESP32 connects to AP with Wi-Fi enterprise encryption. Th
 2. Install client certificate and client key which is required in TLS method and optional in PEAP and TTLS methods.
 3. Set identity of phase 1 which is optional.
 4. Set user name and password of phase 2 which is required in PEAP and TTLS methods.
-5. Enable wpa2 enterprise.
-6. Connect to AP.
+5. Enable WiFi enterprise mode.
+6. Connect to AP using esp_wifi_connect().
 
 *Note:* 
 1. The certificates currently are generated and are present in examples/wifi/wifi_enterprise/main folder.
@@ -93,25 +102,100 @@ idf.py -p PORT flash monitor
 
 ### Example output
 
-Here is an example of wpa2 enterprise(PEAP method) console output.
-```
-I (1352) example: Setting WiFi configuration SSID wpa2_test...
-I (1362) wpa: WPA2 ENTERPRISE VERSION: [v2.0] enable
+I (31) boot: ESP-IDF v5.2-dev-2787-g40cf6433be-dirty 2nd stage bootloader
+I (31) boot: compile time Sep 12 2023 13:39:03
+I (33) boot: Multicore bootloader
+I (38) boot: chip revision: v3.0
+I (41) boot.esp32: SPI Speed      : 40MHz
+I (46) boot.esp32: SPI Mode       : DIO
+I (51) boot.esp32: SPI Flash Size : 2MB
+I (55) boot: Enabling RNG early entropy source...
+I (61) boot: Partition Table:
+I (64) boot: ## Label            Usage          Type ST Offset   Length
+I (71) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (79) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (86) boot:  2 factory          factory app      00 00 00010000 00100000
+I (94) boot: End of partition table
+I (98) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=2aa0ch (174604) map
+I (170) esp_image: segment 1: paddr=0003aa34 vaddr=3ffb0000 size=037a0h ( 14240) load
+I (175) esp_image: segment 2: paddr=0003e1dc vaddr=40080000 size=01e3ch (  7740) load
+I (179) esp_image: segment 3: paddr=00040020 vaddr=400d0020 size=954c8h (611528) map
+I (405) esp_image: segment 4: paddr=000d54f0 vaddr=40081e3c size=13de0h ( 81376) load
+I (449) boot: Loaded app from partition at offset 0x10000
+I (450) boot: Disabling RNG early entropy source...
+I (461) cpu_start: Multicore app
+I (461) cpu_start: Pro cpu up.
+I (462) cpu_start: Starting app cpu, entry point is 0x400811e0
+I (0) cpu_start: App cpu up.
+I (479) cpu_start: Pro cpu start user code
+I (479) cpu_start: cpu freq: 160000000 Hz
+I (479) cpu_start: Application information:
+I (484) cpu_start: Project name:     wifi_enterprise
+I (490) cpu_start: App version:      c6_h2_rng_final_tests-2032-g40c
+I (497) cpu_start: Compile time:     Sep 12 2023 13:38:55
+I (503) cpu_start: ELF file SHA256:  8d1ba00d3...
+I (508) cpu_start: ESP-IDF:          v5.2-dev-2787-g40cf6433be-dirty
+I (515) cpu_start: Min chip rev:     v0.0
+I (520) cpu_start: Max chip rev:     v3.99 
+I (525) cpu_start: Chip rev:         v3.0
+I (530) heap_init: Initializing. RAM available for dynamic allocation:
+I (537) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (543) heap_init: At 3FFB7A20 len 000285E0 (161 KiB): DRAM
+I (549) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (555) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (562) heap_init: At 40095C1C len 0000A3E4 (40 KiB): IRAM
+I (570) spi_flash: detected chip: generic
+I (573) spi_flash: flash io: dio
+W (577) spi_flash: Detected size(8192k) larger than the size in the binary image header(2048k). Using the size in the binary image header.
+I (591) app_start: Starting scheduler on CPU0
+I (595) app_start: Starting scheduler on CPU1
+I (595) main_task: Started on CPU0
+I (605) main_task: Calling app_main()
+I (635) wifi:wifi driver task: 3ffbf930, prio:23, stack:6656, core=0
+I (635) wifi:wifi firmware version: e03c1ca
+I (635) wifi:wifi certification version: v7.0
+I (635) wifi:config NVS flash: enabled
+I (635) wifi:config nano formating: disabled
+I (645) wifi:Init data frame dynamic rx buffer num: 32
+I (645) wifi:Init management frame dynamic rx buffer num: 32
+I (655) wifi:Init management short buffer num: 32
+I (655) wifi:Init dynamic tx buffer num: 32
+I (665) wifi:Init static rx buffer size: 1600
+I (665) wifi:Init static rx buffer num: 10
+I (665) wifi:Init dynamic rx buffer num: 32
+I (675) wifi_init: rx ba win: 6
+I (675) wifi_init: tcpip mbox: 32
+I (675) wifi_init: udp mbox: 6
+I (685) wifi_init: tcp mbox: 6
+I (685) wifi_init: tcp tx win: 5744
+I (695) wifi_init: tcp rx win: 5744
+I (695) wifi_init: tcp mss: 1440
+I (695) wifi_init: WiFi IRAM OP enabled
+I (705) wifi_init: WiFi RX IRAM OP enabled
+I (705) example: Setting WiFi configuration SSID ESP_ENTERPRISE_AP...
+I (715) wpa: WiFi Enterprise enable
+I (725) phy_init: phy_version 4771,450c73b,Aug 16 2023,11:03:10
+I (835) wifi:mode : sta (e0:e2:e6:6a:7c:20)
+I (845) wifi:enable tsf
+I (845) main_task: Returned from app_main()
+I (1465) wpa: BSS: Add new id 0 BSSID 38:94:ed:34:07:66 SSID 'ESP_ENTERPRISE_AP' chan 6
+I (1465) wifi:new:<6,0>, old:<1,0>, ap:<255,255>, sta:<6,0>, prof:1
+I (7385) wifi:state: init -> auth (b0)
+I (7395) wifi:state: auth -> assoc (0)
+I (7405) wifi:state: assoc -> run (10)
+I (7405) wpa: wifi_task prio:7, stack:6656
+I (7495) wpa: len=5 not available in input
+I (7555) wpa: SSL: Need 1595 bytes more input data
+I (7605) wpa: SSL: Need 601 bytes more input data
+I (8575) wpa: len=5 not available in input
+I (8695) wpa: application data is null, adding one byte for ack
+I (8725) wpa: >>>>>EAP FINISH
+I (8785) wifi:connected with ESP_ENTERPRISE_AP, aid = 1, channel 6, BW20, bssid = 38:94:ed:34:07:66
+I (8785) wifi:security: WPA2-ENT, phy: bgn, rssi: -22
+I (8785) wifi:pm start, type: 1
 
-I (1362) wifi: rx_ba=1 tx_ba=1
+I (8795) wifi:AP's beacon interval = 102400 us, DTIM period = 3
 
-I (1372) wifi: mode : sta (24:0a:c4:03:b8:dc)
-I (3002) wifi: n:11 0, o:1 0, ap:255 255, sta:11 0, prof:11
-I (3642) wifi: state: init -> auth (b0)
-I (3642) wifi: state: auth -> assoc (0)
-I (3652) wifi: state: assoc -> run (10)
-I (3652) wpa: wpa2_task prio:24, stack:6144
-
-I (3972) wpa: >>>>>wpa2 FINISH
-
-I (3982) wpa: wpa2 task delete
-
-I (3992) wifi: connected with wpa2_test, channel 11
 I (5372) example: ~~~~~~~~~~~
 I (5372) example: IP:0.0.0.0
 I (5372) example: MASK:0.0.0.0

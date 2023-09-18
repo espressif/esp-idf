@@ -8,3 +8,4 @@ Migration from 5.1 to 5.2
 
     peripherals
     protocols
+    wifi

@@ -2,15 +2,15 @@ menu "Example Configuration"
 
     config EXAMPLE_WIFI_SSID
         string "WiFi SSID"
-        default "wpa2_test"
+        default "ESP_ENTERPRISE_AP"
         help
             SSID (network name) for the example to connect to.
 
     choice
         prompt "Enterprise configuration to be used"
-        default EXAMPLE_WPA_WPA2_ENTERPRISE
-        config EXAMPLE_WPA_WPA2_ENTERPRISE
-            bool "WPA_WPA2_ENT"
+        default EXAMPLE_WPA3_ENTERPRISE
+        config EXAMPLE_WPA2_ENTERPRISE
+            bool "WPA2_ENT"
         config EXAMPLE_WPA3_ENTERPRISE
             bool "WPA3_ENT"
         config EXAMPLE_WPA3_192BIT_ENTERPRISE
@@ -21,7 +21,7 @@ menu "Example Configuration"
             select ESP_WIFI_SUITE_B_192
     endchoice
 
-    if EXAMPLE_WPA_WPA2_ENTERPRISE
+    if EXAMPLE_WPA2_ENTERPRISE
         config EXAMPLE_VALIDATE_SERVER_CERT
             bool "Validate server"
             default y
@@ -29,21 +29,14 @@ menu "Example Configuration"
                 Validate the servers' certificate using CA cert.
     endif
 
-    if !EXAMPLE_WPA_WPA2_ENTERPRISE
+    if !EXAMPLE_WPA2_ENTERPRISE
         config EXAMPLE_VALIDATE_SERVER_CERT
             default y
     endif
 
-    config EXAMPLE_USE_DEFAULT_CERT_BUNDLE
-        bool "Use default cert bundle"
-        depends on EXAMPLE_VALIDATE_SERVER_CERT
-        default n
-        help
-            Use default CA certificate bundle for WPA enterprise connection
-
     choice
         prompt "EAP method for the example to use"
-        default EXAMPLE_EAP_METHOD_PEAP
+        default EXAMPLE_EAP_METHOD_TLS
         config EXAMPLE_EAP_METHOD_TLS
             bool "TLS"
         config EXAMPLE_EAP_METHOD_PEAP
@@ -90,13 +83,19 @@ menu "Example Configuration"
         depends on EXAMPLE_EAP_METHOD_PEAP || EXAMPLE_EAP_METHOD_TTLS
         default "espressif"
         help
-            Username for EAP method (PEAP and TTLS).
+            Username for EAP method (valid for PEAP and TTLS).
 
     config EXAMPLE_EAP_PASSWORD
         string "EAP PASSWORD"
         depends on EXAMPLE_EAP_METHOD_PEAP || EXAMPLE_EAP_METHOD_TTLS
         default "test11"
         help
-            Password for EAP method (PEAP and TTLS).
+            Password for EAP method (valid for PEAP and TTLS).
 
+    config EXAMPLE_USE_DEFAULT_CERT_BUNDLE
+        bool "Use default cert bundle"
+        depends on EXAMPLE_VALIDATE_SERVER_CERT
+        default n
+        help
+            Use default CA certificate bundle for WiFi enterprise connection
 endmenu
