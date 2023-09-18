@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1609,6 +1609,14 @@
 
 #ifndef MYNEWT_VAL_BLE_POWER_CONTROL
 #define MYNEWT_VAL_BLE_POWER_CONTROL   CONFIG_BT_NIMBLE_BLE_POWER_CONTROL
+#endif
+
+#ifndef MYNEWT_VAL_BLE_HIGH_DUTY_ADV_ITVL
+#ifdef CONFIG_BT_NIMBLE_HIGH_DUTY_ADV_ITVL
+#define MYNEWT_VAL_BLE_HIGH_DUTY_ADV_ITVL  CONFIG_BT_NIMBLE_HIGH_DUTY_ADV_ITVL
+#else
+#define MYNEWT_VAL_BLE_HIGH_DUTY_ADV_ITVL  (0)
+#endif
 #endif
 
 #endif
