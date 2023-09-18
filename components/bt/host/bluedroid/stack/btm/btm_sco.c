@@ -379,7 +379,7 @@ static void btm_pkt_stat_send_nums_update(uint16_t sco_inx, uint8_t pkt_status)
 {
     tSCO_CONN   *p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
     p_ccb->pkt_stat_nums.tx_total++;
-    if (pkt_status != BTM_SUCCESS) {
+    if (pkt_status != BTM_SUCCESS && pkt_status != BTM_NO_RESOURCES && pkt_status != BTM_SCO_BAD_LENGTH) {
         p_ccb->pkt_stat_nums.tx_discarded++;
     }
 }
@@ -534,7 +534,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         status = BTM_UNKNOWN_ADDR;
     }
 
-    if (status != BTM_SUCCESS && status!= BTM_NO_RESOURCES) {
+    if (status != BTM_SUCCESS && status!= BTM_NO_RESOURCES && status != BTM_SCO_BAD_LENGTH) {
         BTM_TRACE_WARNING ("stat %d", status);
         osi_free(p_buf);
     }
