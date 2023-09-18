@@ -16,6 +16,7 @@ This example contains some build configurations. For each configuration, a few c
 - `sdkconfig.40m.esp32c3`: ESP32C3 uses main XTAL as low power clock in light sleep enabled.
 - `sdkconfig.defaults.esp32s3`: ESP32S3 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.40m.esp32s3`: ESP32S3 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32c2`: ESP32C2 uses main XTAL as low power clock in light sleep enabled.
 ## How to use example
 
 ### Hardware Required
@@ -47,6 +48,15 @@ idf.py menuconfig
    - `Component config > Bluetooth > Controller Options > MODEM SLEEP Options > Bluetooth modem sleep > Bluetooth Modem sleep Mode 1 > Bluetooth low power clock`
 7. Enable power up main XTAL during light sleep:
    - `Component config > Bluetooth > Controller Options > MODEM SLEEP Options > [*] power up main XTAL during light sleep`
+
+#### For Chip ESP32-C2
+
+4. Enable bluetooth modem sleep:
+   - `Component config > Bluetooth > Controller Options`
+     - `[*] Enable BLE sleep`
+5. Power down flash during light sleep:
+   - `Component config > Hardware Settings > Sleep Config`
+     - `[*] Power down flash in light sleep when there is no SPIRAM`
 
 ### Build and Flash
 
@@ -107,8 +117,10 @@ I (463) NimBLE:
 | ESP32   | 231 mA      | 14.1 mA      | X                      | 1.9 mA                  |
 | ESP32C3 | 262 mA      | 12 mA        | 2.3 mA                 | 140 uA                  |
 | ESP32S3 | 240 mA      | 17.9 mA      | 3.3 mA                 | 230 uA                  |
+| ESP32C2 | 130 mA      | 18.0 mA      | 2.5 mA                 | X                       |
 X: This feature is currently not supported.
 
 ## Example Breakdown
 
 - ESP32 does not support the use of main XTAL in light sleep mode, so an external 32kHz crystal is required.
+- ESP32C2 does not support the use of 32KHz XTAL in light sleep mode, the XTAL frequency is set to 26MHz in default.
