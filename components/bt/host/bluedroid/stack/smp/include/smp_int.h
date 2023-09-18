@@ -527,6 +527,9 @@ extern BOOLEAN smp_calculate_f5_key(UINT8 *w, UINT8 *t);
 extern BOOLEAN smp_calculate_f6(UINT8 *w, UINT8 *n1, UINT8 *n2, UINT8 *r, UINT8 *iocap,
                                 UINT8 *a1, UINT8 *a2, UINT8 *f3);
 extern BOOLEAN smp_calculate_h6(UINT8 *w, UINT8 *keyid, UINT8 *h2);
+extern void smp_save_local_oob_data(tSMP_CB *p_cb);
+extern void smp_clear_local_oob_data(void);
+extern tSMP_LOC_OOB_DATA *smp_get_local_oob_data(void);
 #if SMP_DEBUG == TRUE
 extern void smp_debug_print_nbyte_little_endian (UINT8 *p, const UINT8 *key_name,
         UINT8 len);

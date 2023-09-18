@@ -498,13 +498,9 @@ extern void SMP_KeypressNotification (BD_ADDR bd_addr, UINT8 value);
 ** Description      This function is called to start creation of local SC OOB
 **                  data set (tSMP_LOC_OOB_DATA).
 **
-** Parameters:      bd_addr      - Address of the device to send OOB data block
-**                                 to.
-**
 **  Returns         Boolean - TRUE: creation of local SC OOB data set started.
 *******************************************************************************/
-extern BOOLEAN SMP_CreateLocalSecureConnectionsOobData (
-    tBLE_BD_ADDR *addr_to_send_to);
+extern BOOLEAN SMP_CreateLocalSecureConnectionsOobData (void);
 
 #ifdef __cplusplus
 }

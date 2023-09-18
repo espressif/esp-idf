@@ -39,7 +39,9 @@ static void _btc_storage_save(void)
                 !btc_config_exist(section, BTC_BLE_STORAGE_LE_KEY_PID_STR) &&
                 !btc_config_exist(section, BTC_BLE_STORAGE_LE_KEY_PCSRK_STR) &&
                 !btc_config_exist(section, BTC_BLE_STORAGE_LE_KEY_LENC_STR) &&
-                !btc_config_exist(section, BTC_BLE_STORAGE_LE_KEY_LCSRK_STR)) {
+                !btc_config_exist(section, BTC_BLE_STORAGE_LE_KEY_LCSRK_STR) &&
+                !btc_config_exist(section, BTC_BLE_STORAGE_GATT_CL_SUPP_FEAT_STR) &&
+                !btc_config_exist(section, BTC_BLE_STORAGE_GATT_DB_HASH_STR)) {
             iter = btc_config_section_next(iter);
             btc_config_remove_section(section);
             continue;
@@ -921,6 +923,80 @@ int btc_storage_get_num_ble_bond_devices(void)
     btc_config_unlock();
 
     return num_dev;
+}
+
+bt_status_t btc_storage_get_gatt_cl_supp_feat(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    int ret = btc_config_get_bin(bdstr, BTC_BLE_STORAGE_GATT_CL_SUPP_FEAT_STR, value, (size_t *)&len);
+    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+bt_status_t btc_storage_set_gatt_cl_supp_feat(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len)
+{
+    int ret;
+    bdstr_t bdstr;
+
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr_t));
+    ret = btc_config_set_bin(bdstr, BTC_BLE_STORAGE_GATT_CL_SUPP_FEAT_STR, value, (size_t)len);
+    if (ret == false) {
+        return BT_STATUS_FAIL;
+    }
+
+    return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btc_storage_get_gatt_db_hash(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    int ret = btc_config_get_bin(bdstr, BTC_BLE_STORAGE_GATT_DB_HASH_STR, value, (size_t *)&len);
+    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+bt_status_t btc_storage_set_gatt_db_hash(bt_bdaddr_t *remote_bd_addr, uint8_t *value, int len)
+{
+    int ret;
+    bdstr_t bdstr;
+
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr_t));
+    ret = btc_config_set_bin(bdstr, BTC_BLE_STORAGE_GATT_DB_HASH_STR, value, (size_t)len);
+    if (ret == false) {
+        return BT_STATUS_FAIL;
+    }
+
+    return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btc_storage_remove_gatt_cl_supp_feat(bt_bdaddr_t *remote_bd_addr)
+{
+    bool ret = true;
+    bdstr_t bdstr;
+
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+
+    ret = btc_config_remove(bdstr, BTC_BLE_STORAGE_GATT_CL_SUPP_FEAT_STR);
+    if (ret == false) {
+        return BT_STATUS_FAIL;
+    }
+
+    return  BT_STATUS_SUCCESS;
+}
+
+bt_status_t btc_storage_remove_gatt_db_hash(bt_bdaddr_t *remote_bd_addr)
+{
+    bool ret = true;
+    bdstr_t bdstr;
+
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+
+    ret = btc_config_remove(bdstr, BTC_BLE_STORAGE_GATT_DB_HASH_STR);
+    if (ret == false) {
+        return BT_STATUS_FAIL;
+    }
+
+    return  BT_STATUS_SUCCESS;
 }
 #endif  ///BLE_INCLUDED == TRUE
 #endif  ///SMP_INCLUDED == TRUE

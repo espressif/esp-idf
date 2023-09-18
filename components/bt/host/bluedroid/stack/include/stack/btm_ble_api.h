@@ -1031,7 +1031,14 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT                   32
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT                33
 #define    BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT               34
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               35
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#define    BTM_BLE_GAP_PERIODIC_ADV_RECV_ENABLE_COMPLETE_EVT       35
+#define    BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_COMPLETE_EVT        36
+#define    BTM_BLE_GAP_PERIODIC_ADV_SET_INFO_TRANS_COMPLETE_EVT    37
+#define    BTM_BLE_GAP_SET_PAST_PARAMS_COMPLETE_EVT                38
+#define    BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT            39
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               40
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #define BTM_BLE_EXT_ADV_DATA_COMPLETE          0x00
@@ -1241,6 +1248,39 @@ typedef struct {
     UINT16 max_ce_len;
 } tBTM_BLE_CONN_PARAMS;
 
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_PERIOD_ADV_RECV_ENABLE_CMPL;
+
+typedef struct {
+    UINT8 status;
+    BD_ADDR addr;
+} tBTM_BLE_PERIOD_ADV_SYNC_TRANS_CMPL;
+
+typedef struct {
+    UINT8 status;
+    BD_ADDR addr;
+} tBTM_BLE_PERIOD_ADV_SET_INFO_TRANS_CMPL;
+
+typedef struct {
+    UINT8 status;
+    BD_ADDR addr;
+} tBTM_BLE_SET_PERIOD_ADV_SYNC_TRANS_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+    BD_ADDR addr;
+    UINT16 service_data;
+    UINT16 sync_handle;
+    UINT8 adv_sid;
+    UINT8 adv_addr_type;
+    BD_ADDR adv_addr;
+    UINT8 adv_phy;
+    UINT16 adv_interval;
+    UINT8 adv_clk_accuracy;
+} tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV;
+#endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 typedef union {
     UINT8 status;
@@ -1275,6 +1315,13 @@ typedef union {
     tBTM_PERIOD_ADV_REPORT period_adv_report;
     tBTM_BLE_PERIOD_ADV_SYNC_LOST sync_lost;
     tBTM_BLE_PERIOD_ADV_SYNC_ESTAB sync_estab;
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+    tBTM_BLE_PERIOD_ADV_RECV_ENABLE_CMPL per_adv_recv_enable;
+    tBTM_BLE_PERIOD_ADV_SYNC_TRANS_CMPL per_adv_sync_trans;
+    tBTM_BLE_PERIOD_ADV_SET_INFO_TRANS_CMPL per_adv_set_info_trans;
+    tBTM_BLE_SET_PERIOD_ADV_SYNC_TRANS_PARAMS_CMPL set_past_params;
+    tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV past_recv;
+#endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -1809,6 +1856,29 @@ void BTM_BleConfirmReply (BD_ADDR bd_addr, UINT8 res);
 //extern
 void BTM_BleOobDataReply(BD_ADDR bd_addr, UINT8 res, UINT8 len, UINT8 *p_data);
 
+/*******************************************************************************
+**
+** Function         BTM_BleSecureConnectionOobDataReply
+**
+** Description      This function is called to provide the OOB data for
+**                  SMP in response to BTM_LE_SC_OOB_REQ_EVT when secure connection
+**
+** Parameters:      bd_addr     - Address of the peer device
+**                  p_c         - pointer to Confirmation
+**                  p_r         - pointer to Randomizer
+**
+*******************************************************************************/
+void BTM_BleSecureConnectionOobDataReply(BD_ADDR bd_addr, UINT8 *p_c, UINT8 *p_r);
+
+/*******************************************************************************
+**
+** Function         BTM_BleSecureConnectionCreateOobData
+**
+** Description      This function is called to create the OOB data for
+**                  SMP when secure connection
+**
+*******************************************************************************/
+void BTM_BleSecureConnectionCreateOobData(void);
 
 /*******************************************************************************
 **
@@ -2614,7 +2684,16 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params);
 tBTM_STATUS BTM_BleExtendedScan(BOOLEAN enable, UINT16 duration, UINT16 period);
 
 void BTM_BleSetPreferExtenedConnParams(BD_ADDR bd_addr, tBTM_EXT_CONN_PARAMS *params);
-
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+void BTM_BlePeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable);
+
+void BTM_BlePeriodicAdvSyncTrans(BD_ADDR bd_addr, UINT16 service_data, UINT16 sync_handle);
+
+void BTM_BlePeriodicAdvSetInfoTrans(BD_ADDR bd_addr, UINT16 service_data, UINT8 adv_handle);
+
+void BTM_BleSetPeriodicAdvSyncTransParams(BD_ADDR bd_addr, UINT8 mode, UINT16 skip, UINT16 sync_timeout, UINT8 cte_type);
+#endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
 #endif
