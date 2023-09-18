@@ -140,6 +140,11 @@ variables:
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
   fi
 
+  # Install QEMU if necessary
+  if [[ ! -z "$INSTALL_QEMU" ]]; then
+    $IDF_PATH/tools/idf_tools.py --non-interactive install qemu-xtensa qemu-riscv32
+  fi
+
   source ./export.sh
 
   # Custom clang

@@ -109,5 +109,6 @@ tools/set-submodules-to-github.sh
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_idf_py/test_hints.py
 tools/test_idf_py/test_idf_py.py
+tools/test_idf_py/test_idf_qemu.py
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py

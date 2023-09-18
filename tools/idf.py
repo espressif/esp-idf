@@ -441,9 +441,9 @@ def init_cli(verbose_output: List=None) -> Any:
                 return None
 
         def _print_closing_message(self, args: PropertyDict, actions: _OrderedDictKeysView) -> None:
-            # print a closing message of some kind
-            #
-            if any(t in str(actions) for t in ('flash', 'dfu', 'uf2', 'uf2-app')):
+            # print a closing message of some kind,
+            # except if any of the following actions were requested
+            if any(t in str(actions) for t in ('flash', 'dfu', 'uf2', 'uf2-app', 'qemu')):
                 print('Done')
                 return
 
