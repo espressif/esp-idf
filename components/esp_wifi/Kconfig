@@ -113,6 +113,40 @@ menu "Wi-Fi"
             can deliver frames faster than WiFi layer can transmit. In these cases, we may run out of TX
             buffers.
 
+    choice ESP_WIFI_MGMT_RX_BUFFER
+        prompt "Type of WiFi RX MGMT buffers"
+        default ESP_WIFI_STATIC_RX_MGMT_BUFFER
+        help
+            Select type of WiFi RX MGMT buffers:
+
+            If "Static" is selected, WiFi RX MGMT buffers are allocated when WiFi is initialized and released
+            when WiFi is de-initialized. The size of each static RX MGMT buffer is fixed to about 500 Bytes.
+
+            If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data frame is
+            received. The MGMT buffer is freed after the MGMT data frame has been processed by the WiFi driver.
+
+
+        config ESP_WIFI_STATIC_RX_MGMT_BUFFER
+            bool "Static"
+        config ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
+            bool "Dynamic"
+    endchoice
+
+    config ESP_WIFI_DYNAMIC_RX_MGMT_BUF
+        int
+        default 0 if ESP_WIFI_STATIC_RX_MGMT_BUFFER
+        default 1 if ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
+
+    config ESP_WIFI_RX_MGMT_BUF_NUM_DEF
+        int "Max number of WiFi RX MGMT buffers"
+        range 1 10
+        default 5
+        help
+            Set the number of WiFi RX_MGMT buffers.
+
+            For Management buffers, the number of dynamic and static management buffers is the same.
+            In order to prevent memory fragmentation, the management buffer type should be set to static first.
+
     config ESP_WIFI_CSI_ENABLED
         bool "WiFi CSI(Channel State Information)"
         depends on SOC_WIFI_CSI_SUPPORT
