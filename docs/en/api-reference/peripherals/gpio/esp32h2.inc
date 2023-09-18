@@ -139,6 +139,5 @@ The table below provides more information on pin usage, and please note the comm
 	  - SPI0/1: GPIO15-21 are usually used for SPI flash and not recommended for other uses.
 	  - USB-Serial-JTAG: GPIO 26 and 27 are used by USB-Serial-JTAG by default. In order to use them as GPIOs, USB-Serial-JTAG will be disabled by the drivers.
     - For chip variants with an SiP flash built in, GPIO15 ~ GPIO21 are dedicated to connecting the SiP flash and are not fan-out to the external pins. In addition, GPIO6 ~ GPIO7 are also not fan-out to the external pins. In conclusion, only GPIO0~ GPIO5, GPIO8~ GPIO14, GPIO22~ GPIO27 are available to users.
-    - For chip variant without SiP flash, apart from the flash IOs mentioned above, GPIO22 is not fan-out to the external pin, thus they're not available to users.
 
 ---
