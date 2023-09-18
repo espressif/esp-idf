@@ -319,8 +319,7 @@ static void start_other_core(void)
     }
 }
 
-#if !CONFIG_IDF_TARGET_ESP32P4
-//TODO: IDF-7692
+#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 // This function is needed to make the multicore app runnable on a unicore bootloader (built with FREERTOS UNICORE).
 // It does some cache settings for other CPUs.
 void IRAM_ATTR do_multicore_settings(void)
@@ -351,7 +350,7 @@ void IRAM_ATTR do_multicore_settings(void)
     cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 }
-#endif  //#if !CONFIG_IDF_TARGET_ESP32P4
+#endif // !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
 /*
@@ -432,11 +431,10 @@ void IRAM_ATTR call_start_cpu0(void)
     ESP_EARLY_LOGI(TAG, "Unicore app");
 #else
     ESP_EARLY_LOGI(TAG, "Multicore app");
-#if !CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7692
+#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
-#endif  //#if !CONFIG_IDF_TARGET_ESP32P4
+#endif // !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #endif
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
