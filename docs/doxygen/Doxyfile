@@ -177,6 +177,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_systick_etm.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_task.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_now.h \

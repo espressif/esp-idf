@@ -2068,7 +2068,7 @@ Wi-Fi 80211 数据包发送
        上述建议仅供避免副作用，在有充分理由的情况下可以忽略。
 
    * - 有 Wi-Fi 连接
-     - 当 Wi-Fi 已连接，且序列由应用程序控制，应用程序可能会影响整个 Wi-Fi 连接的序列控制。 因此，en_sys_seq 要为 true，否则将返回 ``ESP_ERR_WIFI_ARG``。
+     - 当 Wi-Fi 已连接，且序列由应用程序控制，应用程序可能会影响整个 Wi-Fi 连接的序列控制。 因此，en_sys_seq 要为 true，否则将返回 ``ESP_ERR_INVALID_ARG``。
 
        “无 Wi-Fi 连接”情况下的 MAC 地址建议也适用于此情况。
 
@@ -2080,7 +2080,7 @@ Wi-Fi 80211 数据包发送
 
        - 如果数据包是从 station 发送到 AP，或从 AP 到 station，Power Management、More Data 和 Re-Transmission 位应该为 0，否则，Wi-Fi 驱动程序不接受该数据包。
 
-       如果任何检查失败，将返回 ``ESP_ERR_WIFI_ARG``。
+       如果任何检查失败，将返回 ``ESP_ERR_INVALID_ARG``。
 
 
 Wi-Fi Sniffer 模式

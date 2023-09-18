@@ -14,5 +14,18 @@ menu "Iperf Configuration"
             The value is used for iperf socket TCP tx timeout, iperf will be aborted
             and socket will be closed and shutdown.
 
+    config IPERF_TRAFFIC_TASK_PRIORITY
+        int "iperf traffic task priority"
+        default 4
+        range 1 24
+        help
+            The value is used for iperf traffic task priority.
+
+    config IPERF_REPORT_TASK_PRIORITY
+        int "iperf result report task priority"
+        default 6
+        range 1 24
+        help
+            The value is used for iperf result report task priority.
 
 endmenu
