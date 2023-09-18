@@ -123,6 +123,8 @@ static bool s_skipped_light_sleep[portNUM_PROCESSORS];
  */
 static bool s_skip_light_sleep[portNUM_PROCESSORS];
 #endif // portNUM_PROCESSORS == 2
+
+static _lock_t s_skip_light_sleep_lock;
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 /* A flag indicating that Idle hook has run on a given CPU;
@@ -547,25 +549,32 @@ static void IRAM_ATTR leave_idle(void)
 
 esp_err_t esp_pm_register_skip_light_sleep_callback(skip_light_sleep_cb_t cb)
 {
+    _lock_acquire(&s_skip_light_sleep_lock);
     for (int i = 0; i < PERIPH_SKIP_LIGHT_SLEEP_NO; i++) {
         if (s_periph_skip_light_sleep_cb[i] == cb) {
+            _lock_release(&s_skip_light_sleep_lock);
             return ESP_OK;
         } else if (s_periph_skip_light_sleep_cb[i] == NULL) {
             s_periph_skip_light_sleep_cb[i] = cb;
+            _lock_release(&s_skip_light_sleep_lock);
             return ESP_OK;
         }
     }
+    _lock_release(&s_skip_light_sleep_lock);
     return ESP_ERR_NO_MEM;
 }
 
 esp_err_t esp_pm_unregister_skip_light_sleep_callback(skip_light_sleep_cb_t cb)
 {
+    _lock_acquire(&s_skip_light_sleep_lock);
     for (int i = 0; i < PERIPH_SKIP_LIGHT_SLEEP_NO; i++) {
         if (s_periph_skip_light_sleep_cb[i] == cb) {
             s_periph_skip_light_sleep_cb[i] = NULL;
+            _lock_release(&s_skip_light_sleep_lock);
             return ESP_OK;
         }
     }
+    _lock_release(&s_skip_light_sleep_lock);
     return ESP_ERR_INVALID_STATE;
 }
 
