@@ -51,8 +51,8 @@ Mesh Models
     * Bridge Configuration Client model
     * Mesh Private Beacon Server model
     * Mesh Private Beacon Client model
-    * On-Demend Private Proxy Server model
-    * On-Demend Private Proxy Client model
+    * On-Demand Private Proxy Server model
+    * On-Demand Private Proxy Client model
     * SAR Configuration Server model
     * SAR Configuration Client model
     * Solicitation PDU RPL Configuration Server model

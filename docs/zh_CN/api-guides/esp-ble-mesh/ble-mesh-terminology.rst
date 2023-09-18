@@ -227,10 +227,10 @@ ESP-BLE-MESH Terminology
   * - Mesh Private Beacon Client model
     - "The model is used to support the functionality of a node that can configure the Mesh Private beacons functionality of another node."
     - 该模型用于支持一个节点配置另一个节点的 Mesh 私有信标功能的功能。
-  * - On-Demend Private Proxy Server model
+  * - On-Demand Private Proxy Server model
     - "The model is used to support the configuration of the advertising with Private Network Identity type functionality of a node."
     - 该模型用于支持节点的私有网络身份类型广告配置功能。
-  * - On-Demend Private Proxy Client model
+  * - On-Demand Private Proxy Client model
     - "The model is used to support the functionality of a node that can configure the advertising with Private Network Identity type functionality of another node."
     - 该模型用于支持一个节点配置另一个节点的私有网络身份类型广告功能的功能。
   * - SAR Configuration Server model

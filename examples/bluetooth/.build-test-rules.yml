@@ -64,11 +64,11 @@ examples/bluetooth/blufi:
 
 examples/bluetooth/esp_ble_mesh:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
       temporary: true
       reason: The runner doesn't support yet
 
@@ -85,6 +85,16 @@ examples/bluetooth/esp_ble_mesh/aligenie_demo:
 examples/bluetooth/esp_ble_mesh/coex_test:
   enable:
     - if: IDF_TARGET in ["esp32"]
+      temporary: true
+      reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32s3", "esp32c6"]
+      temporary: true
+      reason: The runner doesn't support yet
+
+examples/bluetooth/esp_ble_mesh/wifi_coexist:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3", "esp32c6"]
       temporary: true
       reason: the other targets are not tested yet
   disable_test:

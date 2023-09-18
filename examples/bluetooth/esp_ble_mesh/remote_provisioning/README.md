@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 # Remote Provisioning
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -7,7 +7,7 @@
 The example is primarily used to demonstrate the new Remote Provisioning feature added in Mesh Protocol v1.1.
 ## How to use example
 
-Please refer to this [tutorial](examples/bluetooth/esp_ble_mesh/remote_provisioning/tutorial/BLE_Mesh_Remote_Provisioning_Example_Walkthrough.md) for detailed instructions on how to run it.
+Please refer to this [tutorial](tutorial/BLE_Mesh_Remote_Provisioning_Example_Walkthrough.md) for detailed instructions on how to run it.
 
 ### Hardware Required
 You need prepare at least three ESP series development boards. We recommend using the [ESP32-C3-DevKitM-1](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html) or [ESP32-C6-DevKitC-1](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/user_guide.html#). Alternatively, you can use other development boards, but ensure that each board has at least one LED and one button for operation.

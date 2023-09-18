@@ -903,7 +903,7 @@ void app_main(void)
         return;
     }
 
-    /* Device uuis will be filled with bd address at dev_uuid + 2 */
+    /* Device uuid will be filled with bd address at dev_uuid + 2 */
     ble_mesh_get_dev_uuid(dev_uuid);
 
     ESP_LOG_BUFFER_HEX(TAG":Provisioner bd address: ", dev_uuid + 2, BD_ADDR_LEN);

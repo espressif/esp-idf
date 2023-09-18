@@ -9,6 +9,10 @@
 idf-component-manager.rst: WARNING: Badly formated string substitution: {IDF_TARGET}
 esp_ble_mesh_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
 Declaration is '.. cpp:member:: uint16_t model_id'.
+esp_ble_mesh_cm_data_api.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
+Declaration is '.. cpp:member:: int8_t element_offset'.
+esp_ble_mesh_cm_data_api.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
+Declaration is '.. cpp:member:: int8_t model_item_idx'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
 Declaration is '.. cpp:type:: struct esp_mqtt_event_t esp_mqtt_event_t'.
 mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
