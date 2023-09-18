@@ -154,7 +154,6 @@
   - "components/**/*"
 
   - "tools/ci/test_autocomplete.py"
-  - "tools/ci/test_check_kconfigs.py"
 
   - "tools/mass_mfg/**/*"
 

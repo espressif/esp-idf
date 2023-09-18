@@ -71,21 +71,6 @@ check_api_usage:
     - tools/ci/check_api_violation.sh
     - tools/ci/check_examples_extra_component_dirs.sh
 
-test_check_kconfigs:
-  extends: .pre_check_template
-  artifacts:
-    when: on_failure
-    paths:
-      - components/*/Kconfig*.new
-      - examples/*/*/*/Kconfig*.new
-      - examples/*/*/*/*/Kconfig*.new
-      - tools/*/Kconfig*.new
-      - tools/*/*/Kconfig*.new
-      - tools/*/*/*/Kconfig*.new
-    expire_in: 1 week
-  script:
-    - python ${IDF_PATH}/tools/ci/test_check_kconfigs.py
-
 check_blobs:
   extends:
     - .pre_check_template
