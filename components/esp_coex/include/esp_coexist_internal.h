@@ -337,6 +337,14 @@ esp_err_t esp_coex_external_set(esp_coex_pti_level_t level1,
   */
 void esp_coex_external_stop(void);
 
+/**
+ * @brief Set external coexistence wire type.
+ *
+ * @param wire_type Set external coexistence wire type.
+ *
+ */
+void esp_coex_external_set_wire_type(external_coex_wire_t wire_type);
+
 #if SOC_EXTERNAL_COEX_LEADER_TX_LINE
 /**
   * @brief     Enable external coexist tx line

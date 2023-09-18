@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -22,6 +22,10 @@
 #include "esp_vfs_eventfd.h"
 #include "driver/uart.h"
 
+#if CONFIG_EXTERNAL_COEX_ENABLE
+#include "esp_coexist.h"
+#endif
+
 #if !SOC_IEEE802154_SUPPORTED
 #error "RCP is only supported for the SoCs which have IEEE 802.15.4 module"
 #endif
@@ -29,6 +33,17 @@
 #define TAG "ot_esp_rcp"
 
 extern void otAppNcpInit(otInstance *instance);
+
+#if CONFIG_EXTERNAL_COEX_ENABLE
+#if SOC_EXTERNAL_COEX_ADVANCE
+static void ot_external_coexist_init(void)
+{
+    esp_external_coex_gpio_set_t gpio_pin = ESP_OPENTHREAD_DEFAULT_EXTERNAL_COEX_CONFIG();
+    esp_external_coex_set_work_mode(EXTERNAL_COEX_FOLLOWER_ROLE);
+    ESP_ERROR_CHECK(esp_enable_extern_coex_gpio_pin(CONFIG_EXTERNAL_COEX_WIRE_TYPE, gpio_pin));
+}
+#endif // SOC_EXTERNAL_COEX_ADVANCE
+#endif // CONFIG_EXTERNAL_COEX_ENABLE
 
 static void ot_task_worker(void *aContext)
 {
@@ -40,6 +55,10 @@ static void ot_task_worker(void *aContext)
 
     // Initialize the OpenThread stack
     ESP_ERROR_CHECK(esp_openthread_init(&config));
+
+#if CONFIG_EXTERNAL_COEX_ENABLE
+    ot_external_coexist_init();
+#endif // CONFIG_EXTERNAL_COEX_ENABLE
 
     // Initialize the OpenThread ncp
     otAppNcpInit(esp_openthread_get_instance());
