@@ -46,6 +46,11 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 
 -  :cpp:member:`pcnt_unit_config_t::low_limit` 与 :cpp:member:`pcnt_unit_config_t::high_limit` 用于指定内部计数器的最小值和最大值。当计数器超过任一限值时，计数器将归零。
 -  :cpp:member:`pcnt_unit_config_t::accum_count` 用于设置是否需要软件在硬件计数值溢出的时候进行累加保存，这有助于“拓宽”计数器的实际位宽。默认情况下，计数器的位宽最高只有 16 比特。请参考 :ref:`pcnt-compensate-overflow-loss` 了解如何利用此功能来补偿硬件计数器的溢出损失。
+-  :cpp:member:`pcnt_unit_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
+
+.. note::
+
+    由于所有 PCNT 单元共享一个中断源，安装多个 PCNT 单元时请确保每个单元的中断优先级 :cpp:member:`pcnt_unit_config_t::intr_priority` 一致。
 
 调用函数 :cpp:func:`pcnt_new_unit` 并将 :cpp:type:`pcnt_unit_config_t` 作为其输入值，可对 PCNT 单元进行分配和初始化。该函数正常运行时，会返回一个 PCNT 单元句柄。没有可用的 PCNT 单元时（即 PCNT 单元全部被占用），该函数会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。可用的 PCNT 单元总数记录在 :c:macro:`SOC_PCNT_UNITS_PER_GROUP` 中，以供参考。
 
