@@ -70,7 +70,7 @@
 
 如果启用了选项 :ref:`CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS` ，则可以使用 FreeRTOS API :cpp:func:`vTaskGetRunTimeStats` 来获取各个 FreeRTOS 任务运行时占用处理器的时间。
 
-:ref:`SEGGER SystemView <app_trace-system-behaviour-analysis-with-segger-systemview>` 是一款出色的工具，可将任务执行情况可视化，也可用于排查系统整体的性能问题或改进方向。 
+:ref:`SEGGER SystemView <app_trace-system-behaviour-analysis-with-segger-systemview>` 是一款出色的工具，可将任务执行情况可视化，也可用于排查系统整体的性能问题或改进方向。
 
 提高整体速度
 -----------------------------
@@ -82,7 +82,7 @@
     :esp32: - 设置 :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` 为 80 MHz。该值为默认值 40 MHz 的两倍，这意味着从 flash 加载或执行代码的速度也将翻倍。在更改此设置之前，应事先确认连接 {IDF_TARGET_NAME} 和 flash 的板或模块在温度限制范围内支持 80 MHz 的操作。相关信息参见硬件数据手册。
     - 设置 :ref:`CONFIG_ESPTOOLPY_FLASHMODE` 为 QIO 或 QOUT 模式（四线 I/O 模式）。相较于默认的 DIO 模式，在这两种模式下，从 flash 加载或执行代码的速度几乎翻倍。如果两种模式都支持，QIO 会稍微快于 QOUT。请注意，flash 芯片以及 {IDF_TARGET_NAME} 与 flash 芯片之间的电气连接都必须支持四线 I/O 模式，否则 SoC 将无法正常工作。
     - 设置 :ref:`CONFIG_COMPILER_OPTIMIZATION` 为 ``Optimize for performance (-O2)`` 。相较于默认设置，这可能会略微增加二进制文件大小，但几乎必然会提高某些代码的性能。请注意，如果代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本未发现的错误。
-    :SOC_ASSIST_DEBUG_SUPPORTED: - 将 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 设置为禁用。这可能会小幅提升某些代码的性能，且在设备中断多次的情况下尤为明显。
+    :SOC_ASSIST_DEBUG_SUPPORTED: - 禁用 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 可能会小幅提高代码性能，尤其是在设备上出现大量中断的情况下。
     :esp32: - 如果应用程序是基于 ESP32 rev. 3 (ECO3) 的项目并且使用 PSRAM，设置 :ref:`CONFIG_ESP32_REV_MIN` 为 ``3`` 将禁用 PSRAM 的错误修复工作，可以减小代码大小并提高整体性能。
     :SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。尽管 {IDF_TARGET_NAME} 具备单精度浮点运算器，但是浮点运算总是慢于整数运算。因此可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
     :not SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。{IDF_TARGET_NAME} 通过软件模拟进行浮点运算，因此速度非常慢。可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
@@ -142,7 +142,7 @@
 
 ESP-IDF FreeRTOS 是实时操作系统，因此需确保高吞吐量或低延迟的任务获得更高优先级，以便立即运行。调用 :cpp:func:`xTaskCreate` 或 :cpp:func:`xTaskCreatePinnedToCore` 会设定优先级，并且可以在运行时调用 :cpp:func:`vTaskPrioritySet` 进行更改。
 
-此外，还需确保任务适时释放 CPU（通过调用 :cpp:func:`vTaskDelay` 或 ``sleep()`` ，或在信号量、队列、任务通知等方面进行阻塞），以避免低优先级任务饥饿并造成系统性问题。 :ref:`task-watchdog-timer` 提供任务饥饿自动检测机制，但请注意，正确的固件操作有时需要长时间运算，因此任务看门狗定时器超时并不总意味着存在问题。在这些情况下，可能需要微调超时时限，甚至禁用任务看门狗定时器。 
+此外，还需确保任务适时释放 CPU（通过调用 :cpp:func:`vTaskDelay` 或 ``sleep()`` ，或在信号量、队列、任务通知等方面进行阻塞），以避免低优先级任务饥饿并造成系统性问题。 :ref:`task-watchdog-timer` 提供任务饥饿自动检测机制，但请注意，正确的固件操作有时需要长时间运算，因此任务看门狗定时器超时并不总意味着存在问题。在这些情况下，可能需要微调超时时限，甚至禁用任务看门狗定时器。
 
 .. _built-in-task-priorities:
 
@@ -245,7 +245,8 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 
     :SOC_WIFI_SUPPORTED: * 关于提高 Wi-Fi 网速，参见 :ref:`How-to-improve-Wi-Fi-performance` 和 :ref:`wifi-buffer-usage` 。
     * 关于提高 lwIP TCP/IP（Wi-Fi 和以太网）网速，参见 :ref:`lwip-performance` 。
-    :SOC_WIFI_SUPPORTED: * 示例 :example:`wifi/iperf` 包含了一种针对 Wi-Fi TCP/IP 吞吐量进行了大量优化的配置。将文件 :example_file:`wifi/iperf/sdkconfig.defaults` 、 :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` 和 :example_file:`wifi/iperf/sdkconfig.ci.99` 的内容追加到项目的 ``sdkconfig`` 文件中，即可添加所有相关选项。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
+    :SOC_WIFI_SUPPORTED: * 示例 :example:`wifi/iperf` 中的配置针对 Wi-Fi TCP/IP 吞吐量进行了大量优化。将文件 :example_file:`wifi/iperf/sdkconfig.defaults` 、 :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` 和 :example_file:`wifi/iperf/sdkconfig.ci.99` 的内容追加到项目的 ``sdkconfig`` 文件中，即可添加所有相关选项。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
+    :SOC_EMAC_SUPPORTED: * 示例 :example:`ethernet/iperf` 中的配置针对以太网 TCP/IP 吞吐量进行了大量优化。如需了解详情，请查看 :example_file:`ethernet/iperf/sdkconfig.defaults`。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
 
 提高 I/O 性能
 ----------------------------------
@@ -255,7 +256,7 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 :doc:`/api-reference/storage/fatfs` 具体信息和提示如下:
 
 .. list::
-    
+
     - 读取/写入请求的最大大小等于 FatFS 簇大小（分配单元大小）。
     - 使用 ``read`` 和 ``write`` 而非 ``fread`` 和 ``fwrite`` 可以提高性能。
     - 要提高诸如 ``fread`` 和 ``fgets`` 等缓冲读取函数的执行速度，可以增加文件缓冲区的大小（Newlib 的默认值为 128 字节），例如 4096、8192 或 16384 字节。为此，可以在特定文件的指针上使用 ``setvbuf`` 函数进行局部更改，或者修改 :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` 实现全局应用。

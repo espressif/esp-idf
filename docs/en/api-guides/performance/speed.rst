@@ -256,7 +256,7 @@ Using standard C library functions like ``fread`` and ``fwrite`` instead of plat
 :doc:`/api-reference/storage/fatfs` specific information and tips:
 
 .. list::
-    
+
     - Maximum size of the R/W request = FatFS cluster size (allocation unit size).
     - Use ``read`` and ``write`` instead of ``fread`` and ``fwrite``.
     - To increase speed of buffered reading functions like ``fread`` and ``fgets``, you can increase a size of the file buffer (Newlib's default is 128 bytes) to a higher number like 4096, 8192 or 16384. This can be done locally via the ``setvbuf`` function used on a certain file pointer or globally applied to all files via modifying :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE`.
