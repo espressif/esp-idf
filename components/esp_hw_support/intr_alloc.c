@@ -649,7 +649,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         free(ret);
     }
 
-    ESP_EARLY_LOGD(TAG, "Connected src %d to int %d (cpu %d)", source, intr, cpu);
+    ESP_EARLY_LOGD(TAG, "Connected src %d to int %d (cpu %"PRIu32")", source, intr, cpu);
     return ESP_OK;
 }
 

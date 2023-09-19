@@ -261,7 +261,6 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        REQUIRES soc esp_rom
                        LDFRAGMENTS linker.lf)
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
 if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")

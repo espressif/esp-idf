@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "hal/memprot_types.h"
 #include "esp_private/esp_memprot_internal.h"
 #include "esp_memprot.h"
+#include <inttypes.h>
 
 extern int _iram_text_end;
 extern int _rtc_text_end;
@@ -779,8 +780,8 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
 
     sprintf(*dump_info_string,
             "Split line settings (lock=%u):\n"
-            " IRAM0:\n   line ID (main): 0x%08X (cat=0x%08X)\n   line I0: 0x%08X (cat=0x%08X)\n   line I1: 0x%08X (cat=0x%08X)\n"
-            " DRAM0:\n   line D0: 0x%08X (cat=0x%08X)\n   line D1: 0x%08X (cat=0x%08X)\n",
+            " IRAM0:\n   line ID (main): 0x%08"PRIX32" (cat=0x%08"PRIX32")\n   line I0: 0x%08"PRIX32" (cat=0x%08"PRIX32")\n   line I1: 0x%08"PRIX32" (cat=0x%08"PRIX32")\n"
+            " DRAM0:\n   line D0: 0x%08"PRIX32" (cat=0x%08"PRIX32")\n   line D1: 0x%08"PRIX32" (cat=0x%08"PRIX32")\n",
             line_lock, line_ID, line_ID_cat, line_I0, line_I0_cat, line_I1, line_I1_cat, line_D0, line_D0_cat, line_D1, line_D1_cat);
 
     uint32_t offset = strlen(*dump_info_string);
@@ -790,7 +791,7 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
     if (err != ESP_OK) {
         sprintf((*dump_info_string + offset), " RTCFAST:\n   line main: N/A (world=0) - %s\n", esp_err_to_name(err));
     } else {
-        sprintf((*dump_info_string + offset), " RTCFAST:\n   line main: 0x%08X (world=0)\n", (uint32_t)line_RTC);
+        sprintf((*dump_info_string + offset), " RTCFAST:\n   line main: 0x%08"PRIX32" (world=0)\n", (uint32_t)line_RTC);
     }
 
     offset = strlen(*dump_info_string);

@@ -213,9 +213,9 @@ static void s_sweep_for_success_sample_points(uint8_t *reference_data, void *con
 #endif
         if (memcmp(reference_data, read_data, sizeof(read_data)) == 0) {
             out_array[config_idx] = 1;
-            ESP_EARLY_LOGD(TAG, "%d, good", config_idx);
+            ESP_EARLY_LOGD(TAG, "%"PRIu32", good", config_idx);
         } else {
-            ESP_EARLY_LOGD(TAG, "%d, bad", config_idx);
+            ESP_EARLY_LOGD(TAG, "%"PRIu32", bad", config_idx);
         }
 
     }

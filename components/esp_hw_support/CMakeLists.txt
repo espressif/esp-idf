@@ -153,5 +153,3 @@ if(NOT BOOTLOADER_BUILD)
         target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_crypto_dpa_prot_include_impl")
     endif()
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

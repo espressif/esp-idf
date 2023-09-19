@@ -94,14 +94,14 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz)
     delay = (1000 * 1000) / digi_clk + 1;
     //3 ADC digital controller clock cycle
     delay = delay * 3;
-    HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %d, digi_clk: %d, delay: %d", clk_src_freq_hz, digi_clk, delay);
+    HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %"PRIu32", digi_clk: %"PRIu32", delay: %"PRIu32"", clk_src_freq_hz, digi_clk, delay);
 
     //This coefficient (8) is got from test, and verified from DT. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
     if (digi_clk >= APB_CLK_FREQ/8) {
         delay = 0;
     }
 
-    HAL_EARLY_LOGD("adc_hal", "delay: %d", delay);
+    HAL_EARLY_LOGD("adc_hal", "delay: %"PRIu32"", delay);
     adc_oneshot_ll_start(false);
     esp_rom_delay_us(delay);
     adc_oneshot_ll_start(true);

@@ -113,7 +113,7 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
     *real_freq = apll_freq;
 
     if (need_config) {
-        ESP_LOGD(TAG, "APLL will working at %d Hz with coefficients [sdm0] %d [sdm1] %d [sdm2] %d [o_div] %d",
+        ESP_LOGD(TAG, "APLL will working at %"PRIu32" Hz with coefficients [sdm0] %"PRIu32" [sdm1] %"PRIu32" [sdm2] %"PRIu32" [o_div] %"PRIu32"",
                        apll_freq, sdm0, sdm1, sdm2, o_div);
         /* Set coefficients for APLL, notice that it doesn't mean APLL will start */
         rtc_clk_apll_coeff_set(o_div, sdm0, sdm1, sdm2);
