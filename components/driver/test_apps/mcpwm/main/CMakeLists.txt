@@ -6,6 +6,7 @@ set(srcs "test_app_main.c"
          "test_mcpwm_oper.c"
          "test_mcpwm_sync.c"
          "test_mcpwm_timer.c"
+         "test_mcpwm_common.c"
          "test_mcpwm_utils.c")
 
 if(CONFIG_MCPWM_ISR_IRAM_SAFE)

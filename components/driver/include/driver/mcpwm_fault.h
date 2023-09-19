@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +20,10 @@ extern "C" {
  * @brief MCPWM GPIO fault configuration structure
  */
 typedef struct {
-    int group_id; /*!< In which MCPWM group that the GPIO fault belongs to */
-    int gpio_num; /*!< GPIO used by the fault signal */
+    int group_id;                 /*!< In which MCPWM group that the GPIO fault belongs to */
+    int intr_priority;            /*!< MCPWM GPIO fault interrupt priority,
+                                       if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
+    int gpio_num;                 /*!< GPIO used by the fault signal */
     struct {
         uint32_t active_level: 1; /*!< On which level the fault signal is treated as active */
         uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
