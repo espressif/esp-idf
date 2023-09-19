@@ -785,14 +785,17 @@ void bta_ag_rcvd_slc_ready(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
 #if (BTM_WBS_INCLUDED == TRUE)
+    UINT16             handle = p_data->api_setcodec.hdr.layer_specific;
     tBTA_AG_PEER_CODEC codec_type = p_data->api_setcodec.codec;
     tBTA_AG_VAL        val;
+
+    val.hdr.handle = handle;
+    val.num = codec_type;
 
     /* Check if the requested codec type is valid */
     if((codec_type != BTA_AG_CODEC_NONE) &&
        (codec_type != BTA_AG_CODEC_CVSD) &&
        (codec_type != BTA_AG_CODEC_MSBC)) {
-        val.num = codec_type;
         val.hdr.status = BTA_AG_FAIL_RESOURCES;
         APPL_TRACE_ERROR("%s error: unsupported codec type %d", __func__, codec_type);
         (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG *) &val);
@@ -804,11 +807,9 @@ void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
         (codec_type == BTA_AG_CODEC_CVSD)) {
         p_scb->sco_codec = codec_type;
         p_scb->codec_updated = TRUE;
-        val.num = codec_type;
         val.hdr.status = BTA_AG_SUCCESS;
         APPL_TRACE_DEBUG("%s: Updated codec type %d", __func__, codec_type);
     } else {
-        val.num = codec_type;
         val.hdr.status = BTA_AG_FAIL_RESOURCES;
         APPL_TRACE_ERROR("%s error: unsupported codec type %d",__func__, codec_type);
     }

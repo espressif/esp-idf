@@ -134,12 +134,12 @@ do {                                                                            
     hf_local_param[idx].btc_hf_cb.num_active = 0;  \
     hf_local_param[idx].btc_hf_cb.num_held = 0;
 
-#define CHECK_HF_IDX(idx)                                            \
-do {                                                                 \
-    if ((idx < 0) || (idx >= BTC_HF_NUM_CB)) {                       \
-        BTC_TRACE_ERROR("%s: Invalid index %d", __FUNCTION__, idx);  \
-        return;                                                      \
-    }                                                                \
+#define CHECK_HF_IDX(idx)                                                        \
+do {                                                                             \
+    if ((idx < 0) || (idx >= BTC_HF_NUM_CB)) {                                   \
+        BTC_TRACE_ERROR("%s:%d Invalid index %d", __FUNCTION__, __LINE__, idx);  \
+        return;                                                                  \
+    }                                                                            \
 } while (0)
 
 /************************************************************************************
