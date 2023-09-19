@@ -17,6 +17,7 @@
 #include "esp_netif_lwip_internal.h"
 #include <string.h>
 #include "lwip/ip6_addr.h"
+#include "netif/pppif.h"
 
 ESP_EVENT_DEFINE_BASE(NETIF_PPP_STATUS);
 
@@ -285,7 +286,7 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
 esp_netif_recv_ret_t esp_netif_lwip_ppp_input(void *ppp_ctx, void *buffer, size_t len, void *eb)
 {
     struct lwip_peer2peer_ctx * obj = ppp_ctx;
-    err_t ret = pppos_input_tcpip(obj->ppp, buffer, len);
+    err_t ret = pppos_input_tcpip_as_ram_pbuf(obj->ppp, buffer, len);
     if (ret != ERR_OK) {
         ESP_LOGE(TAG, "pppos_input_tcpip failed with %d", ret);
         return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
