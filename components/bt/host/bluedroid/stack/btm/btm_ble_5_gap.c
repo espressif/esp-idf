@@ -693,7 +693,7 @@ end:
     return status;
 }
 
-tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data)
+tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data,BOOLEAN only_update_did)
 {
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
@@ -701,6 +701,13 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
     UINT8 operation = 0;
     UINT16 data_offset = 0;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+    if (only_update_did)
+    {
+        len = 0;
+        data = NULL;
+        rem_len = 0;
+        operation = BTM_BLE_ADV_DATA_OP_UNCHANGED_DATA;
+    }
 
     if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data)) != BTM_SUCCESS) {
        BTM_TRACE_ERROR("%s, invalid extend adv data.", __func__);
@@ -711,7 +718,9 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
         UINT8 send_data_len = (rem_len > BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) ? BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX : rem_len;
 
         if (len <= BTM_BLE_EXT_ADV_DATA_LEN_MAX) {
-            operation = BTM_BLE_ADV_DATA_OP_COMPLETE;
+            if (!only_update_did) {
+                operation = BTM_BLE_ADV_DATA_OP_COMPLETE;
+            }
         } else {
             if (rem_len == len) {
                 operation = BTM_BLE_ADV_DATA_OP_FIRST_FRAG;
@@ -737,7 +746,7 @@ end:
     return status;
 }
 
-tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, BOOLEAN enable)
+tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, UINT8 enable)
 {
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;

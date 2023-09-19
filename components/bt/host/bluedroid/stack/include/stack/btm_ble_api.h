@@ -105,8 +105,12 @@ typedef UINT8   tBTM_BLE_SFP;
 #endif
 
 /* adv parameter boundary values */
-#define BTM_BLE_ADV_INT_MIN            0x0020
-#define BTM_BLE_ADV_INT_MAX            0x4000
+#if BLE_HIGH_DUTY_ADV_INTERVAL
+#define BTM_BLE_ADV_INT_MIN            0x0008  /* 5ms */
+#else
+#define BTM_BLE_ADV_INT_MIN            0x0020  /* 20ms */
+#endif
+#define BTM_BLE_ADV_INT_MAX            0x4000  /* 10240ms */
 
 /* Full scan boundary values */
 #define BTM_BLE_ADV_SCAN_FULL_MIN      0x00
@@ -2663,9 +2667,9 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void);
 
 tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Params *params);
 
-tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data);
+tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data, BOOLEAN only_update_did);
 
-tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, BOOLEAN enable);
+tBTM_STATUS BTM_BlePeriodicAdvEnable(UINT8 instance, UINT8 enable);
 
 tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params);
 

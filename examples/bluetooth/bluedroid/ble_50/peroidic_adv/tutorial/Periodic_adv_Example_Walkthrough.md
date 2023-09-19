@@ -94,12 +94,25 @@ a_2m), &raw_ext_adv_data_2m[0]), test_sem);
 
     // start all adv
     FUNC_SEND_WAIT_SEM(esp_ble_gap_ext_adv_start(NUM_EXT_ADV, &ext_adv[0]), test_sem);
+    
+    // set periodic adv param
+    FUNC_SEND_WAIT_SEM(esp_ble_gap_periodic_adv_set_params(EXT_ADV_HANDLE, &periodic_adv_params), test_sem);
 
-    FUNC_SEND_WAIT_SEM(esp_ble_gap_periodic_adv_set_params(EXT_ADV_HANDLE, &periodic_adv_params),
- test_sem);
-    FUNC_SEND_WAIT_SEM(esp_ble_gap_config_periodic_adv_data_raw(EXT_ADV_HANDLE, sizeof(periodic_a
-dv_raw_data), &periodic_adv_raw_data[0]), test_sem);
+#if (CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH)
+    // set periodic adv raw data
+    FUNC_SEND_WAIT_SEM(esp_ble_gap_config_periodic_adv_data_raw(EXT_ADV_HANDLE, sizeof(periodic_adv_raw_data), &periodic_adv_raw_data[0], false), test_sem);
+    // start periodic adv, include the ADI field in AUX_SYNC_IND PDUs
+    FUNC_SEND_WAIT_SEM(esp_ble_gap_periodic_adv_start(EXT_ADV_HANDLE, true), test_sem);
+    while (1) {
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        // just update the Advertising DID of the periodic advertising, unchanged data
+        FUNC_SEND_WAIT_SEM(esp_ble_gap_config_periodic_adv_data_raw(EXT_ADV_HANDLE, 0, NULL, true), test_sem);
+    }
+#else
+    // set periodic adv raw data
+    FUNC_SEND_WAIT_SEM(esp_ble_gap_config_periodic_adv_data_raw(EXT_ADV_HANDLE, sizeof(periodic_adv_raw_data), &periodic_adv_raw_data[0]), test_sem);
     FUNC_SEND_WAIT_SEM(esp_ble_gap_periodic_adv_start(EXT_ADV_HANDLE), test_sem);
+#endif
 
     return;
 }
