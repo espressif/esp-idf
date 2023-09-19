@@ -3,11 +3,11 @@ JTAG Debugging
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and debugging using GDB. 
+This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and debugging using GDB.
 
 .. note::
 
-    You can also debug your {IDF_TARGET_NAME} without needing to setup JTAG or OpenOCD by using ``idf.py monitor``. See: :doc:`IDF Monitor <../../api-guides/tools/idf-monitor>` and :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    You can also debug your {IDF_TARGET_NAME} without needing to setup JTAG or OpenOCD by using ``idf.py monitor``. See: :doc:`../../api-guides/tools/idf-monitor` and :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`.
 
 .. highlight:: none
 
