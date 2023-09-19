@@ -444,6 +444,11 @@ void vPortTCBPreDeleteHook( void *pxTCB );
  * - Maps to forward declared functions
  * ------------------------------------------------------------------------------------------------------------------ */
 
+#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+#define portGET_CORE_ID()       xPortGetCoreID()
+#define portYIELD_CORE( x )     vPortYieldOtherCore( x )
+#endif
+
 // --------------------- Interrupts ------------------------
 
 #define portDISABLE_INTERRUPTS()            portSET_INTERRUPT_MASK_FROM_ISR()

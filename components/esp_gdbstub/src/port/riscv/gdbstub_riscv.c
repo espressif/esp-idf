@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,8 +85,15 @@ void esp_gdbstub_int(__attribute__((unused)) void *frame)
    /* Pointer to saved frame is in pxCurrentTCB
     * See rtos_int_enter function
     */
-    extern void *pxCurrentTCB;
-    dummy_tcb_t *tcb = pxCurrentTCB;
+    /* Todo: Provide IDF interface for getting pxCurrentTCB (IDF-8182) */
+    int core_id = esp_cpu_get_core_id();
+#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+    extern void **pxCurrentTCBs;
+    dummy_tcb_t *tcb = pxCurrentTCBs[core_id];
+#else
+    extern void **pxCurrentTCB;
+    dummy_tcb_t *tcb = pxCurrentTCB[core_id];
+#endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
     gdbstub_handle_uart_int((esp_gdbstub_frame_t *)tcb->top_of_stack);
 }
 

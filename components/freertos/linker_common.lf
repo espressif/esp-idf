@@ -25,10 +25,12 @@ entries:
         tasks:xTaskCreatePinnedToCore (default)
         tasks:xTaskCreateStaticPinnedToCore (default)
         # Task Utilities
-        tasks:xTaskGetCurrentTaskHandleForCPU (default)
-        tasks:xTaskGetIdleTaskHandleForCPU (default)
-        tasks:xTaskGetCurrentTaskHandleForCPU (default)
-        tasks:xTaskGetAffinity (default)
+        tasks:xTaskGetCoreID (default)
+        tasks:xTaskGetIdleTaskHandleForCore (default)
+        tasks:xTaskGetCurrentTaskHandleForCore (default)
+        if FREERTOS_USE_KERNEL_10_5_1 = y && FREERTOS_GENERATE_RUN_TIME_STATS = y:
+            tasks:ulTaskGetIdleRunTimeCounterForCore (default)
+            tasks:ulTaskGetIdleRunTimePercentForCore (default)
         tasks:pxTaskGetStackStart (default)
         tasks:prvTaskPriorityRaise (default)
         tasks:prvTaskPriorityRestore (default)

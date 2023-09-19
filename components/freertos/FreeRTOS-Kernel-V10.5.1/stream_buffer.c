@@ -43,6 +43,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "stream_buffer.h"
+/* Include private IDF API additions for critical thread safety macros */
+#include "esp_private/freertos_idf_additions_priv.h"
 
 #if ( configUSE_TASK_NOTIFICATIONS != 1 )
     #error configUSE_TASK_NOTIFICATIONS must be set to 1 to build stream_buffer.c
@@ -63,18 +65,18 @@
  * that uses task notifications. */
 /*lint -save -e9026 Function like macros allowed and needed here so they can be overridden. */
 #ifndef sbRECEIVE_COMPLETED
-    #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
-    vTaskSuspendAll();                                                    \
-    {                                                                     \
-        if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
-        {                                                                 \
-            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToSend, \
-                                  ( uint32_t ) 0,                         \
-                                  eNoAction );                            \
-            ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                \
-        }                                                                 \
-    }                                                                     \
-    ( void ) xTaskResumeAll();
+    #define sbRECEIVE_COMPLETED( pxStreamBuffer )                               \
+    prvENTER_CRITICAL_OR_SUSPEND_ALL( &( pxStreamBuffer->xStreamBufferLock ) ); \
+    {                                                                           \
+        if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )                    \
+        {                                                                       \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToSend,       \
+                                  ( uint32_t ) 0,                               \
+                                  eNoAction );                                  \
+            ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                      \
+        }                                                                       \
+    }                                                                           \
+    ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxStreamBuffer->xStreamBufferLock ) );
 #endif /* sbRECEIVE_COMPLETED */
 
 /* If user has provided a per-instance receive complete callback, then
@@ -140,18 +142,18 @@
  * implementation that uses task notifications.
  */
 #ifndef sbSEND_COMPLETED
-    #define sbSEND_COMPLETED( pxStreamBuffer )                               \
-    vTaskSuspendAll();                                                       \
-    {                                                                        \
-        if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
-        {                                                                    \
-            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToReceive, \
-                                  ( uint32_t ) 0,                            \
-                                  eNoAction );                               \
-            ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                \
-        }                                                                    \
-    }                                                                        \
-    ( void ) xTaskResumeAll();
+    #define sbSEND_COMPLETED( pxStreamBuffer )                                  \
+    prvENTER_CRITICAL_OR_SUSPEND_ALL( &( pxStreamBuffer->xStreamBufferLock ) ); \
+    {                                                                           \
+        if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )                 \
+        {                                                                       \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToReceive,    \
+                                  ( uint32_t ) 0,                               \
+                                  eNoAction );                                  \
+            ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                   \
+        }                                                                       \
+    }                                                                           \
+    ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &( pxStreamBuffer->xStreamBufferLock ) );
 #endif /* sbSEND_COMPLETED */
 
 /* If user has provided a per-instance send completed callback, then
@@ -243,6 +245,8 @@ typedef struct StreamBufferDef_t                 /*lint !e9058 Style convention 
         StreamBufferCallbackFunction_t pxSendCompletedCallback;    /* Optional callback called on send complete. sbSEND_COMPLETED is called if this is NULL. */
         StreamBufferCallbackFunction_t pxReceiveCompletedCallback; /* Optional callback called on receive complete.  sbRECEIVE_COMPLETED is called if this is NULL. */
     #endif
+
+    portMUX_TYPE xStreamBufferLock; /* Spinlock required for SMP critical sections */
 } StreamBuffer_t;
 
 /*
@@ -385,6 +389,11 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
                                           pxSendCompletedCallback,
                                           pxReceiveCompletedCallback );
 
+            /* Initialize the stream buffer's spinlock separately, as
+             * prvInitialiseNewStreamBuffer() is also called from
+             * xStreamBufferReset(). */
+            portMUX_INITIALIZE( &( ( ( StreamBuffer_t * ) pucAllocatedMemory )->xStreamBufferLock ) );
+
             traceSTREAM_BUFFER_CREATE( ( ( StreamBuffer_t * ) pucAllocatedMemory ), xIsMessageBuffer );
         }
         else
@@ -462,6 +471,11 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
             /* Remember this was statically allocated in case it is ever deleted
              * again. */
             pxStreamBuffer->ucFlags |= sbFLAGS_IS_STATICALLY_ALLOCATED;
+
+            /* Initialize the stream buffer's spinlock separately, as
+             * prvInitialiseNewStreamBuffer() is also called from
+             * xStreamBufferReset(). */
+            portMUX_INITIALIZE( &( pxStreamBuffer->xStreamBufferLock ) );
 
             traceSTREAM_BUFFER_CREATE( pxStreamBuffer, xIsMessageBuffer );
 
@@ -560,7 +574,7 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer )
     #endif
 
     /* Can only reset a message buffer if there are no tasks blocked on it. */
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
     {
         if( ( pxStreamBuffer->xTaskWaitingToReceive == NULL ) && ( pxStreamBuffer->xTaskWaitingToSend == NULL ) )
         {
@@ -590,7 +604,7 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer )
             xReturn = pdPASS;
         }
     }
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
 
     return xReturn;
 }
@@ -736,7 +750,7 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
         {
             /* Wait until the required number of bytes are free in the message
              * buffer. */
-            taskENTER_CRITICAL();
+            taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
             {
                 xSpace = xStreamBufferSpacesAvailable( pxStreamBuffer );
 
@@ -751,11 +765,11 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
                 }
                 else
                 {
-                    taskEXIT_CRITICAL();
+                    taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
                     break;
                 }
             }
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
 
             traceBLOCKING_ON_STREAM_BUFFER_SEND( xStreamBuffer );
             ( void ) xTaskNotifyWait( ( uint32_t ) 0, ( uint32_t ) 0, NULL, xTicksToWait );
@@ -932,7 +946,7 @@ size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
     {
         /* Checking if there is data and clearing the notification state must be
          * performed atomically. */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
         {
             xBytesAvailable = prvBytesInBuffer( pxStreamBuffer );
 
@@ -955,7 +969,7 @@ size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
 
         if( xBytesAvailable <= xBytesToStoreMessageLength )
         {
@@ -1409,7 +1423,17 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
     } /*lint !e529 !e438 xWriteValue is only used if configASSERT() is defined. */
     #endif
 
-    ( void ) memset( ( void * ) pxStreamBuffer, 0x00, sizeof( StreamBuffer_t ) ); /*lint !e9087 memset() requires void *. */
+    /* This function could be called from xStreamBufferReset(), so we reset the
+     * stream buffer fields manually in order to avoid clearing
+     * xStreamBufferLock. The xStreamBufferLock is initialized separately on
+     * stream buffer creation. */
+    pxStreamBuffer->xTail = ( size_t ) 0;
+    pxStreamBuffer->xHead = ( size_t ) 0;
+    pxStreamBuffer->xTaskWaitingToReceive = ( TaskHandle_t ) 0;
+    pxStreamBuffer->xTaskWaitingToSend = ( TaskHandle_t ) 0;
+    #if ( configUSE_TRACE_FACILITY == 1 )
+        pxStreamBuffer->uxStreamBufferNumber = ( UBaseType_t ) 0;
+    #endif
     pxStreamBuffer->pucBuffer = pucBuffer;
     pxStreamBuffer->xLength = xBufferSizeBytes;
     pxStreamBuffer->xTriggerLevelBytes = xTriggerLevelBytes;

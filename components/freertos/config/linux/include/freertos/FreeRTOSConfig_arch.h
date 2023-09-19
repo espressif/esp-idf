@@ -52,7 +52,7 @@
 
 /* -------------------- API Includes ----------------------- */
 
-#define INCLUDE_xTaskGetCurrentTaskHandle    0                /* not defined in POSIX simulator */
+/* Todo: Reconcile INCLUDE_option differences (IDF-8186) */
 #define INCLUDE_vTaskDelayUntil              1
 #define INCLUDE_uxTaskGetStackHighWaterMark2 0
 

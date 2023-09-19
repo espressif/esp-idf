@@ -4,11 +4,12 @@ menu "FreeRTOS"
         # Upstream FreeRTOS configurations go here
 
         config FREERTOS_USE_KERNEL_10_5_1
-            bool "Use v10.5.1 Kernel (EXPERIMENTAL)"
-            depends on IDF_EXPERIMENTAL_FEATURES
+            bool "Use v10.5.1 Kernel (BETA)"
             default n
             help
-                Hidden option for development/testing purposes to enable building with the v10.5.1 kernel
+                This option enables building for FreeRTOS v10.5.1 kernel.
+
+                Note: The v10.5.1 kernel is still in BETA, thus is not production ready.
 
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"

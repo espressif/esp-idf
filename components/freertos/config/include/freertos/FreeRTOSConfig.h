@@ -107,7 +107,7 @@
 
 /* ----------------------- System -------------------------- */
 
-#define configMAX_TASK_NAME_LEN                        CONFIG_FREERTOS_MAX_TASK_NAME_LEN
+#define configMAX_TASK_NAME_LEN    CONFIG_FREERTOS_MAX_TASK_NAME_LEN
 
 /* If deletion callbacks are enabled, the number of TLSP's are doubled (i.e.,
  * the length of the TCB's pvThreadLocalStoragePointersThis array). This allows
@@ -199,6 +199,7 @@
 #define INCLUDE_xTaskResumeFromISR                 1
 #define INCLUDE_xTimerPendFunctionCall             1
 #define INCLUDE_xTaskGetSchedulerState             1
+#define INCLUDE_xTaskGetCurrentTaskHandle          1
 
 /* -------------------- Trace Macros ----------------------- */
 
@@ -257,10 +258,12 @@
 
 #if !CONFIG_FREERTOS_SMP
     #ifdef CONFIG_FREERTOS_UNICORE
-        #define configNUM_CORES                                1
+        #define configNUMBER_OF_CORES                          1
     #else
-        #define configNUM_CORES                                2
+        #define configNUMBER_OF_CORES                          2
     #endif /* CONFIG_FREERTOS_UNICORE */
+    /* For compatibility */
+    #define configNUM_CORES                                    configNUMBER_OF_CORES
     #ifdef CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID
         #define configTASKLIST_INCLUDE_COREID                  1
     #endif /* CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID */
