@@ -243,7 +243,8 @@ tBTM_STATUS BTM_SetPowerMode (UINT8 pm_id, BD_ADDR remote_bda, tBTM_PM_PWR_MD *p
     /* if mode == hold or pending, return */
     if ( (p_cb->state == BTM_PM_STS_HOLD) ||
             (p_cb->state ==  BTM_PM_STS_PENDING) ||
-            (btm_cb.pm_pend_link_hdl != BTM_INVALID_HANDLE) ) { /* command pending */
+            (btm_cb.pm_pend_link_hdl != BTM_INVALID_HANDLE) ||
+            (p_cb->state & BTM_PM_STORED_MASK) ) { /* command pending */
         if (p_acl_cb->hci_handle != btm_cb.pm_pend_link_hdl) {
             /* set the stored mask */
             p_cb->state |= BTM_PM_STORED_MASK;
