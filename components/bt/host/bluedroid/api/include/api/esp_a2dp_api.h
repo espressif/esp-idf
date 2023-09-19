@@ -69,9 +69,10 @@ typedef enum {
  * @brief Bluetooth A2DP datapath states
  */
 typedef enum {
-    ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND = 0,    /*!< audio stream datapath suspended by remote device */
-    ESP_A2D_AUDIO_STATE_STOPPED,               /*!< audio stream datapath stopped */
+    ESP_A2D_AUDIO_STATE_SUSPEND = 0,           /*!< audio stream datapath suspended by remote device */
     ESP_A2D_AUDIO_STATE_STARTED,               /*!< audio stream datapath started */
+    ESP_A2D_AUDIO_STATE_STOPPED = ESP_A2D_AUDIO_STATE_SUSPEND,          /*!< @note Deprecated */
+    ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND = ESP_A2D_AUDIO_STATE_SUSPEND,   /*!< @note Deprecated */
 } esp_a2d_audio_state_t;
 
 /**
@@ -90,8 +91,8 @@ typedef enum {
     ESP_A2D_MEDIA_CTRL_NONE = 0,               /*!< Not for application use, use inside stack only. */
     ESP_A2D_MEDIA_CTRL_CHECK_SRC_RDY,          /*!< check whether AVDTP is connected, only used in A2DP source */
     ESP_A2D_MEDIA_CTRL_START,                  /*!< command to set up media transmission channel */
-    ESP_A2D_MEDIA_CTRL_STOP,                   /*!< command to stop media transmission */
     ESP_A2D_MEDIA_CTRL_SUSPEND,                /*!< command to suspend media transmission  */
+    ESP_A2D_MEDIA_CTRL_STOP,                   /*!< @note Deprecated, Please use ESP_A2D_MEDIA_CTRL_SUSPEND */
 } esp_a2d_media_ctrl_t;
 
 /**

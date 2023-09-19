@@ -2045,7 +2045,7 @@ void bta_av_str_stopped (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     BT_HDR  *p_buf;
     UINT8 policy = HCI_ENABLE_SNIFF_MODE;
 
-    APPL_TRACE_ERROR("bta_av_str_stopped:audio_open_cnt=%d, p_data %p",
+    APPL_TRACE_DEBUG("bta_av_str_stopped:audio_open_cnt=%d, p_data %p",
                      bta_av_cb.audio_open_cnt, p_data);
 
     bta_sys_idle(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
@@ -2096,7 +2096,7 @@ void bta_av_str_stopped (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     } else {
         suspend_rsp.status = BTA_AV_SUCCESS;
         suspend_rsp.initiator = TRUE;
-        APPL_TRACE_EVENT("bta_av_str_stopped status %d", suspend_rsp.status);
+        APPL_TRACE_WARNING("bta_av_str_stopped status %d", suspend_rsp.status);
 
         /* send STOP_EVT event only if not in reconfiguring state */
         if (p_scb->state != BTA_AV_RCFG_SST) {
