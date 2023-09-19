@@ -24,7 +24,7 @@ System API
     heap_debug
     esp_timer
     internal-unstable
-    :not CONFIG_FREERTOS_UNICORE or esp32p4: ipc
+    :not CONFIG_FREERTOS_UNICORE: ipc
     intr_alloc
     log
     misc_system_api

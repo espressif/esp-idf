@@ -17,11 +17,16 @@ if(CONFIG_ESP_CONSOLE_USB_CDC)
 endif()
 
 if(CONFIG_ESP_IPC_ISR_ENABLE)
-if(CONFIG_IDF_TARGET_ARCH_XTENSA)
-    list(APPEND srcs "arch/xtensa/esp_ipc_isr.c"
-                     "arch/xtensa/esp_ipc_isr_handler.S"
-                     "arch/xtensa/esp_ipc_isr_routines.S")
-endif()
+    list(APPEND srcs "esp_ipc_isr.c")
+    if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+        list(APPEND srcs "arch/xtensa/esp_ipc_isr_port.c"
+                         "arch/xtensa/esp_ipc_isr_handler.S"
+                         "arch/xtensa/esp_ipc_isr_routines.S")
+    elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
+        list(APPEND srcs "arch/riscv/esp_ipc_isr_port.c"
+                         "arch/riscv/esp_ipc_isr_handler.S"
+                         "arch/riscv/esp_ipc_isr_routines.c")
+    endif()
 endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)

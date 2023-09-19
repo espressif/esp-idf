@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,19 +10,12 @@
 #include <assert.h>
 #include "esp_err.h"
 #include "esp_attr.h"
-#include "soc/soc.h"
-#include "soc/dport_reg.h"
-#ifndef CONFIG_IDF_TARGET_ESP32
-#include "soc/periph_defs.h"
-#include "soc/system_reg.h"
-#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
-#include "esp_intr_alloc.h"
 #include "esp_private/esp_ipc_isr.h"
+#include "esp_private/esp_ipc_isr_port.h"
 #include "esp_ipc_isr.h"
-#include "xtensa/core-macros.h"
 #include "sdkconfig.h"
 
 static portMUX_TYPE s_ipc_isr_mux = portMUX_INITIALIZER_UNLOCKED;
@@ -61,10 +54,7 @@ static void esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* arg, esp_ip
 void esp_ipc_isr_init(void)
 {
     const uint32_t cpuid = xPortGetCoreID();
-    uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE + cpuid; // ETS_FROM_CPU_INTR2_SOURCE and ETS_FROM_CPU_INTR3_SOURCE
-    ESP_INTR_DISABLE(ETS_IPC_ISR_INUM);
-    esp_rom_route_intr_matrix(cpuid, intr_source, ETS_IPC_ISR_INUM);
-    ESP_INTR_ENABLE(ETS_IPC_ISR_INUM);
+    esp_ipc_isr_port_init(cpuid);
 
     if (cpuid != 0) {
         s_stall_state = STALL_STATE_RUNNING;
@@ -76,14 +66,14 @@ void esp_ipc_isr_init(void)
 
 /* Public API functions */
 
-void IRAM_ATTR esp_ipc_isr_asm_call(esp_ipc_isr_func_t func, void* arg)
+void IRAM_ATTR esp_ipc_isr_call(esp_ipc_isr_func_t func, void* arg)
 {
     IPC_ISR_ENTER_CRITICAL();
     esp_ipc_isr_call_and_wait(func, arg, IPC_ISR_WAIT_FOR_START);
     IPC_ISR_EXIT_CRITICAL();
 }
 
-void IRAM_ATTR esp_ipc_isr_asm_call_blocking(esp_ipc_isr_func_t func, void* arg)
+void IRAM_ATTR esp_ipc_isr_call_blocking(esp_ipc_isr_func_t func, void* arg)
 {
     IPC_ISR_ENTER_CRITICAL();
     esp_ipc_isr_call_and_wait(func, arg, IPC_ISR_WAIT_FOR_END);
@@ -201,14 +191,8 @@ static void IRAM_ATTR esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* a
     esp_ipc_isr_start_fl = 0;
     esp_ipc_isr_end_fl = 0;
 
-    if (cpu_id == 0) {
-        // it runs an interrupt on cpu1
-        DPORT_REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_3_REG, SYSTEM_CPU_INTR_FROM_CPU_3);
-    } else {
-        // it runs an interrupt on cpu0
-        DPORT_REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_2_REG, SYSTEM_CPU_INTR_FROM_CPU_2);
-    }
-
+    // Trigger an interrupt on the opposite core.
+    esp_ipc_isr_port_int_trigger(!cpu_id);
     // IPC_ISR handler will be called and `...isr_start` and `...isr_end` will be updated there
 
     if (wait_for == IPC_ISR_WAIT_FOR_START) {

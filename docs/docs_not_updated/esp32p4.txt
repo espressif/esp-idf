@@ -178,7 +178,6 @@ api-reference/system/bootloader_image_format.rst
 api-reference/system/inc/power_management_esp32p4.rst
 api-reference/system/heap_debug.rst
 api-reference/system/mm.rst
-api-reference/system/ipc.rst
 api-reference/system/esp_https_ota.rst
 api-reference/system/ulp-risc-v.rst
 api-reference/system/esp_err.rst

@@ -1271,7 +1271,6 @@ examples/system/gcov/main/gcov_example_main.c
 examples/system/gdbstub/main/gdbstub_main.c
 examples/system/heap_task_tracking/main/heap_task_tracking_main.c
 examples/system/himem/main/himem_example_main.c
-examples/system/ipc/ipc_isr/main/main.c
 examples/system/ota/advanced_https_ota/main/advanced_https_ota_example.c
 examples/system/ota/native_ota_example/main/native_ota_example.c
 examples/system/ota/otatool/main/otatool_main.c

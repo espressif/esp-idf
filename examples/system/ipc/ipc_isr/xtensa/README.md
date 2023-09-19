@@ -53,7 +53,7 @@ I (324) example: in[0] = 0x1
 I (334) example: in[1] = 0x2
 I (334) example: in[2] = 0x3
 I (334) example: out[0] = (in[0] | in[1] | in[2]) = 0x3
-I (344) example: out[1] = (in[0] & in[1] & in[2]) = 0x6
+I (344) example: out[1] = (in[0] + in[1] + in[2]) = 0x6
 I (354) example: out[2] = in[2] = 0x3
 I (354) example: out[3] = PS of other cpu = 0x25
 I (364) example: End

@@ -80,11 +80,21 @@ examples/system/himem:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/system/ipc/ipc_isr:
+examples/system/ipc/ipc_isr/riscv:
   enable:
-    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s3"
+    - if: IDF_TARGET_ARCH_RISCV == 1 and ESP_IPC_ISR_ENABLE == 1
       temporary: true
-      reason: the other targets are not tested yet
+      reason: The test is intended only for multi-core chips
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runners
+
+examples/system/ipc/ipc_isr/xtensa:
+  enable:
+    - if: IDF_TARGET_ARCH_XTENSA == 1 and ESP_IPC_ISR_ENABLE == 1
+      temporary: true
+      reason: The test is intended only for multi-core chips
 
 examples/system/light_sleep:
   disable:
