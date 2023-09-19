@@ -182,9 +182,14 @@ esp_err_t mcpwm_operator_apply_carrier(mcpwm_oper_handle_t oper, const mcpwm_car
     float real_duty = 0.0;
 
     if (config && config->frequency_hz) {
-        uint8_t pre_scale = group->resolution_hz / 8 / config->frequency_hz;
-        mcpwm_ll_carrier_set_prescale(hal->dev, oper_id, pre_scale);
-        real_frequency = group->resolution_hz / 8 / pre_scale;
+        // select the clock source
+        mcpwm_carrier_clock_source_t clk_src = config->clk_src ? config->clk_src : MCPWM_CARRIER_CLK_SRC_DEFAULT;
+        ESP_RETURN_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)clk_src), TAG, "set group clock failed");
+
+        uint8_t prescale = group->resolution_hz / 8 / config->frequency_hz;
+        ESP_RETURN_ON_FALSE(prescale > 0 && prescale <= MCPWM_LL_MAX_CARRIER_PRESCALE, ESP_ERR_INVALID_STATE, TAG, "group clock cannot match the frequency");
+        mcpwm_ll_carrier_set_prescale(hal->dev, oper_id, prescale);
+        real_frequency = group->resolution_hz / 8 / prescale;
 
         uint8_t duty = (uint8_t)(config->duty_cycle * 8);
         mcpwm_ll_carrier_set_duty(hal->dev, oper_id, duty);
