@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,6 +177,9 @@ typedef struct {
 #endif
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     void *ds_data;                          /*!< Pointer for digital signature peripheral context, see ESP-TLS Documentation for more details */
+#endif
+#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    bool save_client_session;
 #endif
 } esp_http_client_config_t;
 

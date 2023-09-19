@@ -211,6 +211,28 @@ void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_ke
  */
 void esp_transport_ssl_set_interface_name(esp_transport_handle_t t, struct ifreq *if_name);
 
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+/**
+ * @brief   Session ticket operation
+ */
+typedef enum {
+    ESP_TRANSPORT_SESSION_TICKET_INIT,      /*!< Allocate and initialize a TLS session */
+    ESP_TRANSPORT_SESSION_TICKET_SAVE,      /*!< Save TLS session so it can be restored for the next handshake */
+    ESP_TRANSPORT_SESSION_TICKET_USE,       /*!< Use already saved session to reconnect faster */
+    ESP_TRANSPORT_SESSION_TICKET_FREE       /*!< Deallocate and deinit the TLS session */
+} esp_transport_session_ticket_operation_t;
+
+/**
+ * @brief      Perform desired session ticket operation (init, save, use)
+ *
+ * @param[in]  t            The transport handle
+ * @param[in]  operation    Operation to perform with TLS session
+ *
+ * @note This operation is only available if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS=y
+ */
+esp_err_t esp_transport_ssl_session_ticket_operation(esp_transport_handle_t t, esp_transport_session_ticket_operation_t operation);
+#endif // CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+
 #ifdef __cplusplus
 }
 #endif
