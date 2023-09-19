@@ -91,6 +91,13 @@ menu "Hardware Settings"
                 To reduce leakage current, some types of SPI Flash/RAM only need to pull up the CS pin
                 during light sleep. But there are also some kinds of SPI Flash/RAM that need to pull up
                 all pins. It depends on the SPI Flash/RAM chip used.
+
+        config ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS
+            bool "Allow to enable internal pull-up/downs for the Deep-Sleep wakeup IOs"
+            default y
+            help
+                When using rtc gpio wakeup source during deepsleep without external pull-up/downs, you may want to
+                make use of the internal ones.
     endmenu
 
     menu "ESP_SLEEP_WORKAROUND"
