@@ -20,7 +20,7 @@ idf_component_register(SRCS ${sources}
 idf_build_set_property(COMPILE_DEFINITIONS "_POSIX_READER_WRITER_LOCKS" APPEND)
 
 set(extra_link_flags "-u pthread_include_pthread_impl")
-list(APPEND extra_link_flags "-u pthread_include_pthread_cond_impl")
+list(APPEND extra_link_flags "-u pthread_include_pthread_cond_var_impl")
 list(APPEND extra_link_flags "-u pthread_include_pthread_local_storage_impl")
 list(APPEND extra_link_flags "-u pthread_include_pthread_rwlock_impl")
 list(APPEND extra_link_flags "-u pthread_include_pthread_semaphore_impl")
