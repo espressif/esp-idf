@@ -41,7 +41,7 @@ TEST_CASE("HMAC 'downstream' JTAG Enable mode", "[hw_crypto]")
 {
     int ets_status;
 
-    setup_keyblock(EFUSE_BLK_KEY3, ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG);
+    setup_keyblock(EFUSE_BLK_KEY4, ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG);
 
     // Results calculated with Python:
     //
@@ -64,7 +64,7 @@ TEST_CASE("HMAC 'downstream' JTAG Enable mode", "[hw_crypto]")
     TEST_ASSERT_MESSAGE(ESP_OK == esp_efuse_batch_write_commit(),
                     "Error programming security efuse.\n");
 
-    TEST_ASSERT_EQUAL_HEX32_MESSAGE(ESP_OK, esp_hmac_jtag_enable(HMAC_KEY3, token_data),
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(ESP_OK, esp_hmac_jtag_enable(HMAC_KEY4, token_data),
 		    "JTAG should be re-enabled now, please manually verify");
 }
 
@@ -78,7 +78,7 @@ TEST_CASE("HMAC 'upstream' MAC generation with zeroes", "[hw_crypto]")
 {
     uint8_t hmac[32];
 
-    setup_keyblock(EFUSE_BLK_KEY4, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
+    setup_keyblock(EFUSE_BLK_KEY5, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
 
     const uint8_t zeroes[128] = { };
     // Produce the HMAC of various numbers of zeroes
@@ -163,7 +163,7 @@ TEST_CASE("HMAC 'upstream' MAC generation with zeroes", "[hw_crypto]")
     const size_t num_zero_results = sizeof(zero_results) / sizeof(hmac_result);
 
     for (int i = 0; i < num_zero_results; i++) {
-        TEST_ESP_OK(esp_hmac_calculate(HMAC_KEY4, zeroes, zero_results[i].msglen, hmac));
+        TEST_ESP_OK(esp_hmac_calculate(HMAC_KEY5, zeroes, zero_results[i].msglen, hmac));
         TEST_ASSERT_EQUAL_HEX8_ARRAY(zero_results[i].result, hmac, sizeof(hmac));
     }
 }
@@ -173,7 +173,7 @@ TEST_CASE("HMAC 'upstream' MAC generation from data", "[hw_crypto]")
 {
     uint8_t hmac[32];
 
-    setup_keyblock(EFUSE_BLK_KEY4, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
+    setup_keyblock(EFUSE_BLK_KEY5, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
 
     // 257 characters of pseudo-Latin from lipsum.com (not Copyright)
     const char *message = "Deleniti voluptas explicabo et assumenda. Sed et aliquid minus quis. Praesentium cupiditate quia nemo est. Laboriosam pariatur ut distinctio tenetur. Sunt architecto iure aspernatur soluta ut recusandae. Ut quibusdam occaecati ut qui sit dignissimos eaque..";
@@ -961,7 +961,7 @@ TEST_CASE("HMAC 'upstream' MAC generation from data", "[hw_crypto]")
     };
 
     for (int i = 0; i < sizeof(results)/sizeof(hmac_result); i++) {
-        TEST_ESP_OK(esp_hmac_calculate(HMAC_KEY4, message, results[i].msglen, hmac));
+        TEST_ESP_OK(esp_hmac_calculate(HMAC_KEY5, message, results[i].msglen, hmac));
         TEST_ASSERT_EQUAL_HEX8_ARRAY(results[i].result, hmac, sizeof(hmac));
     }
 }
@@ -973,7 +973,7 @@ TEST_CASE("HMAC 'upstream' wait lock", "[hw_crypto]")
     // 257 characters of pseudo-Latin from lipsum.com (not Copyright)
     const char *message = "Deleniti voluptas explicabo et assumenda. Sed et aliquid minus quis. Praesentium cupiditate quia nemo est. Laboriosam pariatur ut distinctio tenetur. Sunt architecto iure aspernatur soluta ut recusandae. Ut quibusdam occaecati ut qui sit dignissimos eaque..";
 
-    setup_keyblock(EFUSE_BLK_KEY4, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
+    setup_keyblock(EFUSE_BLK_KEY5, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
 
     static const  hmac_result results[] = {
         { .msglen = 255,
@@ -985,7 +985,7 @@ TEST_CASE("HMAC 'upstream' wait lock", "[hw_crypto]")
     };
 
     for (int i = 0; i < sizeof(results)/sizeof(hmac_result); i++) {
-        TEST_ESP_OK(esp_hmac_calculate(HMAC_KEY4, message, results[i].msglen, hmac));
+        TEST_ESP_OK(esp_hmac_calculate(HMAC_KEY5, message, results[i].msglen, hmac));
         TEST_ASSERT_EQUAL_HEX8_ARRAY(results[i].result, hmac, sizeof(hmac));
     }
 }
