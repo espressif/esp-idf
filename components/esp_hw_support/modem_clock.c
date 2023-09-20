@@ -53,6 +53,9 @@ typedef struct modem_clock_context {
     modem_clock_lpclk_src_t lpclk_src[PERIPH_MODEM_MODULE_NUM];
 } modem_clock_context_t;
 
+extern portMUX_TYPE rtc_spinlock;
+
+static int modem_clock_apb_80m_cnt;
 
 #if SOC_WIFI_SUPPORTED
 static void IRAM_ATTR modem_clock_wifi_mac_configure(modem_clock_context_t *ctx, bool enable)
@@ -102,7 +105,31 @@ static void IRAM_ATTR modem_clock_coex_configure(modem_clock_context_t *ctx, boo
 static void IRAM_ATTR modem_clock_fe_configure(modem_clock_context_t *ctx, bool enable)
 {
     modem_clock_hal_enable_fe_clock(ctx->hal, enable);
+    modem_clock_shared_enable(enable);
 }
+
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+void modem_clock_shared_enable(bool enable)
+{
+    if(enable) {
+        portENTER_CRITICAL_SAFE(&rtc_spinlock);
+        modem_clock_apb_80m_cnt++;
+        if (modem_clock_apb_80m_cnt == 1) {
+            modem_clock_hal_enable_shared_clock(true);
+        }
+        portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+    } else {
+        portENTER_CRITICAL_SAFE(&rtc_spinlock);
+        modem_clock_apb_80m_cnt--;
+        if (modem_clock_apb_80m_cnt == 0) {
+            modem_clock_hal_enable_shared_clock(false);
+        } else if (modem_clock_apb_80m_cnt < 0) {
+            abort();
+        }
+        portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+    }
+}
+#endif // SOC_MODEM_CLOCK_IS_INDEPENDENT
 
 static void IRAM_ATTR modem_clock_i2c_master_configure(modem_clock_context_t *ctx, bool enable)
 {
