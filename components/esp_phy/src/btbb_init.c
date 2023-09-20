@@ -22,11 +22,11 @@ static uint8_t s_btbb_access_ref = 0;
 #include "btbb_retention_reg.h"
 static const char* TAG = "btbb_init";
 
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-#define BTBB_LINK_OWNER  ENTRY(3)
-#else
+// #if SOC_PM_RETENTION_HAS_CLOCK_BUG
+// #define BTBB_LINK_OWNER  ENTRY(3)
+// #else
 #define BTBB_LINK_OWNER  ENTRY(0) | ENTRY(2)
-#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
+// #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
 
 static esp_err_t btbb_sleep_retention_init(void)
 {

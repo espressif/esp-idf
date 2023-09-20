@@ -112,16 +112,6 @@ esp_ieee802154_state_t esp_ieee802154_get_state(void);
 esp_err_t esp_ieee802154_sleep(void);
 
 /**
- * @brief  The IEEE 802.15.4 enter sleep.
- */
-void esp_ieee802154_enter_sleep(void);
-
-/**
- * @brief  The IEEE 802.15.4 wakeup.
- */
-void esp_ieee802154_wakeup(void);
-
-/**
  * @brief  Set the IEEE 802.15.4 Radio to receive state.
  *
  * @return
