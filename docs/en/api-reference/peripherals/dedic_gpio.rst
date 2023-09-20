@@ -90,7 +90,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 1. Allocate a GPIO bundle: :cpp:func:`dedic_gpio_new_bundle`
 2. Query the mask occupied by that bundle: :cpp:func:`dedic_gpio_get_out_mask` or/and :cpp:func:`dedic_gpio_get_in_mask`
 3. Call CPU LL apis (e.g., `dedic_gpio_cpu_ll_write_mask`) or write assembly code with that mask
-4. The fasted way of toggling IO is to use the dedicated "set/clear" instructions:
+4. The fastest way of toggling IO is to use the dedicated "set/clear" instructions:
 
     .. only:: esp32s2 or esp32s3
 
