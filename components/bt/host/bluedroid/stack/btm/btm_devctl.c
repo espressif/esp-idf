@@ -688,6 +688,19 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode, UINT8 param_len,
 
 }
 
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+tBTM_STATUS BTM_ConfigCoexStatus(tBTM_COEX_OPERATION op, tBTM_COEX_TYPE type, UINT8 status)
+{
+    UINT8 param[3];
+    UINT8 *p = (UINT8 *)param;
+
+    UINT8_TO_STREAM(p, type);
+    UINT8_TO_STREAM(p, op);
+    UINT8_TO_STREAM(p, status);
+
+    return BTM_VendorSpecificCommand(HCI_VENDOR_COMMON_COEX_STATUS_CMD_OPCODE, 3, param, NULL);
+}
+#endif
 
 /*******************************************************************************
 **

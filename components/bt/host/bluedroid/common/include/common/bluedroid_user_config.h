@@ -361,6 +361,13 @@
 #define UC_BT_BLUEDROID_MEM_DEBUG               FALSE
 #endif
 
+//ESP COEXIST VSC
+#ifdef CONFIG_BT_BLUEDROID_ESP_COEX_VSC
+#define UC_BT_BLUEDROID_ESP_COEX_VSC            CONFIG_BT_BLUEDROID_ESP_COEX_VSC
+#else
+#define UC_BT_BLUEDROID_ESP_COEX_VSC            FALSE
+#endif
+
 
 /**********************************************************
  * Trace reference

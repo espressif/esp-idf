@@ -25,6 +25,9 @@
 #include "bta/bta_api.h"
 #include "bta/bta_sys.h"
 #include "bta_dm_int.h"
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+#include "stack/btm_api.h"
+#endif
 #include "osi/allocator.h"
 #include <string.h>
 
@@ -59,6 +62,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_disable,                         /* BTA_DM_API_DISABLE_EVT */
     bta_dm_set_dev_name,                    /* BTA_DM_API_SET_NAME_EVT */
     bta_dm_get_dev_name,                    /* BTA_DM_API_GET_NAME_EVT */
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    bta_dm_cfg_coex_status,                 /* BTA_DM_API_CFG_COEX_ST_EVT */
+#endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_config_eir,                      /* BTA_DM_API_CONFIG_EIR_EVT */
     bta_dm_set_page_timeout,                /* BTA_DM_API_PAGE_TO_SET_EVT */
@@ -464,12 +470,16 @@ void BTA_DmCoexEventTrigger(uint32_t event)
     case BTA_COEX_EVT_ACL_DISCONNECTED:
         break;
     case BTA_COEX_EVT_STREAMING_STARTED:
-        esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+        BTM_ConfigCoexStatus(BTM_COEX_OP_SET, BTM_COEX_TYPE_BT, BTM_COEX_BT_ST_A2DP_STREAMING);
+        BTM_ConfigCoexStatus(BTM_COEX_OP_CLEAR, BTM_COEX_TYPE_BT, BTM_COEX_BT_ST_A2DP_PAUSED);
+#endif
         break;
     case BTA_COEX_EVT_STREAMING_STOPPED:
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+        BTM_ConfigCoexStatus(BTM_COEX_OP_CLEAR, BTM_COEX_TYPE_BT, BTM_COEX_BT_ST_A2DP_STREAMING);
+        BTM_ConfigCoexStatus(BTM_COEX_OP_CLEAR, BTM_COEX_TYPE_BT, BTM_COEX_BT_ST_A2DP_PAUSED);
+#endif
         break;
     default:
         break;
