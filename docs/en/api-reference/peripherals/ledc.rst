@@ -246,7 +246,13 @@ To set the duty cycle, use the dedicated function :cpp:func:`ledc_set_duty`. Aft
 
 Another way to set the duty cycle, as well as some other channel parameters, is by calling :cpp:func:`ledc_channel_config` covered in Section :ref:`ledc-api-configure-channel`.
 
-The range of the duty cycle values passed to functions depends on selected ``duty_resolution`` and should be from ``0`` to ``(2 ** duty_resolution) - 1``. For example, if the selected duty resolution is 10, then the duty cycle values can range from 0 to 1023. This provides the resolution of ~ 0.1%.
+The range of the duty cycle values passed to functions depends on selected ``duty_resolution`` and should be from ``0`` to ``(2 ** duty_resolution)``. For example, if the selected duty resolution is 10, then the duty cycle values can range from 0 to 1024. This provides the resolution of ~ 0.1%.
+
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c2 or esp32c6 or esp32h2 or esp32p4
+
+    .. warning::
+
+        On {IDF_TARGET_NAME}, when channel's binded timer selects its maximum duty resolution, the duty cycle value cannot be set to ``(2 ** duty_resolution)``. Otherwise, the internal duty counter in the hardware will overflow and be messed up.
 
 
 Change PWM Duty Cycle Using Hardware
