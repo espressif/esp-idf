@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,7 @@ typedef struct {
     int y_gap;
     uint8_t fb_bits_per_pixel;
     uint8_t madctl_val; // save current value of LCD_CMD_MADCTL register
-    uint8_t colmod_cal; // save surrent value of LCD_CMD_COLMOD register
+    uint8_t colmod_val; // save current value of LCD_CMD_COLMOD register
 } nt35510_panel_t;
 
 esp_err_t
@@ -86,16 +86,16 @@ esp_lcd_new_panel_nt35510(const esp_lcd_panel_io_handle_t io, const esp_lcd_pane
     uint8_t fb_bits_per_pixel = 0;
     switch (panel_dev_config->bits_per_pixel) {
     case 16: // RGB565
-        nt35510->colmod_cal = 0x55;
+        nt35510->colmod_val = 0x55;
         fb_bits_per_pixel = 16;
         break;
     case 18: // RGB666
-        nt35510->colmod_cal = 0x66;
+        nt35510->colmod_val = 0x66;
         // each color component (R/G/B) should occupy the 6 high bits of a byte, which means 3 full bytes are required for a pixel
         fb_bits_per_pixel = 24;
         break;
     case 24: // RGB888
-        nt35510->colmod_cal = 0x77;
+        nt35510->colmod_val = 0x77;
         fb_bits_per_pixel = 24;
         break;
     default:
@@ -176,7 +176,7 @@ static esp_err_t panel_nt35510_init(esp_lcd_panel_t *panel)
         nt35510->madctl_val,
     }, 2), TAG, "io tx param LCD_CMD_MADCTL failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD << 8, (uint16_t[]) {
-        nt35510->colmod_cal,
+        nt35510->colmod_val,
     }, 2), TAG, "io tx param LCD_CMD_COLMOD failed");
 
     return ESP_OK;
