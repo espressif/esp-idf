@@ -419,8 +419,6 @@ components/esp_hid/private/bt_hidd.h
 components/esp_hid/private/bt_hidh.h
 components/esp_hid/private/esp_hidd_private.h
 components/esp_hid/src/esp_hid_common.c
-components/esp_hid/test/hid_descriptor.h
-components/esp_hid/test/test_esp_hid.c
 components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
