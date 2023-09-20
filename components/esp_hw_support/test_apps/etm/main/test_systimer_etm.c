@@ -79,7 +79,7 @@ TEST_CASE("esp_timer_etm_event", "[etm]")
     printf("allocate GPIO etm task\r\n");
     esp_etm_task_handle_t gpio_task = NULL;
     gpio_etm_task_config_t gpio_task_config = {
-        .action = GPIO_ETM_TASK_ACTION_TOG,
+        .action = GPIO_ETM_TASK_ACTION_CLR,
     };
     TEST_ESP_OK(gpio_new_etm_task(&gpio_task_config, &gpio_task));
 
@@ -114,11 +114,13 @@ TEST_CASE("esp_timer_etm_event", "[etm]")
     TEST_ESP_OK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     TEST_ESP_OK(esp_timer_start_periodic(periodic_timer, 500000));
 
-    // should see a 1Hz square wave on the GPIO
-    esp_rom_delay_us(1200000);
-
-    // check the final GPIO level
+    vTaskDelay(pdMS_TO_TICKS(100));
+    // etm event not active yet, so the GPIO level should still be the initial state
     TEST_ASSERT_EQUAL(1, gpio_get_level(output_gpio));
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    // etm event should have cleared the GPIO level
+    TEST_ASSERT_EQUAL(0, gpio_get_level(output_gpio));
 
     TEST_ESP_OK(esp_timer_stop(periodic_timer));
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
