@@ -216,6 +216,13 @@ extern "C" {
  */
 #ifdef CONFIG_LWIP_IPV4_NAPT
 #define IP_NAPT                         1
+
+#ifdef CONFIG_LWIP_IPV4_NAPT_PORTMAP
+#define IP_NAPT_PORTMAP                 1
+#else
+#define IP_NAPT_PORTMAP                 0
+#endif
+
 #else
 #define IP_NAPT                         0
 #endif
