@@ -22,6 +22,3 @@ pygobject; sys_platform != 'win32'
 # esp_prov
 bleak
 protobuf
-
-# tools/test_apps/system/monitor_ide_integration
-SimpleWebSocketServer

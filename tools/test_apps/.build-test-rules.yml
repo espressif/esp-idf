@@ -136,16 +136,6 @@ tools/test_apps/system/memprot:
       temporary: true
       reason: the other targets are not tested yet
 
-tools/test_apps/system/monitor_ide_integration:
-  enable:
-    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: lack of runners
-
 tools/test_apps/system/no_embedded_paths:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
