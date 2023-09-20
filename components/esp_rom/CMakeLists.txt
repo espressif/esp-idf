@@ -123,6 +123,11 @@ else() # Regular app build
         if(CONFIG_ESP32C3_REV_MIN_FULL EQUAL 3 OR CONFIG_ESP32C3_REV_MIN_FULL GREATER 3)
             rom_linker_script("eco3")
         endif()
+
+        if(CONFIG_ESP32C3_REV_MIN_FULL EQUAL 101 OR CONFIG_ESP32C3_REV_MIN_FULL GREATER 101)
+            rom_linker_script("eco7")
+        endif()
+
     endif()
 
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
