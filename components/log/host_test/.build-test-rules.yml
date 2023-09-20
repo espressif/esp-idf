@@ -4,8 +4,3 @@ components/log/host_test/log_test:
   enable:
     - if: IDF_TARGET == "linux"
       reason: only test on linux
-
-components/log/test_apps:
-  enable:
-    - if: IDF_TARGET == "esp32"
-      reason: only test on esp32
