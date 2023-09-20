@@ -34,8 +34,7 @@ esp_err_t esp_openthread_sleep_init(void)
 
 void esp_openthread_sleep_process(void)
 {
-    if (esp_ieee802154_get_state() == ESP_IEEE802154_RADIO_SLEEP) {
-        esp_ieee802154_enter_sleep();
+    if (s_ot_sleep == false && esp_ieee802154_get_state() == ESP_IEEE802154_RADIO_SLEEP) {
         esp_pm_lock_release(s_pm_lock);
         s_ot_sleep = true;
     }
@@ -45,7 +44,6 @@ void esp_openthread_wakeup_process(void)
 {
     if (s_ot_sleep) {
         esp_pm_lock_acquire(s_pm_lock);
-        esp_ieee802154_wakeup();
         s_ot_sleep = false;
     }
 }

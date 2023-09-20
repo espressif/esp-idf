@@ -25,6 +25,7 @@
     }
 #endif
 
+// When JIRA PM-3 fix, uart clock can autoswitch.
 #define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                    \
     {                                                           \
         .host_connection_mode = HOST_CONNECTION_MODE_CLI_UART,  \
@@ -38,7 +39,7 @@
                     .stop_bits = UART_STOP_BITS_1,              \
                     .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,      \
                     .rx_flow_ctrl_thresh = 0,                   \
-                    .source_clk = UART_SCLK_DEFAULT,            \
+                    .source_clk = UART_SCLK_XTAL,               \
                 },                                              \
             .rx_pin = UART_PIN_NO_CHANGE,                       \
             .tx_pin = UART_PIN_NO_CHANGE,                       \
