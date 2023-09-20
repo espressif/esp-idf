@@ -32,7 +32,7 @@
 
 static const char *TAG = "gptimer";
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_PERIPH_CLK_CTRL_SHARED
 #define GPTIMER_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
 #define GPTIMER_CLOCK_SRC_ATOMIC()

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "esp_rom_gpio.h"
 #include "ir_tools.h"
 #include "driver/rmt.h"
+#include "soc/rmt_periph.h"
 
 #define RMT_RX_CHANNEL_ENCODING_START (SOC_RMT_CHANNELS_PER_GROUP-SOC_RMT_TX_CANDIDATES_PER_GROUP)
 #define RMT_TX_CHANNEL_ENCODING_END   (SOC_RMT_TX_CANDIDATES_PER_GROUP-1)
@@ -72,8 +73,12 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
     // Routing internal signals by IO Matrix (bind rmt tx and rx signal on the same GPIO)
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[RMT_DATA_IO], PIN_FUNC_GPIO);
     TEST_ESP_OK(gpio_set_direction(RMT_DATA_IO, GPIO_MODE_INPUT_OUTPUT));
-    esp_rom_gpio_connect_out_signal(RMT_DATA_IO, RMT_SIG_OUT0_IDX + tx_channel, 0, 0);
-    esp_rom_gpio_connect_in_signal(RMT_DATA_IO, RMT_SIG_IN0_IDX + rx_channel, 0);
+    if (tx_channel >= 0) {
+        esp_rom_gpio_connect_out_signal(RMT_DATA_IO, rmt_periph_signals.groups[0].channels[tx_channel].tx_sig, 0, 0);
+    }
+    if (rx_channel >= 0) {
+        esp_rom_gpio_connect_in_signal(RMT_DATA_IO, rmt_periph_signals.groups[0].channels[rx_channel].rx_sig, 0);
+    }
 
     // install driver
     if (tx_channel >= 0) {
@@ -160,7 +165,6 @@ TEST_CASE("RMT miscellaneous functions", "[rmt]")
     TEST_ESP_OK(rmt_get_source_clk(channel, &src_clk));
     TEST_ASSERT_EQUAL_INT(RMT_BASECLK_XTAL, src_clk);
 #endif
-
 
     TEST_ESP_OK(rmt_set_tx_carrier(channel, 0, 10, 10, 1));
     TEST_ESP_OK(rmt_set_idle_level(channel, 1, 0));

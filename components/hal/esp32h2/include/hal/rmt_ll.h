@@ -43,6 +43,30 @@ typedef enum {
 } rmt_ll_mem_owner_t;
 
 /**
+ * @brief Enable the bus clock for RMT module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void rmt_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    PCR.rmt_conf.rmt_clk_en = enable;
+}
+
+/**
+ * @brief Reset the RMT module
+ *
+ * @param group_id Group ID
+ */
+static inline void rmt_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    PCR.rmt_conf.rmt_rst_en = 1;
+    PCR.rmt_conf.rmt_rst_en = 0;
+}
+
+/**
  * @brief Enable clock gate for register and memory
  *
  * @param dev Peripheral instance address

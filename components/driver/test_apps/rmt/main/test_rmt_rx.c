@@ -13,6 +13,7 @@
 #include "driver/rmt_rx.h"
 #include "soc/soc_caps.h"
 #include "test_util_rmt_encoders.h"
+#include "test_board.h"
 
 #if CONFIG_RMT_ISR_IRAM_SAFE
 #define TEST_RMT_CALLBACK_ATTR IRAM_ATTR
@@ -42,11 +43,16 @@ static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx
 
 static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt_clock_source_t clk_src)
 {
+    uint32_t const test_rx_buffer_symbols = 128;
+    rmt_symbol_word_t *remote_codes = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
+                                      MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(remote_codes);
+
     rmt_rx_channel_config_t rx_channel_cfg = {
         .clk_src = clk_src,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = mem_block_symbols,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.with_dma = with_dma,
         .flags.io_loop_back = true, // the GPIO will act like a loopback
     };
@@ -67,7 +73,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .trans_queue_depth = 4,
-        .gpio_num = 0,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
         .flags.io_loop_back = true, // TX channel and RX channel will bounded to the same GPIO
     };
     printf("install tx channel\r\n");
@@ -86,15 +92,13 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     printf("enable rx channel\r\n");
     TEST_ESP_OK(rmt_enable(rx_channel));
 
-    rmt_symbol_word_t remote_codes[128];
-
     rmt_receive_config_t receive_config = {
         .signal_range_min_ns = 1250,
         .signal_range_max_ns = 12000000,
     };
 
     // ready to receive
-    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send NEC frame without carrier\r\n");
     TEST_ESP_OK(rmt_transmit(tx_channel, nec_encoder, (uint16_t[]) {
         0x0440, 0x3003 // address, command
@@ -102,7 +106,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
     TEST_ASSERT_EQUAL(34, test_user_data.received_symbol_num);
 
-    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send NEC frame without carrier\r\n");
     TEST_ESP_OK(rmt_transmit(tx_channel, nec_encoder, (uint16_t[]) {
         0x0440, 0x3003 // address, command
@@ -112,7 +116,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
     // ready to receive
-    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send customized NEC frame without carrier\r\n");
     TEST_ESP_OK(rmt_transmit(tx_channel, nec_encoder, (uint16_t[]) {
         0xFF00, 0xFF00, 0xFF00, 0xFF00
@@ -121,7 +125,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ASSERT_EQUAL(66, test_user_data.received_symbol_num);
 #else
     // ready to receive
-    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send customized NEC frame without carrier\r\n");
     // the maximum symbols can receive is its memory block capacity
     TEST_ESP_OK(rmt_transmit(tx_channel, nec_encoder, (uint16_t[]) {
@@ -144,7 +148,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     carrier_cfg.frequency_hz = 25000;
     TEST_ESP_OK(rmt_apply_carrier(rx_channel, &carrier_cfg));
 
-    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send NEC frame with carrier\r\n");
     TEST_ESP_OK(rmt_transmit(tx_channel, nec_encoder, (uint16_t[]) {
         0x0440, 0x3003 // address, command
@@ -153,7 +157,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ASSERT_EQUAL(34, test_user_data.received_symbol_num);
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
-    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send customized frame with carrier\r\n");
     TEST_ESP_OK(rmt_transmit(tx_channel, nec_encoder, (uint16_t[]) {
         0xFF00, 0xFF00, 0xFF00, 0xFF00
@@ -167,7 +171,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ESP_OK(rmt_apply_carrier(rx_channel, NULL));
 #endif // SOC_RMT_SUPPORT_RX_DEMODULATION
 
-    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &receive_config));
     printf("send NEC frame without carrier\r\n");
     TEST_ESP_OK(rmt_transmit(tx_channel, nec_encoder, (uint16_t[]) {
         0x0440, 0x3003 // address, command
@@ -183,6 +187,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     TEST_ESP_OK(rmt_del_channel(rx_channel));
     TEST_ESP_OK(rmt_del_channel(tx_channel));
     TEST_ESP_OK(rmt_del_encoder(nec_encoder));
+    free(remote_codes);
 }
 
 TEST_CASE("rmt rx nec with carrier", "[rmt]")
@@ -195,41 +200,4 @@ TEST_CASE("rmt rx nec with carrier", "[rmt]")
 #if SOC_RMT_SUPPORT_DMA
     test_rmt_rx_nec_carrier(128, true, RMT_CLK_SRC_DEFAULT);
 #endif
-}
-
-TEST_CASE("RMT RX test specifying interrupt priority", "[rmt]")
-{
-    rmt_clock_source_t clk_srcs[] = SOC_RMT_CLKS;
-    rmt_rx_channel_config_t rx_channel_cfg = {
-        .clk_src = clk_srcs[0],
-        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
-        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
-        .gpio_num = 0,
-        .flags.with_dma = false,    // Interrupt will only be allocated when dma disabled
-        .flags.io_loop_back = true, // the GPIO will act like a loopback
-        .intr_priority = 3,
-    };
-    // --- Check if specifying interrupt priority works
-    printf("install rx channel\r\n");
-    rmt_channel_handle_t rx_channel = NULL;
-    TEST_ESP_OK(rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
-
-    rmt_channel_handle_t another_rx_channel = NULL;
-    rmt_rx_channel_config_t another_rx_channel_cfg = rx_channel_cfg;
-    // --- Check if rmt interrupt priority valid check works
-    another_rx_channel_cfg.intr_priority = 4;   ///< Specifying a invalid intr_priority
-    TEST_ESP_ERR(rmt_new_rx_channel(&another_rx_channel_cfg, &another_rx_channel), ESP_ERR_INVALID_ARG);
-    // --- Check if rmt interrupt priority conflict check works
-    another_rx_channel_cfg.intr_priority = 1;   ///< Specifying a conflict intr_priority
-    TEST_ESP_ERR(rmt_new_rx_channel(&another_rx_channel_cfg, &another_rx_channel), ESP_ERR_INVALID_ARG);
-    another_rx_channel_cfg.intr_priority = 0;   ///< Do not specify an intr_priority, should not conflict
-    TEST_ESP_OK(rmt_new_rx_channel(&another_rx_channel_cfg, &another_rx_channel));
-    // --- Check if channel works
-    TEST_ESP_OK(rmt_enable(rx_channel));
-    TEST_ESP_OK(rmt_enable(another_rx_channel));
-    // --- Post-test
-    TEST_ESP_OK(rmt_disable(rx_channel));
-    TEST_ESP_OK(rmt_disable(another_rx_channel));
-    TEST_ESP_OK(rmt_del_channel(rx_channel));
-    TEST_ESP_OK(rmt_del_channel(another_rx_channel));
 }

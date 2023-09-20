@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,9 +13,11 @@
 #include "freertos/idf_additions.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
+#include "soc/gdma_channel.h"
 #include "hal/rmt_types.h"
 #include "hal/rmt_hal.h"
 #include "hal/dma_types.h"
+#include "hal/cache_ll.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_pm.h"
@@ -44,16 +46,27 @@ extern "C" {
 #define RMT_TX_CHANNEL_OFFSET_IN_GROUP 0
 #define RMT_RX_CHANNEL_OFFSET_IN_GROUP (SOC_RMT_CHANNELS_PER_GROUP - SOC_RMT_TX_CANDIDATES_PER_GROUP)
 
-
 #define RMT_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
 // DMA buffer size must align to `rmt_symbol_word_t`
 #define RMT_DMA_DESC_BUF_MAX_SIZE      (DMA_DESCRIPTOR_BUFFER_MAX_SIZE & ~(sizeof(rmt_symbol_word_t) - 1))
 
-#define RMT_DMA_NODES_PING_PONG  2  // two nodes ping-pong
-#define RMT_PM_LOCK_NAME_LEN_MAX 16
+#define RMT_DMA_NODES_PING_PONG               2  // two nodes ping-pong
+#define RMT_PM_LOCK_NAME_LEN_MAX              16
+#define RMT_GROUP_INTR_PRIORITY_UNINITIALIZED (-1)
 
-#define RMT_GROUP_INTR_PRIORITY_UNINITALIZED (-1)
+#if SOC_GDMA_TRIG_PERIPH_RMT0_BUS == SOC_GDMA_BUS_AHB
+#define RMT_DMA_DESC_ALIGN 32
+typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
+#else
+#error "Unsupported RMT DMA bus"
+#endif
+
+#ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
+#define RMT_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
+#else
+#define RMT_GET_NON_CACHE_ADDR(addr) (addr)
+#endif
 
 typedef struct {
     struct {
@@ -151,7 +164,8 @@ struct rmt_tx_channel_t {
     rmt_tx_trans_desc_t *cur_trans; // points to current transaction
     void *user_data;                // user context
     rmt_tx_done_callback_t on_trans_done; // callback, invoked on trans done
-    dma_descriptor_t dma_nodes[RMT_DMA_NODES_PING_PONG]; // DMA descriptor nodes, make up a circular link list
+    rmt_dma_descriptor_t *dma_nodes;    // DMA descriptor nodes
+    rmt_dma_descriptor_t *dma_nodes_nc; // DMA descriptor nodes accessed in non-cached way
     rmt_tx_trans_desc_t trans_desc_pool[];   // transfer descriptor pool
 };
 
@@ -164,13 +178,14 @@ typedef struct {
 
 struct rmt_rx_channel_t {
     rmt_channel_t base;                  // channel base class
-    size_t mem_off;                      // starting offset to fetch the symbols in RMTMEM
+    size_t mem_off;                      // starting offset to fetch the symbols in RMT-MEM
     size_t ping_pong_symbols;            // ping-pong size (half of the RMT channel memory)
     rmt_rx_done_callback_t on_recv_done; // callback, invoked on receive done
     void *user_data;                     // user context
     rmt_rx_trans_desc_t trans_desc;      // transaction description
     size_t num_dma_nodes;                // number of DMA nodes, determined by how big the memory block that user configures
-    dma_descriptor_t dma_nodes[];        // DMA link nodes
+    rmt_dma_descriptor_t *dma_nodes;     // DMA link nodes
+    rmt_dma_descriptor_t *dma_nodes_nc;  // DMA descriptor nodes accessed in non-cached way
 };
 
 /**
@@ -200,7 +215,6 @@ void rmt_release_group_handle(rmt_group_t *group);
  *      - ESP_FAIL: Set clock source failed because of other error
  */
 esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t clk_src);
-
 
 /**
  * @brief Set interrupt priority to RMT group
