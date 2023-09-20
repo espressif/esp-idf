@@ -3,4 +3,5 @@ set(srcs "test_app_main.c"
     )
 
 idf_component_register(SRCS ${srcs}
+                       PRIV_REQUIRES unity test_utils driver
                        WHOLE_ARCHIVE)
