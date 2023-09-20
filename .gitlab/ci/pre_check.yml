@@ -64,11 +64,12 @@ check_version:
     - export IDF_PATH=$PWD
     - tools/ci/check_idf_version.sh
 
-check_rom_api_header:
+check_api_usage:
   extends: .pre_check_template
   script:
     - tools/ci/check_examples_rom_header.sh
     - tools/ci/check_api_violation.sh
+    - tools/ci/check_examples_extra_component_dirs.sh
 
 test_check_kconfigs:
   extends: .pre_check_template
