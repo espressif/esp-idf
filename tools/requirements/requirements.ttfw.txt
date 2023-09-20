@@ -24,6 +24,3 @@ pygobject; sys_platform != 'win32'
 bleak
 # future  # addressed before under ble
 protobuf
-
-# tools/test_apps/system/monitor_ide_integration
-SimpleWebSocketServer
