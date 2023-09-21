@@ -196,3 +196,14 @@ repos:
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]
+  -   repo: https://github.com/shellcheck-py/shellcheck-py
+      rev: v0.9.0.5
+      hooks:
+      - id: shellcheck
+        name: shellcheck bash
+        args: ['--shell', 'bash', '-x']
+        files: 'install.sh|export.sh'
+      - id: shellcheck
+        name: shellcheck dash (export.sh)
+        args: ['--shell', 'dash', '-x']
+        files: 'export.sh'

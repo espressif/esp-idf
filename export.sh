@@ -173,6 +173,7 @@ __main() {
     __verbose ""
     __verbose "  idf.py build"
     __verbose ""
+    __verbose ""
 }
 
 __cleanup() {
