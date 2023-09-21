@@ -11,7 +11,7 @@ IDF Monitor can be launched from an ESP-IDF project by running ``idf.py monitor`
 Keyboard Shortcuts
 ==================
 
-For easy interaction with IDF Monitor, use the keyboard shortcuts given in the table.
+For easy interaction with IDF Monitor, use the keyboard shortcuts given in the table. These keyboard shortcuts can be customized, for more details see `Configuration File`_ section.
 
 .. list-table::
    :header-rows: 1
@@ -61,7 +61,7 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      -
    * - Ctrl + C
      - Interrupt running application
-     - Pauses IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME option to be enabled.
+     - Pauses IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` option to be enabled.
 
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
 
@@ -74,7 +74,7 @@ Automatic Address Decoding
 
 Whenever the chip outputs a hexadecimal address that points to executable code, IDF monitor looks up the location in the source code (file name and line number) and prints the location on the next line in yellow.
 
-.. code-block:: none
+.. highlight:: none
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -305,12 +305,99 @@ The captured output for the filtering options ``PRINT_FILTER="wifi esp_image:E l
     E (31) esp_image: image at 0x30000 has invalid magic byte
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-``The options ``PRINT_FILTER="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` show the following output::
+The options ``PRINT_FILTER="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` show the following output::
 
     load:0x40078000,len:13564
     entry 0x40078d4c
     I (569) heap_init: Initializing. RAM available for dynamic allocation:
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
+
+
+Configuration File
+==================
+
+``esp-idf-monitor`` is using `C0 control codes`_ to interact with the console. Characters from the config file are converted to their C0 control codes. Available characters include the English alphabet (A-Z) and special symbols: ``[``, ``]``, ``\``, ``^``, ``_``.
+
+.. warning::
+
+    Please note that some characters may not work on all platforms or can be already reserved as a shortcut for something else. Use this feature with caution!
+
+
+File Location
+~~~~~~~~~~~~~
+
+The default name for a configuration file is ``esp-idf-monitor.cfg``. First, the same directory ``esp-idf-monitor`` is being run in is inspected.
+
+If a configuration file is not found here, the current user's OS configuration directory is inspected next:
+
+ - Linux: ``/home/<user>/.config/esp-idf-monitor/``
+ - MacOS ``/Users/<user>/.config/esp-idf-monitor/``
+ - Windows: ``c:\Users\<user>\AppData\Local\esp-idf-monitor\``
+
+If a configuration file is still not found, the last inspected location is the home directory:
+
+ - Linux: ``/home/<user>/``
+ - MacOS ``/Users/<user>/``
+ - Windows: ``c:\Users\<user>\``
+
+On Windows, the home directory can be set with the ``HOME`` or ``USERPROFILE`` environment variables. Therefore, the Windows configuration directory location also depends on these.
+
+A different location for the configuration file can be specified with the ``ESP_IDF_MONITOR_CFGFILE`` environment variable, e.g. ``ESP_IDF_MONITOR_CFGFILE = ~/custom_config.cfg``. This overrides the search priorities described above.
+
+``esp-idf-monitor`` will read settings from other usual configuration files if no other configuration file is used.  It will automatically read from ``setup.cfg`` or ``tox.ini`` if they exist.
+
+Configuration Options
+~~~~~~~~~~~~~~~~~~~~~
+
+Below is a table listing the available configuration options:
+
++-----------------------------+---------------------------------------------------------+---------------+
+| Option Name                 | Description                                             | Default Value |
++=============================+=========================================================+===============+
+| menu_key                    | Key to access the main menu.                            | ``T``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| exit_key                    | Key to exit the monitor.                                | ``]``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| chip_reset_key              | Key to initiate a chip reset.                           | ``R``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| recompile_upload_key        | Key to recompile and upload.                            | ``F``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| recompile_upload_app_key    | Key to recompile and upload just the application.       | ``A``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| toggle_output_key           | Key to toggle the output display.                       | ``Y``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| toggle_log_key              | Key to toggle the logging feature.                      | ``L``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| toggle_timestamp_key        | Key to toggle timestamp display.                        | ``I``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| chip_reset_bootloader_key   | Key to reset the chip to bootloader mode.               | ``P``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| exit_menu_key               | Key to exit the monitor from the menu.                  | ``X``         |
++-----------------------------+---------------------------------------------------------+---------------+
+| skip_menu_key               | Pressing the menu key can be skipped for menu commands. | ``False``     |
++-----------------------------+---------------------------------------------------------+---------------+
+
+
+Syntax
+~~~~~~
+
+The configuration file is in .ini file format: it must be introduced by an ``[esp-idf-monitor]`` header to be recognized as valid. This section then contains name = value entries. Lines beginning with ``#`` or ``;`` are ignored as comments.
+
+.. code-block:: text
+
+    # esp-idf-monitor.cfg file to configure internal settings of esp-idf-monitor
+    [esp-idf-monitor]
+    menu_key = T
+    exit_key = ]
+    chip_reset_key = R
+    recompile_upload_key = F
+    recompile_upload_app_key = A
+    toggle_output_key = Y
+    toggle_log_key = L
+    toggle_timestamp_key = I
+    chip_reset_bootloader_key = P
+    exit_menu_key = X
+    skip_menu_key = False
 
 
 Known Issues with IDF Monitor
@@ -328,3 +415,4 @@ Issues Observed on Windows
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
 .. _pySerial: https://github.com/pyserial/pyserial
 .. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm
+.. _C0 control codes: https://en.wikipedia.org/wiki/C0_and_C1_control_codes#C0_controls
