@@ -277,4 +277,13 @@ menu "OpenThread"
         default n
         help
             Only used for Thread1.2 certification
+
+    config OPENTHREAD_TIME_SYNC
+        bool "Enable the time synchronization service feature"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable time synchronization feature, the devices in the same Thread network could
+            sync to the same network time.
+
 endmenu
