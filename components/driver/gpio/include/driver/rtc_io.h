@@ -107,8 +107,8 @@ esp_err_t rtc_gpio_set_direction(gpio_num_t gpio_num, rtc_gpio_mode_t mode);
  * @brief RTC GPIO set direction in deep sleep mode or disable sleep status (default).
  *        In some application scenarios, IO needs to have another states during deep sleep.
  *
- * NOTE: ESP32 support INPUT_ONLY mode.
- *       ESP32S2 support INPUT_ONLY, OUTPUT_ONLY, INPUT_OUTPUT mode.
+ * NOTE: ESP32 supports INPUT_ONLY mode.
+ *       The rest targets support INPUT_ONLY, OUTPUT_ONLY, INPUT_OUTPUT mode.
  *
  * @param  gpio_num GPIO number (e.g. GPIO_NUM_12)
  * @param  mode GPIO direction

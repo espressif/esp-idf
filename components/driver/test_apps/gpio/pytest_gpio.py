@@ -34,6 +34,7 @@ def test_legacy_sigma_delta(dut: IdfDut) -> None:
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 def test_rtc_io(dut: IdfDut) -> None:

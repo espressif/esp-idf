@@ -12,6 +12,7 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "driver/rtc_io.h"
+#include "driver/lp_io.h"
 #include "hal/rtc_io_hal.h"
 #include "soc/rtc_io_periph.h"
 #include "soc/soc_caps.h"
@@ -44,7 +45,7 @@ esp_err_t rtc_gpio_init(gpio_num_t gpio_num)
 {
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
     RTCIO_ENTER_CRITICAL();
-    rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_FUNC_RTC);
+    rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_RTC);
     RTCIO_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -55,7 +56,7 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
     RTCIO_ENTER_CRITICAL();
     // Select Gpio as Digital Gpio
-    rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_FUNC_DIGITAL);
+    rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_DIGITAL);
     RTCIO_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -169,6 +170,22 @@ esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func)
 
     return ESP_OK;
 }
+
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+esp_err_t lp_gpio_connect_in_signal(gpio_num_t gpio_num, uint32_t signal_idx, bool inv)
+{
+    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "LP_IO number error");
+    rtcio_hal_matrix_in(rtc_io_number_get(gpio_num), signal_idx, inv);
+    return ESP_OK;
+}
+
+esp_err_t lp_gpio_connect_out_signal(gpio_num_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv)
+{
+    ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "LP_IO number error");
+    rtcio_hal_matrix_out(rtc_io_number_get(gpio_num), signal_idx, out_inv, oen_inv);
+    return ESP_OK;
+}
+#endif // SOC_LP_GPIO_MATRIX_SUPPORTED
 
 #endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 

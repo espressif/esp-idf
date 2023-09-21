@@ -13,10 +13,6 @@
 
 #if SOC_RTCIO_PIN_COUNT > 0
 #include "soc/rtc_io_channel.h"
-#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-#include "soc/rtc_io_reg.h"
-#include "soc/rtc_io_struct.h"
-#endif
 #endif
 
 #if SOC_ADC_RTC_CTRL_SUPPORTED
