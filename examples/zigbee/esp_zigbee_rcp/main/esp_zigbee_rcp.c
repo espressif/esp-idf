@@ -35,12 +35,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
 #include "zb_scheduler.h"
 #include "esp_zigbee_rcp.h"
-#include "nvs_flash.h"
 
 #if (defined ZB_MACSPLIT_HOST && !defined ZB_MACSPLIT_DEVICE)
 #error Only Zigbee rcp device should be defined
