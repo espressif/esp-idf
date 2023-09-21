@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "hal/spi_ll.h"
 #include "hal/dac_ll.h"
 #include "hal/adc_ll.h"
+#include "hal/hal_utils.h"
 #include "soc/lldesc.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
@@ -99,36 +100,21 @@ static esp_err_t s_dac_dma_periph_set_clock(uint32_t freq_hz, bool is_apll){
     }
     ESP_RETURN_ON_FALSE(interval * 256 > total_div, ESP_ERR_INVALID_ARG, TAG, "the DAC frequency is too small");
 
-    /* Step 3: Calculate the coefficients of ADC digital controller divider*/
-    uint32_t fsclk = interval * freq_hz; /* The clock frequency that produced by ADC controller divider */
-    uint32_t clk_div = digi_ctrl_freq / fsclk;
-    uint32_t mod = digi_ctrl_freq % fsclk;
-    uint32_t a = 0;
-    uint32_t b = 1;
-    if (mod == 0) {
-        goto finish;
-    }
-    uint32_t min_diff = mod + 1;
-    for (uint32_t tmp_b = 1; tmp_b < 64; tmp_b++) {
-        uint32_t tmp_a = (uint32_t)(((mod * b) / (float)fsclk) + 0.5);
-        uint32_t diff = (uint32_t)abs((int)(mod * tmp_b) - (int)(fsclk * tmp_a));
-        if (diff == 0) {
-            a = tmp_a;
-            b = tmp_b;
-            goto finish;
-        }
-        if (diff < min_diff) {
-            min_diff = diff;
-            a = tmp_a;
-            b = tmp_b;
-        }
-    }
+    /* Step 3: Calculate the coefficients of ADC digital controller divider */
+    hal_utils_clk_info_t adc_clk_info = {
+        .src_freq_hz = digi_ctrl_freq / interval,
+        .exp_freq_hz = freq_hz,
+        .max_integ = 257,
+        .min_integ = 1,
+        .max_fract = 64,
+    };
+    hal_utils_clk_div_t adc_clk_div = {};
+    hal_utils_calc_clk_div_frac_accurate(&adc_clk_info, &adc_clk_div);
 
-finish:
     /* Step 4: Set the clock coefficients */
     dac_ll_digi_clk_inv(true);
     dac_ll_digi_set_trigger_interval(interval); // secondary clock division
-    adc_ll_digi_controller_clk_div(clk_div - 1, b, a);
+    adc_ll_digi_controller_clk_div(adc_clk_div.integer - 1, adc_clk_div.denominator, adc_clk_div.numerator);
     adc_ll_digi_clk_sel(is_apll ? ADC_DIGI_CLK_SRC_APLL : ADC_DIGI_CLK_SRC_DEFAULT);
     return ESP_OK;
 }

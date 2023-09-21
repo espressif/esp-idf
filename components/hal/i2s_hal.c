@@ -29,46 +29,18 @@ static const float cut_off_coef[21][3] = {
  *
  * @param sclk      system clock
  * @param mclk      module clock
- * @param integer   output the integer part of the division
- * @param denominator   output the denominator part of the division
- * @param numerator     output the numerator part of the division
+ * @param mclk_div   output the mclk division coefficients
  */
-void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, i2s_ll_mclk_div_t *mclk_div)
+void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_clk_div_t *mclk_div)
 {
-    int ma = 0;
-    int mb = 0;
-    int min = INT32_MAX;
-    uint32_t div_denom = 1;
-    uint32_t div_numer = 0;
-    uint32_t div_inter = sclk / mclk;
-    uint32_t freq_diff = sclk % mclk;
-
-    if (freq_diff) {
-        float decimal = freq_diff / (float)mclk;
-        // Carry bit if the decimal is greater than 1.0 - 1.0 / (I2S_LL_MCLK_DIVIDER_MAX * 2)
-        if (decimal <= 1.0 - 1.0 / (float)(I2S_LL_MCLK_DIVIDER_MAX * 2)) {
-            for (int a = 2; a <= I2S_LL_MCLK_DIVIDER_MAX; a++) {
-                int b = (int)(a * (freq_diff / (double)mclk) + 0.5);
-                ma = freq_diff * a;
-                mb = mclk * b;
-                if (ma == mb) {
-                    div_denom = (uint32_t)a;
-                    div_numer = (uint32_t)b;
-                    break;
-                }
-                if (abs(mb - ma) < min) {
-                    div_denom = (uint32_t)a;
-                    div_numer = (uint32_t)b;
-                    min = abs(mb - ma);
-                }
-            }
-        } else {
-            div_inter++;
-        }
-    }
-    mclk_div->integ = div_inter;
-    mclk_div->denom = div_denom;
-    mclk_div->numer = div_numer;
+    hal_utils_clk_info_t i2s_clk_info = {
+        .src_freq_hz = sclk,
+        .exp_freq_hz = mclk,
+        .max_integ = I2S_LL_CLK_FRAC_DIV_N_MAX,
+        .min_integ = 1,
+        .max_fract = I2S_LL_CLK_FRAC_DIV_AB_MAX,
+    };
+    hal_utils_calc_clk_div_frac_accurate(&i2s_clk_info, mclk_div);
 }
 
 void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
@@ -79,7 +51,7 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
 
 void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
 {
-    i2s_ll_mclk_div_t mclk_div = {};
+    hal_utils_clk_div_t mclk_div = {};
 #if SOC_I2S_HW_VERSION_2
     i2s_ll_tx_enable_clock(hal->dev);
     i2s_ll_mclk_bind_to_tx_clk(hal->dev);
@@ -92,7 +64,7 @@ void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *cl
 
 void i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
 {
-    i2s_ll_mclk_div_t mclk_div = {};
+    hal_utils_clk_div_t mclk_div = {};
 #if SOC_I2S_HW_VERSION_2
     i2s_ll_rx_enable_clock(hal->dev);
     i2s_ll_mclk_bind_to_rx_clk(hal->dev);

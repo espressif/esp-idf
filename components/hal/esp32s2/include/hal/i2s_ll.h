@@ -19,6 +19,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
+#include "hal/hal_utils.h"
 
 
 #ifdef __cplusplus
@@ -30,8 +31,9 @@ extern "C" {
 
 #define I2S_LL_BCK_MAX_PRESCALE  (64)
 
-#define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (6)
-#define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
+#define I2S_LL_CLK_FRAC_DIV_N_MAX  256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
+#define I2S_LL_CLK_FRAC_DIV_AB_MAX 64  // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 6 bit-width
+
 
 #define I2S_LL_EVENT_RX_EOF         BIT(9)
 #define I2S_LL_EVENT_TX_EOF         BIT(12)
@@ -44,16 +46,6 @@ extern "C" {
 
 #define I2S_LL_PLL_F160M_CLK_FREQ   (160 * 1000000) // PLL_F160M_CLK: 160MHz
 #define I2S_LL_DEFAULT_PLL_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
-
-/**
- * @brief I2S clock configuration structure
- * @note Fmclk = Fsclk /(integ+numer/denom)
- */
-typedef struct {
-    uint16_t integ;     // Integer part of I2S module clock divider
-    uint16_t denom;     // Denominator part of I2S module clock divider
-    uint16_t numer;     // Numerator part of I2S module clock divider
-} i2s_ll_mclk_div_t;
 
 /**
  * @brief Enable DMA descriptor owner check
@@ -303,14 +295,14 @@ static inline void i2s_ll_set_raw_mclk_div(i2s_dev_t *hw, uint32_t mclk_div, uin
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
  */
-static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const i2s_ll_mclk_div_t *mclk_div)
+static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
     /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
      * Set to particular coefficients first then update to the target coefficients,
      * otherwise the clock division might be inaccurate.
      * the general idea is to set a value that unlike to calculate from the regular decimal */
     i2s_ll_set_raw_mclk_div(hw, 7, 47, 3);
-    i2s_ll_set_raw_mclk_div(hw, mclk_div->integ, mclk_div->denom, mclk_div->numer);
+    i2s_ll_set_raw_mclk_div(hw, mclk_div->integer, mclk_div->denominator, mclk_div->numerator);
 }
 
 /**
@@ -331,7 +323,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
  */
-static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const i2s_ll_mclk_div_t *mclk_div)
+static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
     // TX and RX channel on ESP32 shares a same mclk
     i2s_ll_tx_set_mclk(hw, mclk_div);

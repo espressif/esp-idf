@@ -9,6 +9,7 @@ endif()
 
 set(srcs "mpu_hal.c"
          "efuse_hal.c"
+         "hal_utils.c"
          "${target}/efuse_hal.c")
 
 

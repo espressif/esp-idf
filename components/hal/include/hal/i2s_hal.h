@@ -130,7 +130,7 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id);
  * @param mclk      module clock
  * @param mclk_div  mclk division coefficients, including integer part and decimal part
  */
-void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, i2s_ll_mclk_div_t *mclk_div);
+void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_clk_div_t *mclk_div);
 
 /**
  * @brief Set tx channel clock
