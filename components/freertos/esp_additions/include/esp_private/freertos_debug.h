@@ -20,6 +20,8 @@
 #endif
 /* *INDENT-ON* */
 
+/* -------------------------------------------------- Task Snapshot ------------------------------------------------- */
+
 /**
  * @brief Task Snapshot structure
  *
@@ -77,6 +79,18 @@ BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask,
 UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
                                   const UBaseType_t uxArrayLength,
                                   UBaseType_t * const pxTCBSize );
+
+/* ----------------------------------------------------- Misc ----------------------------------------------------- */
+
+/**
+ * @brief Get a void pointer to the current TCB of a particular core
+ *
+ * @note This function provides no guarantee that the return TCB will still be the current task (or that the task still
+ * exists) when it returns. It is the caller's responsibility to ensure that the task does not get scheduled or deleted.
+ * @param xCoreID The core to query
+ * @return Void pointer to current TCB
+ */
+void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID );
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
