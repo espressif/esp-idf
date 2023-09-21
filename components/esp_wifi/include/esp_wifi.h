@@ -100,6 +100,8 @@ typedef struct {
     int                    tx_buf_type;            /**< WiFi TX buffer type */
     int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
     int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
+    int                    rx_mgmt_buf_type;       /**< WiFi RX MGMT buffer type */
+    int                    rx_mgmt_buf_num;        /**< WiFi RX MGMT buffer number */
     int                    cache_tx_buf_num;       /**< WiFi TX cache buffer number */
     int                    csi_enable;             /**< WiFi channel state information enable flag */
     int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
@@ -133,6 +135,12 @@ typedef struct {
 #define WIFI_DYNAMIC_TX_BUFFER_NUM CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM
 #else
 #define WIFI_DYNAMIC_TX_BUFFER_NUM 0
+#endif
+
+#ifdef CONFIG_ESP_WIFI_RX_MGMT_BUF_NUM_DEF
+#define WIFI_RX_MGMT_BUF_NUM_DEF CONFIG_ESP_WIFI_RX_MGMT_BUF_NUM_DEF
+#else
+#define WIFI_RX_MGMT_BUF_NUM_DEF 0
 #endif
 
 #if CONFIG_ESP_WIFI_CSI_ENABLED
@@ -219,6 +227,8 @@ extern uint64_t g_wifi_feature_caps;
     .tx_buf_type = CONFIG_ESP_WIFI_TX_BUFFER_TYPE,\
     .static_tx_buf_num = WIFI_STATIC_TX_BUFFER_NUM,\
     .dynamic_tx_buf_num = WIFI_DYNAMIC_TX_BUFFER_NUM,\
+    .rx_mgmt_buf_type = CONFIG_ESP_WIFI_DYNAMIC_RX_MGMT_BUF,\
+    .rx_mgmt_buf_num = WIFI_RX_MGMT_BUF_NUM_DEF,\
     .cache_tx_buf_num = WIFI_CACHE_TX_BUFFER_NUM,\
     .csi_enable = WIFI_CSI_ENABLED,\
     .ampdu_rx_enable = WIFI_AMPDU_RX_ENABLED,\
@@ -1260,6 +1270,32 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
   * @param      wake_interval  Milliseconds after would the chip wake up, from 1 to 65535.
   */
 esp_err_t esp_wifi_connectionless_module_set_wake_interval(uint16_t wake_interval);
+
+/**
+  * @brief      Request extra reference of Wi-Fi radio.
+  *             Wi-Fi keep active state(RF opened) to be able to receive packets.
+  *
+  * @attention  Please pair the use of `esp_wifi_force_wakeup_acquire` with `esp_wifi_force_wakeup_release`.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  */
+esp_err_t esp_wifi_force_wakeup_acquire(void);
+
+/**
+  * @brief      Release extra reference of Wi-Fi radio.
+  *             Wi-Fi go to sleep state(RF closed) if no more use of radio.
+  *
+  * @attention  Please pair the use of `esp_wifi_force_wakeup_acquire` with `esp_wifi_force_wakeup_release`.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  */
+esp_err_t esp_wifi_force_wakeup_release(void);
 
 /**
   * @brief     configure country

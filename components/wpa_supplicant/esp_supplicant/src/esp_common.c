@@ -22,6 +22,7 @@
 #include "esp_wnm.h"
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
+#include "esp_private/wifi.h"
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -652,6 +653,8 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 	uint8_t ext_caps_ie[5] = {0};
 	uint8_t ext_caps_ie_len = 3;
 	uint8_t *pos = ext_caps_ie;
+	wifi_ioctl_config_t cfg = {0};
+	esp_err_t err = 0;
 
 	if (!esp_wifi_is_btm_enabled_internal(WIFI_IF_STA)) {
 		return 0;
@@ -659,8 +662,14 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 
 	*pos++ = WLAN_EID_EXT_CAPAB;
 	*pos++ = ext_caps_ie_len;
-	*pos++ = 0;
-	*pos++ = 0;
+
+	err = esp_wifi_internal_ioctl(WIFI_IOCTL_GET_STA_HT2040_COEX, &cfg);
+	if (err == ESP_OK && cfg.data.ht2040_coex.enable) {
+		*pos++ |= BIT(WLAN_EXT_CAPAB_20_40_COEX);
+	} else {
+		*pos++ = 0;
+	}
+	*pos ++ = 0;
 #define CAPAB_BSS_TRANSITION BIT(3)
 	*pos |= CAPAB_BSS_TRANSITION;
 #undef CAPAB_BSS_TRANSITION
@@ -872,9 +881,6 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
 	}
 	pos = ie;
 #ifdef CONFIG_IEEE80211KV
-	ie_len = get_extended_caps_ie(pos, len);
-	pos += ie_len;
-	len -= ie_len;
 	ie_len = get_rm_enabled_ie(pos, len);
 	pos += ie_len;
 	len -= ie_len;

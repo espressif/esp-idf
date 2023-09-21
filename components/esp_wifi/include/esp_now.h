@@ -264,7 +264,9 @@ esp_err_t esp_now_mod_peer(const esp_now_peer_info_t *peer);
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate);
+esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate)
+      __attribute__((deprecated("This API can be only used when rate is non-HE rate, \
+                                please use esp_now_set_peer_rate_config if you want full support of the rate.")));
 
 /**
   * @brief      Set ESPNOW rate config for each peer

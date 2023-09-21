@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -168,6 +168,10 @@ esp_err_t esp_wifi_deinit(void)
     esp_wifi_internal_set_mac_sleep(false);
     esp_mac_bb_pd_mem_deinit();
 #endif
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    esp_wifi_internal_modem_state_configure(false);
+    esp_pm_unregister_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
+#endif
     esp_phy_modem_deinit();
 
     return err;
@@ -231,11 +235,11 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #endif
 
 #if CONFIG_ESP_WIFI_SLP_IRAM_OPT
-    esp_pm_register_light_sleep_default_params_config_callback(esp_wifi_internal_update_light_sleep_default_params);
-
     int min_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_LIGHT_SLEEP);
     int max_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_CPU_MAX);
     esp_wifi_internal_update_light_sleep_default_params(min_freq_mhz, max_freq_mhz);
+
+    esp_pm_register_light_sleep_default_params_config_callback(esp_wifi_internal_update_light_sleep_default_params);
 
     uint32_t sleep_delay_us = CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME * 1000;
     esp_wifi_set_sleep_delay_time(sleep_delay_us);
@@ -291,6 +295,12 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         esp_wifi_internal_set_mac_sleep(true);
 #endif
         esp_phy_modem_init();
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+        if (sleep_modem_wifi_modem_state_enabled()) {
+            esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
+            esp_wifi_internal_modem_state_configure(true); /* require WiFi to enable automatically receives the beacon */
+        }
+#endif
 #if CONFIG_IDF_TARGET_ESP32
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
 #endif
