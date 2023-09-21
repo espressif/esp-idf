@@ -50,6 +50,12 @@
 
 #define PCNT_PM_LOCK_NAME_LEN_MAX 16
 
+#if !SOC_RCC_IS_INDEPENDENT
+#define PCNT_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define PCNT_RCC_ATOMIC()
+#endif
+
 static const char *TAG = "pcnt";
 
 typedef struct pcnt_platform_t pcnt_platform_t;
@@ -763,8 +769,10 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
             group->intr_priority = -1;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             // enable APB access pcnt registers
-            periph_module_enable(pcnt_periph_signals.groups[group_id].module);
-            periph_module_reset(pcnt_periph_signals.groups[group_id].module);
+            PCNT_RCC_ATOMIC() {
+                pcnt_ll_enable_bus_clock(group_id, true);
+                pcnt_ll_reset_register(group_id);
+            }
             // initialize HAL context
             pcnt_hal_init(&group->hal, group_id);
         }
@@ -795,7 +803,9 @@ static void pcnt_release_group_handle(pcnt_group_t *group)
         assert(s_platform.groups[group_id]);
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL; // deregister from platform
-        periph_module_disable(pcnt_periph_signals.groups[group_id].module);
+        PCNT_RCC_ATOMIC() {
+            pcnt_ll_enable_bus_clock(group_id, false);
+        }
     }
     _lock_release(&s_platform.mutex);
 
