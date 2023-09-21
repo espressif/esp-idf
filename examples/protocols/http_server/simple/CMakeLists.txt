@@ -2,7 +2,7 @@
 # in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.16)
 
-if(${IDF_TARGET} STREQUAL "linux")
+if("${IDF_TARGET}" STREQUAL "linux")
     set(COMPONENTS main)
 endif()
 
