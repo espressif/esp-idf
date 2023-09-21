@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include "unity.h"
 #include "driver/rmt_encoder.h"
+#include "esp_heap_caps.h"
 #include "esp_attr.h"
 
 typedef struct {
@@ -72,7 +73,7 @@ static esp_err_t rmt_led_strip_encoder_reset(rmt_encoder_t *encoder)
 
 esp_err_t test_rmt_new_led_strip_encoder(rmt_encoder_handle_t *ret_encoder)
 {
-    rmt_led_strip_encoder_t *led_encoder = calloc(1, sizeof(rmt_led_strip_encoder_t));
+    rmt_led_strip_encoder_t *led_encoder = heap_caps_calloc(1, sizeof(rmt_led_strip_encoder_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     led_encoder->base.encode = rmt_encode_led_strip;
     led_encoder->base.del = rmt_del_led_strip_encoder;
     led_encoder->base.reset = rmt_led_strip_encoder_reset;
@@ -187,7 +188,7 @@ static esp_err_t rmt_nec_protocol_encoder_reset(rmt_encoder_t *encoder)
 
 esp_err_t test_rmt_new_nec_protocol_encoder(rmt_encoder_handle_t *ret_encoder)
 {
-    rmt_nec_protocol_encoder_t *nec_encoder = calloc(1, sizeof(rmt_nec_protocol_encoder_t));
+    rmt_nec_protocol_encoder_t *nec_encoder = heap_caps_calloc(1, sizeof(rmt_nec_protocol_encoder_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     nec_encoder->base.encode = rmt_encode_nec_protocol;
     nec_encoder->base.del = rmt_del_nec_protocol_encoder;
     nec_encoder->base.reset = rmt_nec_protocol_encoder_reset;
