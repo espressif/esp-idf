@@ -411,4 +411,13 @@ menu "Wi-Fi"
             be shared to other devices, making it in readable format increases
             that risk, also passphrase requires pbkdf2 to convert in psk.
 
+    config ESP_WIFI_ENTERPRISE_SUPPORT
+        bool "Enable enterprise option"
+        default y
+        help
+            Select this to enable/disable enterprise connection support.
+
+            disabling this will reduce binary size.
+            disabling this will disable the use of any esp_wifi_sta_wpa2_ent_* (as APIs will be meaningless)
+
 endmenu # Wi-Fi
