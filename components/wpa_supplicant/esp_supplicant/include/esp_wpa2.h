@@ -296,7 +296,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_pac_file(const unsigned char *pac_file, int 
   * @deprecated This function is deprecated and will be removed in the future.
   *             Please use `esp_eap_client_set_fast_params` instead.
   *
-  * @attention  1. Disabling the ESP_WIFI_MBEDTLS_TLS_CLIENT config is required to use EAP-FAST.
+  * @attention  1. Disabling the WPA_MBEDTLS_TLS_CLIENT config is required to use EAP-FAST.
   *
   * @param  config: eap fast phase 1 configuration
   *

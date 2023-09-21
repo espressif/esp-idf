@@ -283,7 +283,7 @@ esp_err_t esp_eap_client_set_suiteb_192bit_certification(bool enable);
  * EAP-FAST requires a PAC file that contains the client's credentials.
  *
  * @attention  1. For files read from the file system, length has to be decremented by 1 byte.
- * @attention  2. Disabling the ESP_WIFI_MBEDTLS_TLS_CLIENT config is required to use EAP-FAST.
+ * @attention  2. Disabling the WPA_MBEDTLS_TLS_CLIENT config is required to use EAP-FAST.
  *
  * @param[in] pac_file     Pointer to the PAC file buffer.
  * @param[in] pac_file_len Length of the PAC file buffer.
@@ -299,7 +299,7 @@ esp_err_t esp_eap_client_set_pac_file(const unsigned char *pac_file, int pac_fil
  * EAP-FAST supports Fast Provisioning, where clients can be authenticated faster using precomputed keys (PAC).
  * This function allows configuring parameters for Fast Provisioning.
  *
- * @attention  1. Disabling the ESP_WIFI_MBEDTLS_TLS_CLIENT config is required to use EAP-FAST.
+ * @attention  1. Disabling the WPA_MBEDTLS_TLS_CLIENT config is required to use EAP-FAST.
  *
  * @param[in] config Configuration structure with Fast Provisioning parameters.
  *
