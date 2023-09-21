@@ -25,7 +25,7 @@
     }
 #endif
 
-// When JIRA PM-3 fix, uart clock can autoswitch.
+// When JIRA PM-3 is fixed, the UART clock will automatically switch.
 #define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                    \
     {                                                           \
         .host_connection_mode = HOST_CONNECTION_MODE_CLI_UART,  \
