@@ -125,6 +125,8 @@ endif()
 # LEDC related source files
 if(CONFIG_SOC_LEDC_SUPPORTED)
     list(APPEND srcs "ledc/ledc.c")
+
+    list(APPEND ldfragments "ledc/linker.lf")
 endif()
 
 # MCPWM related source files

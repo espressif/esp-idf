@@ -409,15 +409,7 @@ menu "Driver Configurations"
 
     endmenu # Parallel IO Configuration
 
-    menu "LEDC Configuration"
-        config LEDC_CTRL_FUNC_IN_IRAM
-            bool "Place LEDC control functions into IRAM"
-            default n
-            help
-                Place LEDC control functions (ledc_update_duty and ledc_stop) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in an IRAM context.
-                Enabling this option can improve driver performance as well.
-    endmenu # LEDC Configuration
+    orsource "./ledc/Kconfig.ledc"
 
     menu "I2C Configuration"
         config I2C_ISR_IRAM_SAFE
