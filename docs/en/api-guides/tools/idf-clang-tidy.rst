@@ -21,19 +21,11 @@ Prerequisites
 
 If you have never run this tool before, take the following steps to get this tool prepared.
 
-#. Run the export scripts (``export.sh``, ``export.bat``, or others) to set up the environment variables.
-#. Run ``pip install --upgrade pyclang`` to install this plugin. The extra commands would be activated in ``idf.py`` automatically.
 #. Run ``idf_tools.py install esp-clang`` to install the clang-tidy required binaries
 
    .. note::
 
       This toolchain is still under development. After the final release, you do not have to install them manually.
-
-#. Get the file from the `llvm repository <https://github.com/llvm/llvm-project/blob/main/clang-tools-extra/clang-tidy/tool/run-clang-tidy.py>`__ and add the folder of this script to the ``$PATH``. Or you could pass an optional argument ``--run-clang-tidy-py`` later when you call ``idf.py clang-check``. Please do not forget to make the script executable.
-
-   .. note::
-
-      This file would be bundled in future toolchain releases. This is a temporary workaround.
 
 #. Run the export scripts (``export.sh`` / ``export.bat`` / ... ) again to refresh the environment variables.
 
