@@ -92,21 +92,30 @@ ENV IDF_CCACHE_ENABLE=1
 # Install QEMU runtime dependencies
 RUN : \
   && apt-get update && apt-get install -y -q \
+    bzip2 \
     libglib2.0-0 \
     libpixman-1-0 \
+    libslirp0 \
   && rm -rf /var/lib/apt/lists/* \
   && :
 
 # Install QEMU
-ARG QEMU_VER=esp-develop-20220919
-ARG QEMU_DIST=qemu-${QEMU_VER}.tar.bz2
-ARG QEMU_SHA256=f6565d3f0d1e463a63a7f81aec94cce62df662bd42fc7606de4b4418ed55f870
-RUN : \
-  && wget --no-verbose https://github.com/espressif/qemu/releases/download/${QEMU_VER}/${QEMU_DIST} \
-  && echo "${QEMU_SHA256} *${QEMU_DIST}" | sha256sum --check --strict - \
-  && tar -xf ${QEMU_DIST} -C /opt \
-  && rm ${QEMU_DIST} \
-  && :
+ARG QEMU_VER=develop_8.0.0_20230522
+ARG QEMU_RISCV32_DIST=esp-qemu-riscv32-softmmu-${QEMU_VER}-x86_64-linux-gnu.tar.bz2
+ARG QEMU_RISCV32_SHA256=bc7607720ff3d7e3d39f3e1810b8795f376f4b9cf3783c8f2ed3f7f14ba74717
+ARG QEMU_XTENSA_DIST=esp-qemu-xtensa-softmmu-${QEMU_VER}-x86_64-linux-gnu.tar.bz2
+ARG QEMU_XTENSA_SHA256=a7e5e779fd593cb15f6d197034dc2fb427ed9165a4743e2febc6f6a47dfcc618
+
+RUN bash -c ': \
+  && wget --no-verbose https://github.com/espressif/qemu/releases/download/esp-${QEMU_VER//_/-}/${QEMU_RISCV32_DIST} \
+  && echo "${QEMU_RISCV32_SHA256} *${QEMU_RISCV32_DIST}" | sha256sum --check --strict - \
+  && tar -xf ${QEMU_RISCV32_DIST} -C /opt \
+  && rm ${QEMU_RISCV32_DIST} \
+  && wget --no-verbose https://github.com/espressif/qemu/releases/download/esp-${QEMU_VER//_/-}/${QEMU_XTENSA_DIST} \
+  && echo "${QEMU_XTENSA_SHA256} *${QEMU_XTENSA_DIST}" | sha256sum --check --strict - \
+  && tar -xf ${QEMU_XTENSA_DIST} -C /opt \
+  && rm ${QEMU_XTENSA_DIST} \
+  '
 ENV PATH=/opt/qemu/bin:${PATH}
 
 COPY entrypoint.sh /opt/esp/entrypoint.sh
