@@ -15,6 +15,7 @@ esptool
 esp-idf-kconfig
 esp-idf-monitor
 esp-idf-size
+esp-idf-panic-decoder
 
 # gdb extensions dependencies
 freertos_gdb
