@@ -7,6 +7,7 @@
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "soc/gpio_periph.h"
@@ -58,9 +59,6 @@ typedef struct {
     ledc_fade_mode_t mode;
     SemaphoreHandle_t ledc_fade_sem;
     SemaphoreHandle_t ledc_fade_mux;
-#if CONFIG_SPIRAM_USE_MALLOC
-    StaticQueue_t ledc_fade_sem_storage;
-#endif
     ledc_cb_t ledc_fade_callback;
     void *cb_user_arg;
     volatile ledc_fade_fsm_t fsm;
@@ -992,7 +990,7 @@ static esp_err_t ledc_fade_channel_deinit(ledc_mode_t speed_mode, ledc_channel_t
             s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux = NULL;
         }
         if (s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem) {
-            vSemaphoreDelete(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
+            vSemaphoreDeleteWithCaps(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
             s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = NULL;
         }
         free(s_ledc_fade_rec[speed_mode][channel]);
@@ -1008,23 +1006,13 @@ static esp_err_t ledc_fade_channel_init_check(ledc_mode_t speed_mode, ledc_chann
         return ESP_FAIL;
     }
     if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-#if CONFIG_SPIRAM_USE_MALLOC
+        // Always malloc internally since LEDC ISR is always placed in IRAM
         s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *) heap_caps_calloc(1, sizeof(ledc_fade_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
             ledc_fade_channel_deinit(speed_mode, channel);
             return ESP_ERR_NO_MEM;
         }
-
-        memset(&s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem_storage, 0, sizeof(StaticQueue_t));
-        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinaryStatic(&s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem_storage);
-#else
-        s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *) calloc(1, sizeof(ledc_fade_t));
-        if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-            ledc_fade_channel_deinit(speed_mode, channel);
-            return ESP_ERR_NO_MEM;
-        }
-        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinary();
-#endif
+        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinaryWithCaps(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux = xSemaphoreCreateMutex();
         xSemaphoreGive(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
         s_ledc_fade_rec[speed_mode][channel]->fsm = LEDC_FSM_IDLE;
