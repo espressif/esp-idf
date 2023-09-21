@@ -25,6 +25,9 @@ async function runChecks() {
     // Checks for MR area labels
     await require("./mrAreaLabels.js")();
 
+    // Checks for Source branch name
+    require("./mrSourceBranchName.js")();
+
     // Add success log if no issues
     if (
         results.fails.length === 0 &&
