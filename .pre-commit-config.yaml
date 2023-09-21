@@ -28,6 +28,12 @@ repos:
       - id: mixed-line-ending
         args: ['-f=lf']
       - id: double-quote-string-fixer
+      - id: no-commit-to-branch
+        name: Do not use more than one slash in the branch name
+        args: ['--pattern', '^[^/]*/[^/]*/']
+      - id: no-commit-to-branch
+        name: Do not use uppercase letters in the branch name
+        args: ['--pattern', '^[^A-Z]*[A-Z]']
   - repo: https://github.com/PyCQA/flake8
     rev: 5.0.4
     hooks:
