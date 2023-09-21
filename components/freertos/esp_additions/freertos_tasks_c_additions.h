@@ -8,7 +8,7 @@
 #include "esp_assert.h"
 #include "freertos/idf_additions.h"
 #if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-    #include "freertos/task_snapshot.h"
+    #include "esp_private/freertos_debug.h"
 #endif /* CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT */
 #include "esp_private/freertos_idf_additions_priv.h"
 

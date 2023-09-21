@@ -10,6 +10,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+/*
+ * This header contains private API used by various ESP-IDF debugging features (e.g., esp_gdbstub).
+ */
+
 /* *INDENT-OFF* */
 #ifdef __cplusplus
     extern "C" {

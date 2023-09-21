@@ -8,7 +8,7 @@
 #include "sdkconfig.h"
 #include "soc/soc_memory_layout.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/task_snapshot.h"
+#include "esp_private/freertos_debug.h"
 #include "esp_rom_sys.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"

@@ -16,7 +16,6 @@ ESP-IDF adds various new features to supplement the capabilities of FreeRTOS as 
 - **Ring buffers**: Ring buffers provide a FIFO buffer that can accept entries of arbitrary lengths.
 - **ESP-IDF Tick and Idle Hooks**: ESP-IDF provides multiple custom tick interrupt hooks and idle task hooks that are more numerous and more flexible when compared to FreeRTOS tick and idle hooks.
 - **Thread Local Storage Pointer (TLSP) Deletion Callbacks**: TLSP Deletion callbacks are run automatically when a task is deleted, thus allowing users to clean up their TLSPs automatically.
-- **Task Snapshots**: These functions are used by post-mortem debugging features (e.g., core dump) to get a snapshot of each FreeRTOS task.
 - **IDF Additional API**: ESP-IDF specific functions added to augment the features of FreeRTOS.
 - **Component Specific Properties**: Currently added only one component specific property ``ORIG_INCLUDE_PATH``.
 
@@ -436,20 +435,6 @@ When implementing TLSP callbacks, users should note the following:
 - The callback **must never attempt to block or yield** and critical sections should be kept as short as possible
 - The callback is called shortly before a deleted task's memory is freed. Thus, the callback can either be called from :cpp:func:`vTaskDelete` itself, or from the idle task.
 
-.. -------------------------------------------------- Task Snapshot ----------------------------------------------------
-
-Task Snapshot
--------------
-
-The Task Snapshot functions provide port-mortem debugging features (e.g., core dump) via a simple API to get a snapshot of all current tasks in the system. Each task snapshot includes information such as:
-
-- A pointer to the task's Task Control Block (TCB) structure
-- The top of the task's stack (i.e., current stack pointer)
-
-.. warning::
-
-    Task Snapshot must only be called when FreeRTOS is no longer running, such as after the system has crashed.
-
 .. --------------------------------------------- ESP-IDF Additional API ------------------------------------------------
 
 .. _freertos-idf-additional-api:
@@ -483,11 +468,6 @@ Hooks API
 ^^^^^^^^^
 
 .. include-build-file:: inc/esp_freertos_hooks.inc
-
-Task Snapshot API
-^^^^^^^^^^^^^^^^^
-
-.. include-build-file:: inc/task_snapshot.inc
 
 Additional API
 ^^^^^^^^^^^^^^

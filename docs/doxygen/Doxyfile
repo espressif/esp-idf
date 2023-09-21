@@ -214,7 +214,6 @@ INPUT = \
     $(PROJECT_PATH)/components/fatfs/diskio/diskio_wl.h \
     $(PROJECT_PATH)/components/fatfs/vfs/esp_vfs_fat.h \
     $(PROJECT_PATH)/components/freertos/esp_additions/include/freertos/idf_additions.h \
-    $(PROJECT_PATH)/components/freertos/esp_additions/include/freertos/task_snapshot.h \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/event_groups.h \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/message_buffer.h \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/queue.h \

@@ -11,7 +11,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/task_snapshot.h"
+#include "esp_private/freertos_debug.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_check.h"
