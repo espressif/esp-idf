@@ -56,9 +56,6 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
   PYTHON_VER: 3.7.10
 
-  CLANG_TIDY_RUNNER_PROJ: 2107  # idf/clang-tidy-runner
-  IDF_BUILD_APPS_PROJ: 2818  # espressif/idf-build-apps
-
   # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
 
