@@ -7,9 +7,16 @@ menu "Supplicant"
         select MBEDTLS_ECP_C
         select MBEDTLS_ECDH_C
         select MBEDTLS_ECDSA_C
-        select MBEDTLS_TLS_ENABLED
+        select MBEDTLS_CMAC_C
+        select MBEDTLS_ECP_DP_SECP256R1_ENABLED
         help
-            Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
+            Select this option to enable the use of MbedTLS crypto APIs.
+            The internal crypto support within the supplicant is limited
+            and may not suffice for all new security features, including WPA3.
+
+            It is recommended to always keep this option enabled. Additionally,
+            note that MbedTLS can leverage hardware acceleration if available,
+            resulting in significantly faster cryptographic operations.
 
     if WPA_MBEDTLS_CRYPTO
         config WPA_MBEDTLS_TLS_CLIENT
@@ -35,6 +42,7 @@ menu "Supplicant"
     config WPA_SUITE_B_192
         bool "Enable NSA suite B support with 192 bit key"
         default n
+        depends on SOC_WIFI_GCMP_SUPPORT
         select ESP_WIFI_GCMP_SUPPORT
         select ESP_WIFI_GMAC_SUPPORT
         help
