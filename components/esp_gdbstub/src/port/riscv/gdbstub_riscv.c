@@ -89,10 +89,10 @@ void esp_gdbstub_int(__attribute__((unused)) void *frame)
     int core_id = esp_cpu_get_core_id();
 #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
     extern void **pxCurrentTCBs;
-    dummy_tcb_t *tcb = pxCurrentTCBs[core_id];
+    dummy_tcb_t *tcb = (dummy_tcb_t *) &pxCurrentTCBs[core_id];
 #else
     extern void **pxCurrentTCB;
-    dummy_tcb_t *tcb = pxCurrentTCB[core_id];
+    dummy_tcb_t *tcb = (dummy_tcb_t *) &pxCurrentTCB[core_id];
 #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
     gdbstub_handle_uart_int((esp_gdbstub_frame_t *)tcb->top_of_stack);
 }
