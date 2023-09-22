@@ -374,6 +374,20 @@ void *xRingbufferReceiveUpToFromISR(RingbufHandle_t xRingbuffer, size_t *pxItemS
 void vRingbufferReturnItem(RingbufHandle_t xRingbuffer, void *pvItem);
 
 /**
+ * @brief   Return some bytes back to the byte buffer from an ISR
+ *
+ * @param[in]   xRingbuffer Ring buffer the item was retrieved from
+ * @param[in]   pvItem      Item that was received earlier
+ * @param[in]   xMaxSize    Maximum bytes to return. Updated value for returned bytes. Size of
+ *                          SIZE_MAX returns retrieved contiguous bytes back to the byte buffer
+ *
+ * @note Only call this function on a byte buffer
+ *
+ * @return Returned items
+ */
+size_t xRingbufferReturnUpTo(RingbufHandle_t xRingbuffer, void *pvItem, size_t xMaxSize);
+
+/**
  * @brief   Return a previously-retrieved item to the ring buffer from an ISR
  *
  * @param[in]   xRingbuffer Ring buffer the item was retrieved from
@@ -384,6 +398,22 @@ void vRingbufferReturnItem(RingbufHandle_t xRingbuffer, void *pvItem);
  * @note    If a split item is retrieved, both parts should be returned by calling this function twice
  */
 void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, BaseType_t *pxHigherPriorityTaskWoken);
+
+/**
+ * @brief   Return some bytes back to the byte buffer from an ISR
+ *
+ * @param[in]   xRingbuffer Ring buffer the item was retrieved from
+ * @param[in]   pvItem      Item that was received earlier
+ * @param[in]   xMaxSize    Maximum bytes to return. Updated value for returned bytes. Size of
+ *                          SIZE_MAX returns retrieved contiguous bytes back to the byte buffer
+ * @param[out]  pxHigherPriorityTaskWoken   Value pointed to will be set to pdTRUE
+ *                                          if the function woke up a higher priority task.
+ *
+ * @note Only call this function on a byte buffer
+ *
+ * @return Returned items
+ */
+size_t xRingbufferReturnUpToFromISR(RingbufHandle_t xRingbuffer, void *pvItem, size_t xMaxSize, BaseType_t *pxHigherPriorityTaskWoken);
 
 /**
  * @brief   Delete a ring buffer

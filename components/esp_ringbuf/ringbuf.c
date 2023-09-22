@@ -44,7 +44,8 @@ typedef BaseType_t (*CheckItemFitsFunction_t)(Ringbuffer_t *pxRingbuffer, size_t
 typedef void (*CopyItemFunction_t)(Ringbuffer_t *pxRingbuffer, const uint8_t *pcItem, size_t xItemSize);
 typedef BaseType_t (*CheckItemAvailFunction_t) (Ringbuffer_t *pxRingbuffer);
 typedef void *(*GetItemFunction_t)(Ringbuffer_t *pxRingbuffer, BaseType_t *pxIsSplit, size_t xMaxSize, size_t *pxItemSize);
-typedef void (*ReturnItemFunction_t)(Ringbuffer_t *pxRingbuffer, uint8_t *pvItem);
+typedef size_t (*ReturnItemFunction_t)(Ringbuffer_t *pxRingbuffer,
+                                       uint8_t *pvItem, size_t xMaxSize);
 typedef size_t (*GetCurMaxSizeFunction_t)(Ringbuffer_t *pxRingbuffer);
 
 typedef struct RingbufferDefinition {
@@ -153,10 +154,12 @@ Exit:
     - Item is marked free rbITEM_FREE_FLAG
     - pucFree is progressed as far as possible, skipping over already freed items or dummy items
 */
-static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem);
+static size_t prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem,
+                                   size_t xUnusedParam);
 
 //Return data to a byte buffer
-static void prvReturnItemByteBuf(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem);
+static size_t prvReturnItemByteBuf(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem,
+                                   size_t xMaxSize);
 
 //Get the maximum size an item that can currently have if sent to a no-split ring buffer
 static size_t prvGetCurMaxSizeNoSplit(Ringbuffer_t *pxRingbuffer);
@@ -199,6 +202,19 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
                                            size_t *xItemSize1,
                                            size_t *xItemSize2,
                                            size_t xMaxSize);
+
+/*
+Generic function used to return item/data back to the ringbuf. Optional support
+returing some but not whole data to the byte buffer.
+*/
+static size_t prvReturnItemGeneric(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem,
+                                   size_t xMaxSize);
+
+// ISR version of prvReturnItemGeneric()
+static size_t
+prvReturnItemGenericFromISR(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem,
+                            size_t xMaxSize,
+                            BaseType_t *pxHigherPriorityTaskWoken);
 
 // ------------------------------------------------ Static Functions ---------------------------------------------------
 
@@ -592,7 +608,9 @@ static void *prvGetItemByteBuf(Ringbuffer_t *pxRingbuffer,
     return (void *)ret;
 }
 
-static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
+static size_t prvReturnItemDefault(Ringbuffer_t *pxRingbuffer,
+                                   uint8_t *pucItem,
+                                   size_t xUnusedParam)
 {
     //Check arguments and buffer state
     configASSERT(rbCHECK_ALIGNED(pucItem));
@@ -642,19 +660,60 @@ static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
             pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
         }
     }
+
+    return 0;
 }
 
-static void prvReturnItemByteBuf(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
+static size_t prvReturnItemByteBuf(Ringbuffer_t *pxRingbuffer,
+                                   uint8_t *pucItem,
+                                   size_t xMaxSize)
 {
     //Check pointer points to address inside buffer
     configASSERT((uint8_t *)pucItem >= pxRingbuffer->pucHead);
     configASSERT((uint8_t *)pucItem < pxRingbuffer->pucTail);
-    //Free the read memory. Simply moves free pointer to read pointer as byte buffers do not allow multiple outstanding reads
+
+    //Calculate the current item's size
+    size_t xItemSize = 0;
+    size_t xBufferSize = pxRingbuffer->xSize;
+
+    //Read pointer has been wrapped around
+    if (pxRingbuffer->pucRead == pxRingbuffer->pucHead) {
+        //Item pointer is at head
+        if (pucItem == pxRingbuffer->pucHead) {
+            if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) {
+                //Full empty buffer
+                xItemSize = xBufferSize;
+            } else {
+                //Empty ring buffer
+                xItemSize = 0;
+            }
+        } else {
+            //Rollback the read pointer
+            xItemSize = pxRingbuffer->pucTail - pucItem;
+        }
+    } else {
+        //Byte buffer only support returning single contiguous buffer.
+        //i.e. Cannot split
+        assert(pxRingbuffer->pucRead >= pucItem);
+        xItemSize = pxRingbuffer->pucRead - pucItem;
+    }
+
+    //Move read pointer backward if the item size exceeds the return size limit
+    size_t xReturnSize = (xMaxSize <= xItemSize) ? xMaxSize : xItemSize;
+    size_t xRemainingSize = xItemSize - xReturnSize;
+
+    pxRingbuffer->pucRead -= xRemainingSize;
+    if (pxRingbuffer->pucRead < pxRingbuffer->pucHead) {
+        pxRingbuffer->pucRead = pxRingbuffer->pucTail - (pxRingbuffer->pucHead - pxRingbuffer->pucRead);
+    }
+
+    pxRingbuffer->xItemsWaiting += xRemainingSize;
     pxRingbuffer->pucFree = pxRingbuffer->pucRead;
     //If buffer was full before, reset full flag as free pointer has moved
-    if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) {
+    if (xReturnSize != 0) {
         pxRingbuffer->uxRingbufferFlags &= ~rbBUFFER_FULL_FLAG;
     }
+    return xReturnSize;
 }
 
 static size_t prvGetCurMaxSizeNoSplit(Ringbuffer_t *pxRingbuffer)
@@ -920,6 +979,45 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
     portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
 
     return xReturn;
+}
+
+static size_t prvReturnItemGeneric(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem,
+                                   size_t xMaxSize) {
+    portENTER_CRITICAL(&pxRingbuffer->mux);
+    size_t xReturnedItem =
+        pxRingbuffer->vReturnItem(pxRingbuffer, pucItem, xMaxSize);
+    // If a task was waiting for space to send, unblock it immediately.
+    if (listLIST_IS_EMPTY(&pxRingbuffer->xTasksWaitingToSend) == pdFALSE) {
+        if (xTaskRemoveFromEventList(&pxRingbuffer->xTasksWaitingToSend) ==
+            pdTRUE) {
+            // The unblocked task will preempt us. Trigger a yield here.
+            portYIELD_WITHIN_API();
+        }
+    }
+    portEXIT_CRITICAL(&pxRingbuffer->mux);
+    return xReturnedItem;
+}
+
+static size_t
+prvReturnItemGenericFromISR(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem,
+                            size_t xMaxSize,
+                            BaseType_t *pxHigherPriorityTaskWoken) {
+    portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
+    size_t xReturnedItem =
+        pxRingbuffer->vReturnItem(pxRingbuffer, pucItem, xMaxSize);
+    // If a task was waiting for space to send, unblock it immediately.
+    if (listLIST_IS_EMPTY(&pxRingbuffer->xTasksWaitingToSend) == pdFALSE) {
+        if (xTaskRemoveFromEventList(&pxRingbuffer->xTasksWaitingToSend) ==
+            pdTRUE) {
+            // The unblocked task will preempt us. Record that a context switch
+            // is required.
+            if (pxHigherPriorityTaskWoken != NULL) {
+                *pxHigherPriorityTaskWoken = pdTRUE;
+            }
+        }
+    }
+    portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
+    return xReturnedItem;
 }
 
 // ------------------------------------------------ Public Functions ---------------------------------------------------
@@ -1206,16 +1304,16 @@ void vRingbufferReturnItem(RingbufHandle_t xRingbuffer, void *pvItem)
     configASSERT(pxRingbuffer);
     configASSERT(pvItem != NULL);
 
-    portENTER_CRITICAL(&pxRingbuffer->mux);
-    pxRingbuffer->vReturnItem(pxRingbuffer, (uint8_t *)pvItem);
-    //If a task was waiting for space to send, unblock it immediately.
-    if (listLIST_IS_EMPTY(&pxRingbuffer->xTasksWaitingToSend) == pdFALSE) {
-        if (xTaskRemoveFromEventList(&pxRingbuffer->xTasksWaitingToSend) == pdTRUE) {
-            //The unblocked task will preempt us. Trigger a yield here.
-            portYIELD_WITHIN_API();
-        }
-    }
-    portEXIT_CRITICAL(&pxRingbuffer->mux);
+    (void)prvReturnItemGeneric(xRingbuffer, pvItem, SIZE_MAX);
+}
+
+size_t xRingbufferReturnUpTo(RingbufHandle_t xRingbuffer, void *pvItem, size_t xMaxSize) {
+    Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
+    configASSERT(pxRingbuffer);
+    configASSERT(pvItem != NULL);
+    configASSERT(pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG);
+
+    return prvReturnItemGeneric(xRingbuffer, pvItem, xMaxSize);
 }
 
 void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, BaseType_t *pxHigherPriorityTaskWoken)
@@ -1224,18 +1322,20 @@ void vRingbufferReturnItemFromISR(RingbufHandle_t xRingbuffer, void *pvItem, Bas
     configASSERT(pxRingbuffer);
     configASSERT(pvItem != NULL);
 
-    portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
-    pxRingbuffer->vReturnItem(pxRingbuffer, (uint8_t *)pvItem);
-    //If a task was waiting for space to send, unblock it immediately.
-    if (listLIST_IS_EMPTY(&pxRingbuffer->xTasksWaitingToSend) == pdFALSE) {
-        if (xTaskRemoveFromEventList(&pxRingbuffer->xTasksWaitingToSend) == pdTRUE) {
-            //The unblocked task will preempt us. Record that a context switch is required.
-            if (pxHigherPriorityTaskWoken != NULL) {
-                *pxHigherPriorityTaskWoken = pdTRUE;
-            }
-        }
-    }
-    portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
+    (void)prvReturnItemGenericFromISR(pxRingbuffer, (uint8_t *)pvItem, SIZE_MAX,
+                                      pxHigherPriorityTaskWoken);
+}
+
+size_t xRingbufferReturnUpToFromISR(RingbufHandle_t xRingbuffer, void *pvItem,
+                                    size_t xMaxSize,
+                                    BaseType_t *pxHigherPriorityTaskWoken) {
+    Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
+    configASSERT(pxRingbuffer);
+    configASSERT(pvItem != NULL);
+    configASSERT(pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG);
+
+    return prvReturnItemGenericFromISR(pxRingbuffer, (uint8_t *)pvItem,
+                                       xMaxSize, pxHigherPriorityTaskWoken);
 }
 
 void vRingbufferDelete(RingbufHandle_t xRingbuffer)

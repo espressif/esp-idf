@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,7 +130,7 @@ static void receive_check_and_return_item_allow_split(RingbufHandle_t handle, co
 static void receive_check_and_return_item_byte_buffer(RingbufHandle_t handle, const uint8_t *expected_data, size_t expected_size, TickType_t ticks_to_wait, bool in_isr)
 {
     //Receive item
-    size_t item_size;
+    size_t item_size, returned_size, waiting_size, waiting_size_after;
     uint8_t *item;
     if (in_isr) {
         item = (uint8_t *)xRingbufferReceiveUpToFromISR(handle, &item_size, expected_size);
@@ -144,10 +144,45 @@ static void receive_check_and_return_item_byte_buffer(RingbufHandle_t handle, co
         TEST_ASSERT_MESSAGE(item[i] == expected_data[i], "Item data is invalid");
     }
     //Return item
+    waiting_size = 0;
+    waiting_size_after = 0;
+
     if (in_isr) {
-        vRingbufferReturnItemFromISR(handle, (void *)item, NULL);
+        vRingbufferGetInfo(handle, NULL, NULL, NULL, NULL, &waiting_size);
+        returned_size = xRingbufferReturnUpToFromISR(handle, (void *)item, 0, NULL);
+        vRingbufferGetInfo(handle, NULL, NULL, NULL, NULL, &waiting_size_after);
+        TEST_ASSERT_EQUAL_MESSAGE(0, returned_size, "Failed to return 0 bytes");
+        TEST_ASSERT_EQUAL_MESSAGE(item_size, waiting_size_after - waiting_size, "Failed to return 0 bytes");
+
+        waiting_size = waiting_size_after;
+        item = (uint8_t *)xRingbufferReceiveUpToFromISR(handle, &returned_size, item_size);
+        TEST_ASSERT_EQUAL_MESSAGE(item_size, returned_size, "Failed to receive item_size bytes");
+        returned_size = xRingbufferReturnUpToFromISR(handle, (void *)item, item_size / 2, NULL);
+        vRingbufferGetInfo(handle, NULL, NULL, NULL, NULL, &waiting_size_after);
+        TEST_ASSERT_EQUAL_MESSAGE(item_size / 2, returned_size, "Failed to return item_size / 2 bytes");
+        TEST_ASSERT_EQUAL_MESSAGE(item_size / 2, waiting_size - waiting_size_after, "Failed to return item_size / 2 bytes");
+
+        item = (uint8_t *)xRingbufferReceiveUpToFromISR(handle, &returned_size, item_size - item_size / 2);
+        TEST_ASSERT_EQUAL_MESSAGE(item_size - item_size / 2, returned_size, "Failed to receive item_size - item_size / 2 bytes");
+        vRingbufferReturnItemFromISR(handle, (void *)item, NULL); // return remaining bytes
     } else {
-        vRingbufferReturnItem(handle, (void *)item);
+        vRingbufferGetInfo(handle, NULL, NULL, NULL, NULL, &waiting_size);
+        returned_size = xRingbufferReturnUpTo(handle, (void *)item, 0);
+        vRingbufferGetInfo(handle, NULL, NULL, NULL, NULL, &waiting_size_after);
+        TEST_ASSERT_EQUAL_MESSAGE(0, returned_size, "Failed to return 0 bytes");
+        TEST_ASSERT_EQUAL_MESSAGE(item_size, waiting_size_after - waiting_size, "Failed to return 0 bytes");
+
+        waiting_size = waiting_size_after;
+        item = (uint8_t *)xRingbufferReceiveUpTo(handle, &returned_size, ticks_to_wait, item_size);
+        TEST_ASSERT_EQUAL_MESSAGE(item_size, returned_size, "Failed to receive item_size bytes");
+        returned_size = xRingbufferReturnUpTo(handle, (void *)item, item_size / 2);
+        vRingbufferGetInfo(handle, NULL, NULL, NULL, NULL, &waiting_size_after);
+        TEST_ASSERT_EQUAL_MESSAGE(item_size / 2, returned_size, "Failed to return item_size / 2 bytes");
+        TEST_ASSERT_EQUAL_MESSAGE(item_size / 2, waiting_size - waiting_size_after, "Failed to return item_size / 2 bytes");
+
+        item = (uint8_t *)xRingbufferReceiveUpTo(handle, &returned_size, ticks_to_wait, item_size - item_size / 2);
+        TEST_ASSERT_EQUAL_MESSAGE(item_size - item_size / 2, returned_size, "Failed to receive item_size - item_size / 2 bytes");
+        vRingbufferReturnItem(handle, (void *)item); // return remaining bytes
     }
 
     //Check if item wrapped around

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,10 +38,12 @@ static usb_serial_jtag_obj_t *p_usb_serial_jtag_obj = NULL;
 
 static const char* USB_SERIAL_JTAG_TAG = "usb_serial_jtag";
 
-static void usb_serial_jtag_write_and_flush(const uint8_t *buf, uint32_t wr_len)
+static uint32_t usb_serial_jtag_write_and_flush(const uint8_t *buf, uint32_t wr_len)
 {
-    usb_serial_jtag_ll_write_txfifo(buf, wr_len);
+    // May be not written completely on S3
+    uint32_t written_len = usb_serial_jtag_ll_write_txfifo(buf, wr_len);
     usb_serial_jtag_ll_txfifo_flush();
+    return written_len;
 }
 
 static void usb_serial_jtag_isr_handler_default(void *arg) {
@@ -56,13 +58,17 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
             // We disable the interrupt here so that the interrupt won't be triggered if there is no data to send.
             usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
             size_t queued_size;
+            size_t written_size = 0, returned_size = 0;
             uint8_t *queued_buff = (uint8_t *)xRingbufferReceiveUpToFromISR(p_usb_serial_jtag_obj->tx_ring_buf, &queued_size, 64);
             // If the hardware fifo is avaliable, write in it. Otherwise, do nothing.
             if (queued_buff != NULL) {  //Although tx_queued_bytes may be larger than 0. We may have interrupt before xRingbufferSend() was called.
                 //Copy the queued buffer into the TX FIFO
                 usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
-                usb_serial_jtag_write_and_flush(queued_buff, queued_size);
-                vRingbufferReturnItemFromISR(p_usb_serial_jtag_obj->tx_ring_buf, queued_buff, &xTaskWoken);
+                written_size = usb_serial_jtag_write_and_flush(queued_buff, queued_size);
+                returned_size = xRingbufferReturnUpToFromISR(
+                    p_usb_serial_jtag_obj->tx_ring_buf, queued_buff,
+                    written_size, &xTaskWoken);
+                assert(returned_size == written_size);
                 usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
             }
         } else {
