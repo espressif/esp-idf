@@ -4,8 +4,3 @@ components/wear_levelling/host_test:
   enable:
     - if: IDF_TARGET == "linux"
       reason: only test on linux
-components/wear_levelling/test_apps:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3"]
-      temporary: true
-      reason: the other targets are not tested yet
