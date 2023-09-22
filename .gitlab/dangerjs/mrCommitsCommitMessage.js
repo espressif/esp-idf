@@ -4,6 +4,7 @@ const {
     maximumBodyLineChars,
     allowedTypes,
 } = require("./mrCommitsConstants.js");
+const { recordRuleExitStatus } = require("./configParameters.js");
 
 /**
  * Check that commit messages are based on the Espressif ESP-IDF project's rules for git commit messages.
@@ -11,6 +12,7 @@ const {
  * @dangerjs WARN
  */
 module.exports = async function () {
+    const ruleName = "Commit messages style";
     const mrCommits = danger.gitlab.commits;
     const lint = require("@commitlint/lint").default;
 
@@ -154,6 +156,10 @@ module.exports = async function () {
             dangerMessage += AImessageSuggestion;
         }
 
-        warn(dangerMessage);
+        recordRuleExitStatus(ruleName, "Failed");
+        return warn(dangerMessage);
     }
+
+    // At this point, the rule has passed
+    recordRuleExitStatus(ruleName, "Passed");
 };

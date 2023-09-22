@@ -1,3 +1,5 @@
+const { recordRuleExitStatus } = require("./configParameters.js");
+
 /** Check that there are valid JIRA links in MR description.
  *
  * This check extracts the "Related" section from the MR description and
@@ -10,6 +12,7 @@
  *
  */
 module.exports = async function () {
+	const ruleName = 'Jira ticket references';
     const axios = require("axios");
     const mrDescription = danger.gitlab.mr.description;
     const mrCommitMessages = danger.gitlab.commits.map(
@@ -26,6 +29,7 @@ module.exports = async function () {
         !sectionRelated.header || // No section Related in MR description or ...
         !jiraTicketRegex.test(sectionRelated.content) // no Jira links in section Related
     ) {
+        recordRuleExitStatus(ruleName, 'Passed (with suggestions)');
         return message(
             "Please consider adding references to JIRA issues in the `Related` section of the MR description."
         );
@@ -87,6 +91,9 @@ module.exports = async function () {
     if (partMessages.length) {
         createReport();
     }
+
+    // At this point, the rule has passed
+	recordRuleExitStatus(ruleName, 'Passed');
 
     // ---------------------------------------------------------------
 
@@ -225,6 +232,7 @@ module.exports = async function () {
         let dangerMessage = `Some issues found for the related JIRA tickets in this MR:\n${partMessages.join(
             "\n"
         )}`;
-        warn(dangerMessage);
+        recordRuleExitStatus(ruleName, "Failed");
+        return warn(dangerMessage);
     }
 };

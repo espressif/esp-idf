@@ -1,3 +1,5 @@
+const { recordRuleExitStatus } = require("./configParameters.js");
+
 /**
  * Check if MR Description contains mandatory section "Release notes"
  *
@@ -6,6 +8,7 @@
  * @dangerjs WARN (if section missing, is empty or wrong markdown format)
  */
 module.exports = function () {
+    const ruleName = 'Merge request Release Notes section';
     const mrDescription = danger.gitlab.mr.description;
     const wiki_link = `${process.env.DANGER_GITLAB_HOST}/espressif/esp-idf/-/wikis/rfc/How-to-write-release-notes-properly`;
 
@@ -15,8 +18,8 @@ module.exports = function () {
 
     const sectionReleaseNotes = mrDescription.match(regexSectionReleaseNotes);
     if (!sectionReleaseNotes) {
-        warn(`The \`Release Notes\` section seems to be missing. Please check if the section header in MR description is present and in the correct markdown format ("## Release Notes").\n\nSee [Release Notes Format Rules](${wiki_link}).`);
-        return null;
+        recordRuleExitStatus(ruleName, "Failed");
+        return warn(`The \`Release Notes\` section seems to be missing. Please check if the section header in MR description is present and in the correct markdown format ("## Release Notes").\n\nSee [Release Notes Format Rules](${wiki_link}).`);
     }
 
     const releaseNotesLines = sectionReleaseNotes[1].replace(/<!--[\s\S]*?-->/g, '')
@@ -55,9 +58,12 @@ module.exports = function () {
     if (error_output.length > 0) {
         // Paragraphs joined by double `\n`s.
         error_output = [...error_output, `See [Release Notes Format Guide](${wiki_link}).`].join('\n\n');
-        warn(error_output);
+        recordRuleExitStatus(ruleName, "Failed");
+        return warn(error_output);
     }
-    return null;
+
+    // At this point, the rule has passed
+	recordRuleExitStatus(ruleName, 'Passed');
 };
 
 function check_entry(entry) {

@@ -1,7 +1,8 @@
+const { displayAllOutputStatuses } = require("./configParameters.js");
+
 /*
  * Modules with checks are stored in ".gitlab/dangerjs/<module_name>". To import them, use path relative to "dangerfile.js"
  */
-
 async function runChecks() {
     // Checks for merge request title
     require("./mrTitleNoDraftOrWip.js")();
@@ -28,13 +29,16 @@ async function runChecks() {
     // Checks for Source branch name
     require("./mrSourceBranchName.js")();
 
+    // Show DangerJS individual checks statuses - visible in CI job tracelog
+    displayAllOutputStatuses();
+
     // Add success log if no issues
     if (
         results.fails.length === 0 &&
         results.warnings.length === 0 &&
         results.messages.length === 0
     ) {
-        return message("Good Job! All checks are passing!");
+        return message("🎉 Good Job! All checks are passing!");
     }
 }
 
