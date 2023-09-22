@@ -117,3 +117,7 @@ components/driver/test_apps/touch_sensor_v2:
 components/driver/test_apps/twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
+
+components/driver/test_apps/usb_serial_jtag:
+  disable:
+    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
