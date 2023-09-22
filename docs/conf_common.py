@@ -60,7 +60,12 @@ BLUFI_DOCS = ['api-guides/blufi.rst',
 
 WIFI_DOCS = ['api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
-             'api-guides/wireshark-user-guide.rst']
+             'api-guides/wireshark-user-guide.rst',
+             'api-reference/network/esp_nan.rst',
+             'api-reference/network/esp_now.rst',
+             'api-reference/network/esp_smartconfig.rst',
+             'api-reference/network/esp_wifi.rst',
+             'api-reference/network/esp_dpp.rst']
 
 WIFI_MESH_DOCS = ['api-guides/esp-wifi-mesh.rst',
                   'api-reference/network/esp-wifi-mesh.rst']

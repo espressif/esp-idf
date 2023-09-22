@@ -3,20 +3,22 @@
 
 :link_to_translation:`en:[English]`
 
-Wi-Fi
-=====
+.. only:: SOC_WIFI_SUPPORTED
 
-.. toctree::
-   :maxdepth: 1
+   Wi-Fi
+   =====
 
-   esp_now
-   :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
-   esp_smartconfig
-   esp_wifi
-   esp_dpp
-   esp_nan
+   .. toctree::
+      :maxdepth: 1
 
-本部分的 Wi-Fi API 示例代码存放在 ESP-IDF 示例项目的 :example:`wifi` 目录下。
+      esp_now
+      :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
+      esp_smartconfig
+      esp_wifi
+      esp_dpp
+      esp_nan
+
+   本部分的 Wi-Fi API 示例代码存放在 ESP-IDF 示例项目的 :example:`wifi` 目录下。
 
 .. only:: SOC_WIFI_MESH_SUPPORT
 
