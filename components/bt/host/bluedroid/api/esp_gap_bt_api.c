@@ -475,4 +475,23 @@ esp_err_t esp_bt_gap_get_page_timeout(void)
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+esp_err_t esp_bt_gap_set_acl_pkt_types(esp_bd_addr_t remote_bda, uint16_t pkt_types)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return  ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES;
+
+    memcpy(&arg.set_acl_pkt_types.bda, remote_bda, sizeof(bt_bdaddr_t));
+    arg.set_acl_pkt_types.pkt_types = pkt_types;
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */
