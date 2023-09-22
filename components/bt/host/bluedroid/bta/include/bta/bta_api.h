@@ -443,6 +443,8 @@ typedef tBTM_BLE_SET_CHANNELS_RESULTS tBTA_BLE_SET_CHANNELS_RESULTS;
 typedef tBTM_SET_PAGE_TIMEOUT_RESULTS tBTA_SET_PAGE_TIMEOUT_RESULTS;
 typedef tBTM_GET_PAGE_TIMEOUT_RESULTS tBTA_GET_PAGE_TIMEOUT_RESULTS;
 
+typedef tBTM_SET_ACL_PKT_TYPES_RESULTS tBTA_SET_ACL_PKT_TYPES_RESULTS;
+
 typedef tBTM_REMOTE_DEV_NAME tBTA_REMOTE_DEV_NAME;
 
 /* advertising channel map */
@@ -1803,6 +1805,18 @@ void BTA_DmSetPageTimeout(UINT16 page_to, tBTM_CMPL_CB *p_cb);
 **
 *******************************************************************************/
 void BTA_DmGetPageTimeout(tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetAclPktTypes
+**
+** Description      This function sets the packet types used for ACL traffic.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetAclPktTypes(BD_ADDR remote_addr, UINT16 pkt_types, tBTM_CMPL_CB *p_cb);
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
