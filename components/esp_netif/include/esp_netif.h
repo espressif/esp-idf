@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -974,6 +974,10 @@ int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t
 
 /**
  * @brief Iterates over list of interfaces. Returns first netif if NULL given as parameter
+ *
+ * @note This API doesn't lock the list, nor the TCPIP context, as this it's usually required
+ * to get atomic access between iteration steps rather that within a single iteration.
+ * Therefore it is recommended to iterate over the interfaces inside esp_netif_tcpip_exec()
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  *

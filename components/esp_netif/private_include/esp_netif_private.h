@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,7 +82,9 @@ esp_err_t esp_netif_down(esp_netif_t *esp_netif);
 bool esp_netif_is_valid_static_ip(esp_netif_ip_info_t *ip_info);
 
 /**
- * @brief Adds created interface to the list of netifs
+ * @brief Adds created interface to the list of netifs.
+ * This function doesn't lock the list, so you need to call esp_netif_list_lock/unlock
+ * manually before and after the call.
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  *
@@ -90,10 +92,12 @@ bool esp_netif_is_valid_static_ip(esp_netif_ip_info_t *ip_info);
  *         - ESP_OK -- Success
  *         - ESP_ERR_NO_MEM -- Cannot be added due to memory allocation failure
  */
-esp_err_t esp_netif_add_to_list(esp_netif_t* netif);
+esp_err_t esp_netif_add_to_list_unsafe(esp_netif_t* netif);
 
 /**
  * @brief Removes interface to be destroyed from the list of netifs
+ * This function doesn't lock the list, so you need to call esp_netif_list_lock/unlock
+ * manually before and after the call.
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  *
@@ -101,7 +105,7 @@ esp_err_t esp_netif_add_to_list(esp_netif_t* netif);
  *         - ESP_OK -- Success
  *         - ESP_ERR_NOT_FOUND -- This netif was not found in the netif list
  */
-esp_err_t esp_netif_remove_from_list(esp_netif_t* netif);
+esp_err_t esp_netif_remove_from_list_unsafe(esp_netif_t* netif);
 
 /**
  * @brief Iterates over list of interfaces without list locking. Returns first netif if NULL given as parameter
@@ -164,5 +168,14 @@ esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const ip_event_add_i
  *         - ESP_ERR_NO_MEM
  */
 esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
+
+/**
+ * @brief Get esp_netif handle based on the if_key
+ * This doesn't lock the list nor TCPIP context
+ *
+ * @param if_key
+ * @return esp_netif handle if found, NULL otherwise
+ */
+esp_netif_t *esp_netif_get_handle_from_ifkey_unsafe(const char *if_key);
 
 #endif //_ESP_NETIF_PRIVATE_H_
