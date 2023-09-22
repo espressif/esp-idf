@@ -81,7 +81,8 @@ typedef struct {
 #if SOC_I2S_HW_VERSION_2
             i2s_pdm_tx_line_mode_t  line_mode;          /*!< PDM TX line mode, on-line codec, one-line dac, two-line dac mode can be selected */
             bool                    hp_en;              /*!< High pass filter enable */
-            float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
+            uint32_t                hp_cut_off_freq_hzx10; /*!< High pass filter cut-off frequency times 10, cut-off frequency range 23.3Hz ~ 185Hz, see cut-off frequency sheet above
+                                                         *   The freq is timed 10 to use integer type */
             uint32_t                sd_dither;          /*!< Sigma-delta filter dither */
             uint32_t                sd_dither2;         /*!< Sigma-delta filter dither2 */
 #endif // SOC_I2S_HW_VERSION_2

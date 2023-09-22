@@ -45,11 +45,11 @@ static inline void analog_cmpr_ll_set_internal_ref_voltage(analog_cmpr_dev_t *hw
  * @brief Get the voltage of the internal reference
  *
  * @param hw Analog comparator register base address
- * @return The voltage of the internal reference
+ * @return The voltage of the internal reference times 10
  */
-static inline float analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t *hw)
+static inline uint32_t analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t *hw)
 {
-    return hw->pad_comp_config->dref_comp * 0.1F;
+    return hw->pad_comp_config.dref_comp;
 }
 
 /**

@@ -106,7 +106,12 @@ static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Configure the hardware to apply PDM format */
     bool is_slave = handle->role == I2S_ROLE_SLAVE;
-    i2s_hal_pdm_set_tx_slot(&(handle->controller->hal), is_slave, (i2s_hal_slot_config_t *)slot_cfg);
+    i2s_hal_slot_config_t *slot_hal_cfg = (i2s_hal_slot_config_t *)slot_cfg;
+#if SOC_I2S_HW_VERSION_2
+    /* Times 10 to transform the float type to integer because we should avoid float type in hal */
+    slot_hal_cfg->pdm_tx.hp_cut_off_freq_hzx10 = (uint32_t)(slot_cfg->hp_cut_off_freq_hz * 10);
+#endif
+    i2s_hal_pdm_set_tx_slot(&(handle->controller->hal), is_slave, slot_hal_cfg);
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     /* Update the mode info: slot configuration */

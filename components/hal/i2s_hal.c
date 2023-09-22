@@ -12,24 +12,25 @@
 
 #if SOC_I2S_HW_VERSION_2 && (SOC_I2S_SUPPORTS_PDM_TX || SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER)
 /* PDM tx high pass filter cut-off frequency and coefficients list
- * [0]: cut-off frequency; [1]: param0; [2]: param5 */
-static const float cut_off_coef[21][3] = {
-    {185, 0, 0}, {172,  0, 1}, {160,  1, 1},
-    {150, 1, 2}, {137,  2, 2}, {126,  2, 3},
-    {120, 0, 3}, {115,  3, 3}, {106,  1, 7},
-    {104, 2, 4}, {92,   4, 4}, {91.5, 2, 7},
-    {81,  4, 5}, {77.2, 3, 7}, {69,   5, 5},
-    {63,  4, 7}, {58,   5, 6}, {49,   5, 7},
-    {46,  6, 6}, {35.5, 6, 7}, {23.3, 7, 7}
+ * [0]: cut-off frequency * 10; [1]: param0; [2]: param5
+ * NOTE: the cut-off frequency was timed 10 to use integer type */
+static const uint32_t cut_off_coef[21][3] = {
+    {1850, 0, 0}, {1720,  0, 1}, {1600,  1, 1},
+    {1500, 1, 2}, {1370,  2, 2}, {1260,  2, 3},
+    {1200, 0, 3}, {1150,  3, 3}, {1060,  1, 7},
+    {1040, 2, 4}, {920,   4, 4}, {915, 2, 7},
+    {810,  4, 5}, {772, 3, 7}, {690,   5, 5},
+    {630,  4, 7}, {580,   5, 6}, {490,   5, 7},
+    {460,  6, 6}, {355, 6, 7}, {233, 7, 7}
 };
 
-static void s_i2s_hal_get_cut_off_coef(float freq, uint32_t *param0, uint32_t *param5)
+static void s_i2s_hal_get_cut_off_coef(uint32_t freq, uint32_t *param0, uint32_t *param5)
 {
     uint8_t cnt = 0;
-    float min = 1000;
+    uint32_t min = 10000;
     /* Find the closest cut-off frequency and its coefficients */
     for (int i = 0; i < 21; i++) {
-        float tmp = cut_off_coef[i][0] < freq ? freq - cut_off_coef[i][0] : cut_off_coef[i][0] - freq;
+        uint32_t tmp = cut_off_coef[i][0] < freq ? freq - cut_off_coef[i][0] : cut_off_coef[i][0] - freq;
         if (tmp < min) {
             min = tmp;
             cnt = i;
@@ -209,7 +210,7 @@ void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_pdm_slot_mode(hal->dev, is_mono, false, I2S_PDM_SLOT_BOTH);
     uint32_t param0;
     uint32_t param5;
-    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_tx.hp_cut_off_freq_hz, &param0, &param5);
+    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_tx.hp_cut_off_freq_hzx10, &param0, &param5);
     i2s_ll_tx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_tx.hp_en);
     i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, param0);
     i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, param5);
