@@ -7,4 +7,10 @@ menu "Example Configuration"
         help
             UART Baudrate for HCI. Please use standard baudrate.
 
+    config EXAMPLE_HCI_UART_FLOW_CTRL_ENABLE
+        bool "Enable HCI UART flow control"
+        default y
+        help
+            Enable/disable HCI UART flow control
+
 endmenu
