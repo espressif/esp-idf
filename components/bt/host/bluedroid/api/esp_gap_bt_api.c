@@ -428,6 +428,10 @@ esp_err_t esp_bt_gap_set_qos(esp_bd_addr_t remote_bda, uint32_t t_poll)
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (t_poll < ESP_BT_GAP_TPOLL_MIN || t_poll > ESP_BT_GAP_TPOLL_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_ACT_SET_QOS;
