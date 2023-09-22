@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/unistd.h>
+#include <sys/stat.h>
 #include "unity.h"
 #include "esp_partition.h"
 #include "esp_log.h"
@@ -274,3 +275,14 @@ TEST_CASE("FATFS prefers SPI RAM for allocations", "[fatfs]")
     test_teardown();
 }
 #endif // CONFIG_SPIRAM
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+
+TEST_CASE("Size is correct after write when immediate fsync is enabled", "[fatfs]")
+{
+    test_setup();
+    test_fatfs_size("/spiflash/size.txt", "random text\n preferably something relatively long\n");
+    test_teardown();
+}
+
+#endif // CONFIG_FATFS_IMMEDIATE_FSYNC

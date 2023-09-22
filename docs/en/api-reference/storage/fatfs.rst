@@ -26,21 +26,23 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 2. Call :cpp:func:`ff_diskio_register` to register the disk I/O driver for the drive number used in Step 1.
 
-3. Call the FatFs function ``f_mount``, and optionally ``f_fdisk``, ``f_mkfs``, to mount the filesystem using the same drive number which was passed to :cpp:func:`esp_vfs_fat_register`. For more information, see `FatFs documentation <http://elm-chan.org/fsw/ff/doc/mount.html>`_.
+3. Call the FatFs function :cpp:func:`f_mount`, and optionally :cpp:func:`f_fdisk`, :cpp:func:`f_mkfs`, to mount the filesystem using the same drive number which was passed to :cpp:func:`esp_vfs_fat_register`. For more information, see `FatFs documentation <http://elm-chan.org/fsw/ff/doc/mount.html>`_.
 
 4. Call the C standard library and POSIX API functions to perform such actions on files as open, read, write, erase, copy, etc. Use paths starting with the path prefix passed to :cpp:func:`esp_vfs_register` (for example, ``"/sdcard/hello.txt"``). The filesystem uses `8.3 filenames <https://en.wikipedia.org/wiki/8.3_filename>`_ format (SFN) by default. If you need to use long filenames (LFN), enable the :ref:`CONFIG_FATFS_LONG_FILENAMES` option. More details on the FatFs filenames are available `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
 
 5. Optionally, by enabling the option :ref:`CONFIG_FATFS_USE_FASTSEEK`, you can use the POSIX lseek function to perform it faster. The fast seek does not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
 
-6. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix (for example, ``"/hello.txt"``).
+6. Optionally, by enabling the option :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`, you can enable automatic calling of :cpp:func:`f_sync` to flush recent file changes after each call of vfs_fat_write(), vfs_fat_pwrite(), vfs_fat_link(), vfs_fat_truncate() and vfs_fat_ftruncate() functions. This feature improves file-consistency and size reporting accuracy for the FatFS, at a price on decreased performance due to frequent disk operations
 
-7. Close all open files.
+7. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix (for example, ``"/hello.txt"``).
 
-8. Call the FatFs function ``f_mount`` for the same drive number with NULL ``FATFS*`` argument to unmount the filesystem.
+8. Close all open files.
 
-9. Call the FatFs function :cpp:func:`ff_diskio_register` with NULL ``ff_diskio_impl_t*`` argument and the same drive number to unregister the disk I/O driver.
+9. Call the FatFs function :cpp:func:`f_mount` for the same drive number with NULL ``FATFS*`` argument to unmount the filesystem.
 
-10. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
+10. Call the FatFs function :cpp:func:`ff_diskio_register` with NULL ``ff_diskio_impl_t*`` argument and the same drive number to unregister the disk I/O driver.
+
+11. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
 
 The convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount`, and :cpp:func:`esp_vfs_fat_sdcard_unmount` wrap the steps described above and also handle SD card initialization. These functions are described in the next section.
 
