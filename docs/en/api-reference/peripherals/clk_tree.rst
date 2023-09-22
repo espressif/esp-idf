@@ -1,6 +1,8 @@
 Clock Tree
 ==========
 
+:link_to_translation:`zh_CN:[中文]`
+
 {IDF_TARGET_RC_FAST_VAGUE_FREQ: default="8", esp32c3="17.5", esp32s3="17.5", esp32c2="17.5", esp32c6="17.5"}
 
 {IDF_TARGET_RC_FAST_ADJUSTED_FREQ: default="8.5", esp32c3="17.5", esp32s3="17.5", esp32c2="17.5", esp32c6="17.5"}
@@ -9,75 +11,77 @@ Clock Tree
 
 {IDF_TARGET_RC_SLOW_VAGUE_FREQ: default="136", esp32="150", esp32s2="90"}
 
+{IDF_TARGET_RC_SLOW_CLK: default="GPIO0", esp32c2="pin0 (when its frequency is no more than 136 kHz)", "esp32c6="GPIO0", esp32h2="GPIO13"}
+
 The clock subsystem of {IDF_TARGET_NAME} is used to source and distribute system/module clocks from a range of root clocks. The clock tree driver maintains the basic functionality of the system clock and the intricate relationship among module clocks.
 
-This document starts with the introduction to root and module clocks. Then it covers the clock tree APIs that users can call to monitor the status of the module clocks at runtime.
+This document starts with the introduction to root and module clocks. Then it covers the clock tree APIs that can be called to monitor the status of the module clocks at runtime.
 
 Introduction
 ------------
 
-This section lists definitions of the {IDF_TARGET_NAME}'s supported root clocks and module clocks. These definitions are commonly used in the driver configuration, to help user select a proper source clock for the peripheral.
+This section lists definitions of {IDF_TARGET_NAME}'s supported root clocks and module clocks. These definitions are commonly used in the driver configuration, to help select a proper source clock for the peripheral.
 
 Root Clocks
 ^^^^^^^^^^^
 
-Root clocks generate reliable clock signals. These clock signals then pass through various gates, muxes, dividers, or multipliers to become the clock sources for every functional module: the CPU core(s), WIFI, BT, the RTC, and the peripherals.
+Root clocks generate reliable clock signals. These clock signals then pass through various gates, muxes, dividers, or multipliers to become the clock sources for every functional module: the CPU core(s), Wi-Fi, Bluetooth, the RTC, and the peripherals.
 
 {IDF_TARGET_NAME}'s root clocks are listed in :cpp:type:`soc_root_clk_t`:
 
     .. list::
 
-        - Internal {IDF_TARGET_RC_FAST_VAGUE_FREQ}MHz RC Oscillator (RC_FAST)
+        - Internal {IDF_TARGET_RC_FAST_VAGUE_FREQ} MHz RC Oscillator (RC_FAST)
 
-            This RC oscillator generates a ~{IDF_TARGET_RC_FAST_ADJUSTED_FREQ}MHz clock signal output as the RC_FAST_CLK.
+            This RC oscillator generates a about {IDF_TARGET_RC_FAST_ADJUSTED_FREQ} MHz clock signal output as the ``RC_FAST_CLK``.
 
             .. only:: SOC_CLK_RC_FAST_D256_SUPPORTED
 
-                The ~{IDF_TARGET_RC_FAST_ADJUSTED_FREQ}MHz signal output is also passed into a configurable divider, which by default divides the input clock frequency by 256, to generate a RC_FAST_D256_CLK.
+                The about {IDF_TARGET_RC_FAST_ADJUSTED_FREQ} MHz signal output is also passed into a configurable divider, which by default divides the input clock frequency by 256, to generate a ``RC_FAST_D256_CLK``.
 
-                The exact frequency of RC_FAST_CLK can be computed in runtime through calibration on the RC_FAST_D256_CLK.
+                The exact frequency of ``RC_FAST_CLK`` can be computed in runtime through calibration on the ``RC_FAST_D256_CLK``.
 
             .. only:: not SOC_CLK_RC_FAST_D256_SUPPORTED and SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 
-                The exact frequency of RC_FAST_CLK can be computed in runtime through calibration.
+                The exact frequency of ``RC_FAST_CLK`` can be computed in runtime through calibration.
 
             .. only:: not SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 
-                The exact frequency of RC_FAST_CLK cannot be computed in runtime through calibration, but it is still possible to get its frequency through an oscillscope or a logic analyzer by routing the clock signal to a GPIO pin.
+                The exact frequency of ``RC_FAST_CLK`` cannot be computed in runtime through calibration, but it is still possible to get its frequency through an oscilloscope or a logic analyzer by routing the clock signal to a GPIO pin.
 
-        - External {IDF_TARGET_XTAL_FREQ}MHz Crystal (XTAL)
+        - External {IDF_TARGET_XTAL_FREQ} MHz Crystal (XTAL)
 
-        - Internal {IDF_TARGET_RC_SLOW_VAGUE_FREQ}kHz RC Oscillator (RC_SLOW)
+        - Internal {IDF_TARGET_RC_SLOW_VAGUE_FREQ} kHz RC Oscillator (RC_SLOW)
 
-            This RC oscillator generates a ~{IDF_TARGET_RC_SLOW_VAGUE_FREQ}kHz clock signal output as the RC_SLOW_CLK. The exact frequency of this clock can be computed in runtime through calibration.
+            This RC oscillator generates a about {IDF_TARGET_RC_SLOW_VAGUE_FREQ}kHz clock signal output as the ``RC_SLOW_CLK``. The exact frequency of this clock can be computed in runtime through calibration.
 
         .. only:: SOC_CLK_XTAL32K_SUPPORTED
 
-            - External 32kHz Crystal - optional (XTAL32K)
+            - External 32 kHz Crystal - optional (XTAL32K)
 
                 .. only:: esp32
 
-                    The clock source for this XTAL32K_CLK can be either a 32kHz crystal connecting to the 32K_XP and 32K_XN pins or a 32kHz clock signal generated by an external circuit. The external signal must be connected to the 32K_XN pin. Additionally, a 1nF capacitor must be placed between the 32K_XP pin and ground. In this case, the 32K_XP pin cannot be used as a GPIO pin.
+                    The clock source for this ``XTAL32K_CLK`` can be either a 32 kHz crystal connecting to the ``32K_XP`` and ``32K_XN`` pins or a 32 kHz clock signal generated by an external circuit. The external signal must be connected to the ``32K_XN`` pin. Additionally, a 1 nF capacitor must be placed between the ``32K_XP`` pin and ground. In this case, the ``32K_XP`` pin cannot be used as a GPIO pin.
 
                 .. only:: not esp32
 
-                     The clock source for this XTAL32K_CLK can be either a 32kHz crystal connecting to the XTAL_32K_P and XTAL_32K_N pins or a 32kHz clock signal generated by an external circuit. The external signal must be connected to the XTAL_32K_P pin.
+                     The clock source for this ``XTAL32K_CLK`` can be either a 32 kHz crystal connecting to the ``XTAL_32K_P`` and ``XTAL_32K_N`` pins or a 32 kHz clock signal generated by an external circuit. The external signal must be connected to the ``XTAL_32K_P`` pin.
 
-                XTAL32K_CLK can also be calibrated to get its exact frequency.
+                ``XTAL32K_CLK`` can also be calibrated to get its exact frequency.
 
         .. only:: SOC_CLK_OSC_SLOW_SUPPORTED
 
             - External Slow Clock - optional (OSC_SLOW)
 
-                A clock signal generated by an external circuit can be connected to pin0 to be the clock source for the RTC_SLOW_CLK. This clock can also be calibrated to get its exact frequency.
+                A clock signal generated by an external circuit can be connected to {IDF_TARGET_RC_SLOW_CLK} to be the clock source for the ``RTC_SLOW_CLK``. This clock can also be calibrated to get its exact frequency.
 
         .. only:: SOC_CLK_RC32K_SUPPORTED
 
-            - Internal 32kHz RC Oscillator (RC32K)
+            - Internal 32 kHz RC Oscillator (RC32K)
 
                 The exact frequency of this clock can be computed in runtime through calibration.
 
-Typically, the frequency of the signal generated from a RC oscillator circuit is less accurate and more sensitive to environment comparing to the signal generated from a crystal. {IDF_TARGET_NAME} provides several clock source options for the RTC_SLOW_CLK, and users can make the choice based on the requirements for system time accuracy and power consumption (refer to :ref:`rtc-clock-source-choice` for more details).
+Typically, the frequency of the signal generated from an RC oscillator circuit is less accurate and more sensitive to the environment compared to the signal generated from a crystal. {IDF_TARGET_NAME} provides several clock source options for the ``RTC_SLOW_CLK``, and it is possible to make the choice based on the requirements for system time accuracy and power consumption. For more details, please refer to :ref:`rtc-clock-source-choice`.
 
 Module Clocks
 ^^^^^^^^^^^^^
@@ -87,7 +91,7 @@ Module Clocks
 API Usage
 ---------
 
-The clock tree driver provides an all-in-one API to get the frequency of the module clocks, :cpp:func:`esp_clk_tree_src_get_freq_hz`. Users can call this function at any moment, with specifying the clock name (:cpp:enum:`soc_module_clk_t`) and the desired degree of precision of the returned frequency value (:cpp:enum:`esp_clk_tree_src_freq_precision_t`).
+The clock tree driver provides an all-in-one API to get the frequency of the module clocks, :cpp:func:`esp_clk_tree_src_get_freq_hz`. This function allows you to obtain the clock frequency at any time by providing the clock name :cpp:enum:`soc_module_clk_t` and specifying the desired precision level for the returned frequency value :cpp:enum:`esp_clk_tree_src_freq_precision_t`.
 
 API Reference
 -------------
