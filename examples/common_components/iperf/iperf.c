@@ -152,6 +152,8 @@ static void socket_recv(int recv_socket, struct sockaddr_storage listen_addr, ui
 static void socket_send(int send_socket, struct sockaddr_storage dest_addr, uint8_t type, int bw_lim)
 {
     uint8_t *buffer;
+    int32_t *pkt_id_p;
+    int32_t pkt_cnt = 0;
     int actual_send = 0;
     int want_send = 0;
     int period_us = -1;
@@ -161,6 +163,7 @@ static void socket_send(int send_socket, struct sockaddr_storage dest_addr, uint
     int err = 0;
 
     buffer = s_iperf_ctrl.buffer;
+    pkt_id_p = (int32_t *)s_iperf_ctrl.buffer;
     want_send = s_iperf_ctrl.buffer_len;
     iperf_start_report();
 
@@ -183,6 +186,13 @@ static void socket_send(int send_socket, struct sockaddr_storage dest_addr, uint
                 delay_us = 0;
             }
             prev_time = send_time;
+        }
+        *pkt_id_p = htonl(pkt_cnt); // datagrams need to be sequentially numbered
+        if (pkt_cnt >= INT32_MAX) {
+            pkt_cnt = 0;
+        }
+        else {
+            pkt_cnt++;
         }
         if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV6) {
             actual_send = sendto(send_socket, buffer, want_send, 0, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_in6));
