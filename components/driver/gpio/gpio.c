@@ -22,6 +22,7 @@
 #include "esp_check.h"
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
+#include "esp_private/esp_gpio_reserve.h"
 
 #if (SOC_RTCIO_PIN_COUNT > 0)
 #include "hal/rtc_io_hal.h"
@@ -1006,3 +1007,45 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
     return ESP_OK;
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
+{
+    ESP_RETURN_ON_FALSE(out_stream, ESP_ERR_INVALID_ARG, GPIO_TAG, "out_stream error");
+    ESP_RETURN_ON_FALSE(!(io_bit_mask & ~SOC_GPIO_VALID_GPIO_MASK), ESP_ERR_INVALID_ARG, GPIO_TAG, "io_bit_mask error");
+
+    fprintf(out_stream, "================IO DUMP Start================\n");
+    while (io_bit_mask) {
+        uint32_t gpio_num = __builtin_ffsll(io_bit_mask) - 1;
+        io_bit_mask &= ~(1ULL << gpio_num);
+
+        bool pu, pd, ie, oe, od, slp_sel;
+        uint32_t drv, fun_sel, sig_out;
+        gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, &pu, &pd, &ie, &oe, &od, &drv, &fun_sel, &sig_out, &slp_sel);
+
+        fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_pin_reserved(gpio_num) ? " **RESERVED**" : "");
+        fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", pu, pd, drv);
+        fprintf(out_stream, "  InputEn: %d, OutputEn: %d, OpenDrain: %d\n", ie, oe, od);
+        fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", fun_sel, (fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");
+        if (oe && fun_sel == PIN_FUNC_GPIO) {
+            fprintf(out_stream, "  GPIO Matrix SigOut ID: %"PRIu32"%s\n", sig_out, (sig_out == SIG_GPIO_OUT_IDX) ? " (simple GPIO output)" : "");
+        }
+        if (ie && fun_sel == PIN_FUNC_GPIO) {
+            uint32_t cnt = 0;
+            fprintf(out_stream, "  GPIO Matrix SigIn ID:");
+            for (int i = 0; i < SIG_GPIO_OUT_IDX; i++) {
+                if (gpio_hal_get_in_signal_connected_io(gpio_context.gpio_hal, i) == gpio_num) {
+                    cnt++;
+                    fprintf(out_stream, " %d", i);
+                }
+            }
+            if (cnt == 0) {
+                fprintf(out_stream, " (simple GPIO input)");
+            }
+            fprintf(out_stream, "\n");
+        }
+        fprintf(out_stream, "  SleepSelEn: %d\n", slp_sel);
+        fprintf(out_stream, "\n");
+    }
+    fprintf(out_stream, "=================IO DUMP End==================\n");
+    return ESP_OK;
+}

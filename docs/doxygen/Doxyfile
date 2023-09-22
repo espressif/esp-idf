@@ -83,6 +83,7 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/gpio/include/driver/gpio.h \
     $(PROJECT_PATH)/components/driver/gpio/include/driver/gpio_etm.h \
     $(PROJECT_PATH)/components/driver/gpio/include/driver/gpio_filter.h \
+    $(PROJECT_PATH)/components/driver/gpio/include/driver/lp_io.h \
     $(PROJECT_PATH)/components/driver/gpio/include/driver/rtc_io.h \
     $(PROJECT_PATH)/components/driver/gptimer/include/driver/gptimer.h \
     $(PROJECT_PATH)/components/driver/gptimer/include/driver/gptimer_etm.h \

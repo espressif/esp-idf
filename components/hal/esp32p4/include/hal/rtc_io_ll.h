@@ -56,7 +56,7 @@ static inline void rtcio_ll_matrix_in(int rtcio_num, uint32_t signal_idx, bool i
     lp_gpio_func_in_sel_cfg_reg_t reg;
     reg.func_in_sel = rtcio_num;
     reg.in_inv_sel = inv;
-    reg.sig_in_sel = 1; // Bypass LP_GPIO
+    reg.sig_in_sel = 1; // Signal should not bypass LP_GPIO matrix
     LP_GPIO.func_in_sel_cfg[signal_idx].val = reg.val;
 }
 
