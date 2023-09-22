@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/perfmon/test_apps:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
+      reason: Perfmon is only supported on Xtensa
