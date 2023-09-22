@@ -810,6 +810,15 @@ typedef struct {
     UINT8       hci_status;
 } tBTM_SET_AFH_CHANNELS_RESULTS;
 
+/* Structure returned with set ACL packet types event (in tBTM_CMPL_CB callback function)
+** in response to BTM_SetAclPktTypes call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    BD_ADDR     rem_bda;
+    UINT16      pkt_types;
+} tBTM_SET_ACL_PKT_TYPES_RESULTS;
+
 /* Structure returned with set BLE channels event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_BleSetChannels call.
 */
@@ -2204,6 +2213,20 @@ UINT8 BTM_SetTraceLevel (UINT8 new_level);
 *******************************************************************************/
 //extern
 tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout);
+
+/*******************************************************************************
+**
+** Function         BTM_SetAclPktTypes
+**
+** Description      Send HCI Change Connection Packet Type
+**
+** Returns
+**      BTM_SUCCESS         Command sent.
+**      BTM_NO_RESOURCES    If out of resources to send the command.
+**
+*******************************************************************************/
+//extern
+tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **
