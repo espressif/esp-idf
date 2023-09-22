@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@ typedef enum {
     BTC_GAP_BT_MODE_CHG_EVT,
     BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT,
     BTC_GAP_BT_QOS_EVT,
+    BTC_GAP_BT_SET_ACL_PKT_TYPES_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {
@@ -51,6 +52,7 @@ typedef enum {
     BTC_GAP_BT_ACT_SET_AFH_CHANNELS,
     BTC_GAP_BT_ACT_READ_REMOTE_NAME,
     BTC_GAP_BT_ACT_SET_QOS,
+    BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -146,6 +148,12 @@ typedef union {
         bt_bdaddr_t bda;
         uint32_t t_poll;
     } set_qos;
+
+    // BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES
+    struct set_acl_pkt_types_args {
+        bt_bdaddr_t bda;
+        uint16_t pkt_types;
+    } set_acl_pkt_types;
 
 } btc_gap_bt_args_t;
 
