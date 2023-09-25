@@ -16,6 +16,9 @@ Some ESP-NETIF API functions are intended to be called by application code, for 
 
 In many cases, applications do not need to call ESP-NETIF APIs directly as they are called by the default network event handlers.
 
+
+.. _esp-netif structure:
+
 ESP-NETIF Architecture
 ----------------------
 

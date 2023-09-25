@@ -16,6 +16,9 @@ ESP-IDF 支持实现了 BSD API 的自定义 TCP/IP 协议栈。有关不使用 
 
 应用程序通常无需直接调用 ESP-NETIF 的 API，它们会由默认网络事件句柄调用。
 
+
+.. _esp-netif structure:
+
 ESP-NETIF 架构
 ----------------------
 

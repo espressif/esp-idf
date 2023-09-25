@@ -48,9 +48,8 @@ Thread 是一种基于 IPv6 的物联网网状网络技术。
 
 本部分的 Thread API 示例代码存放在 ESP-IDF 示例项目的 :example:`openthread` 目录下。
 
-IP 网络层协议
-================
-
+ESP-NETIF
+=========
 .. toctree::
    :maxdepth: 1
 
