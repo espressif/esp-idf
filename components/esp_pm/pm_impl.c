@@ -999,6 +999,11 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     }
 #else
     leave_idle();
+    /* it is necessary to restore the mac/bb REG before scheduling other tasks in FreeRTOS.*/
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+    mac_bb_power_up_prepare();
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
+
 #endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT && portNUM_PROCESSORS == 2
 #if CONFIG_FREERTOS_SMP
     portRESTORE_INTERRUPTS(state);

@@ -624,6 +624,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     // Will switch to XTAL turn down MSPI speed
     mspi_timing_change_speed_mode_cache_safe(true);
 
+    /*
+    Since the modem requires a PLL clock to access modem REG,
+    it is necessary to back up the mac/bb REG before disabling the PLL clock.
+    */
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+    mac_bb_power_down_prepare();
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
+
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);

@@ -505,10 +505,8 @@ uint32_t IRAM_ATTR sleep_retention_get_modules(void)
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
 void sleep_retention_do_extra_retention(bool backup_or_restore)
 {
-    _lock_acquire_recursive(&s_retention.lock);
     if (s_retention.highpri < SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY ||
         s_retention.highpri > SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
-        _lock_release_recursive(&s_retention.lock);
         return;
     }
     const uint32_t clk_bug_modules = SLEEP_RETENTION_MODULE_BLE_MAC | SLEEP_RETENTION_MODULE_802154_MAC;
@@ -525,7 +523,6 @@ void sleep_retention_do_extra_retention(bool backup_or_restore)
         }
     }
     int refs = s_retention.extra_refs;
-    _lock_release_recursive(&s_retention.lock);
     assert(refs >= 0 && refs <= cnt_modules);
 }
 

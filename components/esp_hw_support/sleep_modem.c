@@ -390,3 +390,22 @@ static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_f
     }
 }
 #endif
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+static bool s_modem_sleep = false;
+void IRAM_ATTR mac_bb_power_down_prepare(void)
+{
+    if (s_modem_sleep == false) {
+        sleep_retention_do_extra_retention(true); // backup
+        s_modem_sleep = true;
+    }
+}
+
+void IRAM_ATTR mac_bb_power_up_prepare(void)
+{
+    if (s_modem_sleep) {
+        sleep_retention_do_extra_retention(false); // restore
+        s_modem_sleep = false;
+    }
+}
+#endif /* SOC_PM_RETENTION_HAS_CLOCK_BUG */

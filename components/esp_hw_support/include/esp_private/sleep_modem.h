@@ -40,6 +40,24 @@ void mac_bb_power_up_cb_execute(void);
 
 #endif // CONFIG_MAC_BB_PD
 
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+/**
+ * @brief MAC and baseband power down operation
+ *
+ * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
+ * power up and backup prepare operations.
+ */
+void mac_bb_power_down_prepare(void);
+
+/**
+ * @brief MAC and baseband power up operation
+ *
+ * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
+ * power up and restore prepare operations.
+ */
+void mac_bb_power_up_prepare(void);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
+
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
 /**
