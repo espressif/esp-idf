@@ -17,6 +17,45 @@
 
 static const char *TAG = "srp6a";
 
+typedef struct esp_srp_handle {
+    int allocated;
+    esp_ng_type_t type;
+    esp_mpi_ctx_t *ctx;
+
+    /* N
+     * the bytes_n simply points to the static array
+     */
+    esp_mpi_t *n;
+    const char    *bytes_n;
+    int      len_n;
+
+    /* g
+     * the bytes_g simply points to the static array
+     */
+    esp_mpi_t *g;
+    const char    *bytes_g;
+    int      len_g;
+
+    /* Salt */
+    esp_mpi_t *s;
+    char    *bytes_s;
+    int      len_s;
+    /* Verifier */
+    esp_mpi_t *v;
+    /* B */
+    esp_mpi_t *B;
+    char    *bytes_B;
+    int      len_B;
+    /* b */
+    esp_mpi_t *b;
+    /* A */
+    esp_mpi_t *A;
+    char    *bytes_A;
+    int      len_A;
+    /* K - session key*/
+    char *session_key;
+} esp_srp_handle;
+
 static void hexdump_mpi(const char *name, esp_mpi_t *bn)
 {
     int len = 0;
@@ -59,14 +98,12 @@ static const char N_3072[] = {
 static const char g_3072[] = { 5 };
 
 
-esp_err_t esp_srp_init(esp_srp_handle_t *hd, esp_ng_type_t ng)
+esp_srp_handle_t *esp_srp_init(esp_ng_type_t ng)
 {
-    if (hd->allocated) {
-        esp_srp_free(hd);
+    esp_srp_handle_t *hd = calloc(1, sizeof(esp_srp_handle));
+    if (!hd) {
+        return NULL;
     }
-
-    memset(hd, 0, sizeof(*hd));
-    hd->allocated = 1;
 
     hd->ctx = esp_mpi_ctx_new();
     if (! hd->ctx) {
@@ -90,18 +127,17 @@ esp_err_t esp_srp_init(esp_srp_handle_t *hd, esp_ng_type_t ng)
         goto error;
     }
     hd->type = ng;
-    return ESP_OK;
+    return hd;
 error:
     esp_srp_free(hd);
-    return ESP_FAIL;
+    return NULL;
 }
 
 void esp_srp_free(esp_srp_handle_t *hd)
 {
-    if (hd->allocated != 1) {
+    if (!hd) {
         return;
     }
-
     if (hd->ctx) {
         esp_mpi_ctx_free(hd->ctx);
     }
@@ -138,7 +174,7 @@ void esp_srp_free(esp_srp_handle_t *hd)
     if (hd->session_key) {
         free(hd->session_key);
     }
-    memset(hd, 0, sizeof(*hd));
+    free(hd);
 }
 
 static esp_mpi_t *calculate_x(char *bytes_salt, int salt_len, const char *username, int username_len, const char *pass, int pass_len)
