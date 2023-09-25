@@ -517,7 +517,6 @@
 #define OPENTHREAD_CONFIG_OPERATIONAL_DATASET_AUTO_INIT 1
 #endif
 
-
 /**
  *
  * Define as 1 to enable support for allocating message pool buffer in PSRAM
@@ -534,6 +533,16 @@
  *
  */
 #define OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TIME_SYNC_ENABLE
+ *
+ * Define as 1 to enable the time synchronization service feature.
+ *
+ */
+#if CONFIG_OPENTHREAD_TIME_SYNC
+#define OPENTHREAD_CONFIG_TIME_SYNC_ENABLE 1
 #endif
 
 #define OPENTHREAD_FTD 1

@@ -242,4 +242,14 @@
  */
 #define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE CONFIG_OPENTHREAD_DNS_CLIENT
 
+/**
+ * @def OPENTHREAD_CONFIG_TIME_SYNC_ENABLE
+ *
+ * Define as 1 to enable the time synchronization service feature.
+ *
+ */
+#if CONFIG_OPENTHREAD_TIME_SYNC
+#define OPENTHREAD_CONFIG_TIME_SYNC_ENABLE 1
+#endif
+
 #define OPENTHREAD_MTD 1
