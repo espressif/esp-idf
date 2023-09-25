@@ -1,3 +1,5 @@
+const { recordRuleExitStatus } = require("./configParameters.js");
+
 /**
  * Check the documentation files in this MR.
  *
@@ -24,6 +26,7 @@
  *
  */
 module.exports = async function () {
+    const ruleName = 'Documentation translation';
     let partMessages = []; // Create a blank field for future records of individual issues
     const pathProject = "espressif/esp-idf";
     const regexIncludeLink = /\.\.\sinclude::\s((\.\.\/)+)en\//;
@@ -89,6 +92,9 @@ module.exports = async function () {
 
     // Create a report with found issues with documents in MR
     createReport();
+
+    // At this point, the rule has passed
+	recordRuleExitStatus(ruleName, 'Passed');
 
     /**
      * Generates an object that represents the relationships between files in two different languages found in this MR.
@@ -245,6 +251,7 @@ module.exports = async function () {
 
         // No docs issues found in MR, but translation labels have been added anyway
         if (!partMessages.length && translationLabelsPresent) {
+            recordRuleExitStatus(ruleName, "Failed");
             return warn(
                 `Please remove the \`needs translation: XX\` labels. For documents that need to translate from scratch, Doc team will translate them in the future. For the current stage, we only focus on updating exiting EN and CN translation to make them in sync.`
             );
@@ -261,9 +268,11 @@ module.exports = async function () {
                 dangerMessage += `
 				\nWhen synchronizing the EN and CN versions, please follow the [Documentation Code](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/contribute/documenting-code.html#standardize-document-format). The total number of lines of EN and CN should be same.\n
 				\nIf you have difficulty in providing translation, you can contact Documentation team by adding <kbd>needs translation: CN</kbd> or <kbd>needs translation: EN</kbd> labels into this MR and retrying Danger CI job. The documentation team will be automatically notified and will help you with the translations before the merge.\n`;
+                recordRuleExitStatus(ruleName, "Failed");
                 return warn(dangerMessage); // no "needs translation: XX" labels in MR; report issues as warn
             } else {
 				dangerMessage += `\nTranslation labels <kbd>needs translation: CN</kbd> or <kbd>needs translation: EN</kbd> were added - this will automatically notify the Documentation team to help you with translation issues.`;
+                recordRuleExitStatus(ruleName, 'Passed (with suggestions)');
                 return message(dangerMessage); // "needs translation: XX" labels were found in MR and Docs team was notified; report issues as info
             }
         }
