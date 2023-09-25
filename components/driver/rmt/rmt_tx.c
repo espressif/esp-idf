@@ -486,6 +486,10 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
 #if !SOC_RMT_SUPPORT_TX_LOOP_COUNT
     ESP_RETURN_ON_FALSE(config->loop_count <= 0, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
 #endif // !SOC_RMT_SUPPORT_TX_LOOP_COUNT
+#if CONFIG_RMT_ISR_IRAM_SAFE
+    // payload is retrieved by the encoder, we should make sure it's still accessible even when the cache is disabled
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
+#endif
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;

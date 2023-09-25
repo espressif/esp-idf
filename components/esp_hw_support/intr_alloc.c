@@ -560,7 +560,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     //Allocate that int!
     if (flags & ESP_INTR_FLAG_SHARED) {
         //Populate vector entry and add to linked list.
-        shared_vector_desc_t *sh_vec=malloc(sizeof(shared_vector_desc_t));
+        shared_vector_desc_t *sh_vec = heap_caps_malloc(sizeof(shared_vector_desc_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (sh_vec == NULL) {
             portEXIT_CRITICAL(&spinlock);
             free(ret);
@@ -583,7 +583,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         vd->flags = VECDESC_FL_NONSHARED;
         if (handler) {
 #if CONFIG_APPTRACE_SV_ENABLE
-            non_shared_isr_arg_t *ns_isr_arg=malloc(sizeof(non_shared_isr_arg_t));
+            non_shared_isr_arg_t *ns_isr_arg = heap_caps_malloc(sizeof(non_shared_isr_arg_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
             if (!ns_isr_arg) {
                 portEXIT_CRITICAL(&spinlock);
                 free(ret);
