@@ -20,11 +20,6 @@ void mmu_hal_init(void)
     ROM_Boot_Cache_Init();
 #endif
 
-//TODO: IDF-7516
-#if CONFIG_IDF_TARGET_ESP32P4
-    Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
-#endif
-
     mmu_ll_set_page_size(0, CONFIG_MMU_PAGE_SIZE);
     mmu_hal_unmap_all();
 }

@@ -23,6 +23,7 @@
 #include "esp_partition.h"
 #include "esp_flash.h"
 #include "test_mm_utils.h"
+#include "soc/ext_mem_defs.h"
 
 const static char *TAG = "CACHE_TEST";
 
@@ -32,9 +33,11 @@ const static char *TAG = "CACHE_TEST";
 
 #define TEST_OFFSET       0x100000
 #if CONFIG_IDF_TARGET_ESP32S2
-#define TEST_SYNC_START   (0x3F500000 + TEST_OFFSET)
+#define TEST_SYNC_START   (SOC_DPORT_CACHE_ADDRESS_LOW + TEST_OFFSET)
 #elif CONFIG_IDF_TARGET_ESP32S3
-#define TEST_SYNC_START   (0x3C000000 + TEST_OFFSET)
+#define TEST_SYNC_START   (SOC_DRAM0_CACHE_ADDRESS_LOW + TEST_OFFSET)
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define TEST_SYNC_START   (SOC_DRAM_PSRAM_ADDRESS_LOW + TEST_OFFSET)
 #endif
 #define TEST_SYNC_SIZE    0x8000
 

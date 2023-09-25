@@ -17,6 +17,7 @@
 #include "driver/i2c.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_dma_utils.h"
 #include "lvgl.h"
 #if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_GT911
 #include "esp_lcd_touch_gt911.h"
@@ -406,13 +407,12 @@ void app_main(void)
     // it's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
     lv_color_t *buf1 = NULL;
     lv_color_t *buf2 = NULL;
+    uint32_t malloc_flags = 0;
 #if CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
-    buf1 = heap_caps_aligned_alloc(EXAMPLE_PSRAM_DATA_ALIGNMENT, EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    buf2 = heap_caps_aligned_alloc(EXAMPLE_PSRAM_DATA_ALIGNMENT, EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-#else
-    buf1 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    buf2 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    malloc_flags |= ESP_DMA_MALLOC_FLAG_PSRAM;
 #endif // CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+    ESP_ERROR_CHECK(esp_dma_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), malloc_flags, (void *)&buf1, NULL));
+    ESP_ERROR_CHECK(esp_dma_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), malloc_flags, (void *)&buf2, NULL));
     assert(buf1);
     assert(buf2);
     ESP_LOGI(TAG, "buf1@%p, buf2@%p", buf1, buf2);

@@ -203,11 +203,15 @@ config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 
+config SOC_CACHE_WRITEBACK_SUPPORTED
+    bool
+    default y
+
 config SOC_CACHE_FREEZE_SUPPORTED
     bool
     default y
 
-config SOC_CACHE_L2_SUPPORTED
+config SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     bool
     default y
 
