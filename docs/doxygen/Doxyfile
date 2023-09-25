@@ -279,9 +279,11 @@ INPUT = \
     $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security.h \
     $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security0.h \
     $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security1.h \
+    $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security2.h \
     $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_ble.h \
     $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_console.h \
     $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_httpd.h \
+    $(PROJECT_PATH)/components/protocomm/include/crypto/srp6a/esp_srp.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
     $(PROJECT_PATH)/components/sdmmc/include/sdmmc_cmd.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
