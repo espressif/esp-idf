@@ -5,6 +5,7 @@
  */
 #include <string.h>
 #include "hal/ecdsa_hal.h"
+#include "esp_crypto_lock.h"
 #include "esp_efuse.h"
 #include "mbedtls/error.h"
 #include "mbedtls/ecdsa.h"
@@ -19,11 +20,9 @@
 
 __attribute__((unused)) static const char *TAG = "ecdsa_alt";
 
-static _lock_t s_crypto_ecdsa_lock;
-
 static void esp_ecdsa_acquire_hardware(void)
 {
-    _lock_acquire(&s_crypto_ecdsa_lock);
+    esp_crypto_ecdsa_lock_acquire();
 
     periph_module_enable(PERIPH_ECDSA_MODULE);
 }
@@ -32,7 +31,7 @@ static void esp_ecdsa_release_hardware(void)
 {
     periph_module_disable(PERIPH_ECDSA_MODULE);
 
-    _lock_release(&s_crypto_ecdsa_lock);
+    esp_crypto_ecdsa_lock_release();
 }
 
 static void ecdsa_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len)
