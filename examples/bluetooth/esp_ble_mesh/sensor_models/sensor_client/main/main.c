@@ -101,6 +101,9 @@ static void example_ble_mesh_set_msg_common(esp_ble_mesh_client_common_param_t *
     common->ctx.addr = node->unicast_addr;
     common->ctx.send_ttl = MSG_SEND_TTL;
     common->msg_timeout = MSG_TIMEOUT;
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+    common->msg_role = MSG_ROLE;
+#endif
 }
 
 static esp_err_t prov_complete(uint16_t node_index, const esp_ble_mesh_octet16_t uuid,
