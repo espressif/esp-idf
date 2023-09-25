@@ -1,4 +1,15 @@
 menu "LWIP"
+    config LWIP_ENABLE
+        bool "Enable LwIP stack"
+        default y if !IDF_TARGET_LINUX
+        default n if IDF_TARGET_LINUX
+        help
+            Builds normally if selected. Excludes LwIP from build if unselected, even if it is a
+            dependency of a component or application.
+            Some applications can switch their IP stacks, e.g., when switching between chip
+            and Linux targets (LwIP stack vs. Linux IP stack). Since the LwIP dependency cannot
+            easily be excluded based on a Kconfig option, it has to be a dependency in all cases.
+            This switch allows the LwIP stack to be built selectively, even if it is a dependency.
 
     config LWIP_LOCAL_HOSTNAME
         string "Local netif hostname"
