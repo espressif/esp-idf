@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ static void *s_dpp_api_lock = NULL;
 
 static bool s_dpp_stop_listening;
 static int s_dpp_auth_retries;
-struct esp_dpp_context_t s_dpp_ctx;
+static struct esp_dpp_context_t s_dpp_ctx;
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
 
 #define DPP_API_LOCK() xSemaphoreTakeRecursive(s_dpp_api_lock, portMAX_DELAY)
@@ -378,6 +378,10 @@ static void esp_dpp_task(void *pvParameters )
                 static int counter;
                 int channel;
 
+                if (p->num_chan <= 0) {
+                    wpa_printf(MSG_ERROR, "Listen channel not set");
+                    break;
+                }
                 channel = p->chan_list[counter++ % p->num_chan];
                 esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
                                            BOOTSTRAP_ROC_WAIT_TIME, s_action_rx_cb);
@@ -518,6 +522,10 @@ esp_err_t
 esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
                            const char *key, const char *uri_info)
 {
+    if (!s_dpp_ctx.dpp_global) {
+        wpa_printf(MSG_ERROR, "DPP: failed to bootstrap as dpp not initialized.");
+        return ESP_FAIL;
+    }
     struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
     char *uri_chan_list = esp_dpp_parse_chan_list(chan_list);
     char *command = os_zalloc(1200);
@@ -603,6 +611,11 @@ fail:
 
 esp_err_t esp_supp_dpp_start_listen(void)
 {
+    if (!s_dpp_ctx.dpp_global || s_dpp_ctx.id < 1) {
+        wpa_printf(MSG_ERROR, "DPP: failed to start listen as dpp not initialized or bootstrapped.");
+        return ESP_FAIL;
+    }
+
     if (esp_wifi_get_user_init_flag_internal() == 0) {
         wpa_printf(MSG_ERROR, "DPP: ROC not possible before wifi is started");
         return ESP_ERR_INVALID_STATE;
@@ -620,6 +633,15 @@ void esp_supp_dpp_stop_listen(void)
 
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 {
+    wifi_mode_t mode = 0;
+    if (esp_wifi_get_mode(&mode) || ((mode != WIFI_MODE_STA) && (mode != WIFI_MODE_APSTA))) {
+        wpa_printf(MSG_ERROR, "DPP: failed to init as not in station mode.");
+        return ESP_FAIL;
+    }
+    if (s_dpp_ctx.dpp_global) {
+        wpa_printf(MSG_ERROR, "DPP: failed to init as init already done.");
+        return ESP_FAIL;
+    }
     struct dpp_global_config cfg = {0};
     int ret;
 
@@ -658,7 +680,6 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 void esp_supp_dpp_deinit(void)
 {
     struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
-
     if (params->info) {
         os_free(params->info);
         params->info = NULL;
@@ -673,7 +694,10 @@ void esp_supp_dpp_deinit(void)
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                &offchan_event_handler);
     s_dpp_auth_retries = 0;
-    dpp_global_deinit(s_dpp_ctx.dpp_global);
-    esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
+    if (s_dpp_ctx.dpp_global) {
+        dpp_global_deinit(s_dpp_ctx.dpp_global);
+        s_dpp_ctx.dpp_global = NULL;
+        esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
+    }
 }
 #endif
