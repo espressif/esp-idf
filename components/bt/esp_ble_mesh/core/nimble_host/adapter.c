@@ -87,7 +87,8 @@ int bt_mesh_host_init(void)
     int rc;
 
     if (init == true) {
-        return -EALREADY;
+        BT_WARN("Already initialized host for mesh!");
+        return 0;
     }
 
     rc = btc_init();
