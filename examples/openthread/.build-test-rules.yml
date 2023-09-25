@@ -12,7 +12,7 @@ examples/openthread/ot_br:
 
 examples/openthread/ot_cli:
   enable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
+    - if: SOC_IEEE802154_SUPPORTED == 1
   disable_test:
     - if: IDF_TARGET == "esp32c6"
       temporary: true
@@ -20,17 +20,24 @@ examples/openthread/ot_cli:
 
 examples/openthread/ot_rcp:
   enable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
+    - if: SOC_IEEE802154_SUPPORTED == 1
   disable_test:
     - if: IDF_TARGET == "esp32h2"
       temporary: true
       reason: only test on esp32c6
 
-# To add support for the ESP32-C6 in TZ-302
-examples/openthread/ot_sleepy_device:
+examples/openthread/ot_sleepy_device/deep_sleep:
   enable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: SOC_IEEE802154_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: SOC_IEEE802154_SUPPORTED == 1
       temporary: true
-      reason: No support # TO-DO: TZ-134
+      reason: Unsupport # TO-DO: TZ-134
+
+examples/openthread/ot_sleepy_device/light_sleep:
+  enable:
+    - if: SOC_IEEE802154_SUPPORTED == 1
+  disable_test:
+    - if: SOC_IEEE802154_SUPPORTED == 1
+      temporary: true
+      reason: Unsupport # TO-DO: TZ-134

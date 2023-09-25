@@ -488,9 +488,6 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     r_ble_rtc_wake_up_state_clr();
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-    sleep_retention_do_extra_retention(true);
-#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     esp_phy_disable(PHY_MODEM_BT);
 #ifdef CONFIG_PM_ENABLE
@@ -507,9 +504,6 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(s_pm_lock);
     r_ble_rtc_wake_up_state_clr();
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG
-    sleep_retention_do_extra_retention(false);
-#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG */
 #endif //CONFIG_PM_ENABLE
     esp_phy_enable(PHY_MODEM_BT);
     s_ble_active = true;
@@ -570,12 +564,21 @@ esp_err_t controller_sleep_init(void)
     if (rc != ESP_OK) {
         goto error;
     }
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+    sleep_modem_register_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
+                                                   sleep_modem_mac_bb_power_up_prepare);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     return rc;
 
 error:
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+    sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
+                                                     sleep_modem_mac_bb_power_up_prepare);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     esp_sleep_disable_bt_wakeup();
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(sleep_modem_light_sleep_overhead_set);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
@@ -592,6 +595,10 @@ error:
 void controller_sleep_deinit(void)
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+    sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
+                                                     sleep_modem_mac_bb_power_up_prepare);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     r_ble_rtc_wake_up_state_clr();
     esp_sleep_disable_bt_wakeup();
     sleep_modem_ble_mac_modem_state_deinit();
@@ -951,11 +958,6 @@ esp_err_t esp_bt_controller_disable(void)
         esp_pm_lock_release(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE
         s_ble_active = false;
-    } else {
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-        /* Avoid consecutive backup of register cause assertion */
-        sleep_retention_module_deinit();
-#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
     }
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     return ESP_OK;
