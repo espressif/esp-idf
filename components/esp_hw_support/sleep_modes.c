@@ -667,10 +667,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     }
 #endif
 
-    /* Enable sleep reject for faster return from this function,
-     * in case the wakeup is already triggerred.
-     */
-    uint32_t reject_triggers = (s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK) | sleep_modem_reject_triggers();
+    uint32_t reject_triggers = s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK;
+
+    if (!deep_sleep) {
+        /* Enable sleep reject for faster return from this function,
+         * in case the wakeup is already triggerred.
+         */
+        reject_triggers |= sleep_modem_reject_triggers();
+    }
 
     //Append some flags in addition to power domains
     uint32_t sleep_flags = pd_flags;
