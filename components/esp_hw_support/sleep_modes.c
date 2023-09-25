@@ -489,12 +489,12 @@ FORCE_INLINE_ATTR void resume_uarts(void)
 FORCE_INLINE_ATTR bool light_sleep_uart_prepare(uint32_t pd_flags, int64_t sleep_duration)
 {
     bool should_skip_sleep = false;
-#if !SOC_PM_SUPPORT_TOP_PD
+#if !SOC_PM_SUPPORT_TOP_PD || !CONFIG_ESP_CONSOLE_UART
     suspend_uarts();
 #else
     if (pd_flags & PMU_SLEEP_PD_TOP) {
         if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
-            // +1 is for cover the last charactor flush time
+            // +1 is for cover the last character flush time
             (sleep_duration < (int64_t)((UART_LL_FIFO_DEF_LEN - uart_ll_get_txfifo_len(CONSOLE_UART_DEV) + 1) * UART_FLUSH_US_PER_CHAR) + SLEEP_UART_FLUSH_DONE_TO_SLEEP_US)) {
             should_skip_sleep = true;
         } else {
