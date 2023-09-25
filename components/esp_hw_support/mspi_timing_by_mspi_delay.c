@@ -469,8 +469,6 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
 static uint32_t s_select_best_tuning_config_str(const mspi_timing_config_t *configs, uint32_t consecutive_length, uint32_t end)
 {
 #if (MSPI_TIMING_CORE_CLOCK_MHZ == 120 || MSPI_TIMING_CORE_CLOCK_MHZ == 240)
-    ESP_EARLY_LOGW("FLASH/PSRAM", "DO NOT USE FOR MASS PRODUCTION! Timing parameters may be updated in future IDF version.");
-
     //STR best point scheme
     uint32_t best_point;
 
