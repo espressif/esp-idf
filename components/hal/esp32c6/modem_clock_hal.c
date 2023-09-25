@@ -36,7 +36,7 @@ void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_conte
     case MODEM_CLOCK_DOMAIN_BT:
         modem_syscon_ll_set_bt_icg_bitmap(hal->syscon_dev, bitmap);
         break;
-    case MODEM_CLOCK_DOMAIN_FE:
+    case MODEM_CLOCK_DOMAIN_MODEM_PRIVATE_FE:
         modem_syscon_ll_set_fe_icg_bitmap(hal->syscon_dev, bitmap);
         break;
     case MODEM_CLOCK_DOMAIN_IEEE802154:
@@ -77,7 +77,7 @@ uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *
     case MODEM_CLOCK_DOMAIN_BT:
         bitmap = modem_syscon_ll_get_bt_icg_bitmap(hal->syscon_dev);
         break;
-    case MODEM_CLOCK_DOMAIN_FE:
+    case MODEM_CLOCK_DOMAIN_MODEM_PRIVATE_FE:
         bitmap = modem_syscon_ll_get_fe_icg_bitmap(hal->syscon_dev);
         break;
     case MODEM_CLOCK_DOMAIN_IEEE802154:
@@ -101,18 +101,20 @@ uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *
     return bitmap;
 }
 
-void IRAM_ATTR modem_clock_hal_enable_fe_clock(modem_clock_hal_context_t *hal, bool enable)
+void IRAM_ATTR modem_clock_hal_enable_modem_adc_common_fe_clock(modem_clock_hal_context_t *hal, bool enable)
+{
+    if (enable) {
+        modem_syscon_ll_enable_fe_apb_clock(hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_80m_clock(hal->syscon_dev, enable);
+    }
+}
+
+void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     if (enable) {
         modem_syscon_ll_enable_fe_cal_160m_clock(hal->syscon_dev, enable);
         modem_syscon_ll_enable_fe_160m_clock(hal->syscon_dev, enable);
     }
-}
-
-void IRAM_ATTR modem_clock_hal_enable_shared_clock(bool enable)
-{
-    modem_syscon_ll_enable_fe_apb_clock(&MODEM_SYSCON, enable);
-    modem_syscon_ll_enable_fe_80m_clock(&MODEM_SYSCON, enable);
 }
 
 void modem_clock_hal_set_ble_rtc_timer_divisor_value(modem_clock_hal_context_t *hal, uint32_t  divider)
