@@ -188,8 +188,9 @@ static esp_err_t esp_aes_isr_initialise( void )
             ESP_LOGE(TAG, "Failed to create intr semaphore");
             return ESP_FAIL;
         }
+        const int isr_flags = esp_intr_level_to_flags(CONFIG_MBEDTLS_AES_INTERRUPT_LEVEL);
 
-        esp_err_t ret = esp_intr_alloc(ETS_AES_INTR_SOURCE, 0, esp_aes_complete_isr, NULL, NULL);
+        esp_err_t ret = esp_intr_alloc(ETS_AES_INTR_SOURCE, isr_flags, esp_aes_complete_isr, NULL, NULL);
         if (ret != ESP_OK) {
             return ret;
         }

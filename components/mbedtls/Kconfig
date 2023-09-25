@@ -391,6 +391,17 @@ menu "mbedTLS"
             This allows other code to run on the CPU while an AES operation is pending.
             Otherwise the CPU busy-waits.
 
+    config MBEDTLS_AES_INTERRUPT_LEVEL
+        int "AES hardware interrupt level"
+        default 0
+        depends on MBEDTLS_AES_USE_INTERRUPT
+        range 0 3
+        help
+            This config helps to set the interrupt priority level for the AES peripheral.
+            Value 0 (default) means that there is no preference regarding the interrupt
+            priority level and any level from 1 to 3 can be selected (based on the availability).
+            Note: Higher value indicates high interrupt priority.
+
     config MBEDTLS_HARDWARE_GCM
         bool "Enable partially hardware accelerated GCM"
         depends on SOC_AES_SUPPORT_GCM && MBEDTLS_HARDWARE_AES
@@ -424,6 +435,17 @@ menu "mbedTLS"
 
             This allows other code to run on the CPU while an MPI operation is pending.
             Otherwise the CPU busy-waits.
+
+    config MBEDTLS_MPI_INTERRUPT_LEVEL
+        int "MPI hardware interrupt level"
+        default 0
+        depends on MBEDTLS_MPI_USE_INTERRUPT
+        range 0 3
+        help
+            This config helps to set the interrupt priority level for the MPI peripheral.
+            Value 0 (default) means that there is no preference regarding the interrupt
+            priority level and any level from 1 to 3 can be selected (based on the availability).
+            Note: Higher value indicates high interrupt priority.
 
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
