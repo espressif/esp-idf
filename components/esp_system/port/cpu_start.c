@@ -144,13 +144,6 @@ static volatile bool s_cpu_inited[SOC_CPU_CORES_NUM] = { false };
 static volatile bool s_resume_cores;
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32P4
-#define UART_START_SCLK_ATOMIC()    PERIPH_RCC_ATOMIC()
-#else
-// #define UART_START_SCLK_ATOMIC()      for(int i = 1, __DECLARE_RCC_ATOMIC_ENV; i < 1; i--)
-#define UART_START_SCLK_ATOMIC()    int __DECLARE_RCC_ATOMIC_ENV;
-#endif
-
 static void core_intr_matrix_clear(void)
 {
     uint32_t core_id = esp_cpu_get_core_id();
@@ -690,10 +683,10 @@ void IRAM_ATTR call_start_cpu0(void)
     clock_hz = esp_clk_xtal_freq(); // From esp32-s3 on, UART clock source is selected to XTAL in ROM
 #endif
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-    UART_START_SCLK_ATOMIC() {
-        (void) __DECLARE_RCC_ATOMIC_ENV; // To avoid build warning about __DECLARE_RCC_ATOMIC_ENV defined but not used on P4
-        esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
-    }
+
+    // In a single thread mode, the freertos is not started yet. So don't have to use a critical section.
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused)); // To avoid build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
+    esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 #endif
 

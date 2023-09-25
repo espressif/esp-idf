@@ -180,38 +180,37 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .irq = ETS_UART4_INTR_SOURCE,
         .module = PERIPH_UART4_MODULE,
     },
-    //TODO:IDF-7815
-    // { // LP UART0
-    //     .pins = {
-    //         [SOC_UART_TX_PIN_IDX] = {
-    //             .default_gpio = LP_U0TXD_GPIO_NUM,
-    //             .iomux_func = LP_U0TXD_MUX_FUNC,
-    //             .input = 0,
-    //             .signal = LP_UART_TXD_PAD_OUT_IDX,
-    //         },
+    { // LP UART0
+        .pins = {
+            [SOC_UART_TX_PIN_IDX] = {
+                .default_gpio = LP_U0TXD_GPIO_NUM,
+                .iomux_func = LP_U0TXD_MUX_FUNC,
+                .input = 0,
+                .signal = LP_UART_TXD_PAD_OUT_IDX,
+            },
 
-    //         [SOC_UART_RX_PIN_IDX] = {
-    //             .default_gpio = LP_U0RXD_GPIO_NUM,
-    //             .iomux_func = LP_U0RXD_MUX_FUNC,
-    //             .input = 1,
-    //             .signal = LP_UART_RXD_PAD_IN_IDX,
-    //         },
+            [SOC_UART_RX_PIN_IDX] = {
+                .default_gpio = LP_U0RXD_GPIO_NUM,
+                .iomux_func = LP_U0RXD_MUX_FUNC,
+                .input = 1,
+                .signal = LP_UART_RXD_PAD_IN_IDX,
+            },
 
-    //         [SOC_UART_RTS_PIN_IDX] = {
-    //             .default_gpio = LP_U0RTS_GPIO_NUM,
-    //             .iomux_func = LP_U0RTS_MUX_FUNC,
-    //             .input = 0,
-    //             .signal = LP_UART_RTSN_PAD_OUT_IDX,
-    //         },
+            [SOC_UART_RTS_PIN_IDX] = {
+                .default_gpio = LP_U0RTS_GPIO_NUM,
+                .iomux_func = LP_U0RTS_MUX_FUNC,
+                .input = 0,
+                .signal = LP_UART_RTSN_PAD_OUT_IDX,
+            },
 
-    //         [SOC_UART_CTS_PIN_IDX] = {
-    //             .default_gpio = LP_U0CTS_GPIO_NUM,
-    //             .iomux_func = LP_U0CTS_MUX_FUNC,
-    //             .input = 1,
-    //             .signal = LP_UART_CTSN_PAD_IN_IDX,
-    //         },
-    //     },
-    //     .irq = ETS_LP_UART_INTR_SOURCE,
-    //     .module = PERIPH_LP_UART0_MODULE,
-    // },
+            [SOC_UART_CTS_PIN_IDX] = {
+                .default_gpio = LP_U0CTS_GPIO_NUM,
+                .iomux_func = LP_U0CTS_MUX_FUNC,
+                .input = 1,
+                .signal = LP_UART_CTSN_PAD_IN_IDX,
+            },
+        },
+        .irq = ETS_LP_UART_INTR_SOURCE,
+        .module = PERIPH_LP_UART0_MODULE,
+    },
 };

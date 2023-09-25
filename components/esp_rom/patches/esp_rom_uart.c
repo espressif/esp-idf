@@ -23,15 +23,6 @@ IRAM_ATTR void esp_rom_uart_tx_wait_idle(uint8_t uart_no)
 }
 #endif
 
-IRAM_ATTR void esp_rom_uart_set_clock_baudrate(uint8_t uart_no, uint32_t clock_hz, uint32_t baud_rate)
-{
-// To avoid build errors about __DECLARE_RCC_ATOMIC_ENV
-#if !BOOTLOADER_BUILD
-    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused));
-#endif
-    uart_ll_set_baudrate(UART_LL_GET_HW(uart_no), baud_rate, clock_hz);
-}
-
 #if CONFIG_IDF_TARGET_ESP32C3
 /**
  * The ESP32-C3 ROM has released two versions, one is the ECO3 version,

@@ -103,6 +103,49 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 }
 
 /**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num)
+    {
+    case 0:
+        PCR.uart0_conf.uart0_clk_en = enable;
+        break;
+    case 1:
+        PCR.uart1_conf.uart1_clk_en = enable;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num)
+    {
+    case 0:
+        PCR.uart0_conf.uart0_rst_en = 1;
+        PCR.uart0_conf.uart0_rst_en = 0;
+        break;
+    case 1:
+        PCR.uart1_conf.uart1_rst_en = 1;
+        PCR.uart1_conf.uart1_rst_en = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
  * @brief Sync the update to UART core clock domain
  *
  * @param hw Beginning address of the peripheral registers.
@@ -150,49 +193,6 @@ FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
 FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
 {
     UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 0);
-}
-
-/**
- * @brief Enable the bus clock for uart
- * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- * @param enable true to enable, false to disable
- */
-static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
-{
-    switch (uart_num)
-    {
-    case 0:
-        PCR.uart0_conf.uart0_clk_en = enable;
-        break;
-    case 1:
-        PCR.uart1_conf.uart1_clk_en = enable;
-        break;
-    default:
-        abort();
-        break;
-    }
-}
-
-/**
- * @brief Reset UART module
- * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- */
-static inline void uart_ll_reset_register(uart_port_t uart_num)
-{
-    switch (uart_num)
-    {
-    case 0:
-        PCR.uart0_conf.uart0_rst_en = 1;
-        PCR.uart0_conf.uart0_rst_en = 0;
-        break;
-    case 1:
-        PCR.uart1_conf.uart1_rst_en = 1;
-        PCR.uart1_conf.uart1_rst_en = 0;
-        break;
-    default:
-        abort();
-        break;
-    }
 }
 
 /**

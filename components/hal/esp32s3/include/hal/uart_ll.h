@@ -81,19 +81,6 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 }
 
 /**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    hw->clk_conf.rst_core = core_rst_en;
-}
-
-/**
  * @brief Enable the bus clock for uart
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param enable true to enable, false to disable
@@ -146,6 +133,19 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 }
 // SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
 #define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
+
+/**
+ * @brief  Configure the UART core reset.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  core_rst_en True to enable the core reset, otherwise set it false.
+ *
+ * @return None.
+ */
+static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
+{
+    hw->clk_conf.rst_core = core_rst_en;
+}
 
 /**
  * @brief  Set the UART source clock.

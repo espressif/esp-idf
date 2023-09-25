@@ -200,6 +200,85 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 }
 
 /**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num)
+    {
+    case 0:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart0_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart0_sys_clk_en = enable;
+        break;
+    case 1:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart1_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart1_sys_clk_en = enable;
+        break;
+    case 2:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart2_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart2_sys_clk_en = enable;
+        break;
+    case 3:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart3_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart3_sys_clk_en = enable;
+        break;
+    case 4:
+        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en = enable;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en = enable;
+        break;
+    case 5:
+        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_enable_bus_clock
+        break;;
+    default:
+        abort();
+        break;
+    }
+}
+// HP_SYS_CLKRST.soc_clk_ctrlx are shared registers, so this function must be used in an atomic way
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+FORCE_INLINE_ATTR void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num)
+    {
+    case 0:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb = 0;
+        break;
+    case 1:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart1_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart1_apb = 0;
+        break;
+    case 2:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart2_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart2_apb = 0;
+        break;
+    case 3:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart3_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart3_apb = 0;
+        break;
+    case 4:
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb = 1;
+        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb = 0;
+        break;
+    case 5:
+        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_reset_register
+        break;;
+    default:
+        abort();
+        break;
+    }
+}
+//  HP_SYS_CLKRST.hp_rst_en1 is a shared register, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
+
+/**
  * @brief Sync the update to UART core clock domain
  *
  * @param hw Beginning address of the peripheral registers.
@@ -294,85 +373,6 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
 }
 // HP_SYS_CLKRST.peri_clk_ctrlxxx are shared registers, so this function must be used in an atomic way
 #define uart_ll_sclk_disable(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_sclk_disable(__VA_ARGS__)
-
-/**
- * @brief Enable the bus clock for uart
- * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- * @param enable true to enable, false to disable
- */
-FORCE_INLINE_ATTR void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
-{
-    switch (uart_num)
-    {
-    case 0:
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart0_apb_clk_en = enable;
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart0_sys_clk_en = enable;
-        break;
-    case 1:
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart1_apb_clk_en = enable;
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart1_sys_clk_en = enable;
-        break;
-    case 2:
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart2_apb_clk_en = enable;
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart2_sys_clk_en = enable;
-        break;
-    case 3:
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart3_apb_clk_en = enable;
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart3_sys_clk_en = enable;
-        break;
-    case 4:
-        HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en = enable;
-        HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en = enable;
-        break;
-    case 5:
-        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_enable_bus_clock
-        break;;
-    default:
-        abort();
-        break;
-    }
-}
-// HP_SYS_CLKRST.soc_clk_ctrlx are shared registers, so this function must be used in an atomic way
-#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
-
-/**
- * @brief Reset UART module
- * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- */
-FORCE_INLINE_ATTR void uart_ll_reset_register(uart_port_t uart_num)
-{
-    switch (uart_num)
-    {
-    case 0:
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb = 1;
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb = 0;
-        break;
-    case 1:
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart1_apb = 1;
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart1_apb = 0;
-        break;
-    case 2:
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart2_apb = 1;
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart2_apb = 0;
-        break;
-    case 3:
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart3_apb = 1;
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart3_apb = 0;
-        break;
-    case 4:
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb = 1;
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_apb = 0;
-        break;
-    case 5:
-        // LP_UART port having its own enable_bus_clock function: lp_uart_ll_reset_register
-        break;;
-    default:
-        abort();
-        break;
-    }
-}
-//  HP_SYS_CLKRST.hp_rst_en1 is a shared register, so this function must be used in an atomic way
-#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Set the UART source clock.
@@ -490,8 +490,7 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl114, reg_uart3_sclk_div_num, sclk_div - 1);
     } else if ((hw) == &UART4) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl115, reg_uart4_sclk_div_num, sclk_div - 1);
-    } else {
-        //LP UART
+    } else if ((hw) == &LP_UART) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
     }
 #undef DIV_UP
@@ -525,7 +524,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl114, reg_uart3_sclk_div_num) + 1;
     } else if ((hw) == &UART4) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl115, reg_uart4_sclk_div_num) + 1;
-    } else {
+    } else if ((hw) == &LP_UART) {
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1;
     }
     return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * sclk_div);

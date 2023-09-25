@@ -79,47 +79,6 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 }
 
 /**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    hw->clk_conf.rst_core = core_rst_en;
-}
-
-/**
- * @brief  Enable the UART clock.
- *
- * @param  hw Beginning address of the peripheral registers.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
-{
-    hw->clk_conf.sclk_en = 1;
-    hw->clk_conf.rx_sclk_en = 1;
-    hw->clk_conf.tx_sclk_en = 1;
-}
-
-/**
- * @brief  Disable the UART clock.
- *
- * @param  hw Beginning address of the peripheral registers.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
-{
-    hw->clk_conf.sclk_en = 0;
-    hw->clk_conf.rx_sclk_en = 0;
-    hw->clk_conf.tx_sclk_en = 0;
-}
-
-/**
  * @brief Enable the bus clock for uart
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param enable true to enable, false to disable
@@ -165,6 +124,48 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 }
 // SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
 #define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
+
+/**
+ * @brief  Configure the UART core reset.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  core_rst_en True to enable the core reset, otherwise set it false.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
+{
+    hw->clk_conf.rst_core = core_rst_en;
+}
+
+/**
+ * @brief  Enable the UART clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
+{
+    hw->clk_conf.sclk_en = 1;
+    hw->clk_conf.rx_sclk_en = 1;
+    hw->clk_conf.tx_sclk_en = 1;
+}
+
+/**
+ * @brief  Disable the UART clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
+{
+    hw->clk_conf.sclk_en = 0;
+    hw->clk_conf.rx_sclk_en = 0;
+    hw->clk_conf.tx_sclk_en = 0;
+}
+
 
 /**
  * @brief  Set the UART source clock.

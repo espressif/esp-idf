@@ -1037,11 +1037,15 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128
 
 config SOC_UART_NUM
     int
-    default 5
+    default 6
 
 config SOC_UART_HP_NUM
     int
     default 5
+
+config SOC_UART_LP_NUM
+    int
+    default 1
 
 config SOC_UART_FIFO_LEN
     int

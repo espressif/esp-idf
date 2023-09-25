@@ -79,6 +79,53 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 }
 
 /**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num)
+    {
+    case 0:
+        SYSTEM.perip_clk_en0.reg_uart_clk_en = enable;
+        break;
+    case 1:
+        SYSTEM.perip_clk_en0.reg_uart1_clk_en = enable;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num)
+    {
+    case 0:
+        SYSTEM.perip_rst_en0.reg_uart_rst = 1;
+        SYSTEM.perip_rst_en0.reg_uart_rst = 0;
+        break;
+    case 1:
+        SYSTEM.perip_rst_en0.reg_uart1_rst = 1;
+        SYSTEM.perip_rst_en0.reg_uart1_rst = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
+
+/**
  * @brief  Configure the UART core reset.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -118,60 +165,6 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
     hw->clk_conf.rx_sclk_en = 0;
     hw->clk_conf.tx_sclk_en = 0;
 }
-
-/**
- * @brief Enable the bus clock for uart
- * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- * @param enable true to enable, false to disable
- */
-static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
-{
-    switch (uart_num)
-    {
-    case 0:
-        SYSTEM.perip_clk_en0.reg_uart_clk_en = enable;
-        break;
-    case 1:
-        SYSTEM.perip_clk_en0.reg_uart1_clk_en = enable;
-        break;
-    case 2:
-        SYSTEM.perip_clk_en1.reg_uart2_clk_en = enable;
-        break;
-    default:
-        abort();
-        break;
-    }
-}
-// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
-
-/**
- * @brief Reset UART module
- * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
- */
-static inline void uart_ll_reset_register(uart_port_t uart_num)
-{
-    switch (uart_num)
-    {
-    case 0:
-        SYSTEM.perip_rst_en0.reg_uart_rst = 1;
-        SYSTEM.perip_rst_en0.reg_uart_rst = 0;
-        break;
-    case 1:
-        SYSTEM.perip_rst_en0.reg_uart1_rst = 1;
-        SYSTEM.perip_rst_en0.reg_uart1_rst = 0;
-        break;
-    case 2:
-        SYSTEM.perip_rst_en1.reg_uart2_rst = 1;
-        SYSTEM.perip_rst_en1.reg_uart2_rst = 0;
-        break;
-    default:
-        abort();
-        break;
-    }
-}
-// SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
-#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Set the UART source clock.

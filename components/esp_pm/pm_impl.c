@@ -738,7 +738,7 @@ void esp_pm_impl_init(void)
 #else
     #error "No UART clock source is aware of DFS"
 #endif // SOC_UART_SUPPORT_xxx
-    while(!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM))) {
+    while (!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM))) {
         ;
     }
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */

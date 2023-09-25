@@ -26,6 +26,7 @@
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "driver/uart_select.h"
+#include "driver/lp_io.h"
 #include "esp_private/uart_private.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_clk_tree.h"
@@ -666,17 +667,21 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     }
 #if (SOC_UART_LP_NUM >= 1)
     else { // LP_UART IO check
-        const uart_periph_sig_t *pins = uart_periph_signal[uart_num].pins;
+
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
+        const uart_periph_sig_t *pins = uart_periph_signal[uart_num].pins;
         // LP_UART has its fixed IOs
         ESP_RETURN_ON_FALSE((tx_io_num < 0 || (tx_io_num == pins[SOC_UART_TX_PIN_IDX].default_gpio)), ESP_FAIL, UART_TAG, "tx_io_num error");
         ESP_RETURN_ON_FALSE((rx_io_num < 0 || (rx_io_num == pins[SOC_UART_RX_PIN_IDX].default_gpio)), ESP_FAIL, UART_TAG, "rx_io_num error");
         ESP_RETURN_ON_FALSE((rts_io_num < 0 || (rts_io_num == pins[SOC_UART_RTS_PIN_IDX].default_gpio)), ESP_FAIL, UART_TAG, "rts_io_num error");
         ESP_RETURN_ON_FALSE((cts_io_num < 0 || (cts_io_num == pins[SOC_UART_CTS_PIN_IDX].default_gpio)), ESP_FAIL, UART_TAG, "cts_io_num error");
+#else
+        // LP_UART signals can be routed to any LP_IOs
+        ESP_RETURN_ON_FALSE((tx_io_num < 0 || rtc_gpio_is_valid_gpio(tx_io_num)), ESP_FAIL, UART_TAG, "tx_io_num error");
+        ESP_RETURN_ON_FALSE((rx_io_num < 0 || rtc_gpio_is_valid_gpio(rx_io_num)), ESP_FAIL, UART_TAG, "rx_io_num error");
+        ESP_RETURN_ON_FALSE((rts_io_num < 0 || rtc_gpio_is_valid_gpio(rts_io_num)), ESP_FAIL, UART_TAG, "rts_io_num error");
+        ESP_RETURN_ON_FALSE((cts_io_num < 0 || rtc_gpio_is_valid_gpio(cts_io_num)), ESP_FAIL, UART_TAG, "cts_io_num error");
 
-#else   // SOC_LP_GPIO_MATRIX_SUPPORTED
-        // LP_UART IOs can be routed any LP_IOs
-        //TODO: IDF-7815, check for LP_IO 0~15
 #endif  // SOC_LP_GPIO_MATRIX_SUPPORTED
     }
 #endif
@@ -690,11 +695,11 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
         else {
-            //TODO:IDF-7815
             rtc_gpio_set_direction(tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
             rtc_gpio_init(tx_io_num);
             rtc_gpio_iomux_func_sel(tx_io_num, 1);
-            LP_GPIO.func10_out_sel_cfg.reg_gpio_func10_out_sel = uart_periph_signal[uart_num].pins[SOC_UART_TX_PIN_IDX].signal;
+
+            lp_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
         }
 #endif
     }
@@ -708,12 +713,11 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
         else {
-            //TODO:IDF-7815
             rtc_gpio_set_direction(rx_io_num, RTC_GPIO_MODE_INPUT_ONLY);
             rtc_gpio_init(rx_io_num);
             rtc_gpio_iomux_func_sel(rx_io_num, 1);
-            LP_GPIO.func2_in_sel_cfg.reg_gpio_sig2_in_sel = 1;
-            LP_GPIO.func2_in_sel_cfg.reg_gpio_func2_in_sel = 11;
+
+            lp_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
         }
 #endif
     }
@@ -726,11 +730,10 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
         else {
-            //TODO:IDF-7815
             rtc_gpio_set_direction(rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY);
             rtc_gpio_init(rts_io_num);
             rtc_gpio_iomux_func_sel(rts_io_num, 1);
-            LP_GPIO.func10_out_sel_cfg.reg_gpio_func12_out_sel = uart_periph_signal[uart_num].pins[SOC_UART_RTS_PIN_IDX].signal;
+            lp_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
         }
 #endif
     }
@@ -744,12 +747,11 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
         else {
-            //TODO:IDF-7815
             rtc_gpio_set_direction(cts_io_num, RTC_GPIO_MODE_INPUT_ONLY);
             rtc_gpio_init(cts_io_num);
             rtc_gpio_iomux_func_sel(cts_io_num, 1);
-            LP_GPIO.func2_in_sel_cfg.reg_gpio_sig3_in_sel = 1;
-            LP_GPIO.func2_in_sel_cfg.reg_gpio_func3_in_sel = 13;
+
+            lp_gpio_connect_in_signal(cts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), 0);
         }
 #endif
     }

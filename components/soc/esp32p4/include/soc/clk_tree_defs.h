@@ -153,8 +153,8 @@ typedef enum {
     SOC_MOD_CLK_APLL,                          /*!< Audio PLL is sourced from PLL, and its frequency is configurable through APLL configuration registers */
     // For LP peripherals
     SOC_MOD_CLK_XTAL_D2,                       /*!< XTAL_D2_CLK comes from the external 40MHz crystal, passing a div of 2 to the LP peripherals */
+    SOC_MOD_CLK_LP_PLL,                        /*!< LP_PLL is from 32kHz XTAL oscillator frequency multipliers, it has a fixed frequency of 8MHz */
     SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
-    SOC_MOD_CLK_LP_PLL,
 } soc_module_clk_t;
 
 //////////////////////////////////////////////////SYSTIMER//////////////////////////////////////////////////////////////

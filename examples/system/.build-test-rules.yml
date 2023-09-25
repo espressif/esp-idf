@@ -205,11 +205,11 @@ examples/system/ulp/lp_core/lp_i2c:
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
   enable:
-    - if: SOC_UART_LP_NUM > 0
+    - if: SOC_ULP_LP_UART_SUPPORTED == 1
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_print:
   enable:
-    - if: SOC_UART_LP_NUM > 0
+    - if: SOC_ULP_LP_UART_SUPPORTED == 1
 
 examples/system/ulp/ulp_fsm/ulp:
   disable:
