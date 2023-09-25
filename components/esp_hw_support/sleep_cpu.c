@@ -507,18 +507,18 @@ static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(voi
     frame->pmacfg1   = RV_READ_CSR(CSR_PMACFG(1));
     frame->pmacfg2   = RV_READ_CSR(CSR_PMACFG(2));
     frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(3));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(4));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(5));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(6));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(7));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(8));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(9));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(10));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(11));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(12));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(13));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(14));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(15));
+    frame->pmacfg4   = RV_READ_CSR(CSR_PMACFG(4));
+    frame->pmacfg5   = RV_READ_CSR(CSR_PMACFG(5));
+    frame->pmacfg6   = RV_READ_CSR(CSR_PMACFG(6));
+    frame->pmacfg7   = RV_READ_CSR(CSR_PMACFG(7));
+    frame->pmacfg8   = RV_READ_CSR(CSR_PMACFG(8));
+    frame->pmacfg9   = RV_READ_CSR(CSR_PMACFG(9));
+    frame->pmacfg10   = RV_READ_CSR(CSR_PMACFG(10));
+    frame->pmacfg11   = RV_READ_CSR(CSR_PMACFG(11));
+    frame->pmacfg12   = RV_READ_CSR(CSR_PMACFG(12));
+    frame->pmacfg13   = RV_READ_CSR(CSR_PMACFG(13));
+    frame->pmacfg14   = RV_READ_CSR(CSR_PMACFG(14));
+    frame->pmacfg15   = RV_READ_CSR(CSR_PMACFG(15));
 #endif // SOC_CPU_HAS_PMA
 
     frame->utvec     = RV_READ_CSR(utvec);
