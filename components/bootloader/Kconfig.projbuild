@@ -709,14 +709,12 @@ menu "Security features"
 
     config SECURE_BOOT_VERIFICATION_KEY
         string "Secure boot public signature verification key"
-        depends on SECURE_SIGNED_APPS && !SECURE_BOOT_BUILD_SIGNED_BINARIES && !SECURE_SIGNED_APPS_RSA_SCHEME
+        depends on SECURE_SIGNED_APPS && SECURE_SIGNED_APPS_ECDSA_SCHEME && !SECURE_BOOT_BUILD_SIGNED_BINARIES
         default "signature_verification_key.bin"
         help
             Path to a public key file used to verify signed images.
             Secure Boot V1: This ECDSA public key is compiled into the bootloader and/or
             app, to verify app images.
-            Secure Boot V2: This RSA public key is compiled into the signature block at
-            the end of the bootloader/app.
 
             Key file is in raw binary format, and can be extracted from a
             PEM formatted private key using the espsecure.py
