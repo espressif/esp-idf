@@ -30,6 +30,12 @@
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
+static bool s_rf_closed = false;
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+#define IEEE802154_LINK_OWNER  ENTRY(3)
+#else
+#define IEEE802154_LINK_OWNER  ENTRY(0) | ENTRY(2)
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
 #endif
 
 #define CCA_DETECTION_TIME 8
@@ -46,6 +52,7 @@ static uint8_t s_recent_rx_frame_info_index;
 static portMUX_TYPE s_ieee802154_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static esp_err_t ieee802154_sleep_init(void);
+static void ieee802154_rf_enable(void);
 
 static IRAM_ATTR void event_end_process(void)
 {
@@ -673,6 +680,7 @@ IEEE802154_STATIC void tx_init(const uint8_t *frame)
 
 esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
 {
+    ieee802154_rf_enable();
     ieee802154_enter_critical();
     tx_init(frame);
 
@@ -700,6 +708,7 @@ esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
 {
     uint32_t tx_target_time;
     uint32_t current_time;
+    ieee802154_rf_enable();
     tx_init(frame);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX_AT);
     if (cca) {
@@ -741,6 +750,7 @@ esp_err_t ieee802154_receive(void)
         // already in rx state, don't abort current rx operation
         return ESP_OK;
     }
+    ieee802154_rf_enable();
 
     ieee802154_enter_critical();
     rx_init();
@@ -753,7 +763,7 @@ esp_err_t ieee802154_receive_at(uint32_t time)
 {
     uint32_t rx_target_time = time - IEEE802154_RX_RAMPUP_TIME_US;
     uint32_t current_time;
-
+    ieee802154_rf_enable();
     rx_init();
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_RX_AT);
     set_next_rx_buffer();
@@ -773,7 +783,7 @@ static esp_err_t ieee802154_sleep_init(void)
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     #define N_REGS_IEEE802154() (((IEEE802154_MAC_DATE_REG - IEEE802154_REG_BASE) / 4) + 1)
     const static sleep_retention_entries_config_t ieee802154_mac_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_IEEE802154_LINK(0x00), IEEE802154_REG_BASE, IEEE802154_REG_BASE, N_REGS_IEEE802154(), 0, 0), .owner = ENTRY(3) },
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_IEEE802154_LINK(0x00), IEEE802154_REG_BASE, IEEE802154_REG_BASE, N_REGS_IEEE802154(), 0, 0), .owner = IEEE802154_LINK_OWNER },
     };
     err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_802154_MAC);
     ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to allocate memory for ieee802154 mac retention");
@@ -782,41 +792,41 @@ static esp_err_t ieee802154_sleep_init(void)
     return err;
 }
 
-IRAM_ATTR void ieee802154_enter_sleep(void)
+IRAM_ATTR static void ieee802154_rf_disable(void)
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-    esp_phy_disable();
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-    sleep_retention_do_extra_retention(true);// backup
-#endif
-    ieee802154_disable(); // IEEE802154 CLOCK Disable
+    if (s_rf_closed == false) {
+        esp_phy_disable();
+        s_rf_closed = true;
+    }
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 
-IRAM_ATTR void ieee802154_wakeup(void)
+IRAM_ATTR static void ieee802154_rf_enable(void)
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-    ieee802154_enable(); // IEEE802154 CLOCK Enable
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-    sleep_retention_do_extra_retention(false);// restore
-#endif
-    esp_phy_enable();
+    if (s_rf_closed) {
+        esp_phy_enable();
+        s_rf_closed = false;
+    }
 #endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 
 esp_err_t ieee802154_sleep(void)
 {
-    ieee802154_enter_critical();
-
-    stop_current_operation();
-    ieee802154_set_state(IEEE802154_STATE_SLEEP);
-
-    ieee802154_exit_critical();
+    if (ieee802154_get_state() != IEEE802154_STATE_SLEEP) {
+        ieee802154_enter_critical();
+        stop_current_operation();
+        ieee802154_set_state(IEEE802154_STATE_SLEEP);
+        ieee802154_exit_critical();
+        ieee802154_rf_disable(); // colse rf
+    }
     return ESP_OK;
 }
 
 esp_err_t ieee802154_energy_detect(uint32_t duration)
 {
+    ieee802154_rf_enable();
     ieee802154_enter_critical();
 
     stop_current_operation();
@@ -832,6 +842,7 @@ esp_err_t ieee802154_energy_detect(uint32_t duration)
 
 esp_err_t ieee802154_cca(void)
 {
+    ieee802154_rf_enable();
     ieee802154_enter_critical();
 
     stop_current_operation();

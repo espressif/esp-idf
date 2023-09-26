@@ -334,16 +334,6 @@ uint8_t esp_ieee802154_get_recent_lqi(void)
     return ieee802154_get_recent_lqi();
 }
 
-void esp_ieee802154_enter_sleep(void)
-{
-    ieee802154_enter_sleep();
-}
-
-void esp_ieee802154_wakeup(void)
-{
-    ieee802154_wakeup();
-}
-
 __attribute__((weak)) void esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
 

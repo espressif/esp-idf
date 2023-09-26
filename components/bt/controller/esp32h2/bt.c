@@ -40,12 +40,9 @@
 #include "hci_uart.h"
 #include "bt_osi_mem.h"
 
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-#include "esp_private/sleep_retention.h"
-#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
-
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_private/sleep_modem.h"
+#include "esp_private/sleep_retention.h"
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
@@ -447,6 +444,7 @@ void esp_bt_rtc_slow_clk_select(uint8_t slow_clk_src)
         case MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL:
             ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
             modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (320 - 1));
+            break;
         case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
             ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
             modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
@@ -474,9 +472,6 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     r_ble_rtc_wake_up_state_clr();
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-    sleep_retention_do_extra_retention(true);
-#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
     esp_phy_disable();
 #ifdef CONFIG_PM_ENABLE
@@ -493,9 +488,6 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(s_pm_lock);
     r_ble_rtc_wake_up_state_clr();
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG
-    sleep_retention_do_extra_retention(false);
-#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG */
 #endif //CONFIG_PM_ENABLE
     esp_phy_enable();
     s_ble_active = true;
@@ -546,7 +538,7 @@ esp_err_t controller_sleep_init(void)
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     /* Create a new regdma link for BLE related register restoration */
-    rc = sleep_modem_ble_mac_modem_state_init(1);
+    rc = sleep_modem_ble_mac_modem_state_init(0);
     assert(rc == 0);
     esp_sleep_enable_bt_wakeup();
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
@@ -924,11 +916,6 @@ esp_err_t esp_bt_controller_disable(void)
         esp_pm_lock_release(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE
         s_ble_active = false;
-    } else {
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-        /* Avoid consecutive backup of register cause assertion */
-        sleep_retention_module_deinit();
-#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
     }
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     return ESP_OK;
