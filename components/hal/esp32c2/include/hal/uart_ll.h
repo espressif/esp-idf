@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include "hal/uart_types.h"
 #include "hal/misc.h"
-#include "hal/assert.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "soc/clk_tree_defs.h"
@@ -69,7 +68,6 @@ typedef enum {
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
     uint32_t uart_rst_bit = ((uart_num == 0) ? SYSTEM_UART_RST :
                             (uart_num == 1) ? SYSTEM_UART1_RST : 0);
     uint32_t uart_en_bit  = ((uart_num == 0) ? SYSTEM_UART_CLK_EN :
@@ -85,8 +83,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
  */
 static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
 {
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         SYSTEM.perip_clk_en0.uart_clk_en = enable;
         break;
@@ -107,8 +104,7 @@ static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
  */
 static inline void uart_ll_reset_register(uart_port_t uart_num)
 {
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         SYSTEM.perip_rst_en0.uart_rst = 1;
         SYSTEM.perip_rst_en0.uart_rst = 0;

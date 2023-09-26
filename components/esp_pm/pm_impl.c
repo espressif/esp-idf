@@ -43,7 +43,6 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/sleep_modem.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_sleep.h"
 
 #include "sdkconfig.h"
@@ -742,13 +741,13 @@ void esp_pm_impl_init(void)
         ;
     }
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
-    UART_SCLK_ATOMIC() {
+    HP_UART_SRC_CLK_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
     esp_err_t err = uart_get_sclk_freq(clk_source, &sclk_freq);
     assert(err == ESP_OK);
-    UART_SCLK_ATOMIC() {
+    HP_UART_SRC_CLK_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
     }
 #endif // CONFIG_ESP_CONSOLE_UART

@@ -34,6 +34,8 @@ void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
  * @param uart_no UART port number
  * @param clock_hz Source clock (in Hz)
  * @param baud_rate Baud rate to set
+ *
+ * @note Only for HP UART
  */
 #define esp_rom_uart_set_clock_baudrate(uart_no, clock_hz, baud_rate) uart_ll_set_baudrate(UART_LL_GET_HW(uart_no), baud_rate, clock_hz)
 

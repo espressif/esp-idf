@@ -230,12 +230,12 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 #elif SOC_UART_SUPPORT_XTAL_CLK
     clk_source = UART_SCLK_XTAL;
 #endif
-    UART_SCLK_ATOMIC() {
+    HP_UART_SRC_CLK_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
     TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
-    UART_SCLK_ATOMIC() {
+    HP_UART_SRC_CLK_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
     }
 #endif

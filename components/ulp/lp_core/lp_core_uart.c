@@ -48,14 +48,12 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     }
 
     // LP UART clock source is mixed with other peripherals in the same register
-    PERIPH_RCC_ATOMIC() {
+    LP_UART_SRC_CLK_ATOMIC() {
         lp_uart_ll_set_source_clk(hal.dev, clk_src);
     }
 
     /* Override protocol parameters from the configuration */
-    UART_SCLK_ATOMIC() {
-        uart_hal_set_baudrate(&hal, cfg->uart_proto_cfg.baud_rate, sclk_freq);
-    }
+    lp_uart_ll_set_baudrate(hal.dev, cfg->uart_proto_cfg.baud_rate, sclk_freq);
     uart_hal_set_parity(&hal, cfg->uart_proto_cfg.parity);
     uart_hal_set_data_bit_num(&hal, cfg->uart_proto_cfg.data_bits);
     uart_hal_set_stop_bits(&hal, cfg->uart_proto_cfg.stop_bits);

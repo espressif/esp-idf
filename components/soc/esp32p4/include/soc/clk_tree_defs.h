@@ -278,7 +278,12 @@ typedef enum {
     LP_UART_SCLK_LP_FAST = SOC_MOD_CLK_RTC_FAST,        /*!< LP_UART source clock is LP(RTC)_FAST */
     LP_UART_SCLK_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock is XTAL_D2 */
     LP_UART_SCLK_LP_PLL  = SOC_MOD_CLK_LP_PLL,          /*!< LP_UART source clock is LP_PLL (8M PLL) */
-    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_XTAL_D2,        /*!< LP_UART source clock default choice is XTAL_D2 */
+#if SOC_CLK_TREE_SUPPORTED
+    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_RTC_FAST,
+#else
+    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock default choice is XTAL_D2 */
+#endif
+
 } soc_periph_lp_uart_clk_src_t;
 
 //////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////

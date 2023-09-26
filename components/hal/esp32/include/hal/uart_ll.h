@@ -11,7 +11,6 @@
 #pragma once
 
 #include <stdlib.h>
-#include "hal/assert.h"
 #include "hal/misc.h"
 #include "esp_attr.h"
 #include "soc/uart_reg.h"
@@ -66,7 +65,6 @@ typedef enum {
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
     uint32_t uart_rst_bit = ((uart_num == 0) ? DPORT_UART_RST :
                             (uart_num == 1) ? DPORT_UART1_RST :
                             (uart_num == 2) ? DPORT_UART2_RST : 0);
@@ -85,8 +83,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
 {
     uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         reg_val = reg_val & (~DPORT_UART_CLK_EN);
         reg_val = reg_val | (enable << 2);
@@ -113,8 +110,7 @@ static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
  */
 static inline void uart_ll_reset_register(uart_port_t uart_num)
 {
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART_RST);
         DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART_RST);

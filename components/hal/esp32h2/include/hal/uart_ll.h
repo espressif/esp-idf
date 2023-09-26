@@ -12,7 +12,6 @@
 
 #include <stdlib.h>
 #include "esp_attr.h"
-#include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/uart_types.h"
 #include "soc/uart_reg.h"
@@ -91,7 +90,6 @@ typedef enum {
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
     uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
                                     (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
     uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
@@ -109,8 +107,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
  */
 static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
 {
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         PCR.uart0_conf.uart0_clk_en = enable;
         break;
@@ -129,8 +126,7 @@ static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
  */
 static inline void uart_ll_reset_register(uart_port_t uart_num)
 {
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         PCR.uart0_conf.uart0_rst_en = 1;
         PCR.uart0_conf.uart0_rst_en = 0;

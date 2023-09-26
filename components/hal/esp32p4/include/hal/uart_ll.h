@@ -69,6 +69,19 @@ typedef enum {
     UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
 
+/**
+ * @brief Sync the update to UART core clock domain
+ *
+ * @param hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_update(uart_dev_t *hw)
+{
+    hw->reg_update.reg_update = 1;
+    while (hw->reg_update.reg_update);
+}
+
 /****************************************** LP_UART Specific ********************************************/
 /**
  * @brief  Get the LP_UART source clock.
@@ -99,7 +112,7 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
  * @param  hw Address offset of the LP UART peripheral registers
  * @param  src_clk Source clock for the LP UART peripheral
  */
-FORCE_INLINE_ATTR void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_clk_src_t src_clk)
+static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_clk_src_t src_clk)
 {
     (void)hw;
     switch (src_clk) {
@@ -122,12 +135,39 @@ FORCE_INLINE_ATTR void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_u
 #define lp_uart_ll_set_source_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_set_source_clk(__VA_ARGS__)
 
 /**
+ * @brief  Configure the lp uart baud-rate.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  baud The baud rate to be set.
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
+ *
+ * @return None
+ */
+FORCE_INLINE_ATTR void lp_uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
+{
+#define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
+    const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
+    uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
+    if (sclk_div == 0) abort();
+
+    uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
+    // The baud rate configuration register is divided into
+    // an integer part and a fractional part.
+    hw->clkdiv_sync.clkdiv = clk_div >> 4;
+    hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
+    //needs force u32 write
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
+#undef DIV_UP
+    uart_ll_update(hw);
+}
+
+/**
  * @brief Enable bus clock for the LP UART module
  *
  * @param hw_id LP UART instance ID
  * @param enable True to enable, False to disable
  */
-FORCE_INLINE_ATTR void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
+static inline void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
 {
     (void)hw_id;
     LPPERI.clk_en.ck_en_lp_uart = enable;
@@ -141,7 +181,7 @@ FORCE_INLINE_ATTR void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
  *
  * @param hw_id LP UART instance ID
  */
-FORCE_INLINE_ATTR void lp_uart_ll_reset_register(int hw_id)
+static inline void lp_uart_ll_reset_register(int hw_id)
 {
     (void)hw_id;
     LPPERI.reset_en.rst_en_lp_uart = 1;
@@ -166,8 +206,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
     bool uart_rst_en = false;
     bool uart_apb_en = false;
     bool uart_sys_en = false;
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         uart_rst_en = HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb;
         uart_apb_en = HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart0_apb_clk_en;
@@ -204,10 +243,9 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param enable true to enable, false to disable
  */
-FORCE_INLINE_ATTR void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
 {
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart0_apb_clk_en = enable;
         HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart0_sys_clk_en = enable;
@@ -243,10 +281,9 @@ FORCE_INLINE_ATTR void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enabl
  * @brief Reset UART module
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  */
-FORCE_INLINE_ATTR void uart_ll_reset_register(uart_port_t uart_num)
+static inline void uart_ll_reset_register(uart_port_t uart_num)
 {
-    switch (uart_num)
-    {
+    switch (uart_num) {
     case 0:
         HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb = 1;
         HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_apb = 0;
@@ -277,19 +314,6 @@ FORCE_INLINE_ATTR void uart_ll_reset_register(uart_port_t uart_num)
 }
 //  HP_SYS_CLKRST.hp_rst_en1 is a shared register, so this function must be used in an atomic way
 #define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
-
-/**
- * @brief Sync the update to UART core clock domain
- *
- * @param hw Beginning address of the peripheral registers.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_update(uart_dev_t *hw)
-{
-    hw->reg_update.reg_update = 1;
-    while (hw->reg_update.reg_update);
-}
 
 /**
  * @brief  Configure the UART core reset.
@@ -490,8 +514,8 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl114, reg_uart3_sclk_div_num, sclk_div - 1);
     } else if ((hw) == &UART4) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl115, reg_uart4_sclk_div_num, sclk_div - 1);
-    } else if ((hw) == &LP_UART) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
+    } else {
+        abort();
     }
 #undef DIV_UP
     uart_ll_update(hw);
