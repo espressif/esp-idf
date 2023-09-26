@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,6 @@
 #include "esp_rom_uart.h"
 #include "soc/soc_caps.h"
 #include "hal/uart_ll.h"
-#include "freertos/semphr.h"
 
 #define UART_NUM SOC_UART_HP_NUM
 
@@ -56,7 +55,6 @@ static int uart_rx_char(int fd);
 // Functions for sending and receiving bytes which use UART driver
 static void uart_tx_char_via_driver(int fd, int c);
 static int uart_rx_char_via_driver(int fd);
-static SemaphoreHandle_t uart_select_mutex[UART_NUM];
 
 typedef struct {
     // Pointers to UART peripherals
@@ -152,8 +150,6 @@ static int uart_open(const char *path, int flags, int mode)
         return -1;
     }
 
-    uart_select_mutex[fd] = xSemaphoreCreateMutex();
-    xSemaphoreGive(uart_select_mutex[fd]);
     s_ctx[fd]->non_blocking = ((flags & O_NONBLOCK) == O_NONBLOCK);
 
     return fd;
@@ -302,7 +298,6 @@ static int uart_fstat(int fd, struct stat * st)
 static int uart_close(int fd)
 {
     assert(fd >=0 && fd < 3);
-    vSemaphoreDelete(uart_select_mutex[fd]);
     return 0;
 }
 
@@ -442,7 +437,6 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
         esp_vfs_select_sem_t select_sem, void **end_select_args)
 {
     const int max_fds = MIN(nfds, UART_NUM);
-    int fd = -1;
     *end_select_args = NULL;
 
     for (int i = 0; i < max_fds; ++i) {
@@ -450,7 +444,6 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
             if (!uart_is_driver_installed(i)) {
                 return ESP_ERR_INVALID_STATE;
             }
-            fd = i;
         }
     }
 
@@ -471,11 +464,14 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
     FD_ZERO(writefds);
     FD_ZERO(exceptfds);
 
-    xSemaphoreTake(uart_select_mutex[fd], portMAX_DELAY);
     portENTER_CRITICAL(uart_get_selectlock());
 
     //uart_set_select_notif_callback sets the callbacks in UART ISR
-    uart_set_select_notif_callback(fd, select_notif_callback_isr);
+    for (int i = 0; i < max_fds; ++i) {
+        if (FD_ISSET(i, &args->readfds_orig) || FD_ISSET(i, &args->writefds_orig) || FD_ISSET(i, &args->errorfds_orig)) {
+            uart_set_select_notif_callback(i, select_notif_callback_isr);
+        }
+    }
 
     for (int i = 0; i < max_fds; ++i) {
         if (FD_ISSET(i, &args->readfds_orig)) {
@@ -504,23 +500,17 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
 static esp_err_t uart_end_select(void *end_select_args)
 {
     uart_select_args_t *args = end_select_args;
-    int fd = -1;
 
     portENTER_CRITICAL(uart_get_selectlock());
     esp_err_t ret = unregister_select(args);
     for (int i = 0; i < UART_NUM; ++i) {
-        if (FD_ISSET(i, &args->readfds_orig) || FD_ISSET(i, &args->writefds_orig) || FD_ISSET(i, &args->errorfds_orig)) {
-            uart_set_select_notif_callback(i, NULL);
-            fd = i;
-            break;
-        }
+        uart_set_select_notif_callback(i, NULL);
     }
     portEXIT_CRITICAL(uart_get_selectlock());
 
     if (args) {
         free(args);
     }
-    xSemaphoreGive(uart_select_mutex[fd]);
 
     return ret;
 }
