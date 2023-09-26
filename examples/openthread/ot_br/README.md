@@ -40,6 +40,12 @@ Similar to the previous Wi-Fi based Thread Border Route setup, but a device with
 ```
 idf.py menuconfig
 ```
+OpenThread Command Line is enabled with UART as the default interface. Additionally, USB JTAG is also supported and can be activated through the menuconfig:
+
+```
+Component config → ESP System Settings → Channel for console output → USB Serial/JTAG Controller
+```
+
 In order to run the example on single SoC which supports both Wi-Fi and Thread, the option `CONFIG_ESP_COEX_SW_COEXIST_ENABLE` and option `CONFIG_OPENTHREAD_RADIO_NATIVE` should be enabled. The two options are enabled by default for ESP32-C6 target.
 
 Two ways are provided to setup the Thread Border Router in this example:

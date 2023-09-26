@@ -18,7 +18,7 @@ extern "C" {
  * @brief This function initializes the OpenThread spinel SPI slave.
  *
  */
-esp_err_t esp_openthread_spi_slave_init(const esp_openthread_platform_config_t *config);
+esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_t *config);
 
 /**
  * @brief This function deinitializes the OpenThread spinel SPI slave.

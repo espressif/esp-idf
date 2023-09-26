@@ -13,6 +13,21 @@ menu "OpenThread"
         help
             Select this option to enable dynamic log level control for OpenThread
 
+    choice OPENTHREAD_CONSOLE_TYPE
+        prompt "OpenThread console type"
+        depends on OPENTHREAD_ENABLED
+        default OPENTHREAD_CONSOLE_TYPE_UART
+        help
+            Select OpenThread console type
+
+        config OPENTHREAD_CONSOLE_TYPE_UART
+            depends on ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
+            bool "OpenThread console type UART"
+        config OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
+            depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+            bool "OpenThread console type USB Serial/JTAG Controller"
+    endchoice #OPENTHREAD_CONSOLE_TYPE
+
     choice OPENTHREAD_LOG_LEVEL
         prompt "OpenThread log verbosity"
         depends on OPENTHREAD_ENABLED && !OPENTHREAD_LOG_LEVEL_DYNAMIC
