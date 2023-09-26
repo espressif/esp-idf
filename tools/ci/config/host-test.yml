@@ -322,13 +322,14 @@ test_sbom:
 test_autocomplete:
   extends: .host_test_template
   image: $CI_DOCKER_REGISTRY/linux-shells:1
-  allow_failure: true
   artifacts:
     when: on_failure
     paths:
       - ${IDF_PATH}/*.out
     expire_in: 1 week
   script:
+  # workaround for issues with missing requirements for python2.7
+    - pyenv global 2.7.18 && pip2.7 install -r requirements.txt
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/ci/test_autocomplete.py
 
 test_detect_python:
