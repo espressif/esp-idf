@@ -112,10 +112,10 @@ examples/storage/parttool:
       reason: lack of runners
 
 examples/storage/perf_benchmark:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
+  disable_test:
+    - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: target esp32p4 is not supported yet
+      reason: target esp32p4 is not supported yet, only build test (for spiflash, not sdspi or sdmmc)
 
 examples/storage/sd_card/sdmmc:
   disable:
