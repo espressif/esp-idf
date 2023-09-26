@@ -67,6 +67,13 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
         rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
     } else if (func == RTCIO_FUNC_DIGITAL) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
+        // If any other rtcio is set to rtc mux, then return early to leave the
+        // clock on.
+        for (gpio_num_t n = 0; n < SOC_RTCIO_PIN_COUNT; n++) {
+            if (GET_PERI_REG_MASK(rtc_io_desc[n].reg, rtc_io_desc[n].mux) != 0) {
+                return;
+            }
+        }
         SENS.sar_io_mux_conf.iomux_clk_gate_en = 0;
     }
 }
