@@ -590,4 +590,3 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_ESPTOOLPY_FLASHFREQ_120M
             - CONFIG_SPIRAM_SPEED_120M
             - CONFIG_SPI_FLASH_QUAD_32BIT_ADDR_ENABLE
-            - CONFIG_FREERTOS_USE_KERNEL_10_5_1

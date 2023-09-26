@@ -248,6 +248,8 @@
     #else
         #define configNUM_CORES                  2
     #endif /* CONFIG_FREERTOS_UNICORE */
+    /* For compatibility */
+    #define configNUMBER_OF_CORES                configNUM_CORES
     #define configRUN_MULTIPLE_PRIORITIES        1
     #define configUSE_TASK_PREEMPTION_DISABLE    1
 #endif /* CONFIG_FREERTOS_SMP */

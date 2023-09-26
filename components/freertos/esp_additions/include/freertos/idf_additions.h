@@ -184,7 +184,7 @@ TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
 }
 /** @endcond */
 
-#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+#if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
 /**
  * @brief Get the total execution of a particular core's idle task
@@ -208,18 +208,7 @@ TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
  */
     configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimePercentForCore( BaseType_t xCoreID );
 
-#else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-
-/* CMock Workaround: CMock currently doesn't preprocess files, thus functions
- * guarded by ifdef still get mocked. We provide a dummy define here so that
- * functions using configRUN_TIME_COUNTER_TYPE can still be mocked.
- *
- * Todo: Will be removed when V10.5.1 becomes the default kernel. */
-    #ifndef configRUN_TIME_COUNTER_TYPE
-        #define configRUN_TIME_COUNTER_TYPE    unsigned int
-    #endif
-
-#endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
 
 /**
  * Returns the start of the stack associated with xTask.

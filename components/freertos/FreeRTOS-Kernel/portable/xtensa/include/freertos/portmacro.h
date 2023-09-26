@@ -427,10 +427,13 @@ void vPortTCBPreDeleteHook( void *pxTCB );
  * - Maps to forward declared functions
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-#define portGET_CORE_ID()       xPortGetCoreID()
-#define portYIELD_CORE( x )     vPortYieldOtherCore( x )
-#endif
+// ----------------------- System --------------------------
+
+#if ( configNUMBER_OF_CORES > 1 )
+    #define portGET_CORE_ID()       xPortGetCoreID()
+#else /* configNUMBER_OF_CORES > 1 */
+    #define portGET_CORE_ID()       ((BaseType_t) 0);
+#endif /* configNUMBER_OF_CORES > 1 */
 
 // --------------------- Interrupts ------------------------
 
@@ -522,6 +525,10 @@ extern void _frxt_setup_switch( void );     //Defined in portasm.S
    happening on the same CPU.
 */
 #define portYIELD_WITHIN_API() esp_crosscore_int_send_yield(xPortGetCoreID())
+
+#if ( configNUMBER_OF_CORES > 1 )
+    #define portYIELD_CORE( xCoreID )     vPortYieldOtherCore( xCoreID )
+#endif /* configNUMBER_OF_CORES > 1 */
 
 // ------------------- Hook Functions ----------------------
 

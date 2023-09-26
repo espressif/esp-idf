@@ -8,12 +8,7 @@
 #include "freertos/FreeRTOSConfig.h"
 #include "soc/soc_caps.h"
 
-#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-#define pxCurrentTCB    pxCurrentTCBs
 .extern pxCurrentTCBs
-#else
-.extern pxCurrentTCB
-#endif
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 #include "esp_private/hw_stack_guard.h"
@@ -22,7 +17,7 @@
     .global port_uxInterruptNesting
     .global port_xSchedulerRunning
     .global xIsrStackTop
-    .global pxCurrentTCB
+    .global pxCurrentTCBs
     .global vTaskSwitchContext
     .global xPortSwitchFlag
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
@@ -38,7 +33,7 @@
 
 /**
  * This function makes the RTOS aware about an ISR entering. It takes the
- * current task stack pointer and places it into the pxCurrentTCB.
+ * current task stack pointer and places it into the pxCurrentTCBs.
  * It then loads the ISR stack into sp.
  * TODO: ISR nesting code improvements ?
  * In the routines below, let's use a0-a5 registers to let the compiler generate
@@ -75,18 +70,18 @@ rtos_int_enter:
     ESP_HW_STACK_GUARD_MONITOR_STOP_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
-    /* Save the current sp in pxCurrentTCB[coreID] and load the ISR stack on to sp */
+    /* Save the current sp in pxCurrentTCBs[coreID] and load the ISR stack on to sp */
 #if ( configNUM_CORES > 1 )
-    la      a0, pxCurrentTCB                /* a0 = &pxCurrentTCB */
-    add     a0, a0, a5                      /* a0 = &pxCurrentTCB[coreID] // a5 already contains coreID * 4 */
-    lw      a0, (a0)                        /* a0 = pxCurrentTCB[coreID] */
-    sw      sp, 0(a0)                       /* pxCurrentTCB[coreID] = sp */
+    la      a0, pxCurrentTCBs               /* a0 = &pxCurrentTCBs */
+    add     a0, a0, a5                      /* a0 = &pxCurrentTCBs[coreID] // a5 already contains coreID * 4 */
+    lw      a0, (a0)                        /* a0 = pxCurrentTCBs[coreID] */
+    sw      sp, 0(a0)                       /* pxCurrentTCBs[coreID] = sp */
     la      a0, xIsrStackTop                /* a0 = &xIsrStackTop */
     add     a0, a0, a5                      /* a0 = &xIsrStackTop[coreID] // a5 already contains coreID * 4 */
     lw      sp, (a0)                        /* sp = xIsrStackTop[coreID] */
 #else
-    lw      a0, pxCurrentTCB                /* a0 = pxCurrentTCB */
-    sw      sp, 0(a0)                       /* pxCurrentTCB[0] = sp */
+    lw      a0, pxCurrentTCBs               /* a0 = pxCurrentTCBs */
+    sw      sp, 0(a0)                       /* pxCurrentTCBs[0] = sp */
     lw      sp, xIsrStackTop                /* sp = xIsrStackTop */
 #endif /* ( configNUM_CORES > 1 ) */
 
@@ -180,20 +175,20 @@ no_switch:
     /* Recover the stack of next task and prepare to exit */
     csrr    a1, mhartid
     slli    a1, a1, 2
-    la      a0, pxCurrentTCB                /* a0 = &pxCurrentTCB */
-    add     a0, a0, a1                      /* a0 = &pxCurrentTCB[coreID] */
-    lw      a0, 0(a0)                       /* a0 = pxCurrentTCB[coreID] */
+    la      a0, pxCurrentTCBs               /* a0 = &pxCurrentTCBs */
+    add     a0, a0, a1                      /* a0 = &pxCurrentTCBs[coreID] */
+    lw      a0, 0(a0)                       /* a0 = pxCurrentTCBs[coreID] */
     lw      sp, 0(a0)                       /* sp = previous sp */
 #else
     /* Recover the stack of next task */
-    lw      a0, pxCurrentTCB
+    lw      a0, pxCurrentTCBs
     lw      sp, 0(a0)
 #endif /* ( configNUM_CORES > 1 ) */
 
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    /* esp_hw_stack_guard_set_bounds(pxCurrentTCB[0]->pxStack,
-     *                               pxCurrentTCB[0]->pxEndOfStack);
+    /* esp_hw_stack_guard_set_bounds(pxCurrentTCBs[0]->pxStack,
+     *                               pxCurrentTCBs[0]->pxEndOfStack);
      */
     lw      a1, PORT_OFFSET_PX_END_OF_STACK(a0)
     lw      a0, PORT_OFFSET_PX_STACK(a0)

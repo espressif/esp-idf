@@ -42,17 +42,14 @@
 /* ----------------------- System -------------------------- */
 
 #define configUSE_NEWLIB_REENTRANT    1
-#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
 
 /* - FreeRTOS provides default for configTLS_BLOCK_TYPE.
  * - We simply provide our own INIT and DEINIT functions
  * - We set "SET" to a blank macro since there is no need to set the reentrancy
  * pointer. All newlib functions calls __getreent. */
-    #define configINIT_TLS_BLOCK( xTLSBlock )      esp_reent_init( &( xTLSBlock ) )
-    #define configSET_TLS_BLOCK( xTLSBlock )
-    #define configDEINIT_TLS_BLOCK( xTLSBlock )    _reclaim_reent( &( xTLSBlock ) )
-
-#endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+#define configINIT_TLS_BLOCK( xTLSBlock )      esp_reent_init( &( xTLSBlock ) )
+#define configSET_TLS_BLOCK( xTLSBlock )
+#define configDEINIT_TLS_BLOCK( xTLSBlock )    _reclaim_reent( &( xTLSBlock ) )
 
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H    1
 

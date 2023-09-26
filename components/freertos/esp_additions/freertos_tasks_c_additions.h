@@ -20,11 +20,6 @@
  * additional API.
  */
 
-#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-    #define pxCurrentTCB    pxCurrentTCBs
-#else
-#endif
-
 /* ------------------------------------------------- Static Asserts ------------------------------------------------- */
 
 /*
@@ -87,7 +82,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
     {
         /* Minor optimization. This function can never switch cores mid
          * execution */
-        BaseType_t xCoreID = xPortGetCoreID();
+        BaseType_t xCoreID = portGET_CORE_ID();
         BaseType_t xSwitchRequired = pdFALSE;
 
         /* This function should never be called by Core 0. */
@@ -110,7 +105,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
             {
                 /* Check if core 0 calling xTaskIncrementTick() has
                  * unblocked a task that can be run. */
-                if( uxTopReadyPriority > pxCurrentTCB[ xCoreID ]->uxPriority )
+                if( uxTopReadyPriority > pxCurrentTCBs[ xCoreID ]->uxPriority )
                 {
                     xSwitchRequired = pdTRUE;
                 }
@@ -126,7 +121,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
              * writer has not explicitly turned time slicing off. */
             #if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
             {
-                if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCB[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
+                if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCBs[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
                 {
                     xSwitchRequired = pdTRUE;
                 }
@@ -227,23 +222,12 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
                 if( pxNewTCB != NULL )
                 {
-                    #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                    {
-                        memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+                    memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
 
-                        /* Allocate space for the stack used by the task being created.
-                         * The base of the stack memory stored in the TCB so the task can
-                         * be deleted later if required. */
-                        pxNewTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-                    }
-                    #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-                    {
-                        /* Allocate space for the stack used by the task being created.
-                         * The base of the stack memory stored in the TCB so the task can
-                         * be deleted later if required. */
-                        pxNewTCB->pxStack = ( StackType_t * ) pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-                    }
-                    #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                    /* Allocate space for the stack used by the task being created.
+                     * The base of the stack memory stored in the TCB so the task can
+                     * be deleted later if required. */
+                    pxNewTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
 
                     if( pxNewTCB->pxStack == NULL )
                     {
@@ -257,17 +241,8 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
             {
                 StackType_t * pxStack;
 
-                #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                {
-                    /* Allocate space for the stack used by the task being created. */
-                    pxStack = pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
-                }
-                #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-                {
-                    /* Allocate space for the stack used by the task being created. */
-                    pxStack = pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
-                }
-                #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                /* Allocate space for the stack used by the task being created. */
+                pxStack = pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
 
                 if( pxStack != NULL )
                 {
@@ -276,11 +251,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
                     if( pxNewTCB != NULL )
                     {
-                        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                        {
-                            memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
-                        }
-                        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                        memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
 
                         /* Store the stack location in the TCB. */
                         pxNewTCB->pxStack = pxStack;
@@ -289,15 +260,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                     {
                         /* The stack cannot be used as the TCB was not created.  Free
                          * it again. */
-                        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                        {
-                            vPortFreeStack( pxStack );
-                        }
-                        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-                        {
-                            vPortFree( pxStack );
-                        }
-                        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                        vPortFreeStack( pxStack );
                     }
                 }
                 else
@@ -397,13 +360,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                 /* The memory used for the task's TCB and stack are passed into this
                  * function - use them. */
                 pxNewTCB = ( TCB_t * ) pxTaskBuffer; /*lint !e740 !e9087 Unusual cast is ok as the structures are designed to have the same alignment, and the size is checked by an assert. */
-
-                #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                {
-                    memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
-                }
-                #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-
+                memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
                 pxNewTCB->pxStack = ( StackType_t * ) puxStackBuffer;
 
                 #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
@@ -500,21 +457,11 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 
     TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID )
     {
-        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-        {
-            /* If xTaskGetIdleTaskHandle() is called before the scheduler has been
-             * started, then xIdleTaskHandle will be NULL. */
-            configASSERT( ( xCoreID < configNUMBER_OF_CORES ) && ( xCoreID != tskNO_AFFINITY ) );
-            configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
-            return xIdleTaskHandle[ xCoreID ];
-        }
-        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-        {
-            configASSERT( xCoreID >= 0 && xCoreID < configNUM_CORES );
-            configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
-            return ( TaskHandle_t ) xIdleTaskHandle[ xCoreID ];
-        }
-        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+        /* If xTaskGetIdleTaskHandle() is called before the scheduler has been
+         * started, then xIdleTaskHandle will be NULL. */
+        configASSERT( ( xCoreID < configNUMBER_OF_CORES ) && ( xCoreID != tskNO_AFFINITY ) );
+        configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
+        return xIdleTaskHandle[ xCoreID ];
     }
 
 #endif /* INCLUDE_xTaskGetIdleTaskHandle */
@@ -526,7 +473,11 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
     {
         TaskHandle_t xReturn;
 
-        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+        #if ( CONFIG_FREERTOS_SMP )
+        {
+            xReturn = xTaskGetCurrentTaskHandleCPU( ( UBaseType_t ) xCoreID );
+        }
+        #else /* CONFIG_FREERTOS_SMP */
         {
             configASSERT( xCoreID < configNUMBER_OF_CORES );
             configASSERT( xCoreID != tskNO_AFFINITY );
@@ -542,26 +493,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
             /* Release the previously taken kernel lock. */
             taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
         }
-        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-        {
-            #if CONFIG_FREERTOS_SMP
-            {
-                xReturn = xTaskGetCurrentTaskHandleCPU( xCoreID );
-            }
-            #else /* CONFIG_FREERTOS_SMP */
-            {
-                if( xCoreID < configNUM_CORES )
-                {
-                    xReturn = pxCurrentTCB[ xCoreID ];
-                }
-                else
-                {
-                    xReturn = NULL;
-                }
-            }
-            #endif /* CONFIG_FREERTOS_SMP */
-        }
-        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+        #endif /* CONFIG_FREERTOS_SMP */
 
         return xReturn;
     }
@@ -569,7 +501,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 #endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
 /*----------------------------------------------------------*/
 
-#if ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+#if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
     configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimeCounterForCore( BaseType_t xCoreID )
     {
@@ -590,10 +522,10 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         return ulRunTimeCounter;
     }
 
-#endif /* ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
 /*----------------------------------------------------------*/
 
-#if ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+#if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
     configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimePercentForCore( BaseType_t xCoreID )
     {
@@ -627,7 +559,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         return ulReturn;
     }
 
-#endif /* ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 &&  ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
 /*-----------------------------------------------------------*/
 
 uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
@@ -940,15 +872,15 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
         else
         {
             /* We have a task; return its reentrant struct. */
-            #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-            {
-                ret = &pxCurTask->xTLSBlock;
-            }
-            #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+            #if ( CONFIG_FREERTOS_SMP )
             {
                 ret = &pxCurTask->xNewLib_reent;
             }
-            #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+            #else /* CONFIG_FREERTOS_SMP */
+            {
+                ret = &pxCurTask->xTLSBlock;
+            }
+            #endif /* CONFIG_FREERTOS_SMP */
         }
 
         return ret;
@@ -1188,16 +1120,12 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
     void * pvRet;
 
     configASSERT( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) );
-    #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+    #if CONFIG_FREERTOS_SMP
+        /* SMP FreeRTOS defines pxCurrentTCB as a macro function call */
+        pvRet = ( void * ) pxCurrentTCB;
+    #else /* CONFIG_FREERTOS_SMP */
         pvRet = ( void * ) pxCurrentTCBs[ xCoreID ];
-    #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-        #if CONFIG_FREERTOS_SMP
-            /* SMP FreeRTOS defines pxCurrentTCB as a macro function call */
-            pvRet = pxCurrentTCB;
-        #else /* CONFIG_FREERTOS_SMP */
-            pvRet = ( void * ) pxCurrentTCB[ xCoreID ];
-        #endif /* CONFIG_FREERTOS_SMP */
-    #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+    #endif /* CONFIG_FREERTOS_SMP */
     return pvRet;
 }
 
