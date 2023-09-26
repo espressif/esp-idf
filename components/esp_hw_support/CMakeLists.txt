@@ -117,6 +117,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_ds.c")
     endif()
 
+    if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
+        list(APPEND srcs "esp_key_mgr.c")
+    endif()
+
     if(CONFIG_SOC_PAU_SUPPORTED)
         list(APPEND srcs "port/pau_regdma.c"
                          "port/regdma_link.c")
