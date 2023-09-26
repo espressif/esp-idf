@@ -1,25 +1,21 @@
 menu "Example Configuration"
 
-    choice
-        prompt "Enterprise configuration to be used"
-        default EXAMPLE_WPA_WPA2_ENTERPRISE
-        config EXAMPLE_WPA_WPA2_ENTERPRISE
-            bool "WPA_WPA2_ENT"
-        config EXAMPLE_WPA3_ENTERPRISE
-            bool "WPA3_ENT"
-            depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
-            select ESP_WIFI_GCMP_SUPPORT
-            select ESP_WIFI_GMAC_SUPPORT
-            select ESP_WIFI_SUITE_B_192
-    endchoice
-
     config EXAMPLE_WIFI_SSID
         string "WiFi SSID"
-        default "wpa2_test"
+        default "ESP_EAP_FAST_AP"
         help
             SSID (network name) for the example to connect to.
 
-    if EXAMPLE_WPA_WPA2_ENTERPRISE
+    choice
+        prompt "Enterprise configuration to be used"
+        default EXAMPLE_WPA3_ENTERPRISE
+        config EXAMPLE_WPA2_ENTERPRISE
+            bool "WPA2_ENT"
+        config EXAMPLE_WPA3_ENTERPRISE
+            bool "WPA3_ENT"
+    endchoice
+
+    if EXAMPLE_WPA2_ENTERPRISE
         config EXAMPLE_VALIDATE_SERVER_CERT
             bool "Validate server"
             default y
@@ -27,7 +23,7 @@ menu "Example Configuration"
                 Validate the servers' certificate using CA cert.
     endif
 
-    if !EXAMPLE_WPA_WPA2_ENTERPRISE
+    if !EXAMPLE_WPA2_ENTERPRISE
         config EXAMPLE_VALIDATE_SERVER_CERT
             default y
     endif

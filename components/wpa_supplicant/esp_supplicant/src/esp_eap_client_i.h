@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ESP_WPA2_I_H
-#define ESP_WPA2_I_H
+#pragma once
 
 #include "esp_wifi_driver.h"
 
-wpa2_ent_eap_state_t wpa2_get_eap_state(void);
-
-#endif
+wpa2_ent_eap_state_t eap_client_get_eap_state(void);

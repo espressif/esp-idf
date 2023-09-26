@@ -35,7 +35,7 @@
 #include "esp_common_i.h"
 #include "esp_owe_i.h"
 #include "common/sae.h"
-#include "esp_wpa2_i.h"
+#include "esp_eap_client_i.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -656,7 +656,7 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     size_t kde_len;
 
     if (is_wpa2_enterprise_connection()) {
-        wpa2_ent_eap_state_t state = wpa2_get_eap_state();
+        wpa2_ent_eap_state_t state = eap_client_get_eap_state();
         if (state == WPA2_ENT_EAP_STATE_IN_PROGRESS) {
             wpa_printf(MSG_INFO, "EAP Success has not been processed yet."
                " Drop EAPOL message.");
