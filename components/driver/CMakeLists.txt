@@ -47,6 +47,9 @@ endif()
 # Analog comparator related source files
 if(CONFIG_SOC_ANA_CMPR_SUPPORTED)
     list(APPEND srcs "analog_comparator/ana_cmpr.c")
+    if(CONFIG_SOC_ANA_CMPR_SUPPORT_ETM)
+        list(APPEND srcs "analog_comparator/ana_cmpr_etm.c")
+    endif()
 endif()
 
 # DAC related source files

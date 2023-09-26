@@ -10,13 +10,22 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/ana_cmpr_struct.h"
-
-#define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
-#define ANALOG_CMPR_LL_EVENT_CROSS      (1 << 0)
+#include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
+#define ANALOG_CMPR_LL_GET_UNIT(hw)     ((hw) == (&ANALOG_CMPR[0]) ? 0 : 1)
+#define ANALOG_CMPR_LL_EVENT_CROSS      (1 << 0)
+#define ANALOG_CMPR_LL_ETM_EVENTS_PER_UNIT    (2)
+
+#define ANALOG_CMPR_LL_NEG_CROSS_MASK(unit)   (1UL << ((int)unit * 3))
+#define ANALOG_CMPR_LL_POS_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 1))
+
+#define ANALOG_CMPR_LL_ETM_SOURCE(unit, type)   (GPIO_EVT_ZERO_DET_POS0 + (unit) * 2 + (type))
+
 
 /**
  * @brief Enable analog comparator
@@ -66,7 +75,7 @@ static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, uint32_t
 }
 
 /**
- * @brief Set cross interrupt trigger type
+ * @brief Get the interrupt mask by trigger type
  *
  * @param hw Analog comparator register base address
  * @param type The type of cross interrupt
@@ -74,27 +83,20 @@ static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, uint32_t
  *              - 1: enable positive cross interrupt (input analog goes from low to high and across the reference voltage)
  *              - 2: enable negative cross interrupt (input analog goes from high to low and across the reference voltage)
  *              - 3: enable any positive or negative cross interrupt
- */
-__attribute__((always_inline))
-static inline void analog_cmpr_ll_set_cross_type(analog_cmpr_dev_t *hw, uint8_t type)
-{
-    hw->pad_comp_config->zero_det_mode = type;
-}
-
-/**
- * @brief Get the interrupt mask by trigger type
- * @note  Only one interrupt on H2
- *
- * @param hw Analog comparator register base address
- * @param type Not used on H2, because H2 can't distinguish the edge type
- *             The parameter here only to be compatible with other targets
  * @return interrupt mask
  */
 __attribute__((always_inline))
 static inline uint32_t analog_cmpr_ll_get_intr_mask_by_type(analog_cmpr_dev_t *hw, uint8_t type)
 {
-    (void)type;
-    return ANALOG_CMPR_LL_EVENT_CROSS;
+    uint32_t unit = ANALOG_CMPR_LL_GET_UNIT(hw);
+    uint32_t mask = 0;
+    if (type & 0x01) {
+        mask |= ANALOG_CMPR_LL_POS_CROSS_MASK(unit);
+    }
+    if (type & 0x02) {
+        mask |= ANALOG_CMPR_LL_NEG_CROSS_MASK(unit);
+    }
+    return mask;
 }
 
 /**

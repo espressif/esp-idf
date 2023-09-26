@@ -18,7 +18,7 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
     /* Allocate a wrong unit */
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ana_cmpr_new_unit(&config, &cmpr));
     /* Allocate a correct unit  */
-    config.unit = ANA_CMPR_UNIT_0;
+    config.unit = 0;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
     /* Try to allocate a existed unit */
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_new_unit(&config, &cmpr));
@@ -51,14 +51,15 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
 TEST_CASE("ana_cmpr_internal_reference", "[ana_cmpr]")
 {
     int src_chan = test_init_src_chan_gpio();
-    uint32_t cnt = 0;
 
+    uint32_t cnt = 0;
     ana_cmpr_handle_t cmpr = NULL;
     ana_cmpr_config_t config = {
-        .unit = ANA_CMPR_UNIT_0,
+        .unit = 0,
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
         .cross_type = ANA_CMPR_CROSS_ANY,
+        .flags.io_loop_back = 1,
     };
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
     ana_cmpr_internal_ref_config_t ref_cfg = {

@@ -305,15 +305,10 @@ typedef struct {
     volatile gpio_ext_version_reg_t version;
 } gpio_ext_dev_t;
 
-// analog comparator is a stand alone peripheral, but it is connected to GPIO
-// so we rename it to analog_cmpr_dev_t from user's perspective
-typedef gpio_ext_dev_t analog_cmpr_dev_t;
-
 extern gpio_sd_dev_t SDM;
 extern gpio_glitch_filter_dev_t GLITCH_FILTER;
 extern gpio_etm_dev_t GPIO_ETM;
 extern gpio_ext_dev_t GPIO_EXT;
-extern analog_cmpr_dev_t ANALOG_CMPR;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(gpio_ext_dev_t) == 0x100, "Invalid size of gpio_ext_dev_t structure");

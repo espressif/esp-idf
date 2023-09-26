@@ -553,31 +553,18 @@ typedef union {
     uint32_t val;
 } gpio_clock_gate_reg_t;
 
-/** Type of zero_det0_filter_cnt register
+/** Type of zero_det_filter_cnt register
  *  GPIO analog comparator zero detect filter count
  */
 typedef union {
     struct {
-        /** zero_det0_filter_cnt : R/W; bitpos: [31:0]; default: 4294967295;
+        /** zero_det_filter_cnt : R/W; bitpos: [31:0]; default: 4294967295;
          *  GPIO analog comparator zero detect filter count
          */
-        uint32_t zero_det0_filter_cnt:32;
+        uint32_t zero_det_filter_cnt:32;
     };
     uint32_t val;
-} gpio_zero_det0_filter_cnt_reg_t;
-
-/** Type of zero_det1_filter_cnt register
- *  GPIO analog comparator zero detect filter count
- */
-typedef union {
-    struct {
-        /** zero_det1_filter_cnt : R/W; bitpos: [31:0]; default: 4294967295;
-         *  GPIO analog comparator zero detect filter count
-         */
-        uint32_t zero_det1_filter_cnt:32;
-    };
-    uint32_t val;
-} gpio_zero_det1_filter_cnt_reg_t;
+} gpio_zero_det_filter_cnt_reg_t;
 
 /** Type of send_seq register
  *  High speed sdio pad bist send sequence
@@ -871,8 +858,7 @@ typedef struct gpio_dev_t {
     volatile gpio_int_st_reg_t int_st;
     volatile gpio_int_ena_reg_t int_ena;
     volatile gpio_int_clr_reg_t int_clr;
-    volatile gpio_zero_det0_filter_cnt_reg_t zero_det0_filter_cnt;
-    volatile gpio_zero_det1_filter_cnt_reg_t zero_det1_filter_cnt;
+    volatile gpio_zero_det_filter_cnt_reg_t zero_det_filter_cnt[2];
     volatile gpio_send_seq_reg_t send_seq;
     volatile gpio_recive_seq_reg_t recive_seq;
     volatile gpio_bistin_sel_reg_t bistin_sel;
