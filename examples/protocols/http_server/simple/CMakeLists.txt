@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/common_components/protocol_examples_common)
 
-if(${IDF_TARGET} STREQUAL "linux")
+if("${IDF_TARGET}" STREQUAL "linux")
     list(APPEND EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/tools/mocks/freertos/"
                     "$ENV{IDF_PATH}/examples/protocols/linux_stubs/esp_stubs")
     set(COMPONENTS main)
