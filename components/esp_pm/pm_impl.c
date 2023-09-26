@@ -967,6 +967,13 @@ void esp_pm_impl_idle_hook(void)
     && !periph_should_skip_light_sleep()
 #endif
     ) {
+        /*
+        Since the modem requires a PLL clock to access modem REG,
+        it is necessary to back up the mac/bb REG before disabling the PLL clock.
+        */
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+        mac_bb_power_down_prepare();
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
         esp_pm_lock_release(s_rtos_lock_handle[core_id]);
         s_core_idle[core_id] = true;
     }
