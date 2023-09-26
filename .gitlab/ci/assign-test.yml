@@ -41,7 +41,7 @@ assign_integration_test:
   extends:
     - .assign_test_template
     - .rules:test:integration_test
-    - .before_script_minimal
+    - .before_script:minimal
   image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
   needs:
     - build_ssc_esp32

@@ -114,7 +114,7 @@ test_idf_py:
 test_idf_tools:
   extends:
     - .host_test_template
-    - .before_script_minimal
+    - .before_script:minimal
   artifacts:
     when: on_failure
     paths:
@@ -294,7 +294,7 @@ test_gen_soc_caps_kconfig:
 test_pytest_qemu:
   extends:
     - .host_test_template
-    - .before_script_build_jobs
+    - .before_script:build
   image: $QEMU_IMAGE
   artifacts:
     when: always
@@ -328,7 +328,7 @@ test_pytest_qemu:
 test_pytest_linux:
   extends:
     - .host_test_template
-    - .before_script_build_jobs
+    - .before_script:build
   artifacts:
     when: always
     paths:

@@ -1,5 +1,7 @@
 .build_template:
   stage: build
+  extends:
+    - .after_script:build:ccache
   image: $ESP_ENV_IMAGE
   tags:
     - build
@@ -8,15 +10,13 @@
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
-  after_script:
-    # Show ccache statistics if enabled globally
-    - test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
   dependencies: []
 
 .build_cmake_template:
   extends:
     - .build_template
-    - .before_script_build_jobs
+    - .before_script:build
+    - .after_script:build:ccache-upload
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
@@ -45,28 +45,6 @@
       - components/idf_test/unit_test/*.yml
     when: always
     expire_in: 4 days
-  after_script:
-    # Show ccache statistics if enabled globally
-    - test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
-    # upload the binary files to s3 server
-    - echo -e "\e[0Ksection_start:`date +%s`:upload_binaries_to_s3_server[collapsed=true]\r\e[0KUploading binaries to s3 Server"
-    - shopt -s globstar
-    # use || true to bypass the no-file error
-    - zip ${CI_JOB_ID}.zip **/build*/*.bin || true
-    - zip ${CI_JOB_ID}.zip **/build*/*.elf || true
-    - zip ${CI_JOB_ID}.zip **/build*/*.map || true
-    - zip ${CI_JOB_ID}.zip **/build*/flasher_args.json || true
-    - zip ${CI_JOB_ID}.zip **/build*/flash_project_args || true
-    - zip ${CI_JOB_ID}.zip **/build*/config/sdkconfig.json || true
-    - zip ${CI_JOB_ID}.zip **/build*/sdkconfig || true
-    - zip ${CI_JOB_ID}.zip **/build*/bootloader/*.bin || true
-    - zip ${CI_JOB_ID}.zip **/build*/partition_table/*.bin || true
-    - mc alias set shiny-s3 ${SHINY_S3_SERVER} ${SHINY_S3_ACCESS_KEY} ${SHINY_S3_SECRET_KEY}
-    - mc cp ${CI_JOB_ID}.zip shiny-s3/idf-artifacts/${CI_PIPELINE_ID}/${CI_JOB_ID}.zip
-    - echo -e "\e[0Ksection_end:`date +%s`:upload_binaries_to_s3_server\r\e[0K"
-    - echo "Please download the full binary files (including *.elf and *.map files) from the following share link"
-    # would be clean up after 4 days
-    - mc share download shiny-s3/idf-artifacts/${CI_PIPELINE_ID}/${CI_JOB_ID}.zip --expire=96h
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -102,7 +80,7 @@
 .build_pytest_template:
   extends:
     - .build_cmake_template
-    - .before_script_build_jobs
+    - .before_script:build
   artifacts:
     paths:
       - "**/build*/size.json"
@@ -148,7 +126,7 @@
 .build_pytest_jtag_template:
   extends:
     - .build_cmake_template
-    - .before_script_build_jobs
+    - .before_script:build
   artifacts:
     paths:
       - "**/build*/size.json"
@@ -424,7 +402,7 @@ build_only_tools_test_apps:
 .build_template_app_template:
   extends:
     - .build_template
-    - .before_script_build_jobs
+    - .before_script:build
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
@@ -526,7 +504,7 @@ build_ssc_esp32h2:
 .build_esp_idf_tests_cmake_template:
   extends:
     - .build_cmake_template
-    - .before_script_build_jobs
+    - .before_script:build
   artifacts:
     paths:
       - "**/build*/size.json"
@@ -770,7 +748,7 @@ pytest_build_system:
 pytest_build_system_macos:
   extends:
     - .test_build_system_template
-    - .before_script_macos
+    - .before_script:build:macos
     - .rules:build:macos
   tags:
     - macos_shell
@@ -786,7 +764,7 @@ pytest_build_system_macos:
 
 build_docker:
   extends:
-    - .before_script_minimal
+    - .before_script:minimal
     - .rules:build:docker
   stage: host_test
   needs: []

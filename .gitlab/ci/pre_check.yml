@@ -8,7 +8,7 @@
 .check_pre_commit_template:
   extends:
     - .pre_check_template
-    - .before_script_minimal
+    - .before_script:minimal
   image: $PRE_COMMIT_IMAGE
 
 check_pre_commit_master_release:
@@ -164,7 +164,7 @@ check_artifacts_expire_time:
 check_test_scripts_build_test_rules:
   extends:
     - .pre_check_template
-    - .before_script_build_jobs
+    - .before_script:build
   script:
     # required pytest related packages
     - run_cmd bash install.sh --enable-pytest
@@ -173,7 +173,7 @@ check_test_scripts_build_test_rules:
 check_configure_ci_environment_parsing:
   extends:
     - .pre_check_template
-    - .before_script_build_jobs
+    - .before_script:build
     - .rules:build
   script:
     - cd tools/ci
@@ -183,7 +183,7 @@ mr_variables:
   extends:
     - .pre_check_template
     - .rules:mr
-    - .before_script_minimal
+    - .before_script:minimal
   tags:
     - build
   script:

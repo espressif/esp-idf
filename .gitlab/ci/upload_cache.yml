@@ -9,7 +9,7 @@
 upload-pip-cache:
   extends:
     - .upload_cache_template
-    - .before_script_minimal
+    - .before_script:minimal
     - .rules:patterns:python-cache
   tags:
     - $GEO
@@ -29,7 +29,7 @@ upload-pip-cache:
 upload-submodules-cache:
   extends:
     - .upload_cache_template
-    - .before_script_minimal
+    - .before_script:minimal
     - .rules:patterns:submodule
   tags:
     - $GEO

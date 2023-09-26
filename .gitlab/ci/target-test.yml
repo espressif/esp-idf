@@ -1527,7 +1527,7 @@ UT_S3:
   extends:
     - .target_test_job_template
     - .rules:test:integration_test
-    - .before_script_minimal
+    - .before_script:minimal
   image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
   cache: []
   needs: # the assign already needs all the build jobs
