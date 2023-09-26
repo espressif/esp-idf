@@ -18,6 +18,7 @@
 #include "hal/assert.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/sdmmc_struct.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,37 @@ typedef enum {
     SDMMC_LL_DELAY_PHASE_2,
     SDMMC_LL_DELAY_PHASE_3,
 } sdmmc_ll_delay_phase_t;
+
+
+/**
+ * @brief Enable the bus clock for SDMMC module
+ *
+ * @param hw    hardware instance address
+ * @param en    enable / disable
+ */
+static inline void sdmmc_ll_enable_bus_clock(sdmmc_dev_t *hw, bool en)
+{
+    SYSTEM.perip_clk_en1.sdio_host_clk_en = en;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sdmmc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the SDMMC module
+ *
+ * @param hw    hardware instance address
+ */
+static inline void sdmmc_ll_reset_register(sdmmc_dev_t *hw)
+{
+    SYSTEM.perip_rst_en1.sdio_host_rst = 1;
+    SYSTEM.perip_rst_en1.sdio_host_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sdmmc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Select SDMMC clock source

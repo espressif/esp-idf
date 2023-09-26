@@ -29,15 +29,22 @@
 #include "hal/sdmmc_hal.h"
 #include "hal/sdmmc_ll.h"
 
-#define SDMMC_EVENT_QUEUE_LENGTH 32
-#define SDMMC_CLK_NEEDS_RCC      CONFIG_IDF_TARGET_ESP32P4
+#define SDMMC_EVENT_QUEUE_LENGTH    32
 
-#if SDMMC_CLK_NEEDS_RCC
+#if !SOC_RCC_IS_INDEPENDENT
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
-#define SDMMC_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#define SDMMC_RCC_ATOMIC()          PERIPH_RCC_ATOMIC()
 #else
 #define SDMMC_RCC_ATOMIC()
 #endif
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+// Clock source and related clock settings are mixing with other peripherals, so we need to use a critical section
+#define SDMMC_CLK_SRC_ATOMIC()      PERIPH_RCC_ATOMIC()
+#else
+#define SDMMC_CLK_SRC_ATOMIC()
+#endif
+
 
 static const char *TAG = "sdmmc_periph";
 
@@ -119,7 +126,7 @@ esp_err_t sdmmc_host_reset(void)
  */
 static void sdmmc_host_set_clk_div(int div)
 {
-    SDMMC_RCC_ATOMIC() {
+    SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_clock_div(s_host_ctx.hal.dev, div);
         sdmmc_ll_select_clk_source(s_host_ctx.hal.dev, SDMMC_CLK_SRC_DEFAULT);
         sdmmc_ll_init_phase_delay(s_host_ctx.hal.dev);
@@ -325,7 +332,7 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
             delay_phase_num = 0;
             break;
     }
-    SDMMC_RCC_ATOMIC() {
+    SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_din_delay(s_host_ctx.hal.dev, phase);
     }
 
@@ -379,15 +386,10 @@ esp_err_t sdmmc_host_init(void)
     }
 
     //enable bus clock for registers
-#if SDMMC_CLK_NEEDS_RCC
     SDMMC_RCC_ATOMIC() {
         sdmmc_ll_enable_bus_clock(s_host_ctx.hal.dev, true);
         sdmmc_ll_reset_register(s_host_ctx.hal.dev);
     }
-#else
-    periph_module_reset(PERIPH_SDMMC_MODULE);
-    periph_module_enable(PERIPH_SDMMC_MODULE);
-#endif
 
     //hal context init
     sdmmc_hal_init(&s_host_ctx.hal);
@@ -678,14 +680,10 @@ esp_err_t sdmmc_host_deinit(void)
     s_host_ctx.io_intr_event = NULL;
     sdmmc_ll_deinit_clk(s_host_ctx.hal.dev);
     sdmmc_host_transaction_handler_deinit();
-#if SDMMC_CLK_NEEDS_RCC
     //disable bus clock for registers
     SDMMC_RCC_ATOMIC() {
         sdmmc_ll_enable_bus_clock(s_host_ctx.hal.dev, false);
     }
-#else
-    periph_module_disable(PERIPH_SDMMC_MODULE);
-#endif
 
     return ESP_OK;
 }
