@@ -308,26 +308,33 @@ static void event_command_ready(fixed_pkt_queue_t *queue)
     command_waiting_response_t *cmd_wait_q = &hci_host_env.cmd_waiting_q;
 
     wait_entry = fixed_pkt_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
-    hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
-    metadata->flags_vnd |= HCI_CMD_MSG_F_VND_SENT;
-    metadata->flags_vnd &= ~HCI_CMD_MSG_F_VND_QUEUED;
+    if (wait_entry) {
+        hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
+        metadata->flags_vnd |= HCI_CMD_MSG_F_VND_SENT;
+        metadata->flags_vnd &= ~HCI_CMD_MSG_F_VND_QUEUED;
 
-    if (metadata->flags_src & HCI_CMD_MSG_F_SRC_NOACK) {
-        packet_fragmenter->fragment_and_dispatch(&metadata->command);
-        hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb) osi_free_func;
-        free_func(wait_entry);
-        return;
+        if (metadata->flags_src & HCI_CMD_MSG_F_SRC_NOACK) {
+            packet_fragmenter->fragment_and_dispatch(&metadata->command);
+            hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb) osi_free_func;
+            free_func(wait_entry);
+            return;
+        }
+        bool send;
+        // Move it to the list of commands awaiting response
+        osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
+        send = list_append(cmd_wait_q->commands_pending_response, wait_entry);
+        osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
+
+        if (send) {
+            // Send it off
+            hci_host_env.command_credits--;
+            packet_fragmenter->fragment_and_dispatch(&metadata->command);
+            restart_command_waiting_response_timer(cmd_wait_q);
+        } else {
+            hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb) osi_free_func;
+            free_func(wait_entry);
+        }
     }
-    hci_host_env.command_credits--;
-    // Move it to the list of commands awaiting response
-    osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
-    list_append(cmd_wait_q->commands_pending_response, wait_entry);
-    osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
-
-    // Send it off
-    packet_fragmenter->fragment_and_dispatch(&metadata->command);
-
-    restart_command_waiting_response_timer(cmd_wait_q);
 }
 
 static void event_packet_ready(fixed_queue_t *queue)
@@ -399,10 +406,9 @@ static void command_timed_out(void *context)
 
     if (wait_entry == NULL) {
         HCI_TRACE_ERROR("%s with no commands pending response", __func__);
-    } else
+    } else {
         // We shouldn't try to recover the stack from this command timeout.
         // If it's caused by a software bug, fix it. If it's a hardware bug, fix it.
-    {
         hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
         HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, metadata->opcode);
         UNUSED(metadata);
@@ -444,10 +450,11 @@ static bool filter_incoming_event(BT_HDR *packet)
         STREAM_TO_UINT8(hci_host_env.command_credits, stream);
         STREAM_TO_UINT16(opcode, stream);
         wait_entry = get_waiting_command(opcode);
-        metadata = (hci_cmd_metadata_t *)(wait_entry->data);
         if (!wait_entry) {
             HCI_TRACE_WARNING("%s command complete event with no matching command. opcode: 0x%x.", __func__, opcode);
-        } else if (metadata->command_complete_cb) {
+        } else {
+            metadata = (hci_cmd_metadata_t *)(wait_entry->data);
+            if (metadata->command_complete_cb) {
             metadata->command_complete_cb(packet, metadata->context);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
             BlE_SYNC *sync_info =  btsnd_hcic_ble_get_sync_info();
@@ -474,10 +481,11 @@ static bool filter_incoming_event(BT_HDR *packet)
         // If a command generates a command status event, it won't be getting a command complete event
 
         wait_entry = get_waiting_command(opcode);
-        metadata = (hci_cmd_metadata_t *)(wait_entry->data);
         if (!wait_entry) {
             HCI_TRACE_WARNING("%s command status event with no matching command. opcode: 0x%x", __func__, opcode);
-        } else if (metadata->command_status_cb) {
+        } else {
+            metadata = (hci_cmd_metadata_t *)(wait_entry->data);
+            if (metadata->command_status_cb) {
             metadata->command_status_cb(status, &metadata->command, metadata->context);
         }
 

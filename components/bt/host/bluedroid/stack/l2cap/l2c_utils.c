@@ -39,6 +39,9 @@
 #include "osi/allocator.h"
 #include "osi/list.h"
 
+static tL2C_LCB  *l2cu_find_free_lcb (void);
+static bool l2cu_find_ccb_in_list(void *p_ccb_node, void *p_local_cid);
+
 /*******************************************************************************
 **
 ** Function         l2cu_allocate_lcb
@@ -50,15 +53,6 @@
 *******************************************************************************/
 tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPORT transport)
 {
-    tL2C_LCB    *p_lcb   = NULL;
-    bool        list_ret = false;
-    extern tL2C_LCB  *l2cu_find_free_lcb (void);
-    // temp solution
-    p_lcb = l2cu_find_free_lcb();
-    if(p_lcb != NULL) {
-        list_ret = true;
-    }
-
 #if (CLASSIC_BT_INCLUDED == TRUE)
     /* Check if peer device's and our BD_ADDR is same or not. It
        should be different to avoid 'Impersonation in the Pin Pairing
@@ -68,56 +62,54 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
         return (NULL);
     }
 #endif
-
-    if(p_lcb == NULL && list_length(l2cb.p_lcb_pool) < MAX_L2CAP_LINKS) {
-        p_lcb = (tL2C_LCB *)osi_malloc(sizeof(tL2C_LCB));
-	    if (p_lcb) {
-	        memset (p_lcb, 0, sizeof(tL2C_LCB));
-            list_ret = list_append(l2cb.p_lcb_pool, p_lcb);
-	    }else {
-	        L2CAP_TRACE_ERROR("Error in allocating L2CAP Link Control Block");
-	    }
-    }
-    if (list_ret) {
+    tL2C_LCB *p_lcb = l2cu_find_free_lcb();
+    if ((p_lcb == NULL) && (list_length(l2cb.p_lcb_pool) < MAX_L2CAP_LINKS)) {
+        p_lcb = (tL2C_LCB *)osi_calloc(sizeof(tL2C_LCB));
         if (p_lcb) {
-            btu_free_timer(&p_lcb->timer_entry);
-            btu_free_timer(&p_lcb->info_timer_entry);
-            btu_free_timer(&p_lcb->upda_con_timer);
-
-            memset (p_lcb, 0, sizeof (tL2C_LCB));
-            memcpy (p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN);
-
-            p_lcb->in_use          = TRUE;
-            p_lcb->link_state      = LST_DISCONNECTED;
-            p_lcb->handle          = HCI_INVALID_HANDLE;
-            p_lcb->link_flush_tout = 0xFFFF;
-            p_lcb->timer_entry.param = (TIMER_PARAM_TYPE)p_lcb;
-            p_lcb->info_timer_entry.param = (TIMER_PARAM_TYPE)p_lcb;
-            p_lcb->upda_con_timer.param = (TIMER_PARAM_TYPE)p_lcb;
-            p_lcb->idle_timeout    = l2cb.idle_timeout;
-            p_lcb->id              = 1;                     /* spec does not allow '0' */
-            p_lcb->is_bonding      = is_bonding;
-#if (BLE_INCLUDED == TRUE)
-            p_lcb->transport       = transport;
-            p_lcb->tx_data_len     = controller_get_interface()->get_ble_default_data_packet_length();
-            p_lcb->le_sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
-
-            if (transport == BT_TRANSPORT_LE) {
-                l2cb.num_ble_links_active++;
-                l2c_ble_link_adjust_allocation();
-            } else
-#endif
-            {
-                l2cb.num_links_active++;
-                l2c_link_adjust_allocation();
+            if (!list_append(l2cb.p_lcb_pool, p_lcb)) {
+                osi_free(p_lcb);
+                p_lcb = NULL;
+                L2CAP_TRACE_ERROR("Error in allocating L2CAP Link Control Block list");
             }
-            p_lcb->link_xmit_data_q = list_new(NULL);
-            return (p_lcb);
+        } else {
+            L2CAP_TRACE_ERROR("Error in allocating L2CAP Link Control Block");
         }
     }
+    if (p_lcb) {
+        btu_free_timer(&p_lcb->timer_entry);
+        btu_free_timer(&p_lcb->info_timer_entry);
+        btu_free_timer(&p_lcb->upda_con_timer);
 
-    /* If here, no free LCB found */
-    return (NULL);
+        memset (p_lcb, 0, sizeof (tL2C_LCB));
+        memcpy (p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN);
+
+        p_lcb->in_use          = TRUE;
+        p_lcb->link_state      = LST_DISCONNECTED;
+        p_lcb->handle          = HCI_INVALID_HANDLE;
+        p_lcb->link_flush_tout = 0xFFFF;
+        p_lcb->timer_entry.param = (TIMER_PARAM_TYPE)p_lcb;
+        p_lcb->info_timer_entry.param = (TIMER_PARAM_TYPE)p_lcb;
+        p_lcb->upda_con_timer.param = (TIMER_PARAM_TYPE)p_lcb;
+        p_lcb->idle_timeout    = l2cb.idle_timeout;
+        p_lcb->id              = 1;                     /* spec does not allow '0' */
+        p_lcb->is_bonding      = is_bonding;
+#if (BLE_INCLUDED == TRUE)
+        p_lcb->transport       = transport;
+        p_lcb->tx_data_len     = controller_get_interface()->get_ble_default_data_packet_length();
+        p_lcb->le_sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
+
+        if (transport == BT_TRANSPORT_LE) {
+            l2cb.num_ble_links_active++;
+            l2c_ble_link_adjust_allocation();
+        } else
+#endif
+        {
+            l2cb.num_links_active++;
+            l2c_link_adjust_allocation();
+        }
+        p_lcb->link_xmit_data_q = list_new(NULL);
+    }
+    return p_lcb;
 }
 
 /*******************************************************************************
@@ -1473,21 +1465,22 @@ void l2cu_change_pri_ccb (tL2C_CCB *p_ccb, tL2CAP_CHNL_PRIORITY priority)
 ** Returns          pointer to CCB, or NULL if none
 **
 *******************************************************************************/
-bool l2cu_find_ccb_in_list(void *p_ccb_node, void *p_local_cid);
 tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
 {
-    tL2C_CCB    *p_ccb = NULL;
-    uint16_t tmp_cid = L2CAP_BASE_APPL_CID;
+    uint16_t tmp_cid;
     L2CAP_TRACE_DEBUG ("l2cu_allocate_ccb: cid 0x%04x", cid);
 
-    p_ccb = l2cu_find_free_ccb ();
+    tL2C_CCB *p_ccb = l2cu_find_free_ccb();
     if(p_ccb == NULL) {
         if (list_length(l2cb.p_ccb_pool) < MAX_L2CAP_CHANNELS) {
-            p_ccb = (tL2C_CCB *)osi_malloc(sizeof(tL2C_CCB));
+            p_ccb = (tL2C_CCB *)osi_calloc(sizeof(tL2C_CCB));
 
             if (p_ccb) {
-                memset (p_ccb, 0, sizeof(tL2C_CCB));
-                list_append(l2cb.p_ccb_pool, p_ccb);
+                if (!list_append(l2cb.p_ccb_pool, p_ccb))
+                {
+                    osi_free(p_ccb);
+                    p_ccb = NULL;
+                }
             }
         }
      }
@@ -3231,6 +3224,16 @@ tL2C_LCB  *l2cu_find_lcb_by_handle (UINT16 handle)
     return (NULL);
 }
 
+bool l2cu_find_ccb_in_list(void *p_ccb_node, void *p_local_cid)
+{
+    tL2C_CCB *p_ccb = (tL2C_CCB *)p_ccb_node;
+    uint8_t local_cid = *((uint8_t *)p_local_cid);
+
+    if (p_ccb->local_cid == local_cid && p_ccb->in_use) {
+        return FALSE;
+    }
+    return TRUE;
+}
 /*******************************************************************************
 **
 ** Function         l2cu_find_ccb_by_cid
@@ -3242,17 +3245,6 @@ tL2C_LCB  *l2cu_find_lcb_by_handle (UINT16 handle)
 ** Returns          pointer to matched CCB, or NULL if no match
 **
 *******************************************************************************/
-bool l2cu_find_ccb_in_list(void *p_ccb_node, void *p_local_cid)
-{
-    tL2C_CCB *p_ccb = (tL2C_CCB *)p_ccb_node;
-    uint8_t local_cid = *((uint8_t *)p_local_cid);
-
-    if (p_ccb->local_cid == local_cid && p_ccb->in_use) {
-        return FALSE;
-    }
-    return TRUE;
-}
-
 tL2C_CCB *l2cu_find_ccb_by_cid (tL2C_LCB *p_lcb, UINT16 local_cid)
 {
     tL2C_CCB    *p_ccb = NULL;

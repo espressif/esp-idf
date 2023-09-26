@@ -549,14 +549,15 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         pkt = (BT_HDR *) osi_calloc(pkt_size);
         if (!pkt) {
             HCI_TRACE_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
-            assert(0);
+            return 0;
         }
 
-        pkt->offset = 0;
         pkt->len = len;
-        pkt->layer_specific = 0;
         memcpy(pkt->data, data, len);
-        fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
+        if (!fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT)) {
+            osi_free(pkt);
+            return 0;
+        }
     } else {
 #if !BLE_ADV_REPORT_FLOW_CONTROL
         // drop the packets if pkt_queue length goes beyond upper limit
@@ -578,7 +579,10 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         pkt->len = len;
         pkt->layer_specific = 0;
         memcpy(pkt->data, data, len);
-        pkt_queue_enqueue(hci_hal_env.adv_rpt_q, linked_pkt);
+        if (!pkt_queue_enqueue(hci_hal_env.adv_rpt_q, linked_pkt)) {
+            osi_free(linked_pkt);
+            return 0;
+        }
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
         hci_adv_credits_consumed(1);
 #endif
