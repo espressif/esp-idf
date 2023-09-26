@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -232,6 +232,17 @@
 #ifndef OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE
 #define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE 1
 #endif
+
+/**
+ * @def OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES
+ *
+ * Specifies number of service entries in the SRP client service pool.
+ *
+ * This config is applicable only when `OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_ENABLE` is enabled.
+ *
+ */
+#define OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES CONFIG_OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES
+
 #endif
 
 /**
@@ -241,5 +252,15 @@
  *
  */
 #define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE CONFIG_OPENTHREAD_DNS_CLIENT
+
+/**
+ * @def OPENTHREAD_CONFIG_TIME_SYNC_ENABLE
+ *
+ * Define as 1 to enable the time synchronization service feature.
+ *
+ */
+#if CONFIG_OPENTHREAD_TIME_SYNC
+#define OPENTHREAD_CONFIG_TIME_SYNC_ENABLE 1
+#endif
 
 #define OPENTHREAD_MTD 1
