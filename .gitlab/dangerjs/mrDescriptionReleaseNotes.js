@@ -74,6 +74,10 @@ function check_entry(entry) {
         return [entry_str, `${indent}- \`No release notes\` comment shouldn't start with bullet.`].join('\n');
     }
 
+    // Remove a leading escaping backslash of the special characters, https://www.markdownguide.org/basic-syntax/#characters-you-can-escape
+    const escapeCharRegex = /\\([\\`*_{}[\]<>()+#-.!|])/g;
+    entry = entry.replace(escapeCharRegex, '$1');
+
     const regex = /^(\s*)[-*+]\s+\[([^\]]+)\]\s+(.*)$/;
     const match = regex.exec(entry);
     if (!match) {
