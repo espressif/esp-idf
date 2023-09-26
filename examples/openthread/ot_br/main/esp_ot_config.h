@@ -74,6 +74,7 @@
 #define HOST_BAUD_RATE 115200
 #endif
 
+#if CONFIG_OPENTHREAD_CONSOLE_TYPE_UART
 #define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                    \
     {                                                           \
         .host_connection_mode = HOST_CONNECTION_MODE_CLI_UART,  \
@@ -93,6 +94,13 @@
             .tx_pin = UART_PIN_NO_CHANGE,                       \
         },                                                      \
     }
+#elif CONFIG_OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
+#define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                        \
+    {                                                               \
+        .host_connection_mode = HOST_CONNECTION_MODE_CLI_USB,       \
+        .host_usb_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT(), \
+    }
+#endif
 
 #define ESP_OPENTHREAD_DEFAULT_PORT_CONFIG()    \
     {                                           \
