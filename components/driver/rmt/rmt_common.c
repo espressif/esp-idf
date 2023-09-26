@@ -160,17 +160,11 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
                         TAG, "get clock source frequency failed");
 
 #if CONFIG_PM_ENABLE
-    bool need_pm_lock = true;
-    // to make the RMT work reliable, the source clock must stay alive and unchanged
-    // driver will create different pm lock for that purpose, according to different clock source
-    esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
-
-#if SOC_RMT_SUPPORT_RC_FAST
-    if (clk_src == RMT_CLK_SRC_RC_FAST) {
-        // RC_FAST won't be turn off in sleep and won't change its frequency during DFS
-        need_pm_lock = false;
-    }
-#endif // SOC_RMT_SUPPORT_RC_FAST
+    // if DMA is not used, we're using CPU to push the data to the RMT FIFO
+    // if the CPU frequency goes down, the transfer+encoding scheme could be unstable because CPU can't fill the data in time
+    // so, choose ESP_PM_CPU_FREQ_MAX lock for non-dma mode
+    // otherwise, chose lock type based on the clock source
+    esp_pm_lock_type_t pm_lock_type = chan->dma_chan ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_CPU_FREQ_MAX;
 
 #if SOC_RMT_SUPPORT_APB
     if (clk_src == RMT_CLK_SRC_APB) {
@@ -179,11 +173,9 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     }
 #endif // SOC_RMT_SUPPORT_APB
 
-    if (need_pm_lock) {
-        sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, channel_id); // e.g. rmt_0_0
-        ret  = esp_pm_lock_create(pm_lock_type, 0, chan->pm_lock_name, &chan->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
-    }
+    sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, channel_id); // e.g. rmt_0_0
+    ret  = esp_pm_lock_create(pm_lock_type, 0, chan->pm_lock_name, &chan->pm_lock);
+    ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
     // no division for group clock source, to achieve highest resolution
