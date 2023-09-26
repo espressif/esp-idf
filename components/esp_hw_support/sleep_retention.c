@@ -94,15 +94,11 @@ typedef struct {
     uint32_t modules;
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
 #define EXTRA_LINK_NUM  (REGDMA_LINK_ENTRY_NUM - 1)
-    int extra_refs;
 #endif
 } sleep_retention_t;
 
 static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
     .highpri = (uint8_t)-1, .modules = 0
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-    , .extra_refs = 0
-#endif
 };
 
 #define SLEEP_RETENTION_ENTRY_BITMAP_MASK       (BIT(REGDMA_LINK_ENTRY_NUM) - 1)
@@ -509,30 +505,13 @@ void sleep_retention_do_extra_retention(bool backup_or_restore)
         s_retention.highpri > SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
         return;
     }
-    const uint32_t clk_bug_modules = SLEEP_RETENTION_MODULE_BLE_MAC | SLEEP_RETENTION_MODULE_802154_MAC;
-    const int cnt_modules = __builtin_popcount(clk_bug_modules & s_retention.modules);
     // Set extra linked list head pointer to hardware
     pau_regdma_set_extra_link_addr(s_retention.lists[s_retention.highpri].entries[EXTRA_LINK_NUM]);
     if (backup_or_restore) {
-        if (s_retention.extra_refs++ == (cnt_modules - 1)) {
-            pau_regdma_trigger_extra_link_backup();
-        }
+        pau_regdma_trigger_extra_link_backup();
     } else {
-        if (--s_retention.extra_refs == (cnt_modules - 1)) {
-            pau_regdma_trigger_extra_link_restore();
-        }
+        pau_regdma_trigger_extra_link_restore();
     }
-    int refs = s_retention.extra_refs;
-    assert(refs >= 0 && refs <= cnt_modules);
-}
-
-void sleep_retention_module_deinit(void)
-{
-    _lock_acquire_recursive(&s_retention.lock);
-    if (s_retention.extra_refs) {
-        s_retention.extra_refs--;
-    }
-    _lock_release_recursive(&s_retention.lock);
 }
 #endif
 

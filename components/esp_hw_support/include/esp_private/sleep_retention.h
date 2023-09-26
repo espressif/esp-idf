@@ -108,8 +108,6 @@ void sleep_retention_entries_get(sleep_retention_entries_t *entries);
  *                          or false for restore to register from memory
  */
 void sleep_retention_do_extra_retention(bool backup_or_restore);
-
-void sleep_retention_module_deinit(void);
 #endif
 
 /**

@@ -45,7 +45,7 @@ void mac_bb_power_up_cb_execute(void);
  * @brief MAC and baseband power down operation
  *
  * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
- * power up and backup prepare operations.
+ * power down and backup prepare operations.
  */
 void mac_bb_power_down_prepare(void);
 
