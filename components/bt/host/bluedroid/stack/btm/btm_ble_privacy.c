@@ -473,10 +473,18 @@ tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
 
     tBTM_STATUS st = BTM_NO_RESOURCES;
     if (controller_get_interface()->supports_ble_privacy()) {
+        #if CONTROLLER_RPA_LIST_ENABLE
         if (btsnd_hcic_ble_rm_device_resolving_list(p_dev_rec->ble.static_addr_type,
                 p_dev_rec->ble.static_addr)) {
             st =  BTM_CMD_STARTED;
         }
+        #else
+            // do nothing
+            /* It will cause that scanner doesn't send scan request to advertiser
+            * which has sent IRK to us and we have stored the IRK in controller.
+            * It is a hardware limitation. The preliminary solution is not to
+            * send key to the controller, but to resolve the random address in host. */
+        #endif
     } else {
         UINT8 param[20] = {0};
         UINT8 *p = param;
