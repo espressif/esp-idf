@@ -49,7 +49,7 @@ static inline void analog_cmpr_ll_set_internal_ref_voltage(analog_cmpr_dev_t *hw
  */
 static inline uint32_t analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t *hw)
 {
-    return hw->pad_comp_config.dref_comp;
+    return hw->pad_comp_config->dref_comp;
 }
 
 /**
