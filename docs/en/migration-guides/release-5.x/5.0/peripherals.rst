@@ -537,7 +537,7 @@ Register Access Macros
 
 Previously, all register access macros could be used as expressions, so the following was allowed::
 
-    uint32_t val = REG_SET_BITS(reg, mask);
+    uint32_t val = REG_SET_BITS(reg, bits, mask);
 
 In ESP-IDF v5.0, register access macros which write or read-modify-write the register can no longer be used as expressions, and can only be used as statements. This applies to the following macros: ``REG_WRITE``, ``REG_SET_BIT``, ``REG_CLR_BIT``, ``REG_SET_BITS``, ``REG_SET_FIELD``, ``WRITE_PERI_REG``, ``CLEAR_PERI_REG_MASK``, ``SET_PERI_REG_MASK``, ``SET_PERI_REG_BITS``.
 
@@ -548,5 +548,5 @@ To store the value which would have been written into the register, split the op
 
 To get the value of the register after modification (which may be different from the value written), add an explicit read::
 
-    REG_SET_BITS(reg, mask);
+    REG_SET_BITS(reg, bits, mask);
     uint32_t new_val = REG_READ(reg);

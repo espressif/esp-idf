@@ -537,7 +537,7 @@ LCD
 
 更新前，所有用于访问寄存器的宏都可以作为表达式来使用，所以以下命令是允许的::
 
-    uint32_t val = REG_SET_BITS(reg, mask);
+    uint32_t val = REG_SET_BITS(reg, bits, mask);
 
 在 ESP-IDF v5.0 中，用于写入或读取-修改-写入寄存器的宏不能再作为表达式使用，而只能作为语句使用，这适用于以下宏： ``REG_WRITE``， ``REG_SET_BIT``， ``REG_CLR_BIT``， ``REG_SET_BITS``， ``REG_SET_FIELD``， ``WRITE_PERI_REG``， ``CLEAR_PERI_REG_MASK``， ``SET_PERI_REG_MASK``， ``SET_PERI_REG_BITS``。
 
@@ -548,5 +548,5 @@ LCD
 
 要获得修改后的寄存器的值（该值可能与写入的值不同），要增加一个显示的读取命令::
 
-    REG_SET_BITS(reg, mask);
+    REG_SET_BITS(reg, bits, mask);
     uint32_t new_val = REG_READ(reg);
