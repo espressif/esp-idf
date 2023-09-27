@@ -105,7 +105,7 @@ static esp_err_t panel_io_i2c_register_event_callbacks(esp_lcd_panel_io_handle_t
 {
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
 
-    if(i2c_panel_io->on_color_trans_done != NULL) {
+    if (i2c_panel_io->on_color_trans_done != NULL) {
         ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
     }
 
@@ -159,8 +159,7 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
     }
 
     // some displays don't want any additional commands on data transfers
-    if (send_param)
-    {
+    if (send_param) {
         uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
         size_t cmds_size = i2c_panel_io->lcd_cmd_bits / 8;
         if (cmds_size > 0 && cmds_size <= sizeof(cmds)) {

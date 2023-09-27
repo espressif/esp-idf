@@ -43,7 +43,6 @@ TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
     };
     TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
 
-
     i2s_chan_handle_t tx_handle = NULL;
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     // I2S driver won't be installed as the same I2S port has been used by LCD

@@ -330,7 +330,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
         lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
         lcd_trans->base.tx_buffer = &lcd_cmd;
-        if(color && color_size) {
+        if (color && color_size) {
             lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
         }
         if (spi_panel_io->flags.octal_mode) {

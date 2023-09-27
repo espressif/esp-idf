@@ -106,7 +106,7 @@ esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel
 
     st7789->ramctl_val_1 = 0x00;
     st7789->ramctl_val_2 = 0xf0;    // Use big endian by default
-    if((panel_dev_config->data_endian) == LCD_RGB_DATA_ENDIAN_LITTLE) {
+    if ((panel_dev_config->data_endian) == LCD_RGB_DATA_ENDIAN_LITTLE) {
         // Use little endian
         st7789->ramctl_val_2 |= ST7789_DATA_LITTLE_ENDIAN_BIT;
     }

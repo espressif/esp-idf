@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -94,7 +94,7 @@ static esp_err_t panel_io_i2c_register_event_callbacks(esp_lcd_panel_io_handle_t
 {
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
 
-    if(i2c_panel_io->on_color_trans_done != NULL) {
+    if (i2c_panel_io->on_color_trans_done != NULL) {
         ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
     }
 
@@ -117,7 +117,7 @@ static esp_err_t panel_io_i2c_rx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, voi
     if (send_param) {
         if (i2c_panel_io->control_phase_enabled) {
             ESP_GOTO_ON_ERROR(i2c_master_write_byte(cmd_link, i2c_panel_io->control_phase_cmd, true),
-                        err, TAG, "write control phase failed"); // control phase
+                              err, TAG, "write control phase failed"); // control phase
         }
         uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
         size_t cmds_size = i2c_panel_io->lcd_cmd_bits / 8;
@@ -157,12 +157,11 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
     ESP_GOTO_ON_ERROR(i2c_master_write_byte(cmd_link, (i2c_panel_io->dev_addr << 1) | I2C_MASTER_WRITE, true), err, TAG, "write address failed"); // address phase
     if (i2c_panel_io->control_phase_enabled) {
         ESP_GOTO_ON_ERROR(i2c_master_write_byte(cmd_link, is_param ? i2c_panel_io->control_phase_cmd : i2c_panel_io->control_phase_data, true),
-                        err, TAG, "write control phase failed"); // control phase
+                          err, TAG, "write control phase failed"); // control phase
     }
 
     // some displays don't want any additional commands on data transfers
-    if (send_param)
-    {
+    if (send_param) {
         uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
         size_t cmds_size = i2c_panel_io->lcd_cmd_bits / 8;
         if (cmds_size > 0 && cmds_size <= sizeof(cmds)) {
