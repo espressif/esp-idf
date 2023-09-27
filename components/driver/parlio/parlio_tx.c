@@ -296,6 +296,10 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     // DMA descriptors must be placed in internal SRAM
     unit->dma_nodes = heap_caps_calloc(dma_nodes_num, sizeof(dma_descriptor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(unit->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no memory for DMA nodes");
+    // Link the descriptors
+    for (int i = 0; i < dma_nodes_num; i++) {
+        unit->dma_nodes[i].next = (i == dma_nodes_num - 1) ? NULL : &(unit->dma_nodes[i + 1]);
+    }
     unit->max_transfer_bits = config->max_transfer_size * 8;
 
     unit->data_width = data_width;
