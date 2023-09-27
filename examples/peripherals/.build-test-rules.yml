@@ -136,6 +136,10 @@ examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
 examples/peripherals/parlio:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runner
 
 examples/peripherals/parlio/simple_rgb_led_matrix:
   disable:

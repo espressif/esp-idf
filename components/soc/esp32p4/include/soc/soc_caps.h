@@ -37,7 +37,7 @@
 #define SOC_MCPWM_SUPPORTED             1
 // #define SOC_TWAI_SUPPORTED              1  //TODO: IDF-7470
 #define SOC_ETM_SUPPORTED               1
-// #define SOC_PARLIO_SUPPORTED            1  //TODO: IDF-7471, TODO: IDF-7472
+#define SOC_PARLIO_SUPPORTED            1  //TODO: IDF-7471
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // disable usb serial jtag for esp32p4, current image does not support
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1  //TODO: IDF-7496
@@ -323,7 +323,7 @@
 #define SOC_PARLIO_RX_UNITS_PER_GROUP        1U  /*!< number of RX units in each group */
 #define SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH    16  /*!< Number of data lines of the TX unit */
 #define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH    16  /*!< Number of data lines of the RX unit */
-#define SOC_PARLIO_TX_RX_SHARE_INTERRUPT     1   /*!< TX and RX unit share the same interrupt source number */
+#define SOC_PARLIO_TX_SIZE_BY_DMA            1   /*!< Transaction length is controlled by DMA instead of indicated by register */
 
 /*--------------------------- MPI CAPS ---------------------------------------*/
 #define SOC_MPI_MEM_BLOCKS_NUM (4)

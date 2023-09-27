@@ -498,6 +498,7 @@ typedef struct parl_io_dev_t {
     volatile parl_io_version_reg_t version;
 } parl_io_dev_t;
 
+extern parl_io_dev_t PARL_IO;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(parl_io_dev_t) == 0x400, "Invalid size of parl_io_dev_t structure");

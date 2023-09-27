@@ -11,8 +11,14 @@
 #include "soc/soc_caps.h"
 #include "hal/parlio_types.h"
 #include "hal/parlio_hal.h"
+#include "hal/parlio_ll.h"
+#include "hal/dma_types.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
+#include "rom/cache.h"
 #include "esp_heap_caps.h"
 #include "driver/parlio_types.h"
+#include "esp_private/periph_ctrl.h"
 
 #if CONFIG_PARLIO_ISR_IRAM_SAFE
 #define PARLIO_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -31,6 +37,41 @@
 #else
 #define PARLIO_INTR_ALLOC_FLAG   (ESP_INTR_FLAG_LOWMED | PARLIO_INTR_ALLOC_FLAG_SHARED)
 #endif
+
+#if SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI
+/* The parlio peripheral uses DMA via AXI bus, which requires the descriptor aligned with 8 */
+typedef dma_descriptor_align8_t parlio_dma_desc_t;
+#else
+typedef dma_descriptor_align4_t parlio_dma_desc_t;
+#endif
+
+#ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
+/* The descriptor address can be mapped by a fixed offset */
+#define PARLIO_GET_NON_CACHED_DESC_ADDR(desc)   (desc ? (parlio_dma_desc_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR(desc)) : NULL)
+#else
+#define PARLIO_GET_NON_CACHED_DESC_ADDR(desc)   (desc)
+#endif // CACHE_LL_L2MEM_NON_CACHE_ADDR
+
+#if SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI
+#define PARLIO_DMA_DESC_ALIGNMENT   8
+#define PARLIO_DMA_DESC_SIZE        8
+#else
+#define PARLIO_DMA_DESC_ALIGNMENT   4
+#define PARLIO_DMA_DESC_SIZE        sizeof(parlio_dma_desc_t)
+#endif
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define PARLIO_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define PARLIO_CLOCK_SRC_ATOMIC()
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+// Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
+#define PARLIO_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define PARLIO_RCC_ATOMIC()
+#endif  // SOC_RCC_IS_INDEPENDENT
 
 #define PARLIO_PM_LOCK_NAME_LEN_MAX 16
 

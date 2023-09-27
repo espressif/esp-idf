@@ -18,7 +18,6 @@
 #include "soc/parlio_periph.h"
 #include "hal/parlio_ll.h"
 #include "esp_private/esp_clk.h"
-#include "esp_private/periph_ctrl.h"
 #include "parlio_private.h"
 
 static const char *TAG = "parlio";
@@ -45,9 +44,10 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
             s_platform.groups[group_id] = group;
             group->group_id = group_id;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-            // enable APB access PARLIO registers
-            periph_module_enable(parlio_periph_signals.groups[group_id].module);
-            periph_module_reset(parlio_periph_signals.groups[group_id].module);
+            PARLIO_RCC_ATOMIC() {
+                parlio_ll_enable_bus_clock(group_id, true);
+                parlio_ll_reset_register(group_id);
+            }
             // hal layer initialize
             parlio_hal_init(&group->hal);
         }
@@ -78,7 +78,9 @@ void parlio_release_group_handle(parlio_group_t *group)
         s_platform.groups[group_id] = NULL;
         // hal layer deinitialize
         parlio_hal_deinit(&group->hal);
-        periph_module_disable(parlio_periph_signals.groups[group_id].module);
+        PARLIO_RCC_ATOMIC() {
+            parlio_ll_enable_bus_clock(group_id, false);
+        }
         free(group);
     }
     _lock_release(&s_platform.mutex);
