@@ -49,7 +49,7 @@ Offset should be in hex format. To reset to the default behaviour you can specif
 Why Stepping with "next" Does Not Bypass Subroutine Calls?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When stepping through the code with ``next`` command, GDB is internally setting a breakpoint (one out of two available) ahead in the code to bypass the subroutine calls. This functionality will not work, if the two available breakpoints are already set elsewhere in the code. If this is the case, delete breakpoints to have one "spare". With both breakpoints already used, stepping through the code with ``next`` command will work as like with ``step`` command and debugger will step inside subroutine calls.
+When stepping through the code with ``next`` command, GDB is internally setting a breakpoint ahead in the code to bypass the subroutine calls. If all {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} breakpoints are already set, this functionality will not work. If this is the case, delete breakpoints to have one "spare". With all breakpoints already used, stepping through the code with ``next`` command will work as like with ``step`` command and debugger will step inside subroutine calls.
 
 
 .. _jtag-debugging-tip-code-options:
@@ -111,7 +111,7 @@ What Is the Meaning of Debugger's Startup Commands?
 
 On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient/appropriate line and start debugging.
 
-* ``set remote hardware-watchpoint-limit 2`` — Restrict GDB to using two hardware watchpoints supported by the chip, 2 for {IDF_TARGET_NAME}. For more information see https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html.
+* ``set remote hardware-watchpoint-limit {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM}`` — Restrict GDB to using available hardware watchpoints supported by the chip, {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} for {IDF_TARGET_NAME}. For more information see https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html.
 * ``mon reset halt`` — reset the chip and keep the CPUs halted
 * ``maintenance flush register-cache`` — monitor (``mon``) command can not inform GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change, and executing ``maintenance flush register-cache`` is a way to force GDB to get new state from the target.
 * ``thb app_main`` — insert a temporary hardware breakpoint at ``app_main``, put here another function name if required
