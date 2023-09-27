@@ -207,4 +207,4 @@ repos:
     hooks:
       - id: astyle_py
         # If you are modifying astyle version, update tools/format.sh as well
-        args: ['--astyle-version=3.4.7', '--rules=tools/ci/astyle_rules.yml']
+        args: ['--astyle-version=3.4.7', '--rules=tools/ci/astyle-rules.yml']
