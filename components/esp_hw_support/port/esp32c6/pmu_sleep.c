@@ -16,6 +16,7 @@
 #include "soc/pmu_struct.h"
 #include "hal/lp_aon_hal.h"
 #include "esp_private/esp_pmu.h"
+#include "pmu_param.h"
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -155,6 +156,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_period, fastclk_period);
 
     if (dslp) {
+        config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
         config->analog = analog_default;
     } else {
@@ -162,21 +164,15 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
-        if (!(pd_flags & PMU_SLEEP_PD_TOP) || !(pd_flags & PMU_SLEEP_PD_MODEM)){
-            analog_default.hp_sys.analog.xpd = 1;
-            analog_default.hp_sys.analog.dbias = 2;
-        }
 
         if (!(pd_flags & PMU_SLEEP_PD_XTAL)){
-            analog_default.hp_sys.analog.xpd = 1;
-            analog_default.hp_sys.analog.pd_cur = 0;
-            analog_default.hp_sys.analog.bias_sleep = 0;
-            analog_default.hp_sys.analog.dbias = 25;
+            analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+            analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
+            analog_default.hp_sys.analog.dbias = HP_CALI_DBIAS;
 
-            analog_default.lp_sys[LP(SLEEP)].analog.xpd = 1;
-            analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = 0;
-            analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = 0;
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = 26;
+            analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+            analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS;
         }
 
         config->analog = analog_default;
@@ -206,25 +202,17 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
 {
     assert(ctx->hal);
+    pmu_ll_hp_set_dbg_atten                   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbg_atten);
     pmu_ll_hp_set_current_power_off           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.pd_cur);
     pmu_ll_hp_set_bias_sleep_enable           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.bias_sleep);
-    pmu_ll_hp_set_regulator_sleep_memory_xpd  (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_mem_xpd);
-    pmu_ll_hp_set_regulator_sleep_logic_xpd   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_logic_xpd);
     pmu_ll_hp_set_regulator_xpd               (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd);
-    pmu_ll_hp_set_regulator_sleep_memory_dbias(ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_mem_dbias);
-    pmu_ll_hp_set_regulator_sleep_logic_dbias (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_logic_dbias);
     pmu_ll_hp_set_regulator_dbias             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbias);
     pmu_ll_hp_set_regulator_driver_bar        (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
-
-    pmu_ll_lp_set_regulator_slp_xpd    (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.slp_xpd);
-    pmu_ll_lp_set_regulator_sleep_dbias(ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.slp_dbias);
-    pmu_ll_lp_set_regulator_xpd        (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.xpd);
-    pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.dbias);
-    pmu_ll_lp_set_regulator_driver_bar (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.drv_b);
 
     pmu_ll_lp_set_dbg_atten            (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbg_atten);
     pmu_ll_lp_set_current_power_off    (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.pd_cur);
     pmu_ll_lp_set_bias_sleep_enable    (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.bias_sleep);
+    pmu_ll_lp_set_regulator_slp_xpd    (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.slp_xpd);
     pmu_ll_lp_set_regulator_xpd        (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.xpd);
     pmu_ll_lp_set_regulator_sleep_dbias(ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.slp_dbias);
     pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbias);

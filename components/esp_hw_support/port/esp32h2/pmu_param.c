@@ -210,9 +210,9 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .slp_mem_xpd     = 0,   \
         .slp_logic_xpd   = 0,   \
         .xpd             = 1,   \
-        .slp_mem_dbias   = 0x5, \
-        .slp_logic_dbias = 0xc, \
-        .dbias           = 0xf \
+        .slp_mem_dbias   = 0, \
+        .slp_logic_dbias = 0, \
+        .dbias           = HP_CALI_DBIAS \
     }, \
     .regulator1 = {             \
         .drv_b           = 0x1a \
@@ -230,9 +230,9 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .slp_mem_xpd     = 0,   \
         .slp_logic_xpd   = 0,   \
         .xpd             = 1,   \
-        .slp_mem_dbias   = 0x5, \
-        .slp_logic_dbias = 0xc, \
-        .dbias           = 0xd  \
+        .slp_mem_dbias   = 0, \
+        .slp_logic_dbias = 0, \
+        .dbias           = HP_CALI_DBIAS  \
     }, \
     .regulator1 = {             \
         .drv_b           = 0x1b \
@@ -247,11 +247,11 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .bias_sleep      = 1    \
     }, \
     .regulator0 = {             \
-        .slp_mem_xpd     = 1,   \
-        .slp_logic_xpd   = 1,   \
-        .xpd             = 0,   \
-        .slp_mem_dbias   = 0x1, \
-        .slp_logic_dbias = 0x5, \
+        .slp_mem_xpd     = 0,   \
+        .slp_logic_xpd   = 0,   \
+        .xpd             = 1,   \
+        .slp_mem_dbias   = 0, \
+        .slp_logic_dbias = 0, \
         .dbias           = 0  \
     }, \
     .regulator1 = {             \
@@ -403,10 +403,10 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .slp_xpd    = 0,    \
         .xpd        = 1,    \
         .slp_dbias  = 0,  \
-        .dbias      = 0xe  \
+        .dbias      = LP_CALI_DBIAS  \
     }, \
     .regulator1 = {         \
-        .drv_b      = 3     \
+        .drv_b      = 0     \
     } \
 }
 
@@ -417,10 +417,10 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
         .bias_sleep = 1,    \
     }, \
     .regulator0 = {         \
-        .slp_xpd    = 1,    \
-        .xpd        = 0,    \
-        .slp_dbias  = 0xf,  \
-        .dbias      = 0  \
+        .slp_xpd    = 0,    \
+        .xpd        = 1,    \
+        .slp_dbias  = 0,  \
+        .dbias      = 1  \
     }, \
     .regulator1 = {         \
         .drv_b      = 9     \

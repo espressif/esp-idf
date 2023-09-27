@@ -209,8 +209,8 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .slp_mem_xpd     = 0,   \
         .slp_logic_xpd   = 0,   \
         .xpd             = 1,   \
-        .slp_mem_dbias   = 0xc, \
-        .slp_logic_dbias = 0xc, \
+        .slp_mem_dbias   = 0, \
+        .slp_logic_dbias = 0, \
         .dbias           = 0x19 \
     }, \
     .regulator1 = {             \
@@ -229,8 +229,8 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .slp_mem_xpd     = 0,   \
         .slp_logic_xpd   = 0,   \
         .xpd             = 1,   \
-        .slp_mem_dbias   = 0xc, \
-        .slp_logic_dbias = 0xc, \
+        .slp_mem_dbias   = 0, \
+        .slp_logic_dbias = 0, \
         .dbias           = 0x1a \
     }, \
     .regulator1 = {             \
@@ -246,12 +246,12 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .bias_sleep      = 0    \
     }, \
     .regulator0 = {             \
-        .slp_mem_xpd     = 1,   \
-        .slp_logic_xpd   = 1,   \
-        .xpd             = 0,   \
-        .slp_mem_dbias   = 0x4, \
-        .slp_logic_dbias = 0x4, \
-        .dbias           = 0x1a \
+        .slp_mem_xpd     = 0,   \
+        .slp_logic_xpd   = 0,   \
+        .xpd             = 1,   \
+        .slp_mem_dbias   = 0, \
+        .slp_logic_dbias = 0, \
+        .dbias           = 1 \
     }, \
     .regulator1 = {             \
         .drv_b           = 0x0 \
@@ -404,8 +404,8 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
     .regulator0 = {         \
         .slp_xpd    = 0,    \
         .xpd        = 1,    \
-        .slp_dbias  = 0x0,  \
-        .dbias      = 0x1a  \
+        .slp_dbias  = 0,  \
+        .dbias      = LP_CALI_DBIAS  \
     }, \
     .regulator1 = {         \
         .drv_b      = 0x0     \
@@ -415,15 +415,15 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
 #define PMU_LP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
     .bias = {               \
         .xpd_bias   = 0,    \
-        .dbg_atten  = 0x0,  \
+        .dbg_atten  = 0,  \
         .pd_cur     = 1,    \
         .bias_sleep = 1,    \
     }, \
     .regulator0 = {         \
-        .slp_xpd    = 1,    \
-        .xpd        = 0,    \
-        .slp_dbias  = 0x0,  \
-        .dbias      = 0x12  \
+        .slp_xpd    = 0,    \
+        .xpd        = 1,    \
+        .slp_dbias  = 0,  \
+        .dbias      = 12  \
     }, \
     .regulator1 = {         \
         .drv_b      = 0x0     \
