@@ -184,13 +184,13 @@ typedef union
     } phone;
 
     // BTC_HF_REGISTER_DATA_CALLBACK_EVT
-    struct reg_data_callback {
+    struct ag_reg_data_callback {
         esp_hf_incoming_data_cb_t recv;
         esp_hf_outgoing_data_cb_t send;
     } reg_data_cb;
 
     // BTC_HF_REQUEST_PKT_STAT_EVT
-    struct req_pkt_stat_sync_handle {
+    struct ag_req_pkt_stat_sync_handle {
         UINT16            sync_conn_handle;
     } pkt_sync_hd;
 

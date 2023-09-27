@@ -83,21 +83,23 @@ config BT_L2CAP_ENABLED
         This enables the Logical Link Control and Adaptation Layer Protocol.
         Only supported classic bluetooth.
 
-config BT_HFP_ENABLE
+menuconfig BT_HFP_ENABLE
     bool "Hands Free/Handset Profile"
     depends on BT_CLASSIC_ENABLED
     default n
+    help
+        Hands Free Unit and Audio Gateway can be included simultaneously
+        but they cannot run simultaneously due to internal limitations.
 
-choice BT_HFP_ROLE
-    prompt "Hands-free Profile Role configuration"
+config BT_HFP_CLIENT_ENABLE
+    bool "Hands Free Unit"
     depends on BT_HFP_ENABLE
+    default y
 
-    config BT_HFP_CLIENT_ENABLE
-        bool "Hands Free Unit"
-
-    config BT_HFP_AG_ENABLE
-        bool "Audio Gateway"
-endchoice
+config BT_HFP_AG_ENABLE
+    bool "Audio Gateway"
+    depends on BT_HFP_ENABLE
+    default y
 
 choice BT_HFP_AUDIO_DATA_PATH
     prompt "audio(SCO) data path"
@@ -120,6 +122,7 @@ config BT_HFP_WBS_ENABLE
     help
         This enables Wide Band Speech. Should disable it when SCO data path is PCM.
         Otherwise there will be no data transmited via GPIOs.
+
 
 config BT_HID_ENABLED
     bool "Classic BT HID"

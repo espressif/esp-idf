@@ -96,49 +96,50 @@
 #define VND_BT_JV_BTA_L2CAP         TRUE
 #endif /* UC_BT_L2CAP_ENABLED */
 
+#if (UC_BT_HFP_AG_ENABLED == TRUE) || (UC_BT_HFP_CLIENT_ENABLED == TRUE)
+#ifndef RFCOMM_INCLUDED
+#define RFCOMM_INCLUDED             TRUE
+#endif
+#ifndef BTM_SCO_INCLUDED
+#define BTM_SCO_INCLUDED            TRUE
+#endif
+#ifndef SBC_DEC_INCLUDED
+#define SBC_DEC_INCLUDED            TRUE
+#endif
+#ifndef SBC_ENC_INCLUDED
+#define SBC_ENC_INCLUDED            TRUE
+#endif
+#ifndef PLC_INCLUDED
+#define PLC_INCLUDED                TRUE
+#endif
+
 #if (UC_BT_HFP_AG_ENABLED == TRUE)
+#ifndef BTM_MAX_SCO_LINKS_AG
+#define BTM_MAX_SCO_LINKS_AG        (1)
+#endif
 #define BTC_HF_INCLUDED             TRUE
 #define BTA_AG_INCLUDED             TRUE
-#define PLC_INCLUDED                TRUE
-#define BTA_JV_RFCOMM_INCLUDED      TRUE
-#ifndef RFCOMM_INCLUDED
-#define RFCOMM_INCLUDED             TRUE
+#else
+#ifndef BTM_MAX_SCO_LINKS_AG
+#define BTM_MAX_SCO_LINKS_AG        (0)
 #endif
-#ifndef BTM_SCO_INCLUDED
-#define BTM_SCO_INCLUDED            TRUE
-#endif
-#ifndef BTM_MAX_SCO_LINKS
-#define BTM_MAX_SCO_LINKS           (1)
-#endif
-#ifndef SBC_DEC_INCLUDED
-#define SBC_DEC_INCLUDED            TRUE
-#endif
-#ifndef SBC_ENC_INCLUDED
-#define SBC_ENC_INCLUDED            TRUE
-#endif
-#endif  /* UC_BT_HFP_AG_ENABLED */
-
+#endif /* (UC_BT_HFP_AG_ENABLED == TRUE) */
 #if (UC_BT_HFP_CLIENT_ENABLED == TRUE)
+#ifndef BTM_MAX_SCO_LINKS_CLIENT
+#define BTM_MAX_SCO_LINKS_CLIENT    (1)
+#endif
 #define BTC_HF_CLIENT_INCLUDED      TRUE
 #define BTA_HF_INCLUDED             TRUE
-#define PLC_INCLUDED                TRUE
-#ifndef RFCOMM_INCLUDED
-#define RFCOMM_INCLUDED             TRUE
+#else
+#ifndef BTM_MAX_SCO_LINKS_CLIENT
+#define BTM_MAX_SCO_LINKS_CLIENT    (0)
 #endif
-#ifndef BTM_SCO_INCLUDED
-#define BTM_SCO_INCLUDED            TRUE
-#endif
-#ifndef BTM_MAX_SCO_LINKS
-#define BTM_MAX_SCO_LINKS           (1)
-#endif
+#endif /* (UC_BT_HFP_CLIENT_ENABLED == TRUE) */
 
-#ifndef SBC_DEC_INCLUDED
-#define SBC_DEC_INCLUDED            TRUE
+#ifndef BTM_MAX_SCO_LINKS
+#define BTM_MAX_SCO_LINKS           (BTM_MAX_SCO_LINKS_AG + BTM_MAX_SCO_LINKS_CLIENT)
 #endif
-#ifndef SBC_ENC_INCLUDED
-#define SBC_ENC_INCLUDED            TRUE
-#endif
-#endif  /* UC_BT_HFP_CLIENT_ENABLED */
+#endif /* (UC_BT_HFP_AG_ENABLED == TRUE) || (UC_BT_HFP_CLIENT_ENABLED == TRUE) */
 
 #if UC_BT_HID_ENABLED
 #define BT_HID_INCLUDED             TRUE
