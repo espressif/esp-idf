@@ -233,7 +233,6 @@ static int http_on_header_event(esp_http_client_handle_t client)
 static int http_on_header_field(http_parser *parser, const char *at, size_t length)
 {
     esp_http_client_t *client = parser->data;
-    http_on_header_event(client);
     http_utils_append_string(&client->current_header_key, at, length);
 
     return 0;
@@ -254,6 +253,7 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
         http_utils_append_string(&client->auth_header, at, length);
     }
     http_utils_append_string(&client->current_header_value, at, length);
+    http_on_header_event(client);
     return 0;
 }
 
@@ -1643,6 +1643,15 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
     } else {
         return HTTP_TRANSPORT_UNKNOWN;
     }
+}
+
+esp_err_t esp_http_client_set_auth_data(esp_http_client_handle_t client, const char *auth_data, int len)
+{
+    if (client == NULL || auth_data == NULL || len <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    http_utils_append_string(&client->auth_header, auth_data, len);
+    return ESP_OK;
 }
 
 void esp_http_client_add_auth(esp_http_client_handle_t client)
