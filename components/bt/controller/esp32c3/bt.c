@@ -246,6 +246,7 @@ extern bool btdm_deep_sleep_mem_init(void);
 extern void btdm_deep_sleep_mem_deinit(void);
 extern void btdm_ble_power_down_dma_copy(bool copy);
 extern uint8_t btdm_sleep_clock_sync(void);
+extern void sdk_config_extend_set_pll_track(bool enable);
 
 #if CONFIG_MAC_BB_PD
 extern void esp_mac_bb_power_down(void);
@@ -747,7 +748,7 @@ static void btdm_sleep_enter_phase2_wrapper(void)
 {
     if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
         if (s_lp_stat.phy_enabled) {
-            esp_phy_disable();
+            esp_phy_disable(PHY_MODEM_BT);
             s_lp_stat.phy_enabled = 0;
         } else {
             assert(0);
@@ -776,7 +777,7 @@ static void btdm_sleep_exit_phase3_wrapper(void)
 
     if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
         if (s_lp_stat.phy_enabled == 0) {
-            esp_phy_enable();
+            esp_phy_enable(PHY_MODEM_BT);
             s_lp_stat.phy_enabled = 1;
         }
     }
@@ -1442,7 +1443,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     /* Enable PHY when enabling controller to reduce power dissipation after controller init
      * Notice the init order: esp_phy_enable() -> bt_bb_v2_init_cmplx() -> coex_pti_v2()
      */
-    esp_phy_enable();
+    esp_phy_enable(PHY_MODEM_BT);
     s_lp_stat.phy_enabled = 1;
 
 #if CONFIG_SW_COEXIST_ENABLE
@@ -1463,6 +1464,9 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
             btdm_controller_enable_sleep(true);
         }
     } while (0);
+
+    // Disable pll track by default in BLE controller on ESP32-C3 and ESP32-S3
+    sdk_config_extend_set_pll_track(false);
 
     if (btdm_controller_enable(mode) != 0) {
         ret = ESP_ERR_INVALID_STATE;
@@ -1494,7 +1498,7 @@ error:
     coex_disable();
 #endif
     if (s_lp_stat.phy_enabled) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
         s_lp_stat.phy_enabled = 0;
     }
     return ret;
@@ -1516,7 +1520,7 @@ esp_err_t esp_bt_controller_disable(void)
     coex_disable();
 #endif
     if (s_lp_stat.phy_enabled) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
         s_lp_stat.phy_enabled = 0;
     }
 

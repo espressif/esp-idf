@@ -487,7 +487,7 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
     sleep_retention_do_extra_retention(true);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
-    esp_phy_disable();
+    esp_phy_disable(PHY_MODEM_BT);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_release(s_pm_lock);
 #endif // CONFIG_PM_ENABLE
@@ -506,7 +506,7 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
     sleep_retention_do_extra_retention(false);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG */
 #endif //CONFIG_PM_ENABLE
-    esp_phy_enable();
+    esp_phy_enable(PHY_MODEM_BT);
     s_ble_active = true;
 }
 
@@ -888,7 +888,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 #if CONFIG_PM_ENABLE
         esp_pm_lock_acquire(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE
-        esp_phy_enable();
+        esp_phy_enable(PHY_MODEM_BT);
         esp_btbb_enable();
         s_ble_active = true;
     }
@@ -909,7 +909,7 @@ error:
 #endif
     if (s_ble_active) {
         esp_btbb_disable();
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
 #if CONFIG_PM_ENABLE
         esp_pm_lock_release(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE
@@ -932,7 +932,7 @@ esp_err_t esp_bt_controller_disable(void)
 #endif
     if (s_ble_active) {
         esp_btbb_disable();
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
 #if CONFIG_PM_ENABLE
         esp_pm_lock_release(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE

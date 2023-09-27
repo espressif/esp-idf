@@ -46,9 +46,10 @@ void IRAM_ATTR phy_exit_critical(uint32_t level)
     }
 }
 
-void esp_phy_enable(void)
+void esp_phy_enable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
+    phy_set_modem_flag(modem);
     if (s_phy_access_ref == 0) {
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
         modem_clock_module_enable(PERIPH_PHY_MODULE);
@@ -68,7 +69,7 @@ void esp_phy_enable(void)
     _lock_release(&s_phy_access_lock);
 }
 
-void esp_phy_disable(void)
+void esp_phy_disable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
 
@@ -85,5 +86,6 @@ void esp_phy_disable(void)
 #endif
     }
 
+    phy_clr_modem_flag(modem);
     _lock_release(&s_phy_access_lock);
 }

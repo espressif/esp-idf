@@ -22,7 +22,7 @@
 esp_err_t esp_ieee802154_enable(void)
 {
     ieee802154_enable();
-    esp_phy_enable();
+    esp_phy_enable(PHY_MODEM_IEEE802154);
     esp_btbb_enable();
     return ieee802154_mac_init();
 }

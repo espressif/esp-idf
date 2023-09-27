@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,15 @@ extern "C" {
 typedef struct {
 	uint8_t params[128];                    /*!< opaque PHY initialization parameters */
 } esp_phy_init_data_t;
+
+/**
+ * @brief PHY enable or disable modem
+ */
+typedef enum {
+    PHY_MODEM_WIFI       = 1,       /*!< PHY modem WIFI       */
+    PHY_MODEM_BT         = 2,       /*!< PHY modem BT         */
+    PHY_MODEM_IEEE802154 = 4,       /*!< PHY modem IEEE802154 */
+} esp_phy_modem_t;
 
 /**
  * @brief Opaque PHY calibration data
@@ -144,8 +153,9 @@ esp_err_t esp_phy_erase_cal_data_in_nvs(void);
  * Now PHY and RF enabling job is done automatically when start WiFi or BT. Users should not
  * call this API in their application.
  *
+ * @param modem the modem to call the phy enable.
  */
-void esp_phy_enable(void);
+void esp_phy_enable(esp_phy_modem_t modem);
 
 /**
  * @brief Disable PHY and RF module
@@ -154,8 +164,9 @@ void esp_phy_enable(void);
  * Now PHY and RF disabling job is done automatically when stop WiFi or BT. Users should not
  * call this API in their application.
  *
+ * @param modem the modem to call the phy disable.
  */
-void esp_phy_disable(void);
+void esp_phy_disable(esp_phy_modem_t modem);
 
 /**
  * @brief Enable BTBB module
@@ -259,16 +270,17 @@ esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
 char * get_phy_version_str(void);
 
 /**
- * @brief Enable phy track pll
- *
+ * @brief Set PHY init parameters
+ * @param param is 1 means combo module
  */
-void phy_track_pll_init(void);
+void phy_init_param_set(uint8_t param);
 
 /**
- * @brief Disable phy track pll
- *
+ * @brief Wi-Fi RX enable
+ * @param enable True for enable wifi receiving mode as default, false for closing wifi receiving mode as default.
  */
-void phy_track_pll_deinit(void);
+void phy_wifi_enable_set(uint8_t enable);
+
 #ifdef __cplusplus
 }
 #endif

@@ -710,3 +710,7 @@ config SOC_BLUFI_SUPPORTED
 config SOC_PHY_IMPROVE_RX_11B
     bool
     default y
+
+config SOC_PHY_COMBO_MODULE
+    bool
+    default y

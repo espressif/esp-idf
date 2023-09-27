@@ -894,3 +894,7 @@ config SOC_BLUFI_SUPPORTED
 config SOC_ULP_HAS_ADC
     bool
     default y
+
+config SOC_PHY_COMBO_MODULE
+    bool
+    default y
