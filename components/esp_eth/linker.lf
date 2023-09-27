@@ -1,0 +1,19 @@
+[mapping:esp_eth]
+archive: libesp_eth.a
+entries:
+  if ETH_IRAM_OPTIMIZATION = y:
+    esp_eth:esp_eth_transmit (noflash_text)
+    esp_eth:esp_eth_transmit_vargs (noflash_text)
+    esp_eth_mac_esp:emac_esp32_transmit (noflash_text)
+    esp_eth_mac_esp:emac_esp32_transmit_multiple_bufs (noflash_text)
+    esp_eth_mac_esp:emac_esp32_receive (noflash_text)
+    esp_eth_mac_esp:emac_esp32_rx_task (noflash_text)
+
+[mapping:esp_eth_hal]
+archive: libhal.a
+entries:
+  if ETH_IRAM_OPTIMIZATION = y:
+    emac_hal:emac_hal_transmit_frame (noflash)
+    emac_hal:emac_hal_transmit_multiple_buf_frame (noflash)
+    emac_hal:emac_hal_alloc_recv_buf (noflash)
+    emac_hal:emac_hal_receive_frame (noflash)
