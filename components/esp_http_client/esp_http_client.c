@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -654,6 +654,12 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
             esp_transport_ssl_set_client_cert_data_der(ssl, config->client_cert_pem, config->client_cert_len);
         }
     }
+
+#if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+    if (config->ds_data != NULL) {
+        esp_transport_ssl_set_ds_data(ssl, config->ds_data);
+    }
+#endif
 
     if (config->client_key_pem) {
         if (!config->client_key_len) {
