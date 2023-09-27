@@ -148,7 +148,7 @@ HF_CMD_HANDLER(ind_change)
     if (sscanf(argv[3], "%d", &ntk_state) != 1 ||
         (ntk_state != ESP_HF_NETWORK_STATE_NOT_AVAILABLE &&
         ntk_state != ESP_HF_NETWORK_STATE_AVAILABLE)) {
-        printf("Invalid argument for netwrok state %s\n", argv[3]);
+        printf("Invalid argument for network state %s\n", argv[3]);
         return 1;
     }
     if (sscanf(argv[4], "%d", &signal) != 1 ||
@@ -157,7 +157,10 @@ HF_CMD_HANDLER(ind_change)
         return 1;
     }
     printf("Device Indicator Changed!\n");
-    esp_hf_ag_devices_status_indchange(hf_peer_addr, call_state, call_setup_state, ntk_state, signal);
+    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_CALL, call_state);
+    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_CALLSETUP, call_setup_state);
+    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_SERVICE, ntk_state);
+    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_SIGNAL, signal);
     return 0;
 }
 

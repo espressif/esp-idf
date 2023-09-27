@@ -71,26 +71,36 @@ static hf_local_param_t *hf_local_param;
 
 #if (BTM_WBS_INCLUDED == TRUE)
 #ifndef BTC_HF_FEATURES
-#define BTC_HF_FEATURES    ( BTA_AG_FEAT_ECNR   | \
-                             BTA_AG_FEAT_REJECT | \
-                             BTA_AG_FEAT_ECS    | \
-                             BTA_AG_FEAT_EXTERR | \
-                             BTA_AG_FEAT_VREC   | \
-                             BTA_AG_FEAT_INBAND | \
-                             BTA_AG_FEAT_CODEC  | \
-                             BTA_AG_FEAT_ESCO_S4| \
-                             BTA_AG_FEAT_UNAT)
+#define BTC_HF_FEATURES    ( BTA_AG_FEAT_ECNR    | \
+                             BTA_AG_FEAT_REJECT  | \
+                             BTA_AG_FEAT_ECS     | \
+                             BTA_AG_FEAT_EXTERR  | \
+                             BTA_AG_FEAT_VREC    | \
+                             BTA_AG_FEAT_INBAND  | \
+                             BTA_AG_FEAT_CODEC   | \
+                             BTA_AG_FEAT_ESCO_S4 | \
+                             BTA_AG_FEAT_UNAT )
 #endif
 #else
 #ifndef BTC_HF_FEATURES
-#define BTC_HF_FEATURES    ( BTA_AG_FEAT_ECNR   | \
-                             BTA_AG_FEAT_REJECT | \
-                             BTA_AG_FEAT_ECS    | \
-                             BTA_AG_FEAT_EXTERR | \
-                             BTA_AG_FEAT_VREC   | \
-                             BTA_AG_FEAT_INBAND | \
-                             BTA_AG_FEAT_ESCO_S4| \
-                             BTA_AG_FEAT_UNAT)
+#if BT_HF_AG_BQB_INCLUDED
+#define BTC_HF_FEATURES    ( BTA_AG_FEAT_REJECT  | \
+                             BTA_AG_FEAT_ECS     | \
+                             BTA_AG_FEAT_EXTERR  | \
+                             BTA_AG_FEAT_VREC    | \
+                             BTA_AG_FEAT_INBAND  | \
+                             BTA_AG_FEAT_ESCO_S4 | \
+                             BTA_AG_FEAT_UNAT )
+#else
+#define BTC_HF_FEATURES    ( BTA_AG_FEAT_ECNR    | \
+                             BTA_AG_FEAT_REJECT  | \
+                             BTA_AG_FEAT_ECS     | \
+                             BTA_AG_FEAT_EXTERR  | \
+                             BTA_AG_FEAT_VREC    | \
+                             BTA_AG_FEAT_INBAND  | \
+                             BTA_AG_FEAT_ESCO_S4 | \
+                             BTA_AG_FEAT_UNAT )
+#endif /* BT_HF_AG_BQB_INCLUDED */
 #endif
 #endif
 
@@ -525,7 +535,20 @@ static bt_status_t btc_hf_indchange_notification(bt_bdaddr_t *bd_addr,
         send_indicator_update(BTA_AG_IND_SIGNAL, signal);
         return BT_STATUS_SUCCESS;
     }
-    return BT_STATUS_SUCCESS;
+    return BT_STATUS_FAIL;
+}
+
+// +CIEV<...> for device status update, send other indicators, e.g. roaming, battery, call held and bearer
+bt_status_t btc_hf_ciev_report(bt_bdaddr_t *bd_addr, tBTA_AG_IND_TYPE indicator, uint16_t value)
+{
+    int idx = btc_hf_idx_by_bdaddr(bd_addr);
+    CHECK_HF_INIT(idx);
+
+    if (is_connected(idx, bd_addr)) {
+        send_indicator_update(indicator, value);
+        return BT_STATUS_SUCCESS;
+    }
+    return BT_STATUS_FAIL;
 }
 
 //AT+CIND response
@@ -607,7 +630,7 @@ static bt_status_t btc_hf_clcc_response(bt_bdaddr_t *bd_addr, int index, esp_hf_
 }
 
 //AT+CNUM
-static bt_status_t btc_hf_cnum_response(bt_bdaddr_t *bd_addr, const char *number, esp_hf_subscriber_service_type_t type)
+static bt_status_t btc_hf_cnum_response(bt_bdaddr_t *bd_addr, const char *number, int number_type, esp_hf_subscriber_service_type_t service_type)
 {
     int idx = btc_hf_idx_by_bdaddr(bd_addr);
     CHECK_HF_SLC_CONNECTED(idx);
@@ -615,11 +638,11 @@ static bt_status_t btc_hf_cnum_response(bt_bdaddr_t *bd_addr, const char *number
     if (is_connected(idx, bd_addr)) {
         tBTA_AG_RES_DATA    ag_res;
         memset(&ag_res, 0, sizeof (ag_res));
-        BTC_TRACE_EVENT("cnum_response: number = %s, type = %d", number, type);
-        if (number) {
-            sprintf(ag_res.str, ",\"%s\",%d",number, type);
+        BTC_TRACE_EVENT("cnum_response: number = %s, number type = %d, service type = %d", number, number_type, service_type);
+        if (service_type) {
+            sprintf(ag_res.str, ",\"%s\",%d,,%d",number, number_type, service_type);
         } else {
-            sprintf(ag_res.str, ",\"\",%d",type);
+            sprintf(ag_res.str, ",\"%s\",%d,,",number, number_type);
         }
         ag_res.ok_flag = BTA_AG_OK_DONE;
         BTA_AgResult(hf_local_param[idx].btc_hf_cb.handle, BTA_AG_CNUM_RES, &ag_res);
@@ -1117,6 +1140,12 @@ void btc_hf_call_handler(btc_msg_t *msg)
             break;
         }
 
+        case BTC_HF_CIEV_REPORT_EVT:
+        {
+            btc_hf_ciev_report(&arg->ciev_rep.remote_addr, arg->ciev_rep.ind.type, arg->ciev_rep.ind.value);
+            break;
+        }
+
         case BTC_HF_CIND_RESPONSE_EVT:
         {
             btc_hf_cind_response(&arg->cind_rep.remote_addr,
@@ -1142,7 +1171,7 @@ void btc_hf_call_handler(btc_msg_t *msg)
 
         case BTC_HF_CNUM_RESPONSE_EVT:
         {
-            btc_hf_cnum_response(&arg->cnum_rep.remote_addr, arg->cnum_rep.number, arg->cnum_rep.type);
+            btc_hf_cnum_response(&arg->cnum_rep.remote_addr, arg->cnum_rep.number, arg->cnum_rep.number_type, arg->cnum_rep.service_type);
             break;
         }
 
@@ -1491,7 +1520,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                     param.out_call.num_or_loc = osi_malloc((strlen(p_data->val.str) + 1) * sizeof(char));
                     sprintf(param.out_call.num_or_loc, "%s", p_data->val.str);
                     btc_hf_cb_to_app(ESP_HF_DIAL_EVT, &param);
-                    send_indicator_update(BTA_AG_IND_CALLSETUP,BTA_AG_CALLSETUP_OUTGOING);
                     osi_free(param.out_call.num_or_loc);
                 } else if (event == BTA_AG_AT_BLDN_EVT) {                    //dial_last
                     memcpy(param.out_call.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));

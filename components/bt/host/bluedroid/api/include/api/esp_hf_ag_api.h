@@ -402,7 +402,7 @@ esp_err_t esp_hf_ag_vra_control(esp_bd_addr_t remote_bda, esp_hf_vr_state_t valu
  */
 esp_err_t esp_hf_ag_volume_control(esp_bd_addr_t remote_bda, esp_hf_volume_control_target_t type, int volume);
 
- /**
+/**
  *
  * @brief           Handle Unknown AT command from HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
@@ -419,7 +419,7 @@ esp_err_t esp_hf_ag_volume_control(esp_bd_addr_t remote_bda, esp_hf_volume_contr
  */
 esp_err_t esp_hf_ag_unknown_at_send(esp_bd_addr_t remote_addr, char *unat);
 
- /**
+/**
  *
  * @brief           Unsolicited send extend AT error code to HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
@@ -435,7 +435,7 @@ esp_err_t esp_hf_ag_unknown_at_send(esp_bd_addr_t remote_addr, char *unat);
  */
 esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_bda, esp_hf_at_response_code_t response_code, esp_hf_cme_err_t error_code);
 
- /**
+/**
  *
  * @brief           Unsolicited send device status notification to HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
@@ -452,10 +452,29 @@ esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_bda, esp_hf_at_response_code_
  *
  */
 esp_err_t esp_hf_ag_devices_status_indchange(esp_bd_addr_t remote_addr, esp_hf_call_status_t call_state,
-                                            esp_hf_call_setup_status_t call_setup_state,
-                                            esp_hf_network_state_t ntk_state, int signal);
+                                             esp_hf_call_setup_status_t call_setup_state,
+                                             esp_hf_network_state_t ntk_state, int signal) __attribute__((
+                                             deprecated("Please use esp_hf_ag_ciev_report")
+                                             ));
 
- /**
+/**
+ *
+ * @brief           Send indicator report "+CIEV: <ind> <value>" to HFP Client. "CIEV" means “indicator events reporting",
+ *                  and all indicator types can be sent one type at a time.
+ *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
+ *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       ind_type: indicator type
+ * @param[in]       value: indicator value
+ * @return
+ *                  - ESP_OK: disconnect request is sent to lower layer
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_hf_ag_ciev_report(esp_bd_addr_t remote_addr, esp_hf_ciev_report_type_t ind_type, int value);
+
+/**
  *
  * @brief           Response to device individual indicators to HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
@@ -501,7 +520,7 @@ esp_err_t esp_hf_ag_cops_response(esp_bd_addr_t remote_addr, char *name);
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
- * @param[in]       index: the index of current call
+ * @param[in]       index: the index of current call, starting with 1, finishing response with 0 (send OK)
  * @param[in]       dir: call direction (incoming/outgoing)
  * @param[in]       current_call_state: current call state
  * @param[in]       mode: current call mode (voice/data/fax)
@@ -525,14 +544,18 @@ esp_err_t esp_hf_ag_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
  *
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       number: registration number
- * @param[in]       type: service type (unknown/voice/fax)
+ * @param[in]       number_type: value of number type from
+ *                               128-143: national or international, may contain prefix and/or escape digits
+ *                               144-159: international, includes country code prefix, add "+" if needed
+ *                               160-175: national, but no prefix nor escape digits
+ * @param[in]       service_type: service type (unknown/voice/fax)
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_hf_subscriber_service_type_t type);
+esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, int number_type, esp_hf_subscriber_service_type_t service_type);
 
 /**
  *
@@ -597,6 +620,9 @@ esp_err_t esp_hf_ag_reject_call(esp_bd_addr_t remote_addr, int num_active, int n
  *
  * @brief           Initiate a call from AG.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
+ *                  If the AG is driven by the HF to call esp_hf_ag_out_call, it needs to response an OK or ERROR
+ *                  to HF. But if the AG is actively calling esp_hf_ag_out_call, it does not need to take a response
+ *                  to HF.
  *
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       num_active: the number of active call

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,17 @@ typedef enum
     ESP_HF_NETWORK_STATE_AVAILABLE
 } esp_hf_network_state_t;
 
+/// +CIEV report type
+typedef enum {
+    ESP_HF_IND_TYPE_CALL = 1,       /*!< position of call indicator */
+    ESP_HF_IND_TYPE_CALLSETUP,      /*!< position of callsetup indicator */
+    ESP_HF_IND_TYPE_SERVICE,        /*!< position of service indicator */
+    ESP_HF_IND_TYPE_SIGNAL,         /*!< position of signal strength indicator, range: 0-5  */
+    ESP_HF_IND_TYPE_ROAM,           /*!< position of roaming indicator */
+    ESP_HF_IND_TYPE_BATTCHG,        /*!< position of battery charge indicator, range: 0-5 */
+    ESP_HF_IND_TYPE_CALLHELD        /*!< position of callheld indicator */
+} esp_hf_ciev_report_type_t;
+
 /** +CIEV Service type */
 typedef enum
 {
@@ -60,7 +71,7 @@ typedef enum
 
 /// +CIND call status indicator values
 typedef enum {
-    ESP_HF_CALL_STATUS_NO_CALLS = 0,                  /*!< no call in progress  */
+    ESP_HF_CALL_STATUS_NO_CALLS = 0,                  /*!< no call in progress */
     ESP_HF_CALL_STATUS_CALL_IN_PROGRESS = 1,          /*!< call is present(active or held) */
 } esp_hf_call_status_t;
 
@@ -124,7 +135,7 @@ typedef enum {
 /// +CNUM service type of the phone number
 typedef enum {
     ESP_HF_SUBSCRIBER_SERVICE_TYPE_UNKNOWN = 0,      /*!< unknown */
-    ESP_HF_SUBSCRIBER_SERVICE_TYPE_VOICE,            /*!< voice service */
+    ESP_HF_SUBSCRIBER_SERVICE_TYPE_VOICE = 4,        /*!< voice service */
     ESP_HF_SUBSCRIBER_SERVICE_TYPE_FAX,              /*!< fax service */
 } esp_hf_subscriber_service_type_t;
 

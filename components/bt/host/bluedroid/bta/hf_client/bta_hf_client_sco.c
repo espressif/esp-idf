@@ -29,6 +29,10 @@
 #include "hci/hci_audio.h"
 #endif
 
+#if BT_HF_CLIENT_BQB_INCLUDED
+static BOOLEAN s_bta_hf_client_bqb_esco_s1_flag = false;
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
+
 #if (BTA_HF_INCLUDED == TRUE)
 #define BTA_HF_CLIENT_NO_EDR_ESCO  (BTM_SCO_PKT_TYPES_MASK_NO_2_EV3 | \
                                     BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 | \
@@ -39,6 +43,7 @@
 #define BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S3  1   /* eSCO setting for CVSD S3 */
 #define BTA_HF_CLIENT_ESCO_PARAM_IDX_MSBC_T2  2   /* eSCO setting for mSBC T2 */
 #define BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4  3   /* eSCO setting for CVSD S4 */
+#define BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S1  4   /* eSCO setting for CVSD S1 */
 
 static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
     /* SCO CVSD */
@@ -91,7 +96,23 @@ static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
         .retrans_effort = BTM_ESCO_RETRANS_QUALITY,
+    },
+    /* ESCO CVSD S1 */
+#if BT_HF_CLIENT_BQB_INCLUDED
+    {
+        .rx_bw = BTM_64KBITS_RATE,
+        .tx_bw = BTM_64KBITS_RATE,
+        .max_latency = 7,
+        .voice_contfmt = BTM_VOICE_SETTING_CVSD,
+        /* Packet Types : EV3 */
+        .packet_types = (HCI_ESCO_PKT_TYPES_MASK_EV3 |
+        BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+        BTM_SCO_PKT_TYPES_MASK_NO_2_EV3 |
+        BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
+        BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
+        .retrans_effort = BTM_ESCO_RETRANS_POWER,
     }
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
 };
 
 enum {
@@ -105,6 +126,22 @@ enum {
     BTA_HF_CLIENT_SCO_CI_DATA_E,       /* sco data ready */
 #endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE ) */
 };
+
+/*******************************************************************************
+**
+** Function     bta_hf_client_bqb_esco_s1_ctrl
+**
+** Description  Control the usage of CVSD eSCO S1 parameter for BQB test
+**
+** Returns      void
+**
+*******************************************************************************/
+#if BT_HF_CLIENT_BQB_INCLUDED
+void bta_hf_client_bqb_esco_s1_ctrl(BOOLEAN enable)
+{
+    s_bta_hf_client_bqb_esco_s1_flag = enable;
+}
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
 
 static void bta_hf_client_sco_event(UINT8 event);
 /*******************************************************************************
@@ -214,6 +251,11 @@ static void bta_hf_client_sco_conn_rsp(tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
                  (bta_hf_client_cb.scb.features && BTA_HF_CLIENT_FEAT_ESCO_S4) &&
                  (bta_hf_client_cb.scb.peer_features && BTA_HF_CLIENT_PEER_ESCO_S4)) {
                 index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4;
+#if BT_HF_CLIENT_BQB_INCLUDED
+                if (s_bta_hf_client_bqb_esco_s1_flag == true) {
+                    index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S1;
+                }
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
             } else if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_MSBC) {
                 index = BTA_HF_CLIENT_ESCO_PARAM_IDX_MSBC_T2;
             }
