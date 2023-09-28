@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -32,20 +32,20 @@ static void dac_dma_write_task(void *args)
     while (1) {
         /* The wave in the buffer will be converted cyclically */
         switch (wav_sel) {
-            case DAC_SINE_WAVE:
-                ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)sin_wav, buf_len, NULL));
-                break;
-            case DAC_TRIANGLE_WAVE:
-                ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)tri_wav, buf_len, NULL));
-                break;
-            case DAC_SAWTOOTH_WAVE:
-                ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)saw_wav, buf_len, NULL));
-                break;
-            case DAC_SQUARE_WAVE:
-                ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)squ_wav, buf_len, NULL));
-                break;
-            default:
-                break;
+        case DAC_SINE_WAVE:
+            ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)sin_wav, buf_len, NULL));
+            break;
+        case DAC_TRIANGLE_WAVE:
+            ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)tri_wav, buf_len, NULL));
+            break;
+        case DAC_SAWTOOTH_WAVE:
+            ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)saw_wav, buf_len, NULL));
+            break;
+        case DAC_SQUARE_WAVE:
+            ESP_ERROR_CHECK(dac_continuous_write_cyclically(handle, (uint8_t *)squ_wav, buf_len, NULL));
+            break;
+        default:
+            break;
         }
         /* Switch wave every CONFIG_EXAMPLE_WAVE_PERIOD_SEC seconds */
         vTaskDelay(pdMS_TO_TICKS(CONFIG_EXAMPLE_WAVE_PERIOD_SEC * 1000));

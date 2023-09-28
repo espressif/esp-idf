@@ -35,7 +35,7 @@ static void host_lib_daemon_task(void *arg)
 
     bool has_clients = true;
     bool has_devices = true;
-    while (has_clients || has_devices ) {
+    while (has_clients || has_devices) {
         uint32_t event_flags;
         ESP_ERROR_CHECK(usb_host_lib_handle_events(portMAX_DELAY, &event_flags));
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {

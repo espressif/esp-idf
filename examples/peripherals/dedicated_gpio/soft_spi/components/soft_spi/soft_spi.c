@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -31,7 +31,6 @@ static portMUX_TYPE g_lock = portMUX_INITIALIZER_UNLOCKED;
 
 const char* __attribute__((used)) SOFT_SPI_TAG = "soft_spi";
 
-
 struct soft_spi_bus_impl_t {
     uint32_t clk_bit;
     uint32_t mosi_bit;
@@ -40,7 +39,6 @@ struct soft_spi_bus_impl_t {
     dedic_gpio_bundle_handle_t out_bundle;
     dedic_gpio_bundle_handle_t in_bundle;
 };
-
 
 esp_err_t soft_spi_new(soft_spi_config_t *config, soft_spi_bus_t *bus)
 {
@@ -121,7 +119,6 @@ error:
     return ret;
 }
 
-
 esp_err_t soft_spi_del(soft_spi_bus_t bus)
 {
     esp_err_t ret;
@@ -135,7 +132,6 @@ error:
     return ret;
 }
 
-
 esp_err_t soft_spi_transfer(soft_spi_bus_t bus, const uint8_t* write_buffer, uint8_t* read_buffer, size_t buf_size)
 {
     esp_err_t ret = ESP_OK;
@@ -145,9 +141,9 @@ esp_err_t soft_spi_transfer(soft_spi_bus_t bus, const uint8_t* write_buffer, uin
 
     portENTER_CRITICAL(&g_lock);
     asm_emulate_spi_shift_byte(write_buffer, read_buffer, buf_size,
-                    /* Provide the offset in special dedicated GPIO register for Clock, MOSI and Clock
-                     * respectively */
-                    bus->clk_bit, bus->mosi_bit, bus->cs_bit, bus->miso_bit);
+                               /* Provide the offset in special dedicated GPIO register for Clock, MOSI and Clock
+                                * respectively */
+                               bus->clk_bit, bus->mosi_bit, bus->cs_bit, bus->miso_bit);
     portEXIT_CRITICAL(&g_lock);
 
 error:

@@ -44,7 +44,6 @@ typedef struct {
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
 } esp_lcd_panel_io_callbacks_t;
 
-
 /**
  * @brief Transmit LCD command and receive corresponding parameters
  *

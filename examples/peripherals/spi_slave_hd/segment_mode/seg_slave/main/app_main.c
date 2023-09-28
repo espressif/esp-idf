@@ -66,7 +66,6 @@
 //Value in these 4 registers indicates number of the RX buffer that Slave has loaded to the DMA
 #define SLAVE_RX_READY_BUF_NUM_REG      16
 
-
 static const char TAG[] = "SEG_SLAVE";
 
 /* Used for Master-Slave synchronization */
@@ -74,7 +73,6 @@ static uint32_t s_tx_ready_buf_size;  //See ``cb_set_tx_ready_buf_size()``
 static uint32_t s_rx_ready_buf_num;   //See ``cb_set_rx_ready_buf_num()``
 
 static uint32_t s_tx_data_id;
-
 
 //-------------------------------Function used for Master-Slave Synchronization---------------------------//
 /**

@@ -43,7 +43,7 @@ static void dac_write_data_asynchronously(dac_continuous_handle_t handle, QueueH
             xQueueReceive(que, &evt_data, portMAX_DELAY);
             size_t loaded_bytes = 0;
             ESP_ERROR_CHECK(dac_continuous_write_asynchronously(handle, evt_data.buf, evt_data.buf_size,
-                                            data + byte_written, data_size - byte_written, &loaded_bytes));
+                                                                data + byte_written, data_size - byte_written, &loaded_bytes));
             byte_written += loaded_bytes;
         }
         /* Clear the legacy data in DMA, clear times equal to the 'dac_continuous_config_t::desc_num' */

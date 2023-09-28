@@ -102,7 +102,6 @@ void app_main(void)
     user_data->timer_idx = 0;
     user_data->alarm_value = TIMER_ALARM_PERIOD_S * TIMER_RESOLUTION_HZ;
 
-
     ESP_LOGI(TAG, "Init timer with auto-reload");
     user_data->auto_reload = true;
     example_tg_timer_init(user_data);

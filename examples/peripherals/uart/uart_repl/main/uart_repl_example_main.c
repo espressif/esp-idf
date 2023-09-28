@@ -84,7 +84,6 @@ static void configure_uarts(void)
     ESP_ERROR_CHECK(uart_set_pin(DEFAULT_UART_CHANNEL, DEFAULT_UART_TX_PIN, DEFAULT_UART_RX_PIN,
                                  UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
-
     connect_uarts();
 }
 
@@ -92,7 +91,8 @@ static void configure_uarts(void)
  * @brief Function called when command `consoletest` will be invoked.
  * It will simply print `test_message` defined above.
  */
-static int console_test(int argc, char **argv) {
+static int console_test(int argc, char **argv)
+{
     printf("%s\n", test_message);
     return 0;
 }
@@ -104,7 +104,8 @@ static int console_test(int argc, char **argv) {
  * the response on RX.
  * The response shall contain the test_message string.
  */
-static void send_commands(void* arg) {
+static void send_commands(void* arg)
+{
     static char data[READ_BUF_SIZE];
     char command[] = "consoletest\n";
     int len = 0;
@@ -115,12 +116,12 @@ static void send_commands(void* arg) {
         len = uart_read_bytes(DEFAULT_UART_CHANNEL, data, READ_BUF_SIZE, 100 / portTICK_PERIOD_MS);
     } while (len == 0);
 
-    if ( len == -1 ) {
+    if (len == -1) {
         goto end;
     }
     /* Send the command `consoletest` to the console UART. */
     len = uart_write_bytes(DEFAULT_UART_CHANNEL, command, sizeof(command));
-    if ( len == -1 ) {
+    if (len == -1) {
         goto end;
     }
 
@@ -129,7 +130,7 @@ static void send_commands(void* arg) {
         len = uart_read_bytes(DEFAULT_UART_CHANNEL, data, READ_BUF_SIZE - 1, 250 / portTICK_PERIOD_MS);
     } while (len == 0);
 
-    if ( len == -1 ) {
+    if (len == -1) {
         goto end;
     }
 
@@ -158,11 +159,11 @@ void app_main(void)
         .func = &console_test,
     };
     esp_console_dev_uart_config_t uart_config = {
-                                                    .channel = CONSOLE_UART_CHANNEL,
-                                                    .baud_rate = UARTS_BAUD_RATE,
-                                                    .tx_gpio_num = CONSOLE_UART_TX_PIN,
-                                                    .rx_gpio_num = CONSOLE_UART_RX_PIN,
-                                                };
+        .channel = CONSOLE_UART_CHANNEL,
+        .baud_rate = UARTS_BAUD_RATE,
+        .tx_gpio_num = CONSOLE_UART_TX_PIN,
+        .rx_gpio_num = CONSOLE_UART_RX_PIN,
+    };
     /**
      * As we don't have a real serial terminal, (we just use default UART to
      * send and receive commands, ) we won't handle any escape sequence, so the
@@ -172,7 +173,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
     configure_uarts();
 
-    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 
     /* Create a task for sending and receiving commands to and from the second UART. */
     xTaskCreate(send_commands, "send_commands_task", TASK_STACK_SIZE, NULL, 10, NULL);

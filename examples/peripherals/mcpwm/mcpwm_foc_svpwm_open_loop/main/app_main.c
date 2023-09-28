@@ -51,12 +51,11 @@ static const char *TAG = "example_foc";
 #define EXAMPLE_FOC_WAVE_FREQ    10         // 50Hz 3 phase AC wave
 #define EXAMPLE_FOC_WAVE_AMPL    100        // Wave amplitude, Use up-down timer mode, max value should be (EXAMPLE_FOC_MCPWM_PERIOD/2)
 
-
 void bsp_bridge_driver_init(void)
 {
     gpio_config_t drv_en_config = {
-        .pin_bit_mask = 1ULL << EXAMPLE_FOC_DRV_EN_GPIO,
         .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = 1ULL << EXAMPLE_FOC_DRV_EN_GPIO,
     };
     ESP_ERROR_CHECK(gpio_config(&drv_en_config));
 }

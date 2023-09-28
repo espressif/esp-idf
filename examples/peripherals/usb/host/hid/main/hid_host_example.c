@@ -180,8 +180,8 @@ static inline bool hid_keyboard_is_modifier_shift(uint8_t modifier)
  * @return false Key scancode unknown
  */
 static inline bool hid_keyboard_get_char(uint8_t modifier,
-        uint8_t key_code,
-        unsigned char *key_char)
+                                         uint8_t key_code,
+                                         unsigned char *key_char)
 {
     uint8_t mod = (hid_keyboard_is_modifier_shift(modifier)) ? 1 : 0;
 
@@ -342,7 +342,6 @@ static void hid_host_generic_report_callback(const uint8_t *const data, const in
     putchar('\r');
 }
 
-
 /**
  * @brief USB HID Host interface callback
  *
@@ -357,14 +356,14 @@ void hid_host_interface_callback(hid_host_device_handle_t hid_device_handle,
     uint8_t data[64] = { 0 };
     size_t data_length = 0;
     hid_host_dev_params_t dev_params;
-    ESP_ERROR_CHECK( hid_host_device_get_params(hid_device_handle, &dev_params));
+    ESP_ERROR_CHECK(hid_host_device_get_params(hid_device_handle, &dev_params));
 
     switch (event) {
     case HID_HOST_INTERFACE_EVENT_INPUT_REPORT:
-        ESP_ERROR_CHECK( hid_host_device_get_raw_input_report_data(hid_device_handle,
-                         data,
-                         64,
-                         &data_length));
+        ESP_ERROR_CHECK(hid_host_device_get_raw_input_report_data(hid_device_handle,
+                                                                  data,
+                                                                  64,
+                                                                  &data_length));
 
         if (HID_SUBCLASS_BOOT_INTERFACE == dev_params.sub_class) {
             if (HID_PROTOCOL_KEYBOARD == dev_params.proto) {
@@ -380,7 +379,7 @@ void hid_host_interface_callback(hid_host_device_handle_t hid_device_handle,
     case HID_HOST_INTERFACE_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "HID Device, protocol '%s' DISCONNECTED",
                  hid_proto_name_str[dev_params.proto]);
-        ESP_ERROR_CHECK( hid_host_device_close(hid_device_handle) );
+        ESP_ERROR_CHECK(hid_host_device_close(hid_device_handle));
         break;
     case HID_HOST_INTERFACE_EVENT_TRANSFER_ERROR:
         ESP_LOGI(TAG, "HID Device, protocol '%s' TRANSFER_ERROR",
@@ -405,7 +404,7 @@ void hid_host_device_event(hid_host_device_handle_t hid_device_handle,
                            void *arg)
 {
     hid_host_dev_params_t dev_params;
-    ESP_ERROR_CHECK( hid_host_device_get_params(hid_device_handle, &dev_params));
+    ESP_ERROR_CHECK(hid_host_device_get_params(hid_device_handle, &dev_params));
 
     switch (event) {
     case HID_HOST_DRIVER_EVENT_CONNECTED:
@@ -417,14 +416,14 @@ void hid_host_device_event(hid_host_device_handle_t hid_device_handle,
             .callback_arg = NULL
         };
 
-        ESP_ERROR_CHECK( hid_host_device_open(hid_device_handle, &dev_config) );
+        ESP_ERROR_CHECK(hid_host_device_open(hid_device_handle, &dev_config));
         if (HID_SUBCLASS_BOOT_INTERFACE == dev_params.sub_class) {
-            ESP_ERROR_CHECK( hid_class_request_set_protocol(hid_device_handle, HID_REPORT_PROTOCOL_BOOT));
+            ESP_ERROR_CHECK(hid_class_request_set_protocol(hid_device_handle, HID_REPORT_PROTOCOL_BOOT));
             if (HID_PROTOCOL_KEYBOARD == dev_params.proto) {
-                ESP_ERROR_CHECK( hid_class_request_set_idle(hid_device_handle, 0, 0));
+                ESP_ERROR_CHECK(hid_class_request_set_idle(hid_device_handle, 0, 0));
             }
         }
-        ESP_ERROR_CHECK( hid_host_device_start(hid_device_handle) );
+        ESP_ERROR_CHECK(hid_host_device_start(hid_device_handle));
         break;
     default:
         break;
@@ -443,14 +442,14 @@ static void usb_lib_task(void *arg)
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
     };
-    ESP_ERROR_CHECK( gpio_config(&input_pin) );
+    ESP_ERROR_CHECK(gpio_config(&input_pin));
 
     const usb_host_config_t host_config = {
         .skip_phy_setup = false,
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
 
-    ESP_ERROR_CHECK( usb_host_install(&host_config) );
+    ESP_ERROR_CHECK(usb_host_install(&host_config));
     xTaskNotifyGive(arg);
 
     while (gpio_get_level(APP_QUIT_PIN) != 0) {
@@ -472,7 +471,7 @@ static void usb_lib_task(void *arg)
     ESP_LOGI(TAG, "USB shutdown");
     // Clean up USB Host
     vTaskDelay(10); // Short delay to allow clients clean-up
-    ESP_ERROR_CHECK( usb_host_uninstall());
+    ESP_ERROR_CHECK(usb_host_uninstall());
     vTaskDelete(NULL);
 }
 
@@ -558,7 +557,7 @@ void app_main(void)
         .callback_arg = NULL
     };
 
-    ESP_ERROR_CHECK( hid_host_install(&hid_host_driver_config) );
+    ESP_ERROR_CHECK(hid_host_install(&hid_host_driver_config));
 
     // Task is working until the devices are gone (while 'user_shutdown' if false)
     user_shutdown = false;

@@ -141,10 +141,10 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_OFF, NULL, 0), TAG,
                         "io tx param SSD1306_CMD_DISP_OFF failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MEMORY_ADDR_MODE, (uint8_t[]) {
-            0x00 // horizontal addressing mode
+        0x00 // horizontal addressing mode
     }, 1), TAG, "io tx param SSD1306_CMD_SET_MEMORY_ADDR_MODE failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_CHARGE_PUMP, (uint8_t[]) {
-            0x14 // enable charge pump
+        0x14 // enable charge pump
     }, 1), TAG, "io tx param SSD1306_CMD_SET_CHARGE_PUMP failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_MIRROR_X_OFF, NULL, 0), TAG,
                         "io tx param SSD1306_CMD_MIRROR_X_OFF failed");
