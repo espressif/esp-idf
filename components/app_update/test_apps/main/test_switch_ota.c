@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,8 +185,8 @@ static void erase_ota_data(void)
 static void reboot_as_deep_sleep(void)
 {
     ESP_LOGI(TAG, "reboot as deep sleep");
-    esp_deep_sleep(20000);
-    TEST_FAIL_MESSAGE("Should never be reachable except when sleep is rejected, abort");
+    esp_sleep_enable_timer_wakeup(2000);
+    esp_deep_sleep_start();
 }
 
 /* @brief Copies a current app to next partition (OTA0-15), after that ESP is rebooting and run this (the next) OTAx.
