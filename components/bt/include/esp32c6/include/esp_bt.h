@@ -204,7 +204,7 @@ typedef struct {
     uint8_t cca_drop_mode;                           /*!< CCA drop mode */
     int8_t cca_low_tx_pwr;                           /*!< CCA low transmit power */
     uint8_t main_xtal_freq;                          /*!< Main crystal frequency */
-    uint8_t version_num;                             /*!< Controller configuration version number */
+    uint32_t version_num;                            /*!< Controller configuration version number */
     uint8_t cpu_freq_mhz;                            /*!< CPU frequency in megahertz (MHz) */
     uint8_t ignore_wl_for_direct_adv;                /*!< Ignore the whitelist for direct advertising */
     uint8_t enable_pcl;                              /*!< Enable power control */
@@ -253,6 +253,8 @@ typedef struct {
     .ble_hci_uart_uart_parity   = DEFAULT_BT_LE_HCI_UART_PARITY,                        \
     .enable_tx_cca              = DEFAULT_BT_LE_TX_CCA_ENABLED,                         \
     .cca_rssi_thresh            = 256 - DEFAULT_BT_LE_CCA_RSSI_THRESH,                  \
+    .cca_drop_mode              = 0,                                                    \
+    .cca_low_tx_pwr             = 0,                                                    \
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
