@@ -71,7 +71,6 @@ components_not_formatted_temporary:
     - "/components/esp_partition/"
     - "/components/esp_phy/"
     - "/components/esp_pm/"
-    - "/components/esp_psram/"
     - "/components/esp_ringbuf/"
     - "/components/esp_rom/"
     - "/components/esp_system/"
