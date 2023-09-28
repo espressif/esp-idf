@@ -11,6 +11,7 @@
 #include "hal/assert.h"
 #include "hal/mpi_types.h"
 #include "soc/pcr_reg.h"
+#include "soc/pcr_struct.h"
 #include "soc/rsa_reg.h"
 #include "soc/mpi_periph.h"
 
@@ -18,6 +19,28 @@
 extern "C" {
 #endif
 
+
+/**
+ * @brief Enable the bus clock for MPI peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void mpi_ll_enable_bus_clock(bool enable)
+{
+    PCR.rsa_conf.rsa_clk_en = enable;
+}
+
+/**
+ * @brief Reset the MPI peripheral module
+ */
+static inline void mpi_ll_reset_register(void)
+{
+    PCR.rsa_conf.rsa_rst_en = 1;
+    PCR.rsa_conf.rsa_rst_en = 0;
+
+    // Clear reset on digital signature also, otherwise RSA is held in reset
+    PCR.ds_conf.ds_rst_en = 0;
+}
 
 static inline size_t mpi_ll_calculate_hardware_words(size_t words)
 {
