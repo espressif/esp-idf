@@ -199,7 +199,7 @@ TEST_CASE("UART can do select()", "[vfs]")
     deinit(uart_fd, socket_fd);
 }
 
-TEST_CASE("UART can do poll()", "[vfs]")
+TEST_CASE("UART can do poll() with POLLIN event", "[vfs]")
 {
     int uart_fd;
     int socket_fd;
@@ -259,6 +259,50 @@ TEST_CASE("UART can do poll()", "[vfs]")
 
     deinit(uart_fd, socket_fd);
 }
+
+TEST_CASE("UART can do poll() with POLLOUT event", "[vfs]")
+{
+    int uart_fd;
+    int socket_fd;
+    char recv_message[sizeof(message)];
+
+    init(&uart_fd, &socket_fd);
+
+    struct pollfd poll_fds[] = {
+        {
+            .fd = uart_fd,
+            .events = POLLOUT,
+        },
+        {
+            .fd = -1,  // should be ignored according to the documentation of poll()
+        },
+    };
+
+    const test_task_param_t test_task_param = {
+        .fd = uart_fd,
+        .delay_ms = 50,
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(test_task_param.sem);
+    start_task(&test_task_param);
+
+    poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
+    TEST_ASSERT_EQUAL(uart_fd, poll_fds[0].fd);
+    TEST_ASSERT_EQUAL(POLLOUT, poll_fds[0].revents);
+    TEST_ASSERT_EQUAL(-1, poll_fds[1].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[1].revents);
+
+    int read_bytes = read(uart_fd, recv_message, sizeof(message));
+    TEST_ASSERT_EQUAL(read_bytes, sizeof(message));
+    TEST_ASSERT_EQUAL_MEMORY(message, recv_message, sizeof(message));
+
+    TEST_ASSERT_EQUAL(xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS), pdTRUE);
+
+    vSemaphoreDelete(test_task_param.sem);
+
+    deinit(uart_fd, socket_fd);
+}
+
 #endif
 
 TEST_CASE("socket can do select()", "[vfs]")
@@ -509,18 +553,10 @@ TEST_CASE("concurrent selects work", "[vfs]")
             .errfds = NULL,
             .maxfds = uart_fd + 1,
             .tv = &tv,
-            .select_ret = 0, // expected timeout
+            .select_ret = 1,
             .sem = xSemaphoreCreateBinary(),
         };
         TEST_ASSERT_NOT_NULL(param.sem);
-
-        start_select_task(&param);
-
-        fd_set rdfds2;
-        FD_ZERO(&rdfds2);
-        FD_SET(uart_fd, &rdfds2);
-        FD_SET(socket_fd, &rdfds2);
-        FD_SET(dummy_socket_fd, &rdfds2);
 
         const test_task_param_t send_param = {
             .fd = uart_fd,
@@ -529,6 +565,14 @@ TEST_CASE("concurrent selects work", "[vfs]")
         };
         TEST_ASSERT_NOT_NULL(send_param.sem);
         start_task(&send_param);        // This task will write to UART which will be detected by select()
+        start_select_task(&param);
+        vTaskDelay(100 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+
+        fd_set rdfds2;
+        FD_ZERO(&rdfds2);
+        FD_SET(uart_fd, &rdfds2);
+        FD_SET(socket_fd, &rdfds2);
+        FD_SET(dummy_socket_fd, &rdfds2);
 
         int s = select(MAX(MAX(uart_fd, dummy_socket_fd), socket_fd) + 1, &rdfds2, NULL, NULL, &tv);
         TEST_ASSERT_EQUAL(1, s);

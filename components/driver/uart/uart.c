@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -771,7 +771,9 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
     uint32_t uart_intr_status = 0;
     uart_event_t uart_event;
     portBASE_TYPE HPTaskAwoken = 0;
+    bool need_yield = false;
     static uint8_t pat_flg = 0;
+    BaseType_t sent = pdFALSE;
     while (1) {
         // The `continue statement` may cause the interrupt to loop infinitely
         // we exit the interrupt here
@@ -793,6 +795,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
             if (p_uart->tx_waiting_fifo == true && p_uart->tx_buf_size == 0) {
                 p_uart->tx_waiting_fifo = false;
                 xSemaphoreGiveFromISR(p_uart->tx_fifo_sem, &HPTaskAwoken);
+                need_yield |= (HPTaskAwoken == pdTRUE);
             } else {
                 //We don't use TX ring buffer, because the size is zero.
                 if (p_uart->tx_buf_size == 0) {
@@ -819,6 +822,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                                 }
                                 //We have saved the data description from the 1st item, return buffer.
                                 vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
+                                need_yield |= (HPTaskAwoken == pdTRUE);
                             } else if (p_uart->tx_ptr == NULL) {
                                 //Update the TX item pointer, we will need this to return item to buffer.
                                 p_uart->tx_ptr = (uint8_t *)p_uart->tx_head;
@@ -841,6 +845,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                         if (p_uart->tx_len_cur == 0) {
                             //Return item to ring buffer.
                             vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
+                            need_yield |= (HPTaskAwoken == pdTRUE);
                             p_uart->tx_head = NULL;
                             p_uart->tx_ptr = NULL;
                             //Sending item done, now we need to send break if there is a record.
@@ -858,6 +863,12 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                                 //enable TX empty interrupt
                                 en_tx_flg = true;
                             }
+                            UART_ENTER_CRITICAL_ISR(&uart_selectlock);
+                            if (p_uart->uart_select_notif_callback) {
+                                p_uart->uart_select_notif_callback(uart_num, UART_SELECT_WRITE_NOTIF, &HPTaskAwoken);
+                                need_yield |= (HPTaskAwoken == pdTRUE);
+                            }
+                            UART_EXIT_CRITICAL_ISR(&uart_selectlock);
                         } else {
                             //enable TX empty interrupt
                             en_tx_flg = true;
@@ -905,13 +916,16 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                     UART_ENTER_CRITICAL_ISR(&uart_selectlock);
                     if (p_uart->uart_select_notif_callback) {
                         p_uart->uart_select_notif_callback(uart_num, UART_SELECT_READ_NOTIF, &HPTaskAwoken);
+                        need_yield |= (HPTaskAwoken == pdTRUE);
                     }
                     UART_EXIT_CRITICAL_ISR(&uart_selectlock);
                 }
                 p_uart->rx_stash_len = rx_fifo_len;
                 //If we fail to push data to ring buffer, we will have to stash the data, and send next time.
                 //Mainly for applications that uses flow control or small ring buffer.
-                if (pdFALSE == xRingbufferSendFromISR(p_uart->rx_ring_buf, p_uart->rx_data_buf, p_uart->rx_stash_len, &HPTaskAwoken)) {
+                sent = xRingbufferSendFromISR(p_uart->rx_ring_buf, p_uart->rx_data_buf, p_uart->rx_stash_len, &HPTaskAwoken);
+                need_yield |= (HPTaskAwoken == pdTRUE);
+                if (sent == pdFALSE) {
                     p_uart->rx_buffer_full_flg = true;
                     UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
                     uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL);
@@ -930,7 +944,9 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                                                  p_uart->rx_buffered_len + pat_idx);
                         }
                         UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
-                        if ((p_uart->event_queue != NULL) && (pdFALSE == xQueueSendFromISR(p_uart->event_queue, (void * )&uart_event, &HPTaskAwoken))) {
+                        sent = xQueueSendFromISR(p_uart->event_queue, (void * )&uart_event, &HPTaskAwoken);
+                        need_yield |= (HPTaskAwoken == pdTRUE);
+                        if ((p_uart->event_queue != NULL) && (sent == pdFALSE)) {
 #ifndef CONFIG_UART_ISR_IN_IRAM     //Only log if ISR is not in IRAM
                             ESP_EARLY_LOGV(UART_TAG, "UART event queue full");
 #endif
@@ -971,6 +987,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
             UART_ENTER_CRITICAL_ISR(&uart_selectlock);
             if (p_uart->uart_select_notif_callback) {
                 p_uart->uart_select_notif_callback(uart_num, UART_SELECT_ERROR_NOTIF, &HPTaskAwoken);
+                need_yield |= (HPTaskAwoken == pdTRUE);
             }
             UART_EXIT_CRITICAL_ISR(&uart_selectlock);
             uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_RXFIFO_OVF);
@@ -982,6 +999,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
             UART_ENTER_CRITICAL_ISR(&uart_selectlock);
             if (p_uart->uart_select_notif_callback) {
                 p_uart->uart_select_notif_callback(uart_num, UART_SELECT_ERROR_NOTIF, &HPTaskAwoken);
+                need_yield |= (HPTaskAwoken == pdTRUE);
             }
             UART_EXIT_CRITICAL_ISR(&uart_selectlock);
             uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_FRAM_ERR);
@@ -990,6 +1008,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
             UART_ENTER_CRITICAL_ISR(&uart_selectlock);
             if (p_uart->uart_select_notif_callback) {
                 p_uart->uart_select_notif_callback(uart_num, UART_SELECT_ERROR_NOTIF, &HPTaskAwoken);
+                need_yield |= (HPTaskAwoken == pdTRUE);
             }
             UART_EXIT_CRITICAL_ISR(&uart_selectlock);
             uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_PARITY_ERR);
@@ -1008,6 +1027,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 p_uart->tx_waiting_brk = 0;
             } else {
                 xSemaphoreGiveFromISR(p_uart->tx_brk_sem, &HPTaskAwoken);
+                need_yield |= (HPTaskAwoken == pdTRUE);
             }
         } else if (uart_intr_status & UART_INTR_TX_BRK_IDLE) {
             UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
@@ -1046,6 +1066,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 }
                 UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
                 xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
+                need_yield |= (HPTaskAwoken == pdTRUE);
             }
         }
     #if SOC_UART_SUPPORT_WAKEUP_INT
@@ -1060,14 +1081,16 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
         }
 
         if (uart_event.type != UART_EVENT_MAX && p_uart->event_queue) {
-            if (pdFALSE == xQueueSendFromISR(p_uart->event_queue, (void * )&uart_event, &HPTaskAwoken)) {
+            sent = xQueueSendFromISR(p_uart->event_queue, (void * )&uart_event, &HPTaskAwoken);
+            need_yield |= (HPTaskAwoken == pdTRUE);
+            if (sent == pdFALSE) {
 #ifndef CONFIG_UART_ISR_IN_IRAM     //Only log if ISR is not in IRAM
                 ESP_EARLY_LOGV(UART_TAG, "UART event queue full");
 #endif
             }
         }
     }
-    if (HPTaskAwoken == pdTRUE) {
+    if (need_yield) {
         portYIELD_FROM_ISR();
     }
 }
