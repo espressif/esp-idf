@@ -487,6 +487,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/core/friend.c"
                     "esp_ble_mesh/core/health_cli.c"
                     "esp_ble_mesh/core/health_srv.c"
+                    "esp_ble_mesh/core/heartbeat.c"
                     "esp_ble_mesh/core/local.c"
                     "esp_ble_mesh/core/lpn.c"
                     "esp_ble_mesh/core/main.c"

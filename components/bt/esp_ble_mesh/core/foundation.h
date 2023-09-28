@@ -266,8 +266,6 @@ void bt_mesh_mod_sub_reset(bool store);
 
 void bt_mesh_cfg_reset(bool store);
 
-void bt_mesh_heartbeat(uint16_t src, uint16_t dst, uint8_t hops, uint16_t feat);
-
 void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time);
 
 struct label *get_label(uint16_t index);
