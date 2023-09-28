@@ -1035,22 +1035,6 @@ config SOC_CLK_APLL_SUPPORTED
     bool
     default y
 
-config SOC_APLL_MULTIPLIER_OUT_MIN_HZ
-    int
-    default 350000000
-
-config SOC_APLL_MULTIPLIER_OUT_MAX_HZ
-    int
-    default 500000000
-
-config SOC_APLL_MIN_HZ
-    int
-    default 5303031
-
-config SOC_APLL_MAX_HZ
-    int
-    default 125000000
-
 config SOC_CLK_RC_FAST_D256_SUPPORTED
     bool
     default y

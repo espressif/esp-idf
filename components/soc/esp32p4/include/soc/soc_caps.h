@@ -48,8 +48,9 @@
 // #define SOC_EFUSE_SUPPORTED             1  //TODO: IDF-7512
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
-// #define SOC_I2S_SUPPORTED               1  //TODO: IDF-6508
 #define SOC_RMT_SUPPORTED               1
+#define SOC_I2S_SUPPORTED               1
+// #define SOC_RMT_SUPPORTED               1  //TODO: IDF-7476
 // #define SOC_SDM_SUPPORTED               1  //TODO: IDF-7551
 // #define SOC_GPSPI_SUPPORTED             1  //TODO: IDF-7502, TODO: IDF-7503
 // #define SOC_LEDC_SUPPORTED              1  //TODO: IDF-6510
@@ -240,16 +241,20 @@
 #define SOC_I2C_SUPPORT_RTC         (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-//TODO: IDF-6508
-#define SOC_I2S_NUM                 (1U)
+#define SOC_I2S_NUM                 (3U)
 #define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
-#define SOC_I2S_SUPPORTS_PLL_F160M  (1)
+#define SOC_I2S_SUPPORTS_APLL       (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
-// #define SOC_I2S_SUPPORTS_PDM        (1)
-// #define SOC_I2S_SUPPORTS_PDM_TX     (1)
-#define SOC_I2S_PDM_MAX_TX_LINES    (2)
-// #define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_SUPPORTS_PDM        (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_SUPPORTS_PDM_RX     (1)
+#define SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER (1)
+#define SOC_I2S_SUPPORTS_TX_SYNC_CNT      (1)
+#define SOC_I2S_SUPPORTS_TDM        (1)
+#define SOC_I2S_PDM_MAX_TX_LINES    (2)     // On I2S0
+#define SOC_I2S_PDM_MAX_RX_LINES    (4)     // On I2S0
+#define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
@@ -510,6 +515,7 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (0)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (0)
 
+#define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
 #define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */

@@ -116,6 +116,7 @@ ESP32-C3    I2S 0     I2S 0     none      I2S 0     none       none
 ESP32-C6    I2S 0     I2S 0     none      I2S 0     none       none
 ESP32-S3   I2S 0/1    I2S 0     I2S 0    I2S 0/1    none       none
 ESP32-H2    I2S 0     I2S 0     none      I2S 0     none       none
+ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    none       none
 =========  ========  ========  ========  ========  ========  ==========
 
 Standard Mode

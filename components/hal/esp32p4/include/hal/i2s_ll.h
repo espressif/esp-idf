@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
-#include "soc/pcr_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
 
@@ -26,28 +26,42 @@
 extern "C" {
 #endif
 
-#define I2S_LL_GET_HW(num)             (((num) == 0)? (&I2S0) : NULL)
+#define I2S_LL_GET_HW(num)             (((num) == 0)? (&I2S0) : ((num) == 1) ? (&I2S1) : (&I2S2))
+#define I2S_LL_GET_ID(hw)              (((hw) == &I2S0)? 0 : ((hw) == &I2S1) ? 1 : 2)
 
 #define I2S_LL_TDM_CH_MASK             (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
 
-#define I2S_LL_CLK_FRAC_DIV_N_MAX  256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
-#define I2S_LL_CLK_FRAC_DIV_AB_MAX 512 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 9 bit-width
+#define I2S_LL_CLK_FRAC_DIV_N_MAX      256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
+#define I2S_LL_CLK_FRAC_DIV_AB_MAX     512 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 9 bit-width
 
-#define I2S_LL_PLL_F96M_CLK_FREQ      (96 * 1000000) // PLL_F96M_CLK: 96MHz
-#define I2S_LL_PLL_F64M_CLK_FREQ      (64 * 1000000) // PLL_F64M_CLK: 64MHz
-#define I2S_LL_DEFAULT_CLK_FREQ   I2S_LL_PLL_F96M_CLK_FREQ  // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+#define I2S_LL_XTAL_CLK_FREQ           (40 * 1000000)   // XTAL_CLK: 40MHz
+#define I2S_LL_DEFAULT_CLK_FREQ        I2S_LL_XTAL_CLK_FREQ  // No PLL clock source on P4, use XTAL as default
 
 /**
+ * @brief Enable the bus clock for I2S module
  *
  * @param i2s_id The port id of I2S
  * @param enable Set true to enable the buf clock
  */
 static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
 {
-    (void)i2s_id;
-    PCR.i2s_conf.i2s_clk_en = enable;
+    switch (i2s_id) {
+        case 0:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s0_apb_clk_en = enable;
+            return;
+        case 1:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s1_apb_clk_en = enable;
+            return;
+        case 2:
+            HP_SYS_CLKRST.soc_clk_ctrl2.reg_i2s2_apb_clk_en = enable;
+            return;
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the I2S module
@@ -56,10 +70,25 @@ static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
  */
 static inline void i2s_ll_reset_register(int i2s_id)
 {
-    (void)i2s_id;
-    PCR.i2s_conf.i2s_rst_en = 1;
-    PCR.i2s_conf.i2s_rst_en = 0;
+    switch (i2s_id) {
+        case 0:
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s0_apb = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s0_apb = 0;
+            return;
+        case 1:
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s1_apb = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s1_apb = 0;
+            return;
+        case 2:
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s2_apb = 1;
+            HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_i2s2_apb = 0;
+            return;
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief I2S module general init, enable I2S clock.
@@ -74,6 +103,10 @@ static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
     // No need to do anything
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_core_clock(__VA_ARGS__)
+
 /**
  * @brief Enable I2S tx module clock
  *
@@ -81,8 +114,18 @@ static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
  */
 static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_tx_clkm_conf.i2s_tx_clkm_en = 1;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_clk_en = 1;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_tx_clk_en = 1;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_tx_clk_en = 1;
+            return;
+    }
 }
 
 /**
@@ -92,8 +135,18 @@ static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_rx_clkm_en = 1;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl11.reg_i2s0_rx_clk_en = 1;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s1_rx_clk_en = 1;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_clk_en = 1;
+            return;
+    }
 }
 
 /**
@@ -103,9 +156,23 @@ static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_tx_clkm_conf.i2s_tx_clkm_en = 0;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_clk_en = 0;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_tx_clk_en = 0;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_tx_clk_en = 0;
+            return;
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_tx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_tx_disable_clock(__VA_ARGS__)
 
 /**
  * @brief Disable I2S rx module clock
@@ -114,9 +181,23 @@ static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_rx_clkm_en = 0;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl11.reg_i2s0_rx_clk_en = 0;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s1_rx_clk_en = 0;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_clk_en = 0;
+            return;
+    }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_rx_disable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_rx_disable_clock(__VA_ARGS__)
 
 /**
  * @brief I2S mclk use tx module clock
@@ -125,8 +206,18 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
  */
 static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_mst_clk_sel = 0;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_mst_clk_sel = 0;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_mst_clk_sel = 0;
+            return;
+    }
 }
 
 /**
@@ -136,8 +227,18 @@ static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
  */
 static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 {
-    (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 1;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_mst_clk_sel = 1;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_mst_clk_sel = 1;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_mst_clk_sel = 1;
+            return;
+    }
 }
 
 /**
@@ -206,6 +307,22 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
     hw->rx_conf.rx_fifo_reset = 0;
 }
 
+static inline uint32_t i2s_ll_get_clk_src(i2s_clock_src_t src)
+{
+    switch (src)
+    {
+        case I2S_CLK_SRC_XTAL:
+            return 0;
+        case I2S_CLK_SRC_APLL:
+            return 1;
+        case I2S_CLK_SRC_EXTERNAL:
+            return 2;
+        default:
+            HAL_ASSERT(false && "unsupported clock source");
+            return -1;
+    }
+}
+
 /**
  * @brief Set TX source clock
  *
@@ -214,24 +331,18 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    (void)hw;
-    switch (src)
-    {
-    case I2S_CLK_SRC_XTAL:
-        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 0;
-        break;
-    case I2S_CLK_SRC_PLL_96M:
-        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 1;
-        break;
-    case I2S_CLK_SRC_PLL_64M:
-        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 2;
-        break;
-    case I2S_CLK_SRC_EXTERNAL:
-        PCR.i2s_tx_clkm_conf.i2s_tx_clkm_sel = 3;
-        break;
-    default:
-        HAL_ASSERT(false && "unsupported clock source");
-        break;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    uint32_t clk_src = i2s_ll_get_clk_src(src);
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_clk_src_sel = clk_src;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_tx_clk_src_sel = clk_src;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_tx_clk_src_sel = clk_src;
+            return;
     }
 }
 
@@ -243,24 +354,18 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    (void)hw;
-    switch (src)
-    {
-    case I2S_CLK_SRC_XTAL:
-        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 0;
-        break;
-    case I2S_CLK_SRC_PLL_96M:
-        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 1;
-        break;
-    case I2S_CLK_SRC_PLL_64M:
-        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 2;
-        break;
-    case I2S_CLK_SRC_EXTERNAL:
-        PCR.i2s_rx_clkm_conf.i2s_rx_clkm_sel = 3;
-        break;
-    default:
-        HAL_ASSERT(false && "unsupported clock source");
-        break;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    uint32_t clk_src = i2s_ll_get_clk_src(src);
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HP_SYS_CLKRST.peri_clk_ctrl11.reg_i2s0_rx_clk_src_sel = clk_src;
+            return;
+        case 1:
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s1_rx_clk_src_sel = clk_src;
+            return;
+        case 2:
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_clk_src_sel = clk_src;
+            return;
     }
 }
 
@@ -287,14 +392,30 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    (void)hw;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_tx_clkm_conf, i2s_tx_clkm_div_num, div_int);
-    typeof(PCR.i2s_tx_clkm_div_conf) div = {};
-    div.i2s_tx_clkm_div_x = x;
-    div.i2s_tx_clkm_div_y = y;
-    div.i2s_tx_clkm_div_z = z;
-    div.i2s_tx_clkm_div_yn1 = yn1;
-    PCR.i2s_tx_clkm_div_conf.val = div.val;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl13, reg_i2s0_tx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_tx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_tx_div_yn1 = yn1;
+            return;
+        case 1:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl16, reg_i2s1_tx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl16.reg_i2s1_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_tx_div_yn1 = yn1;
+            return;
+        case 2:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl18, reg_i2s2_tx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_tx_div_yn1 = yn1;
+            return;
+    }
 }
 
 /**
@@ -309,14 +430,30 @@ static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
  */
 static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
 {
-    (void)hw;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2s_rx_clkm_conf, i2s_rx_clkm_div_num, div_int);
-    typeof(PCR.i2s_rx_clkm_div_conf) div = {};
-    div.i2s_rx_clkm_div_x = x;
-    div.i2s_rx_clkm_div_y = y;
-    div.i2s_rx_clkm_div_z = z;
-    div.i2s_rx_clkm_div_yn1 = yn1;
-    PCR.i2s_rx_clkm_div_conf.val = div.val;
+    // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    switch (I2S_LL_GET_ID(hw)) {
+        case 0:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl12, reg_i2s0_rx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl12.reg_i2s0_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl13.reg_i2s0_rx_div_yn1 = yn1;
+            return;
+        case 1:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl14, reg_i2s1_rx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl15.reg_i2s1_rx_div_yn1 = yn1;
+            return;
+        case 2:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl17, reg_i2s2_rx_div_n, div_int);
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s2_rx_div_x = x;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_y = y;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_z = z;
+            HP_SYS_CLKRST.peri_clk_ctrl18.reg_i2s2_rx_div_yn1 = yn1;
+            return;
+    }
 }
 
 /**
@@ -331,7 +468,7 @@ static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
      * Set to particular coefficients first then update to the target coefficients,
      * otherwise the clock division might be inaccurate.
      * the general idea is to set a value that impossible to calculate from the regular decimal */
-    i2s_ll_tx_set_raw_clk_div(hw, 8, 1, 1, 73, 1);
+    i2s_ll_tx_set_raw_clk_div(hw, 7, 317, 7, 3, 0);
 
     uint32_t div_x = 0;
     uint32_t div_y = 0;
@@ -371,7 +508,7 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
      * Set to particular coefficients first then update to the target coefficients,
      * otherwise the clock division might be inaccurate.
      * the general idea is to set a value that impossible to calculate from the regular decimal */
-    i2s_ll_rx_set_raw_clk_div(hw, 8, 1, 1, 73, 1);
+    i2s_ll_rx_set_raw_clk_div(hw, 7, 317, 7, 3, 0);
 
     uint32_t div_x = 0;
     uint32_t div_y = 0;
@@ -710,6 +847,7 @@ static inline void i2s_ll_rx_enable_tdm(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_pdm_en = false;
     hw->rx_conf.rx_tdm_en = true;
+    hw->rx_pdm2pcm_conf.rx_pdm2pcm_en = false;
 }
 
 /**
@@ -905,18 +1043,88 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
 
 /**
  * @brief Enable RX PDM mode.
- * @note  ESP32-H2 doesn't support pdm in rx mode, disable anyway
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pdm_enable Set true to RX enable PDM mode (ignored)
  */
-static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw)
 {
-    // Due to the lack of `PDM to PCM` module on ESP32-H2, PDM RX is not available
-    HAL_ASSERT(!pdm_enable);
-    hw->rx_conf.rx_pdm_en = 0;
-    hw->rx_conf.rx_tdm_en = 1;
+    hw->rx_conf.rx_pdm_en = 1;
+    hw->rx_conf.rx_tdm_en = 0;
+    hw->rx_pdm2pcm_conf.rx_pdm2pcm_en = 1;
 }
+
+/**
+ * @brief Configure RX PDM downsample
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dsr PDM downsample configuration paramater
+ */
+static inline void i2s_ll_rx_set_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
+{
+    hw->rx_pdm2pcm_conf.rx_pdm_sinc_dsr_16_en = dsr;
+}
+
+/**
+ * @brief Get RX PDM downsample configuration
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param dsr Pointer to accept PDM downsample configuration
+ */
+static inline void i2s_ll_rx_get_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
+{
+    *dsr = (i2s_pdm_dsr_t)hw->rx_pdm2pcm_conf.rx_pdm_sinc_dsr_16_en;
+}
+
+/**
+ * @brief Configure RX PDM amplify number
+ * @note  This is the amplification number of the digital amplifier,
+ *        which is added after the PDM to PCM conversion result and mainly used for
+ *        amplify the small PDM signal under the VAD scenario
+ *        pcm_result = pdm_input * amplify_num
+ *        pcm_result = 0 if amplify_num = 0
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param amp_num PDM RX amplify number
+ */
+static inline void i2s_ll_rx_set_pdm_amplify_num(i2s_dev_t *hw, uint32_t amp_num)
+{
+    hw->rx_pdm2pcm_conf.rx_pdm2pcm_amplify_num = amp_num;
+}
+
+
+/**
+ * @brief Set I2S RX PDM high pass filter param0
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param param The fourth parameter of PDM RX IIR_HP filter stage 1 is (504 + I2S_RX_IIR_HP_MULT12_0[2:0])
+ */
+static inline void i2s_ll_rx_set_pdm_hp_filter_param0(i2s_dev_t *hw, uint32_t param)
+{
+    hw->rx_pdm2pcm_conf.rx_iir_hp_mult12_0 = param;
+}
+
+/**
+ * @brief Set I2S RX PDM high pass filter param5
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param param The fourth parameter of PDM RX IIR_HP filter stage 2 is (504 + I2S_RX_IIR_HP_MULT12_5[2:0])
+ */
+static inline void i2s_ll_rx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t param)
+{
+    hw->rx_pdm2pcm_conf.rx_iir_hp_mult12_5 = param;
+}
+
+/**
+ * @brief Enable I2S RX PDM high pass filter
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable I2S RX PDM high pass filter, set false to bypass it
+ */
+static inline void i2s_ll_rx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
+{
+    hw->rx_pdm2pcm_conf.rx_pdm_hp_bypass = !enable;
+}
+
 
 /**
  * @brief Configura TX a/u-law decompress or compress
@@ -1137,6 +1345,56 @@ static inline void i2s_ll_tx_pdm_line_mode(i2s_dev_t *hw, i2s_pdm_tx_line_mode_t
 {
     hw->tx_pcm2pdm_conf.tx_pdm_dac_mode_en = line_mode > I2S_PDM_TX_ONE_LINE_CODEC;
     hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = line_mode != I2S_PDM_TX_ONE_LINE_DAC;
+}
+
+/**
+ * @brief  Reset TX FIFO synchronization counter
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_reset_fifo_sync_counter(i2s_dev_t *hw)
+{
+    hw->fifo_cnt.tx_fifo_cnt_rst = 1;
+    hw->fifo_cnt.tx_fifo_cnt_rst = 0;
+}
+
+/**
+ * @brief Get TX FIFO synchronization count value
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @return
+ *      bclk count value
+ */
+__attribute__((always_inline))
+static inline uint32_t i2s_ll_tx_get_fifo_sync_count(i2s_dev_t *hw)
+{
+    return hw->fifo_cnt.tx_fifo_cnt;
+}
+
+/**
+ * @brief  Reset TX bclk synchronization counter
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_reset_bclk_sync_counter(i2s_dev_t *hw)
+{
+    hw->bck_cnt.tx_bck_cnt_rst = 1;
+    hw->bck_cnt.tx_bck_cnt_rst = 0;
+}
+
+/**
+ * @brief Get TX bclk synchronization count value
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @return
+ *      fifo count value
+ */
+__attribute__((always_inline))
+static inline uint32_t i2s_ll_tx_get_bclk_sync_count(i2s_dev_t *hw)
+{
+    return hw->bck_cnt.tx_bck_cnt;
 }
 
 #ifdef __cplusplus

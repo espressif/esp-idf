@@ -217,7 +217,7 @@ uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm
      * i.e. xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) >= 350 MHz, '+1' in the following code is to get the ceil value.
      * With this condition, as we know the 'o_div' can't be greater than 31, then we can calculate the APLL minimum support frequency is
      * 350 MHz / ((31 + 2) * 2) = 5303031 Hz (for ceil) */
-    o_div = (int)(SOC_APLL_MULTIPLIER_OUT_MIN_HZ / (float)(freq * 2) + 1) - 2;
+    o_div = (int)(CLK_LL_APLL_MULTIPLIER_MIN_HZ / (float)(freq * 2) + 1) - 2;
     if (o_div > 31) {
         ESP_HW_LOGE(TAG, "Expected frequency is too small");
         return 0;
@@ -227,7 +227,7 @@ uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm
          * i.e. xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) <= 500 MHz, we need to get the floor value in the following code.
          * With this condition, as we know the 'o_div' can't be smaller than 0, then we can calculate the APLL maximum support frequency is
          * 500 MHz / ((0 + 2) * 2) = 125000000 Hz */
-        o_div = (int)(SOC_APLL_MULTIPLIER_OUT_MAX_HZ / (float)(freq * 2)) - 2;
+        o_div = (int)(CLK_LL_APLL_MULTIPLIER_MAX_HZ / (float)(freq * 2)) - 2;
         if (o_div < 0) {
             ESP_HW_LOGE(TAG, "Expected frequency is too big");
             return 0;

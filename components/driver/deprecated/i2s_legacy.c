@@ -25,6 +25,10 @@
 #include "hal/gpio_hal.h"
 #include "driver/i2s_types_legacy.h"
 #include "hal/i2s_hal.h"
+#if SOC_I2S_SUPPORTS_APLL
+#include "hal/clk_tree_ll.h"
+#endif
+
 #if SOC_I2S_SUPPORTS_DAC
 #include "hal/dac_ll.h"
 #include "hal/dac_types.h"
@@ -48,6 +52,7 @@
 #include "esp_pm.h"
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
+#include "esp_private/i2s_platform.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 
@@ -57,6 +62,18 @@ static const char *TAG = "i2s(legacy)";
 #define I2S_EXIT_CRITICAL_ISR(i2s_num)           portEXIT_CRITICAL_ISR(&i2s_spinlock[i2s_num])
 #define I2S_ENTER_CRITICAL(i2s_num)              portENTER_CRITICAL(&i2s_spinlock[i2s_num])
 #define I2S_EXIT_CRITICAL(i2s_num)               portEXIT_CRITICAL(&i2s_spinlock[i2s_num])
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define I2S_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2S_CLOCK_SRC_ATOMIC()
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define I2S_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2S_RCC_ATOMIC()
+#endif
 
 #define I2S_DMA_BUFFER_MAX_SIZE     4092
 
@@ -134,9 +151,6 @@ typedef struct {
     uint32_t          total_slot;     /*!< Total slot number */
 } i2s_obj_t;
 
-// Record the component name that using I2S peripheral
-static const char *comp_using_i2s[SOC_I2S_NUM] = {[0 ... SOC_I2S_NUM - 1] = NULL};
-
 // Global I2S object pointer
 static i2s_obj_t *p_i2s[SOC_I2S_NUM] = {
     [0 ... SOC_I2S_NUM - 1] = NULL,
@@ -146,11 +160,6 @@ static i2s_obj_t *p_i2s[SOC_I2S_NUM] = {
 static portMUX_TYPE i2s_spinlock[SOC_I2S_NUM] = {
     [0 ... SOC_I2S_NUM - 1] = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED,
 };
-
-
-__attribute__((weak)) esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name);
-
-__attribute__((weak)) esp_err_t i2s_platform_release_occupation(int id);
 
 /*-------------------------------------------------------------
                     I2S DMA operation
@@ -633,7 +642,7 @@ static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint3
 #if SOC_I2S_SUPPORTS_APLL
     if (use_apll) {
         /* Calculate the expected APLL  */
-        int div = (int)((SOC_APLL_MIN_HZ / mclk) + 1);
+        int div = (int)((CLK_LL_APLL_MIN_HZ / mclk) + 1);
         /* apll_freq = mclk * div
          * when div = 1, hardware will still divide 2
          * when div = 0, the final mclk will be unpredictable
@@ -654,12 +663,12 @@ static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint3
         /* In APLL mode, there is no sclk but only mclk, so return 0 here to indicate APLL mode */
         return real_freq;
     }
-    return I2S_LL_DEFAULT_PLL_CLK_FREQ;
+    return I2S_LL_DEFAULT_CLK_FREQ;
 #else
     if (use_apll) {
         ESP_LOGW(TAG, "APLL not supported on current chip, use I2S_CLK_SRC_DEFAULT as default clock source");
     }
-    return I2S_LL_DEFAULT_PLL_CLK_FREQ;
+    return I2S_LL_DEFAULT_CLK_FREQ;
 #endif
 }
 
@@ -1021,11 +1030,13 @@ static void i2s_set_clock_legacy(i2s_port_t i2s_num)
     i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
     i2s_hal_clock_info_t clk_info;
     i2s_calculate_clock(i2s_num, &clk_info);
-    if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-        i2s_hal_set_tx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
-    }
-    if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-        i2s_hal_set_rx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
+    I2S_CLOCK_SRC_ATOMIC() {
+        if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
+            i2s_hal_set_tx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
+        }
+        if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
+            i2s_hal_set_rx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
+        }
     }
 }
 
@@ -1479,17 +1490,6 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
         ESP_RETURN_ON_ERROR(i2s_realloc_dma_buffer(i2s_num, p_i2s[i2s_num]->rx), TAG, "Allocate I2S dma rx buffer failed");
     }
 
-    /* Initialize I2S DMA object */
-#if SOC_I2S_HW_VERSION_2
-    /* Enable tx/rx submodule clock */
-    if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-        i2s_ll_tx_enable_clock(p_i2s[i2s_num]->hal.dev);
-    }
-    if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-        i2s_ll_rx_enable_clock(p_i2s[i2s_num]->hal.dev);
-    }
-#endif
-
     return ESP_OK;
 }
 
@@ -1538,12 +1538,14 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
 
 #if SOC_I2S_SUPPORTS_APLL
     if (obj->use_apll) {
-        // switch back to PLL clock source
-        if (obj->dir & I2S_DIR_TX) {
-            i2s_ll_tx_clk_set_src(obj->hal.dev, I2S_CLK_SRC_DEFAULT);
-        }
-        if (obj->dir & I2S_DIR_RX) {
-            i2s_ll_rx_clk_set_src(obj->hal.dev, I2S_CLK_SRC_DEFAULT);
+        I2S_CLOCK_SRC_ATOMIC() {
+            // switch back to PLL clock source
+            if (obj->dir & I2S_DIR_TX) {
+                i2s_hal_set_tx_clock(&obj->hal, NULL, I2S_CLK_SRC_DEFAULT);
+            }
+            if (obj->dir & I2S_DIR_RX) {
+                i2s_hal_set_rx_clock(&obj->hal, NULL, I2S_CLK_SRC_DEFAULT);
+            }
         }
         periph_rtc_apll_release();
     }
@@ -1556,11 +1558,13 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     }
 #endif
 #if SOC_I2S_HW_VERSION_2
-    if (obj->dir & I2S_DIR_TX) {
-        i2s_ll_tx_disable_clock(obj->hal.dev);
-    }
-    if (obj->dir & I2S_DIR_RX) {
-        i2s_ll_rx_disable_clock(obj->hal.dev);
+    I2S_CLOCK_SRC_ATOMIC() {
+        if (obj->dir & I2S_DIR_TX) {
+            i2s_ll_tx_disable_clock(obj->hal.dev);
+        }
+        if (obj->dir & I2S_DIR_RX) {
+            i2s_ll_rx_disable_clock(obj->hal.dev);
+        }
     }
 #endif
     /* Disable module clock */
@@ -1894,37 +1898,6 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
     gpio_matrix_out_check_and_set(pin->data_out_num, i2s_periph_signal[i2s_num].data_out_sig, 0, 0);
     gpio_matrix_in_check_and_set(pin->data_in_num, i2s_periph_signal[i2s_num].data_in_sig, 0);
     return ESP_OK;
-}
-
-esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name)
-{
-    esp_err_t ret = ESP_ERR_NOT_FOUND;
-    ESP_RETURN_ON_FALSE(id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
-    portENTER_CRITICAL(&i2s_spinlock[id]);
-    if (!comp_using_i2s[id]) {
-        ret = ESP_OK;
-        comp_using_i2s[id] = comp_name;
-        periph_module_enable(i2s_periph_signal[id].module);
-        i2s_ll_enable_clock(I2S_LL_GET_HW(id));
-    }
-    portEXIT_CRITICAL(&i2s_spinlock[id]);
-    return ret;
-}
-
-esp_err_t i2s_platform_release_occupation(int id)
-{
-    esp_err_t ret = ESP_ERR_INVALID_STATE;
-    ESP_RETURN_ON_FALSE(id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
-    portENTER_CRITICAL(&i2s_spinlock[id]);
-    if (comp_using_i2s[id]) {
-        ret = ESP_OK;
-        comp_using_i2s[id] = NULL;
-        /* Disable module clock */
-        periph_module_disable(i2s_periph_signal[id].module);
-        i2s_ll_disable_clock(I2S_LL_GET_HW(id));
-    }
-    portEXIT_CRITICAL(&i2s_spinlock[id]);
-    return ret;
 }
 
 /**
