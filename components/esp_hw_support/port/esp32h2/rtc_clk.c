@@ -13,6 +13,7 @@
 #include "esp32h2/rom/rtc.h"
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
@@ -203,6 +204,10 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
     clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
+#ifndef BOOTLOADER_BUILD
+    charge_pump_enable(0);
+    pvt_func_enable(0);
+#endif
 }
 
 static void rtc_clk_cpu_freq_to_8m(void)
@@ -213,6 +218,10 @@ static void rtc_clk_cpu_freq_to_8m(void)
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(8);
+#ifndef BOOTLOADER_BUILD
+    charge_pump_enable(0);
+    pvt_func_enable(0);
+#endif
 }
 
 /**
@@ -222,6 +231,10 @@ static void rtc_clk_cpu_freq_to_8m(void)
  */
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
+#ifndef BOOTLOADER_BUILD
+    pvt_func_enable(1);
+    charge_pump_enable(1);
+#endif
     // f_hp_root = 96MHz
     uint32_t cpu_divider = CLK_LL_PLL_96M_FREQ_MHZ / cpu_freq_mhz;
     clk_ll_cpu_set_divider(cpu_divider);
@@ -241,6 +254,10 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
  */
 static void rtc_clk_cpu_freq_to_flash_pll(uint32_t cpu_freq_mhz, uint32_t cpu_divider)
 {
+#ifndef BOOTLOADER_BUILD
+    pvt_func_enable(1);
+    charge_pump_enable(1);
+#endif
     // f_hp_root = 64MHz
     clk_ll_cpu_set_divider(cpu_divider);
     // Constraint: f_ahb <= 32MHz; f_cpu = N * f_ahb (N = 1, 2, 3...)

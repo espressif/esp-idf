@@ -13,6 +13,7 @@
 #include "esp32c6/rom/rtc.h"
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
@@ -184,6 +185,10 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     clk_ll_cpu_set_ls_divider(div);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
+#ifndef BOOTLOADER_BUILD
+    charge_pump_enable(0);
+    pvt_func_enable(0);
+#endif
 }
 
 static void rtc_clk_cpu_freq_to_8m(void)
@@ -192,6 +197,10 @@ static void rtc_clk_cpu_freq_to_8m(void)
     clk_ll_cpu_set_ls_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     esp_rom_set_cpu_ticks_per_us(20);
+#ifndef BOOTLOADER_BUILD
+    charge_pump_enable(0);
+    pvt_func_enable(0);
+#endif
 }
 
 /**
@@ -201,6 +210,10 @@ static void rtc_clk_cpu_freq_to_8m(void)
  */
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
+#ifndef BOOTLOADER_BUILD
+    pvt_func_enable(1);
+    charge_pump_enable(1);
+#endif
     clk_ll_cpu_set_hs_divider(CLK_LL_PLL_480M_FREQ_MHZ / cpu_freq_mhz);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
     esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
