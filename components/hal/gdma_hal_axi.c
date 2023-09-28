@@ -95,6 +95,7 @@ void gdma_axi_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channe
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
         axi_dma_ll_rx_enable_owner_check(hal->axi_dma_dev, chan_id, en_owner_check);
+        // RX direction always has the descriptor write-back feature enabled
     } else {
         axi_dma_ll_tx_enable_owner_check(hal->axi_dma_dev, chan_id, en_owner_check);
         axi_dma_ll_tx_enable_auto_write_back(hal->axi_dma_dev, chan_id, en_desc_write_back);

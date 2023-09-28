@@ -108,6 +108,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "gdma_hal_axi.c")
     endif()
 
+    if(CONFIG_SOC_DW_GDMA_SUPPORTED)
+        list(APPEND srcs "dw_gdma_hal.c")
+    endif()
+
     if(CONFIG_SOC_I2S_SUPPORTED)
         list(APPEND srcs "i2s_hal.c")
     endif()
