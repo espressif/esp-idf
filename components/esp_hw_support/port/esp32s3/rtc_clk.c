@@ -301,18 +301,6 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         SOC_LOGE(TAG, "invalid frequency");
     }
 
-    /* cpu_frequency < 240M: dbias = pvt-dig + 2;
-       cpu_frequency = 240M: dbias = pvt-dig + 3;
-     */
-    if (cpu_freq_mhz != 240) {
-        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
-        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
-    } else {
-        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_240m);
-        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_240m);
-    }
-    esp_rom_delay_us(40);
-
     /* There are totally 6 LDO slaves(all on by default). At the moment of swithing LDO slave, LDO voltage will also change instantaneously.
      * LDO slave can reduce the voltage change caused by switching frequency.
      * CPU frequency <= 40M : just open 3 LDO slaves; CPU frequency = 80M : open 4 LDO slaves; CPU frequency = 160M : open 5 LDO slaves; CPU frequency = 240M : open 6 LDO slaves;
@@ -323,23 +311,34 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     int pd_slave = cpu_freq_mhz / 80;
     rtc_cpu_freq_config_t cur_config;
     rtc_clk_cpu_freq_get_config(&cur_config);
+    /* cpu_frequency < 240M: dbias = pvt-dig + 2;
+     * cpu_frequency = 240M: dbias = pvt-dig + 3;
+     */
     if (cpu_freq_mhz > cur_config.freq_mhz) {
-        REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE >> pd_slave);
-        REG_SET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL, per_conf);
-        REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
-        /* switch clock source */
-        REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_PLL);
-        rtc_clk_apb_freq_update(80 * MHZ);
-        ets_update_cpu_frequency(cpu_freq_mhz);
-    } else {
-        REG_SET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL, per_conf);
-        REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
-        /* switch clock source */
-        REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_PLL);
-        rtc_clk_apb_freq_update(80 * MHZ);
-        ets_update_cpu_frequency(cpu_freq_mhz);
+        if (cpu_freq_mhz == 240) {
+            REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_240m);
+            REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_240m);
+            esp_rom_delay_us(40);
+        }
         REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE >> pd_slave);
     }
+    REG_SET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL, per_conf);
+    REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
+    /* switch clock source */
+    REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_PLL);
+    rtc_clk_apb_freq_update(80 * MHZ);
+    ets_update_cpu_frequency(cpu_freq_mhz);
+
+    if (cpu_freq_mhz < cur_config.freq_mhz) {
+        if (cur_config.freq_mhz == 240) {
+            REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
+            REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
+            esp_rom_delay_us(40);
+        }
+
+        REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE >> pd_slave);
+    }
+
 }
 
 bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *out_config)
@@ -496,9 +495,9 @@ void rtc_clk_cpu_freq_set_xtal(void)
  */
 void rtc_clk_cpu_freq_to_xtal(int freq, int div)
 {
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
-    esp_rom_delay_us(40);
+    rtc_cpu_freq_config_t cur_config;
+    rtc_clk_cpu_freq_get_config(&cur_config);
+
     ets_update_cpu_frequency(freq);
     /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
@@ -507,18 +506,25 @@ void rtc_clk_cpu_freq_to_xtal(int freq, int div)
     /* switch clock source */
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_XTAL);
     rtc_clk_apb_freq_update(freq * MHZ);
+
+    if (cur_config.freq_mhz == 240) {
+        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
+        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
+        esp_rom_delay_us(40);
+    }
+
     REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE);
 }
 
 static void rtc_clk_cpu_freq_to_8m(void)
 {
+    assert(0 && "LDO dbias need to modified");
     ets_update_cpu_frequency(8);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
-    esp_rom_delay_us(40);
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_8M);
     rtc_clk_apb_freq_update(RTC_FAST_CLK_FREQ_8M);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
     REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE);
 }
 
