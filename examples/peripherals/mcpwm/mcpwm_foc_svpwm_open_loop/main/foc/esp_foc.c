@@ -5,12 +5,11 @@
  */
 #include "esp_foc.h"
 
-
 /**
  * alpha = u - (v + w)sin(30) * (2/3),  (2/3): Equal amplitude transformation const
  * beta  = (v - w)cos(30) * (2/3)
  */
-void foc_clarke_transform (const foc_uvw_coord_t *v_uvw, foc_ab_coord_t *v_ab)
+void foc_clarke_transform(const foc_uvw_coord_t *v_uvw, foc_ab_coord_t *v_ab)
 {
     const _iq foc_clark_k1_iq = _IQ(2.0 / 3.0);
     const _iq foc_clark_k2_iq = _IQ(1.0 / 3.0);
@@ -20,14 +19,14 @@ void foc_clarke_transform (const foc_uvw_coord_t *v_uvw, foc_ab_coord_t *v_ab)
     v_ab->beta  = _IQmpy(v_uvw->v - v_uvw->w, foc_clark_k3_iq);
 }
 
-void foc_inverse_clarke_transform (const foc_ab_coord_t *v_ab, foc_uvw_coord_t *v_uvw)
+void foc_inverse_clarke_transform(const foc_ab_coord_t *v_ab, foc_uvw_coord_t *v_uvw)
 {
     v_uvw->u = v_ab->alpha;
     v_uvw->v = _IQdiv2(_IQmpy(v_ab->beta, _IQ(M_SQRT3)) - v_ab->alpha);
     v_uvw->w = -v_uvw->u - v_uvw->v;
 }
 
-void foc_park_transform (_iq theta_rad, const foc_ab_coord_t *v_ab, foc_dq_coord_t *v_dq)
+void foc_park_transform(_iq theta_rad, const foc_ab_coord_t *v_ab, foc_dq_coord_t *v_dq)
 {
     _iq sin = _IQsin(theta_rad);
     _iq cos = _IQcos(theta_rad);
@@ -36,7 +35,7 @@ void foc_park_transform (_iq theta_rad, const foc_ab_coord_t *v_ab, foc_dq_coord
     v_dq->q = _IQmpy(v_ab->beta, cos) - _IQmpy(v_ab->alpha, sin);
 }
 
-void foc_inverse_park_transform (_iq theta_rad, const foc_dq_coord_t *v_dq, foc_ab_coord_t *v_ab)
+void foc_inverse_park_transform(_iq theta_rad, const foc_dq_coord_t *v_dq, foc_ab_coord_t *v_ab)
 {
     _iq sin = _IQsin(theta_rad);
     _iq cos = _IQcos(theta_rad);

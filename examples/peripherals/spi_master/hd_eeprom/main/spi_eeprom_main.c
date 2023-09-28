@@ -18,7 +18,6 @@
 #include "esp_log.h"
 #include "spi_eeprom.h"
 
-
 /*
  This code demonstrates how to use the SPI master half duplex mode to read/write a AT932C46D EEPROM (8-bit mode).
 */
@@ -70,15 +69,14 @@
 #  define PIN_NUM_CS   1
 #endif
 
-
 static const char TAG[] = "main";
 
 void app_main(void)
 {
     esp_err_t ret;
 #ifndef CONFIG_EXAMPLE_USE_SPI1_PINS
-    ESP_LOGI(TAG, "Initializing bus SPI%d...", EEPROM_HOST+1);
-    spi_bus_config_t buscfg={
+    ESP_LOGI(TAG, "Initializing bus SPI%d...", EEPROM_HOST + 1);
+    spi_bus_config_t buscfg = {
         .miso_io_num = PIN_NUM_MISO,
         .mosi_io_num = PIN_NUM_MOSI,
         .sclk_io_num = PIN_NUM_CLK,

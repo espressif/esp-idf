@@ -15,8 +15,8 @@
 static const char *TAG = "ana_cmpr_example";
 
 static bool example_ana_cmpr_on_cross_callback(ana_cmpr_handle_t cmpr,
-                                                         const ana_cmpr_cross_event_data_t *edata,
-                                                         void *user_ctx)
+                                               const ana_cmpr_cross_event_data_t *edata,
+                                               void *user_ctx)
 {
 #if CONFIG_EXAMPLE_HYSTERESIS_COMPARATOR
     static ana_cmpr_internal_ref_config_t ref_cfg = {
@@ -70,7 +70,7 @@ void example_init_analog_comparator_intr(void)
     };
     ESP_ERROR_CHECK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
 #else
-     /* Step 1: Allocate the new analog comparator unit */
+    /* Step 1: Allocate the new analog comparator unit */
     ana_cmpr_config_t config = {
         .unit = EXAMPLE_ANA_CMPR_UNIT,
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,

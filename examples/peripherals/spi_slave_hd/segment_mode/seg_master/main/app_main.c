@@ -68,7 +68,6 @@
 
 static const char TAG[] = "SEG_MASTER";
 
-
 static void get_spi_bus_default_config(spi_bus_config_t *bus_cfg)
 {
     memset(bus_cfg, 0x0, sizeof(spi_bus_config_t));
@@ -85,7 +84,7 @@ static void get_spi_bus_default_config(spi_bus_config_t *bus_cfg)
 static void get_spi_device_default_config(spi_device_interface_config_t *dev_cfg)
 {
     memset(dev_cfg, 0x0, sizeof(spi_device_interface_config_t));
-    dev_cfg->clock_speed_hz = 10*1000*1000;
+    dev_cfg->clock_speed_hz = 10 * 1000 * 1000;
     dev_cfg->mode = 0;
     dev_cfg->spics_io_num = GPIO_CS;
     dev_cfg->cs_ena_pretrans = 0;
@@ -113,7 +112,6 @@ static void init_master_hd(spi_device_handle_t* out_spi)
     get_spi_device_default_config(&dev_cfg);
     ESP_ERROR_CHECK(spi_bus_add_device(MASTER_HOST, &dev_cfg, out_spi));
 }
-
 
 //-------------------------------Function used for Master-Slave Synchronization---------------------------//
 //Wait for Slave to init the shared registers for its configurations, see the Helper Macros above

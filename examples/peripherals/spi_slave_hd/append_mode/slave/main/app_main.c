@@ -29,7 +29,6 @@
 #define SLAVE_READY_FLAG    0x88
 #define READY_FLAG_REG      0
 
-
 struct trans_link_s {
     spi_slave_hd_data_t trans;
     struct trans_link_s *next;
@@ -40,7 +39,6 @@ typedef struct trans_link_s trans_link_t;
 /* Pointer to the current transaction */
 trans_link_t *tx_curr_trans;
 trans_link_t *rx_curr_trans;
-
 
 static void init_slave_hd(void)
 {
@@ -81,7 +79,7 @@ static esp_err_t create_transaction_pool(uint8_t **data_buf, trans_link_t *trans
 
         //link the recycling transaction descriptors
         if (i != QUEUE_SIZE - 1) {
-            trans_link[i].next = &trans_link[i+1];
+            trans_link[i].next = &trans_link[i + 1];
         } else {
             trans_link[i].next = &trans_link[0];
         }
@@ -100,7 +98,7 @@ static void prepare_tx_data(trans_link_t *tx_trans)
      */
     uint8_t data = rand() % 50;
     tx_trans->trans.len = TRANSACTION_LEN;
-    for(int i = 0; i < tx_trans->trans.len; i++) {
+    for (int i = 0; i < tx_trans->trans.len; i++) {
         tx_trans->trans.data[i] = data + i;
     }
     tx_trans->recycled = 0;

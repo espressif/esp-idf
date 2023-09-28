@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -33,22 +33,22 @@ static void client_event_cb(const usb_host_client_event_msg_t *event_msg, void *
 {
     class_driver_t *driver_obj = (class_driver_t *)arg;
     switch (event_msg->event) {
-        case USB_HOST_CLIENT_EVENT_NEW_DEV:
-            if (driver_obj->dev_addr == 0) {
-                driver_obj->dev_addr = event_msg->new_dev.address;
-                //Open the device next
-                driver_obj->actions |= ACTION_OPEN_DEV;
-            }
-            break;
-        case USB_HOST_CLIENT_EVENT_DEV_GONE:
-            if (driver_obj->dev_hdl != NULL) {
-                //Cancel any other actions and close the device next
-                driver_obj->actions = ACTION_CLOSE_DEV;
-            }
-            break;
-        default:
-            //Should never occur
-            abort();
+    case USB_HOST_CLIENT_EVENT_NEW_DEV:
+        if (driver_obj->dev_addr == 0) {
+            driver_obj->dev_addr = event_msg->new_dev.address;
+            //Open the device next
+            driver_obj->actions |= ACTION_OPEN_DEV;
+        }
+        break;
+    case USB_HOST_CLIENT_EVENT_DEV_GONE:
+        if (driver_obj->dev_hdl != NULL) {
+            //Cancel any other actions and close the device next
+            driver_obj->actions = ACTION_CLOSE_DEV;
+        }
+        break;
+    default:
+        //Should never occur
+        abort();
     }
 }
 
@@ -146,7 +146,7 @@ void class_driver_task(void *arg)
         .max_num_event_msg = CLIENT_NUM_EVENT_MSG,
         .async = {
             .client_event_callback = client_event_cb,
-            .callback_arg = (void *)&driver_obj,
+            .callback_arg = (void *) &driver_obj,
         },
     };
     ESP_ERROR_CHECK(usb_host_client_register(&client_config, &driver_obj.client_hdl));

@@ -19,7 +19,6 @@
 #include <sys/param.h>
 #include "sdkconfig.h"
 
-
 #define EEPROM_BUSY_TIMEOUT_MS  5
 
 #define EEPROM_CLK_FREQ         (1*1000*1000)   //When powered by 3.3V, EEPROM max freq is 1MHz
@@ -42,7 +41,7 @@
 #define ADD_EWEN    0x60
 
 /// Context (config and data) of the spi_eeprom
-struct eeprom_context_t{
+struct eeprom_context_t {
     eeprom_config_t cfg;        ///< Configuration by the caller.
     spi_device_handle_t spi;    ///< SPI device handle
     SemaphoreHandle_t ready_sem; ///< Semaphore for ready signal
@@ -51,7 +50,6 @@ struct eeprom_context_t{
 typedef struct eeprom_context_t eeprom_context_t;
 
 static const char TAG[] = "eeprom";
-
 
 // Workaround: The driver depends on some data in the flash and cannot be placed to DRAM easily for
 // now. Using the version in LL instead.
@@ -62,7 +60,6 @@ static inline esp_err_t gpio_set_level_patch(gpio_num_t gpio_num, uint32_t level
     gpio_ll_set_level(&GPIO, gpio_num, level);
     return ESP_OK;
 }
-
 
 static esp_err_t eeprom_simple_cmd(eeprom_context_t *ctx, uint16_t cmd)
 {
@@ -89,7 +86,9 @@ static esp_err_t eeprom_wait_done(eeprom_context_t* ctx)
         gpio_intr_disable(ctx->cfg.miso_io);
         gpio_set_level(ctx->cfg.cs_io, 0);
 
-        if (ret != pdTRUE) return ESP_ERR_TIMEOUT;
+        if (ret != pdTRUE) {
+            return ESP_ERR_TIMEOUT;
+        }
     } else {
         bool timeout = true;
         gpio_set_level(ctx->cfg.cs_io, 1);
@@ -101,7 +100,9 @@ static esp_err_t eeprom_wait_done(eeprom_context_t* ctx)
             usleep(1);
         }
         gpio_set_level(ctx->cfg.cs_io, 0);
-        if (timeout) return ESP_ERR_TIMEOUT;
+        if (timeout) {
+            return ESP_ERR_TIMEOUT;
+        }
     }
     return ESP_OK;
 }
@@ -144,13 +145,15 @@ esp_err_t spi_eeprom_init(const eeprom_config_t *cfg, eeprom_context_t** out_ctx
     }
 
     eeprom_context_t* ctx = (eeprom_context_t*)malloc(sizeof(eeprom_context_t));
-    if (!ctx) return ESP_ERR_NO_MEM;
+    if (!ctx) {
+        return ESP_ERR_NO_MEM;
+    }
 
     *ctx = (eeprom_context_t) {
         .cfg = *cfg,
     };
 
-    spi_device_interface_config_t devcfg={
+    spi_device_interface_config_t devcfg = {
         .command_bits = 10,
         .clock_speed_hz = EEPROM_CLK_FREQ,
         .mode = 0,          //SPI mode 0
@@ -167,7 +170,7 @@ esp_err_t spi_eeprom_init(const eeprom_config_t *cfg, eeprom_context_t** out_ctx
     };
     //Attach the EEPROM to the SPI bus
     err = spi_bus_add_device(ctx->cfg.host, &devcfg, &ctx->spi);
-    if  (err != ESP_OK) {
+    if (err != ESP_OK) {
         goto cleanup;
     }
 
@@ -217,7 +220,9 @@ esp_err_t spi_eeprom_read(eeprom_context_t* ctx, uint8_t addr, uint8_t* out_data
         .user = ctx,
     };
     esp_err_t err = spi_device_polling_transmit(ctx->spi, &t);
-    if (err!= ESP_OK) return err;
+    if (err != ESP_OK) {
+        return err;
+    }
 
     *out_data = t.rx_data[0];
     return ESP_OK;
@@ -227,7 +232,9 @@ esp_err_t spi_eeprom_erase(eeprom_context_t* ctx, uint8_t addr)
 {
     esp_err_t err;
     err = spi_device_acquire_bus(ctx->spi, portMAX_DELAY);
-    if (err != ESP_OK) return err;
+    if (err != ESP_OK) {
+        return err;
+    }
 
     err = eeprom_simple_cmd(ctx, CMD_ERASE | (addr & ADDR_MASK));
 
@@ -243,7 +250,9 @@ esp_err_t spi_eeprom_write(eeprom_context_t* ctx, uint8_t addr, uint8_t data)
 {
     esp_err_t err;
     err = spi_device_acquire_bus(ctx->spi, portMAX_DELAY);
-    if (err != ESP_OK) return err;
+    if (err != ESP_OK) {
+        return err;
+    }
 
     spi_transaction_t t = {
         .cmd = CMD_WRITE | (addr & ADDR_MASK),
@@ -282,7 +291,9 @@ esp_err_t spi_eeprom_erase_all(eeprom_context_t* ctx)
 
     esp_err_t err;
     err = spi_device_acquire_bus(ctx->spi, portMAX_DELAY);
-    if (err != ESP_OK) return err;
+    if (err != ESP_OK) {
+        return err;
+    }
 
     err = eeprom_simple_cmd(ctx, CMD_ERAL | ADD_ERAL);
 
@@ -304,7 +315,9 @@ esp_err_t spi_eeprom_write_all(eeprom_context_t* ctx, uint8_t data)
 
     esp_err_t err;
     err = spi_device_acquire_bus(ctx->spi, portMAX_DELAY);
-    if (err != ESP_OK) return err;
+    if (err != ESP_OK) {
+        return err;
+    }
 
     spi_transaction_t t = {
         .cmd = CMD_WRAL | ADD_WRAL,

@@ -127,7 +127,6 @@ components_not_formatted_temporary:
     - "/examples/mesh/"
     - "/examples/network/"
     - "/examples/openthread/"
-    - "/examples/peripherals/"
     - "/examples/phy/"
     - "/examples/protocols/"
     - "/examples/provisioning/"
@@ -174,6 +173,9 @@ components_not_formatted_permanent:
     - "/components/app_trace/sys_view/SEGGER/"
     # SoC header files (generated)
     - "/components/soc/*/include/soc/"
+    # Example resource files (generated)
+    - "/examples/peripherals/lcd/i80_controller/main/images/"
+    - "/examples/peripherals/dac/dac_continuous/dac_audio/main/audio_example_file.h"
 
 docs:
   # Docs directory contains some .inc files, which are not C include files

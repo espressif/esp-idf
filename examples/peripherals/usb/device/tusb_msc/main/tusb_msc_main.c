@@ -131,7 +131,6 @@ static void _mount(void)
     ESP_LOGI(TAG, "Mount storage...");
     ESP_ERROR_CHECK(tinyusb_msc_storage_mount(BASE_PATH));
 
-
     // List all the files in this directory
     ESP_LOGI(TAG, "\nls command output:");
     struct dirent *d;
@@ -388,7 +387,7 @@ void app_main(void)
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
     for (int count = 0; count < sizeof(cmds) / sizeof(esp_console_cmd_t); count++) {
-        ESP_ERROR_CHECK( esp_console_cmd_register(&cmds[count]) );
+        ESP_ERROR_CHECK(esp_console_cmd_register(&cmds[count]));
     }
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }

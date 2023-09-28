@@ -24,7 +24,6 @@
 
 #define EXAMPLE_PDM_RX_FREQ_HZ          16000           // I2S PDM RX frequency
 
-
 static i2s_chan_handle_t i2s_example_init_pdm_rx(void)
 {
     i2s_chan_handle_t rx_chan;        // I2S rx channel handler
@@ -71,7 +70,6 @@ static i2s_chan_handle_t i2s_example_init_pdm_rx(void)
     ESP_ERROR_CHECK(i2s_channel_enable(rx_chan));
     return rx_chan;
 }
-
 
 void i2s_example_pdm_rx_task(void *args)
 {

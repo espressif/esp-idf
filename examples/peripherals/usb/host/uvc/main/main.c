@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,7 +99,7 @@ static void uninitialize_usb_host_lib(void)
     xSemaphoreTake(ready_to_uninstall_usb, portMAX_DELAY);
     vSemaphoreDelete(ready_to_uninstall_usb);
 
-    if ( usb_host_uninstall() != ESP_OK) {
+    if (usb_host_uninstall() != ESP_OK) {
         ESP_LOGE(TAG, "Failed to uninstall usb_host");
     }
 }
@@ -163,9 +163,9 @@ int app_main(int argc, char **argv)
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
     };
-    ESP_ERROR_CHECK( gpio_config(&input_pin) );
+    ESP_ERROR_CHECK(gpio_config(&input_pin));
 
-    ESP_ERROR_CHECK( initialize_usb_host_lib() );
+    ESP_ERROR_CHECK(initialize_usb_host_lib());
 
     libuvc_adapter_config_t config = {
         .create_background_task = true,
@@ -176,20 +176,20 @@ int app_main(int argc, char **argv)
 
     libuvc_adapter_set_config(&config);
 
-    UVC_CHECK( uvc_init(&ctx, NULL) );
+    UVC_CHECK(uvc_init(&ctx, NULL));
 
     // Streaming takes place only when enabled in menuconfig
-    ESP_ERROR_CHECK( tcp_server_wait_for_connection() );
+    ESP_ERROR_CHECK(tcp_server_wait_for_connection());
 
     do {
 
         printf("Waiting for device\n");
         wait_for_event(UVC_DEVICE_CONNECTED);
 
-        UVC_CHECK( uvc_find_device(ctx, &dev, PID, VID, SERIAL_NUMBER) );
+        UVC_CHECK(uvc_find_device(ctx, &dev, PID, VID, SERIAL_NUMBER));
         puts("Device found");
 
-        UVC_CHECK( uvc_open(dev, &devh) );
+        UVC_CHECK(uvc_open(dev, &devh));
 
         // Uncomment to print configuration descriptor
         // libuvc_adapter_print_descriptors(devh);
@@ -200,10 +200,10 @@ int app_main(int argc, char **argv)
         uvc_print_diag(devh, stderr);
 
         // Negotiate stream profile
-        res = uvc_get_stream_ctrl_format_size(devh, &ctrl, FORMAT, WIDTH, HEIGHT, FPS );
+        res = uvc_get_stream_ctrl_format_size(devh, &ctrl, FORMAT, WIDTH, HEIGHT, FPS);
         while (res != UVC_SUCCESS) {
             printf("Negotiating streaming format failed, trying again...\n");
-            res = uvc_get_stream_ctrl_format_size(devh, &ctrl, FORMAT, WIDTH, HEIGHT, FPS );
+            res = uvc_get_stream_ctrl_format_size(devh, &ctrl, FORMAT, WIDTH, HEIGHT, FPS);
             sleep(1);
         }
 
@@ -213,7 +213,7 @@ int app_main(int argc, char **argv)
 
         uvc_print_stream_ctrl(&ctrl, stderr);
 
-        UVC_CHECK( uvc_start_streaming(devh, &ctrl, frame_callback, NULL, 0) );
+        UVC_CHECK(uvc_start_streaming(devh, &ctrl, frame_callback, NULL, 0));
         puts("Streaming...");
 
         wait_for_event(UVC_DEVICE_DISCONNECTED);

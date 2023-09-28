@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -43,11 +43,12 @@ static const twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 static const twai_timing_config_t t_config = TWAI_TIMING_CONFIG_25KBITS();
 //Set TX queue length to 0 due to listen only mode
 static const twai_general_config_t g_config = {.mode = TWAI_MODE_LISTEN_ONLY,
-                                              .tx_io = TX_GPIO_NUM, .rx_io = RX_GPIO_NUM,
-                                              .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,
-                                              .tx_queue_len = 0, .rx_queue_len = 5,
-                                              .alerts_enabled = TWAI_ALERT_NONE,
-                                              .clkout_divider = 0};
+                                               .tx_io = TX_GPIO_NUM, .rx_io = RX_GPIO_NUM,
+                                               .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,
+                                               .tx_queue_len = 0, .rx_queue_len = 5,
+                                               .alerts_enabled = TWAI_ALERT_NONE,
+                                               .clkout_divider = 0
+                                              };
 
 static SemaphoreHandle_t rx_sem;
 

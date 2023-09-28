@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -42,24 +42,24 @@ static bool IRAM_ATTR on_timer_alarm_cb(gptimer_handle_t timer, const gptimer_al
     // Switch wave every CONFIG_EXAMPLE_WAVE_PERIOD_SEC second
     if (point_cnt < EXAMPLE_CONVERT_FREQ_HZ * CONFIG_EXAMPLE_WAVE_PERIOD_SEC) {
         switch (wav_sel) {
-            case DAC_SINE_WAVE:
-                ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan0_handle, sin_wav[index]));
-                ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan1_handle, sin_wav[index]));
-                break;
-            case DAC_TRIANGLE_WAVE:
-                ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan0_handle, tri_wav[index]));
-                ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan1_handle, tri_wav[index]));
-                break;
-            case DAC_SAWTOOTH_WAVE:
-                ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan0_handle, saw_wav[index]));
-                ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan1_handle, saw_wav[index]));
-                break;
-            case DAC_SQUARE_WAVE:
-                ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan0_handle, squ_wav[index]));
-                ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan1_handle, squ_wav[index]));
-                break;
-            default:
-                break;
+        case DAC_SINE_WAVE:
+            ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan0_handle, sin_wav[index]));
+            ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan1_handle, sin_wav[index]));
+            break;
+        case DAC_TRIANGLE_WAVE:
+            ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan0_handle, tri_wav[index]));
+            ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan1_handle, tri_wav[index]));
+            break;
+        case DAC_SAWTOOTH_WAVE:
+            ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan0_handle, saw_wav[index]));
+            ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan1_handle, saw_wav[index]));
+            break;
+        case DAC_SQUARE_WAVE:
+            ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan0_handle, squ_wav[index]));
+            ESP_ERROR_CHECK(dac_oneshot_output_voltage(chan1_handle, squ_wav[index]));
+            break;
+        default:
+            break;
         }
         point_cnt++;
         index++;

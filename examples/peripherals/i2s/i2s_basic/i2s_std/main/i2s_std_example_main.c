@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,27 +20,27 @@
 #define EXAMPLE_I2S_DUPLEX_MODE         CONFIG_USE_DUPLEX
 
 #if CONFIG_IDF_TARGET_ESP32
-    #define EXAMPLE_STD_BCLK_IO1        GPIO_NUM_4      // I2S bit clock io number
-    #define EXAMPLE_STD_WS_IO1          GPIO_NUM_5      // I2S word select io number
-    #define EXAMPLE_STD_DOUT_IO1        GPIO_NUM_18     // I2S data out io number
-    #define EXAMPLE_STD_DIN_IO1         GPIO_NUM_19     // I2S data in io number
-    #if !EXAMPLE_I2S_DUPLEX_MODE
-        #define EXAMPLE_STD_BCLK_IO2    GPIO_NUM_22     // I2S bit clock io number
-        #define EXAMPLE_STD_WS_IO2      GPIO_NUM_23     // I2S word select io number
-        #define EXAMPLE_STD_DOUT_IO2    GPIO_NUM_25     // I2S data out io number
-        #define EXAMPLE_STD_DIN_IO2     GPIO_NUM_26     // I2S data in io number
-    #endif
+#define EXAMPLE_STD_BCLK_IO1        GPIO_NUM_4      // I2S bit clock io number
+#define EXAMPLE_STD_WS_IO1          GPIO_NUM_5      // I2S word select io number
+#define EXAMPLE_STD_DOUT_IO1        GPIO_NUM_18     // I2S data out io number
+#define EXAMPLE_STD_DIN_IO1         GPIO_NUM_19     // I2S data in io number
+#if !EXAMPLE_I2S_DUPLEX_MODE
+#define EXAMPLE_STD_BCLK_IO2    GPIO_NUM_22     // I2S bit clock io number
+#define EXAMPLE_STD_WS_IO2      GPIO_NUM_23     // I2S word select io number
+#define EXAMPLE_STD_DOUT_IO2    GPIO_NUM_25     // I2S data out io number
+#define EXAMPLE_STD_DIN_IO2     GPIO_NUM_26     // I2S data in io number
+#endif
 #else
-    #define EXAMPLE_STD_BCLK_IO1        GPIO_NUM_2      // I2S bit clock io number
-    #define EXAMPLE_STD_WS_IO1          GPIO_NUM_3      // I2S word select io number
-    #define EXAMPLE_STD_DOUT_IO1        GPIO_NUM_4      // I2S data out io number
-    #define EXAMPLE_STD_DIN_IO1         GPIO_NUM_5      // I2S data in io number
-    #if !EXAMPLE_I2S_DUPLEX_MODE
-        #define EXAMPLE_STD_BCLK_IO2    GPIO_NUM_6      // I2S bit clock io number
-        #define EXAMPLE_STD_WS_IO2      GPIO_NUM_7      // I2S word select io number
-        #define EXAMPLE_STD_DOUT_IO2    GPIO_NUM_8      // I2S data out io number
-        #define EXAMPLE_STD_DIN_IO2     GPIO_NUM_9      // I2S data in io number
-    #endif
+#define EXAMPLE_STD_BCLK_IO1        GPIO_NUM_2      // I2S bit clock io number
+#define EXAMPLE_STD_WS_IO1          GPIO_NUM_3      // I2S word select io number
+#define EXAMPLE_STD_DOUT_IO1        GPIO_NUM_4      // I2S data out io number
+#define EXAMPLE_STD_DIN_IO1         GPIO_NUM_5      // I2S data in io number
+#if !EXAMPLE_I2S_DUPLEX_MODE
+#define EXAMPLE_STD_BCLK_IO2    GPIO_NUM_6      // I2S bit clock io number
+#define EXAMPLE_STD_WS_IO2      GPIO_NUM_7      // I2S word select io number
+#define EXAMPLE_STD_DOUT_IO2    GPIO_NUM_8      // I2S data out io number
+#define EXAMPLE_STD_DIN_IO2     GPIO_NUM_9      // I2S data in io number
+#endif
 #endif
 
 #define EXAMPLE_BUFF_SIZE               2048

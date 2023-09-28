@@ -64,7 +64,6 @@ static rgb_channel_config_t rgb_led_2_channels = {
     .blue_channel = LEDC_CHANNEL_GAMMA_BLUE,
 };
 
-
 // Define some colors R, G, B channel PWM duty cycles
 #define RGB_TO_DUTY(x)  (x * (1 << LEDC_DUTY_RES) / 255)
 
@@ -126,7 +125,6 @@ static rgb_channel_config_t rgb_led_2_channels = {
 #define BLUEISH_PURPLE_G      RGB_TO_DUTY(102)
 #define BLUEISH_PURPLE_B      RGB_TO_DUTY(255)
 
-
 #if CONFIG_GAMMA_CORRECTION_WITH_LUT
 // Brightness 0 - 100% gamma correction look up table (gamma = 2.6)
 // Y = B ^ 2.6
@@ -157,7 +155,6 @@ static uint32_t gamma_correction_calculator(uint32_t duty)
     return pow((double)duty / (1 << LEDC_DUTY_RES), GAMMA_FACTOR) * (1 << LEDC_DUTY_RES);
 }
 #endif // CONFIG_GAMMA_CORRECTION_WITH_LUT
-
 
 static void rgb_set_duty_and_update(rgb_channel_config_t rgb_channels,
                                     uint32_t target_r_duty, uint32_t target_g_duty, uint32_t target_b_duty)

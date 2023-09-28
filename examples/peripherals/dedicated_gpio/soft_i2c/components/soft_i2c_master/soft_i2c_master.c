@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -24,10 +24,9 @@
 /* Forward declaration of static functions */
 static uint32_t freq_to_delay(soft_i2c_master_freq_t freq);
 static esp_err_t emulate_i2c_transfer(uint8_t device_address,
-                               const uint8_t* write_buffer, uint32_t write_size,
-                               uint8_t* read_buffer, uint32_t read_size,
-                               soft_i2c_master_bus_t bus);
-
+                                      const uint8_t* write_buffer, uint32_t write_size,
+                                      uint8_t* read_buffer, uint32_t read_size,
+                                      soft_i2c_master_bus_t bus);
 
 /* Mutex required to enter critical sections */
 static portMUX_TYPE g_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -41,7 +40,6 @@ struct i2c_master_bus_impl_t {
     uint32_t freq_delay;
     dedic_gpio_bundle_handle_t bundle;
 };
-
 
 esp_err_t soft_i2c_master_new(soft_i2c_master_config_t *config, soft_i2c_master_bus_t *bus)
 {
@@ -103,7 +101,6 @@ error:
     return ret;
 }
 
-
 esp_err_t soft_i2c_master_del(soft_i2c_master_bus_t bus)
 {
     esp_err_t ret;
@@ -116,7 +113,6 @@ esp_err_t soft_i2c_master_del(soft_i2c_master_bus_t bus)
 error:
     return ret;
 }
-
 
 esp_err_t soft_i2c_master_write(soft_i2c_master_bus_t bus,
                                 uint8_t device_address,
@@ -159,7 +155,6 @@ error:
     return ret;
 }
 
-
 esp_err_t soft_i2c_master_write_read(soft_i2c_master_bus_t bus,
                                      uint8_t device_address,
                                      const uint8_t* write_buffer, size_t write_size,
@@ -184,18 +179,17 @@ error:
     return ret;
 }
 
-
 /***** Private implementation *****/
 
 static uint32_t freq_to_delay(soft_i2c_master_freq_t freq)
 {
-    switch(freq) {
-        case SOFT_I2C_100KHZ: return 3;
-        case SOFT_I2C_200KHZ: return 2;
-        case SOFT_I2C_300KHZ: return 1;
-        default:
-            assert(false);
-            return 0;
+    switch (freq) {
+    case SOFT_I2C_100KHZ: return 3;
+    case SOFT_I2C_200KHZ: return 2;
+    case SOFT_I2C_300KHZ: return 1;
+    default:
+        assert(false);
+        return 0;
     }
 }
 
@@ -231,7 +225,6 @@ static inline void emulate_start(soft_i2c_master_bus_t bus)
     set_sda(bidir_bundle, 1, delay);
     set_sda(bidir_bundle, 0, delay);
 }
-
 
 static inline void emulate_stop(soft_i2c_master_bus_t bus)
 {
@@ -287,8 +280,7 @@ static inline uint8_t emulate_read_byte(soft_i2c_master_bus_t bus, int send_ack)
     set_scl(bidir_bundle, 0, delay);
     set_sda(bidir_bundle, 1, delay);
 
-    for (int i = 7; i >= 0; i--)
-    {
+    for (int i = 7; i >= 0; i--) {
         /* Set SCL to low */
         set_scl(bidir_bundle, 0, delay);
         /* Get SDA value now and store it in the final result */

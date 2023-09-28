@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -32,7 +32,6 @@ struct soft_uart_port_impl_t {
     dedic_gpio_bundle_handle_t tx_bundle;
     dedic_gpio_bundle_handle_t rx_bundle;
 };
-
 
 esp_err_t soft_uart_new(soft_uart_config_t *config, soft_uart_port_t *port)
 {
@@ -82,7 +81,6 @@ esp_err_t soft_uart_new(soft_uart_config_t *config, soft_uart_port_t *port)
         }
     };
 
-
     /* Allocate the master port structure now that we need it */
     port_impl = malloc(sizeof(struct soft_uart_port_impl_t));
     ESP_GOTO_ON_FALSE(port_impl != NULL, ESP_ERR_NO_MEM, error, SOFT_UART_TAG, "No more memory available in the system");
@@ -118,7 +116,6 @@ error:
     return ret;
 }
 
-
 esp_err_t soft_uart_del(soft_uart_port_t port)
 {
     esp_err_t ret;
@@ -131,7 +128,6 @@ esp_err_t soft_uart_del(soft_uart_port_t port)
 error:
     return ret;
 }
-
 
 esp_err_t soft_uart_send(soft_uart_port_t port, const uint8_t* write_buffer, size_t write_size)
 {
@@ -172,17 +168,17 @@ static uint32_t baudrate_to_cycles(soft_uart_baudrate_t baudrate)
      * For each delay, subtract a small amount of clock cycles which compensate for the instructions
      * used to prepare the next bits (loop, shifts, logic...).
      */
-    switch(baudrate) {
-        case SOFT_UART_115200: // 115200, 8.63us per bit
-            return ((CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 863)/100 - 20);
-        case SOFT_UART_230400: // 4.34us per bit
-            return ((CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 434)/100 - 24);
-        case SOFT_UART_460800: // 2.17us per bit
-            return ((CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 217)/100 - 20);
-        case SOFT_UART_921600: // 1.085us per bit
-            return ((CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 108)/100 - 23);
-        default:
-            assert(false);
-            return 0;
+    switch (baudrate) {
+    case SOFT_UART_115200: // 115200, 8.63us per bit
+        return ((CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 863) / 100 - 20);
+    case SOFT_UART_230400: // 4.34us per bit
+        return ((CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 434) / 100 - 24);
+    case SOFT_UART_460800: // 2.17us per bit
+        return ((CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 217) / 100 - 20);
+    case SOFT_UART_921600: // 1.085us per bit
+        return ((CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 108) / 100 - 23);
+    default:
+        assert(false);
+        return 0;
     }
 }

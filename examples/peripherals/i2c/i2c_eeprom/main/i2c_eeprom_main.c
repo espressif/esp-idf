@@ -23,7 +23,7 @@ static void disp_buf(uint8_t *buf, int len)
     int i;
     for (i = 0; i < len; i++) {
         printf("%02x ", buf[i]);
-        if (( i + 1 ) % 16 == 0) {
+        if ((i + 1) % 16 == 0) {
             printf("\n");
         }
     }
@@ -59,7 +59,7 @@ void app_main(void)
     uint8_t read_buf[LENGTH];
     ESP_ERROR_CHECK(i2c_eeprom_init(bus_handle, &eeprom_config, &eeprom_handle));
 
-    while(1) {
+    while (1) {
         ESP_ERROR_CHECK(i2c_eeprom_write(eeprom_handle, block_addr, buf, LENGTH));
         // Needs wait for eeprom hardware done, referring from datasheet
         i2c_eeprom_wait_idle(eeprom_handle);

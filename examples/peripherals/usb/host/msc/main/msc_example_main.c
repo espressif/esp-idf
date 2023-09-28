@@ -164,13 +164,13 @@ void app_main(void)
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
     };
-    ESP_ERROR_CHECK( gpio_config(&input_pin) );
+    ESP_ERROR_CHECK(gpio_config(&input_pin));
 
     usb_flags = xEventGroupCreate();
     assert(usb_flags);
 
     const usb_host_config_t host_config = { .intr_flags = ESP_INTR_FLAG_LEVEL1 };
-    ESP_ERROR_CHECK( usb_host_install(&host_config) );
+    ESP_ERROR_CHECK(usb_host_install(&host_config));
     task_created = xTaskCreate(handle_usb_events, "usb_events", 2048, NULL, 2, NULL);
     assert(task_created);
 
@@ -180,7 +180,7 @@ void app_main(void)
         .stack_size = 4096,
         .callback = msc_event_cb,
     };
-    ESP_ERROR_CHECK( msc_host_install(&msc_config) );
+    ESP_ERROR_CHECK(msc_host_install(&msc_config));
 
     const esp_vfs_fat_mount_config_t mount_config = {
         .format_if_mount_failed = false,
@@ -191,28 +191,28 @@ void app_main(void)
     do {
         uint8_t device_address = wait_for_msc_device();
 
-        ESP_ERROR_CHECK( msc_host_install_device(device_address, &msc_device) );
+        ESP_ERROR_CHECK(msc_host_install_device(device_address, &msc_device));
 
         msc_host_print_descriptors(msc_device);
 
-        ESP_ERROR_CHECK( msc_host_get_device_info(msc_device, &info) );
+        ESP_ERROR_CHECK(msc_host_get_device_info(msc_device, &info));
         print_device_info(&info);
 
-        ESP_ERROR_CHECK( msc_host_vfs_register(msc_device, "/usb", &mount_config, &vfs_handle) );
+        ESP_ERROR_CHECK(msc_host_vfs_register(msc_device, "/usb", &mount_config, &vfs_handle));
 
         while (!wait_for_event(DEVICE_DISCONNECTED, 200)) {
             file_operations();
         }
 
         xEventGroupClearBits(usb_flags, READY_TO_UNINSTALL);
-        ESP_ERROR_CHECK( msc_host_vfs_unregister(vfs_handle) );
-        ESP_ERROR_CHECK( msc_host_uninstall_device(msc_device) );
+        ESP_ERROR_CHECK(msc_host_vfs_unregister(vfs_handle));
+        ESP_ERROR_CHECK(msc_host_uninstall_device(msc_device));
 
     } while (gpio_get_level(USB_DISCONNECT_PIN) != 0);
 
     ESP_LOGI(TAG, "Uninitializing USB ...");
-    ESP_ERROR_CHECK( msc_host_uninstall() );
+    ESP_ERROR_CHECK(msc_host_uninstall());
     wait_for_event(READY_TO_UNINSTALL, portMAX_DELAY);
-    ESP_ERROR_CHECK( usb_host_uninstall() );
+    ESP_ERROR_CHECK(usb_host_uninstall());
     ESP_LOGI(TAG, "Done");
 }
