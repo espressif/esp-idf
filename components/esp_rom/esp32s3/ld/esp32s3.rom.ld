@@ -1239,7 +1239,9 @@ r_llc_loc_dl_upd_proc_continue = 0x40003e1c;
 r_llc_loc_encrypt_proc_continue = 0x40003e28;
 r_llc_loc_encrypt_proc_err_cb = 0x40003e34;
 r_llc_loc_feats_exch_proc_continue = 0x40003e40;
+/*
 r_llc_loc_phy_upd_proc_continue = 0x40003e4c;
+*/
 r_llc_loc_phy_upd_proc_err_cb = 0x40003e58;
 r_llc_msg_handler_tab_p_get = 0x40003e64;
 r_llc_pref_param_compute = 0x40003e70;
@@ -1418,13 +1420,17 @@ r_lld_process_cca_data = 0x40004608;
 r_lld_ral_search = 0x40004614;
 r_lld_read_clock = 0x40004620;
 r_lld_res_list_add = 0x4000462c;
+/*
 r_lld_res_list_clear = 0x40004638;
+*/
 r_lld_res_list_is_empty = 0x40004644;
 r_lld_res_list_local_rpa_get = 0x40004650;
 r_lld_res_list_peer_rpa_get = 0x4000465c;
 r_lld_res_list_peer_update = 0x40004668;
 r_lld_res_list_priv_mode_update = 0x40004674;
+/*
 r_lld_res_list_rem = 0x40004680;
+*/
 r_lld_reset_reg = 0x4000468c;
 r_lld_rpa_renew = 0x40004698;
 r_lld_rpa_renew_evt_canceled_cbk = 0x400046a4;
