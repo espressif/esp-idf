@@ -29,7 +29,6 @@
 #include "ext_mem_layout.h"
 #include "esp_mmu_map.h"
 
-
 //This is for size align
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 //This is for vaddr align
@@ -108,14 +107,12 @@ typedef struct {
     mem_region_t mem_regions[SOC_MMU_LINEAR_ADDRESS_REGION_NUM];
 } mmu_ctx_t;
 
-
 static mmu_ctx_t s_mmu_ctx;
 
 #if ENABLE_PADDR_CHECK
 static bool s_is_enclosed(uint32_t block_start, uint32_t block_end, uint32_t new_block_start, uint32_t new_block_size);
 static bool s_is_overlapped(uint32_t block_start, uint32_t block_end, uint32_t new_block_start, uint32_t new_block_size);
 #endif  //#if ENABLE_PADDR_CHECK
-
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
@@ -232,7 +229,7 @@ void esp_mmu_map_init(void)
     //Count the mem regions left after coalescing
     uint32_t region_num = 0;
     for (int i = 0; i < SOC_MMU_LINEAR_ADDRESS_REGION_NUM; i++) {
-        if(hw_mem_regions[i].caps != MEM_REGION_MERGED) {
+        if (hw_mem_regions[i].caps != MEM_REGION_MERGED) {
             region_num++;
         }
     }
@@ -256,7 +253,6 @@ void esp_mmu_map_init(void)
 
     assert(available_region_idx == region_num);
 }
-
 
 static esp_err_t s_mem_caps_check(mmu_mem_caps_t caps)
 {
@@ -290,7 +286,6 @@ esp_err_t esp_mmu_map_get_max_consecutive_free_block_size(mmu_mem_caps_t caps, m
 
     return ESP_OK;
 }
-
 
 static int32_t s_find_available_region(mem_region_t *mem_regions, uint32_t region_nums, size_t size, mmu_mem_caps_t caps, mmu_target_t target)
 {
@@ -372,7 +367,6 @@ IRAM_ATTR esp_err_t esp_mmu_paddr_find_caps(const esp_paddr_t paddr, mmu_mem_cap
     return ESP_OK;
 }
 
-
 static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, uint32_t size)
 {
 #if CONFIG_IDF_TARGET_ESP32
@@ -386,7 +380,6 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, 
     cache_hal_invalidate_addr(vaddr_start, size);
 #endif // CONFIG_IDF_TARGET_ESP32
 }
-
 
 #if MMU_LL_MMU_PER_TARGET
 FORCE_INLINE_ATTR uint32_t s_mapping_operation(mmu_target_t target, uint32_t vaddr_start, esp_paddr_t paddr_start, uint32_t size)
@@ -417,7 +410,6 @@ FORCE_INLINE_ATTR uint32_t s_mapping_operation(mmu_target_t target, uint32_t vad
     return actual_mapped_len;
 }
 #endif
-
 
 static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t vaddr_start, esp_paddr_t paddr_start, uint32_t size)
 {
@@ -592,7 +584,6 @@ err:
     return ret;
 }
 
-
 #if MMU_LL_MMU_PER_TARGET
 FORCE_INLINE_ATTR void s_unmapping_operation(uint32_t vaddr_start, uint32_t size)
 {
@@ -617,7 +608,6 @@ FORCE_INLINE_ATTR void s_unmapping_operation(uint32_t vaddr_start, uint32_t size
 #endif //  #if (SOC_MMU_PERIPH_NUM == 2)
 }
 #endif
-
 
 static void IRAM_ATTR NOINLINE_ATTR s_do_unmapping(uint32_t vaddr_start, uint32_t size)
 {
@@ -680,7 +670,6 @@ esp_err_t esp_mmu_unmap(void *ptr)
     return ESP_OK;
 }
 
-
 esp_err_t esp_mmu_map_dump_mapped_blocks(FILE* stream)
 {
     char line[100];
@@ -725,7 +714,6 @@ esp_err_t esp_mmu_map_dump_mapped_blocks(FILE* stream)
     return ESP_OK;
 }
 
-
 /*---------------------------------------------------------------
         Private dump functions, IRAM Safe
 ---------------------------------------------------------------*/
@@ -752,7 +740,6 @@ esp_err_t IRAM_ATTR esp_mmu_map_dump_mapped_blocks_private(void)
 
     return ESP_OK;
 }
-
 
 /*---------------------------------------------------------------
     Helper APIs for conversion between vaddr and paddr
@@ -785,7 +772,6 @@ esp_err_t esp_mmu_vaddr_to_paddr(void *vaddr, esp_paddr_t *out_paddr, mmu_target
     return ESP_OK;
 }
 
-
 static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
 {
     //we call this for now, but this will be refactored to move out of `spi_flash`
@@ -811,7 +797,6 @@ esp_err_t esp_mmu_paddr_to_vaddr(esp_paddr_t paddr, mmu_target_t target, mmu_vad
 
     return ESP_OK;
 }
-
 
 #if ENABLE_PADDR_CHECK
 /*---------------------------------------------------------------
@@ -875,7 +860,7 @@ static bool s_is_overlapped(uint32_t block_start, uint32_t block_end, uint32_t n
     uint32_t new_block_end = new_block_start + new_block_size;
 
     if (((new_block_start < block_start) && (new_block_end > block_start)) ||
-        ((new_block_start < block_end) && (new_block_end > block_end))) {
+            ((new_block_start < block_end) && (new_block_end > block_end))) {
         is_overlapped = true;
     } else {
         is_overlapped = false;
