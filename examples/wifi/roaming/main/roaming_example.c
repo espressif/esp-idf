@@ -13,14 +13,14 @@
 #include "esp_mac.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
+#include <sys/time.h>
 
 /* Configuration */
 #define EXAMPLE_WIFI_SSID CONFIG_EXAMPLE_WIFI_SSID
 #define EXAMPLE_WIFI_PASSWORD CONFIG_EXAMPLE_WIFI_PASSWORD
 #define EXAMPLE_WIFI_RSSI_THRESHOLD CONFIG_EXAMPLE_WIFI_RSSI_THRESHOLD
 
-/* rrm ctx */
-int rrm_ctx = 0;
+static bool g_neighbor_report_active;
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
@@ -57,6 +57,8 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 #endif
 		if (esp_rrm_is_rrm_supported_connection()) {
 			ESP_LOGI(TAG,"RRM supported");
+                        esp_rrm_send_neighbor_report_request();
+                        g_neighbor_report_active = true;
 		} else {
 			ESP_LOGI(TAG,"RRM not supported");
 		}
@@ -85,6 +87,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 #define ETH_ALEN 6
 #endif
 
+#define MAX_LCI_CIVIC_LEN 256 * 2 + 1
 #define MAX_NEIGHBOR_LEN 512
 #if 1
 static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
@@ -93,6 +96,8 @@ static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
 	const uint8_t *data;
 	int ret = 0;
 
+	char *lci = NULL;
+	char *civic = NULL;
 	/*
 	 * Neighbor Report element (IEEE P802.11-REVmc/D5.0)
 	 * BSSID[6]
@@ -110,12 +115,24 @@ static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
 	}
 
 	char *buf = calloc(1, MAX_NEIGHBOR_LEN);
+	if (!buf) {
+		ESP_LOGE(TAG, "Memory allocation for neighbor list failed");
+		goto cleanup;
+	}
 	data = report;
 
 	while (report_len >= 2 + NR_IE_MIN_LEN) {
 		const uint8_t *nr;
-		char lci[256 * 2 + 1];
-		char civic[256 * 2 + 1];
+		lci = (char *)malloc(sizeof(char)*MAX_LCI_CIVIC_LEN);
+		if (!lci) {
+			ESP_LOGE(TAG, "Memory allocation for lci failed");
+			goto cleanup;
+		}
+		civic = (char *)malloc(sizeof(char)*MAX_LCI_CIVIC_LEN);
+		if (!civic) {
+			ESP_LOGE(TAG, "Memory allocation for civic failed");
+			goto cleanup;
+		}
 		uint8_t nr_len = data[1];
 		const uint8_t *pos = data, *end;
 
@@ -201,9 +218,25 @@ static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
 
 		data = end;
 		report_len -= 2 + nr_len;
+
+		if (lci) {
+			free(lci);
+			lci = NULL;
+		}
+		if (civic) {
+			free(civic);
+			civic = NULL;
+		}
 	}
 
 cleanup:
+	if (lci) {
+		free(lci);
+	}
+	if (civic) {
+		free(civic);
+	}
+
 	if (ret < 0) {
 		free(buf);
 		buf = NULL;
@@ -274,46 +307,50 @@ char * get_tmp_neighbor_list(uint8_t *report, size_t report_len)
 	return buf;
 }
 #endif
-
-void neighbor_report_recv_cb(void *ctx, const uint8_t *report, size_t report_len)
+static void esp_neighbor_report_recv_handler(void* arg, esp_event_base_t event_base,int32_t event_id, void* event_data)
 {
-	int *val = ctx;
-	uint8_t *pos = (uint8_t *)report;
-	int cand_list = 0;
+	if (!g_neighbor_report_active) {
+		ESP_LOGV(TAG,"Neighbor report recieved but not triggerred by us");
+	    return;
+    }
+    if (!event_data) {
+        ESP_LOGE(TAG, "No event data recieved for neighbor report");
+        return;
+    }
+    g_neighbor_report_active = false;
+    uint8_t cand_list = 0;
+    wifi_event_neighbor_report_t *neighbor_report_event = (wifi_event_neighbor_report_t*)event_data;
+    uint8_t *pos = (uint8_t *)neighbor_report_event->report;
+    char * neighbor_list = NULL;
+    if (!pos) {
+        ESP_LOGE(TAG, "Neighbor report is empty");
+        return;
+    }
+    uint8_t report_len = neighbor_report_event->report_len;
+    /* dump report info */
+    ESP_LOGD(TAG, "rrm: neighbor report len=%d", report_len);
+    ESP_LOG_BUFFER_HEXDUMP(TAG, pos, report_len, ESP_LOG_DEBUG);
 
-	if (!report) {
-		ESP_LOGE(TAG, "report is null");
-		return;
-	}
-	if (*val != rrm_ctx) {
-		ESP_LOGE(TAG, "rrm_ctx value didn't match, not initiated by us");
-		return;
-	}
-	/* dump report info */
-	ESP_LOGI(TAG, "rrm: neighbor report len=%d", report_len);
-	ESP_LOG_BUFFER_HEXDUMP(TAG, pos, report_len, ESP_LOG_INFO);
-
-	/* create neighbor list */
-	char *neighbor_list = get_btm_neighbor_list(pos + 1, report_len - 1);
-
-	/* In case neighbor list is not present issue a scan and get the list from that */
-	if (!neighbor_list) {
-		/* issue scan */
-		wifi_scan_config_t params;
-		memset(&params, 0, sizeof(wifi_scan_config_t));
-		if (esp_wifi_scan_start(&params, true) < 0) {
-			goto cleanup;
-		}
-		/* cleanup from net802.11 */
-		esp_wifi_clear_ap_list();
-		cand_list = 1;
+    /* create neighbor list */
+    neighbor_list = get_btm_neighbor_list(pos + 1, report_len - 1);
+    /* In case neighbor list is not present issue a scan and get the list from that */
+    if (!neighbor_list) {
+        /* issue scan */
+        wifi_scan_config_t params;
+        memset(&params, 0, sizeof(wifi_scan_config_t));
+        if (esp_wifi_scan_start(&params, true) < 0) {
+		    goto cleanup;
+	    }
+	    /* cleanup from net802.11 */
+        esp_wifi_clear_ap_list();
+        cand_list = 1;
 	}
 	/* send AP btm query, this will cause STA to roam as well */
 	esp_wnm_send_bss_transition_mgmt_query(REASON_FRAME_LOSS, neighbor_list, cand_list);
-
 cleanup:
 	if (neighbor_list)
 		free(neighbor_list);
+
 }
 
 #if EXAMPLE_WIFI_RSSI_THRESHOLD
@@ -325,13 +362,16 @@ static void esp_bss_rssi_low_handler(void* arg, esp_event_base_t event_base,
 	ESP_LOGI(TAG, "%s:bss rssi is=%d", __func__, event->rssi);
 	/* Lets check channel conditions */
 	rrm_ctx++;
-	if (esp_rrm_send_neighbor_rep_request(neighbor_report_recv_cb, &rrm_ctx) < 0) {
+	if (esp_rrm_send_neighbor_report_request() < 0) {
 		/* failed to send neighbor report request */
 		ESP_LOGI(TAG, "failed to send neighbor report request");
 		if (esp_wnm_send_bss_transition_mgmt_query(REASON_FRAME_LOSS, NULL, 0) < 0) {
 			ESP_LOGI(TAG, "failed to send btm query");
 		}
+	} else {
+		g_neighbor_report_active = true;
 	}
+
 }
 #endif
 
@@ -378,6 +418,8 @@ static void initialise_wifi(void)
 	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 	ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL) );
 	ESP_ERROR_CHECK( esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL) );
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP,
+				&esp_neighbor_report_recv_handler, NULL));
 #if EXAMPLE_WIFI_RSSI_THRESHOLD
 	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_BSS_RSSI_LOW,
 				&esp_bss_rssi_low_handler, NULL));
