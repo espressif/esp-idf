@@ -422,7 +422,6 @@ components/esp_hid/src/esp_hid_common.c
 components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
-components/esp_netif/include/esp_netif_ppp.h
 components/esp_phy/test/test_phy_rtc.c
 components/esp_pm/include/esp_private/pm_trace.h
 components/esp_rom/esp32/ld/esp32.rom.api.ld

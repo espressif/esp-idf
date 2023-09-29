@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "esp_netif_lwip_internal.h"
 #include <string.h>
 #include "lwip/ip6_addr.h"
+#include "netif/pppif.h"
 
 ESP_EVENT_DEFINE_BASE(NETIF_PPP_STATUS);
 
@@ -31,6 +32,9 @@ typedef struct lwip_peer2peer_ctx {
     // PPP specific fields follow
     bool ppp_phase_event_enabled;
     bool ppp_error_event_enabled;
+#ifdef CONFIG_LWIP_ENABLE_LCP_ECHO
+    bool ppp_lcp_echo_disabled;
+#endif
     ppp_pcb *ppp;
 } lwip_peer2peer_ctx_t;
 
@@ -257,6 +261,16 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
     lwip_peer2peer_ctx_t *ppp_ctx = (lwip_peer2peer_ctx_t *)netif_related;
     assert(ppp_ctx->base.netif_type == PPP_LWIP_NETIF);
 
+#ifdef CONFIG_LWIP_ENABLE_LCP_ECHO
+    if (ppp_ctx->ppp_lcp_echo_disabled) {
+        ppp_ctx->ppp->settings.lcp_echo_interval = 0;
+        ppp_ctx->ppp->settings.lcp_echo_fails = 0;
+    } else {
+        ppp_ctx->ppp->settings.lcp_echo_interval = LCP_ECHOINTERVAL;
+        ppp_ctx->ppp->settings.lcp_echo_fails = LCP_MAXECHOFAILS;
+    }
+#endif
+
     ESP_LOGD(TAG, "%s: Starting PPP connection: %p", __func__, ppp_ctx->ppp);
     esp_err_t err = pppapi_connect(ppp_ctx->ppp, 0);
     if (err != ESP_OK) {
@@ -272,7 +286,7 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
 esp_netif_recv_ret_t esp_netif_lwip_ppp_input(void *ppp_ctx, void *buffer, size_t len, void *eb)
 {
     struct lwip_peer2peer_ctx * obj = ppp_ctx;
-    err_t ret = pppos_input_tcpip(obj->ppp, buffer, len);
+    err_t ret = pppos_input_tcpip_as_ram_pbuf(obj->ppp, buffer, len);
     if (ret != ERR_OK) {
         ESP_LOGE(TAG, "pppos_input_tcpip failed with %d", ret);
         return ESP_NETIF_OPTIONAL_RETURN_CODE(ESP_FAIL);
@@ -311,6 +325,9 @@ esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_confi
     struct lwip_peer2peer_ctx *obj =  (struct lwip_peer2peer_ctx *)netif->related_data;
     obj->ppp_phase_event_enabled = config->ppp_phase_event_enabled;
     obj->ppp_error_event_enabled = config->ppp_error_event_enabled;
+#ifdef CONFIG_LWIP_ENABLE_LCP_ECHO
+    obj->ppp_lcp_echo_disabled = config->ppp_lcp_echo_disabled;
+#endif
     return ESP_OK;
 }
 
@@ -323,5 +340,8 @@ esp_err_t esp_netif_ppp_get_params(esp_netif_t *netif, esp_netif_ppp_config_t *c
     struct lwip_peer2peer_ctx *obj =  (struct lwip_peer2peer_ctx *)netif->related_data;
     config->ppp_phase_event_enabled = obj->ppp_phase_event_enabled;
     config->ppp_error_event_enabled = obj->ppp_error_event_enabled;
+#ifdef CONFIG_LWIP_ENABLE_LCP_ECHO
+    config->ppp_lcp_echo_disabled = obj->ppp_lcp_echo_disabled;
+#endif
     return ESP_OK;
 }
