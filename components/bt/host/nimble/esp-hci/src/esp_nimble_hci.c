@@ -378,6 +378,7 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
             assert(evbuf != NULL);
         }
 
+        memset(evbuf, 0, sizeof *evbuf);
         memcpy(evbuf, &data[1], totlen);
 
         rc = ble_hci_trans_ll_evt_tx(evbuf);
