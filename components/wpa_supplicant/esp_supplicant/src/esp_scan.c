@@ -240,6 +240,9 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
 			params->scan_time.passive = scan_params->duration;
 			params->scan_time.active.min = scan_params->duration;
 			params->scan_time.active.max = scan_params->duration;
+		} else {
+			params->scan_time.active.min = SUPPLICANT_SCAN_ACTIVE_SCAN_MIN_DURATION;
+			params->scan_time.active.max = SUPPLICANT_SCAN_ACTIVE_SCAN_MAX_DURATION;
 		}
 	}
 
