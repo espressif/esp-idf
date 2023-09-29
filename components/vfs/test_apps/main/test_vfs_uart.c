@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,6 @@
 #include "test_utils.h"
 #include "sdkconfig.h"
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
 static void fwrite_str_loopback(const char* str, size_t size)
 {
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
@@ -125,7 +124,6 @@ TEST_CASE("CRs are removed from the stdin correctly", "[vfs]")
     TEST_ASSERT_EQUAL(2, rb);
     TEST_ASSERT_EQUAL_UINT8_ARRAY("4\n", dst, 2);
 }
-#endif
 
 struct read_task_arg_t {
     char* out_buffer;
@@ -139,7 +137,6 @@ struct write_task_arg_t {
     SemaphoreHandle_t done;
 };
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
 static void read_task_fn(void* varg)
 {
     struct read_task_arg_t* parg = (struct read_task_arg_t*) varg;
@@ -199,7 +196,6 @@ TEST_CASE("can write to UART while another task is reading", "[vfs]")
     vSemaphoreDelete(read_arg.done);
     vSemaphoreDelete(write_arg.done);
 }
-#endif
 
 TEST_CASE("fcntl supported in UART VFS", "[vfs]")
 {
@@ -212,7 +208,6 @@ TEST_CASE("fcntl supported in UART VFS", "[vfs]")
     TEST_ASSERT_NOT_EQUAL(-1, res);
 }
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 TEST_CASE("Can use termios for UART", "[vfs]")
 {
@@ -353,4 +348,3 @@ TEST_CASE("Can use termios for UART", "[vfs]")
     uart_driver_delete(UART_NUM_1);
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
-#endif
