@@ -162,7 +162,7 @@ static void btm_rrm_task(void *pvParameters)
 }
 #endif /* CONFIG_SUPPLICANT_TASK */
 
-static void clear_bssid_flag(struct wpa_supplicant *wpa_s)
+static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
 {
 	wifi_config_t *config;
 
@@ -178,7 +178,8 @@ static void clear_bssid_flag(struct wpa_supplicant *wpa_s)
 	}
 
 	esp_wifi_get_config(WIFI_IF_STA, config);
-	if (config->sta.bssid_set) {
+	if (config->sta.bssid_set || config->sta.channel) {
+		config->sta.channel = 0;
 		config->sta.bssid_set = 0;
 		esp_wifi_set_config(WIFI_IF_STA, config);
 	}
@@ -439,11 +440,11 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
 	/* Register for mgmt frames */
 	register_mgmt_frames(wpa_s);
 	/* clear set bssid flag */
-	clear_bssid_flag(wpa_s);
+	clear_bssid_flag_and_channel(wpa_s);
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
-void supplicant_sta_disconn_handler(void)
+void supplicant_sta_disconn_handler(uint8_t reason_code)
 {
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
@@ -451,6 +452,12 @@ void supplicant_sta_disconn_handler(void)
 #ifdef CONFIG_IEEE80211KV
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
+	/* Not clearing in case of roaming disconnect as BTM induced connection
+	 * itself sets a specific bssid and channel to connect to before disconnection.
+	 * Subsequent connections or disconnections will clear this flag */
+	if (reason_code != WIFI_REASON_ROAMING) {
+		clear_bssid_flag_and_channel(wpa_s);
+	}
 #endif /* CONFIG_IEEE80211KV */
 	if (wpa_s->current_bss) {
 		wpa_s->current_bss = NULL;

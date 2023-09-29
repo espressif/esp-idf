@@ -301,7 +301,7 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     owe_deinit();
 #endif /* CONFIG_OWE_STA */
 
-    supplicant_sta_disconn_handler();
+    supplicant_sta_disconn_handler(reason_code);
 }
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
