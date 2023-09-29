@@ -1,0 +1,5 @@
+--- components/bt/host/nimble/nimble
++++ components/bt/host/nimble/nimble
+@@ -1 +1 @@
+-Subproject commit e2d7a766fb3927d008902611b3985e8595864c55
++Subproject commit e2d7a766fb3927d008902611b3985e8595864c55-dirty
