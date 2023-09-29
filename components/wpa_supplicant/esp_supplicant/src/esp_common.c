@@ -477,6 +477,7 @@ bool esp_rrm_is_rrm_supported_connection(void)
 
 	return true;
 }
+/*This function has been deprecated in favour of esp_rrm_send_neighbor_report_request*/
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 				      void *cb_ctx)
 {
@@ -501,6 +502,49 @@ int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 	wpa_ssid.ssid_len = ssid->len;
 
 	return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
+}
+
+
+void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_len) {
+	if (report == NULL) {
+		wpa_printf(MSG_DEBUG, "RRM: Notifying neighbor report - NONE");
+		esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, NULL, 0, 0);
+		return;
+	}
+    if (report_len > ESP_WIFI_MAX_NEIGHBOR_REP_LEN) {
+        wpa_printf(MSG_ERROR, "RRM: Neighbor report too large (>%d bytes), hence not reporting", ESP_WIFI_MAX_NEIGHBOR_REP_LEN);
+        return;
+    }
+    wpa_printf(MSG_DEBUG, "RRM: Notifying neighbor report (token = %d)", report[0]);
+    wifi_event_neighbor_report_t neighbor_report_event = {0};
+    os_memcpy(neighbor_report_event.report, report, report_len);
+    neighbor_report_event.report_len = report_len;
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, &neighbor_report_event, sizeof(wifi_event_neighbor_report_t), 0);
+}
+
+int esp_rrm_send_neighbor_report_request(void)
+{
+	struct wpa_supplicant *wpa_s = &g_wpa_supp;
+	struct wpa_ssid_value wpa_ssid = {0};
+	struct wifi_ssid *ssid;
+
+	if (!wpa_s->current_bss) {
+		wpa_printf(MSG_ERROR, "STA not associated, return");
+		return -2;
+	}
+
+	if (!(wpa_s->rrm_ie[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
+		wpa_printf(MSG_ERROR,
+			"RRM: No network support for Neighbor Report.");
+		return -1;
+	}
+
+	ssid = esp_wifi_sta_get_prof_ssid_internal();
+
+	os_memcpy(wpa_ssid.ssid, ssid->ssid, ssid->len);
+	wpa_ssid.ssid_len = ssid->len;
+
+	return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, neighbor_report_recvd_cb, NULL);
 }
 
 bool esp_wnm_is_btm_supported_connection(void)
@@ -847,12 +891,16 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 }
 #endif /* CONFIG_SUPPLICANT_TASK */
 #else /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+int esp_rrm_send_neighbor_report_request(void)
+{
+	return -1;
+}
+
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 				      void *cb_ctx)
 {
 	return -1;
 }
-
 int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
 					   const char *btm_candidates,
 					   int cand_list)
