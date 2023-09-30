@@ -8,7 +8,7 @@ Host-Based Security Workflows
 Introduction
 ------------
 
-It is recommended to have an uninterrupted power supply while enabling security features on ESP32 SoCs. Power failures during the process of secure boot enabling could cause issues that are hard to debug and, in some cases, may cause permanent boot-up failures.
+It is recommended to have an uninterrupted power supply while enabling security features on ESP32 SoCs. Power failures during the secure manufacturing process could cause issues that are hard to debug and, in some cases, may cause permanent boot-up failures.
 
 This guide highlights an approach where security features are enabled with the assistance of an external host machine. Security workflows are broken down into various stages and key material is generated on the host machine; thus, allowing greater recovery chances in case of power or other failures. It also offers better timings for secure manufacturing, e.g., in the case of encryption of firmware on the host machine vs. on the device.
 
