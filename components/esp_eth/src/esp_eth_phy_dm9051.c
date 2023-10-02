@@ -95,7 +95,7 @@ static esp_err_t dm9051_update_link_duplex_speed(phy_dm9051_t *dm9051)
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
     uint32_t peer_pause_ability = false;
     bmsr_reg_t bmsr;
-    dscsr_reg_t dscsr;
+    bmcr_reg_t bmcr;
     anlpar_reg_t anlpar;
     // BMSR is a latch low register
     // after power up, the first latched value must be 0, which means down
@@ -108,17 +108,9 @@ static esp_err_t dm9051_update_link_duplex_speed(phy_dm9051_t *dm9051)
     if (dm9051->phy_802_3.link_status != link) {
         /* when link up, read negotiation result */
         if (link == ETH_LINK_UP) {
-            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_DSCSR_REG_ADDR, &(dscsr.val)), err, TAG, "read DSCSR failed");
-            if (dscsr.fdx100 || dscsr.hdx100) {
-                speed = ETH_SPEED_100M;
-            } else {
-                speed = ETH_SPEED_10M;
-            }
-            if (dscsr.fdx100 || dscsr.fdx10) {
-                duplex = ETH_DUPLEX_FULL;
-            } else {
-                duplex = ETH_DUPLEX_HALF;
-            }
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            speed = bmcr.speed_select == 1 ? ETH_SPEED_100M : ETH_SPEED_10M;
+            duplex = bmcr.duplex_mode == 1 ? ETH_DUPLEX_FULL : ETH_DUPLEX_HALF;
             ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed), err, TAG, "change speed failed");
             ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex), err, TAG, "change duplex failed");
             /* if we're in duplex mode, and peer has the flow control ability */
@@ -231,7 +223,9 @@ static esp_err_t dm9051_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
     /* Check if loopback is enabled, and if so, can it work with proposed speed or not */
     bmcr_reg_t bmcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
-    ESP_GOTO_ON_FALSE(bmcr.en_loopback & (speed == ETH_SPEED_100M), ESP_ERR_INVALID_STATE, err, TAG, "Speed must be 100M for loopback operation");
+    if (bmcr.en_loopback) {
+        ESP_GOTO_ON_FALSE(speed == ETH_SPEED_100M, ESP_ERR_INVALID_STATE, err, TAG, "Speed must be 100M for loopback operation");
+    }
 
     return esp_eth_phy_802_3_set_speed(phy_802_3, speed);
 err:
