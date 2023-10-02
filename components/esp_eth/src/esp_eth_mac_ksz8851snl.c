@@ -298,7 +298,7 @@ static esp_err_t init_set_defaults(emac_ksz8851snl_t *emac)
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXDTTR, RXDTTR_INIT_VALUE), err, TAG, "RXDTTR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXDBCTR, RXDBCTR_INIT_VALUE), err, TAG, "RXDBCTR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR1,
-                                       RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXBE | RXCR1_RXUE | RXCR1_RXME), err, TAG, "RXCR1 write failed");
+                                       RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXUE | RXCR1_RXME | RXCR1_RXMAFMA | RXCR1_RXAE), err, TAG, "RXCR1 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR2,
                                        (4 << RXCR2_SRDBL_SHIFT) | RXCR2_IUFFP | RXCR2_RXIUFCEZ | RXCR2_UDPLFE | RXCR2_RXICMPFCC), err, TAG, "RXCR2 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_RXFCTE | RXQCR_ADRFE), err, TAG, "RXQCR write failed");
@@ -650,13 +650,13 @@ static esp_err_t emac_ksz8851_set_promiscuous(esp_eth_mac_t *mac, bool enable)
     if (enable) {
         // NOTE(v.chistyakov): set promiscuous mode
         ESP_LOGD(TAG, "setting promiscuous mode");
-        rxcr1 |= RXCR1_RXINVF | RXCR1_RXAE;
+        rxcr1 |= RXCR1_RXAE | RXCR1_RXINVF;
         rxcr1 &= ~(RXCR1_RXPAFMA | RXCR1_RXMAFMA);
     } else {
         // NOTE(v.chistyakov): set hash perfect (default)
-        ESP_LOGD(TAG, "setting hash perfect mode");
-        rxcr1 |= RXCR1_RXPAFMA;
-        rxcr1 &= ~(RXCR1_RXINVF | RXCR1_RXAE | RXCR1_RXMAFMA);
+        ESP_LOGD(TAG, "setting perfect with multicast passed");
+        rxcr1 |= RXCR1_RXAE| RXCR1_RXPAFMA | RXCR1_RXMAFMA;
+        rxcr1 &= ~RXCR1_RXINVF;
     }
     ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, KSZ8851_RXCR1, rxcr1), err, TAG, "RXCR1 write failed");
 err:
