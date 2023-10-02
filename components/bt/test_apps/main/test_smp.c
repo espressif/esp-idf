@@ -1,38 +1,24 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 /*
- Tests for the BLE SMP implementation
-*/
+ * Tests for the BLE SMP implementation
+ */
 
-#include <esp_types.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <malloc.h>
-#include <string.h>
 #include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "unity.h"
-#include "esp_heap_caps.h"
-#include "esp_log.h"
-#include "freertos/ringbuf.h"
 #include "esp_random.h"
-#include "nvs_flash.h"
 
 #include "esp_bt.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 #include "esp_gap_ble_api.h"
-
-#define TAG "ble_smp_test"
 
 #define KEY_LENGTH_DWORDS_P256 8
 
@@ -40,7 +26,7 @@ typedef unsigned long  DWORD;
 typedef uint32_t UINT32;
 
 typedef struct {
-DWORD x[KEY_LENGTH_DWORDS_P256];
+    DWORD x[KEY_LENGTH_DWORDS_P256];
     DWORD y[KEY_LENGTH_DWORDS_P256];
     DWORD z[KEY_LENGTH_DWORDS_P256];
 } Point;
@@ -79,7 +65,7 @@ static void bt_rand(void *buf, size_t len)
 
     for (int i = 0; i < (int)(len / sizeof(uint32_t)); i++) {
         uint32_t rand = esp_random();
-        memcpy(buf + i*sizeof(uint32_t), &rand, sizeof(uint32_t));
+        memcpy(buf + i * sizeof(uint32_t), &rand, sizeof(uint32_t));
     }
 
     return;
