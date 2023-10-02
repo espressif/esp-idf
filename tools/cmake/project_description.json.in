@@ -1,5 +1,5 @@
 {
-    "version":            "1",
+    "version":            "1.1",
     "project_name":       "${PROJECT_NAME}",
     "project_version":    "${PROJECT_VER}",
     "project_path":       "${PROJECT_PATH}",
@@ -28,5 +28,6 @@
     "build_components" : ${build_components_json},
     "build_component_paths" : ${build_component_paths_json},
     "build_component_info" : ${build_component_info_json},
+    "all_component_info" : ${all_component_info_json},
     "debug_prefix_map_gdbinit": "${debug_prefix_map_gdbinit}"
 }

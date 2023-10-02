@@ -76,6 +76,7 @@ macro(idf_component_register)
     set(__component_requires "${__REQUIRES}")
     set(__component_kconfig "${__KCONFIG}")
     set(__component_kconfig_projbuild "${__KCONFIG_PROJBUILD}")
+    set(__component_include_dirs "${__INCLUDE_DIRS}")
     set(__component_registered 1)
     return()
 endmacro()
@@ -107,11 +108,13 @@ function(__component_get_requirements)
 
     spaces2list(__component_requires)
     spaces2list(__component_priv_requires)
+    spaces2list(__component_include_dirs)
 
     set(__component_requires "${__component_requires}" PARENT_SCOPE)
     set(__component_priv_requires "${__component_priv_requires}" PARENT_SCOPE)
     set(__component_kconfig "${__component_kconfig}" PARENT_SCOPE)
     set(__component_kconfig_projbuild "${__component_kconfig_projbuild}" PARENT_SCOPE)
+    set(__component_include_dirs "${__component_include_dirs}" PARENT_SCOPE)
     set(__component_registered ${__component_registered} PARENT_SCOPE)
 endfunction()
 
@@ -141,7 +144,8 @@ foreach(__component_target ${__component_targets})
     set(__contents
 "__component_set_property(${__component_target} REQUIRES \"${__component_requires}\")
 __component_set_property(${__component_target} PRIV_REQUIRES \"${__component_priv_requires}\")
-__component_set_property(${__component_target} __COMPONENT_REGISTERED ${__component_registered})"
+__component_set_property(${__component_target} __COMPONENT_REGISTERED ${__component_registered})
+__component_set_property(${__component_target} INCLUDE_DIRS \"${__component_include_dirs}\")"
     )
 
     if(__component_kconfig)
