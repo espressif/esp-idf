@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include "unity.h"
 #include "test_fixtures.hpp"
@@ -863,7 +855,7 @@ void test_Page_calcEntries__uninit()
     NVSPageFixture fix;
     TEST_ASSERT_EQUAL(Page::PageState::UNINITIALIZED, fix.page.state());
 
-    nvs_stats_t nvsStats = {0, 0, 0, 0};
+    nvs_stats_t nvsStats = {0, 0, 0, 0, 0};
 
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.calcEntries(nvsStats));
     TEST_ASSERT_EQUAL(0, nvsStats.used_entries);
@@ -888,7 +880,7 @@ void test_Page_calcEntries__corrupt()
 
     TEST_ASSERT_EQUAL(Page::PageState::CORRUPT, page.state());
 
-    nvs_stats_t nvsStats = {0, 0, 0, 0};
+    nvs_stats_t nvsStats = {0, 0, 0, 0, 0};
 
     TEST_ASSERT_EQUAL(ESP_OK, page.calcEntries(nvsStats));
     TEST_ASSERT_EQUAL(0, nvsStats.used_entries);
@@ -901,7 +893,7 @@ void test_Page_calcEntries__active_wo_blob()
 {
     NVSValidPageFixture fix;
 
-    nvs_stats_t nvsStats = {0, 0, 0, 0};
+    nvs_stats_t nvsStats = {0, 0, 0, 0, 0};
 
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.calcEntries(nvsStats));
     TEST_ASSERT_EQUAL(2, nvsStats.used_entries);
@@ -914,7 +906,7 @@ void test_Page_calcEntries__active_with_blob()
 {
     NVSValidBlobPageFixture fix;
 
-    nvs_stats_t nvsStats = {0, 0, 0, 0};
+    nvs_stats_t nvsStats = {0, 0, 0, 0, 0};
 
     TEST_ASSERT_EQUAL(ESP_OK, fix.page.calcEntries(nvsStats));
     TEST_ASSERT_EQUAL(4, nvsStats.used_entries);
@@ -927,7 +919,7 @@ void test_Page_calcEntries__invalid()
 {
     Page page;
 
-    nvs_stats_t nvsStats = {0, 0, 0, 0};
+    nvs_stats_t nvsStats = {0, 0, 0, 0, 0};
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, page.state());
 

@@ -586,7 +586,6 @@ components/mbedtls/port/include/sha512_alt.h
 components/mbedtls/port/sha/dma/include/esp_sha_dma_priv.h
 components/mbedtls/port/sha/dma/sha.c
 components/mbedtls/port/sha/parallel_engine/sha.c
-components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
 components/nvs_flash/include/nvs_handle.hpp
 components/nvs_flash/src/nvs_cxx_api.cpp
 components/nvs_flash/src/nvs_encrypted_partition.hpp
