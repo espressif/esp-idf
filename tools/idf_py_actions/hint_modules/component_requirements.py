@@ -58,7 +58,7 @@ def generate_hint(output: str) -> Optional[str]:
     # find the source_component that contains the source file
     found_source_component_name = None
     found_source_component_info = None
-    for component_name, component_info in proj_desc['build_component_info'].items():
+    for component_name, component_info in proj_desc['all_component_info'].items():
         # look if the source_filename is within a component directory, not only
         # at component_info['sources'], because the missing file may be included
         # from header file, which is not present in component_info['sources']
@@ -86,7 +86,7 @@ def generate_hint(output: str) -> Optional[str]:
         original_file_match = ORIGINAL_FILE_RE.match(lines[-2])
         if original_file_match:
             original_filename = _get_absolute_path(original_file_match.group(1), proj_desc['build_dir'])
-            for component_name, component_info in proj_desc['build_component_info'].items():
+            for component_name, component_info in proj_desc['all_component_info'].items():
                 component_dir = os.path.normpath(component_info['dir'])
                 if original_filename.startswith(component_dir):
                     found_original_component_name = component_name
@@ -100,7 +100,7 @@ def generate_hint(output: str) -> Optional[str]:
 
     # look for the header file in the public include directories of all components
     found_dep_component_names = []
-    for candidate_component_name, candidate_component_info in proj_desc['build_component_info'].items():
+    for candidate_component_name, candidate_component_info in proj_desc['all_component_info'].items():
         if candidate_component_name == found_source_component_name:
             # skip the component that contains the source file
             continue
@@ -117,7 +117,7 @@ def generate_hint(output: str) -> Optional[str]:
         # directories if we can find the missing header there and notify user about possible
         # missing entry in INCLUDE_DIRS.
         candidate_component_include_dirs = []
-        for component_name, component_info in proj_desc['build_component_info'].items():
+        for component_name, component_info in proj_desc['all_component_info'].items():
             component_dir = os.path.normpath(component_info['dir'])
             for root, _, _ in os.walk(component_dir):
                 full_path = os.path.normpath(os.path.join(root, missing_header))
