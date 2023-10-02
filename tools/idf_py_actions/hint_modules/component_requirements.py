@@ -64,9 +64,10 @@ def generate_hint(output: str) -> Optional[str]:
         # from header file, which is not present in component_info['sources']
         component_dir = os.path.normpath(component_info['dir'])
         if source_filename.startswith(component_dir):
-            found_source_component_name = component_name
+            if found_source_component_info and len(found_source_component_info['dir']) >= len(component_dir):
+                continue
             found_source_component_info = component_info
-            break
+            found_source_component_name = component_name
     if not found_source_component_name:
         # The source file is not in any component.
         # It could be in a subproject added via ExternalProject_Add, in which case
