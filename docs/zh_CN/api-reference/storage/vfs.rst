@@ -179,42 +179,7 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 
 文件描述符是一组很小的正整数，从 ``0`` 到 ``FD_SETSIZE - 1``，``FD_SETSIZE`` 定义在 ``sys/select.h``。最大文件描述符由 ``CONFIG_LWIP_MAX_SOCKETS`` 定义，且为套接字保留。VFS 中包含一个名为 ``s_fd_table`` 的查找表，用于将全局文件描述符映射至 ``s_vfs`` 数组中注册的 VFS 驱动索引。
 
-
-标准 IO 流 (``stdin``, ``stdout``, ``stderr``)
-----------------------------------------------------
-
-如果 menuconfig 中 ``UART for console output`` 选项没有设置为 ``None``，则 ``stdin``、 ``stdout`` 和 ``stderr`` 将默认从 UART 读取或写入。UART0 或 UART1 可用作标准 IO。默认情况下，UART0 使用 115200 波特率，TX 管脚为 GPIO1，RX 管脚为 GPIO3。上述参数可以在 menuconfig 中更改。
-
-对 ``stdout`` 或 ``stderr`` 执行写入操作将会向 UART 发送 FIFO 发送字符，对 ``stdin`` 执行读取操作则会从 UART 接收 FIFO 中取出字符。
-
-默认情况下，VFS 使用简单的函数对 UART 进行读写操作。在所有数据放进 UART FIFO 之前，写操作将处于 busy-wait 状态，读操处于非阻塞状态，仅返回 FIFO 中已有数据。由于读操作为非阻塞，高层级 C 库函数调用（如 ``fscanf("%d\n", &var);``）可能获取不到所需结果。
-
-如果应用程序使用 UART 驱动，则可以调用 :cpp:func:`uart_vfs_dev_use_driver` 函数来指导 VFS 使用驱动中断、读写阻塞功能等，也可以调用 :cpp:func:`uart_vfs_dev_use_nonblocking` 来恢复非阻塞函数。
-
-VFS 还为输入和输出提供换行符转换功能（可选）。多数应用程序在程序内部发送或接收以 LF (''\n'') 结尾的行，但不同的终端程序可能需要不同的换行符，比如 CR 或 CRLF。应用程序可以通过 menuconfig 或者调用 :cpp:func:`uart_vfs_dev_port_set_rx_line_endings` 和 :cpp:func:`uart_vfs_dev_port_set_tx_line_endings` 为输入输出配置换行符。
-
-
-标准流和 FreeRTOS 任务
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-``stdin``、``stdout`` 和 ``stderr`` 的 ``FILE`` 对象在所有 FreeRTOS 任务之间共享，指向这些对象的指针分别存储在每个任务的 ``struct _reent`` 中。
-
-预处理器把如下代码解释为 ``fprintf(__getreent()->_stderr, "42\n");``：
-
-.. highlight:: c
-
-::
-
-    fprintf(stderr, "42\n");
-
-
-其中 ``__getreent()`` 函数将为每个任务返回一个指向 newlib libc 中 ``struct _reent`` 的指针。每个任务的 TCB 均拥有一个 ``struct _reent`` 结构体，任务初始化后，``struct _reent`` 结构体中的 ``_stdin``、``_stdout`` 和 ``_stderr`` 将会被赋予 ``_GLOBAL_REENT`` 中 ``_stdin``、 ``_stdout`` 和 ``_stderr`` 的值，``_GLOBAL_REENT`` 即为 FreeRTOS 启动之前所用结构体。
-
-这样设计带来的结果是：
-
-- 允许设置给定任务的 ``stdin``、 ``stdout`` 和 ``stderr``，而不影响其他任务，例如通过 ``stdin = fopen("/dev/uart/1", "r")``；
-- 但使用 ``fclose`` 关闭默认 ``stdin``、 ``stdout`` 或 ``stderr`` 将同时关闭相应的 ``FILE`` 流对象，因此会影响其他任务；
-- 如需更改新任务的默认 ``stdin``、 ``stdout`` 和 ``stderr`` 流，请在创建新任务之前修改 ``_GLOBAL_REENT->_stdin`` (``_stdout``、``_stderr``)。
+标准 I/O 流（stdin、stdout、stderr）分别映射到文件描述符 0、1 和 2。有关标准 I/O 的更多信息，请参见 :doc:`../../api-guides/stdio`。
 
 ``eventfd()``
 -------------

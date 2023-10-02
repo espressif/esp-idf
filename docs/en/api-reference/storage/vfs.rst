@@ -179,42 +179,7 @@ File Descriptors
 
 File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in ``sys/select.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
 
-
-Standard IO Streams (``stdin``, ``stdout``, ``stderr``)
--------------------------------------------------------
-
-If the menuconfig option ``UART for console output`` is not set to ``None``, then ``stdin``, ``stdout``, and ``stderr`` are configured to read from, and write to, a UART. It is possible to use UART0 or UART1 for standard IO. By default, UART0 is used with 115200 baud rate; TX pin is GPIO1; RX pin is GPIO3. These parameters can be changed in menuconfig.
-
-Writing to ``stdout`` or ``stderr`` sends characters to the UART transmit FIFO. Reading from ``stdin`` retrieves characters from the UART receive FIFO.
-
-By default, VFS uses simple functions for reading from and writing to UART. Writes busy-wait until all data is put into UART FIFO, and reads are non-blocking, returning only the data present in the FIFO. Due to this non-blocking read behavior, higher level C library calls, such as ``fscanf("%d\n", &var);``, might not have desired results.
-
-Applications which use the UART driver can instruct VFS to use the driver's interrupt driven, blocking read and write functions instead. This can be done using a call to the :cpp:func:`uart_vfs_dev_use_driver` function. It is also possible to revert to the basic non-blocking functions using a call to :cpp:func:`uart_vfs_dev_use_nonblocking`.
-
-VFS also provides an optional newline conversion feature for input and output. Internally, most applications send and receive lines terminated by the LF (''\n'') character. Different terminal programs may require different line termination, such as CR or CRLF. Applications can configure this separately for input and output either via menuconfig, or by calls to the functions :cpp:func:`uart_vfs_dev_port_set_rx_line_endings` and :cpp:func:`uart_vfs_dev_port_set_tx_line_endings`.
-
-
-Standard Streams and FreeRTOS Tasks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are stored in per-task ``struct _reent``.
-
-The following code is transferred to ``fprintf(__getreent()->_stderr, "42\n");`` by the preprocessor:
-
-.. highlight:: c
-
-::
-
-    fprintf(stderr, "42\n");
-
-
-The ``__getreent()`` function returns a per-task pointer to ``struct _reent`` in newlib libc. This structure is allocated on the TCB of each task. When a task is initialized, ``_stdin``, ``_stdout``, and ``_stderr`` members of ``struct _reent`` are set to the values of ``_stdin``, ``_stdout``, and ``_stderr`` of ``_GLOBAL_REENT`` (i.e., the structure which is used before FreeRTOS is started).
-
-Such a design has the following consequences:
-
-- It is possible to set ``stdin``, ``stdout``, and ``stderr`` for any given task without affecting other tasks, e.g., by doing ``stdin = fopen("/dev/uart/1", "r")``.
-- Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` closes the ``FILE`` stream object, which will affect all other tasks.
-- To change the default ``stdin``, ``stdout``, ``stderr`` streams for new tasks, modify ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``) before creating the task.
+Standard I/O streams (``stdin``, ``stdout``, ``stderr``) are mapped to file descriptors ``0``, ``1``, and ``2`` respectively. For more information on standard I/O, see :doc:`../../api-guides/stdio`.
 
 ``eventfd()``
 -------------
