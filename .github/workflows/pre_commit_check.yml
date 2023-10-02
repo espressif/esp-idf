@@ -10,11 +10,15 @@ permissions:
 jobs:
   pre_commit_check:
     runs-on: ubuntu-latest
-    env:
-      SKIP: "cleanup-ignore-lists"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: 'recursive' # Check out git submodules
+      - name: Sync and Update Submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
       - name: Fetch head and base refs
         # This is necessary for pre-commit to check the changes in the PR branch
         run: |
