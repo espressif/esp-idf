@@ -388,3 +388,7 @@
 -
     re: "intr_alloc: No free interrupt inputs for [_\\w]+ interrupt"
     hint: "For troubleshooting instructions related to interrupt allocation, run 'idf.py docs -sp api-reference/system/intr_alloc.html'"
+
+-
+    re: "assert failed: [\\w]+ tlsf.c:[\\d]+"
+    hint: "CORRUPT HEAP: heap metadata corrupted resulting in TLSF malfunction.\nMake sure you are not making out of bound writing on the memory you allocate in your application.\nMake sure you are not writing on freed memory.\nFor more information run 'idf.py docs -sp api-reference/system/heap_debug.html'."
