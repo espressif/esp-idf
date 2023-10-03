@@ -979,11 +979,29 @@ int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t
  * to get atomic access between iteration steps rather that within a single iteration.
  * Therefore it is recommended to iterate over the interfaces inside esp_netif_tcpip_exec()
  *
+ * @note This API is deprecated. Please use esp_netif_next_unsafe() directly if all the system
+ * interfaces are under your control and you can safely iterate over them.
+ * Otherwise, iterate over interfaces using esp_netif_tcpip_exec(), or use esp_netif_find_if()
+ * to search in the list of netifs with defined predicate.
+ *
  * @param[in]  esp_netif Handle to esp-netif instance
  *
  * @return First netif from the list if supplied parameter is NULL, next one otherwise
  */
-esp_netif_t *esp_netif_next(esp_netif_t *esp_netif);
+esp_netif_t *esp_netif_next(esp_netif_t *esp_netif)
+__attribute__((deprecated("use esp_netif_next_unsafe() either directly or via esp_netif_tcpip_exec")));
+
+/**
+ * @brief Iterates over list of interfaces without list locking. Returns first netif if NULL given as parameter
+ *
+ * Used for bulk search loops within TCPIP context, e.g. using esp_netif_tcpip_exec(), or if we're sure
+ * that the iteration is safe from our application perspective (e.g. no interface is removed between iterations)
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return First netif from the list if supplied parameter is NULL, next one otherwise
+ */
+esp_netif_t* esp_netif_next_unsafe(esp_netif_t* esp_netif);
 
 /**
  * @brief Predicate callback for esp_netif_find_if() used to find interface
@@ -992,7 +1010,7 @@ esp_netif_t *esp_netif_next(esp_netif_t *esp_netif);
 typedef bool (*esp_netif_find_predicate_t)(esp_netif_t *netif, void *ctx);
 
 /**
- * @brief Return a netif pointer for the interface that meets criteria defined
+ * @brief Return a netif pointer for the first interface that meets criteria defined
  * by the callback
  *
  * @param fn Predicate function returning true for the desired interface

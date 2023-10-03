@@ -812,7 +812,7 @@ static esp_err_t esp_netif_find_if_api(esp_netif_api_msg_t *msg)
 {
     find_if_api_t *find_if_api = msg->data;
     esp_netif_t *esp_netif = NULL;
-    while ((esp_netif = esp_netif_next(esp_netif)) != NULL) {
+    while ((esp_netif = esp_netif_next_unsafe(esp_netif)) != NULL) {
         if (find_if_api->fn(esp_netif, find_if_api->ctx)) {
             *msg->p_esp_netif = esp_netif;
             return ESP_OK;
