@@ -803,6 +803,34 @@ esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
     return netif;
 }
 
+typedef struct find_if_api {
+    esp_netif_find_predicate_t fn;
+    void *ctx;
+} find_if_api_t;
+
+static esp_err_t esp_netif_find_if_api(esp_netif_api_msg_t *msg)
+{
+    find_if_api_t *find_if_api = msg->data;
+    esp_netif_t *esp_netif = NULL;
+    while ((esp_netif = esp_netif_next(esp_netif)) != NULL) {
+        if (find_if_api->fn(esp_netif, find_if_api->ctx)) {
+            *msg->p_esp_netif = esp_netif;
+            return ESP_OK;
+        }
+    }
+    return ESP_FAIL;
+}
+
+esp_netif_t *esp_netif_find_if(esp_netif_find_predicate_t fn, void *ctx)
+{
+    esp_netif_t *netif = NULL;
+    find_if_api_t find_if_api = { .fn = fn, .ctx = ctx };
+    if (esp_netif_lwip_ipc_call_get_netif(esp_netif_find_if_api, &netif, &find_if_api) == ESP_OK) {
+        return netif;
+    }
+    return NULL;
+}
+
 static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
 {
     if (esp_netif->lwip_netif) {
