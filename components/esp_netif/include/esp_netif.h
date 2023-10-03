@@ -986,6 +986,22 @@ int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t
 esp_netif_t *esp_netif_next(esp_netif_t *esp_netif);
 
 /**
+ * @brief Predicate callback for esp_netif_find_if() used to find interface
+ *        which meets defined criteria
+ */
+typedef bool (*esp_netif_find_predicate_t)(esp_netif_t *netif, void *ctx);
+
+/**
+ * @brief Return a netif pointer for the interface that meets criteria defined
+ * by the callback
+ *
+ * @param fn Predicate function returning true for the desired interface
+ * @param ctx Context pointer passed to the predicate, typically a descriptor to compare with
+ * @return valid netif pointer if found, NULL if not
+ */
+esp_netif_t *esp_netif_find_if(esp_netif_find_predicate_t fn, void *ctx);
+
+/**
  * @brief Returns number of registered esp_netif objects
  *
  * @return Number of esp_netifs
