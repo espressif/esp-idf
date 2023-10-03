@@ -251,6 +251,16 @@ static inline esp_err_t esp_netif_lwip_ipc_call_fn(esp_netif_api_fn fn, esp_neti
     return esp_netif_lwip_ipc_call_msg(&msg);
 }
 
+static inline esp_err_t esp_netif_lwip_ipc_call_get_netif(esp_netif_api_fn fn, esp_netif_t **netif, void *ctx)
+{
+    esp_netif_api_msg_t msg = {
+            .p_esp_netif = netif,
+            .data = ctx,
+            .api_fn = fn
+    };
+    return esp_netif_lwip_ipc_call_msg(&msg);
+}
+
 static inline esp_err_t esp_netif_lwip_ipc_no_args(esp_netif_api_fn fn)
 {
     esp_netif_api_msg_t msg = {
@@ -766,6 +776,34 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     esp_netif_add_to_list(esp_netif);
 
     return esp_netif;
+}
+
+typedef struct find_if_api {
+    esp_netif_find_predicate_t fn;
+    void *ctx;
+} find_if_api_t;
+
+static esp_err_t esp_netif_find_if_api(esp_netif_api_msg_t *msg)
+{
+    find_if_api_t *find_if_api = msg->data;
+    esp_netif_t *esp_netif = NULL;
+    while ((esp_netif = esp_netif_next(esp_netif)) != NULL) {
+        if (find_if_api->fn(esp_netif, find_if_api->ctx)) {
+            *msg->p_esp_netif = esp_netif;
+            return ESP_OK;
+        }
+    }
+    return ESP_FAIL;
+}
+
+esp_netif_t *esp_netif_find_if(esp_netif_find_predicate_t fn, void *ctx)
+{
+    esp_netif_t *netif = NULL;
+    find_if_api_t find_if_api = { .fn = fn, .ctx = ctx };
+    if (esp_netif_lwip_ipc_call_get_netif(esp_netif_find_if_api, &netif, &find_if_api) == ESP_OK) {
+        return netif;
+    }
+    return NULL;
 }
 
 static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
