@@ -366,7 +366,11 @@ esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_asse
         esp_rom_gpio_pad_select_gpio(phy_802_3->reset_gpio_num);
         gpio_set_direction(phy_802_3->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(phy_802_3->reset_gpio_num, 0);
-        esp_rom_delay_us(reset_assert_us);
+        if (reset_assert_us < 10000) {
+            esp_rom_delay_us(reset_assert_us);
+        } else {
+            vTaskDelay(pdMS_TO_TICKS(reset_assert_us/1000));
+        }
         gpio_set_level(phy_802_3->reset_gpio_num, 1);
     }
     return ESP_OK;
@@ -380,14 +384,14 @@ esp_err_t esp_eth_phy_802_3_detect_phy_addr(esp_eth_mediator_t *eth, int *detect
     }
     int addr_try = 0;
     uint32_t reg_value = 0;
-    for (; addr_try < 16; addr_try++) {
+    for (; addr_try < 32; addr_try++) {
         eth->phy_reg_read(eth, addr_try, ETH_PHY_IDR1_REG_ADDR, &reg_value);
         if (reg_value != 0xFFFF && reg_value != 0x00) {
             *detected_addr = addr_try;
             break;
         }
     }
-    if (addr_try < 16) {
+    if (addr_try < 32) {
         ESP_LOGD(TAG, "Found PHY address: %d", addr_try);
         return ESP_OK;
     }
