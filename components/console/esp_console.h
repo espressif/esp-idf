@@ -99,7 +99,7 @@ typedef struct {
 #endif // CONFIG_ESP_CONSOLE_UART_CUSTOM
 #endif // CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
 
-#if CONFIG_ESP_CONSOLE_USB_CDC || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
 /**
  * @brief Parameters for console device: USB CDC
  *
@@ -111,7 +111,7 @@ typedef struct {
 } esp_console_dev_usb_cdc_config_t;
 
 #define ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT() {}
-#endif // CONFIG_ESP_CONSOLE_USB_CDC || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
+#endif //CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
 
 #if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED || (defined __DOXYGEN__ && SOC_USB_SERIAL_JTAG_SUPPORTED)
 /**
@@ -335,7 +335,7 @@ struct esp_console_repl_s {
 esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
 #endif // CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
 
-#if CONFIG_ESP_CONSOLE_USB_CDC || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
 /**
  * @brief Establish a console REPL environment over USB CDC
  *
@@ -356,7 +356,7 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
  *      - ESP_FAIL Parameter error
  */
 esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
-#endif // CONFIG_ESP_CONSOLE_USB_CDC || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
+#endif //CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED || (defined __DOXYGEN__ && SOC_USB_OTG_SUPPORTED)
 
 #if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED || (defined __DOXYGEN__ && SOC_USB_SERIAL_JTAG_SUPPORTED)
 /**

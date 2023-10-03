@@ -12,7 +12,7 @@ if(CONFIG_SOC_BOD_SUPPORTED)
     list(APPEND srcs "brownout.c")
 endif()
 
-if(CONFIG_ESP_CONSOLE_USB_CDC)
+if(ESP_CONSOLE_IS_USB_CDC_ENABLED)
     list(APPEND srcs "usb_console.c")
 endif()
 

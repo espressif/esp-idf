@@ -76,11 +76,11 @@ static ssize_t _fstat_r_console(struct _reent *r, int fd, struct stat * st)
 static int _fsync_console(int fd)
 {
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
-#ifdef CONFIG_ESP_CONSOLE_UART
+#ifdef CONFIG_ESP_CONSOLE_IS_UART_ENABLED
         esp_rom_uart_flush_tx(CONFIG_ESP_CONSOLE_UART_NUM);
-#elif defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
+#elif defined(CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED)
         esp_rom_uart_flush_tx(CONFIG_ESP_ROM_USB_SERIAL_DEVICE_NUM);
-#elif defined(CONFIG_ESP_CONSOLE_USB_CDC)
+#elif defined(CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED)
         esp_rom_uart_flush_tx(CONFIG_ESP_ROM_USB_OTG_NUM);
 #endif
         return 0;

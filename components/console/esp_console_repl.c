@@ -50,9 +50,9 @@ static void esp_console_repl_task(void *args);
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl);
 #endif // CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
-#if CONFIG_ESP_CONSOLE_USB_CDC
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl);
-#endif // CONFIG_ESP_CONSOLE_USB_CDC
+#endif //CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 #if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl);
 #endif // CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
@@ -60,7 +60,7 @@ static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_
 static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_history(const char *history_path, uint32_t max_history_len, esp_console_repl_com_t *repl_com);
 
-#if CONFIG_ESP_CONSOLE_USB_CDC
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
     esp_err_t ret = ESP_OK;
@@ -124,7 +124,7 @@ _exit:
     }
     return ret;
 }
-#endif // CONFIG_ESP_CONSOLE_USB_CDC
+#endif //CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 
 #if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
@@ -431,7 +431,7 @@ _exit:
 }
 #endif // CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
 
-#if CONFIG_ESP_CONSOLE_USB_CDC
+#if CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
 {
     esp_err_t ret = ESP_OK;
@@ -449,7 +449,7 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
 _exit:
     return ret;
 }
-#endif // CONFIG_ESP_CONSOLE_USB_CDC
+#endif //CONFIG_ESP_CONSOLE_IS_USB_CDC_ENABLED
 
 #if CONFIG_ESP_CONSOLE_IS_USB_SERIAL_JTAG_ENABLED
 static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl)
