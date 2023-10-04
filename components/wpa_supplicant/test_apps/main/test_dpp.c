@@ -14,8 +14,10 @@
 #include "utils/common.h"
 #include "utils/includes.h"
 #include "crypto/crypto.h"
-#include "../src/common/defs.h"
-#include "../src/common/dpp.h"
+#include "common/defs.h"
+#include "common/dpp.h"
+#include "sdkconfig.h"
+#include "test_wpa_supplicant_common.h"
 
 #ifdef CONFIG_ESP_WIFI_TESTING_OPTIONS
 struct dpp_global {
@@ -32,6 +34,7 @@ extern size_t dpp_nonce_override_len;
 
 TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
 {
+    set_leak_threshold(120);
     /* Global variables */
     char command[1200] = {0};
     const u8 *frame;
