@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import sys
+from copy import deepcopy
 from datetime import datetime
 from typing import Callable, Optional
 
@@ -87,7 +88,17 @@ def test_func_name(request: FixtureRequest) -> str:
 @pytest.fixture
 def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
     is_qemu = request._pyfuncitem.get_closest_marker('qemu') is not None
-    return format_case_id(target, config, request.node.originalname, is_qemu=is_qemu)  # type: ignore
+    if hasattr(request._pyfuncitem, 'callspec'):
+        params = deepcopy(request._pyfuncitem.callspec.params)  # type: ignore
+    else:
+        params = {}
+
+    filtered_params = {}
+    for k, v in params.items():
+        if k not in request.session._fixturemanager._arg2fixturedefs:  # type: ignore
+            filtered_params[k] = v  # not fixture ones
+
+    return format_case_id(target, config, request.node.originalname, is_qemu=is_qemu, params=filtered_params)  # type: ignore
 
 
 @pytest.fixture

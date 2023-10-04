@@ -9,13 +9,16 @@ from xml.etree import ElementTree as ET
 from .constants import TARGET_MARKERS
 
 
-def format_case_id(target: t.Optional[str], config: t.Optional[str], case: str, is_qemu: bool = False) -> str:
+def format_case_id(target: t.Optional[str], config: t.Optional[str], case: str, is_qemu: bool = False, params: t.Optional[dict] = None) -> str:
     parts = []
     if target:
         parts.append((str(target) + '_qemu') if is_qemu else str(target))
     if config:
         parts.append(str(config))
     parts.append(case)
+
+    if params:
+        parts.append(str(params))
 
     return '.'.join(parts)
 
