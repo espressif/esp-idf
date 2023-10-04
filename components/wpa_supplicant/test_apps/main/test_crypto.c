@@ -16,11 +16,13 @@
 
 #include "mbedtls/ecp.h"
 #include "test_utils.h"
+#include "test_wpa_supplicant_common.h"
 
 typedef struct crypto_bignum crypto_bignum;
 
 TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
 {
+    set_leak_threshold(250);
     {
 
         uint8_t buf[32], buf2[32];
@@ -331,6 +333,7 @@ static inline void ecp_mpi_load( mbedtls_mpi *X, const mbedtls_mpi_uint *p, size
 
 TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
 {
+    set_leak_threshold(600);
 
     static const mbedtls_mpi_uint secp256r1_gx[] = {
         BYTES_TO_T_UINT_8( 0x96, 0xC2, 0x98, 0xD8, 0x45, 0x39, 0xA1, 0xF4 ),
