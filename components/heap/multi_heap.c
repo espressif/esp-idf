@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,12 +60,6 @@ size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
 
 void *multi_heap_get_block_address(multi_heap_block_handle_t block)
     __attribute__((alias("multi_heap_get_block_address_impl")));
-
-void *multi_heap_get_block_owner(multi_heap_block_handle_t block)
-{
-    return NULL;
-}
-
 #endif
 
 #define ALIGN(X) ((X) & ~(sizeof(void *)-1))
