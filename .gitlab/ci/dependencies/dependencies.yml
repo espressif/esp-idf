@@ -115,20 +115,6 @@ build:integration_test:
 # -------------
 # Special Cases
 # -------------
-"test:component_ut-{0}":
-  matrix:
-    - *all_targets
-  labels:
-    - component_ut
-    - "component_ut_{0}"
-    - target_test
-  patterns:
-    - component_ut
-    - "build-component_ut-{0}"
-  included_in:
-    - build:component_ut
-    - "build:component_ut-{0}"
-    - build:target_test
 
 # To reduce the specific runners' usage.
 # Do not create these jobs by default patterns on development branches

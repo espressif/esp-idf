@@ -40,18 +40,6 @@ Building an example is the same as building any other project:
 - `idf.py build` to build the example.
 - Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
 
-## Running Test Python Script (ttfw)
-
-Some of the examples have `..._test.py` scripts that are used to test that the example works as expected. These scripts run automatically in the internal test queue. They are not intended to be run by ESP-IDF users but sometimes you may want to run them locally.
-
-Install Python dependencies and export the Python path where the IDF CI Python modules are found with the following commands:
-
-```bash
-bash install.sh --enable-ttfw
-source export.sh
-export PYTHONPATH=$IDF_PATH/tools/ci/python_packages:$IDF_PATH/tools:$PYTHONPATH
-```
-
 ## Running Test Python Script (pytest)
 
 Some of the examples have `pytest_....py` scripts that are using the `pytest` as the test framework. For detailed information, please refer to the "Run the Tests Locally" Section under [ESP-IDF tests in Pytest documentation](../docs/en/contribute/esp-idf-tests-with-pytest.rst)

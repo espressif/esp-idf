@@ -19,6 +19,7 @@ netifaces
 rangehttpserver
 dbus-python; sys_platform == 'linux'
 protobuf
+bleak
 paho-mqtt
 paramiko
 netmiko

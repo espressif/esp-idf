@@ -27,8 +27,6 @@
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/idf_http_server_test/**/*"
   - "tools/ci/python_packages/idf_iperf_test_util/**/*"
-  - "tools/ci/python_packages/tiny_test_fw/**/*"
-  - "tools/ci/python_packages/ttfw_idf/**/*"
   - "tools/ci/python_packages/common_test_methods.py"
 
   - "tools/esp_prov/**/*"
@@ -71,21 +69,10 @@
 
 .patterns-custom_test: &patterns-custom_test
   - "tools/ci/python_packages/gitlab_api.py"
-  - "tools/ci/python_packages/tiny_test_fw/**/*"
-  - "tools/ci/python_packages/ttfw_idf/**/*"
   - "tools/ci/python_packages/common_test_methods.py"
 
   - "tools/test_apps/**/*"
   - "tools/ldgen/**/*"
-
-.patterns-unit_test: &patterns-unit_test
-  - "tools/ci/python_packages/gitlab_api.py"
-  - "tools/ci/python_packages/tiny_test_fw/**/*"
-  - "tools/ci/python_packages/ttfw_idf/**/*"
-
-  - "tools/unit-test-app/**/*"
-
-  - "components/**/*"
 
 .patterns-component_ut: &patterns-component_ut
   - "tools/ci/python_packages/gitlab_api.py"
@@ -283,18 +270,6 @@
 
 # for jobs: component_ut_pytest_sdio related
 .patterns-component_ut-sdio: &patterns-component_ut-sdio
-  - "components/hal/sdio*.c"
-  - "components/hal/include/hal/sdio*.h"
-  - "components/driver/sdspi*.c"
-  - "components/driver/sdio*.c"
-  - "components/driver/sdmmc*.c"
-  - "components/driver/include/driver/sdspi*.h"
-  - "components/driver/include/driver/sdio*.h"
-  - "components/driver/include/driver/sdmmc*.h"
-  - "components/sdmmc/**/*"
-
-# for jobs: UT_xx_SDSPI related
-.patterns-unit_test-sdio: &patterns-unit_test-sdio
   - "components/hal/sdio*.c"
   - "components/hal/include/hal/sdio*.h"
   - "components/driver/sdspi*.c"

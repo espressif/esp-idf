@@ -124,12 +124,7 @@ variables:
   # install latest python packages
   # target test jobs
   if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
-    # ttfw jobs
-    if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
-      run_cmd bash install.sh --enable-ci --enable-ttfw
-    else
-      run_cmd bash install.sh --enable-ci --enable-pytest
-    fi
+    run_cmd bash install.sh --enable-ci --enable-pytest
   elif [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
     run_cmd bash install.sh --enable-ci --enable-docs
   elif [[ "${CI_JOB_STAGE}" == "build" ]]; then

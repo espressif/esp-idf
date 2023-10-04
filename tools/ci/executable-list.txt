@@ -112,5 +112,3 @@ tools/test_idf_py/test_hints.py
 tools/test_idf_py/test_idf_py.py
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
-tools/unit-test-app/tools/get_available_configs.sh
-tools/unit-test-app/unit_test.py

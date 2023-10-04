@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 from idf_build_apps import LOGGER, App, build_apps, find_apps, setup_logging
 from idf_build_apps.constants import SUPPORTED_TARGETS
-from idf_ci_utils import IDF_PATH, get_ttfw_app_paths
+from idf_ci_utils import IDF_PATH
 
 CI_ENV_VARS = {
     'EXTRA_CFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
@@ -100,8 +100,6 @@ def get_cmake_apps(
     from idf_pytest.constants import PytestApp
     from idf_pytest.script import get_pytest_cases
 
-    ttfw_app_dirs = get_ttfw_app_paths(paths, target)
-
     apps = find_apps(
         paths,
         recursive=True,
@@ -123,7 +121,7 @@ def get_cmake_apps(
     apps_for_build = []
     pytest_cases_apps = [app for case in get_pytest_cases(paths, target) for app in case.apps]
     for app in apps:
-        if preserve_all or app.app_dir in ttfw_app_dirs:  # relpath
+        if preserve_all:  # relpath
             app.preserve = True
 
         if PytestApp(os.path.realpath(app.app_dir), app.target, app.config_name) in pytest_cases_apps:
