@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_assert.h"
 #include "esp_check.h"
 #include "http_parser.h"
 #include "http_header.h"
@@ -19,12 +20,17 @@
 #include "sdkconfig.h"
 #include "esp_http_client.h"
 #include "errno.h"
+#include "esp_random.h"
+#include "esp_tls.h"
 
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
 #include "esp_transport_ssl.h"
 #endif
 
 static const char *TAG = "HTTP_CLIENT";
+
+ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_ANY == (int)ESP_TLS_VER_ANY, "Enum mismatch in esp_http_client and esp-tls");
+ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_MAX <= (int)ESP_TLS_VER_TLS_MAX, "HTTP client supported TLS is not supported in esp-tls");
 
 /**
  * HTTP Buffer
@@ -661,6 +667,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
             esp_transport_ssl_set_client_cert_data_der(ssl, config->client_cert_pem, config->client_cert_len);
         }
     }
+    esp_transport_ssl_set_tls_version(ssl, config->tls_version);
 
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     if (config->ds_data != NULL) {
