@@ -16,10 +16,11 @@
 #include "utils/common.h"
 #include "utils/includes.h"
 #include "crypto/crypto.h"
-#include "../src/common/sae.h"
+#include "common/sae.h"
 #include "utils/wpabuf.h"
 #include "test_utils.h"
-#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6781
+#include "test_wpa_supplicant_common.h"
+
 typedef struct crypto_bignum crypto_bignum;
 
 static struct wpabuf *wpabuf_alloc2(size_t len)
@@ -47,6 +48,7 @@ void wpabuf_free2(struct wpabuf *buf)
 
 TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 {
+    set_leak_threshold(120);
     ESP_LOGI("SAE Test", "### Beginning SAE init and deinit ###");
     {
         /* Test init and deinit*/
@@ -422,5 +424,5 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
     ESP_LOGI("SAE Test", "=========== Complete ============");
 
 }
-#endif
+
 #endif /* CONFIG_WPA3_SAE */
