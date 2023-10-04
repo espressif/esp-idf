@@ -447,7 +447,7 @@ esp_err_t esp_wifi_scan_stop(void);
 /**
   * @brief     Get number of APs found in last scan
   *
-  * @param[out] number  store number of APIs found in last scan
+  * @param[out] number  store number of APs found in last scan
   *
   * @attention This API can only be called when the scan is completed, otherwise it may get wrong value.
   *
