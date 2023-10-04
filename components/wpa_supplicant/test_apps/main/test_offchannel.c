@@ -10,20 +10,23 @@
  * CONDITIONS OF ANY KIND, either express or implied.
  */
 
-#include "string.h"
+#include <string.h>
 #include <inttypes.h>
 #include "esp_system.h"
-#include "unity.h"
+#include "esp_log.h"
 #include "esp_system.h"
 #include "esp_event.h"
-#include "esp_wifi_types.h"
-#include "utils/common.h"
-#include "common/ieee802_11_defs.h"
-#include "../esp_supplicant/src/esp_wifi_driver.h"
-#include "esp_log.h"
-#include "test_utils.h"
-#include "memory_checks.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
+#include "unity.h"
+#include "utils/common.h"
+#include "esp_wifi_types.h"
+#include "esp_wifi_driver.h"
+#include "memory_checks.h"
+#include "common/ieee802_11_defs.h"
+#include "test_utils.h"
+#include "test_wpa_supplicant_common.h"
+#include "sdkconfig.h"
 
 #define WIFI_START_EVENT        0x00000001
 #define WIFI_ROC_DONE_EVENT     0x00000002
@@ -32,9 +35,9 @@
 
 #define TEST_LISTEN_CHANNEL     6
 
-/* No runners */
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32C6, ESP32H2)
-//IDF-5046
+/* No runners; IDF-5046 */
+#if CONFIG_IDF_TARGET_ESP32
+
 static const char *TAG = "test_offchan";
 esp_netif_t *wifi_netif;
 static EventGroupHandle_t wifi_event;
@@ -127,7 +130,7 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
                            uint8_t channel, uint32_t wait_time_ms)
 {
     wifi_action_tx_req_t *req = os_zalloc(sizeof(*req) + len);;
-    TEST_ASSERT( req != NULL);
+    TEST_ASSERT(req != NULL);
 
     req->ifx = WIFI_IF_STA;
     memcpy(req->dest_mac, dest_mac, ETH_ALEN);
@@ -144,14 +147,13 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
     os_free(req);
 }
 
-
 /* Test that foreground Scan doesn't pre-empt ROC & vice versa */
 TEST_CASE("Test scan and ROC simultaneously", "[Offchan]")
 {
     wifi_action_rx_cb_t rx_cb = dummy_rx_action;
     EventBits_t bits;
 
-    test_case_uses_tcpip();
+    set_leak_threshold(6000);
     start_wifi_as_sta();
 
     xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_PERIOD_MS);
@@ -180,7 +182,7 @@ static void test_wifi_offchan_tx(void)
     char mac_str[19];
     uint8_t mac[6];
 
-    test_case_uses_tcpip();
+    set_leak_threshold(6000);
     start_wifi_as_sta();
     xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_PERIOD_MS);
 
@@ -218,7 +220,7 @@ static void test_wifi_roc(void)
     EventBits_t bits;
     uint8_t mac[6];
 
-    test_case_uses_tcpip();
+    set_leak_threshold(6000);
     start_wifi_as_sta();
 
     xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_PERIOD_MS);
@@ -241,6 +243,6 @@ static void test_wifi_roc(void)
     }
 }
 
-TEST_CASE_MULTIPLE_DEVICES("test ROC and Offchannel Action Frame Tx", "[Offchan][test_env=UT_T2_1][timeout=90]", test_wifi_roc, test_wifi_offchan_tx);
+TEST_CASE_MULTIPLE_DEVICES("test ROC and Offchannel Action Frame Tx", "[Offchan][test_env=wifi_two_dut][timeout=90]", test_wifi_roc, test_wifi_offchan_tx);
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
+#endif //CONFIG_IDF_TARGET_ESP32
