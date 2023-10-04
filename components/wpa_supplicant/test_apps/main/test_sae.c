@@ -22,14 +22,14 @@
 #if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6781
 typedef struct crypto_bignum crypto_bignum;
 
-
 static struct wpabuf *wpabuf_alloc2(size_t len)
 {
     struct wpabuf *buf = (struct wpabuf *)os_zalloc(sizeof(struct wpabuf) + len);
-    if (buf == NULL)
+    if (buf == NULL) {
         return NULL;
+    }
     buf->size = len;
-    buf->buf = (u8 *) (buf + 1);
+    buf->buf = (u8 *)(buf + 1);
     return buf;
 }
 
@@ -39,8 +39,9 @@ static struct wpabuf *wpabuf_alloc2(size_t len)
  *    */
 void wpabuf_free2(struct wpabuf *buf)
 {
-    if (buf == NULL)
+    if (buf == NULL) {
         return;
+    }
     os_free(buf);
 }
 
@@ -188,10 +189,9 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         ESP_LOG_BUFFER_HEXDUMP("SAE: Predefined PMKID ", pmkid, SAE_PMKID_LEN, ESP_LOG_INFO);
         TEST_ASSERT(os_memcmp(pmkid, sae.pmkid, SAE_PMKID_LEN) == 0);
 
-
         pt_info = sae_derive_pt(pt_groups,
-                    (const u8 *) ssid, os_strlen(ssid),
-                    (const u8 *) pw, os_strlen(pw), pwid);
+                                (const u8 *) ssid, os_strlen(ssid),
+                                (const u8 *) pw, os_strlen(pw), pwid);
 
         TEST_ASSERT(pt_info != NULL);
 
@@ -240,13 +240,13 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         buf = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
 
-        TEST_ASSERT( buf != NULL);
+        TEST_ASSERT(buf != NULL);
 
         sae_write_commit(&sae, buf, NULL, NULL);// No anti-clogging token
 
         /* Parsing commit created by self will be detected as reflection attack*/
         TEST_ASSERT(sae_parse_commit(&sae,
-                    wpabuf_mhead(buf), buf->used, NULL, 0, default_groups, 0) == SAE_SILENTLY_DISCARD);
+                                     wpabuf_mhead(buf), buf->used, NULL, 0, default_groups, 0) == SAE_SILENTLY_DISCARD);
 
         wpabuf_free2(buf);
         sae_clear_temp_data(&sae);
@@ -281,14 +281,13 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* STA1 creates commit msg buffer*/
         buf1 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
-        TEST_ASSERT( buf1 != NULL);
+        TEST_ASSERT(buf1 != NULL);
         sae_write_commit(&sae1, buf1, NULL, NULL);// No anti-clogging token
-	ESP_LOG_BUFFER_HEXDUMP("SAE: Commit1", wpabuf_mhead_u8(buf1), wpabuf_len(buf1), ESP_LOG_INFO);
-
+        ESP_LOG_BUFFER_HEXDUMP("SAE: Commit1", wpabuf_mhead_u8(buf1), wpabuf_len(buf1), ESP_LOG_INFO);
 
         /* STA2 creates commit msg buffer*/
         buf2 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
-        TEST_ASSERT( buf2 != NULL);
+        TEST_ASSERT(buf2 != NULL);
         sae_write_commit(&sae2, buf2, NULL, NULL);// No anti-clogging token
         ESP_LOG_BUFFER_HEXDUMP("SAE: Commit2", wpabuf_mhead_u8(buf2), wpabuf_len(buf2), ESP_LOG_INFO);
 
@@ -297,11 +296,11 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* STA1 parses STA2 commit*/
         TEST_ASSERT(sae_parse_commit(&sae1,
-                    wpabuf_mhead(buf2), buf2->used, NULL, 0, default_groups, 0) == 0);
+                                     wpabuf_mhead(buf2), buf2->used, NULL, 0, default_groups, 0) == 0);
 
         /* STA2 parses STA1 commit*/
         TEST_ASSERT(sae_parse_commit(&sae2,
-                    wpabuf_mhead(buf1), buf1->used, NULL, 0, default_groups, 0) == 0);
+                                     wpabuf_mhead(buf1), buf1->used, NULL, 0, default_groups, 0) == 0);
 
         /* STA1 processes commit*/
         TEST_ASSERT(sae_process_commit(&sae1) == 0);
@@ -311,13 +310,13 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* STA1 creates confirm msg buffer*/
         buf3 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
-        TEST_ASSERT( buf3 != NULL);
+        TEST_ASSERT(buf3 != NULL);
         sae_write_confirm(&sae1, buf3);
         ESP_LOG_BUFFER_HEXDUMP("SAE: Confirm1", wpabuf_mhead_u8(buf3), wpabuf_len(buf3), ESP_LOG_INFO);
 
         /* STA2 creates confirm msg buffer*/
         buf4 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
-        TEST_ASSERT( buf3 != NULL);
+        TEST_ASSERT(buf3 != NULL);
         sae_write_confirm(&sae2, buf4);
         ESP_LOG_BUFFER_HEXDUMP("SAE: Confirm2", wpabuf_mhead_u8(buf4), wpabuf_len(buf4), ESP_LOG_INFO);
 
@@ -369,12 +368,12 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* STA1 creates commit msg buffer*/
         buf1 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
-        TEST_ASSERT( buf1 != NULL);
+        TEST_ASSERT(buf1 != NULL);
         sae_write_commit(&sae1, buf1, NULL, NULL);// No anti-clogging token
 
         /* STA2 creates commit msg buffer*/
         buf2 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
-        TEST_ASSERT( buf2 != NULL);
+        TEST_ASSERT(buf2 != NULL);
         sae_write_commit(&sae2, buf2, NULL, NULL);// No anti-clogging token
 
         sae1.state = SAE_COMMITTED;
@@ -382,11 +381,11 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* STA1 parses STA2 commit*/
         TEST_ASSERT(sae_parse_commit(&sae1,
-                    wpabuf_mhead(buf2), buf2->used, NULL, 0, default_groups, 0) == 0);
+                                     wpabuf_mhead(buf2), buf2->used, NULL, 0, default_groups, 0) == 0);
 
         /* STA2 parses STA1 commit*/
         TEST_ASSERT(sae_parse_commit(&sae2,
-                    wpabuf_mhead(buf1), buf1->used, NULL, 0, default_groups, 0) == 0);
+                                     wpabuf_mhead(buf1), buf1->used, NULL, 0, default_groups, 0) == 0);
 
         /* STA1 processes commit*/
         TEST_ASSERT(sae_process_commit(&sae1) == 0);
@@ -396,12 +395,12 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* STA1 creates confirm msg buffer*/
         buf3 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
-        TEST_ASSERT( buf3 != NULL);
+        TEST_ASSERT(buf3 != NULL);
         sae_write_confirm(&sae1, buf3);
 
         /* STA2 creates confirm msg buffer*/
         buf4 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
-        TEST_ASSERT( buf3 != NULL);
+        TEST_ASSERT(buf3 != NULL);
         sae_write_confirm(&sae2, buf4);
 
         /* STA1 checks confirm from STA2 and the check fails*/
