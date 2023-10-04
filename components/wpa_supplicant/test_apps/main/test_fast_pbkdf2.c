@@ -9,13 +9,14 @@
 #include "utils/common.h"
 #include "mbedtls/pkcs5.h"
 #include "crypto/sha1.h"
-
-#if SOC_WIFI_SUPPORTED
+#include "test_wpa_supplicant_common.h"
 
 #define PMK_LEN 32
 
 TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
 {
+    set_leak_threshold(120);
+
     uint8_t PMK[PMK_LEN];
     uint8_t ssid_len;
     uint8_t passphrase_len;
@@ -65,5 +66,3 @@ TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
     }
     TEST_ASSERT(memcmp(PMK, expected_pmk, PMK_LEN) == 0);
 }
-
-#endif /* SOC_WIFI_SUPPORTED */
