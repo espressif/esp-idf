@@ -3,31 +3,31 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
-#include "string.h"
+#include <time.h>
+#include <string.h>
 #include <inttypes.h>
 #include "esp_system.h"
-#include "unity.h"
+#include "esp_log.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_wifi_types.h"
+#include "unity.h"
 #include "utils/common.h"
 #include "utils/eloop.h"
 #include "common/ieee802_11_defs.h"
-#include "../esp_supplicant/src/esp_wifi_driver.h"
-#include "esp_log.h"
-#include "test_utils.h"
+#include "esp_wifi_driver.h"
 #include "memory_checks.h"
-#include <time.h>
+#include "test_wpa_supplicant_common.h"
 
-#if SOC_WIFI_SUPPORTED
-uint32_t timeouts_usec[6] = { 10000, 1000, 10000, 5000, 15000, 1000 };
-uint32_t timeouts_sec[6] = { 10, 1, 10, 5, 15, 1 };
-int executed_order[6];
-int t;
-struct os_reltime ts;
+static uint32_t timeouts_usec[6] = { 10000, 1000, 10000, 5000, 15000, 1000 };
+static uint32_t timeouts_sec[6] = { 10, 1, 10, 5, 15, 1 };
+static int executed_order[6];
+static int t;
+static struct os_reltime ts;
+
 
 /* there is only single instance of esp_timer so no need of protection */
-void callback(void *a, void *b)
+static void callback(void *a, void *b)
 {
     int *i = a;
     struct os_time age, now;
@@ -55,6 +55,7 @@ extern const wifi_osi_funcs_t *wifi_funcs;
 /* Check if eloop runs its timers correctly & in correct order */
 TEST_CASE("Test eloop timers run", "[eloop]")
 {
+    set_leak_threshold(800);
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     cfg.nvs_enable = false;
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -83,4 +84,3 @@ TEST_CASE("Test eloop timers run", "[eloop]")
     TEST_ESP_OK(esp_wifi_deinit());
     os_sleep(3, 0);
 }
-#endif //SOC_WIFI_SUPPORTED
