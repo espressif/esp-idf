@@ -77,6 +77,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         args.no_hints = True
         build_target(target_name, ctx, args)
 
+    def save_defconfig(target_name: str, ctx: Context, args: PropertyDict, menu_labels: bool) -> None:
+        if menu_labels:
+            os.environ['ESP_IDF_KCONFIG_MIN_LABELS'] = '1'
+        else:
+            # unset variable
+            os.environ.pop('ESP_IDF_KCONFIG_MIN_LABELS', None)
+        build_target(target_name, ctx, args)
+
     def fallback_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """
         Execute targets that are not explicitly known to idf.py
@@ -491,9 +499,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
                 ]
             },
             'save-defconfig': {
-                'callback': build_target,
+                'callback': save_defconfig,
                 'help': 'Generate a sdkconfig.defaults with options different from the default ones',
-                'options': global_options
+                'options': global_options + [{
+                    'names': ['--add-menu-labels'],
+                    'is_flag': True,
+                    'help': 'Add menu labels to minimal config.',
+                }]
             }
         }
     }
