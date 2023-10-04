@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,14 @@ void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*
  * @param      t    ssl transport
  */
 void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t);
+
+/**
+ * @brief      Set TLS protocol version for ESP-TLS connection
+ *
+ * @param      t    ssl transport
+ * @param[in]  tls_version      TLS version
+ */
+void esp_transport_ssl_set_tls_version(esp_transport_handle_t t, esp_tls_proto_ver_t tls_version);
 
 /**
  * @brief      Set SSL client certificate data for mutual authentication (as PEM format).
