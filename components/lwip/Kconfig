@@ -941,6 +941,13 @@ menu "LWIP"
         help
             Enable Microsoft Point-to-Point Encryption (MPPE) support
 
+    config LWIP_PPP_SERVER_SUPPORT
+        bool "Enable PPP server support"
+        depends on LWIP_PPP_SUPPORT
+        default n
+        help
+            Enable to use PPP server
+
     config LWIP_ENABLE_LCP_ECHO
         bool "Enable LCP ECHO"
         depends on LWIP_PPP_SUPPORT
