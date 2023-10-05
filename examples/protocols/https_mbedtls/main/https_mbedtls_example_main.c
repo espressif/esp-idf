@@ -128,10 +128,6 @@ static void https_get_task(void *pvParameters)
     mbedtls_esp_enable_debug_log(&conf, CONFIG_MBEDTLS_DEBUG_LEVEL);
 #endif
 
-#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
-    mbedtls_ssl_conf_min_tls_version(&conf, MBEDTLS_SSL_VERSION_TLS1_3);
-    mbedtls_ssl_conf_max_tls_version(&conf, MBEDTLS_SSL_VERSION_TLS1_3);
-#endif
     if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0)
     {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
