@@ -21,6 +21,7 @@ System API
     freertos_additions
     mem_alloc
     mm
+    :SOC_PSRAM_DMA_CAPABLE or SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE: mm_sync
     heap_debug
     esp_timer
     internal-unstable

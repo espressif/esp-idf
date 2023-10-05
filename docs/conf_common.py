@@ -73,6 +73,8 @@ WIFI_MESH_DOCS = ['api-guides/esp-wifi-mesh.rst',
 
 COEXISTENCE_DOCS = ['api-guides/coexist.rst']
 
+MM_SYNC_DOCS = ['api-reference/system/mm_sync.rst']
+
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst']
 
 SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst',
@@ -186,6 +188,8 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
                             'SOC_BT_CLASSIC_SUPPORTED':CLASSIC_BT_DOCS,
                             'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
+                            'SOC_PSRAM_DMA_CAPABLE':MM_SYNC_DOCS,
+                            'SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE':MM_SYNC_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
                             'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,

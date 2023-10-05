@@ -157,6 +157,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_etm.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_dma_utils.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_ds.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
