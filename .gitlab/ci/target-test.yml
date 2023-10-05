@@ -95,7 +95,6 @@ pytest_examples_esp32_jtag:
     - build_pytest_examples_jtag
   tags: [ esp32, jtag ]
   variables:
-    SETUP_TOOLS: "1"  # need gdb openocd
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32_ccs811:
@@ -131,7 +130,6 @@ pytest_examples_esp32s2_jtag:
     - build_pytest_examples_jtag
   tags: [ esp32s2, jtag ]
   variables:
-    SETUP_TOOLS: "1"  # need gdb openocd
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32s3_generic:
@@ -151,7 +149,6 @@ pytest_examples_esp32s3_usb_serial_jtag:
     - build_pytest_examples_jtag
   tags: [ esp32s3, usb_serial_jtag ]
   variables:
-    SETUP_TOOLS: "1"  # need gdb openocd
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32s3_f4r8:
@@ -179,7 +176,6 @@ pytest_examples_esp32c2_jtag:
     - build_pytest_examples_jtag
   tags: [ esp32c2, jtag ]
   variables:
-    SETUP_TOOLS: "1"  # need gdb openocd
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32c3_generic:
@@ -199,7 +195,6 @@ pytest_examples_esp32c3_usb_serial_jtag:
     - build_pytest_examples_jtag
   tags: [ esp32c3, usb_serial_jtag ]
   variables:
-    SETUP_TOOLS: "1"  # need gdb openocd
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_examples_esp32c3_flash_suspend:
@@ -1201,8 +1196,6 @@ pytest_test_apps_esp32_generic:
   needs:
     - build_pytest_test_apps_esp32
   tags: [ esp32, generic ]
-  variables:
-    SETUP_TOOLS: "1"  # need gdb
 
 pytest_test_apps_esp32_jtag:
   extends:
@@ -1212,7 +1205,6 @@ pytest_test_apps_esp32_jtag:
     - build_pytest_test_apps_esp32
   tags: [ esp32, jtag]
   variables:
-    SETUP_TOOLS: "1"  # need gdb
     PYTEST_EXTRA_FLAGS: "--log-cli-level DEBUG"
 
 pytest_test_apps_esp32_ethernet:
@@ -1230,8 +1222,6 @@ pytest_test_apps_esp32s2_generic:
   needs:
     - build_pytest_test_apps_esp32s2
   tags: [ esp32s2, generic ]
-  variables:
-    SETUP_TOOLS: "1"  # need gdb
 
 pytest_test_apps_esp32s3_generic:
   extends:
