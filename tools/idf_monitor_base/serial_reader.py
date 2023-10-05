@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import queue
@@ -7,6 +7,7 @@ import sys
 import time
 
 import serial
+from serial.tools import list_ports
 
 from .constants import CHECK_ALIVE_FLAG_TIMEOUT, MINIMAL_EN_LOW_DELAY, RECONNECT_DELAY, TAG_SERIAL
 from .output_helpers import red_print, yellow_print
@@ -49,7 +50,13 @@ class SerialReader(Reader):
             self.serial.rts = high     # IO0=HIGH
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
             # Current state not reset the target!
-            self.serial.open()
+            try:
+                self.serial.open()
+            except serial.serialutil.SerialException:
+                # if connection to port fails suggest other available ports
+                port_list = '\n'.join([p.device for p in list_ports.comports()])
+                yellow_print(f'Connection to {self.serial.portstr} failed. Available ports:\n{port_list}')
+                return
             if not self.gdb_exit and self.reset:
                 self.serial.dtr = high     # Set dtr to reset state (affected by rts)
                 self.serial.rts = low      # Set rts/dtr to the reset state
