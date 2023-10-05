@@ -18,18 +18,20 @@ while getopts ":h" option; do
         h)
             "${ESP_PYTHON}" "${IDF_PATH}/tools/install_util.py" print_help sh
             exit;;
+        \?)
+            ;;
     esac
 done
 
-TARGETS=`"${ESP_PYTHON}" "${IDF_PATH}/tools/install_util.py" extract targets "$@"`
+TARGETS=$("${ESP_PYTHON}" "${IDF_PATH}/tools/install_util.py" extract targets "$@")
 
 echo "Installing ESP-IDF tools"
-"${ESP_PYTHON}" "${IDF_PATH}/tools/idf_tools.py" install --targets=${TARGETS}
+"${ESP_PYTHON}" "${IDF_PATH}/tools/idf_tools.py" install --targets="${TARGETS}"
 
-FEATURES=`"${ESP_PYTHON}" "${IDF_PATH}/tools/install_util.py" extract features "$@"`
+FEATURES=$("${ESP_PYTHON}" "${IDF_PATH}/tools/install_util.py" extract features "$@")
 
 echo "Installing Python environment and packages"
-"${ESP_PYTHON}" "${IDF_PATH}/tools/idf_tools.py" install-python-env --features=${FEATURES}
+"${ESP_PYTHON}" "${IDF_PATH}/tools/idf_tools.py" install-python-env --features="${FEATURES}"
 
 echo "All done! You can now run:"
 echo ""

@@ -208,3 +208,14 @@ repos:
       - id: astyle_py
         # If you are modifying astyle version, update tools/format.sh as well
         args: ['--astyle-version=3.4.7', '--rules=tools/ci/astyle-rules.yml']
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.5
+    hooks:
+    - id: shellcheck
+      name: shellcheck bash
+      args: ['--shell', 'bash', '-x']
+      files: 'install.sh|export.sh'
+    - id: shellcheck
+      name: shellcheck dash (export.sh)
+      args: ['--shell', 'dash', '-x']
+      files: 'export.sh'
