@@ -501,7 +501,7 @@ def init_cli(verbose_output: List=None) -> Any:
 
                 if os.path.exists(os.path.join(args.build_dir, 'flash_args')):
                     print(f'or from the "{args.build_dir}" directory')
-                    print(' {}'.format(' '.join(esptool_cmd + ['@flash_args'])))
+                    print(' {}'.format(' '.join(esptool_cmd + ['"@flash_args"'])))
 
             if 'all' in actions or 'build' in actions:
                 print_flashing_message('Project', 'project')
