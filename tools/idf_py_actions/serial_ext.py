@@ -193,6 +193,7 @@ def action_extensions(base_actions, project_path):
         'help': 'Serial port.',
         'scope': 'global',
         'envvar': 'ESPPORT',
+        'type': click.Path(),
         'default': None,
     }
 
