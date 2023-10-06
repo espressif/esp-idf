@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,10 +198,17 @@ uint32_t rtc_clk_freq_cal(uint32_t cal_val)
 __attribute__((constructor))
 static void enable_timer_group0_for_calibration(void)
 {
+#ifndef BOOTLOADER_BUILD
     PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
         if (ref_count == 0) {
             timer_ll_enable_bus_clock(0, true);
             timer_ll_reset_register(0);
         }
     }
+#else
+    // no critical section is needed for bootloader
+    int __DECLARE_RCC_RC_ATOMIC_ENV;
+    timer_ll_enable_bus_clock(0, true);
+    timer_ll_reset_register(0);
+#endif
 }
