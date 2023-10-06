@@ -81,6 +81,7 @@ def dut_start_secure_app(dut: Dut) -> None:
 # Correctly signed bootloader + correctly signed app should work
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 def test_examples_security_secure_boot(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
@@ -92,6 +93,7 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
 # Any key index can be written to any key block and should work
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 # Increasing the test timeout to 1200s as the test runs for 18 iterations
 # and thus the default 600s timeout is not sufficient
 @pytest.mark.timeout(1200)
@@ -113,6 +115,7 @@ def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
 # If a key is revoked, bootloader signed with that key should fail verification
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
@@ -131,6 +134,7 @@ def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
 # Corrupt one byte at a time of bootloader signature and test that the verification fails
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 @pytest.mark.timeout(18000)
 # Increasing the test timeout to 18000s as the test runs for 384 iterations
 # and thus the default 600s timeout is not sufficient
@@ -167,6 +171,7 @@ def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut) -> None:
 # Corrupt app signature, one byte at a time, and test that the verification fails
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 @pytest.mark.timeout(18000)
 # Increasing the test timeout to 18000s as the test runs for 385 iterations
 # and thus the default 600s timeout is not sufficient
@@ -208,6 +213,6 @@ def test_examples_security_secure_boot_corrupt_app_sig(dut: Dut) -> None:
     dut.secure_boot_burn_en_bit()
     dut.secure_boot_burn_digest('test_rsa_3072_key.pem', 0, 0)
 
-    dut.expect('Sig block 0 invalid: Stored CRC ends', timeout=2)
+    dut.expect('Sig block 0 invalid: {}'.format('CRC mismatch' if dut.target == 'esp32p4' else 'Stored CRC ends'), timeout=2)
     dut.expect('Secure boot signature verification failed', timeout=2)
     dut.expect('No bootable app partitions in the partition table', timeout=2)
