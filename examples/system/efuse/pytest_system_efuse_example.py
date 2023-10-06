@@ -554,6 +554,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
 @pytest.mark.esp32c2
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.generic
@@ -626,6 +627,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
 @pytest.mark.esp32c2
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.generic
