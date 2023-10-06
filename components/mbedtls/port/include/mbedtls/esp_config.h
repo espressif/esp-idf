@@ -56,8 +56,15 @@
  */
 #ifdef CONFIG_MBEDTLS_HAVE_TIME
 #define MBEDTLS_HAVE_TIME
+/**
+ * \def MBEDTLS_PLATFORM_MS_TIME_ALT
+ *
+ * Define platform specific function to get time since bootup in milliseconds.
+ */
+#define MBEDTLS_PLATFORM_MS_TIME_ALT
 #else
 #undef MBEDTLS_HAVE_TIME
+#undef MBEDTLS_PLATFORM_MS_TIME_ALT
 #endif
 
 /**
