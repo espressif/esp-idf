@@ -62,6 +62,7 @@ inline static uint32_t get_all_caps(const heap_t *heap)
 */
 void *heap_caps_realloc_default(void *p, size_t size);
 void *heap_caps_malloc_default(size_t size);
+void *heap_caps_aligned_alloc_default(size_t alignment, size_t size);
 
 
 #ifdef __cplusplus

@@ -655,30 +655,9 @@ size_t heap_caps_get_allocated_size( void *ptr )
     return size;
 }
 
-HEAP_IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint32_t caps)
+static HEAP_IRAM_ATTR void *heap_caps_aligned_alloc_base(size_t alignment, size_t size, uint32_t caps)
 {
     void *ret = NULL;
-
-    if(!alignment) {
-        return NULL;
-    }
-
-    //Alignment must be a power of two:
-    if((alignment & (alignment - 1)) != 0) {
-        return NULL;
-    }
-
-    if (size == 0) {
-        return NULL;
-    }
-
-    if (size > HEAP_SIZE_MAX) {
-        // Avoids int overflow when adding small numbers to size, or
-        // calculating 'end' from start+size, by limiting 'size' to the possible range
-        heap_caps_alloc_failed(size, caps, __func__);
-
-        return NULL;
-    }
 
     for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
@@ -702,10 +681,81 @@ HEAP_IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint
         }
     }
 
-    heap_caps_alloc_failed(size, caps, __func__);
-
     //Nothing usable found.
     return NULL;
+}
+
+static HEAP_IRAM_ATTR int heap_caps_aligned_check_args(size_t alignment, size_t size, const char *funcname) {
+    if (!alignment) {
+        return -1;
+    }
+
+    // Alignment must be a power of two:
+    if ((alignment & (alignment - 1)) != 0) {
+        return -1;
+    }
+
+    if (size == 0) {
+        return -1;
+    }
+
+    if (size > HEAP_SIZE_MAX) {
+        // Avoids int overflow when adding small numbers to size, or
+        // calculating 'end' from start+size, by limiting 'size' to the possible range
+        heap_caps_alloc_failed(size, MALLOC_CAP_DEFAULT, funcname);
+
+        return -1;
+    }
+
+    return 0;
+}
+
+HEAP_IRAM_ATTR void *heap_caps_aligned_alloc_default(size_t alignment, size_t size)
+{
+    void *ret = NULL;
+
+    if (malloc_alwaysinternal_limit == MALLOC_DISABLE_EXTERNAL_ALLOCS) {
+        return heap_caps_aligned_alloc(alignment, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    }
+
+    if (heap_caps_aligned_check_args(alignment, size, __func__) != 0) {
+        return NULL;
+    }
+
+    if (size <= (size_t)malloc_alwaysinternal_limit) {
+        ret = heap_caps_aligned_alloc_base(alignment, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    } else {
+        ret = heap_caps_aligned_alloc_base(alignment, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM);
+    }
+
+    if (ret != NULL) {
+        return ret;
+    }
+
+    ret = heap_caps_aligned_alloc_base(alignment, size, MALLOC_CAP_DEFAULT);
+
+    if (ret == NULL) {
+        heap_caps_alloc_failed(size, MALLOC_CAP_DEFAULT, __func__);
+    }
+
+    return ret;
+}
+
+HEAP_IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint32_t caps)
+{
+    void *ret = NULL;
+
+    if (heap_caps_aligned_check_args(alignment, size, __func__) != 0) {
+        return NULL;
+    }
+
+    ret = heap_caps_aligned_alloc_base(alignment, size, caps);
+
+    if (ret == NULL) {
+        heap_caps_alloc_failed(size, caps, __func__);
+    }
+
+    return ret;
 }
 
 HEAP_IRAM_ATTR void heap_caps_aligned_free(void *ptr)
