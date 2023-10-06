@@ -256,11 +256,16 @@ In both cases (i.e., sending the ``Ctrl+C`` message, or receiving the special st
 Output Filtering
 ~~~~~~~~~~~~~~~~
 
-IDF monitor can be invoked as ``idf.py monitor --print-filter="xyz"``, where ``--print-filter`` is the parameter for output filtering. The default value is an empty string, which means that everything is printed.
+IDF monitor can be invoked as ``idf.py monitor --print-filter="xyz"``, where ``--print-filter`` is the parameter for output filtering. The default value is an empty string, which means that everything is printed. Filtering can also be configured using the ``ESP_IDF_MONITOR_PRINT_FILTER`` environment variable.
+
+.. note::
+
+   When using both the environment variable ``ESP_IDF_MONITOR_PRINT_FILTER`` and the argument ``--print-filter``, the setting from the CLI argument will take precedence.
+
 
 Restrictions on what to print can be specified as a series of ``<tag>:<log_level>`` items where ``<tag>`` is the tag string and ``<log_level>`` is a character from the set ``{N, E, W, I, D, V, *}`` referring to a level for :doc:`logging <../../api-reference/system/log>`.
 
-For example, ``PRINT_FILTER="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e., ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to Verbose level.
+For example, ``--print_filter="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e., ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to Verbose level.
 
 .. note::
 
@@ -273,7 +278,7 @@ If the last line of the output in your app is not followed by a carriage return,
 Examples of Filtering Rules:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- ``*`` can be used to match any tags. However, the string ``PRINT_FILTER="*:I tag1:E"`` with regards to ``tag1`` prints errors only, because the rule for ``tag1`` has a higher priority over the rule for ``*``.
+- ``*`` can be used to match any tags. However, the string ``--print_filter="*:I tag1:E"`` with regards to ``tag1`` prints errors only, because the rule for ``tag1`` has a higher priority over the rule for ``*``.
 - The default (empty) rule is equivalent to ``*:V`` because matching every tag at the Verbose level or lower means matching everything.
 - ``"*:N"`` suppresses not only the outputs from logging functions, but also the prints made by ``printf``, etc. To avoid this, use ``*:E`` or a higher verbosity level.
 - Rules ``"tag1:V"``, ``"tag1:v"``, ``"tag1:"``, ``"tag1:*"``, and ``"tag1"`` are equivalent.
@@ -300,12 +305,12 @@ The following log snippet was acquired without any filtering options::
     D (318) vfs: esp_vfs_register_fd_range is successful for range <54; 64) and VFS ID 1
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-The captured output for the filtering options ``PRINT_FILTER="wifi esp_image:E light_driver:I"`` is given below::
+The captured output for the filtering options ``--print_filter="wifi esp_image:E light_driver:I"`` is given below::
 
     E (31) esp_image: image at 0x30000 has invalid magic byte
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-The options ``PRINT_FILTER="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` show the following output::
+The options ``--print_filter="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` show the following output::
 
     load:0x40078000,len:13564
     entry 0x40078d4c
