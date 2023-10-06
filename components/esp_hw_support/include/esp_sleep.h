@@ -439,7 +439,22 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
 /**
  * @brief Enter deep sleep with the configured wakeup options
  *
- * This function does not return.
+ * @note In general, the function does not return, but if the sleep is rejected,
+ * then it returns from it.
+ *
+ * The reason for the rejection can be such as a short sleep time.
+ *
+ * @return
+ *  - No return - If the sleep is not rejected.
+ *  - ESP_ERR_SLEEP_REJECT sleep request is rejected(wakeup source set before the sleep request)
+ */
+esp_err_t esp_deep_sleep_try_to_start(void);
+
+/**
+ * @brief Enter deep sleep with the configured wakeup options
+ *
+ * @note The function does not do a return (no rejection). Even if wakeup source set before the sleep request
+ * it goes to deep sleep anyway.
  */
 void esp_deep_sleep_start(void) __attribute__((__noreturn__));
 
@@ -466,9 +481,29 @@ esp_err_t esp_light_sleep_start(void);
  * followed by a call to esp_deep_sleep_start.
  *
  * @param time_in_us  deep-sleep time, unit: microsecond
+ *
+ * @return
+ *  - No return - If the sleep is not rejected.
+ *  - ESP_ERR_SLEEP_REJECT sleep request is rejected(wakeup source set before the sleep request)
+ */
+esp_err_t esp_deep_sleep_try(uint64_t time_in_us);
+
+/**
+ * @brief Enter deep-sleep mode
+ *
+ * The device will automatically wake up after the deep-sleep time
+ * Upon waking up, the device calls deep sleep wake stub, and then proceeds
+ * to load application.
+ *
+ * Call to this function is equivalent to a call to esp_deep_sleep_enable_timer_wakeup
+ * followed by a call to esp_deep_sleep_start.
+ *
+ * @note The function does not do a return (no rejection).. Even if wakeup source set before the sleep request
+ * it goes to deep sleep anyway.
+ *
+ * @param time_in_us  deep-sleep time, unit: microsecond
  */
 void esp_deep_sleep(uint64_t time_in_us) __attribute__((__noreturn__));
-
 
 /**
   * @brief Register a callback to be called from the deep sleep prepare
