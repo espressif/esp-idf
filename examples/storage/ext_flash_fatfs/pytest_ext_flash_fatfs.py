@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 
 
@@ -7,6 +7,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
+@pytest.mark.esp32s2
 @pytest.mark.external_flash
 def test_ext_flash_fatfs(dut: Dut) -> None:
     message_list = ('Initialized external Flash',

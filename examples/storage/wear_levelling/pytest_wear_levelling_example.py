@@ -8,8 +8,7 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
+@pytest.mark.supported_targets
 def test_wear_levelling_example(dut: Dut) -> None:
 
     message_list = ('example: Mounting FAT filesystem',
