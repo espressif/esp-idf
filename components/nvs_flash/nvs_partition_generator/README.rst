@@ -158,12 +158,19 @@ You can run the utility to generate NVS partition using the command below. A sam
 Generate Encryption Keys Partition
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Usage**::
+.. only:: SOC_HMAC_SUPPORTED
 
-    python nvs_partition_gen.py generate-key [-h] [--key_protect_hmac] [--kp_hmac_keygen]
-                                                  [--kp_hmac_keyfile KP_HMAC_KEYFILE] [--kp_hmac_inputkey KP_HMAC_INPUTKEY]
-                                                  [--keyfile KEYFILE] [--outdir OUTDIR]
+    **Usage**::
 
+        python nvs_partition_gen.py generate-key [-h] [--key_protect_hmac] [--kp_hmac_keygen]
+                                                    [--kp_hmac_keyfile KP_HMAC_KEYFILE] [--kp_hmac_inputkey KP_HMAC_INPUTKEY]
+                                                    [--keyfile KEYFILE] [--outdir OUTDIR]
+
+.. only:: not SOC_HMAC_SUPPORTED
+
+    **Usage**::
+
+        python nvs_partition_gen.py generate-key [-h] [--keyfile KEYFILE] [--outdir OUTDIR]
 
 **Optional Arguments**:
 
@@ -172,49 +179,69 @@ Generate Encryption Keys Partition
 +=============================================+===================================================================================+
 | ``-h`` \ ``--help``                         | Show the help message and exit                                                    |
 +---------------------------------------------+-----------------------------------------------------------------------------------+
-| ``--key_protect_hmac``                      | If set, the NVS encryption key protection scheme based on HMAC                    |
-|                                             | peripheral is used; else the default scheme based on Flash Encryption             |
-|                                             | is used                                                                           |
-+---------------------------------------------+-----------------------------------------------------------------------------------+
-| ``--kp_hmac_keygen``                        | Generate the HMAC key for HMAC-based encryption scheme                            |
-+---------------------------------------------+-----------------------------------------------------------------------------------+
-| ``--kp_hmac_keyfile KP_HMAC_KEYFILE``       | Path to output HMAC key file                                                      |
-+---------------------------------------------+-----------------------------------------------------------------------------------+
-| ``--kp_hmac_inputkey KP_HMAC_INPUTKEY``     | File having the HMAC key for generating the NVS encryption keys                   |
-+---------------------------------------------+-----------------------------------------------------------------------------------+
 | ``--keyfile KEYFILE``                       | Path to output encryption keys file                                               |
 +---------------------------------------------+-----------------------------------------------------------------------------------+
 | ``--outdir OUTDIR``                         | Output directory to store files created. (Default: current directory)             |
 +---------------------------------------------+-----------------------------------------------------------------------------------+
 
+.. only:: SOC_HMAC_SUPPORTED
+
+    **Optional Arguments (HMAC scheme-specific)**:
+
+    +---------------------------------------------+-----------------------------------------------------------------------------------+
+    | Parameter                                   | Description                                                                       |
+    +=============================================+===================================================================================+
+    | ``--key_protect_hmac``                      | If set, the NVS encryption key protection scheme based on HMAC                    |
+    |                                             | peripheral is used; else the default scheme based on Flash Encryption             |
+    |                                             | is used                                                                           |
+    +---------------------------------------------+-----------------------------------------------------------------------------------+
+    | ``--kp_hmac_keygen``                        | Generate the HMAC key for HMAC-based encryption scheme                            |
+    +---------------------------------------------+-----------------------------------------------------------------------------------+
+    | ``--kp_hmac_keyfile KP_HMAC_KEYFILE``       | Path to output HMAC key file                                                      |
+    +---------------------------------------------+-----------------------------------------------------------------------------------+
+    | ``--kp_hmac_inputkey KP_HMAC_INPUTKEY``     | File having the HMAC key for generating the NVS encryption keys                   |
+    +---------------------------------------------+-----------------------------------------------------------------------------------+
+
 You can run the utility to generate only the encryption key partition using the command below::
 
     python nvs_partition_gen.py generate-key
 
-For generating encryption key for the HMAC-based scheme, the following commands can be used:
+.. only:: SOC_HMAC_SUPPORTED
 
-- Generate the HMAC key and the NVS encryption keys::
+    For generating encryption key for the HMAC-based scheme, the following commands can be used:
 
-    python nvs_partition_gen.py generate-key --key_protect_hmac --kp_hmac_keygen
+    - Generate the HMAC key and the NVS encryption keys::
 
-.. note:: Encryption key of the format ``<outdir>/keys/keys-<timestamp>.bin`` and HMAC key of the format ``<outdir>/keys/hmac-keys-<timestamp>.bin`` are created.
+        python nvs_partition_gen.py generate-key --key_protect_hmac --kp_hmac_keygen
 
-- Generate the NVS encryption keys, given the HMAC-key::
+    .. note:: Encryption key of the format ``<outdir>/keys/keys-<timestamp>.bin`` and HMAC key of the format ``<outdir>/keys/hmac-keys-<timestamp>.bin`` are created.
 
-    python nvs_partition_gen.py generate-key --key_protect_hmac --kp_hmac_inputkey testdata/sample_hmac_key.bin
+    - Generate the NVS encryption keys, given the HMAC-key::
 
-.. note:: You can provide the custom filename for the HMAC key as well as the encryption key as a parameter.
+        python nvs_partition_gen.py generate-key --key_protect_hmac --kp_hmac_inputkey testdata/sample_hmac_key.bin
+
+    .. note:: You can provide the custom filename for the HMAC key as well as the encryption key as a parameter.
 
 Generate Encrypted NVS Partition
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Usage**::
+.. only:: SOC_HMAC_SUPPORTED
 
-        python nvs_partition_gen.py encrypt [-h] [--version {1,2}] [--keygen]
-                                            [--keyfile KEYFILE] [--inputkey INPUTKEY] [--outdir OUTDIR]
-                                            [--key_protect_hmac] [--kp_hmac_keygen]
-                                            [--kp_hmac_keyfile KP_HMAC_KEYFILE] [--kp_hmac_inputkey KP_HMAC_INPUTKEY]
-                                            input output size
+    **Usage**::
+
+            python nvs_partition_gen.py encrypt [-h] [--version {1,2}] [--keygen]
+                                                [--keyfile KEYFILE] [--inputkey INPUTKEY] [--outdir OUTDIR]
+                                                [--key_protect_hmac] [--kp_hmac_keygen]
+                                                [--kp_hmac_keyfile KP_HMAC_KEYFILE] [--kp_hmac_inputkey KP_HMAC_INPUTKEY]
+                                                input output size
+
+.. only:: not SOC_HMAC_SUPPORTED
+
+    **Usage**::
+
+            python nvs_partition_gen.py encrypt [-h] [--version {1,2}] [--keygen]
+                                                [--keyfile KEYFILE] [--inputkey INPUTKEY] [--outdir OUTDIR]
+                                                input output size
 
 
 **Positional Arguments**:
@@ -250,16 +277,24 @@ Generate Encrypted NVS Partition
 +---------------------------------------------+-------------------------------------------------------------------------------+
 | ``--outdir OUTDIR``                         | Output directory to store file created (Default: current directory)           |
 +---------------------------------------------+-------------------------------------------------------------------------------+
-| ``--key_protect_hmac``                      | If set, the NVS encryption key protection scheme based on HMAC                |
-|                                             | peripheral is used; else the default scheme based on Flash Encryption         |
-|                                             | is used                                                                       |
-+---------------------------------------------+-------------------------------------------------------------------------------+
-| ``--kp_hmac_keygen``                        | Generate the HMAC key for HMAC-based encryption scheme                        |
-+---------------------------------------------+-------------------------------------------------------------------------------+
-| ``--kp_hmac_keyfile KP_HMAC_KEYFILE``       | Path to output HMAC key file                                                  |
-+---------------------------------------------+-------------------------------------------------------------------------------+
-| ``--kp_hmac_inputkey KP_HMAC_INPUTKEY``     | File having the HMAC key for generating the NVS encryption keys               |
-+---------------------------------------------+-------------------------------------------------------------------------------+
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    **Optional Arguments (HMAC scheme-specific)**:
+
+    +---------------------------------------------+-------------------------------------------------------------------------------+
+    | Parameter                                   | Description                                                                   |
+    +=============================================+===============================================================================+
+    | ``--key_protect_hmac``                      | If set, the NVS encryption key protection scheme based on HMAC                |
+    |                                             | peripheral is used; else the default scheme based on Flash Encryption         |
+    |                                             | is used                                                                       |
+    +---------------------------------------------+-------------------------------------------------------------------------------+
+    | ``--kp_hmac_keygen``                        | Generate the HMAC key for HMAC-based encryption scheme                        |
+    +---------------------------------------------+-------------------------------------------------------------------------------+
+    | ``--kp_hmac_keyfile KP_HMAC_KEYFILE``       | Path to output HMAC key file                                                  |
+    +---------------------------------------------+-------------------------------------------------------------------------------+
+    | ``--kp_hmac_inputkey KP_HMAC_INPUTKEY``     | File having the HMAC key for generating the NVS encryption keys               |
+    +---------------------------------------------+-------------------------------------------------------------------------------+
 
 You can run the utility to encrypt NVS partition using the command below. A sample CSV file is provided with the utility:
 
@@ -268,6 +303,8 @@ You can run the utility to encrypt NVS partition using the command below. A samp
     python nvs_partition_gen.py encrypt sample_singlepage_blob.csv sample_encr.bin 0x3000 --keygen
 
   .. note:: Encryption key of the format ``<outdir>/keys/keys-<timestamp>.bin`` is created.
+
+.. only:: SOC_HMAC_SUPPORTED
 
   - To generate an encrypted partition using the HMAC-based scheme, the above command can be used alongwith some additional parameters.
 
