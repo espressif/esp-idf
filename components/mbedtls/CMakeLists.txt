@@ -110,9 +110,13 @@ list(REMOVE_ITEM src_x509 x509_crt.c)
 set_property(TARGET mbedx509 PROPERTY SOURCES ${src_x509})
 endif()
 
+# Core libraries from the mbedTLS project
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
+# 3rd party libraries from the mbedTLS project
+list(APPEND mbedtls_targets everest p256m)
 
-set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c")
+set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
+                           "${COMPONENT_DIR}/port/esp_platform_time.c")
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 set(mbedtls_target_sources ${mbedtls_target_sources}
