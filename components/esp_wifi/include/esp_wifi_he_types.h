@@ -40,7 +40,7 @@ enum {
 /**
   * @brief Channel state information(CSI) configuration type
   */
-typedef struct {
+typedef struct wifi_csi_config_t {
     uint32_t enable : 1;                    /**< enable to acquire CSI */
     uint32_t acquire_csi_legacy : 1;        /**< enable to acquire L-LTF when receiving a 11g PPDU */
     uint32_t acquire_csi_ht20 : 1;          /**< enable to acquire HT-LTF when receiving an HT20 PPDU */
@@ -56,7 +56,7 @@ typedef struct {
     uint32_t val_scale_cfg : 2;             /**< value 0-3 */
     uint32_t dump_ack_en : 1;               /**< enable to dump 802.11 ACK frame, default disabled */
     uint32_t reserved : 19;                 /**< reserved */
-} wifi_csi_acquire_config_t;
+} wifi_csi_config_t;
 
 /**
   * @brief HE variant HT Control field including UPH(UL power headroom) and OM(Operation mode)
@@ -139,7 +139,7 @@ typedef enum {
 /**
   * @brief RxControl Info
   */
-typedef struct {
+typedef struct wifi_pkt_rx_ctrl_t {
     signed rssi : 8;                              /**< the RSSI of the reception frame */
     unsigned rate : 5;                            /**< if cur_bb_format is RX_BB_FORMAT_11B, it's the transmission rate. otherwise it's Rate field of L-SIG */
     unsigned : 1;                                 /**< reserved */
@@ -201,7 +201,7 @@ typedef struct {
     unsigned : 2;                                 /**< reserved */
     unsigned rx_state : 8;                        /**< reception state, 0: successful, others: failure */
     unsigned : 24;                                /**< reserved */
-} __attribute__((packed)) esp_wifi_rxctrl_t;
+} __attribute__((packed)) wifi_pkt_rx_ctrl_t;
 
 /** Argument structure for WIFI_EVENT_TWT_SET_UP event */
 typedef struct {

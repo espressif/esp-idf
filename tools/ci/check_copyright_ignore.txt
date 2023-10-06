@@ -483,8 +483,6 @@ components/esp_rom/linux/esp_rom_crc.c
 components/esp_rom/linux/esp_rom_md5.c
 components/esp_rom/patches/esp_rom_crc.c
 components/esp_system/ubsan.c
-components/esp_wifi/include/esp_private/esp_wifi_types_private.h
-components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/src/mesh_event.c
 components/fatfs/diskio/diskio.c
 components/fatfs/diskio/diskio_impl.h

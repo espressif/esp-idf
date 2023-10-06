@@ -393,7 +393,7 @@ typedef uint32_t (*esp_crc32_le_t)(uint32_t crc, uint8_t const *buf, uint32_t le
   *        The structure can be set as software crypto or the crypto optimized by device's
   *        hardware.
   */
-typedef struct {
+typedef struct wpa_crypto_funcs_t {
     uint32_t size;                                   /**< The crypto callback function structure size */
     uint32_t version;                                /**< The crypto callback function structure version */
     esp_aes_wrap_t aes_wrap;                         /**< The AES wrap callback function used by esp_wifi */

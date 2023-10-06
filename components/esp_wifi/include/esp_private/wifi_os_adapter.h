@@ -26,7 +26,7 @@ extern "C" {
 #define OSI_QUEUE_SEND_BACK          1
 #define OSI_QUEUE_SEND_OVERWRITE     2
 
-typedef struct {
+typedef struct wifi_osi_funcs_t {
     int32_t _version;
     bool (* _env_is_chip)(void);
     void (*_set_intr)(int32_t cpu_no, uint32_t intr_source, uint32_t intr_num, int32_t intr_prio);
