@@ -1,0 +1,11 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/wpa_supplicant/test_apps:
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1
+  depends_components:
+    - esp_wifi
+    - wpa_supplicant
+    - mbedtls
+    - esp_timer
+    - esp_event
