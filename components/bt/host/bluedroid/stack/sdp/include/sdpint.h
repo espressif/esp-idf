@@ -37,8 +37,10 @@
 #define SDP_MAX_CONTINUATION_LEN    16          /* As per the spec */
 
 /* Timeout definitions. */
-#define SDP_INACT_TIMEOUT       30              /* Inactivity timeout         */
-
+#define SDP_INACT_TIMEOUT           30          /* Inactivity timeout */
+#if BT_SDP_BQB_INCLUDED
+#define SDP_BQB_INACT_TIMEOUT       90          /* Inactivity timeout for BQB test */
+#endif /* BT_SDP_BQB_INCLUDED */
 
 /* Define the Out-Flow default values. */
 #define  SDP_OFLOW_QOS_FLAG                 0
