@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,32 +18,32 @@
 #include "test_common_adc.h"
 #include "test_utils.h"
 
-/**
- * On ESP32C3, ADC2 is no longer supported, due to its HW limitation.
- */
-#if (SOC_ADC_PERIPH_NUM > 1) && !CONFIG_IDF_TARGET_ESP32C3
+#if SOC_WIFI_SUPPORTED && SOC_ADC_SUPPORTED
 
-static const char* TAG = "test_adc2";
+static const char* TAG = "test_adc_wifi";
 
 #define DEFAULT_SSID "TEST_SSID"
 #define DEFAULT_PWD  "TEST_PASS"
 
+//ADC Channels
 #if CONFIG_IDF_TARGET_ESP32
-#define TEST_ADC2_CHAN0         ADC_CHANNEL_9
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define TEST_ADC2_CHAN0         ADC_CHANNEL_0
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define TEST_ADC2_CHAN0         ADC_CHANNEL_0
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define TEST_ADC2_CHAN0         ADC_CHANNEL_0
+#define ADC1_WIFI_TEST_CHAN0            ADC_CHANNEL_4
+#define ADC2_WIFI_TEST_CHAN0            ADC_CHANNEL_9
+#else
+#define ADC1_WIFI_TEST_CHAN0            ADC_CHANNEL_0
+#define ADC2_WIFI_TEST_CHAN0            ADC_CHANNEL_0
 #endif
 
-#define ADC_ERROR_THRES         100
+#define ADC_ERROR_THRES         200
 #define TEST_NUM                8
 
 #define MINUS_UNTIL_ZERO(a, b) ( ((a) > (b)) ? ((a)-(b)): 0)
 #define TIME_REMAIN(start, now, timeout) ((now) >= (start) ? MINUS_UNTIL_ZERO((timeout), (now)-(start)) : -1)
 
+static int read_raw;
+static int target_value;
+static int test_adc_io;
+static bool test_list[TEST_NUM] = {1, 1, 0, 0, 1, 0, 1, 0};
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -98,7 +98,30 @@ static int event_deinit(void)
     return ESP_OK;
 }
 
-TEST_CASE("adc2 work with wifi","[adc]")
+static void s_test_adc_work_when_wifi_on(adc_oneshot_unit_handle_t adc_handle, adc_channel_t channel)
+{
+    esp_err_t ret = ESP_FAIL;
+    int32_t start = xTaskGetTickCount();
+    int32_t now;
+    int32_t remain_wait_ms = 0;
+    int32_t timeout = pdMS_TO_TICKS(10);
+    do {
+        now = xTaskGetTickCount();
+        remain_wait_ms = pdTICKS_TO_MS(TIME_REMAIN(start, now, timeout));
+        ret = adc_oneshot_read(adc_handle, channel, &read_raw);
+        if (ret == ESP_OK) {
+            printf("When WiFi is ON, ADC read: %d (target_value: %d)\n", read_raw, target_value);
+            TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
+            break;
+        } else if (ret == ESP_ERR_TIMEOUT) {
+            continue;
+        } else {
+            TEST_ESP_OK(ret);
+        }
+    } while (remain_wait_ms);
+}
+
+__attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_channel_t channel)
 {
     test_case_uses_tcpip();
 
@@ -132,82 +155,83 @@ TEST_CASE("adc2 work with wifi","[adc]")
     TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
     //---------------------------------ADC init-----------------------------------//
-    int read_raw;
-    int target_value;
-    int test_adc_io;
-    bool test_list[TEST_NUM] = {1, 1, 0, 0, 1, 0, 1, 0};
 
-    TEST_ESP_OK(adc_oneshot_channel_to_io(ADC_UNIT_2, TEST_ADC2_CHAN0, &test_adc_io));
+    TEST_ESP_OK(adc_oneshot_channel_to_io(unit_id, channel, &test_adc_io));
     printf("test_adc_io is %d\n", test_adc_io);
 
-    //-------------ADC2 Init---------------//
-    adc_oneshot_unit_handle_t adc2_handle;
-    adc_oneshot_unit_init_cfg_t init_config2 = {
-        .unit_id = ADC_UNIT_2,
+    //-------------ADC Init---------------//
+    adc_oneshot_unit_handle_t adc_handle;
+    adc_oneshot_unit_init_cfg_t init_config = {
+        .unit_id = unit_id,
         .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
-    TEST_ESP_OK(adc_oneshot_new_unit(&init_config2, &adc2_handle));
+    TEST_ESP_OK(adc_oneshot_new_unit(&init_config, &adc_handle));
 
-    //-------------ADC2 TEST Channel 0 Config---------------//
+    //-------------ADC TEST Channel Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
         .atten = ADC_ATTEN_DB_11,
     };
-    TEST_ESP_OK(adc_oneshot_config_channel(adc2_handle, TEST_ADC2_CHAN0, &config));
+    TEST_ESP_OK(adc_oneshot_config_channel(adc_handle, channel, &config));
 
     for (int i = 0; i < TEST_NUM; i++) {
         /* Tune test ADC channel level */
-        test_adc_set_io_level(ADC_UNIT_2, TEST_ADC2_CHAN0, test_list[i]);
+        test_adc_set_io_level(unit_id, channel, test_list[i]);
         target_value = test_list[i] ? ADC_TEST_HIGH_VAL : ADC_TEST_LOW_VAL;
 
 
-        /* ADC2 single read before WIFI start */
-        TEST_ESP_OK(adc_oneshot_read(adc2_handle, TEST_ADC2_CHAN0, &read_raw));
+        /* ADC single read before WIFI start */
+        TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &read_raw));
         printf("Before WiFi starts, ADC read: %d (target_value: %d)\n", read_raw, target_value);
         TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
 
 
-        /* ADC2 single read when WIFI is on */
+        /* ADC single read when WIFI is on */
         TEST_ESP_OK(esp_wifi_start());
 #if CONFIG_IDF_TARGET_ESP32
-        TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, adc_oneshot_read(adc2_handle, TEST_ADC2_CHAN0, &read_raw));
+        if (unit_id == 1) {
+            // On ESP32 ADC2, PWDET/PKDET controller is for Wi-Fi internal use only.
+            // If Wi-Fi module is using the SAR ADC2, users can not measure the analog signal from the pins using SAR ADC2.
+            // After SAR ADC2 is released by Wi-Fi, users can use SAR ADC2 normally.
+            TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, adc_oneshot_read(adc_handle, channel, &read_raw));
+        } else {
+            s_test_adc_work_when_wifi_on(adc_handle, channel);
+        }
 #else
-        esp_err_t ret = ESP_FAIL;
-        int32_t start = xTaskGetTickCount();
-        int32_t now;
-        int32_t remain_wait_ms = 0;
-        int32_t timeout = pdMS_TO_TICKS(10);
-
-        do {
-            now = xTaskGetTickCount();
-            remain_wait_ms = pdTICKS_TO_MS(TIME_REMAIN(start, now, timeout));
-            ret = adc_oneshot_read(adc2_handle, TEST_ADC2_CHAN0, &read_raw);
-            if (ret == ESP_OK) {
-                printf("When WiFi is ON, ADC read: %d (target_value: %d)\n", read_raw, target_value);
-                TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
-                break;
-            } else if (ret == ESP_ERR_TIMEOUT) {
-                continue;
-            } else {
-                TEST_ESP_OK(ret);
-            }
-        } while (remain_wait_ms);
+        s_test_adc_work_when_wifi_on(adc_handle, channel);
 #endif
-
-
-        /* ADC2 single read after WIFI is off */
+        /* ADC single read after WIFI is off */
         TEST_ESP_OK(esp_wifi_stop());
-        TEST_ESP_OK(adc_oneshot_read(adc2_handle, TEST_ADC2_CHAN0, &read_raw));
+        TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &read_raw));
         printf("After WiFi is OFF, ADC read: %d (target_value: %d)\n\n", read_raw, target_value);
         TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
     }
 
+    TEST_ESP_OK(adc_oneshot_del_unit(adc_handle));
+    ESP_LOGI(TAG, "ADC%d with WiFi test is success", unit_id + 1);
+
     TEST_ESP_OK(esp_wifi_deinit());
     event_deinit();
     nvs_flash_deinit();
-    TEST_ESP_OK(adc_oneshot_del_unit(adc2_handle));
 
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
 
-#endif  //#if (SOC_ADC_PERIPH_NUM > 1)
+#if CONFIG_IDF_TARGET_ESP32C6
+// On ESP32C6, ADC need to call two modem clocks: modem_syscon_ll_enable_fe_80m_clock and modem_syscon_ll_enable_fe_apb_clock.
+// Without calling these two clocks, PWDET mode will not take into effect, so ADC readings will be wrong.
+TEST_CASE("ADC1 work with WiFi","[adc]")
+{
+    adc_work_with_wifi(ADC_UNIT_1, ADC1_WIFI_TEST_CHAN0);
+}
+#endif  // CONFIG_IDF_TARGET_ESP32C6
+
+#if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
+// On ESP32C3, ADC2 is no longer supported, due to its HW limitation.
+TEST_CASE("ADC2 work with WiFi","[adc]")
+{
+    adc_work_with_wifi(ADC_UNIT_2, ADC2_WIFI_TEST_CHAN0);
+}
+#endif // (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
+
+#endif //SOC_WIFI_SUPPORTED && SOC_ADC_SUPPORTED
