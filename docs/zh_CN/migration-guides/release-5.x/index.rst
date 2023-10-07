@@ -18,6 +18,7 @@
     storage
     system
     tools
+    wifi
 
 .. Please create a separate file for each minor release, for example:
 

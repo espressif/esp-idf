@@ -18,6 +18,7 @@ Migration from 4.4 to 5.0
     storage
     system
     tools
+    wifi
 
 .. Please create a separate file for each minor release, for example:
 
