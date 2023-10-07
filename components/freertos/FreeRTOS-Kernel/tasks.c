@@ -201,8 +201,19 @@
     #define taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, xYieldEqualPriority )                                         prvIsYieldUsingPrioritySMP( ( pxTCB )->uxPriority, ( pxTCB )->xCoreID, xCurCoreID, xYieldEqualPriority )
     #define taskIS_YIELD_REQUIRED_USING_PRIORITY( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )    prvIsYieldUsingPrioritySMP( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )
 #else
-    #define taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, xYieldEqualPriority )                                         ( ( ( ( pxTCB )->uxPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) > pxCurrentTCBs[ 0 ]->uxPriority ) ? pdTRUE : pdFALSE )
-    #define taskIS_YIELD_REQUIRED_USING_PRIORITY( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )    ( ( ( uxTaskPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) >= pxCurrentTCBs[ 0 ]->uxPriority ) ? pdTRUE : pdFALSE )
+    #define taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, xYieldEqualPriority )                                                                \
+    ( {                                                                                                                                    \
+        /* xCurCoreID is unused */                                                                                                         \
+        ( void ) xCurCoreID;                                                                                                               \
+        ( ( ( pxTCB )->uxPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) > pxCurrentTCBs[ 0 ]->uxPriority ) ? pdTRUE : pdFALSE; \
+    } )
+    #define taskIS_YIELD_REQUIRED_USING_PRIORITY( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )                     \
+    ( {                                                                                                                              \
+        /* xTaskCoreID and xCurCoreID are unused */                                                                                  \
+        ( void ) xTaskCoreID;                                                                                                        \
+        ( void ) xCurCoreID;                                                                                                         \
+        ( ( uxTaskPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) >= pxCurrentTCBs[ 0 ]->uxPriority ) ? pdTRUE : pdFALSE; \
+    } )
 #endif /* configNUMBER_OF_CORES > 1 */
 /*-----------------------------------------------------------*/
 
@@ -215,7 +226,12 @@
 #if ( configNUMBER_OF_CORES > 1 )
     #define taskIS_AFFINITY_COMPATIBLE( xCore, xCoreID )    ( ( ( ( xCoreID ) == xCore ) || ( ( xCoreID ) == tskNO_AFFINITY ) ) ? pdTRUE : pdFALSE )
 #else
-    #define taskIS_AFFINITY_COMPATIBLE( xCore, xCoreID )    ( pdTRUE )
+    #define taskIS_AFFINITY_COMPATIBLE( xCore, xCoreID ) \
+    ( {                                                  \
+        /* xCoreID is unused */                          \
+        ( void ) xCoreID;                                \
+        pdTRUE;                                          \
+    } )
 #endif /* configNUMBER_OF_CORES > 1 */
 /*-----------------------------------------------------------*/
 
@@ -225,7 +241,12 @@
     #define taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xCoreID )    ( ( ( pxTCB ) == pxCurrentTCBs[ ( xCoreID ) ] ) ? pdTRUE : pdFALSE )
 #else
     #define taskIS_CURRENTLY_RUNNING( pxTCB )                     ( ( ( pxTCB ) == pxCurrentTCBs[ 0 ] ) ? pdTRUE : pdFALSE )
-    #define taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xCoreID )    taskIS_CURRENTLY_RUNNING( pxTCB )
+    #define taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xCoreID ) \
+    ( {                                                        \
+        /* xCoreID is unused */                                \
+        ( void ) xCoreID;                                      \
+        taskIS_CURRENTLY_RUNNING( pxTCB );                     \
+    } )
 #endif /* configNUMBER_OF_CORES > 1 */
 /*-----------------------------------------------------------*/
 
@@ -234,7 +255,12 @@
 #if ( configNUMBER_OF_CORES > 1 )
     #define taskCAN_BE_SCHEDULED( pxTCB )    prvCheckTaskCanBeScheduledSMP( pxTCB )
 #else
-    #define taskCAN_BE_SCHEDULED( pxTCB )    ( ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) 0U ) ) ? pdTRUE : pdFALSE )
+    #define taskCAN_BE_SCHEDULED( pxTCB )                                           \
+    ( {                                                                             \
+        /* pxTCB is unused */                                                       \
+        ( void ) pxTCB;                                                             \
+        ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) 0U ) ) ? pdTRUE : pdFALSE; \
+    } )
 #endif /* configNUMBER_OF_CORES > 1 */
 /*-----------------------------------------------------------*/
 
