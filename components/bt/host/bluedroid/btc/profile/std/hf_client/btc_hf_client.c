@@ -28,6 +28,10 @@
 #include "esp_bt.h"
 #include <assert.h>
 
+#if BT_HF_CLIENT_BQB_INCLUDED
+static BOOLEAN s_bta_hf_client_bqb_esco_s4_flag = false;
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
+
 #if (BTC_HF_CLIENT_INCLUDED == TRUE)
 
 /************************************************************************************
@@ -54,6 +58,21 @@
 #endif
 
 
+/*******************************************************************************
+**
+** Function     bta_hf_client_bqb_esco_s4_ctrl
+**
+** Description  Control the usage of BTA_HF_CLIENT_FEAT_ESCO_S4 for BQB test
+**
+** Returns      void
+**
+*******************************************************************************/
+#if BT_HF_CLIENT_BQB_INCLUDED
+void bta_hf_client_bqb_esco_s4_ctrl(BOOLEAN enable)
+{
+    s_bta_hf_client_bqb_esco_s4_flag = enable;
+}
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
 
 /************************************************************************************
 **  Static variables
@@ -743,6 +762,11 @@ bt_status_t btc_hf_client_execute_service(BOOLEAN b_enable)
         if (btc_hf_client_version >= HFP_HF_VERSION_1_7)
         {
             hf_client_local_param.btc_hf_client_features |= BTA_HF_CLIENT_FEAT_ESCO_S4;
+#if BT_HF_CLIENT_BQB_INCLUDED
+        if (s_bta_hf_client_bqb_esco_s4_flag == true) {
+            hf_client_local_param.btc_hf_client_features = BTA_HF_CLIENT_FEAT_ESCO_S4;
+        }
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
             BTC_TRACE_EVENT("eSCO S4 Setting Supported");
 
         }

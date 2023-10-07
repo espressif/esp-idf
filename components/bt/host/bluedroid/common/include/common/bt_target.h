@@ -1995,6 +1995,24 @@
 
 /******************************************************************************
 **
+** HFP
+**
+******************************************************************************/
+
+#if (BTC_HF_INCLUDED == TRUE) && (BT_CLASSIC_BQB_INCLUDED == TRUE)
+#define BT_HF_AG_BQB_INCLUDED           TRUE
+#else
+#define BT_HF_AG_BQB_INCLUDED           FALSE
+#endif
+
+#if (BTC_HF_CLIENT_INCLUDED == TRUE) && (BT_CLASSIC_BQB_INCLUDED == TRUE)
+#define BT_HF_CLIENT_BQB_INCLUDED       TRUE
+#else
+#define BT_HF_CLIENT_BQB_INCLUDED       FALSE
+#endif
+
+/******************************************************************************
+**
 ** GAP
 **
 ******************************************************************************/
