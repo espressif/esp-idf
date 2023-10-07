@@ -7,6 +7,7 @@
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "soc/gpio_periph.h"
@@ -58,9 +59,6 @@ typedef struct {
     ledc_fade_mode_t mode;
     SemaphoreHandle_t ledc_fade_sem;
     SemaphoreHandle_t ledc_fade_mux;
-#if CONFIG_SPIRAM_USE_MALLOC
-    StaticQueue_t ledc_fade_sem_storage;
-#endif
     ledc_cb_t ledc_fade_callback;
     void *cb_user_arg;
     volatile ledc_fade_fsm_t fsm;
@@ -672,8 +670,13 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 #endif
 
     /*set channel parameters*/
-    /*   channel parameters decide how the waveform looks like in one period*/
-    /*   set channel duty and hpoint value, duty range is (0 ~ ((2 ** duty_resolution) - 1)), max hpoint value is 0xfffff*/
+    /*   channel parameters decide how the waveform looks like in one period */
+    /*   set channel duty and hpoint value, duty range is [0, (2**duty_res)], hpoint range is [0, (2**duty_res)-1] */
+    /*   Note: On ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32C6, ESP32H2, ESP32P4, due to a hardware bug,
+     *         100% duty cycle (i.e. 2**duty_res) is not reachable when the binded timer selects the maximum duty
+     *         resolution. For example, the max duty resolution on ESP32C3 is 14-bit width, then set duty to (2**14)
+     *         will mess up the duty calculation in hardware.
+    */
     ledc_set_duty_with_hpoint(speed_mode, ledc_channel, duty, hpoint);
     /*update duty settings*/
     ledc_update_duty(speed_mode, ledc_channel);
@@ -859,7 +862,7 @@ static inline void IRAM_ATTR ledc_calc_fade_end_channel(uint32_t *fade_end_statu
     *channel = i;
 }
 
-void IRAM_ATTR ledc_fade_isr(void *arg)
+static void IRAM_ATTR ledc_fade_isr(void *arg)
 {
     bool cb_yield = false;
     BaseType_t HPTaskAwoken = pdFALSE;
@@ -987,7 +990,7 @@ static esp_err_t ledc_fade_channel_deinit(ledc_mode_t speed_mode, ledc_channel_t
             s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux = NULL;
         }
         if (s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem) {
-            vSemaphoreDelete(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
+            vSemaphoreDeleteWithCaps(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
             s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = NULL;
         }
         free(s_ledc_fade_rec[speed_mode][channel]);
@@ -1003,23 +1006,13 @@ static esp_err_t ledc_fade_channel_init_check(ledc_mode_t speed_mode, ledc_chann
         return ESP_FAIL;
     }
     if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-#if CONFIG_SPIRAM_USE_MALLOC
+        // Always malloc internally since LEDC ISR is always placed in IRAM
         s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *) heap_caps_calloc(1, sizeof(ledc_fade_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
             ledc_fade_channel_deinit(speed_mode, channel);
             return ESP_ERR_NO_MEM;
         }
-
-        memset(&s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem_storage, 0, sizeof(StaticQueue_t));
-        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinaryStatic(&s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem_storage);
-#else
-        s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *) calloc(1, sizeof(ledc_fade_t));
-        if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-            ledc_fade_channel_deinit(speed_mode, channel);
-            return ESP_ERR_NO_MEM;
-        }
-        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinary();
-#endif
+        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinaryWithCaps(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux = xSemaphoreCreateMutex();
         xSemaphoreGive(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
         s_ledc_fade_rec[speed_mode][channel]->fsm = LEDC_FSM_IDLE;
@@ -1070,8 +1063,9 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
         ESP_LOGD(LEDC_TAG, "cur duty: %"PRIu32"; target: %"PRIu32", step: %d, cycle: %d; scale: %d; dir: %d",
                  duty_cur, target_duty, step_num, cycle_num, scale, dir);
     } else {
+        // Directly set duty to the target, does not care on the dir
         portENTER_CRITICAL(&ledc_spinlock);
-        ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty, dir, 1, 1, 0);
+        ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty, 1, 1, 1, 0);
         portEXIT_CRITICAL(&ledc_spinlock);
         ESP_LOGD(LEDC_TAG, "Set to target duty: %"PRIu32, target_duty);
     }
@@ -1231,6 +1225,7 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
 
 esp_err_t ledc_fade_func_install(int intr_alloc_flags)
 {
+    LEDC_CHECK(s_ledc_fade_isr_handle == NULL, "fade function already installed", ESP_ERR_INVALID_STATE);
     //OR intr_alloc_flags with ESP_INTR_FLAG_IRAM because the fade isr is in IRAM
     return ledc_isr_register(ledc_fade_isr, NULL, intr_alloc_flags | ESP_INTR_FLAG_IRAM, &s_ledc_fade_isr_handle);
 }

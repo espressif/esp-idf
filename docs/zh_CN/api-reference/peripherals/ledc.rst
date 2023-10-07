@@ -246,7 +246,13 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
 另外一种设置占空比和其他通道参数的方式是调用 :ref:`ledc-api-configure-channel` 一节提到的函数 :cpp:func:`ledc_channel_config`。
 
-传递给函数的占空比数值范围取决于选定的 ``duty_resolution``，应为 ``0`` 至 ``(2 ** duty_resolution) - 1``。例如，如选定的占空比分辨率为 10，则占空比的数值范围为 0 至 1023。此时分辨率为 ~ 0.1%。
+传递给函数的占空比数值范围取决于选定的 ``duty_resolution``，应为 ``0`` 至 ``(2 ** duty_resolution)``。例如，如选定的占空比分辨率为 10，则占空比的数值范围为 0 至 1024。此时分辨率为 ~ 0.1%。
+
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c2 or esp32c6 or esp32h2 or esp32p4
+
+    .. warning::
+
+        在 {IDF_TARGET_NAME} 上，当通道绑定的定时器配置了其最大 PWM 占空比分辨率（ ``MAX_DUTY_RES`` ），通道的占空比不能被设置到 ``(2 ** MAX_DUTY_RES)`` 。否则，硬件内部占空比计数器会溢出，并导致占空比计算错误。
 
 
 使用硬件改变 PWM 占空比
