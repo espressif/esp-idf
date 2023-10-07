@@ -17,4 +17,4 @@ from pytest_embedded import Dut
     indirect=True,
 )
 def test_parlio(dut: Dut) -> None:
-    dut.run_all_single_board_cases(reset=True)
+    dut.run_all_single_board_cases()

@@ -32,8 +32,10 @@
     .max_recv_size = 10 * 1024,  \
     .data_width = 1,  \
     .clk_src = _clk_src,  \
-    .clk_freq_hz = _clk_freq,  \
-    .clk_gpio_num = _clk_src == PARLIO_CLK_SRC_EXTERNAL ? TEST_CLK_GPIO : -1,  \
+    .ext_clk_freq_hz = _clk_src == PARLIO_CLK_SRC_EXTERNAL ? _clk_freq : 0,  \
+    .clk_in_gpio_num = _clk_src == PARLIO_CLK_SRC_EXTERNAL ? TEST_CLK_GPIO : -1,  \
+    .exp_clk_freq_hz = _clk_freq,  \
+    .clk_out_gpio_num = -1,  \
     .valid_gpio_num = TEST_VALID_GPIO,  \
     .data_gpio_nums = {  \
         [0] = TEST_DATA0_GPIO,  \
@@ -47,52 +49,6 @@
 
 #define TEST_TASK_DATA_READY_BIT     0x01
 #define TEST_TASK_FINISHED_BIT       0x02
-
-TEST_CASE("parallel_rx_unit_install_uninstall", "[parlio_rx]")
-{
-    printf("install rx units exhaustively\r\n");
-    parlio_rx_unit_handle_t units[SOC_PARLIO_GROUPS * SOC_PARLIO_RX_UNITS_PER_GROUP];
-    int k = 0;
-    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
-    for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
-        for (int j = 0; j < SOC_PARLIO_RX_UNITS_PER_GROUP; j++) {
-            TEST_ESP_OK(parlio_new_rx_unit(&config, &units[k++]));
-        }
-    }
-    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, parlio_new_rx_unit(&config, &units[0]));
-
-    for (int i = 0; i < k; i++) {
-        TEST_ESP_OK(parlio_del_rx_unit(units[i]));
-    }
-
-    // clock from external
-    config.clk_src = PARLIO_CLK_SRC_EXTERNAL;
-    // clock gpio must be set when the clock is input from external
-    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, parlio_new_rx_unit(&config, &units[0]));
-
-    // clock from internal
-    config.clk_src = PARLIO_CLK_SRC_DEFAULT;
-    config.clk_gpio_num = TEST_CLK_GPIO;
-#if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
-    TEST_ESP_OK(parlio_new_rx_unit(&config, &units[0]));
-    TEST_ESP_OK(parlio_del_rx_unit(units[0]));
-#else
-    // failed because of not support output the clock to a gpio
-    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, parlio_new_rx_unit(&config, &units[0]));
-    config.clk_gpio_num = -1;
-#endif
-    config.data_width = 3;
-    // data width should be power of 2
-    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, parlio_new_rx_unit(&config, &units[0]));
-
-    config.data_width = 4;
-    TEST_ESP_OK(parlio_new_rx_unit(&config, &units[0]));
-    TEST_ESP_OK(parlio_rx_unit_enable(units[0], true));
-    // delete unit before it's disabled is not allowed
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, parlio_del_rx_unit(units[0]));
-    TEST_ESP_OK(parlio_rx_unit_disable(units[0]));
-    TEST_ESP_OK(parlio_del_rx_unit(units[0]));
-}
 
 typedef struct {
     uint32_t partial_recv_cnt;
@@ -123,107 +79,6 @@ static bool test_parlio_rx_timeout_callback(parlio_rx_unit_handle_t rx_unit, con
     test_data->timeout_cnt++;
     return false;
 }
-
-#define TEST_PAYLOAD_SIZE   5000
-
-// This test case uses soft delimiter
-TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
-{
-    parlio_rx_unit_handle_t rx_unit = NULL;
-    parlio_rx_delimiter_handle_t deli = NULL;
-    parlio_rx_delimiter_handle_t timeout_deli = NULL;
-
-    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
-    TEST_ESP_OK(parlio_new_rx_unit(&config, &rx_unit));
-
-    parlio_rx_soft_delimiter_config_t sft_deli_cfg = {
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
-        .eof_data_len = TEST_PAYLOAD_SIZE,
-        .timeout_ticks = 0,
-    };
-    TEST_ESP_OK(parlio_new_rx_delimiter(&sft_deli_cfg, &deli));
-    parlio_rx_level_delimiter_config_t lvl_deli_cfg = {
-        .valid_sig_line_id = TEST_VALID_SIG,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
-        .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
-        .eof_data_len = TEST_PAYLOAD_SIZE,
-        .timeout_ticks = 5,
-        .flags = {
-            .active_level = 1,
-        },
-    };
-    TEST_ESP_OK(parlio_new_rx_delimiter(&lvl_deli_cfg, &timeout_deli));
-
-    parlio_rx_event_callbacks_t cbs = {
-        .on_partial_receive = test_parlio_rx_partial_recv_callback,
-        .on_receive_done = test_parlio_rx_done_callback,
-        .on_timeout = test_parlio_rx_timeout_callback,
-    };
-    test_data_t test_data = {
-        .partial_recv_cnt = 0,
-        .recv_done_cnt = 0,
-    };
-    TEST_ESP_OK(parlio_rx_unit_register_event_callbacks(rx_unit, &cbs, &test_data));
-    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, true));
-
-    parlio_receive_config_t recv_config = {
-        .delimiter = deli,
-        .flags.is_infinite = false,
-    };
-    uint8_t *payload = heap_caps_calloc(1, TEST_PAYLOAD_SIZE, TEST_PARLIO_MEM_ALLOC_CAPS);
-    TEST_ASSERT(payload);
-
-    printf("Testing one normal transaction...\n");
-    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
-    TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
-    TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
-    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
-    TEST_ASSERT_EQUAL_UINT32(2, test_data.partial_recv_cnt);
-    TEST_ASSERT_EQUAL_UINT32(1, test_data.recv_done_cnt);
-    memset(&test_data, 0, sizeof(test_data_t));
-
-    printf("Testing normal transactions in queue...\n");
-    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
-    // push 5 repeated transactions to the queue
-    for (int i = 0; i < 5; i++) {
-        TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
-    }
-    TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
-    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
-    TEST_ASSERT_EQUAL_UINT32(10, test_data.partial_recv_cnt);
-    TEST_ASSERT_EQUAL_UINT32(5, test_data.recv_done_cnt);
-    memset(&test_data, 0, sizeof(test_data_t));
-
-    printf("Testing the infinite transaction...\n");
-    recv_config.flags.is_infinite = true;
-    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
-    TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
-    // Won't receive done semaphore in infinite transaction
-    TEST_ESP_ERR(ESP_ERR_TIMEOUT, parlio_rx_unit_wait_all_done(rx_unit, 500));
-    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
-    TEST_ASSERT_GREATER_THAN(6, test_data.partial_recv_cnt);
-    TEST_ASSERT_GREATER_THAN(3, test_data.recv_done_cnt);
-    memset(&test_data, 0, sizeof(test_data_t));
-
-    // printf("Testing the timeout callback...\n");
-    // recv_config.flags.is_infinite = false;
-    // recv_config.delimiter = timeout_deli;
-    // // push 5 repeated transactions to the queue
-    // for (int i = 0; i < 5; i++) {
-    //     TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
-    //     gpio_set_level(TEST_VALID_GPIO, 1);
-    //     vTaskDelay(pdMS_TO_TICKS(100));
-    //     gpio_set_level(TEST_VALID_GPIO, 0);
-    //     vTaskDelay(pdMS_TO_TICKS(50));
-    // }
-    // TEST_ASSERT_TRUE(test_data.timeout_cnt);
-
-    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
-    TEST_ESP_OK(parlio_del_rx_delimiter(deli));
-    TEST_ESP_OK(parlio_del_rx_delimiter(timeout_deli));
-    TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
-    free(payload);
-};
 
 static void connect_signal_internally(uint32_t gpio, uint32_t sigo, uint32_t sigi)
 {
@@ -407,15 +262,12 @@ static void level_delimiter_sender_task_spi(void *args)
     }
 }
 
-static bool test_delimiter(parlio_rx_delimiter_handle_t deli, void (*sender_task_thread)(void *args))
+static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_clk, void (*sender_task_thread)(void *args))
 {
     parlio_rx_unit_handle_t rx_unit = NULL;
 
     parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_EXTERNAL, 1000000);
-    if (sender_task_thread == pulse_delimiter_sender_task_i2s) {
-        // I2S offers free-running clock
-        config.flags.free_clk = 1;
-    }
+    config.flags.free_clk = free_running_clk;
     TEST_ESP_OK(parlio_new_rx_unit(&config, &rx_unit));
     TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, true));
 
@@ -431,7 +283,7 @@ static bool test_delimiter(parlio_rx_delimiter_handle_t deli, void (*sender_task
 
     parlio_receive_config_t recv_config = {
         .delimiter = deli,
-        .flags.is_infinite = false,
+        .flags.partial_rx_en = false,
     };
     uint8_t recv_buff[TEST_EOF_DATA_LEN];
     bool is_success = false;
@@ -479,12 +331,12 @@ TEST_CASE("parallel_rx_unit_level_delimiter_test_via_spi", "[parlio_rx]")
         .eof_data_len = TEST_EOF_DATA_LEN,
         .timeout_ticks = 0,
         .flags = {
-            .active_level = 1,
+            .active_low_en = 0,
         },
     };
     parlio_rx_delimiter_handle_t deli = NULL;
-    TEST_ESP_OK(parlio_new_rx_delimiter(&lvl_deli_cfg, &deli));
-    bool is_success = test_delimiter(deli, level_delimiter_sender_task_spi);
+    TEST_ESP_OK(parlio_new_rx_level_delimiter(&lvl_deli_cfg, &deli));
+    bool is_success = test_delimiter(deli, false, level_delimiter_sender_task_spi);
     TEST_ESP_OK(parlio_del_rx_delimiter(deli));
     TEST_ASSERT(is_success);
 }
@@ -506,8 +358,200 @@ TEST_CASE("parallel_rx_unit_pulse_delimiter_test_via_i2s", "[parlio_rx]")
         },
     };
     parlio_rx_delimiter_handle_t deli = NULL;
-    TEST_ESP_OK(parlio_new_rx_delimiter(&pls_deli_cfg, &deli));
-    bool is_success = test_delimiter(deli, pulse_delimiter_sender_task_i2s);
+    TEST_ESP_OK(parlio_new_rx_pulse_delimiter(&pls_deli_cfg, &deli));
+    bool is_success = test_delimiter(deli, true, pulse_delimiter_sender_task_i2s);
     TEST_ESP_OK(parlio_del_rx_delimiter(deli));
     TEST_ASSERT(is_success);
+}
+
+TEST_CASE("parallel_rx_unit_install_uninstall", "[parlio_rx]")
+{
+    printf("install rx units exhaustively\r\n");
+    parlio_rx_unit_handle_t units[SOC_PARLIO_GROUPS * SOC_PARLIO_RX_UNITS_PER_GROUP];
+    int k = 0;
+    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
+    for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
+        for (int j = 0; j < SOC_PARLIO_RX_UNITS_PER_GROUP; j++) {
+            TEST_ESP_OK(parlio_new_rx_unit(&config, &units[k++]));
+        }
+    }
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, parlio_new_rx_unit(&config, &units[0]));
+
+    for (int i = 0; i < k; i++) {
+        TEST_ESP_OK(parlio_del_rx_unit(units[i]));
+    }
+
+    // clock from external
+    config.clk_src = PARLIO_CLK_SRC_EXTERNAL;
+    // clock gpio must be set when the clock is input from external
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, parlio_new_rx_unit(&config, &units[0]));
+
+    // clock from internal
+    config.clk_src = PARLIO_CLK_SRC_DEFAULT;
+    config.clk_out_gpio_num = TEST_CLK_GPIO;
+#if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+    TEST_ESP_OK(parlio_new_rx_unit(&config, &units[0]));
+    TEST_ESP_OK(parlio_del_rx_unit(units[0]));
+#else
+    // failed because of not support output the clock to a gpio
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, parlio_new_rx_unit(&config, &units[0]));
+    config.clk_out_gpio_num = -1;
+#endif
+    config.data_width = 3;
+    // data width should be power of 2
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, parlio_new_rx_unit(&config, &units[0]));
+
+    config.data_width = 4;
+    TEST_ESP_OK(parlio_new_rx_unit(&config, &units[0]));
+    TEST_ESP_OK(parlio_rx_unit_enable(units[0], true));
+    // delete unit before it's disabled is not allowed
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, parlio_del_rx_unit(units[0]));
+    TEST_ESP_OK(parlio_rx_unit_disable(units[0]));
+    TEST_ESP_OK(parlio_del_rx_unit(units[0]));
+}
+
+#define TEST_PAYLOAD_SIZE   5000
+
+// This test case uses soft delimiter
+TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
+{
+    parlio_rx_unit_handle_t rx_unit = NULL;
+    parlio_rx_delimiter_handle_t deli = NULL;
+
+    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
+    config.flags.free_clk = 1;
+    TEST_ESP_OK(parlio_new_rx_unit(&config, &rx_unit));
+
+    parlio_rx_soft_delimiter_config_t sft_deli_cfg = {
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .eof_data_len = TEST_PAYLOAD_SIZE,
+        .timeout_ticks = 0,
+    };
+    TEST_ESP_OK(parlio_new_rx_soft_delimiter(&sft_deli_cfg, &deli));
+
+    parlio_rx_event_callbacks_t cbs = {
+        .on_partial_receive = test_parlio_rx_partial_recv_callback,
+        .on_receive_done = test_parlio_rx_done_callback,
+    };
+    test_data_t test_data = {
+        .partial_recv_cnt = 0,
+        .recv_done_cnt = 0,
+    };
+    TEST_ESP_OK(parlio_rx_unit_register_event_callbacks(rx_unit, &cbs, &test_data));
+    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, true));
+
+    parlio_receive_config_t recv_config = {
+        .delimiter = deli,
+        .flags.partial_rx_en = false,
+    };
+    uint8_t *payload = heap_caps_calloc(1, TEST_PAYLOAD_SIZE, TEST_PARLIO_MEM_ALLOC_CAPS);
+    TEST_ASSERT(payload);
+
+    printf("Testing one normal transaction...\n");
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
+    TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
+    TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
+    TEST_ASSERT_EQUAL_UINT32(2, test_data.partial_recv_cnt);
+    TEST_ASSERT_EQUAL_UINT32(1, test_data.recv_done_cnt);
+    memset(&test_data, 0, sizeof(test_data_t));
+
+    printf("Testing normal transactions in queue...\n");
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
+    // push 5 repeated transactions to the queue
+    for (int i = 0; i < 5; i++) {
+        TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
+    }
+    TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
+    TEST_ASSERT_EQUAL_UINT32(10, test_data.partial_recv_cnt);
+    TEST_ASSERT_EQUAL_UINT32(5, test_data.recv_done_cnt);
+    memset(&test_data, 0, sizeof(test_data_t));
+
+    printf("Testing resume transactions in queue after enabling...\n");
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
+    // push 5 repeated transactions to the queue
+    for (int i = 0; i < 10; i++) {
+        TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
+    }
+    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
+    memset(&test_data, 0, sizeof(test_data_t));
+    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, false));
+    TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
+    TEST_ASSERT_GREATER_THAN(2, test_data.partial_recv_cnt);
+    TEST_ASSERT_GREATER_THAN(1, test_data.recv_done_cnt);
+    memset(&test_data, 0, sizeof(test_data_t));
+
+    printf("Testing the infinite transaction...\n");
+    recv_config.flags.partial_rx_en = true;
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, true));
+    TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
+    // Won't receive done semaphore in infinite transaction
+    TEST_ESP_ERR(ESP_ERR_TIMEOUT, parlio_rx_unit_wait_all_done(rx_unit, 500));
+    TEST_ESP_OK(parlio_rx_soft_delimiter_start_stop(rx_unit, deli, false));
+    TEST_ASSERT_GREATER_THAN(6, test_data.partial_recv_cnt);
+    TEST_ASSERT_GREATER_THAN(3, test_data.recv_done_cnt);
+    memset(&test_data, 0, sizeof(test_data_t));
+
+    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
+    TEST_ESP_OK(parlio_del_rx_delimiter(deli));
+    TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
+    free(payload);
+};
+
+TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
+{
+    parlio_rx_unit_handle_t rx_unit = NULL;
+    parlio_rx_delimiter_handle_t timeout_deli = NULL;
+
+    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_DEFAULT, 1000000);
+    config.flags.free_clk = 1;
+    config.flags.clk_gate_en = 1;
+    TEST_ESP_OK(parlio_new_rx_unit(&config, &rx_unit));
+
+    parlio_rx_level_delimiter_config_t lvl_deli_cfg = {
+        .valid_sig_line_id = TEST_VALID_SIG,
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
+        .eof_data_len = TEST_PAYLOAD_SIZE,
+        .timeout_ticks = 400,
+        .flags = {
+            .active_low_en = 0,
+        },
+    };
+    TEST_ESP_OK(parlio_new_rx_level_delimiter(&lvl_deli_cfg, &timeout_deli));
+
+    parlio_rx_event_callbacks_t cbs = {
+        .on_timeout = test_parlio_rx_timeout_callback,
+    };
+    test_data_t test_data = {
+        .timeout_cnt = 0,
+    };
+    TEST_ESP_OK(parlio_rx_unit_register_event_callbacks(rx_unit, &cbs, &test_data));
+    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, true));
+
+    parlio_receive_config_t recv_config = {
+        .delimiter = timeout_deli,
+        .flags.partial_rx_en = false,
+    };
+    uint8_t *payload = heap_caps_calloc(1, TEST_PAYLOAD_SIZE, TEST_PARLIO_MEM_ALLOC_CAPS);
+    TEST_ASSERT(payload);
+
+    printf("Testing the timeout callback...\n");
+    // push 5 repeated transactions to the queue
+    for (int i = 0; i < 5; i++) {
+        TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, payload, TEST_PAYLOAD_SIZE, &recv_config));
+        gpio_set_level(TEST_VALID_GPIO, 1);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        gpio_set_level(TEST_VALID_GPIO, 0);
+        vTaskDelay(pdMS_TO_TICKS(5));
+        printf("Transaction %d finished\n", i);
+    }
+    TEST_ASSERT_TRUE(test_data.timeout_cnt);
+
+    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
+    TEST_ESP_OK(parlio_del_rx_delimiter(timeout_deli));
+    TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
+    free(payload);
 }

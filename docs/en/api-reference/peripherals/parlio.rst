@@ -8,10 +8,6 @@ The Parallel IO peripheral is a general purpose parallel interface that can be u
 
 The TX and RX driver of Parallel IO peripheral are designed separately, you can include ``driver/parlio_tx.h`` or ``driver/parlio_rx.h`` to use any of them.
 
-Parlio RX Driver
-----------------
-
-
 Application Examples
 --------------------
 

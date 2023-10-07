@@ -102,33 +102,6 @@ static inline void parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_cloc
 }
 
 /**
- * @brief Get the clock source for the RX unit
- *
- * @param dev Parallel IO register base address
- * @return
- *      parlio_clock_source_t RX core clock source
- */
-static inline parlio_clock_source_t parlio_ll_rx_get_clock_source(parl_io_dev_t *dev)
-{
-    (void)dev;
-    uint32_t clk_sel = PCR.parl_clk_rx_conf.parl_clk_rx_sel;
-    switch (clk_sel) {
-    case 0:
-        return PARLIO_CLK_SRC_XTAL;
-    case 1:
-        return PARLIO_CLK_SRC_PLL_F240M;
-    case 2:
-        return PARLIO_CLK_SRC_RC_FAST;
-    case 3:
-        return PARLIO_CLK_SRC_EXTERNAL;
-    default: // unsupported clock source
-        HAL_ASSERT(false);
-        break;
-    }
-    return PARLIO_CLK_SRC_DEFAULT;
-}
-
-/**
  * @brief Set the clock divider for the RX unit
  *
  * @param dev Parallel IO register base address
@@ -209,13 +182,13 @@ static inline void parlio_ll_rx_set_recv_bit_len(parl_io_dev_t *dev, uint32_t bi
  * @brief Set the sub mode of the level controlled receive mode
  *
  * @param dev Parallel IO register base address
- * @param active_level Level of the external enable signal, true for active high, false for active low
+ * @param active_low_en Level of the external enable signal, true for active low, false for active high
  */
 __attribute__((always_inline))
-static inline void parlio_ll_rx_set_level_recv_mode(parl_io_dev_t *dev, bool active_level)
+static inline void parlio_ll_rx_set_level_recv_mode(parl_io_dev_t *dev, bool active_low_en)
 {
     dev->rx_cfg0.rx_smp_mode_sel = 0;
-    dev->rx_cfg0.rx_level_submode_sel = !active_level; // 0: active low, 1: active high
+    dev->rx_cfg0.rx_level_submode_sel = active_low_en;
 }
 
 /**
@@ -423,33 +396,6 @@ static inline void parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_cloc
         break;
     }
     PCR.parl_clk_tx_conf.parl_clk_tx_sel = clk_sel;
-}
-
-/**
- * @brief Get the clock source for the TX unit
- *
- * @param dev Parallel IO register base address
- * @return
- *      parlio_clock_source_t TX core clock source
- */
-static inline parlio_clock_source_t parlio_ll_tx_get_clock_source(parl_io_dev_t *dev)
-{
-    (void)dev;
-    uint32_t clk_sel = PCR.parl_clk_tx_conf.parl_clk_tx_sel;
-    switch (clk_sel) {
-    case 0:
-        return PARLIO_CLK_SRC_XTAL;
-    case 1:
-        return PARLIO_CLK_SRC_PLL_F240M;
-    case 2:
-        return PARLIO_CLK_SRC_RC_FAST;
-    case 3:
-        return PARLIO_CLK_SRC_EXTERNAL;
-    default: // unsupported clock source
-        HAL_ASSERT(false);
-        break;
-    }
-    return PARLIO_CLK_SRC_DEFAULT;
 }
 
 /**

@@ -118,12 +118,22 @@ struct parlio_unit_t {
     parlio_group_t          *group; // group handle
 };
 
-parlio_group_t *parlio_acquire_group_handle(int group_id);
-
-void parlio_release_group_handle(parlio_group_t *group);
-
+/**
+ * @brief Register the rx or tx unit to the parlio group
+ *
+ * @param[in]  unit         The TX/RX unit base handle
+ * @return
+ *      - ESP_ERR_NO_MEM    No memory for the unit
+ *      - ESP_ERR_NOT_FOUND No available unit found on this group
+ *      - ESP_OK            Success to register the unit on the group
+ */
 esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit);
 
+/**
+ * @brief Unregister the rx or tx unit from the parlio group
+ *
+ * @param[in]  unit        The TX/RX unit base handle
+ */
 void parlio_unregister_unit_from_group(parlio_unit_base_handle_t unit);
 
 #ifdef __cplusplus

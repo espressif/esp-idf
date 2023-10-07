@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdatomic.h>
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include "sdkconfig.h"
@@ -27,6 +26,7 @@
 #include "hal/parlio_ll.h"
 #include "hal/gpio_hal.h"
 #include "hal/dma_types.h"
+#include "hal/hal_utils.h"
 #include "driver/gpio.h"
 #include "driver/parlio_rx.h"
 #include "parlio_private.h"
@@ -57,12 +57,10 @@ typedef struct {
  */
 typedef struct parlio_rx_unit_t {
     /* Unit general Resources */
-    int                             unit_id;                /*!< unit id */
-    parlio_dir_t                    dir;                    /*!< unit direction */
-    parlio_group_t                  *group;                 /*!< group handle */
+    struct parlio_unit_t            base;                   /*!< base unit */
     parlio_clock_source_t           clk_src;                /*!< clock source of the unit */
     parlio_rx_unit_config_t         cfg;                    /*!< basic configuration of the rx unit */
-    bool                            is_enabled;             /*!< State flag that indicates whether the unit is enabled */
+    volatile bool                   is_enabled;             /*!< State flag that indicates whether the unit is enabled */
     /* Mutex Lock */
     SemaphoreHandle_t               mutex;                  /*!< Mutex lock for concurrence safety,
                                                              *   which should be acquired and released in a same function */
@@ -118,7 +116,7 @@ typedef struct parlio_rx_delimiter_t {
     uint32_t                        eof_data_len;           /*!< The length of the data to trigger the eof interrupt */
     uint32_t                        timeout_ticks;          /*!< The ticks of source clock that can trigger hardware timeout */
     struct {
-        uint32_t                    active_level: 1;           /*!< Which level indicates the validation of the transmitting data */
+        uint32_t                    active_low_en: 1;          /*!< Whether the transmitting data validate when the valid signal at low level  */
         uint32_t                    start_bit_included: 1;     /*!< Whether data bit is included in the start pulse */
         uint32_t                    end_bit_included: 1;       /*!< Whether data bit is included in the end pulse, only valid when `has_end_pulse` is true */
         uint32_t                    has_end_pulse: 1;          /*!< Whether there's an end pulse to terminate the transaction,
@@ -127,13 +125,16 @@ typedef struct parlio_rx_delimiter_t {
     } flags;
 } parlio_rx_delimiter_t;
 
+static portMUX_TYPE s_rx_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
 static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parlio_rx_transaction_t *trans)
 {
     dma_descriptor_t *p_desc = rx_unit->dma_descs;
     /* Update the current transaction to the next one, and declare the delimiter is under using of the rx unit */
     memcpy(&rx_unit->curr_trans, trans, sizeof(parlio_rx_transaction_t));
+    portENTER_CRITICAL_SAFE(&s_rx_spinlock);
     trans->delimiter->under_using = true;
+    portEXIT_CRITICAL_SAFE(&s_rx_spinlock);
 
     uint32_t desc_num = trans->size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     uint32_t remain_num = trans->size % DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
@@ -177,7 +178,7 @@ static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_
 
 static IRAM_ATTR void s_parlio_set_delimiter_config(parlio_rx_unit_handle_t rx_unit, parlio_rx_delimiter_handle_t deli)
 {
-    parlio_hal_context_t *hal = &(rx_unit->group->hal);
+    parlio_hal_context_t *hal = &(rx_unit->base.group->hal);
 
     /* Set the clock sampling edge and the bit order */
     parlio_ll_rx_set_sample_clock_edge(hal->regs, deli->sample_edge);
@@ -187,7 +188,7 @@ static IRAM_ATTR void s_parlio_set_delimiter_config(parlio_rx_unit_handle_t rx_u
     switch (deli->mode) {
         case PARLIO_RX_LEVEL_MODE:
             /* Select the level receive mode */
-            parlio_ll_rx_set_level_recv_mode(hal->regs, deli->flags.active_level);
+            parlio_ll_rx_set_level_recv_mode(hal->regs, deli->flags.active_low_en);
             parlio_ll_rx_treat_data_line_as_en(hal->regs, deli->valid_sig_line_id);
             break;
         case PARLIO_RX_PULSE_MODE:
@@ -235,8 +236,8 @@ static IRAM_ATTR void s_parlio_set_delimiter_config(parlio_rx_unit_handle_t rx_u
 
 static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, const parlio_rx_unit_config_t *config)
 {
-    int group_id = rx_unit->group->group_id;
-    int unit_id = rx_unit->unit_id;
+    int group_id = rx_unit->base.group->group_id;
+    int unit_id = rx_unit->base.unit_id;
     /* Default GPIO configuration */
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
@@ -246,24 +247,24 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
 
     /* When the source clock comes from external, enable the gpio input direction and connect to the clock input signal */
     if (config->clk_src == PARLIO_CLK_SRC_EXTERNAL) {
-        ESP_RETURN_ON_FALSE(config->clk_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG, "clk_gpio_num must be set while the clock input from external");
+        ESP_RETURN_ON_FALSE(config->clk_in_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG, "clk_in_gpio_num must be set while the clock input from external");
         /* Connect the clock in signal to the GPIO matrix if it is set */
         if (!config->flags.io_no_init) {
             gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_INPUT;
-            gpio_conf.pin_bit_mask = BIT64(config->clk_gpio_num);
+            gpio_conf.pin_bit_mask = BIT64(config->clk_in_gpio_num);
             ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk in GPIO failed");
         }
-        esp_rom_gpio_connect_in_signal(config->clk_gpio_num,
+        esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_in_sig, false);
     }
     /* When the source clock comes from internal and supported to output the internal clock,
      * enable the gpio output direction and connect to the clock output signal */
-    else if (config->clk_gpio_num >= 0) {
+    if (config->clk_out_gpio_num >= 0) {
 #if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
         gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_OUTPUT;
-        gpio_conf.pin_bit_mask = BIT64(config->clk_gpio_num);
+        gpio_conf.pin_bit_mask = BIT64(config->clk_out_gpio_num);
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk out GPIO failed");
-        esp_rom_gpio_connect_out_signal(config->clk_gpio_num,
+        esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_out_sig, false, false);
 #else
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "this target not support to output the clock");
@@ -318,7 +319,6 @@ static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma
         /* If received a normal EOF, it's a receive done event on parlio RX */
         if (rx_unit->cbs.on_receive_done) {
             evt_data.data = rx_unit->usr_recv_buf;
-            evt_data.size = rx_unit->curr_trans.size;
             evt_data.recv_bytes = rx_unit->curr_trans.recv_bytes;
             need_yield |= rx_unit->cbs.on_receive_done(rx_unit, &evt_data, rx_unit->user_data);
         }
@@ -328,27 +328,29 @@ static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma
         /* For infinite transactions, reset the receiving bytes when the transaction is done */
         rx_unit->curr_trans.recv_bytes = 0;
     } else {
-        parlio_rx_transaction_t next_trans;
+        parlio_rx_transaction_t next_trans = {};
         /* The current transaction finished, try to get the next transaction from the transaction queue */
         if (xQueueReceiveFromISR(rx_unit->trans_que, &next_trans, &high_task_woken) == pdTRUE) {
             if (rx_unit->cfg.flags.free_clk) {
-                parlio_ll_rx_enable_clock(rx_unit->group->hal.regs, false);
+                parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, false);
             }
             /* If the delimiter of the next transaction is not same as the current one, need to re-config the hardware */
             if (next_trans.delimiter != rx_unit->curr_trans.delimiter) {
                 s_parlio_set_delimiter_config(rx_unit, next_trans.delimiter);
             }
             /* Mount the new transaction buffer and start the new transaction */
-            s_parlio_mount_transaction_buffer(rx_unit, &rx_unit->curr_trans);
+            s_parlio_mount_transaction_buffer(rx_unit, &next_trans);
             gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->dma_descs);
             if (rx_unit->cfg.flags.free_clk) {
-                parlio_ll_rx_start(rx_unit->group->hal.regs, true);
-                parlio_ll_rx_enable_clock(rx_unit->group->hal.regs, true);
+                parlio_ll_rx_start(rx_unit->base.group->hal.regs, true);
+                parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, true);
             }
-        } else {
+        } else if (rx_unit->curr_trans.delimiter) {  // Add condition in case the curr_trans has been cleared in the last timeout isr
             /* No more transaction pending to receive, clear the current transaction */
+            portENTER_CRITICAL_ISR(&s_rx_spinlock);
             rx_unit->curr_trans.delimiter->under_using = false;
             memset(&rx_unit->curr_trans, 0, sizeof(parlio_rx_transaction_t));
+            portEXIT_CRITICAL_ISR(&s_rx_spinlock);
             need_yield |= high_task_woken == pdTRUE;
             xSemaphoreGiveFromISR(rx_unit->trans_sem, &high_task_woken);
         }
@@ -362,13 +364,16 @@ static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle
 {
     parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t )user_data;
     bool need_yield = false;
+    /* No need to process the data if error EOF (i.e. timeout) happened */
+    if (event_data->flags.abnormal_eof) {
+        return false;
+    }
+
     /* Get the finished descriptor from the current descriptor */
     dma_descriptor_t *finished_desc = rx_unit->curr_desc;
     parlio_rx_event_data_t evt_data = {
         .delimiter = rx_unit->curr_trans.delimiter,
-        // TODO: The current descriptor is not able to access when error EOF occur
         .data = finished_desc->buffer,
-        .size = finished_desc->dw0.size,
         .recv_bytes = finished_desc->dw0.length,
     };
     if (rx_unit->cbs.on_partial_receive) {
@@ -378,7 +383,9 @@ static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle
     if (rx_unit->curr_trans.flags.infinite && rx_unit->curr_trans.flags.indirect_mount) {
         memcpy(rx_unit->usr_recv_buf + rx_unit->curr_trans.recv_bytes, evt_data.data, evt_data.recv_bytes);
     } else {
+        portENTER_CRITICAL_ISR(&s_rx_spinlock);
         rx_unit->curr_trans.delimiter->under_using = false;
+        portEXIT_CRITICAL_ISR(&s_rx_spinlock);
     }
     /* Update received bytes */
     if (rx_unit->curr_trans.recv_bytes >= rx_unit->curr_trans.size) {
@@ -395,7 +402,7 @@ static esp_err_t s_parlio_rx_create_dma_descriptors(parlio_rx_unit_handle_t rx_u
 {
     ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid param");
 
-    uint32_t desc_num =max_recv_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED + 1;
+    uint32_t desc_num = max_recv_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED + 1;
     /* set at least 2 descriptors */
     if (desc_num < 2) {
         desc_num = 4;
@@ -439,25 +446,43 @@ static esp_err_t s_parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit)
 
 static esp_err_t s_parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, const parlio_rx_unit_config_t *config)
 {
-    parlio_hal_context_t *hal = &rx_unit->group->hal;
+    parlio_hal_context_t *hal = &rx_unit->base.group->hal;
     parlio_clock_source_t clk_src = config->clk_src;
-    uint32_t periph_src_clk_hz = 0;
-    uint32_t div = 1;
+    uint32_t src_freq_hz = 0;
+    uint32_t exp_freq_hz = 0;
+    hal_utils_clk_div_t clk_div = {
+        .integer = 1,
+    };
     /* if the source clock is input from the GPIO, then we're in the slave mode */
     if (clk_src != PARLIO_CLK_SRC_EXTERNAL) {
-        ESP_RETURN_ON_FALSE(config->clk_freq_hz, ESP_ERR_INVALID_ARG, TAG, "clock frequency not set");
+        ESP_RETURN_ON_FALSE(config->exp_clk_freq_hz, ESP_ERR_INVALID_ARG, TAG, "output clock frequency not set");
+        exp_freq_hz = config->exp_clk_freq_hz;
         /* get the internal clock source frequency */
-        esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz);
-        /* set clock division, round up */
-        div = (periph_src_clk_hz + config->clk_freq_hz - 1) / config->clk_freq_hz;
+        esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_freq_hz);
     } else {
-        periph_src_clk_hz = config->clk_freq_hz;
+        ESP_RETURN_ON_FALSE(config->ext_clk_freq_hz, ESP_ERR_INVALID_ARG, TAG, "input clock frequency not set");
+        exp_freq_hz = config->exp_clk_freq_hz > 0 ? config->exp_clk_freq_hz : config->ext_clk_freq_hz;
+        src_freq_hz = config->ext_clk_freq_hz;
     }
+    /* set clock division, round up */
+    hal_utils_clk_info_t clk_info = {
+        .src_freq_hz = src_freq_hz,
+        .exp_freq_hz = exp_freq_hz,
+        .max_integ = PARLIO_LL_RX_MAX_CLK_INT_DIV,
+        .min_integ = 1,
+        .round_opt = HAL_DIV_ROUND,
+    };
+#if PARLIO_LL_RX_MAX_CLK_FRACT_DIV
+    clk_info.max_fract = PARLIO_LL_RX_MAX_CLK_FRACT_DIV;
+    rx_unit->cfg.exp_clk_freq_hz = hal_utils_calc_clk_div_frac_accurate(&clk_info, &clk_div);
+#else
+    rx_unit->cfg.exp_clk_freq_hz = hal_utils_calc_clk_div_integer(&clk_info, &clk_div.integer);
+#endif
 
 #if CONFIG_PM_ENABLE
     if (clk_src != PARLIO_CLK_SRC_EXTERNAL) {
         /* XTAL and PLL clock source will be turned off in light sleep, so we need to create a NO_LIGHT_SLEEP lock */
-        sprintf(rx_unit->pm_lock_name, "parlio_rx_%d_%d", rx_unit->group->group_id, rx_unit->unit_id); // e.g. parlio_rx_0_0
+        sprintf(rx_unit->pm_lock_name, "parlio_rx_%d_%d", rx_unit->base.group->group_id, rx_unit->base.unit_id); // e.g. parlio_rx_0_0
         esp_err_t ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, rx_unit->pm_lock_name, &rx_unit->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
     }
@@ -465,14 +490,13 @@ static esp_err_t s_parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, c
 
     /* Set clock configuration */
     parlio_ll_rx_set_clock_source(hal->regs, clk_src);
-    parlio_ll_rx_set_clock_div(hal->regs, div);
+    parlio_ll_rx_set_clock_div(hal->regs, &clk_div);
 
     rx_unit->clk_src = clk_src;
-    rx_unit->cfg.clk_freq_hz = periph_src_clk_hz / div;
     /* warning if precision lost due to division */
     if ((clk_src != PARLIO_CLK_SRC_EXTERNAL) &&
-        (config->clk_freq_hz != rx_unit->cfg.clk_freq_hz )) {
-        ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32, rx_unit->cfg.clk_freq_hz );
+        (config->exp_clk_freq_hz != rx_unit->cfg.exp_clk_freq_hz )) {
+        ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32, rx_unit->cfg.exp_clk_freq_hz );
     }
 
     return ESP_OK;
@@ -510,7 +534,7 @@ static esp_err_t s_parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
         free(rx_unit->dma_buf);
     }
     /* Unregister the RX unit from the PARLIO group */
-    if (rx_unit->group) {
+    if (rx_unit->base.group) {
         parlio_unregister_unit_from_group((parlio_unit_base_handle_t)rx_unit);
     }
     /* Free the RX unit */
@@ -527,6 +551,8 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     /* Check the data width to be the the power of 2 */
     ESP_RETURN_ON_FALSE(__builtin_popcount(config->data_width) == 1, ESP_ERR_INVALID_ARG, TAG,
                         "data line number should be the power of 2 without counting valid signal");
+    ESP_RETURN_ON_FALSE(config->data_width <= (int)PARLIO_RX_UNIT_MAX_DATA_WIDTH, ESP_ERR_INVALID_ARG, TAG,
+                        "data line number should be within %d", (int)PARLIO_RX_UNIT_MAX_DATA_WIDTH);
 
     esp_err_t ret = ESP_OK;
     parlio_rx_unit_handle_t unit = NULL;
@@ -534,11 +560,12 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     /* Allocate unit memory */
     unit = heap_caps_calloc(1, sizeof(parlio_rx_unit_t), PARLIO_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no memory for rx unit");
-    unit->dir = PARLIO_DIR_RX;
+    unit->base.dir = PARLIO_DIR_RX;
     unit->is_enabled = false;
 
     /* Initialize mutex lock */
     unit->mutex = xSemaphoreCreateMutexWithCaps(PARLIO_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(unit->mutex, ESP_ERR_NO_MEM, err, TAG, "no memory for mutex semaphore");
     /* Create transaction binary semaphore */
     unit->trans_sem = xSemaphoreCreateBinaryWithCaps(PARLIO_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(unit->trans_sem, ESP_ERR_NO_MEM, err, TAG, "no memory for transaction semaphore");
@@ -559,7 +586,7 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
         unit->cfg.flags.free_clk = 1;
     }
 
-    parlio_group_t *group = unit->group;
+    parlio_group_t *group = unit->base.group;
     parlio_hal_context_t *hal = &group->hal;
     /* Initialize GPIO */
     ESP_GOTO_ON_ERROR(s_parlio_rx_unit_set_gpio(unit, config), err, TAG, "failed to set GPIO");
@@ -576,13 +603,17 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     parlio_ll_rx_set_bus_width(hal->regs, config->data_width);
 #if SOC_PARLIO_RX_CLK_SUPPORT_GATING
     parlio_ll_rx_enable_clock_gating(hal->regs, config->flags.clk_gate_en);
+#else
+    if (config->flags.clk_gate_en) {
+        ESP_LOGW(TAG, "The current target does not support clock gating");
+    }
 #endif  // SOC_PARLIO_RX_CLK_SUPPORT_GATING
 
     /* return RX unit handle */
     *ret_unit = unit;
 
     ESP_LOGD(TAG, "new rx unit(%d,%d) at %p, trans_queue_depth=%zu",
-             group->group_id, unit->unit_id, (void *)unit, unit->cfg.trans_queue_depth);
+             group->group_id, unit->base.unit_id, (void *)unit, unit->cfg.trans_queue_depth);
     return ESP_OK;
 
 err:
@@ -595,21 +626,24 @@ err:
 esp_err_t parlio_del_rx_unit(parlio_rx_unit_handle_t rx_unit)
 {
     ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // Not necessary to take the semaphore while checking the flag because it's going to be deleted
     ESP_RETURN_ON_FALSE(!rx_unit->is_enabled, ESP_ERR_INVALID_STATE, TAG, "the unit has not disabled");
 
-    ESP_LOGD(TAG, "del rx unit (%d, %d)", rx_unit->group->group_id, rx_unit->unit_id);
+    ESP_LOGD(TAG, "del rx unit (%d, %d)", rx_unit->base.group->group_id, rx_unit->base.unit_id);
     return s_parlio_destroy_rx_unit(rx_unit);
 }
 
 esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queue)
 {
     ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(!rx_unit->is_enabled, ESP_ERR_INVALID_STATE, TAG, "the unit has enabled or running");
-    rx_unit->is_enabled = true;
 
-    parlio_hal_context_t *hal = &rx_unit->group->hal;
+    esp_err_t ret = ESP_OK;
+    parlio_hal_context_t *hal = &rx_unit->base.group->hal;
 
     xSemaphoreTake(rx_unit->mutex, portMAX_DELAY);
+    ESP_GOTO_ON_FALSE(!rx_unit->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "the unit has enabled or running");
+    rx_unit->is_enabled = true;
+
     /* Acquire the power management lock incase */
     if (rx_unit->pm_lock) {
         esp_pm_lock_acquire(rx_unit->pm_lock);
@@ -623,43 +657,50 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
     }
 
     /* Check if we need to start a pending transaction */
-    parlio_rx_transaction_t trans;
+    parlio_rx_transaction_t trans = {};
     if (reset_queue) {
         xQueueReset(rx_unit->trans_que);
         xSemaphoreGive(rx_unit->trans_sem);
     } else if (xQueueReceive(rx_unit->trans_que, &trans, 0) == pdTRUE) {
-        xSemaphoreTake(rx_unit->trans_sem, 0);
+        // The semaphore always supposed to be taken successfully
+        assert(xSemaphoreTake(rx_unit->trans_sem, 0) == pdTRUE);
         if (rx_unit->cfg.flags.free_clk) {
             parlio_ll_rx_enable_clock(hal->regs, false);
         }
         s_parlio_set_delimiter_config(rx_unit, trans.delimiter);
-        s_parlio_mount_transaction_buffer(rx_unit, &rx_unit->curr_trans);
+        s_parlio_mount_transaction_buffer(rx_unit, &trans);
         gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->curr_desc);
         if (rx_unit->cfg.flags.free_clk) {
             parlio_ll_rx_start(hal->regs, true);
             parlio_ll_rx_enable_clock(hal->regs, true);
         }
     }
+err:
     xSemaphoreGive(rx_unit->mutex);
 
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t parlio_rx_unit_disable(parlio_rx_unit_handle_t rx_unit)
 {
     ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(rx_unit->is_enabled, ESP_ERR_INVALID_STATE, TAG, "the unit has disabled");
-    rx_unit->is_enabled = false;
 
-    /* stop the RX engine */
-    parlio_hal_context_t *hal = &rx_unit->group->hal;
+    esp_err_t ret = ESP_OK;
+    parlio_hal_context_t *hal = &rx_unit->base.group->hal;
+
     xSemaphoreTake(rx_unit->mutex, portMAX_DELAY);
+    ESP_GOTO_ON_FALSE(rx_unit->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "the unit has disabled");
+    rx_unit->is_enabled = false;
+    /* stop the RX engine */
     gdma_stop(rx_unit->dma_chan);
     parlio_ll_rx_enable_clock(hal->regs, false);
     parlio_ll_rx_start(hal->regs, false);
     if (rx_unit->curr_trans.delimiter) {
+        portENTER_CRITICAL(&s_rx_spinlock);
         rx_unit->curr_trans.delimiter->under_using = false;
+        portEXIT_CRITICAL(&s_rx_spinlock);
     }
+    xSemaphoreGive(rx_unit->trans_sem);
 
     /* For continuous receiving, free the temporary buffer and stop the DMA */
     if (rx_unit->dma_buf) {
@@ -672,9 +713,10 @@ esp_err_t parlio_rx_unit_disable(parlio_rx_unit_handle_t rx_unit)
     }
     /* Erase the current transaction */
     memset(&rx_unit->curr_trans, 0, sizeof(parlio_rx_transaction_t));
+err:
     xSemaphoreGive(rx_unit->mutex);
 
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t parlio_new_rx_level_delimiter(const parlio_rx_level_delimiter_config_t *config,
@@ -698,7 +740,7 @@ esp_err_t parlio_new_rx_level_delimiter(const parlio_rx_level_delimiter_config_t
     delimiter->bit_pack_order = config->bit_pack_order;
     delimiter->eof_data_len = config->eof_data_len;
     delimiter->timeout_ticks = config->timeout_ticks;
-    delimiter->flags.active_level = config->flags.active_level;
+    delimiter->flags.active_low_en = config->flags.active_low_en;
 
     *ret_delimiter = delimiter;
 
@@ -773,13 +815,16 @@ esp_err_t parlio_rx_soft_delimiter_start_stop(parlio_rx_unit_handle_t rx_unit, p
 {
     ESP_RETURN_ON_FALSE(rx_unit && delimiter, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(delimiter->mode == PARLIO_RX_SOFT_MODE, ESP_ERR_INVALID_ARG, TAG, "The delimiter is not soft delimiter");
-    ESP_RETURN_ON_FALSE(rx_unit->is_enabled, ESP_ERR_INVALID_STATE, TAG, "the unit has not enabled");
+
+    esp_err_t ret = ESP_OK;
 
     xSemaphoreTake(rx_unit->mutex, portMAX_DELAY);
-    parlio_hal_context_t *hal = &(rx_unit->group->hal);
+    ESP_GOTO_ON_FALSE(rx_unit->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "the unit has not enabled");
+    parlio_hal_context_t *hal = &(rx_unit->base.group->hal);
     parlio_ll_rx_start_soft_recv(hal->regs, start_stop);
+err:
     xSemaphoreGive(rx_unit->mutex);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t parlio_del_rx_delimiter(parlio_rx_delimiter_handle_t delimiter)
@@ -792,20 +837,25 @@ esp_err_t parlio_del_rx_delimiter(parlio_rx_delimiter_handle_t delimiter)
 
 static esp_err_t s_parlio_rx_unit_do_transaction(parlio_rx_unit_handle_t rx_unit, parlio_rx_transaction_t *trans)
 {
-    if (!rx_unit->curr_trans.delimiter) {
-        xSemaphoreTake(rx_unit->trans_sem, 0);
+    bool is_stopped = false;
+    /* Get whether DMA stopped atomically */
+    portENTER_CRITICAL_ISR(&s_rx_spinlock);
+    is_stopped = rx_unit->curr_trans.delimiter == NULL;
+    portEXIT_CRITICAL_ISR(&s_rx_spinlock);
+    if (is_stopped) {
         if (rx_unit->cfg.flags.free_clk) {
-            parlio_ll_rx_enable_clock(rx_unit->group->hal.regs, false);
+            parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, false);
         }
         if (trans->delimiter != rx_unit->curr_trans.delimiter) {
             s_parlio_set_delimiter_config(rx_unit, trans->delimiter);
         }
         s_parlio_mount_transaction_buffer(rx_unit, trans);
+        // Take semaphore without block time here, only indicate there are transactions on receiving
+        xSemaphoreTake(rx_unit->trans_sem, 0);
         gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->curr_desc);
         if (rx_unit->cfg.flags.free_clk) {
-            printf("enable start\n");
-            parlio_ll_rx_start(rx_unit->group->hal.regs, true);
-            parlio_ll_rx_enable_clock(rx_unit->group->hal.regs, true);
+            parlio_ll_rx_start(rx_unit->base.group->hal.regs, true);
+            parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, true);
         }
     } else { // Otherwise send to the queue
         /* Send the transaction to the queue */
@@ -837,14 +887,15 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
         ESP_RETURN_ON_FALSE(recv_cfg->delimiter->valid_sig_line_id >= rx_unit->cfg.data_width,
             ESP_ERR_INVALID_ARG, TAG, "the valid_sig_line_id of this delimiter is conflict with rx unit data width");
         /* Assign the signal here to ensure iram safe */
-        recv_cfg->delimiter->valid_sig = parlio_periph_signals.groups[rx_unit->group->group_id].
-                                         rx_units[rx_unit->unit_id].
+        recv_cfg->delimiter->valid_sig = parlio_periph_signals.groups[rx_unit->base.group->group_id].
+                                         rx_units[rx_unit->base.unit_id].
                                          data_sigs[recv_cfg->delimiter->valid_sig_line_id];
     }
     void *p_buffer = payload;
 
     /* Create the internal DMA buffer for the infinite transaction if indirect_mount is set */
-    if (recv_cfg->flags.is_infinite && recv_cfg->flags.indirect_mount) {
+    if (recv_cfg->flags.partial_rx_en && recv_cfg->flags.indirect_mount) {
+        ESP_RETURN_ON_FALSE(!rx_unit->dma_buf, ESP_ERR_INVALID_STATE, TAG, "infinite transaction is using the internal DMA buffer");
         /* Allocate the internal DMA buffer to store the data temporary */
         rx_unit->dma_buf = heap_caps_calloc(1, payload_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
         ESP_RETURN_ON_FALSE(rx_unit->dma_buf, ESP_ERR_NO_MEM, TAG, "No memory for the internal DMA buffer");
@@ -858,7 +909,7 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
         .payload = p_buffer,
         .size = payload_size,
         .recv_bytes = 0,
-        .flags.infinite = recv_cfg->flags.is_infinite,
+        .flags.infinite = recv_cfg->flags.partial_rx_en,
         .flags.indirect_mount = recv_cfg->flags.indirect_mount,
     };
     rx_unit->usr_recv_buf = payload;
@@ -873,29 +924,38 @@ esp_err_t parlio_rx_unit_wait_all_done(parlio_rx_unit_handle_t rx_unit, int time
 {
     ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
-    xSemaphoreTake(rx_unit->mutex, portMAX_DELAY);
     TickType_t ticks = timeout_ms < 0 ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
-    /* Waiting for the all transaction done signal */
-    if (xSemaphoreTake(rx_unit->trans_sem, ticks) == pdFALSE) {
-        xSemaphoreGive(rx_unit->mutex);
-        return ESP_ERR_TIMEOUT;
-    }
+    /* Waiting for the all transactions done */
+    ESP_RETURN_ON_FALSE(xSemaphoreTake(rx_unit->trans_sem, ticks) == pdTRUE, ESP_ERR_TIMEOUT, TAG, "wait all transactions done timeout");
     /* Put back the signal */
     xSemaphoreGive(rx_unit->trans_sem);
-    xSemaphoreGive(rx_unit->mutex);
 
     return ESP_OK;
 }
 
 esp_err_t parlio_rx_unit_register_event_callbacks(parlio_rx_unit_handle_t rx_unit, const parlio_rx_event_callbacks_t *cbs, void *user_data)
 {
-    ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(!rx_unit->is_enabled, ESP_ERR_INVALID_STATE, TAG, "the unit has enabled or running");
+    esp_err_t ret = ESP_OK;
 
+    ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+#if CONFIG_PARLIO_ISR_IRAM_SAFE
+    ESP_RETURN_ON_FALSE(!cbs->on_partial_receive || esp_ptr_in_iram(cbs->on_partial_receive), ESP_ERR_INVALID_ARG,
+                        TAG, "on_partial_receive not in IRAM");
+    ESP_RETURN_ON_FALSE(!cbs->on_receive_done || esp_ptr_in_iram(cbs->on_receive_done), ESP_ERR_INVALID_ARG,
+                        TAG, "on_receive_done not in IRAM");
+    ESP_RETURN_ON_FALSE(!cbs->on_timeout || esp_ptr_in_iram(cbs->on_timeout), ESP_ERR_INVALID_ARG,
+                        TAG, "on_timeout not in IRAM");
+    ESP_RETURN_ON_FALSE(!user_data || esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG,
+                        TAG, "user_data not in internal RAM");
+#endif
     xSemaphoreTake(rx_unit->mutex, portMAX_DELAY);
+    ESP_GOTO_ON_FALSE(!rx_unit->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "the unit has enabled or running");
+
     memcpy(&rx_unit->cbs, cbs, sizeof(parlio_rx_event_callbacks_t));
     rx_unit->user_data = user_data;
+err:
     xSemaphoreGive(rx_unit->mutex);
-
-    return ESP_OK;
+    return ret;
 }

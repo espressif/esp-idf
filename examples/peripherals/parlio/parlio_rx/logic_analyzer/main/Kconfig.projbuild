@@ -1,0 +1,39 @@
+menu "ESP probe configurations"
+
+    choice EXAMPLE_SIGNAL_SRC
+        prompt "Select signal source"
+        default EXAMPLE_INTERNAL_SIGNAL
+        config EXAMPLE_INTERNAL_SIGNAL
+            bool "Probing the internal signals"
+        config EXAMPLE_EXTERNAL_SIGNAL
+            bool "Probing the External signals"
+    endchoice
+
+    choice EXAMPLE_STREAM
+        prompt "Select ESP probe dump stream"
+        default EXAMPLE_FLASH_STREAM if !SOC_WIFI_SUPPORTED && !SOC_EMAC_SUPPORTED
+        default EXAMPLE_TCP_STREAM if SOC_WIFI_SUPPORTED || SOC_EMAC_SUPPORTED
+        help
+            Select the dump stream for the sampled data
+        config EXAMPLE_FLASH_STREAM
+            bool "Dump data into FLASH"
+        config EXAMPLE_TCP_STREAM
+            depends on SOC_WIFI_SUPPORTED || SOC_EMAC_SUPPORTED
+            bool "Dump data to the host using TCP"
+    endchoice
+
+    config EXAMPLE_HOST_IP_ADDR
+        depends on EXAMPLE_TCP_STREAM
+        default "192.168.1.100"
+        string "TCP server IP address"
+    config EXAMPLE_HOST_PORT
+        depends on EXAMPLE_TCP_STREAM
+        default 8888
+        int "TCP server port"
+
+    config EXAMPLE_PARTITION_LABEL
+        depends on EXAMPLE_FLASH_STREAM
+        default "storage"
+        string "The label of the data storage partition"
+
+endmenu

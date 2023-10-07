@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,11 +48,6 @@ typedef enum {
     PARLIO_BIT_PACK_ORDER_LSB, /*!< Bit pack order: LSB */
     PARLIO_BIT_PACK_ORDER_MSB, /*!< Bit pack order: MSB */
 } parlio_bit_pack_order_t;
-
-typedef enum {
-    PARIO_CLK_TYPE_FREE,
-    PARIO_CLK_TYPE_NON_FREE,
-} parlio_clock_type_t;
 
 #if SOC_PARLIO_SUPPORTED
 /**

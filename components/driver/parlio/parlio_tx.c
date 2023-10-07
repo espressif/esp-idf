@@ -45,9 +45,7 @@ typedef struct {
 } parlio_tx_trans_desc_t;
 
 typedef struct parlio_tx_unit_t {
-    int unit_id;           // unit id
-    parlio_dir_t dir;
-    parlio_group_t *group; // group handle
+    struct parlio_unit_t base; // base unit
     size_t data_width;     // data width
     intr_handle_t intr;    // allocated interrupt handle
     esp_pm_lock_handle_t pm_lock;   // power management lock
@@ -120,9 +118,9 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
             vQueueDeleteWithCaps(tx_unit->trans_queues[i]);
         }
     }
-    if (tx_unit->group) {
+    if (tx_unit->base.group) {
         // de-register from group
-        parlio_unregister_unit_from_group((parlio_unit_base_handle_t)tx_unit);
+        parlio_unregister_unit_from_group((parlio_unit_base_handle_t)&(tx_unit->base));
     }
     free(tx_unit->dma_nodes);
     free(tx_unit);
@@ -131,8 +129,8 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
 
 static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
 {
-    int group_id = tx_unit->group->group_id;
-    int unit_id = tx_unit->unit_id;
+    int group_id = tx_unit->base.group->group_id;
+    int unit_id = tx_unit->base.unit_id;
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_OUTPUT,
@@ -195,7 +193,7 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit)
 
 static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
 {
-    parlio_hal_context_t *hal = &tx_unit->group->hal;
+    parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     parlio_clock_source_t clk_src = config->clk_in_gpio_num >= 0 ? PARLIO_CLK_SRC_EXTERNAL : config->clk_src;
     uint32_t periph_src_clk_hz = 0;
     // if the source clock is input from the GPIO, then we're in the slave mode
@@ -210,7 +208,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
 #if CONFIG_PM_ENABLE
     if (clk_src != PARLIO_CLK_SRC_EXTERNAL) {
         // XTAL and PLL clock source will be turned off in light sleep, so we need to create a NO_LIGHT_SLEEP lock
-        sprintf(tx_unit->pm_lock_name, "parlio_tx_%d_%d", tx_unit->group->group_id, tx_unit->unit_id); // e.g. parlio_tx_0_0
+        sprintf(tx_unit->pm_lock_name, "parlio_tx_%d_%d", tx_unit->base.group->group_id, tx_unit->base.unit_id); // e.g. parlio_tx_0_0
         esp_err_t ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, tx_unit->pm_lock_name, &tx_unit->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
     }
@@ -280,14 +278,14 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
         unit->dma_nodes[i].next = (i == dma_nodes_num - 1) ? NULL : &(unit->dma_nodes[i+1]);
     }
     unit->max_transfer_bits = config->max_transfer_size * 8;
-    unit->dir = PARLIO_DIR_TX;
+    unit->base.dir = PARLIO_DIR_TX;
     unit->data_width = data_width;
     //create transaction queue
     ESP_GOTO_ON_ERROR(parlio_tx_create_trans_queue(unit, config), err, TAG, "create transaction queue failed");
 
     // register the unit to a group
-    ESP_GOTO_ON_ERROR(parlio_register_unit_to_group((parlio_unit_base_handle_t)unit), err, TAG, "register unit to group failed");
-    parlio_group_t *group = unit->group;
+    ESP_GOTO_ON_ERROR(parlio_register_unit_to_group((parlio_unit_base_handle_t)&(unit->base)), err, TAG, "register unit to group failed");
+    parlio_group_t *group = unit->base.group;
     parlio_hal_context_t *hal = &group->hal;
     // select the clock source
     ESP_GOTO_ON_ERROR(parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
@@ -346,7 +344,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     // return TX unit handle
     *ret_unit = unit;
     ESP_LOGD(TAG, "new tx unit(%d,%d) at %p, out clk=%"PRIu32"Hz, queue_depth=%zu, idle_mask=%"PRIx32,
-             group->group_id, unit->unit_id, unit, unit->out_clk_freq_hz, unit->queue_depth, unit->idle_value_mask);
+             group->group_id, unit->base.unit_id, unit, unit->out_clk_freq_hz, unit->queue_depth, unit->idle_value_mask);
     return ESP_OK;
 
 err:
@@ -360,7 +358,7 @@ esp_err_t parlio_del_tx_unit(parlio_tx_unit_handle_t unit)
 {
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(atomic_load(&unit->fsm) == PARLIO_TX_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
-    ESP_LOGD(TAG, "del tx unit(%d,%d)", unit->group->group_id, unit->unit_id);
+    ESP_LOGD(TAG, "del tx unit(%d,%d)", unit->base.group->group_id, unit->base.unit_id);
     return parlio_destroy_tx_unit(unit);
 }
 
@@ -425,7 +423,7 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
 
 static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_t *t)
 {
-    parlio_hal_context_t *hal = &tx_unit->group->hal;
+    parlio_hal_context_t *hal = &tx_unit->base.group->hal;
 
     tx_unit->cur_trans = t;
 
@@ -458,7 +456,7 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
         if (tx_unit->pm_lock) {
             esp_pm_lock_acquire(tx_unit->pm_lock);
         }
-        parlio_hal_context_t *hal = &tx_unit->group->hal;
+        parlio_hal_context_t *hal = &tx_unit->base.group->hal;
         parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, true);
         atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
     } else {
@@ -506,7 +504,7 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "unit can't be disabled in state %d", expected_fsm);
 
     // stop the TX engine
-    parlio_hal_context_t *hal = &tx_unit->group->hal;
+    parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     gdma_stop(tx_unit->dma_chan);
     parlio_ll_tx_start(hal->regs, false);
     parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, false);
@@ -569,7 +567,7 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
 static void IRAM_ATTR parlio_tx_default_isr(void *args)
 {
     parlio_tx_unit_t *tx_unit = (parlio_tx_unit_t *)args;
-    parlio_group_t *group = tx_unit->group;
+    parlio_group_t *group = tx_unit->base.group;
     parlio_hal_context_t *hal = &group->hal;
     BaseType_t high_task_woken = pdFALSE;
     bool need_yield = false;
