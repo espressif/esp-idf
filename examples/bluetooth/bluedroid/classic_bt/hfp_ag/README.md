@@ -13,7 +13,7 @@ This example is designed to run on commonly available ESP32 development board, e
 
 ### Configure the project
 
-Open the project configuration menu: 
+Open the project configuration menu:
 
 ```bash
 idf.py menuconfig
@@ -234,15 +234,11 @@ I (245311) BT_APP_HF: --Audio State connected
 
 #### Device Status Indication
 
-You can type `ind <call> <ntk> <callsetup> <sig>` to send device status of AG to HF Unit. Log on AG prints such as:  `Device Indicator Changed!`  and on HF Unit side prints such as:
+You can type `ciev <ind_type> <value>` to send device status of AG to HF Unit. Log on AG prints such as:  `Device Indicator Changed!`  and on HF Unit side prints such as:
 
 ```
-E (293641) BT_HF: APP HFP event: CALL_IND_EVT
-E (293641) BT_HF: --Call indicator call in progress
-E (293641) BT_HF: APP HFP event: CALL_SETUP_IND_EVT
-E (293651) BT_HF: --Call setup indicator INCOMING
-E (293651) BT_HF: APP HFP event: SIGNAL_STRENGTH_IND_EVT
-E (293661) BT_HF: -- signal strength: 5
+I (106167) BT_HF: APP HFP event: CALL_SETUP_IND_EVT
+I (106167) BT_HF: --Call setup indicator INCOMING
 ```
 
 **Note: The AG device sends only the changed status to the HF Unit.**
@@ -274,7 +270,7 @@ E (19556) BT_HF: --in-band ring state Provided
 
 If you encounter any problems, please check if the following rules are followed:
 
-- You should type the command in the terminal according to the format described in the commands help table. 
+- You should type the command in the terminal according to the format described in the commands help table.
 - Not all commands in the table are supported by the HF Unit.
 - If you want to `hf con;` to establish a service level connection with a specific HF Unit, you should add the MAC address of the HF Unit in `app_hf_msg_set.c` for example: `esp_bd_addr_t peer_addr = {0xb4, 0xe6, 0x2d, 0xeb, 0x09, 0x93};`
 - Use `esp_hf_client_register_callback()` and  `esp_hf_client_init();` before  establishing a service level connection.
@@ -286,6 +282,5 @@ Due to the complexity of the HFP, this example has more source files than other 
 - The example will respond to user command through the UART console. Please go to `console_uart.c` for the configuration details.
 - For the voice interface, ESP32 has provided PCM input/output signals which can be directed to GPIO pins. So, please go to `gpio_pcm_config.c` for the configuration details.
 - If you want to update the command table, please refer to `app_hf_msg_set.c`.
-- If you want to update the command parse rules, please refer to `app_hf_msg_prs.c`.
 - If you want to update the responses of the AG or want to update the log, please refer to `bt_app_hf.c`.
 - The task configuration part is in `bt_app_core.c`.
