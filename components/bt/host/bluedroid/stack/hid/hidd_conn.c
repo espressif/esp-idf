@@ -772,7 +772,7 @@ tHID_STATUS hidd_conn_send_data(uint8_t channel, uint8_t msg_type, uint8_t param
     }
 #endif
     HIDD_TRACE_VERBOSE("%s: report sent", __func__);
-    if (!L2CA_DataWrite(cid, p_buf))
+    if (L2CA_DataWrite(cid, p_buf) == L2CAP_DW_FAILED)
         return (HID_ERR_CONGESTED);
     return (HID_SUCCESS);
 }
