@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,12 +9,11 @@
 #include "hal/emac_hal.h"
 #include "hal/emac_ll.h"
 #include "hal/gpio_ll.h"
+#include "hal/assert.h"
 
 #define ETH_CRC_LENGTH (4)
 
-#ifndef NDEBUG
 #define EMAC_HAL_BUF_MAGIC_ID 0x1E1C8416
-#endif // NDEBUG
 
 typedef struct {
 #ifndef NDEBUG
@@ -629,7 +628,7 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
         emac_hal_auto_buf_info_t *buff_info = (emac_hal_auto_buf_info_t *)buf;
 #ifndef NDEBUG
         /* check that buffer was allocated by emac_hal_alloc_recv_buf */
-        assert(buff_info->magic_id == EMAC_HAL_BUF_MAGIC_ID);
+        HAL_ASSERT(buff_info->magic_id == EMAC_HAL_BUF_MAGIC_ID);
 #endif // NDEBUG
         copy_len = buff_info->copy_len;
         ret_len = copy_len;
