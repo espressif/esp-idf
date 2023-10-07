@@ -279,6 +279,32 @@ TEST_CASE("Calling esp_wifi_deinit() without stop", "[wifi_init]")
     unity_utils_task_delete(th);
 }
 
+TEST_CASE("Calling esp_wifi_connect() without start", "[wifi_init]")
+{
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    cfg.nvs_enable = false;
+
+    ESP_LOGI(TAG, EMPH_STR("event_init"));
+    TEST_ESP_OK(event_init());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
+    TEST_ESP_OK(esp_wifi_init(&cfg));
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_connect"));
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_STARTED, esp_wifi_connect());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
+    TEST_ESP_OK(esp_wifi_deinit());
+    ESP_LOGI(TAG, "test passed...");
+
+    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
+}
+
+TEST_CASE("Calling esp_wifi_connect() without init", "[wifi_init]")
+{
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_connect"));
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_INIT, esp_wifi_connect());
+    ESP_LOGI(TAG, "test passed...");
+}
+
 static void wifi_country_code_task(void* arg)
 {
     SemaphoreHandle_t *sema = (SemaphoreHandle_t *) arg;
