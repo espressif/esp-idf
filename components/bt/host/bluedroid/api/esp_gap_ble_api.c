@@ -875,7 +875,7 @@ esp_err_t esp_ble_dtm_rx_start(const esp_ble_dtm_rx_t *rx_params)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_DTM_RX_START;
 
-     memcpy(&arg.dtm_rx_start, rx_params, sizeof(esp_ble_dtm_rx_t));
+    memcpy(&arg.dtm_rx_start, rx_params, sizeof(esp_ble_dtm_rx_t));
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -885,7 +885,7 @@ esp_err_t esp_ble_dtm_rx_start(const esp_ble_dtm_rx_t *rx_params)
 esp_err_t esp_ble_dtm_enh_tx_start(const esp_ble_dtm_enh_tx_t *tx_params)
 {
     btc_msg_t msg = {0};
-    btc_ble_gap_args_t arg;
+    btc_ble_5_gap_args_t arg;
 
     if (!tx_params) {
         return ESP_ERR_INVALID_ARG;
@@ -897,15 +897,15 @@ esp_err_t esp_ble_dtm_enh_tx_start(const esp_ble_dtm_enh_tx_t *tx_params)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_DTM_ENH_TX_START;
 
-    memcpy(&arg.dtm_tx_start, tx_params, sizeof(esp_ble_dtm_enh_tx_t));
+    memcpy(&arg.dtm_enh_tx_start, tx_params, sizeof(esp_ble_dtm_enh_tx_t));
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_dtm_enh_rx_start(const esp_ble_dtm_enh_rx_t *rx_params)
 {
     btc_msg_t msg = {0};
-    btc_ble_gap_args_t arg;
+    btc_ble_5_gap_args_t arg;
 
     if (!rx_params) {
         return ESP_ERR_INVALID_ARG;
@@ -917,9 +917,9 @@ esp_err_t esp_ble_dtm_enh_rx_start(const esp_ble_dtm_enh_rx_t *rx_params)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_DTM_ENH_RX_START;
 
-     memcpy(&arg.dtm_rx_start, rx_params, sizeof(esp_ble_dtm_enh_rx_t));
+    memcpy(&arg.dtm_enh_rx_start, rx_params, sizeof(esp_ble_dtm_enh_rx_t));
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 

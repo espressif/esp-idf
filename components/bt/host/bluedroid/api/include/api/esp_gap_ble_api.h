@@ -125,6 +125,18 @@ typedef uint8_t   esp_ble_auth_req_t;         /*!< combination of the above bit 
 
 typedef uint8_t esp_ble_io_cap_t;               /*!< combination of the io capability */
 
+#define    BLE_DTM_PKT_PAYLOAD_0x00   0x00       /*!< PRBS9 sequence ‘11111111100000111101...’ (in transmission order) as described in [Vol 6] Part F, Section 4.1.5 */
+#define    BLE_DTM_PKT_PAYLOAD_0x01   0x01       /*!< Repeated ‘11110000’ (in transmission order) sequence as described in [Vol 6] Part F, Section 4.1.5 */
+#define    BLE_DTM_PKT_PAYLOAD_0x02   0x02       /*!< Repeated ‘10101010’ (in transmission order) sequence as described in [Vol 6] Part F, Section 4.1.5 */
+#define    BLE_DTM_PKT_PAYLOAD_0x03   0x03       /*!< PRBS15 sequence as described in [Vol 6] Part F, Section 4.1.5 */
+#define    BLE_DTM_PKT_PAYLOAD_0x04   0x04       /*!< Repeated ‘11111111’ (in transmission order) sequence */
+#define    BLE_DTM_PKT_PAYLOAD_0x05   0x05       /*!< Repeated ‘00000000’ (in transmission order) sequence */
+#define    BLE_DTM_PKT_PAYLOAD_0x06   0x06       /*!< Repeated ‘00001111’ (in transmission order) sequence */
+#define    BLE_DTM_PKT_PAYLOAD_0x07   0x07       /*!< Repeated ‘01010101’ (in transmission order) sequence */
+#define    BLE_DTM_PKT_PAYLOAD_MAX    0x08       /*!< 0x08 ~ 0xFF, Reserved for future use */
+
+typedef uint8_t esp_ble_dtm_pkt_payload_t;
+
 /// GAP BLE callback event type
 typedef enum {
     //BLE_42_FEATURE_SUPPORT
@@ -351,18 +363,6 @@ typedef enum {
     ///DTM test end event
     DTM_TEST_STOP_EVT,
 } esp_ble_dtm_update_evt_t;
-
-typedef enum {
-    BLE_DTM_PKT_PAYLOAD_0x00,       /*!< PRBS9 sequence ‘11111111100000111101...’ (in transmission order) as described in [Vol 6] Part F, Section 4.1.5 */
-    BLE_DTM_PKT_PAYLOAD_0x01,       /*!< Repeated ‘11110000’ (in transmission order) sequence as described in [Vol 6] Part F, Section 4.1.5 */
-    BLE_DTM_PKT_PAYLOAD_0x02,       /*!< Repeated ‘10101010’ (in transmission order) sequence as described in [Vol 6] Part F, Section 4.1.5 */
-    BLE_DTM_PKT_PAYLOAD_0x03,       /*!< PRBS15 sequence as described in [Vol 6] Part F, Section 4.1.5 */
-    BLE_DTM_PKT_PAYLOAD_0x04,       /*!< Repeated ‘11111111’ (in transmission order) sequence */
-    BLE_DTM_PKT_PAYLOAD_0x05,       /*!< Repeated ‘00000000’ (in transmission order) sequence */
-    BLE_DTM_PKT_PAYLOAD_0x06,       /*!< Repeated ‘00001111’ (in transmission order) sequence */
-    BLE_DTM_PKT_PAYLOAD_0x07,       /*!< Repeated ‘01010101’ (in transmission order) sequence */
-    BLE_DTM_PKT_PAYLOAD_MAX,        /*!< 0x08 ~ 0xFF, Reserved for future use */
-} esp_ble_dtm_pkt_payload_t;
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
