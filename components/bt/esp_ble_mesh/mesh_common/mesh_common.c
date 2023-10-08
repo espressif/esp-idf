@@ -77,6 +77,10 @@ uint8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
     bt_mesh_client_user_data_t *client = NULL;
 
     if (srv_send) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+            BT_DBG("Message is sent by a provisioner(server) model");
+            return PROVISIONER;
+        }
         BT_DBG("Message is sent by a server model");
         return NODE;
     }
