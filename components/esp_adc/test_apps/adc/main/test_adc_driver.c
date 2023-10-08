@@ -59,12 +59,10 @@ static bool IRAM_ATTR s_alarm_callback(gptimer_handle_t timer, const gptimer_ala
         TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw);
     }
 
-
     // check the count value at alarm event
     vTaskNotifyGiveFromISR(test_ctx->task_handle, &high_task_wakeup);
     return high_task_wakeup == pdTRUE;
 }
-
 
 TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
 {
@@ -114,7 +112,6 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
     TEST_ESP_OK(gptimer_stop(timer));
 
-
     //ADC IO tile high
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 1);
     isr_test_ctx.level = 1;
@@ -143,7 +140,6 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
 #endif
 
 #define ADC_FRAME_TEST_SIZE    8192
-
 
 static bool IRAM_ATTR NOINLINE_ATTR s_conv_done_cb_frame_size_test(adc_continuous_handle_t handle, const adc_continuous_evt_data_t *edata, void *user_data)
 {
@@ -206,15 +202,14 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
             sum += ADC_DRIVER_TEST_GET_DATA(p);
             cnt++;
         }
-        esp_rom_printf("avg: %d\n", sum/cnt);
-        TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, sum/cnt);
+        esp_rom_printf("avg: %d\n", sum / cnt);
+        TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, sum / cnt);
     }
 
     TEST_ESP_OK(adc_continuous_stop(handle));
     TEST_ESP_OK(adc_continuous_deinit(handle));
     free(result);
 }
-
 
 #define ADC_FLUSH_TEST_SIZE    64
 
@@ -253,11 +248,11 @@ TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignor
 
         for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
             adc_digi_output_data_t *p = (void*)&result[i];
-    #if (SOC_ADC_DIGI_RESULT_BYTES == 2)
+#if (SOC_ADC_DIGI_RESULT_BYTES == 2)
             printf("ADC1, Channel: %d, Value: %d\n", p->type1.channel, p->type1.data);
-    #else
+#else
             printf("ADC1, Channel: %d, Value: %d\n", p->type2.channel, p->type2.data);
-    #endif
+#endif
         }
         /**
          * With this delay, check the read out data to be the newest data

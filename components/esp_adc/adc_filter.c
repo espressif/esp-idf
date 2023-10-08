@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,13 +20,12 @@
 static const char *TAG = "adc_filter";
 static portMUX_TYPE s_filter_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
-
 #if SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
 static atomic_bool s_adc_filter_claimed[SOC_ADC_DIGI_IIR_FILTER_NUM] = {ATOMIC_VAR_INIT(false),
 #if (SOC_ADC_DIGI_IIR_FILTER_NUM >= 2)
-ATOMIC_VAR_INIT(false)
+                                                                        ATOMIC_VAR_INIT(false)
 #endif
-};
+                                                                       };
 
 static esp_err_t s_adc_filter_claim(adc_continuous_handle_t handle, adc_iir_filter_t *filter_ctx, adc_unit_t unit)
 {
@@ -86,7 +85,6 @@ static esp_err_t s_adc_filter_free(adc_iir_filter_t *filter_ctx)
     return ESP_OK;
 }
 #endif
-
 
 esp_err_t adc_new_continuous_iir_filter(adc_continuous_handle_t handle, const adc_continuous_iir_filter_config_t *config, adc_iir_filter_handle_t *ret_hdl)
 {

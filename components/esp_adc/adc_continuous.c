@@ -197,7 +197,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     }
 
     ret = esp_intr_alloc(spicommon_irqdma_source_for_host(adc_ctx->spi_host), ESP_INTR_FLAG_IRAM, adc_dma_intr_handler,
-                        (void *)adc_ctx, &adc_ctx->dma_intr_hdl);
+                         (void *)adc_ctx, &adc_ctx->dma_intr_hdl);
     if (ret != ESP_OK) {
         goto cleanup;
     }
@@ -213,7 +213,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
 
     adc_ctx->i2s_host = I2S_NUM_0;
     ret = esp_intr_alloc(i2s_periph_signal[adc_ctx->i2s_host].irq, ESP_INTR_FLAG_IRAM, adc_dma_intr_handler,
-                        (void *)adc_ctx, &adc_ctx->dma_intr_hdl);
+                         (void *)adc_ctx, &adc_ctx->dma_intr_hdl);
     if (ret != ESP_OK) {
         goto cleanup;
     }

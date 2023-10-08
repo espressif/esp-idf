@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,17 +25,14 @@
 #include "hal/adc_ll.h"
 #include "soc/adc_periph.h"
 
-
 #if CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM
 #define ADC_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define ADC_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 #endif
 
-
 extern portMUX_TYPE rtc_spinlock;
 static const char *TAG = "adc_oneshot";
-
 
 typedef struct adc_oneshot_unit_ctx_t {
     adc_oneshot_hal_ctx_t hal;
@@ -49,19 +46,16 @@ typedef struct adc_oneshot_ctx_t {
     int apb_periph_ref_cnts;       //For the chips that ADC oneshot mode using APB_SARADC periph
 } adc_oneshot_ctx_t;
 
-
 static adc_oneshot_ctx_t s_ctx;    //ADC oneshot mode context
 static atomic_bool s_adc_unit_claimed[SOC_ADC_PERIPH_NUM] = {ATOMIC_VAR_INIT(false),
 #if (SOC_ADC_PERIPH_NUM >= 2)
-ATOMIC_VAR_INIT(false)
+                                                             ATOMIC_VAR_INIT(false)
 #endif
-};
-
+                                                            };
 
 static bool s_adc_unit_claim(adc_unit_t unit);
 static bool s_adc_unit_free(adc_unit_t unit);
 static esp_err_t s_adc_io_init(adc_unit_t unit, adc_channel_t channel);
-
 
 esp_err_t adc_oneshot_io_to_channel(int io_num, adc_unit_t * const unit_id, adc_channel_t * const channel)
 {

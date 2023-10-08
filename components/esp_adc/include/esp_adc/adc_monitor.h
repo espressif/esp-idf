@@ -6,7 +6,6 @@
 
 #pragma once
 
-
 #include "adc_continuous.h"
 
 #ifdef __cplusplus
@@ -47,7 +46,6 @@ typedef struct {
     adc_monitor_evt_cb_t on_over_high_thresh;           /*!< adc_monitor high value interrupt callback */
     adc_monitor_evt_cb_t on_below_low_thresh;           /*!< adc_monitor low value interrupt callback */
 } adc_monitor_evt_cbs_t;
-
 
 /**
  * @brief Allocate an ADC continuous mode monitor (and configure it into an initial state)

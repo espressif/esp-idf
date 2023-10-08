@@ -88,7 +88,6 @@ extern "C" {
 #define ADC_TEST_HIGH_THRESH     200
 #endif
 
-
 /*---------------------------------------------------------------
         ADC Attenuation
 ---------------------------------------------------------------*/
@@ -132,7 +131,6 @@ bool test_adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten
  * @param[in] handle    ADC calibration handle
  */
 void test_adc_calibration_deinit(adc_cali_handle_t handle);
-
 
 /*---------------------------------------------------------------
         ADC GPIO

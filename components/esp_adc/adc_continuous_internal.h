@@ -106,7 +106,6 @@ struct adc_continuous_ctx_t {
 #endif
 };
 
-
 #ifdef __cplusplus
 }
 #endif

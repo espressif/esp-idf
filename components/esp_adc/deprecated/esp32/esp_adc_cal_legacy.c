@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,13 +85,17 @@ static const uint32_t adc2_vref_atten_offset[4] = {63, 66, 89, 128};
 
 //20 Point lookup tables, covering ADC readings from 2880 to 4096, step size of 64
 static const uint32_t lut_adc1_low[LUT_POINTS] = {2240, 2297, 2352, 2405, 2457, 2512, 2564, 2616, 2664, 2709,
-                                                  2754, 2795, 2832, 2868, 2903, 2937, 2969, 3000, 3030, 3060};
+                                                  2754, 2795, 2832, 2868, 2903, 2937, 2969, 3000, 3030, 3060
+                                                 };
 static const uint32_t lut_adc1_high[LUT_POINTS] = {2667, 2706, 2745, 2780, 2813, 2844, 2873, 2901, 2928, 2956,
-                                                   2982, 3006, 3032, 3059, 3084, 3110, 3135, 3160, 3184, 3209};
+                                                   2982, 3006, 3032, 3059, 3084, 3110, 3135, 3160, 3184, 3209
+                                                  };
 static const uint32_t lut_adc2_low[LUT_POINTS] = {2238, 2293, 2347, 2399, 2451, 2507, 2561, 2613, 2662, 2710,
-                                                  2754, 2792, 2831, 2869, 2904, 2937, 2968, 2999, 3029, 3059};
+                                                  2754, 2792, 2831, 2869, 2904, 2937, 2968, 2999, 3029, 3059
+                                                 };
 static const uint32_t lut_adc2_high[LUT_POINTS] = {2657, 2698, 2738, 2774, 2807, 2838, 2867, 2894, 2921, 2946,
-                                                   2971, 2996, 3020, 3043, 3067, 3092, 3116, 3139, 3162, 3185};
+                                                   2971, 2996, 3020, 3043, 3067, 3092, 3116, 3139, 3162, 3185
+                                                  };
 
 /* ----------------------- EFuse Access Functions --------------------------- */
 static bool check_efuse_vref(void)
