@@ -176,6 +176,20 @@ menu "Hardware Settings"
             help
                 When using rtc gpio wakeup source during deepsleep without external pull-up/downs, you may want to
                 make use of the internal ones.
+
+        config ESP_SLEEP_EVENT_CALLBACKS
+            bool "Enable registration of sleep event callbacks"
+            depends on FREERTOS_USE_TICKLESS_IDLE
+            default n
+            help
+                If enabled, it allows user to register sleep event callbacks. It is primarily designed for internal
+                developers and customers can use PM_LIGHT_SLEEP_CALLBACKS as an alternative.
+
+                NOTE: These callbacks are executed from the IDLE task context hence you cannot have any blocking calls
+                in your callbacks.
+
+                NOTE: Enabling these callbacks may change sleep duration calculations based on time spent in
+                callback and hence it is highly recommended to keep them as short as possible.
     endmenu
 
     menu "ESP_SLEEP_WORKAROUND"

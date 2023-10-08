@@ -14,6 +14,7 @@
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_timer_private.h"
+#include "esp_private/sleep_event.h"
 #include "esp_private/system_internal.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
@@ -762,12 +763,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
 #if SOC_PMU_SUPPORTED
 #if SOC_PM_CPU_RETENTION_BY_SW
+            esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_GOTO_SLEEP, (void *)0);
             if (pd_flags & PMU_SLEEP_PD_CPU) {
                 result = esp_sleep_cpu_retention(pmu_sleep_start, s_config.wakeup_triggers, reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
             } else {
 #endif
                 result = call_rtc_sleep_start(reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
             }
+            esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_EXIT_SLEEP, (void *)0);
 #else
             result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu, deep_sleep);
 #endif
@@ -808,6 +811,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     {
         rtc_clk_cpu_freq_set_config(&cpu_freq_config);
     }
+
+    esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
 
     if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
         // Turn up MSPI speed if switch to PLL
@@ -975,6 +980,7 @@ FORCE_INLINE_ATTR bool can_power_down_vddsdio(uint32_t pd_flags, const uint32_t 
 esp_err_t esp_light_sleep_start(void)
 {
     s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
+    esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_GOTO_SLEEP, (void *)0);
 #if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
     esp_err_t timerret = ESP_OK;
 
@@ -1012,9 +1018,9 @@ esp_err_t esp_light_sleep_start(void)
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
 #endif
     uint32_t ccount_at_sleep_start = esp_cpu_get_cycle_count();
+    esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_TIME_START, (void *)0);
     uint64_t high_res_time_at_start = esp_timer_get_time();
     uint32_t sleep_time_overhead_in = (ccount_at_sleep_start - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
-
     esp_ipc_isr_stall_other_cpu();
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
@@ -1196,6 +1202,7 @@ esp_err_t esp_light_sleep_start(void)
     }
 #endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
 
+    esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_EXIT_SLEEP, (void *)0);
     s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
     return err;
 }
