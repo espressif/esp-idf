@@ -326,9 +326,7 @@ esp_err_t simple_ble_stop(void)
     return ESP_OK;
 }
 
-#ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
 esp_err_t simple_ble_disconnect(void)
 {
     return esp_ble_gap_disconnect(s_cached_remote_bda);
 }
-#endif

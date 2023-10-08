@@ -26,4 +26,17 @@ menu "Protocomm"
             Disabling this option saves some code size.
             Consult the Enabling protocomm security version section of the
             Protocomm documentation in ESP-IDF Programming guide for more details.
+
+    config ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+        bool
+        depends on BT_ENABLED
+        help
+            Keep BT on after calling protocomm_ble_stop
+
+    config ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
+        bool
+        depends on ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+        help
+            Terminate connection after calling protocomm_ble_stop
+
 endmenu
