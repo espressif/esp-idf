@@ -120,6 +120,17 @@ struct esp_lcd_panel_t {
      */
     esp_err_t (*disp_on_off)(esp_lcd_panel_t *panel, bool on_off);
 
+    /**
+    * @brief Turn display in sleep mode
+    *
+    * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
+    * @param[in] sleep True turn display on sleep mode, False wake up
+    * @return
+    *          - ESP_OK on success
+    *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
+    */
+    esp_err_t (*disp_sleep)(esp_lcd_panel_t *panel, bool sleep);
+
     void *user_data;    /*!< User data, used to store externally customized data */
 };
 

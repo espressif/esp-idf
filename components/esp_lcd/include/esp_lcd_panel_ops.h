@@ -133,6 +133,17 @@ esp_err_t esp_lcd_panel_disp_on_off(esp_lcd_panel_handle_t panel, bool on_off);
 esp_err_t esp_lcd_panel_disp_off(esp_lcd_panel_handle_t panel, bool off)
 __attribute__((deprecated("use esp_lcd_panel_disp_on_off instead")));
 
+/**
+ * @brief Turn display in sleep mode
+ *
+ * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
+ * @param[in] sleep True turn display on sleep mode, False wake up
+ * @return
+ *          - ESP_OK on success
+ *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
+ */
+esp_err_t esp_lcd_panel_disp_sleep(esp_lcd_panel_handle_t panel, bool sleep);
+
 #ifdef __cplusplus
 }
 #endif
