@@ -1,16 +1,16 @@
-Security Guides
+安全指南
 ***************
 
 :link_to_translation:`en:[English]`
 
-Overview
+概述
 --------
 .. toctree::
    :maxdepth: 1
 
    security
 
-Features
+功能
 --------
 .. toctree::
    :maxdepth: 1
@@ -19,7 +19,7 @@ Features
    :esp32: secure-boot-v1
    secure-boot-v2
 
-Workflows
+流程
 ---------
 .. toctree::
    :maxdepth: 1
