@@ -92,11 +92,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
 /*-----------------------------------------------------------*/
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * MessageBufferHandle_t xMessageBufferCreate( size_t xBufferSizeBytes );
- * @endcode
  *
  * Creates a new message buffer using dynamically allocated memory.  See
  * xMessageBufferCreateStatic() for a version that uses statically allocated
@@ -156,25 +151,18 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  *  }
  *
  * @endcode
- * \defgroup xMessageBufferCreate xMessageBufferCreate
  * \ingroup MessageBufferManagement
  */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 #define xMessageBufferCreate( xBufferSizeBytes ) \
     xStreamBufferGenericCreate( ( xBufferSizeBytes ), ( size_t ) 0, pdTRUE, NULL, NULL )
-
+/** @endcond */
 #if ( configUSE_SB_COMPLETED_CALLBACK == 1 )
     #define xMessageBufferCreateWithCallback( xBufferSizeBytes, pxSendCompletedCallback, pxReceiveCompletedCallback ) \
     xStreamBufferGenericCreate( ( xBufferSizeBytes ), ( size_t ) 0, pdTRUE, ( pxSendCompletedCallback ), ( pxReceiveCompletedCallback ) )
 #endif
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * MessageBufferHandle_t xMessageBufferCreateStatic( size_t xBufferSizeBytes,
- *                                                uint8_t *pucMessageBufferStorageArea,
- *                                                StaticMessageBuffer_t *pxStaticMessageBuffer );
- * @endcode
  * Creates a new message buffer using statically allocated memory.  See
  * xMessageBufferCreate() for a version that uses dynamically allocated memory.
  *
@@ -213,7 +201,7 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  *
  * // Used to dimension the array used to hold the messages.  The available space
  * // will actually be one less than this, so 999.
- #define STORAGE_SIZE_BYTES 1000
+ * #define STORAGE_SIZE_BYTES 1000
  *
  * // Defines the memory that will actually hold the messages within the message
  * // buffer.
@@ -238,25 +226,18 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  * }
  *
  * @endcode
- * \defgroup xMessageBufferCreateStatic xMessageBufferCreateStatic
  * \ingroup MessageBufferManagement
  */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 #define xMessageBufferCreateStatic( xBufferSizeBytes, pucMessageBufferStorageArea, pxStaticMessageBuffer ) \
     xStreamBufferGenericCreateStatic( ( xBufferSizeBytes ), 0, pdTRUE, ( pucMessageBufferStorageArea ), ( pxStaticMessageBuffer ), NULL, NULL )
-
+/** @endcond */
 #if ( configUSE_SB_COMPLETED_CALLBACK == 1 )
     #define xMessageBufferCreateStaticWithCallback( xBufferSizeBytes, pucMessageBufferStorageArea, pxStaticMessageBuffer, pxSendCompletedCallback, pxReceiveCompletedCallback ) \
     xStreamBufferGenericCreateStatic( ( xBufferSizeBytes ), 0, pdTRUE, ( pucMessageBufferStorageArea ), ( pxStaticMessageBuffer ), ( pxSendCompletedCallback ), ( pxReceiveCompletedCallback ) )
 #endif
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * BaseType_t xMessageBufferGetStaticBuffers( MessageBufferHandle_t xMessageBuffer,
- *                                            uint8_t ** ppucMessageBufferStorageArea,
- *                                            StaticMessageBuffer_t ** ppxStaticMessageBuffer );
- * @endcode
  *
  * Retrieve pointers to a statically created message buffer's data structure
  * buffer and storage area buffer. These are the same buffers that are supplied
@@ -272,7 +253,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  *
  * @return pdTRUE if buffers were retrieved, pdFALSE otherwise.
  *
- * \defgroup xMessageBufferGetStaticBuffers xMessageBufferGetStaticBuffers
  * \ingroup MessageBufferManagement
  */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
@@ -281,14 +261,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * size_t xMessageBufferSend( MessageBufferHandle_t xMessageBuffer,
- *                         const void *pvTxData,
- *                         size_t xDataLengthBytes,
- *                         TickType_t xTicksToWait );
- * @endcode
  *
  * Sends a discrete message to the message buffer.  The message can be any
  * length that fits within the buffer's free space, and is copied into the
@@ -374,21 +346,12 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  *  }
  * }
  * @endcode
- * \defgroup xMessageBufferSend xMessageBufferSend
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferSend( xMessageBuffer, pvTxData, xDataLengthBytes, xTicksToWait ) \
     xStreamBufferSend( ( xMessageBuffer ), ( pvTxData ), ( xDataLengthBytes ), ( xTicksToWait ) )
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * size_t xMessageBufferSendFromISR( MessageBufferHandle_t xMessageBuffer,
- *                                const void *pvTxData,
- *                                size_t xDataLengthBytes,
- *                                BaseType_t *pxHigherPriorityTaskWoken );
- * @endcode
  *
  * Interrupt safe version of the API function that sends a discrete message to
  * the message buffer.  The message can be any length that fits within the
@@ -479,21 +442,12 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  *  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
  * }
  * @endcode
- * \defgroup xMessageBufferSendFromISR xMessageBufferSendFromISR
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferSendFromISR( xMessageBuffer, pvTxData, xDataLengthBytes, pxHigherPriorityTaskWoken ) \
     xStreamBufferSendFromISR( ( xMessageBuffer ), ( pvTxData ), ( xDataLengthBytes ), ( pxHigherPriorityTaskWoken ) )
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * size_t xMessageBufferReceive( MessageBufferHandle_t xMessageBuffer,
- *                            void *pvRxData,
- *                            size_t xBufferLengthBytes,
- *                            TickType_t xTicksToWait );
- * @endcode
  *
  * Receives a discrete message from a message buffer.  Messages can be of
  * variable length and are copied out of the buffer.
@@ -568,7 +522,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  *  }
  * }
  * @endcode
- * \defgroup xMessageBufferReceive xMessageBufferReceive
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferReceive( xMessageBuffer, pvRxData, xBufferLengthBytes, xTicksToWait ) \
@@ -576,14 +529,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
 
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * size_t xMessageBufferReceiveFromISR( MessageBufferHandle_t xMessageBuffer,
- *                                   void *pvRxData,
- *                                   size_t xBufferLengthBytes,
- *                                   BaseType_t *pxHigherPriorityTaskWoken );
- * @endcode
  *
  * An interrupt safe version of the API function that receives a discrete
  * message from a message buffer.  Messages can be of variable length and are
@@ -670,18 +615,12 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  *  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
  * }
  * @endcode
- * \defgroup xMessageBufferReceiveFromISR xMessageBufferReceiveFromISR
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferReceiveFromISR( xMessageBuffer, pvRxData, xBufferLengthBytes, pxHigherPriorityTaskWoken ) \
     xStreamBufferReceiveFromISR( ( xMessageBuffer ), ( pvRxData ), ( xBufferLengthBytes ), ( pxHigherPriorityTaskWoken ) )
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * void vMessageBufferDelete( MessageBufferHandle_t xMessageBuffer );
- * @endcode
  *
  * Deletes a message buffer that was previously created using a call to
  * xMessageBufferCreate() or xMessageBufferCreateStatic().  If the message
@@ -698,10 +637,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
     vStreamBufferDelete( xMessageBuffer )
 
 /**
- * message_buffer.h
- * @code{c}
- * BaseType_t xMessageBufferIsFull( MessageBufferHandle_t xMessageBuffer );
- * @endcode
  *
  * Tests to see if a message buffer is full.  A message buffer is full if it
  * cannot accept any more messages, of any size, until space is made available
@@ -716,10 +651,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
     xStreamBufferIsFull( xMessageBuffer )
 
 /**
- * message_buffer.h
- * @code{c}
- * BaseType_t xMessageBufferIsEmpty( MessageBufferHandle_t xMessageBuffer );
- * @endcode
  *
  * Tests to see if a message buffer is empty (does not contain any messages).
  *
@@ -733,10 +664,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
     xStreamBufferIsEmpty( xMessageBuffer )
 
 /**
- * message_buffer.h
- * @code{c}
- * BaseType_t xMessageBufferReset( MessageBufferHandle_t xMessageBuffer );
- * @endcode
  *
  * Resets a message buffer to its initial empty state, discarding any message it
  * contained.
@@ -750,7 +677,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  * the message queue to wait for space to become available, or to wait for a
  * a message to be available, then pdFAIL is returned.
  *
- * \defgroup xMessageBufferReset xMessageBufferReset
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferReset( xMessageBuffer ) \
@@ -773,7 +699,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  * architecture, so if xMessageBufferSpacesAvailable() returns 10, then the size
  * of the largest message that can be written to the message buffer is 6 bytes.
  *
- * \defgroup xMessageBufferSpaceAvailable xMessageBufferSpaceAvailable
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferSpaceAvailable( xMessageBuffer ) \
@@ -782,10 +707,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
     xStreamBufferSpacesAvailable( xMessageBuffer ) /* Corrects typo in original macro name. */
 
 /**
- * message_buffer.h
- * @code{c}
- * size_t xMessageBufferNextLengthBytes( MessageBufferHandle_t xMessageBuffer );
- * @endcode
  * Returns the length (in bytes) of the next message in a message buffer.
  * Useful if xMessageBufferReceive() returned 0 because the size of the buffer
  * passed into xMessageBufferReceive() was too small to hold the next message.
@@ -795,18 +716,12 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  * @return The length (in bytes) of the next message in the message buffer, or 0
  * if the message buffer is empty.
  *
- * \defgroup xMessageBufferNextLengthBytes xMessageBufferNextLengthBytes
  * \ingroup MessageBufferManagement
  */
 #define xMessageBufferNextLengthBytes( xMessageBuffer ) \
     xStreamBufferNextMessageLengthBytes( xMessageBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * BaseType_t xMessageBufferSendCompletedFromISR( MessageBufferHandle_t xMessageBuffer, BaseType_t *pxHigherPriorityTaskWoken );
- * @endcode
  *
  * For advanced users only.
  *
@@ -835,18 +750,12 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  * @return If a task was removed from the Blocked state then pdTRUE is returned.
  * Otherwise pdFALSE is returned.
  *
- * \defgroup xMessageBufferSendCompletedFromISR xMessageBufferSendCompletedFromISR
  * \ingroup StreamBufferManagement
  */
 #define xMessageBufferSendCompletedFromISR( xMessageBuffer, pxHigherPriorityTaskWoken ) \
     xStreamBufferSendCompletedFromISR( ( xMessageBuffer ), ( pxHigherPriorityTaskWoken ) )
 
 /**
- * message_buffer.h
- *
- * @code{c}
- * BaseType_t xMessageBufferReceiveCompletedFromISR( MessageBufferHandle_t xMessageBuffer, BaseType_t *pxHigherPriorityTaskWoken );
- * @endcode
  *
  * For advanced users only.
  *
@@ -876,7 +785,6 @@ typedef StreamBufferHandle_t MessageBufferHandle_t;
  * @return If a task was removed from the Blocked state then pdTRUE is returned.
  * Otherwise pdFALSE is returned.
  *
- * \defgroup xMessageBufferReceiveCompletedFromISR xMessageBufferReceiveCompletedFromISR
  * \ingroup StreamBufferManagement
  */
 #define xMessageBufferReceiveCompletedFromISR( xMessageBuffer, pxHigherPriorityTaskWoken ) \

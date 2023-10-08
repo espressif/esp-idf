@@ -147,3 +147,49 @@ List of differences between Vanilla FreeRTOS V10.5.1 and building the dual-core 
   - Extended critical section so that SMP can check for yields while still inside critical section
 - `vTaskStepTick()`
   - Extended critical section so that SMP can access `xTickCount` while still inside critical section
+
+## Header File & Doxygen Changes
+
+List of changes made to Vanilla FreeRTOS V10.5.1 header files to allow for building in ESP-IDF documentation build system.
+
+- Removed leading header name line (e.g., `xxx.h`) in doxygen comment blocks. For example:
+
+  ```c
+  /**
+   * xxx.h
+   *
+   * Documentation from some func
+   */
+  void some_func(void);
+  ```
+
+- Removed leading `@code{c}` blocks in containing redundant function prototypes. For example:
+
+  ```c
+  /**
+   * @code{c}
+   * void some_func(int var_a, int var_b);
+   * @endcode
+   *
+   * Documentation from some func
+   */
+  void some_func(int var_a, int var_b);
+  ```
+
+- Added `/** @cond !DOC_EXCLUDE_HEADER_SECTION */` and `/** @endcond */` labels to exclude various doxygen sections from being included into documentation builds. These excluded sections include:
+    - In doxygen blocks that describe multiple related set of functions/macros, only the function/macro that matches the doxygen blocks parameters is included. For example:
+      ```c
+      /**
+       * Description that covers both some_func() and some_func_extra()
+       *
+       * @param var_a var_a description
+       * @param var_b var_b description
+       */
+      /** @cond !DOC_EXCLUDE_HEADER_SECTION */
+      #define some_func(var_a)                #define some_func_generic(var_a, NULL)
+      /** @endcond */
+      #define some_func_extra(var_a, var_b)   #define some_func_generic(var_a, var_b)
+      ```
+    - In functions/macros that are not meant to be directly called by users (i.e., internal), such as the various `Generic` variants of functions
+
+- Some types/functions/macros are manually documented, thus are documented with regular comment blocks (i.e., `/* */`) instead of doxygen comment blocks (i.e., `/** */`). Some of these blocks are changed into doxygen blocks.
