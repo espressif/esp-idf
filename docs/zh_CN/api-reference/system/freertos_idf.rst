@@ -10,7 +10,7 @@ FreeRTOS (ESP-IDF)
 
 原始 FreeRTOS（下文称 Vanilla FreeRTOS）是一款小巧高效的实时操作系统，适用于许多单核 MCU 和 SoC。但为了支持双核 ESP 芯片，如 ESP32、ESP32-S3、ESP32-P4，ESP-IDF 提供了支持双核对称多处理 (SMP) 的 FreeRTOS 实现（下文称 ESP-IDF FreeRTOS）。
 
-ESP-IDF FreeRTOS 以 Vanilla FreeRTOS v10.4.3 为基础，为支持 SMP，在 API 和内核行为上做了较大改动。本文档描述了 Vanilla FreeRTOS 与 ESP-IDF FreeRTOS 之间的 API 和内核行为差异。
+ESP-IDF FreeRTOS 以 Vanilla FreeRTOS v10.5.1 为基础，为支持 SMP，在 API 和内核行为上做了较大改动。本文档描述了 Vanilla FreeRTOS 与 ESP-IDF FreeRTOS 之间的 API 和内核行为差异。
 
 .. note::
 

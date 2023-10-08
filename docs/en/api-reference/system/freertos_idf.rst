@@ -10,7 +10,7 @@ Overview
 
 The original FreeRTOS (hereinafter referred to as Vanilla FreeRTOS) is a compact and efficient real-time operating system supported on many single-core MCUs and SoCs. However, to support numerous dual-core ESP targets, such as ESP32, ESP32-S3, and ESP32-P4, ESP-IDF provides an implementation of FreeRTOS with dual-core symmetric multiprocessing (SMP) capabilities (hereinafter referred to as ESP-IDF FreeRTOS).
 
-ESP-IDF FreeRTOS is based on Vanilla FreeRTOS v10.4.3 but contains significant modifications to both API and kernel behavior in order to support dual-core SMP. This document describes the API and behavioral differences between Vanilla FreeRTOS and ESP-IDF FreeRTOS.
+ESP-IDF FreeRTOS is based on Vanilla FreeRTOS v10.5.1 but contains significant modifications to both API and kernel behavior in order to support dual-core SMP. This document describes the API and behavioral differences between Vanilla FreeRTOS and ESP-IDF FreeRTOS.
 
 .. note::
 
