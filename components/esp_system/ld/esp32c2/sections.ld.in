@@ -36,9 +36,27 @@ SECTIONS
     . = ORIGIN(dram0_0_seg) + _iram_end - _iram_start;
   } > dram0_0_seg
 
-  .dram0.data :
+  /**
+   * This section MUST be placed at the beginning of the DRAM0,
+   * which will be released along with iram0_bt.text when Bluetooth is no longer in use
+   */
+ .dram0.bt.data :
   {
     _data_start = ABSOLUTE(.);
+    mapping[dram0_bt_data]
+    . = ALIGN(8);
+  } > dram0_0_seg
+
+  .dram0.bt.bss (NOLOAD) :
+  {
+    . = ALIGN (8);
+    _bss_bt_start = ABSOLUTE(.);
+    mapping[dram0_bt_bss]
+    _bss_bt_end = ABSOLUTE(.);
+  } > dram0_0_seg
+
+  .dram0.data :
+  {
     *(.gnu.linkonce.d.*)
     *(.data1)
     __global_pointer$ = . + 0x800;
@@ -290,6 +308,18 @@ SECTIONS
     mapping[iram0_bss]
 
     _iram_bss_end = ABSOLUTE(.);
+  } > iram0_0_seg
+
+  /**
+   * This section needs to be placed at the end of the IRAM0,
+   * which will be released along with dram0_bt_data and dram0_bt_bss when Bluetooth is no longer in use
+   */
+  .iram0.bt.text :
+  {
+    . = ALIGN(16);
+    _iram_bt_text_start = ABSOLUTE(.);
+    mapping[iram0_bt_text]
+
     . = ALIGN(16);
     _iram_end = ABSOLUTE(.);
   } > iram0_0_seg
