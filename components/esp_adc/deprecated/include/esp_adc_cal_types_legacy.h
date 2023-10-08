@@ -44,7 +44,6 @@ typedef struct {
 } esp_adc_cal_characteristics_t;
 #endif  //#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
 
-
 #ifdef __cplusplus
 }
 #endif

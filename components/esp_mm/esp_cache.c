@@ -26,7 +26,6 @@ static const char *TAG = "cache";
 
 DEFINE_CRIT_SECTION_LOCK_STATIC(s_spinlock);
 
-
 esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
 {
     ESP_RETURN_ON_FALSE_ISR(addr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
@@ -90,7 +89,6 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     return ESP_OK;
 }
 
-
 esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, size_t *actual_size)
 {
     ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
@@ -131,7 +129,6 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, 
 
     return ESP_OK;
 }
-
 
 esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, size_t *actual_size)
 {

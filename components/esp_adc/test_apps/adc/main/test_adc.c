@@ -34,7 +34,6 @@ static const char *TAG_CH[2][10] = {{"ADC1_CH4", "ADC1_CH5"}, {"ADC2_CH0"}};
 static const char *TAG_CH[2][10] = {{"ADC1_CH2", "ADC1_CH3"}, {"ADC2_CH0"}};
 #endif
 
-
 /*---------------------------------------------------------------
         ADC Oneshot High / Low test
 ---------------------------------------------------------------*/
@@ -95,7 +94,6 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[1][0]);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
-
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
     ESP_LOGI(TAG_CH[0][0], "raw  data: %d", adc_raw[0][0]);
@@ -113,14 +111,11 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[1][0]);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
-
     TEST_ESP_OK(adc_oneshot_del_unit(adc1_handle));
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     TEST_ESP_OK(adc_oneshot_del_unit(adc2_handle));
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 }
-
-
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
 /*---------------------------------------------------------------
@@ -224,8 +219,8 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
         ESP_LOGI(TAG, "ADC%d Chan%d: raw difference: %"PRId32, unit_id + 1, channel, raw_diff);
 
         if (do_calibration) {
-                int32_t cali_diff = cali_expected - cali_after_sleep;
-                ESP_LOGI(TAG, "ADC%d Chan%d: cali difference: %"PRId32, unit_id + 1, channel, cali_diff);
+            int32_t cali_diff = cali_expected - cali_after_sleep;
+            ESP_LOGI(TAG, "ADC%d Chan%d: cali difference: %"PRId32, unit_id + 1, channel, cali_diff);
         }
 
         //Test Calibration registers
@@ -267,14 +262,14 @@ TEST_CASE("test ADC2 Single Read with Light Sleep", "[adc][manul][ignore]")
 
 #endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
-
 #if SOC_ADC_MONITOR_SUPPORTED && CONFIG_SOC_ADC_DMA_SUPPORTED
 #if CONFIG_IDF_TARGET_ESP32S2
 #define TEST_ADC_FORMATE_TYPE   ADC_DIGI_OUTPUT_FORMAT_TYPE1
 #else
 #define TEST_ADC_FORMATE_TYPE   ADC_DIGI_OUTPUT_FORMAT_TYPE2
 #endif
-bool IRAM_ATTR test_high_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data){
+bool IRAM_ATTR test_high_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data)
+{
     return false;
 }
 TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
@@ -366,7 +361,6 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
 
-
 /**
  * NOTE: To run this special feature test case, you need wire ADC channel pin you want to monit
  *       to a wave output pin defined below.
@@ -386,11 +380,13 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
 #define TEST_WAVE_OUT_PIN   GPIO_NUM_2      //GPIO_2
 static uint32_t m1h_cnt, m1l_cnt;
 
-bool IRAM_ATTR m1h_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data){
+bool IRAM_ATTR m1h_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data)
+{
     m1h_cnt ++;
     return false;
 }
-bool IRAM_ATTR m1l_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data){
+bool IRAM_ATTR m1l_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data)
+{
     m1l_cnt ++;
     return false;
 }
@@ -451,8 +447,7 @@ TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
     TEST_ESP_OK(adc_continuous_monitor_enable(monitor_handle));
     TEST_ESP_OK(adc_continuous_start(handle));
 
-    for (uint8_t i=0; i<8; i++)
-    {
+    for (uint8_t i = 0; i < 8; i++) {
         vTaskDelay(1000);
 
         // check monitor cb
@@ -465,7 +460,7 @@ TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
             m1h_cnt = 0;
             gpio_set_level(TEST_WAVE_OUT_PIN, 0);
         } else {
-            TEST_ASSERT_UINT32_WITHIN(SOC_ADC_SAMPLE_FREQ_THRES_LOW*0.1, SOC_ADC_SAMPLE_FREQ_THRES_LOW, m1l_cnt);
+            TEST_ASSERT_UINT32_WITHIN(SOC_ADC_SAMPLE_FREQ_THRES_LOW * 0.1, SOC_ADC_SAMPLE_FREQ_THRES_LOW, m1l_cnt);
             TEST_ASSERT_LESS_THAN_UINT32(5, m1h_cnt);   //Actually, it will still encountered 1~2 times because hardware run very quickly
             m1l_cnt = 0;
             gpio_set_level(TEST_WAVE_OUT_PIN, 1);

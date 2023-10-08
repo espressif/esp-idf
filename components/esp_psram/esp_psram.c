@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /*----------------------------------------------------------------------------------------------------
  * Abstraction layer for PSRAM. PSRAM device related registers and MMU/Cache related code shouls be
  * abstracted to lower layers.
@@ -34,7 +33,6 @@
 #include "esp32/rom/cache.h"
 #include "esp_private/esp_cache_esp32_private.h"
 #endif
-
 
 /**
  * Two types of PSRAM memory regions for now:
@@ -84,12 +82,12 @@ typedef struct {
 static psram_ctx_t s_psram_ctx;
 static const char* TAG = "esp_psram";
 
-
 #if CONFIG_IDF_TARGET_ESP32
 //If no function in esp_himem.c is used, this function will be linked into the
 //binary instead of the one in esp_himem.c, automatically making sure no memory
 //is reserved if no himem function is used.
-size_t __attribute__((weak)) esp_himem_reserved_area_size(void) {
+size_t __attribute__((weak)) esp_himem_reserved_area_size(void)
+{
     return 0;
 }
 
@@ -104,7 +102,6 @@ static void IRAM_ATTR s_mapping(int v_start, int size)
 #endif
 }
 #endif  //CONFIG_IDF_TARGET_ESP32
-
 
 esp_err_t esp_psram_init(void)
 {
@@ -301,12 +298,11 @@ esp_err_t esp_psram_init(void)
     return ESP_OK;
 }
 
-
 esp_err_t esp_psram_extram_add_to_heap_allocator(void)
 {
     esp_err_t ret = ESP_FAIL;
 
-    uint32_t byte_aligned_caps[] = {MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT};
+    uint32_t byte_aligned_caps[] = {MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT};
     ret = heap_caps_add_region_with_caps(byte_aligned_caps,
                                          s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start,
                                          s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_end);
@@ -316,7 +312,7 @@ esp_err_t esp_psram_extram_add_to_heap_allocator(void)
 
     if (s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size) {
         assert(s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_start);
-        uint32_t word_aligned_caps[] = {MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_32BIT};
+        uint32_t word_aligned_caps[] = {MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_32BIT};
         ret = heap_caps_add_region_with_caps(word_aligned_caps,
                                              s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_start,
                                              s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_end);
@@ -331,7 +327,6 @@ esp_err_t esp_psram_extram_add_to_heap_allocator(void)
     return ESP_OK;
 }
 
-
 bool IRAM_ATTR esp_psram_check_ptr_addr(const void *p)
 {
     if (!s_psram_ctx.is_initialised) {
@@ -341,7 +336,6 @@ bool IRAM_ATTR esp_psram_check_ptr_addr(const void *p)
     return ((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_start && (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_end) ||
            ((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_start && (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_end);
 }
-
 
 esp_err_t esp_psram_extram_reserve_dma_pool(size_t size)
 {
@@ -423,7 +417,7 @@ static bool s_test_psram(intptr_t v_start, size_t size, intptr_t reserved_start,
         }
     }
     if (errct) {
-        ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, size/32, initial_err + v_start);
+        ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, size / 32, initial_err + v_start);
         return false;
     } else {
         ESP_EARLY_LOGI(TAG, "SPI SRAM memory test OK");

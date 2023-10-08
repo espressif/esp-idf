@@ -43,7 +43,6 @@ static uint32_t page0_mapped = 0;
 static uint32_t page0_page = INVALID_PHY_PAGE;
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 
-
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
 {
@@ -86,7 +85,6 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     return ESP_OK;
 }
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-
 
 #if CONFIG_SPIRAM_RODATA
 esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
@@ -134,7 +132,6 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     return ESP_OK;
 }
 #endif  //#if CONFIG_SPIRAM_RODATA
-
 
 /*----------------------------------------------------------------------------
                     Part 2 APIs (See @Backgrounds on top of this file)
@@ -196,7 +193,6 @@ uint32_t instruction_flash_end_page_get(void)
 }
 #endif  //CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
-
 #if CONFIG_SPIRAM_RODATA
 //------------------------------------Copy Flash .rodata to PSRAM-------------------------------------//
 static uint32_t rodata_in_spiram;
@@ -218,7 +214,7 @@ void rodata_flash_page_info_init(uint32_t psram_start_physical_page)
     uint32_t rodata_mmu_offset = ((uint32_t)&_rodata_reserved_start & SOC_MMU_VADDR_MASK) / MMU_PAGE_SIZE;
     rodata_start_page = ((volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS2_MMU_START))[rodata_mmu_offset];
 #elif CONFIG_IDF_TARGET_ESP32S3
-    uint32_t rodata_page_cnt = ((uint32_t)&_rodata_reserved_end - ((uint32_t)&_rodata_reserved_start & ~ (MMU_PAGE_SIZE - 1)) + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
+    uint32_t rodata_page_cnt = ((uint32_t)&_rodata_reserved_end - ((uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1)) + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
     rodata_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + CACHE_DROM_MMU_START);
 #endif
     rodata_start_page &= SOC_MMU_VALID_VAL_MASK;

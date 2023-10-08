@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 
-
 /*
  * Driver Backgrounds
  *
@@ -238,7 +237,6 @@ esp_err_t adc_continuous_io_to_channel(int io_num, adc_unit_t * const unit_id, a
  *       - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t adc_continuous_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * const io_num);
-
 
 #ifdef __cplusplus
 }

@@ -38,7 +38,7 @@ const static uint64_t adc1_error_coef_atten[COEFF_VERSION_NUM][COEFF_GROUP_NUM][
         {{0, 0}, {0, 0}, {0, 0}},                                                    //atten0
         {{0, 0}, {0, 0}, {0, 0}},                                                    //atten1
         {{12217864764388775, 1e16}, {1954123107752,   1e16}, {6409679727,  1e16}},   //atten2
-        {{3915910437042445 , 1e16}, {31536470857564,  1e16}, {12493873014, 1e16}},   //atten3
+        {{3915910437042445, 1e16}, {31536470857564,  1e16}, {12493873014, 1e16}},    //atten3
     },
 };
 
@@ -61,7 +61,6 @@ const static int32_t adc1_error_sign[COEFF_VERSION_NUM][COEFF_GROUP_NUM][TERM_MA
         {-1, -1,  1}, //atten3
     },
 };
-
 
 void curve_fitting_get_second_step_coeff(const adc_cali_curve_fitting_config_t *config, cali_chars_second_step_t *ctx)
 {

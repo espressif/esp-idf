@@ -46,7 +46,6 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
     return ret;
 }
 
-
 #if ESP_ADC_CAL_CURVE_FITTING_SUPPORTED
 /*------------------------------------------------------------------------------
  * Private API
@@ -79,7 +78,7 @@ int32_t esp_adc_cal_get_reading_error(const esp_adc_error_calc_param_t *param, u
     error = (int32_t)term[0] * (*param->sign)[atten][0];
 
     for (int i = 1; i < term_num; i++) {
-        variable[i] = variable[i-1] * v_cali_1;
+        variable[i] = variable[i - 1] * v_cali_1;
         coeff = (*param->coeff)[atten][i][0];
         term[i] = variable[i] * coeff;
         ESP_LOGV(TAG, "big coef is %llu, big term%d is %llu, coef_id is %d", coeff, i, term[i], i);

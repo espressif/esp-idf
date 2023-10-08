@@ -10,18 +10,15 @@
 #include "rom/cache.h"
 #include "esp_private/esp_cache_esp32_private.h"
 
-
 static cache_driver_t s_cache_drv = {
     Cache_Flush,
     NULL,
 };
 
-
 void cache_register_writeback(cache_driver_t *func)
 {
     s_cache_drv.cache_writeback_psram = func->cache_writeback_psram;
 }
-
 
 void cache_sync(void)
 {

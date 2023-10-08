@@ -35,7 +35,6 @@ adc_digi_iir_filter_coeff_t g_test_filter_coeff[TEST_FILTER_COEFF_NUMS] = {
 };
 #endif
 
-
 /*---------------------------------------------------------------
         ADC Calibration
 ---------------------------------------------------------------*/
@@ -90,7 +89,6 @@ void test_adc_calibration_deinit(adc_cali_handle_t handle)
 #endif
 }
 
-
 /*---------------------------------------------------------------
         ADC GPIO
 ---------------------------------------------------------------*/
@@ -102,7 +100,7 @@ void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
-    TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY: GPIO_PULLDOWN_ONLY)));
+    TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY : GPIO_PULLDOWN_ONLY)));
 #else
     gpio_num_t io_num = ADC_GET_IO_NUM(unit, channel);
     if (level) {
@@ -112,10 +110,9 @@ void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
         TEST_ESP_OK(rtc_gpio_pullup_dis(io_num));
         TEST_ESP_OK(rtc_gpio_pulldown_en(io_num));
     }
-    TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY: GPIO_PULLDOWN_ONLY)));
+    TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY : GPIO_PULLDOWN_ONLY)));
 #endif
 }
-
 
 void test_adc_set_io_middle(adc_unit_t unit, adc_channel_t channel)
 {
