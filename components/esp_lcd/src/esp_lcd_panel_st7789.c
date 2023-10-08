@@ -40,6 +40,7 @@ static esp_err_t panel_st7789_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool
 static esp_err_t panel_st7789_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t panel_st7789_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
 static esp_err_t panel_st7789_disp_on_off(esp_lcd_panel_t *panel, bool off);
+static esp_err_t panel_st7789_sleep(esp_lcd_panel_t *panel, bool sleep);
 
 typedef struct {
     esp_lcd_panel_t base;
@@ -53,6 +54,7 @@ typedef struct {
     uint8_t colmod_val;    // save current value of LCD_CMD_COLMOD register
     uint8_t ramctl_val_1;
     uint8_t ramctl_val_2;
+    bool sleep;
 } st7789_panel_t;
 
 esp_err_t
@@ -124,6 +126,7 @@ esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel
     st7789->base.mirror = panel_st7789_mirror;
     st7789->base.swap_xy = panel_st7789_swap_xy;
     st7789->base.disp_on_off = panel_st7789_disp_on_off;
+    st7789->base.disp_sleep = panel_st7789_sleep;
     *ret_panel = &(st7789->base);
     ESP_LOGD(TAG, "new st7789 panel @%p", st7789);
 
@@ -179,6 +182,7 @@ static esp_err_t panel_st7789_init(esp_lcd_panel_t *panel)
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT, NULL, 0), TAG,
                         "io tx param LCD_CMD_SLPOUT failed");
     vTaskDelay(pdMS_TO_TICKS(100));
+    st7789->sleep = false;
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
         st7789->madctl_val,
     }, 1), TAG, "io tx param LCD_CMD_MADCTL failed");
@@ -287,12 +291,35 @@ static esp_err_t panel_st7789_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
     st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
     esp_lcd_panel_io_handle_t io = st7789->io;
     int command = 0;
+
     if (on_off) {
+        if (st7789->sleep) {
+            esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT, NULL, 0);
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
         command = LCD_CMD_DISPON;
     } else {
         command = LCD_CMD_DISPOFF;
     }
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, command, NULL, 0), TAG,
                         "io tx param LCD_CMD_DISPON/LCD_CMD_DISPOFF failed");
+    return ESP_OK;
+}
+
+static esp_err_t panel_st7789_sleep(esp_lcd_panel_t *panel, bool sleep)
+{
+    st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
+    esp_lcd_panel_io_handle_t io = st7789->io;
+    int command = 0;
+    if (sleep) {
+        command = LCD_CMD_SLPIN;
+    } else {
+        command = LCD_CMD_SLPOUT;
+    }
+    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
+
+    st7789->sleep = sleep;
+    vTaskDelay(pdMS_TO_TICKS(100));
+
     return ESP_OK;
 }
