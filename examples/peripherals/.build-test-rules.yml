@@ -151,9 +151,10 @@ examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
 examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32p4"
+  disable_test:
+    - if: IDF_TARGET != "esp32s3"
       temporary: true
-      reason: not supported on p4 yet # TODO: IDF-8075
+      reason: lack of runners
 
 examples/peripherals/parlio:
   disable:

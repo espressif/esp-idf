@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # MCPWM FOC SVPWM Generation Open Loop Example
 
@@ -29,10 +29,13 @@ These three-phase sine signals are generated at 50Hz by **open loop FOC**, pleas
 
 ### Hardware Required
 
-1. An ESP board with MCPWM peripheral supported (e.g. ESP32-S3-Motor-DevKit)
-2. A three-phase gate driver, for example, the [DRV8302](https://www.ti.com.cn/product/zh-cn/DRV8302)
-3. Six N-MOSFETs, for example, the [IRF540NS](https://www.infineon.com/cms/en/product/power/mosfet/12v-300v-n-channel-power-mosfet/irf540ns/)
-4. A USB cable for Power supply and programming
+1. An **ESP32-S3-Motor-DevKit**, or independent circuit module follows:
+1.1. Any ESP board with MCPWM peripheral supported (e.g. ESP32S3, ESP32C6, ESP32H2 ,,,)
+1.2. A three-phase gate driver, for example, the [DRV8302](https://www.ti.com.cn/product/zh-cn/DRV8302)
+1.3. Six N-MOSFETs, for example, the [IRF540NS](https://www.infineon.com/cms/en/product/power/mosfet/12v-300v-n-channel-power-mosfet/irf540ns/)
+2. A USB cable for programming
+3. A Power supply at least 9V
+4. Any 3-phases load (e.g. PMSM, ACIM, or transformer)
 
 ### Connection
 Using only `delta/triangle` connect to the output.
