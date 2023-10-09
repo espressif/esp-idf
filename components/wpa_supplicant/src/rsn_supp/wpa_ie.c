@@ -191,6 +191,8 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 #ifdef CONFIG_WPA3_SAE
     } else if (key_mgmt == WPA_KEY_MGMT_SAE) {
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE);
+    } else if (key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY) {
+        RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE_EXT_KEY);
 #endif /* CONFIG_WPA3_SAE */
 #ifdef CONFIG_OWE_STA
     } else if (key_mgmt == WPA_KEY_MGMT_OWE) {

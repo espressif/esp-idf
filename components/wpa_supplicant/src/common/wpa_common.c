@@ -335,6 +335,8 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 #ifdef CONFIG_WPA3_SAE
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE)
 		return WPA_KEY_MGMT_SAE;
+	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE_EXT_KEY)
+		return WPA_KEY_MGMT_SAE_EXT_KEY;
 #endif /* CONFIG_WPA3_SAE */
 #ifdef CONFIG_OWE_STA
 	if(RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_OWE)
@@ -969,6 +971,8 @@ u32 wpa_akm_to_suite(int akm)
 		return RSN_AUTH_KEY_MGMT_802_1X_SUITE_B_192;
 	if (akm & WPA_KEY_MGMT_SAE)
 		return RSN_AUTH_KEY_MGMT_SAE;
+	if (akm & WPA_KEY_MGMT_SAE_EXT_KEY)
+		return RSN_AUTH_KEY_MGMT_SAE_EXT_KEY;
 	if (akm & WPA_KEY_MGMT_FT_SAE)
 		return RSN_AUTH_KEY_MGMT_FT_SAE;
 	if (akm & WPA_KEY_MGMT_OWE)
