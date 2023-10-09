@@ -1337,7 +1337,7 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
 #if SOC_I2S_HW_VERSION_2
         SLOT_CFG(pdm_tx).line_mode = I2S_PDM_TX_ONE_LINE_CODEC;
         SLOT_CFG(pdm_tx).hp_en = true;
-        SLOT_CFG(pdm_tx).hp_cut_off_freq_hz = 49;
+        SLOT_CFG(pdm_tx).hp_cut_off_freq_hzx10 = 490;
         SLOT_CFG(pdm_tx).sd_dither = 0;
         SLOT_CFG(pdm_tx).sd_dither2 = 1;
 #endif // SOC_I2S_HW_VERSION_2
