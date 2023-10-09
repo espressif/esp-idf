@@ -454,7 +454,8 @@ LCD Panel IO Operations
 * :cpp:func:`esp_lcd_panel_reset` can reset the LCD panel.
 * :cpp:func:`esp_lcd_panel_init` performs a basic initialization of the panel. To perform more manufacture specific initialization, please go to :ref:`steps_add_manufacture_init`.
 * Through combined use of :cpp:func:`esp_lcd_panel_swap_xy` and :cpp:func:`esp_lcd_panel_mirror`, you can rotate the LCD screen.
-* :cpp:func:`esp_lcd_panel_disp_on_off` can turn on or off the LCD screen (different from LCD backlight).
+* :cpp:func:`esp_lcd_panel_disp_on_off` can turn on or off the LCD screen by cutting down the output path from the frame buffer to the LCD screen.
+* :cpp:func:`esp_lcd_panel_disp_sleep` can reduce the power consumption of the LCD screen by entering the sleep mode. The internal frame buffer is still retained.
 * :cpp:func:`esp_lcd_panel_draw_bitmap` is the most significant function, which does the magic to draw the user provided color buffer to the LCD screen, where the draw window is also configurable.
 
 .. _steps_add_manufacture_init:
