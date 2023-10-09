@@ -9,13 +9,14 @@
 
 #include "hal/spi_hal.h"
 #include "hal/assert.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/soc_caps.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
-#if SOC_AHB_GDMA_VERSION == 1
+#if SOC_GDMA_SUPPORTED
+#if (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB) && (SOC_AHB_GDMA_VERSION == 1)
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
-
 #define spi_dma_ll_rx_reset(dev, chan)                             gdma_ll_rx_reset_channel(&GDMA, chan)
 #define spi_dma_ll_tx_reset(dev, chan)                             gdma_ll_tx_reset_channel(&GDMA, chan);
 #define spi_dma_ll_rx_start(dev, chan, addr) do {\
@@ -26,7 +27,21 @@
             gdma_ll_tx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
             gdma_ll_tx_start(&GDMA, chan);\
         } while (0)
+
+#elif (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)   //TODO: IDF-6152, refactor spi hal layer
+#include "hal/axi_dma_ll.h"
+#define spi_dma_ll_rx_reset(dev, chan)                             axi_dma_ll_rx_reset_channel(&AXI_DMA, chan)
+#define spi_dma_ll_tx_reset(dev, chan)                             axi_dma_ll_tx_reset_channel(&AXI_DMA, chan);
+#define spi_dma_ll_rx_start(dev, chan, addr) do {\
+            axi_dma_ll_rx_set_desc_addr(&AXI_DMA, chan, (uint32_t)addr);\
+            axi_dma_ll_rx_start(&AXI_DMA, chan);\
+        } while (0)
+#define spi_dma_ll_tx_start(dev, chan, addr) do {\
+            axi_dma_ll_tx_set_desc_addr(&AXI_DMA, chan, (uint32_t)addr);\
+            axi_dma_ll_tx_start(&AXI_DMA, chan);\
+        } while (0)
 #endif
+#endif  //SOC_GDMA_SUPPORTED
 
 void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev)
 {
@@ -37,7 +52,6 @@ void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 #endif
     spi_ll_master_set_pos_cs(hw, dev->cs_pin_id, dev->positive_cs);
     spi_ll_master_set_clock_by_reg(hw, &dev->timing_conf.clock_reg);
-    spi_ll_set_clk_source(hw, dev->timing_conf.clock_source);
     //Configure bit order
     spi_ll_set_rx_lsbfirst(hw, dev->rx_lsbfirst);
     spi_ll_set_tx_lsbfirst(hw, dev->tx_lsbfirst);
@@ -131,6 +145,43 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
     memcpy(&hal->trans_config, trans, sizeof(spi_hal_trans_config_t));
 }
 
+#if SOC_NON_CACHEABLE_OFFSET
+#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))((uint32_t)(addr) + SOC_NON_CACHEABLE_OFFSET))
+#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))((uint32_t)(addr) - SOC_NON_CACHEABLE_OFFSET))
+#else
+#define ADDR_DMA_2_CPU(addr)   (addr)
+#define ADDR_CPU_2_DMA(addr)   (addr)
+#endif
+//TODO: IDF-6152, refactor spi hal layer
+static void s_spi_hal_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
+{
+    dmadesc = ADDR_DMA_2_CPU(dmadesc);
+    int n = 0;
+    while (len) {
+        int dmachunklen = len;
+        if (dmachunklen > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+            dmachunklen = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+        }
+        if (is_rx) {
+            //Receive needs DMA length rounded to next 32-bit boundary
+            dmadesc[n].dw0.size = (dmachunklen + 3) & (~3);
+            dmadesc[n].dw0.length = (dmachunklen + 3) & (~3);
+        } else {
+            dmadesc[n].dw0.size = dmachunklen;
+            dmadesc[n].dw0.length = dmachunklen;
+        }
+        dmadesc[n].buffer = (uint8_t *)data;
+        dmadesc[n].dw0.suc_eof = 0;
+        dmadesc[n].dw0.owner = 1;
+        dmadesc[n].next = ADDR_CPU_2_DMA(&dmadesc[n + 1]);
+        len -= dmachunklen;
+        data += dmachunklen;
+        n++;
+    }
+    dmadesc[n - 1].dw0.suc_eof = 1; //Mark last DMA desc as end of stream.
+    dmadesc[n - 1].next = NULL;
+}
+
 void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev, const spi_hal_trans_config_t *trans)
 {
     spi_dev_t *hw = hal->hw;
@@ -140,13 +191,13 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
         if (!hal->dma_enabled) {
             //No need to setup anything; we'll copy the result out of the work registers directly later.
         } else {
-            lldesc_setup_link(hal->dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
+            s_spi_hal_dma_desc_setup_link(hal->dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
 
             spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
             spi_ll_dma_rx_fifo_reset(hal->hw);
             spi_ll_infifo_full_clr(hal->hw);
             spi_ll_dma_rx_enable(hal->hw, 1);
-            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, hal->dmadesc_rx);
+            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, (lldesc_t *)hal->dmadesc_rx);
         }
 
     }
@@ -165,13 +216,13 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
             //Need to copy data to registers manually
             spi_ll_write_buffer(hw, trans->send_buffer, trans->tx_bitlen);
         } else {
-            lldesc_setup_link(hal->dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
+            s_spi_hal_dma_desc_setup_link(hal->dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
 
             spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
             spi_ll_dma_tx_fifo_reset(hal->hw);
             spi_ll_outfifo_empty_clr(hal->hw);
             spi_ll_dma_tx_enable(hal->hw, 1);
-            spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, hal->dmadesc_tx);
+            spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, (lldesc_t *)hal->dmadesc_tx);
         }
     }
 

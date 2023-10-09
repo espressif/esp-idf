@@ -117,7 +117,6 @@ api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/secure_element.rst
 api-reference/peripherals/ledc.rst
 api-reference/peripherals/temp_sensor.rst
-api-reference/peripherals/spi_features.rst
 api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/clk_tree.rst
 api-reference/peripherals/spi_flash/xip_from_psram.inc
@@ -136,7 +135,6 @@ api-reference/peripherals/ds.rst
 api-reference/peripherals/i2c.rst
 api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
-api-reference/peripherals/spi_master.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/sdmmc_host.rst
 api-reference/peripherals/uart.rst

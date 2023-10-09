@@ -115,6 +115,7 @@ typedef struct {
 #define SPI_TRANS_MULTILINE_CMD       (1<<9)  ///< The data lines used at command phase is the same as data phase (otherwise, only one data line is used at command phase)
 #define SPI_TRANS_MODE_OCT            (1<<10) ///< Transmit/receive data in 8-bit mode
 #define SPI_TRANS_MULTILINE_ADDR      SPI_TRANS_MODE_DIOQIO_ADDR ///< The data lines used at address phase is the same as data phase (otherwise, only one data line is used at address phase)
+#define SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL   (1<<11) ///< By default driver will automatically re-alloc dma buffer if it doesn't meet hardware alignment or dma_capable requirements, this flag is for you to disable this feature, you will need to take care of the alignment otherwise driver will return you error ESP_ERR_INVALID_ARG
 
 /**
  * This structure describes one SPI transaction. The descriptor should not be modified until the transaction finishes.
@@ -208,6 +209,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_TRANS_CS_KEEP_ACTIVE flag is specified while
  *                                 the bus was not acquired (`spi_device_acquire_bus()` should be called first)
+ *                                 or set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but tx or rx buffer not DMA-capable, or addr&len not align to cache line size
  *         - ESP_ERR_TIMEOUT       if there was no room in the queue before ticks_to_wait expired
  *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
  *         - ESP_ERR_INVALID_STATE if previous transactions are not finished
@@ -273,6 +275,7 @@ esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *tra
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_TRANS_CS_KEEP_ACTIVE flag is specified while
  *                                 the bus was not acquired (`spi_device_acquire_bus()` should be called first)
+ *                                 or set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but tx or rx buffer not DMA-capable, or addr&len not align to cache line size
  *         - ESP_ERR_TIMEOUT       if the device cannot get control of the bus before ``ticks_to_wait`` expired
  *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
  *         - ESP_ERR_INVALID_STATE if previous transactions are not finished

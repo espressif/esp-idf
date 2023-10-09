@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "driver/spi_common.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
+#include "hal/dma_types.h"
 #include "esp_pm.h"
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
@@ -45,6 +46,13 @@ extern "C"
 #define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)
 #endif
 
+#if SOC_GPSPI_SUPPORTED && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
+#define DMA_DESC_MEM_ALIGN_SIZE 8
+typedef dma_descriptor_align8_t spi_dma_desc_t;
+#else
+#define DMA_DESC_MEM_ALIGN_SIZE 4
+typedef dma_descriptor_align4_t spi_dma_desc_t;
+#endif
 
 struct spi_bus_lock_t;
 struct spi_bus_lock_dev_t;
@@ -56,22 +64,21 @@ typedef struct spi_bus_lock_dev_t* spi_bus_lock_dev_handle_t;
 /// Background operation control function
 typedef void (*bg_ctrl_func_t)(void*);
 
-typedef struct lldesc_s lldesc_t;
-
 /// Attributes of an SPI bus
 typedef struct {
-    spi_bus_config_t bus_cfg;   ///< Config used to initialize the bus
-    uint32_t flags;             ///< Flags (attributes) of the bus
-    int max_transfer_sz;        ///< Maximum length of bytes available to send
-    bool dma_enabled;           ///< To enable DMA or not
-    int tx_dma_chan;            ///< TX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
-    int rx_dma_chan;            ///< RX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
-    int dma_desc_num;           ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
-    lldesc_t *dmadesc_tx;       ///< DMA descriptor array for TX
-    lldesc_t *dmadesc_rx;       ///< DMA descriptor array for RX
+    spi_bus_config_t bus_cfg;           ///< Config used to initialize the bus
+    uint32_t flags;                     ///< Flags (attributes) of the bus
+    int max_transfer_sz;                ///< Maximum length of bytes available to send
+    bool dma_enabled;                   ///< To enable DMA or not
+    uint16_t internal_mem_align_size;   ///< Buffer align byte requirement for internal memory
+    int tx_dma_chan;                    ///< TX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
+    int rx_dma_chan;                    ///< RX DMA channel, on ESP32 and ESP32S2, tx_dma_chan and rx_dma_chan are same
+    int dma_desc_num;                   ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
+    spi_dma_desc_t *dmadesc_tx;         ///< DMA descriptor array for TX
+    spi_dma_desc_t *dmadesc_rx;         ///< DMA descriptor array for RX
     spi_bus_lock_handle_t lock;
 #ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_handle_t pm_lock;   ///< Power management lock
+    esp_pm_lock_handle_t pm_lock;       ///< Power management lock
 #endif
 } spi_bus_attr_t;
 

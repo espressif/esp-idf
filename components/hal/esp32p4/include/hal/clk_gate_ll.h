@@ -44,12 +44,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return HP_SYS_CLKRST_REG_TWAI1_CLK_EN;
     case PERIPH_TWAI2_MODULE:
         return HP_SYS_CLKRST_REG_TWAI2_CLK_EN;
-    case PERIPH_GPSPI_MODULE:
-        return HP_SYS_CLKRST_REG_GPSPI2_HS_CLK_EN;
-    case PERIPH_GPSPI2_MODULE:
-        return HP_SYS_CLKRST_REG_GPSPI2_MST_CLK_EN;
-    case PERIPH_GPSPI3_MODULE:
-        return HP_SYS_CLKRST_REG_GPSPI3_MST_CLK_EN;
     case PERIPH_I3C_MODULE:
         return HP_SYS_CLKRST_REG_I3C_MST_CLK_EN;
     case PERIPH_CAM_MODULE:
@@ -125,10 +119,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_CAN2;
     case PERIPH_LEDC_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_LEDC;
-    case PERIPH_GPSPI2_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_SPI2;
-    case PERIPH_GPSPI3_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_SPI3;
     case PERIPH_LCD_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_LCDCAM;
     case PERIPH_SARADC_MODULE:
@@ -194,10 +184,6 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_TWAI1_MODULE:
     case PERIPH_TWAI2_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL116_REG;
-    case PERIPH_GPSPI_MODULE:
-    case PERIPH_GPSPI2_MODULE:
-    case PERIPH_GPSPI3_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL117_REG;
     case PERIPH_I3C_MODULE:
     case PERIPH_CAM_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL119_REG;
@@ -247,8 +233,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_TWAI1_MODULE:
     case PERIPH_TWAI2_MODULE:
     case PERIPH_LEDC_MODULE:
-    case PERIPH_GPSPI2_MODULE:
-    case PERIPH_GPSPI3_MODULE:
     case PERIPH_CAM_MODULE:
     case PERIPH_SARADC_MODULE:
     case PERIPH_AES_MODULE:

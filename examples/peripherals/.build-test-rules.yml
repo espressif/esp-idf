@@ -232,13 +232,12 @@ examples/peripherals/spi_master/lcd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
 
-examples/peripherals/spi_slave/receiver:
+examples/peripherals/spi_slave:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-
-examples/peripherals/spi_slave/sender:
-  disable:
-    - if: SOC_GPSPI_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: target(s) is not supported yet # TODO: IDF-7503 slave support
 
 examples/peripherals/spi_slave_hd/append_mode/master:
   disable:
@@ -255,10 +254,16 @@ examples/peripherals/spi_slave_hd/append_mode/slave:
 examples/peripherals/spi_slave_hd/segment_mode/seg_master:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: target(s) is not supported yet # TODO: IDF-7505 slave hd support
 
 examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
   disable:
     - if: IDF_TARGET == "esp32" or SOC_GPSPI_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: target(s) is not supported yet # TODO: IDF-7505 slave hd support
 
 examples/peripherals/temperature_sensor/temp_sensor:
   disable:

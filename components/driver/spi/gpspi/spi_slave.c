@@ -163,6 +163,9 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     bool use_dma = (dma_chan != SPI_DMA_DISABLED);
     spihost[host]->dma_enabled = use_dma;
     if (use_dma) {
+#if CONFIG_IDF_TARGET_ESP32P4
+        abort();    //will supported in IDF-7503
+#endif
         ret = spicommon_dma_chan_alloc(host, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
         if (ret != ESP_OK) {
             goto cleanup;

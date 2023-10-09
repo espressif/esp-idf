@@ -52,7 +52,7 @@
 #define SOC_I2S_SUPPORTED               1
 // #define SOC_RMT_SUPPORTED               1  //TODO: IDF-7476
 // #define SOC_SDM_SUPPORTED               1  //TODO: IDF-7551
-// #define SOC_GPSPI_SUPPORTED             1  //TODO: IDF-7502, TODO: IDF-7503
+#define SOC_GPSPI_SUPPORTED             1
 // #define SOC_LEDC_SUPPORTED              1  //TODO: IDF-6510
 #define SOC_I2C_SUPPORTED               1  //TODO: IDF-6507, TODO: IDF-7491
 #define SOC_SYSTIMER_SUPPORTED          1
@@ -378,29 +378,29 @@
 #define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
 #define SOC_SDM_CLK_SUPPORT_XTAL     1
 
-// TODO: IDF-5334 (Copy from esp32c3, need check)
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#define SOC_SPI_PERIPH_NUM          2
-#define SOC_SPI_PERIPH_CS_NUM(i)    6
-#define SOC_SPI_MAX_CS_NUM          6
-
-#define SOC_MEMSPI_IS_INDEPENDENT 1
+#define SOC_SPI_PERIPH_NUM              3
+#define SOC_SPI_PERIPH_CS_NUM(i)        (((i)==0)? 2: (((i)==1)? 6: 3))
+#define SOC_SPI_MAX_CS_NUM              6
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 
-#define SOC_SPI_SUPPORT_DDRCLK              1
+// #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1    //TODO: IDF-7505
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
+#define SOC_SPI_SUPPORT_DDRCLK              1
 #define SOC_SPI_SUPPORT_CD_SIG              1
-#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       0
+#define SOC_SPI_SUPPORT_OCT                 1
 #define SOC_SPI_SUPPORT_CLK_XTAL            1
-#define SOC_SPI_SUPPORT_CLK_PLL_F80M        1
-#define SOC_SPI_SUPPORT_CLK_RC_FAST         1
+// #define SOC_SPI_SUPPORT_CLK_RC_FAST         1    //bellow clks are waiting for clock tree
+// #define SOC_SPI_SUPPORT_CLK_SPLL_F480M      1    //super pll
+// #define SOC_SPI_SUPPORT_CLK_SDIO            1    //sdio pll
+// #define SOC_SPI_SUPPORT_CLK_APLL            1    //audio pll
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
 
-#define SOC_SPI_MAX_PRE_DIVIDER 16
+#define SOC_MEMSPI_IS_INDEPENDENT   1
+#define SOC_SPI_MAX_PRE_DIVIDER     16
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)

@@ -107,6 +107,7 @@ typedef enum {
  * @param hw Beginning address of the peripheral registers.
  * @param clk_source clock source to select, see valid sources in type `spi_clock_source_t`
  */
+__attribute__((always_inline))
 static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
 {
     //empty, keep this for compatibility

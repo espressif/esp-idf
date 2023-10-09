@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,17 +13,27 @@
 #include "soc/clk_tree_defs.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
-#if SOC_AHB_GDMA_VERSION == 1
+#if SOC_GDMA_SUPPORTED
+#if (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB) && (SOC_AHB_GDMA_VERSION == 1)
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
-
 #define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         gdma_ll_rx_enable_data_burst(&GDMA, chan, enable);
 #define spi_dma_ll_tx_enable_burst_data(dev, chan, enable)         gdma_ll_tx_enable_data_burst(&GDMA, chan, enable);
 #define spi_dma_ll_rx_enable_burst_desc(dev, chan, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, chan, enable);
 #define spi_dma_ll_tx_enable_burst_desc(dev, chan, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, chan, enable);
 #define spi_dma_ll_enable_out_auto_wrback(dev, chan, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, chan, enable);
 #define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          gdma_ll_tx_set_eof_mode(&GDMA, chan, enable);
+
+#elif (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)   //TODO: IDF-6152, refactor spi hal layer
+#include "hal/axi_dma_ll.h"
+#define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         axi_dma_ll_rx_enable_data_burst(&AXI_DMA, chan, enable);
+#define spi_dma_ll_tx_enable_burst_data(dev, chan, enable)         axi_dma_ll_tx_enable_data_burst(&AXI_DMA, chan, enable);
+#define spi_dma_ll_rx_enable_burst_desc(dev, chan, enable)         axi_dma_ll_rx_enable_descriptor_burst(&AXI_DMA, chan, enable);
+#define spi_dma_ll_tx_enable_burst_desc(dev, chan, enable)         axi_dma_ll_tx_enable_descriptor_burst(&AXI_DMA, chan, enable);
+#define spi_dma_ll_enable_out_auto_wrback(dev, chan, enable)          axi_dma_ll_tx_enable_auto_write_back(&AXI_DMA, chan, enable);
+#define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          axi_dma_ll_tx_set_eof_mode(&AXI_DMA, chan, enable);
 #endif
+#endif  //SOC_GDMA_SUPPORTED
 
 /* The tag may be unused if log level is set to NONE  */
 static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";

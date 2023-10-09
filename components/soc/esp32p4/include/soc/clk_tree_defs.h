@@ -391,16 +391,20 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of SPI
  */
-#define SOC_SPI_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+#define SOC_SPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_SPLL}
 
 /**
  * @brief Type of SPI clock source.
  */
 typedef enum {
-    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,     /*!< Select PLL_80M as SPI source clock */
-    SPI_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,    /*!< Select PLL_80M as SPI source clock */
     SPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,            /*!< Select XTAL as SPI source clock */
-    SPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as SPI source clock */
+#if SOC_CLK_TREE_SUPPORTED
+    SPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,
+    SPI_CLK_SRC_SPLL_480 = SOC_MOD_CLK_SPLL,
+    SPI_CLK_SRC_DEFAULT = SPI_CLK_SRC_SPLL_480,     /*!< Select SPLL_480M as SPI source clock */
+#else
+    SPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as SPI source clock */
+#endif
 } soc_periph_spi_clk_src_t;
 
 /////////////////////////////////////////////////PSRAM////////////////////////////////////////////////////////////////////
