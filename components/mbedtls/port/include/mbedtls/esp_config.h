@@ -2739,25 +2739,6 @@
 #define MBEDTLS_X509_CRT_WRITE_C
 
 /**
- * \def MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
- *
-  * Alow the X509 parser to not break-off when parsing an X509 certificate
- * and encountering an unknown critical extension.
- *
- * Module:  library/x509_crt.c
- *
- * Requires: MBEDTLS_X509_CRT_PARSE_C
- *
- * This module is supports loading of certificates with extensions that
- * may not be supported by mbedtls.
- */
-#ifdef CONFIG_MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXT
-#define MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
-#else
-#undef MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
-#endif
-
-/**
  * \def MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
  *
  * If set, this enables the X.509 API `mbedtls_x509_crt_verify_with_ca_cb()`
