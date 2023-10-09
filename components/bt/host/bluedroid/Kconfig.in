@@ -124,26 +124,25 @@ config BT_HFP_WBS_ENABLE
         Otherwise there will be no data transmited via GPIOs.
 
 
-config BT_HID_ENABLED
+menuconfig BT_HID_ENABLED
     bool "Classic BT HID"
     depends on BT_CLASSIC_ENABLED
     default n
     help
         This enables the BT HID Host
 
-choice BT_HID_ROLE
-    prompt "Profile Role configuration"
+config BT_HID_HOST_ENABLED
+    bool "Classic BT HID Host"
     depends on BT_HID_ENABLED
-    config BT_HID_HOST_ENABLED
-        bool "Classic BT HID Host"
-        help
-            This enables the BT HID Host
+    default n
+    help
+        This enables the BT HID Host
 
-    config BT_HID_DEVICE_ENABLED
-        bool "Classic BT HID Device"
-        help
-            This enables the BT HID Device
-endchoice
+config BT_HID_DEVICE_ENABLED
+    bool "Classic BT HID Device"
+    depends on BT_HID_ENABLED
+    help
+        This enables the BT HID Device
 
 config BT_BLE_ENABLED
     bool "Bluetooth Low Energy"
