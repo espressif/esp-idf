@@ -326,7 +326,7 @@ Configuration File
 File Location
 ~~~~~~~~~~~~~
 
-The default name for a configuration file is ``esp-idf-monitor.cfg``. First, the same directory ``esp-idf-monitor`` is being run in is inspected.
+The default name for a configuration file is ``esp-idf-monitor.cfg``. First, the same directory ``esp-idf-monitor`` is being run if is inspected.
 
 If a configuration file is not found here, the current user's OS configuration directory is inspected next:
 
@@ -342,40 +342,56 @@ If a configuration file is still not found, the last inspected location is the h
 
 On Windows, the home directory can be set with the ``HOME`` or ``USERPROFILE`` environment variables. Therefore, the Windows configuration directory location also depends on these.
 
-A different location for the configuration file can be specified with the ``ESP_IDF_MONITOR_CFGFILE`` environment variable, e.g. ``ESP_IDF_MONITOR_CFGFILE = ~/custom_config.cfg``. This overrides the search priorities described above.
+A different location for the configuration file can be specified with the ``ESP_IDF_MONITOR_CFGFILE`` environment variable, e.g., ``ESP_IDF_MONITOR_CFGFILE = ~/custom_config.cfg``. This overrides the search priorities described above.
 
-``esp-idf-monitor`` will read settings from other usual configuration files if no other configuration file is used.  It will automatically read from ``setup.cfg`` or ``tox.ini`` if they exist.
+``esp-idf-monitor`` will read settings from other usual configuration files if no other configuration file is used. It automatically reads from ``setup.cfg`` or ``tox.ini`` if they exist.
 
 Configuration Options
 ~~~~~~~~~~~~~~~~~~~~~
 
 Below is a table listing the available configuration options:
 
-+-----------------------------+---------------------------------------------------------+---------------+
-| Option Name                 | Description                                             | Default Value |
-+=============================+=========================================================+===============+
-| menu_key                    | Key to access the main menu.                            | ``T``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| exit_key                    | Key to exit the monitor.                                | ``]``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| chip_reset_key              | Key to initiate a chip reset.                           | ``R``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| recompile_upload_key        | Key to recompile and upload.                            | ``F``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| recompile_upload_app_key    | Key to recompile and upload just the application.       | ``A``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| toggle_output_key           | Key to toggle the output display.                       | ``Y``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| toggle_log_key              | Key to toggle the logging feature.                      | ``L``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| toggle_timestamp_key        | Key to toggle timestamp display.                        | ``I``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| chip_reset_bootloader_key   | Key to reset the chip to bootloader mode.               | ``P``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| exit_menu_key               | Key to exit the monitor from the menu.                  | ``X``         |
-+-----------------------------+---------------------------------------------------------+---------------+
-| skip_menu_key               | Pressing the menu key can be skipped for menu commands. | ``False``     |
-+-----------------------------+---------------------------------------------------------+---------------+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 50 20
+    :align: center
+
+    * - Option Name
+      - Description
+      - Default Value
+    * - menu_key
+      - Key to access the main menu.
+      - ``T``
+    * - exit_key
+      - Key to exit the monitor.
+      - ``]``
+    * - chip_reset_key
+      - Key to initiate a chip reset.
+      - ``R``
+    * - recompile_upload_key
+      - Key to recompile and upload.
+      - ``F``
+    * - recompile_upload_app_key
+      - Key to recompile and upload just the application.
+      - ``A``
+    * - toggle_output_key
+      - Key to toggle the output display.
+      - ``Y``
+    * - toggle_log_key
+      - Key to toggle the logging feature.
+      - ``L``
+    * - toggle_timestamp_key
+      - Key to toggle timestamp display.
+      - ``I``
+    * - chip_reset_bootloader_key
+      - Key to reset the chip to bootloader mode.
+      - ``P``
+    * - exit_menu_key
+      - Key to exit the monitor from the menu.
+      - ``X``
+    * - skip_menu_key
+      - Pressing the menu key can be skipped for menu commands.
+      - ``False``
 
 
 Syntax
