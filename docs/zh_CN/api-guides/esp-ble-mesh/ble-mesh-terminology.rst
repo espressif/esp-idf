@@ -1,9 +1,9 @@
 ESP-BLE-MESH Terminology
 ========================
 
-.. _ble-mesh-terminology-role:
-
 :link_to_translation:`en:[English]`
+
+.. _ble-mesh-terminology-role:
 
 .. list-table:: 表 1 ESP-BLE-MESH 术语 - 身份
   :widths: 10 40 60
@@ -120,6 +120,7 @@ ESP-BLE-MESH Terminology
   * - 基于证书的配网 (Certificate-based Provisioning)
     - Certificate-based Out-of-Band
     - 基于证书的配网功能利用公钥基础设施来验证未配网设备的公钥和UUID信息。
+
 
 .. _ble-mesh-terminology-address:
 
@@ -277,6 +278,3 @@ ESP-BLE-MESH Terminology
 
 官方定义摘自 `ESP-BLE-MESH Glossary of Terms <https://www.bluetooth.com/learn-about-bluetooth/recent-enhancements/mesh/mesh-glossary/>`_.
 查看更多术语，也请参照上述网址。
-
-
-

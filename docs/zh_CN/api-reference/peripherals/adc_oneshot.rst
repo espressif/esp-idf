@@ -93,7 +93,6 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
     ADC IO 及其对应的 ADC 通道编号，请参阅 `技术规格书 <{IDF_TARGET_TRM_CN_URL}>`__。
 
-
     此外，可以使用 :cpp:func:`adc_continuous_io_to_channel` 和 :cpp:func:`adc_continuous_channel_to_io` 了解 ADC 通道和 ADC IO。
 
 为使以上设置生效，请使用上述配置结构体调用 :cpp:func:`adc_oneshot_config_channel`，并指定要配置的 ADC 通道。函数 :cpp:func:`adc_oneshot_config_channel` 支持多次调用，以配置不同的 ADC 通道。驱动程序将在内部保存每个通道的配置。

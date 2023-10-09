@@ -337,7 +337,7 @@ The map file itself is broken into parts and each part has a heading. The parts 
     - If you are wondering why some object file in particular was included in the binary, this part may give a clue. This part can be used in conjunction with the ``Cross Reference Table`` at the end of the file.
 
     .. note::
-        
+
         Not every object file shown in this list ends up included in the final binary, some end up in the ``Discarded input sections`` list instead.
 
 - ``Allocating common symbols``
@@ -561,6 +561,3 @@ IRAM Binary Size
 ----------------
 
 If the IRAM section of a binary is too large, this issue can be resolved by reducing IRAM memory usage. See :ref:`optimize-iram-usage`.
-
-
-
