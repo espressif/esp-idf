@@ -1681,6 +1681,18 @@ int sae_write_commit(struct sae_data *sae, struct wpabuf *buf,
 				"SAE: Anti-clogging token (in container)",
 				token);
 	}
+
+	if (wpa_key_mgmt_sae_ext_key(sae->akmp)) {
+		u32 suite = wpa_akm_to_suite(sae->akmp);
+
+		wpabuf_put_u8(buf, WLAN_EID_EXTENSION);
+		wpabuf_put_u8(buf, 1 + RSN_SELECTOR_LEN);
+		wpabuf_put_u8(buf, WLAN_EID_EXT_AKM_SUITE_SELECTOR);
+		RSN_SELECTOR_PUT(wpabuf_put(buf, RSN_SELECTOR_LEN), suite);
+		wpa_printf(MSG_DEBUG, "SAE: AKM Suite Selector: %08x", suite);
+		sae->own_akm_suite_selector = suite;
+	}
+
 	return ESP_OK;
 }
 
@@ -1754,6 +1766,16 @@ static int sae_is_token_container_elem(const u8 *pos, const u8 *end)
 		pos[1] >= 1 &&
 		end - pos - 2 >= pos[1] &&
 		pos[2] == WLAN_EID_EXT_ANTI_CLOGGING_TOKEN;
+}
+
+
+static int sae_is_akm_suite_selector_elem(const u8 *pos, const u8 *end)
+{
+	return end - pos >= 2 + 1 + RSN_SELECTOR_LEN &&
+		pos[0] == WLAN_EID_EXTENSION &&
+		pos[1] >= 1 + RSN_SELECTOR_LEN &&
+		end - pos - 2 >= pos[1] &&
+		pos[2] == WLAN_EID_EXT_AKM_SUITE_SELECTOR;
 }
 
 
@@ -2044,6 +2066,35 @@ static int sae_parse_rejected_groups(struct sae_data *sae,
 }
 
 
+static int sae_parse_akm_suite_selector(struct sae_data *sae,
+					const u8 **pos, const u8 *end)
+{
+	const u8 *epos;
+	u8 len;
+
+	wpa_hexdump(MSG_DEBUG, "SAE: Possible elements at the end of the frame",
+		    *pos, end - *pos);
+	if (!sae_is_akm_suite_selector_elem(*pos, end))
+		return WLAN_STATUS_SUCCESS;
+
+	epos = *pos;
+	epos++; /* skip IE type */
+	len = *epos++; /* IE length */
+	if (len > end - epos || len < 1)
+		return WLAN_STATUS_UNSPECIFIED_FAILURE;
+	epos++; /* skip ext ID */
+	len--;
+
+	if (len < RSN_SELECTOR_LEN)
+		return WLAN_STATUS_UNSPECIFIED_FAILURE;
+	sae->peer_akm_suite_selector = RSN_SELECTOR_GET(epos);
+	wpa_printf(MSG_DEBUG, "SAE: Received AKM Suite Selector: %08x",
+		   sae->peer_akm_suite_selector);
+	*pos = epos + len;
+	return WLAN_STATUS_SUCCESS;
+}
+
+
 u16 sae_parse_commit(struct sae_data *sae, const u8 *data, size_t len,
 		     const u8 **token, size_t *token_len, int *allowed_groups,
 		     int h2e)
@@ -2087,6 +2138,29 @@ u16 sae_parse_commit(struct sae_data *sae, const u8 *data, size_t len,
 	/* Optional Anti-Clogging Token Container element */
 	if (h2e)
 		sae_parse_token_container(sae, pos, end, token, token_len);
+
+	/* Conditional AKM Suite Selector element */
+	if (h2e) {
+		res = sae_parse_akm_suite_selector(sae, &pos, end);
+		if (res != WLAN_STATUS_SUCCESS)
+			return res;
+	}
+
+	if (sae->own_akm_suite_selector &&
+	    sae->own_akm_suite_selector != sae->peer_akm_suite_selector) {
+		wpa_printf(MSG_DEBUG,
+			   "SAE: AKM suite selector mismatch: own=%08x peer=%08x",
+			   sae->own_akm_suite_selector,
+			   sae->peer_akm_suite_selector);
+		return WLAN_STATUS_UNSPECIFIED_FAILURE;
+	}
+
+	if (!sae->akmp) {
+		if (sae->peer_akm_suite_selector ==
+		    RSN_AUTH_KEY_MGMT_SAE_EXT_KEY) {
+			sae->akmp = WPA_KEY_MGMT_SAE_EXT_KEY;
+		}
+	}
 
 	/*
 	 * Check whether peer-commit-scalar and PEER-COMMIT-ELEMENT are same as

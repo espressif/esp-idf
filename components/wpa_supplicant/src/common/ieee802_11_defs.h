@@ -255,6 +255,7 @@
 #define WLAN_EID_EXT_HE_OPERATION 36
 #define WLAN_EID_EXT_REJECTED_GROUPS 92
 #define WLAN_EID_EXT_ANTI_CLOGGING_TOKEN 93
+#define WLAN_EID_EXT_AKM_SUITE_SELECTOR 114
 
 /* Extended RSN Capabilities */
 /* bits 0-3: Field length (n-1) */
