@@ -15,6 +15,9 @@
 #include "hal/uart_types.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
+#include "soc/system_struct.h"
+#include "soc/system_reg.h"
+#include "soc/dport_access.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -55,6 +58,77 @@ typedef enum {
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
     UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
+
+/**
+ * @brief Check if UART is enabled or disabled.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return true: enabled; false: disabled
+ */
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
+{
+    uint32_t uart_rst_bit = ((uart_num == 0) ? SYSTEM_UART_RST :
+                            (uart_num == 1) ? SYSTEM_UART1_RST :
+                            (uart_num == 2) ? SYSTEM_UART2_RST : 0);
+    uint32_t uart_en_bit  = ((uart_num == 0) ? SYSTEM_UART_CLK_EN :
+                            (uart_num == 1) ? SYSTEM_UART1_CLK_EN :
+                            (uart_num == 2) ? SYSTEM_UART2_CLK_EN : 0);
+    return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, uart_rst_bit) == 0 &&
+        DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, uart_en_bit) != 0;
+}
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num) {
+    case 0:
+        SYSTEM.perip_clk_en0.uart_clk_en = enable;
+        break;
+    case 1:
+        SYSTEM.perip_clk_en0.uart1_clk_en = enable;
+        break;
+    case 2:
+        SYSTEM.perip_clk_en1.uart2_clk_en = enable;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        SYSTEM.perip_rst_en0.uart_rst = 1;
+        SYSTEM.perip_rst_en0.uart_rst = 0;
+        break;
+    case 1:
+        SYSTEM.perip_rst_en0.uart1_rst = 1;
+        SYSTEM.perip_rst_en0.uart1_rst = 0;
+        break;
+    case 2:
+        SYSTEM.perip_rst_en1.uart2_rst = 1;
+        SYSTEM.perip_rst_en1.uart2_rst = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Configure the UART core reset.

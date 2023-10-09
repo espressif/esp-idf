@@ -682,6 +682,9 @@ void IRAM_ATTR call_start_cpu0(void)
     clock_hz = esp_clk_xtal_freq(); // From esp32-s3 on, UART clock source is selected to XTAL in ROM
 #endif
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+
+    // In a single thread mode, the freertos is not started yet. So don't have to use a critical section.
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused)); // To avoid build errors about spinlock's __DECLARE_RCC_ATOMIC_ENV
     esp_rom_uart_set_clock_baudrate(CONFIG_ESP_CONSOLE_UART_NUM, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 #endif

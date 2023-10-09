@@ -72,6 +72,7 @@
 // #define SOC_PMU_SUPPORTED               1  //TODO: IDF-7531
 // #define SOC_PAU_SUPPORTED               1  //TODO: IDF-7531
 // #define SOC_LP_TIMER_SUPPORTED          1  //TODO: IDF-7532
+// #define SOC_ULP_LP_UART_SUPPORTED       1  //TODO: IDF-7533
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_SPIRAM_SUPPORTED            1
@@ -470,11 +471,12 @@
 /*-------------------------- MEMPROT CAPS ------------------------------------*/
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-// ESP32-P4 has 2 UARTs
-#define SOC_UART_NUM                    (2)
-#define SOC_UART_HP_NUM                 (2)
-// #define SOC_UART_LP_NUM                 (1U)
+// ESP32-P4 has 6 UARTs (5 HP UART, and 1 LP UART)
+#define SOC_UART_NUM                    (6)
+#define SOC_UART_HP_NUM                 (5)
+#define SOC_UART_LP_NUM                 (1U)
 #define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
+#define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
 #define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
 #define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */

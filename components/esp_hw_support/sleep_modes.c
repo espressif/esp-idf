@@ -425,7 +425,7 @@ static void IRAM_ATTR flush_uarts(void)
 #ifdef CONFIG_IDF_TARGET_ESP32
         esp_rom_uart_tx_wait_idle(i);
 #else
-        if (periph_ll_uart_enabled(i)) {
+        if (uart_ll_is_enabled(i)) {
             esp_rom_uart_tx_wait_idle(i);
         }
 #endif
@@ -443,7 +443,7 @@ FORCE_INLINE_ATTR void suspend_uarts(void)
     s_suspended_uarts_bmap = 0;
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
 #ifndef CONFIG_IDF_TARGET_ESP32
-        if (!periph_ll_uart_enabled(i)) {
+        if (!uart_ll_is_enabled(i)) {
             continue;
         }
 #endif

@@ -389,7 +389,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     };
 
     const uart_port_t uart_echo = UART_NUM_1;
-    const int uart_tx_signal = U1TXD_OUT_IDX;
+    const int uart_tx_signal = uart_periph_signal[uart_echo].pins[SOC_UART_TX_PIN_IDX].signal;
     const int uart_tx = UART1_TX_PIN;
     const int uart_rx = UART1_RX_PIN;
     const int buf_size = 256;

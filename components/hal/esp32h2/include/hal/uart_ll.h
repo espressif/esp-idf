@@ -17,6 +17,7 @@
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/pcr_reg.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -79,6 +80,66 @@ typedef enum {
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
     UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
+
+/**
+ * @brief Check if UART is enabled or disabled.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return true: enabled; false: disabled
+ */
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
+{
+    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
+                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
+    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
+                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
+    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
+                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
+    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
+        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
+}
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num) {
+    case 0:
+        PCR.uart0_conf.uart0_clk_en = enable;
+        break;
+    case 1:
+        PCR.uart1_conf.uart1_clk_en = enable;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        PCR.uart0_conf.uart0_rst_en = 1;
+        PCR.uart0_conf.uart0_rst_en = 0;
+        break;
+    case 1:
+        PCR.uart1_conf.uart1_rst_en = 1;
+        PCR.uart1_conf.uart1_rst_en = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
 
 /**
  * @brief Sync the update to UART core clock domain

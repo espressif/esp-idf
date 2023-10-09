@@ -687,8 +687,6 @@ components/soc/esp32c3/include/soc/soc_pins.h
 components/soc/esp32c3/include/soc/spi_mem_reg.h
 components/soc/esp32c3/include/soc/spi_pins.h
 components/soc/esp32c3/include/soc/spi_reg.h
-components/soc/esp32c3/include/soc/system_reg.h
-components/soc/esp32c3/include/soc/system_struct.h
 components/soc/esp32c3/include/soc/systimer_reg.h
 components/soc/esp32c3/include/soc/systimer_struct.h
 components/soc/esp32c3/include/soc/uart_pins.h
