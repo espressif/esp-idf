@@ -7,7 +7,6 @@ setuptools>=21
 #
 # importlib_metadata: is part of python3.8 and newer as importlib.metadata
 importlib_metadata; python_version < "3.8"
-packaging
 click==7.0; python_version == "3.4"
 click>=7.0; python_version != "3.4"
 pyserial>=3.0
