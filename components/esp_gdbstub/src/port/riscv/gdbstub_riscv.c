@@ -11,6 +11,7 @@
 #include "rv_decode.h"
 #include "sdkconfig.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_private/freertos_debug.h"
 
 extern volatile esp_gdbstub_frame_t *temp_regs_frame;
 
@@ -85,15 +86,7 @@ void esp_gdbstub_int(__attribute__((unused)) void *frame)
    /* Pointer to saved frame is in pxCurrentTCB
     * See rtos_int_enter function
     */
-    /* Todo: Provide IDF interface for getting pxCurrentTCB (IDF-8182) */
-    int core_id = esp_cpu_get_core_id();
-#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-    extern void **pxCurrentTCBs;
-    dummy_tcb_t *tcb = (dummy_tcb_t *) &pxCurrentTCBs[core_id];
-#else
-    extern void **pxCurrentTCB;
-    dummy_tcb_t *tcb = (dummy_tcb_t *) &pxCurrentTCB[core_id];
-#endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+    dummy_tcb_t *tcb = (dummy_tcb_t *)pvTaskGetCurrentTCBForCore(esp_cpu_get_core_id());
     gdbstub_handle_uart_int((esp_gdbstub_frame_t *)tcb->top_of_stack);
 }
 

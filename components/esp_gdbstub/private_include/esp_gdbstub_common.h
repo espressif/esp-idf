@@ -16,7 +16,7 @@
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/task_snapshot.h"
+#include "esp_private/freertos_debug.h"
 #endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 /* Internal error codes used by the routines that parse the incoming gdb packet */

@@ -8,7 +8,7 @@
 #include "esp_assert.h"
 #include "freertos/idf_additions.h"
 #if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-    #include "freertos/task_snapshot.h"
+    #include "esp_private/freertos_debug.h"
 #endif /* CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT */
 #include "esp_private/freertos_idf_additions_priv.h"
 
@@ -1180,6 +1180,26 @@ UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
     return uxArrayNumFilled;
 }
 /*----------------------------------------------------------*/
+
+/* ----------------------------------------------------- Misc ----------------------------------------------------- */
+
+void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
+{
+    void * pvRet;
+
+    configASSERT( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) );
+    #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+        pvRet = ( void * ) pxCurrentTCBs[ xCoreID ];
+    #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+        #if CONFIG_FREERTOS_SMP
+            /* SMP FreeRTOS defines pxCurrentTCB as a macro function call */
+            pvRet = pxCurrentTCB;
+        #else /* CONFIG_FREERTOS_SMP */
+            pvRet = ( void * ) pxCurrentTCB[ xCoreID ];
+        #endif /* CONFIG_FREERTOS_SMP */
+    #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+    return pvRet;
+}
 
 /* ----------------------------------------------------- OpenOCD ---------------------------------------------------- */
 
