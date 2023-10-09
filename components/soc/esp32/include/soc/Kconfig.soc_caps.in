@@ -155,6 +155,18 @@ config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
+config SOC_MPU_SUPPORTED
+    bool
+    default y
+
+config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_FLASH_SUPPORTED
+    bool
+    default y
+
 config SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL
     int
     default 5

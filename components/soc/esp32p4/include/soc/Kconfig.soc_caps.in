@@ -55,6 +55,10 @@ config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
 
+config SOC_EFUSE_SUPPORTED
+    bool
+    default y
+
 config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
@@ -124,6 +128,14 @@ config SOC_SPIRAM_SUPPORTED
     default y
 
 config SOC_PSRAM_DMA_CAPABLE
+    bool
+    default y
+
+config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
 
