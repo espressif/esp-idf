@@ -108,7 +108,7 @@ enum sae_state {
 struct sae_data {
 	enum sae_state state;
 	u16 send_confirm;
-	u8 pmk[SAE_PMK_LEN];
+	u8 pmk[SAE_PMK_LEN_MAX];
 	size_t pmk_len;
 	int akmp; /* WPA_KEY_MGMT_* used in key derivation */
 	u32 own_akm_suite_selector;
