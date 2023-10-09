@@ -237,4 +237,3 @@ J3
 .. _ESP32-C3 技术规格书: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_cn.pdf
 .. _ESP32-C3-WROOM-02 规格书: https://www.espressif.com/sites/default/files/documentation/esp32-c3-wroom-02_datasheet_cn.pdf
 .. _ESP32-C3-DevKitC-02 原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-C3-DEVKITC-02_V1_1_20210126A.pdf
-

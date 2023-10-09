@@ -28,3 +28,8 @@ API 参考
 
 .. include-build-file:: inc/esp_wifi.inc
 .. include-build-file:: inc/esp_wifi_types.inc
+.. include-build-file:: inc/esp_eap_client.inc
+.. include-build-file:: inc/esp_wps.inc
+.. include-build-file:: inc/esp_rrm.inc
+.. include-build-file:: inc/esp_wnm.inc
+.. include-build-file:: inc/esp_mbo.inc
