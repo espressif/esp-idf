@@ -855,7 +855,8 @@ int wpa_pmk_r1_to_ptk(const u8 *pmk_r1, const u8 *snonce, const u8 *anonce,
 */
 
 int wpa_use_akm_defined(int akmp){
-	return akmp == WPA_KEY_MGMT_OWE ||
+	return akmp == WPA_KEY_MGMT_OSEN ||
+		akmp == WPA_KEY_MGMT_OWE ||
 		wpa_key_mgmt_sae(akmp) ||
 		wpa_key_mgmt_suite_b(akmp);
 }

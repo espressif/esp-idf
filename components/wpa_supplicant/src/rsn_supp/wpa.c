@@ -424,18 +424,6 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
         //eapol_sm_notify_cached(sm->eapol);
 #ifdef CONFIG_IEEE80211R
         sm->xxkey_len = 0;
-#ifdef CONFIG_WPA3_SAE
-        if ((sm->key_mgmt == WPA_KEY_MGMT_FT_SAE) &&
-             sm->pmk_len == PMK_LEN) {
-            /* Need to allow FT key derivation to proceed with
-             * PMK from SAE being used as the XXKey in cases where
-             * the PMKID in msg 1/4 matches the PMKSA entry that was
-             * just added based on SAE authentication for the
-             * initial mobility domain association. */
-            os_memcpy(sm->xxkey, sm->pmk, sm->pmk_len);
-            sm->xxkey_len = sm->pmk_len;
-        }
-#endif /* CONFIG_WPA3_SAE */
 #endif /* CONFIG_IEEE80211R */
     } else if (wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
         int res = 0, pmk_len;
@@ -2298,18 +2286,22 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
          sm->key_mgmt = WPA_KEY_MGMT_FT_PSK;
     } else if (auth_mode == WPA3_AUTH_OWE) {
          sm->key_mgmt = WPA_KEY_MGMT_OWE;
+    } else if (auth_mode == WPA3_AUTH_PSK_EXT_KEY) {
+         sm->key_mgmt = WPA_KEY_MGMT_SAE_EXT_KEY; /* for WPA3 PSK */
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
 }
 
-void wpa_set_pmk(uint8_t *pmk, const u8 *pmkid, bool cache_pmksa)
+void wpa_set_pmk(uint8_t *pmk, size_t pmk_length, const u8 *pmkid, bool cache_pmksa)
 {
     struct wpa_sm *sm = &gWpaSm;
     int pmk_len;
 
     if (wpa_key_mgmt_sha384(sm->key_mgmt))
         pmk_len = PMK_LEN_SUITE_B_192;
+    else if (wpa_key_mgmt_sae(sm->key_mgmt))
+        pmk_len = pmk_length;
     else
         pmk_len = PMK_LEN;
 
@@ -2335,7 +2327,8 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     /* Ideally we should use network_ctx for this purpose however currently network profile block
      * is part of libraries,
      * TODO Correct this in future during NVS restructuring */
-    if ((sm->key_mgmt == WPA_KEY_MGMT_SAE) &&
+    if ((sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY) &&
         (os_memcmp(sm->bssid, bssid, ETH_ALEN) == 0) &&
         (os_memcmp(sm->ssid, ssid, ssid_len) != 0)) {
         use_pmk_cache = false;
@@ -2474,7 +2467,9 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
      *  Here only handle passphrase string.  Need extra step to handle 32B, 64Hex raw
      *    PMK.
      */
-    if (sm->key_mgmt == WPA_KEY_MGMT_SAE || sm->key_mgmt == WPA_KEY_MGMT_OWE)
+    if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+        sm->key_mgmt == WPA_KEY_MGMT_OWE ||
+        sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */

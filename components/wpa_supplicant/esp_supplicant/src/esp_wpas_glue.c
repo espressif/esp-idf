@@ -98,7 +98,7 @@ void wpa_supplicant_transition_disable(struct wpa_sm *sm, u8 bitmap)
     wpa_printf(MSG_DEBUG, "TRANSITION_DISABLE %02x", bitmap);
 
     if  ((bitmap & TRANSITION_DISABLE_WPA3_PERSONAL) &&
-         wpa_key_mgmt_sae(sm->key_mgmt)) {
+          wpa_key_mgmt_sae(sm->key_mgmt)) {
         esp_wifi_sta_disable_wpa2_authmode_internal();
     }
 }
