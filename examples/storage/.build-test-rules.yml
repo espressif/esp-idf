@@ -113,9 +113,13 @@ examples/storage/parttool:
 
 examples/storage/perf_benchmark:
   disable:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
       temporary: true
-      reason: target esp32p4 is not supported yet
+      reason: SDMMC and SDSPI not supported on P4 yet # TODO: IDF-6502, IDF-7501
+  disable_test:
+    - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["spiflash"]
+      temporary: true
+      reason: SPIFLASH not supported on P4 yet, only build stage enabled # TODO: IDF-7499
 
 examples/storage/sd_card/sdmmc:
   disable:
