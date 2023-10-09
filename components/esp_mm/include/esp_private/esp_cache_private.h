@@ -58,7 +58,6 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, 
  */
 esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, size_t *actual_size);
 
-
 #ifdef __cplusplus
 }
 #endif

@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 
-
 /**
  * Set addr space dirty
  *
