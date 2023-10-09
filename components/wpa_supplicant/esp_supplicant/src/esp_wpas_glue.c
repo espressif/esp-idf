@@ -93,7 +93,7 @@ int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
 
 }
 
-void wpa_supplicant_transition_disable(void *sm, u8 bitmap)
+void wpa_supplicant_transition_disable(struct wpa_sm *sm, u8 bitmap)
 {
     wpa_printf(MSG_DEBUG, "TRANSITION_DISABLE %02x", bitmap);
 

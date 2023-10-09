@@ -42,7 +42,8 @@ struct sae_pk {
 };
 
 struct sae_temporary_data {
-	u8 kck[SAE_KCK_LEN];
+	u8 kck[SAE_MAX_HASH_LEN];
+	size_t kck_len;
 	struct crypto_bignum *own_commit_scalar;
 	struct crypto_bignum *own_commit_element_ffc;
 	struct crypto_ec_point *own_commit_element_ecc;
@@ -109,15 +110,14 @@ struct sae_data {
 	u16 send_confirm;
 	u8 pmk[SAE_PMK_LEN];
 	u8 pmkid[SAE_PMKID_LEN];
-
 	struct crypto_bignum *peer_commit_scalar;
+	struct crypto_bignum *peer_commit_scalar_accepted;
 	int group;
 	unsigned int sync; /* protocol instance variable: Sync */
 	u16 rc; /* protocol instance variable: Rc (received send-confirm) */
-	struct sae_temporary_data *tmp;
-	struct crypto_bignum *peer_commit_scalar_accepted;
 	unsigned int h2e:1;
 	unsigned int pk:1;
+	struct sae_temporary_data *tmp;
 };
 
 int sae_set_group(struct sae_data *sae, int group);

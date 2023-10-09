@@ -235,27 +235,39 @@ int wpa_ft_parse_ies(const u8 *ies, size_t ies_len,
 #endif /* CONFIG_IEEE80211R */
 
 
-static unsigned int wpa_kck_len(int akmp)
+static unsigned int wpa_kck_len(int akmp, size_t pmk_len)
 {
-	if (akmp == WPA_KEY_MGMT_IEEE8021X_SUITE_B_192)
+	switch (akmp) {
+	case WPA_KEY_MGMT_IEEE8021X_SUITE_B_192:
 		return 24;
-	return 16;
+	case WPA_KEY_MGMT_OWE:
+		return pmk_len / 2;
+	default:
+		return 16;
+	}
 }
 
-static unsigned int wpa_kek_len(int akmp)
+static unsigned int wpa_kek_len(int akmp, size_t pmk_len)
 {
-	if (akmp == WPA_KEY_MGMT_IEEE8021X_SUITE_B_192)
+	switch (akmp) {
+	case WPA_KEY_MGMT_IEEE8021X_SUITE_B_192:
 		return 32;
-	return 16;
+	case WPA_KEY_MGMT_OWE:
+		return pmk_len <= 32 ? 16 : 32;
+	default:
+		return 16;
+	}
 }
 
 
-unsigned int wpa_mic_len(int akmp)
+unsigned int wpa_mic_len(int akmp, size_t pmk_len)
 {
-	if (akmp == WPA_KEY_MGMT_IEEE8021X_SUITE_B_192)
+	switch (akmp) {
+	case WPA_KEY_MGMT_IEEE8021X_SUITE_B_192:
 		return 24;
-
-	return 16;
+	default:
+		return 16;
+	}
 }
 
 static int rsn_selector_to_bitfield(const u8 *s)
@@ -783,8 +795,8 @@ int wpa_pmk_r1_to_ptk(const u8 *pmk_r1, const u8 *snonce, const u8 *anonce,
 	os_memcpy(pos, sta_addr, ETH_ALEN);
 	pos += ETH_ALEN;
 
-	ptk->kck_len = wpa_kck_len(akmp);
-	ptk->kek_len = wpa_kek_len(akmp);
+	ptk->kck_len = wpa_kck_len(akmp, PMK_LEN);
+	ptk->kek_len = wpa_kek_len(akmp, PMK_LEN);
 	ptk->tk_len = wpa_cipher_key_len(cipher);
 	ptk_len = ptk->kck_len + ptk->kek_len + ptk->tk_len;
 
@@ -835,10 +847,9 @@ int wpa_pmk_r1_to_ptk(const u8 *pmk_r1, const u8 *snonce, const u8 *anonce,
 */
 
 int wpa_use_akm_defined(int akmp){
-	int ret = 0;
-	if(wpa_key_mgmt_sae(akmp))
-		ret = 1;
-	return ret;
+	return akmp == WPA_KEY_MGMT_OWE ||
+		wpa_key_mgmt_sae(akmp) ||
+		wpa_key_mgmt_suite_b(akmp);
 }
 
 int wpa_use_aes_key_wrap(int akmp)
@@ -933,6 +944,35 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
 		return -1;
 	}
 
+	return 0;
+}
+
+u32 wpa_akm_to_suite(int akm)
+{
+#ifdef CONFIG_IEEE80211R
+	if (akm & WPA_KEY_MGMT_FT_IEEE8021X)
+		return RSN_AUTH_KEY_MGMT_FT_802_1X;
+	if (akm & WPA_KEY_MGMT_FT_PSK)
+		return RSN_AUTH_KEY_MGMT_FT_PSK;
+#endif /* CONFIG_IEEE80211R */
+	if (akm & WPA_KEY_MGMT_IEEE8021X_SHA256)
+		return RSN_AUTH_KEY_MGMT_802_1X_SHA256;
+	if (akm & WPA_KEY_MGMT_IEEE8021X)
+		return RSN_AUTH_KEY_MGMT_UNSPEC_802_1X;
+	if (akm & WPA_KEY_MGMT_PSK_SHA256)
+		return RSN_AUTH_KEY_MGMT_PSK_SHA256;
+	if (akm & WPA_KEY_MGMT_PSK)
+		return RSN_AUTH_KEY_MGMT_PSK_OVER_802_1X;
+	if (akm & WPA_KEY_MGMT_IEEE8021X_SUITE_B)
+		return RSN_AUTH_KEY_MGMT_802_1X_SUITE_B;
+	if (akm & WPA_KEY_MGMT_IEEE8021X_SUITE_B_192)
+		return RSN_AUTH_KEY_MGMT_802_1X_SUITE_B_192;
+	if (akm & WPA_KEY_MGMT_SAE)
+		return RSN_AUTH_KEY_MGMT_SAE;
+	if (akm & WPA_KEY_MGMT_FT_SAE)
+		return RSN_AUTH_KEY_MGMT_FT_SAE;
+	if (akm & WPA_KEY_MGMT_OWE)
+		return RSN_AUTH_KEY_MGMT_OWE;
 	return 0;
 }
 
@@ -1099,6 +1139,7 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		return -1;
 	}
 	u8 data[2 * ETH_ALEN + 2 * WPA_NONCE_LEN];
+	size_t data_len = 2 * ETH_ALEN + 2 * WPA_NONCE_LEN;
 	u8 tmp[WPA_KCK_MAX_LEN + WPA_KEK_MAX_LEN + WPA_TK_MAX_LEN];
 	size_t ptk_len;
 
@@ -1120,25 +1161,25 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 			  WPA_NONCE_LEN);
 	}
 
-	ptk->kck_len = wpa_kck_len(akmp);
-	ptk->kek_len = wpa_kek_len(akmp);
+	ptk->kck_len = wpa_kck_len(akmp, pmk_len);
+	ptk->kek_len = wpa_kek_len(akmp, pmk_len);
 	ptk->tk_len = wpa_cipher_key_len(cipher);
 	ptk_len = ptk->kck_len + ptk->kek_len + ptk->tk_len;
 
 #if defined(CONFIG_SUITEB192)
 	if (wpa_key_mgmt_sha384(akmp)) {
 		wpa_printf(MSG_DEBUG, "WPA: PTK derivation using PRF(SHA384)");
-		if (sha384_prf(pmk, pmk_len, label, data, sizeof(data),
+		if (sha384_prf(pmk, pmk_len, label, data, data_len,
 					tmp, ptk_len) < 0)
 			return -1;
 	} else
 #endif
-	if (wpa_key_mgmt_sha256(akmp))
-		sha256_prf(pmk, pmk_len, label, data, sizeof(data),
+	if (wpa_key_mgmt_sha256(akmp)) {
+		sha256_prf(pmk, pmk_len, label, data, data_len,
 			   tmp, ptk_len);
-	else
-		sha1_prf(pmk, pmk_len, label, data, sizeof(data), tmp, ptk_len);
-
+	} else {
+		sha1_prf(pmk, pmk_len, label, data, data_len, tmp, ptk_len);
+	}
 	wpa_printf(MSG_DEBUG, "WPA: PTK derivation - A1=" MACSTR " A2=" MACSTR"\n",
 		   MAC2STR(addr1), MAC2STR(addr2));
 
