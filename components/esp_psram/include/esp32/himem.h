@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,6 @@ typedef struct esp_himem_rangedata_t *esp_himem_rangehandle_t;
  */
 esp_err_t esp_himem_alloc(size_t size, esp_himem_handle_t *handle_out);
 
-
 /**
  * @brief Allocate a memory region to map blocks into
  *
@@ -79,7 +78,6 @@ esp_err_t esp_himem_alloc_map_range(size_t size, esp_himem_rangehandle_t *handle
  */
 esp_err_t esp_himem_map(esp_himem_handle_t handle, esp_himem_rangehandle_t range, size_t ram_offset, size_t range_offset, size_t len, int flags, void **out_ptr);
 
-
 /**
  * @brief Free a block of physical memory
  *
@@ -91,8 +89,6 @@ esp_err_t esp_himem_map(esp_himem_handle_t handle, esp_himem_rangehandle_t range
  *          - ESP_ERR_INVALID_ARG if the handle still is (partially) mapped
  */
 esp_err_t esp_himem_free(esp_himem_handle_t handle);
-
-
 
 /**
  * @brief Free a mapping range
@@ -106,7 +102,6 @@ esp_err_t esp_himem_free(esp_himem_handle_t handle);
  */
 esp_err_t esp_himem_free_map_range(esp_himem_rangehandle_t handle);
 
-
 /**
  * @brief Unmap a region
  *
@@ -117,7 +112,6 @@ esp_err_t esp_himem_free_map_range(esp_himem_rangehandle_t handle);
  *          - ESP_ERR_INVALID_ARG if ptr or len are invalid.
  */
 esp_err_t esp_himem_unmap(esp_himem_rangehandle_t range, void *ptr, size_t len);
-
 
 /**
  * @brief Get total amount of memory under control of himem API
@@ -133,7 +127,6 @@ size_t esp_himem_get_phys_size(void);
  */
 size_t esp_himem_get_free_size(void);
 
-
 /**
  * @brief Get amount of SPI memory address space needed for bankswitching
  *
@@ -143,7 +136,6 @@ size_t esp_himem_get_free_size(void);
  * @returns Amount of reserved area, in bytes
  */
 size_t esp_himem_reserved_area_size(void);
-
 
 #ifdef __cplusplus
 }
