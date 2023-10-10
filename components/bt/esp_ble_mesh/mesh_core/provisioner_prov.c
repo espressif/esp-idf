@@ -19,6 +19,8 @@
 #include "provisioner_prov.h"
 #include "provisioner_main.h"
 
+#define PROV_SVC_ADV_RX_CHECK(pre, cur)   ((cur) < (pre) ? ((cur) + (UINT32_MAX - (pre)) >= 200) : ((cur) - (pre) >= 200))
+
 #if CONFIG_BLE_MESH_PROVISIONER
 
 _Static_assert(BLE_MESH_MAX_CONN >= CONFIG_BLE_MESH_PBG_SAME_TIME,
@@ -3426,6 +3428,21 @@ int bt_mesh_provisioner_prov_deinit(bool erase)
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
 
+static bool bt_mesh_prov_svc_adv_filter(void)
+{
+    static uint32_t timestamp = 0;
+    static uint32_t pre_timestamp = 0;
+
+    timestamp = k_uptime_get_32();
+
+    if (PROV_SVC_ADV_RX_CHECK(pre_timestamp, timestamp)) {
+        pre_timestamp = timestamp;
+        return false;
+    }
+
+    return true;
+}
+
 static bool is_unprov_dev_info_callback_to_app(bt_mesh_prov_bearer_t bearer, const uint8_t uuid[16],
                                                const bt_mesh_addr_t *addr, uint16_t oob_info, int8_t rssi)
 {
@@ -3443,6 +3460,11 @@ static bool is_unprov_dev_info_callback_to_app(bt_mesh_prov_bearer_t bearer, con
 
         if (i == ARRAY_SIZE(unprov_dev)) {
             BT_DBG("Device not in queue, notify to app layer");
+
+            if (adv_type == BLE_MESH_ADV_IND && bt_mesh_prov_svc_adv_filter()) {
+                return true;
+            }
+
             if (notify_unprov_adv_pkt_cb) {
                 notify_unprov_adv_pkt_cb(addr->val, addr->type, adv_type, uuid, oob_info, bearer, rssi);
             }
