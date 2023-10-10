@@ -10,6 +10,8 @@ IDF clang-tidy 是使用 `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`
 
    IDF clang-tidy 的功能及其依赖的工具链尚在开发中，最终版本发布前可能有重大变更。
 
+   目前仅支持基于 clang 的工具链。在配置项目前，必须在环境变量或 CMake 缓存中设置 ``IDF_TOOLCHAIN=clang`` 进行激活。
+
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
    .. warning::
