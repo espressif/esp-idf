@@ -20,6 +20,7 @@
 #include "esp32/rom/lldesc.h"
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
+#include "soc/dport_reg.h"
 #include "hal/misc.h"
 #include "hal/spi_types.h"
 #include "hal/assert.h"
@@ -56,6 +57,86 @@ typedef spi_dev_t spi_dma_dev_t;
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
+/**
+ * Enable peripheral register clock
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+    if (enable) {
+        switch (host_id)
+        {
+        case SPI1_HOST:
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI01_CLK_EN);
+            break;
+        case SPI2_HOST:
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI2_CLK_EN);
+            break;
+        case SPI3_HOST:
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
+            break;
+        default: HAL_ASSERT(false);
+        }
+    } else {
+        switch (host_id)
+        {
+        case SPI1_HOST:
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI01_CLK_EN);
+            break;
+        case SPI2_HOST:
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI2_CLK_EN);
+            break;
+        case SPI3_HOST:
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
+            break;
+        default: HAL_ASSERT(false);
+        }
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * Reset whole peripheral register to init value defined by HW design
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ */
+static inline void spi_ll_reset_register(spi_host_device_t host_id) {
+    switch (host_id)
+    {
+    case SPI1_HOST:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI01_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI01_RST);
+        break;
+    case SPI2_HOST:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI2_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI2_RST);
+        break;
+    case SPI3_HOST:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_RST);
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_reset_register(__VA_ARGS__)
+
+/**
+ * Enable functional output clock within peripheral
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
+{
+    //empty, keep this for compatibility
+}
 
 /**
  * Select SPI peripheral clock source (master).
@@ -970,6 +1051,39 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
  *      RX DMA (Peripherals->DMA->RAM)
  *      TX DMA (RAM->DMA->Peripherals)
  *----------------------------------------------------------------------------*/
+/**
+ * Enable peripheral register clock
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+    (void)host_id; // has only one spi_dma
+    if (enable) {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_DMA_CLK_EN);
+    } else {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_DMA_CLK_EN);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_dma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_dma_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * Reset whole peripheral register to init value defined by HW design
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ */
+static inline void spi_dma_ll_reset_register(spi_host_device_t host_id) {
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_DMA_RST);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_DMA_RST);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_dma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_dma_ll_reset_register(__VA_ARGS__)
+
 /**
  * Reset RX DMA which stores the data received from a peripheral into RAM.
  *

@@ -36,7 +36,7 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-#define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
+#define SPI_LL_GET_HW(ID) (((ID)==1) ? &GPSPI2 : (((ID)==2) ? &GPSPI3 : NULL))
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
