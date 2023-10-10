@@ -265,7 +265,12 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             return;
         }
 
-         if (btc_storage_get_remote_addr_type(&bdaddr, &addr_type) != BT_STATUS_SUCCESS) {
+        if (btc_dm_cb.pairing_cb.ble.is_pid_key_rcvd) {
+            // delete unused section in NVS
+            btc_storage_remove_unused_sections(p_auth_cmpl->bd_addr, &btc_dm_cb.pairing_cb.ble.pid_key);
+        }
+
+        if (btc_storage_get_remote_addr_type(&bdaddr, &addr_type) != BT_STATUS_SUCCESS) {
             btc_storage_set_remote_addr_type(&bdaddr, p_auth_cmpl->addr_type, true);
         }
         btc_storage_set_ble_dev_auth_mode(&bdaddr, p_auth_cmpl->auth_mode, true);
@@ -743,6 +748,9 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_ENABLE_EVT: {
         btc_clear_services_mask();
 #if (SMP_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE)
+        btc_storage_delete_duplicate_ble_devices();
+#endif ///BLE_INCLUDED == TRUE
         //load the bonding device to the btm layer
         btc_storage_load_bonded_devices();
 #endif  ///SMP_INCLUDED == TRUE
