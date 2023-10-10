@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import os
+import sys
 
 from .constants import DEFAULT_PRINT_FILTER, DEFAULT_TOOLCHAIN_PREFIX, PANIC_DECODE_BACKTRACE, PANIC_DECODE_DISABLE
 from .coredump import COREDUMP_DECODE_DISABLE, COREDUMP_DECODE_INFO
@@ -13,8 +14,9 @@ def get_parser():  # type: () -> argparse.ArgumentParser
 
     parser.add_argument(
         '--port', '-p',
-        help='Serial port device',
-        default=os.environ.get('ESPTOOL_PORT', '/dev/ttyUSB0')
+        help='Serial port device. If not set, a connected port will be used.' +
+        (' Defaults to `/dev/ttyUSB0` if connected.' if sys.platform == 'linux' else ''),
+        default=os.environ.get('ESPTOOL_PORT', None)
     )
 
     parser.add_argument(
