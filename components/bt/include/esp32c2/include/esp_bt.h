@@ -90,6 +90,7 @@ typedef enum {
     ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15dbm */
     ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18dbm */
     ESP_PWR_LVL_P20 = 15,              /*!< Corresponding to  +20dbm */
+    ESP_PWR_LVL_P21 = 15,              /*!< Corresponding to  +20dbm, this enum variable has been deprecated */
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
 
