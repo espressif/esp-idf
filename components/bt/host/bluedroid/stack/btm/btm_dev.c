@@ -592,7 +592,7 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec)
                     p_target_rec->ble.ble_addr_type = p_dev_rec->ble.ble_addr_type;
                     p_target_rec->device_type |= p_dev_rec->device_type;
                     /* Remove the unused device from the list */
-		    list_remove(btm_cb.p_sec_dev_rec_list, p_dev_rec);
+                    list_remove(btm_cb.p_sec_dev_rec_list, p_dev_rec);
 		}
                 break;
             }
