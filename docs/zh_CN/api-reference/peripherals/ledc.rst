@@ -202,6 +202,8 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
         2. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
 
+LEDC 驱动提供了一个辅助函数 :cpp:func:`ledc_find_suitable_duty_resolution`。传入时钟源频率及期望的 PWM 信号频率，这个函数可以直接找到最大可配的占空比分辨率值。
+
 当一个定时器不再被任何通道所需要时，可以通过调用相同的函数 :cpp:func:`ledc_timer_config` 来重置这个定时器。此时，函数入参的配置结构体需要指定：
 
 -  :cpp:member:`ledc_timer_config_t::speed_mode` 重置定时器的所属速度模式 （:cpp:type:`ledc_mode_t`）

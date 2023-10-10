@@ -109,7 +109,7 @@ typedef struct {
 
 /**
  * @brief LEDC channel configuration
- *        Configure LEDC channel with the given channel/output gpio_num/interrupt/source timer/frequency(Hz)/LEDC duty resolution
+ *        Configure LEDC channel with the given channel/output gpio_num/interrupt/source timer/frequency(Hz)/LEDC duty
  *
  * @param ledc_conf Pointer of LEDC channel configure struct
  *
@@ -118,6 +118,18 @@ typedef struct {
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf);
+
+/**
+ * @brief Helper function to find the maximum possible duty resolution in bits for ledc_timer_config()
+ *
+ * @param src_clk_freq LEDC timer source clock frequency (Hz) (See doxygen comments of `ledc_clk_cfg_t` or get from `esp_clk_tree_src_get_freq_hz`)
+ * @param timer_freq Desired LEDC timer frequency (Hz)
+ *
+ * @return
+ *     - 0 The timer frequency cannot be achieved
+ *     - Others The largest duty resolution value to be set
+ */
+uint32_t ledc_find_suitable_duty_resolution(uint32_t src_clk_freq, uint32_t timer_freq);
 
 /**
  * @brief LEDC timer configuration

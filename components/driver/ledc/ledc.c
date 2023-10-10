@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <sys/param.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -330,9 +331,9 @@ static inline uint32_t ledc_calculate_divisor(uint32_t src_clk_freq, int freq_hz
      * high.
      *
      * NOTE: We are also going to round up the value when necessary, thanks to:
-     * (freq_hz * precision) / 2
+     * (freq_hz * precision / 2)
      */
-    return ( ( (uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS ) + ((freq_hz * precision) / 2 ) )
+    return ( ( (uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS ) + freq_hz * precision / 2 )
            / (freq_hz * precision);
 }
 
@@ -852,7 +853,35 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
         ESP_LOGW(LEDC_TAG, "LEDC timer not configured, call ledc_timer_config to set timer frequency");
         return 0;
     }
-    return (((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) + (uint64_t) precision * clock_divider / 2) / precision / clock_divider;
+    return (((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) + precision * clock_divider / 2) / (precision * clock_divider);
+}
+
+static inline uint32_t ilog2(uint32_t i)
+{
+    assert(i > 0);
+    uint32_t log = 0;
+    while (i >>= 1) {
+        ++log;
+    }
+    return log;
+}
+
+// https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#ledpwm
+uint32_t ledc_find_suitable_duty_resolution(uint32_t src_clk_freq, uint32_t timer_freq)
+{
+    // Highest resolution is calculated when LEDC_CLK_DIV = 1 (i.e. div_param = 1 << LEDC_LL_FRACTIONAL_BITS)
+    uint32_t div = (src_clk_freq + timer_freq / 2) / timer_freq; // rounded
+    uint32_t duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+    uint32_t div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
+    if (LEDC_IS_DIV_INVALID(div_param)) {
+        div = src_clk_freq / timer_freq; // truncated
+        duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+        div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
+        if (LEDC_IS_DIV_INVALID(div_param)) {
+            duty_resolution = 0;
+        }
+    }
+    return duty_resolution;
 }
 
 static inline void IRAM_ATTR ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_t *channel)
