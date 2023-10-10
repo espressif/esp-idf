@@ -175,8 +175,9 @@ long gcov_rtio_ftell(void *stream)
 
 int gcov_rtio_feof(void *stream)
 {
-    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
-    return 0; // esp_apptrace_feof(ESP_APPTRACE_DEST_TRAX, stream); // TODO IDF-7920
+    int ret = esp_apptrace_feof(ESP_APPTRACE_DEST_TRAX, stream);
+    ESP_EARLY_LOGV(TAG, "%s(%p) = %d", __FUNCTION__, stream, ret);
+    return ret;
 }
 
 void gcov_rtio_setbuf(void *arg1 __attribute__ ((unused)), void *arg2 __attribute__ ((unused)))
