@@ -2958,7 +2958,7 @@ static bool notify_unprov_dev_info(bt_mesh_prov_bearer_t bearer, const uint8_t u
         if (i == ARRAY_SIZE(unprov_dev)) {
             BT_DBG("Device not in queue, notify to app layer");
 
-            if (bt_mesh_prov_svc_adv_filter()) {
+            if (adv_type == BLE_MESH_ADV_IND && bt_mesh_prov_svc_adv_filter()) {
                 return true;
             }
 
