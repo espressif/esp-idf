@@ -48,6 +48,60 @@ static void httpd_ssl_close(void *ctx)
     ESP_LOGD(TAG, "Secure socket closed");
 }
 
+httpd_ssl_config_t httpd_ssl_config_default(void)
+{
+    httpd_ssl_config_t config = {
+        .httpd = {
+            .task_priority = tskIDLE_PRIORITY + 5,
+            .stack_size = 10240,
+            .core_id = tskNO_AFFINITY,
+            .server_port = 0,
+            .ctrl_port = ESP_HTTPD_DEF_CTRL_PORT + 1,
+            .max_open_sockets = 4,
+            .max_uri_handlers = 8,
+            .max_resp_headers = 8,
+            .backlog_conn = 5,
+            .lru_purge_enable = true,
+            .recv_wait_timeout = 5,
+            .send_wait_timeout = 5,
+            .global_user_ctx = NULL,
+            .global_user_ctx_free_fn = NULL,
+            .global_transport_ctx = NULL,
+            .global_transport_ctx_free_fn = NULL,
+            .enable_so_linger = false,
+            .linger_timeout = 0,
+            .keep_alive_enable = false,
+            .keep_alive_idle = 0,
+            .keep_alive_interval = 0,
+            .keep_alive_count = 0,
+            .open_fn = NULL,
+            .close_fn = NULL,
+            .uri_match_fn = NULL,
+        },
+        .servercert = NULL,
+        .servercert_len = 0,
+        .cacert_pem = NULL,
+        .cacert_len = 0,
+        .prvtkey_pem = NULL,
+        .prvtkey_len = 0,
+        .use_ecdsa_peripheral = false,
+        .ecdsa_key_efuse_blk = 0,
+        .transport_mode = HTTPD_SSL_TRANSPORT_SECURE,
+        .port_secure = 443,
+        .port_insecure = 80,
+        .session_tickets = false,
+        .use_secure_element = false,
+        .user_cb = NULL,
+        .ssl_userdata = NULL,
+#if CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK
+        .cert_select_cb = NULL,
+#endif
+        .alpn_protos = NULL,
+    };
+
+    return config;
+}
+
 /**
  * SSL socket pending-check function
  *
