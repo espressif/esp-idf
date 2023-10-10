@@ -725,6 +725,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif // CONFIG_BT_NIMBLE_ENABLED
     /* Enable BT-related clocks */
     modem_clock_module_enable(PERIPH_BT_MODULE);
+    modem_clock_module_mac_reset(PERIPH_BT_MODULE);
     /* Select slow clock source for BT momdule */
 #if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL);

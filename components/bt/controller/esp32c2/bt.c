@@ -628,6 +628,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif
     esp_phy_modem_init();
     periph_module_enable(PERIPH_BT_MODULE);
+    periph_module_reset(PERIPH_BT_MODULE);
 
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "osi coex funcs reg failed");
@@ -685,6 +686,7 @@ controller_init_err:
     ble_controller_deinit();
 modem_deint:
     esp_phy_modem_deinit();
+    periph_module_disable(PERIPH_BT_MODULE);
 #if CONFIG_BT_NIMBLE_ENABLED
     ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
 #endif // CONFIG_BT_NIMBLE_ENABLED
@@ -710,6 +712,8 @@ esp_err_t esp_bt_controller_deinit(void)
     ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
+
+    periph_module_disable(PERIPH_BT_MODULE);
 
 #if CONFIG_BT_NIMBLE_ENABLED
     /* De-initialize default event queue */
