@@ -315,11 +315,11 @@ To spare you the trouble of installing a serial terminal program, macOS offers t
 
   Replace ``device_name`` with the name found running ``ls /dev/cu.*``.
 
-- What you are looking for is some log displayed by the **screen**. The log contents depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_. To exit the **screen** session type Ctrl-A + \\ .
+- What you are looking for is some log displayed by the **screen**. The log contents depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_. To exit the current **screen** session, type ``Ctrl-A + K``.
 
 .. note::
 
-   Do not forget to **exit the screen session** after verifying that the communication is working. If you fail to do it and just close the terminal window, the serial port will be inaccessible for uploading firmware later.
+   Do not forget to **exit the current screen session** after verifying that the communication is working. If you fail to do it and just close the terminal window, the serial port will be inaccessible for uploading firmware later.
 
 Example Output
 ^^^^^^^^^^^^^^
