@@ -35,6 +35,7 @@ typedef struct {
 tBTM_EXT_ADV_RECORD adv_record[MAX_BLE_ADV_INSTANCE] = {0};
 extern void btm_ble_inter_set(bool extble_inter);
 
+#if !UC_BT_STACK_NO_LOG
 static const char *btm_ble_hci_status_to_str(tHCI_STATUS status)
 {
     switch(status) {
@@ -184,6 +185,7 @@ static const char *btm_ble_hci_status_to_str(tHCI_STATUS status)
 
     return NULL;
 }
+#endif /* !UC_BT_STACK_NO_LOG */
 
 void btm_ble_extendadvcb_init(void)
 {

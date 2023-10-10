@@ -290,16 +290,17 @@ void esp_core_dump_reset_fake_stacks(void)
 /* Get the top of the ISR stack.
  * Check core dump port interface for more information about this function.
  */
-uint8_t* esp_core_dump_get_isr_stack_top(void) {
-    extern uint8_t port_IntStack;
-    return &port_IntStack;
+uint8_t* esp_core_dump_get_isr_stack_top(void)
+{
+    extern uint8_t port_IntStack[];
+    return port_IntStack;
 }
 
- uint32_t esp_core_dump_get_isr_stack_end(void)
- {
+uint32_t esp_core_dump_get_isr_stack_end(void)
+{
     uint8_t* isr_top_stack = esp_core_dump_get_isr_stack_top();
     return (uint32_t)(isr_top_stack + (xPortGetCoreID()+1)*configISR_STACK_SIZE);
- }
+}
 
 
 static inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)

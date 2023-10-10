@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -254,6 +254,17 @@ int esp_apptrace_ftell(esp_apptrace_dest_t dest, void *stream);
  * @return ESP_OK on success, otherwise see esp_err_t
  */
 int esp_apptrace_fstop(esp_apptrace_dest_t dest);
+
+/**
+ * @brief Test end-of-file indicator on a stream.
+ *		  This function has the same semantic as 'feof' except for the first argument.
+ *
+ * @param dest   Indicates HW interface to use.
+ * @param stream File handle returned by esp_apptrace_fopen.
+ *
+ * @return Non-Zero if end-of-file indicator is set for stream. See feof for details.
+ */
+int esp_apptrace_feof(esp_apptrace_dest_t dest, void *stream);
 
 /**
  * @brief Triggers gcov info dump.

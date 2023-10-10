@@ -8,6 +8,8 @@
 
 #include "esp_err.h"
 
+#define ESP_VFS_DEV_CONSOLE "/dev/console"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

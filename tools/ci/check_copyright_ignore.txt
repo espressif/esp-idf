@@ -460,7 +460,6 @@ components/esp_rom/include/esp32/rom/aes.h
 components/esp_rom/include/esp32/rom/bigint.h
 components/esp_rom/include/esp32/rom/crc.h
 components/esp_rom/include/esp32/rom/efuse.h
-components/esp_rom/include/esp32/rom/libc_stubs.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/tbconsole.h
 components/esp_rom/include/esp32/rom/tjpgd.h
@@ -477,7 +476,6 @@ components/esp_rom/include/esp32s2/rom/bigint.h
 components/esp_rom/include/esp32s2/rom/crc.h
 components/esp_rom/include/esp32s2/rom/digital_signature.h
 components/esp_rom/include/esp32s2/rom/hmac.h
-components/esp_rom/include/esp32s2/rom/libc_stubs.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/esp_rom/include/esp32s2/rom/sha.h
