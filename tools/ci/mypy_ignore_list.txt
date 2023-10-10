@@ -28,7 +28,6 @@ examples/system/ota/otatool/otatool_example.py
 tools/ble/lib_ble_client.py
 tools/ble/lib_gap.py
 tools/ble/lib_gatt.py
-tools/ci/check_kconfigs.py
 tools/ci/python_packages/idf_http_server_test/adder.py
 tools/ci/python_packages/idf_http_server_test/client.py
 tools/ci/python_packages/idf_http_server_test/test.py
@@ -56,7 +55,6 @@ tools/ci/python_packages/ttfw_idf/__init__.py
 tools/ci/python_packages/ttfw_idf/unity_test_parser.py
 tools/ci/python_packages/wifi_tools.py
 tools/ci/test_autocomplete.py
-tools/ci/test_check_kconfigs.py
 tools/esp_app_trace/espytrace/apptrace.py
 tools/esp_app_trace/espytrace/sysview.py
 tools/esp_app_trace/logtrace_proc.py

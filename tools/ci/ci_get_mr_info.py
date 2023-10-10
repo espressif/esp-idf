@@ -45,7 +45,7 @@ def get_mr_changed_files(source_branch: str) -> t.List[str]:
         return []
 
     git_output = subprocess.check_output(
-        ['git', 'diff', '--name-only', f'origin/{mr.target_branch}...origin/{source_branch}']
+        ['git', 'diff', '--name-only', '--diff-filter=d', f'origin/{mr.target_branch}...origin/{source_branch}']
     ).decode('utf8')
 
     return [line.strip() for line in git_output.splitlines() if line.strip()]
