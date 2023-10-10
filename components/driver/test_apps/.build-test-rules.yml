@@ -184,3 +184,14 @@ components/driver/test_apps/uart:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
       reason: target(s) is not supported yet # TODO: IDF-6511
+
+components/driver/test_apps/usb_serial_jtag:
+  disable:
+    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/gpio/**/*
+    - components/driver/usb_serial_jtag/**/*
+  depends_components:
+    - hal
+    - esp_hw_support # for clock
+    - vfs

@@ -853,6 +853,14 @@ pytest_components_esp32s3_mspi_f8r8:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, MSPI_F8R8 ]
 
+pytest_components_esp32s3_usb_serial_jtag:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, usb_serial_jtag ]
+
 pytest_components_esp32c2_generic:
   extends:
     - .pytest_components_dir_template
@@ -918,6 +926,14 @@ pytest_components_esp32c3_wifi_two_dut:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, wifi_two_dut ]
+
+pytest_components_esp32c3_usb_serial_jtag:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, usb_serial_jtag ]
 
 pytest_components_esp32s3_wifi_two_dut:
   extends:
@@ -1008,6 +1024,14 @@ pytest_components_esp32c6_generic:
   tags: [ esp32c6, generic ]
   parallel: 2
 
+pytest_components_esp32c6_usb_serial_jtag:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c6
+  needs:
+    - build_pytest_components_esp32c6
+  tags: [ esp32c6, usb_serial_jtag ]
+
 pytest_components_esp32h2_generic:
   extends:
     - .pytest_components_dir_template
@@ -1040,6 +1064,14 @@ component_ut_pytest_esp32h2_ecdsa:
   needs:
     - build_pytest_components_esp32h2
   tags: [ esp32h2, ecdsa_efuse ]
+
+pytest_components_esp32h2_usb_serial_jtag:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2
+  needs:
+    - build_pytest_components_esp32h2
+  tags: [ esp32h2, usb_serial_jtag ]
 
 pytest_components_esp32c6_generic_multi_device:
   extends:
