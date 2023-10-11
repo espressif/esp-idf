@@ -33,6 +33,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default y if "$(IDF_CI_BUILD)" = "y" || "$(IDF_CI_BUILD)" = 1
 
+    config IDF_DOC_BUILD
+        bool
+        default y if "$(IDF_DOC_BUILD)" = "y" || "$(IDF_DOC_BUILD)" = 1
+
     config IDF_TOOLCHAIN
         # This option records the IDF target when sdkconfig is generated the first time.
         # It is not updated if environment variable $IDF_TOOLCHAIN changes later, and

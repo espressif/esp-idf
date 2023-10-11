@@ -180,8 +180,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_netif/include/esp_vfs_l2tap.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_sntp.h \
     $(PROJECT_PATH)/components/esp_partition/include/esp_partition.h \
-    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
-    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
@@ -262,9 +260,6 @@ INPUT = \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_netif_glue.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_types.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread.h \
-    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
-    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
-    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_masks.h \
     $(PROJECT_PATH)/components/protocomm/include/common/protocomm.h \
     $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security.h \
     $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security0.h \
@@ -284,25 +279,6 @@ INPUT = \
     $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash_counters.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
-    $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_button.h \
-    $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_element.h \
-    $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_matrix.h \
-    $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_slider.h \
-    $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
-    $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_lock.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_i2c.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/shared/include/ulp_riscv_lock_shared.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/include/ulp_lp_core.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_gpio.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_i2c.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_types_stack.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_dev.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_eventfd.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_semihost.h \

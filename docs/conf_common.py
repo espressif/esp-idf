@@ -13,6 +13,7 @@ from __future__ import print_function, unicode_literals
 
 import os.path
 import re
+from pathlib import Path
 
 from esp_docs.conf_docs import *  # noqa: F403,F401
 
@@ -293,6 +294,8 @@ with open('../page_redirects.txt') as f:
 html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 html_static_path = ['../_static']
+
+idf_build_system = {'doxygen_component_info': True, 'component_info_ignore_file': Path(os.environ['IDF_PATH']) / 'docs' / 'component_info_ignore_file.txt'}
 
 
 # Callback function for user setup that needs be done after `config-init`-event
