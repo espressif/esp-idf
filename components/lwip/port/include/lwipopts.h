@@ -162,6 +162,12 @@ extern "C" {
  */
 #define ARP_QUEUEING                    1
 
+#ifdef CONFIG_LWIP_DHCPS_STATIC_ENTRIES
+#define ETHARP_SUPPORT_STATIC_ENTRIES   1
+#else
+#define ETHARP_SUPPORT_STATIC_ENTRIES   0
+#endif
+
 /*
    --------------------------------
    ---------- IP options ----------
