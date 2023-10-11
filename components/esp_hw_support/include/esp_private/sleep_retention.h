@@ -45,7 +45,6 @@ typedef enum sleep_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_IOMUX        = BIT(21),
     SLEEP_RETENTION_MODULE_SPIMEM       = BIT(22),
     SLEEP_RETENTION_MODULE_SYSTIMER     = BIT(23),
-    SLEEP_RETENTION_MODULE_PVT          = BIT(24),
 
     SLEEP_RETENTION_MODULE_ALL          = (uint32_t)-1
 } sleep_retention_module_bitmap_t;
