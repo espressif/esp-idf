@@ -56,7 +56,14 @@ bool cache_hal_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32_t len, uint3
 uint32_t cache_hal_get_cache_line_size(uint32_t cache_level, cache_type_t type)
 {
     HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
-    return 4;
+
+    uint32_t line_size = 0;
+
+    if (cache_level == CACHE_LL_LEVEL_EXT_MEM) {
+        line_size = 4;
+    }
+
+    return line_size;
 }
 
 bool cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size)

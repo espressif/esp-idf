@@ -129,7 +129,7 @@ void cache_hal_unfreeze(uint32_t cache_level, cache_type_t type);
  * @param cache_level  Level of the Cache(s)
  * @param type         see `cache_type_t`
  *
- * @return cache line size, in bytes
+ * @return cache line size, in bytes. 0 stands for no such cache in this type or level
  */
 uint32_t cache_hal_get_cache_line_size(uint32_t cache_level, cache_type_t type);
 
