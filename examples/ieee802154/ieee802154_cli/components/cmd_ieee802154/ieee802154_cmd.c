@@ -18,7 +18,7 @@
 #include "soc/ieee802154_reg.h"
 
 static uint8_t s_tx_frame[131] = { 0 };
-static const char* TAG = "i154test";
+static const char* TAG = "i154cmd";
 
 static void register_rx(void);
 static void register_tx(void);
@@ -34,8 +34,6 @@ static void register_pending(void);
 static void register_cca(void);
 static void register_esp154(void);
 static void register_reg(void);
-static void register_free(void);
-static void register_restart(void);
 
 void register_ieee802154_cmd(void)
 {
@@ -53,8 +51,6 @@ void register_ieee802154_cmd(void)
     register_cca();
     register_esp154();
     register_reg();
-    register_free();
-    register_restart();
 }
 
 static struct {
@@ -78,8 +74,8 @@ static int process_energy(int argc, char **argv)
             ESP_LOGI(TAG, "ed start");
             esp_ieee802154_energy_detect(duration);
         } else {
-                ESP_LOGE(TAG, "no valid arguments");
-                return 1;
+            ESP_LOGE(TAG, "no valid arguments");
+            return 1;
         }
     } else {
         ESP_LOGE(TAG, "no valid arguments");
@@ -364,7 +360,7 @@ static int process_extaddr(int argc, char **argv)
     } else if (extaddr_args.get_extaddr->count) {
         esp_ieee802154_get_extended_address(extaddr);
         ESP_LOGI(TAG, "get extaddr: %02x%02x%02x%02x%02x%02x%02x%02x", extaddr[7], extaddr[6], extaddr[5], extaddr[4],
-                extaddr[3], extaddr[2], extaddr[1], extaddr[0]);
+                 extaddr[3], extaddr[2], extaddr[1], extaddr[0]);
     } else {
         ESP_LOGE(TAG, "no valid arguments");
     }
@@ -640,38 +636,6 @@ static void register_esp154()
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
-/* 'fheap' command check for memory leaks */
-static struct {
-    struct arg_end *end;
-} free_args;
-
-static int process_free(int argc, char **argv)
-{
-    int nerrors = arg_parse(argc, argv, (void **) &free_args);
-    if (nerrors != 0) {
-        arg_print_errors(stderr, free_args.end, argv[0]);
-        return 1;
-    }
-
-    esp_get_free_heap_size();
-    ESP_LOGI(TAG, "heap size: %" PRIu32, esp_get_free_heap_size());
-    return 0;
-}
-
-static void register_free()
-{
-    free_args.end = arg_end(2);
-
-    const esp_console_cmd_t cmd = {
-        .command = "fheap",
-        .help = "get the size of heap memory",
-        .hint = NULL,
-        .func = &process_free,
-        .argtable = &free_args
-    };
-    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
-}
-
 /* 'reg' command reads/writes the registers */
 static struct {
     struct arg_int *get_reg;
@@ -766,7 +730,7 @@ static int process_tx(int argc, char **argv)
     if (tx_args.cca_enable->count) {
         cca = true;
     }
-    memcpy(s_tx_frame+offset, tx_frame, sizeof(tx_frame));
+    memcpy(s_tx_frame + offset, tx_frame, sizeof(tx_frame));
     esp_ieee802154_transmit(s_tx_frame, cca);
     return 0;
 }
@@ -841,51 +805,30 @@ static void register_rx(void)
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
-/* 'restart' command restarts the program */
-static int restart(int argc, char **argv)
+static void esp_ieee802154_frame_print(const uint8_t *frame)
 {
-    ESP_EARLY_LOGI(TAG, "Restarting");
-    esp_restart();
-}
-
-static void register_restart(void)
-{
-    const esp_console_cmd_t cmd = {
-        .command = "restart",
-        .help = "Restart the program",
-        .hint = NULL,
-        .func = &restart
-    };
-    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
+    for (uint8_t idx = 1; idx < frame[0]; idx += 8) {
+        ESP_EARLY_LOGI(TAG, "%02x %02x %02x %02x %02x %02x %02x %02x",
+                       frame[idx], frame[idx + 1], frame[idx + 2], frame[idx + 3],
+                       frame[idx + 4], frame[idx + 5], frame[idx + 6], frame[idx + 7]);
+    }
 }
 
 void esp_ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, esp_ieee802154_frame_info_t *ack_frame_info)
 {
     ESP_EARLY_LOGI(TAG, "Tx Done %d bytes", frame[0]);
-    for(uint8_t idx = 1; idx < frame[0]; idx+=8) {
-        ESP_EARLY_LOGI(TAG, "%02x %02x %02x %02x %02x %02x %02x %02x",
-        frame[idx], frame[idx+1], frame[idx+2], frame[idx+3],
-        frame[idx+4], frame[idx+5], frame[idx+6], frame[idx+7]);
-    }
+    esp_ieee802154_frame_print(frame);
 
     if (ack != NULL) {
         ESP_EARLY_LOGI(TAG, "Rx ack %d bytes", ack[0]);
-        for(uint8_t idx = 1; idx < ack[0]; idx+=8) {
-            ESP_EARLY_LOGI(TAG, "%02x %02x %02x %02x %02x %02x %02x %02x",
-            ack[idx], ack[idx+1], ack[idx+2], ack[idx+3],
-            ack[idx+4], ack[idx+5], ack[idx+6], ack[idx+7]);
-        }
+        esp_ieee802154_frame_print(ack);
     }
 }
 
 void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info)
 {
     ESP_EARLY_LOGI(TAG, "Rx Done %d bytes", frame[0]);
-    for(uint8_t idx = 1; idx < frame[0]; idx+=8) {
-        ESP_EARLY_LOGI(TAG, "%02x %02x %02x %02x %02x %02x %02x %02x",
-        frame[idx], frame[idx+1], frame[idx+2], frame[idx+3],
-        frame[idx+4], frame[idx+5], frame[idx+6], frame[idx+7]);
-    }
+    esp_ieee802154_frame_print(frame);
 }
 
 void esp_ieee802154_energy_detect_done(int8_t power)

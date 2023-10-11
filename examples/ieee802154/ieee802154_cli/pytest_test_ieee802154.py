@@ -148,7 +148,7 @@ def test_based_txrx(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -162,7 +162,7 @@ def test_based_energy(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -177,7 +177,7 @@ def test_based_channel(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -192,7 +192,7 @@ def test_based_txpower(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -211,7 +211,7 @@ def test_based_promiscuous(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -226,7 +226,7 @@ def test_based_panid(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -241,7 +241,7 @@ def test_based_shortaddr(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -256,7 +256,7 @@ def test_based_extaddr(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -275,7 +275,7 @@ def test_based_coordinator(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -296,7 +296,7 @@ def test_based_pending(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -580,7 +580,7 @@ def test_based_transmit_failed(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32c6
-@pytest.mark.generic
+@pytest.mark.ieee802154
 @pytest.mark.parametrize(
     'config', ['release',],
     indirect=True
@@ -588,15 +588,15 @@ def test_based_transmit_failed(dut: IdfDut) -> None:
 def test_based_initialize(dut: IdfDut) -> None:
     transmit = dut
     transmit.expect('ieee802154>', timeout=10)
-    transmit.write('fheap')
-    fst_data = transmit.expect(r'heap size: [0-9]+', timeout=10)[0].decode()
-    fst_size = re.findall(r'heap size: ([0-9]+)', fst_data)
+    transmit.write('heap')
+    fst_data = transmit.expect(r'min heap size: [0-9]+', timeout=10)[0].decode()
+    fst_size = re.findall(r'min heap size: ([0-9]+)', fst_data)
     transmit.write('esp154 -e')
     transmit.expect('initialize the IEEE 802.15.4 subsystem', timeout=10)
     transmit.write('esp154 -d')
     transmit.expect('deinitialize the IEEE 802.15.4 subsystem', timeout=10)
-    transmit.write('fheap')
-    scd_data = transmit.expect(r'heap size: [0-9]+', timeout=10)[0].decode()
-    scd_size = re.findall(r'heap size: ([0-9]+)', scd_data)
+    transmit.write('heap')
+    scd_data = transmit.expect(r'min heap size: [0-9]+', timeout=10)[0].decode()
+    scd_size = re.findall(r'min heap size: ([0-9]+)', scd_data)
     print('first heap size: ', int(fst_size[0]))
     print('second heap size: ', int(scd_size[0]))

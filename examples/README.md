@@ -14,6 +14,7 @@ The examples are grouped into subdirectories by category. Each category director
 - `cxx` C++ language utilization examples and experimental components.
 - `ethernet` Ethernet network examples.
 - `get-started` Simple examples with minimal functionality. Good start point for beginners.
+- `ieee802154` IEEE802.15.4 examples.
 - `mesh` Wi-Fi Mesh examples.
 - `network` Examples related to general network environment, test & analysis.
 - `openthread` OpenThread examples.
