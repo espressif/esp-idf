@@ -18,6 +18,7 @@
 #include "esp_check.h"
 #include "driver/rmt_encoder.h"
 #include "rmt_private.h"
+#include "hal/hal_utils.h"
 
 static const char *TAG = "rmt";
 
@@ -44,15 +45,6 @@ static esp_err_t rmt_bytes_encoder_reset(rmt_encoder_t *encoder)
     bytes_encoder->last_bit_index = 0;
     bytes_encoder->last_byte_index = 0;
     return ESP_OK;
-}
-
-__attribute__((always_inline))
-static inline uint8_t _bitwise_reverse(uint8_t n)
-{
-    n = ((n & 0xf0) >> 4) | ((n & 0x0f) << 4);
-    n = ((n & 0xcc) >> 2) | ((n & 0x33) << 2);
-    n = ((n & 0xaa) >> 1) | ((n & 0x55) << 1);
-    return n;
 }
 
 static size_t IRAM_ATTR rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
@@ -98,7 +90,7 @@ static size_t IRAM_ATTR rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_han
         uint8_t cur_byte = nd[byte_index];
         // bit-wise reverse
         if (bytes_encoder->flags.msb_first) {
-            cur_byte = _bitwise_reverse(cur_byte);
+            cur_byte = hal_utils_bitwise_reverse8(cur_byte);
         }
         while ((len > 0) && (bit_index < 8)) {
             if (cur_byte & (1 << bit_index)) {
