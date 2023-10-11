@@ -295,8 +295,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         | BIT(PMU_ICG_FUNC_ENA_SEC)             \
         | BIT(PMU_ICG_FUNC_ENA_PWM)             \
         | BIT(PMU_ICG_FUNC_ENA_SYSTIMER)        \
-        | BIT(PMU_ICG_FUNC_ENA_UART0))          \
-        | BIT(PMU_ICG_FUNC_ENA_PVT_MONITOR),    \
+        | BIT(PMU_ICG_FUNC_ENA_UART0)),         \
 }
 
 #define PMU_HP_MODEM_RETENTION_CONFIG_DEFAULT() {   \
@@ -343,8 +342,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         | BIT(PMU_ICG_FUNC_ENA_SEC)            \
         | BIT(PMU_ICG_FUNC_ENA_PWM)            \
         | BIT(PMU_ICG_FUNC_ENA_SYSTIMER)        \
-        | BIT(PMU_ICG_FUNC_ENA_UART0))         \
-        | BIT(PMU_ICG_FUNC_ENA_PVT_MONITOR),     \
+        | BIT(PMU_ICG_FUNC_ENA_UART0)),         \
 }
 
 const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pmu_hp_mode_t mode)
