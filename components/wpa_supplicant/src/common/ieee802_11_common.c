@@ -220,6 +220,10 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			elems->sae_pk_len = elen - 4;
 			break;
 #endif /* CONFIG_SAE_PK */
+		case WFA_RSNE_OVERRIDE_OUI_TYPE:
+			elems->rsne_override = pos;
+			elems->rsne_override_len = elen;
+			break;
 		default:
 			wpa_printf(MSG_EXCESSIVE, "Unknown WFA "
 				"information element ignored "
