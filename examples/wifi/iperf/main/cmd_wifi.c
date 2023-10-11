@@ -195,6 +195,7 @@ static int wifi_cmd_sta(int argc, char **argv)
     }
 
     ESP_LOGI(TAG, "sta connecting to '%s'", sta_args.ssid->sval[0]);
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
     wifi_cmd_sta_join(sta_args.ssid->sval[0], sta_args.password->sval[0]);
     return 0;
 }

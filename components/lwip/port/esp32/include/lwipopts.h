@@ -43,6 +43,11 @@ extern "C"
  */
 #ifdef CONFIG_LWIP_TCPIP_CORE_LOCKING
 #define LWIP_TCPIP_CORE_LOCKING         1
+#ifdef CONFIG_LWIP_TCPIP_CORE_LOCKING_INPUT
+#define LWIP_TCPIP_CORE_LOCKING_INPUT   1
+#else
+#define LWIP_TCPIP_CORE_LOCKING_INPUT   0
+#endif
 #define LOCK_TCPIP_CORE()     do { sys_mutex_lock(&lock_tcpip_core); sys_thread_tcpip(LWIP_CORE_LOCK_MARK_HOLDER); } while(0)
 #define UNLOCK_TCPIP_CORE()   do { sys_thread_tcpip(LWIP_CORE_LOCK_UNMARK_HOLDER); sys_mutex_unlock(&lock_tcpip_core);  } while(0)
 #ifdef CONFIG_LWIP_CHECK_THREAD_SAFETY
@@ -51,6 +56,7 @@ extern "C"
 
 #else
 #define LWIP_TCPIP_CORE_LOCKING         0
+#define LWIP_TCPIP_CORE_LOCKING_INPUT   0
 #ifdef CONFIG_LWIP_CHECK_THREAD_SAFETY
 #define LWIP_ASSERT_CORE_LOCKED()     do { LWIP_ASSERT("Required to run in TCPIP context!", sys_thread_tcpip(LWIP_CORE_LOCK_QUERY_HOLDER)); } while(0)
 #endif /* CONFIG_LWIP_CHECK_THREAD_SAFETY */
