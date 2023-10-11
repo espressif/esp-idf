@@ -454,7 +454,7 @@ The :example_file:`wifi/iperf/sdkconfig.defaults` file for the iperf example con
 
   Suggest applying changes a few at a time and checking the performance each time with a particular application workload.
 
-- If a lot of tasks are competing for CPU time on the system, consider that the lwIP task has configurable CPU affinity (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`) and runs at fixed priority (18). To optimize CPU utilization, consider assigning competing tasks to different cores or adjusting their priorities to lower values. For additional details on built-in task priorities, please refer to :ref:`built-in-task-priorities`.
+- If a lot of tasks are competing for CPU time on the system, consider that the lwIP task has configurable CPU affinity (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`) and runs at fixed priority (18, ``ESP_TASK_TCPIP_PRIO``). To optimize CPU utilization, consider assigning competing tasks to different cores or adjusting their priorities to lower values. For additional details on built-in task priorities, please refer to :ref:`built-in-task-priorities`.
 
 - If using ``select()`` function with socket arguments only, disabling :ref:`CONFIG_VFS_SUPPORT_SELECT` will make ``select()`` calls faster.
 

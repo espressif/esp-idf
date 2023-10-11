@@ -454,7 +454,7 @@ iperf 示例下的 :example_file:`wifi/iperf/sdkconfig.defaults` 文件包含已
 
   建议逐步应用更改，并在每次更改后，通过特定应用程序的工作负载检查性能。
 
-- 如果系统中有许多任务抢占 CPU 时间，可以考虑调整 lwIP 任务的 CPU 亲和性 (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`)，并以固定优先级 (18) 运行。为优化 CPU 使用，可以考虑将竞争任务分配给不同核心，或将其优先级调整至较低值。有关内置任务优先级的更多详情，请参阅 :ref:`built-in-task-priorities`。
+- 如果系统中有许多任务抢占 CPU 时间，可以考虑调整 lwIP 任务的 CPU 亲和性 (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`)，并以固定优先级 (18, ``ESP_TASK_TCPIP_PRIO``) 运行。为优化 CPU 使用，可以考虑将竞争任务分配给不同核心，或将其优先级调整至较低值。有关内置任务优先级的更多详情，请参阅 :ref:`built-in-task-priorities`。
 
 - 如果使用仅带有套接字参数的 ``select()`` 函数，禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 可以更快地调用 ``select()``。
 
