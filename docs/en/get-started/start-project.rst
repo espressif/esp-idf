@@ -53,7 +53,7 @@ For more information on ``idf.py`` arguments, see :ref:`idf.py`.
 
     The option ``flash`` automatically builds and flashes the project, so running ``idf.py build`` is not necessary.
 
-Encountered Issues While Flashing? See this :doc:`flashing-troubleshooting` page or :doc:`establish-serial-connection` for more detailed information.
+Encountered Issues While Flashing? See the "Additional Tips" below. You can also refer to :doc:`flashing-troubleshooting` page or :doc:`establish-serial-connection` for more detailed information.
 
 Normal Operation
 ~~~~~~~~~~~~~~~~
@@ -444,13 +444,14 @@ Now you are ready to try some other :idf:`examples`, or go straight to developin
     If building an example, please check the README file for the ``Supported Targets`` table. If this is present including {IDF_TARGET_NAME} target, or the table does not exist at all, the example will work on {IDF_TARGET_NAME}.
 
 
+
 Additional Tips
 ===============
 
-Permission Issues ``/dev/ttyUSB0``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Permission Denied Issue
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-With some Linux distributions, you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the {IDF_TARGET_NAME}. :ref:`This can be solved by adding the current user to the dialout group <linux-dialout-group>`.
+With some Linux distributions, you may get the error message similar to ``Could not open port <PORT>: Permission denied: '<PORT>'`` when flashing the {IDF_TARGET_NAME}. :ref:`This can be solved by adding the current user to the specific group <linux-dialout-group>`, such as ``dialout`` or ``uucp`` group.
 
 Python Compatibility
 ~~~~~~~~~~~~~~~~~~~~
