@@ -2554,7 +2554,8 @@ BaseType_t xTaskResumeAll( void )
                  * appropriate ready list. */
                 while( listLIST_IS_EMPTY( &xPendingReadyList[ xCurCoreID ] ) == pdFALSE )
                 {
-                    pxTCB = listGET_OWNER_OF_HEAD_ENTRY( ( &xPendingReadyList[ xCurCoreID ] ) ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+                    /* Note: Add volatile cast (IDF-8361) */
+                    pxTCB = listGET_OWNER_OF_HEAD_ENTRY( ( volatile List_t * ) ( &xPendingReadyList[ xCurCoreID ] ) ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
                     listREMOVE_ITEM( &( pxTCB->xEventListItem ) );
                     portMEMORY_BARRIER();
                     listREMOVE_ITEM( &( pxTCB->xStateListItem ) );
