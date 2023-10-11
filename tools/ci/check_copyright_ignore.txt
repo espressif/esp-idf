@@ -546,7 +546,6 @@ components/freertos/FreeRTOS-Kernel-SMP/timers.c
 components/hal/include/hal/dac_types.h
 components/hal/spi_slave_hal.c
 components/hal/spi_slave_hal_iram.c
-components/hal/test/test_mpu.c
 components/heap/test_multi_heap_host/main.cpp
 components/heap/test_multi_heap_host/test_multi_heap.cpp
 components/idf_test/include/idf_performance.h

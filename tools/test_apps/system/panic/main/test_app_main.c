@@ -100,6 +100,9 @@ void app_main(void)
     HANDLE_TEST(test_name, test_ub);
     HANDLE_TEST(test_name, test_assert);
     HANDLE_TEST(test_name, test_assert_cache_disabled);
+#if CONFIG_IDF_TARGET_ESP32
+    HANDLE_TEST(test_name, test_illegal_access);
+#endif
 
 #if CONFIG_TEST_MEMPROT
 

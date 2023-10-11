@@ -822,3 +822,17 @@ def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str
     dut.expect_exact('Stack pointer: 0x')
     dut.expect(r'Stack bounds: 0x(.*) - 0x')
     common_test(dut, config)
+
+
+@pytest.mark.esp32
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.generic
+def test_illegal_access(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    if dut.is_xtensa:
+        dut.expect(r'\[1\] val: (-?\d+) at 0x80000000', timeout=30)
+        dut.expect_gme('LoadProhibited')
+        dut.expect_reg_dump(0)
+        dut.expect_backtrace()
+        dut.expect_elf_sha256()
+        dut.expect_none('Guru Meditation')
