@@ -245,7 +245,6 @@ void BTA_AgAudioClose(UINT16 handle)
     }
 }
 
-
 /*******************************************************************************
 **
 ** Function         BTA_AgResult
@@ -297,7 +296,30 @@ void BTA_AgSetCodec(UINT16 handle, tBTA_AG_PEER_CODEC codec)
     }
 }
 
-#if (BTM_SCO_HCI_INCLUDED == TRUE )
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_AgPktStatsNumsGet
+**
+** Description      Specify the sync_conn_handle to be used for the packet numbers
+**                  received or send.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AgPktStatsNumsGet(UINT16 handle, UINT16 sync_conn_handle)
+{
+    tBTA_AG_PKT_STAT_GET  *p_buf;
+
+    if ((p_buf = (tBTA_AG_PKT_STAT_GET *) osi_malloc(sizeof(tBTA_AG_PKT_STAT_GET))) != NULL) {
+        p_buf->hdr.event = BTA_AG_PKT_STAT_NUMS_GET_EVT;
+        p_buf->hdr.layer_specific = handle;
+        p_buf->sync_conn_handle = sync_conn_handle;
+        bta_sys_sendmsg(p_buf);
+    }
+}
+
 /************************************************************************************************
  * Function        BTA_AgCiData
  *
@@ -317,6 +339,6 @@ void BTA_AgCiData(UINT16 handle)
         bta_sys_sendmsg(p_buf);
     }
 }
-#endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE ) */
+#endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */
 
 #endif /* #if (BTA_AG_INCLUDED == TRUE)*/

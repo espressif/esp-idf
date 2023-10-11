@@ -91,6 +91,7 @@ enum
     BTA_AG_CI_SCO_DATA,
     BTA_AG_CI_RX_DATA,
     BTA_AG_RCVD_SLC_READY,
+    BTA_AG_PKT_STAT_NUMS,
     BTA_AG_NUM_ACTIONS
 };
 
@@ -133,7 +134,8 @@ const tBTA_AG_ACTION bta_ag_action[] =
     bta_ag_send_ring,
     bta_ag_ci_sco_data,
     bta_ag_ci_rx_data,
-    bta_ag_rcvd_slc_ready
+    bta_ag_rcvd_slc_ready,
+    bta_ag_pkt_stat_nums
 };
 
 /* state table information */
@@ -167,7 +169,8 @@ const UINT8 bta_ag_st_init[][BTA_AG_NUM_COLS] =
 /* RING_TOUT_EVT */         {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_INIT_ST},
 /* SVC_TOUT_EVT */          {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_INIT_ST},
 /* CI_SCO_DATA_EVT */       {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_INIT_ST},
-/* CI_SLC_READY_EVT */      {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_INIT_ST}
+/* CI_SLC_READY_EVT */      {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_INIT_ST},
+/* PKT_STAT_NUMS_GET_EVT */ {BTA_AG_PKT_STAT_NUMS,  BTA_AG_IGNORE,          BTA_AG_INIT_ST}
 };
 
 /* state table for opening state */
@@ -196,7 +199,8 @@ const UINT8 bta_ag_st_opening[][BTA_AG_NUM_COLS] =
 /* RING_TOUT_EVT */         {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_OPENING_ST},
 /* SVC_TOUT_EVT */          {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_OPENING_ST},
 /* CI_SCO_DATA_EVT */       {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_OPENING_ST},
-/* CI_SLC_READY_EVT */      {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_OPENING_ST}
+/* CI_SLC_READY_EVT */      {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_OPENING_ST},
+/* PKT_STAT_NUMS_GET_EVT */ {BTA_AG_PKT_STAT_NUMS,  BTA_AG_IGNORE,          BTA_AG_OPENING_ST}
 };
 
 /* state table for open state */
@@ -225,7 +229,8 @@ const UINT8 bta_ag_st_open[][BTA_AG_NUM_COLS] =
 /* RING_TOUT_EVT */         {BTA_AG_SEND_RING,      BTA_AG_IGNORE,          BTA_AG_OPEN_ST},
 /* SVC_TOUT_EVT */          {BTA_AG_START_CLOSE,    BTA_AG_IGNORE,          BTA_AG_CLOSING_ST},
 /* CI_SCO_DATA_EVT */       {BTA_AG_CI_SCO_DATA,    BTA_AG_IGNORE,          BTA_AG_OPEN_ST},
-/* CI_SLC_READY_EVT */      {BTA_AG_RCVD_SLC_READY, BTA_AG_IGNORE,          BTA_AG_OPEN_ST}
+/* CI_SLC_READY_EVT */      {BTA_AG_RCVD_SLC_READY, BTA_AG_IGNORE,          BTA_AG_OPEN_ST},
+/* PKT_STAT_NUMS_GET_EVT */ {BTA_AG_PKT_STAT_NUMS,  BTA_AG_IGNORE,          BTA_AG_OPEN_ST}
 };
 
 /* state table for closing state */
@@ -254,7 +259,8 @@ const UINT8 bta_ag_st_closing[][BTA_AG_NUM_COLS] =
 /* RING_TOUT_EVT */         {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_CLOSING_ST},
 /* SVC_TOUT_EVT */          {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_CLOSING_ST},
 /* CI_SCO_DATA_EVT */       {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_CLOSING_ST},
-/* CI_SLC_READY_EVT */      {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_CLOSING_ST}
+/* CI_SLC_READY_EVT */      {BTA_AG_IGNORE,         BTA_AG_IGNORE,          BTA_AG_CLOSING_ST},
+/* PKT_STAT_NUMS_GET_EVT */ {BTA_AG_PKT_STAT_NUMS,  BTA_AG_IGNORE,          BTA_AG_CLOSING_ST}
 };
 
 /* type for state table */
@@ -357,6 +363,8 @@ static char *bta_ag_evt_str(UINT16 event, tBTA_AG_RES result)
         return "SCO data Callin";
     case BTA_AG_CI_SLC_READY_EVT:
         return "SLC Ready Callin";
+    case BTA_AG_PKT_STAT_NUMS_GET_EVT:
+        return "Get Packet Nums";
     default:
         return "Unknown AG Event";
     }

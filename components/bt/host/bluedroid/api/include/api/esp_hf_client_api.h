@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_HF_CLIENT_API_H__
 #define __ESP_HF_CLIENT_API_H__
@@ -96,6 +88,7 @@ typedef enum {
     ESP_HF_CLIENT_BSIR_EVT,                          /*!< setting of in-band ring tone */
     ESP_HF_CLIENT_BINP_EVT,                          /*!< requested number of last voice tag from AG */
     ESP_HF_CLIENT_RING_IND_EVT,                      /*!< ring indication event */
+    ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT,             /*!< requested number of packet different status */
 } esp_hf_client_cb_event_t;
 
 /// HFP client callback parameters
@@ -116,6 +109,7 @@ typedef union {
     struct hf_client_audio_stat_param {
         esp_hf_client_audio_state_t state;       /*!< audio connection state */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
+        uint16_t  sync_conn_handle;              /*!< (e)SCO connection handle */
     } audio_stat;                                /*!< HF callback param of ESP_HF_CLIENT_AUDIO_STATE_EVT */
 
     /**
@@ -250,6 +244,19 @@ typedef union {
     struct hf_client_binp_param {
         const char *number;                      /*!< phone number corresponding to the last voice tag in the HF */
     } binp;                                      /*!< HF callback param of ESP_HF_CLIENT_BINP_EVT */
+
+    /**
+     * @brief ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT
+     */
+    struct hf_client_pkt_status_nums {
+        uint32_t rx_total;        /*!< the total number of packets received */
+        uint32_t rx_correct;      /*!< the total number of packets data correctly received */
+        uint32_t rx_err;          /*!< the total number of packets data with possible invalid */
+        uint32_t rx_none;         /*!< the total number of packets data no received */
+        uint32_t rx_lost;         /*!< the total number of packets data partially lost */
+        uint32_t tx_total;        /*!< the total number of packets send */
+        uint32_t tx_discarded;    /*!< the total number of packets send lost */
+    } pkt_nums;                   /*!< HF callback param of ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT */
 
 } esp_hf_client_cb_param_t;                      /*!< HFP client callback parameters */
 
@@ -508,7 +515,7 @@ esp_err_t esp_hf_client_answer_call(void);
 
 /**
  *
- * @brief           Reject an incoming call(send AT+CHUP command).
+ * @brief           Reject an incoming call or terminate an ongoing call(send AT+CHUP command).
  *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
  * @return
@@ -616,6 +623,22 @@ esp_err_t esp_hf_client_send_nrec(void);
  */
 esp_err_t esp_hf_client_register_data_callback(esp_hf_client_incoming_data_cb_t recv,
                                                esp_hf_client_outgoing_data_cb_t send);
+
+/**
+ *
+ * @brief           Get the number of packets received and sent
+ *                  This function is only used in the case that Voice Over HCI is enabled and the audio state is connected.
+ *                  When the operation is completed, the callback function will be called with ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT.
+ *
+ * @param[in]       sync_conn_handle: the (e)SCO connection handle
+ *
+ * @return
+ *                  - ESP_OK: if the request is sent successfully
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_hf_client_pkt_stat_nums_get(uint16_t sync_conn_handle);
 
 /**
  * @brief           Trigger the lower-layer to fetch and send audio data.

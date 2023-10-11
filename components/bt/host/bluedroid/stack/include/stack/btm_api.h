@@ -1062,6 +1062,17 @@ enum {
 };
 typedef UINT8 tBTM_SCO_DATA_FLAG;
 
+/* Count the number of SCO Data Packet Status */
+typedef struct {
+    UINT32 rx_total;
+    UINT32 rx_correct;
+    UINT32 rx_err;
+    UINT32 rx_none;
+    UINT32 rx_lost;
+    UINT32 tx_total;
+    UINT32 tx_discarded;
+} tBTM_SCO_PKT_STAT_NUMS;
+
 /***************************
 **  SCO Callback Functions
 ****************************/
@@ -4189,6 +4200,17 @@ tBTM_STATUS BTM_SetAfhChannels (AFH_CHANNELS channels, tBTM_CMPL_CB *p_afh_chann
 **
 *******************************************************************************/
 tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_channels_cmpl_cback);
+
+/*******************************************************************************
+**
+** Function         BTM_PktStatNumsGet
+**
+** Description      This function is called to get the number of packet status struct
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_PktStatNumsGet(UINT16 sync_conn_handle, tBTM_SCO_PKT_STAT_NUMS *pkt_nums);
 
 #ifdef __cplusplus
 }
