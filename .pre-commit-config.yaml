@@ -66,6 +66,8 @@ repos:
         name: Validate Kconfig files
         entry: tools/ci/check_kconfigs.py
         language: python
+        additional_dependencies:
+          - esp-idf-kconfig
         files: '^Kconfig$|Kconfig.*$'
       - id: check-deprecated-kconfigs-options
         name: Check if any Kconfig Options Deprecated
