@@ -860,6 +860,72 @@
           "status": "recommended"
         }
       ]
+    },
+    {
+      "description": "QEMU for Xtensa",
+      "export_paths": [
+        [
+          "qemu",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/qemu",
+      "install": "on_request",
+      "license": "GPL-2.0-only",
+      "name": "qemu-xtensa",
+      "supported_targets": [
+        "esp32"
+      ],
+      "version_cmd": [
+        "qemu-system-xtensa",
+        "--version"
+      ],
+      "version_regex": "QEMU emulator version ([a-z0-9.-_]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "a7e5e779fd593cb15f6d197034dc2fb427ed9165a4743e2febc6f6a47dfcc618",
+            "size": 45962695,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.0.0-20230522/esp-qemu-xtensa-softmmu-develop_8.0.0_20230522-x86_64-linux-gnu.tar.bz2"
+          },
+          "name": "8.0.0",
+          "status": "recommended"
+        }
+      ]
+    },
+    {
+      "description": "QEMU for RISC-V",
+      "export_paths": [
+        [
+          "qemu",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/qemu",
+      "install": "on_request",
+      "license": "GPL-2.0-only",
+      "name": "qemu-riscv32",
+      "supported_targets": [
+        "esp32c3"
+      ],
+      "version_cmd": [
+        "qemu-system-riscv32",
+        "--version"
+      ],
+      "version_regex": "QEMU emulator version ([a-z0-9.-_]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "bc7607720ff3d7e3d39f3e1810b8795f376f4b9cf3783c8f2ed3f7f14ba74717",
+            "size": 47175493,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.0.0-20230522/esp-qemu-riscv32-softmmu-develop_8.0.0_20230522-x86_64-linux-gnu.tar.bz2"
+          },
+          "name": "8.0.0",
+          "status": "recommended"
+        }
+      ]
     }
   ],
   "version": 1

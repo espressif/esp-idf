@@ -1,5 +1,7 @@
 .. This file gets included from auto-generated part of idf-tools.rst.
 .. Comments "tool-NAME-notes" act as delimiters.
+..
+.. This is a padding to have the same line numbers as zh_CN version>
 
 
 .. tool-xtensa-esp-elf-gdb-notes
@@ -66,6 +68,18 @@ On Linux and macOS, it is recommended to install ninja using the OS-specific pac
 
 .. tool-esp-rom-elfs-notes
 
+
+---
+
+.. tool-qemu-xtensa-notes
+
+Some ESP-specific instructions for running QEMU for Xtensa chips are here: https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md
+
+---
+
+.. tool-qemu-riscv32-notes
+
+Some ESP-specific instructions for running QEMU for RISC-V chips are here: https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32c3/README.md
 
 ---
 
