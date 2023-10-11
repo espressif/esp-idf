@@ -39,8 +39,11 @@ int  wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
         return wpa_parse_wpa_ie_rsnxe(wpa_ie, wpa_ie_len, data);
     } else if (wpa_ie[0] == WLAN_EID_WAPI) {
         return 0;
+    } else if (wpa_ie_len >= 6 && wpa_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
+               wpa_ie[1] >= 4 &&
+               WPA_GET_BE32(&wpa_ie[2]) == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
+        return wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, data);
     }
-
     return wpa_parse_wpa_ie_wpa(wpa_ie, wpa_ie_len, data);
 }
 

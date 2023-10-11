@@ -2329,6 +2329,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     size_t assoc_rsnxe_len = sizeof(assoc_rsnxe);
     bool reassoc_same_ess = false;
     int try_opportunistic = 0;
+    const u8 *ie = NULL;
 
     /* Incase AP has changed it's SSID, don't try with PMK caching for SAE connection */
     /* Ideally we should use network_ctx for this purpose however currently network profile block
@@ -2447,9 +2448,10 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         return -1;
     sm->assoc_wpa_ie_len = res;
 
-    const u8 *rsnxe;
-    rsnxe = esp_wifi_sta_get_rsnxe((u8*)bssid);
-    wpa_sm_set_ap_rsnxe(rsnxe, rsnxe ? (rsnxe[1] + 2) : 0);
+    ie = esp_wifi_sta_get_ie((u8*)bssid, WLAN_EID_RSN);
+    wpa_sm_set_ap_rsn_ie(sm, ie, ie[1]+2);
+    ie = esp_wifi_sta_get_ie((u8*)bssid, WLAN_EID_RSNX);
+    wpa_sm_set_ap_rsnxe(sm, ie, ie ? (ie[1] + 2) : 0);
 
     res = wpa_gen_rsnxe(sm, assoc_rsnxe, assoc_rsnxe_len);
     if (res < 0)
@@ -2740,23 +2742,93 @@ struct wpa_sm * get_wpa_sm(void)
     return &gWpaSm;
 }
 
-int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
+/**
+ * wpa_sm_set_ap_rsn_ie - Set AP RSN IE from Beacon/ProbeResp
+ * @sm: Pointer to WPA state machine data from wpa_sm_init()
+ * @ie: Pointer to IE data (starting from id)
+ * @len: IE length
+ * Returns: 0 on success, -1 on failure
+ *
+ * Inform WPA state machine about the RSN IE used in Beacon / Probe Response
+ * frame.
+ */
+int wpa_sm_set_ap_rsn_ie(struct wpa_sm *sm, const u8 *ie, size_t len)
 {
-    struct wpa_sm *sm = &gWpaSm;
+	if (sm == NULL)
+		return -1;
 
-    os_free(sm->ap_rsnxe);
-    if (!ie || len == 0) {
-        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
-        sm->ap_rsnxe = NULL;
-        sm->ap_rsnxe_len = 0;
-    } else {
-        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
-        sm->ap_rsnxe = os_memdup(ie, len);
-        if (!sm->ap_rsnxe)
-            return -1;
+	os_free(sm->ap_rsn_ie);
+	if (ie == NULL || len == 0) {
+		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+			"WPA: clearing AP RSN IE");
+		sm->ap_rsn_ie = NULL;
+		sm->ap_rsn_ie_len = 0;
+	} else {
+		wpa_hexdump(MSG_DEBUG, "WPA: set AP RSN IE", ie, len);
+		if (ie[0] == WLAN_EID_VENDOR_SPECIFIC && len > 2 + 4) {
+			sm->ap_rsn_ie = os_malloc(len - 4);
+			if (!sm->ap_rsn_ie)
+				return -1;
+			sm->ap_rsn_ie[0] = WLAN_EID_RSN;
+			sm->ap_rsn_ie[1] = len - 2 - 4;
+			os_memcpy(&sm->ap_rsn_ie[2], ie + 2 + 4, len - 2 - 4);
+			sm->ap_rsn_ie_len = len - 4;
+			wpa_hexdump(MSG_DEBUG,
+				    "RSN: Converted RSNE override to RSNE",
+				    sm->ap_rsn_ie, sm->ap_rsn_ie_len);
+		} else {
+			sm->ap_rsn_ie = os_memdup(ie, len);
+			if (sm->ap_rsn_ie == NULL)
+				return -1;
 
-        sm->ap_rsnxe_len = len;
-    }
+			sm->ap_rsn_ie_len = len;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * wpa_sm_set_ap_rsnxe - Set AP RSNXE from Beacon/ProbeResp
+ * @sm: Pointer to WPA state machine data from wpa_sm_init()
+ * @ie: Pointer to IE data (starting from id)
+ * @len: IE length
+ * Returns: 0 on success, -1 on failure
+ *
+ * Inform WPA state machine about the RSNXE used in Beacon / Probe Response
+ * frame.
+ */
+int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+	if (!sm)
+		return -1;
+
+	os_free(sm->ap_rsnxe);
+	if (!ie || len == 0) {
+		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: clearing AP RSNXE");
+		sm->ap_rsnxe = NULL;
+		sm->ap_rsnxe_len = 0;
+	} else {
+		wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
+		if (ie[0] == WLAN_EID_VENDOR_SPECIFIC && len > 2 + 4) {
+			sm->ap_rsnxe = os_malloc(len - 4);
+			if (!sm->ap_rsnxe)
+				return -1;
+			sm->ap_rsnxe[0] = WLAN_EID_RSNX;
+			sm->ap_rsnxe[1] = len - 2 - 4;
+			os_memcpy(&sm->ap_rsnxe[2], ie + 2 + 4, len - 2 - 4);
+			sm->ap_rsnxe_len = len - 4;
+			wpa_hexdump(MSG_DEBUG,
+				    "RSN: Converted RSNXE override to RSNXE",
+				    sm->ap_rsnxe, sm->ap_rsnxe_len);
+		} else {
+			sm->ap_rsnxe = os_memdup(ie, len);
+			if (!sm->ap_rsnxe)
+				return -1;
+
+			sm->ap_rsnxe_len = len;
+		}
+	}
 
     if (sm->ap_rsnxe != NULL) {
         sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
