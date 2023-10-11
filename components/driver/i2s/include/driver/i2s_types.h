@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@ typedef enum {
  * @brief I2S controller communication mode
  */
 typedef enum {
-    I2S_COMM_MODE_STD,              /*!< I2S controller using standard communication mode, support philips/MSB/PCM format */
+    I2S_COMM_MODE_STD,              /*!< I2S controller using standard communication mode, support Philips/MSB/PCM format */
 #if SOC_I2S_SUPPORTS_PDM
     I2S_COMM_MODE_PDM,              /*!< I2S controller using PDM communication mode, support PDM output or input */
 #endif
@@ -41,13 +41,13 @@ typedef enum {
 } i2s_comm_mode_t;
 
 /**
- * @brief The multiple of mclk to sample rate
+ * @brief The multiple of MCLK to sample rate
  */
 typedef enum {
-    I2S_MCLK_MULTIPLE_128       = 128,     /*!< mclk = sample_rate * 128 */
-    I2S_MCLK_MULTIPLE_256       = 256,     /*!< mclk = sample_rate * 256 */
-    I2S_MCLK_MULTIPLE_384       = 384,     /*!< mclk = sample_rate * 384 */
-    I2S_MCLK_MULTIPLE_512       = 512,     /*!< mclk = sample_rate * 512 */
+    I2S_MCLK_MULTIPLE_128       = 128,     /*!< MCLK = sample_rate * 128 */
+    I2S_MCLK_MULTIPLE_256       = 256,     /*!< MCLK = sample_rate * 256 */
+    I2S_MCLK_MULTIPLE_384       = 384,     /*!< MCLK = sample_rate * 384 */
+    I2S_MCLK_MULTIPLE_512       = 512,     /*!< MCLK = sample_rate * 512 */
 } i2s_mclk_multiple_t;
 
 /**
@@ -63,7 +63,7 @@ typedef struct {
                                   */
 } i2s_event_data_t;
 
-typedef struct i2s_channel_obj_t    *i2s_chan_handle_t; /*!< i2s channel object handle, the control unit of the i2s driver*/
+typedef struct i2s_channel_obj_t    *i2s_chan_handle_t; /*!< I2S channel object handle, the control unit of the I2S driver*/
 
 /**
  * @brief I2S event callback

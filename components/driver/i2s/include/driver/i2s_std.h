@@ -25,7 +25,7 @@ extern "C" {
 #if CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Philips format in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
@@ -43,8 +43,8 @@ extern "C" {
 
 /**
  * @brief PCM(short) format in 2 slots
- * @note  PCM(long) is same as philips in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @note  PCM(long) is same as Philips in 2 slots
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PCM_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)  { \
@@ -62,7 +62,7 @@ extern "C" {
 
 /**
  * @brief MSB format in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
@@ -81,7 +81,7 @@ extern "C" {
 #elif CONFIG_IDF_TARGET_ESP32S2
 /**
  * @brief Philips format in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
@@ -98,8 +98,8 @@ extern "C" {
 
 /**
  * @brief PCM(short) format in 2 slots
- * @note  PCM(long) is same as philips in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @note  PCM(long) is same as Philips in 2 slots
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PCM_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)  { \
@@ -116,7 +116,7 @@ extern "C" {
 
 /**
  * @brief MSB format in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
@@ -134,7 +134,7 @@ extern "C" {
 #else
 /**
  * @brief Philips format in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
@@ -152,8 +152,8 @@ extern "C" {
 
 /**
  * @brief PCM(short) format in 2 slots
- * @note  PCM(long) is same as philips in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @note  PCM(long) is same as Philips in 2 slots
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_PCM_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)  { \
@@ -171,7 +171,7 @@ extern "C" {
 
 /**
  * @brief MSB format in 2 slots
- * @param bits_per_sample i2s data bit width
+ * @param bits_per_sample I2S data bit width
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
 #define I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
@@ -194,9 +194,9 @@ extern "C" {
 /** @endcond */
 
 /**
- * @brief i2s default standard clock configuration
+ * @brief I2S default standard clock configuration
  * @note Please set the mclk_multiple to I2S_MCLK_MULTIPLE_384 while using 24 bits data width
- *       Otherwise the sample rate might be imprecise since the bclk division is not a integer
+ *       Otherwise the sample rate might be imprecise since the BCLK division is not a integer
  * @param rate sample rate
  */
 #define I2S_STD_CLK_DEFAULT_CONFIG(rate) { \
@@ -219,7 +219,7 @@ typedef struct {
 
     /* Particular fields */
     i2s_std_slot_mask_t     slot_mask;          /*!< Select the left, right or both slot */
-    uint32_t                ws_width;           /*!< WS signal width (i.e. the number of bclk ticks that ws signal is high) */
+    uint32_t                ws_width;           /*!< WS signal width (i.e. the number of BCLK ticks that WS signal is high) */
     bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
     bool                    bit_shift;          /*!< Set to enable bit shift in Philips mode */
 #if SOC_I2S_HW_VERSION_1    // For esp32/esp32-s2
@@ -237,17 +237,17 @@ typedef struct {
 typedef struct {
     /* General fields */
     uint32_t                sample_rate_hz;     /*!< I2S sample rate */
-    i2s_clock_src_t         clk_src;            /*!< Choose clock source, see 'soc_periph_i2s_clk_src_t' for the supported clock sources.
-                                                 *   selected 'I2S_CLK_SRC_EXTERNAL'(if supports) to enable the external source clock input via MCLK pin,
+    i2s_clock_src_t         clk_src;            /*!< Choose clock source, see `soc_periph_i2s_clk_src_t` for the supported clock sources.
+                                                 *   selected `I2S_CLK_SRC_EXTERNAL` (if supports) to enable the external source clock input via MCLK pin,
                                                  */
 #if SOC_I2S_HW_VERSION_2
-    uint32_t                ext_clk_freq_hz;    /*!< External clock source frequency in Hz, only take effect when 'clk_src = I2S_CLK_SRC_EXTERNAL', otherwise this field will be ignored,
-                                                 *   Please make sure the frequency input is equal or greater than bclk, i.e. 'sample_rate_hz * slot_bits * 2'
+    uint32_t                ext_clk_freq_hz;    /*!< External clock source frequency in Hz, only take effect when `clk_src = I2S_CLK_SRC_EXTERNAL`, otherwise this field will be ignored,
+                                                 *   Please make sure the frequency input is equal or greater than BCLK, i.e. `sample_rate_hz * slot_bits * 2`
                                                  */
 #endif
-    i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate
+    i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of MCLK to the sample rate
                                                  *   Default is 256 in the helper macro, it can satisfy most of cases,
-                                                 *   but please set this field a multiple of '3' (like 384) when using 24-bit data width,
+                                                 *   but please set this field a multiple of `3` (like 384) when using 24-bit data width,
                                                  *   otherwise the sample rate might be inaccurate
                                                  */
 } i2s_std_clk_config_t;
@@ -256,34 +256,34 @@ typedef struct {
  * @brief I2S standard mode GPIO pins configuration
  */
 typedef struct {
-    gpio_num_t mclk;               /*!< MCK pin, output by default, input if the clock source is selected to 'I2S_CLK_SRC_EXTERNAL' */
-    gpio_num_t bclk;               /*!< BCK pin, input in slave role, output in master role */
-    gpio_num_t ws;                 /*!< WS pin, input in slave role, output in master role */
+    gpio_num_t MCLK;               /*!< MCK pin, output by default, input if the clock source is selected to `I2S_CLK_SRC_EXTERNAL` */
+    gpio_num_t BCLK;               /*!< BCK pin, input in slave role, output in master role */
+    gpio_num_t WS;                 /*!< WS pin, input in slave role, output in master role */
     gpio_num_t dout;               /*!< DATA pin, output */
     gpio_num_t din;                /*!< DATA pin, input */
     struct {
-        uint32_t   mclk_inv: 1;    /*!< Set 1 to invert the mclk output */
-        uint32_t   bclk_inv: 1;    /*!< Set 1 to invert the bclk input/output */
-        uint32_t   ws_inv: 1;      /*!< Set 1 to invert the ws input/output */
+        uint32_t   mclk_inv: 1;    /*!< Set 1 to invert the MCLK output */
+        uint32_t   bclk_inv: 1;    /*!< Set 1 to invert the BCLK input/output */
+        uint32_t   ws_inv: 1;      /*!< Set 1 to invert the WS input/output */
     } invert_flags;                /*!< GPIO pin invert flags */
 } i2s_std_gpio_config_t;
 
 /**
- * @brief I2S standard mode major configuration that including clock/slot/gpio configuration
+ * @brief I2S standard mode major configuration that including clock/slot/GPIO configuration
  */
 typedef struct {
     i2s_std_clk_config_t    clk_cfg;    /*!< Standard mode clock configuration, can be generated by macro I2S_STD_CLK_DEFAULT_CONFIG */
     i2s_std_slot_config_t   slot_cfg;   /*!< Standard mode slot configuration, can be generated by macros I2S_STD_[mode]_SLOT_DEFAULT_CONFIG, [mode] can be replaced with PHILIPS/MSB/PCM */
-    i2s_std_gpio_config_t   gpio_cfg;   /*!< Standard mode gpio configuration, specified by user */
+    i2s_std_gpio_config_t   gpio_cfg;   /*!< Standard mode GPIO configuration, specified by user */
 } i2s_std_config_t;
 
 /**
- * @brief Initialize i2s channel to standard mode
+ * @brief Initialize I2S channel to standard mode
  * @note  Only allowed to be called when the channel state is REGISTERED, (i.e., channel has been allocated, but not initialized)
  *        and the state will be updated to READY if initialization success, otherwise the state will return to REGISTERED.
  *
  * @param[in]   handle      I2S channel handler
- * @param[in]   std_cfg     Configurations for standard mode, including clock, slot and gpio
+ * @param[in]   std_cfg     Configurations for standard mode, including clock, slot and GPIO
  *                          The clock configuration can be generated by the helper macro `I2S_STD_CLK_DEFAULT_CONFIG`
  *                          The slot configuration can be generated by the helper macro `I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG`,
  *                          `I2S_STD_PCM_SLOT_DEFAULT_CONFIG` or `I2S_STD_MSB_SLOT_DEFAULT_CONFIG`
@@ -299,8 +299,8 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
 /**
  * @brief Reconfigure the I2S clock for standard mode
  * @note  Only allowed to be called when the channel state is READY, i.e., channel has been initialized, but not started
- *        this function won't change the state. 'i2s_channel_disable' should be called before calling this function if i2s has started.
- * @note  The input channel handle has to be initialized to standard mode, i.e., 'i2s_channel_init_std_mode' has been called before reconfiguring
+ *        this function won't change the state. `i2s_channel_disable` should be called before calling this function if I2S has started.
+ * @note  The input channel handle has to be initialized to standard mode, i.e., `i2s_channel_init_std_mode` has been called before reconfiguring
  *
  * @param[in]   handle      I2S channel handler
  * @param[in]   clk_cfg     Standard mode clock configuration, can be generated by `I2S_STD_CLK_DEFAULT_CONFIG`
@@ -314,8 +314,8 @@ esp_err_t i2s_channel_reconfig_std_clock(i2s_chan_handle_t handle, const i2s_std
 /**
  * @brief Reconfigure the I2S slot for standard mode
  * @note  Only allowed to be called when the channel state is READY, i.e., channel has been initialized, but not started
- *        this function won't change the state. 'i2s_channel_disable' should be called before calling this function if i2s has started.
- * @note  The input channel handle has to be initialized to standard mode, i.e., 'i2s_channel_init_std_mode' has been called before reconfiguring
+ *        this function won't change the state. `i2s_channel_disable` should be called before calling this function if I2S has started.
+ * @note  The input channel handle has to be initialized to standard mode, i.e., `i2s_channel_init_std_mode` has been called before reconfiguring
  *
  * @param[in]   handle      I2S channel handler
  * @param[in]   slot_cfg    Standard mode slot configuration, can be generated by `I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG`,
@@ -329,13 +329,13 @@ esp_err_t i2s_channel_reconfig_std_clock(i2s_chan_handle_t handle, const i2s_std
 esp_err_t i2s_channel_reconfig_std_slot(i2s_chan_handle_t handle, const i2s_std_slot_config_t *slot_cfg);
 
 /**
- * @brief Reconfigure the I2S gpio for standard mode
+ * @brief Reconfigure the I2S GPIO for standard mode
  * @note  Only allowed to be called when the channel state is READY, i.e., channel has been initialized, but not started
- *        this function won't change the state. 'i2s_channel_disable' should be called before calling this function if i2s has started.
- * @note  The input channel handle has to be initialized to standard mode, i.e., 'i2s_channel_init_std_mode' has been called before reconfiguring
+ *        this function won't change the state. `i2s_channel_disable` should be called before calling this function if I2S has started.
+ * @note  The input channel handle has to be initialized to standard mode, i.e., `i2s_channel_init_std_mode` has been called before reconfiguring
  *
  * @param[in]   handle      I2S channel handler
- * @param[in]   gpio_cfg    Standard mode gpio configuration, specified by user
+ * @param[in]   gpio_cfg    Standard mode GPIO configuration, specified by user
  * @return
  *      - ESP_OK    Set clock successfully
  *      - ESP_ERR_INVALID_ARG   NULL pointer, invalid configuration  or not standard mode
