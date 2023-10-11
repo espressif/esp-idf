@@ -52,14 +52,8 @@ extern size_t global_op_class_size;
 struct ieee802_11_elems {
 	const u8 *rsn_ie;
 	u8 rsn_ie_len;
-	const u8 *wmm;
-	u8 wmm_len;
-	const u8 *wmm_tspec;
-	u8 wmm_tspec_len;
-	const u8 *wpa_ie;
-	u8 wpa_ie_len;
-	const u8 *wps_ie;
-	u8 wps_ie_len;
+	const u8 *rsnxe;
+	u8 rsnxe_len;
 #ifdef CONFIG_RRM
 	const u8 *rrm_enabled;
 	u8 rrm_enabled_len;
@@ -77,8 +71,6 @@ struct ieee802_11_elems {
 	u8 sae_pk_len;
 #endif
 #ifdef CONFIG_WPA3_SAE
-	const u8 *rsnxe;
-	u8 rsnxe_len;
 	const u8 *rsne_override;
 	u8 rsne_override_len;
 #endif

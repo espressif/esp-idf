@@ -422,6 +422,7 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, struct ieee802_1
                 goto send_resp;
             }
 
+            wpa_auth_set_rsn_override(sta->wpa_sm, elems.rsne_override != NULL);
             res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, elems.rsn_ie, elems.rsn_ie_len, elems.rsnxe, elems.rsnxe_len);
 #ifdef CONFIG_SAE
             if (wpa_auth_uses_sae(sta->wpa_sm) && sta->sae &&

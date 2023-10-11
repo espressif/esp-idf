@@ -200,8 +200,10 @@ struct hostapd_bss_config {
 
 	int wpa; /* bitfield of WPA_PROTO_WPA, WPA_PROTO_RSN */
 	int wpa_key_mgmt;
+	int rsn_override_key_mgmt;
 #ifdef CONFIG_IEEE80211W
 	enum mfp_options ieee80211w;
+	enum mfp_options rsn_override_mfp;
 	/* dot11AssociationSAQueryMaximumTimeout (in TUs) */
 	unsigned int assoc_sa_query_max_timeout;
 	/* dot11AssociationSAQueryRetryTimeout (in TUs) */
@@ -220,6 +222,7 @@ struct hostapd_bss_config {
 	int wpa_ptk_rekey;
 	int rsn_pairwise;
 	int rsn_preauth;
+	int rsn_override_pairwise;
 	char *rsn_preauth_interfaces;
 
 #ifdef CONFIG_IEEE80211R

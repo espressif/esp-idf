@@ -110,6 +110,8 @@ struct wpa_state_machine {
 	int wpa_key_mgmt; /* the selected WPA_KEY_MGMT_* */
 	struct rsn_pmksa_cache_entry *pmksa;
 
+	bool rsn_override;
+
 #ifdef CONFIG_IEEE80211R_AP
 	u8 xxkey[PMK_LEN_MAX]; /* PSK or the second 256 bits of MSK, or the
 				* first 384 bits of MSK */
@@ -184,6 +186,8 @@ struct wpa_authenticator {
 
 	u8 *wpa_ie;
 	size_t wpa_ie_len;
+	u8 *rsne_override; /* RSNE with overridden payload */
+	u8 *rsnxe_override; /* RSNXE with overridden payload */
 	struct rsn_pmksa_cache *pmksa;
 
 	u8 addr[ETH_ALEN];
@@ -195,7 +199,7 @@ struct wpa_authenticator {
 
 
 int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
-		     const u8 *pmkid, int group_mgmt_cipher);
+		     const u8 *pmkid);
 int wpa_write_rsnxe(struct wpa_auth_config *conf, u8 *buf, size_t len);
 void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 		      struct wpa_state_machine *sm, int key_info,

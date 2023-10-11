@@ -127,6 +127,7 @@ struct ft_remote_r1kh {
 struct wpa_auth_config {
 	int wpa;
 	int wpa_key_mgmt;
+	int rsn_override_key_mgmt;
 	int wpa_pairwise;
 	int wpa_group;
 	int wpa_group_rekey;
@@ -134,6 +135,7 @@ struct wpa_auth_config {
 	int wpa_gmk_rekey;
 	int wpa_ptk_rekey;
 	int rsn_pairwise;
+	int rsn_override_pairwise;
 	int rsn_preauth;
 	int eapol_version;
 	int wmm_enabled;
@@ -143,6 +145,7 @@ struct wpa_auth_config {
 	int tx_status;
 #ifdef CONFIG_IEEE80211W
 	enum mfp_options ieee80211w;
+	enum mfp_options rsn_override_mfp;
 #endif /* CONFIG_IEEE80211W */
 	int group_mgmt_cipher;
 #ifdef CONFIG_SAE
@@ -304,5 +307,6 @@ int wpa_auth_pmksa_add_sae(struct wpa_authenticator *wpa_auth, const u8 *addr,
 void wpa_auth_add_sae_pmkid(struct wpa_state_machine *sm, const u8 *pmkid);
 void wpa_auth_pmksa_remove(struct wpa_authenticator *wpa_auth,
 			    const u8 *sta_addr);
+void wpa_auth_set_rsn_override(struct wpa_state_machine *sm, bool val);
 
 #endif /* WPA_AUTH_H */

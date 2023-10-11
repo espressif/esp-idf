@@ -191,6 +191,7 @@ int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
 	return nei_pos - nei_rep;
 }
 
+#ifdef CONFIG_WPA3_SAE
 static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 					    struct ieee802_11_elems *elems,
 					    int show_errors)
@@ -216,10 +217,6 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 		 * subtyped */
 		switch (pos[3]) {
 		case 1:
-			/* Microsoft OUI (00:50:F2) with OUI Type 1:
-			 * real WPA information element */
-			elems->wpa_ie = pos;
-			elems->wpa_ie_len = elen;
 			break;
 		case WMM_OUI_TYPE:
 			/* WMM information element */
@@ -239,12 +236,8 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 				 * Length field can be used to distinguish the
 				 * IEs.
 				 */
-				elems->wmm = pos;
-				elems->wmm_len = elen;
 				break;
 			case WMM_OUI_SUBTYPE_TSPEC_ELEMENT:
-				elems->wmm_tspec = pos;
-				elems->wmm_tspec_len = elen;
 				break;
 			default:
 				wpa_printf(MSG_EXCESSIVE, "unknown WMM "
@@ -256,8 +249,6 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			break;
 		case 4:
 			/* Wi-Fi Protected Setup (WPS) IE */
-			elems->wps_ie = pos;
-			elems->wps_ie_len = elen;
 			break;
 		default:
 			wpa_printf(MSG_EXCESSIVE, "Unknown Microsoft "
@@ -275,12 +266,10 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			elems->sae_pk_len = elen - 4;
 			break;
 #endif /* CONFIG_SAE_PK */
-#ifdef CONFIG_WPA3_SAE
 		case WFA_RSNE_OVERRIDE_OUI_TYPE:
 			elems->rsne_override = pos;
 			elems->rsne_override_len = elen;
 			break;
-#endif
 		default:
 			wpa_printf(MSG_EXCESSIVE, "Unknown WFA "
 				"information element ignored "
@@ -299,6 +288,7 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 
 	return 0;
 }
+#endif /* CONFIG_WPA3_SAE */
 
 #ifdef CONFIG_SAE_PK
 static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
@@ -367,6 +357,7 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 			}
 			break;
 #endif /*CONFIG_SAE_PK*/
+#ifdef CONFIG_WPA3_SAE
 		case WLAN_EID_VENDOR_SPECIFIC:
 			if (ieee802_11_parse_vendor_specific(pos, elen,
 							     elems,
@@ -374,16 +365,15 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 				unknown++;
 			}
 			break;
+#endif /* CONFIG_WPA3_SAE */
 		case WLAN_EID_RSN:
 			elems->rsn_ie = pos;
 			elems->rsn_ie_len = elen;
 			break;
-#ifdef CONFIG_WPA3_SAE
 		case WLAN_EID_RSNX:
 			elems->rsnxe = pos;
 			elems->rsnxe_len = elen;
 			break;
-#endif
 #ifdef CONFIG_WNM
 		case WLAN_EID_EXT_CAPAB:
 			/* extended caps can go beyond 8 octacts but we aren't using them now */
