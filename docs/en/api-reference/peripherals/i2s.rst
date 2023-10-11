@@ -252,7 +252,7 @@ Both :cpp:func:`i2s_channel_write` and :cpp:func:`i2s_channel_read` are blocking
 Configuration
 ^^^^^^^^^^^^^
 
-Users can initialize a channel by calling corresponding functions (i.e., :func:`i2s_channel_init_std_mode`, :func:`i2s_channel_init_pdm_rx_mode`, :func:`i2s_channel_init_pdm_tx_mode`, or :func:`i2s_channel_init_tdm_mode`) to a specific mode. If the configurations need to be updated after initialization, users have to first call :cpp:func:`i2s_channel_disable` to ensure that the channel has stopped, and then call corresponding `reconfig` functions, like :cpp:func:`i2s_channel_reconfig_std_slot`, :cpp:func:`i2s_channel_reconfig_std_clock`, and :cpp:func:`i2s_channel_reconfig_std_gpio`.
+Users can initialize a channel by calling corresponding functions (i.e., :func:`i2s_channel_init_std_mode`, :func:`i2s_channel_init_pdm_rx_mode`, :func:`i2s_channel_init_pdm_tx_mode`, or :func:`i2s_channel_init_tdm_mode`) to a specific mode. If the configurations need to be updated after initialization, users have to first call :cpp:func:`i2s_channel_disable` to ensure that the channel has stopped, and then call corresponding ``reconfig`` functions, like :cpp:func:`i2s_channel_reconfig_std_slot`, :cpp:func:`i2s_channel_reconfig_std_clock`, and :cpp:func:`i2s_channel_reconfig_std_gpio`.
 
 IRAM Safe
 ^^^^^^^^^

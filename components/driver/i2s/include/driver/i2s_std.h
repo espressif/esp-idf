@@ -256,13 +256,13 @@ typedef struct {
  * @brief I2S standard mode GPIO pins configuration
  */
 typedef struct {
-    gpio_num_t MCLK;               /*!< MCK pin, output by default, input if the clock source is selected to `I2S_CLK_SRC_EXTERNAL` */
-    gpio_num_t BCLK;               /*!< BCK pin, input in slave role, output in master role */
-    gpio_num_t WS;                 /*!< WS pin, input in slave role, output in master role */
+    gpio_num_t mclk;               /*!< MCK pin, output by default, input if the clock source is selected to `I2S_CLK_SRC_EXTERNAL` */
+    gpio_num_t bclk;               /*!< BCK pin, input in slave role, output in master role */
+    gpio_num_t ws;                 /*!< WS pin, input in slave role, output in master role */
     gpio_num_t dout;               /*!< DATA pin, output */
     gpio_num_t din;                /*!< DATA pin, input */
     struct {
-        uint32_t   mclk_inv: 1;    /*!< Set 1 to invert the MCLK output */
+        uint32_t   mclk_inv: 1;    /*!< Set 1 to invert the MCLK input/output */
         uint32_t   bclk_inv: 1;    /*!< Set 1 to invert the BCLK input/output */
         uint32_t   ws_inv: 1;      /*!< Set 1 to invert the WS input/output */
     } invert_flags;                /*!< GPIO pin invert flags */
