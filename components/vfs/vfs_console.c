@@ -31,7 +31,7 @@ typedef struct {
 
 #if CONFIG_VFS_SUPPORT_IO
 // Primary register part.
-#ifdef CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART
 const static char *primary_path = "/dev/uart";
 #elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 const static char *primary_path = "/dev/usbserjtag";
@@ -40,7 +40,9 @@ const static char *primary_path = "/dev/cdcacm";
 #endif
 
 // Secondary register part.
-#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+#if (CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG || \
+     CONFIG_ESP_CONSOLE_SECONDARY_UART || \
+     CONFIG_ESP_CONSOLE_SECONDARY_USB_CDC)
 const static char *secondary_path = "/dev/secondary";
 static int secondary_vfs_index;
 #endif // Secondary part
@@ -63,6 +65,10 @@ int console_open(const char * path, int flags, int mode)
 // Secondary port open
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
     vfs_console.fd_secondary = get_vfs_for_path(secondary_path)->vfs.open("/", flags, mode);
+#elif CONFIG_ESP_CONSOLE_SECONDARY_UART
+    vfs_console.fd_secondary = get_vfs_for_path(secondary_path)->vfs.open("/"STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM), flags, mode);
+#elif CONFIG_ESP_CONSOLE_SECONDARY_USB_CDC
+    vfs_console.fd_secondary = get_vfs_for_path(secondary_path)->vfs.open("/", flags, mode);
 #endif
     return 0;
 }
@@ -71,7 +77,9 @@ ssize_t console_write(int fd, const void *data, size_t size)
 {
     // All function calls are to primary, except from write and close, which will be forwarded to both primary and secondary.
     get_vfs_for_index(primary_vfs_index)->vfs.write(vfs_console.fd_primary, data, size);
-#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+#if (CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG || \
+     CONFIG_ESP_CONSOLE_SECONDARY_UART || \
+     CONFIG_ESP_CONSOLE_SECONDARY_USB_CDC)
     get_vfs_for_index(secondary_vfs_index)->vfs.write(vfs_console.fd_secondary, data, size);
 #endif
     return size;
@@ -195,7 +203,7 @@ esp_err_t esp_vfs_console_register(void)
 {
     esp_err_t err = ESP_OK;
 // Primary register part.
-#ifdef CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART
     const esp_vfs_t *uart_vfs = esp_vfs_uart_get_vfs();
     err = esp_vfs_register_common(primary_path, strlen(primary_path), uart_vfs, NULL, &primary_vfs_index);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
@@ -217,6 +225,18 @@ esp_err_t esp_vfs_console_register(void)
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
     const esp_vfs_t *usb_serial_jtag_vfs = esp_vfs_usb_serial_jtag_get_vfs();
     err = esp_vfs_register_common(secondary_path, strlen(secondary_path), usb_serial_jtag_vfs, NULL, &secondary_vfs_index);
+    if(err != ESP_OK) {
+        return err;
+    }
+#elif CONFIG_ESP_CONSOLE_SECONDARY_UART
+    const esp_vfs_t *uart_vfs = esp_vfs_uart_get_vfs();
+    err = esp_vfs_register_common(secondary_path, strlen(secondary_path), uart_vfs, NULL, &secondary_vfs_index);
+    if(err != ESP_OK) {
+        return err;
+    }
+#elif CONFIG_ESP_CONSOLE_SECONDARY_USB_CDC
+    const esp_vfs_t *cdcacm_vfs = esp_vfs_cdcacm_get_vfs();
+    err = esp_vfs_register_common(secondary_path, strlen(secondary_path), cdcacm_vfs, NULL, &secondary_vfs_index);
     if(err != ESP_OK) {
         return err;
     }

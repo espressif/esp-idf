@@ -302,7 +302,7 @@ static void do_core_init(void)
     assert(vfs_err == ESP_OK && "Failed to register vfs console");
 #endif
 
-#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_IS_NONE_ENABLED)
     const static char *default_stdio_dev = "/dev/console/";
     esp_reent_init(_GLOBAL_REENT);
     _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
@@ -322,9 +322,9 @@ static void do_core_init(void)
     __swsetup_r(_GLOBAL_REENT, _GLOBAL_REENT->_stderr);
     __swsetup_r(_GLOBAL_REENT, _GLOBAL_REENT->_stdin);
 #endif // ESP_ROM_NEEDS_SWSETUP_WORKAROUND
-#else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+#else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_IS_NONE_ENABLED)
     _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
-#endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+#endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_IS_NONE_ENABLED)
 
     esp_err_t err __attribute__((unused));
 
