@@ -17,7 +17,7 @@ extern "C" {
 #define KEY_MGR_SW_INIT_KEY_SIZE         32
 #define KEY_MGR_ASSIST_INFO_SIZE         64
 #define KEY_MGR_KEY_RECOVERY_INFO_SIZE   64
-#define KEY_MGR_HUK_INFO_SIZE            64
+#define KEY_MGR_HUK_INFO_SIZE            HUK_INFO_SIZE
 /* AES deploy mode */
 #define KEY_MGR_K2_INFO_SIZE             64
 #define KEY_MGR_K1_ENCRYPTED_SIZE        32
@@ -76,7 +76,7 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(esp_key_mgr_aes_key_config_t *key_c
  *      ESP_OK for success
  *      ESP_FAIL/relevant error code for failure
  */
-esp_err_t esp_key_mgr_deploy_key_in_aes_mode(esp_key_mgr_aes_key_config_t *key_config, esp_key_mgr_key_recovery_info_t *key_info);
+esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(esp_key_mgr_ecdh0_key_config_t *key_config, esp_key_mgr_key_recovery_info_t *key_info);
 
 /*
  * @brief Recover a key from the given key info
