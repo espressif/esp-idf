@@ -56,6 +56,8 @@ extern "C" {
 #define CMD_FASTRD_QUAD_4B  0x6C
 #define CMD_FASTRD_DIO_4B   0xBC
 #define CMD_FASTRD_DUAL_4B  0x3C
+#define CMD_FASTRD_4B       0x0C
+#define CMD_SLOWRD_4B       0x13
 
 
 /* Provide a Flash API for bootloader_support code,
