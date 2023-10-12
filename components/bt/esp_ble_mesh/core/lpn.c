@@ -21,6 +21,7 @@
 #include "foundation.h"
 #include "mesh/main.h"
 #include "mesh/cfg_srv.h"
+#include "heartbeat.h"
 
 #include "mesh_v1.1/utils.h"
 
