@@ -228,7 +228,9 @@ static esp_err_t bootloader_init_spi_flash(void)
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
     bootloader_enable_qio_mode();
 #endif
-
+#if CONFIG_SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
+    bootloader_flash_32bits_address_map_enable(bootloader_flash_get_spi_mode());
+#endif
     print_flash_info(&bootloader_image_hdr);
     update_flash_config(&bootloader_image_hdr);
     //ensure the flash is write-protected

@@ -96,6 +96,18 @@ extern const bootloader_qio_info_t __attribute__((weak)) bootloader_flash_qe_sup
   */
 esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void);
 
+#if CONFIG_SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
+/**
+ * @brief Enable 32bits address flash(larger than 16MB) can map to cache.
+ *
+ * @param flash_mode SPI flash working mode.
+ *
+ * @note This can be overridden because it's attribute weak.
+ */
+void __attribute__((weak)) bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t flash_mode);
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

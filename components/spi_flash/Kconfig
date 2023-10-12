@@ -286,4 +286,15 @@ menu "SPI Flash driver"
             This option is invisible, and will be selected automatically
             when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
 
+    config SPI_FLASH_32BIT_ADDRESS
+        bool
+        default y if ESPTOOLPY_FLASHSIZE_32MB || ESPTOOLPY_FLASHSIZE_64MB || ESPTOOLPY_FLASHSIZE_128MB
+        default n
+        help
+            This is a helper config for 32bits address flash. Invisible for users.
+
+    config SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
+        bool
+        default y if ESPTOOLPY_OCT_FLASH && SPI_FLASH_32BIT_ADDRESS
+        default n
 endmenu
