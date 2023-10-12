@@ -11,7 +11,7 @@ IDF 监视器是一个串行终端程序，使用了 esp-idf-monitor_ 包，用�
 操作快捷键
 ==================
 
-为了方便与 IDF 监视器进行交互，请使用表中给出的快捷键。
+为了方便与 IDF 监视器进行交互，请使用表中给出的快捷键。这些快捷键可以自定义，请查看 `配置文件`_ 章节了解详情。
 
 .. list-table::
    :header-rows: 1
@@ -61,7 +61,7 @@ IDF 监视器是一个串行终端程序，使用了 esp-idf-monitor_ 包，用�
      -
    * - Ctrl + C
      - 中断正在运行的应用程序
-     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启用 :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME 选项。
+     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启用 :ref: `CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` 选项。
 
 除了 ``Ctrl-]`` 和 ``Ctrl-T``，其他快捷键信号会通过串口发送到目标设备。
 
@@ -313,6 +313,109 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
 
 
+配置文件
+========
+
+``esp-idf-monitor`` 使用 `C0 控制字符`_ 与控制台进行交互。配置文件中的字符会被转换为对应的 C0 控制代码。可用字符包括英文字母 (A-Z) 和特殊符号：``[``、``]``、``\``、``^``、和 ``_``.
+
+.. warning::
+
+    注意，一些字符可能无法在所有平台通用，或被保留作为其他用途的快捷键。请谨慎使用此功能。
+
+
+文件位置
+~~~~~~~~~~
+
+配置文件的默认名称为 ``esp-idf-monitor.cfg``。首先，在 ``esp-idf-monitor`` 路径中检测配置文件并运行。
+
+如果此目录中没有检测到配置文件，则检查当前用户操作系统的配置目录：
+
+  - Linux: ``/home/<user>/.config/esp-idf-monitor/``
+  - MacOS ``/Users/<user>/.config/esp-idf-monitor/``
+  - Windows: ``c:\Users\<user>\AppData\Local\esp-idf-monitor\``
+
+如仍未检测到配置文件，会最后再检查主目录：
+
+  - Linux: ``/home/<user>/``
+  - MacOS ``/Users/<user>/``
+  - Windows: ``c:\Users\<user>\``
+
+在 Windows 中，可以使用 ``HOME`` 或 ``USERPROFILE`` 环境变量设置主目录，因此，Windows 配置目录的位置也取决于这些变量。
+
+还可以使用 ``ESP_IDF_MONITOR_CFGFILE`` 环境变量为配置文件指定一个不同的位置，例如 ``ESP_IDF_MONITOR_CFGFILE = ~/custom_config.cfg``。这一设置的检测优先级高于上述所有位置检测的优先级。
+
+如果没有使用其他配置文件，``esp-idf-monitor`` 会从其他常用的配置文件中读取设置。如果存在 ``setup.cfg`` 或 ``tox.ini`` 文件，``esp-idf-monitor`` 会自动从这些文件中读取设置。
+
+配置选项
+~~~~~~~~~~
+
+下表列出了可用的配置选项：
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 50 20
+    :align: center
+
+    * - 选项名称
+      - 描述
+      - 默认值
+    * - menu_key
+      - 访问主菜单
+      - ``T``
+    * - exit_key
+      - 退出监视器
+      - ``]``
+    * - chip_reset_key
+      - 初始化芯片重置
+      - ``R``
+    * - recompile_upload_key
+      - 重新编译并上传
+      - ``F``
+    * - recompile_upload_app_key
+      - 仅重新编译并上传应用程序
+      - ``A``
+    * - toggle_output_key
+      - 切换输出显示
+      - ``Y``
+    * - toggle_log_key
+      - 切换日志功能
+      - ``L``
+    * - toggle_timestamp_key
+      - 切换时间戳显示
+      - ``I``
+    * - chip_reset_bootloader_key
+      - 将芯片重置为引导加载模式
+      - ``P``
+    * - exit_menu_key
+      - 从菜单中退出监视器
+      - ``X``
+    * - skip_menu_key
+      - 设置使用菜单命令时无需按下主菜单键
+      - ``False``
+
+
+语法
+~~~~
+
+配置文件为 .ini 文件格式，必须以 ``[esp-idf-monitor]`` 标头引入才能被识别为有效文件。以下语法以“配置名称 = 配置值”形式列出。以 ``#`` 或 ``;`` 开头的行是注释，将被忽略。
+
+.. code-block:: text
+
+    # esp-idf-monitor.cfg file to configure internal settings of esp-idf-monitor
+    [esp-idf-monitor]
+    menu_key = T
+    exit_key = ]
+    chip_reset_key = R
+    recompile_upload_key = F
+    recompile_upload_app_key = A
+    toggle_output_key = Y
+    toggle_log_key = L
+    toggle_timestamp_key = I
+    chip_reset_bootloader_key = P
+    exit_menu_key = X
+    skip_menu_key = False
+
+
 IDF 监视器已知问题
 =================================
 
@@ -328,3 +431,4 @@ Windows 环境下已知问题
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
 .. _pySerial: https://github.com/pyserial/pyserial
 .. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm
+.. _C0 控制字符: https://zh.wikipedia.org/wiki/C0%E4%B8%8EC1%E6%8E%A7%E5%88%B6%E5%AD%97%E7%AC%A6#C0_(ASCII%E5%8F%8A%E5%85%B6%E6%B4%BE%E7%94%9F)
