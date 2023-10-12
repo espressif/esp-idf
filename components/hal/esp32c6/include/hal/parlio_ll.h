@@ -87,7 +87,7 @@ static inline void parlio_ll_rx_set_clock_div(parl_io_dev_t *dev, uint32_t div)
 {
     (void)dev;
     HAL_ASSERT(div > 0 && div <= PARLIO_LL_RX_MAX_CLOCK_DIV);
-    PCR.parl_clk_rx_conf.parl_clk_rx_div_num = div - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.parl_clk_rx_conf, parl_clk_rx_div_num, div - 1);
 }
 
 /**
@@ -369,7 +369,7 @@ static inline void parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, uint32_t div)
 {
     (void)dev;
     HAL_ASSERT(div > 0 && div <= PARLIO_LL_TX_MAX_CLOCK_DIV);
-    PCR.parl_clk_tx_conf.parl_clk_tx_div_num = div - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.parl_clk_tx_conf, parl_clk_tx_div_num, div - 1);
 }
 
 /**
