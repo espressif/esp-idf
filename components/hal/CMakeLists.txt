@@ -1,52 +1,51 @@
-
 idf_build_get_property(target IDF_TARGET)
 
-# On Linux, there is currently no HAL, hence this simple component registration
-if(${target} STREQUAL "linux")
-    idf_component_register()
-    return()
+set(srcs "hal_utils.c")
+set(includes "platform_port/include")
+
+# target specific include must be added before the generic one
+# becuase of the "include_next" directive used by the efuse_hal.h
+if(NOT ${target} STREQUAL "linux")
+    list(APPEND includes "${target}/include")
+endif()
+list(APPEND includes "include")
+
+if(CONFIG_SOC_MPU_SUPPORTED)
+    list(APPEND srcs "mpu_hal.c")
 endif()
 
-set(srcs "mpu_hal.c"
-         "efuse_hal.c"
-         "hal_utils.c"
-         "${target}/efuse_hal.c")
-
-
-set(includes "${target}/include" "include" "platform_port/include")
-
-if(NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
-    list(APPEND srcs "wdt_hal_iram.c")
-endif()
-
-if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-    list(APPEND srcs "mmu_hal.c")
-
-    # We wrap Cache ROM APIs as Cache HAL APIs for: 1. internal ram ; 2. unified APIs
-    # ESP32 cache structure / ROM APIs are different and we have a patch `cache_hal_esp32.c` for it.
-    if(${target} STREQUAL "esp32")
-        list(APPEND srcs "esp32/cache_hal_esp32.c")
-    else()
-        list(APPEND srcs "cache_hal.c")
-    endif()
+if(CONFIG_SOC_EFUSE_SUPPORTED)
+    list(APPEND srcs "efuse_hal.c" "${target}/efuse_hal.c")
 endif()
 
 if(CONFIG_SOC_LP_TIMER_SUPPORTED)
     list(APPEND srcs "lp_timer_hal.c")
 endif()
 
+if(CONFIG_SOC_WDT_SUPPORTED AND NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
+    list(APPEND srcs "wdt_hal_iram.c")
+endif()
+
+if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+    if(CONFIG_SOC_MMU_PERIPH_NUM)
+        list(APPEND srcs "mmu_hal.c")
+    endif()
+
+    # We wrap Cache ROM APIs as Cache HAL APIs for: 1. internal ram ; 2. unified APIs
+    # ESP32 cache structure / ROM APIs are different and we have a patch `cache_hal_esp32.c` for it.
+    if(${target} STREQUAL "esp32")
+        list(APPEND srcs "esp32/cache_hal_esp32.c")
+    elseif(NOT ${target} STREQUAL "linux")
+        list(APPEND srcs "cache_hal.c")
+    endif()
+endif()
+
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs
-        "rtc_io_hal.c"
-        "gpio_hal.c"
-        "uart_hal.c"
-        "uart_hal_iram.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-        list(APPEND srcs
-            "spi_flash_hal.c"
-            "spi_flash_hal_iram.c"
-        )
+        if(CONFIG_SOC_SPI_FLASH_SUPPORTED)
+            list(APPEND srcs "spi_flash_hal.c" "spi_flash_hal_iram.c")
+        endif()
         if(CONFIG_SOC_FLASH_ENC_SUPPORTED)
             list(APPEND srcs "spi_flash_encrypt_hal_iram.c")
         endif()
@@ -58,6 +57,18 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
+    endif()
+
+    if(CONFIG_SOC_UART_SUPPORTED)
+        list(APPEND srcs "uart_hal.c" "uart_hal_iram.c")
+    endif()
+
+    if(CONFIG_SOC_GPIO_PORT)
+        list(APPEND srcs "gpio_hal.c")
+    endif()
+
+    if(CONFIG_SOC_RTCIO_PIN_COUNT)
+        list(APPEND srcs "rtc_io_hal.c")
     endif()
 
     if(CONFIG_SOC_GPTIMER_SUPPORTED)

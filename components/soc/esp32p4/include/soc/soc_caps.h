@@ -45,7 +45,7 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 // #define SOC_RISCV_COPROC_SUPPORTED      1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
-// #define SOC_EFUSE_SUPPORTED             1  //TODO: IDF-7512
+#define SOC_EFUSE_SUPPORTED             1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_RMT_SUPPORTED               1
@@ -81,6 +81,8 @@
 // #define SOC_SDMMC_HOST_SUPPORTED        1  //TODO: IDF-6502
 // #define SOC_CLK_TREE_SUPPORTED          1  //TODO: IDF-7526
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1  //TODO: IDF-7565
+#define SOC_WDT_SUPPORTED               1
+#define SOC_SPI_FLASH_SUPPORTED         1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
