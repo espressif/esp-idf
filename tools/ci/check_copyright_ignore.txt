@@ -1162,7 +1162,6 @@ components/soc/esp32s3/include/soc/usb_types.h
 components/soc/esp32s3/include/soc/usb_wrap_reg.h
 components/soc/esp32s3/include/soc/usb_wrap_struct.h
 components/soc/esp32s3/include/soc/wdev_reg.h
-components/soc/esp32s3/interrupts.c
 components/soc/esp32s3/ledc_periph.c
 components/soc/esp32s3/rtc_io_periph.c
 components/soc/esp32s3/sdio_slave_periph.c
