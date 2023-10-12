@@ -19,14 +19,18 @@ extern "C" {
 /*
  * @brief Configure HUK: Generate new HUK information or Recover key from recovery information
  *     Generation Mode: In this case the Generation mode of the HUK Generator is used. A new HUK is generated and the respective HUK information is copied to the given buffer. This info can be again used to recover the same HUK.
- *     Recovery Mode: In this case the Recovery mode of the HUK Generator is used. The HUK is recovered from the given HUK information. This is the HUK information generated previously with help of huk_hal_generate_huk_info.
+ *     Recovery Mode: In this case the Recovery mode of the HUK Generator is used. The HUK is recovered from the given HUK information. This is the HUK information generated previously when HUK info was generated with a previous call to huk_hal_configure.
  *
  * @input
  *      huk_info_buf(I/O)    Pointer to the buffer for the HUK info, size of the given buffer must equal to HUK_INFO_SIZE
  *          In Generation Mode the buffer shall be populated with the huk_info_buf
  *          In recovery mode the huk_info stored in the buffer shall be consumed for HUK recovery
+ *
+ * @return
+ *      ESP_OK      on success
+ *      ESP_FAIL    on failure
  */
-void huk_hal_configure(const esp_huk_mode_t huk_mode, uint8_t *huk_info_buf);
+esp_err_t huk_hal_configure(const esp_huk_mode_t huk_mode, uint8_t *huk_info_buf);
 
 /**
  * @brief Read state of Hardware Unique Key Generator

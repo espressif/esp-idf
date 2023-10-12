@@ -25,9 +25,13 @@ static void inline huk_hal_wait_for_state(esp_huk_state_t state)
     }
 }
 
-void huk_hal_configure(const esp_huk_mode_t huk_mode, uint8_t *huk_info_buf)
+esp_err_t huk_hal_configure(const esp_huk_mode_t huk_mode, uint8_t *huk_info_buf)
 {
-    esp_rom_km_huk_conf(huk_mode, huk_info_buf);
+    if (esp_rom_km_huk_conf(huk_mode, huk_info_buf) == ETS_OK) {
+        return ESP_OK;
+    } else {
+        return ESP_FAIL;
+    }
 }
 
 uint8_t huk_hal_get_risk_level(void)
