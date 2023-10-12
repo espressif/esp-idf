@@ -32,9 +32,9 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 5. Optionally, by enabling the option :ref:`CONFIG_FATFS_USE_FASTSEEK`, you can use the POSIX lseek function to perform it faster. The fast seek does not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
 
-6. Optionally, by enabling the option :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`, you can enable automatic calling of :cpp:func:`f_sync` to flush recent file changes after each call of vfs_fat_write(), vfs_fat_pwrite(), vfs_fat_link(), vfs_fat_truncate() and vfs_fat_ftruncate() functions. This feature improves file-consistency and size reporting accuracy for the FatFS, at a price on decreased performance due to frequent disk operations
+6. Optionally, by enabling the option :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`, you can enable automatic calling of :cpp:func:`f_sync` to flush recent file changes after each call of :cpp:func:`vfs_fat_write`, :cpp:func:`vfs_fat_pwrite`, :cpp:func:`vfs_fat_link`, :cpp:func:`vfs_fat_truncate` and :cpp:func:`vfs_fat_ftruncate` functions. This feature improves file-consistency and size reporting accuracy for the FatFs, at a price on decreased performance due to frequent disk operations.
 
-7. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix (for example, ``"/hello.txt"``).
+7. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix, for example, ``"/hello.txt"``.
 
 8. Close all open files.
 
