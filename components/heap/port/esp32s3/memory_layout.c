@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,43 +29,40 @@
 
 /* Index of memory in `soc_memory_types[]` */
 enum {
-    SOC_MEMORY_TYPE_DRAM        = 0,
-    SOC_MEMORY_TYPE_STACK_DRAM  = 1,
-    SOC_MEMORY_TYPE_DIRAM       = 2,
-    SOC_MEMORY_TYPE_STACK_DIRAM = 3,
-    SOC_MEMORY_TYPE_IRAM        = 4,
-    SOC_MEMORY_TYPE_SPIRAM      = 5,
-    SOC_MEMORY_TYPE_NODMARAM    = 6,
-    SOC_MEMORY_TYPE_RTCRAM      = 7,
+    SOC_MEMORY_TYPE_DIRAM   = 0,
+    SOC_MEMORY_TYPE_DRAM    = 1,
+    SOC_MEMORY_TYPE_IRAM    = 2,
+    SOC_MEMORY_TYPE_SPIRAM  = 3,
+    SOC_MEMORY_TYPE_RTCRAM  = 4,
     SOC_MEMORY_TYPE_NUM,
 };
 
-const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    // Type 0: DRAM
-    [SOC_MEMORY_TYPE_DRAM] = { "DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, false},
-    // Type 1: DRAM used for startup stacks
-    [SOC_MEMORY_TYPE_STACK_DRAM] = { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT | MALLOC_CAP_RETENTION, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, true},
-    // Type 2: DRAM which has an alias on the I-port
-    [SOC_MEMORY_TYPE_DIRAM] = { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC | MALLOC_CAP_RETENTION}, true, false},
-    // Type 3: DIRAM used for startup stacks
-    [SOC_MEMORY_TYPE_STACK_DIRAM] = { "STACK/DIRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT | MALLOC_CAP_RETENTION, MALLOC_CAP_EXEC | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, true, true},
-    // Type 4: IRAM
-    [SOC_MEMORY_TYPE_IRAM] = { "IRAM", { MALLOC_CAP_EXEC | MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
-    // Type 5: SPI SRAM data
-    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT}, false, false},
-    // Type 6: DRAM which is not DMA accesible
-    [SOC_MEMORY_TYPE_NODMARAM] = { "NON_DMA_DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT, 0 }, false, false},
-    // Type 7: RTC Fast RAM
-    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM, MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT }, false, false},
-};
+/* COMMON_CAPS is the set of attributes common to all types of memory (except I/D cache data memory) on this chip */
+#define ESP32S3_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
+
 
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#define SOC_MEMORY_TYPE_DEFAULT SOC_MEMORY_TYPE_DRAM
-#define SOC_MEMORY_TYPE_STACK_DEFAULT SOC_MEMORY_TYPE_STACK_DRAM
+#define MALLOC_DIRAM_BASE_CAPS      ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_RETENTION
+#define MALLOC_RTCRAM_BASE_CAPS     ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL
 #else
-#define SOC_MEMORY_TYPE_DEFAULT SOC_MEMORY_TYPE_DIRAM
-#define SOC_MEMORY_TYPE_STACK_DEFAULT SOC_MEMORY_TYPE_STACK_DIRAM
+#define MALLOC_DIRAM_BASE_CAPS      ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_RETENTION | MALLOC_CAP_EXEC
+#define MALLOC_RTCRAM_BASE_CAPS     ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_EXEC
 #endif
+
+/**
+ * Defined the attributes and allocation priority of each memory on the chip,
+ * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * in turn to continue matching.
+ */
+const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
+/*                           Mem Type Name | High Priority Matching  | Medium Priorty Matching                                        | Low Priority Matching */
+    [SOC_MEMORY_TYPE_DIRAM]  = { "RAM",    { MALLOC_DIRAM_BASE_CAPS,   0,                                                               0 }},
+    [SOC_MEMORY_TYPE_DRAM]   = { "DRAM",   { 0,                        ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA,  0 }},
+    [SOC_MEMORY_TYPE_IRAM]   = { "IRAM",   { MALLOC_CAP_EXEC,          MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL,                          0 }},
+    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM,        ESP32S3_MEM_COMMON_CAPS,                                         0 }},
+    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM,        0,                                                               MALLOC_RTCRAM_BASE_CAPS }},
+};
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
 
@@ -83,28 +80,28 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_DATA_LOW,  SOC_EXTRAM_DATA_SIZE,                       SOC_MEMORY_TYPE_SPIRAM,     0}, //SPI SRAM, if available
+#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB && !defined(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
+    { 0x40374000,           0x4000,                                     SOC_MEMORY_TYPE_IRAM,   0,                                      false}, //Level 1, IRAM
 #endif
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
-    { 0x40374000,           0x4000,                                     SOC_MEMORY_TYPE_IRAM,       0},          //Level 1, IRAM
-#endif
-    { 0x3FC88000,           0x8000,                                     SOC_MEMORY_TYPE_DEFAULT,      0x40378000}, //Level 2, IDRAM, can be used as trace memory
-    { 0x3FC90000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,      0x40380000}, //Level 3, IDRAM, can be used as trace memory
-    { 0x3FCA0000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,      0x40390000}, //Level 4, IDRAM, can be used as trace memory
-    { 0x3FCB0000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,      0x403A0000}, //Level 5, IDRAM, can be used as trace memory
-    { 0x3FCC0000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,      0x403B0000}, //Level 6, IDRAM, can be used as trace memory
-    { 0x3FCD0000,           0x10000,                                    SOC_MEMORY_TYPE_DEFAULT,      0x403C0000}, //Level 7, IDRAM, can be used as trace memory
-    { 0x3FCE0000,           (APP_USABLE_DRAM_END-0x3FCE0000),           SOC_MEMORY_TYPE_DEFAULT,      0x403D0000}, //Level 8, IDRAM, can be used as trace memory,
-    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END),  SOC_MEMORY_TYPE_STACK_DEFAULT, MAP_DRAM_TO_IRAM(APP_USABLE_DRAM_END)}, //Level 8, IDRAM, can be used as trace memory, ROM reserved area, recycled by heap allocator in app_main task
+    { 0x3FC88000,           0x8000,                                     SOC_MEMORY_TYPE_DIRAM,  0x40378000,                             false}, //Level 2, IDRAM, can be used as trace memory
+    { 0x3FC90000,           0x10000,                                    SOC_MEMORY_TYPE_DIRAM,  0x40380000,                             false}, //Level 3, IDRAM, can be used as trace memory
+    { 0x3FCA0000,           0x10000,                                    SOC_MEMORY_TYPE_DIRAM,  0x40390000,                             false}, //Level 4, IDRAM, can be used as trace memory
+    { 0x3FCB0000,           0x10000,                                    SOC_MEMORY_TYPE_DIRAM,  0x403A0000,                             false}, //Level 5, IDRAM, can be used as trace memory
+    { 0x3FCC0000,           0x10000,                                    SOC_MEMORY_TYPE_DIRAM,  0x403B0000,                             false}, //Level 6, IDRAM, can be used as trace memory
+    { 0x3FCD0000,           0x10000,                                    SOC_MEMORY_TYPE_DIRAM,  0x403C0000,                             false}, //Level 7, IDRAM, can be used as trace memory
+    { 0x3FCE0000,           (APP_USABLE_DRAM_END-0x3FCE0000),           SOC_MEMORY_TYPE_DIRAM,  0x403D0000,                             false}, //Level 8, IDRAM, can be used as trace memory,
+    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END),  SOC_MEMORY_TYPE_DIRAM,  MAP_DRAM_TO_IRAM(APP_USABLE_DRAM_END),  true},  //Level 8, IDRAM, can be used as trace memory, ROM reserved area, recycled by heap allocator in app_main task
 #if CONFIG_ESP32S3_DATA_CACHE_16KB || CONFIG_ESP32S3_DATA_CACHE_32KB
-    { 0x3FCF0000,           0x8000,                                     SOC_MEMORY_TYPE_DRAM,       0}, //Level 9, DRAM, DMA is accessible but retention DMA is inaccessible
+    { 0x3FCF0000,           0x8000,                                     SOC_MEMORY_TYPE_DRAM,   0,                                      false}, //Level 9, DRAM, DMA is accessible but retention DMA is inaccessible
 #endif
 #if CONFIG_ESP32S3_DATA_CACHE_16KB
-    { 0x3C000000,           0x4000,                                     SOC_MEMORY_TYPE_DRAM,       0}, //Level 10, DRAM, DMA is accessible but retention DMA is inaccessible
+    { 0x3C000000,           0x4000,                                     SOC_MEMORY_TYPE_DRAM,   0,                                      false}, //Level 10, DRAM, DMA is accessible but retention DMA is inaccessible
+#endif
+#ifdef CONFIG_SPIRAM
+    { SOC_EXTRAM_DATA_LOW,  SOC_EXTRAM_DATA_SIZE,                       SOC_MEMORY_TYPE_SPIRAM, 0,                                      false}, //SPI SRAM, if available
 #endif
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x600fe000,           0x2000,                                     SOC_MEMORY_TYPE_RTCRAM,     0}, //Fast RTC memory
+    { 0x600fe000,           0x2000,                                     SOC_MEMORY_TYPE_RTCRAM, 0,                                      false}, //Fast RTC memory
 #endif
 };
 

@@ -26,40 +26,37 @@
 
 /* Index of memory in `soc_memory_types[]` */
 enum {
-    SOC_MEMORY_TYPE_DRAM        = 0,
-    SOC_MEMORY_TYPE_STACK_DRAM  = 1,
-    SOC_MEMORY_TYPE_DIRAM       = 2,
-    SOC_MEMORY_TYPE_STACK_DIRAM = 3,
-    SOC_MEMORY_TYPE_SPIRAM      = 4,
-    SOC_MEMORY_TYPE_RTCRAM      = 5,
-    SOC_MEMORY_TYPE_TCM         = 6,
+    SOC_MEMORY_TYPE_L2MEM   = 0,
+    SOC_MEMORY_TYPE_SPIRAM  = 1,
+    SOC_MEMORY_TYPE_TCM     = 2,
+    SOC_MEMORY_TYPE_RTCRAM  = 3,
     SOC_MEMORY_TYPE_NUM,
 };
 
-const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    // Type 0: DRAM
-    [SOC_MEMORY_TYPE_DRAM] = { "DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, false},
-    // Type 1: DRAM used for startup stacks
-    [SOC_MEMORY_TYPE_STACK_DRAM] = { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, MALLOC_CAP_RETENTION }, false, true},
-    // Type 2: DRAM which has an alias on the I-port
-    [SOC_MEMORY_TYPE_DIRAM] = { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
-    // Type 3: DIRAM used for startup stacks
-    [SOC_MEMORY_TYPE_STACK_DIRAM] = { "STACK/DIRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT | MALLOC_CAP_RETENTION, MALLOC_CAP_EXEC | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, true, true},
-    // Type 4: SPI SRAM data
-    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT}, false, false},
-    // Type 5: RTCRAM   // TODO: IDF-5667 Better to rename to LPRAM
-    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM, MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT }, false, false},
-    // Type 6: TCM
-    [SOC_MEMORY_TYPE_TCM] = {"TCM", {MALLOC_CAP_TCM, MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT}, false, false},
-};
+/* COMMON_CAPS is the set of attributes common to all types of memory on this chip */
+#define ESP32P4_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
 
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#define SOC_MEMORY_TYPE_DEFAULT SOC_MEMORY_TYPE_DRAM
-#define SOC_MEMORY_TYPE_STACK_DEFAULT SOC_MEMORY_TYPE_STACK_DRAM
+#define MALLOC_L2MEM_BASE_CAPS      ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA
+#define MALLOC_RTCRAM_BASE_CAPS     ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL
 #else
-#define SOC_MEMORY_TYPE_DEFAULT SOC_MEMORY_TYPE_DIRAM
-#define SOC_MEMORY_TYPE_STACK_DEFAULT SOC_MEMORY_TYPE_STACK_DIRAM
+#define MALLOC_L2MEM_BASE_CAPS      ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_EXEC
+#define MALLOC_RTCRAM_BASE_CAPS     ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_EXEC
 #endif
+
+/**
+ * Defined the attributes and allocation priority of each memory on the chip,
+ * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * in turn to continue matching.
+ */
+const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
+    /*                       Mem Type Name  | High Priority Matching   | Medium Priorty Matching                      | Low Priority Matching */
+    [SOC_MEMORY_TYPE_L2MEM]  = { "RAM",     { MALLOC_L2MEM_BASE_CAPS,    0,                                             0 }},
+    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM",  { MALLOC_CAP_SPIRAM,         ESP32P4_MEM_COMMON_CAPS,                       0 }},
+    [SOC_MEMORY_TYPE_TCM]    = { "TCM",     { MALLOC_CAP_TCM,            ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
+    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",  { MALLOC_CAP_RTCRAM,         0,                                             MALLOC_RTCRAM_BASE_CAPS}},
+};
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
 
@@ -78,22 +75,22 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_LOW,       SOC_EXTRAM_SIZE,                           SOC_MEMORY_TYPE_SPIRAM,      0}, //PSRAM, if available
+    { SOC_EXTRAM_LOW,   SOC_EXTRAM_SIZE,    SOC_MEMORY_TYPE_SPIRAM, 0,             false}, //PSRAM, if available
 #endif
     // base 192k is always avaible, even if we config l2 cache size to 512k
-    { 0x4ff00000,           0x30000,                                   SOC_MEMORY_TYPE_DEFAULT,     0x4ff00000},
+    { 0x4ff00000,       0x30000,            SOC_MEMORY_TYPE_L2MEM,  0x4ff00000,    false},
     // 64k for rom startup stack
-    { 0x4ff30000,           0x10000,                                   SOC_MEMORY_TYPE_STACK_DRAM,     0x4ff30000},
+    { 0x4ff30000,       0x10000,            SOC_MEMORY_TYPE_L2MEM,  0x4ff30000,    true},
 #if CONFIG_ESP32P4_L2_CACHE_256KB // 768-256 = 512k avaible for l2 memory, add extra 256k
-    { 0x4ff40000,           0x40000,                                   SOC_MEMORY_TYPE_DEFAULT,     0x4ff40000},
+    { 0x4ff40000,       0x40000,            SOC_MEMORY_TYPE_L2MEM,  0x4ff40000,    false},
 #endif
 #if CONFIG_ESP32P4_L2_CACHE_128KB // 768 - 128 = 640k avaible for l2 memory, add extra 384k
-    { 0x4ff40000,           0x60000,                                   SOC_MEMORY_TYPE_DEFAULT,     0x4ff40000},
+    { 0x4ff40000,       0x60000,            SOC_MEMORY_TYPE_L2MEM,  0x4ff40000,    false},
 #endif
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50108000,           0x8000,                                    SOC_MEMORY_TYPE_RTCRAM,      0},          //LPRAM
+    { 0x50108000,       0x8000,             SOC_MEMORY_TYPE_RTCRAM, 0,             false}, //LPRAM
 #endif
-    { 0x30100000,           0x2000,                                    SOC_MEMORY_TYPE_TCM,     0},
+    { 0x30100000,       0x2000,             SOC_MEMORY_TYPE_TCM,    0,             false},
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
