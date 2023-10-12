@@ -12,7 +12,6 @@
 
 #include "aes/esp_aes.h"
 #include "mbedtls/cipher.h"
-#include "soc/lldesc.h"
 
 #ifdef __cplusplus
 extern "C" {

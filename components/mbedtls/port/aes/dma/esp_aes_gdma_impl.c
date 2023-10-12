@@ -5,14 +5,15 @@
  */
 
 #include "esp_aes_dma_priv.h"
+#include "esp_crypto_dma.h"
 #include "esp_crypto_shared_gdma.h"
 
-esp_err_t esp_aes_dma_start(const lldesc_t *input, const lldesc_t *output)
+esp_err_t esp_aes_dma_start(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output)
 {
-    return esp_crypto_shared_gdma_start(input, output, GDMA_TRIG_PERIPH_AES);
+    return esp_crypto_shared_gdma_start_axi_ahb(input, output, GDMA_TRIG_PERIPH_AES);
 }
 
-bool esp_aes_dma_done(const lldesc_t *output)
+bool esp_aes_dma_done(const crypto_dma_desc_t *output)
 {
-    return (output->owner == 0);
+    return (output->dw0.owner == 0);
 }

@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "aes/esp_aes.h"
-#include "aes/esp_aes_gcm.h"
-#include "soc/soc_caps.h"
 #include <stdbool.h>
+#include "aes/esp_aes.h"
+#include "soc/soc_caps.h"
+#include "esp_crypto_dma.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +29,7 @@ bool valid_key_length(const esp_aes_context *ctx);
  * @param aad_len   GCM additional data length
  * @return int      -1 on error
  */
-int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, lldesc_t *aad_desc, size_t aad_len);
+int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, crypto_dma_desc_t *aad_desc, size_t aad_len);
 #endif
 
 #ifdef __cplusplus

@@ -33,7 +33,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_log.h"
 #include "esp_attr.h"
-#include "soc/lldesc.h"
+#include "esp_crypto_dma.h"
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
 #include "sys/param.h"
@@ -42,8 +42,8 @@
 #endif
 #include "esp_crypto_lock.h"
 #include "hal/aes_hal.h"
-#include "esp_aes_internal.h"
 #include "esp_aes_dma_priv.h"
+#include "esp_aes_internal.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
@@ -103,25 +103,19 @@ static bool s_check_dma_capable(const void *p);
  *  * Must be in DMA capable memory, so stack is not a safe place to put them
  *  * To avoid having to malloc/free them for every DMA operation
  */
-static DRAM_ATTR lldesc_t s_stream_in_desc;
-static DRAM_ATTR lldesc_t s_stream_out_desc;
+static DRAM_ATTR crypto_dma_desc_t s_stream_in_desc;
+static DRAM_ATTR crypto_dma_desc_t s_stream_out_desc;
 static DRAM_ATTR uint8_t s_stream_in[AES_BLOCK_BYTES];
 static DRAM_ATTR uint8_t s_stream_out[AES_BLOCK_BYTES];
 
-static inline void esp_aes_wait_dma_done(lldesc_t *output)
+/** Append a descriptor to the chain, set head if chain empty
+ *
+ * @param[out] head Pointer to the first/head node of the DMA descriptor linked list
+ * @param item Pointer to the DMA descriptor node that has to be appended
+ */
+static inline void dma_desc_append(crypto_dma_desc_t **head, crypto_dma_desc_t *item)
 {
-    /* Wait for DMA write operation to complete */
-    while (1) {
-        if ( esp_aes_dma_done(output) ) {
-            break;
-        }
-    }
-}
-
-/* Append a descriptor to the chain, set head if chain empty */
-static inline void lldesc_append(lldesc_t **head, lldesc_t *item)
-{
-    lldesc_t *it;
+    crypto_dma_desc_t *it;
     if (*head == NULL) {
         *head = item;
         return;
@@ -129,11 +123,61 @@ static inline void lldesc_append(lldesc_t **head, lldesc_t *item)
 
     it = *head;
 
-    while (it->empty != 0) {
-        it = (lldesc_t *)it->empty;
+    while (it->next != 0) {
+        it = (crypto_dma_desc_t *)it->next;
     }
-    it->eof = 0;
-    it->empty = (uint32_t)item;
+    it->dw0.suc_eof = 0;
+    it->next = item;
+}
+
+/**
+ * Generate a linked list pointing to a (huge) buffer in an descriptor array.
+ *
+ * The caller should ensure there is enough size to hold the array, by calling
+ * `dma_desc_get_required_num` with the same or less than the max_desc_size argument.
+ *
+ * @param[out] dmadesc Output of a descriptor array, the head should be fed to the DMA.
+ * @param data Buffer for the descriptors to point to.
+ * @param len Size (or length for TX) of the buffer
+ * @param max_desc_size Maximum length of each descriptor
+ * @param isrx The RX DMA may require the buffer to be word-aligned, set to true for a RX link, otherwise false.
+ */
+static inline void dma_desc_setup_link(crypto_dma_desc_t* dmadesc, const void *data, int len, int max_desc_size, bool isrx)
+{
+    int i = 0;
+    while (len) {
+        int dmachunklen = len;
+        if (dmachunklen > max_desc_size) {
+            dmachunklen = max_desc_size;
+        }
+        if (isrx) {
+            //Receive needs DMA length rounded to next 32-bit boundary
+            dmadesc[i].dw0.size = (dmachunklen + 3) & (~3);
+            dmadesc[i].dw0.length = (dmachunklen + 3) & (~3);
+        } else {
+            dmadesc[i].dw0.size = dmachunklen;
+            dmadesc[i].dw0.length = dmachunklen;
+        }
+        dmadesc[i].buffer = (void *)data;
+        dmadesc[i].dw0.suc_eof = 0;
+        dmadesc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+        dmadesc[i].next = &dmadesc[i + 1];
+        len -= dmachunklen;
+        data += dmachunklen;
+        i++;
+    }
+    dmadesc[i - 1].dw0.suc_eof = 1; //Mark last DMA desc as end of stream.
+    dmadesc[i - 1].next = NULL;
+}
+
+static inline void esp_aes_wait_dma_done(crypto_dma_desc_t *output)
+{
+    /* Wait for DMA write operation to complete */
+    while (1) {
+        if ( esp_aes_dma_done(output) ) {
+            break;
+        }
+    }
 }
 
 void esp_aes_acquire_hardware( void )
@@ -221,7 +265,7 @@ static esp_err_t esp_aes_isr_initialise( void )
 #endif // CONFIG_MBEDTLS_AES_USE_INTERRUPT
 
 /* Wait for AES hardware block operation to complete */
-static int esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
+static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_desc)
 {
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     if (use_intr) {
@@ -335,10 +379,10 @@ cleanup:
  */
 static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, uint8_t *stream_out)
 {
-    lldesc_t *in_desc_head = NULL, *out_desc_head = NULL;
-    lldesc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
-    lldesc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
-    size_t lldesc_num = 0;
+    crypto_dma_desc_t *in_desc_head = NULL, *out_desc_head = NULL;
+    crypto_dma_desc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
+    crypto_dma_desc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
+    size_t crypto_dma_desc_num = 0;
     unsigned stream_bytes = len % AES_BLOCK_BYTES; // bytes which aren't in a full block
     unsigned block_bytes = len - stream_bytes;     // bytes which are in a full block
     unsigned blocks = (block_bytes / AES_BLOCK_BYTES) + ((stream_bytes > 0) ? 1 : 0);
@@ -388,10 +432,10 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         }
 
         /* Set up dma descriptors for input and output considering the 16 byte alignment requirement for EDMA */
-        lldesc_num = lldesc_get_required_num_constrained(block_bytes, LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED);
+        crypto_dma_desc_num = dma_desc_get_required_num(block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED);
 
         /* Allocate both in and out descriptors to save a malloc/free per function call */
-        block_desc = heap_caps_calloc(lldesc_num * 2, sizeof(lldesc_t), MALLOC_CAP_DMA);
+        block_desc = heap_caps_calloc(crypto_dma_desc_num * 2, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA);
         if (block_desc == NULL) {
             mbedtls_platform_zeroize(output, len);
             ESP_LOGE(TAG, "Failed to allocate memory");
@@ -399,36 +443,37 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         }
 
         block_in_desc = block_desc;
-        block_out_desc = block_desc + lldesc_num;
+        block_out_desc = block_desc + crypto_dma_desc_num;
 
-        lldesc_setup_link(block_in_desc, input, block_bytes, 0);
+        dma_desc_setup_link(block_in_desc, input, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC, 0);
+
         //Limit max inlink descriptor length to be 16 byte aligned, require for EDMA
-        lldesc_setup_link_constrained(block_out_desc, output, block_bytes, LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED, 0);
+        dma_desc_setup_link(block_out_desc, output, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED, 0);
 
         /* Setup in/out start descriptors */
-        lldesc_append(&in_desc_head, block_in_desc);
-        lldesc_append(&out_desc_head, block_out_desc);
+        dma_desc_append(&in_desc_head, block_in_desc);
+        dma_desc_append(&out_desc_head, block_out_desc);
 
-        out_desc_tail = &block_out_desc[lldesc_num - 1];
+        out_desc_tail = &block_out_desc[crypto_dma_desc_num - 1];
     }
 
     /* Any leftover bytes which are appended as an additional DMA list */
     if (stream_bytes > 0) {
 
-        memset(&s_stream_in_desc, 0, sizeof(lldesc_t));
-        memset(&s_stream_out_desc, 0, sizeof(lldesc_t));
+        memset(&s_stream_in_desc, 0, sizeof(crypto_dma_desc_t));
+        memset(&s_stream_out_desc, 0, sizeof(crypto_dma_desc_t));
 
         memset(s_stream_in, 0, AES_BLOCK_BYTES);
         memset(s_stream_out, 0, AES_BLOCK_BYTES);
 
         memcpy(s_stream_in, input + block_bytes, stream_bytes);
 
-        lldesc_setup_link(&s_stream_in_desc, s_stream_in, AES_BLOCK_BYTES, 0);
-        lldesc_setup_link(&s_stream_out_desc, s_stream_out, AES_BLOCK_BYTES, 0);
+        dma_desc_setup_link(&s_stream_in_desc, s_stream_in, AES_BLOCK_BYTES, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC, 0);
+        dma_desc_setup_link(&s_stream_out_desc, s_stream_out, AES_BLOCK_BYTES, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC, 0);
 
         /* Link with block descriptors */
-        lldesc_append(&in_desc_head, &s_stream_in_desc);
-        lldesc_append(&out_desc_head, &s_stream_out_desc);
+        dma_desc_append(&in_desc_head, &s_stream_in_desc);
+        dma_desc_append(&out_desc_head, &s_stream_out_desc);
 
         out_desc_tail = &s_stream_out_desc;
     }
@@ -494,13 +539,13 @@ cleanup:
  * 3. If AES interrupt is enabled and ISR initialisation fails
  * 4. Failure in any of the AES operations
  */
-int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, lldesc_t *aad_desc, size_t aad_len)
+int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, crypto_dma_desc_t *aad_desc, size_t aad_len)
 {
-    lldesc_t *in_desc_head = NULL, *out_desc_head = NULL, *len_desc = NULL;
-    lldesc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
-    lldesc_t stream_in_desc, stream_out_desc;
-    lldesc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
-    size_t lldesc_num;
+    crypto_dma_desc_t *in_desc_head = NULL, *out_desc_head = NULL, *len_desc = NULL;
+    crypto_dma_desc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
+    crypto_dma_desc_t stream_in_desc, stream_out_desc;
+    crypto_dma_desc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
+    size_t crypto_dma_desc_num = 0;
     uint32_t len_buf[4] = {};
     uint8_t stream_in[16] = {};
     uint8_t stream_out[16] = {};
@@ -523,10 +568,10 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     }
 
     /* Set up dma descriptors for input and output */
-    lldesc_num = lldesc_get_required_num(block_bytes);
+    crypto_dma_desc_num = dma_desc_get_required_num(block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC);
 
     /* Allocate both in and out descriptors to save a malloc/free per function call, add 1 for length descriptor */
-    block_desc = heap_caps_calloc( (lldesc_num * 2) + 1, sizeof(lldesc_t), MALLOC_CAP_DMA);
+    block_desc = heap_caps_calloc((crypto_dma_desc_num * 2) + 1, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA);
     if (block_desc == NULL) {
         mbedtls_platform_zeroize(output, len);
         ESP_LOGE(TAG, "Failed to allocate memory");
@@ -534,32 +579,32 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     }
 
     block_in_desc = block_desc;
-    len_desc = block_desc + lldesc_num;
-    block_out_desc = block_desc + lldesc_num + 1;
+    len_desc = block_desc + crypto_dma_desc_num;
+    block_out_desc = block_desc + crypto_dma_desc_num + 1;
 
     if (aad_desc != NULL) {
-        lldesc_append(&in_desc_head, aad_desc);
+        dma_desc_append(&in_desc_head, aad_desc);
     }
 
     if (block_bytes > 0) {
-        lldesc_setup_link(block_in_desc, input, block_bytes, 0);
-        lldesc_setup_link(block_out_desc, output, block_bytes, 0);
+        dma_desc_setup_link(block_in_desc, input, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC, 0);
+        dma_desc_setup_link(block_out_desc, output, block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC, 0);
 
-        lldesc_append(&in_desc_head, block_in_desc);
-        lldesc_append(&out_desc_head, block_out_desc);
+        dma_desc_append(&in_desc_head, block_in_desc);
+        dma_desc_append(&out_desc_head, block_out_desc);
 
-        out_desc_tail = &block_out_desc[lldesc_num - 1];
+        out_desc_tail = &block_out_desc[crypto_dma_desc_num - 1];
     }
 
     /* Any leftover bytes which are appended as an additional DMA list */
     if (stream_bytes > 0) {
         memcpy(stream_in, input + block_bytes, stream_bytes);
 
-        lldesc_setup_link(&stream_in_desc, stream_in, AES_BLOCK_BYTES, 0);
-        lldesc_setup_link(&stream_out_desc, stream_out, AES_BLOCK_BYTES, 0);
+        dma_desc_setup_link(&stream_in_desc, stream_in, AES_BLOCK_BYTES, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC, 0);
+        dma_desc_setup_link(&stream_out_desc, stream_out, AES_BLOCK_BYTES, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC, 0);
 
-        lldesc_append(&in_desc_head, &stream_in_desc);
-        lldesc_append(&out_desc_head, &stream_out_desc);
+        dma_desc_append(&in_desc_head, &stream_in_desc);
+        dma_desc_append(&out_desc_head, &stream_out_desc);
 
         out_desc_tail = &stream_out_desc;
     }
@@ -568,13 +613,13 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     len_buf[1] = __builtin_bswap32(aad_len * 8);
     len_buf[3] = __builtin_bswap32(len * 8);
 
-    len_desc->length = sizeof(len_buf);
-    len_desc->size = sizeof(len_buf);
-    len_desc->owner = 1;
-    len_desc->eof = 1;
-    len_desc->buf = (uint8_t *)len_buf;
+    len_desc->dw0.length = sizeof(len_buf);
+    len_desc->dw0.size = sizeof(len_buf);
+    len_desc->dw0.owner = 1;
+    len_desc->dw0.suc_eof = 1;
+    len_desc->buffer = (uint8_t *)len_buf;
 
-    lldesc_append(&in_desc_head, len_desc);
+    dma_desc_append(&in_desc_head, len_desc);
 
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     /* Only use interrupt for long AES operations */
