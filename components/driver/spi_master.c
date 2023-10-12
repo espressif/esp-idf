@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
 Architecture:
@@ -936,22 +928,29 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     if (ret!=ESP_OK) return ret;
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot send polling transaction while the previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE );
 
+    spi_host_t *host = handle->host;
+    spi_trans_priv_t priv_polling_trans;
+    ret = setup_priv_desc(trans_desc, &priv_polling_trans, (host->bus_attr->dma_enabled));
+    if (ret!=ESP_OK) return ret;
+
     /* If device_acquiring_lock is set to handle, it means that the user has already
      * acquired the bus thanks to the function `spi_device_acquire_bus()`.
      * In that case, we don't need to take the lock again. */
-    spi_host_t *host = handle->host;
     if (host->device_acquiring_lock != handle) {
         ret = spi_bus_lock_acquire_start(handle->dev_lock, ticks_to_wait);
     } else {
         ret = spi_bus_lock_wait_bg_done(handle->dev_lock, ticks_to_wait);
     }
-    if (ret != ESP_OK) return ret;
-
-    ret = setup_priv_desc(trans_desc, &host->cur_trans_buf, (host->bus_attr->dma_enabled));
-    if (ret!=ESP_OK) return ret;
+    if (ret != ESP_OK) {
+        uninstall_priv_desc(&priv_polling_trans);
+        ESP_LOGE(SPI_TAG, "polling can't get buslock");
+        return ret;
+    }
+    //After holding the buslock, common resource can be accessed !!
 
     //Polling, no interrupt is used.
     host->polling = true;
+    host->cur_trans_buf = priv_polling_trans;
 
     ESP_LOGV(SPI_TAG, "polling trans");
     spi_new_trans(handle, &host->cur_trans_buf);
