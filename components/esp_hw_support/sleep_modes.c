@@ -1426,7 +1426,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
     }
     s_config.ext1_rtc_gpio_mask = rtc_gpio_mask;
     if (level_mode) {
-        s_config.ext1_trigger_mode = io_mask;
+        s_config.ext1_trigger_mode = rtc_gpio_mask;
     } else {
         s_config.ext1_trigger_mode = 0;
     }
