@@ -113,7 +113,10 @@ extern int _bss_start;
 extern int _bss_end;
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
-
+#if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
+extern int _bss_bt_start;
+extern int _bss_bt_end;
+#endif // CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
 extern int _instruction_reserved_start;
 extern int _instruction_reserved_end;
 extern int _rodata_reserved_start;
@@ -413,6 +416,11 @@ void IRAM_ATTR call_start_cpu0(void)
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
+
+#if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
+    // Clear Bluetooth bss
+    memset(&_bss_bt_start, 0, (&_bss_bt_end - &_bss_bt_start) * sizeof(_bss_bt_start));
+#endif // CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     // Clear IRAM BSS

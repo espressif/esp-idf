@@ -63,6 +63,7 @@ if(CONFIG_BT_ENABLED)
 
     set(srcs "")
     set(include_dirs "")
+    set(ldfragments "linker.lf")
 
     if(CONFIG_IDF_TARGET_ESP32)
         list(APPEND srcs "controller/esp32/bt.c"
@@ -76,6 +77,7 @@ if(CONFIG_BT_ENABLED)
         list(APPEND srcs "controller/esp32c3/bt.c")
 
     elseif(CONFIG_IDF_TARGET_ESP32C2)
+        set(ldfragments "linker.lf.esp32c2")
         list(APPEND srcs "controller/esp32c2/bt.c")
 
     elseif(CONFIG_IDF_TARGET_ESP32C6)
@@ -760,13 +762,12 @@ if(CONFIG_BT_ENABLED)
 
 endif()
 
-# requirements can't depend on config
 idf_component_register(SRCS "${srcs}"
-                INCLUDE_DIRS "${include_dirs}"
-                PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES esp_timer esp_wifi
-                PRIV_REQUIRES nvs_flash soc esp_pm esp_phy esp_coex mbedtls driver vfs
-                LDFRAGMENTS "linker.lf")
+                       INCLUDE_DIRS "${include_dirs}"
+                       PRIV_INCLUDE_DIRS "${priv_include_dirs}"
+                       REQUIRES esp_timer esp_wifi
+                       PRIV_REQUIRES nvs_flash soc esp_pm esp_phy esp_coex mbedtls driver vfs
+                       LDFRAGMENTS "${ldfragments}")
 
 if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)

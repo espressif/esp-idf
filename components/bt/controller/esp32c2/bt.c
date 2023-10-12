@@ -156,14 +156,14 @@ extern int ble_txpwr_set(esp_ble_enhanced_power_type_t power_type, uint16_t hand
 extern int ble_txpwr_get(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 extern int ble_get_npl_element_info(esp_bt_controller_config_t *cfg, ble_npl_count_info_t * npl_info);
 extern void bt_track_pll_cap(void);
-extern uint32_t _bt_bss_start;
+
+#if CONFIG_BT_RELEASE_IRAM
+extern uint32_t _iram_bt_text_start;
+extern uint32_t _bss_bt_end;
+#else
 extern uint32_t _bt_bss_end;
-extern uint32_t _nimble_bss_start;
-extern uint32_t _nimble_bss_end;
-extern uint32_t _nimble_data_start;
-extern uint32_t _nimble_data_end;
-extern uint32_t _bt_data_start;
-extern uint32_t _bt_data_end;
+extern uint32_t _bt_controller_data_start;
+#endif
 
 /* Local Function Declaration
  *********************************************************************
@@ -828,32 +828,28 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
     intptr_t mem_start, mem_end;
 
+#if CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+    /* Release Bluetooth text section and merge Bluetooth data, bss & text into a large free heap
+     * region when esp_bt_mem_release is called, total saving ~21kB or more of IRAM. ESP32-C2 has
+     * only 3 configurable PMP entries available, rest of them are hard-coded. We cannot split the
+     * memory into 3 different regions (IRAM, BLE-IRAM, DRAM). So `ESP_SYSTEM_PMP_IDRAM_SPLIT` needs
+     * to be disabled.
+     */
+    ESP_LOGE(NIMBLE_PORT_LOG_TAG, "`ESP_SYSTEM_PMP_IDRAM_SPLIT` should be disabled!");
+    assert(0);
+#endif // CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+
     if (mode & ESP_BT_MODE_BLE) {
-        mem_start = (intptr_t)&_bt_bss_start;
+#if CONFIG_BT_RELEASE_IRAM
+        mem_start = (intptr_t)MAP_IRAM_TO_DRAM((intptr_t)&_iram_bt_text_start);
+        mem_end = (intptr_t)&_bss_bt_end;
+#else
+        mem_start = (intptr_t)&_bt_controller_data_start;
         mem_end = (intptr_t)&_bt_bss_end;
+#endif // CONFIG_BT_RELEASE_IRAM
         if (mem_start != mem_end) {
-            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-
-        mem_start = (intptr_t)&_bt_data_start;
-        mem_end = (intptr_t)&_bt_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release BT Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-
-        mem_start = (intptr_t)&_nimble_bss_start;
-        mem_end = (intptr_t)&_nimble_bss_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release NimBLE BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-
-        mem_start = (intptr_t)&_nimble_data_start;
-        mem_end = (intptr_t)&_nimble_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release NimBLE Data [0x%08x] - [0x%08x]", mem_start, mem_end);
+            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Release BLE [0x%08x] - [0x%08x], len %d", mem_start,
+                     mem_end, mem_end - mem_start);
             ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
         }
     }
