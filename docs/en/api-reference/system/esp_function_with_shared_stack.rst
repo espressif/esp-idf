@@ -1,10 +1,13 @@
 Call Function with External Stack
 =================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
-A given function can be executed with a user-allocated stack space which is independent of current task stack, this mechanism can be used to save stack space wasted by tasks which call a common function with intensive stack usage such as ``printf``. The given function can be called inside the shared stack space which is a callback function deferred by calling :cpp:func:`esp_execute_shared_stack_function`, passing that function as a parameter.
+A given function can be executed with a user-allocated stack space which is independent of current task stack. This mechanism can be used to save stack space wasted by tasks which call a common function with intensive stack usage such as ``printf``. The given function can be called inside the shared stack space, which is a callback function deferred by calling :cpp:func:`esp_execute_shared_stack_function`, passing that function as a parameter.
+
 
 Usage
 -----
@@ -49,11 +52,10 @@ The usage may look like the code below:
         free(shared_stack);
     }
 
+
 .. _esp-call-with-stack-basic_usage:
 
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_expression_with_stack.inc
-
-

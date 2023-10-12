@@ -8,7 +8,7 @@ Overview
 
 {IDF_TARGET_NAME} has a DMA engine which can help to offload internal memory copy operations from the CPU in an asynchronous way.
 
-The async memcpy API wraps all DMA configurations and operations, the signature of :cpp:func:`esp_async_memcpy` is almost the same as the standard libc ``memcpy`` function.
+The async memcpy API wraps all DMA configurations and operations. The signature of :cpp:func:`esp_async_memcpy` is almost the same as the standard libc ``memcpy`` function.
 
 The DMA allows multiple memory copy requests to be queued up before the first one is completed, which allows overlap of computation and memory copy. Moreover, it is still possible to know the exact time when a memory copy request is completed by registering an event callback.
 
@@ -31,7 +31,7 @@ There are several ways to install the async memcpy driver, depending on the unde
     :SOC_CP_DMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_cpdma` is used to install the async memcpy driver based on the CP DMA engine.
     :SOC_AHB_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_ahb` is used to install the async memcpy driver based on the AHB GDMA engine.
     :SOC_AXI_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_axi` is used to install the async memcpy driver based on the AXI GDMA engine.
-    - :cpp:func:`esp_async_memcpy_install` is a generic API to install the async memcpy driver with a default DMA engine. If the SoC has the CP_DMA engine, the default DMA engine is CP_DMA. Otherwise, the default DMA engine is AHB_GDMA.
+    - :cpp:func:`esp_async_memcpy_install` is a generic API to install the async memcpy driver with a default DMA engine. If the SoC has the CP DMA engine, the default DMA engine is CP DMA. Otherwise, the default DMA engine is AHB GDMA.
 
 Driver configuration is described in :cpp:type:`async_memcpy_config_t`:
 

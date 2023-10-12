@@ -31,13 +31,13 @@ DMA 允许多个内存复制请求在首个请求完成之前排队，即允许�
     :SOC_CP_DMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_cpdma` 用于安装基于 CP DMA 引擎的异步 memcpy 驱动。
     :SOC_AHB_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_ahb` 用于安装基于 AHB GDMA 引擎的异步 memcpy 驱动。
     :SOC_AXI_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_axi` 用于安装基于 AXI GDMA 引擎的异步 memcpy 驱动。
-    - :cpp:func:`esp_async_memcpy_install` 是一个通用 API，用于安装带有默认 DMA 引擎的异步 memcpy 驱动。如果 SoC 具有 CP_DMA 引擎，则默认 DMA 引擎为 CP_DMA，否则，默认 DMA 引擎为 AHB_GDMA。
+    - :cpp:func:`esp_async_memcpy_install` 是一个通用 API，用于安装带有默认 DMA 引擎的异步 memcpy 驱动。如果 SoC 具有 CP DMA 引擎，则默认 DMA 引擎为 CP DMA，否则，默认 DMA 引擎为 AHB GDMA。
 
 在 :cpp:type:`async_memcpy_config_t` 中设置驱动配置：
 
 * :cpp:member:`backlog`：此项用于配置首个请求完成前可以排队的最大内存复制事务数量。如果将此字段设置为零，会应用默认值 4。
 * :cpp:member:`sram_trans_align`：声明 SRAM 中数据地址和复制大小的对齐方式，如果数据没有对齐限制，则设置为零。如果设置为四的倍数值（即 4X），驱动程序将内部启用突发模式，这有利于某些和性能相关的应用程序。
-* :cpp:member:`psram_trans_align`：声明 PSRAM 中数据地址和复制大小声明对齐方式。如果 memcpy 的目标地址位于 PSRAM 中，用户必须给出有一个效值（只支持 16、32、64）。如果设置为零，会默认采用 16 位对齐。在内部，驱动程序会根据对齐方式来配置 DMA 访问 PSRAM 时所用的块大小。
+* :cpp:member:`psram_trans_align`：声明 PSRAM 中数据地址和复制大小的对齐方式。如果 memcpy 的目标地址位于 PSRAM 中，用户必须给出一个有效值（只支持 16、32、64）。如果设置为零，会默认采用 16 位对齐。在内部，驱动程序会根据对齐方式来配置 DMA 访问 PSRAM 时所用的块大小。
 * :cpp:member:`flags`：此项可以启用一些特殊的驱动功能。
 
 .. code-block:: c
