@@ -718,9 +718,6 @@ macro(project project_name)
     # Add DFU build and flash targets
     __add_dfu_targets()
 
-    # Add UF2 build targets
-    __add_uf2_targets()
-
     idf_build_executable(${project_elf})
 
     __project_info("${test_components}")

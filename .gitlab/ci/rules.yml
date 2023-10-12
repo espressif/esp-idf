@@ -192,7 +192,6 @@
   - "tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py"
 
   - "tools/mkuf2.py"
-  - "tools/test_mkuf2/test_mkuf2.py"
 
   - "tools/split_paths_by_spaces.py"
 
