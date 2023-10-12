@@ -124,6 +124,13 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module);
  */
 void modem_clock_wifi_mac_reset(void);
 
+/**
+ * @brief Enable clock registers which shared by both modem and ADC. Need a ref count to enable/disable them
+ *
+ * @param enable true: enable; false: disable
+ */
+void modem_clock_shared_enable(bool enable);
+
 #ifdef __cplusplus
 }
 #endif
