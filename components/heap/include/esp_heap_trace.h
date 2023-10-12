@@ -39,7 +39,7 @@ typedef struct heap_trace_record_t {
 #if CONFIG_HEAP_TRACING_STANDALONE
     TAILQ_ENTRY(heap_trace_record_t) tailq_list; ///< Linked list: prev & next records
 #if CONFIG_HEAP_TRACE_HASH_MAP
-    TAILQ_ENTRY(heap_trace_record_t) tailq_hashmap; ///< Linked list: prev & next in hashmap entry list
+    SLIST_ENTRY(heap_trace_record_t) slist_hashmap; ///< Linked list: next in hashmap entry list
 #endif // CONFIG_HEAP_TRACE_HASH_MAP
 #endif // CONFIG_HEAP_TRACING_STANDALONE
 } heap_trace_record_t;
