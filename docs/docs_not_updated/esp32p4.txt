@@ -55,11 +55,9 @@ api-guides/cplusplus.rst
 api-guides/SYSVIEW_FreeRTOS.txt
 api-guides/build-system.rst
 api-guides/core_dump.rst
-api-guides/inc/external-ram-esp32-notes.rst
 api-guides/inc/linux-host-requirements.rst
 api-guides/dfu.rst
 api-guides/current-consumption-measurement-modules.rst
-api-guides/external-ram.rst
 api-guides/reproducible-builds.rst
 api-guides/hardware-abstraction.rst
 api-guides/wifi-security.rst
