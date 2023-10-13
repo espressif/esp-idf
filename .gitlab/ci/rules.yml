@@ -605,9 +605,6 @@
 .if-label-integration_test_wifi: &if-label-integration_test_wifi
   if: '$BOT_LABEL_INTEGRATION_TEST_WIFI || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test_wifi(?:,[^,\n\r]+)*$/i'
 
-.if-label-lan8720: &if-label-lan8720
-  if: '$BOT_LABEL_LAN8720 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*lan8720(?:,[^,\n\r]+)*$/i'
-
 .if-label-macos: &if-label-macos
   if: '$BOT_LABEL_MACOS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*macos(?:,[^,\n\r]+)*$/i'
 
@@ -693,7 +690,6 @@
     - <<: *if-label-component_ut_esp32p4
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-component_ut_esp32s3
-    - <<: *if-label-lan8720
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
@@ -741,7 +737,6 @@
     - <<: *if-label-build
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
-    - <<: *if-label-lan8720
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
@@ -1640,7 +1635,6 @@
     - <<: *if-label-integration_test
     - <<: *if-label-integration_test_ble
     - <<: *if-label-integration_test_wifi
-    - <<: *if-label-lan8720
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
@@ -1718,7 +1712,6 @@
       when: never
     - <<: *if-protected
     - <<: *if-label-build
-    - <<: *if-label-lan8720
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
@@ -1752,7 +1745,6 @@
       when: never
     - <<: *if-protected
     - <<: *if-label-build
-    - <<: *if-label-lan8720
     - <<: *if-label-target_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
@@ -1954,13 +1946,6 @@
       changes: *patterns-unit_test
     - <<: *if-dev-push
       changes: *patterns-unit_test-sdio
-
-.rules:labels-protected:lan8720:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-lan8720
 
 .rules:labels:nvs_coverage:
   rules:

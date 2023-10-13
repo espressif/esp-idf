@@ -225,13 +225,3 @@ build:integration_test:
 "labels:nvs_coverage": # host_test
   labels:
     - nvs_coverage
-
-"labels-protected:lan8720":  # UT # FIXME: IDFCI-1176 temporary run this on master/release or with label
-  labels:
-    - lan8720
-  included_in:
-    - build:unit_test
-    - build:unit_test-esp32
-    - build:target_test
-    - build:component_ut
-    - build:component_ut-esp32

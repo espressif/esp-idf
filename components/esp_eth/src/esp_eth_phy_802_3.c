@@ -384,16 +384,18 @@ esp_err_t esp_eth_phy_802_3_detect_phy_addr(esp_eth_mediator_t *eth, int *detect
     }
     int addr_try = 0;
     uint32_t reg_value = 0;
-    for (; addr_try < 32; addr_try++) {
-        eth->phy_reg_read(eth, addr_try, ETH_PHY_IDR1_REG_ADDR, &reg_value);
-        if (reg_value != 0xFFFF && reg_value != 0x00) {
-            *detected_addr = addr_try;
-            break;
+    for (int i = 0; i < 3; i++){
+        for (addr_try = 0; addr_try < 32; addr_try++) {
+            eth->phy_reg_read(eth, addr_try, ETH_PHY_IDR1_REG_ADDR, &reg_value);
+            if (reg_value != 0xFFFF && reg_value != 0x00) {
+                *detected_addr = addr_try;
+                break;
+            }
         }
-    }
-    if (addr_try < 32) {
-        ESP_LOGD(TAG, "Found PHY address: %d", addr_try);
-        return ESP_OK;
+        if (addr_try < 32) {
+            ESP_LOGD(TAG, "Found PHY address: %d", addr_try);
+            return ESP_OK;
+        }
     }
     ESP_LOGE(TAG, "No PHY device detected");
     return ESP_ERR_NOT_FOUND;
