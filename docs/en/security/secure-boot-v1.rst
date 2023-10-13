@@ -235,6 +235,7 @@ Items marked with (^) are to fulfill hardware restrictions, as opposed to crypto
    - Append to the overall ciphertext output.
 5. Byte-swap each 4 byte word of the ciphertext (^)
 6. Calculate SHA-512 of the ciphertext.
+7. Byte-swap each 4 byte word of the above calculated digest. (^)
 
 Output digest is 192 bytes of data: The 128 byte IV, followed by the 64 byte SHA-512 digest.
 
