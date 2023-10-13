@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdio.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
@@ -543,7 +544,19 @@ esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t int
  */
 esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num);
 
-#endif
+#endif //SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+/**
+ * @brief Dump IO configuration information to console
+ *
+ * @param out_stream IO stream (e.g. stdout)
+ * @param io_bit_mask IO pin bit mask, each bit maps to an IO
+ *
+ * @return
+ *    - ESP_OK Success
+ *    - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask);
 
 #ifdef __cplusplus
 }
