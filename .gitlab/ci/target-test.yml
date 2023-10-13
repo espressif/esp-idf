@@ -670,6 +670,7 @@ pytest_components_esp32_ip101:
 pytest_components_esp32_lan8720:
   extends:
     - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, eth_lan8720 ]
@@ -677,6 +678,7 @@ pytest_components_esp32_lan8720:
 pytest_components_esp32_rtl8201:
   extends:
     - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, eth_rtl8201 ]
@@ -684,6 +686,7 @@ pytest_components_esp32_rtl8201:
 pytest_components_esp32_w5500:
   extends:
     - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, eth_w5500 ]
@@ -691,6 +694,7 @@ pytest_components_esp32_w5500:
 pytest_components_esp32_ksz8851snl:
   extends:
     - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, eth_ksz8851snl ]
@@ -698,6 +702,7 @@ pytest_components_esp32_ksz8851snl:
 pytest_components_esp32_dm9051:
   extends:
     - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, eth_dm9051 ]
@@ -705,6 +710,7 @@ pytest_components_esp32_dm9051:
 pytest_components_esp32_ksz8041:
   extends:
     - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, eth_ksz8041 ]
@@ -712,6 +718,7 @@ pytest_components_esp32_ksz8041:
 pytest_components_esp32_dp83848:
   extends:
     - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, eth_dp83848 ]
