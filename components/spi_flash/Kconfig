@@ -329,7 +329,7 @@ menu "SPI Flash driver"
         help
             This is a helper config for 32bits address flash. Invisible for users.
 
-    config SPI_FLASH_32BIT_ADDR_ENABLE
+    config SPI_FLASH_QUAD_32BIT_ADDR_ENABLE
         bool "Enable 32-bit-address (over 16MB) SPI Flash access"
         depends on SPI_FLASH_32BIT_ADDRESS && !ESPTOOLPY_OCT_FLASH && IDF_TARGET_ESP32S3 && IDF_EXPERIMENTAL_FEATURES
         default n
@@ -338,5 +338,10 @@ menu "SPI Flash driver"
             1. This option only valid for 4-line flash. Octal flash doesn't need this.
             2. This option is experimental, which means it can't use on all flash chips stable, for more
             information, please contact Espressif Business support.
+
+    config SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
+        bool
+        default y if ESPTOOLPY_OCT_FLASH && SPI_FLASH_32BIT_ADDRESS
+        default n
 
 endmenu

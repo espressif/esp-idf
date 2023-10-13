@@ -288,7 +288,7 @@ esp_err_t bootloader_init_spi_flash(void)
         bootloader_enable_qio_mode();
     }
 #endif
-#if CONFIG_SPI_FLASH_32BIT_ADDR_ENABLE
+#if CONFIG_SPI_FLASH_QUAD_32BIT_ADDR_ENABLE || CONFIG_SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
     bootloader_flash_32bits_address_map_enable(bootloader_flash_get_spi_mode());
 #endif
     print_flash_info(&bootloader_image_hdr);
