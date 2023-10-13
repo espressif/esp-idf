@@ -8,20 +8,26 @@
 #include <stdio.h>
 
 #include "esp_crypto_lock.h"
-#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "ecc_impl.h"
 #include "hal/ecc_hal.h"
+#include "hal/ecc_ll.h"
 
 static void esp_ecc_acquire_hardware(void)
 {
     esp_crypto_ecc_lock_acquire();
 
-    periph_module_enable(PERIPH_ECC_MODULE);
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(true);
+        ecc_ll_reset_register();
+    }
 }
 
 static void esp_ecc_release_hardware(void)
 {
-    periph_module_disable(PERIPH_ECC_MODULE);
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(false);
+    }
 
     esp_crypto_ecc_lock_release();
 }

@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
 #include "esp_crypto_lock.h"
 #include "esp_efuse.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "mbedtls/error.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"
-#include "esp_private/periph_ctrl.h"
 #include "ecdsa/ecdsa_alt.h"
 
 #define ECDSA_KEY_MAGIC             (short) 0xECD5A
@@ -24,12 +25,17 @@ static void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
 
-    periph_module_enable(PERIPH_ECDSA_MODULE);
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(true);
+        ecdsa_ll_reset_register();
+    }
 }
 
 static void esp_ecdsa_release_hardware(void)
 {
-    periph_module_disable(PERIPH_ECDSA_MODULE);
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(false);
+    }
 
     esp_crypto_ecdsa_lock_release();
 }

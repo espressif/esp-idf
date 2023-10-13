@@ -12,12 +12,43 @@
 #include "hal/mpi_types.h"
 #include "soc/hwcrypto_periph.h"
 #include "soc/system_reg.h"
+#include "soc/system_struct.h"
 #include "soc/mpi_periph.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+/**
+ * @brief Enable the bus clock for MPI peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void mpi_ll_enable_bus_clock(bool enable)
+{
+    SYSTEM.perip_clk_en1.reg_crypto_rsa_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mpi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the MPI peripheral module
+ */
+static inline void mpi_ll_reset_register(void)
+{
+    SYSTEM.perip_rst_en1.reg_crypto_rsa_rst = 1;
+    SYSTEM.perip_rst_en1.reg_crypto_rsa_rst = 0;
+
+    // Clear reset on digital signature also, otherwise RSA is held in reset
+    SYSTEM.perip_rst_en1.reg_crypto_ds_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mpi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_reset_register(__VA_ARGS__)
 
 static inline size_t mpi_ll_calculate_hardware_words(size_t words)
 {

@@ -19,6 +19,40 @@ extern "C" {
 #endif
 
 
+/**
+ * @brief Enable the bus clock for MPI peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void mpi_ll_enable_bus_clock(bool enable)
+{
+    if (enable) {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    } else {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mpi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the MPI peripheral module
+ */
+static inline void mpi_ll_reset_register(void)
+{
+    DPORT_SET_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
+
+    // Clear reset on digital signature also, otherwise RSA is held in reset
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_DIGITAL_SIGNATURE);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mpi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_reset_register(__VA_ARGS__)
+
 /* Round up number of words to nearest
    512 bit (16 word) block count.
 */

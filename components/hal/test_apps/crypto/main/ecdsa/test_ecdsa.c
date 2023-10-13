@@ -8,10 +8,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_random.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/ecdsa_hal.h"
+#include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
 
 #include "memory_checks.h"
@@ -19,15 +20,19 @@
 
 #include "ecdsa_params.h"
 
-
 static void ecdsa_enable_and_reset(void)
 {
-    periph_ll_enable_clk_clear_rst(PERIPH_ECDSA_MODULE);
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(true);
+        ecdsa_ll_reset_register();
+    }
 }
 
-static void ecdsa_disable_and_reset(void)
+static void ecdsa_disable(void)
 {
-    periph_ll_disable_clk_set_rst(PERIPH_ECDSA_MODULE);
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(false);
+    }
 }
 
 static void ecc_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len)
@@ -62,7 +67,7 @@ static int test_ecdsa_verify(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t*
 
     ecdsa_enable_and_reset();
     int ret = ecdsa_hal_verify_signature(&conf, sha_le, r_le, s_le, pub_x, pub_y, len);
-    ecdsa_disable_and_reset();
+    ecdsa_disable();
     return ret;
 }
 
@@ -142,7 +147,7 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
         ecdsa_hal_gen_signature(&conf, NULL, sha_le, r_le, s_le, len);
     } while(!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
 
-    ecdsa_disable_and_reset();
+    ecdsa_disable();
 }
 
 static void test_ecdsa_sign_and_verify(bool is_p256, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key)
@@ -191,7 +196,7 @@ static void test_ecdsa_export_pubkey(bool is_p256, bool use_km_key)
         TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa192_pub_y, pub_y, len);
     }
 
-    ecdsa_disable_and_reset();
+    ecdsa_disable();
 }
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 
