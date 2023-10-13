@@ -754,7 +754,7 @@ extern UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
 
 extern tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                                     UINT16 length, UINT8 *value);
-
+extern tGATT_STATUS gatts_get_attr_value_internal(UINT16 attr_handle, UINT16 *length, UINT8 **value);
 extern tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                                     UINT16 *length, UINT8 **value);
 extern BOOLEAN gatts_is_auto_response(UINT16 attr_handle);
