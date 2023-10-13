@@ -482,6 +482,25 @@ esp_err_t nvs_get_blob(nvs_handle_t handle, const char* key, void* out_value, si
 /**@}*/
 
 /**
+ * @brief      Lookup key-value pair with given key name.
+ *
+ * Note that function may indicate both existence of the key as well as the data type of NVS entry if it is found.
+ *
+ * @param[in]  handle    Storage handle obtained with nvs_open.
+ * @param[in]  key       Key name. Maximum length is (NVS_KEY_NAME_MAX_SIZE-1) characters. Shouldn't be empty.
+ * @param[out] out_type  Pointer to the output variable populated with data type of NVS entry in case key was found.
+ *                       May be NULL, respective data type is then not provided.
+ * @return
+ *              - ESP_OK if NVS entry for key provided was found
+ *              - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
+ *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
+ *              - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *                NVS partition (only if NVS assertion checks are disabled)
+ *              - other error codes from the underlying storage driver
+ */
+esp_err_t nvs_find_key(nvs_handle_t handle, const char* key, nvs_type_t* out_type);
+
+/**
  * @brief      Erase key-value pair with given key name.
  *
  * Note that actual storage may not be updated until nvs_commit function is called.

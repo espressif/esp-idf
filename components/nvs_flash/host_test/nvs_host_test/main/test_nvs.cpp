@@ -3310,7 +3310,92 @@ TEST_CASE("nvs multiple write with same key but different types", "[nvs][xxx]")
     TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
+TEST_CASE("nvs find key tests", "[nvs]")
+{
+    const size_t buff_len = 4096;
 
+    PartitionEmulationFixture f(0, 20);
+    f.randomize(100);
+
+    nvs_handle_t handle_1;
+    nvs_handle_t handle_2;
+
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 13;
+
+
+    TEST_ESP_ERR(nvs_open("namespace1", NVS_READWRITE, &handle_1), ESP_ERR_NVS_NOT_INITIALIZED);
+    for (uint16_t i = NVS_FLASH_SECTOR; i < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
+        f.erase(i);
+    }
+    TEST_ESP_OK(nvs::NVSPartitionManager::get_instance()->init_custom(f.part(),
+                NVS_FLASH_SECTOR,
+                NVS_FLASH_SECTOR_COUNT_MIN));
+
+    nvs_type_t datatype_found;  // datatype of entry found
+
+    // open writeable namespace
+    TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
+
+    // set value, erease value, test find before and after each of steps
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foo", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+    // write "foo" as I32, should find it, first attempt without pointer to type variable
+    TEST_ESP_OK(nvs_set_i32(handle_1, "foo", 0x12345678));
+    TEST_ESP_OK(nvs_find_key(handle_1, "foo", nullptr));
+    // second search attempt with pointer to type variable specified
+    TEST_ESP_OK(nvs_find_key(handle_1, "foo", &datatype_found));
+    CHECK(datatype_found == NVS_TYPE_I32);
+    TEST_ESP_OK(nvs_erase_key(handle_1, "foo"));
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foo", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+
+    // set value, rewrite value, erease value, test find before and after each of steps
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foo1", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_i16(handle_1, "foo1", 0x1234));
+    TEST_ESP_OK(nvs_find_key(handle_1, "foo1", &datatype_found));
+    CHECK(datatype_found == NVS_TYPE_I16);
+    TEST_ESP_OK(nvs_set_i16(handle_1, "foo1", 0x4321));
+    TEST_ESP_OK(nvs_find_key(handle_1, "foo1", &datatype_found));
+    CHECK(datatype_found == NVS_TYPE_I16);
+    TEST_ESP_OK(nvs_erase_key(handle_1, "foo1"));
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foo1", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+
+    // set blob value, rewrite blob, delete blob, test find before and after each of steps
+    uint8_t *p_buff = (uint8_t *) malloc(buff_len);
+    CHECK(p_buff != nullptr);
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foo2", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+    for(size_t i=0; i<buff_len; i++) p_buff[i] = (uint8_t) (i%0xff);
+    TEST_ESP_OK(nvs_set_blob(handle_1, "foo2", p_buff, buff_len));
+    TEST_ESP_OK(nvs_find_key(handle_1, "foo2", &datatype_found));
+    CHECK(datatype_found == NVS_TYPE_BLOB);
+    for(size_t i=0; i<buff_len; i++) p_buff[i] = (uint8_t) ((buff_len-i-1)%0xff);
+    TEST_ESP_OK(nvs_set_blob(handle_1, "foo2", p_buff, buff_len));
+    TEST_ESP_OK(nvs_find_key(handle_1, "foo2", &datatype_found));
+    CHECK(datatype_found == NVS_TYPE_BLOB);
+    TEST_ESP_OK(nvs_erase_key(handle_1, "foo2"));
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foo2", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+
+    // test namespace is respected in nvs_find_key
+    // open second writeable namespace
+    TEST_ESP_OK(nvs_open("namespace2", NVS_READWRITE, &handle_2));
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foon1", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_find_key(handle_2, "foon1", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_i16(handle_1, "foon1", 0x1234));
+    TEST_ESP_OK(nvs_find_key(handle_1, "foon1", &datatype_found));
+    TEST_ESP_ERR(nvs_find_key(handle_2, "foon1", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_i16(handle_2, "foon1", 0x1234));
+    TEST_ESP_OK(nvs_find_key(handle_1, "foon1", &datatype_found));
+    TEST_ESP_OK(nvs_find_key(handle_2, "foon1", &datatype_found));
+    TEST_ESP_OK(nvs_erase_key(handle_1, "foon1"));
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foon1", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_find_key(handle_2, "foon1", &datatype_found));
+    TEST_ESP_OK(nvs_erase_key(handle_2, "foon1"));
+    TEST_ESP_ERR(nvs_find_key(handle_1, "foon1", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(nvs_find_key(handle_2, "foon1", &datatype_found), ESP_ERR_NVS_NOT_FOUND);
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
+}
 /* Add new tests above */
 /* This test has to be the final one */
 
