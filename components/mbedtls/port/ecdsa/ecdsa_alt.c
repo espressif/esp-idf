@@ -14,7 +14,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "ecdsa/ecdsa_alt.h"
 
-#define ECDSA_KEY_MAGIC             0xECD5A
+#define ECDSA_KEY_MAGIC             (short) 0xECD5A
 #define ECDSA_SHA_LEN               32
 #define MAX_ECDSA_COMPONENT_LEN     32
 

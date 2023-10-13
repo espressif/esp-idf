@@ -56,8 +56,15 @@
  */
 #ifdef CONFIG_MBEDTLS_HAVE_TIME
 #define MBEDTLS_HAVE_TIME
+/**
+ * \def MBEDTLS_PLATFORM_MS_TIME_ALT
+ *
+ * Define platform specific function to get time since bootup in milliseconds.
+ */
+#define MBEDTLS_PLATFORM_MS_TIME_ALT
 #else
 #undef MBEDTLS_HAVE_TIME
+#undef MBEDTLS_PLATFORM_MS_TIME_ALT
 #endif
 
 /**
@@ -2730,25 +2737,6 @@
  * This module is required for X.509 certificate creation.
  */
 #define MBEDTLS_X509_CRT_WRITE_C
-
-/**
- * \def MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
- *
-  * Alow the X509 parser to not break-off when parsing an X509 certificate
- * and encountering an unknown critical extension.
- *
- * Module:  library/x509_crt.c
- *
- * Requires: MBEDTLS_X509_CRT_PARSE_C
- *
- * This module is supports loading of certificates with extensions that
- * may not be supported by mbedtls.
- */
-#ifdef CONFIG_MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXT
-#define MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
-#else
-#undef MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
-#endif
 
 /**
  * \def MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK
