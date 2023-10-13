@@ -82,7 +82,7 @@ You can also see the information on segments in the ESP-IDF logs while your appl
     * version word (4 bytes)
     * signature data (64 bytes)
 
-6. If the option :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to RSA or ECDSA (V2) then the application image will have an additional signature sector of that is 4K bytes in size. For more details on the format of this signature sector, please refer to :ref:`signature-block-format`.
+6. If the option :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to RSA or ECDSA (V2) then the application image will have an additional signature sector of 4 KB in size. For more details on the format of this signature sector, please refer to :ref:`signature-block-format`.
 
 .. _app-image-format-application-description:
 

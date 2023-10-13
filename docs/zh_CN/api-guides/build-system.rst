@@ -64,7 +64,7 @@ idf.py
 
 为了方便，:ref:`idf.py` 已经封装了 CMake_ 命令，但是你愿意，也可以直接调用 CMake。
 
-.. code-block:: bash
+.. highlight:: bash
 
 当 ``idf.py`` 在执行某些操作时，它会打印出其运行的每条命令以便参考。例如运行 ``idf.py build`` 命令与在 bash shell（或者 Windows Command Prompt）中运行以下命令是相同的::
 
@@ -147,7 +147,7 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 示例项目
 ========
 
-.. code-block:: none
+.. highlight:: none
 
 示例项目的目录树结构可能如下所示::
 
@@ -198,7 +198,7 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 最小 CMakeLists 文件示例
 ------------------------
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 最小项目::
 
@@ -256,7 +256,7 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 构建系统设置了一些全局的构建规范（编译标志、定义等），这些规范可用于编译来自所有组件的所有源文件。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 例如，其中一个默认的构建规范是编译选项 ``Wextra``。假设一个用户想用 ``Wno-extra`` 来覆盖这个选项，
 应在 ``project()`` 之后进行::
@@ -306,7 +306,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 最小组件 CMakeLists 文件
 --------------------------
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 最小组件 ``CMakeLists.txt`` 文件通过使用 ``idf_component_register`` 将组件添加到构建系统中。
 
@@ -373,7 +373,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 组件编译控制
 ------------------
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 在编译特定组件的源文件时，可以使用 `target_compile_options`_  函数来传递编译器选项::
 
@@ -475,7 +475,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 Car 组件
 ^^^^^^^^^
 
-.. code-block:: c
+.. highlight:: c
 
 ``car.h`` 头文件是 ``car`` 组件的公共接口。该头文件直接包含了 ``engine.h``，这是因为它需要使用 ``engine.h`` 中的一些声明::
 
@@ -507,7 +507,7 @@ Car 组件
 Engine 组件
 ^^^^^^^^^^^^^^^^
 
-.. code-block:: c
+.. highlight:: c
 
 ``engine`` 组件也有一个公共头文件 ``include/engine.h``，但这个头文件更为简单::
 
@@ -664,7 +664,7 @@ CMake 通常会在链接器命令行上重复两次组件库名称来自动处�
 添加链接时依赖项
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 ESP-IDF 的 CMake 辅助函数 ``idf_component_add_link_dependency`` 可以在组件之间添加仅作用于链接时的依赖关系。绝大多数情况下，我们都建议你使用 ``idf_component_register`` 中的 ``PRIV_REQUIRES`` 功能来构建依赖关系。然而在某些情况下，还是有必要添加另一个组件对当前组件的链接时依赖，即反转 ``PRIV_REQUIRES`` 中的依赖关系（参考示例：:doc:`/api-reference/peripherals/spi_flash/spi_flash_override_driver`）。
 
@@ -816,7 +816,7 @@ CMake 调试
 
 配置系统可用于根据项目配置中选择的选项有条件地编译某些文件。
 
-.. code-block:: none
+.. highlight:: none
 
 ``Kconfig``::
 
@@ -859,7 +859,7 @@ CMake 调试
         help
             Select this to output temperature plots
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 ``CMakeLists.txt``::
 
@@ -932,7 +932,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
   idf_component_register(...
                          EMBED_TXTFILES server_root_cert.pem)
 
-.. code-block:: c
+.. highlight:: c
 
 文件的内容会被添加到 flash 的 .rodata 段，用户可以通过符号名来访问，如下所示::
 
@@ -941,7 +941,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
 符号名会根据文件全名生成，如 ``EMBED_FILES`` 中所示，字符 ``/``、``.`` 等都会被下划线替代。符号名称中的 _binary 前缀由 objcopy 命令添加，对文本文件和二进制文件都是如此。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 如果要将文件嵌入到项目中，而非组件中，可以调用 ``target_add_binary_data`` 函数::
 
@@ -951,7 +951,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
 有关使用此技术的示例，请查看 file_serving 示例 :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` 中的 main 组件，两个文件会在编译时加载并链接到固件中。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 也可以嵌入生成的文件::
 
@@ -980,7 +980,7 @@ ESP-IDF 还支持自动生成链接脚本，它允许组件通过链接片段文
 完全覆盖组件的构建过程
 ----------------------
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 当然，在有些情况下，上面提到的方法不一定够用。如果组件封装了另一个第三方组件，而这个第三方组件并不能直接在 ESP-IDF 的构建系统中工作，在这种情况下，就需要放弃 ESP-IDF 的构建系统，改为使用 CMake 的 ExternalProject_ 功能。组件 CMakeLists 示例如下::
 
@@ -1077,7 +1077,7 @@ flash 参数
 - ``flash_app_args`` 只包含烧录应用程序的参数。
 - ``flash_bootloader_args`` 只包含烧录引导程序的参数。
 
-.. code-block:: bash
+.. highlight:: bash
 
 你可以参照如下命令将任意烧录参数文件传递给 ``esptool.py``::
 
@@ -1105,7 +1105,7 @@ ESP-IDF 构建系统用“组件”的概念“封装”了 CMake，并提供了
 
 然而，“组件”概念的背后是一个完整的 CMake 构建系统，因此可以制作纯 CMake 组件。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 下面是使用纯 CMake 语法为 ``json`` 组件编写的最小 CMakeLists 文件的示例::
 
@@ -1125,7 +1125,7 @@ ESP-IDF 构建系统用“组件”的概念“封装”了 CMake，并提供了
 
 CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的应用程序中使用开源代码。CMake 构建系统的一大好处就是可以导入这些第三方的项目，有时候甚至不用做任何改动。这就允许用户使用当前 ESP-IDF 组件尚未提供的功能，或者使用其它库来实现相同的功能。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 假设 ``main`` 组件需要导入一个假想库 ``foo``，相应的组件 CMakeLists 文件如下所示::
 
@@ -1167,7 +1167,7 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
 组件中使用预建库
 =================
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 还有一种情况是你有一个由其它构建过程生成预建静态库（``.a`` 文件）。
 
@@ -1430,7 +1430,7 @@ ESP-IDF 组件属性
 文件通配 & 增量构建
 =====================
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 在 ESP-IDF 组件中添加源文件的首选方法是在 ``COMPONENT_SRCS`` 中手动列出它们::
 

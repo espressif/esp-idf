@@ -8,7 +8,7 @@ OTA Process Overview
 
 The OTA update mechanism allows a device to update itself based on data received while the normal firmware is running (for example, over Wi-Fi or Bluetooth.)
 
-OTA requires configuring the :doc:`Partition Table <../../api-guides/partition-tables>` of the device with at least two OTA app slot partitions (i.e., ``ota_0`` and ``ota_1``) and an OTA Data Partition.
+OTA requires configuring the :doc:`../../api-guides/partition-tables` of the device with at least two OTA app slot partitions (i.e., ``ota_0`` and ``ota_1``) and an OTA Data Partition.
 
 The OTA operation functions write a new app firmware image to whichever OTA app slot that is currently not selected for booting. Once the image is verified, the OTA Data partition is updated to specify that this image should be used for the next boot.
 
@@ -17,7 +17,7 @@ The OTA operation functions write a new app firmware image to whichever OTA app 
 OTA Data Partition
 ------------------
 
-An OTA data partition (type ``data``, subtype ``ota``) must be included in the :doc:`Partition Table <../../api-guides/partition-tables>` of any project which uses the OTA functions.
+An OTA data partition (type ``data``, subtype ``ota``) must be included in the :doc:`../../api-guides/partition-tables` of any project which uses the OTA functions.
 
 For factory boot settings, the OTA data partition should contain no data (all bytes erased to 0xFF). In this case, the ESP-IDF software bootloader will boot the factory app if it is present in the partition table. If no factory app is included in the partition table, the first available OTA slot (usually ``ota_0``) is booted.
 
@@ -201,7 +201,7 @@ The verification of signed OTA updates can be performed even without enabling ha
 OTA Tool ``otatool.py``
 -----------------------
 
-The component ``app_update`` provides a tool :component_file:`otatool.py <app_update/otatool.py>` for performing OTA partition-related operations on a target device. The following operations can be performed using the tool:
+The component ``app_update`` provides a tool :component_file:`app_update/otatool.py` for performing OTA partition-related operations on a target device. The following operations can be performed using the tool:
 
   - read contents of otadata partition (read_otadata)
   - erase otadata partition, effectively resetting device to factory app (erase_otadata)
@@ -297,10 +297,10 @@ More information can be obtained by specifying ``--help`` as argument:
 See Also
 --------
 
-* :doc:`Partition Table documentation <../../api-guides/partition-tables>`
-* :doc:`Partition API <../storage/partition>`
-* :doc:`Lower-Level SPI Flash API <../peripherals/spi_flash/index>`
-* :doc:`ESP HTTPS OTA <esp_https_ota>`
+* :doc:`../../api-guides/partition-tables`
+* :doc:`../storage/partition`
+* :doc:`../peripherals/spi_flash/index`
+* :doc:`esp_https_ota`
 
 Application Example
 -------------------

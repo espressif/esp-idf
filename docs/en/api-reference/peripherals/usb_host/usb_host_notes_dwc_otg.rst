@@ -138,7 +138,7 @@ Control transfers are more complicated as they are bi-directional (i.e., each co
 Interrupt
 ^^^^^^^^^
 
-In accordance with the USB2.0 specification, interrupt transfers executes transactions at the endpoints specified service period (i.e., ``bInterval``). A particular interrupt endpoint may not execute more than one interrupt transaction within a service period. The service period is specified in number of (micro)frames, thus a particular interrupt endpoint will generally execute one transaction every Nth (micro)frame until the transfer is complete. For interrupt channels, the service period of a particular channel (i.e., ``bInterval``) is specified via the Host Frame List (see section 6.5 of programming guide for more details).
+In accordance with the USB2.0 specification, interrupt transfers executes transactions at the endpoints specified service period (i.e., ``bInterval``). A particular interrupt endpoint may not execute more than one interrupt transaction within a service period. The service period is specified in number of microframes/frames, thus a particular interrupt endpoint will generally execute one transaction every Nth microframe/frame until the transfer is complete. For interrupt channels, the service period of a particular channel (i.e., ``bInterval``) is specified via the Host Frame List (see section 6.5 of programming guide for more details).
 
 .. note::
 
@@ -161,7 +161,7 @@ Thus, interrupt transfers in Host Mode Scatter/Gather DMA have the following pec
 Isochronous
 ^^^^^^^^^^^
 
-In accordance with the USB2.0 specification, isochronous transfers executes transactions at the endpoints specified service period (i.e., ``bInterval``) in order to achieve a constant rate of data transfer. A particular isochronous endpoint may not execute more than one isochronous transaction within a service period. The service period is specified in number of (micro)frames, thus a particular isochronous endpoint will generally execute one transaction every Nth (micro)frame until the transfer is complete. For isochronous channels, the service period of a particular channel (i.e., ``bInterval``) is specified via the Host Frame List (see section 6.5 of programming guide for more details).
+In accordance with the USB2.0 specification, isochronous transfers executes transactions at the endpoints specified service period (i.e., ``bInterval``) in order to achieve a constant rate of data transfer. A particular isochronous endpoint may not execute more than one isochronous transaction within a service period. The service period is specified in number of microframes/frames, thus a particular isochronous endpoint will generally execute one transaction every Nth microframe/frame until the transfer is complete. For isochronous channels, the service period of a particular channel (i.e., ``bInterval``) is specified via the Host Frame List (see section 6.5 of programming guide for more details).
 
 However, unlike interrupt transactions, isochronous transactions are not retried on failure (or NAK), due to the need to maintain the constant data rate.
 
@@ -171,7 +171,7 @@ However, unlike interrupt transactions, isochronous transactions are not retried
 
 Thus, isochronous transfers in Host Mode Scatter/Gather DMA have the following peculiarities:
 
-- A QTD must be allocated for each (micro)frame. However, non-service service period QTDs should be left blank (i.e., only ever Nth QTD should be filled if the channel's service period is every Nth (micro)frame).
+- A QTD must be allocated for each microframe/frame. However, non-service service period QTDs should be left blank (i.e., only ever Nth QTD should be filled if the channel's service period is every Nth microframe/frame).
 - **Each filled QTD must represent a single transaction instead of a transfer**.
 - Because isochronous transactions are not retried on failure, the status each completed QTD must be checked.
 

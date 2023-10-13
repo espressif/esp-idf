@@ -48,7 +48,7 @@ ESP HTTPS OTA 升级
 
 在从 AWS S3 等服务获取镜像时，这一选项非常有用。在启用该选项时， 可以将 mbedTLS Rx 的 buffer 大小（即 :ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`）设置为较小的值。不启用此配置时，无法将其设置为较小值。
 
-mbedTLS Rx buffer 的默认大小为 16 K，但如果将 ``partial_http_download`` 的 ``max_http_request_size`` 设置为 4 K，便能将 mbedTLS Rx 的 buffer 减小到 4 K。使用这一配置方式预计可以节省约 12 K 内存。
+mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_download`` 的 ``max_http_request_size`` 设置为 4 KB，便能将 mbedTLS Rx 的 buffer 减小到 4 KB。使用这一配置方式预计可以节省约 12 KB 内存。
 
 
 签名验证

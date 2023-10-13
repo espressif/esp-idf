@@ -1,4 +1,4 @@
-.. code-block:: c
+.. highlight:: c
 
 Error Handling
 ==============
