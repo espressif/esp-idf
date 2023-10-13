@@ -80,7 +80,7 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(isr_test_ctx.oneshot_handle, ADC1_TEST_CHAN0, &config));
 
@@ -171,7 +171,7 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
         .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
-    adc_pattern[0].atten = ADC_ATTEN_DB_11;
+    adc_pattern[0].atten = ADC_ATTEN_DB_12;
     adc_pattern[0].channel = ADC1_TEST_CHAN0;
     adc_pattern[0].unit = ADC_UNIT_1;
     adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -229,7 +229,7 @@ TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignor
         .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
-    adc_pattern[0].atten = ADC_ATTEN_DB_11;
+    adc_pattern[0].atten = ADC_ATTEN_DB_12;
     adc_pattern[0].channel = ADC1_TEST_CHAN0;
     adc_pattern[0].unit = ADC_UNIT_1;
     adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;

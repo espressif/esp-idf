@@ -28,12 +28,12 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
 {
     assert((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
            (version <= ESP_EFUSE_ADC_CALIB_VER_MAX));
-    assert(atten <= ADC_ATTEN_DB_11);
+    assert(atten <= ADC_ATTEN_DB_12);
     (void) adc_unit;
 
     if (atten == ADC_ATTEN_DB_2_5 || atten == ADC_ATTEN_DB_6) {
         /**
-         * - ESP32C2 only supports HW calibration on ADC_ATTEN_DB_0 and ADC_ATTEN_DB_11
+         * - ESP32C2 only supports HW calibration on ADC_ATTEN_DB_0 and ADC_ATTEN_DB_12
          * - For other attenuation, we just return default value, which is 0.
          */
         return 0;
@@ -56,7 +56,7 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
     if (atten == ADC_ATTEN_DB_0) {
         init_code = adc_icode_diff_atten0 + 2160;
     } else {
-        //ADC_ATTEN_DB_11
+        //ADC_ATTEN_DB_12
         init_code = adc_icode_diff_atten3 + adc_icode_diff_atten0 + 2160;
     }
 
@@ -76,7 +76,7 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
 
     if (atten == ADC_ATTEN_DB_2_5 || atten == ADC_ATTEN_DB_6) {
         /**
-         * - ESP32C2 only supports SW calibration on ADC_ATTEN_DB_0 and ADC_ATTEN_DB_11
+         * - ESP32C2 only supports SW calibration on ADC_ATTEN_DB_0 and ADC_ATTEN_DB_12
          * - For other attenuation, we need to return an error, informing upper layer SW calibration driver
          *   to deal with the error.
          */
@@ -101,7 +101,7 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
         *out_digi = adc_vol_diff_atten0 + 1540;
         *out_vol_mv = 400;
     } else {
-        //ADC_ATTEN_DB_11
+        //ADC_ATTEN_DB_12
         *out_digi = adc_vol_diff_atten0 + 1540 - adc_vol_diff_atten3 - 123;
         *out_vol_mv = 1370;
     }
