@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +52,11 @@ esp_err_t Partition::read(size_t src_addr, void *dest, size_t size)
 size_t Partition::get_sector_size()
 {
     return SPI_FLASH_SEC_SIZE;
+}
+
+bool Partition::is_readonly()
+{
+    return this->partition->readonly;
 }
 
 Partition::~Partition()

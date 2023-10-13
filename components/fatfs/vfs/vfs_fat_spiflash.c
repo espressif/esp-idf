@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include <string.h>
 #include "esp_check.h"
 #include "esp_log.h"
-#include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "vfs_fat_internal.h"
 #include "diskio_impl.h"
@@ -28,6 +27,8 @@ typedef struct vfs_fat_spiflash_ctx_t {
 } vfs_fat_spiflash_ctx_t;
 
 static vfs_fat_spiflash_ctx_t *s_ctx[FF_VOLUMES] = {};
+
+extern esp_err_t esp_vfs_set_readonly_flag(const char* base_path); // from vfs/vfs.c to set readonly flag in esp_vfs_t struct externally
 
 static bool s_get_context_id_by_label(const char *label, uint32_t *out_id)
 {
@@ -159,6 +160,10 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     //At this stage, we should always get a free context, otherwise program should return already
     assert(ctx_id != FF_VOLUMES);
     s_ctx[ctx_id] = ctx;
+
+    if (data_partition->readonly) {
+        esp_vfs_set_readonly_flag(base_path);
+    }
 
     return ESP_OK;
 
@@ -296,6 +301,11 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
         ret = ESP_FAIL;
         goto fail;
     }
+
+    if (data_partition->readonly) {
+        esp_vfs_set_readonly_flag(base_path);
+    }
+
     return ESP_OK;
 
 fail:

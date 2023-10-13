@@ -134,6 +134,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_NOT_FINISHED
     ERR_TBL_IT(ESP_ERR_NOT_FINISHED),                           /*   268 0x10c Operation has not fully completed */
 #   endif
+#   ifdef      ESP_ERR_NOT_ALLOWED
+    ERR_TBL_IT(ESP_ERR_NOT_ALLOWED),                            /*   269 0x10d Operation is not allowed */
+#   endif
     // components/nvs_flash/include/nvs.h
 #   ifdef      ESP_ERR_NVS_BASE
     ERR_TBL_IT(ESP_ERR_NVS_BASE),                               /*  4352 0x1100 Starting number of error codes */

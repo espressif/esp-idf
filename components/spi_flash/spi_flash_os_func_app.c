@@ -206,14 +206,19 @@ static IRAM_ATTR void release_buffer_malloc(void* arg, void *temp_buf)
 
 static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
 {
+    if (!esp_partition_is_flash_region_writable(start_addr, size)) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
     if (((app_func_arg_t*)arg)->no_protect || esp_partition_main_flash_region_safe(start_addr, size)) {
         //ESP_OK = 0, also means protected==0
         return ESP_OK;
     } else {
         return ESP_ERR_NOT_SUPPORTED;
     }
+#endif // !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+    return ESP_OK;
 }
-
 
 static IRAM_ATTR void main_flash_op_status(uint32_t op_status)
 {

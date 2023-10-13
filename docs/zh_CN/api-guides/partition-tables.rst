@@ -166,11 +166,21 @@ app 分区的大小和偏移地址可以采用十进制数、以 0x 为前缀的
 Flags 字段
 ~~~~~~~~~~
 
-当前仅支持 ``encrypted`` 标记。如果 Flags 字段设置为 ``encrypted``，且已启用 :doc:`/security/flash-encryption` 功能，则该分区将会被加密。
+目前支持 ``encrypted`` 和 ``readonly`` 标记：
 
-.. note::
+  - 如果 Flags 字段设置为 ``encrypted``，且已启用 :doc:`/security/flash-encryption` 功能，则该分区将会被加密。
 
-   ``app`` 分区始终会被加密，不管 Flags 字段是否设置。
+  .. note::
+
+      无论是否设置 Flags 字段，``app`` 分区都将保持加密。
+
+  - 如果 Flags 字段设置为 ``readonly``，则该分区为只读分区。``readonly`` 标记仅支持除 ``ota`` 和 ``coredump`` 子类型外的 ``data`` 分区。使用该标记，防止意外写入如出厂数据分区等包含关键设备特定配置数据的分区。
+
+  .. note::
+
+      在任何写入模式下 (``w``、``w+``、``a``、``a+``、``r+``)，尝试通过 C 文件 I/O API 打开文件 (``fopen```) 的操作都将失败并返回 ``NULL``。除 ``O_RDONLY`` 外，``open`` 与任何标志一同使用都将失败并返回 ``-1``，全局变量 ``errno`` 也将设置为 ``EROFS``。上述情况同样适用于通过其他 POSIX 系统调用函数执行写入或擦除的操作。在只读分区上，以读写模式打开 NVS 的句柄将失败并返回 :c:macro:`ESP_ERR_NOT_ALLOWED` 错误代码，使用 ``esp_partition`` 或 ``spi_flash`` 等较低级别的 API 进行写入操作也将返回 :c:macro:`ESP_ERR_NOT_ALLOWED` 错误代码。
+
+可以使用冒号连接不同的标记，来同时指定多个标记，如 ``encrypted:readonly``。
 
 生成二进制分区表
 ----------------

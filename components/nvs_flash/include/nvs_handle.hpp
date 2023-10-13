@@ -222,6 +222,7 @@ protected:
  *             - ESP_ERR_NVS_NOT_FOUND id namespace doesn't exist yet and
  *               mode is NVS_READONLY
  *             - ESP_ERR_NVS_INVALID_NAME if namespace name doesn't satisfy constraints
+ *             - ESP_ERR_NOT_ALLOWED if the NVS partition is read-only and mode is NVS_READWRITE
  *             - other error codes from the underlying storage driver
  *
  * @return unique pointer of an nvs handle on success, an empty unique pointer otherwise

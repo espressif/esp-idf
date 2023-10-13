@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "WL_Ext_Perf.h"
+#include "Partition.h"
 #include <stdlib.h>
 #include "esp_log.h"
 
@@ -25,7 +26,7 @@ WL_Ext_Perf::~WL_Ext_Perf()
     free(this->sector_buffer);
 }
 
-esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Flash_Access *flash_drv)
+esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Partition *partition)
 {
     wl_ext_cfg_t *ext_cfg = (wl_ext_cfg_t *)cfg;
 
@@ -44,7 +45,7 @@ esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Flash_Access *flash_drv)
         return ESP_ERR_NO_MEM;
     }
 
-    return WL_Flash::config(cfg, flash_drv);
+    return WL_Flash::config(cfg, partition);
 }
 
 esp_err_t WL_Ext_Perf::init()

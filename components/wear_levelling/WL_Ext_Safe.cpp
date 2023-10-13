@@ -49,11 +49,11 @@ WL_Ext_Safe::~WL_Ext_Safe()
 {
 }
 
-esp_err_t WL_Ext_Safe::config(WL_Config_s *cfg, Flash_Access *flash_drv)
+esp_err_t WL_Ext_Safe::config(WL_Config_s *cfg, Partition *partition)
 {
     esp_err_t result = ESP_OK;
 
-    result = WL_Ext_Perf::config(cfg, flash_drv);
+    result = WL_Ext_Perf::config(cfg, partition);
     WL_EXT_RESULT_CHECK(result);
     /* two extra sectors will be reserved to store buffer transaction state WL_Ext_Safe_State
      and temporary storage of the actual sector data from the sector which is to be erased*/
