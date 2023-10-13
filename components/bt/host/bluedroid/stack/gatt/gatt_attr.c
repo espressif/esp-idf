@@ -40,7 +40,7 @@
 #define BLE_GATT_CL_SUPP_FEAT_BITMASK 0x07
 
 #define GATTP_MAX_NUM_INC_SVR       0
-#define GATTP_MAX_CHAR_NUM          4
+#define GATTP_MAX_CHAR_NUM          5
 #define GATTP_MAX_ATTR_NUM          (GATTP_MAX_CHAR_NUM * 2 + GATTP_MAX_NUM_INC_SVR + 1)
 #define GATTP_MAX_CHAR_VALUE_SIZE   50
 
@@ -205,18 +205,6 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
 
     p_rsp->attr_value.handle = p_data->handle;
 
-    /* handle request for reading service changed */
-    if (p_data->handle == gatt_cb.handle_of_h_r) {
-        status = GATTS_GetAttributeValue(p_data->handle, &len, &value);
-        if(status == GATT_SUCCESS && len > 0 && value) {
-            if(len > GATT_MAX_ATTR_LEN) {
-                len = GATT_MAX_ATTR_LEN;
-            }
-            p_rsp->attr_value.len = len;
-            memcpy(p_rsp->attr_value.value, value, len);
-        }
-    }
-
     /* handle request for reading client supported features */
     if (p_data->handle == gatt_cb.handle_of_cl_supported_feat) {
         if (tcb == NULL) {
@@ -224,7 +212,7 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
         }
         p_rsp->attr_value.len = 1;
         memcpy(p_rsp->attr_value.value, &tcb->cl_supp_feat, 1);
-        status = GATT_SUCCESS;
+        return GATT_SUCCESS;
     }
 
     /* handle request for reading database hash */
@@ -232,16 +220,25 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
         p_rsp->attr_value.len = BT_OCTET16_LEN;
         memcpy(p_rsp->attr_value.value, gatt_cb.database_hash, BT_OCTET16_LEN);
         gatt_sr_update_cl_status(tcb, true);
-        status = GATT_SUCCESS;
+        return GATT_SUCCESS;
     }
 
     /* handle request for reading server supported features */
     if (p_data->handle == gatt_cb.handle_of_sr_supported_feat) {
         p_rsp->attr_value.len = 1;
         memcpy(p_rsp->attr_value.value, &gatt_cb.gatt_sr_supported_feat_mask, 1);
-        status = GATT_SUCCESS;
+        return GATT_SUCCESS;
     }
 
+    /* handle request for reading service changed des and the others */
+    status = GATTS_GetAttributeValue(p_data->handle, &len, &value);
+    if(status == GATT_SUCCESS && len > 0 && value) {
+        if(len > GATT_MAX_ATTR_LEN) {
+            len = GATT_MAX_ATTR_LEN;
+        }
+        p_rsp->attr_value.len = len;
+        memcpy(p_rsp->attr_value.value, value, len);
+    }
     return status;
 }
 
