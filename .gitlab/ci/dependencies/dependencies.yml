@@ -11,7 +11,6 @@
 .target_test: &target_test
   - example_test
   - custom_test
-  - unit_test
   - component_ut
 
 ##############
@@ -116,14 +115,12 @@ build:integration_test:
 # -------------
 # Special Cases
 # -------------
-"test:component_ut-{0}": # component_ut will trigger by unit_test as well, since now we have 2 kinds of UT
+"test:component_ut-{0}":
   matrix:
     - *all_targets
   labels:
     - component_ut
     - "component_ut_{0}"
-    - unit_test
-    - "unit_test_{0}"
     - target_test
   patterns:
     - component_ut

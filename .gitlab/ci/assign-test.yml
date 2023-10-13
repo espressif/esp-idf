@@ -14,29 +14,6 @@
   script:
     - run_cmd python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py $TEST_TYPE $TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_DIR/test_configs
 
-assign_unit_test:
-  extends:
-    - .assign_test_template
-    - .rules:build:unit_test
-  needs:
-    - job: build_esp_idf_tests_cmake_esp32
-      optional: true
-    - job: build_esp_idf_tests_cmake_esp32s2
-      optional: true
-    - job: build_esp_idf_tests_cmake_esp32c2
-      optional: true
-    - job: build_esp_idf_tests_cmake_esp32c3
-      optional: true
-    - job: build_esp_idf_tests_cmake_esp32c6
-      optional: true
-    - job: build_esp_idf_tests_cmake_esp32h2
-      optional: true
-    - job: build_esp_idf_tests_cmake_esp32s3
-      optional: true
-  variables:
-    TEST_TYPE: unit_test
-    TEST_DIR: components/idf_test/unit_test
-
 assign_integration_test:
   extends:
     - .assign_test_template
