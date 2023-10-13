@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,11 +13,13 @@
 #include "driver/pcnt.h"
 #if SOC_LEDC_SUPPORTED
 #include "driver/ledc.h"
+#include "soc/ledc_periph.h"
 #endif
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/gpio_periph.h"
 #include "soc/pcnt_struct.h"
+#include "soc/pcnt_periph.h"
 #include "unity.h"
 #include "esp_rom_gpio.h"
 
@@ -31,21 +33,6 @@
 #define MIN_THRESHOLD 0
 #define PCNT_CTRL_HIGH_LEVEL 1
 #define PCNT_CTRL_LOW_LEVEL 0
-
-// The following items only used in the cases that involve LEDC
-#if SOC_LEDC_SUPPORTED
-
-static QueueHandle_t pcnt_evt_queue = NULL;
-
-typedef struct {
-    int zero_times;
-    int h_limit;
-    int l_limit;
-    int h_threshold;
-    int l_threshold;
-    int filter_time;
-} event_times;
-#endif // SOC_LEDC_SUPPORTED
 
 // test PCNT basic configuration
 TEST_CASE("PCNT_test_config", "[pcnt]")
@@ -108,14 +95,25 @@ TEST_CASE("PCNT_test_config", "[pcnt]")
 
 // The following test cases rely on the support of LEDC
 #if SOC_LEDC_SUPPORTED
+// The following items only used in the cases that involve LEDC
+static QueueHandle_t pcnt_evt_queue = NULL;
+
+typedef struct {
+    int zero_times;
+    int h_limit;
+    int l_limit;
+    int h_threshold;
+    int l_threshold;
+    int filter_time;
+} event_times;
 
 static void pcnt_test_io_config(int ctrl_level)
 {
     // Connect internal signals using IO matrix.
     gpio_set_direction(PULSE_IO, GPIO_MODE_INPUT_OUTPUT);
-    esp_rom_gpio_connect_out_signal(PULSE_IO, LEDC_LS_SIG_OUT1_IDX, 0, 0); // LEDC_TIMER_1, LEDC_LOW_SPEED_MODE
-    esp_rom_gpio_connect_in_signal(PULSE_IO, PCNT_SIG_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
-    esp_rom_gpio_connect_in_signal(ctrl_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT, PCNT_CTRL_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
+    esp_rom_gpio_connect_out_signal(PULSE_IO, ledc_periph_signal[LEDC_LOW_SPEED_MODE].sig_out0_idx + 1, 0, 0);  // LEDC_CHANNEL_1, LEDC_LOW_SPEED_MODE
+    esp_rom_gpio_connect_in_signal(PULSE_IO, pcnt_periph_signals.groups[0].units[0].channels[0].pulse_sig, 0);      // PCNT_UNIT_0, PCNT_CHANNEL_0
+    esp_rom_gpio_connect_in_signal(ctrl_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT, pcnt_periph_signals.groups[0].units[0].channels[0].control_sig, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
 }
 
 /* use LEDC to produce pulse for PCNT

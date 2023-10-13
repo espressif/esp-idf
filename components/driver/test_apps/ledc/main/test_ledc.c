@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,11 @@
 #if SOC_LEDC_SUPPORT_APB_CLOCK
 #define TEST_DEFAULT_CLK_CFG LEDC_USE_APB_CLK
 #elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+#if SOC_CLK_TREE_SUPPORTED
 #define TEST_DEFAULT_CLK_CFG LEDC_USE_PLL_DIV_CLK
+#else
+#define TEST_DEFAULT_CLK_CFG LEDC_USE_XTAL_CLK
+#endif
 #endif
 
 static ledc_channel_config_t initialize_channel_config(void)
@@ -541,12 +545,13 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
         .speed_mode = speed_mode,
         .duty_resolution = timer_bit,
         .timer_num = timer,
-        .freq_hz = 5000,
+        .freq_hz = TEST_PWM_FREQ,
         .clk_cfg = TEST_DEFAULT_CLK_CFG,
     };
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     frequency_set_get(speed_mode, timer, 100, 100, 20);
+#if SOC_CLK_TREE_SUPPORTED
     frequency_set_get(speed_mode, timer, 5000, 5000, 50);
     // Try a frequency that couldn't be exactly achieved, requires rounding
     uint32_t theoretical_freq = 9000;
@@ -558,6 +563,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
         theoretical_freq = 9009;
     }
     frequency_set_get(speed_mode, timer, 9000, theoretical_freq, 50);
+#endif
 
     // Pause and de-configure the timer so that it won't affect the following test cases
     TEST_ESP_OK(ledc_timer_pause(speed_mode, timer));
@@ -581,6 +587,7 @@ TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
     tear_testbench();
 }
 
+#if SOC_CLK_TREE_SUPPORTED
 static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg_t clk_src, uint32_t duty_res,
         uint32_t freq_hz)
 {
@@ -648,6 +655,7 @@ TEST_CASE("LEDC timer select specific clock source", "[ledc]")
 
     tear_testbench();
 }
+#endif  //SOC_CLK_TREE_SUPPORTED
 
 TEST_CASE("LEDC timer pause and resume", "[ledc]")
 {
@@ -669,14 +677,14 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
         .speed_mode = test_speed_mode,
         .duty_resolution = LEDC_TIMER_13_BIT,
         .timer_num = LEDC_TIMER_0,
-        .freq_hz = 5000,
+        .freq_hz = TEST_PWM_FREQ,
         .clk_cfg = TEST_DEFAULT_CLK_CFG,
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(5, 5000, count);
+    TEST_ASSERT_INT16_WITHIN(5, TEST_PWM_FREQ, count);
 
     //pause ledc timer, when pause it, will get no waveform count
     printf("Pause ledc timer\n");
@@ -690,14 +698,14 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
     TEST_ESP_OK(ledc_timer_resume(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, 5000, count);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, count);
 
     //reset ledc timer
     printf("reset ledc timer\n");
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(100 / portTICK_PERIOD_MS);
     count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, 5000, count);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, count);
     tear_testbench();
 }
 

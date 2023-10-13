@@ -79,6 +79,10 @@ config SOC_GPSPI_SUPPORTED
     bool
     default y
 
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
 config SOC_I2C_SUPPORTED
     bool
     default y
@@ -525,19 +529,27 @@ config SOC_LEDC_SUPPORT_XTAL_CLOCK
 
 config SOC_LEDC_CHANNEL_NUM
     int
-    default 6
+    default 8
 
 config SOC_LEDC_TIMER_BIT_WIDTH
     int
     default 20
 
+config SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+    bool
+    default y
+
+config SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
+    int
+    default 16
+
 config SOC_LEDC_SUPPORT_FADE_STOP
     bool
     default y
 
-config SOC_LEDC_GAMMA_FADE_RANGE_MAX
+config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
     int
-    default 16
+    default 10
 
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
