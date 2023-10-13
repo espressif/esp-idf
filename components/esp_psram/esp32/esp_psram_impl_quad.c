@@ -668,32 +668,45 @@ static esp_err_t IRAM_ATTR psram_2t_mode_enable(psram_spi_num_t spi_num)
     return ESP_OK;
 }
 
-#define CHECK_DATA_LEN   (1024)
+#define CHECK_DATA_LEN   (512) // Needs 1.5 kB of stack.
 #define CHECK_ADDR_STEP  (0x100000)
 #define SIZE_32MBIT      (0x400000)
 #define SIZE_64MBIT      (0x800000)
 
 static esp_err_t psram_2t_mode_check(psram_spi_num_t spi_num)
 {
-    uint8_t w_check_data[CHECK_DATA_LEN] = {0};
-    uint8_t r_check_data[CHECK_DATA_LEN] = {0};
+    // Save and restore used RAM to keep noinit data intact.
+    uint8_t check_data[CHECK_DATA_LEN];
+    uint8_t saved_data_lo[CHECK_DATA_LEN];
+    uint8_t saved_data_hi[CHECK_DATA_LEN];
 
-    for (uint32_t addr = 0; addr < SIZE_32MBIT; addr += CHECK_ADDR_STEP) {
-        spi_user_psram_write(spi_num, addr, (uint32_t *)w_check_data, CHECK_DATA_LEN);
-    }
+    for (uint32_t addr=0; addr<SIZE_32MBIT; addr+=CHECK_ADDR_STEP) {
 
-    memset(w_check_data, 0xff, sizeof(w_check_data));
+        // Save low and high bank.
+        spi_user_psram_read(spi_num, addr, (uint32_t *)saved_data_lo, CHECK_DATA_LEN);
+        spi_user_psram_read(spi_num, addr + SIZE_32MBIT, (uint32_t *)saved_data_hi, CHECK_DATA_LEN);
 
-    for (uint32_t addr = SIZE_32MBIT; addr < SIZE_64MBIT; addr += CHECK_ADDR_STEP) {
-        spi_user_psram_write(spi_num, addr, (uint32_t *)w_check_data, CHECK_DATA_LEN);
-    }
+        // Write 0x00 to low bank.
+        memset(check_data, 0x00, sizeof(check_data));
+        spi_user_psram_write(spi_num, addr, (uint32_t *)check_data, CHECK_DATA_LEN);
 
-    for (uint32_t addr = 0; addr < SIZE_32MBIT; addr += CHECK_ADDR_STEP) {
-        spi_user_psram_read(spi_num, addr, (uint32_t *)r_check_data, CHECK_DATA_LEN);
-        for (uint32_t j = 0; j < CHECK_DATA_LEN; j++) {
-            if (r_check_data[j] != 0xff) {
-                return ESP_FAIL;
-            }
+        // Write 0xff to high bank.
+        memset(check_data, 0xff, sizeof(check_data));
+        spi_user_psram_write(spi_num, addr + SIZE_32MBIT, (uint32_t *)check_data, CHECK_DATA_LEN);
+
+        // Check low bank for 0xff.
+        int error = 0;
+        spi_user_psram_read(spi_num, addr, (uint32_t *)check_data, CHECK_DATA_LEN);
+        for (uint32_t j=0; j<CHECK_DATA_LEN; j++) {
+            error += check_data[j] != 0xff;
+        }
+
+        // Restore saved memory.
+        spi_user_psram_write(spi_num, addr, (uint32_t *)saved_data_lo, CHECK_DATA_LEN);
+        spi_user_psram_write(spi_num, addr + SIZE_32MBIT, (uint32_t *)saved_data_hi, CHECK_DATA_LEN);
+
+        if (error) {
+            return ESP_FAIL;
         }
     }
 
