@@ -118,7 +118,7 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
 static esp_err_t check_valid(const adc_cali_line_fitting_config_t *config)
 {
     ESP_RETURN_ON_FALSE(config->unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC unit");
-    ESP_RETURN_ON_FALSE((config->atten == ADC_ATTEN_DB_0 || config->atten == ADC_ATTEN_DB_11), ESP_ERR_NOT_SUPPORTED, TAG, "only ADC_ATTEN_DB_0 and ADC_ATTEN_DB_11 are supported");
+    ESP_RETURN_ON_FALSE((config->atten == ADC_ATTEN_DB_0 || config->atten == ADC_ATTEN_DB_12), ESP_ERR_NOT_SUPPORTED, TAG, "only ADC_ATTEN_DB_0 and ADC_ATTEN_DB_12 are supported");
     if (config->atten == ADC_ATTEN_DB_0) {
         ESP_LOGW(TAG, "Experimental: ADC Atten 0 calibration can now only used for inputs lower than 950mV. Calibration Scheme may get updated, DON'T USE FOR MASS PRODUCTION!");
     }

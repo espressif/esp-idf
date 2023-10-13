@@ -38,7 +38,7 @@
 #endif
 #define EXAMPLE_DAC_CHAN0_IO                DAC_CHAN0_GPIO_NUM             // DAC channel 0 io number
 #define EXAMPLE_DAC_CHAN1_IO                DAC_CHAN1_GPIO_NUM             // DAC channel 1 io number
-#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_11
+#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_12
 
 _Static_assert(EXAMPLE_DAC_AMPLITUDE < 256, "The DAC accuracy is 8 bit-width, doesn't support the amplitude beyond 255");
 
