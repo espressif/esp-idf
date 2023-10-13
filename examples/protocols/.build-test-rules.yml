@@ -143,6 +143,12 @@ examples/protocols/modbus:
       temporary: true
       reason: not supported on p4 # TODO: IDF-7869
 
+examples/protocols/mqtt/custom_outbox:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: not supported on p4 # TODO: IDF-8077
+
 examples/protocols/mqtt/ssl:
   disable:
     - if: IDF_TARGET == "esp32p4"
