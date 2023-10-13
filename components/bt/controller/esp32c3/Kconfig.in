@@ -279,20 +279,19 @@ choice BT_CTRL_SCAN_DUPL_TYPE
     config BT_CTRL_SCAN_DUPL_TYPE_DEVICE
         bool "Scan Duplicate By Device Address"
         help
-            This way is to use advertiser address filtering. The adv packet of the same address is only
-            allowed to be reported once
+            Advertising packets with the same address, address type, and advertising type are reported once.
 
     config BT_CTRL_SCAN_DUPL_TYPE_DATA
         bool "Scan Duplicate By Advertising Data"
         help
-            This way is to use advertising data filtering. All same advertising data only allow to be reported
-            once even though they are from different devices.
+            Advertising packets with identical advertising data, address type, and advertising type
+            are reported only once, even if they originate from different devices.
 
     config BT_CTRL_SCAN_DUPL_TYPE_DATA_DEVICE
         bool "Scan Duplicate By Device Address And Advertising Data"
         help
-            This way is to use advertising data and device address filtering. All different adv packets with
-            the same address are allowed to be reported.
+            Advertising packets with the same address, advertising data, address type,
+            and advertising type are reported only once.
 endchoice
 
 config BT_CTRL_SCAN_DUPL_TYPE
