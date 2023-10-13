@@ -33,7 +33,7 @@
 #define ADC_TEST_WIDTH         ADC_BITWIDTH_13
 #endif
 
-#define ADC_TEST_ATTEN         ADC_ATTEN_DB_11
+#define ADC_TEST_ATTEN         ADC_ATTEN_DB_12
 
 TEST_CASE("DAC_API_basic_logic_test", "[dac]")
 {

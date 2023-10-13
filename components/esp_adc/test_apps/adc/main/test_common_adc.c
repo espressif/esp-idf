@@ -20,9 +20,9 @@ __attribute__((unused)) static const char *TAG = "TEST_ADC";
         ADC Attenuation
 ---------------------------------------------------------------*/
 #if CONFIG_IDF_TARGET_ESP32C2
-adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_11};
+adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_12};
 #else
-adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_11};
+adc_atten_t g_test_atten[TEST_ATTEN_NUMS] = {ADC_ATTEN_DB_0, ADC_ATTEN_DB_2_5, ADC_ATTEN_DB_6, ADC_ATTEN_DB_12};
 #endif
 
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
