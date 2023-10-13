@@ -126,7 +126,7 @@ ESP-IDF FreeRTOS
 FreeRTOS 附加功能
 ------------------
 
-ESP-IDF 还为 FreeRTOS 提供了一些补充功能，如环形缓冲区、ESP-IDF 风格的 Tick 和 Idle 钩子、以及 TLSP 删除回调。要了解更多信息，请参见 :doc:`freertos_additions`。
+ESP-IDF 还为 FreeRTOS 提供了一些补充功能，如环形 buffer、ESP-IDF 风格的 tick 钩子和 idle 钩子、以及 TLSP 删除回调。要了解更多信息，请参见 :doc:`freertos_additions`。
 
 .. _freertos-heap:
 
