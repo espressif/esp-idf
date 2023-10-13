@@ -16,6 +16,8 @@
 #include "esp_check.h"
 #include "freertos/FreeRTOS.h"
 
+static __attribute__((unused)) const char *TAG = "sleep_event";
+
 #if CONFIG_ESP_SLEEP_EVENT_CALLBACKS
 esp_sleep_event_cbs_config_t g_sleep_event_cbs_config;
 static portMUX_TYPE s_sleep_event_mutex = portMUX_INITIALIZER_UNLOCKED;
@@ -70,22 +72,21 @@ esp_err_t esp_sleep_unregister_event_callback(esp_sleep_event_cb_index_t event_i
 }
 #endif
 
-#if CONFIG_ESP_SLEEP_EVENT_CALLBACKS
-esp_err_t IRAM_ATTR esp_sleep_execute_event_callbacks(esp_sleep_event_cb_index_t event_id, void *ext_arg)
+void IRAM_ATTR esp_sleep_execute_event_callbacks(esp_sleep_event_cb_index_t event_id, void *ext_arg)
 {
+#if CONFIG_ESP_SLEEP_EVENT_CALLBACKS
     if (event_id >= SLEEP_EVENT_CB_INDEX_NUM) {
-        return ESP_ERR_INVALID_ARG;
+        ESP_EARLY_LOGW(TAG, "event_id out of range");
+        return;
     }
     esp_sleep_event_cb_config_t *current = g_sleep_event_cbs_config.sleep_event_cb_config[event_id];
     while (current != NULL) {
-        (current->cb)(current->user_arg, ext_arg);
+        if (current->cb != NULL) {
+            if (ESP_OK != (*current->cb)(current->user_arg, ext_arg)) {
+                ESP_EARLY_LOGW(TAG, "esp_sleep_execute_event_callbacks has an err, current->cb = %p", current->cb);
+            }
+        }
         current = current->next;
     }
-    return ESP_OK;
-}
-#else
-esp_err_t IRAM_ATTR esp_sleep_execute_event_callbacks(esp_sleep_event_cb_index_t event_id, void *ext_arg)
-{
-    return ESP_OK;
-}
 #endif
+}

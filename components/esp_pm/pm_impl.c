@@ -209,7 +209,7 @@ pm_mode_t esp_pm_impl_get_mode(esp_pm_lock_type_t type, int arg)
 /**
  * @brief Function entry parameter types for light sleep callback functions (if CONFIG_FREERTOS_USE_TICKLESS_IDLE)
  */
-typedef struct {
+struct _esp_pm_sleep_cb_config_t {
     /**
      * Callback function defined by user.
      */
@@ -226,7 +226,9 @@ typedef struct {
      * Next callback function defined by user.
      */
     struct _esp_pm_sleep_cb_config_t *next;
-} esp_pm_sleep_cb_config_t;
+};
+
+typedef struct _esp_pm_sleep_cb_config_t esp_pm_sleep_cb_config_t;
 
 static esp_pm_sleep_cb_config_t *s_light_sleep_enter_cb_config;
 static esp_pm_sleep_cb_config_t *s_light_sleep_exit_cb_config;
@@ -324,24 +326,30 @@ esp_err_t esp_pm_light_sleep_unregister_cbs(esp_pm_sleep_cbs_register_config_t *
     return ESP_OK;
 }
 
-static esp_err_t IRAM_ATTR esp_pm_execute_enter_sleep_callbacks(int64_t sleep_time_us)
+static void IRAM_ATTR esp_pm_execute_enter_sleep_callbacks(int64_t sleep_time_us)
 {
     esp_pm_sleep_cb_config_t *enter_current = s_light_sleep_enter_cb_config;
     while (enter_current != NULL) {
-        enter_current->cb(sleep_time_us, enter_current->arg);
+        if (enter_current->cb != NULL) {
+            if (ESP_OK != (*enter_current->cb)(sleep_time_us, enter_current->arg)) {
+                ESP_EARLY_LOGW(TAG, "esp_pm_execute_enter_sleep_callbacks has an err, enter_current = %p", enter_current);
+            }
+        }
         enter_current = enter_current->next;
     }
-    return ESP_OK;
 }
 
-static esp_err_t IRAM_ATTR esp_pm_execute_exit_sleep_callbacks(int64_t sleep_time_us)
+static void IRAM_ATTR esp_pm_execute_exit_sleep_callbacks(int64_t sleep_time_us)
 {
     esp_pm_sleep_cb_config_t *exit_current = s_light_sleep_exit_cb_config;
     while (exit_current != NULL) {
-        exit_current->cb(sleep_time_us, exit_current->arg);
+        if (exit_current->cb != NULL) {
+            if (ESP_OK != (*exit_current->cb)(sleep_time_us, exit_current->arg)) {
+                ESP_EARLY_LOGW(TAG, "esp_pm_execute_exit_sleep_callbacks has an err, exit_current = %p", exit_current);
+            }
+        }
         exit_current = exit_current->next;
     }
-    return ESP_OK;
 }
 #endif
 
@@ -770,21 +778,13 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
         int64_t time_until_next_alarm = next_esp_timer_alarm - now;
         int64_t wakeup_delay_us = portTICK_PERIOD_MS * 1000LL * xExpectedIdleTime;
         int64_t sleep_time_us = MIN(wakeup_delay_us, time_until_next_alarm);
-        if (sleep_time_us >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP * portTICK_PERIOD_MS * 1000LL) {
-            int64_t slept_us = 0;
+        int64_t slept_us = 0;
 #if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
-            if (s_light_sleep_enter_cb_config != NULL && s_light_sleep_enter_cb_config->cb) {
-                uint32_t cycle = esp_cpu_get_cycle_count();
-                esp_err_t err = esp_pm_execute_enter_sleep_callbacks(sleep_time_us);
-                if (err != ESP_OK) {
-                    portEXIT_CRITICAL(&s_switch_lock);
-                    return;
-                }
-                sleep_time_us -= (esp_cpu_get_cycle_count() - cycle) / (esp_clk_cpu_freq() / 1000000ULL);
-            }
-            if (sleep_time_us >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP * portTICK_PERIOD_MS * 1000LL)
-            {
+        uint32_t cycle = esp_cpu_get_cycle_count();
+        esp_pm_execute_enter_sleep_callbacks(sleep_time_us);
+        sleep_time_us -= (esp_cpu_get_cycle_count() - cycle) / (esp_clk_cpu_freq() / 1000000ULL);
 #endif
+        if (sleep_time_us >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP * portTICK_PERIOD_MS * 1000LL) {
             esp_sleep_enable_timer_wakeup(sleep_time_us - LIGHT_SLEEP_EARLY_WAKEUP_US);
 #if CONFIG_PM_TRACE && SOC_PM_SUPPORT_RTC_PERIPH_PD
             /* to force tracing GPIOs to keep state */
@@ -823,13 +823,10 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
 #endif
             }
             other_core_should_skip_light_sleep(core_id);
-#if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
-            }
-            if (s_light_sleep_exit_cb_config != NULL && s_light_sleep_exit_cb_config->cb) {
-                esp_pm_execute_exit_sleep_callbacks(slept_us);
-            }
-#endif
         }
+#if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
+        esp_pm_execute_exit_sleep_callbacks(slept_us);
+#endif
     }
     portEXIT_CRITICAL(&s_switch_lock);
 }
