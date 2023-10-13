@@ -196,6 +196,9 @@ static const char* TAG = "pm";
 static void do_switch(pm_mode_t new_mode);
 static void leave_idle(void);
 static void on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_per_us);
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+static size_t esp_pm_get_total_lock_count(void);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
 
 pm_mode_t esp_pm_impl_get_mode(esp_pm_lock_type_t type, int arg)
 {
@@ -972,7 +975,9 @@ void esp_pm_impl_idle_hook(void)
         it is necessary to back up the mac/bb REG before disabling the PLL clock.
         */
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
-        mac_bb_power_down_prepare();
+        if (esp_pm_get_total_lock_count() <= portNUM_PROCESSORS) {
+            mac_bb_power_down_prepare();
+        }
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
         esp_pm_lock_release(s_rtos_lock_handle[core_id]);
         s_core_idle[core_id] = true;
@@ -1037,3 +1042,16 @@ void esp_pm_impl_waiti(void)
     esp_cpu_wait_for_intr();
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+static size_t esp_pm_get_total_lock_count(void)
+{
+    size_t all_mode_lock_counts = 0;
+    portENTER_CRITICAL(&s_switch_lock);
+    for (int i = 0; i < ARRAY_SIZE(s_mode_lock_counts); i++) {
+        all_mode_lock_counts += s_mode_lock_counts[i];
+    }
+    portEXIT_CRITICAL(&s_switch_lock);
+    return all_mode_lock_counts;
+}
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
