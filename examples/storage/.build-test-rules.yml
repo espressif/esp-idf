@@ -131,11 +131,9 @@ examples/storage/sd_card/sdmmc:
 
 examples/storage/sd_card/sdspi:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4"]
-      temporary: true
-      reason: Not supported
+    - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6"]
+    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6", "esp32h2", "esp32p4"]
       temporary: true
       reason: lack of runners
 
