@@ -5,7 +5,7 @@
 
 本节将介绍如何在 :ref:`Eclipse <jtag-debugging-examples-eclipse>` 和 :ref:`命令行 <jtag-debugging-examples-command-line>` 中使用 GDB 进行调试的示例。
 
-.. code-block:: none
+.. highlight:: none
 
 
 .. _jtag-debugging-examples-eclipse:

@@ -5,7 +5,7 @@ Debugging Examples
 
 This section describes debugging with GDB from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
 
-.. code-block:: none
+.. highlight:: none
 
 
 .. _jtag-debugging-examples-eclipse:

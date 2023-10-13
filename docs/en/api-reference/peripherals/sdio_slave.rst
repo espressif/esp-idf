@@ -96,7 +96,7 @@ Connections
 
         Here is a list of modules/kits with 3.3 V flash:
 
-        - Modules: All modules except ESP32-WROVER、ESP32-WROVER-I、ESP32-S3-WROOM-2, and please check `模组概览 <https://www.espressif.com/zh-hans/products/modules>`__ for module list
+        - Modules: All modules except ESP32-WROVER, ESP32-WROVER-I, ESP32-S3-WROOM-2, and please check `Modules Overview <https://www.espressif.com/en/products/modules>`__ for module list
         - Kits: ESP32-PICO-KIT, ESP32-DevKitC (up to v4), ESP32-WROVER-KIT (v4.1 [also known as ESP32-WROVER-KIT-VB], v2, v1 [also known as DevKitJ v1])
 
         You can tell the version of your ESP23-WROVER-KIT version from the module on it: v4.1 are with ESP32-WROVER-B modules, v3 are with ESP32-WROVER modules, while v2 and v1 are with ESP32-WROOM-32 modules.
@@ -170,7 +170,7 @@ The host can trigger an interruption in the slave by writing a single bit to the
 
 .. note::
 
-  The callback function is called in the ISR. Do not use any delay, loop or blocking function in the callback, e.g. mutex.
+  The callback function is called in the ISR. Do not use any delay, loop or blocking function in the callback, e.g., mutex.
 
 Similar to the previous information, there's an alternative set of functions available. You can call ``sdio_slave_wait_int`` to wait for an interrupt within a certain time, or call ``sdio_slave_clear_int`` to clear interrupts from host. The callback function can work with the wait functions perfectly.
 

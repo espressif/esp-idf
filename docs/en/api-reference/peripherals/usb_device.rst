@@ -32,7 +32,7 @@ Hardware USB Connection
 
 - Any board with the {IDF_TARGET_NAME} chip with USB connectors or with exposed USB's D+ and D- (DATA+/DATA-) pins.
 
-If the board has no USB connector but has the pins, connect pins directly to the host (e.g. with do-it-yourself cable from any USB connection cable).
+If the board has no USB connector but has the pins, connect pins directly to the host (e.g., with do-it-yourself cable from any USB connection cable).
 
 On {IDF_TARGET_NAME}, connect GPIO {IDF_TARGET_USB_DP_GPIO_NUM} and {IDF_TARGET_USB_DM_GPIO_NUM} to D+/D- respectively:
 
@@ -95,7 +95,7 @@ Install Driver
 
 To initialize the driver, users should call :cpp:func:`tinyusb_driver_install`. The driver's configuration is specified in a :cpp:type:`tinyusb_config_t` structure that is passed as an argument to :cpp:func:`tinyusb_driver_install`.
 
- Note that the :cpp:type:`tinyusb_config_t` structure can be zero initialized (e.g. ``const tinyusb_config_t tusb_cfg = { 0 };``) or partially (as shown below). For any member that is initialized to `0` or `NULL`, the driver will use its default configuration values for that member (see example below)
+ Note that the :cpp:type:`tinyusb_config_t` structure can be zero initialized (e.g., ``const tinyusb_config_t tusb_cfg = { 0 };``) or partially (as shown below). For any member that is initialized to `0` or `NULL`, the driver will use its default configuration values for that member (see example below)
 
 .. code-block:: c
 

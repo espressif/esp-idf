@@ -22,7 +22,7 @@ ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The defaul
     ------------------------------------------------------------------------------------------------------------
     | MAC Header | Category Code | Organization Identifier | Random Values | Vendor Specific Content |   FCS   |
     ------------------------------------------------------------------------------------------------------------
-      24 bytes         1 byte              3 bytes               4 bytes             7~257 bytes        4 bytes 
+      24 bytes         1 byte              3 bytes               4 bytes             7-257 bytes        4 bytes
 
 - Category Code: The Category Code field is set to the value (127) indicating the vendor-specific category.
 - Organization Identifier: The Organization Identifier contains a unique identifier (0x18fe34), which is the first three bytes of MAC address applied by Espressif.
@@ -36,7 +36,7 @@ ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The defaul
     -------------------------------------------------------------------------------
     | Element ID | Length | Organization Identifier | Type | Version |    Body    |
     -------------------------------------------------------------------------------
-        1 byte     1 byte            3 bytes         1 byte   1 byte   0~250 bytes 
+        1 byte     1 byte            3 bytes         1 byte   1 byte   0-250 bytes
 
 - Element ID: The Element ID field is set to the value (221), indicating the vendor-specific element.
 - Length: The length is the total length of Organization Identifier, Type, Version and Body.
@@ -89,7 +89,7 @@ If there is a lot of ESP-NOW data to send, call :cpp:func:`esp_now_send()` to se
 Receiving ESP-NOW Data
 ----------------------
 
-Call :cpp:func:`esp_now_register_recv_cb()` to register receiving callback function.  Call the receiving callback function when receiving ESP-NOW. The receiving callback function also runs from the Wi-Fi task. So, do not do lengthy operations in the callback function. 
+Call :cpp:func:`esp_now_register_recv_cb()` to register receiving callback function.  Call the receiving callback function when receiving ESP-NOW. The receiving callback function also runs from the Wi-Fi task. So, do not do lengthy operations in the callback function.
 Instead, post the necessary data to a queue and handle it from a lower priority task.
 
 Config ESP-NOW Rate

@@ -48,7 +48,7 @@ To use the partial image download feature, enable ``partial_http_download`` conf
 
 This option is useful while fetching image from a service like AWS S3, where mbedTLS Rx buffer size (:ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`) can be set to a lower value which is not possible without enabling this configuration.
 
-Default value of mbedTLS Rx buffer size is set to 16 K. By using ``partial_http_download`` with ``max_http_request_size`` of 4 K, size of mbedTLS Rx buffer can be reduced to 4 K. With this configuration, memory saving of around 12 K is expected.
+Default value of mbedTLS Rx buffer size is set to 16 KB. By using ``partial_http_download`` with ``max_http_request_size`` of 4 KB, size of mbedTLS Rx buffer can be reduced to 4 KB. With this configuration, memory saving of around 12 KB is expected.
 
 
 Signature Verification
