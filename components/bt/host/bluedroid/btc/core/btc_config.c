@@ -311,6 +311,14 @@ bool btc_config_remove_section(const char *section)
     return config_remove_section(config, section);
 }
 
+bool btc_config_update_newest_section(const char *section)
+{
+    assert(config != NULL);
+    assert(section != NULL);
+
+    return config_update_newest_section(config, section);
+}
+
 void btc_config_flush(void)
 {
     assert(config != NULL);
