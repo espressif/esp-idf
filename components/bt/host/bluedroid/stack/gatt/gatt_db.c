@@ -780,13 +780,24 @@ tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
 ** Returns          Status of the operation.
 **
 *******************************************************************************/
-static tGATT_STATUS gatts_get_attr_value_internal(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+tGATT_STATUS gatts_get_attr_value_internal(UINT16 attr_handle, UINT16 *length, UINT8 **value)
 {
     UINT8 i;
     tGATT_READ_REQ read_req;
     tGATT_STATUS status = GATT_NOT_FOUND;
     tGATT_SR_REG *p_rcb = gatt_cb.sr_reg;
     UINT8 service_uuid[LEN_UUID_128] = {0};
+
+    if (length == NULL){
+        GATT_TRACE_ERROR("gatts_get_attr_value_internal Fail:length is NULL.\n");
+        return GATT_INVALID_PDU;
+    }
+
+    if (value == NULL){
+        GATT_TRACE_ERROR("gatts_get_attr_value_internal Fail:value is NULL.\n");
+        *length = 0;
+        return GATT_INVALID_PDU;
+    }
 
     // find the service by handle
     for (i = 0; i < GATT_MAX_SR_PROFILES; i++, p_rcb++) {
@@ -866,10 +877,6 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:value is NULL.\n");
         *length = 0;
         return GATT_INVALID_PDU;
-    }
-
-    if (gatts_get_attr_value_internal(attr_handle, length, value) == GATT_SUCCESS) {
-        return GATT_SUCCESS;
     }
 
     p_cur = (tGATT_ATTR16 *) p_db->p_attr_list;
