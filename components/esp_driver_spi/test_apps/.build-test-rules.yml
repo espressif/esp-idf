@@ -1,3 +1,9 @@
+components/esp_driver_spi/test_apps/spi:
+  depends_components:
+    - esp_mm  # for cache
+    - esp_driver_spi
+    - esp_driver_gpio
+
 components/esp_driver_spi/test_apps/spi/master:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
