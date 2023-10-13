@@ -51,6 +51,8 @@ public:
 
     esp_err_t get_item_size(ItemType datatype, const char *key, size_t &size) override;
 
+    esp_err_t find_key(const char *key, nvs_type_t &nvstype) override;
+
     esp_err_t erase_item(const char *key) override;
 
     esp_err_t erase_all() override;
