@@ -14,8 +14,6 @@ menu "Hardware Settings"
                 software recognize the chip version based on the rev selected in menuconfig.
     endmenu
 
-    orsource "./port/$IDF_TARGET/Kconfig.spiram"
-
     menu "MAC Config"
         config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
             bool
