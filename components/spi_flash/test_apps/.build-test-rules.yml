@@ -5,6 +5,15 @@ components/spi_flash/test_apps/esp_flash:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: target esp32p4 is not supported yet # TODO: IDF-7499
+  depends_filepatterns:
+    - components/driver/gpio/**/*
+    - components/driver/spi/**/*
+    - components/bootloader_support/bootloader_flash/**/*
+  depends_components:
+    - esp_mm
+    - esp_psram
+    - spi_flash
+    - esptool_py # Some flash related kconfigs are listed here.
 
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
@@ -15,6 +24,9 @@ components/spi_flash/test_apps/flash_encryption:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: target esp32p4 is not supported yet # TODO: IDF-7545
+  depends_components:
+    - esp_mm
+    - spi_flash
 
 components/spi_flash/test_apps/flash_suspend:
   disable:
@@ -26,6 +38,10 @@ components/spi_flash/test_apps/flash_suspend:
     - if: IDF_TARGET != "esp32c3"
       temporary: true
       reason: lack of runners
+  depends_filepatterns:
+    - components/driver/gptimer/**/*
+  depends_components:
+    - spi_flash
 
 components/spi_flash/test_apps/mspi_test:
   disable:
@@ -37,3 +53,12 @@ components/spi_flash/test_apps/mspi_test:
     - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32p4"]
       temporary: true
       reason: not supported yet #TODO: IDF-7556 for p4
+  depends_filepatterns:
+    - components/driver/gpio/**/*
+    - components/driver/spi/**/*
+    - components/bootloader_support/bootloader_flash/**/*
+  depends_components:
+    - esp_mm
+    - esp_psram
+    - spi_flash
+    - esptool_py # Some flash related kconfigs are listed here.
