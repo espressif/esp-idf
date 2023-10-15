@@ -43,7 +43,6 @@
 
 /* ------------------ Scheduler Related -------------------- */
 
-#define configMAX_PRIORITIES                           ( 25 )
 #ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
     #define configUSE_PORT_OPTIMISED_TASK_SELECTION    1
 #else

@@ -90,6 +90,7 @@
 #endif /* configUSE_TICKLESS_IDLE */
 #define configCPU_CLOCK_HZ                           ( CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000 )
 #define configTICK_RATE_HZ                           CONFIG_FREERTOS_HZ
+#define configMAX_PRIORITIES                         ( 25 )
 #define configUSE_TIME_SLICING                       1
 #define configUSE_16_BIT_TICKS                       0
 #define configIDLE_SHOULD_YIELD                      0
@@ -171,11 +172,11 @@
 
 /* ------------------- Software Timer ---------------------- */
 
-#define configUSE_TIMERS                1
-#define configTIMER_TASK_PRIORITY       CONFIG_FREERTOS_TIMER_TASK_PRIORITY
-#define configTIMER_QUEUE_LENGTH        CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
-#define configTIMER_TASK_STACK_DEPTH    CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
-#define configTIMER_SERVICE_TASK_NAME   CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
+#define configUSE_TIMERS                 1
+#define configTIMER_TASK_PRIORITY        CONFIG_FREERTOS_TIMER_TASK_PRIORITY
+#define configTIMER_QUEUE_LENGTH         CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
+#define configTIMER_TASK_STACK_DEPTH     CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
+#define configTIMER_SERVICE_TASK_NAME    CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
 
 /* -------------------- API Includes ----------------------- */
 
