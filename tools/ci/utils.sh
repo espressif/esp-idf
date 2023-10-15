@@ -49,6 +49,11 @@ function set_component_ut_vars() {
   echo "exported variables COMPONENT_UT_DIRS, COMPONENT_UT_EXCLUDES"
 }
 
+function upload_artifacts_to_s3() {
+  # for detailed documents, please refer to .gitlab/ci/README.md#uploaddownload-artifacts-to-internal-minio-server
+  python tools/ci/artifacts_handler.py upload
+}
+
 function error() {
   printf "\033[0;31m%s\n\033[0m" "${1}" >&2
 }

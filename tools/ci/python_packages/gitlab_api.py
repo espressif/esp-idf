@@ -80,7 +80,7 @@ class Gitlab(object):
         self.gitlab_inst = gitlab.Gitlab.from_config(gitlab_id=gitlab_id, config_files=config_files)
         self.gitlab_inst.auth()
         if project_id:
-            self.project = self.gitlab_inst.projects.get(project_id)
+            self.project = self.gitlab_inst.projects.get(project_id, lazy=True)
         else:
             self.project = None
 

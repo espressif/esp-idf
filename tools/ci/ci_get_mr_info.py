@@ -3,7 +3,7 @@
 # internal use only for CI
 # get latest MR information by source branch
 #
-# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -73,6 +73,16 @@ def get_mr_components(source_branch: str) -> t.List[str]:
     return list(components)
 
 
+def get_target_in_tags(tags: str) -> str:
+    from idf_pytest.constants import TARGET_MARKERS
+
+    for x in tags.split(','):
+        if x in TARGET_MARKERS:
+            return x
+
+    raise RuntimeError(f'No target marker found in {tags}')
+
+
 def _print_list(_list: t.List[str], separator: str = '\n') -> None:
     print(separator.join(_list))
 
@@ -88,6 +98,8 @@ if __name__ == '__main__':
     actions.add_parser('files', parents=[common_args])
     actions.add_parser('commits', parents=[common_args])
     actions.add_parser('components', parents=[common_args])
+    target = actions.add_parser('target_in_tags')
+    target.add_argument('tags', help='comma separated tags, e.g., esp32,generic')
 
     args = parser.parse_args()
 
@@ -99,5 +111,7 @@ if __name__ == '__main__':
         _print_list([commit.id for commit in get_mr_commits(args.src_branch)])
     elif args.action == 'components':
         _print_list(get_mr_components(args.src_branch))
+    elif args.action == 'target_in_tags':
+        print(get_target_in_tags(args.tags))
     else:
         raise NotImplementedError('not possible to get here')
