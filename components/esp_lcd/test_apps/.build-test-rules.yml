@@ -3,6 +3,10 @@
 components/esp_lcd/test_apps/i2c_lcd:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/i2c/**/*
   disable_test:
     - if: IDF_TARGET not in ["esp32c3"]
       temporary: true
@@ -11,19 +15,33 @@ components/esp_lcd/test_apps/i2c_lcd:
 components/esp_lcd/test_apps/i2c_lcd_legacy:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/i2c/**/*
   disable_test:
     - if: IDF_TARGET not in ["esp32c3"]
       temporary: true
       reason: insufficient runners
 
 components/esp_lcd/test_apps/i80_lcd:
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/i2s/**/* # i80 IO driver relies on I2S on esp32 and esp32s2
   disable:
     - if: SOC_LCD_I80_SUPPORTED != 1
 
 components/esp_lcd/test_apps/rgb_lcd:
+  depends_components:
+    - esp_lcd
   disable:
     - if: SOC_LCD_RGB_SUPPORTED != 1
 
 components/esp_lcd/test_apps/spi_lcd:
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/spi/**/*
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1

@@ -103,22 +103,40 @@ examples/peripherals/i2s/i2s_recorder:
 examples/peripherals/lcd/i2c_oled:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/i2c/**/*
 
 examples/peripherals/lcd/i80_controller:
   disable:
     - if: SOC_LCD_I80_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/i2s/**/* # i80 IO driver relies on I2S on esp32 and esp32s2
 
 examples/peripherals/lcd/rgb_panel:
   disable:
     - if: SOC_LCD_RGB_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
 
 examples/peripherals/lcd/spi_lcd_touch:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/spi/**/*
 
 examples/peripherals/lcd/tjpgd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/spi/**/*
 
 examples/peripherals/ledc:
   disable:
