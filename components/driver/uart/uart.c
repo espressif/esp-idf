@@ -1227,7 +1227,12 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
         }
 
         if (uart_event.type != UART_EVENT_MAX && p_uart->event_queue) {
-            sent = xQueueSendFromISR(p_uart->event_queue, (void * )&uart_event, &HPTaskAwoken);
+            if (uart_event.type != UART_BUFFER_FULL) {
+                sent = xQueueSendFromISR(p_uart->event_queue, (void * )&uart_event, &HPTaskAwoken);
+            } else {
+                // Put high priority event to the queue's front
+                sent = xQueueSendToFrontFromISR(p_uart->event_queue, (void *)&uart_event, &HPTaskAwoken);
+            }
             need_yield |= (HPTaskAwoken == pdTRUE);
             if (sent == pdFALSE) {
 #ifndef CONFIG_UART_ISR_IN_IRAM     //Only log if ISR is not in IRAM
