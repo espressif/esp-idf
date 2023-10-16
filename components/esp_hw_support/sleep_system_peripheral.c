@@ -28,10 +28,6 @@
 #include "soc/gpio_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/interrupt_matrix_reg.h"
-#if SOC_PMU_PVT_SUPPORTED
-#include "soc/pvt_reg.h"
-#endif
-
 #include "hal/mwdt_ll.h"
 
 static __attribute__((unused)) const char *TAG = "sleep_sys_periph";
@@ -224,30 +220,6 @@ esp_err_t sleep_sys_periph_systimer_retention_init(void)
     return ESP_OK;
 }
 
-#if SOC_PMU_PVT_SUPPORTED
-esp_err_t sleep_sys_periph_pvt_retention_init(void)
-{
-#if CONFIG_IDF_TARGET_ESP32C6
-    #define PVT_RETENTION_REGS_CNT  14
-    #define PVT_RETENTION_MAP_BASE  PVT_PMUP_BITMAP_LOW0_REG
-    const static uint32_t pvt_regs_map[4] = {0x139D61, 0x600000, 0x2000000, 0};
-#elif CONFIG_IDF_TARGET_ESP32H2
-    #define PVT_RETENTION_REGS_CNT  14
-    #define PVT_RETENTION_MAP_BASE  PVT_PMUP_BITMAP_LOW0_REG
-    const static uint32_t pvt_regs_map[4] = {0x139D61, 0x6000, 0x20000, 0};
-#endif
-
-    const static sleep_retention_entries_config_t pvt_regs_retention[] = {
-        [0]  = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PVT_LINK(0x00), PVT_RETENTION_MAP_BASE, PVT_RETENTION_MAP_BASE, PVT_RETENTION_REGS_CNT, 0, 0, pvt_regs_map[0], pvt_regs_map[1], pvt_regs_map[2], pvt_regs_map[3]), .owner = ENTRY(0) | ENTRY(2) },
-    };
-
-    esp_err_t err = sleep_retention_entries_create(pvt_regs_retention, ARRAY_SIZE(pvt_regs_retention), SLEEP_RETENTION_PERIPHERALS_PRIORITY_DEFAULT, SLEEP_RETENTION_MODULE_PVT);
-    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (PVT) retention");
-    ESP_LOGI(TAG, "PVT sleep retention initialization");
-    return ESP_OK;
-}
-#endif
-
 esp_err_t sleep_sys_periph_retention_init(void)
 {
     esp_err_t err;
@@ -266,11 +238,6 @@ esp_err_t sleep_sys_periph_retention_init(void)
     err = sleep_sys_periph_spimem_retention_init();
     if(err) goto error;
     err = sleep_sys_periph_systimer_retention_init();
-    if(err) goto error;
-#if SOC_PMU_PVT_SUPPORTED
-    err = sleep_sys_periph_pvt_retention_init();
-    if(err) goto error;
-#endif
 
 error:
     return err;
@@ -280,18 +247,14 @@ bool peripheral_domain_pd_allowed(void)
 {
     const uint32_t modules = sleep_retention_get_modules();
     const uint32_t mask = (const uint32_t) (
-            SLEEP_RETENTION_MODULE_INTR_MATRIX  |
-            SLEEP_RETENTION_MODULE_HP_SYSTEM    |
-            SLEEP_RETENTION_MODULE_TEE_APM      |
-            SLEEP_RETENTION_MODULE_UART0        |
-            SLEEP_RETENTION_MODULE_TG0          |
-            SLEEP_RETENTION_MODULE_IOMUX        |
-            SLEEP_RETENTION_MODULE_SPIMEM       |
-            SLEEP_RETENTION_MODULE_SYSTIMER     |
-#if SOC_PMU_PVT_SUPPORTED
-            SLEEP_RETENTION_MODULE_PVT          |
-#endif
-            0);
+            SLEEP_RETENTION_MODULE_INTR_MATRIX | \
+            SLEEP_RETENTION_MODULE_HP_SYSTEM   | \
+            SLEEP_RETENTION_MODULE_TEE_APM     | \
+            SLEEP_RETENTION_MODULE_UART0       | \
+            SLEEP_RETENTION_MODULE_TG0         | \
+            SLEEP_RETENTION_MODULE_IOMUX       | \
+            SLEEP_RETENTION_MODULE_SPIMEM      | \
+            SLEEP_RETENTION_MODULE_SYSTIMER);
     return ((modules & mask) == mask);
 }
 

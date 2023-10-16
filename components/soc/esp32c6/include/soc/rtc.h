@@ -118,26 +118,6 @@ set sleep_init default param
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
 
 /*
-set pvt default param
-*/
-#define PVT_CHANNEL0_SEL    34
-#define PVT_CHANNEL1_SEL    38
-#define PVT_CHANNEL0_CFG    0x1033e
-#define PVT_CHANNEL1_CFG    0x1033e
-#define PVT_CHANNEL2_CFG    0x10000
-#define PVT_CMD0            0x24
-#define PVT_CMD1            0x5
-#define PVT_CMD2            0x427
-#define PVT_TARGET          0x1f40
-#define PVT_CLK_DIV         1
-#define PVT_EDG_MODE        1
-#define PVT_DELAY_NUM_HIGH  108
-#define PVT_DELAY_NUM_LOW   98
-#define PVT_PUMP_CHANNEL_CODE   1
-#define PVT_PUMP_BITMAP     512
-#define PVT_PUMP_DRV        0
-
-/*
 The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
 storing in efuse (based on ATE 5k ECO3 chips)
 */
