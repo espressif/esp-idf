@@ -263,4 +263,15 @@
 #define OPENTHREAD_CONFIG_TIME_SYNC_ENABLE 1
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_RADIO_STATS_ENABLE
+ *
+ * Set to 1 to enable support for Radio Statistics. Note that this option only works for OPENTHREAD_FTD and
+ * OPENTHREAD_MTD.
+ *
+ */
+#if CONFIG_OPENTHREAD_RADIO_STATS_ENABLE
+#define OPENTHREAD_CONFIG_RADIO_STATS_ENABLE 1
+#endif
+
 #define OPENTHREAD_MTD 1
