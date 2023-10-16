@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -379,6 +379,10 @@ static void esp_dpp_task(void *pvParameters )
                 static int counter;
                 int channel;
 
+                if (p->num_chan <= 0) {
+                    wpa_printf(MSG_ERROR, "Listen channel not set");
+                    break;
+                }
                 channel = p->chan_list[counter++ % p->num_chan];
                 esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
                                            BOOTSTRAP_ROC_WAIT_TIME, s_action_rx_cb);
