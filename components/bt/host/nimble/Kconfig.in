@@ -611,32 +611,6 @@ config BT_NIMBLE_PERIODIC_ADV_ENH
     help
         Enable the periodic advertising enhancements
 
-choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
-    prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
-    default BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-    depends on ESP_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED
-    help
-            When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
-            better avoid dramatic performance deterioration of Wi-Fi.
-
-        config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EN
-            bool "Force Enable"
-            help
-                Always enable the limitation on max tx/rx time for Coded-PHY connection
-
-        config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-            bool "Force Disable"
-            help
-                Disable the limitation on max tx/rx time for Coded-PHY connection
-endchoice
-
-config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
-    int
-    default 0 if !(ESP_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED)
-    default 1 if BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EN
-    default 0 if BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-
-
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
     depends on BT_NIMBLE_ENABLED
