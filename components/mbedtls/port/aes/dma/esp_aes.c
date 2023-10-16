@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include "mbedtls/aes.h"
+#include "mbedtls/platform_util.h"
 #include "esp_intr_alloc.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_log.h"

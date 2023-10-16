@@ -23,7 +23,6 @@
 #include "mbedtls/error.h"
 
 #include <string.h>
-#include "mbedtls/platform.h"
 
 #if SOC_AES_SUPPORT_DMA
 #include "esp_aes_dma_priv.h"
