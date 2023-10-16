@@ -161,9 +161,9 @@ esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, vo
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -173,9 +173,9 @@ void esp_netif_action_start(void *esp_netif, esp_event_base_t base, int32_t even
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_stop(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -185,9 +185,9 @@ void esp_netif_action_stop(void *esp_netif, esp_event_base_t base, int32_t event
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -197,9 +197,9 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_disconnected(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -209,9 +209,9 @@ void esp_netif_action_disconnected(void *esp_netif, esp_event_base_t base, int32
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -221,9 +221,9 @@ void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t eve
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_join_ip6_multicast_group(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -233,9 +233,9 @@ void esp_netif_action_join_ip6_multicast_group(void *esp_netif, esp_event_base_t
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_leave_ip6_multicast_group(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -245,9 +245,9 @@ void esp_netif_action_leave_ip6_multicast_group(void *esp_netif, esp_event_base_
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_add_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -257,9 +257,9 @@ void esp_netif_action_add_ip6_address(void *esp_netif, esp_event_base_t base, in
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
