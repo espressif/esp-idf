@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -432,6 +432,40 @@ void test_fatfs_stat(const char* filename, const char* root_dir)
     TEST_ASSERT_EQUAL(0, stat(root_dir, &st));
     TEST_ASSERT(st.st_mode & S_IFDIR);
     TEST_ASSERT_FALSE(st.st_mode & S_IFREG);
+}
+
+void test_fatfs_size(const char* filename, const char* content) {
+    size_t expected_size = strlen(content);
+
+    int fd = open(filename, O_CREAT | O_WRONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    ssize_t wr = write(fd, content, expected_size);
+    TEST_ASSERT_NOT_EQUAL(-1, wr);
+
+    struct stat st;
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+    TEST_ASSERT_EQUAL(wr, st.st_size);
+
+    ssize_t wr2 = pwrite(fd, content, expected_size, expected_size);
+    TEST_ASSERT_NOT_EQUAL(-1, wr2);
+
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+    TEST_ASSERT_EQUAL(wr + wr2, st.st_size);
+
+    TEST_ASSERT_EQUAL(0, ftruncate(fd, wr));
+
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+    TEST_ASSERT_EQUAL(wr, st.st_size);
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    wr /= 2;
+
+    TEST_ASSERT_EQUAL(0, truncate(filename, wr));
+
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+    TEST_ASSERT_EQUAL(wr, st.st_size);
 }
 
 void test_fatfs_mtime_dst(const char* filename, const char* root_dir)

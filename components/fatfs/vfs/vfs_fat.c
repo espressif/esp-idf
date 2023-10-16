@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -416,6 +416,20 @@ static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
             return -1;
         }
     }
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+    _lock_acquire(&fat_ctx->lock);
+    if (written > 0) {
+        res = f_sync(file);
+        if (res != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            return -1;
+        }
+     }
+    _lock_release(&fat_ctx->lock);
+#endif
+
     return written;
 }
 
@@ -513,6 +527,18 @@ static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, o
         } // else f_write failed so errno shouldn't be overwritten
         ret = -1; // in case the write was successful but the seek wasn't
     }
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+    if (wr > 0) {
+        FRESULT f_res2 = f_sync(file); // We need new result to check whether we can overwrite errno
+        if (f_res2 != FR_OK) {
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res2);
+            if (f_res == FR_OK)
+                errno = fresult_to_errno(f_res2);
+            ret = -1;
+        }
+    }
+#endif
 
 pwrite_release:
     _lock_release(&fat_ctx->lock);
@@ -727,6 +753,13 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
         }
         size_left -= will_copy;
     }
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+    _lock_acquire(&fat_ctx->lock);
+    res = f_sync(pf2);
+    _lock_release(&fat_ctx->lock);
+#endif
+
 fail3:
     f_close(pf2);
 fail2:
@@ -985,13 +1018,24 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
     }
 
     res = f_truncate(file);
-    _lock_release(&fat_ctx->lock);
 
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
         ret = -1;
+        goto close;
     }
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+    res = f_sync(file);
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        ret = -1;
+    }
+#endif
+
+    _lock_release(&fat_ctx->lock);
 
 close:
     res = f_close(file);
@@ -1055,7 +1099,17 @@ static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
         ret = -1;
+        goto out;
     }
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+    res = f_sync(file);
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        ret = -1;
+    }
+#endif
 
 out:
     _lock_release(&fat_ctx->lock);

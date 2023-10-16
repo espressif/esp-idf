@@ -51,6 +51,8 @@ void test_fatfs_ftruncate_file(const char* path);
 
 void test_fatfs_stat(const char* filename, const char* root_dir);
 
+void test_fatfs_size(const char* filename, const char* content);
+
 void test_fatfs_mtime_dst(const char* filename, const char* root_dir);
 
 void test_fatfs_utime(const char* filename, const char* root_dir);
