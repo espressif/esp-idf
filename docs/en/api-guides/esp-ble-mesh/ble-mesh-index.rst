@@ -262,14 +262,14 @@ Bluetooth SIG Documentation
 ---------------------------
 
 - `BLE Mesh Core Specification <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633>`_
-- `BLE Mesh Model Specification <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429634>`_
-- `An Intro to Bluetooth Mesh Part 1 <https://blog.bluetooth.com/an-intro-to-bluetooth-mesh-part1>`_ / `Part 2 <https://blog.bluetooth.com/an-intro-to-bluetooth-mesh-part2>`__
-- `The Fundamental Concepts of Bluetooth Mesh Networking, Part 1 <https://blog.bluetooth.com/the-fundamental-concepts-of-bluetooth-mesh-networking-part-1>`_ / `Part 2 <https://blog.bluetooth.com/the-fundamental-concepts-of-bluetooth-mesh-networking-part-2>`__
-- `Bluetooth Mesh Networking: Friendship <https://blog.bluetooth.com/bluetooth-mesh-networking-series-friendship>`_
-- `Management of Devices in a Bluetooth Mesh Network <https://blog.bluetooth.com/management-of-devices-bluetooth-mesh-network>`_
-- `Bluetooth Mesh Security Overview <https://blog.bluetooth.com/bluetooth-mesh-security-overview>`_
-- `Provisioning a Bluetooth Mesh Network Part 1 <https://blog.bluetooth.com/provisioning-a-bluetooth-mesh-network-part-1>`_ / `Part 2 <https://blog.bluetooth.com/provisioning-a-bluetooth-mesh-network-part-2>`__
+- `BLE Mesh Model Specification <https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=554899>`_
+- `An Intro to Bluetooth Mesh Part 1 <https://www.bluetooth.com/blog/an-intro-to-bluetooth-mesh-part1>`_ / `Part 2 <https://www.bluetooth.com/blog/an-intro-to-bluetooth-mesh-part2>`__
+- `The Fundamental Concepts of Bluetooth Mesh Networking, Part 1 <https://www.bluetooth.com/blog/the-fundamental-concepts-of-bluetooth-mesh-networking-part-1>`_ / `Part 2 <https://www.bluetooth.com/blog/the-fundamental-concepts-of-bluetooth-mesh-networking-part-2>`__
+- `Bluetooth Mesh Networking: Friendship <https://www.bluetooth.com/blog/bluetooth-mesh-networking-series-friendship>`_
+- `Management of Devices in a Bluetooth Mesh Network <https://www.bluetooth.com/blog/management-of-devices-bluetooth-mesh-network>`_
+- `Bluetooth Mesh Security Overview <https://www.bluetooth.com/blog/bluetooth-mesh-security-overview>`_
+- `Provisioning a Bluetooth Mesh Network Part 1 <https://www.bluetooth.com/blog/provisioning-a-bluetooth-mesh-network-part-1>`_ / `Part 2 <https://www.bluetooth.com/blog/provisioning-a-bluetooth-mesh-network-part-2>`__
 
 
-.. _ESP32-DevKitC: https://www.espressif.com/en/products/hardware/esp32-devkitc/overview
+.. _ESP32-DevKitC: https://www.espressif.com/en/products/devkits/esp32-devkitc/overview
 .. _ESP-WROVER-KIT: https://www.espressif.com/en/products/hardware/esp-wrover-kit/overview
