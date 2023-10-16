@@ -30,7 +30,6 @@
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
-#include "esp_private/pm_impl.h"
 static bool s_rf_closed = false;
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
 #define IEEE802154_LINK_OWNER  ENTRY(3)
@@ -778,17 +777,6 @@ esp_err_t ieee802154_receive_at(uint32_t time)
     return ESP_OK;
 }
 
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG
-static bool IRAM_ATTR sleep_modem_ieee802154_modem_state_skip_light_sleep(void)
-{
-    bool skip = false;
-    if (esp_ieee802154_get_state() != ESP_IEEE802154_RADIO_SLEEP) {
-        skip = true;
-    }
-    return skip;
-}
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_RETENTION_HAS_CLOCK_BUG
-
 static esp_err_t ieee802154_sleep_init(void)
 {
     esp_err_t err = ESP_OK;
@@ -800,9 +788,6 @@ static esp_err_t ieee802154_sleep_init(void)
     err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_802154_MAC);
     ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to allocate memory for ieee802154 mac retention");
     ESP_LOGI(IEEE802154_TAG, "ieee802154 mac sleep retention initialization");
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-    esp_pm_register_skip_light_sleep_callback(sleep_modem_ieee802154_modem_state_skip_light_sleep);
-#endif
 #endif
     return err;
 }
