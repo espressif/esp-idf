@@ -7,7 +7,6 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32s2
 @pytest.mark.external_flash
 def test_ext_flash_fatfs(dut: Dut) -> None:
     message_list = ('Initialized external Flash',

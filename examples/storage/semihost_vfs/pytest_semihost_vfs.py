@@ -34,30 +34,6 @@ def prepare() -> t.Generator[None, None, None]:
             f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32-wrover-kit-3.3v.cfg',
             marks=[pytest.mark.esp32],
         ),
-        # pytest.param(
-        #     'esp,idf,jtag',
-        #     'y',
-        #     f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32c2-ftdi.cfg',
-        #     marks=[pytest.mark.esp32c2],
-        # ),
-        # pytest.param(
-        #     'esp,idf,jtag',
-        #     'y',
-        #     f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32s2-kaluga-1.cfg',
-        #     marks=[pytest.mark.esp32c3],
-        # ),
-        # pytest.param(
-        #     'esp,idf,jtag',
-        #     'y',
-        #     f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32s2-kaluga-1.cfg',
-        #     marks=[pytest.mark.esp32s2],
-        # ),
-        # pytest.param(
-        #     'esp,idf,jtag',
-        #     'y',
-        #     f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32s2-kaluga-1.cfg',
-        #     marks=[pytest.mark.esp32s3],
-        # ),
     ],
     indirect=True,
 )

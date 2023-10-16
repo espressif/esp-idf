@@ -11,7 +11,8 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.supported_targets
+@pytest.mark.esp32
+@pytest.mark.esp32c3
 def test_examples_nvs_rw_blob(dut: Dut) -> None:
     def expect_start_msg(index: int) -> None:
         dut.expect('Restart counter = {}'.format(index), timeout=10)

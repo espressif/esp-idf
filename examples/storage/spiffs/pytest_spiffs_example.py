@@ -7,7 +7,8 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.supported_targets
+@pytest.mark.esp32
+@pytest.mark.esp32c3
 def test_examples_spiffs(dut: Dut) -> None:
     message_list = (rb'example: Initializing SPIFFS',
                     rb'example: Partition size: total: \d+, used: \d+',

@@ -2,10 +2,11 @@
 
 examples/storage/custom_flash_driver:
   depends_components:
-    - fatfs
-    - vfs
     - spi_flash
     - driver
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/emmc:
   depends_components:
@@ -23,12 +24,11 @@ examples/storage/ext_flash_fatfs:
     - vfs
     - spi_flash
     - driver
-    - esp_system
   disable:
     - if: IDF_TARGET == "esp32p4"
       reason: not supported yet
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32s2"]
+    - if: IDF_TARGET not in ["esp32"]
       temporary: true
       reason: lack of runners
 
@@ -36,7 +36,6 @@ examples/storage/fatfsgen:
   depends_components:
     - fatfs
     - vfs
-    - esp_system
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only one target needed
@@ -45,17 +44,23 @@ examples/storage/nvs_rw_blob:
   depends_components:
     - nvs_flash
     - driver
-    - esp_system
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/nvs_rw_value:
   depends_components:
     - nvs_flash
-    - nvs_system
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/nvs_rw_value_cxx:
   depends_components:
     - nvs_flash
-    - nvs_system
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/nvsgen:
   depends_components:
@@ -100,7 +105,6 @@ examples/storage/perf_benchmark:
     - vfs
     - sdmmc
     - spiffs
-    - soc
     - wear_levelling
     - esp_partition
     - driver
@@ -133,7 +137,7 @@ examples/storage/sd_card/sdspi:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s2"]
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: true
       reason: lack of runners
 
@@ -149,6 +153,9 @@ examples/storage/spiffs:
   depends_components:
     - spiffs
     - vfs
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/spiffsgen:
   depends_components:
@@ -164,3 +171,6 @@ examples/storage/wear_levelling:
     - vfs
     - wear_levelling
     - fatfs
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
