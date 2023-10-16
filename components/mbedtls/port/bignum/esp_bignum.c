@@ -85,7 +85,9 @@ static esp_err_t esp_mpi_isr_initialise(void)
             return ESP_FAIL;
         }
 
-        esp_intr_alloc(ETS_RSA_INTR_SOURCE, 0, esp_mpi_complete_isr, NULL, NULL);
+        const int isr_flags = esp_intr_level_to_flags(CONFIG_MBEDTLS_MPI_INTERRUPT_LEVEL);
+
+        esp_intr_alloc(ETS_RSA_INTR_SOURCE, isr_flags, esp_mpi_complete_isr, NULL, NULL);
     }
 
     /* MPI is clocked proportionally to CPU clock, take power management lock */
