@@ -1,0 +1,6 @@
+name: 'newlib'
+version: '4.3.0'
+cpe: cpe:2.3:a:newlib_project:newlib:{}:*:*:*:*:*:*:*
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: Red Hat Incorporated'
+description: An open-source C standard library implementation with additional features and patches from Espressif.
