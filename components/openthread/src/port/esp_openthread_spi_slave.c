@@ -70,7 +70,7 @@ static void IRAM_ATTR handle_spi_transaction_done(spi_slave_transaction_t *trans
     trans = NULL;
 }
 
-esp_err_t esp_openthread_spi_slave_init(const esp_openthread_platform_config_t *config)
+esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_t *config)
 {
     s_spi_config = config->host_config.spi_slave_config;
     gpio_config_t io_conf = {
