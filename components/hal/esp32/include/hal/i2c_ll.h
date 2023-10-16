@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "soc/clk_tree_defs.h"
 #include "hal/i2c_types.h"
 #include "esp_attr.h"
-#include "hal/misc.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,7 +97,7 @@ static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_f
 static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_config_t *bus_cfg)
 {
     /* SCL period. According to the TRM, we should always subtract 1 to SCL low period */
-    assert(bus_cfg->scl_low > 0);
+    HAL_ASSERT(bus_cfg->scl_low > 0);
     hw->scl_low_period.period = bus_cfg->scl_low - 1;
     /* Still according to the TRM, if filter is not enbled, we have to subtract 7,
      * if SCL filter is enabled, we have to subtract:
@@ -106,12 +106,12 @@ static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_confi
      * to SCL high period */
     uint16_t scl_high = bus_cfg->scl_high;
     /* In the "worst" case, we will subtract 13, make sure the result will still be correct */
-    assert(scl_high > 13);
+    HAL_ASSERT(scl_high > 13);
     if (hw->scl_filter_cfg.en) {
         if (hw->scl_filter_cfg.thres <= 2) {
             scl_high -= 8;
         } else {
-            assert(hw->scl_filter_cfg.thres <= 7);
+            HAL_ASSERT(hw->scl_filter_cfg.thres <= 7);
             scl_high -= hw->scl_filter_cfg.thres + 6;
         }
     } else {

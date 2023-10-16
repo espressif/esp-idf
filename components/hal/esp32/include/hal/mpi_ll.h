@@ -139,7 +139,7 @@ static inline void mpi_ll_write_to_mem_block(mpi_param_t param, size_t offset, c
      *
      */
 
-    //for (uint32_t i = copy_words; i < hw_words; i++) { assert(pbase[i] == 0); }
+    //for (uint32_t i = copy_words; i < hw_words; i++) { HAL_ASSERT(pbase[i] == 0); }
 #endif
 }
 
@@ -165,7 +165,7 @@ static inline void mpi_ll_write_at_offset(mpi_param_t param, int offset, uint32_
 */
 static inline void mpi_ll_read_from_mem_block(uint32_t* p, size_t n, size_t num_words)
 {
-    assert(n >= num_words);
+    HAL_ASSERT(n >= num_words);
     uint32_t mem_base = MPI_LL_BLOCK_BASES[MPI_PARAM_Z];
     /* Copy data from memory block registers */
     esp_dport_access_read_buffer(p, mem_base, num_words);
