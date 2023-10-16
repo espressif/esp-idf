@@ -518,6 +518,7 @@ if __name__ == '__main__':
                 )
 
         if arg.action == 'check-readmes':
+            os.environ['NIGHTLY_RUN'] = '1'
             check_readme(
                 list(check_dirs),
                 exclude_dirs=_exclude_dirs,
