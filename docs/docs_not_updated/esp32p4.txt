@@ -199,8 +199,6 @@ api-reference/protocols/asio.rst
 security/host-based-security-workflows.rst
 security/flash-encryption.rst
 security/security.rst
-security/secure-boot-v2.rst
-security/secure-boot-v1.rst
 security/esp32p4_log.inc
 security/index.rst
 about.rst

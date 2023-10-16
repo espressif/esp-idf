@@ -3,11 +3,11 @@
 Secure Boot V2
 ==============
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6 or esp32h2="RSA-PSS or ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6 or esp32h2 or esp32p4="RSA-PSS or ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6 or esp32h2="RSA-3072, ECDSA-256, or ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6 or esp32h2 or esp32p4="RSA-3072, ECDSA-256, or ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6 or esp32h2="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6 or esp32h2 or esp32p4="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="(ECO 3 onwards)", esp32c3="(ECO 3 onwards)"}
 
@@ -138,21 +138,23 @@ The signature block starts on a 4 KB aligned boundary and has a flash sector of 
 
         RSA is recommended for use cases where fast bootup time is required whereas ECDSA is recommended for use cases where shorter key length is required.
 
-        .. list-table:: Comparison between signature verification time
-            :widths: 10 10 20
-            :header-rows: 1
+        .. only:: not esp32p4
 
-            * - **Verification scheme**
-              - **Time**
-              - **CPU Frequency**
-            * - RSA-3072
-              - {IDF_TARGET_RSA_TIME}
-              - {IDF_TARGET_CPU_FREQ}
-            * - ECDSA-P256
-              - {IDF_TARGET_ECDSA_TIME}
-              - {IDF_TARGET_CPU_FREQ}
+            .. list-table:: Comparison between signature verification time
+                :widths: 10 10 20
+                :header-rows: 1
 
-        The above table compares the time taken to verify a signature in a particular scheme. It does not indicate the bootup time.
+                * - **Verification scheme**
+                  - **Time**
+                  - **CPU Frequency**
+                * - RSA-3072
+                  - {IDF_TARGET_RSA_TIME}
+                  - {IDF_TARGET_CPU_FREQ}
+                * - ECDSA-P256
+                  - {IDF_TARGET_ECDSA_TIME}
+                  - {IDF_TARGET_CPU_FREQ}
+
+          The above table compares the time taken to verify a signature in a particular scheme. It does not indicate the bootup time.
 
 The content of each signature block is shown in the following table:
 
