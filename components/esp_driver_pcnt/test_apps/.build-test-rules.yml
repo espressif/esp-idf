@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_pcnt/test_apps/pulse_cnt:
+  disable:
+    - if: SOC_PCNT_SUPPORTED != 1
+  depends_components:
+    - esp_driver_pcnt

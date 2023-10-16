@@ -1,11 +1,6 @@
 [mapping:driver]
 archive: libdriver.a
 entries:
-    if PCNT_CTRL_FUNC_IN_IRAM = y:
-        pulse_cnt: pcnt_unit_start (noflash)
-        pulse_cnt: pcnt_unit_stop (noflash)
-        pulse_cnt: pcnt_unit_clear_count (noflash)
-        pulse_cnt: pcnt_unit_get_count (noflash)
     if SDM_CTRL_FUNC_IN_IRAM = y:
         sdm: sdm_channel_set_pulse_density (noflash)
     if ANA_CMPR_CTRL_FUNC_IN_IRAM = y:

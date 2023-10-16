@@ -33,9 +33,9 @@ set(extra_components_which_shouldnt_be_included
     bootloader_support
     # [refactor-todo]: should cxx be in G1? Can it exist without FreeRTOS?
     cxx
-    # [refactor-todo]: driver is a dependency of esp_pm, esp_timer, spi_flash, vfs, esp_wifi, ${IDF_TARGET}
+    # [refactor-todo]: driver is a dependency of esp_pm, spi_flash, vfs, esp_wifi
     #   all of these should be removed from G1 except for spi_flash.
-    driver
+    driver esp_driver_pcnt
     # esp_app_format is dependency of bootloader_support, app_update
     esp_app_format
     # esp_bootloader_format is dependency of bootloader_support, app_update

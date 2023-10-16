@@ -113,10 +113,6 @@ components/driver/test_apps/parlio:
       temporary: true
       reason: lack of runner
 
-components/driver/test_apps/pulse_cnt:
-  disable:
-    - if: SOC_PCNT_SUPPORTED != 1
-
 components/driver/test_apps/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1

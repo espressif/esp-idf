@@ -193,6 +193,8 @@ examples/peripherals/parlio/simple_rgb_led_matrix:
 examples/peripherals/pcnt:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
+  depends_components:
+    - esp_driver_pcnt
 
 examples/peripherals/rmt:
   disable:
