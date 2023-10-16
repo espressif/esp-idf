@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <stdbool.h>
@@ -35,21 +27,24 @@ typedef struct{
     // RX parameters
     RingbufHandle_t rx_ring_buf;        /*!< RX ring buffer handler */
     uint32_t rx_buf_size;               /*!< TX buffer size */
-    uint8_t rx_data_buf[64];            /*!< Data buffer to stash FIFO data */
+    uint8_t rx_data_buf[USB_SER_JTAG_ENDP_SIZE];            /*!< Data buffer to stash FIFO data */
 
     // TX parameters
     uint32_t tx_buf_size;               /*!< TX buffer size */
     RingbufHandle_t tx_ring_buf;        /*!< TX ring buffer handler */
+    uint8_t tx_data_buf[USB_SER_JTAG_ENDP_SIZE];  /*!< Data buffer to stash TX FIFO data */
+    size_t tx_stash_cnt;                          /*!< Number of stashed TX FIFO bytes */
 } usb_serial_jtag_obj_t;
 
 static usb_serial_jtag_obj_t *p_usb_serial_jtag_obj = NULL;
 
 static const char* USB_SERIAL_JTAG_TAG = "usb_serial_jtag";
 
-static void usb_serial_jtag_write_and_flush(const uint8_t *buf, uint32_t wr_len)
+static size_t usb_serial_jtag_write_and_flush(const uint8_t *buf, uint32_t wr_len)
 {
-    usb_serial_jtag_ll_write_txfifo(buf, wr_len);
+    size_t size = usb_serial_jtag_ll_write_txfifo(buf, wr_len);
     usb_serial_jtag_ll_txfifo_flush();
+    return size;
 }
 
 static void usb_serial_jtag_isr_handler_default(void *arg) {
@@ -58,19 +53,53 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
     usbjtag_intr_status = usb_serial_jtag_ll_get_intsts_mask();
 
     if (usbjtag_intr_status & USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY) {
-        // Interrupt tells us the host picked up the data we sent. If we have more data, we can put it in the buffer and the host will pick that up next.
+        // Interrupt tells us the host picked up the data we sent.
+        // If we have more data, we can put it in the buffer and the host will pick that up next.
         // Send data in isr.
+        // If the hardware fifo is available, write in it. Otherwise, do nothing.
         if (usb_serial_jtag_ll_txfifo_writable() == 1) {
             // We disable the interrupt here so that the interrupt won't be triggered if there is no data to send.
             usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
             size_t queued_size;
-            uint8_t *queued_buff = (uint8_t *)xRingbufferReceiveUpToFromISR(p_usb_serial_jtag_obj->tx_ring_buf, &queued_size, 64);
-            // If the hardware fifo is avaliable, write in it. Otherwise, do nothing.
-            if (queued_buff != NULL) {  //Although tx_queued_bytes may be larger than 0. We may have interrupt before xRingbufferSend() was called.
-                //Copy the queued buffer into the TX FIFO
-                usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
-                usb_serial_jtag_write_and_flush(queued_buff, queued_size);
-                vRingbufferReturnItemFromISR(p_usb_serial_jtag_obj->tx_ring_buf, queued_buff, &xTaskWoken);
+            uint8_t *queued_buff = NULL;
+            bool is_stashed_data = false;
+            if (p_usb_serial_jtag_obj->tx_stash_cnt != 0) {
+                // Send stashed tx bytes before reading bytes from ring buffer
+                queued_buff = p_usb_serial_jtag_obj->tx_data_buf;
+                queued_size = p_usb_serial_jtag_obj->tx_stash_cnt;
+                is_stashed_data = true;
+            } else {
+                // Max 64 data payload size in a single EndPoint
+                queued_buff = (uint8_t *)xRingbufferReceiveUpToFromISR(p_usb_serial_jtag_obj->tx_ring_buf, &queued_size, USB_SER_JTAG_ENDP_SIZE);
+            }
+
+            usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+
+            if (queued_buff != NULL) {
+
+                // Although tx_queued_bytes may be larger than 0, we may have
+                // interrupted before xRingbufferSend() was called.
+                // Copy the queued buffer into the TX FIFO
+
+                // On ringbuffer wrap-around the size can be 0 even though the buffer returned is not NULL
+                if (queued_size > 0) {
+                    uint32_t sent_size = usb_serial_jtag_write_and_flush(queued_buff, queued_size);
+
+                    if (sent_size < queued_size) {
+                        // Not all bytes could be sent at once, stash the unwritten bytes in a tx buffer
+                        // stash_size will not larger than USB_SER_JTAG_ENDP_SIZE because queued_size is got from xRingbufferReceiveUpToFromISR
+                        size_t stash_size = queued_size - sent_size;
+                        memcpy(p_usb_serial_jtag_obj->tx_data_buf, &queued_buff[sent_size], stash_size);
+                        p_usb_serial_jtag_obj->tx_stash_cnt = stash_size;
+                    } else {
+                        p_usb_serial_jtag_obj->tx_stash_cnt = 0;
+                        // assert if sent_size is larger than queued_size.
+                        assert(sent_size <= queued_size);
+                    }
+                }
+                if (is_stashed_data == false) {
+                    vRingbufferReturnItemFromISR(p_usb_serial_jtag_obj->tx_ring_buf, queued_buff, &xTaskWoken);
+                }
                 usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
             }
         } else {
@@ -101,6 +130,7 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     p_usb_serial_jtag_obj = (usb_serial_jtag_obj_t*) heap_caps_calloc(1, sizeof(usb_serial_jtag_obj_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
     p_usb_serial_jtag_obj->rx_buf_size = usb_serial_jtag_config->rx_buffer_size;
     p_usb_serial_jtag_obj->tx_buf_size = usb_serial_jtag_config->tx_buffer_size;
+    p_usb_serial_jtag_obj->tx_stash_cnt = 0;
     if (p_usb_serial_jtag_obj == NULL) {
         ESP_LOGE(USB_SERIAL_JTAG_TAG, "memory allocate error");
         err = ESP_ERR_NO_MEM;
@@ -150,7 +180,7 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
     }
 
     // Recieve new data from ISR
-    data = (uint8_t*) xRingbufferReceiveUpTo(p_usb_serial_jtag_obj->rx_ring_buf, &data_read_len, (portTickType) ticks_to_wait, length);
+    data = (uint8_t*) xRingbufferReceiveUpTo(p_usb_serial_jtag_obj->rx_ring_buf, &data_read_len, (TickType_t) ticks_to_wait, length);
     if (data == NULL) {
         // If there is no data received from ringbuffer, return 0 directly.
         return 0;
