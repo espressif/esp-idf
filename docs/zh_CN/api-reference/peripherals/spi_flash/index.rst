@@ -118,7 +118,7 @@ SPI flash 容量
 
 SPI flash 容量由引导加载程序镜像头部（烧录偏移量为 0x1000）的一个字段进行配置。
 
-默认情况下，引导程序被写入 flash 时，``esptool.py`` 会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。也可以在工程配置中设置 :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
+默认情况下，引导程序被写入 flash 时，``esptool.py`` 会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。也可以在工程配置中设置 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
 
 如需在运行时覆盖已配置的 flash 容量，请配置 ``g_rom_flashchip`` 结构中的 ``chip_size``。``esp_flash_*`` 函数使用此容量（于软件和 ROM 中）进行边界检查。
 
