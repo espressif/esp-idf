@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <inttypes.h>
 #include "esp_timer.h"
 #include "sdmmc_common.h"
 
@@ -160,7 +161,7 @@ esp_err_t sdmmc_init_sd_wait_data_ready(sdmmc_card_t* card)
             return err;
         }
         if (++count % 16 == 0) {
-            ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
+            ESP_LOGV(TAG, "waiting for card to become ready (%" PRIu32 ")", count);
         }
     }
     return ESP_OK;
@@ -210,12 +211,12 @@ esp_err_t sdmmc_send_cmd_switch_func(sdmmc_card_t* card,
         /* busy response is never sent */
     } else if (resp_ver == 1) {
         if (SD_SFUNC_BUSY(resp->data, group) & (1 << function)) {
-            ESP_LOGD(TAG, "%s: response indicates function %d:%d is busy",
+            ESP_LOGD(TAG, "%s: response indicates function %" PRIu32 ":%" PRIu32 " is busy",
                     __func__, group, function);
             return ESP_ERR_INVALID_STATE;
         }
     } else {
-        ESP_LOGD(TAG, "%s: got an invalid version of SWITCH_FUNC response: 0x%02x",
+        ESP_LOGD(TAG, "%s: got an invalid version of SWITCH_FUNC response: 0x%02" PRIx32,
                 __func__, resp_ver);
         return ESP_ERR_INVALID_RESPONSE;
     }
@@ -446,15 +447,15 @@ uint32_t sdmmc_sd_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t
             uint32_t timeout_sec = card->ssr.erase_offset +
                 card->ssr.erase_timeout * (erase_size_kb + card->ssr.alloc_unit_kb - 1) /
                     (card->ssr.erase_size_au * card->ssr.alloc_unit_kb);
-            ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, ES=%u, ET=%u, EO=%u, AU=%u kB)",
-                     __func__, timeout_sec, erase_size_kb, card->ssr.erase_size_au,
-                     card->ssr.erase_timeout, card->ssr.erase_offset, card->ssr.alloc_unit_kb);
+            ESP_LOGD(TAG, "%s: erase timeout %" PRIu32 " s (erasing %" PRIu32 " kB, ES=%" PRIu32 ", ET=%" PRIu32 ", EO=%" PRIu32 ", AU=%" PRIu32 " kB)",
+                     __func__, timeout_sec, (uint32_t) erase_size_kb, (uint32_t) card->ssr.erase_size_au,
+                     (uint32_t) card->ssr.erase_timeout, (uint32_t) card->ssr.erase_offset, (uint32_t) card->ssr.alloc_unit_kb);
             return timeout_sec * 1000;
         } else {
             uint32_t timeout_ms = SDMMC_SD_DISCARD_TIMEOUT * erase_size_kb / card->csd.sector_size;
             timeout_ms = MAX(1000, timeout_ms);
-            ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, %ums per sector)",
-                     __func__, timeout_ms / 1000, erase_size_kb, SDMMC_SD_DISCARD_TIMEOUT);
+            ESP_LOGD(TAG, "%s: erase timeout %" PRIu32 " s (erasing %" PRIu32 " kB, %" PRIu32 " ms per sector)",
+                     __func__, (uint32_t) (timeout_ms / 1000), (uint32_t) erase_size_kb, (uint32_t) SDMMC_SD_DISCARD_TIMEOUT);
             return timeout_ms;
         }
     } else {

@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <inttypes.h>
 #include "sdmmc_common.h"
 #include "esp_attr.h"
 #include "esp_compiler.h"
@@ -240,7 +241,7 @@ esp_err_t sdmmc_io_read_byte(sdmmc_card_t* card, uint32_t function,
 {
     esp_err_t ret = sdmmc_io_rw_direct(card, function, addr, SD_ARG_CMD52_READ, out_byte);
     if (unlikely(ret != ESP_OK)) {
-        ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (read 0x%x) returned 0x%x", __func__, addr, ret);
+        ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (read 0x%" PRIx32 ") returned 0x%x", __func__, addr, ret);
     }
     return ret;
 }
@@ -252,7 +253,7 @@ esp_err_t sdmmc_io_write_byte(sdmmc_card_t* card, uint32_t function,
     esp_err_t ret = sdmmc_io_rw_direct(card, function, addr,
             SD_ARG_CMD52_WRITE | SD_ARG_CMD52_EXCHANGE, &tmp_byte);
     if (unlikely(ret != ESP_OK)) {
-        ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (write 0x%x) returned 0x%x", __func__, addr, ret);
+        ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (write 0x%" PRIu32 ") returned 0x%x", __func__, addr, ret);
         return ret;
     }
     if (out_byte != NULL) {

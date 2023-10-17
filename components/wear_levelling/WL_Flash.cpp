@@ -12,6 +12,7 @@
 #include "crc32.h"
 #include <string.h>
 #include <stddef.h>
+#include <inttypes.h>
 
 static const char *TAG = "wl_flash";
 #ifndef WL_CFG_CRC_CONST
@@ -20,7 +21,7 @@ static const char *TAG = "wl_flash";
 
 #define WL_RESULT_CHECK(result) \
     if (result != ESP_OK) { \
-        ESP_LOGE(TAG,"%s(%d): result = 0x%08x", __FUNCTION__, __LINE__, result); \
+        ESP_LOGE(TAG,"%s(%d): result = 0x%08" PRIx32, __FUNCTION__, __LINE__, (uint32_t) result); \
         return (result); \
     }
 
@@ -40,7 +41,7 @@ WL_Flash::~WL_Flash()
 
 esp_err_t WL_Flash::config(wl_config_t *cfg, Partition *partition)
 {
-    ESP_LOGV(TAG, "%s partition_start_addr=0x%08x, wl_partition_size=0x%08x, wl_page_size=0x%08x, flash_sector_size=0x%08x, wl_update_rate=0x%08x, wl_pos_update_record_size=0x%08x, version=0x%08x, wl_temp_buff_size=0x%08x", __func__,
+    ESP_LOGV(TAG, "%s partition_start_addr=0x%08" PRIx32 ", wl_partition_size=0x%08" PRIx32 ", wl_page_size=0x%08" PRIx32 ", flash_sector_size=0x%08" PRIx32 ", wl_update_rate=0x%08" PRIx32 ", wl_pos_update_record_size=0x%08" PRIx32 ", version=0x%08" PRIx32 ", wl_temp_buff_size=0x%08" PRIx32 , __func__,
              (uint32_t) cfg->wl_partition_start_addr,
              cfg->wl_partition_size,
              cfg->wl_page_size,
@@ -87,7 +88,7 @@ esp_err_t WL_Flash::config(wl_config_t *cfg, Partition *partition)
     ptrdiff_t flash_sz = ((this->cfg.wl_partition_size - this->state_size * 2 - this->cfg_size) / this->cfg.wl_page_size - 1) * this->cfg.wl_page_size; // -1 remove dummy block
     this->flash_size = ((this->cfg.wl_partition_size - this->state_size * 2 - this->cfg_size) / this->cfg.wl_page_size - 1) * this->cfg.wl_page_size; // -1 remove dummy block
 
-    ESP_LOGD(TAG, "%s - config result: state_size=0x%08x, cfg_size=0x%08x, addr_cfg=0x%08x, addr_state1=0x%08x, addr_state2=0x%08x, flash_size=0x%08x", __func__,
+    ESP_LOGD(TAG, "%s - config result: state_size=0x%08" PRIx32 ", cfg_size=0x%08" PRIx32 ", addr_cfg=0x%08" PRIx32 ", addr_state1=0x%08" PRIx32 ", addr_state2=0x%08" PRIx32 ", flash_size=0x%08" PRIx32, __func__,
              (uint32_t) this->state_size,
              (uint32_t) this->cfg_size,
              (uint32_t) this->addr_cfg,
@@ -130,7 +131,7 @@ esp_err_t WL_Flash::init()
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
     uint32_t crc2 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_copy, check_size);
 
-    ESP_LOGD(TAG, "%s - config ID=%i, stored ID=%i, wl_sec_erase_cycle_count=%i, wl_block_size=%i, wl_max_sec_erase_cycle_count=%i, wl_dummy_sec_pos=%i, wl_dummy_sec_move_count=0x%8.8X",
+    ESP_LOGD(TAG, "%s - config ID=%" PRIu32 ", stored ID=%" PRIu32 ", wl_sec_erase_cycle_count=%" PRIu32 ", wl_block_size=%" PRIu32 ", wl_max_sec_erase_cycle_count=%" PRIu32 ", wl_dummy_sec_pos=%" PRIu32 ", wl_dummy_sec_move_count=0x%8.8" PRIX32,
              __func__,
              this->cfg.version,
              this->state.version,
@@ -140,7 +141,7 @@ esp_err_t WL_Flash::init()
              this->state.wl_dummy_sec_pos,
              this->state.wl_dummy_sec_move_count);
 
-    ESP_LOGD(TAG, "%s starts: crc1= 0x%08x, crc2 = 0x%08x, this->state.crc= 0x%08x, state_copy->crc= 0x%08x, version=%i, read_version=%i", __func__, crc1, crc2, this->state.crc32, state_copy->crc32, this->cfg.version, this->state.version);
+    ESP_LOGD(TAG, "%s starts: crc1= 0x%08" PRIx32 ", crc2 = 0x%08" PRIx32 ", this->state.crc= 0x%08" PRIx32 ", state_copy->crc= 0x%08" PRIx32 ", version=%" PRIu32 ", read_version=%" PRIu32, __func__, crc1, crc2, this->state.crc32, state_copy->crc32, this->cfg.version, this->state.version);
     if ((crc1 == this->state.crc32) && (crc2 == state_copy->crc32)) {
         // The state is OK. Check the ID
         if (this->state.version != this->cfg.version) {
@@ -167,13 +168,13 @@ esp_err_t WL_Flash::init()
                     }
                 }
             }
-            ESP_LOGD(TAG, "%s: crc1=0x%08x, crc2 = 0x%08x, result= 0x%08x", __func__, crc1, crc2, (uint32_t)result);
+            ESP_LOGD(TAG, "%s: crc1=0x%08" PRIx32 ", crc2 = 0x%08" PRIx32 ", result= 0x%08" PRIx32 , __func__, crc1, crc2, (uint32_t)result);
             result = this->recoverPos();
             WL_RESULT_CHECK(result);
         }
     } else if ((crc1 != this->state.crc32) && (crc2 != state_copy->crc32)) { // This is just new flash or new version
         // Check if this is new version or just new instance of WL
-        ESP_LOGD(TAG, "%s: try to update version - crc1= 0x%08x, crc2 = 0x%08x, result= 0x%08x", __func__, (uint32_t)crc1, (uint32_t)crc2, (uint32_t)result);
+        ESP_LOGD(TAG, "%s: try to update version - crc1= 0x%08" PRIx32 ", crc2 = 0x%08" PRIx32 ", result= 0x%08" PRIx32 , __func__, (uint32_t)crc1, (uint32_t)crc2, (uint32_t)result);
         result = this->updateVersion();
         if (result == ESP_FAIL) {
             ESP_LOGD(TAG, "%s: init flash sections", __func__);
@@ -232,11 +233,11 @@ esp_err_t WL_Flash::init()
     }
     if (result != ESP_OK) {
         this->initialized = false;
-        ESP_LOGE(TAG, "%s: returned 0x%08x", __func__, (uint32_t)result);
+        ESP_LOGE(TAG, "%s: returned 0x%08" PRIx32 , __func__, (uint32_t)result);
         return result;
     }
     this->initialized = true;
-    ESP_LOGD(TAG, "%s - wl_dummy_sec_move_count= 0x%08x", __func__, (uint32_t)this->state.wl_dummy_sec_move_count);
+    ESP_LOGD(TAG, "%s - wl_dummy_sec_move_count= 0x%08" PRIx32 , __func__, (uint32_t)this->state.wl_dummy_sec_move_count);
     return ESP_OK;
 }
 
@@ -251,7 +252,7 @@ esp_err_t WL_Flash::recoverPos()
         result = this->partition->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, this->temp_buff, this->cfg.wl_pos_update_record_size);
         pos_bits = this->OkBuffSet(i);
         WL_RESULT_CHECK(result);
-        ESP_LOGV(TAG, "%s - check pos: result=0x%08x, position= %i, pos_bits= 0x%08x", __func__, (uint32_t)result, (uint32_t)position, (uint32_t)pos_bits);
+        ESP_LOGV(TAG, "%s - check pos: result=0x%08" PRIx32 ", position= %" PRIu32 ", pos_bits= 0x%08" PRIx32 , __func__, (uint32_t) result, (uint32_t) position, (uint32_t) pos_bits);
         if (pos_bits == false) {
             break; // we have found position
         }
@@ -261,7 +262,7 @@ esp_err_t WL_Flash::recoverPos()
     if (this->state.wl_dummy_sec_pos == this->state.wl_part_max_sec_pos) {
         this->state.wl_dummy_sec_pos--;
     }
-    ESP_LOGD(TAG, "%s - this->state.wl_dummy_sec_pos= 0x%08x, position= 0x%08x, result= 0x%08x, wl_part_max_sec_pos= 0x%08x", __func__, (uint32_t)this->state.wl_dummy_sec_pos, (uint32_t)position, (uint32_t)result, (uint32_t)this->state.wl_part_max_sec_pos);
+    ESP_LOGD(TAG, "%s - this->state.wl_dummy_sec_pos= 0x%08" PRIx32 ", position= 0x%08" PRIx32 ", result= 0x%08" PRIx32 ", wl_part_max_sec_pos= 0x%08" PRIx32 , __func__, (uint32_t)this->state.wl_dummy_sec_pos, (uint32_t)position, (uint32_t)result, (uint32_t)this->state.wl_part_max_sec_pos);
     ESP_LOGV(TAG, "%s done", __func__);
     return result;
 }
@@ -301,8 +302,8 @@ esp_err_t WL_Flash::initSections()
     result = this->partition->write(this->addr_cfg, &this->cfg, sizeof(wl_config_t));
     WL_RESULT_CHECK(result);
 
-    ESP_LOGD(TAG, "%s - this->state->wl_max_sec_erase_cycle_count= 0x%08x, this->state->wl_part_max_sec_pos= 0x%08x", __func__, this->state.wl_max_sec_erase_cycle_count, this->state.wl_part_max_sec_pos);
-    ESP_LOGD(TAG, "%s - result= 0x%08x", __func__, result);
+    ESP_LOGD(TAG, "%s - this->state->wl_max_sec_erase_cycle_count= 0x%08" PRIx32 ", this->state->wl_part_max_sec_pos= 0x%08" PRIx32 , __func__, this->state.wl_max_sec_erase_cycle_count, this->state.wl_part_max_sec_pos);
+    ESP_LOGD(TAG, "%s - result= 0x%08x" , __func__, result);
     return result;
 }
 
@@ -336,24 +337,24 @@ esp_err_t WL_Flash::updateV1_V2()
     uint32_t v1_crc1 = this->state.wl_device_id;
     uint32_t v1_crc2 = state_copy->wl_device_id;
 
-    ESP_LOGD(TAG, "%s - process crc1=0x%08x, crc2=0x%08x, v1_crc1=0x%08x, v1_crc2=0x%08x, version=%i", __func__, crc1, crc2, v1_crc1, v1_crc2, this->state.version);
+    ESP_LOGD(TAG, "%s - process crc1=0x%08" PRIx32 ", crc2=0x%08" PRIx32 ", v1_crc1=0x%08" PRIx32 ", v1_crc2=0x%08" PRIx32 ", version=%" PRIu32, __func__, crc1, crc2, v1_crc1, v1_crc2, this->state.version);
 
     if ((crc1 == v1_crc1) && (crc2 == v1_crc2) && (v1_crc1 == v1_crc2) && (this->state.version == 1) && (state_copy->version == 1)) {
         // Here we have to update all internal structures
-        ESP_LOGI(TAG, "%s Update from V1 to V2, crc=0x%08x, ", __func__, crc1);
+        ESP_LOGI(TAG, "%s Update from V1 to V2, crc=0x%08" PRIx32 ", ", __func__, crc1);
         uint32_t pos = 0;
 
         for (size_t i = 0; i < this->state.wl_part_max_sec_pos; i++) {
             uint8_t pos_bits;
             result = this->partition->read(this->addr_state1 + sizeof(wl_state_t) + i * this->cfg.wl_pos_update_record_size, &pos_bits, 1);
             WL_RESULT_CHECK(result);
-            ESP_LOGV(TAG, "%s- result= 0x%08x, pos= %i, pos_bits= 0x%08x", __func__, (uint32_t)result, (uint32_t)pos, (uint32_t)pos_bits);
+            ESP_LOGV(TAG, "%s- result= 0x%08" PRIx32 ", pos= %" PRIu32 ", pos_bits= 0x%08" PRIx32 , __func__, (uint32_t) result, (uint32_t) pos, (uint32_t) pos_bits);
             pos = i;
             if (pos_bits == 0xff) {
                 break; // we have found position
             }
         }
-        ESP_LOGI(TAG, "%s wl_part_max_sec_pos=%i, pos=%i, state.ver=%i, state2.ver=%i", __func__, (uint32_t)this->state.wl_part_max_sec_pos, (uint32_t)pos, (uint32_t)this->state.version, (uint32_t)state_copy->version);
+        ESP_LOGI(TAG, "%s wl_part_max_sec_pos=%" PRIu32 ", pos=%" PRIu32 ", state.ver=%" PRIu32 ", state2.ver=%" PRIu32, __func__, (uint32_t) this->state.wl_part_max_sec_pos, (uint32_t) pos, (uint32_t) this->state.version, (uint32_t) state_copy->version);
         if (pos == this->state.wl_part_max_sec_pos) {
             pos--;
         }
@@ -381,7 +382,7 @@ esp_err_t WL_Flash::updateV1_V2()
         WL_RESULT_CHECK(result);
         result = this->partition->write(this->addr_state2, &this->state, sizeof(wl_state_t));
         WL_RESULT_CHECK(result);
-        ESP_LOGD(TAG, "%s - wl_dummy_sec_move_count= 0x%08x, pos= 0x%08x", __func__, this->state.wl_dummy_sec_move_count, this->state.wl_dummy_sec_pos);
+        ESP_LOGD(TAG, "%s - wl_dummy_sec_move_count= 0x%08" PRIx32 ", pos= 0x%08" PRIx32 , __func__, this->state.wl_dummy_sec_move_count, this->state.wl_dummy_sec_pos);
 
         memset(this->temp_buff, 0, this->cfg.wl_pos_update_record_size);
         for (uint32_t i = 0 ; i <= pos; i++) {
@@ -430,7 +431,7 @@ esp_err_t WL_Flash::updateWL()
     }
     // Here we have to move the block and increase the state
     this->state.wl_sec_erase_cycle_count = 0;
-    ESP_LOGV(TAG, "%s - wl_sec_erase_cycle_count= 0x%08x, pos= 0x%08x", __func__, this->state.wl_sec_erase_cycle_count, this->state.wl_dummy_sec_pos);
+    ESP_LOGV(TAG, "%s - wl_sec_erase_cycle_count= 0x%08" PRIx32 ", pos= 0x%08" PRIx32 , __func__, this->state.wl_sec_erase_cycle_count, this->state.wl_dummy_sec_pos);
     // copy data to dummy block
     size_t data_addr = this->state.wl_dummy_sec_pos + 1; // next block, [pos+1] copy to [pos]
     if (data_addr >= this->state.wl_part_max_sec_pos) {
@@ -440,7 +441,7 @@ esp_err_t WL_Flash::updateWL()
     this->dummy_addr = this->cfg.wl_partition_start_addr + this->state.wl_dummy_sec_pos * this->cfg.wl_page_size;
     result = this->partition->erase_range(this->dummy_addr, this->cfg.wl_page_size);
     if (result != ESP_OK) {
-        ESP_LOGE(TAG, "%s - erase wl dummy sector result= 0x%08x", __func__, result);
+        ESP_LOGE(TAG, "%s - erase wl dummy sector result= 0x%08x" , __func__, result);
         this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
         return result;
     }
@@ -449,13 +450,13 @@ esp_err_t WL_Flash::updateWL()
     for (size_t i = 0; i < copy_count; i++) {
         result = this->partition->read(data_addr + i * this->cfg.wl_temp_buff_size, this->temp_buff, this->cfg.wl_temp_buff_size);
         if (result != ESP_OK) {
-            ESP_LOGE(TAG, "%s - not possible to read buffer, will try next time, result= 0x%08x", __func__, result);
+            ESP_LOGE(TAG, "%s - not possible to read buffer, will try next time, result= 0x%08x" , __func__, result);
             this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
             return result;
         }
         result = this->partition->write(this->dummy_addr + i * this->cfg.wl_temp_buff_size, this->temp_buff, this->cfg.wl_temp_buff_size);
         if (result != ESP_OK) {
-            ESP_LOGE(TAG, "%s - not possible to write buffer, will try next time, result= 0x%08x", __func__, result);
+            ESP_LOGE(TAG, "%s - not possible to write buffer, will try next time, result= 0x%08x" , __func__, result);
             this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
             return result;
         }
@@ -468,14 +469,14 @@ esp_err_t WL_Flash::updateWL()
     // write state to mem. We updating only affected bits
     result |= this->partition->write(this->addr_state1 + sizeof(wl_state_t) + byte_pos, this->temp_buff, this->cfg.wl_pos_update_record_size);
     if (result != ESP_OK) {
-        ESP_LOGE(TAG, "%s - update position 1 result= 0x%08x", __func__, result);
+        ESP_LOGE(TAG, "%s - update position 1 result= 0x%08x" , __func__, result);
         this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
         return result;
     }
     this->fillOkBuff(this->state.wl_dummy_sec_pos);
     result |= this->partition->write(this->addr_state2 + sizeof(wl_state_t) + byte_pos, this->temp_buff, this->cfg.wl_pos_update_record_size);
     if (result != ESP_OK) {
-        ESP_LOGE(TAG, "%s - update position 2 result= 0x%08x", __func__, result);
+        ESP_LOGE(TAG, "%s - update position 2 result= 0x%08x" , __func__, result);
         this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1; // we will update next time
         return result;
     }
@@ -499,13 +500,13 @@ esp_err_t WL_Flash::updateWL()
         WL_RESULT_CHECK(result);
         result = this->partition->write(this->addr_state2, &this->state, sizeof(wl_state_t));
         WL_RESULT_CHECK(result);
-        ESP_LOGD(TAG, "%s - wl_dummy_sec_move_count= 0x%08x, wl_dummy_sec_pos= 0x%08x, ", __func__, this->state.wl_dummy_sec_move_count, this->state.wl_dummy_sec_pos);
+        ESP_LOGD(TAG, "%s - wl_dummy_sec_move_count= 0x%08" PRIx32 ", wl_dummy_sec_pos= 0x%08" PRIx32 ", ", __func__, this->state.wl_dummy_sec_move_count, this->state.wl_dummy_sec_pos);
     }
     // Save structures to the flash... and check result
     if (result == ESP_OK) {
-        ESP_LOGV(TAG, "%s - result= 0x%08x", __func__, result);
+        ESP_LOGV(TAG, "%s - result= 0x%08x" , __func__, result);
     } else {
-        ESP_LOGE(TAG, "%s - result= 0x%08x", __func__, result);
+        ESP_LOGE(TAG, "%s - result= 0x%08x" , __func__, result);
     }
     return result;
 }
@@ -518,7 +519,7 @@ size_t WL_Flash::calcAddr(size_t addr)
     } else {
         result += this->cfg.wl_page_size;
     }
-    ESP_LOGV(TAG, "%s - addr= 0x%08x -> result= 0x%08x, dummy_addr= 0x%08x", __func__, (uint32_t) addr, (uint32_t) result, (uint32_t)dummy_addr);
+    ESP_LOGV(TAG, "%s - addr= 0x%08" PRIx32 " -> result= 0x%08" PRIx32 ", dummy_addr= 0x%08" PRIx32 , __func__, (uint32_t) addr, (uint32_t) result, (uint32_t)dummy_addr);
     return result;
 }
 
@@ -545,7 +546,7 @@ esp_err_t WL_Flash::erase_sector(size_t sector)
     if (!this->initialized) {
         return ESP_ERR_INVALID_STATE;
     }
-    ESP_LOGD(TAG, "%s - sector= 0x%08x", __func__, (uint32_t) sector);
+    ESP_LOGD(TAG, "%s - sector= 0x%08" PRIx32 , __func__, (uint32_t) sector);
     result = this->updateWL();
     WL_RESULT_CHECK(result);
     size_t virt_addr = this->calcAddr(sector * this->cfg.flash_sector_size);
@@ -560,14 +561,14 @@ esp_err_t WL_Flash::erase_range(size_t start_address, size_t size)
     if (!this->initialized) {
         return ESP_ERR_INVALID_STATE;
     }
-    ESP_LOGD(TAG, "%s - start_address= 0x%08x, size= 0x%08x", __func__, (uint32_t) start_address, (uint32_t) size);
+    ESP_LOGD(TAG, "%s - start_address= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) start_address, (uint32_t) size);
     size_t erase_count = (size + this->cfg.flash_sector_size - 1) / this->cfg.flash_sector_size;
     size_t start_sector = start_address / this->cfg.flash_sector_size;
     for (size_t i = 0; i < erase_count; i++) {
         result = this->erase_sector(start_sector + i);
         WL_RESULT_CHECK(result);
     }
-    ESP_LOGV(TAG, "%s - result= 0x%08x", __func__, result);
+    ESP_LOGV(TAG, "%s - result= 0x%08x" , __func__, result);
     return result;
 }
 
@@ -577,7 +578,7 @@ esp_err_t WL_Flash::write(size_t dest_addr, const void *src, size_t size)
     if (!this->initialized) {
         return ESP_ERR_INVALID_STATE;
     }
-    ESP_LOGD(TAG, "%s - dest_addr= 0x%08x, size= 0x%08x", __func__, (uint32_t) dest_addr, (uint32_t) size);
+    ESP_LOGD(TAG, "%s - dest_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) dest_addr, (uint32_t) size);
     uint32_t count = (size - 1) / this->cfg.wl_page_size;
     for (size_t i = 0; i < count; i++) {
         size_t virt_addr = this->calcAddr(dest_addr + i * this->cfg.wl_page_size);
@@ -596,11 +597,11 @@ esp_err_t WL_Flash::read(size_t src_addr, void *dest, size_t size)
     if (!this->initialized) {
         return ESP_ERR_INVALID_STATE;
     }
-    ESP_LOGD(TAG, "%s - src_addr= 0x%08x, size= 0x%08x", __func__, (uint32_t) src_addr, (uint32_t) size);
+    ESP_LOGD(TAG, "%s - src_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) src_addr, (uint32_t) size);
     uint32_t count = (size - 1) / this->cfg.wl_page_size;
     for (size_t i = 0; i < count; i++) {
         size_t virt_addr = this->calcAddr(src_addr + i * this->cfg.wl_page_size);
-        ESP_LOGV(TAG, "%s - real_addr= 0x%08x, size= 0x%08x", __func__, (uint32_t) (this->cfg.wl_partition_start_addr + virt_addr), (uint32_t) size);
+        ESP_LOGV(TAG, "%s - real_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) (this->cfg.wl_partition_start_addr + virt_addr), (uint32_t) size);
         result = this->partition->read(this->cfg.wl_partition_start_addr + virt_addr, &((uint8_t *)dest)[i * this->cfg.wl_page_size], this->cfg.wl_page_size);
         WL_RESULT_CHECK(result);
     }
@@ -624,6 +625,6 @@ esp_err_t WL_Flash::flush()
     esp_err_t result = ESP_OK;
     this->state.wl_sec_erase_cycle_count = this->state.wl_max_sec_erase_cycle_count - 1;
     result = this->updateWL();
-    ESP_LOGD(TAG, "%s - result= 0x%08x, wl_dummy_sec_move_count= 0x%08x", __func__, result, this->state.wl_dummy_sec_move_count);
+    ESP_LOGD(TAG, "%s - result= 0x%08x, wl_dummy_sec_move_count= 0x%08" PRIx32, __func__, result, this->state.wl_dummy_sec_move_count);
     return result;
 }

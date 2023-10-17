@@ -41,5 +41,3 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
         " -fno-inline-small-functions -fno-inline-functions-called-once")
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
