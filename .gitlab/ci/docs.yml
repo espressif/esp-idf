@@ -37,15 +37,24 @@
 .if-dev-push: &if-dev-push
   if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
 
+.if-schedule: &if-schedule
+  if: '$CI_PIPELINE_SOURCE == "schedule"'
+
 .doc-rules:build:docs-full:
   rules:
     - <<: *if-qa-test-tag
       when: never
-    - <<: *if-protected
+    - <<: *if-schedule
     - <<: *if-label-build_docs
     - <<: *if-label-docs_full
     - <<: *if-dev-push
       changes: *patterns-docs-full
+
+.doc-rules:build:docs-full-prod:
+  rules:
+    - <<: *if-qa-test-tag
+      when: never
+    - <<: *if-protected-no_label
 
 .doc-rules:build:docs-partial:
   rules:
@@ -83,10 +92,6 @@ check_docs_lang_sync:
   stage: build_doc
   tags:
     - build_docs
-  needs:
-    - job: fast_template_app
-      artifacts: false
-      optional: true
   script:
     - cd docs
     - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
@@ -110,6 +115,23 @@ build_docs_html_full:
   extends:
     - .build_docs_template
     - .doc-rules:build:docs-full
+  needs:
+    - job: fast_template_app
+      artifacts: false
+      optional: true
+  artifacts:
+    when: always
+    paths:
+      - docs/_build/*/*/*.txt
+      - docs/_build/*/*/html/*
+    expire_in: 4 days
+  variables:
+    DOC_BUILDERS: "html"
+
+build_docs_html_full_prod:
+  extends:
+    - .build_docs_template
+    - .doc-rules:build:docs-full-prod
   artifacts:
     when: always
     paths:
@@ -123,6 +145,10 @@ build_docs_html_partial:
   extends:
     - .build_docs_template
     - .doc-rules:build:docs-partial
+  needs:
+    - job: fast_template_app
+      artifacts: false
+      optional: true
   artifacts:
     when: always
     paths:
@@ -142,6 +168,22 @@ build_docs_pdf:
   extends:
     - .build_docs_template
     - .doc-rules:build:docs-full
+  needs:
+    - job: fast_template_app
+      artifacts: false
+      optional: true
+  artifacts:
+    when: always
+    paths:
+      - docs/_build/*/*/latex/*
+    expire_in: 4 days
+  variables:
+    DOC_BUILDERS: "latex"
+
+build_docs_pdf_prod:
+  extends:
+    - .build_docs_template
+    - .doc-rules:build:docs-full-prod
   artifacts:
     when: always
     paths:
@@ -194,13 +236,12 @@ deploy_docs_production:
   # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
   extends:
     - .deploy_docs_template
-  rules:
-    - <<: *if-protected-no_label
+    - .doc-rules:build:docs-full-prod
   stage: post_deploy
   dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs: # ensure runs after push_to_github succeeded
-    - build_docs_html_full
-    - build_docs_pdf
+    - build_docs_html_full_prod
+    - build_docs_pdf_prod
     - job: push_to_github
       artifacts: false
   variables:
@@ -215,8 +256,7 @@ deploy_docs_production:
 check_doc_links:
   extends:
     - .build_docs_template
-  rules:
-    - <<: *if-protected-no_label
+    - .doc-rules:build:docs-full-prod
   stage: post_deploy
   needs:
     - job: deploy_docs_production
