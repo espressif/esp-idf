@@ -1,4 +1,0 @@
-# This config is split between targets since different component needs to be excluded
-CONFIG_IDF_TARGET="esp32c3"
-# spi_flash is tested in other configs
-TEST_EXCLUDE_COMPONENTS=spi_flash

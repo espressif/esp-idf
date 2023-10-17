@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import yaml
-from idf_ci_utils import IDF_PATH, get_ttfw_cases
+from idf_ci_utils import IDF_PATH
 
 YES = u'\u2713'
 NO = u'\u2717'
@@ -228,34 +228,14 @@ def check_test_scripts(
     def check_enable_test(
         _app: App,
         _pytest_app_dir_targets_dict: Dict[str, Dict[str, str]],
-        _ttfw_app_dir_targets_dict: Dict[str, Dict[str, str]],
     ) -> bool:
         if _app.app_dir in _pytest_app_dir_targets_dict:
             test_script_path = _pytest_app_dir_targets_dict[_app.app_dir]['script_path']
             actual_verified_targets = sorted(
                 set(_pytest_app_dir_targets_dict[_app.app_dir]['targets'])
             )
-        elif _app.app_dir in _ttfw_app_dir_targets_dict:
-            test_script_path = _ttfw_app_dir_targets_dict[_app.app_dir]['script_path']
-            actual_verified_targets = sorted(
-                set(_ttfw_app_dir_targets_dict[_app.app_dir]['targets'])
-            )
         else:
             return True  # no test case
-
-        if (
-            _app.app_dir in _pytest_app_dir_targets_dict
-            and _app.app_dir in _ttfw_app_dir_targets_dict
-        ):
-            print(
-                f'''
-            Both pytest and ttfw test cases are found for {_app.app_dir},
-            please remove one of them.
-            pytest script: {_pytest_app_dir_targets_dict[_app.app_dir]['script_path']}
-            ttfw script: {_ttfw_app_dir_targets_dict[_app.app_dir]['script_path']}
-            '''
-            )
-            return False
 
         actual_extra_tested_targets = set(actual_verified_targets) - set(
             _app.verified_targets
@@ -297,9 +277,6 @@ def check_test_scripts(
             If you want to enable test targets in the pytest test scripts, please add `@pytest.mark.MISSING_TARGET`
             marker above the test case function.
 
-            If you want to enable test targets in the ttfw test scripts, please add/extend the keyword `targets` in
-            the ttfw decorator, e.g. `@ttfw_idf.idf_example_test(..., target=['esp32', 'MISSING_TARGET'])`
-
             If you want to disable the test targets in the manifest file, please modify your manifest file with
             the following code snippet:
 
@@ -334,10 +311,8 @@ def check_test_scripts(
     exit_code = 0
 
     pytest_cases = get_pytest_cases(paths)
-    ttfw_cases = get_ttfw_cases(paths)
 
     pytest_app_dir_targets_dict = {}
-    ttfw_app_dir_targets_dict = {}
     for case in pytest_cases:
         for pytest_app in case.apps:
             app_dir = os.path.relpath(pytest_app.path, IDF_PATH)
@@ -351,18 +326,6 @@ def check_test_scripts(
                     pytest_app.target
                 )
 
-    for case in ttfw_cases:
-        app_dir = case.case_info['app_dir']
-        if app_dir not in ttfw_app_dir_targets_dict:
-            ttfw_app_dir_targets_dict[app_dir] = {
-                'script_path': case.case_info['script_path'],
-                'targets': [case.case_info['target'].lower()],
-            }
-        else:
-            ttfw_app_dir_targets_dict[app_dir]['targets'].append(
-                case.case_info['target'].lower()
-            )
-
     checked_app_dirs = set()
     for app in apps:
         if app.app_dir not in checked_app_dirs:
@@ -371,7 +334,7 @@ def check_test_scripts(
             continue
 
         success = check_enable_test(
-            app, pytest_app_dir_targets_dict, ttfw_app_dir_targets_dict
+            app, pytest_app_dir_targets_dict
         )
         if not success:
             print(f'check_enable_test failed for app: {app}')

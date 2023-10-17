@@ -63,13 +63,11 @@
 - `macos_test`
 - `nvs_coverage`
 - `submodule`
-- `unit_test[_esp32/esp32s2/...]`
-- `weekend_test`
 - `windows`
 
 There are two general labels (not recommended since these two labels will trigger a lot of jobs)
 
-- `target_test`: includes all target for `example_test`, `custom_test`, `component_ut`, `unit_test`, `integration_test`
+- `target_test`: includes all target for `example_test`, `custom_test`, `component_ut`, `integration_test`
 - `all_test`: includes all test labels
 
 ### How to trigger a `detached` pipeline without pushing new commits?
@@ -197,7 +195,7 @@ if a name has multi phrases, use `-` to concatenate them.
 
     - `target_test`
 
-      a combination of `example_test`, `custom_test`, `unit_test`, `component_ut`, `integration_test` and all targets
+      a combination of `example_test`, `custom_test`, `component_ut`, `integration_test` and all targets
 
 #### `rules` Template Naming Rules
 

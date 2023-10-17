@@ -1542,9 +1542,15 @@ pytest_test_apps_esp32c3_wifi_two_dut:
   JOB_FULL_NAME="${JOB_NAME_PREFIX}_${CI_NODE_INDEX}"
   CONFIG_FILE="${CONFIG_FILE_PATH}/${JOB_FULL_NAME}.yml"
 
-.target_test_job_template:
+.integration_test_template:
   extends:
     - .target_test_template
+    - .rules:test:integration_test
+    - .before_script:minimal
+  image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
+  cache: []
+  needs: # the assign already needs all the build jobs
+    - assign_integration_test
   artifacts:
     when: always
     paths:
@@ -1556,33 +1562,7 @@ pytest_test_apps_esp32c3_wifi_two_dut:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
     expire_in: 1 week
   variables:
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
-    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
-  script:
-    - *define_config_file_name
-    # first test if config file exists, if not exist, exit 0
-    - |
-      { [[ -e $CONFIG_FILE ]]; } || { echo 'No config file found. Consider decreasing the parallel count of this job in ".gitlab/ci/target-test.yml"'; exit 0; }
-    # clone test env configs
-    - retry_failed git clone $TEST_ENV_CONFIG_REPO
-    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    # git clone the known failure cases repo, run test
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
-    # run test
-    - cd tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
-
-.integration_test_template:
-  extends:
-    - .target_test_job_template
-    - .rules:test:integration_test
-    - .before_script:minimal
-  image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
-  cache: []
-  needs: # the assign already needs all the build jobs
-    - assign_integration_test
-  variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "${CI_PROJECT_DIR}/TEST_LOGS"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
