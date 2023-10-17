@@ -806,7 +806,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * The priority value itself is platform-dependent, but is passed to
  * sys_thread_new() when the thread is created.
  */
-#define TCPIP_THREAD_PRIO               CONFIG_LWIP_TCPIP_TASK_PRIO
+#define TCPIP_THREAD_PRIO               ESP_TASK_TCPIP_PRIO
 
 /**
  * TCPIP_MBOX_SIZE: The mailbox size for the tcpip thread messages
