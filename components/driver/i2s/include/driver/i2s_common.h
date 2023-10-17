@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,16 +37,16 @@ extern "C" {
  *       The variables used in the function should be in the SRAM as well.
  */
 typedef struct {
-    i2s_isr_callback_t on_recv;             /**< Callback of data received event, only for rx channel
+    i2s_isr_callback_t on_recv;             /**< Callback of data received event, only for RX channel
                                              *   The event data includes DMA buffer address and size that just finished receiving data
                                              */
-    i2s_isr_callback_t on_recv_q_ovf;       /**< Callback of receiving queue overflowed event, only for rx channel
+    i2s_isr_callback_t on_recv_q_ovf;       /**< Callback of receiving queue overflowed event, only for RX channel
                                              *   The event data includes buffer size that has been overwritten
                                              */
-    i2s_isr_callback_t on_sent;             /**< Callback of data sent event, only for tx channel
+    i2s_isr_callback_t on_sent;             /**< Callback of data sent event, only for TX channel
                                              *   The event data includes DMA buffer address and size that just finished sending data
                                              */
-    i2s_isr_callback_t on_send_q_ovf;       /**< Callback of sending queue overflowed event, only for tx channel
+    i2s_isr_callback_t on_send_q_ovf;       /**< Callback of sending queue overflowed event, only for TX channel
                                              *   The event data includes buffer size that has been overwritten
                                              */
 } i2s_event_callbacks_t;
@@ -61,9 +61,9 @@ typedef struct {
     /* DMA configurations */
     uint32_t            dma_desc_num;       /*!< I2S DMA buffer number, it is also the number of DMA descriptor */
     uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots,
-                                             *   it should be the multiple of '3' when the data bit width is 24.
+                                             *   it should be the multiple of `3` when the data bit width is 24.
                                              */
-    bool                auto_clear;         /*!< Set to auto clear DMA TX buffer, i2s will always send zero automatically if no data to send */
+    bool                auto_clear;         /*!< Set to auto clear DMA TX buffer, I2S will always send zero automatically if no data to send */
     int                 intr_priority;      /*!< I2S interrupt priority, range [0, 7], if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } i2s_chan_config_t;
 
@@ -82,16 +82,16 @@ typedef struct {
  * @brief Allocate new I2S channel(s)
  * @note  The new created I2S channel handle will be REGISTERED state after it is allocated successfully.
  * @note  When the port id in channel configuration is I2S_NUM_AUTO, driver will allocate I2S port automatically
- *        on one of the i2s controller, otherwise driver will try to allocate the new channel on the selected port.
+ *        on one of the I2S controller, otherwise driver will try to allocate the new channel on the selected port.
  * @note  If both tx_handle and rx_handle are not NULL, it means this I2S controller will work at full-duplex mode,
- *        the rx and tx channels will be allocated on a same I2S port in this case.
- *        Note that some configurations of tx/rx channel are shared on ESP32 and ESP32S2,
+ *        the RX and TX channels will be allocated on a same I2S port in this case.
+ *        Note that some configurations of TX/RX channel are shared on ESP32 and ESP32S2,
  *        so please make sure they are working at same condition and under same status(start/stop).
- *        Currently, full-duplex mode can't guarantee tx/rx channels write/read synchronously,
+ *        Currently, full-duplex mode can't guarantee TX/RX channels write/read synchronously,
  *        they can only share the clock signals for now.
  * @note  If tx_handle OR rx_handle is NULL, it means this I2S controller will work at simplex mode.
- *        For ESP32 and ESP32S2, the whole I2S controller (i.e. both rx and tx channel) will be occupied,
- *        even if only one of rx or tx channel is registered.
+ *        For ESP32 and ESP32S2, the whole I2S controller (i.e. both RX and TX channel) will be occupied,
+ *        even if only one of RX or TX channel is registered.
  *        For the other targets, another channel on this controller will still available.
  *
  * @param[in]   chan_cfg    I2S controller channel configurations
@@ -106,8 +106,8 @@ typedef struct {
 esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *ret_tx_handle, i2s_chan_handle_t *ret_rx_handle);
 
 /**
- * @brief Delete the i2s channel
- * @note  Only allowed to be called when the i2s channel is at REGISTERED or READY state (i.e., it should stop before deleting it).
+ * @brief Delete the I2S channel
+ * @note  Only allowed to be called when the I2S channel is at REGISTERED or READY state (i.e., it should stop before deleting it).
  * @note  Resource will be free automatically if all channels in one port are deleted
  *
  * @param[in]   handle      I2S channel handler
@@ -122,18 +122,18 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle);
  * @param[in]   handle      I2S channel handler
  * @param[out]  chan_info   I2S channel basic information
  * @return
- *      - ESP_OK    Get i2s channel information success
- *      - ESP_ERR_NOT_FOUND     The input handle doesn't match any registered I2S channels, it may not an i2s channel handle or not available any more
+ *      - ESP_OK    Get I2S channel information success
+ *      - ESP_ERR_NOT_FOUND     The input handle doesn't match any registered I2S channels, it may not an I2S channel handle or not available any more
  *      - ESP_ERR_INVALID_ARG   The input handle or chan_info pointer is NULL
  */
 esp_err_t i2s_channel_get_info(i2s_chan_handle_t handle, i2s_chan_info_t *chan_info);
 
 /**
- * @brief Enable the i2s channel
+ * @brief Enable the I2S channel
  * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
  *        the channel will enter RUNNING state once it is enabled successfully.
- * @note  Enable the channel can start the I2S communication on hardware. It will start outputting bclk and ws signal.
- *        For mclk signal, it will start to output when initialization is finished
+ * @note  Enable the channel can start the I2S communication on hardware. It will start outputting BCLK and WS signal.
+ *        For MCLK signal, it will start to output when initialization is finished
  *
  * @param[in]   handle      I2S channel handler
  *      - ESP_OK    Start successfully
@@ -143,10 +143,10 @@ esp_err_t i2s_channel_get_info(i2s_chan_handle_t handle, i2s_chan_info_t *chan_i
 esp_err_t i2s_channel_enable(i2s_chan_handle_t handle);
 
 /**
- * @brief Disable the i2s channel
+ * @brief Disable the I2S channel
  * @note  Only allowed to be called when the channel state is RUNNING, (i.e., channel has been started)
  *        the channel will enter READY state once it is disabled successfully.
- * @note  Disable the channel can stop the I2S communication on hardware. It will stop bclk and ws signal but not mclk signal
+ * @note  Disable the channel can stop the I2S communication on hardware. It will stop BCLK and WS signal but not MCLK signal
  *
  * @param[in]   handle      I2S channel handler
  * @return
@@ -180,7 +180,7 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
 
 /**
  * @brief I2S write data
- * @note  Only allowed to be called when the channel state is RUNNING, (i.e., tx channel has been started and is not writing now)
+ * @note  Only allowed to be called when the channel state is RUNNING, (i.e., TX channel has been started and is not writing now)
  *        but the RUNNING only stands for the software state, it doesn't mean there is no the signal transporting on line.
  *
  * @param[in]   handle      I2S channel handler
@@ -190,7 +190,7 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
  * @param[in]   timeout_ms      Max block time
  * @return
  *      - ESP_OK    Write successfully
- *      - ESP_ERR_INVALID_ARG   NULL pointer or this handle is not tx handle
+ *      - ESP_ERR_INVALID_ARG   NULL pointer or this handle is not TX handle
  *      - ESP_ERR_TIMEOUT       Writing timeout, no writing event received from ISR within ticks_to_wait
  *      - ESP_ERR_INVALID_STATE I2S is not ready to write
  */
@@ -208,7 +208,7 @@ esp_err_t i2s_channel_write(i2s_chan_handle_t handle, const void *src, size_t si
  * @param[in]   timeout_ms      Max block time
  * @return
  *      - ESP_OK    Read successfully
- *      - ESP_ERR_INVALID_ARG   NULL pointer or this handle is not rx handle
+ *      - ESP_ERR_INVALID_ARG   NULL pointer or this handle is not RX handle
  *      - ESP_ERR_TIMEOUT       Reading timeout, no reading event received from ISR within ticks_to_wait
  *      - ESP_ERR_INVALID_STATE I2S is not ready to read
  */
