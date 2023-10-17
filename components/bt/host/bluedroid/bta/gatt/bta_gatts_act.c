@@ -495,11 +495,11 @@ void bta_gatts_add_char_descr(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
 
 /*******************************************************************************
 **
-** Function         bta_gatts_add_char_descr
+** Function         bta_gatts_set_attr_value
 **
-** Description      action function to add characteristic descriptor.
+** Description      This function is used to set the attribute value.
 **
-** Returns          none.
+** Returns          None.
 **
 *******************************************************************************/
 void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
@@ -526,8 +526,23 @@ void bta_gatts_set_attr_value(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_
     }
 }
 
+/*******************************************************************************
+**
+** Function         bta_gatts_get_attr_value
+**
+** Description      This function retrieves the attribute value associated with
+**                  the given attribute handle.
+**
+** Returns          tGATT_STATUS - GATT status indicating success or failure in
+**                  retrieving the attribute value.
+**
+*******************************************************************************/
+
 tGATT_STATUS bta_gatts_get_attr_value(UINT16 attr_handle, UINT16 *length, UINT8 **value)
 {
+    if (GATTS_GetAttributeValueInternal(attr_handle, length, value) == 0) {
+        return 0;
+    }
 
    return GATTS_GetAttributeValue(attr_handle, length, value);
 }
