@@ -109,7 +109,7 @@ extern const bootloader_qio_info_t __attribute__((weak)) bootloader_flash_qe_sup
   */
 esp_err_t __attribute__((weak)) bootloader_flash_unlock(void);
 
-#if CONFIG_SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
+#if CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
 /**
  * @brief Enable 32bits address flash(larger than 16MB) can map to cache.
  *
