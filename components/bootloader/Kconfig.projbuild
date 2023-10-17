@@ -101,7 +101,6 @@ menu "Bootloader config"
         config BOOTLOADER_FLASH_XMC_SUPPORT
             bool "Enable the support for flash chips of XMC (READ DOCS FIRST)"
             default y
-            depends on !IDF_ENV_BRINGUP
             help
                 Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
                 XMC chips will be forbidden to be used, when this option is disabled.
@@ -119,7 +118,7 @@ menu "Bootloader config"
 
         config BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
             bool
-            default y if ESPTOOLPY_OCT_FLASH && SPI_FLASH_32BIT_ADDRESS
+            default y if ESPTOOLPY_OCT_FLASH && BOOTLOADER_FLASH_32BIT_ADDR
             default n
 
     endmenu
