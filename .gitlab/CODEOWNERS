@@ -55,6 +55,7 @@
 /.gitlab/dangerjs/                    @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 /.pre-commit-config.yaml              @esp-idf-codeowners/ci
 /.readthedocs.yml                     @esp-idf-codeowners/docs
+/.vale.ini                            @esp-idf-codeowners/docs
 /CMakeLists.txt                       @esp-idf-codeowners/build-config
 /COMPATIBILITY*.md                    @esp-idf-codeowners/peripherals
 /CONTRIBUTING.md                      @esp-idf-codeowners/docs
