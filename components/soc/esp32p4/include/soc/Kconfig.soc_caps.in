@@ -555,6 +555,22 @@ config SOC_I2S_TDM_FULL_DATA_WIDTH
     bool
     default y
 
+config SOC_ISP_NUMS
+    int
+    default 1
+
+config SOC_ISP_AF_CTRLR_NUMS
+    int
+    default 1
+
+config SOC_ISP_AF_ENV_DETECTOR_NUMS
+    int
+    default 1
+
+config SOC_ISP_AF_WINDOW_NUMS
+    int
+    default 3
+
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
     default y

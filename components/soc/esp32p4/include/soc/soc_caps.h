@@ -267,6 +267,12 @@
 #define SOC_I2S_PDM_MAX_RX_LINES    (4)     // On I2S0
 #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
 
+/*-------------------------- ISP CAPS ----------------------------------------*/
+#define SOC_ISP_NUMS                    1U
+#define SOC_ISP_AF_CTRLR_NUMS           1U
+#define SOC_ISP_AF_ENV_DETECTOR_NUMS    1U
+#define SOC_ISP_AF_WINDOW_NUMS          3
+
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)

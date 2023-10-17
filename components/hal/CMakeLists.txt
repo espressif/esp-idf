@@ -83,6 +83,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "i2c_hal.c" "i2c_hal_iram.c")
     endif()
 
+    if(CONFIG_SOC_ISP_SUPPORTED)
+        list(APPEND srcs "isp_hal.c")
+    endif()
+
     if(CONFIG_SOC_RMT_SUPPORTED)
         list(APPEND srcs "rmt_hal.c")
     endif()
