@@ -6,9 +6,6 @@ endif()
 
 # Always compiled source files
 set(srcs
-    "gpio/gpio.c"
-    "gpio/gpio_glitch_filter_ops.c"
-    "gpio/rtc_io.c"
     "spi/spi_bus_lock.c")
 
 # Always included headers
@@ -16,7 +13,6 @@ set(includes "include"
              "deprecated"
              "analog_comparator/include"
              "dac/include"
-             "gpio/include"
              "gptimer/include"
              "i2c/include"
              "i2s/include"
@@ -35,8 +31,7 @@ set(includes "include"
              "usb_serial_jtag/include")
 
 # Always included linker fragments
-set(ldfragments "linker.lf"
-                "gpio/linker.lf")
+set(ldfragments "linker.lf")
 
 # ADC related source files (dprecated)
 if(CONFIG_SOC_ADC_SUPPORTED)
@@ -69,23 +64,6 @@ endif()
 # Parallel IO related source files
 if(CONFIG_SOC_PARLIO_SUPPORTED)
     list(APPEND srcs "parlio/parlio_common.c" "parlio/parlio_tx.c")
-endif()
-
-# GPIO related source files
-if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
-    list(APPEND srcs "gpio/dedic_gpio.c")
-endif()
-
-if(CONFIG_SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER)
-    list(APPEND srcs "gpio/gpio_pin_glitch_filter.c")
-endif()
-
-if(CONFIG_SOC_GPIO_FLEX_GLITCH_FILTER_NUM GREATER 0)
-    list(APPEND srcs "gpio/gpio_flex_glitch_filter.c")
-endif()
-
-if(CONFIG_SOC_GPIO_SUPPORT_ETM)
-    list(APPEND srcs "gpio/gpio_etm.c")
 endif()
 
 # GPTimer related source files
@@ -248,7 +226,7 @@ else()
                            REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
-                                    esp_driver_pcnt
+                                    esp_driver_gpio esp_driver_pcnt
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

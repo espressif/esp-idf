@@ -77,7 +77,7 @@ entries:
         esp_time_impl:esp_set_time_from_rtc (noflash)
 
 [mapping:driver_pm]
-archive: libdriver.a
+archive: libesp_driver_gpio.a
 entries:
     if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
         gpio:gpio_sleep_pupd_config_unapply (noflash)

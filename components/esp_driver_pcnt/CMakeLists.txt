@@ -11,7 +11,7 @@ else()
     idf_component_register(SRCS ${srcs}
                            INCLUDE_DIRS ${public_include}
                            PRIV_REQUIRES "esp_pm"
-                                         "driver" # will be replaced by esp_driver_gpio
+                                         "esp_driver_gpio"
                            LDFRAGMENTS "linker.lf"
                           )
 endif()

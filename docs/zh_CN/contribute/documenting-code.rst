@@ -123,7 +123,7 @@ Doxygen 支持多种格式，并支持文档内部的多个详情级别，具有
 
    如需更多应用示例，请参考 :component_file:`nvs_flash/include/nvs.h`。
 
-4. 如需进一步跳过重复定义或枚举等代码，可使用 ``/** @cond */`` 和 ``/** @endcond */`` 命令附上该代码。相关应用实例，请参考 :component_file:`driver/gpio/include/driver/gpio.h`。
+4. 如需进一步跳过重复定义或枚举等代码，可使用 ``/** @cond */`` 和 ``/** @endcond */`` 命令附上该代码。相关应用实例，请参考 :component_file:`esp_driver_gpio/include/driver/gpio.h`。
 
 5. 使用 markdown 添加标题、链接和表格等，增强文档的可读性。 ::
 

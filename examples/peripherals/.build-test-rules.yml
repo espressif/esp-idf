@@ -27,6 +27,10 @@ examples/peripherals/dac:
   disable:
     - if: SOC_DAC_SUPPORTED != 1
 
+examples/peripherals/gpio:
+  depends_components:
+    - esp_driver_gpio
+
 examples/peripherals/gpio/matrix_keyboard:
   enable:
     - if: IDF_TARGET == "esp32s2"

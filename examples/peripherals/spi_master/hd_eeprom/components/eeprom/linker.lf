@@ -5,20 +5,23 @@
 [mapping:eeprom]
 archive: libeeprom.a
 entries:
-    * (noflash)
+    if EXAMPLE_USE_SPI1_PINS = y:
+        * (noflash)
 
 [mapping:ext_driver]
-archive: libdriver.a
+archive: libesp_driver_gpio.a
 entries:
-    # gpio_set_level, gpio_get_level, gpio_context, _gpio_hal, etc...
-    gpio (noflash)
+    if EXAMPLE_USE_SPI1_PINS = y:
+        gpio: gpio_intr_enable (noflash)
 
 [mapping:ext_soc]
 archive: libhal.a
 entries:
-    gpio_hal (noflash)
+    if EXAMPLE_USE_SPI1_PINS = y:
+        gpio_hal: gpio_hal_intr_enable_on_core (noflash)
 
 [mapping:ext_newlib]
 archive: libnewlib.a
 entries:
-    time:usleep (noflash)
+    if EXAMPLE_USE_SPI1_PINS = y:
+        time:usleep (noflash)

@@ -42,5 +42,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       PRIV_REQUIRES driver efuse
+                       PRIV_REQUIRES driver esp_driver_gpio efuse esp_pm esp_ringbuf
                        LDFRAGMENTS linker.lf)

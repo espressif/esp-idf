@@ -50,8 +50,11 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sleep_retention.c"  "sleep_system_peripheral.c" "sleep_clock.c")
     endif()
 
-    # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
-    list(APPEND priv_requires driver esp_timer)
+    # [refactor-todo]
+    list(APPEND priv_requires driver            # for UART (by sleep_modes)
+                              esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
+                              esp_timer
+                              esp_pm)
 
     list(APPEND priv_requires esp_mm)
 

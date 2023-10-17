@@ -6,8 +6,7 @@
 
 #pragma once
 
-
-#include "soc/soc.h"
+#include <stdint.h>
 //include soc related (generated) definitions
 #include "soc/soc_caps.h"
 

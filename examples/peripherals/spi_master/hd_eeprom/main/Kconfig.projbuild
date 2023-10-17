@@ -4,9 +4,12 @@ menu "Example Configuration"
         bool "The example uses SPI1 shared pins for EEPROM connection"
         default n
         depends on SPI_FLASH_SHARE_SPI1_BUS
+        select GPIO_CTRL_FUNC_IN_IRAM
+        select COMPILER_OPTIMIZATION_CHECKS_SILENT # silent the error check, as the error string are stored in rodata
         help
             Enable this option will make the EEPROM use SPI1 pins, which is shared with the main
-            flash chip.
+            flash chip. Therefore, when doing transaction on SPI1 bus, data cannot be fetched
+            from the flash, so all the data used during this time should be put into the internal RAM.
 
             Currently this example hasn't supported SPI1 pins on other chips yet.
 

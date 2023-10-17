@@ -27,10 +27,14 @@ elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                    INCLUDE_DIRS ${includes}
-                    PRIV_INCLUDE_DIRS ${priv_includes}
-                    LDFRAGMENTS linker.lf
-                    PRIV_REQUIRES esp_partition spi_flash bootloader_support mbedtls esp_rom soc esp_system driver)
+                       INCLUDE_DIRS ${includes}
+                       PRIV_INCLUDE_DIRS ${priv_includes}
+                       LDFRAGMENTS linker.lf
+                       PRIV_REQUIRES esp_partition spi_flash bootloader_support mbedtls esp_rom soc esp_system
+                                     esp_driver_gpio
+                                     # [refactor-todo] esp_flash_internal.h -> spi_common_internal.h requires cleanup
+                                     driver
+                      )
 
 if(CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF)
   target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_app_format)
