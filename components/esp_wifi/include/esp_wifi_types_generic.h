@@ -8,7 +8,7 @@
 #ifndef __ESP_WIFI_TYPES_H__
 #define __ESP_WIFI_TYPES_H__
 
-#include "esp_event.h"
+#include "esp_event_base.h"
 #include "esp_interface.h"
 
 #ifdef __cplusplus
@@ -430,7 +430,7 @@ typedef struct {
     uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
 } vendor_ie_data_t;
 
-typedef struct wifi_pkt_rx_ctrl_t wifi_pkt_rx_ctrl_t;
+typedef struct wifi_pkt_rx_ctrl_t esp_wifi_rxctrl_t;
 
 /**
   * @brief Promiscuous frame type

@@ -102,7 +102,9 @@ typedef struct wifi_csi_config_t{
     uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
     bool dump_ack_en;       /**< enable to dump 802.11 ACK frame, default disabled */
 } wifi_csi_config_t;
-#endif
+#endif // !CONFIG_SOC_WIFI_HE_SUPPORT
+
+typedef wifi_pkt_rx_ctrl_t esp_wifi_rxctrl_t;
 
 /**
   * @brief CSI data type
