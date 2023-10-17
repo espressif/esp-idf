@@ -74,7 +74,7 @@ There are some features that are not supported by all flash chips, or not suppor
 
 -  Flash unique ID - means that flash supports its unique 64-bit ID.
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     -  Suspend & Resume - means that flash can accept suspend/resume command during its writing/erasing. The {IDF_TARGET_NAME} may keep the cache on when the flash is being written/erased and suspend it to read its contents randomly.
 
@@ -169,7 +169,7 @@ Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap
 Note that since memory mapping happens in pages, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``, regardless of the partition boundary.
 
 .. note::
-    
+
     mmap is supported by cache, so it can only be used on main flash.
 
 SPI Flash Implementation

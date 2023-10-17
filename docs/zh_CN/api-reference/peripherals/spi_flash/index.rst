@@ -74,7 +74,7 @@ flash 可选的功能
 
 -  flash 的私有 ID (unique ID) - 表示 flash 支持它自己的 64-bit 独有 ID。
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     -  暂停与恢复 - 表示 flash 可以在读/写的过程中接受暂停/恢复的命令。{IDF_TARGET_NAME} 可以在 flash 正在写/擦除的过程中保持 cache 开启，并能随机读取 flash 中的内容。
 
