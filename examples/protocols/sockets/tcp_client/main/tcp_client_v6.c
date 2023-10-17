@@ -84,78 +84,48 @@ static int get_src_iface(char *interface)
 }
 #else
 
-static esp_netif_t *get_esp_netif_from_iface(char *interface_i)
-{
-    esp_netif_t *netif = NULL;
-    esp_err_t ret = ESP_FAIL;
-    char iface[10];
-
-    // Get interface details and own global ipv6 address
-    for (int i = 0; i < esp_netif_get_nr_of_ifs(); ++i) {
-        netif = esp_netif_next(netif);
-        ret = esp_netif_get_netif_impl_name(netif, iface);
-        if ((ESP_FAIL == ret) || (NULL == netif)) {
-            ESP_LOGE(TAG, "No interface available");
-            return NULL;
-        }
-
-        if (0 == strcmp(interface_i, iface)) {
-            return netif;
-        }
-    }
-
-    return NULL;
-}
-
-
 /**
  * @brief In case of Auto mode returns the interface name with a valid IPv6 address or
  *        In case the user has specified interface, validates and returns the interface name.
  *
- * @param[out] interface Name of the interface in as a string.
+ * This function is a predicate for esp_netif_find_if() API, and it uses the underlying
+ * network interface name as a context parameter
  *
- * @return 0 incase of success.
+ * @return true if we found the appropriate interface, false if not
  */
-static int get_src_iface(char *interface)
+static bool choose_netif(esp_netif_t *netif, void* ctx)
 {
-    esp_netif_t *netif = NULL;
-    esp_err_t ret = ESP_FAIL;
-    int ip6_addrs_count = 0;
+    char *interface = ctx;
     esp_ip6_addr_t ip6[LWIP_IPV6_NUM_ADDRESSES];
 
-    // Get interface details and own global ipv6 address
-    for (int i = 0; i < esp_netif_get_nr_of_ifs(); ++i) {
-        netif = esp_netif_next(netif);
-        ret = esp_netif_get_netif_impl_name(netif, interface);
+    esp_err_t ret = esp_netif_get_netif_impl_name(netif, interface);
 
-        if ((ESP_FAIL == ret) || (NULL == netif)) {
-            ESP_LOGE(TAG, "No interface available");
-            return -1;
-        }
-
+    if ((ESP_FAIL == ret) || (NULL == netif)) {
+        ESP_LOGE(TAG, "No interface available");
+        return false;
+    }
 #if defined(CONFIG_EXAMPLE_USER_SPECIFIED_IFACE)
-        if (!strcmp(CONFIG_EXAMPLE_USER_SPECIFIED_IFACE_NAME, interface)) {
+    if (!strcmp(CONFIG_EXAMPLE_USER_SPECIFIED_IFACE_NAME, interface)) {
             ESP_LOGI(TAG, "Interface: %s", interface);
-            return 0;
+            return true;
         }
 #else
-        ip6_addrs_count = esp_netif_get_all_ip6(netif, ip6);
-        for (int j = 0; j < ip6_addrs_count; ++j) {
-            esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&(ip6[j]));
+    int ip6_addrs_count = esp_netif_get_all_ip6(netif, ip6);
+    for (int j = 0; j < ip6_addrs_count; ++j) {
+        esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&(ip6[j]));
 
-            if ((ESP_IP6_ADDR_IS_GLOBAL == ipv6_type) ||
-                    (ESP_IP6_ADDR_IS_UNIQUE_LOCAL == ipv6_type) ||
-                    (ESP_IP6_ADDR_IS_LINK_LOCAL == ipv6_type)) {
-                // Break as we have the source address
-                ESP_LOGI(TAG, "Interface: %s", interface);
-                return 0;
-            }
+        if ((ESP_IP6_ADDR_IS_GLOBAL == ipv6_type) ||
+            (ESP_IP6_ADDR_IS_UNIQUE_LOCAL == ipv6_type) ||
+            (ESP_IP6_ADDR_IS_LINK_LOCAL == ipv6_type)) {
+            // Break as we have the source address
+            ESP_LOGI(TAG, "Interface: %s", interface);
+            return true;
         }
-#endif    // #if defined(CONFIG_EXAMPLE_USER_SPECIFIED_IFACE)
     }
-
-    return -1;
+#endif    // #if defined(CONFIG_EXAMPLE_USER_SPECIFIED_IFACE)
+    return false;
 }
+
 #endif    // #if defined(CONFIG_IDF_TARGET_LINUX)
 
 
@@ -191,12 +161,11 @@ void tcp_client(void)
         }
         ESP_LOGI(TAG, "Socket created, connecting to %s:%d", host_ip, PORT);
 
+#if defined(CONFIG_IDF_TARGET_LINUX)
         if (0 != get_src_iface(interface)) {
             ESP_LOGE(TAG, "Interface: Unavailable");
             break;
         }
-
-#if defined(CONFIG_IDF_TARGET_LINUX)
         memset (&ifr, 0, sizeof(ifr));
         snprintf (ifr.ifr_name, sizeof (ifr.ifr_name), "%s", interface);
         if (ioctl (sock, SIOCGIFINDEX, &ifr) < 0) {
@@ -208,13 +177,13 @@ void tcp_client(void)
         ESP_LOGI(TAG, "Interface index: %d", dest_addr.sin6_scope_id);
 #endif
 #else
-        if (NULL == (netif = get_esp_netif_from_iface(interface))) {
+        if (NULL == (netif = esp_netif_find_if(choose_netif, interface))) {
             ESP_LOGE(TAG, "Failed to find interface ");
             break;
         }
 #if defined(CONFIG_EXAMPLE_IPV6)
         dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(netif);
-        ESP_LOGI(TAG, "Interface index: %d", dest_addr.sin6_scope_id);
+        ESP_LOGI(TAG, "Interface index: %" PRIu32, dest_addr.sin6_scope_id);
 #endif
 #endif
 
