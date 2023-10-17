@@ -707,6 +707,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     /* Enable BT-related clocks */
     modem_clock_module_enable(PERIPH_BT_MODULE);
+    modem_clock_module_mac_reset(PERIPH_BT_MODULE);
 #if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
    esp_bt_rtc_slow_clk_select(MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL);
    slow_clk_freq = 100000;
