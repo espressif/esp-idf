@@ -225,6 +225,11 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ds_hal.c")
     endif()
 
+    if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
+        list(APPEND srcs "key_mgr_hal.c")
+        list(APPEND srcs "huk_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "touch_sensor_hal.c"
