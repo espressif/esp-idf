@@ -177,7 +177,7 @@ VFS does not impose any limit on total file path length, but it does limit the F
 File Descriptors
 ----------------
 
-File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in newlib's ``sys/types.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
+File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in ``sys/select.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
 
 
 Standard IO Streams (``stdin``, ``stdout``, ``stderr``)

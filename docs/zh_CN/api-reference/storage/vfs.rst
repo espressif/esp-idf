@@ -177,7 +177,7 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 文件描述符
 ----------------
 
-文件描述符是一组很小的正整数，从 ``0`` 到 ``FD_SETSIZE - 1``，``FD_SETSIZE`` 在 newlib ``sys/types.h`` 中定义。最大文件描述符由 ``CONFIG_LWIP_MAX_SOCKETS`` 定义，且为套接字保留。VFS 中包含一个名为 ``s_fd_table`` 的查找表，用于将全局文件描述符映射至 ``s_vfs`` 数组中注册的 VFS 驱动索引。
+文件描述符是一组很小的正整数，从 ``0`` 到 ``FD_SETSIZE - 1``，``FD_SETSIZE`` 定义在 ``sys/select.h``。最大文件描述符由 ``CONFIG_LWIP_MAX_SOCKETS`` 定义，且为套接字保留。VFS 中包含一个名为 ``s_fd_table`` 的查找表，用于将全局文件描述符映射至 ``s_vfs`` 数组中注册的 VFS 驱动索引。
 
 
 标准 IO 流 (``stdin``, ``stdout``, ``stderr``)
