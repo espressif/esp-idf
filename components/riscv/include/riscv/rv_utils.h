@@ -113,6 +113,20 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
     RV_WRITE_CSR(mtvec, mtvec_val);
 }
 
+#if SOC_INT_CLIC_SUPPORTED
+ FORCE_INLINE_ATTR __attribute__((pure)) uint32_t rv_utils_get_interrupt_level(void)
+{
+#if CONFIG_IDF_TARGET_ESP32P4
+    // As per CLIC specs, mintstatus CSR should be at 0xFB1, however esp32p4 implements it at 0x346
+    #define MINTSTATUS 0x346
+#else
+    #error "rv_utils_get_mintstatus() is not implemented. Check for correct mintstatus register address."
+#endif /* CONFIG_IDF_TARGET_ESP32P4 */
+    uint32_t mintstatus = RV_READ_CSR(MINTSTATUS);
+    return ((mintstatus >> 24) & 0xFF); // Return the mintstatus[31:24] bits to get the mil field
+}
+#endif /* SOC_INT_CLIC_SUPPORTED */
+
 // ------------------ Interrupt Control --------------------
 
 FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)

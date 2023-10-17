@@ -645,13 +645,18 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
     uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
 #if SOC_INT_CLIC_SUPPORTED
+    /* When CLIC is supported:
+     *  - The lowest interrupt threshold level is 0. Therefore, an interrupt threshold level above 0 would mean that we
+     *    are in a critical section.
+     *  - Since CLIC enables HW interrupt nesting, we do not have the updated interrupt level in the
+     *    INTERRUPT_CURRENT_CORE_INT_THRESH_REG register when nested interrupts occur. To know the current interrupt
+     *    level, we read the machine-mode interrupt level (mil) field from the mintstatus CSR. A non-zero value indicates
+     *    that we are in an interrupt context.
+     */
+    uint32_t intr_level = rv_utils_get_interrupt_level();
     threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
 
-    /* When CLIC is supported, the lowest interrupt threshold level is 0.
-     * Therefore, an interrupt threshold level above 0 would mean that we
-     * are either in a critical section or in an ISR.
-     */
-    return (threshold == 0);
+    return ((intr_level == 0) && (threshold == 0));
 #endif /* SOC_INT_CLIC_SUPPORTED */
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
      * and exit critical code, will recover threshold value (1). so threshold <= 1
