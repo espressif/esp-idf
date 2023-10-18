@@ -1111,10 +1111,6 @@ config SOC_TWAI_SUPPORTS_RX_STATUS
     bool
     default y
 
-config SOC_EFUSE_DIS_DOWNLOAD_ICACHE
-    bool
-    default y
-
 config SOC_EFUSE_DIS_PAD_JTAG
     bool
     default y
@@ -1128,6 +1124,10 @@ config SOC_EFUSE_DIS_DIRECT_BOOT
     default y
 
 config SOC_EFUSE_SOFT_DIS_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DOWNLOAD_MSPI
     bool
     default y
 
@@ -1159,7 +1159,15 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+    bool
+    default y
+
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
 
