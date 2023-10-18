@@ -270,13 +270,13 @@ void esp_netif_free_rx_buffer(void *h, void* buffer)
 
 esp_err_t esp_netif_transmit(esp_netif_t *esp_netif, void* data, size_t len)
 {
-    ESP_LOGV(TAG, "Transmitting data: ptr:%p, size:%d", data, len);
+    ESP_LOGV(TAG, "Transmitting data: ptr:%p, size:%lu", data, (long unsigned int) len);
     return (esp_netif->driver_transmit)(esp_netif->driver_handle, data, len);
 }
 
 esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb)
 {
-    ESP_LOGV(TAG, "Received data: ptr:%p, size:%d", buffer, len);
+    ESP_LOGV(TAG, "Received data: ptr:%p, size:%lu", buffer, (long unsigned int) len);
     esp_netif_transmit(esp_netif, buffer, len);
     if (eb) {
         esp_netif_free_rx_buffer(esp_netif, eb);

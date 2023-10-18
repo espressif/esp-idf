@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs "src/esp_lcd_common.c"
          "src/esp_lcd_panel_io.c"
          "src/esp_lcd_panel_io_i2c_v1.c"

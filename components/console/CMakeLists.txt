@@ -1,3 +1,10 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is currently not supported by the POSIX/Linux simulator, but we may support it in the
+             # future (TODO: IDF-8103)
+endif()
+
 set(argtable_srcs argtable3/arg_cmd.c
                   argtable3/arg_date.c
                   argtable3/arg_dbl.c

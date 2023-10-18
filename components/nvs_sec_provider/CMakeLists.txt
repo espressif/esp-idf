@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 idf_component_register(SRCS "nvs_sec_provider.c"
                        INCLUDE_DIRS include
                        PRIV_REQUIRES bootloader_support efuse esp_partition nvs_flash)

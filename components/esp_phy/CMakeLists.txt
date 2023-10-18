@@ -1,5 +1,9 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
+if(${idf_target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 if(IDF_TARGET STREQUAL "esp32p4")
     # TODO: IDF-7460
     return()
