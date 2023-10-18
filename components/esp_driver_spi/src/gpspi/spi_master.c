@@ -149,6 +149,7 @@ typedef struct {
     spi_trans_priv_t cur_trans_buf;
     int cur_cs;     //current device doing transaction
     const spi_bus_attr_t* bus_attr;
+    const spi_dma_ctx_t *dma_ctx;
 
     /**
      * the bus is permanently controlled by a device until `spi_bus_release_bus`` is called. Otherwise
@@ -221,6 +222,7 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
     esp_err_t err = ESP_OK;
 
     const spi_bus_attr_t* bus_attr = spi_bus_get_attr(host_id);
+    const spi_dma_ctx_t *dma_ctx = spi_bus_get_dma_ctx(host_id);
     SPI_CHECK(bus_attr != NULL, "host_id not initialized", ESP_ERR_INVALID_STATE);
     SPI_CHECK(bus_attr->lock != NULL, "SPI Master cannot attach to bus. (Check CONFIG_SPI_FLASH_SHARE_SPI1_BUS)", ESP_ERR_INVALID_ARG);
     // spihost contains atomic variables, which should not be put in PSRAM
@@ -236,6 +238,7 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
         .polling = false,
         .device_acquiring_lock = NULL,
         .bus_attr = bus_attr,
+        .dma_ctx = dma_ctx,
     };
 
     // interrupts are not allowed on SPI1 bus
@@ -259,17 +262,24 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
     }
 
     //assign the SPI, RX DMA and TX DMA peripheral registers beginning address
-    spi_hal_config_t hal_config = {
+    spi_hal_config_t hal_config = { .dma_enabled = bus_attr->dma_enabled, };
+    if (bus_attr->dma_enabled && dma_ctx) {
+        hal_config.dmadesc_tx = dma_ctx->dmadesc_tx;
+        hal_config.dmadesc_rx = dma_ctx->dmadesc_rx;
+        hal_config.dmadesc_n = dma_ctx->dma_desc_num;
+#if SOC_GDMA_SUPPORTED
+        //temporary used for gdma_ll alias in hal layer
+        gdma_get_channel_id(dma_ctx->tx_dma_chan, (int *)&hal_config.tx_dma_chan);
+        gdma_get_channel_id(dma_ctx->rx_dma_chan, (int *)&hal_config.rx_dma_chan);
+#else
         //On ESP32-S2 and earlier chips, DMA registers are part of SPI registers. Pass the registers of SPI peripheral to control it.
-        .dma_in = SPI_LL_GET_HW(host_id),
-        .dma_out = SPI_LL_GET_HW(host_id),
-        .dma_enabled = bus_attr->dma_enabled,
-        .dmadesc_tx = bus_attr->dmadesc_tx,
-        .dmadesc_rx = bus_attr->dmadesc_rx,
-        .tx_dma_chan = bus_attr->tx_dma_chan,
-        .rx_dma_chan = bus_attr->rx_dma_chan,
-        .dmadesc_n = bus_attr->dma_desc_num,
-    };
+        hal_config.dma_in = SPI_LL_GET_HW(host_id);
+        hal_config.dma_out = SPI_LL_GET_HW(host_id);
+        hal_config.tx_dma_chan = dma_ctx->tx_dma_chan.chan_id;
+        hal_config.rx_dma_chan = dma_ctx->rx_dma_chan.chan_id;
+#endif
+    }
+
     SPI_MASTER_PERI_CLOCK_ATOMIC() {
         spi_ll_enable_clock(host_id, true);
     }
@@ -633,8 +643,8 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     spi_hal_trans_config_t hal_trans = {};
     hal_trans.tx_bitlen = trans->length;
     hal_trans.rx_bitlen = trans->rxlength;
-    hal_trans.rcv_buffer = (uint8_t*)host->cur_trans_buf.buffer_to_rcv;
-    hal_trans.send_buffer = (uint8_t*)host->cur_trans_buf.buffer_to_send;
+    hal_trans.rcv_buffer = (uint8_t*)trans_buf->buffer_to_rcv;
+    hal_trans.send_buffer = (uint8_t*)trans_buf->buffer_to_send;
     hal_trans.cmd = trans->cmd;
     hal_trans.addr = trans->addr;
     hal_trans.cs_keep_active = (trans->flags & SPI_TRANS_CS_KEEP_ACTIVE) ? 1 : 0;
@@ -699,6 +709,10 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
     BaseType_t do_yield = pdFALSE;
     spi_host_t *host = (spi_host_t *)arg;
     const spi_bus_attr_t* bus_attr = host->bus_attr;
+#if CONFIG_IDF_TARGET_ESP32
+    //only for esp32 dma workaround usage
+    const spi_dma_ctx_t *dma_ctx = host->dma_ctx;
+#endif
 
     assert(spi_hal_usr_is_done(&host->hal));
 
@@ -720,7 +734,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         if (bus_attr->dma_enabled) {
 #if CONFIG_IDF_TARGET_ESP32
             //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
-            spicommon_dmaworkaround_idle(bus_attr->tx_dma_chan);
+            spicommon_dmaworkaround_idle(dma_ctx->tx_dma_chan.chan_id);
 #endif  //#if CONFIG_IDF_TARGET_ESP32
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE   //invalidate here to let user access rx data in post_cb if possible
@@ -793,7 +807,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
             if (bus_attr->dma_enabled && (cur_trans_buf->buffer_to_rcv || cur_trans_buf->buffer_to_send)) {
                 //mark channel as active, so that the DMA will not be reset by the slave
                 //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
-                spicommon_dmaworkaround_transfer_active(bus_attr->tx_dma_chan);
+                spicommon_dmaworkaround_transfer_active(dma_ctx->tx_dma_chan.chan_id);
             }
 #endif  //#if CONFIG_IDF_TARGET_ESP32
             spi_new_trans(device_to_send, cur_trans_buf);
@@ -1081,7 +1095,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, TickT
 #if CONFIG_IDF_TARGET_ESP32
     if (host->bus_attr->dma_enabled) {
         //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
-        spicommon_dmaworkaround_transfer_active(host->bus_attr->tx_dma_chan);
+        spicommon_dmaworkaround_transfer_active(host->dma_ctx->tx_dma_chan.chan_id);
     }
 #endif  //#if CONFIG_IDF_TARGET_ESP32
 
@@ -1101,7 +1115,7 @@ void SPI_MASTER_ISR_ATTR spi_device_release_bus(spi_device_t *dev)
 #if CONFIG_IDF_TARGET_ESP32
     if (host->bus_attr->dma_enabled) {
         //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
-        spicommon_dmaworkaround_idle(host->bus_attr->tx_dma_chan);
+        spicommon_dmaworkaround_idle(host->dma_ctx->tx_dma_chan.chan_id);
     }
     //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
 #endif  //#if CONFIG_IDF_TARGET_ESP32

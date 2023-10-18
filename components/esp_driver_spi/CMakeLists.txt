@@ -11,7 +11,8 @@ set(public_include "include")
 if(CONFIG_SOC_GPSPI_SUPPORTED)
     list(APPEND srcs "src/gpspi/spi_common.c"
                      "src/gpspi/spi_master.c"
-                     "src/gpspi/spi_slave.c")
+                     "src/gpspi/spi_slave.c"
+                     "src/gpspi/spi_dma.c")
 endif()
 
 if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)

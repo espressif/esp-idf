@@ -196,13 +196,14 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     uint32_t dma_chan = 0;
 
     spi_success = spicommon_periph_claim(SPI3_HOST, "adc");
-    ret = spicommon_dma_chan_alloc(SPI3_HOST, SPI_DMA_CH_AUTO, &dma_chan, &dma_chan);
+    ret = spicommon_dma_chan_alloc(SPI3_HOST, SPI_DMA_CH_AUTO, &adc_ctx->spi_dma_ctx);
     if (ret == ESP_OK) {
         adc_ctx->spi_host = SPI3_HOST;
     }
     if (!spi_success || (adc_ctx->spi_host != SPI3_HOST)) {
         goto cleanup;
     }
+    dma_chan = adc_ctx->spi_dma_ctx->rx_dma_chan.chan_id;
 
     ret = esp_intr_alloc(spicommon_irqdma_source_for_host(adc_ctx->spi_host), ESP_INTR_FLAG_IRAM, adc_dma_intr_handler,
                          (void *)adc_ctx, &adc_ctx->dma_intr_hdl);
@@ -494,7 +495,7 @@ esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle)
     gdma_del_channel(handle->rx_dma_channel);
 #elif CONFIG_IDF_TARGET_ESP32S2
     esp_intr_free(handle->dma_intr_hdl);
-    spicommon_dma_chan_free(handle->spi_host);
+    spicommon_dma_chan_free(handle->spi_dma_ctx);
     spicommon_periph_free(handle->spi_host);
 #elif CONFIG_IDF_TARGET_ESP32
     esp_intr_free(handle->dma_intr_hdl);

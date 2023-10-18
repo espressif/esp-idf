@@ -36,15 +36,12 @@ typedef struct {
 
 typedef struct {
     bool dma_enabled;
+    spi_dma_ctx_t   *dma_ctx;
     uint16_t internal_mem_align_size;
     int max_transfer_sz;
     uint32_t flags;
     portMUX_TYPE int_spinlock;
     intr_handle_t intr;
-#if SOC_GDMA_SUPPORTED
-    gdma_channel_handle_t gdma_handle_tx;   //varible for storge gdma handle
-    gdma_channel_handle_t gdma_handle_rx;
-#endif
     intr_handle_t intr_dma;
     spi_slave_hd_callback_config_t callback;
     spi_slave_hd_hal_context_t hal;
@@ -74,13 +71,10 @@ static bool spi_gdma_tx_channel_callback(gdma_channel_handle_t dma_chan, gdma_ev
 static void spi_slave_hd_intr_append(void *arg);
 static void spi_slave_hd_intr_segment(void *arg);
 
-esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *bus_config,
-                            const spi_slave_hd_slot_config_t *config)
+esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *bus_config, const spi_slave_hd_slot_config_t *config)
 {
     bool spi_chan_claimed;
     bool append_mode = (config->flags & SPI_SLAVE_HD_APPEND_MODE);
-    uint32_t actual_tx_dma_chan = 0;
-    uint32_t actual_rx_dma_chan = 0;
     esp_err_t ret = ESP_OK;
 
     SPIHD_CHECK(VALID_HOST(host_id), "invalid host", ESP_ERR_INVALID_ARG);
@@ -104,34 +98,28 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->append_mode = append_mode;
 
     if (host->dma_enabled) {
-        ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &host->dma_ctx);
+        if (ret != ESP_OK) {
+            goto cleanup;
+        }
+        ret = spicommon_dma_desc_alloc(host->dma_ctx, bus_config->max_transfer_sz, &host->max_transfer_sz);
         if (ret != ESP_OK) {
             goto cleanup;
         }
 
-        //Malloc for all the DMA descriptors
-        int dma_desc_ct = (bus_config->max_transfer_sz + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-        if (dma_desc_ct == 0) {
-            dma_desc_ct = 1; //default to 4k when max is not given
-        }
-        host->hal.dma_desc_num = dma_desc_ct;
-        spi_dma_desc_t *orig_dmadesc_tx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
-        spi_dma_desc_t *orig_dmadesc_rx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
-
-        host->hal.dmadesc_tx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * dma_desc_ct, MALLOC_CAP_DEFAULT);
-        host->hal.dmadesc_rx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * dma_desc_ct, MALLOC_CAP_DEFAULT);
-        if (!(host->hal.dmadesc_tx && host->hal.dmadesc_rx && orig_dmadesc_tx && orig_dmadesc_rx)) {
+        host->hal.dma_desc_num = host->dma_ctx->dma_desc_num;
+        host->hal.dmadesc_tx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * host->hal.dma_desc_num, MALLOC_CAP_DEFAULT);
+        host->hal.dmadesc_rx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * host->hal.dma_desc_num, MALLOC_CAP_DEFAULT);
+        if (!(host->hal.dmadesc_tx && host->hal.dmadesc_rx)) {
             ret = ESP_ERR_NO_MEM;
             goto cleanup;
         }
         //Pair each desc to each possible trans
-        for (int i = 0; i < dma_desc_ct; i ++) {
-            host->hal.dmadesc_tx[i].desc = &orig_dmadesc_tx[i];
-            host->hal.dmadesc_rx[i].desc = &orig_dmadesc_rx[i];
+        for (int i = 0; i < host->hal.dma_desc_num; i ++) {
+            host->hal.dmadesc_tx[i].desc = &host->dma_ctx->dmadesc_tx[i];
+            host->hal.dmadesc_rx[i].desc = &host->dma_ctx->dmadesc_rx[i];
         }
 
-        //Get the actual SPI bus transaction size in bytes.
-        host->max_transfer_sz = dma_desc_ct * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         size_t alignment;
         esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, &alignment);
@@ -156,13 +144,20 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         .dma_in = SPI_LL_GET_HW(host_id),
         .dma_out = SPI_LL_GET_HW(host_id),
         .dma_enabled = host->dma_enabled,
-        .tx_dma_chan = actual_tx_dma_chan,
-        .rx_dma_chan = actual_rx_dma_chan,
         .append_mode = append_mode,
         .mode = config->mode,
         .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
         .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
     };
+
+#if SOC_GDMA_SUPPORTED
+    //temporary used for gdma_ll alias in hal layer
+    gdma_get_channel_id(host->dma_ctx->tx_dma_chan, (int *)&hal_config.tx_dma_chan);
+    gdma_get_channel_id(host->dma_ctx->rx_dma_chan, (int *)&hal_config.rx_dma_chan);
+#else
+    hal_config.tx_dma_chan = host->dma_ctx->tx_dma_chan.chan_id;
+    hal_config.rx_dma_chan = host->dma_ctx->rx_dma_chan.chan_id;
+#endif
 
     //Init the hal according to the hal_config set above
     spi_slave_hd_hal_init(&host->hal, &hal_config);
@@ -219,11 +214,10 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         }
 #if SOC_GDMA_SUPPORTED
         // config gmda and ISR callback for gdma supported chip
-        spicommon_gdma_get_handle(host_id, &host->gdma_handle_tx, GDMA_CHANNEL_DIRECTION_TX);
         gdma_tx_event_callbacks_t tx_cbs = {
             .on_trans_eof = spi_gdma_tx_channel_callback
         };
-        gdma_register_tx_event_callbacks(host->gdma_handle_tx, &tx_cbs, host);
+        gdma_register_tx_event_callbacks(host->dma_ctx->tx_dma_chan, &tx_cbs, host);
 #else
         ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), 0, spi_slave_hd_intr_append,
                              (void *)host, &host->intr_dma);
@@ -293,11 +287,11 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
 
     spicommon_periph_free(host_id);
     if (host->dma_enabled) {
-        free(host->hal.dmadesc_tx->desc);
-        free(host->hal.dmadesc_rx->desc);
+        free(host->dma_ctx->dmadesc_tx);
+        free(host->dma_ctx->dmadesc_rx);
         free(host->hal.dmadesc_tx);
         free(host->hal.dmadesc_rx);
-        spicommon_dma_chan_free(host_id);
+        spicommon_dma_chan_free(host->dma_ctx);
     }
     free(host);
     spihost[host_id] = NULL;
