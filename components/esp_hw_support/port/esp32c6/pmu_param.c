@@ -294,8 +294,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         BIT(PMU_ICG_FUNC_ENA_IOMUX)     | \
         BIT(PMU_ICG_FUNC_ENA_SPI2)      | \
         BIT(PMU_ICG_FUNC_ENA_UART0)     | \
-        BIT(PMU_ICG_FUNC_ENA_SYSTIMER)  | \
-        BIT(PMU_ICG_FUNC_ENA_PVT_MONITOR) \
+        BIT(PMU_ICG_FUNC_ENA_SYSTIMER)    \
     ) \
 }
 
@@ -344,8 +343,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         BIT(PMU_ICG_FUNC_ENA_IOMUX)     | \
         BIT(PMU_ICG_FUNC_ENA_SPI2)      | \
         BIT(PMU_ICG_FUNC_ENA_UART0)     | \
-        BIT(PMU_ICG_FUNC_ENA_SYSTIMER)  | \
-        BIT(PMU_ICG_FUNC_ENA_PVT_MONITOR) \
+        BIT(PMU_ICG_FUNC_ENA_SYSTIMER)    \
     ) \
 }
 
