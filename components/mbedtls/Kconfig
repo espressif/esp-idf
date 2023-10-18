@@ -1052,16 +1052,4 @@ menu "mbedTLS"
             then the ESP will be unable to process keys greater
             than SOC_RSA_MAX_BIT_LEN.
 
-    menuconfig MBEDTLS_SECURITY_RISKS
-        bool "Show configurations with potential security risks"
-        default n
-
-    config MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXT
-        bool "X.509 CRT parsing with unsupported critical extensions"
-        depends on MBEDTLS_SECURITY_RISKS
-        default n
-        help
-            Allow the X.509 certificate parser to load certificates
-            with unsupported critical extensions
-
 endmenu  # mbedTLS
