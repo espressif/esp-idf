@@ -84,10 +84,10 @@ The ``main`` task is one of multiple tasks that are automatically spawned by ESP
           - CPU0
           - 1
           - Task that simply calls ``app_main``. This task will self delete when ``app_main`` returns
-        * - Idle Tasks (``IDLEx``)
-          - CPU0 and CPU1
+        * - Idle Tasks (``IDLE``)
+          - CPU0
           - 0
-          - Idle task created for (and pinned to) each CPU
+          - Idle task created for CPU0
 
 Task API
 --------
