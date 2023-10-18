@@ -1,12 +1,3 @@
-languages.rst
-contribute/esp-idf-tests-with-pytest.rst
-contribute/contributor-agreement.rst
-contribute/documenting-code.rst
-contribute/creating-examples.rst
-contribute/style-guide.rst
-contribute/copyright-guide.rst
-contribute/install-pre-commit-hook.rst
-contribute/index.rst
 api-guides/core_dump_internals.rst
 api-guides/performance/speed.rst
 api-guides/performance/size.rst
@@ -67,13 +58,7 @@ api-guides/openthread.rst
 api-guides/fatal-errors.rst
 api-guides/memory-types.rst
 api-guides/general-notes.rst
-third-party-tools/platformio.rst
-COPYRIGHT.rst
-libraries-and-frameworks/libs-frameworks.rst
-libraries-and-frameworks/index.rst
-libraries-and-frameworks/cloud-frameworks.rst
 conf.py
-versions.rst
 api-reference/api-conventions.rst
 api-reference/template.rst
 api-reference/provisioning/protocomm.rst
@@ -198,8 +183,6 @@ security/flash-encryption.rst
 security/security.rst
 security/esp32p4_log.inc
 security/index.rst
-about.rst
-resources.rst
 migration-guides/release-5.x/5.2/protocols.rst
 migration-guides/release-5.x/5.2/index.rst
 migration-guides/release-5.x/5.2/peripherals.rst
@@ -214,6 +197,4 @@ get-started/flashing-troubleshooting.rst
 get-started/windows-start-project.rst
 get-started/index.rst
 get-started/windows-setup-update.rst
-404.rst
-index.rst
 hw-reference/index.rst
