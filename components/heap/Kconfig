@@ -63,7 +63,6 @@ menu "Heap memory debugging"
 
     config HEAP_TASK_TRACKING
         bool "Enable heap task tracking"
-        depends on !HEAP_POISONING_DISABLED
         help
             Enables tracking the task responsible for each heap allocation.
 
