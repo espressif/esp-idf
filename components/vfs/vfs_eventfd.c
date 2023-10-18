@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -267,13 +267,13 @@ static ssize_t event_write(int fd, const void *data, size_t size)
             s_events[fd].value += *val;
             ret = size;
             trigger_select_for_event(&s_events[fd]);
-
-            if (s_events[fd].support_isr) {
-                portEXIT_CRITICAL(&s_events[fd].data_spin_lock);
-            }
         } else {
             errno = EBADF;
             ret = -1;
+        }
+
+        if (s_events[fd].support_isr) {
+            portEXIT_CRITICAL(&s_events[fd].data_spin_lock);
         }
         _lock_release_recursive(&s_events[fd].lock);
     }
