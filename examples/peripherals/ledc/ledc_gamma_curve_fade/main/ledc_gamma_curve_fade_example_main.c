@@ -28,7 +28,7 @@
 #define LEDC_MODE                     LEDC_LOW_SPEED_MODE
 
 #define LEDC_DUTY_RES                 LEDC_TIMER_13_BIT // Set duty resolution to 13 bits
-#define LEDC_FREQUENCY                (5000) // Frequency in Hertz. Set frequency at 5 kHz
+#define LEDC_FREQUENCY                (4000) // Frequency in Hertz. Set frequency at 4 kHz
 
 // Define two RGB LEDs IOs and channels
 #define LEDC_RED_IO                   (0)
@@ -225,7 +225,7 @@ static void example_rgb_ledc_init(void)
         .speed_mode       = LEDC_MODE,
         .timer_num        = LEDC_TIMER,
         .duty_resolution  = LEDC_DUTY_RES,
-        .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 5 kHz
+        .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 4 kHz
         .clk_cfg          = LEDC_AUTO_CLK
     };
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));

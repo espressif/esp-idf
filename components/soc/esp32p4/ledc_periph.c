@@ -11,5 +11,7 @@
  Bunch of constants for every LEDC peripheral: GPIO signals
 */
 const ledc_signal_conn_t ledc_periph_signal[1] = {
-
+    {
+        .sig_out0_idx = LEDC_LS_SIG_OUT_PAD_OUT0_IDX,
+    }
 };

@@ -20,6 +20,7 @@ PROVIDE ( UHCI0             = 0x500DF000 );
 PROVIDE ( RMT               = 0x500A2000 );
 PROVIDE ( RMTMEM            = 0x500A2800 );
 PROVIDE ( LEDC              = 0x500D3000 );
+PROVIDE ( LEDC_GAMMA_RAM  = 0x500D3400 );
 PROVIDE ( TIMERG0           = 0x500C2000 );
 PROVIDE ( TIMERG1           = 0x500C3000 );
 PROVIDE ( SYSTIMER          = 0x500E2000 );

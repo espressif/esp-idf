@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "hal/ledc_types.h"
 #include "soc/ledc_periph.h"
 #include "soc/ledc_struct.h"
+#include "soc/system_struct.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
@@ -34,6 +35,42 @@ extern "C" {
                               }
 
 #define LEDC_LL_GLOBAL_CLK_DEFAULT LEDC_SLOW_CLK_RC_FAST
+
+/**
+ * @brief Enable peripheral register clock
+ *
+ * @param enable    Enable/Disable
+ */
+static inline void ledc_ll_enable_bus_clock(bool enable) {
+    SYSTEM.perip_clk_en0.reg_ledc_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ledc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset whole peripheral register to init value defined by HW design
+ */
+static inline void ledc_ll_enable_reset_reg(bool enable) {
+    SYSTEM.perip_rst_en0.reg_ledc_rst = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ledc_ll_enable_reset_reg(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_reset_reg(__VA_ARGS__)
+
+/**
+ * @brief Enable LEDC function clock
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param en True to enable, false to disable
+ *
+ * @return None
+ */
+static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en) {
+    //resolve for compatibility
+}
 
 /**
  * @brief Set LEDC low speed timer clock

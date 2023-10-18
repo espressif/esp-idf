@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "hal/ledc_types.h"
 #include "soc/ledc_periph.h"
 #include "soc/ledc_struct.h"
+#include "soc/dport_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +41,49 @@ extern "C" {
                                                      ((SPEED) == LEDC_HIGH_SPEED_MODE && (CLK) == LEDC_USE_APB_CLK) \
                                                     )
 
+/**
+ * @brief Enable peripheral register clock
+ *
+ * @param enable    Enable/Disable
+ */
+static inline void ledc_ll_enable_bus_clock(bool enable) {
+    if (enable) {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_LEDC_CLK_EN);
+    } else {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_LEDC_CLK_EN);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ledc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset whole peripheral register to init value defined by HW design
+ */
+static inline void ledc_ll_enable_reset_reg(bool enable) {
+    if (enable) {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_LEDC_RST);
+    } else {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_LEDC_RST);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ledc_ll_enable_reset_reg(...) (void)__DECLARE_RCC_ATOMIC_ENV; ledc_ll_enable_reset_reg(__VA_ARGS__)
+
+/**
+ * @brief Enable LEDC function clock
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param en True to enable, false to disable
+ *
+ * @return None
+ */
+static inline void ledc_ll_enable_clock(ledc_dev_t *hw, bool en) {
+    //resolve for compatibility
+}
 
 /**
  * @brief Set LEDC low speed timer clock
