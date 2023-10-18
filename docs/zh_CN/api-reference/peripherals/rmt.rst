@@ -249,6 +249,7 @@ RMT 是一种特殊的通信外设，无法像 SPI 和 I2C 那样发送原始字
         注意，不是所有 ESP 芯片都支持 **循环发送** 功能，在配置此选项前，请参阅 [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__]。若所选芯片不支持配置此选项，可能会报告 :c:macro:`ESP_ERR_NOT_SUPPORTED` 错误。
 
 - :cpp:member:`rmt_transmit_config_t::eot_level` 设置发射器完成工作时的输出电平，该设置同时适用于调用 :cpp:func:`rmt_disable` 停止发射器工作时的输出电平。
+- :cpp:member:`rmt_transmit_config_t::queue_nonblocking` 设置当传输队列满的时候该函数是否需要等待。如果该值设置为 ``true`` 那么当遇到队列满的时候，该函数会立即返回错误代码 :c:macro:`ESP_ERR_INVALID_STATE`。否则，函数会阻塞当前线程，直到传输队列有空档。
 
 .. note::
 
