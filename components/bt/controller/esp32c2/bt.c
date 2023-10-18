@@ -202,7 +202,6 @@ static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTR
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 const static uint32_t log_bufs_size[] = {2048, 1024, 1024};
-static uint8_t buffers = 0;
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* This variable tells if BLE is running */
@@ -648,6 +647,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     interface_func_t bt_controller_log_interface;
     bt_controller_log_interface = esp_bt_controller_log_interface;
+    uint8_t buffers = 0;
 #if CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
     buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
