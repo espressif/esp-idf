@@ -25,6 +25,9 @@
 .if-protected-no_label: &if-protected-no_label
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
 
+.if-qa-test-tag: &if-qa-test-tag
+  if: '$CI_COMMIT_TAG =~ /^qa-test/'
+
 .if-label-build_docs: &if-label-build_docs
   if: '$BOT_LABEL_BUILD_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build_docs(?:,[^,\n\r]+)*$/i'
 
@@ -32,10 +35,12 @@
   if: '$BOT_LABEL_DOCS_FULL || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs_full(?:,[^,\n\r]+)*$/i'
 
 .if-dev-push: &if-dev-push
-  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
 
 .doc-rules:build:docs-full:
   rules:
+    - <<: *if-qa-test-tag
+      when: never
     - <<: *if-protected
     - <<: *if-label-build_docs
     - <<: *if-label-docs_full
@@ -44,6 +49,8 @@
 
 .doc-rules:build:docs-partial:
   rules:
+    - <<: *if-qa-test-tag
+      when: never
     - <<: *if-dev-push
       changes: *patterns-docs-full
       when: never

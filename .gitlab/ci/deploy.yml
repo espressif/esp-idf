@@ -32,7 +32,7 @@ push_to_github:
   extends:
     - .deploy_job_template
     - .before_script:minimal
-    - .rules:protected-no_label
+    - .rules:push_to_github
   dependencies: []
   script:
     - add_github_ssh_keys
