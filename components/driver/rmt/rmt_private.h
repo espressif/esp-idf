@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <stdatomic.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -80,8 +81,12 @@ typedef enum {
 } rmt_channel_direction_t;
 
 typedef enum {
+    RMT_FSM_INIT_WAIT,
     RMT_FSM_INIT,
+    RMT_FSM_ENABLE_WAIT,
     RMT_FSM_ENABLE,
+    RMT_FSM_RUN_WAIT,
+    RMT_FSM_RUN,
 } rmt_fsm_t;
 
 enum {
@@ -119,7 +124,7 @@ struct rmt_channel_t {
     portMUX_TYPE spinlock;  // prevent channel resource accessing by user and interrupt concurrently
     uint32_t resolution_hz; // channel clock resolution
     intr_handle_t intr;     // allocated interrupt handle for each channel
-    rmt_fsm_t fsm;          // channel life cycle specific FSM
+    _Atomic rmt_fsm_t fsm;  // channel life cycle specific FSM
     rmt_channel_direction_t direction; // channel direction
     rmt_symbol_word_t *hw_mem_base;    // base address of RMT channel hardware memory
     rmt_symbol_word_t *dma_mem_base;   // base address of RMT channel DMA buffer

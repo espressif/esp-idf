@@ -56,7 +56,7 @@ The description of the RMT functionality is divided into the following sections:
 
 - :ref:`rmt-resource-allocation` - covers how to allocate and properly configure RMT channels. It also covers how to recycle channels and other resources when they are no longer used.
 - :ref:`rmt-carrier-modulation-and demodulation` - describes how to modulate and demodulate the carrier signals for TX and RX channels respectively.
-- :ref:`rmt-register-event-callbacks` - covers how to register user-provided event callbacks in order to receive RMT channel events.
+- :ref:`rmt-register-event-callbacks` - covers how to register user-provided event callbacks to receive RMT channel events.
 - :ref:`rmt-enable-and-disable-channel` - shows how to enable and disable the RMT channel.
 - :ref:`rmt-initiate-tx-transaction` - describes the steps to initiate a transaction for a TX channel.
 - :ref:`rmt-initiate-rx-transaction` - describes the steps to initiate a transaction for an RX channel.
@@ -84,7 +84,7 @@ To install an RMT TX channel, there is a configuration structure that needs to b
 - :cpp:member:`rmt_tx_channel_config_t::resolution_hz` sets the resolution of the internal tick counter. The timing parameter of the RMT signal is calculated based on this **tick**.
 - :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` has a slightly different meaning based on if the DMA backend is enabled or not.
 
-    - If the DMA is enabled via :cpp:member:`rmt_tx_channel_config_t::with_dma`, then this field controls the size of the internal DMA buffer. To achieve a better throughput and smaller CPU overhead, we recommend you set a large value, e.g., ``1024``.
+    - If the DMA is enabled via :cpp:member:`rmt_tx_channel_config_t::with_dma`, then this field controls the size of the internal DMA buffer. To achieve a better throughput and smaller CPU overhead, you can set a larger value, e.g., ``1024``.
     - If DMA is not used, this field controls the size of the dedicated memory block owned by the channel, which should be at least {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}.
 
 - :cpp:member:`rmt_tx_channel_config_t::trans_queue_depth` sets the depth of the internal transaction queue, the deeper the queue, the more transactions can be prepared in the backlog.
@@ -205,7 +205,7 @@ The RX channel-supported event callbacks are listed in the :cpp:type:`rmt_rx_eve
 
 Users can save their own context in :cpp:func:`rmt_tx_register_event_callbacks` and :cpp:func:`rmt_rx_register_event_callbacks` as well, via the parameter ``user_data``. The user data is directly passed to each callback function.
 
-In the callback function, users can fetch the event-specific data that is filled by the driver in the ``edata``. Note that the ``edata`` pointer is only valid for the duration of the callback.
+In the callback function, users can fetch the event-specific data that is filled by the driver in the ``edata``. Note that the ``edata`` pointer is only valid during the callback.
 
 The TX-done event data is defined in :cpp:type:`rmt_tx_done_event_data_t`:
 
@@ -237,7 +237,7 @@ Initiate TX Transaction
 
 RMT is a special communication peripheral, as it is unable to transmit raw byte streams like SPI and I2C. RMT can only send data in its own format :cpp:type:`rmt_symbol_word_t`. However, the hardware does not help to convert the user data into RMT symbols, this can only be done in software by the so-called **RMT Encoder**. The encoder is responsible for encoding user data into RMT symbols and then writing to the RMT memory block or the DMA buffer. For how to create an RMT encoder, please refer to :ref:`rmt-rmt-encoder`.
 
-Once we got an encoder, we can initiate a TX transaction by calling :cpp:func:`rmt_transmit`. This function takes several positional parameters like channel handle, encoder handle, and payload buffer. Besides, we also need to provide a transmission-specific configuration in :cpp:type:`rmt_transmit_config_t`:
+Once you created an encoder, you can initiate a TX transaction by calling :cpp:func:`rmt_transmit`. This function takes several positional parameters like channel handle, encoder handle, and payload buffer. Besides, you also need to provide a transmission-specific configuration in :cpp:type:`rmt_transmit_config_t`:
 
 - :cpp:member:`rmt_transmit_config_t::loop_count` sets the number of transmission loops. After the transmitter has finished one round of transmission, it can restart the same transmission again if this value is not set to zero. As the loop is controlled by hardware, the RMT channel can be used to generate many periodic sequences with minimal CPU intervention.
 
@@ -249,6 +249,7 @@ Once we got an encoder, we can initiate a TX transaction by calling :cpp:func:`r
         The **loop transmit** feature is not supported on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you configure this option, or you might encounter :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 
 - :cpp:member:`rmt_transmit_config_t::eot_level` sets the output level when the transmitter finishes working or stops working by calling :cpp:func:`rmt_disable`.
+- :cpp:member:`rmt_transmit_config_t::queue_nonblocking` sets whether to wait for a free slot in the transaction queue when it is full. If this value is set to ``true``, then the function will return with an error code :c:macro:`ESP_ERR_INVALID_STATE` when the queue is full. Otherwise, the function will block until a free slot is available in the queue.
 
 .. note::
 
@@ -264,7 +265,7 @@ Internally, :cpp:func:`rmt_transmit` constructs a transaction descriptor and sen
 Multiple Channels Simultaneous Transmission
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In some real-time control applications (e.g., to make two robotic arms move simultaneously), we do not want any time drift in between when startup multiple TX channels. The RMT driver can help to manage this by creating a so-called **Sync Manager**. The sync manager is represented by :cpp:type:`rmt_sync_manager_handle_t` in the driver. The procedure of RMT sync transmission is shown as follows:
+In some real-time control applications (e.g., to make two robotic arms move simultaneously), you do not want any time drift between different channels. The RMT driver can help to manage this by creating a so-called **Sync Manager**. The sync manager is represented by :cpp:type:`rmt_sync_manager_handle_t` in the driver. The procedure of RMT sync transmission is shown as follows:
 
 .. figure:: /../_static/rmt_tx_sync.png
     :align: center
@@ -380,20 +381,20 @@ RMT Encoder
 
 An RMT encoder is part of the RMT TX transaction, whose responsibility is to generate and write the correct RMT symbols into hardware memory or DMA buffer at a specific time. There are some special restrictions for an encoding function:
 
-- During a single transaction, the encoding function may be called multiple times. This is necessary because the target RMT memory block cannot hold all the artifacts at once. To overcome this limitation, we utilize a **ping-pong** approach, where the encoding session is divided into multiple parts. This means that the encoder needs to **keep track of its state** in order to continue encoding from where it left off in the previous part.
+- During a single transaction, the encoding function may be called multiple times. This is necessary because the target RMT memory block cannot hold all the artifacts at once. To overcome this limitation, the driver utilizes a **ping-pong** approach, where the encoding session is divided into multiple parts. This means that the encoder needs to **keep track of its state** to continue encoding from where it left off in the previous part.
 - The encoding function is running in the ISR context. To speed up the encoding session, it is highly recommended to put the encoding function into IRAM. This can also avoid the cache miss during encoding.
 
-To help get started with the RMT driver faster, some commonly-used encoders are provided out-of-the-box. They can either work alone or be chained together into a new encoder. See also `Composite Pattern <https://en.wikipedia.org/wiki/Composite_pattern>`__ for the principle behind it. The driver has defined the encoder interface in :cpp:type:`rmt_encoder_t`, it contains the following functions:
+To help get started with the RMT driver faster, some commonly used encoders are provided out-of-the-box. They can either work alone or be chained together into a new encoder. See also `Composite Pattern <https://en.wikipedia.org/wiki/Composite_pattern>`__ for the principle behind it. The driver has defined the encoder interface in :cpp:type:`rmt_encoder_t`, it contains the following functions:
 
 - :cpp:member:`rmt_encoder_t::encode` is the fundamental function of an encoder. This is where the encoding session happens.
 
     - The function might be called multiple times within a single transaction. The encode function should return the state of the current encoding session.
     - The supported states are listed in the :cpp:type:`rmt_encode_state_t`. If the result contains :cpp:enumerator:`RMT_ENCODING_COMPLETE`, it means the current encoder has finished work.
-    - If the result contains :cpp:enumerator:`RMT_ENCODING_MEM_FULL`, we need to yield from the current session, as there is no space to save more encoding artifacts.
+    - If the result contains :cpp:enumerator:`RMT_ENCODING_MEM_FULL`, the program needs to yield from the current session, as there is no space to save more encoding artifacts.
 
 - :cpp:member:`rmt_encoder_t::reset` should reset the encoder state back to the initial state (the RMT encoder is stateful).
 
-    - If the RMT transmitter is manually stopped without resetting its corresponding encoder, subsequent encoding session can be erroneous. 
+    - If the RMT transmitter is manually stopped without resetting its corresponding encoder, subsequent encoding session can be erroneous.
     - This function is also called implicitly in :cpp:func:`rmt_disable`.
 
 - :cpp:member:`rmt_encoder_t::del` should free the resources allocated by the encoder.
@@ -424,7 +425,7 @@ Besides the primitive encoders provided by the driver, the user can implement hi
 Customize RMT Encoder for NEC Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this section, we demonstrates how to write an NEC encoder. The NEC IR protocol uses pulse distance encoding of the message bits. Each pulse burst is ``562.5 µs`` in length, logical bits are transmitted as follows. It is worth mentioning that the least significant bit of each byte is sent first.
+This section demonstrates how to write an NEC encoder. The NEC IR protocol uses pulse distance encoding of the message bits. Each pulse burst is ``562.5 µs`` in length, logical bits are transmitted as follows. It is worth mentioning that the least significant bit of each byte is sent first.
 
 - Logical ``0``: a ``562.5 µs`` pulse burst followed by a ``562.5 µs`` space, with a total transmit time of ``1.125 ms``
 - Logical ``1``: a ``562.5 µs`` pulse burst followed by a ``1.6875 ms`` space, with a total transmit time of ``2.25 ms``
@@ -445,7 +446,7 @@ When a key is pressed on the remote controller, the transmitted message includes
 - 8-bit logical inverse of the command
 - a final ``562.5 µs`` pulse burst to signify the end of message transmission
 
-Then we can construct the NEC :cpp:member:`rmt_encoder_t::encode` function in the same order, for example:
+Then you can construct the NEC :cpp:member:`rmt_encoder_t::encode` function in the same order, for example:
 
 .. code:: c
 
