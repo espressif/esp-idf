@@ -107,6 +107,14 @@ typedef enum {
 } esp_ble_enhanced_power_type_t;
 
 /**
+ * @brief Select buffers
+*/
+typedef enum {
+    ESP_BLE_LOG_BUF_HCI         = 0x02,
+    ESP_BLE_LOG_BUF_CONTROLLER  = 0x05,
+} esp_ble_log_buf_t;
+
+/**
  * @brief Address type and address value.
  */
 typedef struct {
