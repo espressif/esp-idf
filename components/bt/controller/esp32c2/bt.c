@@ -124,7 +124,7 @@ typedef void (*interface_func_t) (uint32_t len, const uint8_t*addr, bool end);
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
 extern int ble_controller_init(esp_bt_controller_config_t *cfg);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-extern int ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create);
+extern int ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
 extern int ble_log_deinit_async(void);
 extern void ble_log_async_output_dump_all(bool output);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -199,6 +199,11 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
  */
 /* Static variable declare */
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+const static uint32_t log_bufs_size[] = {2048, 1024, 1024};
+static uint8_t buffers = 0;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* This variable tells if BLE is running */
 static bool s_ble_active = false;
@@ -639,25 +644,32 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    interface_func_t bt_controller_log_interface;
+    bt_controller_log_interface = esp_bt_controller_log_interface;
+#if CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+    buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+#if CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
+    buffers |= ESP_BLE_LOG_BUF_HCI;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
+#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    ret = ble_log_init_async(bt_controller_log_interface, false, buffers, (uint32_t *)log_bufs_size);
+#else
+    ret = ble_log_init_async(bt_controller_log_interface, true, buffers, (uint32_t *)log_bufs_size);
+#endif // CONFIG_BT_CONTROLLER_LOG_DUMP
+    if (ret != ESP_OK) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_log_init failed %d", ret);
+        goto modem_deint;
+    }
+#endif // CONFIG_BT_CONTROLLER_LOG_ENABLED
+
     ret = ble_controller_init(cfg);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", ret);
         goto modem_deint;
     }
-
-#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    interface_func_t bt_controller_log_interface;
-    bt_controller_log_interface = esp_bt_controller_log_interface;
-#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
-    ret = ble_log_init_async(bt_controller_log_interface, false);
-#else
-    ret = ble_log_init_async(bt_controller_log_interface, true);
-#endif // CONFIG_BT_CONTROLLER_LOG_DUMP
-    if (ret != ESP_OK) {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_log_init failed %d", ret);
-        goto controller_init_err;
-    }
-#endif // CONFIG_BT_CONTROLLER_LOG_ENABLED
 
     ret = controller_sleep_init();
     if (ret != ESP_OK) {
@@ -679,12 +691,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     return ESP_OK;
 free_controller:
     controller_sleep_deinit();
-#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-controller_init_err:
-    ble_log_deinit_async();
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
 modem_deint:
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    ble_log_deinit_async();
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     esp_phy_modem_deinit();
     periph_module_disable(PERIPH_BT_MODULE);
 #if CONFIG_BT_NIMBLE_ENABLED
