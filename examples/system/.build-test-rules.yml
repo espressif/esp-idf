@@ -66,6 +66,10 @@ examples/system/esp_timer:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
       reason: target(s) is not supported yet # TODO: IDF-7529
+  disable_test:
+    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
+      temporary: true
+      reason: lack of runner
   depends_components:
     - esp_timer
 
@@ -188,8 +192,10 @@ examples/system/ota/simple_ota_example:
 
 examples/system/perfmon:
   enable:
-    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"] and NIGHTLY_RUN == "1"
       reason: xtensa only feature
+    - if: IDF_TARGET == "esp32"
+      reason: testing on a single target is sufficient
   depends_components:
     - perfmon
 
