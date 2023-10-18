@@ -85,7 +85,8 @@ menu "Power Management"
     config PM_CHECK_SLEEP_RETENTION_FRAME
         bool
         depends on PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
-        default n if !IDF_CI_BUILD
+        default y if IDF_CI_BUILD
+        default n
         help
             This option is invisible to users, and it is only used for ci testing,
             enabling it in the application will increase the sleep and wake-up time overhead
