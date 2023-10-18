@@ -29,7 +29,7 @@
 #include "hal/cache_ll.h"
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
+#if !SOC_RCC_IS_INDEPENDENT
 #define SPI_COMMON_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
 #define SPI_COMMON_RCC_CLOCK_ATOMIC()
@@ -107,15 +107,10 @@ bool spicommon_periph_claim(spi_host_device_t host, const char* source)
     bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &false_var, true);
     if (ret) {
         spi_claiming_func[host] = source;
-#if CONFIG_IDF_TARGET_ESP32P4   //deprecate clk_gate_ll start from p4, others in TODO: IDF-8159
         SPI_COMMON_RCC_CLOCK_ATOMIC() {
             spi_ll_enable_bus_clock(host, true);
             spi_ll_reset_register(host);
-            spi_ll_enable_clock(host, true);
         }
-#else
-        periph_module_enable(spi_periph_signal[host].module);
-#endif
     } else {
         ESP_EARLY_LOGE(SPI_TAG, "SPI%d already claimed by %s.", host+1, spi_claiming_func[host]);
     }
@@ -133,13 +128,9 @@ bool spicommon_periph_free(spi_host_device_t host)
     bool true_var = true;
     bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &true_var, false);
     if (ret) {
-#if CONFIG_IDF_TARGET_ESP32P4
         SPI_COMMON_RCC_CLOCK_ATOMIC() {
             spi_ll_enable_bus_clock(host, false);
         }
-#else
-        periph_module_disable(spi_periph_signal[host].module);
-#endif
     }
     return ret;
 }
@@ -156,10 +147,11 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
 
 //----------------------------------------------------------alloc dma periph-------------------------------------------------------//
 #if !SOC_GDMA_SUPPORTED
+
+#if SPI_LL_DMA_SHARED
 static inline periph_module_t get_dma_periph(int dma_chan)
 {
     assert(dma_chan >= 1 && dma_chan <= SOC_SPI_DMA_CHAN_NUM);
-#if CONFIG_IDF_TARGET_ESP32S2
     if (dma_chan == 1) {
         return PERIPH_SPI2_DMA_MODULE;
     } else if (dma_chan == 2) {
@@ -167,10 +159,8 @@ static inline periph_module_t get_dma_periph(int dma_chan)
     } else {
         abort();
     }
-#elif CONFIG_IDF_TARGET_ESP32
-    return PERIPH_SPI_DMA_MODULE;
-#endif
 }
+#endif
 
 static bool claim_dma_chan(int dma_chan, uint32_t *out_actual_dma_chan)
 {
@@ -180,7 +170,21 @@ static bool claim_dma_chan(int dma_chan, uint32_t *out_actual_dma_chan)
     bool is_used = (BIT(dma_chan) & spi_dma_chan_enabled);
     if (!is_used) {
         spi_dma_chan_enabled |= BIT(dma_chan);
-        periph_module_enable(get_dma_periph(dma_chan));
+#if SPI_LL_DMA_SHARED
+        PERIPH_RCC_ACQUIRE_ATOMIC(get_dma_periph(dma_chan), ref_count) {
+            //esp32s2: dma_chan index is same as spi host_id, no matter dma_chan_auto or not
+            if (ref_count == 0) {
+                spi_dma_ll_enable_bus_clock(dma_chan, true);
+                spi_dma_ll_reset_register(dma_chan);
+            }
+        }
+#else
+        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+            //esp32: have only one spi_dma
+            spi_dma_ll_enable_bus_clock(dma_chan, true);
+            spi_dma_ll_reset_register(dma_chan);
+        }
+#endif
         *out_actual_dma_chan = dma_chan;
         ret = true;
     }
@@ -355,7 +359,17 @@ static esp_err_t dma_chan_free(spi_host_device_t host_id)
 
     portENTER_CRITICAL(&spi_dma_spinlock);
     spi_dma_chan_enabled &= ~BIT(dma_chan);
-    periph_module_disable(get_dma_periph(dma_chan));
+#if SPI_LL_DMA_SHARED
+        PERIPH_RCC_RELEASE_ATOMIC(get_dma_periph(dma_chan), ref_count) {
+            if (ref_count == 0) {
+                spi_dma_ll_enable_bus_clock(host_id, false);
+            }
+        }
+#else
+        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+            spi_dma_ll_enable_bus_clock(host_id, false);
+        }
+#endif
     portEXIT_CRITICAL(&spi_dma_spinlock);
 
 #else //SOC_GDMA_SUPPORTED

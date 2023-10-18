@@ -37,7 +37,7 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-#define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):&GPSPI2)
+#define SPI_LL_GET_HW(ID) (((ID)==1) ? &GPSPI2 : NULL)
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
@@ -91,6 +91,56 @@ typedef enum {
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
+/**
+ * Enable peripheral register clock
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+    switch (host_id)
+    {
+    case SPI1_HOST:
+        PCR.mspi_conf.mspi_clk_en = enable;
+        break;
+    case SPI2_HOST:
+        PCR.spi2_conf.spi2_clk_en = enable;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Reset whole peripheral register to init value defined by HW design
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ */
+static inline void spi_ll_reset_register(spi_host_device_t host_id) {
+    switch (host_id)
+    {
+    case SPI1_HOST:
+        PCR.mspi_conf.mspi_rst_en = 1;
+        PCR.mspi_conf.mspi_rst_en = 0;
+        break;
+    case SPI2_HOST:
+        PCR.spi2_conf.spi2_rst_en = 1;
+        PCR.spi2_conf.spi2_rst_en = 0;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Enable functional output clock within peripheral
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
+{
+    (void) host_id;
+    PCR.spi2_clkm_conf.spi2_clkm_en = enable;
+}
 
 /**
  * Select SPI peripheral clock source (master).
@@ -134,7 +184,6 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     hw->slave.val = 0;
     hw->user.val = 0;
 
-    PCR.spi2_clkm_conf.spi2_clkm_en = 1;
     PCR.spi2_clkm_conf.spi2_clkm_sel = 1;
 
     hw->dma_conf.val = 0;
