@@ -9,8 +9,9 @@ push_to_github:
   extends:
     - .deploy_job_template
     - .before_script_minimal
-    - .rules:protected-no_label
-  dependencies: []
+    - .rules:push_to_github
+  needs:
+    - check_submodule_sync
   script:
     - add_github_ssh_keys
     - git remote remove github &>/dev/null || true
