@@ -6,6 +6,7 @@ import fnmatch
 import glob
 import os
 import typing as t
+import zipfile
 from enum import Enum
 from pathlib import Path
 from zipfile import ZipFile
@@ -24,12 +25,16 @@ class ArtifactType(str, Enum):
 
 TYPE_PATTERNS_DICT = {
     ArtifactType.MAP_AND_ELF_FILES: [
-        '**/build*/**/*.map',
-        '**/build*/**/*.elf',
+        '**/build*/bootloader/*.map',
+        '**/build*/bootloader/*.elf',
+        '**/build*/*.map',
+        '**/build*/*.elf',
     ],
     ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES: [
         '**/build*/build_log.txt',
-        '**/build*/**/*.bin',
+        '**/build*/*.bin',
+        '**/build*/bootloader/*.bin',
+        '**/build*/partition_table/*.bin',
         '**/build*/flasher_args.json',
         '**/build*/flash_project_args',
         '**/build*/config/sdkconfig.json',
@@ -103,7 +108,14 @@ def _upload_files(
     job_id: str,
 ) -> None:
     has_file = False
-    with ZipFile(f'{job_id}.zip', 'w') as zw:
+    with ZipFile(
+        f'{job_id}.zip',
+        'w',
+        compression=zipfile.ZIP_DEFLATED,
+        # 1 is the fastest compression level
+        # the size differs not much between 1 and 9
+        compresslevel=1,
+    ) as zw:
         for pattern in TYPE_PATTERNS_DICT[artifact_type]:
             for file in glob.glob(pattern, recursive=True):
                 zw.write(file)
