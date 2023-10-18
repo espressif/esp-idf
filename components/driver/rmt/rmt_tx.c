@@ -40,6 +40,7 @@ static esp_err_t rmt_tx_modulate_carrier(rmt_channel_handle_t channel, const rmt
 static esp_err_t rmt_tx_enable(rmt_channel_handle_t channel);
 static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel);
 static void rmt_tx_default_isr(void *args);
+static void rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t);
 
 #if SOC_RMT_SUPPORT_DMA
 static bool rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
@@ -310,10 +311,10 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
                                     config->flags.invert_out, false);
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->gpio_num], PIN_FUNC_GPIO);
 
+    portMUX_INITIALIZE(&tx_channel->base.spinlock);
+    atomic_init(&tx_channel->base.fsm, RMT_FSM_INIT);
     tx_channel->base.direction = RMT_CHANNEL_DIRECTION_TX;
-    tx_channel->base.fsm = RMT_FSM_INIT;
     tx_channel->base.hw_mem_base = &RMTMEM.channels[channel_id + RMT_TX_CHANNEL_OFFSET_IN_GROUP].symbols[0];
-    tx_channel->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     // polymorphic methods
     tx_channel->base.del = rmt_del_tx_channel;
     tx_channel->base.set_carrier_action = rmt_tx_modulate_carrier;
@@ -335,6 +336,8 @@ err:
 
 static esp_err_t rmt_del_tx_channel(rmt_channel_handle_t channel)
 {
+    ESP_RETURN_ON_FALSE(atomic_load(&channel->fsm) == RMT_FSM_INIT,
+                        ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
     rmt_group_t *group = channel->group;
     int group_id = group->group_id;
@@ -373,7 +376,7 @@ esp_err_t rmt_new_sync_manager(const rmt_sync_manager_config_t *config, rmt_sync
         channel = config->tx_channel_array[i];
         ESP_GOTO_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, err, TAG, "sync manager supports TX channel only");
         ESP_GOTO_ON_FALSE(channel->group == group, ESP_ERR_INVALID_ARG, err, TAG, "channels to be managed should locate in the same group");
-        ESP_GOTO_ON_FALSE(channel->fsm == RMT_FSM_ENABLE, ESP_ERR_INVALID_STATE, err, TAG, "channel should be started before creating sync manager");
+        ESP_GOTO_ON_FALSE(atomic_load(&channel->fsm) == RMT_FSM_ENABLE, ESP_ERR_INVALID_STATE, err, TAG, "channel not in enable state");
         channel_mask |= 1 << channel->channel_id;
     }
     synchro->channel_mask = channel_mask;
@@ -480,7 +483,6 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
 {
     ESP_RETURN_ON_FALSE(channel && encoder && payload && payload_bytes && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
-    ESP_RETURN_ON_FALSE(channel->fsm == RMT_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "channel not in enable state");
 #if !SOC_RMT_SUPPORT_TX_LOOP_COUNT
     ESP_RETURN_ON_FALSE(config->loop_count <= 0, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
 #endif // !SOC_RMT_SUPPORT_TX_LOOP_COUNT
@@ -488,22 +490,20 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
     // payload is retrieved by the encoder, we should make sure it's still accessible even when the cache is disabled
     ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
 #endif
-    rmt_group_t *group = channel->group;
-    rmt_hal_context_t *hal = &group->hal;
-    int channel_id = channel->channel_id;
+    TickType_t queue_wait_ticks = portMAX_DELAY;
+    if (config->flags.queue_nonblocking) {
+        queue_wait_ticks = 0;
+    }
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
     rmt_tx_trans_desc_t *t = NULL;
-    // acquire one transaction description from ready_queue or done_queue
-    if (tx_chan->num_trans_inflight < tx_chan->queue_size) {
-        ESP_RETURN_ON_FALSE(xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_READY], &t, portMAX_DELAY) == pdTRUE,
-                            ESP_FAIL, TAG, "no transaction in the ready queue");
-    } else {
-        ESP_RETURN_ON_FALSE(xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &t, portMAX_DELAY) == pdTRUE,
-                            ESP_FAIL, TAG, "recycle transaction from done queue failed");
-        tx_chan->num_trans_inflight--;
+    // acquire one transaction description from ready queue or complete queue
+    if (xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_READY], &t, 0) != pdTRUE) {
+        if (xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &t, queue_wait_ticks) == pdTRUE) {
+            tx_chan->num_trans_inflight--;
+        }
     }
-    // sanity check
-    assert(t);
+    ESP_RETURN_ON_FALSE(t, ESP_ERR_INVALID_STATE, TAG, "no free transaction descriptor, please consider increasing trans_queue_depth");
+
     // fill in the transaction descriptor
     memset(t, 0, sizeof(rmt_tx_trans_desc_t));
     t->encoder = encoder;
@@ -514,7 +514,7 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
     t->flags.eot_level = config->flags.eot_level;
 
     // send the transaction descriptor to queue
-    if (xQueueSend(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &t, portMAX_DELAY) == pdTRUE) {
+    if (xQueueSend(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
         tx_chan->num_trans_inflight++;
     } else {
         // put the trans descriptor back to ready_queue
@@ -522,13 +522,18 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
                             ESP_ERR_INVALID_STATE, TAG, "ready queue full");
     }
 
-    // we don't know which "transmission complete" event will be triggered, but must be one of them: trans_done, loop_done
-    // when we run at here, the interrupt status bit for tx_done or loop_end should already up (ensured by `rmt_tx_enable()`)
-    // that's why we can go into ISR as soon as we enable the interrupt bit
-    // in the ISR, we will fetch the transactions from trans_queue and start it
-    portENTER_CRITICAL(&group->spinlock);
-    rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id) | RMT_LL_EVENT_TX_LOOP_END(channel_id), true);
-    portEXIT_CRITICAL(&group->spinlock);
+    // check if we need to start one pending transaction
+    rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT)) {
+        // check if we need to start one transaction
+        if (xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
+            atomic_store(&channel->fsm, RMT_FSM_RUN);
+            rmt_tx_do_transaction(tx_chan, t);
+        } else {
+            atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+        }
+    }
+
     return ESP_OK;
 }
 
@@ -625,6 +630,9 @@ static void IRAM_ATTR rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_tr
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;
 
+    // update current transaction
+    tx_chan->cur_trans = t;
+
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         gdma_reset(channel->dma_chan);
@@ -638,7 +646,7 @@ static void IRAM_ATTR rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_tr
 #endif // SOC_RMT_SUPPORT_DMA
 
     // set transaction specific parameters
-    portENTER_CRITICAL_ISR(&channel->spinlock);
+    portENTER_CRITICAL_SAFE(&channel->spinlock);
     rmt_ll_tx_reset_pointer(hal->regs, channel_id); // reset pointer for new transaction
     rmt_ll_tx_enable_loop(hal->regs, channel_id, t->loop_count != 0);
 #if SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
@@ -654,10 +662,10 @@ static void IRAM_ATTR rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_tr
         t->remain_loop_count -= this_loop_count;
     }
 #endif // SOC_RMT_SUPPORT_TX_LOOP_COUNT
-    portEXIT_CRITICAL_ISR(&channel->spinlock);
+    portEXIT_CRITICAL_SAFE(&channel->spinlock);
 
     // enable/disable specific interrupts
-    portENTER_CRITICAL_ISR(&group->spinlock);
+    portENTER_CRITICAL_SAFE(&group->spinlock);
 #if SOC_RMT_SUPPORT_TX_LOOP_COUNT
     rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_LOOP_END(channel_id), t->loop_count > 0);
 #endif // SOC_RMT_SUPPORT_TX_LOOP_COUNT
@@ -671,7 +679,7 @@ static void IRAM_ATTR rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_tr
     }
     // don't generate trans done event for loop transmission
     rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id), t->loop_count == 0);
-    portEXIT_CRITICAL_ISR(&group->spinlock);
+    portEXIT_CRITICAL_SAFE(&group->spinlock);
 
     // at the beginning of a new transaction, encoding memory offset should start from zero.
     // It will increase in the encode function e.g. `rmt_encode_copy()`
@@ -691,39 +699,29 @@ static void IRAM_ATTR rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_tr
     }
 #endif
     // turn on the TX machine
-    portENTER_CRITICAL_ISR(&channel->spinlock);
+    portENTER_CRITICAL_SAFE(&channel->spinlock);
     rmt_ll_tx_fix_idle_level(hal->regs, channel_id, t->flags.eot_level, true);
     rmt_ll_tx_start(hal->regs, channel_id);
-    portEXIT_CRITICAL_ISR(&channel->spinlock);
+    portEXIT_CRITICAL_SAFE(&channel->spinlock);
 }
 
 static esp_err_t rmt_tx_enable(rmt_channel_handle_t channel)
 {
+    // can enable the channel when it's in "init" state
+    rmt_fsm_t expected_fsm = RMT_FSM_INIT;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_ENABLE_WAIT),
+                        ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
+
+    // acquire power manager lock
+    if (channel->pm_lock) {
+        esp_pm_lock_acquire(channel->pm_lock);
+    }
+
+#if SOC_RMT_SUPPORT_DMA
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;
-    // acquire power manager lock
-    if (channel->pm_lock) {
-        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(channel->pm_lock), TAG, "acquire pm_lock failed");
-    }
-
-    portENTER_CRITICAL(&channel->spinlock);
-    rmt_ll_tx_reset_pointer(hal->regs, channel_id);
-    rmt_ll_tx_enable_loop(hal->regs, channel_id, false);
-#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
-    rmt_ll_tx_reset_loop_count(hal->regs, channel_id);
-    rmt_ll_tx_enable_loop_count(hal->regs, channel_id, false);
-#endif // SOC_RMT_SUPPORT_TX_LOOP_COUNT
-    // trigger a quick trans done event by sending a EOF symbol, no signal should appear on the GPIO
-    tx_chan->cur_trans = NULL;
-    channel->hw_mem_base[0].val = 0;
-    rmt_ll_tx_start(hal->regs, channel_id);
-    portEXIT_CRITICAL(&channel->spinlock);
-
-    // wait the RMT interrupt line goes active, we won't go into the ISR handler until we enable the `RMT_LL_EVENT_TX_DONE` interrupt
-    while (!(rmt_ll_tx_get_interrupt_status_raw(hal->regs, channel_id) & RMT_LL_EVENT_TX_DONE(channel_id))) {}
-#if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         // enable the DMA access mode
         portENTER_CRITICAL(&channel->spinlock);
@@ -734,12 +732,22 @@ static esp_err_t rmt_tx_enable(rmt_channel_handle_t channel)
     }
 #endif // SOC_RMT_SUPPORT_DMA
 
-    channel->fsm = RMT_FSM_ENABLE;
+    atomic_store(&channel->fsm, RMT_FSM_ENABLE);
 
-    // enable channel interrupt, dispatch transactions in ISR (in case there're transaction descriptors in the queue, then we should start them)
-    portENTER_CRITICAL(&group->spinlock);
-    rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id), true);
-    portEXIT_CRITICAL(&group->spinlock);
+    // check if we need to start one pending transaction
+    rmt_tx_trans_desc_t *t = NULL;
+    expected_fsm = RMT_FSM_ENABLE;
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT)) {
+        if (xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
+            // sanity check
+            assert(t);
+            atomic_store(&channel->fsm, RMT_FSM_RUN);
+            rmt_tx_do_transaction(tx_chan, t);
+        } else {
+            atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+        }
+    }
+
     return ESP_OK;
 }
 
@@ -750,24 +758,37 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;
 
-    portENTER_CRITICAL(&channel->spinlock);
-    rmt_ll_tx_enable_loop(hal->regs, channel->channel_id, false);
+    // can disable the channel when it's in `enable` or `run` state
+    bool valid_state = false;
+    rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_INIT_WAIT)) {
+        valid_state = true;
+    }
+    expected_fsm = RMT_FSM_RUN;
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_INIT_WAIT)) {
+        valid_state = true;
+        // disable the hardware
+        portENTER_CRITICAL(&channel->spinlock);
+        rmt_ll_tx_enable_loop(hal->regs, channel->channel_id, false);
 #if SOC_RMT_SUPPORT_TX_ASYNC_STOP
-    rmt_ll_tx_stop(hal->regs, channel->channel_id);
+        rmt_ll_tx_stop(hal->regs, channel->channel_id);
 #endif
-    portEXIT_CRITICAL(&channel->spinlock);
+        portEXIT_CRITICAL(&channel->spinlock);
 
-    portENTER_CRITICAL(&group->spinlock);
-    rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id), false);
+        portENTER_CRITICAL(&group->spinlock);
+        rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id), false);
 #if !SOC_RMT_SUPPORT_TX_ASYNC_STOP
-    // we do a trick to stop the undergoing transmission
-    // stop interrupt, insert EOF marker to the RMT memory, polling the trans_done event
-    channel->hw_mem_base[0].val = 0;
-    while (!(rmt_ll_tx_get_interrupt_status_raw(hal->regs, channel_id) & RMT_LL_EVENT_TX_DONE(channel_id))) {}
+        // we do a trick to stop the undergoing transmission
+        // stop interrupt, insert EOF marker to the RMT memory, polling the trans_done event
+        channel->hw_mem_base[0].val = 0;
+        while (!(rmt_ll_tx_get_interrupt_status_raw(hal->regs, channel_id) & RMT_LL_EVENT_TX_DONE(channel_id))) {}
 #endif
-    rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id));
-    portEXIT_CRITICAL(&group->spinlock);
+        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id));
+        portEXIT_CRITICAL(&group->spinlock);
+    }
+    ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "channel can't be disabled in state %d", expected_fsm);
 
+    // disable the DMA
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         gdma_stop(channel->dma_chan);
@@ -779,9 +800,10 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
         portEXIT_CRITICAL(&channel->spinlock);
     }
 #endif
+
     // recycle the interrupted transaction
     if (tx_chan->cur_trans) {
-        xQueueSend(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &tx_chan->cur_trans, portMAX_DELAY);
+        xQueueSend(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &tx_chan->cur_trans, 0);
         // reset corresponding encoder
         rmt_encoder_reset(tx_chan->cur_trans->encoder);
     }
@@ -792,7 +814,9 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(channel->pm_lock), TAG, "release pm_lock failed");
     }
 
-    channel->fsm = RMT_FSM_INIT;
+    // finally we switch to the INIT state
+    atomic_store(&channel->fsm, RMT_FSM_INIT);
+
     return ESP_OK;
 }
 
@@ -836,12 +860,7 @@ static esp_err_t rmt_tx_modulate_carrier(rmt_channel_handle_t channel, const rmt
 
 static bool IRAM_ATTR rmt_isr_handle_tx_threshold(rmt_tx_channel_t *tx_chan)
 {
-    rmt_channel_t *channel = &tx_chan->base;
-    rmt_group_t *group = channel->group;
-    rmt_hal_context_t *hal = &group->hal;
-    uint32_t channel_id = channel->channel_id;
-
-    // continue pingpong transmission
+    // continue ping-pong transmission
     rmt_tx_trans_desc_t *t = tx_chan->cur_trans;
     size_t encoded_symbols = t->transmitted_symbol_num;
     // encoding finished, only need to send the EOF symbol
@@ -854,73 +873,54 @@ static bool IRAM_ATTR rmt_isr_handle_tx_threshold(rmt_tx_channel_t *tx_chan)
     t->transmitted_symbol_num = encoded_symbols;
     tx_chan->mem_end = tx_chan->ping_pong_symbols * 3 - tx_chan->mem_end; // mem_end equals to either ping_pong_symbols or ping_pong_symbols*2
 
-    rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_THRES(channel_id));
-
     return false;
 }
 
 static bool IRAM_ATTR rmt_isr_handle_tx_done(rmt_tx_channel_t *tx_chan)
 {
     rmt_channel_t *channel = &tx_chan->base;
-    rmt_group_t *group = channel->group;
-    rmt_hal_context_t *hal = &group->hal;
-    uint32_t channel_id = channel->channel_id;
     BaseType_t awoken = pdFALSE;
     rmt_tx_trans_desc_t *trans_desc = NULL;
     bool need_yield = false;
 
-    portENTER_CRITICAL_ISR(&group->spinlock);
-    // disable interrupt temporarily, re-enable it when there is transaction unhandled in the queue
-    rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id), false);
-    portEXIT_CRITICAL_ISR(&group->spinlock);
-
-    trans_desc = tx_chan->cur_trans;
-    // process finished transaction
-    if (trans_desc) {
-        // don't care of the tx done event for any undergoing loop transaction
-        // mostly it's triggered when a loop transmission is undergoing and user calls `rmt_transmit()` where tx done interrupt is generated by accident
-        if (trans_desc->loop_count != 0) {
-            rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id));
-            return need_yield;
-        }
-        if (tx_chan->on_trans_done) {
-            rmt_tx_done_event_data_t edata = {
-                .num_symbols = trans_desc->transmitted_symbol_num,
-            };
-            if (tx_chan->on_trans_done(channel, &edata, tx_chan->user_data)) {
-                need_yield = true;
-            }
-        }
-        // move transaction to done_queue
+    rmt_fsm_t expected_fsm = RMT_FSM_RUN;
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_ENABLE_WAIT)) {
+        trans_desc = tx_chan->cur_trans;
+        // move current finished transaction to the complete queue
         xQueueSendFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &trans_desc, &awoken);
         if (awoken == pdTRUE) {
             need_yield = true;
         }
-    }
-    // fetch new transaction description from trans_queue
-    if (xQueueReceiveFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &trans_desc, &awoken) == pdTRUE) {
-        // sanity check
-        assert(trans_desc);
-        // update current transaction
-        tx_chan->cur_trans = trans_desc;
-
-        portENTER_CRITICAL_ISR(&group->spinlock);
-        // only clear the trans done status when we're sure there still remains transaction to handle
-        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id));
-        // enable interrupt again, because the new transaction can trigger another trans done event
-        rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id), trans_desc->loop_count == 0);
-        rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_LOOP_END(channel_id), trans_desc->loop_count > 0);
-        portEXIT_CRITICAL_ISR(&group->spinlock);
-
-        // begin a new transaction
-        rmt_tx_do_transaction(tx_chan, trans_desc);
-    } else { // No transactions left in the queue
-        // don't clear interrupt status, so when next time user push new transaction to the queue and call esp_intr_enable,
-        // we can go to this ISR handler again
         tx_chan->cur_trans = NULL;
+        atomic_store(&channel->fsm, RMT_FSM_ENABLE);
     }
-    if (awoken == pdTRUE) {
-        need_yield = true;
+
+    // invoke callback
+    rmt_tx_done_callback_t done_cb = tx_chan->on_trans_done;
+    if (done_cb) {
+        rmt_tx_done_event_data_t edata = {
+            .num_symbols = trans_desc->transmitted_symbol_num,
+        };
+        if (done_cb(channel, &edata, tx_chan->user_data)) {
+            need_yield = true;
+        }
+    }
+
+    // let's try start the next pending transaction
+    expected_fsm = RMT_FSM_ENABLE;
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT)) {
+        if (xQueueReceiveFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &trans_desc, &awoken) == pdTRUE) {
+            // sanity check
+            assert(trans_desc);
+            atomic_store(&channel->fsm, RMT_FSM_RUN);
+            // begin a new transaction
+            rmt_tx_do_transaction(tx_chan, trans_desc);
+            if (awoken == pdTRUE) {
+                need_yield = true;
+            }
+        } else {
+            atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+        }
     }
 
     return need_yield;
@@ -941,16 +941,16 @@ static bool IRAM_ATTR rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
     if (trans_desc) {
 #if !SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
         portENTER_CRITICAL_ISR(&channel->spinlock);
-        // This is a workaround for chips that don't support auto stop
+        // This is a workaround for chips that don't support loop auto stop
         // Although we stop the transaction immediately in ISR handler, it's still possible that some rmt symbols have sneaked out
         rmt_ll_tx_stop(hal->regs, channel_id);
         portEXIT_CRITICAL_ISR(&channel->spinlock);
 #endif // SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
+
         // continue unfinished loop transaction
         if (trans_desc->remain_loop_count) {
             uint32_t this_loop_count = MIN(trans_desc->remain_loop_count, RMT_LL_MAX_LOOP_COUNT_PER_BATCH);
             trans_desc->remain_loop_count -= this_loop_count;
-            rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_LOOP_END(channel_id));
             portENTER_CRITICAL_ISR(&channel->spinlock);
             rmt_ll_tx_set_loop_count(hal->regs, channel_id, this_loop_count);
             rmt_ll_tx_reset_pointer(hal->regs, channel_id);
@@ -958,51 +958,49 @@ static bool IRAM_ATTR rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
             rmt_ll_tx_start(hal->regs, channel_id);
             portEXIT_CRITICAL_ISR(&channel->spinlock);
             return need_yield;
-        } else {
-            if (tx_chan->on_trans_done) {
-                rmt_tx_done_event_data_t edata = {
-                    .num_symbols = trans_desc->transmitted_symbol_num,
-                };
-                if (tx_chan->on_trans_done(channel, &edata, tx_chan->user_data)) {
-                    need_yield = true;
-                }
-            }
-            // move transaction to done_queue
+        }
+
+        // loop transaction finished
+        rmt_fsm_t expected_fsm = RMT_FSM_RUN;
+        if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_ENABLE_WAIT)) {
+            // move current finished transaction to the complete queue
             xQueueSendFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &trans_desc, &awoken);
             if (awoken == pdTRUE) {
                 need_yield = true;
             }
+            tx_chan->cur_trans = NULL;
+            atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+        }
+
+        // invoke callback
+        rmt_tx_done_callback_t done_cb = tx_chan->on_trans_done;
+        if (done_cb) {
+            rmt_tx_done_event_data_t edata = {
+                .num_symbols = trans_desc->transmitted_symbol_num,
+            };
+            if (done_cb(channel, &edata, tx_chan->user_data)) {
+                need_yield = true;
+            }
+        }
+
+        // let's try start the next pending transaction
+        expected_fsm = RMT_FSM_ENABLE;
+        if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT)) {
+            if (xQueueReceiveFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &trans_desc, &awoken) == pdTRUE) {
+                // sanity check
+                assert(trans_desc);
+                atomic_store(&channel->fsm, RMT_FSM_RUN);
+                // begin a new transaction
+                rmt_tx_do_transaction(tx_chan, trans_desc);
+                if (awoken == pdTRUE) {
+                    need_yield = true;
+                }
+            } else {
+                atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+            }
         }
     }
-    // trans_done and loop_done should be considered as one "transmission complete"
-    // but sometimes the trans done event might also be triggered together with loop done event, by accident, so clear it first
-    rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id));
-    portENTER_CRITICAL_ISR(&group->spinlock);
-    // disable interrupt temporarily, re-enable it when there is transaction unhandled in the queue
-    rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_LOOP_END(channel_id), false);
-    portEXIT_CRITICAL_ISR(&group->spinlock);
 
-    // fetch new transaction description from trans_queue
-    if (xQueueReceiveFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &trans_desc, &awoken) == pdTRUE) {
-        // sanity check
-        assert(trans_desc);
-        tx_chan->cur_trans = trans_desc;
-        // clear the loop end status when we're sure there still remains transaction to handle
-        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_LOOP_END(channel_id));
-
-        portENTER_CRITICAL_ISR(&group->spinlock);
-        // enable interrupt again, because the new transaction can trigger new trans done event
-        rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_DONE(channel_id), trans_desc->loop_count == 0);
-        rmt_ll_enable_interrupt(hal->regs, RMT_LL_EVENT_TX_LOOP_END(channel_id), trans_desc->loop_count > 0);
-        portEXIT_CRITICAL_ISR(&group->spinlock);
-
-        // begin a new transaction
-        rmt_tx_do_transaction(tx_chan, trans_desc);
-    } else { // No transactions left in the queue
-        // don't clear interrupt status, so when next time user push new transaction to the queue and call esp_intr_enable,
-        // we can go into ISR handler again
-        tx_chan->cur_trans = NULL;
-    }
     if (awoken == pdTRUE) {
         need_yield = true;
     }
@@ -1020,6 +1018,7 @@ static void IRAM_ATTR rmt_tx_default_isr(void *args)
     bool need_yield = false;
 
     uint32_t status = rmt_ll_tx_get_interrupt_status(hal->regs, channel_id);
+    rmt_ll_clear_interrupt_status(hal->regs, status);
 
     // Tx threshold interrupt
     if (status & RMT_LL_EVENT_TX_THRES(channel_id)) {
