@@ -244,7 +244,7 @@ menu "Wi-Fi"
     config ESP32_WIFI_ENABLE_WPA3_SAE
         bool "Enable WPA3-Personal"
         default y
-        depends on WPA_MBEDTLS_CRYPTO
+        select WPA_MBEDTLS_CRYPTO
         help
             Select this option to allow the device to establish a WPA3-Personal connection with eligible AP's.
             PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be

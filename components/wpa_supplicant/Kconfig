@@ -8,6 +8,7 @@ menu "Supplicant"
         select MBEDTLS_ECDH_C
         select MBEDTLS_ECDSA_C
         select MBEDTLS_TLS_ENABLED
+        select MBEDTLS_ECP_DP_SECP256R1_ENABLED
         help
             Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
 
