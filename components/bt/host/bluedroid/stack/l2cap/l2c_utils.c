@@ -1563,12 +1563,12 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     l2c_fcr_free_timer (p_ccb);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
-#if BT_CLASSIC_BQB_INCLUDED
+#if BT_SDP_BQB_INCLUDED
     if (l2cap_bqb_ertm_mode_included_flag) {
         p_ccb->ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
         p_ccb->ertm_info.allowed_modes = L2CAP_FCR_CHAN_OPT_ERTM;
     } else
-#endif /* BT_CLASSIC_BQB_INCLUDED */
+#endif /* BT_SDP_BQB_INCLUDED */
     {
         p_ccb->ertm_info.preferred_mode = L2CAP_FCR_BASIC_MODE;        /* Default mode for channel is basic mode */
         p_ccb->ertm_info.allowed_modes = L2CAP_FCR_CHAN_OPT_BASIC|L2CAP_FCR_CHAN_OPT_ERTM;
