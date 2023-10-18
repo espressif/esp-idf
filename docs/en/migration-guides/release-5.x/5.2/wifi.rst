@@ -21,3 +21,8 @@ For the event WIFI_EVENT_STA_DISCONNECTED, the original reason code WIFI_REASON_
 - REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY
 
 For details, please refer to :ref:`esp_wifi_reason_code`.
+
+
+WiFi Multiple Antennas
+----------------------
+WiFi multiple antennas api will be deprecated. Please use newer APIs from `esp_phy.h`.
