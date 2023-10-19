@@ -56,6 +56,17 @@ void http_utils_trim_whitespace(char **str);
 char *http_utils_get_string_between(const char *str, const char *begin, const char *end);
 
 /**
+ * @brief      Returns a string that contains the part after the search string till the end of the source string.
+ *             It will allocate a new memory space for this string, so you need to free it when no longer used
+ *
+ * @param[in]  str    The source string
+ * @param[in]  begin  The search string
+ *
+ * @return     The string between begin and the end of str
+ */
+char *http_utils_get_string_after(const char *str, const char *begin);
+
+/**
  * @brief      Join 2 strings to one
  *             It will allocate a new memory space for this string, so you need to free it when no longer use
  *

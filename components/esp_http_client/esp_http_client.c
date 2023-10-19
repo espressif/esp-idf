@@ -579,6 +579,7 @@ static esp_err_t _clear_auth_data(esp_http_client_handle_t client)
     free(client->auth_data->qop);
     free(client->auth_data->nonce);
     free(client->auth_data->opaque);
+    free(client->auth_data->uri);
     memset(client->auth_data, 0, sizeof(esp_http_auth_data_t));
     return ESP_OK;
 }
@@ -610,7 +611,12 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
             auth_response = http_auth_basic(client->connection_info.username, client->connection_info.password);
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
         } else if (client->connection_info.auth_type == HTTP_AUTH_TYPE_DIGEST && client->auth_data) {
-            client->auth_data->uri = client->connection_info.path;
+            client->auth_data->uri = NULL;
+            http_utils_assign_string(&client->auth_data->uri,client->connection_info.path,-1);
+            if (client->connection_info.query){
+                http_utils_append_string(&client->auth_data->uri,"?",-1);
+                http_utils_append_string(&client->auth_data->uri,client->connection_info.query,-1);
+            }
             client->auth_data->cnonce = ((uint64_t)esp_random() << 32) + esp_random();
             auth_response = http_auth_digest(client->connection_info.username, client->connection_info.password, client->auth_data);
             client->auth_data->nc ++;
@@ -1754,6 +1760,9 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         client->auth_data->nc = 1;
         client->auth_data->realm = http_utils_get_string_between(auth_header, "realm=\"", "\"");
         client->auth_data->algorithm = http_utils_get_string_between(auth_header, "algorithm=", ",");
+        if (client->auth_data->algorithm == NULL) {
+            client->auth_data->algorithm = http_utils_get_string_after(auth_header, "algorithm=");
+        }
         if (client->auth_data->algorithm == NULL) {
             client->auth_data->algorithm = strdup("MD5");
         }
