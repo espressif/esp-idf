@@ -1034,15 +1034,18 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
 
             tmp = (u8 *)(ehdr + 1) + 1;
             ret = wps_process_wps_mX_req(tmp, plen - sizeof(*ehdr) - 1, &res);
-            if (ret == ESP_OK && res != WPS_FAILURE && res != WPS_FRAGMENT) {
+            if (res == WPS_FRAGMENT) {
+                wpa_printf(MSG_DEBUG, "wps frag, silently exit", res);
+                ret = ESP_OK;
+                break;
+            }
+            if (ret == ESP_OK && res != WPS_FAILURE) {
                 ret = wps_send_wps_mX_rsp(ehdr->identifier);
+
                 if (ret == ESP_OK) {
                     wpa_printf(MSG_DEBUG, "sm->wps->state = %d", sm->wps->state);
                     wps_start_msg_timer();
                 }
-            } else if (ret == ESP_OK && res == WPS_FRAGMENT) {
-                wpa_printf(MSG_DEBUG, "wps frag, continue...");
-                ret = ESP_OK;
             } else {
                 ret = ESP_FAIL;
             }
