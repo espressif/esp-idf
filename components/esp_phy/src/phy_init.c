@@ -1113,3 +1113,8 @@ esp_err_t esp_phy_update_country_info(const char *country)
 
 void esp_wifi_power_domain_on(void) __attribute__((alias("esp_wifi_bt_power_domain_on")));
 void esp_wifi_power_domain_off(void) __attribute__((alias("esp_wifi_bt_power_domain_off")));
+
+_lock_t phy_get_lock(void)
+{
+    return s_phy_access_lock;
+}
