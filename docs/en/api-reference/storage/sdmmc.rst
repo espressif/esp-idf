@@ -8,7 +8,7 @@ Overview
 
 The SD/SDIO/MMC driver currently supports SD memory, SDIO cards, and eMMC chips. This is a protocol level driver built on top of SDMMC and SD SPI host drivers.
 
-SDMMC and SD SPI host drivers (:component_file:`driver/sdmmc/include/driver/sdmmc_host.h` and :component_file:`driver/spi/include/driver/sdspi_host.h`) provide API functions for:
+SDMMC and SD SPI host drivers (:component_file:`driver/sdmmc/include/driver/sdmmc_host.h` and :component_file:`driver/sdspi/include/driver/sdspi_host.h`) provide API functions for:
 
 - Sending commands to slave devices
 - Sending and receiving data

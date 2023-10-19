@@ -1,0 +1,16 @@
+components/esp_driver_spi/test_apps/spi/master:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+components/esp_driver_spi/test_apps/spi/param:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+components/esp_driver_spi/test_apps/spi/slave:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+components/esp_driver_spi/test_apps/spi/slave_hd:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+    - if: SOC_SPI_SUPPORT_SLAVE_HD_VER2 != 1

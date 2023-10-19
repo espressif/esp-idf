@@ -4,8 +4,8 @@ examples/network/bridge:
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Generic functionality, no need to be run on specific targets
-  depends_filepatterns:
-    - components/driver/spi/**/*
+  depends_components:
+    - esp_driver_spi
 
 examples/network/eth2ap:
   disable:
