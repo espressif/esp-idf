@@ -51,6 +51,7 @@ static int  wpa_gen_wpa_ie_wpa(u8 *wpa_ie, size_t wpa_ie_len,
 {
     u8 *pos;
     struct wpa_ie_hdr *hdr;
+    u32 suite;
 
     if (wpa_ie_len < sizeof(*hdr) + WPA_SELECTOR_LEN +
         2 + WPA_SELECTOR_LEN + 2 + WPA_SELECTOR_LEN)
@@ -62,34 +63,26 @@ static int  wpa_gen_wpa_ie_wpa(u8 *wpa_ie, size_t wpa_ie_len,
     WPA_PUT_LE16(hdr->version, WPA_VERSION);
     pos = (u8 *) (hdr + 1);
 
-    if (group_cipher == WPA_CIPHER_CCMP) {
-        RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_CCMP);
-    } else if (group_cipher == WPA_CIPHER_TKIP) {
-        RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_TKIP);
-    } else if (group_cipher == WPA_CIPHER_WEP104) {
-        RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_WEP104);
-    } else if (group_cipher == WPA_CIPHER_WEP40) {
-        RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_WEP40);
-    } else {
-        wpa_printf(MSG_DEBUG, "Invalid group cipher (%d).",
+    suite = wpa_cipher_to_suite(WPA_PROTO_WPA, group_cipher);
+    if (suite == 0) {
+        wpa_printf(MSG_WARNING, "Invalid group cipher (%d).",
                group_cipher);
         return -1;
     }
+    RSN_SELECTOR_PUT(pos, suite);
     pos += WPA_SELECTOR_LEN;
 
     *pos++ = 1;
     *pos++ = 0;
-    if (pairwise_cipher == WPA_CIPHER_CCMP) {
-        RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_CCMP);
-    } else if (pairwise_cipher == WPA_CIPHER_TKIP) {
-        RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_TKIP);
-    } else if (pairwise_cipher == WPA_CIPHER_NONE) {
-        RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_NONE);
-    } else {
-        wpa_printf(MSG_DEBUG, "Invalid pairwise cipher (%d).",
+    suite = wpa_cipher_to_suite(WPA_PROTO_WPA, pairwise_cipher);
+    if (suite == 0 ||
+        (!wpa_cipher_valid_pairwise(pairwise_cipher) &&
+         pairwise_cipher != WPA_CIPHER_NONE)) {
+        wpa_printf(MSG_WARNING, "Invalid pairwise cipher (%d).",
                pairwise_cipher);
         return -1;
     }
+    RSN_SELECTOR_PUT(pos, suite);
     pos += WPA_SELECTOR_LEN;
 
     *pos++ = 1;
@@ -198,6 +191,8 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 #ifdef CONFIG_WPA3_SAE
     } else if (key_mgmt == WPA_KEY_MGMT_SAE) {
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE);
+    } else if (key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY) {
+        RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE_EXT_KEY);
 #endif /* CONFIG_WPA3_SAE */
 #ifdef CONFIG_OWE_STA
     } else if (key_mgmt == WPA_KEY_MGMT_OWE) {
