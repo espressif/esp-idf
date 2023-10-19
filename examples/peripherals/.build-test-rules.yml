@@ -215,6 +215,10 @@ examples/peripherals/rmt/stepper_motor:
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
 
 examples/peripherals/sdio/host:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: request p4 essl spi to be ready for build, TODO IDF-8357
   enable:
     - if: SOC_SDMMC_HOST_SUPPORTED == 1
     - if: IDF_TARGET == "esp32"

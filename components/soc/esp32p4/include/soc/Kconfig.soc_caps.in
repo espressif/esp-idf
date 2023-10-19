@@ -139,6 +139,10 @@ config SOC_PSRAM_DMA_CAPABLE
     bool
     default y
 
+config SOC_SDMMC_HOST_SUPPORTED
+    bool
+    default y
+
 config SOC_WDT_SUPPORTED
     bool
     default y
@@ -763,6 +767,22 @@ config SOC_RSA_MAX_BIT_LEN
     int
     default 4096
 
+config SOC_SDMMC_USE_IOMUX
+    bool
+    default y
+
+config SOC_SDMMC_USE_GPIO_MATRIX
+    bool
+    default y
+
+config SOC_SDMMC_NUM_SLOTS
+    int
+    default 2
+
+config SOC_SDMMC_DELAY_PHASE_NUM
+    int
+    default 4
+
 config SOC_SHA_DMA_MAX_BUFFER_SIZE
     int
     default 3968
@@ -792,26 +812,6 @@ config SOC_SHA_SUPPORT_SHA256
     default y
 
 config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
-    bool
-    default y
-
-config SOC_SDMMC_USE_IOMUX
-    bool
-    default y
-
-config SOC_SDMMC_USE_GPIO_MATRIX
-    bool
-    default y
-
-config SOC_SDMMC_NUM_SLOTS
-    int
-    default 2
-
-config SOC_SDMMC_IOMUX_FUNC
-    bool
-    default n
-
-config SOC_SDMMC_DMA_NEED_CACHE_WB
     bool
     default y
 

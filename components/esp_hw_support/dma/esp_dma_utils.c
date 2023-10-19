@@ -11,6 +11,7 @@
 #include "esp_check.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
 #include "esp_dma_utils.h"
 #include "esp_private/esp_cache_private.h"
 #include "soc/soc_caps.h"
@@ -66,4 +67,43 @@ esp_err_t esp_dma_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, 
     }
 
     return ret;
+}
+
+bool esp_dma_is_buffer_aligned(const void *ptr, size_t size, esp_dma_buf_location_t location)
+{
+    assert(ptr);
+    uint32_t flags = ESP_CACHE_MALLOC_FLAG_DMA;
+
+    if (location == ESP_DMA_BUF_LOCATION_INTERNAL) {
+        if (!esp_ptr_dma_capable(ptr) || !esp_ptr_dma_capable(ptr + size - 1)) {
+            return false;
+        }
+    } else {
+#if !SOC_PSRAM_DMA_CAPABLE
+        return false;
+#endif
+        if (!esp_ptr_external_ram(ptr) || !esp_ptr_external_ram(ptr + size - 1)) {
+            return false;
+        }
+
+        flags |= ESP_DMA_MALLOC_FLAG_PSRAM;
+    }
+
+    bool is_aligned = false;
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    size_t cache_alignment = 0;
+    esp_err_t ret = esp_cache_get_alignment(flags, &cache_alignment);
+    assert(ret == ESP_OK);
+    if (((intptr_t)ptr % cache_alignment == 0) && (size % cache_alignment == 0)) {
+        is_aligned = true;
+    }
+#else
+    (void)size;
+    if ((intptr_t)ptr % 4 == 0) {
+        is_aligned = true;
+    }
+#endif
+
+    return is_aligned;
 }

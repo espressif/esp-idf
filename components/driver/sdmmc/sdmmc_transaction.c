@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -18,7 +19,10 @@
 #include "driver/sdmmc_defs.h"
 #include "driver/sdmmc_host.h"
 #include "esp_timer.h"
+#include "esp_cache.h"
+#include "esp_private/esp_cache_private.h"
 #include "sdmmc_private.h"
+#include "soc/soc_caps.h"
 
 
 /* Number of DMA descriptors used for transfer.
@@ -26,6 +30,14 @@
  * of SD memory cards (most data transfers are multiples of 512 bytes).
  */
 #define SDMMC_DMA_DESC_CNT  4
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define SDMMC_ALIGN_ATTR         __attribute__((aligned(CONFIG_CACHE_L1_CACHE_LINE_SIZE)))
+#else
+#define SDMMC_ALIGN_ATTR
+#endif
+
+#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 static const char* TAG = "sdmmc_req";
 
@@ -57,7 +69,7 @@ const uint32_t SDMMC_CMD_ERR_MASK =
         SDMMC_INTMASK_RCRC |
         SDMMC_INTMASK_RESP_ERR;
 
-static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
+SDMMC_ALIGN_ATTR static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
 static sdmmc_transfer_state_t s_cur_transfer = { 0 };
 static QueueHandle_t s_request_mutex;
 static bool s_is_app_cmd;   // This flag is set if the next command is an APP command
@@ -113,6 +125,12 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(s_pm_lock);
 #endif
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // cache sync related
+    size_t cache_sync_len = 0;
+#endif
+
     // dispose of any events which happened asynchronously
     handle_idle_state_events();
     // convert cmdinfo to hardware register value
@@ -131,6 +149,14 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
             ret = ESP_ERR_INVALID_ARG;
             goto out;
         }
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        cache_sync_len = cmdinfo->buflen;
+        ret = esp_cache_msync((void *)cmdinfo->data, cache_sync_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        if (ret != ESP_OK) {
+            goto out;
+        }
+#endif
         // this clears "owned by IDMAC" bits
         memset(s_dma_desc, 0, sizeof(s_dma_desc));
         // initialize first descriptor
@@ -167,6 +193,15 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
     }
     s_is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == MMC_APP_CMD);
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    if (cmdinfo->data) {
+        ret = esp_cache_msync((void *)cmdinfo->data, cache_sync_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        if (ret != ESP_OK) {
+            goto out;
+        }
+    }
+#endif
+
 out:
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_release(s_pm_lock);
@@ -185,6 +220,10 @@ static size_t get_free_descriptors_count(void)
      */
     for (size_t i = 0; i < SDMMC_DMA_DESC_CNT; ++i) {
         sdmmc_desc_t* desc = &s_dma_desc[(next + i) % SDMMC_DMA_DESC_CNT];
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        assert(ret == ESP_OK);
+#endif
         if (desc->owned_by_idmac) {
             break;
         }
@@ -224,6 +263,10 @@ static void fill_dma_descriptors(size_t num_desc)
         ESP_LOGV(TAG, "fill %d desc=%d rem=%d next=%d last=%d sz=%d",
                 num_desc, next, s_cur_transfer.size_remaining,
                 s_cur_transfer.next_desc, desc->last_descriptor, desc->buffer1_size);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        assert(ret == ESP_OK);
+#endif
     }
 }
 

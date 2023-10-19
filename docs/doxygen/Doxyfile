@@ -114,6 +114,7 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_types.h \
     $(PROJECT_PATH)/components/driver/sdio_slave/include/driver/sdio_slave.h \
     $(PROJECT_PATH)/components/driver/sigma_delta/include/driver/sdm.h \
+    $(PROJECT_PATH)/components/driver/sdmmc/include/driver/sdmmc_default_configs.h \
     $(PROJECT_PATH)/components/driver/sdmmc/include/driver/sdmmc_host.h \
     $(PROJECT_PATH)/components/driver/sdmmc/include/driver/sdmmc_types.h \
     $(PROJECT_PATH)/components/driver/spi/include/driver/sdspi_host.h \

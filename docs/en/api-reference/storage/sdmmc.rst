@@ -28,6 +28,25 @@ For functions used to initialize and configure:
 
     The protocol layer works with the host via the :cpp:class:`sdmmc_host_t` structure. This structure contains pointers to various functions of the host.
 
+Pin Configurations
+------------------
+
+..only:: SOC_SDMMC_USE_IOMUX and not SOC_SDMMC_USE_GPIO_MATRIX
+
+    SDMMC pins are dedicated, you don't have to configure the pins.
+
+..only:: SOC_SDMMC_USE_GPIO_MATRIX and not SOC_SDMMC_USE_IOMUX
+
+    SDMMC pin signals are routed via GPIO Matrix, so you will need to configure the pins in :cpp:type:`sdmmc_slot_config_t`.
+
+..only:: esp32p4
+
+    SDMMC have two slots:
+
+    .. list::
+
+        - slot 0 pins are dedicated for UHS-I mode. This is not yet supported in the driver.
+        - slot 1 pins are routed via GPIO Matrix, and it's for non UHS-I usage. You will need to configure the pins in :cpp:type:`sdmmc_slot_config_t` to use the slot 1.
 
 Application Example
 -------------------
