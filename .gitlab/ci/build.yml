@@ -236,6 +236,7 @@ build_pytest_examples_esp32h2:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32h2
+  parallel: 2
   variables:
     IDF_TARGET: esp32h2
     TEST_DIR: examples
@@ -402,7 +403,7 @@ build_only_tools_test_apps:
   extends:
     - .build_cmake_template
     - .rules:build:custom_test
-  parallel: 9
+  parallel: 8
   script:
     # CI specific options start from "--collect-size-info xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py tools/test_apps -v
@@ -636,7 +637,7 @@ build_examples_cmake_esp32c3:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32c3
-  parallel: 6
+  parallel: 8
   variables:
     IDF_TARGET: esp32c3
     TEST_DIR: examples
@@ -645,7 +646,7 @@ build_examples_cmake_esp32c6:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32c6
-  parallel: 6
+  parallel: 10
   variables:
     IDF_TARGET: esp32c6
     TEST_DIR: examples
@@ -654,7 +655,7 @@ build_examples_cmake_esp32h2:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32h2
-  parallel: 2
+  parallel: 6
   variables:
     IDF_TARGET: esp32h2
     TEST_DIR: examples
