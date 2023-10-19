@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "soc/soc_caps.h"
+#include "soc/gdma_channel.h"
 #include "hal/parlio_types.h"
 #include "hal/parlio_hal.h"
 #include "hal/parlio_ll.h"
@@ -38,12 +39,17 @@
 #define PARLIO_INTR_ALLOC_FLAG   (ESP_INTR_FLAG_LOWMED | PARLIO_INTR_ALLOC_FLAG_SHARED)
 #endif
 
-#if SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI
-/* The parlio peripheral uses DMA via AXI bus, which requires the descriptor aligned with 8 */
-typedef dma_descriptor_align8_t parlio_dma_desc_t;
-#else
-typedef dma_descriptor_align4_t parlio_dma_desc_t;
+#if defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS) // Parlio uses GDMA
+#if defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AHB)
+typedef dma_descriptor_align4_t     parlio_dma_desc_t;
+#define PARLIO_DMA_DESC_ALIGNMENT   4
+#define PARLIO_GDMA_NEW_CHANNEL     gdma_new_ahb_channel
+#elif defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI)
+typedef dma_descriptor_align8_t     parlio_dma_desc_t;
+#define PARLIO_DMA_DESC_ALIGNMENT   8
+#define PARLIO_GDMA_NEW_CHANNEL     gdma_new_axi_channel
 #endif
+#endif // defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS)
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
 /* The descriptor address can be mapped by a fixed offset */
@@ -51,14 +57,6 @@ typedef dma_descriptor_align4_t parlio_dma_desc_t;
 #else
 #define PARLIO_GET_NON_CACHED_DESC_ADDR(desc)   (desc)
 #endif // CACHE_LL_L2MEM_NON_CACHE_ADDR
-
-#if SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI
-#define PARLIO_DMA_DESC_ALIGNMENT   8
-#define PARLIO_DMA_DESC_SIZE        8
-#else
-#define PARLIO_DMA_DESC_ALIGNMENT   4
-#define PARLIO_DMA_DESC_SIZE        sizeof(parlio_dma_desc_t)
-#endif
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define PARLIO_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()

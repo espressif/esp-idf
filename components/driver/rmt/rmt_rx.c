@@ -76,9 +76,7 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
     };
-#if SOC_GDMA_TRIG_PERIPH_RMT0_BUS == SOC_GDMA_BUS_AHB
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &rx_channel->base.dma_chan), TAG, "allocate RX DMA channel failed");
-#endif
     gdma_rx_event_callbacks_t cbs = {
         .on_recv_eof = rmt_dma_rx_eof_cb,
     };

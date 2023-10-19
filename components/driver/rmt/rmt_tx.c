@@ -47,7 +47,7 @@ static bool rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t 
 static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx_channel_config_t *config)
 {
     rmt_symbol_word_t *dma_mem_base = heap_caps_calloc(1, sizeof(rmt_symbol_word_t) * config->mem_block_symbols,
-                                      RMT_MEM_ALLOC_CAPS | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+                                                       RMT_MEM_ALLOC_CAPS | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     ESP_RETURN_ON_FALSE(dma_mem_base, ESP_ERR_NO_MEM, TAG, "no mem for tx DMA buffer");
     tx_channel->base.dma_mem_base = dma_mem_base;
     for (int i = 0; i < RMT_DMA_NODES_PING_PONG; i++) {
@@ -63,9 +63,7 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
-#if SOC_GDMA_TRIG_PERIPH_RMT0_BUS == SOC_GDMA_BUS_AHB
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &tx_channel->base.dma_chan), TAG, "allocate TX DMA channel failed");
-#endif
     gdma_tx_event_callbacks_t cbs = {
         .on_trans_eof = rmt_dma_tx_eof_cb,
     };

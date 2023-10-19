@@ -55,12 +55,9 @@ extern "C" {
 #define RMT_PM_LOCK_NAME_LEN_MAX              16
 #define RMT_GROUP_INTR_PRIORITY_UNINITIALIZED (-1)
 
-#if SOC_GDMA_TRIG_PERIPH_RMT0_BUS == SOC_GDMA_BUS_AHB
-#define RMT_DMA_DESC_ALIGN 32
+// RMT is a slow peripheral, it only supports AHB-GDMA
+#define RMT_DMA_DESC_ALIGN      4
 typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
-#else
-#error "Unsupported RMT DMA bus"
-#endif
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
 #define RMT_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)

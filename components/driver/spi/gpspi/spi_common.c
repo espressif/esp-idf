@@ -246,11 +246,6 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 
 #else //SOC_GDMA_SUPPORTED
 
-#if (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB)
-static esp_err_t (*spi_gdma_chan_allocator)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *) = gdma_new_ahb_channel;
-#elif (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
-static esp_err_t (*spi_gdma_chan_allocator)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *) = gdma_new_axi_channel;
-#endif
 static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
 {
     assert(is_valid_host(host_id));
@@ -264,13 +259,13 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
             .flags.reserve_sibling = 1,
             .direction = GDMA_CHANNEL_DIRECTION_TX,
         };
-        ESP_RETURN_ON_ERROR(spi_gdma_chan_allocator(&tx_alloc_config, &ctx->tx_channel), SPI_TAG, "alloc gdma tx failed");
+        ESP_RETURN_ON_ERROR(SPI_GDMA_NEW_CHANNEL(&tx_alloc_config, &ctx->tx_channel), SPI_TAG, "alloc gdma tx failed");
 
         gdma_channel_alloc_config_t rx_alloc_config = {
             .direction = GDMA_CHANNEL_DIRECTION_RX,
             .sibling_chan = ctx->tx_channel,
         };
-        ESP_RETURN_ON_ERROR(spi_gdma_chan_allocator(&rx_alloc_config, &ctx->rx_channel), SPI_TAG, "alloc gdma rx failed");
+        ESP_RETURN_ON_ERROR(SPI_GDMA_NEW_CHANNEL(&rx_alloc_config, &ctx->rx_channel), SPI_TAG, "alloc gdma rx failed");
 
         if (host_id == SPI2_HOST) {
             gdma_connect(ctx->rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 2));
