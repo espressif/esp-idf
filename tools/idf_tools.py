@@ -83,7 +83,7 @@ TOOLS_FILE = 'tools/tools.json'
 TOOLS_SCHEMA_FILE = 'tools/tools_schema.json'
 TOOLS_FILE_NEW = 'tools/tools.new.json'
 IDF_ENV_FILE = 'idf-env.json'
-TOOLS_FILE_VERSION = 1
+TOOLS_FILE_VERSION = 2
 IDF_TOOLS_PATH_DEFAULT = os.path.join('~', '.espressif')
 UNKNOWN_VERSION = 'unknown'
 SUBST_TOOL_PATH_REGEX = re.compile(r'\${TOOL_PATH}')
@@ -409,6 +409,14 @@ def unpack(filename, destination):  # type: (str, str) -> None
         # https://bugs.python.org/issue17153
         destination = str(destination)
     archive_obj.extractall(destination)
+    # ZipFile on Unix systems does not preserve file permissions while extracting it
+    # We need to reset the permissions afterward
+    if sys.platform != 'win32' and filename.endswith('zip') and isinstance(archive_obj, ZipFile):
+        for file_info in archive_obj.infolist():
+            extracted_file = os.path.join(destination, file_info.filename)
+            extracted_permissions = file_info.external_attr >> 16 & 0o777  # Extract Unix permissions
+            if os.path.exists(extracted_file):
+                os.chmod(extracted_file, extracted_permissions)
 
 
 def splittype(url):  # type: (str) -> Tuple[Optional[str], str]
@@ -547,12 +555,12 @@ class ToolExecError(RuntimeError):
 
 
 class IDFToolDownload(object):
-    def __init__(self, platform_name, url, size, sha256):  # type: (str, str, int, str) -> None
+    def __init__(self, platform_name, url, size, sha256, rename_dist):  # type: (str, str, int, str, str) -> None
         self.platform_name = platform_name
         self.url = url
         self.size = size
         self.sha256 = sha256
-        self.platform_name = platform_name
+        self.rename_dist = rename_dist
 
 
 @functools.total_ordering
@@ -582,8 +590,8 @@ class IDFToolVersion(object):
             return NotImplemented
         return self.status == other.status and self.version == other.version
 
-    def add_download(self, platform_name, url, size, sha256):  # type: (str, str, int, str) -> None
-        self.downloads[platform_name] = IDFToolDownload(platform_name, url, size, sha256)
+    def add_download(self, platform_name, url, size, sha256, rename_dist=''):  # type: (str, str, int, str, str) -> None
+        self.downloads[platform_name] = IDFToolDownload(platform_name, url, size, sha256, rename_dist)
 
     def get_download_for_platform(self, platform_name):  # type: (Optional[str]) -> Optional[IDFToolDownload]
         platform_name = Platforms.get(platform_name)
@@ -847,7 +855,7 @@ class IDFTool(object):
             raise SystemExit(1)
 
         url = download_obj.url
-        archive_name = os.path.basename(url)
+        archive_name = download_obj.rename_dist if download_obj.rename_dist else os.path.basename(url)
         local_path = os.path.join(global_idf_tools_path or '', 'dist', archive_name)
         mkdir_p(os.path.dirname(local_path))
 
@@ -881,7 +889,7 @@ class IDFTool(object):
         assert version in self.versions
         download_obj = self.versions[version].get_download_for_platform(self._platform)
         assert download_obj is not None
-        archive_name = os.path.basename(download_obj.url)
+        archive_name = download_obj.rename_dist if download_obj.rename_dist else os.path.basename(download_obj.url)
         archive_path = os.path.join(global_idf_tools_path or '', 'dist', archive_name)
         assert os.path.isfile(archive_path)
         dest_dir = self.get_path_for_version(version)
@@ -1033,7 +1041,8 @@ class IDFTool(object):
                                        (platform_id, tool_name, version))
 
                 version_obj.add_download(platform_id,
-                                         platform_dict['url'], platform_dict['size'], platform_dict['sha256'])
+                                         platform_dict['url'], platform_dict['size'],
+                                         platform_dict['sha256'], platform_dict.get('rename_dist', ''))
 
                 if version_status == IDFToolVersion.STATUS_RECOMMENDED:
                     if platform_id not in recommended_versions:
@@ -1060,11 +1069,19 @@ class IDFTool(object):
                 'status': version_obj.status
             }
             for platform_id, download in version_obj.downloads.items():
-                version_json[platform_id] = {
-                    'url': download.url,
-                    'size': download.size,
-                    'sha256': download.sha256
-                }
+                if download.rename_dist:
+                    version_json[platform_id] = {
+                        'url': download.url,
+                        'size': download.size,
+                        'sha256': download.sha256,
+                        'rename_dist': download.rename_dist
+                    }
+                else:
+                    version_json[platform_id] = {
+                        'url': download.url,
+                        'size': download.size,
+                        'sha256': download.sha256
+                    }
             versions_array.append(version_json)
         overrides_array = self.platform_overrides
 
@@ -1331,9 +1348,6 @@ def parse_tools_info_json(tools_info):  # type: ignore
     Parse and validate the dictionary obtained by loading the tools.json file.
     Returns a dictionary of tools (key: tool name, value: IDFTool object).
     """
-    if tools_info['version'] != TOOLS_FILE_VERSION:
-        raise RuntimeError('Invalid version')
-
     tools_dict = OrderedDict()
 
     tools_array = tools_info.get('tools')
@@ -2313,7 +2327,8 @@ def action_add_version(args):  # type: ignore
     if not tool_obj:
         info('Creating new tool entry for {}'.format(tool_name))
         tool_obj = IDFTool(tool_name, TODO_MESSAGE, IDFTool.INSTALL_ALWAYS,
-                           TODO_MESSAGE, TODO_MESSAGE, [TODO_MESSAGE], TODO_MESSAGE)
+                           TODO_MESSAGE, TODO_MESSAGE, [TODO_MESSAGE], TODO_MESSAGE,
+                           [TODO_MESSAGE])
         tools_info[tool_name] = tool_obj
     version = args.version
     version_status = IDFToolVersion.STATUS_SUPPORTED
