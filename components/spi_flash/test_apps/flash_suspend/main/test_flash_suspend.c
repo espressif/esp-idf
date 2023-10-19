@@ -121,14 +121,10 @@ TEST_CASE("flash suspend test", "[spi_flash][suspend]")
     };
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &gptimer));
 
-    /**
-    set alarm_count is 2500.
-    So, in this case, ISR duration time is around 2240 and ISR interval time is around 2470
-    so ISR_interval - ISR_duration is around 230us. Just a little bit larger than `tsus` value.
-    */
+    // For pre-test, set alarm_count as a larger value.
     gptimer_alarm_config_t alarm_config = {
         .reload_count = 0,
-        .alarm_count = 2500,
+        .alarm_count = 10000,
         .flags.auto_reload_on_alarm = true,
     };
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
@@ -151,11 +147,61 @@ TEST_CASE("flash suspend test", "[spi_flash][suspend]")
     RECORD_TIME_END(erase_time);
 
     TEST_ESP_OK(gptimer_stop(gptimer));
+    TEST_ESP_OK(gptimer_disable(gptimer));
+    uint32_t isr_duration_time = s_isr_time / times;
+    ESP_LOGI(TAG, "--------------------Pre Test...--------------------");
+    ESP_LOGI(TAG, "Flash Driver Erase Operation finishes, duration:\n\t\t%0.2f us", GET_US_BY_CCOUNT(erase_time));
+    ESP_LOGI(TAG, "During Erase, ISR callback function(in flash) response time:\n\t\t%0.2f us", GET_US_BY_CCOUNT(s_flash_func_time / times));
+    ESP_LOGI(TAG, "During Erase, ISR duration time:\n\t\t%0.2f us", GET_US_BY_CCOUNT(isr_duration_time));
+    ESP_LOGI(TAG, "During Erase, ISR interval time:\n\t\t%0.2f us", GET_US_BY_CCOUNT(s_isr_interval_time / (times - 1)));
+
+    // init all time parameters
+    s_flash_func_t1 = 0;
+    s_flash_func_t2 = 0;
+    s_flash_func_time = 0;
+    s_isr_t1 = 0;
+    s_isr_t2 = 0;
+    s_isr_time = 0;
+    s_isr_interval_t1 = 0;
+    s_isr_interval_t2 = 0;
+    s_isr_interval_time = 0;
+    times = 0;
+
+    // run test again for validate the tSUS value
+
+    /**
+    set alarm_count is duration_time + Tsus value.
+    So, in this case, ISR duration time is around 2217 and ISR interval time is around 2259(tested value, can change each time)
+    so ISR_interval - ISR_duration is around 42us. Just a little bit larger than `tsus` value.
+    */
+    alarm_config.alarm_count = GET_US_BY_CCOUNT(isr_duration_time) + CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US,
+    TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+
+    TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, &is_flash));
+    TEST_ESP_OK(gptimer_enable(gptimer));
+    TEST_ESP_OK(gptimer_start(gptimer));
+
+    erase_time = 0;
+
+    RECORD_TIME_START();
+    TEST_ESP_OK(esp_flash_erase_region(part->flash_chip, part->address, part->size));
+    TEST_ESP_OK(esp_flash_write(part->flash_chip, large_const_buffer, part->address, sizeof(large_const_buffer)));
+
+    RECORD_TIME_END(erase_time);
+
+    TEST_ESP_OK(gptimer_stop(gptimer));
+
+    isr_duration_time = GET_US_BY_CCOUNT(s_isr_time / times);
+    uint32_t isr_interval_time = GET_US_BY_CCOUNT(s_isr_interval_time / (times - 1));
+    ESP_LOGI(TAG, "--------------------Formal Test...--------------------");
     ESP_LOGI(TAG, "Flash Driver Erase Operation finishes, duration:\n\t\t%0.2f us", GET_US_BY_CCOUNT(erase_time));
     ESP_LOGI(TAG, "During Erase, ISR callback function(in flash) response time:\n\t\t%0.2f us", GET_US_BY_CCOUNT(s_flash_func_time / times));
     ESP_LOGI(TAG, "During Erase, ISR duration time:\n\t\t%0.2f us", GET_US_BY_CCOUNT(s_isr_time / times));
     ESP_LOGI(TAG, "During Erase, ISR interval time:\n\t\t%0.2f us", GET_US_BY_CCOUNT(s_isr_interval_time / (times - 1)));
-
+    ESP_LOGI(TAG, "The tsus value which passes the test is:\n\t\t%ld us", isr_interval_time - isr_duration_time);
+    // 15 stands for threshold. We allow the interval time minus duration time is little bit larger than TSUS value
+    TEST_ASSERT_LESS_THAN(CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US + 15, isr_interval_time - isr_duration_time);
+    ESP_LOGI(TAG, "Reasonable value!");
 
     ESP_LOGI(TAG, "Finish");
     TEST_ESP_OK(gptimer_disable(gptimer));
