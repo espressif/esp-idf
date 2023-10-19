@@ -6,6 +6,7 @@
 
 #include "esp_timer.h"
 #include "esp_phy_init.h"
+#include "esp_private/phy.h"
 #include <stdint.h>
 
 static volatile uint16_t s_phy_modem_flag = 0;
@@ -27,7 +28,7 @@ bool phy_enabled_modem_contains(esp_phy_modem_t modem)
 }
 #endif
 
-static void phy_track_pll_timer_callback(void* arg)
+static void phy_track_pll(void)
 {
     bool wifi_track_pll = false;
     bool ble_154_track_pll = false;
@@ -44,7 +45,17 @@ static void phy_track_pll_timer_callback(void* arg)
         s_bt_154_prev_timestamp = esp_timer_get_time();
     }
 #endif
-    phy_param_track_tot(wifi_track_pll, ble_154_track_pll);
+    if (wifi_track_pll || ble_154_track_pll) {
+        phy_param_track_tot(wifi_track_pll, ble_154_track_pll);
+    }
+}
+
+static void phy_track_pll_timer_callback(void* arg)
+{
+    _lock_t phy_lock = phy_get_lock();
+    _lock_acquire(&phy_lock);
+    phy_track_pll();
+    _lock_release(&phy_lock);
 }
 
 void phy_track_pll_init(void)
@@ -60,7 +71,7 @@ void phy_track_pll_init(void)
     need_track_pll = need_track_pll || ((esp_timer_get_time() - s_bt_154_prev_timestamp) > PHY_TRACK_PLL_PERIOD_IN_US);
 #endif
     if (need_track_pll) {
-        phy_track_pll_timer_callback((void* )0);
+        phy_track_pll();
     }
 
     const esp_timer_create_args_t phy_track_pll_timer_args = {
