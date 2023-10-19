@@ -3267,7 +3267,9 @@ BaseType_t xTaskIncrementTick( void )
                              * 0, we only need to context switch if the unblocked
                              * task can run on core 0 and has a higher priority
                              * than the current task. */
-                            if( ( taskIS_AFFINITY_COMPATIBLE( 0, pxTCB->xCoreID ) == pdTRUE ) && ( pxTCB->uxPriority > pxCurrentTCBs[ 0 ]->uxPriority ) )
+
+                            /* ">" changed to ">="" due to IDF incompatibility (IDF-8428) */
+                            if( ( taskIS_AFFINITY_COMPATIBLE( 0, pxTCB->xCoreID ) == pdTRUE ) && ( pxTCB->uxPriority >= pxCurrentTCBs[ 0 ]->uxPriority ) )
                             {
                                 xSwitchRequired = pdTRUE;
                             }
