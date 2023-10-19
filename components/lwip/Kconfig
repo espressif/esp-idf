@@ -15,6 +15,14 @@ menu "LWIP"
             could be used to convert network interface index to name
             instead of IDF specific esp-netif APIs (such as esp_netif_get_netif_impl_name())
 
+    config LWIP_TCPIP_TASK_PRIO
+        int "LWIP TCP/IP Task Priority"
+        default 18
+        range 1 24
+        help
+            LWIP tcpip task priority. In case of high throughput, this parameter
+            could be changed up to (configMAX_PRIORITIES-1).
+
     config LWIP_TCPIP_CORE_LOCKING
         bool "Enable tcpip core locking"
         default n
@@ -25,6 +33,15 @@ menu "LWIP"
             See LOCK_TCPIP_CORE() and UNLOCK_TCPIP_CORE().
 
             If disable tcpip core locking,TCP IP will perform tasks through context switching
+
+    config LWIP_TCPIP_CORE_LOCKING_INPUT
+        bool "Enable tcpip core locking input"
+        depends on LWIP_TCPIP_CORE_LOCKING
+        default n
+        help
+            when LWIP_TCPIP_CORE_LOCKING is enabled, this lets tcpip_input() grab the
+            mutex for input packets as well, instead of allocating a message and passing
+            it to tcpip_thread.
 
     config LWIP_CHECK_THREAD_SAFETY
         bool "Checks that lwip API runs in expected context"
