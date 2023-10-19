@@ -372,6 +372,47 @@ MSC
 * A host class driver for the Mass Storage Class (Bulk-Only Transport) is deployed to `IDF component registry <https://components.espressif.com/component/espressif/usb_host_msc>`__. You can find its example in :example:`peripherals/usb/host/msc`.
 
 
+.. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
+
+Host Stack Configuration
+------------------------
+
+Non-Compliant Device Support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To support USB devices that are non-compliant in various scenarios or exhibit specific behaviors it is possible to configure the USB Host stack.
+
+As a USB device may be hot-plugged, it is essential to have the configurable delays between power switching and device attachment, and when the device's internal power has stabilized.
+
+Enumeration Configuration
+"""""""""""""""""""""""""
+
+During the process of enumerating connected USB devices, several timeout values ensure the proper functioning of the device.
+
+.. figure:: ../../../_static/usb_host/poweron-timings.png
+    :align: center
+    :alt: USB Root Hub Power-on and Connection Events Timing
+    :figclass: align-center
+
+    USB Root Hub Power-on and Connection Events Timing
+
+The figure above shows all the timeouts associated with both turning on port power with a device connected and hot-plugging a device.
+
+* After a port is reset or resumed, the USB System Software is expected to provide a “recovery” interval of 10 ms before the device attached to the port is expected to respond to data transfers.
+* After the reset/resume recovery interval, if a device receives a SetAddress() request, the device must be able to complete processing of the request and be able to successfully complete the Status stage of the request within 50 ms.
+* After successful completion of the Status stage, the device is allowed a SetAddress() recovery interval of 2 ms.
+
+.. note::
+
+    For more details regarding connection event timings, please refer to the Universal Serial Bus 2.0 specification, chapter 7.1.7.3 "Connect and Disconnect Signaling".
+
+Configurable parameters of the USB host stack can be configured with multiple options via Menuconfig.
+
+* For Debounce delay refer to :ref:`CONFIG_USB_HOST_DEBOUNCE_DELAY_MS`
+* For Reset hold interval refer to :ref:`CONFIG_USB_HOST_RESET_HOLD_MS`
+* For Reset recovery interval refer to :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS`
+* Fer SetAddress() recovery interval refer to: :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS`
+
 .. -------------------------------------------------- API Reference ----------------------------------------------------
 
 API Reference
