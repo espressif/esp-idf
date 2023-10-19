@@ -46,7 +46,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def fixture_session_work_dir(request: FixtureRequest) -> typing.Generator[Path, None, None]:
     work_dir = request.config.getoption('--work-dir')
     if work_dir:
-        work_dir = os.path.join(work_dir, datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S'))
+        work_dir = os.path.join(work_dir, datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d_%H-%M-%S'))
         logging.debug(f'using work directory: {work_dir}')
         os.makedirs(work_dir, exist_ok=True)
         clean_dir = None

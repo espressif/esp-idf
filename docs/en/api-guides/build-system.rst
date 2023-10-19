@@ -294,7 +294,14 @@ When CMake runs to configure the project, it logs the components included in the
 Multiple Components with the Same Name
 --------------------------------------
 
-When ESP-IDF is collecting all the components to compile, it will do this in the order specified by ``COMPONENT_DIRS``; by default, this means ESP-IDF's internal components first (``IDF_PATH/components``), then any components in directories specified in ``EXTRA_COMPONENT_DIRS``, and finally the project's components (``PROJECT_DIR/components``). If two or more of these directories contain component sub-directories with the same name, the component in the last place searched is used. This allows, for example, overriding ESP-IDF components with a modified version by copying that component from the ESP-IDF components directory to the project components directory and then modifying it there. If used in this way, the ESP-IDF directory itself can remain untouched.
+When ESP-IDF is collecting all the components to compile, the search precedence is as follows (from highest to lowest):
+
+* Project components
+* Components from ``EXTRA_COMPONENT_DIRS``
+* Project managed components, downloaded by the IDF Component Manager into ``PROJECT_DIR/managed_components``, unless the IDF Component Manager is disabled.
+* ESP-IDF components (``IDF_PATH/components``)
+
+If two or more of these directories contain component sub-directories with the same name, the component with higher precedence is used. This allows, for example, overriding ESP-IDF components with a modified version by copying that component from the ESP-IDF components directory to the project components directory and then modifying it there. If used in this way, the ESP-IDF directory itself can remain untouched.
 
 .. note::
 
@@ -1244,12 +1251,26 @@ Set a :ref:`build property <cmake-build-properties>` *property* with value *val*
 
 .. code-block:: none
 
-  idf_build_component(component_dir)
+  idf_build_component(component_dir [component_source])
 
 Present a directory *component_dir* that contains a component to the build system. Relative paths are converted to absolute paths with respect to current directory.
-All calls to this command must be performed before `idf_build_process`.
 
-This command does not guarantee that the component will be processed during build (see the `COMPONENTS` argument description for `idf_build_process`)
+An optional *component_source* argument can be specified to indicate the source of the component. (default: "project_components")
+
+This argument determines the overriding priority for components with the same name. For detailed information, see :ref:`cmake-components-same-name`.
+
+This argument supports the following values (from highest to lowest priority):
+
+- "project_components" - project components
+- "project_extra_components" - components from ``EXTRA_COMPONENT_DIRS``
+- "project_managed_components" - custom project dependencies managed by the IDF Component Manager
+- "idf_components" - ESP-IDF built-in components, typically under :idf:`/components`
+
+For instance, if a component named "json" is present as both "idf_components", and "project_components", the component as "project_components" takes precedence over the one as "idf_components".
+
+.. warning::
+
+    All calls to this command must be performed before `idf_build_process`. This command does not guarantee that the component will be processed during build (see the `COMPONENTS` argument description for `idf_build_process`).
 
 .. code-block:: none
 
@@ -1409,6 +1430,7 @@ These are properties that describe a component. Values of component properties c
 - COMPONENT_LIB - name for created component static/interface library; set by ``idf_build_component`` and library itself is created by ``idf_component_register``
 - COMPONENT_NAME - name of the component; set by ``idf_build_component`` based on the component directory name
 - COMPONENT_TYPE - type of the component, whether LIBRARY or CONFIG_ONLY. A component is of type LIBRARY if it specifies source files or embeds a file
+- COMPONENT_SOURCE - source of the component, one of "idf_components", "project_managed_components", "project_components", "project_extra_components". This is used to determine the override precedence of components with the same name.
 - EMBED_FILES - list of files to embed in component; set from ``idf_component_register`` EMBED_FILES argument
 - EMBED_TXTFILES - list of text files to embed in component; set from ``idf_component_register`` EMBED_TXTFILES argument
 - INCLUDE_DIRS - list of component include directories; set from ``idf_component_register`` INCLUDE_DIRS argument

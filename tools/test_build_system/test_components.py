@@ -3,11 +3,38 @@
 
 import json
 import logging
+import os
 import shutil
 from pathlib import Path
+from typing import Generator
 
 import pytest
 from test_build_system_helpers import EnvDict, IdfPyFunc, append_to_file, replace_in_file
+
+
+@pytest.fixture(autouse=True)
+def create_idf_components(request: pytest.FixtureRequest) -> Generator:
+    """
+    Auto create/remove components under IDF_PATH.
+    Use it by applying the marker to the test function:
+
+    >>> @pytest.mark.with_idf_components(['cmp1', 'cmp2', ...])
+    """
+    mark = request.node.get_closest_marker('with_idf_components')
+    if mark is None:
+        yield
+    else:
+        idf_path = Path(os.environ['IDF_PATH'])
+        created_paths = []
+        for name in mark.args[0]:
+            (idf_path / 'components' / name).mkdir(parents=True)
+            (idf_path / 'components' / name / 'CMakeLists.txt').write_text('idf_component_register()')
+            created_paths.append(str((idf_path / 'components' / name).as_posix()))
+
+        yield
+
+        for path in created_paths:
+            shutil.rmtree(path)
 
 
 def test_component_extra_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
@@ -104,19 +131,100 @@ def test_component_overriden_dir(idf_py: IdfPyFunc, test_app_copy: Path, default
     assert 'kconfig:{}'.format(idf_path / 'components' / 'hal') in ret.stdout, 'Failed to verify original `main` directory'
 
 
-def test_components_prioritizer_over_extra_components_dir(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
-    logging.info('Project components prioritized over EXTRA_COMPONENT_DIRS')
+def test_project_components_overrides_extra_components(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Project components override components defined in EXTRA_COMPONENT_DIRS')
     (test_app_copy / 'extra_dir' / 'my_component').mkdir(parents=True)
     (test_app_copy / 'extra_dir' / 'my_component' / 'CMakeLists.txt').write_text('idf_component_register()')
     replace_in_file(test_app_copy / 'CMakeLists.txt',
                     '# placeholder_before_include_project_cmake',
                     'set(EXTRA_COMPONENT_DIRS extra_dir)')
-    ret = idf_py('reconfigure')
-    assert str(test_app_copy / 'extra_dir' / 'my_component') in ret.stdout, 'Unable to find component specified in EXTRA_COMPONENT_DIRS'
+    idf_py('reconfigure')
+    with open(test_app_copy / 'build' / 'project_description.json', 'r') as f:
+        data = json.load(f)
+    assert str((test_app_copy / 'extra_dir' / 'my_component').as_posix()) in data.get('build_component_paths')
+
     (test_app_copy / 'components' / 'my_component').mkdir(parents=True)
     (test_app_copy / 'components' / 'my_component' / 'CMakeLists.txt').write_text('idf_component_register()')
-    ret = idf_py('reconfigure')
-    assert str(test_app_copy / 'components' / 'my_component') in ret.stdout, 'Project components should be prioritized over EXTRA_COMPONENT_DIRS'
+    idf_py('reconfigure')
+    with open(test_app_copy / 'build' / 'project_description.json', 'r') as f:
+        data = json.load(f)
+    assert str((test_app_copy / 'components' / 'my_component').as_posix()) in data.get('build_component_paths')
+    assert str((test_app_copy / 'extra_dir' / 'my_component').as_posix()) not in data.get('build_component_paths')
+
+
+def test_extra_components_overrides_managed_components(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('components defined in EXTRA_COMPONENT_DIRS override managed components')
+    (test_app_copy / 'main' / 'idf_component.yml').write_text("""
+    dependencies:
+        example/cmp: "*"
+        """)
+    idf_py('reconfigure')
+    with open(test_app_copy / 'build' / 'project_description.json', 'r') as f:
+        data = json.load(f)
+    assert str((test_app_copy / 'managed_components' / 'example__cmp').as_posix()) in data.get(
+        'build_component_paths')
+
+    (test_app_copy / 'extra_dir' / 'cmp').mkdir(parents=True)
+    (test_app_copy / 'extra_dir' / 'cmp' / 'CMakeLists.txt').write_text('idf_component_register()')
+    replace_in_file(test_app_copy / 'CMakeLists.txt',
+                    '# placeholder_before_include_project_cmake',
+                    'set(EXTRA_COMPONENT_DIRS extra_dir)')
+    idf_py('reconfigure')
+    with open(test_app_copy / 'build' / 'project_description.json', 'r') as f:
+        data = json.load(f)
+    assert str((test_app_copy / 'extra_dir' / 'cmp').as_posix()) in data.get('build_component_paths')
+    assert str((test_app_copy / 'managed_components' / 'example__cmp').as_posix()) not in data.get(
+        'build_component_paths')
+
+
+@pytest.mark.with_idf_components(['cmp'])
+def test_managed_components_overrides_idf_components(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Managed components override components defined in IDF_PATH/components')
+    # created idf component 'cmp' in marker
+    idf_path = Path(os.environ['IDF_PATH'])
+    idf_py('reconfigure')
+    with open(test_app_copy / 'build' / 'project_description.json', 'r') as f:
+        data = json.load(f)
+    assert str((idf_path / 'components' / 'cmp').as_posix()) in data.get(
+        'build_component_paths')
+
+    (test_app_copy / 'main' / 'idf_component.yml').write_text("""
+dependencies:
+    example/cmp: "*"
+    """)
+    idf_py('reconfigure')
+    with open(test_app_copy / 'build' / 'project_description.json', 'r') as f:
+        data = json.load(f)
+    assert str((test_app_copy / 'managed_components' / 'example__cmp').as_posix()) in data.get(
+        'build_component_paths')
+    assert str((idf_path / 'components' / 'cmp').as_posix()) not in data.get(
+        'build_component_paths')
+
+
+def test_manifest_local_source_overrides_extra_components(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    (test_app_copy / '..' / 'extra_dir' / 'cmp').mkdir(parents=True)
+    (test_app_copy / '..' / 'extra_dir' / 'cmp' / 'CMakeLists.txt').write_text('idf_component_register()')
+    replace_in_file(test_app_copy / 'CMakeLists.txt',
+                    '# placeholder_before_include_project_cmake',
+                    'set(EXTRA_COMPONENT_DIRS ../extra_dir)')
+    idf_py('reconfigure')
+    with open(test_app_copy / 'build' / 'project_description.json', 'r') as f:
+        data = json.load(f)
+    assert str((test_app_copy / '..' / 'extra_dir' / 'cmp').resolve().as_posix()) in data.get('build_component_paths')
+
+    (test_app_copy / '..' / 'cmp').mkdir(parents=True)
+    (test_app_copy / '..' / 'cmp' / 'CMakeLists.txt').write_text('idf_component_register()')
+    with open(test_app_copy / 'main' / 'idf_component.yml', 'w') as f:
+        f.write("""
+dependencies:
+    cmp:
+        path: '../../cmp'
+        """)
+    idf_py('reconfigure')
+    with open(test_app_copy / 'build' / 'project_description.json', 'r') as f:
+        data = json.load(f)
+    assert str((test_app_copy / '..' / 'cmp').resolve().as_posix()) in data.get('build_component_paths')
+    assert str((test_app_copy / '..' / 'extra_dir' / 'cmp').resolve().as_posix()) not in data.get('build_component_paths')
 
 
 def test_exclude_components_not_passed(idf_py: IdfPyFunc, test_app_copy: Path) -> None:

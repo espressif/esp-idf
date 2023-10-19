@@ -294,9 +294,16 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 同名组件
 --------
 
-ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进行，这意味着在默认情况下，首先搜索 ESP-IDF 内部组件（``IDF_PATH/components``），然后是 ``EXTRA_COMPONENT_DIRS`` 中的组件，最后是项目组件（``PROJECT_DIR/components``）。如果这些目录中的两个或者多个包含具有相同名字的组件，则使用搜索到的最后一个位置的组件。这就允许将组件复制到项目目录中再修改以覆盖 ESP-IDF 组件，如果使用这种方式，ESP-IDF 目录本身可以保持不变。
+ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组件目录（从高到低）：
 
-.. 注解::
+* 项目目录下的组件
+* ``EXTRA_COMPONENT_DIRS`` 中的组件
+* 项目目录下 ``managed_components`` 目录中的组件。这些组件由 IDF Component Manager 下载并管理。（除非 IDF Component Manager 被禁用）
+* ``IDF_PATH/components`` 目录下的组件
+
+如果有两个及以上同名组件，构建系统会使用优先级更高的组件。这使得我们可以在项目中覆盖 ESP-IDF 提供的组件。只需要复制 ESP-IDF 组件到项目目录下，然后修改它。这样可以在修改组件的同时，不修改 ESP-IDF 的源代码。
+
+.. note::
 
   如果在现有项目中通过将组件移动到一个新位置来覆盖它，项目不会自动看到新组件的路径。请运行 ``idf.py reconfigure`` 命令后（或删除项目构建文件夹）再重新构建。
 
@@ -1244,23 +1251,37 @@ ESP-IDF 构建命令
 
 .. code-block:: none
 
-  idf_build_component(component_dir)
+  idf_build_component(component_dir [component_source])
 
 向构建系统提交一个包含组件的 *component_dir* 目录。相对路径会被转换为相对于当前目录的绝对路径。
-所有对该命令的调用必须在`idf_build_process`之前执行。
 
-该命令并不保证组件在构建过程中会被处理（参见 `idf_build_process` 中 `COMPONENTS` 参数说明）
+一个可选的 *component_source* 参数可以用于指定组件源。（默认为 "project_components"）
+
+这个参数决定了同名组件的优先级。详细信息请参考 :ref:`cmake-components-same-name`。
+
+该参数可以指定如下组件源（优先级从高到低排序）：
+
+- "project_components" - 项目目录中的组件
+- "project_extra_components" - 通过 ``EXTRA_COMPONENT_DIRS`` 指定的额外组件
+- "project_managed_components" - 通过 IDF Component Manager 管理的组件
+- "idf_components" - ESP-IDF 中的组件，通常在 :idf:`/components` 目录中
+
+举个例子，如果有两个组件，组件名都为 "json"。一个组件源被定义为 "project_components"，另一个组件源被定义为 "idf_components"，那么 "project_components" 中的 "json" 组件会被优先选择。
+
+.. warning::
+
+    所有对该命令的调用必须在 `idf_build_process` 之前执行。该命令并不保证组件在构建过程中会被处理（参见 `idf_build_process` 中 `COMPONENTS` 参数说明）。
 
 .. code-block:: none
 
-  idf_build_process(target
-                    [PROJECT_DIR project_dir]
-                    [PROJECT_VER project_ver]
-                    [PROJECT_NAME project_name]
-                    [SDKCONFIG sdkconfig]
-                    [SDKCONFIG_DEFAULTS sdkconfig_defaults]
-                    [BUILD_DIR build_dir]
-                    [COMPONENTS component1 component2 ...])
+    idf_build_process(target
+                      [PROJECT_DIR project_dir]
+                      [PROJECT_VER project_ver]
+                      [PROJECT_NAME project_name]
+                      [SDKCONFIG sdkconfig]
+                      [SDKCONFIG_DEFAULTS sdkconfig_defaults]
+                      [BUILD_DIR build_dir]
+                      [COMPONENTS component1 component2 ...])
 
 为导入 ESP-IDF 组件执行大量的幕后工作，包括组件配置、库创建、依赖性扩展和解析。在这些功能中，对于用户最重要的可能是通过调用每个组件的 ``idf_component_register`` 来创建库。该命令为每个组件创建库，这些库可以使用别名来访问，其形式为 idf::*component_name*。
 这些别名可以用来将组件链接到用户自己的目标、库或可执行文件上。
@@ -1409,6 +1430,7 @@ ESP-IDF 组件属性
 - COMPONENT_LIB - 所创建的组件静态/接口库的名称；由 ``idf_build_component`` 设置，库本身由 ``idf_component_register`` 创建。
 - COMPONENT_NAME - 组件的名称；由 ``idf_build_component`` 根据组件的目录名设置。
 - COMPONENT_TYPE - 组件的类型（LIBRARY 或 CONFIG_ONLY）。如果一个组件指定了源文件或嵌入了一个文件，那么它的类型就是 LIBRARY。
+- COMPONENT_SOURCE - 组件源。可选值为 "idf_components"，"project_managed_components"，"project_components"，"project_extra_components". 用于决定同名组件的优先级。
 - EMBED_FILES - 要嵌入组件的文件列表；由 ``idf_component_register`` EMBED_FILES 参数设置。
 - EMBED_TXTFILES - 要嵌入组件的文本文件列表；由 ``idf_component_register`` EMBED_TXTFILES 参数设置。
 - INCLUDE_DIRS - 组件 include 目录列表；由 ``idf_component_register`` INCLUDE_DIRS 参数设置。
