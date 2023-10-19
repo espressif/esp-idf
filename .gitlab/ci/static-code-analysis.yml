@@ -30,7 +30,7 @@ check_pylint:
       if [ -n "$CI_MERGE_REQUEST_IID" ]; then
         export files=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | grep ".py$");
       else
-        export files=$(find . -iname "*.py" -print);
+        export files=$(git ls-files "*.py" | xargs);
       fi
     - if [ -z "$files" ]; then echo "No python files found"; exit 0; fi
     - run_cmd pylint --exit-zero --load-plugins=pylint_gitlab --output-format=gitlab-codeclimate:pylint.json $files
