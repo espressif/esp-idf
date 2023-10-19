@@ -164,7 +164,7 @@ The operating bit rate of the TWAI driver is configured using the :cpp:type:`twa
     2. **Timing Segment 1** consists of 1 to 16 time quanta before sample point
     3. **Timing Segment 2** consists of 1 to 8 time quanta after sample point
 
-{IDF_TARGET_MAX_BRP:default="128", esp32="128", esp32s2="32768", esp32s3="16384", esp32c3="16384", esp32c6="32768", esp32h2="32768"}
+{IDF_TARGET_MAX_BRP:default="32768", esp32="128", esp32s3="16384", esp32c3="16384"}
 
 The **Baudrate Prescaler** is used to determine the period of each time quantum by dividing the TWAI controller's source clock. On the {IDF_TARGET_NAME}, the ``brp`` can be **any even number from 2 to {IDF_TARGET_MAX_BRP}**. Alternatively, you can decide the resolution of each quantum, by setting :cpp:member:`twai_timing_config_t::quanta_resolution_hz` to a non-zero value. In this way, the driver can calculate the underlying ``brp`` value for you. It is useful when you set different clock sources but want the bitrate to keep the same.
 

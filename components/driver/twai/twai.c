@@ -58,6 +58,12 @@
 #define TWAI_RCC_ATOMIC()
 #endif
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define TWAI_PERI_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define TWAI_PERI_ATOMIC()
+#endif
+
 /* ------------------ Typedefs, structures, and variables ------------------- */
 
 //Control structure for TWAI driver
@@ -453,6 +459,11 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
         twai_ll_enable_bus_clock(controller_id, true);
         twai_ll_reset_register(controller_id);
     }
+    TWAI_PERI_ATOMIC() {
+        //Enable functional clock
+        twai_ll_set_clock_source(p_twai_obj->controller_id, clk_src);
+        twai_ll_enable_clock(p_twai_obj->controller_id, true);
+    }
 
     //Initialize TWAI HAL layer
     twai_hal_config_t hal_config = {
@@ -514,6 +525,9 @@ esp_err_t twai_driver_uninstall_v2(twai_handle_t handle)
 
     //Clear registers by reading
     twai_hal_deinit(&p_twai_obj->hal);
+    TWAI_PERI_ATOMIC() {
+        twai_ll_enable_clock(controller_id, false);
+    }
     TWAI_RCC_ATOMIC() {
         twai_ll_enable_bus_clock(controller_id, false);
     }

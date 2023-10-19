@@ -35,7 +35,7 @@
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
-// #define SOC_TWAI_SUPPORTED              1  //TODO: IDF-7470
+#define SOC_TWAI_SUPPORTED              1
 #define SOC_ETM_SUPPORTED               1
 #define SOC_PARLIO_SUPPORTED            1  //TODO: IDF-7471
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
@@ -458,7 +458,7 @@
 #define SOC_MWDT_SUPPORT_XTAL              (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#define SOC_TWAI_CONTROLLER_NUM         2
+#define SOC_TWAI_CONTROLLER_NUM         3
 #define SOC_TWAI_CLK_SUPPORT_XTAL       1
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                32768

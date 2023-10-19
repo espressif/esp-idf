@@ -464,6 +464,21 @@ typedef enum {
 } soc_periph_ana_cmpr_clk_src_t;
 
 //////////////////////////////////////////////////TWAI//////////////////////////////////////////////////////////////////
+/**
+ * @brief Array initializer for all supported clock sources of TWAI
+ */
+#define SOC_TWAI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief TWAI clock source
+ */
+typedef enum {
+    TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+#if SOC_CLK_TREE_SUPPORTED
+    TWAI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST      /*!< Select RC_FAST as the source clock */
+#endif
+    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default clock choice */
+} soc_periph_twai_clk_src_t;
 
 //////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////////
 
