@@ -126,7 +126,7 @@ typedef struct {
  * @return
  *    - ESP_OK
  *    - ESP_FAIL
- *    - ESP_ERR_WIFI_ARG
+ *    - ESP_ERR_INVALID_ARG
  */
 esp_err_t esp_mesh_set_beacon_interval(int interval_ms);
 

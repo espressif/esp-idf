@@ -77,7 +77,6 @@ int sae_set_group(struct sae_data *sae, int group)
 	/* Unsupported group */
 	wpa_printf(MSG_DEBUG,
 		   "SAE: Group %d not supported by the crypto library", group);
-	os_free(tmp);
 	return ESP_FAIL;
 }
 
