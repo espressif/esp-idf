@@ -482,16 +482,10 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
             configASSERT( xCoreID < configNUMBER_OF_CORES );
             configASSERT( xCoreID != tskNO_AFFINITY );
 
-            /* For SMP, we need to take the kernel lock here as we are about to
-             * access kernel data structures. For single core, a critical section is
-             * not required as this is not called from an interrupt and the current
-             * TCB will always be the same for any individual execution thread. */
-            taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
-            {
-                xReturn = pxCurrentTCBs[ xCoreID ];
-            }
-            /* Release the previously taken kernel lock. */
-            taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+            /* A critical section is not required as this function does not
+             * guarantee that the TCB will still be valid when this function
+             * returns. */
+            xReturn = pxCurrentTCBs[ xCoreID ];
         }
         #endif /* CONFIG_FREERTOS_SMP */
 
@@ -861,7 +855,7 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
     struct _reent * __getreent( void )
     {
         /* No lock needed because if this changes, we won't be running anymore. */
-        TCB_t * pxCurTask = xTaskGetCurrentTaskHandle();
+        TCB_t * pxCurTask = ( TCB_t * ) xTaskGetCurrentTaskHandle();
         struct _reent * ret;
 
         if( pxCurTask == NULL )

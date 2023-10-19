@@ -117,6 +117,10 @@ The following functions were modified to accommodate SMP behavior:
   - Updated logic to determine whether sleep is possible in SMP by checking the status of both cores.
 - `prvCheckTasksWaitingTermination()`
   - Updated logic so that we don't delete tasks on `xTasksWaitingTermination` which are still currently running on the other core.
+- `xTaskGetCurrentTaskHandle()`
+  - In SMP, the function will now disables interrupts to ensure that the calling task does not switch cores while fetching the current core's TCB.
+- `xTaskGetSchedulerState()`
+  - In SMP, the function now disables interrupts to ensure that the calling task does not switch cores while checking its own copy of `uxSchedulerSuspended`.
 - `prvAddCurrentTaskToDelayedList()`
   - Added extra check to see if current blocking task has already been deleted by the other core.
 

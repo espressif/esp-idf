@@ -68,16 +68,19 @@
 /* Some code sections require extra critical sections when building for SMP
  * ( configNUMBER_OF_CORES > 1 ). */
 #if ( configNUMBER_OF_CORES > 1 )
-    /* Macros that Enter/exit a critical section only when building for SMP */
-    #define taskENTER_CRITICAL_SMP_ONLY( pxLock )         taskENTER_CRITICAL( pxLock )
-    #define taskEXIT_CRITICAL_SMP_ONLY( pxLock )          taskEXIT_CRITICAL( pxLock )
-    #define taskENTER_CRITICAL_ISR_SMP_ONLY( pxLock )     taskENTER_CRITICAL_ISR( pxLock )
-    #define taskEXIT_CRITICAL_ISR_SMP_ONLY( pxLock )      taskEXIT_CRITICAL_ISR( pxLock )
-    #define taskENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )    prvTaskEnterCriticalSafeSMPOnly( pxLock )
-    #define taskEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )     prvTaskExitCriticalSafeSMPOnly( pxLock )
-    /* Macros that Enter/exit a critical section only when building for single-core */
-    #define taskENTER_CRITICAL_SC_ONLY( pxLock )          taskENTER_CRITICAL( pxLock )
-    #define taskEXIT_CRITICAL_SC_ONLY( pxLock )           taskEXIT_CRITICAL( pxLock )
+    /* Macros that enter/exit a critical section only when building for SMP */
+    #define taskENTER_CRITICAL_SMP_ONLY( pxLock )             taskENTER_CRITICAL( pxLock )
+    #define taskEXIT_CRITICAL_SMP_ONLY( pxLock )              taskEXIT_CRITICAL( pxLock )
+    #define taskENTER_CRITICAL_ISR_SMP_ONLY( pxLock )         taskENTER_CRITICAL_ISR( pxLock )
+    #define taskEXIT_CRITICAL_ISR_SMP_ONLY( pxLock )          taskEXIT_CRITICAL_ISR( pxLock )
+    #define taskENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )        prvTaskEnterCriticalSafeSMPOnly( pxLock )
+    #define taskEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )         prvTaskExitCriticalSafeSMPOnly( pxLock )
+    /* Macros that enter/exit a critical section only when building for single-core */
+    #define taskENTER_CRITICAL_SC_ONLY( pxLock )              taskENTER_CRITICAL( pxLock )
+    #define taskEXIT_CRITICAL_SC_ONLY( pxLock )               taskEXIT_CRITICAL( pxLock )
+    /* Macros that enable/disable interrupts only when building for SMP */
+    #define taskDISABLE_INTERRUPTS_ISR_SMP_ONLY()             portSET_INTERRUPT_MASK_FROM_ISR()
+    #define taskEnable_INTERRUPTS_ISR_SMP_ONLY( uxStatus )    portCLEAR_INTERRUPT_MASK_FROM_ISR( uxStatus )
 
     static inline __attribute__( ( always_inline ) )
     void prvTaskEnterCriticalSafeSMPOnly( portMUX_TYPE * pxLock )
@@ -114,16 +117,20 @@
     }
 
 #else /* configNUMBER_OF_CORES > 1 */
-    /* Macros that Enter/exit a critical section only when building for SMP */
+    /* Macros that enter/exit a critical section only when building for SMP */
     #define taskENTER_CRITICAL_SMP_ONLY( pxLock )
     #define taskEXIT_CRITICAL_SMP_ONLY( pxLock )
     #define taskENTER_CRITICAL_ISR_SMP_ONLY( pxLock )
     #define taskEXIT_CRITICAL_ISR_SMP_ONLY( pxLock )
     #define taskENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )
     #define taskEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )
-    /* Macros that Enter/exit a critical section only when building for single-core */
-    #define taskENTER_CRITICAL_SC_ONLY( pxLock )    taskENTER_CRITICAL( pxLock )
-    #define taskEXIT_CRITICAL_SC_ONLY( pxLock )     taskEXIT_CRITICAL( pxLock )
+    /* Macros that enter/exit a critical section only when building for single-core */
+    #define taskENTER_CRITICAL_SC_ONLY( pxLock )              taskENTER_CRITICAL( pxLock )
+    #define taskEXIT_CRITICAL_SC_ONLY( pxLock )               taskEXIT_CRITICAL( pxLock )
+    /* Macros that enable/disable interrupts only when building for SMP */
+    #define taskDISABLE_INTERRUPTS_ISR_SMP_ONLY()             ( ( UBaseType_t ) 0 )
+    #define taskEnable_INTERRUPTS_ISR_SMP_ONLY( uxStatus )    ( ( void ) uxStatus )
+
 #endif /* configNUMBER_OF_CORES > 1 */
 
 #if ( configUSE_PREEMPTION == 0 )
@@ -4832,7 +4839,24 @@ static void prvResetNextTaskUnblockTime( void )
 
     TaskHandle_t xTaskGetCurrentTaskHandle( void )
     {
-        return xTaskGetCurrentTaskHandleForCore( portGET_CORE_ID() );
+        TaskHandle_t xReturn;
+        UBaseType_t uxSavedInterruptStatus;
+
+        /* For SMP, we need to disable interrupts to ensure the caller does not
+         * switch cores in between portGET_CORE_ID() and fetching the current
+         * core's TCB. We use the ISR versions of interrupt macros as this
+         * function could be called inside critical sections.
+         *
+         * For single-core a critical section is not required as this is not
+         * called from an interrupt and the current TCB will always be the same
+         * for any individual execution thread. */
+        uxSavedInterruptStatus = taskDISABLE_INTERRUPTS_ISR_SMP_ONLY();
+        {
+            xReturn = pxCurrentTCBs[ portGET_CORE_ID() ];
+        }
+        taskEnable_INTERRUPTS_ISR_SMP_ONLY( uxSavedInterruptStatus );
+
+        return xReturn;
     }
 
 #endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
@@ -4843,10 +4867,18 @@ static void prvResetNextTaskUnblockTime( void )
     BaseType_t xTaskGetSchedulerState( void )
     {
         BaseType_t xReturn;
+        UBaseType_t uxSavedInterruptStatus;
 
-        /* For SMP, we need to take the kernel lock here as we are about to
-         * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        /* For SMP, we need to disable interrupts here to ensure we don't switch
+         * cores midway. We forego taking the kernel lock here as a minor
+         * optimization as it is not required.
+         *
+         * - xSchedulerRunning is only ever set by core 0 atomically
+         * - Each core will only ever update its own copy of uxSchedulerSuspended.
+         *
+         * We use the ISR versions of interrupt macros as this function could be
+         * called inside critical sections. */
+        uxSavedInterruptStatus = taskDISABLE_INTERRUPTS_ISR_SMP_ONLY();
         {
             if( xSchedulerRunning == pdFALSE )
             {
@@ -4864,8 +4896,7 @@ static void prvResetNextTaskUnblockTime( void )
                 }
             }
         }
-        /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        taskEnable_INTERRUPTS_ISR_SMP_ONLY( uxSavedInterruptStatus );
 
         return xReturn;
     }
