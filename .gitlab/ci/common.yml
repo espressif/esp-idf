@@ -45,8 +45,6 @@ variables:
   PYTHON_VER: 3.8.17
 
   # Docker images
-  BOT_DOCKER_IMAGE_TAG: ":latest"
-
   ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env-v5.2:2"
   ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env-v5.2:2-1"
   QEMU_IMAGE: "${CI_DOCKER_REGISTRY}/qemu-v5.2:2-20230522"
@@ -55,9 +53,6 @@ variables:
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
 
   PRE_COMMIT_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-pre-commit:1"
-
-  # target test config file, used by assign test job
-  CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/.gitlab/ci/target-test.yml"
 
   # target test repo parameters
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
