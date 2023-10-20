@@ -40,7 +40,7 @@
 
 #include "esp_tls.h"
 #include "sdkconfig.h"
-#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE && CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
 #include "esp_crt_bundle.h"
 #endif
 #include "time_sync.h"
@@ -84,8 +84,10 @@ extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_
 
 extern const uint8_t local_server_cert_pem_start[] asm("_binary_local_server_cert_pem_start");
 extern const uint8_t local_server_cert_pem_end[]   asm("_binary_local_server_cert_pem_end");
+#if CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
 static const int server_supported_ciphersuites[] = {MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, 0};
 static const int server_unsupported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256, 0};
+#endif
 #ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
 static esp_tls_client_session_t *tls_client_session = NULL;
 static bool save_client_session = false;
@@ -173,7 +175,7 @@ exit:
     }
 }
 
-#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE && CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
 static void https_get_request_using_crt_bundle(void)
 {
     ESP_LOGI(TAG, "https_request using crt bundle");
@@ -182,7 +184,7 @@ static void https_get_request_using_crt_bundle(void)
     };
     https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
 }
-#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE && CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
 
 static void https_get_request_using_cacert_buf(void)
 {
@@ -196,6 +198,8 @@ static void https_get_request_using_cacert_buf(void)
 
 static void https_get_request_using_specified_ciphersuites(void)
 {
+#if CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
+
     ESP_LOGI(TAG, "https_request using server supported ciphersuites");
     esp_tls_cfg_t cfg = {
         .cacert_buf = (const unsigned char *) server_root_cert_pem_start,
@@ -210,6 +214,7 @@ static void https_get_request_using_specified_ciphersuites(void)
     cfg.ciphersuites_list = server_unsupported_ciphersuites;
 
     https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
+#endif
 }
 
 static void https_get_request_using_global_ca_store(void)
@@ -280,7 +285,7 @@ static void https_request_task(void *pvparameters)
     https_get_request_using_already_saved_session(server_url);
 #endif
 
-#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE && CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
     https_get_request_using_crt_bundle();
 #endif
     ESP_LOGI(TAG, "Minimum free heap size: %" PRIu32 " bytes", esp_get_minimum_free_heap_size());
