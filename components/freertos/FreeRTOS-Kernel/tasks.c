@@ -3632,6 +3632,13 @@ void vTaskSwitchContext( void )
             }
             #endif
 
+            /* Wrap this call in a macro. IDF-8434 */
+            #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
+            {
+                vPortSetStackWatchpoint( pxCurrentTCBs[ xCurCoreID ]->pxStack );
+            }
+            #endif /* CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK */
+
             #if ( ( configUSE_NEWLIB_REENTRANT == 1 ) || ( configUSE_C_RUNTIME_TLS_SUPPORT == 1 ) )
             {
                 /* Switch C-Runtime's TLS Block to point to the TLS
