@@ -154,12 +154,6 @@ In both cases, the functions involve checking that the first 4 bytes of an alloc
 
 Different values usually indicate buffer underrun or overrun. Overrun indicates that when writing to memory, the data written exceeds the size of the allocated memory, resulting in writing to an unallocated memory area; underrun indicates that when reading memory, the data read exceeds the allocated memory and reads data from an unallocated memory area.
 
-.. only:: CONFIG_ESP_ROM_HAS_HEAP_TLSF
-
-    .. warning::
-
-        When the ROM implementation of the heap TLSF is used, note that :cpp:func:`heap_caps_check_integrity` will not perform the check of the canary bytes.
-
 Comprehensive
 +++++++++++++
 
@@ -183,12 +177,6 @@ Calls to :cpp:func:`heap_caps_check_integrity` may print errors relating to ``0x
 
 - For free heap blocks, the checker expects to find all bytes set to ``0xFE``. Any other values indicate a use-after-free bug where free memory has been incorrectly overwritten.
 - For allocated heap blocks, the behavior is the same as for the Light Impact mode. The canary bytes ``0xABBA1234`` and ``0xBAAD5678`` are checked at the head and tail of each allocated buffer, and any variation indicates a buffer overrun or underrun.
-
-.. only:: CONFIG_ESP_ROM_HAS_HEAP_TLSF
-
-    .. warning::
-
-        When the ROM implementation of the heap TLSF is used, note that :cpp:func:`heap_caps_check_integrity` will not perform the check of the canary bytes.
 
 .. _heap-task-tracking:
 
