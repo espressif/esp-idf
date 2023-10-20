@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
-#if CONFIG_APPTRACE_ENABLE == 1
+
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 
@@ -423,7 +423,6 @@ TEST_CASE("App trace test (1 task + 1 crashed timer ISR @ 1 core)", "[trace][ign
     esp_apptrace_test(&test_cfg);
 }
 
-
 TEST_CASE("App trace test (1 crashed task)", "[trace][ignore]")
 {
     esp_apptrace_test_task_arg_t s_test_tasks[1];
@@ -717,6 +716,7 @@ typedef struct {
 static bool esp_sysview_test_timer_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     esp_sysviewtrace_timer_arg_t *tim_arg = (esp_sysviewtrace_timer_arg_t *)user_ctx;
+    (void) tim_arg;
     return false;
 }
 
@@ -724,7 +724,7 @@ static void esp_sysviewtrace_test_task(void *p)
 {
     esp_sysviewtrace_task_arg_t *arg = (esp_sysviewtrace_task_arg_t *) p;
     volatile uint32_t tmp = 0;
-    printf("%x: run sysview task\n", (uint32_t)xTaskGetCurrentTaskHandle());
+    printf("%p: run sysview task\n", xTaskGetCurrentTaskHandle());
 
     if (arg->timer) {
         gptimer_alarm_config_t alarm_config = {
@@ -744,7 +744,7 @@ static void esp_sysviewtrace_test_task(void *p)
     int i = 0;
     while (1) {
         static uint32_t count;
-        printf("%d", arg->id);
+        printf("%" PRIu32, arg->id);
         if ((++count % 80) == 0) {
             printf("\n");
         }
@@ -890,22 +890,22 @@ TEST_CASE("SysView trace test 2", "[trace][ignore]")
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &tim_arg2.gptimer));
 
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace0", 2048, &arg1, 3, &thnd, 0);
-    printf("Created task %x\n", (uint32_t)thnd);
+    printf("Created task %p\n", thnd);
 #if CONFIG_FREERTOS_UNICORE == 0
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace1", 2048, &arg2, 4, &thnd, 1);
 #else
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svtrace1", 2048, &arg2, 4, &thnd, 0);
 #endif
-    printf("Created task %x\n", (uint32_t)thnd);
+    printf("Created task %p\n", thnd);
 
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svsync0", 2048, &arg3, 3, &thnd, 0);
-    printf("Created task %x\n", (uint32_t)thnd);
+    printf("Created task %p\n", thnd);
 #if CONFIG_FREERTOS_UNICORE == 0
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svsync1", 2048, &arg4, 5, &thnd, 1);
 #else
     xTaskCreatePinnedToCore(esp_sysviewtrace_test_task, "svsync1", 2048, &arg4, 5, &thnd, 0);
 #endif
-    printf("Created task %x\n", (uint32_t)thnd);
+    printf("Created task %p\n", thnd);
 
     xSemaphoreTake(arg1.done, portMAX_DELAY);
     vSemaphoreDelete(arg1.done);
@@ -924,4 +924,3 @@ TEST_CASE("SysView trace test 2", "[trace][ignore]")
     TEST_ESP_OK(gptimer_del_timer(tim_arg2.gptimer));
 }
 #endif // #if CONFIG_APPTRACE_SV_ENABLE == 0
-#endif // #if CONFIG_APPTRACE_ENABLE == 1

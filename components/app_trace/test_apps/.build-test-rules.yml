@@ -1,0 +1,9 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/app_trace/test_apps:
+  depends_components:
+    - app_trace
+    - esp_timer
+    - soc
+    - driver
+    - esp_hw_support
