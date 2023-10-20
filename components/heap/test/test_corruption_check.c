@@ -67,8 +67,6 @@ TEST_CASE("multi_heap poisoning detection", "[heap]")
     }
 }
 
-#if !defined(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
-
 #ifdef CONFIG_HEAP_TASK_TRACKING
 #define HEAD_CANARY_OFFSET  3 // head canary | task tracking | allocated size
 #else
@@ -114,5 +112,3 @@ TEST_CASE("canary corruption in light or comprehensive poisoning mode", "[heap]"
     ptr[TAIL_CANARY_OFFSET] = canary;
     heap_caps_free(ptr);
 }
-
-#endif // !CONFIG_HEAP_TLSF_USE_ROM_IMPL
