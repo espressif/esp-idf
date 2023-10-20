@@ -24,10 +24,58 @@
  * https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html.
  */
 
+typedef struct {
+        const char *in;
+        const char *out;
+} cmd_context_t;
+
+static int do_hello_cmd_with_context(void *context, int argc, char **argv)
+{
+    cmd_context_t *cmd_context = (cmd_context_t *)context;
+    cmd_context->out = cmd_context->in;
+    return 0;
+}
+
 static int do_hello_cmd(int argc, char **argv)
 {
     printf("Hello World\n");
     return 0;
+}
+
+static int do_not_call(void* context, int argc, char **argv)
+{
+    TEST_ASSERT_MESSAGE(false, "This function is a dummy and must not be called\n");
+    return 0;
+}
+
+TEST_CASE("esp console register with normal and context aware functions set fails", "[console]")
+{
+    esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "valid_cmd",
+        .help = "Command which is valid",
+        .hint = NULL,
+        .func = do_hello_cmd,
+        .func_w_context = do_not_call,
+    };
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console register with normal and context aware function set to NULL fails", "[console]")
+{
+    esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "valid_cmd",
+        .help = "Command which is valid",
+        .hint = NULL,
+        .func = do_hello_cmd,
+        .func_w_context = do_not_call,
+    };
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
 }
 
 TEST_CASE("esp console init/deinit test", "[console]")
@@ -145,5 +193,73 @@ TEST_CASE("esp console init/deinit test, minimal config", "[console]")
     TEST_ESP_OK(esp_console_cmd_register(&cmd));
     // re-register the same command, just for test
     TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console test set_context", "[console]")
+{
+    /* Test with minimal init config */
+    esp_console_config_t console_config = {
+        .max_cmdline_args = 2,
+        .max_cmdline_length = 100,
+    };
+
+    TEST_ESP_OK(esp_console_init(&console_config));
+
+    TEST_ASSERT_EQUAL(esp_console_cmd_set_context(NULL, NULL), ESP_ERR_INVALID_ARG);
+    TEST_ASSERT_EQUAL(esp_console_cmd_set_context("invalid", NULL), ESP_ERR_NOT_FOUND);
+
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console test with context", "[console]")
+{
+    /* Test with minimal init config */
+    esp_console_config_t console_config = {
+        .max_cmdline_args = 2,
+        .max_cmdline_length = 100,
+    };
+
+    TEST_ESP_OK(esp_console_init(&console_config));
+
+    const esp_console_cmd_t cmds[] = {
+        {
+            .command = "hello-c1",
+            .help = "Print Hello World in context c1",
+            .hint = NULL,
+            .func_w_context = do_hello_cmd_with_context,
+        },
+        {
+            .command = "hello-c2",
+            .help = "Print Hello World in context c2",
+            .hint = NULL,
+            .func_w_context = do_hello_cmd_with_context,
+        },
+    };
+    cmd_context_t contexts[] = {
+        {
+            .in = "c1",
+            .out = NULL,
+        },
+        {
+            .in = "c2",
+            .out = NULL,
+        },
+    };
+
+    static_assert((sizeof(contexts) / sizeof(contexts[0])) == (sizeof(cmds) / sizeof(cmds[0])));
+
+    for (int i=0; i < sizeof(cmds) / sizeof(cmds[0]); i++) {
+        TEST_ESP_OK(esp_console_cmd_register(&cmds[i]));
+        TEST_ESP_OK(esp_console_cmd_set_context(cmds[i].command, &contexts[i]));
+    }
+
+    for (int i=0; i < sizeof(cmds) / sizeof(cmds[0]); i++) {
+        int ret;
+        TEST_ESP_OK(esp_console_run(cmds[i].command, &ret));
+        TEST_ASSERT_EQUAL(ret, 0);
+        TEST_ASSERT_EQUAL(contexts[i].in, contexts[i].out);
+    }
+
     TEST_ESP_OK(esp_console_deinit());
 }
