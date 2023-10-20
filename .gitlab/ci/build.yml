@@ -550,6 +550,38 @@ pytest_build_system_macos:
     reports:
       junit: XUNIT_RESULT.xml
 
+.test_build_system_template_win:
+  stage: host_test
+  variables:
+  # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
+    IDF_CCACHE_ENABLE: "1"
+    PYTHONPATH: "$PYTHONPATH;$IDF_PATH\\tools;$IDF_PATH\\tools\\esp_app_trace;$IDF_PATH\\components\\partition_table;$IDF_PATH\\tools\\ci\\python_packages"
+  before_script: []
+  after_script: []
+  timeout: 4 hours
+  script:
+    - .\install.ps1 --enable-ci --enable-pytest
+    - . .\export.ps1
+    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - cd ${IDF_PATH}\tools\test_build_system
+    - pytest --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+
+pytest_build_system_win:
+  extends:
+    - .test_build_system_template_win
+    - .rules:test:windows_pytest_build_system
+  needs: []
+  tags:
+    - windows-target
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    when: always
+    expire_in: 2 days
+    reports:
+      junit: XUNIT_RESULT.xml
+
 build_docker:
   extends:
     - .before_script:minimal
