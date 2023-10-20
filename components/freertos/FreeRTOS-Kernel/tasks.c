@@ -3010,7 +3010,19 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
                 /* Arrange for xTickCount to reach xNextTaskUnblockTime in
                  * xTaskIncrementTick() when the scheduler resumes.  This ensures
                  * that any delayed tasks are resumed at the correct time. */
-                configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdTRUE );
+                #if ( configNUMBER_OF_CORES > 1 )
+                {
+                    /* In SMP, the entire tickless idle handling block
+                     * is replaced with a critical section, taking the kernel lock. */
+                    configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdFALSE );
+                }
+                #else /* configNUMBER_OF_CORES > 1 */
+                {
+                    /* In single-core, the entire tickless idle handling block
+                     * is done with scheduler suspended. */
+                    configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdTRUE );
+                }
+                #endif /* configNUMBER_OF_CORES > 1 */
                 configASSERT( xTicksToJump != ( TickType_t ) 0 );
 
                 xPendedTicks++;
