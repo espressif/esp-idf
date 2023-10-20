@@ -28,7 +28,8 @@ typedef struct
     uint8_t discrete_input5:1;
     uint8_t discrete_input6:1;
     uint8_t discrete_input7:1;
-    uint8_t discrete_input_port1:8;
+    uint8_t discrete_input_port1;
+    uint8_t discrete_input_port2;
 } discrete_reg_params_t;
 #pragma pack(pop)
 
@@ -37,6 +38,7 @@ typedef struct
 {
     uint8_t coils_port0;
     uint8_t coils_port1;
+    uint8_t coils_port2;
 } coil_reg_params_t;
 #pragma pack(pop)
 
