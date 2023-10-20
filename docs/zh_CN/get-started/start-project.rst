@@ -53,7 +53,7 @@
 
     勾选 ``flash`` 选项将自动编译并烧录工程，因此无需再运行 ``idf.py build``。
 
-若在烧录过程中遇到问题，请前往 :doc:`flashing-troubleshooting` 或 :doc:`establish-serial-connection` 获取更多详细信息。
+若在烧录过程中遇到问题，请参考下文中的“其他提示”。也可以前往 :doc:`flashing-troubleshooting` 或 :doc:`establish-serial-connection` 获取更多详细信息。
 
 常规操作
 ~~~~~~~~~~~~~~~~
@@ -444,13 +444,14 @@
 	在编译示例程序前请查看 README 文件中 ``Supported Targets`` 表格。如果表格中包含 {IDF_TARGET_NAME}， 或者不存在这个表格，那么即表示 {IDF_TARGET_NAME} 支持这个示例程序。
 
 
+
 其他提示
 ===============
 
-权限问题 /dev/ttyUSB0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+权限问题
+~~~~~~~~~~~~~~~~~~~~~
 
-使用某些 Linux 版本向 {IDF_TARGET_NAME} 烧录固件时，可能会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息。此时可以将用户添加至 :ref:`Linux Dialout 组<linux-dialout-group>`。
+使用某些 Linux 版本向 {IDF_TARGET_NAME} 烧录固件时，可能会出现类似 ``Could not open port <PORT>: Permission denied: '<PORT>'`` 错误消息。此时可以在 Linux 将用户添加至 :ref:`dialout 组或 uucp 组<linux-dialout-group>` 来解决此类问题。
 
 兼容的 Python 版本
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
