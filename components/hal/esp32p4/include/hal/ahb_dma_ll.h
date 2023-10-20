@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/hal_utils.h"
 #include "hal/gdma_types.h"
 #include "hal/gdma_ll.h"
 #include "soc/ahb_dma_struct.h"
@@ -558,7 +559,7 @@ static inline void ahb_dma_ll_tx_crc_set_lfsr_data_mask(ahb_dma_dev_t *dev, uint
     dev->out_crc[channel].crc_data_en_addr.tx_crc_data_en_addr_chn = crc_bit;
     if (reverse_data_mask) {
         // "& 0xff" because the hardware only support 8-bit data
-        data_mask = _bitwise_reverse(data_mask & 0xFF);
+        data_mask = hal_utils_bitwise_reverse8(data_mask & 0xFF);
     }
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->out_crc[channel].crc_data_en_wr_data, tx_crc_data_en_wr_data_chn, data_mask);
 }
@@ -619,7 +620,7 @@ static inline void ahb_dma_ll_rx_crc_set_lfsr_data_mask(ahb_dma_dev_t *dev, uint
     dev->in_crc[channel].crc_data_en_addr.rx_crc_data_en_addr_chn = crc_bit;
     if (reverse_data_mask) {
         // "& 0xff" because the hardware only support 8-bit data
-        data_mask = _bitwise_reverse(data_mask & 0xFF);
+        data_mask = hal_utils_bitwise_reverse8(data_mask & 0xFF);
     }
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->in_crc[channel].crc_data_en_wr_data, rx_crc_data_en_wr_data_chn, data_mask);
 }

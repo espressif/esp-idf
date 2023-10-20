@@ -82,15 +82,6 @@ static inline void gdma_ll_reset_register(int group_id)
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_reset_register(__VA_ARGS__)
 
-__attribute__((always_inline))
-static inline uint8_t _bitwise_reverse(uint8_t n)
-{
-    n = ((n & 0xf0) >> 4) | ((n & 0x0f) << 4);
-    n = ((n & 0xcc) >> 2) | ((n & 0x33) << 2);
-    n = ((n & 0xaa) >> 1) | ((n & 0x55) << 1);
-    return n;
-}
-
 #ifdef __cplusplus
 }
 #endif
