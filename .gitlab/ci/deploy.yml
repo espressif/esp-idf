@@ -33,7 +33,8 @@ push_to_github:
     - .deploy_job_template
     - .before_script:minimal
     - .rules:push_to_github
-  dependencies: []
+  needs:
+    - check_submodule_sync
   script:
     - add_github_ssh_keys
     - git remote remove github &>/dev/null || true
@@ -43,7 +44,9 @@ push_to_github:
 deploy_update_SHA_in_esp-dockerfiles:
   extends:
     - .deploy_job_template
+    - .before_script:minimal
     - .rules:protected-no_label-always
+  dependencies: []
   script:
     - 'curl --header "PRIVATE-TOKEN: ${ESPCI_SCRIPTS_TOKEN}" -o create_MR_in_esp_dockerfile.sh $GITLAB_HTTP_SERVER/api/v4/projects/1260/repository/files/create_MR_in_esp_dockerfile%2Fcreate_MR_in_esp_dockerfile.sh/raw\?ref\=master'
     - chmod +x create_MR_in_esp_dockerfile.sh
