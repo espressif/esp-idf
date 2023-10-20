@@ -63,6 +63,18 @@ void esp_crypto_mpi_lock_acquire(void);
  */
 void esp_crypto_mpi_lock_release(void);
 
+/**
+ * @brief Acquire lock for the ECC cryptography peripheral.
+ *
+ */
+void esp_crypto_ecc_lock_acquire(void);
+
+/**
+ * @brief Release lock for the ECC cryptography peripheral.
+ *
+ */
+void esp_crypto_ecc_lock_release(void);
+
 #ifdef __cplusplus
 }
 #endif
