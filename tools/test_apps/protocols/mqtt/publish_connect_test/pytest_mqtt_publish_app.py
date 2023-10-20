@@ -210,6 +210,7 @@ stress_test_cases = make_cases(stress_scenarios)
 
 @pytest.mark.esp32
 @pytest.mark.ethernet
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('test_case', test_cases)
 def test_mqtt_publish(dut: Dut, test_case: Any) -> None:
     publish_cfg = get_configurations(dut)
