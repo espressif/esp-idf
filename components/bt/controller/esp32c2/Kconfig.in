@@ -257,7 +257,21 @@ config BT_LE_CONTROLLER_LOG_ENABLED
     bool "Controller log enable"
     default n
     help
+        Enable controller log
+
+config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+    bool "enable controller log module"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
         Enable controller log module
+
+config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+    bool "enable HCI log module"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
+        Enable hci log module
 
 config BT_LE_CONTROLLER_LOG_DUMP_ONLY
     bool "Controller log dump mode only"
