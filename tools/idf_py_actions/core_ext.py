@@ -77,8 +77,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         args.no_hints = True
         build_target(target_name, ctx, args)
 
-    def save_defconfig(target_name: str, ctx: Context, args: PropertyDict, menu_labels: bool) -> None:
-        if menu_labels:
+    def save_defconfig(target_name: str, ctx: Context, args: PropertyDict, add_menu_labels: bool) -> None:
+        if add_menu_labels:
             os.environ['ESP_IDF_KCONFIG_MIN_LABELS'] = '1'
         else:
             # unset variable
