@@ -296,6 +296,7 @@ void esp_panic_handler(panic_info_t *info)
     // If on-chip-debugger is attached, and system is configured to be aware of this,
     // then only print up to details. Users should be able to probe for the other information
     // in debug mode.
+#if CONFIG_ESP_DEBUG_OCDAWARE
     if (esp_cpu_dbgr_is_attached()) {
 		char *panic_reason_str = NULL;
 		if (info->pseudo_excause) {
@@ -324,7 +325,7 @@ void esp_panic_handler(panic_info_t *info)
         esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
         return;
     }
-
+#endif //CONFIG_ESP_DEBUG_OCDAWARE
     // start panic WDT to restart system if we hang in this handler
     if (!wdt_hal_is_enabled(&rtc_wdt_ctx)) {
         wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
