@@ -58,6 +58,8 @@
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
   - "tools/kconfig_new/**/*"
+  - "tools/idf.py"
+  - "tools/idf_py_actions/**/*"
   - "tools/requirements.json"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
