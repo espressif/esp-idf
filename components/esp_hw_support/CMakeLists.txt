@@ -125,6 +125,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sleep_wake_stub.c")
     endif()
 
+    if(CONFIG_SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX OR CONFIG_SOC_GPIO_CLOCKOUT_BY_IO_MUX)
+        list(APPEND srcs "esp_clock_output.c")
+    endif()
+
     if(CONFIG_IDF_TARGET_ESP32P4)
         list(REMOVE_ITEM srcs
                 "sleep_cpu.c"         # TODO: IDF-7528, IDF-7529

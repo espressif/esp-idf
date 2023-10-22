@@ -7,12 +7,15 @@
 #pragma once
 
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/queue.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
 #include "hal/i2s_hal.h"
 #include "driver/i2s_types.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp_clock_output.h"
+#endif
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"
 #endif
@@ -114,6 +117,9 @@ typedef struct {
     i2s_chan_handle_t       tx_chan;        /*!< tx channel handler */
     i2s_chan_handle_t       rx_chan;        /*!< rx channel handler */
     int                     mclk;           /*!< MCK out pin, shared by tx/rx*/
+#if CONFIG_IDF_TARGET_ESP32
+    esp_clock_output_mapping_handle_t mclk_out_hdl; /*!< The handle of MCLK output signal */
+#endif
 } i2s_controller_t;
 
 struct i2s_channel_obj_t {

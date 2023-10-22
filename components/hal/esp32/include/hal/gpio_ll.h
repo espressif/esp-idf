@@ -679,11 +679,13 @@ static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_
 /**
  * @brief  Control the pin in the IOMUX
  *
- * @param  val Control value
+ * @param  bmap   write mask of control value
+ * @param  val    Control value
+ * @param  shift  write mask shift of control value
  */
-static inline __attribute__((always_inline)) void gpio_ll_iomux_pin_ctrl(uint32_t val)
+static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
 {
-    WRITE_PERI_REG(PIN_CTRL, val);
+    SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
 }
 
 /**

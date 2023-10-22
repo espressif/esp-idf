@@ -479,6 +479,20 @@ typedef enum {
     MSPI_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
 } soc_periph_mspi_clk_src_t;
 
+//////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
+typedef enum {
+    CLKOUT_SIG_XTAL    = 5,     /*!< Main crystal oscillator clock */
+    CLKOUT_SIG_CPU     = 16,    /*!< CPU clock */
+    CLKOUT_SIG_AHB     = 17,    /*!< AHB clock */
+    CLKOUT_SIG_APB     = 18,    /*!< APB clock */
+    CLKOUT_SIG_XTAL32K = 21,    /*!< External 32kHz crystal clock */
+    CLKOUT_SIG_EXT32K  = 22,    /*!< External slow clock input through XTAL_32K_P */
+    CLKOUT_SIG_RC_FAST = 23,    /*!< RC fast clock, about 17.5MHz */
+    CLKOUT_SIG_RC_32K  = 24,    /*!< Internal slow RC oscillator */
+    CLKOUT_SIG_RC_SLOW = 25,    /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
+    CLKOUT_SIG_INVALID = 0xFF,
+} soc_clkout_sig_id_t;
+
 #ifdef __cplusplus
 }
 #endif
