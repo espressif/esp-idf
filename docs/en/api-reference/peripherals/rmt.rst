@@ -278,11 +278,7 @@ Receive Mode Parameters
 Use Interrupts
 --------------
 
-Registering of an interrupt handler for the RMT controller is done be calling :cpp:func:`rmt_isr_register`.
-
-.. note::
-
-    When calling :cpp:func:`rmt_driver_install` to use the system RMT driver, a default ISR is being installed. In such a case you cannot register a generic ISR handler with :cpp:func:`rmt_isr_register`.
+Registering of an interrupt handler for the RMT controller is done by calling :cpp:func:`rmt_isr_register`.
 
 The RMT controller triggers interrupts on four specific events describes below. To enable interrupts on these events, the following functions are provided:
 
@@ -295,12 +291,13 @@ Setting or clearing an interrupt enable mask for specific channels and events ma
 
 When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
 
-If you do not need an ISR anymore, you can deregister it by calling a function :cpp:func:`rmt_isr_deregister`.
+If you do not need an ISR anymore, you can de-register it by calling a function :cpp:func:`rmt_isr_deregister`.
 
 .. warning::
 
-    It's not recommended for users to register an interrupt handler in their applications. RMT driver is highly dependent on interrupt, especially when doing transaction in a ping-pong way, so the driver itself has registered a default handler called ``rmt_driver_isr_default``.
-    Instead, if what you want is to get a notification when transaction is done, go ahead with :cpp:func:`rmt_register_tx_end_callback`.
+    :cpp:func:`rmt_isr_register` is provided as a public API by mistake. It's not recommended to use it directly. Even if you have registered a customized ISR handler with that, you still don't have the context of the RMT driver object. The driver has registered a dedicated ISR handler called ``rmt_driver_isr_default`` within :cpp:func:`rmt_driver_install`.
+
+    If you want to get a notification at some specific event (for example, "transaction done"), you can register callback functions like :cpp:func:`rmt_register_tx_end_callback`.
 
 
 Uninstall Driver
