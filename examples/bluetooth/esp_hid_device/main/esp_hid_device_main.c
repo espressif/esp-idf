@@ -42,27 +42,6 @@ typedef struct
 
 #if CONFIG_BT_BLE_ENABLED
 static local_param_t s_ble_hid_param = {0};
-const unsigned char hidapiReportMap[] = { //8 bytes input, 8 bytes feature
-    0x06, 0x00, 0xFF,  // Usage Page (Vendor Defined 0xFF00)
-    0x0A, 0x00, 0x01,  // Usage (0x0100)
-    0xA1, 0x01,        // Collection (Application)
-    0x85, 0x01,        //   Report ID (1)
-    0x15, 0x00,        //   Logical Minimum (0)
-    0x26, 0xFF, 0x00,  //   Logical Maximum (255)
-    0x75, 0x08,        //   Report Size (8)
-    0x95, 0x08,        //   Report Count (8)
-    0x09, 0x01,        //   Usage (0x01)
-    0x82, 0x02, 0x01,  //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Buffered Bytes)
-    0x95, 0x08,        //   Report Count (8)
-    0x09, 0x02,        //   Usage (0x02)
-    0xB2, 0x02, 0x01,  //   Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile,Buffered Bytes)
-    0x95, 0x08,        //   Report Count (8)
-    0x09, 0x03,        //   Usage (0x03)
-    0x91, 0x02,        //   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              // End Collection
-
-    // 38 bytes
-};
 
 const unsigned char mediaReportMap[] = {
     0x05, 0x0C,        // Usage Page (Consumer)
@@ -126,10 +105,6 @@ const unsigned char mediaReportMap[] = {
 
 static esp_hid_raw_report_map_t ble_report_maps[] = {
     {
-        .data = hidapiReportMap,
-        .len = sizeof(hidapiReportMap)
-    },
-    {
         .data = mediaReportMap,
         .len = sizeof(mediaReportMap)
     }
@@ -143,7 +118,7 @@ static esp_hid_device_config_t ble_hid_config = {
     .manufacturer_name  = "Espressif",
     .serial_number      = "1234567890",
     .report_maps        = ble_report_maps,
-    .report_maps_len    = 2
+    .report_maps_len    = 1
 };
 
 #define HID_CC_RPT_MUTE                 1
@@ -293,7 +268,7 @@ void esp_hidd_send_consumer_value(uint8_t key_cmd, bool key_pressed)
             break;
         }
     }
-    esp_hidd_dev_input_set(s_ble_hid_param.hid_dev, 1, HID_RPT_ID_CC_IN, buffer, HID_CC_IN_RPT_LEN);
+    esp_hidd_dev_input_set(s_ble_hid_param.hid_dev, 0, HID_RPT_ID_CC_IN, buffer, HID_CC_IN_RPT_LEN);
     return;
 }
 
