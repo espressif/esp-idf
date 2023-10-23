@@ -1,5 +1,0 @@
-semphr.h:line: warning: argument 'pxStaticSemaphore' of command @param is not found in the argument list of xSemaphoreCreateCounting(uxMaxCount, uxInitialCount)
-task.h:line: warning: argument 'pxTaskDefinition' of command @param is not found in the argument list of vTaskAllocateMPURegions(TaskHandle_t xTask, const MemoryRegion_t *const pxRegions)
-task.h:line: warning: argument 'pxCreatedTask' of command @param is not found in the argument list of vTaskAllocateMPURegions(TaskHandle_t xTask, const MemoryRegion_t *const pxRegions)
-task.h:line: warning: argument 'pxTaskDefinition' of command @param is not found in the argument list of vTaskAllocateMPURegions(TaskHandle_t xTask, const MemoryRegion_t *const pxRegions)
-task.h:line: warning: argument 'pxCreatedTask' of command @param is not found in the argument list of vTaskAllocateMPURegions(TaskHandle_t xTask, const MemoryRegion_t *const pxRegions)

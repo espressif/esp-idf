@@ -1,14 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020 Amazon.com, Inc. or its affiliates
+ * FreeRTOS Kernel V10.5.1 (ESP-IDF SMP modified)
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
- */
-
-/*
- * FreeRTOS Kernel V10.4.3
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -71,24 +69,16 @@
  * be set and then tested atomically - as is the case where event groups are
  * used to create a synchronisation point between multiple tasks (a
  * 'rendezvous').
- *
- * @cond !DOC_SINGLE_GROUP
- * \defgroup EventGroup EventGroup
- * @endcond
  */
 
 
 
 /**
- * event_groups.h
  *
  * Type by which event groups are referenced.  For example, a call to
  * xEventGroupCreate() returns an EventGroupHandle_t variable that can then
  * be used as a parameter to other event group functions.
  *
- * @cond !DOC_SINGLE_GROUP
- * \defgroup EventGroupHandle_t EventGroupHandle_t
- * @endcond
  * \ingroup EventGroup
  */
 struct EventGroupDef_t;
@@ -99,20 +89,11 @@ typedef struct EventGroupDef_t   * EventGroupHandle_t;
  * number of bits it holds is set by configUSE_16_BIT_TICKS (16 bits if set to 1,
  * 32 bits if set to 0.
  *
- * @cond !DOC_SINGLE_GROUP
- * \defgroup EventBits_t EventBits_t
- * @endcond
  * \ingroup EventGroup
  */
 typedef TickType_t               EventBits_t;
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- * EventGroupHandle_t xEventGroupCreate( void );
- * @endcode
- * @endcond
  *
  * Create a new event group.
  *
@@ -157,9 +138,6 @@ typedef TickType_t               EventBits_t;
  *      // The event group was created.
  *  }
  * @endcode
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupCreate xEventGroupCreate
- * @endcond
  * \ingroup EventGroup
  */
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
@@ -167,12 +145,6 @@ typedef TickType_t               EventBits_t;
 #endif
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- * EventGroupHandle_t xEventGroupCreateStatic( EventGroupHandle_t * pxEventGroupBuffer );
- * @endcode
- * @endcond
  *
  * Create a new event group.
  *
@@ -222,16 +194,6 @@ typedef TickType_t               EventBits_t;
 #endif
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  EventBits_t xEventGroupWaitBits(    EventGroupHandle_t xEventGroup,
- *                                      const EventBits_t uxBitsToWaitFor,
- *                                      const BaseType_t xClearOnExit,
- *                                      const BaseType_t xWaitForAllBits,
- *                                      const TickType_t xTicksToWait );
- * @endcode
- * @endcond
  *
  * [Potentially] block to wait for one or more bits to be set within a
  * previously created event group.
@@ -263,7 +225,8 @@ typedef TickType_t               EventBits_t;
  *
  * @param xTicksToWait The maximum amount of time (specified in 'ticks') to wait
  * for one/all (depending on the xWaitForAllBits value) of the bits specified by
- * uxBitsToWaitFor to become set.
+ * uxBitsToWaitFor to become set. A value of portMAX_DELAY can be used to block
+ * indefinitely (provided INCLUDE_vTaskSuspend is set to 1 in FreeRTOSConfig.h).
  *
  * @return The value of the event group at the time either the bits being waited
  * for became set, or the block time expired.  Test the return value to know
@@ -312,9 +275,6 @@ typedef TickType_t               EventBits_t;
  *      }
  * }
  * @endcode
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupWaitBits xEventGroupWaitBits
- * @endcond
  * \ingroup EventGroup
  */
 EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
@@ -324,12 +284,6 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
                                  TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToClear );
- * @endcode
- * @endcond
  *
  * Clear bits within an event group.  This function cannot be called from an
  * interrupt.
@@ -377,21 +331,12 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
  *      }
  * }
  * @endcode
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupClearBits xEventGroupClearBits
- * @endcond
  * \ingroup EventGroup
  */
 EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
                                   const EventBits_t uxBitsToClear ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  BaseType_t xEventGroupClearBitsFromISR( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet );
- * @endcode
- * @endcond
  *
  * A version of xEventGroupClearBits() that can be called from an interrupt.
  *
@@ -404,6 +349,12 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
  * routine.  Therefore xEventGroupClearBitsFromISR() sends a message to the
  * timer task to have the clear operation performed in the context of the timer
  * task.
+ *
+ * @note If this function returns pdPASS then the timer task is ready to run
+ * and a portYIELD_FROM_ISR(pdTRUE) should be executed to perform the needed
+ * clear on the event group.  This behavior is different from
+ * xEventGroupSetBitsFromISR because the parameter xHigherPriorityTaskWoken is
+ * not present.
  *
  * @param xEventGroup The event group in which the bits are to be cleared.
  *
@@ -434,12 +385,10 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
  *      if( xResult == pdPASS )
  *      {
  *          // The message was posted successfully.
+ *          portYIELD_FROM_ISR(pdTRUE);
  *      }
  * }
  * @endcode
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupClearBitsFromISR xEventGroupClearBitsFromISR
- * @endcond
  * \ingroup EventGroup
  */
 #if ( configUSE_TRACE_FACILITY == 1 )
@@ -447,16 +396,10 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
                                             const EventBits_t uxBitsToClear ) PRIVILEGED_FUNCTION;
 #else
     #define xEventGroupClearBitsFromISR( xEventGroup, uxBitsToClear ) \
-    xTimerPendFunctionCallFromISR( vEventGroupClearBitsCallback, ( void * ) xEventGroup, ( uint32_t ) uxBitsToClear, NULL )
+    xTimerPendFunctionCallFromISR( vEventGroupClearBitsCallback, ( void * ) ( xEventGroup ), ( uint32_t ) ( uxBitsToClear ), NULL )
 #endif
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet );
- * @endcode
- * @endcond
  *
  * Set bits within an event group.
  * This function cannot be called from an interrupt.  xEventGroupSetBitsFromISR()
@@ -521,21 +464,12 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
  *      }
  * }
  * @endcode
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupSetBits xEventGroupSetBits
- * @endcond
  * \ingroup EventGroup
  */
 EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
                                 const EventBits_t uxBitsToSet ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  BaseType_t xEventGroupSetBitsFromISR( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet, BaseType_t *pxHigherPriorityTaskWoken );
- * @endcode
- * @endcond
  *
  * A version of xEventGroupSetBits() that can be called from an interrupt.
  *
@@ -600,9 +534,6 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
  *      }
  * }
  * @endcode
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupSetBitsFromISR xEventGroupSetBitsFromISR
- * @endcond
  * \ingroup EventGroup
  */
 #if ( configUSE_TRACE_FACILITY == 1 )
@@ -611,19 +542,10 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
                                           BaseType_t * pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
 #else
     #define xEventGroupSetBitsFromISR( xEventGroup, uxBitsToSet, pxHigherPriorityTaskWoken ) \
-    xTimerPendFunctionCallFromISR( vEventGroupSetBitsCallback, ( void * ) xEventGroup, ( uint32_t ) uxBitsToSet, pxHigherPriorityTaskWoken )
+    xTimerPendFunctionCallFromISR( vEventGroupSetBitsCallback, ( void * ) ( xEventGroup ), ( uint32_t ) ( uxBitsToSet ), ( pxHigherPriorityTaskWoken ) )
 #endif
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  EventBits_t xEventGroupSync(    EventGroupHandle_t xEventGroup,
- *                                  const EventBits_t uxBitsToSet,
- *                                  const EventBits_t uxBitsToWaitFor,
- *                                  TickType_t xTicksToWait );
- * @endcode
- * @endcond
  *
  * Atomically set bits within an event group, then wait for a combination of
  * bits to be set within the same event group.  This functionality is typically
@@ -664,9 +586,9 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
  * Example usage:
  * @code{c}
  * // Bits used by the three tasks.
- * #define TASK_0_BIT      ( 1 << 0 )
- * #define TASK_1_BIT      ( 1 << 1 )
- * #define TASK_2_BIT      ( 1 << 2 )
+ * #define TASK_0_BIT     ( 1 << 0 )
+ * #define TASK_1_BIT     ( 1 << 1 )
+ * #define TASK_2_BIT     ( 1 << 2 )
  *
  * #define ALL_SYNC_BITS ( TASK_0_BIT | TASK_1_BIT | TASK_2_BIT )
  *
@@ -737,9 +659,6 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
  * }
  *
  * @endcode
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupSync xEventGroupSync
- * @endcond
  * \ingroup EventGroup
  */
 EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
@@ -749,12 +668,6 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  EventBits_t xEventGroupGetBits( EventGroupHandle_t xEventGroup );
- * @endcode
- * @endcond
  *
  * Returns the current value of the bits in an event group.  This function
  * cannot be used from an interrupt.
@@ -763,20 +676,11 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
  *
  * @return The event group bits at the time xEventGroupGetBits() was called.
  *
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupGetBits xEventGroupGetBits
- * @endcond
  * \ingroup EventGroup
  */
-#define xEventGroupGetBits( xEventGroup )    xEventGroupClearBits( xEventGroup, 0 )
+#define xEventGroupGetBits( xEventGroup )    xEventGroupClearBits( ( xEventGroup ), 0 )
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup );
- * @endcode
- * @endcond
  *
  * A version of xEventGroupGetBits() that can be called from an ISR.
  *
@@ -784,20 +688,11 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
  *
  * @return The event group bits at the time xEventGroupGetBitsFromISR() was called.
  *
- * @cond !DOC_SINGLE_GROUP
- * \defgroup xEventGroupGetBitsFromISR xEventGroupGetBitsFromISR
- * @endcond
  * \ingroup EventGroup
  */
 EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  void xEventGroupDelete( EventGroupHandle_t xEventGroup );
- * @endcode
- * @endcond
  *
  * Delete an event group that was previously created by a call to
  * xEventGroupCreate().  Tasks that are blocked on the event group will be
@@ -808,13 +703,6 @@ EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup ) PRIVILEG
 void vEventGroupDelete( EventGroupHandle_t xEventGroup ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond !DOC_EXCLUDE_HEADER_SECTION
- * event_groups.h
- * @code{c}
- *  BaseType_t xEventGroupGetStaticBuffer( EventGroupHandle_t xEventGroup,
- *                                         StaticEventGroup_t ** ppxEventGroupBuffer );
- * @endcode
- * @endcond
  *
  * Retrieve a pointer to a statically created event groups's data structure
  * buffer. It is the same buffer that is supplied at the time of creation.
