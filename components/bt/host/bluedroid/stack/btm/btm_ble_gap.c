@@ -4352,7 +4352,7 @@ void btm_ble_read_remote_features_complete(UINT8 *p)
 *******************************************************************************/
 void btm_ble_write_adv_enable_complete(UINT8 *p)
 {
-    /* if write adv enable/disbale not succeed */
+    /* if write adv enable/disable not succeed */
     if (*p != HCI_SUCCESS) {
         BTM_TRACE_ERROR("%s failed", __func__);
     }
