@@ -97,6 +97,7 @@ typedef struct esp_now_rate_config {
     wifi_phy_mode_t phymode;                 /**< ESPNOW phymode of specified interface */
     wifi_phy_rate_t rate;                    /**< ESPNOW rate of specified interface*/
     bool ersu;                               /**< ESPNOW using ersu send frame*/
+    bool dcm;                                /**< ESPNOW using dcm rate to send frame*/
 } esp_now_rate_config_t;
 
 /**
