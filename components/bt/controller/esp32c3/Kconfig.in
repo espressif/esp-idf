@@ -364,7 +364,7 @@ endchoice
 
 config BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int
-    default 0 if (!ESP32_WIFI_SW_COEXIST_ENABLE)
+    default 0 if !ESP32_WIFI_SW_COEXIST_ENABLE
     default 1 if BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EN
     default 0 if BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
