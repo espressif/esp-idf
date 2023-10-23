@@ -353,7 +353,7 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 
     https_ota_handle->update_partition = NULL;
     ESP_LOGI(TAG, "Starting OTA...");
-    https_ota_handle->update_partition = esp_ota_get_next_update_partition(NULL);
+    https_ota_handle->update_partition = (ota_config->update_partition!=NULL)?(ota_config->update_partition):(esp_ota_get_next_update_partition(NULL));
     if (https_ota_handle->update_partition == NULL) {
         ESP_LOGE(TAG, "Passive OTA partition not found");
         err = ESP_FAIL;
@@ -648,7 +648,10 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
             break;
     }
 
-    if ((err == ESP_OK) && (handle->state == ESP_HTTPS_OTA_SUCCESS)) {
+    if ((err == ESP_OK) && (handle->state == ESP_HTTPS_OTA_SUCCESS)
+			&& (handle->update_partition->type == ESP_PARTITION_TYPE_APP)
+			&& (handle->update_partition->subtype >= ESP_PARTITION_SUBTYPE_APP_OTA_MIN)
+		) {
         esp_err_t err = esp_ota_set_boot_partition(handle->update_partition);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);

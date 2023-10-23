@@ -140,6 +140,8 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         return ESP_ERR_NOT_FOUND;
     }
 
+    if(partition->type == ESP_PARTITION_TYPE_APP)
+    {
     if (!is_ota_partition(partition)) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -158,6 +160,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         }
     }
 #endif
+    }
 
     if (image_size != OTA_WITH_SEQUENTIAL_WRITES) {
         // If input image size is 0 or OTA_SIZE_UNKNOWN, erase entire partition
@@ -216,9 +219,12 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                 }
             }
 
+            if(it->part->type == ESP_PARTITION_TYPE_APP)
+            {
             if (it->wrote_size == 0 && it->partial_bytes == 0 && size > 0 && data_bytes[0] != ESP_IMAGE_HEADER_MAGIC) {
                 ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x)", data_bytes[0]);
                 return ESP_ERR_OTA_VALIDATE_FAILED;
+            }
             }
 
             if (esp_flash_encryption_enabled()) {
@@ -360,9 +366,12 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
       .size = it->part->size,
     };
 
+    if(it->part->type == ESP_PARTITION_TYPE_APP)
+    {
     if (esp_image_verify(ESP_IMAGE_VERIFY, &part_pos, &data) != ESP_OK) {
         ret = ESP_ERR_OTA_VALIDATE_FAILED;
         goto cleanup;
+    }
     }
 
  cleanup:
