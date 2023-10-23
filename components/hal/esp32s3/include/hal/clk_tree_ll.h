@@ -122,7 +122,7 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void
     bool xtal_xpd_sw = (xtal_conf & RTC_CNTL_XTAL32K_XPD_FORCE) >> RTC_CNTL_XTAL32K_XPD_FORCE_S;
     /* If xtal xpd software control is on */
     bool xtal_xpd_st = (xtal_conf & RTC_CNTL_XPD_XTAL_32K) >> RTC_CNTL_XPD_XTAL_32K_S;
-    // disabled = xtal_xpd_sw && !xtal_xpd_st; enabled = !disbaled
+    // disabled = xtal_xpd_sw && !xtal_xpd_st; enabled = !disabled
     bool enabled = !xtal_xpd_sw || xtal_xpd_st;
     return enabled;
 }

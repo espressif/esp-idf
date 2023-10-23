@@ -54,7 +54,7 @@ typedef uint8_t   esp_ble_auth_req_t;         /*!< combination of the above bit 
 #define ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_DISABLE 0    /*!< authentication disable*/
 #define ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE  1    /*!< authentication enable*/
 
-#define ESP_BLE_OOB_DISABLE 0    /*!< disbale the out of bond*/
+#define ESP_BLE_OOB_DISABLE 0    /*!< disable the out of bond*/
 #define ESP_BLE_OOB_ENABLE  1    /*!< enable the out of bond*/
 
 /// relate to BTM_IO_CAP_xxx in stack/btm_api.h
