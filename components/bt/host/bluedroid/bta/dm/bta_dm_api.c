@@ -1813,6 +1813,29 @@ extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p
     }
 }
 
+/*******************************************************************************
+**
+** Function         BTA_DmBleClearAdv
+**
+** Description      This function is called to clear Advertising
+**
+** Parameters       p_adv_data_cback : clear adv complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_DmBleClearAdv (tBTA_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback)
+{
+    tBTA_DM_API_CLEAR_ADV  *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CLEAR_ADV *)
+                 osi_malloc(sizeof(tBTA_DM_API_CLEAR_ADV))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_CLEAR_ADV_EVT;
+        p_msg->p_clear_adv_cback = p_clear_adv_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
 #endif
 /*******************************************************************************
 **
