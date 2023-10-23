@@ -259,11 +259,28 @@ static inline void print_memprot_err_details(const void *frame __attribute__((un
 }
 #endif
 
+static void panic_print_register_array(const char* names[], const uint32_t* regs, int size)
+{
+    const int regs_per_line = 4;
+    for (int i = 0; i < size; i++) {
+        if (i % regs_per_line == 0) {
+            panic_print_str("\r\n");
+        }
+        panic_print_str(names[i]);
+        panic_print_str(": 0x");
+        panic_print_hex(regs[i]);
+        panic_print_str("  ");
+    }
+}
+
+
 void panic_print_registers(const void *f, int core)
 {
-    uint32_t *regs = (uint32_t *)f;
+    const RvExcFrame *frame = (RvExcFrame *)f;
 
-    // only print ABI name
+    /**
+     * General Purpose context, only print ABI name
+     */
     const char *desc[] = {
         "MEPC    ", "RA      ", "SP      ", "GP      ", "TP      ", "T0      ", "T1      ", "T2      ",
         "S0/FP   ", "S1      ", "A0      ", "A1      ", "A2      ", "A3      ", "A4      ", "A5      ",
@@ -273,20 +290,9 @@ void panic_print_registers(const void *f, int core)
     };
 
     panic_print_str("Core ");
-    panic_print_dec(((RvExcFrame *)f)->mhartid);
+    panic_print_dec(frame->mhartid);
     panic_print_str(" register dump:");
-
-    for (int x = 0; x < sizeof(desc) / sizeof(desc[0]); x += 4) {
-        panic_print_str("\r\n");
-        for (int y = 0; y < 4 && x + y < sizeof(desc) / sizeof(desc[0]); y++) {
-            if (desc[x + y][0] != 0) {
-                panic_print_str(desc[x + y]);
-                panic_print_str(": 0x");
-                panic_print_hex(regs[x + y]);
-                panic_print_str("  ");
-            }
-        }
-    }
+    panic_print_register_array(desc, f, DIM(desc));
 }
 
 /**

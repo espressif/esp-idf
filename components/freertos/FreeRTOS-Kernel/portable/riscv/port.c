@@ -59,6 +59,18 @@
 #include "soc/hp_system_reg.h"
 #endif
 
+#if ( SOC_CPU_COPROC_NUM > 0 )
+
+#include "esp_private/panic_internal.h"
+
+/* Since `portFORCE_INLINE` is not defined in `portmacro.h`, we must define it here since it is
+ * used by `atomic.h`. */
+#define portFORCE_INLINE    inline
+#include "freertos/atomic.h"
+
+#endif // ( SOC_CPU_COPROC_NUM > 0 )
+
+
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 /**
@@ -82,6 +94,13 @@ volatile UBaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS] = {0};
 
+#if ( SOC_CPU_COPROC_NUM > 0 )
+
+/* Current owner of the coprocessors for each core */
+StaticTask_t* port_uxCoprocOwner[portNUM_PROCESSORS][SOC_CPU_COPROC_NUM];
+
+#endif /* SOC_CPU_COPROC_NUM > 0 */
+
 /*
 *******************************************************************************
 * Interrupt stack. The size of the interrupt stack is determined by the config
@@ -104,6 +123,10 @@ StackType_t *xIsrStackBottom[portNUM_PROCESSORS] = {0};
 
 BaseType_t xPortStartScheduler(void)
 {
+#if ( SOC_CPU_COPROC_NUM > 0 )
+    /* Disable FPU so that the first task to use it will trigger an exception */
+    rv_utils_disable_fpu();
+#endif
     /* Initialize all kernel state tracking variables */
     BaseType_t coreID = xPortGetCoreID();
     port_uxInterruptNesting[coreID] = 0;
@@ -238,6 +261,58 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 }
 #endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
 
+
+#if ( SOC_CPU_COPROC_NUM > 0 )
+
+/**
+ * @brief Retrieve or allocate coprocessors save area from the given pxTopOfStack address.
+ *
+ * @param pxTopOfStack End of the stack address. This represents the highest address of a Task's stack.
+ */
+FORCE_INLINE_ATTR RvCoprocSaveArea* pxRetrieveCoprocSaveAreaFromStackPointer(UBaseType_t pxTopOfStack)
+{
+    return (RvCoprocSaveArea*) STACKPTR_ALIGN_DOWN(16, pxTopOfStack - sizeof(RvCoprocSaveArea));
+}
+
+/**
+ * @brief Allocate and initialize the coprocessors save area on the stack
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ *
+ * @return Stack pointer that points to allocated and initialized the coprocessor save area
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseCoprocSaveArea(UBaseType_t uxStackPointer)
+{
+    RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(uxStackPointer);
+    memset(sa, 0, sizeof(RvCoprocSaveArea));
+    return (UBaseType_t) sa;
+}
+
+
+static void vPortCleanUpCoprocArea(void *pvTCB)
+{
+    StaticTask_t* task = (StaticTask_t*) pvTCB;
+
+    /* Get a pointer to the task's coprocessor save area */
+    const UBaseType_t bottomstack = (UBaseType_t) task->pxDummy8;
+    RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(bottomstack);
+
+    /* If the Task used any coprocessor, check if it is the actual owner of any.
+     * If yes, reset the owner. */
+    if (sa->sa_enable != 0) {
+        /* Get the core the task is pinned on */
+        const BaseType_t coreID = task->xDummyCoreID;
+
+        for (int i = 0; i < SOC_CPU_COPROC_NUM; i++) {
+            StaticTask_t** owner = &port_uxCoprocOwner[coreID][i];
+            /* If the owner is `task`, replace it with NULL atomically */
+            Atomic_CompareAndSwapPointers_p32((void**) owner, NULL, task);
+        }
+    }
+}
+#endif /* SOC_CPU_COPROC_NUM > 0 */
+
+
 /**
  * @brief Initialize the task's starting interrupt stack frame
  *
@@ -304,12 +379,38 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
 
     - All stack areas are aligned to 16 byte boundary
     - We use UBaseType_t for all of stack area initialization functions for more convenient pointer arithmetic
+
+    In the case of targets that have coprocessors, the stack is presented as follows:
+    HIGH ADDRESS
+    |---------------------------| <- pxTopOfStack on entry
+    | Coproc. Save Area         | <- RvCoprocSaveArea
+    | ------------------------- |
+    | TLS Variables             |
+    | ------------------------- | <- Start of useable stack
+    | Starting stack frame      |
+    | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
+    |             |             |
+    |             |             |
+    |             V             |
+    |---------------------------|
+    | Coproc. m Saved Context   | <- Coprocessor context save area after allocation
+    |---------------------------|
+    | Coproc. n Saved Context   | <- Another coprocessor context save area after allocation
+    ----------------------------- <- Bottom of stack
+    LOW ADDRESS
+
+    Where m != n, n < SOC_CPU_COPROC_NUM, m < SOC_CPU_COPROC_NUM
+
     */
 
     UBaseType_t uxStackPointer = (UBaseType_t)pxTopOfStack;
     configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
-    // IDF-7770: Support FPU context save area for P4
+#if ( SOC_CPU_COPROC_NUM > 0 )
+    // Initialize the coprocessors save area
+    uxStackPointer = uxInitialiseCoprocSaveArea(uxStackPointer);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
+#endif // SOC_CPU_COPROC_NUM > 0
 
     // Initialize GCC TLS area
     uint32_t threadptr_reg_init;
@@ -647,7 +748,103 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         /* Call TLS pointers deletion callbacks */
         vPortTLSPointersDelCb( pxTCB );
     #endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
+
+    #if ( SOC_CPU_COPROC_NUM > 0 )
+        /* Cleanup coproc save area */
+        vPortCleanUpCoprocArea( pxTCB );
+    #endif /* SOC_CPU_COPROC_NUM > 0 */
 }
+
+
+#if ( SOC_CPU_COPROC_NUM > 0 )
+
+// ----------------------- Coprocessors --------------------------
+
+/**
+ * @brief Pin the given task to the given core
+ *
+ * This function is called when a task uses a coprocessor. Since the coprocessors registers
+ * are saved lazily, as soon as a task starts using one, it must always be scheduled on the core
+ * it is currently executing on.
+ */
+void vPortTaskPinToCore(StaticTask_t* task, int coreid)
+{
+    task->xDummyCoreID = coreid;
+}
+
+
+/**
+ * @brief Get coprocessor save area out of the given task. If the coprocessor area is not created,
+ *        it shall be allocated.
+ */
+RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, int coproc)
+{
+    const UBaseType_t bottomstack = (UBaseType_t) task->pxDummy8;
+    RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(bottomstack);
+    /* Check if the allocator is NULL. Since we don't have a way to get the end of the stack
+     * during its initialization, we have to do this here */
+    if (sa->sa_allocator == 0) {
+        sa->sa_allocator = (UBaseType_t) task->pxDummy6;
+    }
+
+    /* Check if coprocessor area is allocated */
+    if (sa->sa_coprocs[coproc] == NULL) {
+        const uint32_t coproc_sa_sizes[] = {
+            RV_COPROC0_SIZE, RV_COPROC1_SIZE
+        };
+        /* Allocate the save area at end of the allocator */
+        UBaseType_t allocated = sa->sa_allocator + coproc_sa_sizes[coproc];
+        sa->sa_coprocs[coproc] = (void*) allocated;
+        /* Update the allocator address for next use */
+        sa->sa_allocator = allocated;
+    }
+    return sa;
+}
+
+
+/**
+ * @brief Update given coprocessor owner and get the address of former owner's save area.
+ *
+ * This function is called when the current running task has poked a coprocessor's register which
+ * was used by a previous task. We have to save the coprocessor context (registers) inside the
+ * current owner's save area and change the ownership. The coprocessor will be marked as used in
+ * the new owner's coprocessor save area.
+ *
+ * @param coreid    Current core
+ * @param coproc    Coprocessor to save context of
+ *
+ * @returns Coprocessor former owner's save area
+ */
+RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* owner)
+{
+    RvCoprocSaveArea* sa = NULL;
+    /* Address of coprocessor owner */
+    StaticTask_t** owner_addr = &port_uxCoprocOwner[ coreid ][ coproc ];
+    /* Atomically exchange former owner with the new one */
+    StaticTask_t* former = Atomic_SwapPointers_p32((void**) owner_addr, owner);
+    /* Get the save area of former owner */
+    if (former != NULL) {
+        sa = pxPortGetCoprocArea(former, coproc);
+    }
+    return sa;
+}
+
+
+/**
+ * @brief Aborts execution when a coprocessor was used in an ISR context
+ */
+void vPortCoprocUsedInISR(void* frame)
+{
+    extern void xt_unhandled_exception(void*);
+    /* Since this function is called from an exception handler, the interrupts are disabled,
+     * as such, it is not possible to trigger another exception as would `abort` do.
+     * Simulate an abort without actually triggering an exception. */
+    g_panic_abort = true;
+    g_panic_abort_details = (char *) "ERROR: Coprocessors must not be used in ISRs!\n";
+    xt_unhandled_exception(frame);
+}
+
+#endif /* SOC_CPU_COPROC_NUM > 0 */
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *

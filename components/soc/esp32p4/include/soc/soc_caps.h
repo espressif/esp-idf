@@ -149,6 +149,9 @@
 #define SOC_INT_CLIC_SUPPORTED          1
 #define SOC_INT_HW_NESTED_SUPPORTED     1       // Support for hardware interrupts nesting
 #define SOC_BRANCH_PREDICTOR_SUPPORTED  1
+#define SOC_CPU_HAS_FPU                 1
+#define SOC_CPU_HAS_FPU_EXT_ILL_BUG     1       // EXT_ILL CSR doesn't support FLW/FSW
+#define SOC_CPU_COPROC_NUM              2
 
 #define SOC_CPU_BREAKPOINTS_NUM         4
 #define SOC_CPU_WATCHPOINTS_NUM         4
