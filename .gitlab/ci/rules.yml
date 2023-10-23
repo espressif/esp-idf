@@ -24,6 +24,7 @@
   - "tools/ci/sonar_exclude_list.txt"
 
 .patterns-example_test: &patterns-example_test
+  - "tools/ci/idf_pytest/**/*"
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/idf_http_server_test/**/*"
   - "tools/ci/python_packages/idf_iperf_test_util/**/*"
@@ -70,6 +71,7 @@
   - "tools/test_sbom/*"
 
 .patterns-custom_test: &patterns-custom_test
+  - "tools/ci/idf_pytest/**/*"
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/common_test_methods.py"
 
@@ -77,6 +79,7 @@
   - "tools/ldgen/**/*"
 
 .patterns-component_ut: &patterns-component_ut
+  - "tools/ci/idf_pytest/**/*"
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/common_test_methods.py"
   - "tools/test_apps/configs/sdkconfig.debug_helpers"
