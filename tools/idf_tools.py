@@ -1802,6 +1802,15 @@ def action_export(args):  # type: ignore
 
     if paths_to_export:
         export_vars['PATH'] = path_sep.join(to_shell_specific_paths(paths_to_export) + [old_path])
+        # Correct PATH order check for Windows platform
+        # idf-exe has to be before \tools in PATH
+        if sys.platform == 'win32':
+            paths_to_check = rf"{export_vars['PATH']}{os.environ['PATH']}"
+            try:
+                if paths_to_check.index(r'\tools;') < paths_to_check.index(r'\idf-exe'):
+                    warn('The PATH is not in correct order (idf-exe should be before esp-idf\\tools)')
+            except ValueError:
+                fatal(f'Both of the directories (..\\idf-exe\\.. and ..\\tools) has to be in the PATH:\n\n{paths_to_check}\n')
 
     if export_vars:
         # if not copy of export_vars is given to function, it brekas the formatting string for 'export_statements'

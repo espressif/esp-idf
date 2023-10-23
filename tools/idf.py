@@ -105,6 +105,15 @@ def check_environment() -> List:
         debug_print_idf_version()
         raise SystemExit(1)
 
+    # Check used Python interpreter
+    checks_output.append('Checking used Python interpreter...')
+    try:
+        python_venv_path = os.environ['IDF_PYTHON_ENV_PATH']
+        if python_venv_path and not sys.executable.startswith(python_venv_path):
+            print_warning(f'WARNING: Python interpreter "{sys.executable}" used to start idf.py is not from installed venv "{python_venv_path}"')
+    except KeyError:
+        print_warning('WARNING: The IDF_PYTHON_ENV_PATH is missing in environmental variables!')
+
     return checks_output
 
 
