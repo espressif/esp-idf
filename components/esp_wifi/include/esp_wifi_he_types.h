@@ -157,7 +157,7 @@ typedef struct {
     unsigned : 15;                                /**< reserved */
     unsigned : 15;                                /**< reserved */
     unsigned : 2;                                 /**< reserved */
-    unsigned noise_floor : 8;                     /**< the noise floor of the reception frame */
+    signed noise_floor : 8;                       /**< the noise floor of the reception frame */
     unsigned channel : 4;                         /**< the primary channel */
     unsigned second : 4;                          /**< the second channel if in HT40 */
     unsigned : 8;                                 /**< reserved */
