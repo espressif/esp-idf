@@ -95,6 +95,12 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
         ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
                           TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
+    // check the peak ticks that the timer can reach to
+    uint32_t peak_ticks = config->period_ticks;
+    if (config->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN) {
+        peak_ticks /= 2; // in symmetric mode, peak_ticks = period_ticks / 2
+    }
+    ESP_GOTO_ON_FALSE(peak_ticks > 0 && peak_ticks < MCPWM_LL_MAX_COUNT_VALUE, ESP_ERR_INVALID_ARG, err, TAG, "invalid period ticks");
 
     timer = heap_caps_calloc(1, sizeof(mcpwm_timer_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for timer");
@@ -125,10 +131,6 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
 
     // set the peak tickes that the timer can reach to
     timer->count_mode = config->count_mode;
-    uint32_t peak_ticks = config->period_ticks;
-    if (timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN) {
-        peak_ticks /= 2; // in symmetric mode, peak_ticks = period_ticks / 2
-    }
     timer->peak_ticks = peak_ticks;
     mcpwm_ll_timer_set_peak(hal->dev, timer_id, peak_ticks, timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN);
     // set count direction
@@ -174,6 +176,22 @@ esp_err_t mcpwm_del_timer(mcpwm_timer_handle_t timer)
     return ESP_OK;
 }
 
+esp_err_t mcpwm_timer_set_period(mcpwm_timer_handle_t timer, uint32_t period_ticks)
+{
+    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    mcpwm_group_t *group = timer->group;
+    int timer_id = timer->timer_id;
+    mcpwm_hal_context_t *hal = &group->hal;
+    uint32_t peak_ticks = period_ticks;
+    if (timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN) {
+        peak_ticks /= 2; // in symmetric mode, peak_ticks = period_ticks / 2
+    }
+    ESP_RETURN_ON_FALSE_ISR(peak_ticks > 0 && peak_ticks < MCPWM_LL_MAX_COUNT_VALUE, ESP_ERR_INVALID_ARG, TAG, "invalid period ticks");
+    mcpwm_ll_timer_set_peak(hal->dev, timer_id, peak_ticks, timer->count_mode == MCPWM_TIMER_COUNT_MODE_UP_DOWN);
+    timer->peak_ticks = peak_ticks;
+    return ESP_OK;
+}
+
 esp_err_t mcpwm_timer_register_event_callbacks(mcpwm_timer_handle_t timer, const mcpwm_timer_event_callbacks_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(timer && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -203,8 +221,8 @@ esp_err_t mcpwm_timer_register_event_callbacks(mcpwm_timer_handle_t timer, const
         int isr_flags = MCPWM_INTR_ALLOC_FLAG;
         isr_flags |= mcpwm_get_intr_priority_flag(group);
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
-                            (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_TIMER_MASK(timer_id),
-                            mcpwm_timer_default_isr, timer, &timer->intr), TAG, "install interrupt service for timer failed");
+                                                      (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_TIMER_MASK(timer_id),
+                                                      mcpwm_timer_default_isr, timer, &timer->intr), TAG, "install interrupt service for timer failed");
     }
 
     // enable/disable interrupt events

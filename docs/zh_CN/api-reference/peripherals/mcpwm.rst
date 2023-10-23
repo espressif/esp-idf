@@ -228,6 +228,11 @@ MCPWM 允许为 定时器、操作器、比较器、故障以及捕获事件分�
 定时器操作和事件
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+更新定时器周期
+~~~~~~~~~~~~~~
+
+定时器周期在创建定时器时就已经通过 :cpp:member:`mcpwm_timer_config_t::period_ticks` 被初始化过了。你还可以在运行期间，调用 :cpp:func:`mcpwm_timer_set_period` 函数来更新定时周期。新周期的生效时机由 :cpp:member:`mcpwm_timer_config_t::update_period_on_empty` 和 :cpp:member:`mcpwm_timer_config_t::update_period_on_sync` 共同决定。如果他们两个参数都是 ``false``， 那么新的定时周期会立即生效。
+
 注册定时器事件回调
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -991,6 +996,7 @@ IRAM 安全
 另一个 Kconfig 选项 :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` 也支持将常用的 IO 控制函数存放在 IRAM 中，以保证在禁用 cache 时可以正常使用函数。IO 控制函数如下所示：
 
 - :cpp:func:`mcpwm_comparator_set_compare_value`
+- :cpp:func:`mcpwm_timer_set_period`
 
 
 .. _mcpwm-thread-safety:
@@ -1003,6 +1009,7 @@ IRAM 安全
 驱动程序设置了临界区，以防函数同时在任务和 ISR 中调用。因此，以下函数支持在 ISR 上下文运行：
 
 - :cpp:func:`mcpwm_comparator_set_compare_value`
+- :cpp:func:`mcpwm_timer_set_period`
 
 :ref:`mcpwm-resource-allocation-and-initialization` 中尚未提及的函数并非线程安全。在没有设置互斥锁保护的任务中，应避免调用这些函数。
 
