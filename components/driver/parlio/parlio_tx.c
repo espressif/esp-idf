@@ -219,11 +219,7 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit)
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
-#if SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AHB
-    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &tx_unit->dma_chan), TAG, "allocate TX DMA channel failed");
-#elif SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI
-    ESP_RETURN_ON_ERROR(gdma_new_axi_channel(&dma_chan_config, &tx_unit->dma_chan), TAG, "allocate TX DMA channel failed");
-#endif
+    ESP_RETURN_ON_ERROR(PARLIO_GDMA_NEW_CHANNEL(&dma_chan_config, &tx_unit->dma_chan), TAG, "allocate TX DMA channel failed");
     gdma_connect(tx_unit->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_PARLIO, 0));
     gdma_strategy_config_t gdma_strategy_conf = {
         .auto_update_desc = true,
@@ -315,7 +311,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     size_t dma_nodes_num = config->max_transfer_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
     // DMA descriptors must be placed in internal SRAM
 
-    unit->dma_nodes = heap_caps_aligned_calloc(PARLIO_DMA_DESC_ALIGNMENT, dma_nodes_num, PARLIO_DMA_DESC_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    unit->dma_nodes = heap_caps_aligned_calloc(PARLIO_DMA_DESC_ALIGNMENT, dma_nodes_num, sizeof(parlio_dma_desc_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(unit->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no memory for DMA nodes");
     // Link the descriptors
     for (int i = 0; i < dma_nodes_num; i++) {

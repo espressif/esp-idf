@@ -40,10 +40,10 @@ extern "C" {
 
 #if SOC_GPSPI_SUPPORTED
 
-#if SOC_GPSPI_SUPPORTED && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
-typedef dma_descriptor_align8_t spi_dma_desc_t;
-#else
+#if SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB
 typedef dma_descriptor_align4_t spi_dma_desc_t;
+#else
+typedef dma_descriptor_align8_t spi_dma_desc_t;
 #endif
 
 /**

@@ -46,12 +46,19 @@ extern "C"
 #define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)
 #endif
 
-#if SOC_GPSPI_SUPPORTED && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
-#define DMA_DESC_MEM_ALIGN_SIZE 8
-typedef dma_descriptor_align8_t spi_dma_desc_t;
-#else
+#if !defined(SOC_GDMA_TRIG_PERIPH_SPI2_BUS)
 #define DMA_DESC_MEM_ALIGN_SIZE 4
 typedef dma_descriptor_align4_t spi_dma_desc_t;
+#else
+#if defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
+#define DMA_DESC_MEM_ALIGN_SIZE  8
+#define SPI_GDMA_NEW_CHANNEL     gdma_new_axi_channel
+typedef dma_descriptor_align8_t spi_dma_desc_t;
+#elif defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB)
+#define DMA_DESC_MEM_ALIGN_SIZE 4
+#define SPI_GDMA_NEW_CHANNEL    gdma_new_ahb_channel
+typedef dma_descriptor_align4_t spi_dma_desc_t;
+#endif
 #endif
 
 struct spi_bus_lock_t;
