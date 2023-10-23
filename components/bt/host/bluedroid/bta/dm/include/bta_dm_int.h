@@ -206,6 +206,9 @@ enum {
     BTA_DM_API_PERIODIC_ADV_SET_INFO_TRANS_EVT,
     BTA_DM_API_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS_EVT,
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if BLE_INCLUDED == TRUE
+    BTA_DM_API_BLE_CLEAR_ADV_EVT,
+#endif
     BTA_DM_MAX_EVT
 };
 
@@ -842,6 +845,11 @@ typedef struct {
     BD_ADDR     remote_bda;
 } tBTA_DM_API_BLE_DISCONNECT;
 
+typedef struct {
+    BT_HDR                  hdr;
+    tBTA_CLEAR_ADV_CMPL_CBACK       *p_clear_adv_cback;
+} tBTA_DM_API_CLEAR_ADV;
+
 #endif /* BLE_INCLUDED */
 
 /* data type for BTA_DM_API_REMOVE_ACL_EVT */
@@ -1212,6 +1220,7 @@ typedef union {
     tBTA_DM_API_PERIODIC_ADV_SET_INFO_TRANS ble_periodic_adv_set_info_trans;
     tBTA_DM_API_SET_PAST_PARAMS ble_set_past_params;
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+    tBTA_DM_API_CLEAR_ADV           ble_clear_adv;
 #endif
 
     tBTA_DM_API_REMOVE_ACL              remove_acl;
@@ -1643,6 +1652,8 @@ extern void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_multi_adv_data(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_multi_adv_upd_param(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_multi_adv_enb(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data);
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_gap_read_phy(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_set_prefer_default_phy(tBTA_DM_MSG *p_data);
