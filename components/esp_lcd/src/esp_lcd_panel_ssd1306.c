@@ -34,10 +34,12 @@ static const char *TAG = "lcd_panel.ssd1306";
 #define SSD1306_CMD_MIRROR_X_ON           0xA1
 #define SSD1306_CMD_INVERT_OFF            0xA6
 #define SSD1306_CMD_INVERT_ON             0xA7
+#define SSD1306_CMD_SET_MULTIPLEX         0xA8
 #define SSD1306_CMD_DISP_OFF              0xAE
 #define SSD1306_CMD_DISP_ON               0xAF
 #define SSD1306_CMD_MIRROR_Y_OFF          0xC0
 #define SSD1306_CMD_MIRROR_Y_ON           0xC8
+#define SSD1306_CMD_SET_COMPINS           0xDA
 
 static esp_err_t panel_ssd1306_del(esp_lcd_panel_t *panel);
 static esp_err_t panel_ssd1306_reset(esp_lcd_panel_t *panel);
@@ -58,7 +60,14 @@ typedef struct {
     int y_gap;
     unsigned int bits_per_pixel;
     bool swap_axes;
+    esp_lcd_panel_ssd1306_config_t vendor;
 } ssd1306_panel_t;
+
+static esp_lcd_panel_ssd1306_config_t default_ssd1306_config = {
+    .mux_ratio = 63,
+    .com_pin_alt = true,
+    .com_lr_remap = false
+};
 
 esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel)
 {
@@ -84,6 +93,10 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     ssd1306->bits_per_pixel = panel_dev_config->bits_per_pixel;
     ssd1306->reset_gpio_num = panel_dev_config->reset_gpio_num;
     ssd1306->reset_level = panel_dev_config->flags.reset_active_high;
+    ssd1306->vendor =
+        panel_dev_config->vendor_config
+        ? *(esp_lcd_panel_ssd1306_config_t*)panel_dev_config->vendor_config
+        : default_ssd1306_config;
     ssd1306->base.del = panel_ssd1306_del;
     ssd1306->base.reset = panel_ssd1306_reset;
     ssd1306->base.init = panel_ssd1306_init;
@@ -138,6 +151,14 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
 {
     ssd1306_panel_t *ssd1306 = __containerof(panel, ssd1306_panel_t, base);
     esp_lcd_panel_io_handle_t io = ssd1306->io;
+
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MULTIPLEX, (uint8_t[]) {
+        // set multiplex ratio
+        ssd1306->vendor.mux_ratio
+    }, 1), TAG, "io tx param SSD1306_CMD_SET_MULTIPLEX failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_COMPINS, (uint8_t[1]) {
+        0x2 | (ssd1306->vendor.com_pin_alt << 4) | (ssd1306->vendor.com_lr_remap << 5)
+    }, 1), TAG, "io tx param SSD1306_CMD_SET_COMPINS failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_OFF, NULL, 0), TAG,
                         "io tx param SSD1306_CMD_DISP_OFF failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MEMORY_ADDR_MODE, (uint8_t[]) {

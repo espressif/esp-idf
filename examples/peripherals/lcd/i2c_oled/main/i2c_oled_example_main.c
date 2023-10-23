@@ -99,6 +99,14 @@ void app_main(void)
         .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
     };
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_SSD1306
+#if EXAMPLE_LCD_V_RES != 64
+    esp_lcd_panel_ssd1306_config_t ssd1306_config = {
+        .mux_ratio = EXAMPLE_LCD_V_RES - 1,
+        .com_pin_alt = false
+    };
+    panel_config.vendor_config = &ssd1306_config;
+#endif
+
     ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
     ESP_ERROR_CHECK(esp_lcd_new_panel_sh1107(io_handle, &panel_config, &panel_handle));

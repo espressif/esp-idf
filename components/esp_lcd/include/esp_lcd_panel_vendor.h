@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,33 @@ esp_err_t esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp
 esp_err_t esp_lcd_new_panel_nt35510(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel);
 
 /**
+ * @brief SSD1306 configuration structure
+ *
+ * To be used as esp_lcd_panel_dev_config_t.vendor_config.
+ * See esp_lcd_new_panel_ssd1306().
+ */
+typedef struct {
+    /**
+     * @brief Multiplex ratio: (0..63)
+     *
+     * Display's height minus one.
+     */
+    uint8_t mux_ratio;
+
+    /**
+     * @brief Enables alternative COM pin configuration.
+     *
+     * When unset then Sequential COM pin configuration is used.
+     */
+    bool com_pin_alt;
+
+    /**
+     * @brief COM Left/Right remap.
+     */
+    bool com_lr_remap;
+} esp_lcd_panel_ssd1306_config_t;
+
+/**
  * @brief Create LCD panel for model SSD1306
  *
  * @param[in] io LCD panel IO handle
@@ -67,6 +94,24 @@ esp_err_t esp_lcd_new_panel_nt35510(const esp_lcd_panel_io_handle_t io, const es
  *          - ESP_ERR_INVALID_ARG   if parameter is invalid
  *          - ESP_ERR_NO_MEM        if out of memory
  *          - ESP_OK                on success
+ *
+ * @note The default panel size is 128x64.
+ * @note Use esp_lcd_panel_ssd1306_config_t to set the correct size.
+ * Example usage:
+ * @code {c}
+ *
+ * esp_lcd_panel_ssd1306_config_t ssd1306_config = {
+ *     .width = 128,
+ *     .height = 32
+ * };
+ * esp_lcd_panel_dev_config_t panel_config = {
+ *     <...>
+ *     .vendor_config = &ssd1306_config
+ * };
+ *
+ * esp_lcd_panel_handle_t panel_handle = NULL;
+ * esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle);
+ * @endcode
  */
 esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel);
 
