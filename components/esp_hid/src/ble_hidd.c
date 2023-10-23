@@ -463,7 +463,7 @@ static void hid_event_handler(esp_ble_hidd_dev_t *dev, int device_index, esp_gat
         link_report_handles(&dev->devices[device_index], param->add_attr_tab.handles);
         esp_ble_gatts_start_service(dev->devices[device_index].hid_svc.handle);
         if ((device_index + 1) < dev->devices_len) {
-            create_hid_db(dev, device_index + 1);//add next device
+            create_hid_db(dev, device_index + 1);//add next device if support
         }
         break;
     }
