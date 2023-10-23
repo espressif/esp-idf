@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for SPI Slave HD
 
@@ -78,7 +70,9 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
     hal->rx_dma_head = &hal->rx_dummy_head;
 
     //Configure slave
-    s_spi_slave_hd_hal_dma_init_config(hal);
+    if (hal_config->dma_enabled) {
+        s_spi_slave_hd_hal_dma_init_config(hal);
+    }
 
     spi_ll_slave_hd_init(hw);
     spi_ll_set_addr_bitlen(hw, hal_config->address_bits);
