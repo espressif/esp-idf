@@ -146,6 +146,11 @@ def junit_properties(test_case_name: str, record_xml_attribute: Callable[[str, o
     record_xml_attribute('name', test_case_name)
 
 
+@pytest.fixture(autouse=True)
+def set_test_case_name(request: FixtureRequest, test_case_name: str) -> None:
+    request.node.funcargs['test_case_name'] = test_case_name
+
+
 ######################
 # Log Util Functions #
 ######################
