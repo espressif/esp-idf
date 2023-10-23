@@ -400,7 +400,7 @@ build_examples_cmake_esp32s3:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32s3
-  parallel: 7
+  parallel: 11
   variables:
     IDF_TARGET: esp32s3
     TEST_DIR: examples
@@ -409,7 +409,7 @@ build_examples_cmake_esp32c2:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32c2
-  parallel: 6
+  parallel: 7
   variables:
     IDF_TARGET: esp32c2
     TEST_DIR: examples
@@ -418,7 +418,7 @@ build_examples_cmake_esp32c3:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32c3
-  parallel: 6
+  parallel: 9
   variables:
     IDF_TARGET: esp32c3
     TEST_DIR: examples
@@ -427,7 +427,7 @@ build_examples_cmake_esp32c6:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32c6
-  parallel: 6
+  parallel: 11
   variables:
     IDF_TARGET: esp32c6
     TEST_DIR: examples
@@ -436,7 +436,7 @@ build_examples_cmake_esp32h2:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32h2
-  parallel: 4
+  parallel: 9
   variables:
     IDF_TARGET: esp32h2
     TEST_DIR: examples
@@ -445,7 +445,7 @@ build_examples_cmake_esp32p4:
   extends:
     - .build_cmake_template
     - .rules:build:example_test-esp32p4
-  parallel: 2
+  parallel: 4
   variables:
     IDF_TARGET: esp32p4
     TEST_DIR: examples
