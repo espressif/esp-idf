@@ -22,23 +22,18 @@
 #include "esp_rom_gpio.h"
 #include "esp_log.h"
 #include "test_utils.h"
+#include "test_board.h"
 
 static const char TAG[] = "test-i2c";
-
-#define TEST_I2C_SCL_PIN  2
-#define TEST_I2C_SDA_PIN  4
-#define TEST_I2C_SCL_FREQ (100 * 1000)
-#define TEST_I2C_PORT     0
-#define SLAVE_ADDR        0x58
-
 
 TEST_CASE("I2C bus install-uninstall test", "[i2c]")
 {
     i2c_master_bus_config_t i2c_mst_config_1 = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = TEST_I2C_SCL_PIN,
-        .sda_io_num = TEST_I2C_SDA_PIN,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
     };
     i2c_master_bus_handle_t i2c_mst_handle1;
 
@@ -46,8 +41,9 @@ TEST_CASE("I2C bus install-uninstall test", "[i2c]")
     i2c_master_bus_config_t i2c_mst_config_2 = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = 1,
-        .scl_io_num = TEST_I2C_SCL_PIN,
-        .sda_io_num = TEST_I2C_SDA_PIN,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
     };
     i2c_master_bus_handle_t i2c_mst_handle2;
 #endif
@@ -75,8 +71,9 @@ TEST_CASE("I2C driver memory leaking check", "[i2c]")
     i2c_master_bus_config_t i2c_mst_config_1 = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = TEST_I2C_SCL_PIN,
-        .sda_io_num = TEST_I2C_SDA_PIN,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
     };
     i2c_master_bus_handle_t bus_handle;
 
@@ -95,8 +92,9 @@ TEST_CASE("I2C device add & remove check", "[i2c]")
     i2c_master_bus_config_t i2c_mst_config_1 = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = TEST_I2C_SCL_PIN,
-        .sda_io_num = TEST_I2C_SDA_PIN,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
     };
     i2c_master_bus_handle_t bus_handle;
 
@@ -137,8 +135,8 @@ TEST_CASE("I2C master probe device test", "[i2c]")
     i2c_master_bus_config_t i2c_mst_config_1 = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = TEST_I2C_PORT,
-        .scl_io_num = TEST_I2C_SCL_PIN,
-        .sda_io_num = TEST_I2C_SDA_PIN,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
         .flags.enable_internal_pullup = true,
     };
     i2c_master_bus_handle_t bus_handle;

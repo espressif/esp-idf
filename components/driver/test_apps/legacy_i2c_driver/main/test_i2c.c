@@ -508,6 +508,66 @@ static void i2c_slave_repeat_read(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
 
+#if SOC_I2C_NUM > 1
+
+static void i2c_master_write_test_more_ports(void)
+{
+    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
+    int i;
+
+    i2c_config_t conf_master = i2c_master_init();
+    TEST_ESP_OK(i2c_param_config(I2C_NUM_1, &conf_master));
+
+    TEST_ESP_OK(i2c_driver_install(I2C_NUM_1, I2C_MODE_MASTER,
+                                   I2C_MASTER_RX_BUF_DISABLE,
+                                   I2C_MASTER_TX_BUF_DISABLE, 0));
+    unity_wait_for_signal("i2c slave init finish");
+
+    unity_send_signal("master write");
+    for (i = 0; i < DATA_LENGTH / 2; i++) {
+        data_wr[i] = i;
+    }
+    i2c_master_write_slave(I2C_NUM_1, data_wr, DATA_LENGTH / 2);
+    disp_buf(data_wr, i);
+    free(data_wr);
+    unity_wait_for_signal("ready to delete");
+    TEST_ESP_OK(i2c_driver_delete(I2C_NUM_1));
+}
+
+static void i2c_slave_read_test_more_ports(void)
+{
+    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
+    int size_rd = 0;
+    int len = 0;
+
+    i2c_config_t conf_slave = i2c_slave_init();
+    TEST_ESP_OK(i2c_param_config( I2C_NUM_1, &conf_slave));
+    TEST_ESP_OK(i2c_driver_install(I2C_NUM_1, I2C_MODE_SLAVE,
+                                   I2C_SLAVE_RX_BUF_LEN,
+                                   I2C_SLAVE_TX_BUF_LEN, 0));
+    unity_send_signal("i2c slave init finish");
+
+    unity_wait_for_signal("master write");
+    while (1) {
+        len = i2c_slave_read_buffer( I2C_NUM_1, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
+        if (len == 0) {
+            break;
+        }
+        size_rd += len;
+    }
+    disp_buf(data_rd, size_rd);
+    for (int i = 0; i < size_rd; i++) {
+        TEST_ASSERT(data_rd[i] == i);
+    }
+    free(data_rd);
+    unity_send_signal("ready to delete");
+    TEST_ESP_OK(i2c_driver_delete(I2C_NUM_1));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test, more ports", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_more_ports, i2c_slave_read_test_more_ports);
+
+#endif
+
 static volatile bool exit_flag;
 static bool test_read_func;
 

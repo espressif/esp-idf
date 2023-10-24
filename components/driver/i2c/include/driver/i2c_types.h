@@ -52,6 +52,11 @@ typedef struct i2c_master_bus_t *i2c_master_bus_handle_t;
 typedef struct i2c_master_dev_t *i2c_master_dev_handle_t;
 
 /**
+ * @brief Type of I2C slave device handle
+ */
+typedef struct i2c_slave_dev_t *i2c_slave_dev_handle_t;
+
+/**
  * @brief Data type used in I2C event callback
  */
 typedef struct {
@@ -68,6 +73,46 @@ typedef struct {
  * @return Whether a high priority task has been waken up by this function
  */
 typedef bool (*i2c_master_callback_t)(i2c_master_dev_handle_t i2c_dev, const i2c_master_event_data_t *evt_data, void *arg);
+
+/**
+ * @brief Event structure used in I2C slave
+ */
+typedef struct {
+    uint8_t *buffer;
+} i2c_slave_rx_done_event_data_t;
+
+/**
+ * @brief Callback signature for I2C slave.
+ *
+ * @param[in]  i2c_slave Handle for I2C slave.
+ * @param[out] evt_data I2C capture event data, fed by driver
+ * @param[in]  user_ctx User data, set in `i2c_slave_register_event_callbacks()`
+ *
+ * @return Whether a high priority task has been waken up by this function
+ */
+typedef bool (*i2c_slave_received_callback_t)(i2c_slave_dev_handle_t i2c_slave, const i2c_slave_rx_done_event_data_t *evt_data, void *arg);
+
+#if SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
+
+/**
+ * @brief Stretch cause event structure used in I2C slave
+ */
+typedef struct {
+    i2c_slave_stretch_cause_t stretch_cause;
+} i2c_slave_stretch_event_data_t;
+
+/**
+ * @brief Callback signature for I2C slave stretch.
+ *
+ * @param[in]  i2c_slave Handle for I2C slave.
+ * @param[out] evt_cause I2C capture event cause, fed by driver
+ * @param[in]  user_ctx User data, set in `i2c_slave_register_event_callbacks()`
+ *
+ * @return Whether a high priority task has been waken up by this function
+ */
+typedef bool (*i2c_slave_stretch_callback_t)(i2c_slave_dev_handle_t i2c_slave, const i2c_slave_stretch_event_data_t *evt_cause, void *arg);
+
+#endif
 
 #ifdef __cplusplus
 }
