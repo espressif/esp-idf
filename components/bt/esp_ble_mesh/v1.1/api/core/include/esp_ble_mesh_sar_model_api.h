@@ -70,8 +70,9 @@ typedef struct {
 typedef struct {
     uint8_t sar_segments_threshold:5,                       /*!< SAR Segments Threshold state */
             sar_ack_delay_increment:3;                      /*!< SAR Acknowledgment Delay Increment state */
-    uint8_t sar_ack_retrans_count:2,                        /*!< SAR Acknowledgment Retransmissions Count state */
-            sar_discard_timeout:4;                          /*!< SAR Discard Timeout state */
+    uint8_t sar_discard_timeout:4,                          /*!< SAR Discard Timeout state */
+            sar_receiver_segment_interval_step:4;           /*!< SAR Receiver Segment Interval Step state */
+    uint8_t sar_ack_retrans_count:4;                        /*!< SAR Acknowledgment Retransmissions Count state */
 } esp_ble_mesh_sar_receiver_set_t;
 
 /**
@@ -97,8 +98,9 @@ typedef struct {
 typedef struct {
     uint8_t sar_segments_threshold:5,                       /*!< SAR Segments Threshold state */
             sar_ack_delay_increment:3;                      /*!< SAR Acknowledgment Delay Increment state */
-    uint8_t sar_ack_retrans_count:2,                        /*!< SAR Acknowledgment Retransmissions Count state */
-            sar_discard_timeout:4;                          /*!< SAR Discard Timeout state */
+    uint8_t sar_discard_timeout:4,                          /*!< SAR Discard Timeout state */
+            sar_receiver_segment_interval_step:4;           /*!< SAR Receiver Segment Interval Step state */
+    uint8_t sar_ack_retrans_count:4;                        /*!< SAR Acknowledgment Retransmissions Count state */
 } esp_ble_mesh_sar_receiver_status_t;
 
 /** Result of sending SAR Configuration Client messages */

@@ -87,11 +87,6 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
     return rpl_check_and_store(rx, match);
 }
 
-bool bt_mesh_bridge_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
-{
-    return rpl_check_and_store(rx, match);
-}
-
 void bt_mesh_rpl_update(void)
 {
     /* Discard "old old" IV Index entries from RPL and flag

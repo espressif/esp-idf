@@ -35,7 +35,8 @@ _Static_assert(!(IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) && IS_ENABLED(CON
 
 #define ADV_OPT     (BLE_MESH_ADV_OPT_CONNECTABLE | BLE_MESH_ADV_OPT_ONE_TIME)
 
-#if CONFIG_BLE_MESH_GATT_PROXY_SERVER && CONFIG_BLE_MESH_PRB_SRV
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER && \
+    (CONFIG_BLE_MESH_PRB_SRV || CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX)
 #define RAND_UPDATE_INTERVAL    K_MINUTES(10)
 
 /* The Random field of Private Network Identity
@@ -438,12 +439,12 @@ static int beacon_send(struct bt_mesh_proxy_client *client, struct bt_mesh_subne
 
 #if CONFIG_BLE_MESH_PROXY_PRIVACY
     if (client->proxy_privacy == BLE_MESH_PROXY_PRIVACY_ENABLED) {
-        bt_mesh_private_beacon_create(sub, &buf);
-
         /* NOTE: Each time a Mesh Private beacon for a subnet is sent to a Proxy Client,
          * the Random field in the Mesh Private beacon shall be regenerated.
          */
         bt_mesh_private_beacon_update_random(sub);
+
+        bt_mesh_private_beacon_create(sub, &buf);
     } else
 #endif
     {
@@ -476,22 +477,9 @@ static void proxy_send_beacons(struct k_work *work)
     for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
         struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
 
-#if 0
-        if (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED ||
-            sub->node_id == BLE_MESH_NODE_IDENTITY_RUNNING) {
-            sub->proxy_privacy = BLE_MESH_PROXY_PRIVACY_DISABLED;
-        } else if (true) {
-#if CONFIG_BLE_MESH_PRB_SRV
-            /* TODO: Check if Private GATT Proxy or Private Node Identity is enabled */
-#endif
-            sub->proxy_privacy = BLE_MESH_PROXY_PRIVACY_ENABLED;
-        } else {
-            sub->proxy_privacy = BLE_MESH_PROXY_PRIVACY_NOT_SUPPORTED;
-        }
-#endif
-
         if (sub->net_idx != BLE_MESH_KEY_UNUSED) {
             beacon_send(client, sub);
+
 #if CONFIG_BLE_MESH_DF_SRV
             if (sub->directed_proxy != BLE_MESH_DIRECTED_PROXY_NOT_SUPPORTED) {
                 bt_mesh_directed_proxy_server_directed_proxy_caps_status_send(client->conn, sub);
@@ -630,16 +618,58 @@ static bool is_exist_private_node_id_enable(void)
     return false;
 }
 
-void disable_all_private_node_identity(void)
+int bt_mesh_proxy_private_identity_disable(void)
 {
+    if (!bt_mesh_is_provisioned()) {
+        return -EAGAIN;
+    }
+
     for (size_t i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
         /* NOTE: Set private node identity state of all valid subnets disabled */
         struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
 
-        if (sub->net_idx != BLE_MESH_KEY_UNUSED) {
-            bt_mesh_proxy_server_private_identity_stop(sub);
+        if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
+            continue;
         }
+
+        if (sub->private_node_id == BLE_MESH_PRIVATE_NODE_IDENTITY_NOT_SUPPORTED) {
+            continue;
+        }
+
+        bt_mesh_proxy_server_private_identity_stop(sub);
     }
+
+    return 0;
+}
+
+int bt_mesh_proxy_private_identity_enable(void)
+{
+    int count = 0;
+
+    if (!bt_mesh_is_provisioned()) {
+        return -EAGAIN;
+    }
+
+    for (size_t i = 0U; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+        struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+
+        if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
+            continue;
+        }
+
+        if (sub->private_node_id == BLE_MESH_PRIVATE_NODE_IDENTITY_NOT_SUPPORTED) {
+            continue;
+        }
+
+        bt_mesh_proxy_server_private_identity_start(sub);
+        count++;
+    }
+
+    if (count) {
+        bt_mesh_adv_update();
+    }
+
+    return 0;
 }
 #endif /* CONFIG_BLE_MESH_PRB_SRV */
 #endif /* GATT_PROXY */
@@ -1373,7 +1403,7 @@ static const struct bt_mesh_adv_data net_id_ad[] = {
     BLE_MESH_ADV_DATA(BLE_MESH_DATA_SVC_DATA16, proxy_svc_data, NET_ID_LEN),
 };
 
-#if CONFIG_BLE_MESH_PRB_SRV
+#if CONFIG_BLE_MESH_PRB_SRV || CONFIG_BLE_MESH_PROXY_SOLIC_PDU_RX
 static const struct bt_mesh_adv_data private_node_id_ad[] = {
     BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_FLAGS, (BLE_MESH_AD_GENERAL | BLE_MESH_AD_NO_BREDR)),
     BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_UUID16_ALL, 0x28, 0x18),
@@ -1532,23 +1562,6 @@ static int private_node_id_adv(struct bt_mesh_subnet *sub)
     proxy_adv_enabled = true;
 
     return 0;
-}
-
-void bt_mesh_prb_pnid_adv_local_set(bool start)
-{
-    for (size_t i = 0U; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
-
-        if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
-            continue;
-        }
-
-        if (start) {
-            bt_mesh_proxy_server_private_identity_start(sub);
-        } else {
-            bt_mesh_proxy_server_private_identity_stop(sub);
-        }
-    }
 }
 #endif /* CONFIG_BLE_MESH_PRB_SRV */
 
@@ -1751,7 +1764,8 @@ static size_t gatt_prov_adv_create(struct bt_mesh_adv_data prov_sd[2])
     }
 
     memcpy(prov_svc_data + 2, bt_mesh_prov_get()->uuid, 16);
-    sys_put_be16(bt_mesh_prov_get()->oob_info, prov_svc_data + 18);
+    /* According CSS, all the field within adv data shall be little-endian */
+    sys_put_le16(bt_mesh_prov_get()->oob_info, prov_svc_data + 18);
 
     if (bt_mesh_prov_get()->uri) {
         size_t uri_len = strlen(bt_mesh_prov_get()->uri);

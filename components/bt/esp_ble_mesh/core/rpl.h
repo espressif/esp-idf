@@ -20,8 +20,6 @@ void bt_mesh_update_rpl(struct bt_mesh_rpl *rpl, struct bt_mesh_net_rx *rx);
 
 bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match);
 
-bool bt_mesh_bridge_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match);
-
 void bt_mesh_rpl_update(void);
 
 void bt_mesh_rpl_reset_single(uint16_t src, bool erase);

@@ -1091,6 +1091,16 @@ if BLE_MESH
                 help
                     Maximum number of Bridging Table entries that the Bridge Configuration Server can support.
 
+            config BLE_MESH_BRIDGE_CRPL
+                int "Maximum capacity of bridge replay protection list"
+                default 5
+                range 1 255
+                help
+                    This option specifies the maximum capacity of the bridge replay
+                    protection list. The bridge replay protection list is used to
+                    prevent a bridged subnet from replay attack, which will store the
+                    source address and sequence number of the received bridge messages.
+
         endif #BLE_MESH_BRC_SRV
 
         config BLE_MESH_PRB_CLI
@@ -1474,6 +1484,7 @@ if BLE_MESH
 
         config BLE_MESH_BQB_TEST
             bool "Enable BLE Mesh specific internal test"
+            select BLE_MESH_IV_UPDATE_TEST
             default n
             help
                 This option is used to enable some internal functions for auto-pts test.

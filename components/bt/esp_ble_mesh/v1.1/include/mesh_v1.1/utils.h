@@ -119,6 +119,11 @@ int bt_mesh_directed_update_dependent_node(void *sub, uint8_t type,
 int bt_mesh_directed_forwarding_ctl_recv(uint8_t ctl_op, void *rx,
                                          struct net_buf_simple *buf);
 
+void bt_mesh_restore_directed_forwarding_state(uint16_t net_idx,
+                                               uint8_t directed_forwarding);
+
+uint8_t bt_mesh_get_and_disable_directed_forwarding_state(void *sub);
+
 int bt_mesh_directed_forwarding_sub_init(void *sub);
 
 int bt_mesh_recovery_directed_forwarding_table(void *sub);
@@ -181,6 +186,8 @@ void bt_mesh_delete_netkey_in_bridge_table(uint16_t net_idx);
 bool bt_mesh_bridge_change_net_key(void *rx, const uint8_t **enc,
                                    const uint8_t **priv,
                                    uint8_t *nid, uint8_t cred);
+
+int bt_mesh_print_subnet_bridge_table(void);
 
 void bt_mesh_disable_directed_proxy_state(uint16_t net_idx);
 
