@@ -134,7 +134,6 @@ static esp_hid_device_config_t hid_config = {
 };
 
 static esp_hidd_dev_t *hid_dev = NULL;
-static bool dev_connected = false;
 
 #define HID_CC_RPT_MUTE                 1
 #define HID_CC_RPT_POWER                2
@@ -287,7 +286,44 @@ void esp_hidd_send_consumer_value(uint8_t key_cmd, bool key_pressed)
     return;
 }
 
-static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
+void ble_hid_demo_task(void *pvParameters)
+{
+    static bool send_volum_up = false;
+    while (1) {
+        ESP_LOGI(TAG, "Send the volume");
+        if (send_volum_up) {
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, true);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, false);
+        } else {
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, true);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, false);
+        }
+        send_volum_up = !send_volum_up;
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+}
+
+void ble_hid_task_start_up(void)
+{
+    if (s_ble_hid_param.task_hdl) {
+        // Task already exists
+        return;
+    }
+    xTaskCreate(ble_hid_demo_task, "ble_hid_demo_task", 2 * 1024, NULL, configMAX_PRIORITIES - 3,
+                &s_ble_hid_param.task_hdl);
+}
+
+void ble_hid_task_shut_down(void)
+{
+    if (s_ble_hid_param.task_hdl) {
+        vTaskDelete(s_ble_hid_param.task_hdl);
+        s_ble_hid_param.task_hdl = NULL;
+    }
+}
+
+static void ble_hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
 {
     esp_hidd_event_t event = (esp_hidd_event_t)id;
     esp_hidd_event_data_t *param = (esp_hidd_event_data_t *)event_data;
@@ -300,10 +336,6 @@ static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32
     }
     case ESP_HIDD_CONNECT_EVENT: {
         ESP_LOGI(TAG, "CONNECT");
-<<<<<<< HEAD
-        dev_connected = true;//todo: this should be on auth_complete (in GAP)
-=======
->>>>>>> 028fce28f7... fix(bt/bluedroid): Optimize compatibility with IOS and MACOS devices
         break;
     }
     case ESP_HIDD_PROTOCOL_MODE_EVENT: {
@@ -312,7 +344,15 @@ static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32
     }
     case ESP_HIDD_CONTROL_EVENT: {
         ESP_LOGI(TAG, "CONTROL[%u]: %sSUSPEND", param->control.map_index, param->control.control ? "EXIT_" : "");
-        break;
+        if (param->control.control)
+        {
+            // exit suspend
+            ble_hid_task_start_up();
+        } else {
+            // suspend
+            ble_hid_task_shut_down();
+        }
+    break;
     }
     case ESP_HIDD_OUTPUT_EVENT: {
         ESP_LOGI(TAG, "OUTPUT[%u]: %8s ID: %2u, Len: %d, Data:", param->output.map_index, esp_hid_usage_str(param->output.usage), param->output.report_id, param->output.length);
@@ -326,7 +366,7 @@ static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32
     }
     case ESP_HIDD_DISCONNECT_EVENT: {
         ESP_LOGI(TAG, "DISCONNECT: %s", esp_hid_disconnect_reason_str(esp_hidd_dev_transport_get(param->disconnect.dev), param->disconnect.reason));
-        dev_connected = false;
+        ble_hid_task_shut_down();
         esp_hid_ble_gap_adv_start();
         break;
     }
@@ -344,19 +384,17 @@ void hid_demo_task(void *pvParameters)
 {
     static bool send_volum_up = false;
     while (1) {
-        if (dev_connected) {
-            ESP_LOGI(TAG, "Send the volume");
-            if (send_volum_up) {
-                esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, true);
-                vTaskDelay(100 / portTICK_PERIOD_MS);
-                esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, false);
-            } else {
-                esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, true);
-                vTaskDelay(100 / portTICK_PERIOD_MS);
-                esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, false);
-            }
-            send_volum_up = !send_volum_up;
+        ESP_LOGI(TAG, "Send the volume");
+        if (send_volum_up) {
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, true);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, false);
+        } else {
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, true);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, false);
         }
+        send_volum_up = !send_volum_up;
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
