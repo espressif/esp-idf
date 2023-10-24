@@ -2368,6 +2368,16 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT;
         param.node_proxy_gatt_disable_comp.err_code = bt_mesh_proxy_server_gatt_disable();
         break;
+#if CONFIG_BLE_MESH_PRB_SRV
+    case BTC_BLE_MESH_ACT_PRIVATE_PROXY_IDENTITY_ENABLE:
+        act = ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_ENABLE_COMP_EVT;
+        param.node_private_proxy_identity_enable_comp.err_code = bt_mesh_proxy_private_identity_enable();
+        break;
+    case BTC_BLE_MESH_ACT_PRIVATE_PROXY_IDENTITY_DISABLE:
+        act = ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_DISABLE_COMP_EVT;
+        param.node_private_proxy_identity_disable_comp.err_code = bt_mesh_proxy_private_identity_disable();
+        break;
+#endif /* CONFIG_BLE_MESH_PRB_SRV */
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 #endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 #if CONFIG_BLE_MESH_PROVISIONER

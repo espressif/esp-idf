@@ -180,7 +180,7 @@ static inline int adv_send(struct net_buf *buf)
             bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
             struct bt_mesh_adv_data solic_ad[3] = {
                 BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_FLAGS, (BLE_MESH_AD_GENERAL | BLE_MESH_AD_NO_BREDR)),
-                BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_UUID16_ALL, 0x29, 0x18),
+                BLE_MESH_ADV_DATA_BYTES(BLE_MESH_DATA_UUID16_ALL, 0x59, 0x18),
                 BLE_MESH_ADV_DATA(BLE_MESH_DATA_SVC_DATA16, buf->data, buf->len),
             };
             err = bt_le_adv_start(&param, solic_ad, 3, NULL, 0);

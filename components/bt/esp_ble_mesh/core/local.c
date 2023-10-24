@@ -148,10 +148,9 @@ int bt_mesh_enable_directed_forwarding(uint16_t net_idx, bool directed_forwardin
 
     return 0;
 }
+#endif /* CONFIG_BLE_MESH_DF_SRV */
 
-#endif
 #if CONFIG_BLE_MESH_NODE
-
 const uint8_t *bt_mesh_node_get_local_net_key(uint16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
@@ -369,5 +368,4 @@ int bt_mesh_node_bind_app_key_to_model(uint16_t elem_addr, uint16_t mod_id,
     BT_ERR("Model bound is full!");
     return -ENOMEM;
 }
-
 #endif /* CONFIG_BLE_MESH_NODE */

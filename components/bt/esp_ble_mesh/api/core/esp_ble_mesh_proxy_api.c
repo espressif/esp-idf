@@ -53,6 +53,34 @@ esp_err_t esp_ble_mesh_proxy_gatt_disable(void)
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+#if CONFIG_BLE_MESH_PRB_SRV
+esp_err_t esp_ble_mesh_private_proxy_identity_enable(void)
+{
+    btc_msg_t msg = {0};
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PRIVATE_PROXY_IDENTITY_ENABLE;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_private_proxy_identity_disable(void)
+{
+    btc_msg_t msg = {0};
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PRIVATE_PROXY_IDENTITY_DISABLE;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif /* CONFIG_BLE_MESH_PRB_SRV */
+
 esp_err_t esp_ble_mesh_proxy_client_connect(esp_ble_mesh_bd_addr_t addr,
                                             esp_ble_mesh_addr_type_t addr_type,
                                             uint16_t net_idx)
