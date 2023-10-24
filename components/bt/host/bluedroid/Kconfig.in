@@ -250,6 +250,14 @@ config BT_GATTC_MAX_CACHE_CHAR
     help
         Maximum GATTC cache characteristic count
 
+config BT_GATTC_NOTIF_REG_MAX
+    int "Max gattc notify(indication) register number"
+    depends on BT_GATTC_ENABLE
+    range 1 64
+    default 5
+    help
+        Maximum GATTC notify(indication) register number
+
 config BT_GATTC_CACHE_NVS_FLASH
     bool "Save gattc cache data to nvs flash"
     depends on BT_GATTC_ENABLE
