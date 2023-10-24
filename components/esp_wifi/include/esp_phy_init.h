@@ -243,6 +243,18 @@ esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
  */
 char * get_phy_version_str(void);
 
+/**
+ * @brief Set PHY init parameters
+ * @param param is 1 means combo module
+ */
+void phy_init_param_set(uint8_t param);
+
+/**
+ * @brief Wi-Fi RX enable
+ * @param enable True for enable wifi receiving mode as default, false for closing wifi receiving mode as default.
+ */
+void phy_wifi_enable_set(uint8_t enable);
+
 #ifdef __cplusplus
 }
 #endif
