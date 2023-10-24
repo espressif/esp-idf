@@ -10,6 +10,7 @@
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 #include "esp_private/vectors_const.h"
+#include "esp_private/panic_reason.h"
 
 
     .equ SAVE_REGS, 32
@@ -224,6 +225,19 @@ _call_panic_handler:
     /* When CLIC is supported, external interrupts are shifted by 16, deduct this difference from mcause */
     add   a1, a1, -16
 #endif // CONFIG_SOC_INT_CLIC_SUPPORTED
+
+#if CONFIG_ESP_INT_WDT_CHECK_CPU1
+    /* Check if this was a INT WDT */
+    li t0, PANIC_RSN_INTWDT_CPU0
+    bne a1, t0, _store_mcause
+    /* Check if the cause is the app cpu failing to tick, if so then update mcause to reflect this*/
+    lw t0, int_wdt_cpu1_ticked
+    bnez t0, _store_mcause
+    li t0, PANIC_RSN_INTWDT_CPU1_FLAG
+    add a1, a1, t0
+#endif
+
+_store_mcause:
     sw    a1, RV_STK_MCAUSE(sp)
     call  panic_from_isr
     /* We arrive here if the exception handler has returned. This means that

@@ -30,12 +30,10 @@
 
 #define REASON_YIELD            BIT(0)
 #define REASON_FREQ_SWITCH      BIT(1)
-#define REASON_GDB_CALL         BIT(3)
-
-#if CONFIG_IDF_TARGET_ARCH_XTENSA
 #define REASON_PRINT_BACKTRACE  BIT(2)
+#define REASON_GDB_CALL         BIT(3)
 #define REASON_TWDT_ABORT       BIT(4)
-#endif
+
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[portNUM_PROCESSORS];
@@ -100,20 +98,22 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
         update_breakpoints();
     }
 #endif // !CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
-#if CONFIG_IDF_TARGET_ARCH_XTENSA // IDF-2986
+
     if (my_reason_val & REASON_PRINT_BACKTRACE) {
         esp_backtrace_print(100);
     }
 
+
+
 #if CONFIG_ESP_TASK_WDT_EN
     if (my_reason_val & REASON_TWDT_ABORT) {
-        extern void task_wdt_timeout_abort_xtensa(bool);
+        extern void task_wdt_timeout_abort(bool);
         /* Called from a crosscore interrupt, thus, we are not the core that received
          * the TWDT interrupt, call the function with `false` as a parameter. */
-        task_wdt_timeout_abort_xtensa(false);
+        task_wdt_timeout_abort(false);
     }
 #endif // CONFIG_ESP_TASK_WDT_EN
-#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
+
 }
 
 //Initialize the crosscore interrupt on this core. Call this once
@@ -182,7 +182,6 @@ void IRAM_ATTR esp_crosscore_int_send_gdb_call(int core_id)
     esp_crosscore_int_send(core_id, REASON_GDB_CALL);
 }
 
-#if CONFIG_IDF_TARGET_ARCH_XTENSA
 void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
@@ -193,4 +192,3 @@ void IRAM_ATTR esp_crosscore_int_send_twdt_abort(int core_id) {
     esp_crosscore_int_send(core_id, REASON_TWDT_ABORT);
 }
 #endif // CONFIG_ESP_TASK_WDT_EN
-#endif
