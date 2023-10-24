@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -244,6 +244,18 @@ esp_err_t esp_phy_apply_phy_init_data(uint8_t *init_data);
  * @return PHY lib version.
  */
 char * get_phy_version_str(void);
+
+/**
+ * @brief Set PHY init parameters
+ * @param param is 1 means combo module
+ */
+void phy_init_param_set(uint8_t param);
+
+/**
+ * @brief Wi-Fi RX enable
+ * @param enable Whether to enable phy for wifi
+ */
+void phy_wifi_enable_set(uint8_t enable);
 
 #ifdef __cplusplus
 }
