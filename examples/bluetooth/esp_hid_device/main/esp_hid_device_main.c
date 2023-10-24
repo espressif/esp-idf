@@ -318,6 +318,10 @@ void ble_hid_demo_task(void *pvParameters)
 
 void ble_hid_task_start_up(void)
 {
+    if (s_ble_hid_param.task_hdl) {
+        // Task already exists
+        return;
+    }
     xTaskCreate(ble_hid_demo_task, "ble_hid_demo_task", 2 * 1024, NULL, configMAX_PRIORITIES - 3,
                 &s_ble_hid_param.task_hdl);
 }
@@ -352,7 +356,15 @@ static void ble_hidd_event_callback(void *handler_args, esp_event_base_t base, i
     }
     case ESP_HIDD_CONTROL_EVENT: {
         ESP_LOGI(TAG, "CONTROL[%u]: %sSUSPEND", param->control.map_index, param->control.control ? "EXIT_" : "");
-        break;
+        if (param->control.control)
+        {
+            // exit suspend
+            ble_hid_task_start_up();
+        } else {
+            // suspend
+            ble_hid_task_shut_down();
+        }
+    break;
     }
     case ESP_HIDD_OUTPUT_EVENT: {
         ESP_LOGI(TAG, "OUTPUT[%u]: %8s ID: %2u, Len: %d, Data:", param->output.map_index, esp_hid_usage_str(param->output.usage), param->output.report_id, param->output.length);
