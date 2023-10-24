@@ -282,7 +282,7 @@ static esp_err_t create_hid_db(esp_ble_hidd_dev_t *dev, int device_index)
     add_db_record(_last_db, HIDD_LE_IDX_HID_INFO_VAL, (uint8_t *)&s_hid_info_char_uuid, ESP_GATT_PERM_READ, 4, 4, (uint8_t *)hidInfo);
 
     add_db_record(_last_db, HIDD_LE_IDX_HID_CTNL_PT_CHAR, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_write_nr);
-    add_db_record(_last_db, HIDD_LE_IDX_HID_CTNL_PT_VAL, (uint8_t *)&s_hid_control_point_uuid, ESP_GATT_PERM_READ, 1, 0, NULL);
+    add_db_record(_last_db, HIDD_LE_IDX_HID_CTNL_PT_VAL, (uint8_t *)&s_hid_control_point_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, 1, 0, NULL);
 
     add_db_record(_last_db, HIDD_LE_IDX_PROTO_MODE_CHAR, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write_nr);
     add_db_record(_last_db, HIDD_LE_IDX_PROTO_MODE_VAL, (uint8_t *)&s_hid_proto_mode_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, 1, 1, (uint8_t *)&dev->protocol);
@@ -301,7 +301,7 @@ static esp_err_t create_hid_db(esp_ble_hidd_dev_t *dev, int device_index)
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_notify);
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ, report->value_len, 0, NULL);
-                add_db_record(_last_db, index++, (uint8_t *)&s_character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, 2, 0, NULL);
+                add_db_record(_last_db, index++, (uint8_t *)&s_character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE_ENCRYPTED, 2, 0, NULL);
             } else if (report->report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
                 //Output Report
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write_write_nr);
