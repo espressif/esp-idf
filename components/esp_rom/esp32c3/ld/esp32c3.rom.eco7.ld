@@ -33,6 +33,7 @@ wDev_ProcessFiq = 0x400017f0;
 wDev_ProcessRxSucData = 0x400017f4;
 ppProcTxDone = 0x40001804;
 pm_tx_data_done_process = 0x40001808;
+ppMapWaitTxq = 0x40001810;
 ieee80211_encap_esfbuf = 0x4000185c;
 sta_input = 0x40001870;
 ieee80211_crypto_decap = 0x4000189c;
