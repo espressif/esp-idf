@@ -45,6 +45,12 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
         list(APPEND args --filter ${DEFAULT_CRT_DIR}/cmn_crt_authorities.csv)
     endif()
 
+    # Add deprecated root certs if enabled. This config is not visible if the default cert
+    # bundle is not selected
+    if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_deprecated.pem)
+    endif()
+
     if(CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE)
         get_filename_component(custom_bundle_path
         ${CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH} ABSOLUTE BASE_DIR "${project_dir}")

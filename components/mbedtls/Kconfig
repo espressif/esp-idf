@@ -348,6 +348,21 @@ menu "mbedTLS"
                 Name of the custom certificate directory or file. This path is evaluated
                 relative to the project root directory.
 
+        config MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST
+            bool "Add deprecated root certificates"
+            depends on MBEDTLS_CERTIFICATE_BUNDLE && !MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_NONE
+            help
+                Include the deprecated list of root certificates in the bundle.
+                This list gets updated when a certificate is removed from the Mozilla's
+                NSS root certificate store. This config can be enabled if you would like
+                to ensure that none of the certificates that were deployed in the product
+                are affected because of the update to bundle. In turn, enabling this
+                config keeps expired, retracted certificates in the bundle and it may
+                pose a security risk.
+
+                - Deprecated cert list may grow based based on sync with upstream bundle
+                - Deprecated certs would be be removed in ESP-IDF (next) major release
+
         config MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS
             int "Maximum no of certificates allowed in certificate bundle"
             default 200
