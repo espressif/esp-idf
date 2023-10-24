@@ -180,11 +180,12 @@
 
 /* ------------------- Software Timer ---------------------- */
 
-#define configUSE_TIMERS                 1
-#define configTIMER_TASK_PRIORITY        CONFIG_FREERTOS_TIMER_TASK_PRIORITY
-#define configTIMER_QUEUE_LENGTH         CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
-#define configTIMER_TASK_STACK_DEPTH     CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
-#define configTIMER_SERVICE_TASK_NAME    CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
+#define configUSE_TIMERS                          1
+#define configTIMER_TASK_PRIORITY                 CONFIG_FREERTOS_TIMER_TASK_PRIORITY
+#define configTIMER_QUEUE_LENGTH                  CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
+#define configTIMER_TASK_STACK_DEPTH              CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
+#define configTIMER_SERVICE_TASK_NAME             CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
+#define configTIMER_SERVICE_TASK_CORE_AFFINITY    CONFIG_FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
 
 /* ------------------------ List --------------------------- */
 
