@@ -67,6 +67,8 @@
 #define SOC_ADC_PATT_LEN_MAX                    (8) /*!< One pattern table, each contains 8 items. Each item takes 1 byte */
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+#define SOC_ADC_DIGI_RESULT_BYTES               (4)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
 #define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)
 /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval<= 4095 */

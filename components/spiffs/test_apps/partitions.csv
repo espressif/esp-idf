@@ -1,3 +1,0 @@
-# Name,     Type, SubType, Offset,   Size, Flags
-factory,    0,    0,        0x10000, 1M
-storage,    data, spiffs,   ,        256k

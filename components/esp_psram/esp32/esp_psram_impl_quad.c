@@ -845,7 +845,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
         psram_io.psram_cs_io  = D2WD_PSRAM_CS_IO;
     } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         ESP_EARLY_LOGE(TAG, "This chip is ESP32-PICO-V3. It does not support PSRAM (disable it in Kconfig)");
-        abort();
+        return ESP_FAIL;
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH)) {
         ESP_EARLY_LOGI(TAG, "This chip is %s",
                         (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)? "ESP32-PICO": "ESP32-U4WDH");
@@ -882,7 +882,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(psram_vaddr_mode_t vaddrmode)   //psra
         psram_io.psram_cs_io  = D0WDR2_V3_PSRAM_CS_IO;
     } else {
         ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %d", pkg_ver);
-        abort();
+        return ESP_FAIL;
     }
     s_psram_cs_io = psram_io.psram_cs_io;
 

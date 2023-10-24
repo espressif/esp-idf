@@ -37,15 +37,6 @@
 	sbom-description = A small and fast ECDH and ECDSA implementation for 8-bit, 32-bit, and 64-bit processors
 	sbom-hash = 24c60e243580c7868f4334a1ba3123481fe1aa48
 
-[submodule "components/spiffs/spiffs"]
-	path = components/spiffs/spiffs
-	url = ../../pellepl/spiffs.git
-	sbom-version = 0.2-255-g0dbb3f71c5f6
-	sbom-supplier = Person: Peter Andersson
-	sbom-url = https://github.com/pellepl/spiffs
-	sbom-description = Wear-leveled SPI flash file system for embedded devices
-	sbom-hash = 0dbb3f71c5f6fae3747a9d935372773762baf852
-
 [submodule "components/json/cJSON"]
 	path = components/json/cJSON
 	url = ../../DaveGamble/cJSON.git
@@ -63,10 +54,6 @@
 [submodule "components/lwip/lwip"]
 	path = components/lwip/lwip
 	url = ../../espressif/esp-lwip.git
-
-[submodule "components/mqtt/esp-mqtt"]
-	path = components/mqtt/esp-mqtt
-	url = ../../espressif/esp-mqtt.git
 
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
