@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -344,7 +344,6 @@ static void ble_hidd_event_callback(void *handler_args, esp_event_base_t base, i
     }
     case ESP_HIDD_CONNECT_EVENT: {
         ESP_LOGI(TAG, "CONNECT");
-        ble_hid_task_start_up();//todo: this should be on auth_complete (in GAP)
         break;
     }
     case ESP_HIDD_PROTOCOL_MODE_EVENT: {
