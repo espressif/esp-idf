@@ -35,7 +35,6 @@
 #include "freertos/idf_additions.h"
 
 static const char *TAG = "i2c.master";
-static _lock_t s_i2c_bus_acquire;
 
 #define DIM(array)                (sizeof(array)/sizeof(*array))
 #define I2C_ADDRESS_TRANS_WRITE(device_address)    (((device_address) << 1) | 0)
@@ -785,39 +784,13 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     ESP_RETURN_ON_FALSE(bus_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE((bus_config->i2c_port < SOC_I2C_NUM || bus_config->i2c_port == -1), ESP_ERR_INVALID_ARG, TAG, "invalid i2c port number");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(bus_config->sda_io_num) && GPIO_IS_VALID_GPIO(bus_config->scl_io_num), ESP_ERR_INVALID_ARG, TAG, "invalid SDA/SCL pin number");
-    bool bus_occupied = false;
-    bool bus_found = false;
 
     i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t) + 20 * sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
 
     ESP_RETURN_ON_FALSE(i2c_master, ESP_ERR_NO_MEM, TAG, "no memory for i2c master bus");
 
-    _lock_acquire(&s_i2c_bus_acquire);
-    if (i2c_port_num == -1) {
-        for (int i = 0; i < SOC_I2C_NUM; i++) {
-            bus_occupied = i2c_bus_occupied(i);
-            if (bus_occupied == false) {
-                ret = i2c_acquire_bus_handle(i, &i2c_master->base, I2C_BUS_MODE_MASTER);
-                if (ret != ESP_OK) {
-                    ESP_LOGE(TAG, "acquire bus failed");
-                    _lock_release(&s_i2c_bus_acquire);
-                    goto err;
-                }
-                bus_found = true;
-                i2c_port_num = i;
-                break;
-            }
-        }
-        ESP_GOTO_ON_FALSE((bus_found == true), ESP_ERR_NOT_FOUND, err, TAG, "acquire bus failed, no free bus");
-    } else {
-        ret = i2c_acquire_bus_handle(i2c_port_num, &i2c_master->base, I2C_BUS_MODE_MASTER);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "acquire bus failed");
-            _lock_release(&s_i2c_bus_acquire);
-            goto err;
-        }
-    }
-    _lock_release(&s_i2c_bus_acquire);
+    ESP_GOTO_ON_ERROR(i2c_acquire_bus_handle(i2c_port_num, &i2c_master->base, I2C_BUS_MODE_MASTER), err, TAG, "I2C bus acquire failed");
+    i2c_port_num = i2c_master->base->port_num;
 
     i2c_hal_context_t *hal = &i2c_master->base->hal;
     i2c_master->base->scl_num = bus_config->scl_io_num;

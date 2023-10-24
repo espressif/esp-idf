@@ -45,24 +45,29 @@ typedef union {
 #define I2C_LL_CMD_END        4    /*!<I2C end command */
 
 typedef enum {
-    I2C_LL_INTR_TXFIFO_WM = (1 << 1),
-    I2C_LL_INTR_RXFIFO_WM = (1 << 0),
+    I2C_INTR_MST_TXFIFO_WM = (1 << 1),
+    I2C_INTR_MST_RXFIFO_WM = (1 << 11),
     I2C_LL_INTR_NACK = (1 << 10),
     I2C_LL_INTR_TIMEOUT = (1 << 8),
     I2C_LL_INTR_MST_COMPLETE = (1 << 7),
     I2C_LL_INTR_ARBITRATION = (1 << 5),
     I2C_LL_INTR_END_DETECT = (1 << 3),
     I2C_LL_INTR_ST_TO = (1 << 13),
-    I2C_LL_INTR_START = (1 << 15),
-    I2C_LL_INTR_STRETCH = (1 << 16),
-    I2C_LL_INTR_UNMATCH = (1 << 18),
-} i2c_ll_intr_t;
+} i2c_ll_master_intr_t;
+
+typedef enum {
+    I2C_INTR_SLV_TXFIFO_WM = (1 << 1),
+    I2C_INTR_SLV_RXFIFO_WM = (1 << 11),
+    I2C_INTR_SLV_COMPLETE = (1 << 7),
+    I2C_INTR_START = (1 << 15),
+    I2C_INTR_STRETCH = (1 << 16),
+} i2c_ll_slave_intr_t;
 
 // Get the I2C hardware instance
 #define I2C_LL_GET_HW(i2c_num)        (((i2c_num) == 0) ? &I2C0 : &I2C1)
 #define I2C_LL_MASTER_EVENT_INTR    (I2C_ACK_ERR_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
-#define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_EMPTY_INT_ENA_M)
-#define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_RXFIFO_FULL_INT_ENA_M)
+#define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_EMPTY_INT_ENA_M|I2C_RX_REC_FULL_INT_ST_M)
+#define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_RX_REC_FULL_INT_ST_M)
 #define I2C_LL_SLAVE_TX_EVENT_INTR  (I2C_TXFIFO_EMPTY_INT_ENA_M)
 
 /**
@@ -277,7 +282,7 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
 {
     hw->slave_addr.en_10bit = addr_10bit_en;
     if (addr_10bit_en) {
-        uint8_t addr_14_7 = (slave_addr & 0xff) << 7;
+        uint16_t addr_14_7 = (slave_addr & 0xff) << 7;
         uint8_t addr_6_0 = ((slave_addr & 0x300) >> 8) || 0x78;
         hw->slave_addr.addr = addr_14_7 || addr_6_0;
     } else {
@@ -368,6 +373,7 @@ static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
  */
 static inline void i2c_ll_set_rxfifo_full_thr(i2c_dev_t *hw, uint8_t full_thr)
 {
+    hw->fifo_conf.nonfifo_rx_thres = full_thr;
     hw->fifo_conf.rx_fifo_full_thrhd = full_thr;
 }
 

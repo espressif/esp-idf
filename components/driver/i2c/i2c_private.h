@@ -16,6 +16,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
+#include "driver/i2c_slave.h"
 #include "esp_pm.h"
 
 #ifdef __cplusplus
@@ -52,6 +53,7 @@ typedef struct i2c_bus_t i2c_bus_t;
 typedef struct i2c_master_bus_t i2c_master_bus_t;
 typedef struct i2c_bus_t *i2c_bus_handle_t;
 typedef struct i2c_master_dev_t i2c_master_dev_t;
+typedef struct i2c_slave_dev_t i2c_slave_dev_t;
 
 typedef enum {
     I2C_BUS_MODE_MASTER = 0,
@@ -153,6 +155,34 @@ struct i2c_master_dev_t {
     void *user_ctx;                       // Callback user context
 };
 
+typedef struct {
+    bool trans_complete;  // Event of transaction complete
+    bool slave_stretch;   // Event of slave stretch happens
+    bool addr_unmatch;    // Event of address unmatched
+} i2c_slave_evt_t;
+
+typedef struct {
+    uint8_t *buffer;            // Pointer to the buffer need to be received in ISR
+    uint32_t rcv_fifo_cnt;      // receive fifo count.
+} i2c_slave_receive_t;
+
+struct i2c_slave_dev_t {
+    i2c_bus_t *base;                            // bus base class
+    SemaphoreHandle_t slv_rx_mux;               // Mutex for slave rx direction
+    SemaphoreHandle_t slv_tx_mux;               // Mutex for slave tx direction
+    RingbufHandle_t rx_ring_buf;                // Handle for rx ringbuffer
+    RingbufHandle_t tx_ring_buf;                // Handle for tx ringbuffer
+    uint8_t data_buf[SOC_I2C_FIFO_LEN];         // Data buffer for slave
+    uint32_t trans_data_length;                 // Send data length
+    i2c_slave_event_callbacks_t callbacks;      // I2C slave callbacks
+    void *user_ctx;                             // Callback user context
+    i2c_slave_fifo_mode_t fifo_mode;            // Slave fifo mode.
+    QueueHandle_t slv_evt_queue;                // Event Queue used in slave nonfifo mode.
+    i2c_slave_evt_t slave_evt;                  // Slave event structure.
+    i2c_slave_receive_t receive_desc;           // Slave receive descriptor
+    uint32_t already_receive_len;               // Data length already received in ISR.
+};
+
 /**
  * @brief Acquire I2C bus handle
  *
@@ -197,14 +227,6 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t cl
  *      - Otherwise: Set SCL/SDA IOs error.
  */
 esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle);
-
-/**
- * @brief Check whether I2C bus is occupied
- *
- * @param port_num I2C port number.
- * @return true: occupied, otherwise, false.
- */
-bool i2c_bus_occupied(i2c_port_num_t port_num);
 
 #ifdef __cplusplus
 }

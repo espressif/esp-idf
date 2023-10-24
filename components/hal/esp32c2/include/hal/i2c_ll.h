@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,23 +47,17 @@ typedef union {
 #define I2C_LL_CMD_END        4    /*!<I2C end command */
 
 typedef enum {
-    I2C_LL_INTR_TXFIFO_WM = (1 << 1),
-    I2C_LL_INTR_RXFIFO_WM = (1 << 0),
     I2C_LL_INTR_NACK = (1 << 10),
     I2C_LL_INTR_TIMEOUT = (1 << 8),
     I2C_LL_INTR_MST_COMPLETE = (1 << 7),
     I2C_LL_INTR_ARBITRATION = (1 << 5),
     I2C_LL_INTR_END_DETECT = (1 << 3),
     I2C_LL_INTR_ST_TO = (1 << 13),
-    I2C_LL_INTR_START = (1 << 15),
-    I2C_LL_INTR_STRETCH = (1 << 16),
-    I2C_LL_INTR_UNMATCH = (1 << 18),
-} i2c_ll_intr_t;
+} i2c_ll_master_intr_t;
 
 // Get the I2C hardware instance
 #define I2C_LL_GET_HW(i2c_num)        (&I2C0)
 #define I2C_LL_MASTER_EVENT_INTR    (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
-#define I2C_LL_SLAVE_EVENT_INTR     0
 #define I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT   (9)
 
 /**

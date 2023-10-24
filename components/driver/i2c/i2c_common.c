@@ -37,7 +37,7 @@ typedef struct i2c_platform_t {
 
 static i2c_platform_t s_i2c_platform = {}; // singleton platform
 
-esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_new_bus, i2c_bus_mode_t mode)
+static esp_err_t s_i2c_bus_handle_aquire(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_new_bus, i2c_bus_mode_t mode)
 {
 #if CONFIG_I2C_ENABLE_DEBUG_LOG
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
@@ -76,15 +76,41 @@ esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_
     return ret;
 }
 
-bool i2c_bus_occupied(i2c_port_num_t port_num)
+static bool i2c_bus_occupied(i2c_port_num_t port_num)
+{
+    return s_i2c_platform.buses[port_num] != NULL;
+}
+
+esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_new_bus, i2c_bus_mode_t mode)
 {
     bool bus_occupied = false;
+    bool bus_found = false;
+    esp_err_t ret = ESP_OK;
     _lock_acquire(&s_i2c_platform.mutex);
-    if (s_i2c_platform.buses[port_num]) {
-        bus_occupied = true;
+    if (port_num == -1) {
+        for (int i = 0; i < SOC_I2C_NUM; i++) {
+            bus_occupied = i2c_bus_occupied(i);
+            if (bus_occupied == false) {
+                ret = s_i2c_bus_handle_aquire(i, i2c_new_bus, mode);
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "acquire bus failed");
+                    _lock_release(&s_i2c_platform.mutex);
+                    return ret;
+                }
+                bus_found = true;
+                port_num = i;
+                break;
+            }
+        }
+        ESP_RETURN_ON_FALSE((bus_found == true), ESP_ERR_NOT_FOUND, TAG, "acquire bus failed, no free bus");
+    } else {
+        ret = s_i2c_bus_handle_aquire(port_num, i2c_new_bus, mode);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "acquire bus failed");
+        }
     }
     _lock_release(&s_i2c_platform.mutex);
-    return bus_occupied;
+    return ret;
 }
 
 esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
@@ -205,12 +231,8 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
         .pull_up_en = handle->pull_up_enable ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
         .pin_bit_mask = 1ULL << handle->sda_num,
     };
-#if CONFIG_IDF_TARGET_ESP32
-    // on esp32, must enable internal pull-up
-    sda_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-#endif
-    ESP_RETURN_ON_ERROR(gpio_config(&sda_conf), TAG, "config GPIO failed");
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->sda_num, 1), TAG, "i2c sda pin set level failed");
+    ESP_RETURN_ON_ERROR(gpio_config(&sda_conf), TAG, "config GPIO failed");
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[handle->sda_num], PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
@@ -224,12 +246,8 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
         .pull_up_en = handle->pull_up_enable ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
         .pin_bit_mask = 1ULL << handle->scl_num,
     };
-#if CONFIG_IDF_TARGET_ESP32
-    // on esp32, must enable internal pull-up
-    scl_conf.pull_up_en = GPIO_PULLUP_ENABLE;
-#endif
-    ESP_RETURN_ON_ERROR(gpio_config(&scl_conf), TAG, "config GPIO failed");
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->scl_num, 1), TAG, "i2c scl pin set level failed");
+    ESP_RETURN_ON_ERROR(gpio_config(&scl_conf), TAG, "config GPIO failed");
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[handle->scl_num], PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
