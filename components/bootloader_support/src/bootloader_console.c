@@ -26,6 +26,9 @@
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/uart.h"
 #endif
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#include "hal/usb_phy_ll.h"
+#endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
@@ -104,6 +107,9 @@ void bootloader_console_init(void)
     esp_rom_uart_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
     esp_rom_uart_set_as_console(ESP_ROM_UART_USB);
     esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+    usb_phy_ll_int_otg_enable(&USB_WRAP);
+#endif
 }
 #endif //CONFIG_ESP_CONSOLE_USB_CDC
 
