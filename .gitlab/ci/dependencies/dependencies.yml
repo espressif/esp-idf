@@ -83,16 +83,6 @@
     - "build:{0}"
     - build:target_test
 
-build:integration_test:
-  labels:
-    - build
-  patterns:
-    - build_components
-    - build_system
-  included_in:
-    - build:target_test
-
-
 ####################
 # Target Test Jobs #
 ####################
@@ -171,23 +161,6 @@ build:integration_test:
     - "build:example_test-esp32c6"
     - "build:example_test-esp32h2"
     - "build:example_test"
-    - build:target_test
-
-"test:integration_test_{0}":
-  matrix:
-    - - wifi
-      - ble
-  labels:
-    - integration_test_{0}
-    - integration_test
-    - target_test
-  patterns:
-    - integration_test-{0}
-    - target_test-{0}
-    # - maybe others
-  included_in:
-    - test:integration_test
-    - build:integration_test
     - build:target_test
 
 "test:host_test":

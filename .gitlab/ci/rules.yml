@@ -112,22 +112,6 @@
 .patterns-component_ut-wifi: &patterns-component_ut-wifi
   - "components/esp_wifi/**/*"
 
-.patterns-integration_test-ble: &patterns-integration_test-ble
-  - "tools/ci/python_packages/gitlab_api.py"
-  - "tools/ci/integration_test/**/*"
-  - "components/bt/controller/lib_esp32"
-  - "components/bt/controller/lib_esp32c3_family"
-  - "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"
-  - "components/bt/host/nimble/nimble"
-  - "components/esp_phy/lib"
-  - "components/esp_coex/??[!s][!t]*/**/*"
-  - "components/esp_coex/???/**/*"
-  - "components/esp_coex/*"
-
-.patterns-integration_test-wifi: &patterns-integration_test-wifi
-  - "tools/ci/python_packages/gitlab_api.py"
-  - "tools/ci/integration_test/**/*"
-
 .patterns-build_macos: &patterns-build_macos
   - "tools/ci/test_configure_ci_environment.sh"
 
@@ -570,15 +554,6 @@
 
 .if-label-host_test: &if-label-host_test
   if: '$BOT_LABEL_HOST_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*host_test(?:,[^,\n\r]+)*$/i'
-
-.if-label-integration_test: &if-label-integration_test
-  if: '$BOT_LABEL_INTEGRATION_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test(?:,[^,\n\r]+)*$/i'
-
-.if-label-integration_test_ble: &if-label-integration_test_ble
-  if: '$BOT_LABEL_INTEGRATION_TEST_BLE || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test_ble(?:,[^,\n\r]+)*$/i'
-
-.if-label-integration_test_wifi: &if-label-integration_test_wifi
-  if: '$BOT_LABEL_INTEGRATION_TEST_WIFI || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test_wifi(?:,[^,\n\r]+)*$/i'
 
 .if-label-macos: &if-label-macos
   if: '$BOT_LABEL_MACOS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*macos(?:,[^,\n\r]+)*$/i'
@@ -1584,9 +1559,6 @@
     - <<: *if-label-example_test_esp32p4
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
-    - <<: *if-label-integration_test
-    - <<: *if-label-integration_test_ble
-    - <<: *if-label-integration_test_wifi
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
@@ -1634,10 +1606,6 @@
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
-    - <<: *if-dev-push
-      changes: *patterns-integration_test-ble
-    - <<: *if-dev-push
-      changes: *patterns-integration_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
