@@ -114,7 +114,6 @@ if(BOOTLOADER_BUILD)
 
     elseif(target STREQUAL "esp32c2")
         rom_linker_script("newlib")
-        rom_linker_script("mbedtls")
 
     elseif(target STREQUAL "esp32c6")
         rom_linker_script("newlib")
@@ -230,7 +229,10 @@ else() # Regular app build
     elseif(target STREQUAL "esp32c2")
         rom_linker_script("newlib")
         rom_linker_script("version")
-        rom_linker_script("mbedtls")
+
+        if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+            rom_linker_script("mbedtls")
+        endif()
 
         if(CONFIG_NEWLIB_NANO_FORMAT)
             # nano formatting functions in ROM are also built for 64-bit time_t.
