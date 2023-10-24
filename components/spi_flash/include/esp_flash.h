@@ -172,6 +172,8 @@ esp_err_t esp_flash_get_physical_size(esp_flash_t *chip, uint32_t *flash_size);
 
 /** @brief Read flash unique ID via the common "RDUID" SPI flash command.
  *
+ * @note This is an optional feature, which is not supported on all flash chips. READ PROGRAMMING GUIDE FIRST!
+ *
  * @param chip Pointer to identify flash chip. Must have been successfully initialised via esp_flash_init().
  * @param[out] out_id Pointer to receive unique ID value.
  *

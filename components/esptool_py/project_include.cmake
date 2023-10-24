@@ -15,7 +15,7 @@ set(ESPMKUF2 ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
 set(ESPTOOLPY_CHIP "${chip_model}")
 
 if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
-    if(CONFIG_SPI_FLASH_HPM_ENABLE)
+    if(CONFIG_BOOTLOADER_FLASH_DC_AWARE)
     # When set flash frequency to 120M, must keep 1st bootloader work under ``DOUT`` mode
     # because on some flash chips, 120M will modify the status register,
     # which will make ROM won't work.

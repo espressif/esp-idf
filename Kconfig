@@ -587,7 +587,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
             Current experimental feature list:
 
-            - CONFIG_ESPTOOLPY_FLASHFREQ_120M
-            - CONFIG_SPIRAM_SPEED_120M
-            - CONFIG_SPI_FLASH_QUAD_32BIT_ADDR_ENABLE
+            - CONFIG_ESPTOOLPY_FLASHFREQ_120M && CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+            - CONFIG_SPIRAM_SPEED_120M && CONFIG_SPIRAM_MODE_OCT
+            - CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
             - CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL
