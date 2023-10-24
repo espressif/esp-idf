@@ -153,12 +153,15 @@ To enhance the capabilities of the ULP LP-Core coprocessor, it has access to per
 
  * LP IO
  * LP I2C
+ * LP UART
 
 Application Examples
 --------------------
 
-* ULP LP-Core Coprocessor polls GPIO while main CPU is in deep sleep: :example:`system/ulp/lp_core/gpio`.
-* ULP LP-Core Coprocessor reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met: :example:`system/ulp/lp_core/lp_i2c`.
+* :example:`system/ulp/lp_core/gpio` polls GPIO while main CPU is in deep sleep.
+* :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+* :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver from the LP core.
+* :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
 
 API Reference
 -------------
@@ -168,6 +171,7 @@ Main CPU API Reference
 
 .. include-build-file:: inc/ulp_lp_core.inc
 .. include-build-file:: inc/lp_core_i2c.inc
+.. include-build-file:: inc/lp_core_uart.inc
 
 LP Core API Reference
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -175,3 +179,5 @@ LP Core API Reference
 .. include-build-file:: inc/ulp_lp_core_utils.inc
 .. include-build-file:: inc/ulp_lp_core_gpio.inc
 .. include-build-file:: inc/ulp_lp_core_i2c.inc
+.. include-build-file:: inc/ulp_lp_core_uart.inc
+.. include-build-file:: inc/ulp_lp_core_print.inc
