@@ -15,20 +15,20 @@ The previous GCC version was GCC 12.2.0. This has now been upgraded to GCC 13.2.
 Common Porting Problems and Fixes
 =================================
 
-stdio.h No Longer Includes sys/types.h
---------------------------------------
+``stdio.h`` No Longer Includes ``sys/types.h``
+-------------------------------------------------
 
-Issue:
+Issue
 ^^^^^^
 
-Compile errors may occur in code that previously worked with the old toolchain. For example:
+Compilation errors may occur in code that previously worked with the old toolchain. For example:
 
 .. code-block:: c
 
     #include <stdio.h>
     clock_t var; // error: expected specifier-qualifier-list before 'clock_t'
 
-Solution:
+Solution
 ^^^^^^^^^
 
 To resolve this issue, the correct header must be included. Refactor the code like this:
