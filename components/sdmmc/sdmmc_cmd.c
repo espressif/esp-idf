@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
 #include "esp_timer.h"
 #include "sdmmc_common.h"
 
@@ -19,15 +20,15 @@ esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd)
     }
 
     int slot = card->host.slot;
-    ESP_LOGV(TAG, "sending cmd slot=%d op=%d arg=%x flags=%x data=%p blklen=%d datalen=%d timeout=%d",
-            slot, cmd->opcode, cmd->arg, cmd->flags, cmd->data, cmd->blklen, cmd->datalen, cmd->timeout_ms);
+    ESP_LOGV(TAG, "sending cmd slot=%d op=%" PRIu32 " arg=%" PRIx32 " flags=%x data=%p blklen=%" PRIu32 " datalen=%" PRIu32 " timeout=%" PRIu32,
+            slot, cmd->opcode, cmd->arg, cmd->flags, cmd->data, (uint32_t) cmd->blklen, (uint32_t) cmd->datalen, cmd->timeout_ms);
     esp_err_t err = (*card->host.do_transaction)(slot, cmd);
     if (err != 0) {
-        ESP_LOGD(TAG, "cmd=%d, sdmmc_req_run returned 0x%x", cmd->opcode, err);
+        ESP_LOGD(TAG, "cmd=%" PRIu32 ", sdmmc_req_run returned 0x%x", cmd->opcode, err);
         return err;
     }
     int state = MMC_R1_CURRENT_STATE(cmd->response);
-    ESP_LOGV(TAG, "cmd response %08x %08x %08x %08x err=0x%x state=%d",
+    ESP_LOGV(TAG, "cmd response %08" PRIx32 " %08" PRIx32 " %08" PRIx32 " %08" PRIx32 " err=0x%x state=%d",
                cmd->response[0],
                cmd->response[1],
                cmd->response[2],
@@ -481,7 +482,7 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
             return err;
         }
         if (++count % 16 == 0) {
-            ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
+            ESP_LOGV(TAG, "waiting for card to become ready (%" PRIu32 ")", (uint32_t) count);
         }
     }
     /* SPI mode: although card busy indication is based on the busy token,
@@ -496,12 +497,12 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
             return err;
         }
         if (status & SD_SPI_R2_CARD_LOCKED) {
-            ESP_LOGE(TAG, "%s: write failed, card is locked: r2=0x%04x",
+            ESP_LOGE(TAG, "%s: write failed, card is locked: r2=0x%04" PRIx32,
                      __func__, status);
             return ESP_ERR_INVALID_STATE;
         }
         if (status != 0) {
-            ESP_LOGE(TAG, "%s: card status indicates an error after write operation: r2=0x%04x",
+            ESP_LOGE(TAG, "%s: card status indicates an error after write operation: r2=0x%04" PRIx32,
                      __func__, status);
             return ESP_ERR_INVALID_RESPONSE;
         }
@@ -687,7 +688,7 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
             return err;
         }
         if (status != 0) {
-            ESP_LOGE(TAG, "%s: card status indicates an error after erase operation: r2=0x%04x",
+            ESP_LOGE(TAG, "%s: card status indicates an error after erase operation: r2=0x%04" PRIx32,
                      __func__, status);
             return ESP_ERR_INVALID_RESPONSE;
         }

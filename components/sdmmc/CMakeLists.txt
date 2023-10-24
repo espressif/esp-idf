@@ -13,5 +13,3 @@ idf_component_register(SRCS "sdmmc_cmd.c"
                     INCLUDE_DIRS include
                     REQUIRES driver
                     PRIV_REQUIRES soc esp_timer)
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

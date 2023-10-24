@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <inttypes.h>
 #include <unistd.h>
 #include "sdmmc_common.h"
 
@@ -298,7 +299,7 @@ uint32_t sdmmc_mmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_
     /* TODO: calculate erase timeout based on ext_csd (trim_timeout) */
     uint32_t timeout_ms = SDMMC_SD_DISCARD_TIMEOUT * erase_size_kb / card->csd.sector_size;
     timeout_ms = MAX(1000, timeout_ms);
-    ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, %ums per sector)",
-             __func__, timeout_ms / 1000, erase_size_kb, SDMMC_SD_DISCARD_TIMEOUT);
+    ESP_LOGD(TAG, "%s: erase timeout %" PRIu32 " s (erasing %" PRIu32 " kB, %" PRIu32 " ms per sector)",
+             __func__, (uint32_t) (timeout_ms / 1000), (uint32_t) erase_size_kb, (uint32_t) SDMMC_SD_DISCARD_TIMEOUT);
     return timeout_ms;
 }

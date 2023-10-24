@@ -9,5 +9,3 @@ idf_component_register(SRCS "Partition.cpp"
                     PRIV_INCLUDE_DIRS private_include
                     REQUIRES esp_partition
                     PRIV_REQUIRES spi_flash)
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

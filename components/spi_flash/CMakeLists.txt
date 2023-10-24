@@ -71,5 +71,4 @@ if(NOT BOOTLOADER_BUILD AND NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         # will be replaced with MMU requirements
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()
