@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,3 +23,7 @@
 */
 
 #pragma once
+
+// No meaning to define GPIO number for Linux target, only to avoid build warning on Kconfig ESP_CONSOLE_UART_TX_GPIO, ESP_CONSOLE_UART_RX_GPIO
+#define SOC_GPIO_IN_RANGE_MAX           (65535)
+#define SOC_GPIO_OUT_RANGE_MAX          (65535)
