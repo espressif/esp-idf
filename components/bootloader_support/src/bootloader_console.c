@@ -38,6 +38,7 @@ void bootloader_console_init(void)
 void bootloader_console_init(void)
 {
     const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
+    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused)); // To avoid build errors/warnings about __DECLARE_RCC_ATOMIC_ENV
 
     // Install rom uart printf as console.
     esp_rom_install_uart_printf();
@@ -59,8 +60,8 @@ void bootloader_console_init(void)
             uart_tx_gpio != UART_NUM_0_TXD_DIRECT_GPIO_NUM ||
             uart_rx_gpio != UART_NUM_0_RXD_DIRECT_GPIO_NUM) {
         // Change default UART pins back to GPIOs
-        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, PIN_FUNC_GPIO);
-        gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[UART_NUM_0_RXD_DIRECT_GPIO_NUM], PIN_FUNC_GPIO);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[UART_NUM_0_TXD_DIRECT_GPIO_NUM], PIN_FUNC_GPIO);
         // Route GPIO signals to/from pins
         const uint32_t tx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX);
         const uint32_t rx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX);
@@ -71,7 +72,11 @@ void bootloader_console_init(void)
         esp_rom_gpio_connect_in_signal(uart_rx_gpio, rx_idx, 0);
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[uart_tx_gpio], PIN_FUNC_GPIO);
         // Enable the peripheral
-        periph_ll_enable_clk_clear_rst(PERIPH_UART0_MODULE + uart_num);
+        uart_ll_enable_bus_clock(uart_num, true);
+        uart_ll_reset_register(uart_num);
+        // Reset TX and RX FIFOs
+        uart_ll_txfifo_rst(UART_LL_GET_HW(uart_num));
+        uart_ll_rxfifo_rst(UART_LL_GET_HW(uart_num));
     }
 #endif // CONFIG_ESP_CONSOLE_UART_CUSTOM
 
@@ -80,7 +85,6 @@ void bootloader_console_init(void)
 #if ESP_ROM_UART_CLK_IS_XTAL
     clock_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ; // From esp32-s3 on, UART clk source is selected to XTAL in ROM
 #endif
-    int __DECLARE_RCC_ATOMIC_ENV __attribute__ ((unused)); // To avoid build errors/warnings about __DECLARE_RCC_ATOMIC_ENV
     esp_rom_uart_set_clock_baudrate(uart_num, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 }
 #endif // CONFIG_ESP_CONSOLE_UART
