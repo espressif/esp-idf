@@ -2,3 +2,11 @@
 # This file is auto-generated from SoC caps
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
+
+config SOC_GPIO_IN_RANGE_MAX
+    int
+    default 65535
+
+config SOC_GPIO_OUT_RANGE_MAX
+    int
+    default 65535

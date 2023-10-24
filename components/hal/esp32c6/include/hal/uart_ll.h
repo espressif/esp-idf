@@ -266,25 +266,6 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 }
 
 /**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    if ((hw) != &LP_UART) {
-        UART_LL_PCR_REG_SET(hw, conf, rst_en, core_rst_en);
-    } else {
-        // LP_UART reset shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
-        abort();
-    }
-}
-
-/**
  * @brief  Enable the UART clock.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -297,7 +278,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
         UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 1);
     } else {
         // LP_UART clk_en shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Needs to be protected with a lock, therefore, it has its unique LL function
         abort();
     }
 }
@@ -315,7 +296,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
         UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 0);
     } else {
         // LP_UART clk_en shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Needs to be protected with a lock, therefore, it has its unique LL function
         abort();
     }
 }
@@ -350,7 +331,7 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
         UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, sel_value);
     } else {
         // LP_UART clk_sel shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Needs to be protected with a lock, therefore, it has its unique LL function
         abort();
     }
 }
