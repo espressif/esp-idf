@@ -94,7 +94,7 @@ typedef enum {
  */
 static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2c_hal_clk_config_t *clk_cal)
 {
-    uint32_t clkm_div = source_clk / (bus_freq * 1024) +1;
+    uint32_t clkm_div = source_clk / (bus_freq * 1024) + 1;
     uint32_t sclk_freq = source_clk / clkm_div;
     uint32_t half_cycle = sclk_freq / bus_freq / 2;
     //SCL
@@ -103,7 +103,7 @@ static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_f
     // default, scl_wait_high < scl_high
     // Make 80KHz as a boundary here, because when working at lower frequency, too much scl_wait_high will faster the frequency
     // according to some hardware behaviors.
-    clk_cal->scl_wait_high = (bus_freq >= 80*1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
+    clk_cal->scl_wait_high = (bus_freq >= 80 * 1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
     clk_cal->scl_high = half_cycle - clk_cal->scl_wait_high;
     clk_cal->sda_hold = half_cycle / 4;
     clk_cal->sda_sample = half_cycle / 2;
@@ -142,7 +142,7 @@ static inline void i2c_ll_update(i2c_dev_t *hw)
 static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_config_t *bus_cfg)
 {
     if (hw == &I2C0) {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl10, reg_i2c0_clk_div_num, bus_cfg->clkm_div - 1);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl10, reg_i2c0_clk_div_num, bus_cfg->clkm_div - 1);
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl10, reg_i2c0_clk_div_numerator, 0);
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl10, reg_i2c0_clk_div_denominator, 0);
     } else if (hw == &I2C1) {
@@ -581,7 +581,7 @@ static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *h
 __attribute__((always_inline))
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_t len)
 {
-    for (int i = 0; i< len; i++) {
+    for (int i = 0; i < len; i++) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->data, fifo_rdata, ptr[i]);
     }
 }
@@ -598,7 +598,7 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_
 __attribute__((always_inline))
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
-    for(int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         ptr[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->data, fifo_rdata);
     }
 }
@@ -610,14 +610,11 @@ static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
  * @param  len Amount of data needs to be writen
- *
- * @return None.
  */
 static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, const uint8_t *ptr, uint8_t len)
 {
-    uint32_t *fifo_addr = (uint32_t *)&hw->txfifo_start_addr;
     for (int i = 0; i < len; i++) {
-        fifo_addr[i + ram_offset] = ptr[i];
+        hw->txfifo_mem[i + ram_offset] = ptr[i];
     }
 }
 
@@ -628,15 +625,11 @@ static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, co
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
  * @param  len Amount of data needs read
- *
- * @return None
  */
 static inline void i2c_ll_read_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, uint8_t *ptr, uint8_t len)
 {
-    uint32_t *fifo_addr = (uint32_t *)&hw->rxfifo_start_addr;
-
     for (int i = 0; i < len; i++) {
-        ptr[i] = fifo_addr[i + ram_offset];
+        ptr[i] = hw->rxfifo_mem[i + ram_offset];
     }
 }
 
@@ -748,9 +741,9 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_c
 {
     // src_clk : (1) for RTC_CLK, (0) for XTAL
     if (hw == &I2C0) {
-        HP_SYS_CLKRST.peri_clk_ctrl10.reg_i2c0_clk_src_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1: 0;
+        HP_SYS_CLKRST.peri_clk_ctrl10.reg_i2c0_clk_src_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
     } else if (hw == &I2C1) {
-        HP_SYS_CLKRST.peri_clk_ctrl10.reg_i2c1_clk_src_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1: 0;
+        HP_SYS_CLKRST.peri_clk_ctrl10.reg_i2c1_clk_src_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
     } else if (hw == &LP_I2C) {
         // Do nothing
         return;
@@ -834,7 +827,6 @@ static inline volatile void *i2c_ll_get_interrupt_status_reg(i2c_dev_t *dev)
 {
     return &dev->int_status;
 }
-
 
 /**
  * @brief Enable I2C slave clock stretch.
