@@ -276,6 +276,15 @@ menu "Memory Settings"
         help
                 Dynamic memory size of block 2
 
+    config BT_NIMBLE_MSYS_BUF_FROM_HEAP
+        bool "Get Msys Mbuf from heap"
+        default y
+        depends on BT_LE_MSYS_INIT_IN_CONTROLLER
+        help
+            This option sets the source of the shared msys mbuf memory between
+            the Host and the Controller. Allocate the memory from the heap if
+            this option is sets, from the mempool otherwise.
+
     config BT_NIMBLE_TRANSPORT_ACL_FROM_LL_COUNT
         int "ACL Buffer count"
         depends on BT_NIMBLE_ENABLED
