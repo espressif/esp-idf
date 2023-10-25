@@ -453,44 +453,48 @@ macro(project project_name)
 
     set(extra_project_args "LANGUAGES;C;CXX;ASM")
 
-    set(LANGUAGES_POS -1)
-    string(FIND "${ARGV}" "LANGUAGES" LANGUAGES_POS)
-    if (LANGUAGES_POS GREATER 0)
-        # LANGUAGES definition from top level CMakeFile.txt exists
-        string(SUBSTRING "${ARGV}" 0 ${LANGUAGES_POS} ARGV_PREFIX)
-        string(SUBSTRING "${ARGV}" ${LANGUAGES_POS} -1 ARGV_SUB)
-        # ARGV_SUB is "LANGUAGES X Y Z and the rest", just remove what we specify
+    set(LANGUAGES_pos -1)
+    string(FIND "${ARGV}" "LANGUAGES" LANGUAGES_pos)
+    if (LANGUAGES_pos GREATER 0)
+        # LANGUAGES definition from the project level CMakeLists.txt exists, split ARGV at that position
 
-        # the C definition is tricky, as it also conflicts with CSharp, CXX etc..
-        # so remove the definit option (;C; covers most, ;C at the end covers a special case.
-        # ;C theoretically could be a DESCRITION or the like too, but unlikly
-        string(REPLACE ";C;" ";" ARGV_SUB "${ARGV_SUB}")
-        string(LENGTH "${ARGV_SUB}" _C_LEN)
-        math(EXPR _C_END_POS "${_C_LEN} - 2" OUTPUT_FORMAT DECIMAL)
-        string(FIND "${ARGV_SUB}" ";C" _C_POS REVERSE) #special case ;C at the end
-        if( _C_POS GREATER_EQUAL _C_END_POS )
+        string(SUBSTRING "${ARGV}" 0 ${LANGUAGES_pos} ARGV_prefix)
+        string(SUBSTRING "${ARGV}" ${LANGUAGES_pos} -1 ARGV_languages)
+        # ARGV_languages contains "LANGUAGES;X;Y;Z now and anything following it"
+        # just remove the languages we want to default set here via ${extra_project_args}
+
+        # ;C is tricky
+        # as it also conflicts with CSharp, CXX etc..
+        # replace ';C;' with ';' covers most cases, remove ';C' at the end covers a special case.
+        # unhandled caveat: removeing ';C' could
+        # also remove from a DESCRITION or any other following part, but unlikely enough
+        string(REPLACE ";C;" ";" ARGV_languages "${ARGV_languages}")
+        string(LENGTH "${ARGV_languages}" _ARGV_languages_len)
+        math(EXPR _C_end_pos "${_ARGV_languages_len} - 2" OUTPUT_FORMAT DECIMAL)
+        string(FIND "${ARGV_languages}" ";C" _C_pos REVERSE) #special case ;C at the end
+        if( _C_pos GREATER_EQUAL _C_end_pos )
             # C; present at the end
-            string(REPLACE ";C" "" ARGV_SUB "${ARGV_SUB}")
+            string(REPLACE ";C" "" ARGV_languages "${ARGV_languages}")
         endif()
 
         # ;CXX is unique enough
-        string(REPLACE ";CXX" "" ARGV_SUB "${ARGV_SUB}")
+        string(REPLACE ";CXX" "" ARGV_languages "${ARGV_languages}")
 
         # ;ASM is unique enough
-        string(REPLACE ";ASM" "" ARGV_SUB "${ARGV_SUB}")
+        string(REPLACE ";ASM" "" ARGV_languages "${ARGV_languages}")
 
         #last, remove the LANGUAGES keyword, which we specify ourselves, leave ; , might already be gone
-        string(REPLACE "LANGUAGES;" "" ARGV_SUB "${ARGV_SUB}")
-        string(REPLACE "LANGUAGES" "" ARGV_SUB "${ARGV_SUB}")
+        string(REPLACE "LANGUAGES;" "" ARGV_languages "${ARGV_languages}")
+        string(REPLACE "LANGUAGES" "" ARGV_languages "${ARGV_languages}")
 
-        set(ARGV_PROJECT "${ARGV_PREFIX};${ARGV_EXT};${ARGV_SUB}")
+        set(ARGV_project "${ARGV_prefix};${extra_project_args};${ARGV_languages}")
     else()
-        # no LANGUAGES definition from top CMakeFile.txt
-        set(ARGV_PROJECT "${ARGV};${ARGV_EXT}")
+        # no LANGUAGES definition from the project level CMakeList.txt
+        set(ARGV_project "${ARGV};${extra_project_args}")
     endif()
 
     # The actual call to project()
-    __project(${ARGV_PROJECT})
+    __project(${ARGV_project})
 
     # Generate compile_commands.json (needs to come after project call).
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -546,7 +550,7 @@ macro(project project_name)
     #
     # PROJECT_NAME is taken from the passed name from project() call
     # PROJECT_DIR is set to the current directory
-    # PROJECT_VER is from the version text or the CMakeFile or git revision of the current repo
+    # PROJECT_VER is from the version text or the CMakeLists.txt or git revision of the current repo
 
     # SDKCONFIG_DEFAULTS environment variable may specify a file name relative to the root of the project.
     # When building the bootloader, ignore this variable, since:
