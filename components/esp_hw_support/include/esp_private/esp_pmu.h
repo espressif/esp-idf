@@ -41,31 +41,64 @@ extern "C" {
 #else
 #define RTC_EXT0_TRIG_EN            0
 #endif
+
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
 #define RTC_EXT1_TRIG_EN            PMU_EXT1_WAKEUP_EN      //!< EXT1 wakeup
+#else
+#define RTC_EXT1_TRIG_EN            0
 #endif
+
 #define RTC_GPIO_TRIG_EN            PMU_GPIO_WAKEUP_EN      //!< GPIO wakeup
+
+#if SOC_LP_TIMER_SUPPORTED
 #define RTC_TIMER_TRIG_EN           PMU_LP_TIMER_WAKEUP_EN  //!< Timer wakeup
+#else
+#define RTC_TIMER_TRIG_EN           0
+#endif
+
+#if SOC_WIFI_SUPPORTED
 #define RTC_WIFI_TRIG_EN            PMU_WIFI_SOC_WAKEUP_EN  //!< WIFI wakeup (light sleep only)
+#else
+#define RTC_WIFI_TRIG_EN            0
+#endif
+
+#if SOC_UART_SUPPORT_WAKEUP_INT
 #define RTC_UART0_TRIG_EN           PMU_UART0_WAKEUP_EN     //!< UART0 wakeup (light sleep only)
 #define RTC_UART1_TRIG_EN           PMU_UART1_WAKEUP_EN     //!< UART1 wakeup (light sleep only)
+#else
+#define RTC_UART0_TRIG_EN           0
+#define RTC_UART1_TRIG_EN           0
+#endif
+
+#if SOC_BT_SUPPORTED
 #define RTC_BT_TRIG_EN              PMU_BLE_SOC_WAKEUP_EN   //!< BT wakeup (light sleep only)
+#else
+#define RTC_BT_TRIG_EN              0
+#endif
+
 #define RTC_USB_TRIG_EN             PMU_USB_WAKEUP_EN
+
 #if SOC_LP_CORE_SUPPORTED
 #define RTC_LP_CORE_TRIG_EN         PMU_LP_CORE_WAKEUP_EN   //!< LP core wakeup
+#else
+#define RTC_LP_CORE_TRIG_EN         0
 #endif //SOC_LP_CORE_SUPPORTED
+
 #define RTC_XTAL32K_DEAD_TRIG_EN    0 // TODO
 #define RTC_BROWNOUT_DET_TRIG_EN    0 // TODO
 
 /**
  * RTC_SLEEP_REJECT_MASK records sleep reject sources supported by chip
  */
-#define RTC_SLEEP_REJECT_MASK (RTC_GPIO_TRIG_EN         | \
+#define RTC_SLEEP_REJECT_MASK (RTC_EXT0_TRIG_EN         | \
+                               RTC_EXT1_TRIG_EN         | \
+                               RTC_GPIO_TRIG_EN         | \
                                RTC_TIMER_TRIG_EN        | \
                                RTC_WIFI_TRIG_EN         | \
                                RTC_UART0_TRIG_EN        | \
                                RTC_UART1_TRIG_EN        | \
                                RTC_BT_TRIG_EN           | \
+                               RTC_LP_CORE_TRIG_EN      | \
                                RTC_XTAL32K_DEAD_TRIG_EN | \
                                RTC_USB_TRIG_EN          | \
                                RTC_BROWNOUT_DET_TRIG_EN)
