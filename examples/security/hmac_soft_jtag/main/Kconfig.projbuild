@@ -1,0 +1,13 @@
+menu "Example Configuration"
+
+    config EXAMPLE_JTAG_SEC_HMAC_EFUSE_KEY_ID
+        int "eFuse key ID storing the HMAC key"
+        range -1 5
+        default -1
+        help
+            The eFuse block key ID stores the HMAC key necessary for deriving token data to enable JTAG access.
+
+            Note: If set to -1, the system will attempt to use the first found keys with the purpose
+            either HMAC_DOWN_ALL or HMAC_DOWN_JTAG.
+
+endmenu

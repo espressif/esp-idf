@@ -6,6 +6,17 @@ examples/security/flash_encryption:
       temporary: true
       reason: lack of runners
 
+examples/security/hmac_soft_jtag:
+  disable:
+    - if: SOC_HMAC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32c6"]
+      reason: sufficient to test on one HMAC-capable chip
+  depends_components:
+    - esp_hw_support
+  depends_filepatterns:
+    - examples/security/hmac_soft_jtag/**/*
+
 examples/security/nvs_encryption_hmac:
   disable:
     - if: SOC_HMAC_SUPPORTED != 1
