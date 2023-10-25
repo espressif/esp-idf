@@ -451,7 +451,7 @@ macro(project project_name)
     # LANGUAGES usually to be last topic in ARGV list, so we simply kill all the parts we also specify,
     # and append the remainder
 
-    set(ARGV_EXT "LANGUAGES;C;CXX;ASM")
+    set(extra_project_args "LANGUAGES;C;CXX;ASM")
 
     set(LANGUAGES_POS -1)
     string(FIND "${ARGV}" "LANGUAGES" LANGUAGES_POS)
