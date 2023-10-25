@@ -310,8 +310,7 @@ static inline void i2c_ll_slave_broadcast_enable(i2c_dev_t *hw, bool broadcast_e
 __attribute__((always_inline))
 static inline void i2c_ll_slave_get_stretch_cause(i2c_dev_t *hw, i2c_slave_stretch_cause_t *stretch_cause)
 {
-    switch (hw->sr.stretch_cause)
-    {
+    switch (hw->sr.stretch_cause) {
     case 0:
         *stretch_cause = I2C_SLAVE_STRETCH_CAUSE_ADDRESS_MATCH;
         break;
@@ -628,14 +627,11 @@ static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
  * @param  len Amount of data needs to be writen
- *
- * @return None.
  */
 static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, const uint8_t *ptr, uint8_t len)
 {
-    uint32_t *fifo_addr = (uint32_t *)&hw->txfifo_start_addr;
     for (int i = 0; i < len; i++) {
-        fifo_addr[i + ram_offset] = ptr[i];
+        hw->txfifo_mem[i + ram_offset] = ptr[i];
     }
 }
 
@@ -646,15 +642,11 @@ static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, co
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
  * @param  len Amount of data needs read
- *
- * @return None
  */
 static inline void i2c_ll_read_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, uint8_t *ptr, uint8_t len)
 {
-    uint32_t *fifo_addr = (uint32_t *)&hw->rxfifo_start_addr;
-
     for (int i = 0; i < len; i++) {
-        ptr[i] = fifo_addr[i + ram_offset];
+        ptr[i] = hw->rxfifo_mem[i + ram_offset];
     }
 }
 
