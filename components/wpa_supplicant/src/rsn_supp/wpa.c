@@ -662,6 +662,7 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     u8 *kde, *kde_buf = NULL;
     size_t kde_len;
 
+#ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
     if (is_wpa2_enterprise_connection()) {
         wpa2_ent_eap_state_t state = eap_client_get_eap_state();
         if (state == WPA2_ENT_EAP_STATE_IN_PROGRESS) {
@@ -670,6 +671,7 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
             return;
         }
     }
+#endif
 
     wpa_sm_set_state(WPA_FIRST_HALF_4WAY_HANDSHAKE);
 
