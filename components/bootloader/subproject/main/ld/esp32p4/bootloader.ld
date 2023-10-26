@@ -9,9 +9,9 @@
  *  Make sure the bootloader can load into main memory without overwriting itself.
  *
  *  ESP32-P4 ROM static data usage is as follows:
- *  - 0x4086ad08 - 0x4087c610: Shared buffers, used in UART/USB/SPI download mode only
- *  - 0x4087c610 - 0x4087e610: CPU1 stack, can be reclaimed as heap after RTOS startup
- *  - 0x4087e610 - 0x40880000: ROM .bss and .data (not easily reclaimable)
+ *  - 0x4ff296b8 - 0x4ff3afc0: Shared buffers, used in UART/USB/SPI download mode only
+ *  - 0x4ff3afc0 - 0x4ff3fba4: CPU1 stack, can be reclaimed as heap after RTOS startup
+ *  - 0x4ff3fba4 - 0x4ff40000: ROM .bss and .data (not easily reclaimable)
  *
  *  The 2nd stage bootloader can take space up to the end of ROM shared
  *  buffers area (0x4087c610).
@@ -217,34 +217,38 @@ SECTIONS
 /**
  *  Appendix: Memory Usage of ROM bootloader
  *
- * 0x4086ad08 ------------------> _dram0_0_start
+ * 0x4ff296b8 ------------------> _dram0_0_start
  *            |               |
  *            |               |
  *            |               |   1. Large buffers that are only used in certain boot modes, see shared_buffers.h
  *            |               |
  *            |               |
- * 0x4087c610 ------------------> __stack_sentry
+ * 0x4ff3afc0 ------------------> __stack_sentry
  *            |               |
  *            |               |   2. Startup pro cpu stack (freed when IDF app is running)
  *            |               |
- * 0x4087e610 ------------------> __stack (pro cpu)
+ * 0x4ff3cfc0 ------------------> __stack (pro cpu)
+ *            |               |
+ *            |               |      Startup app cpu stack
+ *            |               |
+ * 0x4ff3efc0 ------------------> __stack_app (app cpu)
  *            |               |
  *            |               |
  *            |               |   3. Shared memory only used in startup code or nonos/early boot*
  *            |               |      (can be freed when IDF runs)
  *            |               |
  *            |               |
- * 0x4087f564 ------------------> _dram0_rtos_reserved_start
+ * 0x4ff3fba4 ------------------> _dram0_rtos_reserved_start
  *            |               |
  *            |               |
  *            |               |   4. Shared memory used in startup code and when IDF runs
  *            |               |
  *            |               |
- * 0x4087fab0 ------------------> _dram0_rtos_reserved_end
+ * 0x4ff3ff94 ------------------> _dram0_rtos_reserved_end
  *            |               |
- * 0x4087fce8 ------------------> _data_start_interface
+ * 0x4ff3ffc8 ------------------> _data_start_interface
  *            |               |
  *            |               |   5. End of DRAM is the 'interface' data with constant addresses (ECO compatible)
  *            |               |
- * 0x40880000 ------------------> _data_end_interface
+ * 0x4ff40000 ------------------> _data_end_interface
  */
