@@ -197,10 +197,10 @@ static inline uint32_t sdmmc_ll_get_card_clock_div(sdmmc_dev_t *hw, uint32_t slo
     uint32_t card_div = 0;
 
     if (slot == 0) {
-        HAL_ASSERT(hw->clksrc.card0 = 0);
+        HAL_ASSERT(hw->clksrc.card0 == 0);
         card_div = hw->clkdiv.div0;
     } else if (slot == 1) {
-        HAL_ASSERT(hw->clksrc.card1 = 1);
+        HAL_ASSERT(hw->clksrc.card1 == 1);
         card_div = hw->clkdiv.div1;
     } else {
         HAL_ASSERT(false);
