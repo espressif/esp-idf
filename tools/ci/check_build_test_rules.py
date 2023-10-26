@@ -481,6 +481,7 @@ if __name__ == '__main__':
                 )
 
         if arg.action == 'check-readmes':
+            os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
             os.environ['NIGHTLY_RUN'] = '1'
             check_readme(
                 list(check_dirs),
@@ -489,6 +490,7 @@ if __name__ == '__main__':
             )
         elif arg.action == 'check-test-scripts':
             os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
+            os.environ['NIGHTLY_RUN'] = '1'
             check_test_scripts(
                 list(check_dirs),
                 exclude_dirs=_exclude_dirs,

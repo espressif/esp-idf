@@ -20,8 +20,7 @@ def get_uart_msgs(i: int) -> List[str]:
             'uart_select_example: {} bytes were received through UART1: {}'.format(len(msg), msg)]
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 def test_examples_select(dut: Dut) -> None:
 

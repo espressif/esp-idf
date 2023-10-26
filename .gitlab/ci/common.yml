@@ -92,6 +92,7 @@ variables:
 
   if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)include_nightly_run(,|$)"; then
     export INCLUDE_NIGHTLY_RUN="1"
+    export NIGHTLY_RUN="1"
   fi
 
   # configure cmake related flags
