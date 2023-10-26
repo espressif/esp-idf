@@ -49,7 +49,7 @@ static void test_master(void)
         mst_tx_buf[i] = heap_caps_calloc(TEST_BUF_SIZE, 1, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         mst_rx_buf[i] = heap_caps_calloc(TEST_BUF_SIZE, 1, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         slv_tx_buf[i] = heap_caps_calloc(TEST_BUF_SIZE, 1, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-        get_tx_buffer(test_seed, mst_tx_buf[i], slv_tx_buf[i], TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(test_seed, mst_tx_buf[i], slv_tx_buf[i], TEST_BUF_SIZE);
     }
 
     //Trans0
@@ -133,7 +133,7 @@ static void test_slave(void)
         slv_tx_buf[i] = heap_caps_calloc(TEST_BUF_SIZE, 1, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         slv_rx_buf[i] = heap_caps_calloc(TEST_BUF_SIZE, 1, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         mst_tx_buf[i] = heap_caps_calloc(TEST_BUF_SIZE, 1, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-        get_tx_buffer(test_seed, mst_tx_buf[i], slv_tx_buf[i], TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(test_seed, mst_tx_buf[i], slv_tx_buf[i], TEST_BUF_SIZE);
     }
 
     spi_slave_transaction_t trans[TEST_TIMES] = {};

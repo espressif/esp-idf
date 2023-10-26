@@ -105,7 +105,8 @@ ENV_MARKERS = {
     'wifi_two_dut': 'tests should be run on runners which has two wifi duts connected.',
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',
-    'sdio_master_slave': 'Test sdio multi board.',
+    'sdio_master_slave': 'Test sdio multi board, esp32+esp32',
+    'sdio_multidev_32_c6': 'Test sdio multi board, esp32+esp32c6',
 }
 
 

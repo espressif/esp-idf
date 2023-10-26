@@ -12,6 +12,7 @@
 #include "test_spi_utils.h"
 #include "soc/spi_periph.h"
 #include "esp_serial_slave_link/essl_spi.h"
+#include "test_dualboard_utils.h"
 
 #if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #include "driver/spi_slave_hd.h"
@@ -649,7 +650,7 @@ static void hd_master(void)
     WORD_ALIGNED_ATTR uint8_t *master_recv_buf = calloc(1, send_buf_size * 2);
     //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_slave`` does.
     WORD_ALIGNED_ATTR uint8_t *slave_send_buf = malloc(send_buf_size * 2);
-    get_tx_buffer(199, master_send_buf, slave_send_buf, send_buf_size * 2);
+    test_fill_random_to_buffers_dualboard(199, master_send_buf, slave_send_buf, send_buf_size * 2);
 
     //This is the same as the ``hd_slave`` sets.
     int trans_len[] = {5, send_buf_size};
@@ -700,7 +701,7 @@ static void hd_slave(void)
     WORD_ALIGNED_ATTR uint8_t *slave_recv_buf = calloc(1, send_buf_size * 2);
     //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_master`` does.
     WORD_ALIGNED_ATTR uint8_t *master_send_buf = malloc(send_buf_size * 2);
-    get_tx_buffer(199, master_send_buf, slave_send_buf, send_buf_size * 2);
+    test_fill_random_to_buffers_dualboard(199, master_send_buf, slave_send_buf, send_buf_size * 2);
 
     //make the first transaction shorter than the actual trans length of the master, so that the second one will be loaded while the master is still doing the first transaction.
     int trans_len[] = {5, send_buf_size};
@@ -793,7 +794,7 @@ static void hd_master_quad(void)
     WORD_ALIGNED_ATTR uint8_t *master_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
     //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_slave`` does.
     WORD_ALIGNED_ATTR uint8_t *slave_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
-    get_tx_buffer(199, master_send_buf, slave_send_buf, BUF_SIZE);
+    test_fill_random_to_buffers_dualboard(199, master_send_buf, slave_send_buf, BUF_SIZE);
 
     unity_send_signal("Master ready");
     unity_wait_for_signal("slave ready");
@@ -848,7 +849,7 @@ static void hd_slave_quad(void)
     WORD_ALIGNED_ATTR uint8_t *slave_recv_buf = heap_caps_calloc(BUF_SIZE, 1, MALLOC_CAP_DMA);
     //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_master`` does.
     WORD_ALIGNED_ATTR uint8_t *master_send_buf = heap_caps_malloc(BUF_SIZE, MALLOC_CAP_DMA);
-    get_tx_buffer(199, master_send_buf, slave_send_buf, BUF_SIZE);
+    test_fill_random_to_buffers_dualboard(199, master_send_buf, slave_send_buf, BUF_SIZE);
 
     int trans_len = BUF_SIZE / 2;
     spi_slave_hd_data_t slave_trans[4] = {
