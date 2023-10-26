@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,6 +50,12 @@ typedef struct {
 } coex_adapter_funcs_t;
 
 extern coex_adapter_funcs_t g_coex_adapter_funcs;
+
+typedef struct {
+    uint8_t major;
+    uint8_t minor;
+    uint8_t patch;
+} coex_version_t;
 
 #ifdef __cplusplus
 }
