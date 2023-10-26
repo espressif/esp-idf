@@ -201,4 +201,17 @@ esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const ip_event_add_i
  */
 esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
 
+/**
+ * @brief Initialize netif objects for handling lists of interfaces one esp_netif level
+ *
+ * @return esp_err_t ESP_OK on success
+ */
+esp_err_t esp_netif_objects_init(void);
+
+/**
+ * @brief Deinitialize netif objects
+ *
+ */
+void esp_netif_objects_deinit(void);
+
 #endif //_ESP_NETIF_PRIVATE_H_

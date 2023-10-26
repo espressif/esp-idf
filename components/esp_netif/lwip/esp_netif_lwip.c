@@ -340,6 +340,10 @@ static void tcpip_init_done(void *arg)
 
 esp_err_t esp_netif_init(void)
 {
+    if (esp_netif_objects_init() != ESP_OK) {
+        ESP_LOGE(TAG, "esp_netif_objects_init() failed");
+        return ESP_FAIL;
+    }
     if (!sys_thread_tcpip(LWIP_CORE_IS_TCPIP_INITIALIZED)) {
 #if CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
         uint8_t rand_buf[16];
@@ -392,6 +396,11 @@ esp_err_t esp_netif_init(void)
 
 esp_err_t esp_netif_deinit(void)
 {
+    /* esp_netif_deinit() is not supported (as lwIP deinit isn't suported either)
+     * Once it's supported, we need to de-initialize:
+     * - netif objects calling esp_netif_objects_deinit()
+     * - other lwIP specific objects (see the comment after tcpip_initialized)
+     */
     if (sys_thread_tcpip(LWIP_CORE_IS_TCPIP_INITIALIZED)) {
         /* deinit of LwIP not supported:
          * do not deinit semaphores and states,
@@ -566,8 +575,6 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     lwip_netif->state = esp_netif;
     esp_netif->lwip_netif = lwip_netif;
 
-    esp_netif_add_to_list(esp_netif);
-
     // Configure the created object with provided configuration
     esp_err_t ret =  esp_netif_init_configuration(esp_netif, esp_netif_config);
     if (ret != ESP_OK) {
@@ -575,6 +582,8 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
         esp_netif_destroy(esp_netif);
         return NULL;
     }
+
+    esp_netif_add_to_list(esp_netif);
 
     return esp_netif;
 }
