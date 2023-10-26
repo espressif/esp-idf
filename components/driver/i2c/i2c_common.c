@@ -56,9 +56,13 @@ static esp_err_t s_i2c_bus_handle_aquire(i2c_port_num_t port_num, i2c_bus_handle
             bus->bus_mode = mode;
 
             // Enable the I2C module
-            periph_module_enable(i2c_periph_signal[port_num].module);
-            periph_module_reset(i2c_periph_signal[port_num].module);
-            i2c_hal_init(&bus->hal, port_num);
+            I2C_RCC_ATOMIC() {
+                i2c_ll_enable_bus_clock(bus->port_num, true);
+                i2c_ll_reset_register(bus->port_num);
+            }
+            I2C_CLOCK_SRC_ATOMIC() {
+                i2c_hal_init(&bus->hal, port_num);
+            }
         }
     } else {
         ESP_LOGE(TAG, "I2C bus id(%d) has already been acquired", port_num);
@@ -131,7 +135,9 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
                 ESP_RETURN_ON_ERROR(esp_pm_lock_delete(i2c_bus->pm_lock), TAG, "delete pm_lock failed");
             }
             // Disable I2C module
-            periph_module_disable(i2c_periph_signal[port_num].module);
+            I2C_RCC_ATOMIC() {
+                i2c_ll_enable_bus_clock(port_num, false);
+            }
             free(i2c_bus);
         }
     }

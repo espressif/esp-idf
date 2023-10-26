@@ -245,7 +245,9 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
 #endif
 
     //Default, we enable hardware filter
-    i2c_ll_set_source_clk(hal->dev, slave_config->clk_source);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_set_source_clk(hal->dev, slave_config->clk_source);
+    }
     bool addr_10bit_en = slave_config->addr_bit_len != I2C_ADDR_BIT_LEN_7;
     i2c_ll_set_slave_addr(hal->dev, slave_config->slave_addr, addr_10bit_en);
 #if SOC_I2C_SLAVE_SUPPORT_BROADCAST
