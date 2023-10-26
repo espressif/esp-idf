@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,25 +32,41 @@ static SemaphoreHandle_t  s_list_lock = NULL;
 
 ESP_EVENT_DEFINE_BASE(IP_EVENT);
 
+esp_err_t esp_netif_objects_init(void)
+{
+    if (s_list_lock != NULL) {
+        // already initialized
+        return ESP_OK;
+    }
+    s_list_lock = xSemaphoreCreateMutex();
+    if (s_list_lock == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
+
+void esp_netif_objects_deinit(void)
+{
+    vSemaphoreDelete(s_list_lock);
+    s_list_lock = NULL;
+}
+
 esp_err_t esp_netif_list_lock(void)
 {
-    if (s_list_lock == NULL) {
-        s_list_lock = xSemaphoreCreateMutex();
-        if (s_list_lock == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
+    if (s_list_lock) {
+        xSemaphoreTake(s_list_lock, portMAX_DELAY);
+    } else {
+        ESP_LOGD(TAG, "%s list not locked (s_list_lock not initialized)", __func__);
     }
-    xSemaphoreTake(s_list_lock, portMAX_DELAY);
     return ESP_OK;
 }
 
 void esp_netif_list_unlock(void)
 {
-    assert(s_list_lock);
-    xSemaphoreGive(s_list_lock);
-    if (s_esp_netif_counter == 0) {
-        vQueueDelete(s_list_lock);
-        s_list_lock = NULL;
+    if (s_list_lock) {
+        xSemaphoreGive(s_list_lock);
+    } else {
+        ESP_LOGD(TAG, "%s list not unlocked (s_list_lock not initialized)", __func__);
     }
 }
 

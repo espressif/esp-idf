@@ -148,14 +148,6 @@ static esp_err_t set_lwip_netif_callback(struct esp_netif_api_msg_s *msg)
     return ESP_OK;
 }
 
-static esp_err_t remove_lwip_netif_callback(struct esp_netif_api_msg_s *msg)
-{
-    (void)msg;
-    netif_remove_ext_callback(&netif_callback);
-    memset(&netif_callback, 0, sizeof(netif_callback));
-    return ESP_OK;
-}
-
 static void dns_clear_servers(bool keep_fallback)
 {
     u8_t numdns = 0;
@@ -502,6 +494,10 @@ static void tcpip_init_done(void *arg)
 
 esp_err_t esp_netif_init(void)
 {
+    if (esp_netif_objects_init() != ESP_OK) {
+        ESP_LOGE(TAG, "esp_netif_objects_init() failed");
+        return ESP_FAIL;
+    }
     if (!sys_thread_tcpip(LWIP_CORE_IS_TCPIP_INITIALIZED)) {
 #if CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
         uint8_t rand_buf[16];
@@ -559,6 +555,11 @@ esp_err_t esp_netif_init(void)
 
 esp_err_t esp_netif_deinit(void)
 {
+    /* esp_netif_deinit() is not supported (as lwIP deinit isn't suported either)
+     * Once it's supported, we need to de-initialize:
+     * - netif objects calling esp_netif_objects_deinit()
+     * - other lwIP specific objects (see the comment after tcpip_initialized)
+     */
     if (sys_thread_tcpip(LWIP_CORE_IS_TCPIP_INITIALIZED)) {
         /* deinit of LwIP not supported:
          * do not deinit semaphores and states,
@@ -566,6 +567,7 @@ esp_err_t esp_netif_deinit(void)
          *
         sys_sem_free(&api_sync_sem);
         sys_sem_free(&api_lock_sem);
+        netif_remove_ext_callback(); (in lwip context)
          */
         return ESP_ERR_NOT_SUPPORTED;
 
@@ -736,8 +738,6 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
 
     esp_netif->lwip_netif = lwip_netif;
 
-    esp_netif_add_to_list(esp_netif);
-
 #if ESP_DHCPS
     // Create DHCP server structure
     if (esp_netif_config->base->flags & ESP_NETIF_DHCP_SERVER) {
@@ -762,6 +762,8 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     if (netif_callback.callback_fn == NULL ) {
         esp_netif_lwip_ipc_no_args(set_lwip_netif_callback);
     }
+
+    esp_netif_add_to_list(esp_netif);
 
     return esp_netif;
 }
@@ -858,9 +860,11 @@ void esp_netif_destroy(esp_netif_t *esp_netif)
 {
     if (esp_netif) {
         esp_netif_remove_from_list(esp_netif);
-        if (esp_netif_get_nr_of_ifs() == 0) {
-            esp_netif_lwip_ipc_no_args(remove_lwip_netif_callback);
-        }
+        // not calling  `netif_remove_ext_callback()` if number of netifs is 0
+        // since it's unsafe.
+        // It is expected to be called globally in `esp_netif_deinit()`
+        // once it's supported.
+        // }
         free(esp_netif->ip_info);
         free(esp_netif->ip_info_old);
         free(esp_netif->if_key);
