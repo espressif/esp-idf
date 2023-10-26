@@ -76,6 +76,14 @@ void coex_disable(void);
 const char *coex_version_get(void);
 
 /**
+ * @brief Get software coexist version value
+ *        extern function for internal use.
+ * @param ptr_version : points to version structure
+ * @return : ESP_OK - success, other - failed
+ */
+esp_err_t coex_version_get_value(coex_version_t* ptr_version);
+
+/**
  * @brief Coexist performance preference set from libbt.a
  *        extern function for internal use.
  *
