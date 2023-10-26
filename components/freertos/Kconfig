@@ -244,6 +244,25 @@ menu "FreeRTOS"
 
                 Note: The clock used for run time statistics can be configured in FREERTOS_RUN_TIME_STATS_CLK.
 
+        choice FREERTOS_RUN_TIME_COUNTER_TYPE
+            prompt "configRUN_TIME_COUNTER_TYPE"
+            depends on FREERTOS_GENERATE_RUN_TIME_STATS && !FREERTOS_SMP
+            default FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+            help
+                Sets the data type used for the FreeRTOS run time stats. A larger data type can be used to reduce the
+                frequency of the counter overflowing.
+
+            config FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+                bool "uint32_t"
+                help
+                    configRUN_TIME_COUNTER_TYPE is set to uint32_t
+
+            config FREERTOS_RUN_TIME_COUNTER_TYPE_U64
+                bool "uint64_t"
+                help
+                    configRUN_TIME_COUNTER_TYPE is set to uint64_t
+        endchoice # FREERTOS_RUN_TIME_COUNTER_TYPE
+
         config FREERTOS_USE_TICKLESS_IDLE
             # Todo: Currently not supported in SMP FreeRTOS yet (IDF-4986)
             # Todo: Consider whether this option should still be exposed (IDF-4986)
