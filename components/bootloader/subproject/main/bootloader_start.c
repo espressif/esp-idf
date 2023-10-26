@@ -77,21 +77,6 @@ static int select_partition_number(bootloader_state_t *bs)
     return selected_boot_partition(bs);
 }
 
-#ifdef CONFIG_BOOTLOADER_WAIT_AFTER_EN
-
-/*
- * Sleep roughly the specified amount of milliseconds
- */
-static void sleep_ms(uint32_t delay_msec)
-{
-    uint32_t tm_start = esp_log_early_timestamp();
-    do {
-        uint32_t dummy = esp_log_early_timestamp();
-        (void)(dummy);
-    } while (delay_msec > ((esp_log_early_timestamp() - tm_start) ));
-}
-#endif
-
 /*
  * Selects a boot partition.
  * The conditions for switching to another firmware are checked.
@@ -110,24 +95,24 @@ static int selected_boot_partition(const bootloader_state_t *bs)
         reset_level = true;
 #endif
 
+#ifdef CONFIG_BOOTLOADER_WAIT_AFTER_EN
         ESP_LOGW(TAG, "Use GPIO %d for more than %d s to perform factory reset!",
             (int)CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET,
             (int)(CONFIG_BOOTLOADER_HOLD_TIME_GPIO + BL_HOLDOFF_TIME_MS/1000)
         );
 
-#ifdef CONFIG_BOOTLOADER_WAIT_AFTER_EN
         //give the user a chance to react after a power up to hold BOOT button
-        sleep_ms(BL_HOLDOFF_TIME_MS);
+        uint32_t tm_start = esp_log_early_timestamp();
+        do { } while (BL_HOLDOFF_TIME_MS > ((esp_log_early_timestamp() - tm_start) ));
 #endif
 
         if (bootloader_common_check_long_hold_gpio_level(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET, CONFIG_BOOTLOADER_HOLD_TIME_GPIO, reset_level) == GPIO_LONG_HOLD) {
-            ESP_LOGI(TAG, "Detect a condition of the factory reset");
             bool ota_data_erase = false;
 #ifdef CONFIG_BOOTLOADER_OTA_DATA_ERASE
             ota_data_erase = true;
 #endif
             const char *list_erase = CONFIG_BOOTLOADER_DATA_FACTORY_RESET;
-            ESP_LOGI(TAG, "Data partitions to erase: %s", list_erase);
+            ESP_LOGI(TAG, "Factory Reset selected. Data partitions to erase: %s", list_erase);
             if (bootloader_common_erase_part_type_data(list_erase, ota_data_erase) == false) {
                 ESP_LOGE(TAG, "Not all partitions were erased");
             }
@@ -144,7 +129,7 @@ static int selected_boot_partition(const bootloader_state_t *bs)
         app_test_level = true;
 #endif
         if (bootloader_common_check_long_hold_gpio_level(CONFIG_BOOTLOADER_NUM_PIN_APP_TEST, CONFIG_BOOTLOADER_HOLD_TIME_GPIO, app_test_level) == GPIO_LONG_HOLD) {
-            ESP_LOGI(TAG, "Detect a boot condition of the test firmware");
+            ESP_LOGI(TAG, "Test Firmware selected");
             if (bs->test.offset != 0) {
                 boot_index = TEST_APP_INDEX;
                 return boot_index;
