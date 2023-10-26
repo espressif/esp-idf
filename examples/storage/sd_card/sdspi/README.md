@@ -111,6 +111,19 @@ I (7396) example: Card unmounted
 
 The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code. Enable the `CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED` menuconfig option, then build and flash the example.
 
+> Once you've enabled the `CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED` option, if you continue to encounter the following error:
+
+```
+E (600) sdmmc_cmd: sdmmc_read_sectors_dma: sdmmc_send_cmd returned 0x108
+E (600) diskio_sdmmc: sdmmc_read_blocks failed (264)
+W (610) vfs_fat_sdmmc: failed to mount card (1)
+E (610) vfs_fat_sdmmc: mount_to_vfs failed (0xffffffff).
+I (620) gpio: GPIO[13]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+E (630) example: Failed to mount filesystem. If you want the card to be formatted, set the CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.
+```
+
+Please ensure that your SD card is operational and not experiencing any malfunctions.
+
 
 ### Unable to flash the example, or serial port not available (ESP32 only)
 
@@ -125,3 +138,20 @@ An attempt to download a new firmware under this conditions may also result in t
 `esptool --port PORT --before no_reset --baud 115200 --chip esp32 erase_flash`
 
 to erase your board's flash, then flash the firmware again.
+
+> If you insert an SD card into the slot and encounter issues when attempting to flash a supported target using the `idf.py flash` command, please consider removing the SD card and attempting to flash the target again. If the flashing process succeeds after removing the SD card, it suggests potential issues with power supply.
+
+Ensure that the board and SD card adapter you are using are powered using the appropriate power source.
+
+
+### Getting the following errors
+
+> `vfs_fat_sdmmc: slot init failed (0x103)`
+
+> `vfs_fat_sdmmc: sdmmc_card_init failed (0x102)`
+
+> `sdmmc_init_ocr: send_op_cond (1) returned 0x107`
+
+Attempt to reboot the board. This error may occur if you reset the ESP board or host controller without power-cycling it. In such cases, the card may remain in its previous state, causing it to potentially not respond to commands sent by the host controller.
+
+Additionally, if the example works with certain SD cards but encounters issues with others, please confirm the read/write speed of the SD card. If the card is not compatible with the host frequency, consider lowering the host frequency and then attempting the operation again.

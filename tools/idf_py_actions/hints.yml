@@ -276,6 +276,35 @@
     hint: "``esp_vfs_fat_sdmmc_unmount()`` is now deprecated, you can use :cpp:func:`esp_vfs_fat_sdcard_unmount()` instead. See Storage migration guide 5.1 for more details"
 
 -
+    re: "vfs_fat_sdmmc: sdmmc_card_init failed"
+    hint: "Please verify if there is an SD card inserted into the SD slot. Then, try rebooting the board."
+
+-
+    re: "sdmmc_common: sdmmc_init_ocr: send_op_cond"
+    hint: "Please reboot the board and then try again"
+
+-
+    re: "sdmmc_io: sdmmc_io_read_byte: sdmmc_io_rw_direct"
+    hint: "Please verify that card supports IO capabilities. Refer 'IDF_PATH/examples/peripherals/sdio/host/README.md' for more details"
+
+-
+    re: "example: Failed to initialize the card \\({}\\). Make sure SD card lines have pull-up resistors in place."
+    hint: "Please refer ./README.md for details"
+    variables:
+        -
+            re_variables: ['ESP_ERR_TIMEOUT']
+            hint_variables: []
+        -
+            re_variables: ['ESP_ERR_INVALID_RESPONSE']
+            hint_variables: []
+        -
+            re_variables: ['ESP_ERR_INVALID_STATE']
+            hint_variables: []
+        -
+            re_variables: ['ESP_ERR_INVALID_ARG']
+            hint_variables: []
+
+-
     re: "esp_usb_jtag: could not find or open device!"
     hint: "Please check the wire connection to debugging device or access rights to a serial port."
 

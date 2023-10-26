@@ -439,6 +439,8 @@ esp_err_t esp_vfs_fat_sdcard_unmount(const char *base_path, sdmmc_card_t *card)
     if (!found) {
         return ESP_ERR_INVALID_ARG;
     }
+    free(s_ctx[id]->base_path);
+    s_ctx[id]->base_path = NULL;
     free(s_ctx[id]);
     s_ctx[id] = NULL;
 
