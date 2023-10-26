@@ -151,6 +151,32 @@ menu "Bootloader config"
             bool "Reset on GPIO high"
     endchoice
 
+    config BOOTLOADER_WAIT_AFTER_EN
+        bool "Enable Waiting time before Factory Reset GPIO probe (especially usefull for GPIO 0 as factory reset)"
+        default y
+        depends on BOOTLOADER_FACTORY_RESET
+        help
+            Enable Wait Time in bootloader prior to probing for Factory Reset condition.
+            This is especially usefull if GPIO 0 (BOOT button on most Dev Boards) is set as Factory Reset GPIO.
+            Without the wait time, the GPIO 0 / BOOT, if held down, during boot, is already probed by the ROM loader
+            which would be selecting UART boot mode.
+
+            The intended use case is as follows:
+               * set GPIO 0 (BOOT) as Factory Reset, which is already a pre-installed button on almost every ESP32 board
+               * for the GPIO 0 (BOOT): set 'Reset on GPIO Low'
+               * enable the Waiting Time after EN
+               * press RESET (EN) --> ROM Loader determines normal flash boot
+               * shortly after, press and hold GPIO 0 (BOOT) button until the Factory reset condition is recognized
+               * boot continues, Factory reset is applied
+
+    config BOOTLOADER_WAIT_AFTER_EN_TIME_MS
+        int "Time to wait before the Factory Reset GPIO probe (ms)"
+        depends on BOOTLOADER_WAIT_AFTER_EN
+        default 3000
+        range 0 10000
+        help
+            The specified waiting time after booting the bootloader and prior to probing the Factory Reset GPIO
+
     config BOOTLOADER_OTA_DATA_ERASE
         bool "Clear OTA data on factory reset (select factory partition)"
         depends on BOOTLOADER_FACTORY_RESET

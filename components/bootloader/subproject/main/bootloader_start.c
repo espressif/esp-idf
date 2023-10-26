@@ -11,6 +11,13 @@
 #include "bootloader_common.h"
 #include "bootloader_hooks.h"
 
+/*
+ * Time in ms to hold bootloader, so user can see what to do for factory reset
+ * especially if GPIO 0 is used, this is the only option to prevent ROM loader to already grab UART mode
+ * so GPIO 0 can be used to both select ROM loader and if held right after reset, to perform the factory reset.
+ */
+#define BL_HOLDOFF_TIME_MS CONFIG_BOOTLOADER_WAIT_AFTER_EN_TIME_MS
+
 static const char *TAG = "boot";
 
 static int select_partition_number(bootloader_state_t *bs);
@@ -70,6 +77,21 @@ static int select_partition_number(bootloader_state_t *bs)
     return selected_boot_partition(bs);
 }
 
+#ifdef CONFIG_BOOTLOADER_WAIT_AFTER_EN
+
+/*
+ * Sleep roughly the specified amount of milliseconds
+ */
+static void sleep_ms(uint32_t delay_msec)
+{
+    uint32_t tm_start = esp_log_early_timestamp();
+    do {
+        uint32_t dummy = esp_log_early_timestamp();
+        (void)(dummy);
+    } while (delay_msec > ((esp_log_early_timestamp() - tm_start) ));
+}
+#endif
+
 /*
  * Selects a boot partition.
  * The conditions for switching to another firmware are checked.
@@ -87,6 +109,17 @@ static int selected_boot_partition(const bootloader_state_t *bs)
 #if CONFIG_BOOTLOADER_FACTORY_RESET_PIN_HIGH
         reset_level = true;
 #endif
+
+        ESP_LOGW(TAG, "Use GPIO %d for more than %d s to perform factory reset!",
+            (int)CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET,
+            (int)(CONFIG_BOOTLOADER_HOLD_TIME_GPIO + BL_HOLDOFF_TIME_MS/1000)
+        );
+
+#ifdef CONFIG_BOOTLOADER_WAIT_AFTER_EN
+        //give the user a chance to react after a power up to hold BOOT button
+        sleep_ms(BL_HOLDOFF_TIME_MS);
+#endif
+
         if (bootloader_common_check_long_hold_gpio_level(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET, CONFIG_BOOTLOADER_HOLD_TIME_GPIO, reset_level) == GPIO_LONG_HOLD) {
             ESP_LOGI(TAG, "Detect a condition of the factory reset");
             bool ota_data_erase = false;
