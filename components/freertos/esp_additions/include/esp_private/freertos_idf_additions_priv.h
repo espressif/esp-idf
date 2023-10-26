@@ -57,15 +57,15 @@
 
     #define prvENTER_CRITICAL_OR_SUSPEND_ALL( x )    ( { vTaskSuspendAll(); ( void ) ( x ); } )
     #define prvEXIT_CRITICAL_OR_RESUME_ALL( x )      xTaskResumeAll()
-    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus )  \
-    {                                                                   \
-        ( uxInterruptStatus ) = portSET_INTERRUPT_MASK_FROM_ISR();      \
-        ( void ) ( pxLock );                                            \
+    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus ) \
+    {                                                                  \
+        ( uxInterruptStatus ) = portSET_INTERRUPT_MASK_FROM_ISR();     \
+        ( void ) ( pxLock );                                           \
     }
-    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus )  \
-    {                                                                    \
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( ( uxInterruptStatus ) );      \
-        ( void ) ( pxLock );                                             \
+    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus ) \
+    {                                                                   \
+        portCLEAR_INTERRUPT_MASK_FROM_ISR( ( uxInterruptStatus ) );     \
+        ( void ) ( pxLock );                                            \
     }
 
 #endif /* ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES == 1 ) ) */
@@ -209,6 +209,88 @@
     void prvTaskPriorityRestore( prvTaskSavedPriority_t * pxSavedPriority );
 
 #endif /* INCLUDE_vTaskPrioritySet == 1 */
+
+#if CONFIG_SPIRAM
+
+/**
+ * Create a new task with stack having the desired heap capabilities and add it to the
+ * list of tasks that are ready to run.
+ *
+ * @note: This is an internal function and meant for usage by pthread only.
+ * @note: Tasks with stacks not having the default heap capabilities for FreeRTOS may
+ *        not be able to run while flash cache is disabled.
+ *        This is the case if, e.g., any task on the chip is reading or writing
+ *        flash memory.
+ *
+ * @note: The difference between this function and xTaskCreatePinnedToCoreWithCaps()
+ *        is the following:
+ *        * A FreeRTOS task created by this function is deleted by normal FreeRTOS deletion functions,
+ *          i.e., vTaskDelete().
+ *        * A FreeRTOS task created by this function can delete itself.
+ *
+ * This function behaves like xTaskCreateAffinitySet(), except that it allocates
+ * the stack from the heap with the desired heap capabilities.
+ *
+ * @param pxTaskCode Pointer to the task entry function.  Tasks
+ * must be implemented to never return (i.e. continuous loop).
+ *
+ * @param pcName A descriptive name for the task.  This is mainly used to
+ * facilitate debugging.  Max length defined by configMAX_TASK_NAME_LEN - default
+ * is 16.
+ *
+ * @param usStackDepth The size of the task stack specified as the number of bytes.
+ *
+ * @param pvParameters Pointer that will be used as the parameter for the task
+ * being created.
+ *
+ * @param uxPriority The priority at which the task should run.  Systems that
+ * include MPU support can optionally create tasks in a privileged (system)
+ * mode by setting bit portPRIVILEGE_BIT of the priority parameter.  For
+ * example, to create a privileged task at priority 2 the uxPriority parameter
+ * should be set to ( 2 | portPRIVILEGE_BIT ).
+ *
+ * @param xCoreID (only IDF SMP FreeRTOS)
+ * The core to which the task is pinned to, or tskNO_AFFINITY if
+ * the task can run on any core.
+ *
+ * @param uxCoreAffinityMask (only Amazon SMP FreeRTOS)
+ * A bitwise value that indicates the cores on which the task can run.
+ * Cores are numbered from 0 to configNUM_CORES - 1.
+ * For example, to ensure that a task can run on core 0 and core 1, set
+ * uxCoreAffinityMask to 0x03. Note that only one of the cores will be used when
+ * using the IDF SMP version of FreeRTOS instead of Amazon FreeRTOS SMP.
+ *
+ * @param uxStackMemoryCaps The heap caps bitfield describing the memory capabilities to
+ * be used for stack memory. Currently, the capabilities have to include MALLOC_CAP_8BIT
+ * and one of the following: MALLOC_CAP_SPIRAM, MALLOC_CAP_INTERNAL.
+ *
+ * @param pxCreatedTask Used to pass back a handle by which the created task
+ * can be referenced.
+ *
+ * @return pdPASS if the task was successfully created and added to a ready
+ * list, otherwise an error code defined in the file projdefs.h
+ */
+    #if CONFIG_FREERTOS_SMP
+        BaseType_t prvTaskCreateDynamicAffinitySetWithCaps( TaskFunction_t pxTaskCode,
+                                                            const char * const pcName,
+                                                            const configSTACK_DEPTH_TYPE usStackDepth,
+                                                            void * const pvParameters,
+                                                            UBaseType_t uxPriority,
+                                                            UBaseType_t uxCoreAffinityMask,
+                                                            UBaseType_t uxStackMemoryCaps,
+                                                            TaskHandle_t * const pxCreatedTask );
+    #else
+        BaseType_t prvTaskCreateDynamicPinnedToCoreWithCaps( TaskFunction_t pxTaskCode,
+                                                             const char * const pcName,
+                                                             const configSTACK_DEPTH_TYPE usStackDepth,
+                                                             void * const pvParameters,
+                                                             UBaseType_t uxPriority,
+                                                             const BaseType_t xCoreID,
+                                                             UBaseType_t uxStackMemoryCaps,
+                                                             TaskHandle_t * const pxCreatedTask );
+    #endif // CONFIG_FREERTOS_SMP
+
+#endif // CONFIG_SPIRAM
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

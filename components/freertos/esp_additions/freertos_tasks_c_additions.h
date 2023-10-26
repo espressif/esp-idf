@@ -6,6 +6,7 @@
 
 #include "sdkconfig.h"
 #include "esp_assert.h"
+#include "esp_heap_caps.h"
 #include "freertos/idf_additions.h"
 #if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
     #include "esp_private/freertos_debug.h"
@@ -1157,4 +1158,103 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
     };
 
 #endif /* CONFIG_FREERTOS_DEBUG_OCDAWARE */
+/*----------------------------------------------------------*/
+
+/* ----------------------------------------------------- PSRAM ---------------------------------------------------- */
+
+#if CONFIG_SPIRAM
+
+    #if CONFIG_FREERTOS_SMP
+        BaseType_t prvTaskCreateDynamicAffinitySetWithCaps( TaskFunction_t pxTaskCode,
+                                                            const char * const pcName,
+                                                            const configSTACK_DEPTH_TYPE usStackDepth,
+                                                            void * const pvParameters,
+                                                            UBaseType_t uxPriority,
+                                                            UBaseType_t uxCoreAffinityMask,
+                                                            UBaseType_t uxStackMemoryCaps,
+                                                            TaskHandle_t * const pxCreatedTask )
+    #else
+        BaseType_t prvTaskCreateDynamicPinnedToCoreWithCaps( TaskFunction_t pxTaskCode,
+                                                             const char * const pcName,
+                                                             const configSTACK_DEPTH_TYPE usStackDepth,
+                                                             void * const pvParameters,
+                                                             UBaseType_t uxPriority,
+                                                             const BaseType_t xCoreID,
+                                                             UBaseType_t uxStackMemoryCaps,
+                                                             TaskHandle_t * const pxCreatedTask )
+    #endif /* if CONFIG_FREERTOS_SMP */
+    {
+        TCB_t * pxNewTCB;
+        BaseType_t xReturn;
+
+        StackType_t * pxStack;
+
+        configASSERT( uxStackMemoryCaps & ( MALLOC_CAP_8BIT ) );
+        configASSERT( ( uxStackMemoryCaps & MALLOC_CAP_SPIRAM ) ||
+                      ( uxStackMemoryCaps & MALLOC_CAP_INTERNAL ) );
+
+        /* Allocate space for the stack used by the task being created. */
+        pxStack = heap_caps_malloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ), uxStackMemoryCaps );
+
+        if( pxStack != NULL )
+        {
+            /* Allocate space for the TCB. */
+            pxNewTCB = ( TCB_t * ) pvPortMalloc( sizeof( TCB_t ) );
+
+            if( pxNewTCB != NULL )
+            {
+                #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+                {
+                    memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+                }
+                #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+
+                /* Store the stack location in the TCB. */
+                pxNewTCB->pxStack = pxStack;
+            }
+            else
+            {
+                /* The stack cannot be used as the TCB has not been created. Free it. */
+                heap_caps_free( pxStack );
+            }
+        }
+        else
+        {
+            pxNewTCB = NULL;
+        }
+
+        if( pxNewTCB != NULL )
+        {
+            #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 )
+            {
+                /* Tasks can be created statically or dynamically, so note this
+                 * task was created dynamically in case it is later deleted. */
+                pxNewTCB->ucStaticallyAllocated = tskDYNAMICALLY_ALLOCATED_STACK_AND_TCB;
+            }
+            #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
+
+            #if CONFIG_FREERTOS_SMP
+                prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
+            #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+                {
+                    /* Set the task's affinity before scheduling it */
+                    pxNewTCB->uxCoreAffinityMask = uxCoreAffinityMask;
+                }
+                #endif
+            #else
+                prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
+            #endif
+
+            prvAddNewTaskToReadyList( pxNewTCB );
+            xReturn = pdPASS;
+        }
+        else
+        {
+            xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
+        }
+
+        return xReturn;
+    }
+
+#endif // SPIRAM
 /*----------------------------------------------------------*/
