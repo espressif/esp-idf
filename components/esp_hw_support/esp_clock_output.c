@@ -6,13 +6,12 @@
 
 #include <sys/queue.h>
 #include "sdkconfig.h"
-
+#include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
 #include "esp_clock_output.h"
 #include "esp_check.h"
 #include "esp_rom_gpio.h"
-#include "esp_private/clkout_channel.h"
-#include "esp_private/startup_internal.h"
+#include "clkout_channel.h"
 #include "hal/gpio_hal.h"
 #include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
@@ -59,13 +58,13 @@ static clkout_channel_handle_t* clkout_channel_alloc(soc_clkout_sig_id_t clk_sig
         s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].is_mapped = true;
         allocated_channel = &s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)];
     } else if ((s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].mapped_io_bmap & BIT(gpio_num)) &&
-        (s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].mapped_clock == clk_sig)) {
+               (s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].mapped_clock == clk_sig)) {
         allocated_channel = &s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)];
     }
     allocated_channel->channel_id = (clock_out_channel_t)IONUM_TO_CLKOUT_CHANNEL(gpio_num);
     portEXIT_CRITICAL(&s_clkout_handle[IONUM_TO_CLKOUT_CHANNEL(gpio_num)].clkout_channel_lock);
 #elif SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
-    for(uint32_t channel = 0; channel < CLKOUT_CHANNEL_MAX; channel++) {
+    for (uint32_t channel = 0; channel < CLKOUT_CHANNEL_MAX; channel++) {
         portENTER_CRITICAL(&s_clkout_handle[channel].clkout_channel_lock);
         if (!s_clkout_handle[channel].is_mapped) {
             s_clkout_handle[channel].is_mapped = true;

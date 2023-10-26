@@ -18,6 +18,7 @@
 #include "esp_cpu.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
+#include "esp_clock_output.h"
 #include "esp_private/esp_clk.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -51,6 +52,7 @@ typedef struct {
     int smi_mdc_gpio_num;
     int smi_mdio_gpio_num;
     eth_mac_clock_config_t clock_config;
+    esp_clock_output_mapping_handle_t rmii_clk_hdl; // we use the esp_clock_output driver to output a pre-configured APLL clock as the RMII reference clock
     uint8_t addr[6];
     uint8_t *rx_buf[CONFIG_ETH_DMA_RX_BUFFER_NUM];
     uint8_t *tx_buf[CONFIG_ETH_DMA_TX_BUFFER_NUM];
@@ -472,6 +474,9 @@ static void esp_emac_free_driver_obj(emac_esp32_t *emac, void *descriptors)
         for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
             free(emac->rx_buf[i]);
         }
+        if (emac->rmii_clk_hdl) {
+            esp_clock_output_stop(emac->rmii_clk_hdl);
+        }
 #ifdef CONFIG_PM_ENABLE
         if (emac->pm_lock) {
             esp_pm_lock_delete(emac->pm_lock);
@@ -519,7 +524,7 @@ static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_
         core_num = esp_cpu_get_core_id();
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_esp32_rx_task, "emac_rx", config->rx_task_stack_size, emac,
-                           config->rx_task_prio, &emac->rx_task_hdl, core_num);
+                                                   config->rx_task_prio, &emac->rx_task_hdl, core_num);
     ESP_GOTO_ON_FALSE(xReturned == pdPASS, ESP_FAIL, err, TAG, "create emac_rx task failed");
 
     *out_descriptors = descriptors;
@@ -578,15 +583,18 @@ static esp_err_t esp_emac_config_data_interface(const eth_esp32_emac_config_t *e
                               emac->clock_config.rmii.clock_gpio == EMAC_CLK_OUT_180_GPIO,
                               ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC clock output GPIO");
             emac_hal_iomux_rmii_clk_ouput(emac->clock_config.rmii.clock_gpio);
-            if (emac->clock_config.rmii.clock_gpio == EMAC_APPL_CLK_OUT_GPIO) {
-                REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
-            }
             /* Enable RMII clock */
             emac_hal_clock_enable_rmii_output(&emac->hal);
-            // Power up APLL clock
+            // the RMII reference comes from the APLL
             periph_rtc_apll_acquire();
             ESP_GOTO_ON_ERROR(emac_config_apll_clock(), err, TAG, "Configure APLL for RMII failed");
             emac->use_apll = true;
+
+            // we can also use the IOMUX to route the APLL clock to specific GPIO
+            if (emac->clock_config.rmii.clock_gpio == EMAC_APPL_CLK_OUT_GPIO) {
+                ESP_GOTO_ON_ERROR(esp_clock_output_start(CLKOUT_SIG_APLL, EMAC_APPL_CLK_OUT_GPIO, &emac->rmii_clk_hdl),
+                                  err, TAG, "start APLL clock output failed");
+            }
         } else {
             ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC clock mode");
         }
