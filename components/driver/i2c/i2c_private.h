@@ -17,10 +17,23 @@
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "driver/i2c_slave.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_pm.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define I2C_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2C_CLOCK_SRC_ATOMIC()
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define I2C_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2C_RCC_ATOMIC()
 #endif
 
 #if CONFIG_I2C_ISR_IRAM_SAFE

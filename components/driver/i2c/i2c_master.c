@@ -92,8 +92,9 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
 
     //to reset the I2C hw module, we need re-enable the hw
     s_i2c_master_clear_bus(i2c_master->base);
-    periph_module_disable(i2c_periph_signal[i2c_master->base->port_num].module);
-    periph_module_enable(i2c_periph_signal[i2c_master->base->port_num].module);
+    I2C_RCC_ATOMIC() {
+        i2c_ll_reset_register(i2c_master->base->port_num);
+    }
 
     i2c_hal_master_init(hal);
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_INTR_MASK);
@@ -546,7 +547,11 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->read_len_static = 0;
 
     i2c_hal_master_set_scl_timeout_val(hal, i2c_dev->scl_wait_us, i2c_master->base->clk_src_freq_hz);
-    i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
+
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
+        i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
+    }
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_update(hal->dev);
 
@@ -1125,7 +1130,10 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
 
     // I2C probe does not have i2c device module. So set the clock parameter independently
     // This will not influence device transaction.
-    i2c_hal_set_bus_timing(hal, 100000, bus_handle->base->clk_src, bus_handle->base->clk_src_freq_hz);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_set_source_clk(hal->dev, bus_handle->base->clk_src);
+        i2c_hal_set_bus_timing(hal, 100000, bus_handle->base->clk_src, bus_handle->base->clk_src_freq_hz);
+    }
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     i2c_ll_update(hal->dev);

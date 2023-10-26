@@ -22,9 +22,8 @@ void i2c_hal_slave_init(i2c_hal_context_t *hal)
 }
 #endif
 
-void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_clock_source_t src_clk, int source_freq)
+void _i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_clock_source_t src_clk, int source_freq)
 {
-    i2c_ll_set_source_clk(hal->dev, src_clk);
     i2c_hal_clk_config_t clk_cal = {0};
     i2c_ll_master_cal_bus_clk(source_freq, scl_freq, &clk_cal);
     i2c_ll_master_set_bus_timing(hal->dev, &clk_cal);
@@ -45,7 +44,7 @@ void i2c_hal_master_init(i2c_hal_context_t *hal)
     i2c_ll_rxfifo_rst(hal->dev);
 }
 
-void i2c_hal_init(i2c_hal_context_t *hal, int i2c_port)
+void _i2c_hal_init(i2c_hal_context_t *hal, int i2c_port)
 {
     if (hal->dev == NULL) {
         hal->dev = I2C_LL_GET_HW(i2c_port);
@@ -53,7 +52,7 @@ void i2c_hal_init(i2c_hal_context_t *hal, int i2c_port)
     i2c_ll_enable_controller_clock(hal->dev, true);
 }
 
-void i2c_hal_deinit(i2c_hal_context_t *hal)
+void _i2c_hal_deinit(i2c_hal_context_t *hal)
 {
     i2c_ll_enable_controller_clock(hal->dev, false);
     hal->dev = NULL;
