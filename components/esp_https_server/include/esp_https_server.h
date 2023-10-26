@@ -104,70 +104,30 @@ struct httpd_ssl_config {
     esp_https_server_user_cb *user_cb;
 
     void *ssl_userdata; /*!< user data to add to the ssl context  */
+#if CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK
     esp_tls_handshake_callback cert_select_cb; /*!< Certificate selection callback to use */
+#endif
 
     const char** alpn_protos; /*!< Application protocols the server supports in order of prefernece. Used for negotiating during the TLS handshake, first one the client supports is selected. The data structure must live as long as the https server itself! */
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;
 
+/* Macro kept for compatibility reasons */
+#define HTTPD_SSL_CONFIG_DEFAULT    httpd_ssl_config_default
 /**
- * Default config struct init
+ * Returns the httpd config struct with default initialisation
  *
- * (http_server default config had to be copied for customization)
- *
+ * @return
+ * httpd_ssl_config_t   HTTPD ssl config struct
+ *                      with default initialisation
  * Notes:
  * - port is set when starting the server, according to 'transport_mode'
  * - one socket uses ~ 40kB RAM with SSL, we reduce the default socket count to 4
  * - SSL sockets are usually long-lived, closing LRU prevents pool exhaustion DOS
  * - Stack size may need adjustments depending on the user application
  */
-#define HTTPD_SSL_CONFIG_DEFAULT() {              \
-    .httpd = {                                    \
-        .task_priority      = tskIDLE_PRIORITY+5, \
-        .stack_size         = 10240,              \
-        .core_id            = tskNO_AFFINITY,     \
-        .server_port        = 0,                  \
-        .ctrl_port   = ESP_HTTPD_DEF_CTRL_PORT+1, \
-        .max_open_sockets   = 4,                  \
-        .max_uri_handlers   = 8,                  \
-        .max_resp_headers   = 8,                  \
-        .backlog_conn       = 5,                  \
-        .lru_purge_enable   = true,               \
-        .recv_wait_timeout  = 5,                  \
-        .send_wait_timeout  = 5,                  \
-        .global_user_ctx = NULL,                  \
-        .global_user_ctx_free_fn = NULL,          \
-        .global_transport_ctx = NULL,             \
-        .global_transport_ctx_free_fn = NULL,     \
-        .enable_so_linger = false,                \
-        .linger_timeout = 0,                      \
-        .keep_alive_enable = false,               \
-        .keep_alive_idle = 0,                     \
-        .keep_alive_interval = 0,                 \
-        .keep_alive_count = 0,                    \
-        .open_fn = NULL,                          \
-        .close_fn = NULL,                         \
-        .uri_match_fn = NULL                      \
-    },                                            \
-    .servercert = NULL,                           \
-    .servercert_len = 0,                          \
-    .cacert_pem = NULL,                           \
-    .cacert_len = 0,                              \
-    .prvtkey_pem = NULL,                          \
-    .prvtkey_len = 0,                             \
-    .use_ecdsa_peripheral = false,                \
-    .ecdsa_key_efuse_blk = 0,                     \
-    .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
-    .port_secure = 443,                           \
-    .port_insecure = 80,                          \
-    .session_tickets = false,                     \
-    .use_secure_element = false,                  \
-    .user_cb = NULL,                              \
-    .ssl_userdata = NULL,                         \
-    .cert_select_cb = NULL,                       \
-    .alpn_protos = NULL,                          \
-}
+httpd_ssl_config_t httpd_ssl_config_default(void);
 
 /**
  * Create a SSL capable HTTP server (secure mode may be disabled in config)

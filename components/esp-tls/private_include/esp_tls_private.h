@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,20 +53,20 @@ struct esp_tls {
     mbedtls_x509_crt cacert;                                                    /*!< Container for the X.509 CA certificate */
 
     mbedtls_x509_crt *cacert_ptr;                                               /*!< Pointer to the cacert being used. */
-
+    union {
     mbedtls_x509_crt clientcert;                                                /*!< Container for the X.509 client certificate */
+    mbedtls_x509_crt servercert;                                                /*!< Container for the X.509 server certificate */
+    };
 
+    union {
     mbedtls_pk_context clientkey;                                               /*!< Container for the private key of the client
                                                                                      certificate */
+    mbedtls_pk_context serverkey;                                               /*!< Container for the private key of the server
+                                                                                     certificate */
+    };
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     bool use_ecdsa_peripheral;                                                  /*!< Use the ECDSA peripheral for the private key operations. */
     uint8_t ecdsa_efuse_blk;                                                    /*!< The efuse block number where the ECDSA key is stored. */
-#endif
-#ifdef CONFIG_ESP_TLS_SERVER
-    mbedtls_x509_crt servercert;                                                /*!< Container for the X.509 server certificate */
-
-    mbedtls_pk_context serverkey;                                               /*!< Container for the private key of the server
-                                                                                   certificate */
 #endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
     void *priv_ctx;
@@ -95,3 +95,11 @@ struct esp_tls {
     esp_tls_error_handle_t error_handle;                                        /*!< handle to error descriptor */
 
 };
+
+// Function pointer for the server configuration API
+typedef esp_err_t (*set_server_config_func_ptr) (esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
+
+// This struct contains any data that is only specific to the server session and not required by the client.
+typedef struct esp_tls_server_params {
+    set_server_config_func_ptr set_server_cfg;
+} esp_tls_server_params_t;
