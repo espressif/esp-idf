@@ -41,7 +41,9 @@ void spi_slave_hal_init(spi_slave_hal_context_t *hal, const spi_slave_hal_config
     hal->dma_in = hal_config->dma_in;
     hal->dma_out = hal_config->dma_out;
 
-    s_spi_slave_hal_dma_init_config(hal);
+    if (hal->use_dma) {
+        s_spi_slave_hal_dma_init_config(hal);
+    }
     spi_ll_slave_init(hal->hw);
 
     //Force a transaction done interrupt. This interrupt won't fire yet because we initialized the SPI interrupt as

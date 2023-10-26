@@ -71,7 +71,9 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config
     spi_ll_set_mosi_free_level(hw, 0);
 #endif
     spi_ll_master_init(hw);
-    s_spi_hal_dma_init_config(hal);
+    if (config->dma_enabled) {
+        s_spi_hal_dma_init_config(hal);
+    }
 
     //Force a transaction done interrupt. This interrupt won't fire yet because
     //we initialized the SPI interrupt as disabled. This way, we can just
