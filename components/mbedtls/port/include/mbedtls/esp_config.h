@@ -123,10 +123,8 @@
 #undef MBEDTLS_AES_ALT
 #endif
 
-#ifdef CONFIG_MBEDTLS_HARDWARE_GCM
+#ifdef CONFIG_MBEDTLS_HARDWARE_AES
 #define MBEDTLS_GCM_ALT
-#else
-#undef MBEDTLS_GCM_ALT
 #endif
 
 /* MBEDTLS_SHAxx_ALT to enable hardware SHA support
