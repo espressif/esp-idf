@@ -11,7 +11,7 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/isp_types.h"
-#include "hal/color_space_types.h"
+#include "hal/color_types.h"
 #include "soc/isp_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/clk_tree_defs.h"
@@ -89,7 +89,7 @@ typedef enum {
 /**
  * @brief Enable the bus clock for ISP module
  *
- * @param hw    hardware instance address
+ * @param hw    Hardware instance address
  * @param en    enable / disable
  */
 static inline void isp_ll_enable_module_clock(isp_dev_t *hw, bool en)
@@ -104,7 +104,7 @@ static inline void isp_ll_enable_module_clock(isp_dev_t *hw, bool en)
 /**
  * @brief Reset the ISP module
  *
- * @param hw    hardware instance address
+ * @param hw    Hardware instance address
  */
 static inline void isp_ll_reset_module_clock(isp_dev_t *hw)
 {
@@ -119,7 +119,7 @@ static inline void isp_ll_reset_module_clock(isp_dev_t *hw)
 /**
  * @brief Select ISP clock source
  *
- * @param hw       hardware instance address
+ * @param hw       Hardware instance address
  * @param clk_src  clock source, see valid sources in type `soc_periph_isp_clk_src_t`
  */
 static inline void isp_ll_select_clk_source(isp_dev_t *hw, soc_periph_isp_clk_src_t clk_src)
@@ -150,7 +150,7 @@ static inline void isp_ll_select_clk_source(isp_dev_t *hw, soc_periph_isp_clk_sr
 /**
  * @brief Set ISP clock div
  *
- * @param hw     hardware instance address
+ * @param hw     Hardware instance address
  * @param div    divider value
  */
 static inline void isp_ll_set_clock_div(isp_dev_t *hw, uint32_t div)
@@ -168,7 +168,7 @@ static inline void isp_ll_set_clock_div(isp_dev_t *hw, uint32_t div)
 /**
  * @brief Init ISP
  *
- * @param[in] hw
+ * @param[in] hw  Hardware instance address
  */
 static inline void isp_ll_init(isp_dev_t *hw)
 {
@@ -180,7 +180,7 @@ static inline void isp_ll_init(isp_dev_t *hw)
 /**
  * @brief Enable / Disable ISP clock
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_clk_enable(isp_dev_t *hw, bool enable)
@@ -191,7 +191,7 @@ static inline void isp_ll_clk_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Enable / Disable ISP
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_enable(isp_dev_t *hw, bool enable)
@@ -202,7 +202,7 @@ static inline void isp_ll_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Set input data source
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] source  input data source, see `isp_input_data_source_t`
  */
 static inline void isp_ll_set_input_data_source(isp_dev_t *hw, isp_input_data_source_t source)
@@ -212,11 +212,11 @@ static inline void isp_ll_set_input_data_source(isp_dev_t *hw, isp_input_data_so
         hw->cntl.isp_in_src = 0;
         hw->cntl.mipi_data_en = 1;
         break;
-    case ISP_INPUT_DATA_SOURCE_CAM:
+    case ISP_INPUT_DATA_SOURCE_DVP:
         hw->cntl.isp_in_src = 1;
         hw->cntl.mipi_data_en = 0;
         break;
-    case ISP_INPUT_DATA_SOURCE_DMA:
+    case ISP_INPUT_DATA_SOURCE_DWGDMA:
         hw->cntl.isp_in_src = 2;
         hw->cntl.mipi_data_en = 0;
         break;
@@ -226,32 +226,43 @@ static inline void isp_ll_set_input_data_source(isp_dev_t *hw, isp_input_data_so
 }
 
 /**
- * @brief Set input data format
+ * @brief Set input data color format
  *
- * @param[in] hw
- * @param[in] format  data format, see `color_space_pixel_format_t`
+ * @param[in] hw      Hardware instance address
+ * @param[in] format  color format, see `color_space_pixel_format_t`
+ *
+ * @return true for valid format, false for invalid format
  */
-static inline void isp_ll_set_input_data_format(isp_dev_t *hw, color_space_pixel_format_t format)
+static inline bool isp_ll_set_input_data_color_format(isp_dev_t *hw, color_space_pixel_format_t format)
 {
-    switch (format) {
-    case COLOR_SPACE_RAW8:
-        hw->cntl.isp_data_type = 0;
-        break;
-    case COLOR_SPACE_RAW10:
-        hw->cntl.isp_data_type = 1;
-        break;
-    case COLOR_SPACE_RAW12:
-        hw->cntl.isp_data_type = 2;
-        break;
-    default:
-        HAL_ASSERT(false);
+    bool valid = false;
+
+    if (format.color_space == COLOR_SPACE_RAW) {
+        switch(format.pixel_format) {
+        case COLOR_PIXEL_RAW8:
+            hw->cntl.isp_data_type = 0;
+            valid = true;
+            break;
+        case COLOR_PIXEL_RAW10:
+            hw->cntl.isp_data_type = 1;
+            valid = true;
+            break;
+        case COLOR_PIXEL_RAW12:
+            hw->cntl.isp_data_type = 2;
+            valid = true;
+            break;
+        default:
+            break;
+        }
     }
+
+    return valid;
 }
 
 /**
  * @brief Set input data horizontal pixel number
  *
- * @param[in] hw
+ * @param[in] hw         Hardware instance address
  * @param[in] pixel_num  number of pixels
  */
 static inline void isp_ll_set_intput_data_h_pixel_num(isp_dev_t *hw, uint32_t pixel_num)
@@ -262,7 +273,7 @@ static inline void isp_ll_set_intput_data_h_pixel_num(isp_dev_t *hw, uint32_t pi
 /**
  * @brief Set input data vertical row number
  *
- * @param[in] hw
+ * @param[in] hw       Hardware instance address
  * @param[in] row_num  number of rows
  */
 static inline void isp_ll_set_intput_data_v_row_num(isp_dev_t *hw, uint32_t row_num)
@@ -271,53 +282,76 @@ static inline void isp_ll_set_intput_data_v_row_num(isp_dev_t *hw, uint32_t row_
 }
 
 /**
- * @brief Set output data format
+ * @brief Set output data color format
  *
- * @param[in] hw
- * @param[in] format  data format, see `color_space_pixel_format_t`
+ * @param[in] hw      Hardware instance address
+ * @param[in] format  color format, see `color_space_pixel_format_t`
+ *
+ * @return true for valid format, false for invalid format
  */
-static inline void isp_ll_set_output_data_format(isp_dev_t *hw, color_space_pixel_format_t format)
+static inline bool isp_ll_set_output_data_color_format(isp_dev_t *hw, color_space_pixel_format_t format)
 {
-    switch (format) {
-    case COLOR_SPACE_RAW8:
-        hw->cntl.isp_out_type = 0;
-        hw->cntl.demosaic_en = 0;
-        hw->cntl.rgb2yuv_en = 0;
-        hw->cntl.yuv2rgb_en = 0;
-        break;
-    case COLOR_SPACE_YUV422:
-        hw->cntl.isp_out_type = 1;
-        hw->cntl.demosaic_en = 1;
-        hw->cntl.rgb2yuv_en = 1;
-        hw->cntl.yuv2rgb_en = 0;
-        break;
-    case COLOR_SPACE_RGB888:
-        hw->cntl.isp_out_type = 2;
-        hw->cntl.demosaic_en = 1;
-        hw->cntl.rgb2yuv_en = 1;
-        hw->cntl.yuv2rgb_en = 1;
-        break;
-    case COLOR_SPACE_YUV420:
-        hw->cntl.isp_out_type = 3;
-        hw->cntl.demosaic_en = 1;
-        hw->cntl.rgb2yuv_en = 1;
-        hw->cntl.yuv2rgb_en = 0;
-        break;
-    case COLOR_SPACE_RGB565:
-        hw->cntl.isp_out_type = 4;
-        hw->cntl.demosaic_en = 1;
-        hw->cntl.rgb2yuv_en = 1;
-        hw->cntl.yuv2rgb_en = 1;
-        break;
-    default:
-        HAL_ASSERT(false);
+    bool valid = false;
+
+    if (format.color_space == COLOR_SPACE_RAW) {
+        switch(format.pixel_format) {
+        case COLOR_PIXEL_RAW8:
+            hw->cntl.isp_out_type = 0;
+            hw->cntl.demosaic_en = 0;
+            hw->cntl.rgb2yuv_en = 0;
+            hw->cntl.yuv2rgb_en = 0;
+            valid = true;
+            break;
+        default:
+            break;
+        }
+    } else if (format.color_space == COLOR_SPACE_RGB) {
+        switch(format.pixel_format) {
+        case COLOR_PIXEL_RGB888:
+            hw->cntl.isp_out_type = 2;
+            hw->cntl.demosaic_en = 1;
+            hw->cntl.rgb2yuv_en = 1;
+            hw->cntl.yuv2rgb_en = 1;
+            valid = true;
+            break;
+        case COLOR_PIXEL_RGB565:
+            hw->cntl.isp_out_type = 4;
+            hw->cntl.demosaic_en = 1;
+            hw->cntl.rgb2yuv_en = 1;
+            hw->cntl.yuv2rgb_en = 1;
+            valid = true;
+            break;
+        default:
+            break;
+        }
+    } else if (format.color_space == COLOR_SPACE_YUV) {
+        switch(format.pixel_format) {
+        case COLOR_PIXEL_YUV422:
+            hw->cntl.isp_out_type = 1;
+            hw->cntl.demosaic_en = 1;
+            hw->cntl.rgb2yuv_en = 1;
+            hw->cntl.yuv2rgb_en = 0;
+            valid = true;
+            break;
+        case COLOR_PIXEL_YUV420:
+            hw->cntl.isp_out_type = 3;
+            hw->cntl.demosaic_en = 1;
+            hw->cntl.rgb2yuv_en = 1;
+            hw->cntl.yuv2rgb_en = 0;
+            valid = true;
+            break;
+        default:
+            break;
+        }
     }
+
+    return valid;
 }
 
 /**
  * @brief Set if line start packet exists
  *
- * @param[in] hw
+ * @param[in] hw  Hardware instance address
  * @param[in] en  Enable / Disable
  */
 static inline void isp_ll_enable_line_start_packet_exist(isp_dev_t *hw, bool en)
@@ -328,7 +362,7 @@ static inline void isp_ll_enable_line_start_packet_exist(isp_dev_t *hw, bool en)
 /**
  * @brief Set if line end packet exists
  *
- * @param[in] hw
+ * @param[in] hw  Hardware instance address
  * @param[in] en  Enable / Disable
  */
 static inline void isp_ll_enable_line_end_packet_exist(isp_dev_t *hw, bool en)
@@ -339,9 +373,11 @@ static inline void isp_ll_enable_line_end_packet_exist(isp_dev_t *hw, bool en)
 /**
  * @brief Get if demosaic is enabled
  *
+ * @param[in] hw  Hardware instance address
+ *
  * @return  True: enabled
  */
-static inline bool isp_ll_get_demosaic_en(isp_dev_t *hw)
+static inline bool isp_ll_is_demosaic_enabled(isp_dev_t *hw)
 {
     return hw->cntl.demosaic_en;
 }
@@ -349,9 +385,11 @@ static inline bool isp_ll_get_demosaic_en(isp_dev_t *hw)
 /**
  * @brief Get if rgb2yuv is enabled
  *
+ * @param[in] hw  Hardware instance address
+ *
  * @return  True: enabled
  */
-static inline bool isp_ll_get_rgb2yuv_en(isp_dev_t *hw)
+static inline bool isp_ll_is_rgb2yuv_enabled(isp_dev_t *hw)
 {
     return hw->cntl.rgb2yuv_en;
 }
@@ -373,7 +411,7 @@ static inline void isp_ll_af_clk_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Enable / Disable AF
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_af_enable(isp_dev_t *hw, bool enable)
@@ -395,7 +433,7 @@ static inline void isp_ll_af_enable_auto_update(isp_dev_t *hw, bool enable)
 /**
  * @brief Manual aupdate AF once
  *
- * @param[in] hw
+ * @param[in] hw  Hardware instance address
  */
 static inline void isp_ll_af_manual_update(isp_dev_t *hw)
 {
@@ -406,7 +444,7 @@ static inline void isp_ll_af_manual_update(isp_dev_t *hw)
 /**
  * @brief Set edge thresh mode
  *
- * @param[in] hw
+ * @param[in] hw    Hardware instance address
  * @param[in] mode  See `isp_ll_af_edge_monitor_mode_t`
  */
 static inline void isp_ll_af_set_edge_thresh_mode(isp_dev_t *hw, isp_ll_af_edge_monitor_mode_t mode)
@@ -419,7 +457,7 @@ static inline void isp_ll_af_set_edge_thresh_mode(isp_dev_t *hw, isp_ll_af_edge_
 /**
  * @brief Set edge threshold
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] thresh  Edge threshold
  */
 static inline void isp_ll_af_set_edge_thresh(isp_dev_t *hw, uint32_t thresh)
@@ -432,7 +470,7 @@ static inline void isp_ll_af_set_edge_thresh(isp_dev_t *hw, uint32_t thresh)
 /**
  * @brief Set auto edge thresh pixel num
  *
- * @param[in] hw
+ * @param[in] hw         Hardware instance address
  * @param[in] pixel_num  Pixel numbers
  */
 static inline void isp_ll_af_set_auto_edge_thresh_pixel_num(isp_dev_t *hw, uint32_t pixel_num)
@@ -445,7 +483,7 @@ static inline void isp_ll_af_set_auto_edge_thresh_pixel_num(isp_dev_t *hw, uint3
 /**
  * @brief Set window range
  *
- * @param[in] hw
+ * @param[in] hw              Hardware instance address
  * @param[in] window_id       Window ID
  * @param[in] top_left_x      Top left pixel x axis value
  * @param[in] top_left_y      Top left pixel y axis value
@@ -486,7 +524,7 @@ static inline void isp_ll_af_set_window_range(isp_dev_t *hw, uint32_t window_id,
 /**
  * @brief Get window sum
  *
- * @param[in] hw
+ * @param[in] hw         Hardware instance address
  * @param[in] window_id  Window ID
  *
  * @return Window sum
@@ -508,7 +546,7 @@ static inline uint32_t isp_ll_af_get_window_sum(isp_dev_t *hw, uint32_t window_i
 /**
  * @brief Get window lum
  *
- * @param[in] hw
+ * @param[in] hw         Hardware instance address
  * @param[in] window_id  Window ID
  *
  * @return Window lum
@@ -533,7 +571,7 @@ static inline uint32_t isp_ll_af_get_window_lum(isp_dev_t *hw, uint32_t window_i
 /**
  * @brief Set env monitor period
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] period  period of the env monitor, in frames
  */
 static inline void isp_ll_af_env_monitor_set_period(isp_dev_t *hw, uint32_t period)
@@ -544,7 +582,7 @@ static inline void isp_ll_af_env_monitor_set_period(isp_dev_t *hw, uint32_t peri
 /**
  * @brief Set env monitor mode
  *
- * @param[in] hw
+ * @param[in] hw    Hardware instance address
  * @param[in] mode  See `isp_ll_af_env_monitor_mode_t`
  */
 static inline void isp_ll_af_env_monitor_set_mode(isp_dev_t *hw, isp_ll_af_env_monitor_mode_t mode)
@@ -560,7 +598,7 @@ static inline void isp_ll_af_env_monitor_set_mode(isp_dev_t *hw, isp_ll_af_env_m
 /**
  * @brief Set env monitor threshold
  *
- * @param[in] hw
+ * @param[in] hw          Hardware instance address
  * @param[in] sum_thresh  Threshold for definition
  * @param[in] lum_thresh  Threshold for luminance
  */
@@ -575,7 +613,7 @@ static inline void isp_ll_af_env_monitor_set_thresh(isp_dev_t *hw, uint32_t sum_
 /**
  * @brief Set env monitor ratio
  *
- * @param[in] hw
+ * @param[in] hw         Hardware instance address
  * @param[in] ratio_val  Threshold for ratio
  */
 static inline void isp_ll_af_env_monitor_set_ratio(isp_dev_t *hw, uint32_t ratio_val)
@@ -592,7 +630,7 @@ static inline void isp_ll_af_env_monitor_set_ratio(isp_dev_t *hw, uint32_t ratio
 /**
  * @brief Enable / Disable BF clock
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_bf_clk_enable(isp_dev_t *hw, bool enable)
@@ -603,7 +641,7 @@ static inline void isp_ll_bf_clk_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Enable / Disable BF
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_bf_enable(isp_dev_t *hw, bool enable)
@@ -617,7 +655,7 @@ static inline void isp_ll_bf_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Enable / Disable CCM clock
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_ccm_clk_enable(isp_dev_t *hw, bool enable)
@@ -628,7 +666,7 @@ static inline void isp_ll_ccm_clk_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Enable / Disable CCM
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_ccm_enable(isp_dev_t *hw, bool enable)
@@ -642,7 +680,7 @@ static inline void isp_ll_ccm_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Enable / Disable Color clock
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_color_clk_enable(isp_dev_t *hw, bool enable)
@@ -653,7 +691,7 @@ static inline void isp_ll_color_clk_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Enable / Disable Color
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] enable  Enable / Disable
  */
 static inline void isp_ll_color_enable(isp_dev_t *hw, bool enable)
@@ -667,7 +705,7 @@ static inline void isp_ll_color_enable(isp_dev_t *hw, bool enable)
 /**
  * @brief Enable / Disable interrupt
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] mask    INTR mask
  * @param[in] enable  Enable / disable
  */
@@ -684,7 +722,7 @@ static inline void isp_ll_enable_intr(isp_dev_t *hw, uint32_t mask, bool enable)
 /**
  * @brief Get interrupt status
  *
- * @param[in] hw
+ * @param[in] hw  Hardware instance address
  *
  * @return Interrupt status
  */
@@ -697,7 +735,7 @@ static inline uint32_t isp_ll_get_intr_status(isp_dev_t *hw)
 /**
  * @brief Get interrupt raw
  *
- * @param[in] hw
+ * @param[in] hw  Hardware instance address
  *
  * @return Interrupt raw
  */
@@ -710,7 +748,7 @@ static inline uint32_t isp_ll_get_intr_raw(isp_dev_t *hw)
 /**
  * @brief Clear interrupt
  *
- * @param[in] hw
+ * @param[in] hw      Hardware instance address
  * @param[in] mask    INTR mask
  */
 __attribute__((always_inline))

@@ -559,7 +559,7 @@ config SOC_ISP_NUMS
     int
     default 1
 
-config SOC_ISP_AF_CTRLR_NUMS
+config SOC_ISP_AF_CTLR_NUMS
     int
     default 1
 
