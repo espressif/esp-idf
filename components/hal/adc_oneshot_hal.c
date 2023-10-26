@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,33 +85,42 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz)
 {
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     (void)unit;
-    uint32_t delay = 0;
     /**
      * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
      * ADC digital controller (when its clock frequency is too slow). A rough estimate for this step should be at least 3 ADC digital controller
      * clock cycle.
      */
-    uint32_t digi_clk = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
+    uint32_t adc_ctrl_clk = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
     //Convert frequency to time (us). Since decimals are removed by this division operation. Add 1 here in case of the fact that delay is not enough.
-    delay = (1000 * 1000) / digi_clk + 1;
-    //3 ADC digital controller clock cycle
-    delay = delay * 3;
-    HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %"PRIu32", digi_clk: %"PRIu32", delay: %"PRIu32"", clk_src_freq_hz, digi_clk, delay);
+    uint32_t sample_delay_us = ((1000 * 1000) / adc_ctrl_clk + 1) * 3;
+    HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %"PRIu32", adc_ctrl_clk: %"PRIu32", sample_delay_us: %"PRIu32"", clk_src_freq_hz, adc_ctrl_clk, sample_delay_us);
 
     //This coefficient (8) is got from test, and verified from DT. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
-    if (digi_clk >= APB_CLK_FREQ/8) {
-        delay = 0;
+    if (adc_ctrl_clk >= APB_CLK_FREQ/8) {
+        sample_delay_us = 0;
     }
 
-    HAL_EARLY_LOGD("adc_hal", "delay: %"PRIu32"", delay);
+    HAL_EARLY_LOGD("adc_hal", "delay for `onetime_start` signal captured: %"PRIu32"", sample_delay_us);
     adc_oneshot_ll_start(false);
-    esp_rom_delay_us(delay);
+    esp_rom_delay_us(sample_delay_us);
     adc_oneshot_ll_start(true);
 
-    //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
+#if ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL
+    /**
+     * There is a hardware limitation.
+     * After ADC get DONE signal, it still need a delay to synchronize ADC raw data or it may get zero.
+     * A rough estimate for this step should be at least ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL ADC sar clock cycle.
+     */
+    uint32_t sar_clk = adc_ctrl_clk / ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT;
+    uint32_t read_delay_us = ((1000 * 1000) / sar_clk + 1) * ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL;
+    HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %"PRIu32", sar_clk: %"PRIu32", read_delay_us: %"PRIu32"", clk_src_freq_hz, sar_clk, read_delay_us);
+    esp_rom_delay_us(read_delay_us);
+
+#endif //ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL
+
 #else
     adc_oneshot_ll_start(unit);
-#endif
+#endif // SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 }
 
 bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
