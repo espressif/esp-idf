@@ -283,6 +283,8 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
 int __wrap_mbedtls_ssl_setup(mbedtls_ssl_context *ssl, const mbedtls_ssl_config *conf)
 {
     ssl->conf = conf;
+    ssl->tls_version = ssl->conf->max_tls_version;
+
     CHECK_OK(ssl_handshake_init(ssl));
 
     mbedtls_free(ssl->MBEDTLS_PRIVATE(out_buf));
