@@ -15,6 +15,7 @@
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "test_common_adc.h"
+#include "esp_rom_sys.h"
 
 const __attribute__((unused)) static char *TAG = "TEST_ADC";
 
@@ -115,6 +116,44 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     TEST_ESP_OK(adc_oneshot_del_unit(adc2_handle));
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+}
+
+TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_oneshot]")
+{
+    //There is a hardware limitation. After ADC get DONE signal, it still need a delay to synchronize ADC raw data or it may get zero even if getting DONE signal.
+
+    int test_num = 100;
+    adc_channel_t channel = ADC1_TEST_CHAN1;
+    adc_atten_t atten = ADC_ATTEN_DB_11;
+    adc_unit_t unit_id = ADC_UNIT_1;
+
+    adc_oneshot_unit_handle_t adc1_handle;
+    adc_oneshot_unit_init_cfg_t init_config1 = {
+        .unit_id = unit_id,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
+    };
+
+    adc_oneshot_chan_cfg_t config = {
+        .bitwidth = SOC_ADC_RTC_MAX_BITWIDTH,
+        .atten = atten,
+    };
+
+    int raw_data = 0;
+    srand(199);
+
+    for (int i = 0; i < test_num; i++) {
+        test_adc_set_io_level(unit_id, ADC1_TEST_CHAN1, 1);
+
+        TEST_ESP_OK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+        TEST_ESP_OK(adc_oneshot_config_channel(adc1_handle, channel, &config));
+        TEST_ESP_OK(adc_oneshot_read(adc1_handle, channel, &raw_data));
+
+        TEST_ASSERT_NOT_EQUAL(0, raw_data);
+
+        TEST_ESP_OK(adc_oneshot_del_unit(adc1_handle));
+
+        esp_rom_delay_us(rand() % 512);
+    }
 }
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
