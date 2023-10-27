@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/system_reg.h"
 #include "soc/usb_wrap_struct.h"
@@ -22,8 +23,6 @@ extern "C" {
  */
 static inline void usb_phy_ll_int_otg_enable(usb_wrap_dev_t *hw)
 {
-    //Enable internal PHY
-    hw->otg_conf.pad_enable = 1;
     hw->otg_conf.phy_sel = 0;
 }
 
@@ -59,6 +58,16 @@ static inline void usb_phy_ll_int_load_conf(usb_wrap_dev_t *hw, bool dp_pu, bool
 }
 
 /**
+ * @brief Enable the internal PHY control to D+/D- pad
+ * @param hw     Start address of the USB Wrap registers
+ * @param pad_en Enable the PHY control to D+/D- pad
+ */
+static inline void usb_phy_ll_usb_wrap_pad_enable(usb_wrap_dev_t *hw, bool pad_en)
+{
+    hw->otg_conf.pad_enable = pad_en;
+}
+
+/**
  * @brief Enable the internal PHY's test mode
  *
  * @param hw Start address of the USB Wrap registers
@@ -76,6 +85,24 @@ static inline void usb_phy_ll_int_enable_test_mode(usb_wrap_dev_t *hw, bool en)
     } else {
         hw->test_conf.test_enable = 0;
     }
+}
+
+/**
+ * Enable the bus clock for USB Wrap module
+ * @param clk_en True if enable the clock of USB Wrap module
+ */
+FORCE_INLINE_ATTR void usb_phy_ll_usb_wrap_enable_bus_clock(bool clk_en)
+{
+    REG_SET_FIELD(DPORT_PERIP_CLK_EN0_REG, DPORT_USB_CLK_EN, clk_en);
+}
+
+/**
+ * @brief Reset the USB Wrap module
+ */
+FORCE_INLINE_ATTR void usb_phy_ll_usb_wrap_reset_register(void)
+{
+    REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 1);
+    REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 0);
 }
 
 #ifdef __cplusplus
