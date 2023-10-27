@@ -345,7 +345,13 @@ static void transport_simple_ble_disconnect(esp_gatts_cb_event_t event, esp_gatt
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error closing the session after disconnect");
         } else {
-            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            protocomm_ble_event_t ble_event = {};
+            /* Assign the event type */
+            ble_event.evt_type = PROTOCOMM_TRANSPORT_BLE_DISCONNECTED;
+            /* Set the Disconnection handle */
+            ble_event.conn_handle = param->disconnect.conn_id;
+
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, &ble_event, sizeof(protocomm_ble_event_t), portMAX_DELAY) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to post transport disconnection event");
             }
         }
@@ -371,7 +377,13 @@ static void transport_simple_ble_connect(esp_gatts_cb_event_t event, esp_gatt_if
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error creating the session");
         } else {
-            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_CONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            protocomm_ble_event_t ble_event = {};
+            /* Assign the event type */
+            ble_event.evt_type = PROTOCOMM_TRANSPORT_BLE_CONNECTED;
+            /* Set the Connection handle */
+            ble_event.conn_handle = param->connect.conn_id;
+
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_CONNECTED, &ble_event, sizeof(protocomm_ble_event_t), portMAX_DELAY) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to post transport pairing event");
             }
         }
