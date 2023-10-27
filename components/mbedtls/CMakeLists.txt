@@ -192,8 +192,10 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
 endif()
 
 
-target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
-                                  "${COMPONENT_DIR}/port/esp_mem.c"
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c")
+endif()
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c"
                                   "${COMPONENT_DIR}/port/esp_timing.c"
 )
 
