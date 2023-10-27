@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_I2C_STRUCT_H_
 #define _SOC_I2C_STRUCT_H_
 
@@ -363,39 +355,8 @@ typedef volatile struct i2c_dev_s {
     uint32_t reserved_f4;
     uint32_t date;
     uint32_t reserved_fc;
-    uint32_t txfifo_start_addr;
-    uint32_t reserved_104;
-    uint32_t reserved_108;
-    uint32_t reserved_10c;
-    uint32_t reserved_110;
-    uint32_t reserved_114;
-    uint32_t reserved_118;
-    uint32_t reserved_11c;
-    uint32_t reserved_120;
-    uint32_t reserved_124;
-    uint32_t reserved_128;
-    uint32_t reserved_12c;
-    uint32_t reserved_130;
-    uint32_t reserved_134;
-    uint32_t reserved_138;
-    uint32_t reserved_13c;
-    uint32_t reserved_140;
-    uint32_t reserved_144;
-    uint32_t reserved_148;
-    uint32_t reserved_14c;
-    uint32_t reserved_150;
-    uint32_t reserved_154;
-    uint32_t reserved_158;
-    uint32_t reserved_15c;
-    uint32_t reserved_160;
-    uint32_t reserved_164;
-    uint32_t reserved_168;
-    uint32_t reserved_16c;
-    uint32_t reserved_170;
-    uint32_t reserved_174;
-    uint32_t reserved_178;
-    uint32_t reserved_17c;
-    uint32_t rxfifo_start_addr;
+    uint32_t txfifo_mem[32];
+    uint32_t rxfifo_mem[32];
 } i2c_dev_t;
 extern i2c_dev_t I2C0;
 #ifdef __cplusplus
