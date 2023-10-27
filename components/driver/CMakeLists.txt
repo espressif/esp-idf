@@ -23,7 +23,6 @@ set(includes "include"
              "ledc/include"
              "mcpwm/include"
              "parlio/include"
-             "pcnt/include"
              "rmt/include"
              "sdio_slave/include"
              "sdmmc/include"
@@ -153,10 +152,9 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
     list(APPEND ldfragments "mcpwm/linker.lf")
 endif()
 
-# PCNT related source files
+# PCNT legacy driver
 if(CONFIG_SOC_PCNT_SUPPORTED)
-    list(APPEND srcs "pcnt/pulse_cnt.c"
-                     "deprecated/pcnt_legacy.c")
+    list(APPEND srcs "deprecated/pcnt_legacy.c")
 endif()
 
 # RMT related source files
@@ -248,6 +246,9 @@ else()
                            INCLUDE_DIRS ${includes}
                            PRIV_REQUIRES efuse esp_timer esp_mm
                            REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
+                           # for backward compatibility, the driver component needs to
+                           # have a public dependency on other "esp_driver_foo" components
+                                    esp_driver_pcnt
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

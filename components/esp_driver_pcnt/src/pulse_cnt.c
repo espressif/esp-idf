@@ -192,7 +192,7 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
                       "invalid limit range:[%d,%d]", config->low_limit, config->high_limit);
     if (config->intr_priority) {
         ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & PCNT_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
-                            TAG, "invalid interrupt priority:%d", config->intr_priority);
+                          TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
 
     unit = heap_caps_calloc(1, sizeof(pcnt_unit_t), PCNT_MEM_ALLOC_CAPS);
@@ -225,8 +225,8 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
             isr_flags |= PCNT_ALLOW_INTR_PRIORITY_MASK;
         }
         ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(pcnt_periph_signals.groups[group_id].irq, isr_flags,
-                          (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
-                          pcnt_default_isr, unit, &unit->intr), err,
+                                                    (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
+                                                    pcnt_default_isr, unit, &unit->intr), err,
                           TAG, "install interrupt service failed");
     }
 
@@ -488,8 +488,8 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
             isr_flags |= PCNT_ALLOW_INTR_PRIORITY_MASK;
         }
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(pcnt_periph_signals.groups[group_id].irq, isr_flags,
-                            (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
-                            pcnt_default_isr, unit, &unit->intr),
+                                                      (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
+                                                      pcnt_default_isr, unit, &unit->intr),
                             TAG, "install interrupt service failed");
     }
     // enable/disable PCNT interrupt events

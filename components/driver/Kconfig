@@ -227,7 +227,7 @@ menu "Driver Configurations"
 
     orsource "./gptimer/Kconfig.gptimer"
 
-    orsource "./pcnt/Kconfig.pcnt"
+    orsource "../esp_driver_pcnt/Kconfig.pcnt"
 
     orsource "./rmt/Kconfig.rmt"
 
