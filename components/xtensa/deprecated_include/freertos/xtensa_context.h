@@ -6,6 +6,6 @@
 
 #pragma once
 
-/* This header file has been moved, thus `#include <freertos/xtensa_context.h>` is deprecated. Please use `#include <xtensa_context.h>` instead */
-/* Todo: IDF-7230 */
-#include <xtensa/xtensa_context.h>
+#warning "This header file has been moved, thus `#include <freertos/xtensa_context.h>` is deprecated. Please use `#include <xtensa_context.h>` instead"
+
+#include <xtensa_context.h>
