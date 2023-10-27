@@ -133,6 +133,9 @@ typedef enum {
     WIFI_REASON_ROAMING                            = 207,
     WIFI_REASON_ASSOC_COMEBACK_TIME_TOO_LONG       = 208,
     WIFI_REASON_SA_QUERY_TIMEOUT                   = 209,
+    WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY  = 210,
+    WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD  = 211,
+    WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD      = 212,
 } wifi_err_reason_t;
 
 typedef enum {
