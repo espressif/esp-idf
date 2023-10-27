@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2023 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,12 +62,14 @@ bt_status_t btc_storage_remove_bonded_device(bt_bdaddr_t *remote_bd_addr);
 
 /*******************************************************************************
 **
-** Function         btc_storage_remove_bonded_device
+** Function         btc_storage_load_bonded_devices
 **
-** Description      BTC storage API - Deletes the bonded device from NVRAM
+** Description      BTC storage API - Loads all the bonded devices from NVRAM
+**                  and adds to the BTA.
+**                  Additionally, this API also invokes the adaper_properties_cb
+**                  and remote_device_properties_cb for each of the bonded devices.
 **
-** Returns          BT_STATUS_SUCCESS if the deletion was successful,
-**                  BT_STATUS_FAIL otherwise
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
 **
 *******************************************************************************/
 bt_status_t btc_storage_load_bonded_devices(void);
@@ -94,6 +96,31 @@ int btc_storage_get_num_bt_bond_devices(void);
 **
 *******************************************************************************/
 bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int *dev_num);
+
+/*******************************************************************************
+**
+** Function         btc_storage_get_num_all_bond_devices
+**
+** Description      BTC storage API - get all the num of the bonded device from NVRAM
+**
+** Returns          the num of the bonded device
+**
+*******************************************************************************/
+int btc_storage_get_num_all_bond_devices(void);
+
+/*******************************************************************************
+**
+** Function         btc_storage_update_active_device
+**
+** Description      BTC storage API - Once an ACL link is established and remote
+**                  bd_addr is already stored in NVRAM, update the config and update
+**                  the remote device to be the newest active device. The updates will
+**                  not be stored into NVRAM immediately.
+**
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr);
 
 #if (defined BTC_HH_INCLUDED && BTC_HH_INCLUDED == TRUE)
 /*******************************************************************************
@@ -172,8 +199,7 @@ bt_status_t btc_storage_set_hidd(bt_bdaddr_t *remote_bd_addr);
  ******************************************************************************/
 bt_status_t btc_storage_remove_hidd(bt_bdaddr_t *remote_bd_addr);
 #endif //(defined BTC_HD_INCLUDED && BTC_HD_INCLUDED == TRUE)
+#endif /* BTC_STORAGE_H */
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* BTC_STORAGE_H */
