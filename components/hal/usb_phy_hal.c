@@ -20,6 +20,7 @@ void usb_phy_hal_otg_conf(usb_phy_hal_context_t *hal, usb_phy_target_t phy_targe
     if (phy_target == USB_PHY_TARGET_EXT) {
         usb_phy_ll_ext_otg_enable(hal->wrap_dev);
     } else if (phy_target == USB_PHY_TARGET_INT) {
+        usb_phy_ll_usb_wrap_pad_enable(hal->wrap_dev, true);
         usb_phy_ll_int_otg_enable(hal->wrap_dev);
     }
 }

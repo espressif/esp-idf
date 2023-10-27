@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,14 @@
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "hal/gpio_ll.h"
+#include "soc/soc_caps.h"
 #include "soc/usb_pins.h"
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define USB_WRAP_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define USB_WRAP_RCC_ATOMIC()
+#endif
 
 static const char *USBPHY_TAG = "usb_phy";
 
@@ -219,9 +226,12 @@ static esp_err_t usb_phy_install(void)
         portEXIT_CRITICAL(&phy_spinlock);
         goto cleanup;
     }
+    // Enable USB peripheral and reset the register
     portEXIT_CRITICAL(&phy_spinlock);
-    periph_module_enable(usb_otg_periph_signal.module);
-    periph_module_reset(usb_otg_periph_signal.module);
+    USB_WRAP_RCC_ATOMIC() {
+        usb_phy_ll_usb_wrap_enable_bus_clock(true);
+        usb_phy_ll_usb_wrap_reset_register();
+    }
     return ESP_OK;
 
 cleanup:
@@ -311,8 +321,10 @@ static void phy_uninstall(void)
     if (p_phy_ctrl_obj->ref_count == 0) {
         p_phy_ctrl_obj_free = p_phy_ctrl_obj;
         p_phy_ctrl_obj = NULL;
-        // Disable USB peripheral
-        periph_module_disable(usb_otg_periph_signal.module);
+        USB_WRAP_RCC_ATOMIC() {
+            // Disable USB peripheral without reset the module
+            usb_phy_ll_usb_wrap_enable_bus_clock(false);
+        }
     }
     portEXIT_CRITICAL(&phy_spinlock);
     free(p_phy_ctrl_obj_free);
@@ -327,8 +339,9 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
     if (handle->target == USB_PHY_TARGET_EXT) {
         p_phy_ctrl_obj->external_phy = NULL;
     } else {
-        // Clear pullup and pulldown loads on D+ / D-
+        // Clear pullup and pulldown loads on D+ / D-, and disable the pads
         usb_phy_ll_int_load_conf(handle->hal_context.wrap_dev, false, false, false, false);
+        usb_phy_ll_usb_wrap_pad_enable(handle->hal_context.wrap_dev, false);
         p_phy_ctrl_obj->internal_phy = NULL;
     }
     portEXIT_CRITICAL(&phy_spinlock);
