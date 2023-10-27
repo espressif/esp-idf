@@ -206,6 +206,11 @@ void block_absorb_post_hook(void *start, size_t size, bool is_free)
 
 void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t alignment)
 {
+    return multi_heap_aligned_alloc_offs(heap, size, alignment, 0);
+}
+
+void *multi_heap_aligned_alloc_offs(multi_heap_handle_t heap, size_t size, size_t alignment, size_t offset)
+{
     if (!size) {
         return NULL;
     }
@@ -216,7 +221,7 @@ void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t ali
 
     multi_heap_internal_lock(heap);
     poison_head_t *head = multi_heap_aligned_alloc_impl_offs(heap, size + POISON_OVERHEAD,
-                                                             alignment, sizeof(poison_head_t));
+                                                             alignment, offset + sizeof(poison_head_t));
     uint8_t *data = NULL;
     if (head != NULL) {
         data = poison_allocated_region(head, size);
