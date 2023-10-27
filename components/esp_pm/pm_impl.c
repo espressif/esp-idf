@@ -29,7 +29,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
-#include "freertos/xtensa_timer.h"
+#include "xtensa_timer.h"
 #include "xtensa/core-macros.h"
 #endif
 
