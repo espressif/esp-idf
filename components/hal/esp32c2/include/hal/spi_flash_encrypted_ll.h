@@ -17,6 +17,7 @@
 #include "soc/system_reg.h"
 #include "soc/xts_aes_reg.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
@@ -84,7 +85,8 @@ static inline void spi_flash_encrypt_ll_buffer_length(uint32_t size)
  */
 static inline void spi_flash_encrypt_ll_plaintext_save(uint32_t address, const uint32_t* buffer, uint32_t size)
 {
-    uint32_t plaintext_offs = (address % 64);
+    uint32_t plaintext_offs = (address % SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX);
+    HAL_ASSERT(plaintext_offs + size <= SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX);
     memcpy((void *)(XTS_AES_PLAIN_MEM + plaintext_offs), buffer, size);
 }
 
