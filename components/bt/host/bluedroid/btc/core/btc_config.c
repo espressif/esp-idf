@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -297,6 +297,14 @@ bool btc_config_remove_section(const char *section)
     assert(section != NULL);
 
     return config_remove_section(config, section);
+}
+
+bool btc_config_update_newest_section(const char *section)
+{
+    assert(config != NULL);
+    assert(section != NULL);
+
+    return config_update_newest_section(config, section);
 }
 
 void btc_config_flush(void)
