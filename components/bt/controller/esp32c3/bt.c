@@ -43,8 +43,6 @@
 #include "riscv/interrupt.h"
 #include "esp32c3/rom/rom_layout.h"
 #else //CONFIG_IDF_TARGET_ESP32S3
-#include "freertos/xtensa_api.h"
-#include "xtensa/core-macros.h"
 #include "esp32s3/rom/rom_layout.h"
 #endif
 #if CONFIG_BT_ENABLED

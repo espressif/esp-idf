@@ -16,8 +16,8 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/portmacro.h"
+#include "xtensa_api.h" // Replace with interrupt allocator API (IDF-3891)
 #include "xtensa/core-macros.h"
 #include "esp_types.h"
 #include "esp_mac.h"

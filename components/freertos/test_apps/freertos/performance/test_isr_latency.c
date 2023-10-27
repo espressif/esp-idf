@@ -18,7 +18,7 @@
 #include "test_utils.h"
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xtensa/hal.h"
-#include "freertos/xtensa_api.h"
+#include "xtensa_api.h"     // Replace with interrupt allocator API (IDF-3891)
 #define TEST_SET_INT_MASK(mask) xt_set_intset(mask)
 #define TEST_CLR_INT_MASK(mask) xt_set_intclear(mask)
 #elif CONFIG_IDF_TARGET_ARCH_RISCV
