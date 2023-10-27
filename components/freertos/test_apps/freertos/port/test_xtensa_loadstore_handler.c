@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,10 +15,7 @@
 #include "esp_random.h"
 #include "unity.h"
 
-#if CONFIG_IDF_TARGET_ARCH_XTENSA
-#include "freertos/xtensa_api.h"
-
-#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 TEST_CASE("LoadStore Exception handler", "[freertos]")
 {
     int32_t val0 = 0xDEADBEEF;
@@ -128,5 +125,4 @@ TEST_CASE("LoadStore Exception handler", "[freertos]")
     TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
     heap_caps_free(arr);
 }
-#endif // CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
-#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
