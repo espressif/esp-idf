@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,7 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "brownout.h"
+#include "esp_private/sleep_console.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/sar_periph_ctrl.h"
 
@@ -351,6 +352,10 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 #endif
         }
     } else {
+#if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
+        // Only avoid USJ pad leakage here, USB OTG pad leakage is prevented through USB Host driver.
+        sleep_console_usj_pad_backup_and_disable();
+#endif
 #if CONFIG_MAC_BB_PD
         mac_bb_power_down_cb_execute();
 #endif
@@ -374,6 +379,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
  */
 inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
+#if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
+    sleep_console_usj_pad_restore();
+#endif
     sar_periph_ctrl_power_enable();
 #if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
     sleep_disable_memory_retention();

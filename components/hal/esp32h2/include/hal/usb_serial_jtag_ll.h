@@ -15,10 +15,12 @@
 // The LL layer of the USB-serial-jtag controller
 
 #pragma once
-
+#include <stdbool.h>
+#include "esp_attr.h"
 #include "hal/misc.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
+#include "soc/clkrst_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,6 +167,60 @@ static inline void usb_serial_jtag_ll_txfifo_flush(void)
     USB_SERIAL_JTAG.ep1_conf.wr_done=1;
 }
 
+
+/**
+ * @brief Disable usb serial jtag pad during light sleep to avoid current leakage
+ *
+ * @return Initial configuration of usb serial jtag pad enable before light sleep
+ */
+FORCE_INLINE_ATTR bool usb_serial_jtag_ll_pad_backup_and_disable(void)
+{
+    bool pad_enabled = USB_SERIAL_JTAG.conf0.usb_pad_enable;
+
+    // Disable USB pad function
+    USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
+
+    return pad_enabled;
+}
+
+/**
+ * @brief Enable the internal USJ PHY control to D+/D- pad
+ *
+ * @param enable_pad Enable the USJ PHY control to D+/D- pad
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_pad(bool enable_pad)
+{
+    USB_SERIAL_JTAG.conf0.usb_pad_enable = enable_pad;
+}
+
+/**
+ * @brief Enable the bus clock for  USB Serial_JTAG module
+ * @param clk_en True if enable the clock of USB Serial_JTAG module
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
+{
+    REG_SET_BIT(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_USB_DEVICE_CLK_EN);
+}
+
+/**
+ * @brief Reset the usb serial jtag module
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
+{
+    REG_SET_BIT(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_USB_DEVICE_RST);
+    REG_CLR_BIT(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_USB_DEVICE_RST);
+}
+
+/**
+ * Get the enable status USB Serial_JTAG module
+ *
+ * @return Return true if USB Serial_JTAG module is enabled
+ */
+FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
+{
+    return (REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_USB_DEVICE_CLK_EN) \
+        && !REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_USB_DEVICE_RST));
+}
 
 #ifdef __cplusplus
 }
