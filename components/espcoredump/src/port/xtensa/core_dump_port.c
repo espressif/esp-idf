@@ -14,7 +14,7 @@
 #include "soc/soc_memory_layout.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "esp_rom_sys.h"
 #include "esp_core_dump_common.h"
 #include "esp_core_dump_port.h"

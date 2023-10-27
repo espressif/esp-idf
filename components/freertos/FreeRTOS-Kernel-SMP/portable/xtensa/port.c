@@ -13,7 +13,7 @@
 #include "portmacro.h"
 #include "spinlock.h"
 #include "xt_instr_macros.h"
-#include "xtensa/xtensa_context.h"
+#include "xtensa_context.h"
 #include "xtensa/corebits.h"
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"

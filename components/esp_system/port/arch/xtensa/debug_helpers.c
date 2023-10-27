@@ -15,7 +15,7 @@
 #include "esp_cpu_utils.h"
 #include "esp_private/panic_internal.h"
 
-#include "xtensa/xtensa_context.h"
+#include "xtensa_context.h"
 
 #include "sdkconfig.h"
 
