@@ -38,10 +38,9 @@ components/spi_flash/test_apps/flash_suspend:
     - if: IDF_TARGET != "esp32c3"
       temporary: true
       reason: lack of runners
-  depends_filepatterns:
-    - components/driver/gptimer/**/*
   depends_components:
     - spi_flash
+    - esp_driver_gptimer
 
 components/spi_flash/test_apps/mspi_test:
   disable:

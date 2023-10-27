@@ -81,7 +81,7 @@ examples/system/eventfd:
     - if: SOC_GPTIMER_SUPPORTED != 1
   depends_components:
     - vfs
-    - driver
+    - esp_driver_gptimer
 
 examples/system/flash_suspend:
   enable:

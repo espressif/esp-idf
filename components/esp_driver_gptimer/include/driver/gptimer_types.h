@@ -35,7 +35,7 @@ typedef struct {
  * @param[in] user_ctx User data, passed from `gptimer_register_event_callbacks`
  * @return Whether a high priority task has been waken up by this function
  */
-typedef bool (*gptimer_alarm_cb_t) (gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);
+typedef bool (*gptimer_alarm_cb_t)(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);
 
 #ifdef __cplusplus
 }

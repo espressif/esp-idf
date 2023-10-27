@@ -13,6 +13,11 @@ components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
 components/esp_hw_support/test_apps/etm:
   disable:
     - if: SOC_ETM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_gptimer
+    - esp_driver_gpio
+    - esp_timer
+    - driver # TODO: replace with esp_driver_mcpwm, esp_driver_ana_cmpr
 
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
