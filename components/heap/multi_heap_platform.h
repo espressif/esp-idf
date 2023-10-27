@@ -72,6 +72,7 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
 #define MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(HEAD) ((TaskHandle_t*)(HEAD) - 1)
 #define MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(SIZE) ((SIZE) + sizeof(TaskHandle_t))
 #define MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(SIZE) ((SIZE) - sizeof(TaskHandle_t))
+#define MULTI_HEAP_BLOCK_OWNER_SIZE() sizeof(TaskHandle_t)
 #else
 #define MULTI_HEAP_SET_BLOCK_OWNER(HEAD)
 #define MULTI_HEAP_GET_BLOCK_OWNER(HEAD) (NULL)
@@ -79,6 +80,7 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
 #define MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(HEAD) (HEAD)
 #define MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(SIZE) (SIZE)
 #define MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(SIZE) (SIZE)
+#define MULTI_HEAP_BLOCK_OWNER_SIZE() 0
 #endif // CONFIG_HEAP_TASK_TRACKING
 
 #else // MULTI_HEAP_FREERTOS

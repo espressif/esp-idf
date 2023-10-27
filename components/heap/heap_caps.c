@@ -122,7 +122,9 @@ HEAP_IRAM_ATTR static void *heap_caps_malloc_base( size_t size, uint32_t caps)
 {
     void *ret = NULL;
 
-    if (size == 0 || MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size) > HEAP_SIZE_MAX ) {
+    // remove block owner size to HEAP_SIZE_MAX rather than adding the block owner size
+    // to size to prevent overflows.
+    if (size == 0 || size > MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(HEAP_SIZE_MAX) ) {
         // Avoids int overflow when adding small numbers to size, or
         // calculating 'end' from start+size, by limiting 'size' to the possible range
         return NULL;
@@ -412,7 +414,9 @@ HEAP_IRAM_ATTR static void *heap_caps_realloc_base( void *ptr, size_t size, uint
         return NULL;
     }
 
-    if (MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size) > HEAP_SIZE_MAX) {
+    // remove block owner size to HEAP_SIZE_MAX rather than adding the block owner size
+    // to size to prevent overflows.
+    if (size > MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(HEAP_SIZE_MAX)) {
         return NULL;
     }
 
@@ -421,6 +425,7 @@ HEAP_IRAM_ATTR static void *heap_caps_realloc_base( void *ptr, size_t size, uint
     if(esp_ptr_in_diram_iram((void *)ptr)) {
         uint32_t *dram_addr = (uint32_t *)ptr;
         dram_ptr  = (void *)dram_addr[-1];
+        dram_ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(dram_ptr);
 
         heap = find_containing_heap(dram_ptr);
         assert(heap != NULL && "realloc() pointer is outside heap areas");
@@ -434,6 +439,12 @@ HEAP_IRAM_ATTR static void *heap_caps_realloc_base( void *ptr, size_t size, uint
         heap = find_containing_heap(ptr);
         assert(heap != NULL && "realloc() pointer is outside heap areas");
     }
+
+    // shift ptr by block owner offset. Since the ptr returned to the user
+    // does not include the block owner bytes (that are located at the
+    // beginning of the allocated memory) we have to add them back before
+    // processing the realloc.
+    ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(ptr);
 
     // are the existing heap's capabilities compatible with the
     // requested ones?
@@ -466,8 +477,10 @@ HEAP_IRAM_ATTR static void *heap_caps_realloc_base( void *ptr, size_t size, uint
         }
 
         assert(old_size > 0);
-        memcpy(new_p, ptr, MIN(size, old_size));
-        heap_caps_free(ptr);
+        // do not copy the block owner bytes
+        memcpy(new_p, MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ptr), MIN(size, old_size));
+        // add the block owner bytes to ptr since they are removed in heap_caps_free
+        heap_caps_free(MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ptr));
         return new_p;
     }
 
@@ -571,11 +584,13 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
             multi_heap_info_t hinfo;
             multi_heap_get_info(heap->heap, &hinfo);
 
-            info->total_free_bytes += hinfo.total_free_bytes;
-            info->total_allocated_bytes += hinfo.total_allocated_bytes;
+            info->total_free_bytes += hinfo.total_free_bytes - MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0);
+            info->total_allocated_bytes += (hinfo.total_allocated_bytes -
+                                           hinfo.allocated_blocks * MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0));
             info->largest_free_block = MAX(info->largest_free_block,
                                            hinfo.largest_free_block);
-            info->minimum_free_bytes += hinfo.minimum_free_bytes;
+            info->largest_free_block -= info->largest_free_block ? MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0) : 0;
+            info->minimum_free_bytes += hinfo.minimum_free_bytes - MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0);
             info->allocated_blocks += hinfo.allocated_blocks;
             info->free_blocks += hinfo.free_blocks;
             info->total_blocks += hinfo.total_blocks;
@@ -654,6 +669,9 @@ void heap_caps_dump_all(void)
 
 size_t heap_caps_get_allocated_size( void *ptr )
 {
+    // add the block owner bytes back to ptr before handing over
+    // to multi heap layer.
+    ptr = MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(ptr);
     heap_t *heap = find_containing_heap(ptr);
     assert(heap);
     size_t size = multi_heap_get_allocated_size(heap->heap, ptr);
@@ -673,8 +691,9 @@ static HEAP_IRAM_ATTR void *heap_caps_aligned_alloc_base(size_t alignment, size_
                 //Heap has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.
                 if ((get_all_caps(heap) & caps) == caps) {
-                    //Just try to alloc, nothing special.
-                    void *ret = multi_heap_aligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size), alignment);
+                    // Just try to alloc, nothing special. Provide the size of the block owner
+                    // as an offset to prevent a miscalculation of the alignment.
+                    void *ret = multi_heap_aligned_alloc_offs(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(size), alignment, MULTI_HEAP_BLOCK_OWNER_SIZE());
                     if (ret != NULL) {
                         MULTI_HEAP_SET_BLOCK_OWNER(ret);
                         ret = MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(ret);
