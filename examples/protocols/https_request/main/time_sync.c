@@ -87,7 +87,7 @@ exit:
     if (my_handle != 0) {
         nvs_close(my_handle);
     }
-    esp_netif_deinit();
+    esp_netif_sntp_deinit();
 
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error updating time in nvs");
