@@ -127,6 +127,28 @@ static inline void i2c_ll_update(i2c_dev_t *hw)
 }
 
 /**
+ * @brief Enable the bus clock for I2C module
+ *
+ * @param i2c_port I2C port id
+ * @param enable true to enable, false to disable
+ */
+static inline void i2c_ll_enable_bus_clock(int i2c_port, bool enable)
+{
+    PCR.i2c[i2c_port].i2c_conf.i2c_clk_en = enable;
+}
+
+/**
+ * @brief Reset the I2C module
+ *
+ * @param i2c_port Group ID
+ */
+static inline void i2c_ll_reset_register(int i2c_port)
+{
+    PCR.i2c[i2c_port].i2c_conf.i2c_rst_en = 1;
+    PCR.i2c[i2c_port].i2c_conf.i2c_rst_en = 0;
+}
+
+/**
  * @brief  Configure the I2C bus timing related register.
  *
  * @param  hw Beginning address of the peripheral registers
