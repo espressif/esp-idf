@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -40,7 +40,7 @@
 
 #include "esp_tls.h"
 #include "sdkconfig.h"
-#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE && CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
 #include "esp_crt_bundle.h"
 #endif
 #include "time_sync.h"
@@ -164,7 +164,7 @@ exit:
     }
 }
 
-#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE && CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
 static void https_get_request_using_crt_bundle(void)
 {
     ESP_LOGI(TAG, "https_request using crt bundle");
@@ -173,7 +173,7 @@ static void https_get_request_using_crt_bundle(void)
     };
     https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
 }
-#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE && CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
 
 static void https_get_request_using_cacert_buf(void)
 {
@@ -253,7 +253,7 @@ static void https_request_task(void *pvparameters)
     https_get_request_using_already_saved_session(server_url);
 #endif
 
-#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE && CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
     https_get_request_using_crt_bundle();
 #endif
     ESP_LOGI(TAG, "Minimum free heap size: %" PRIu32 " bytes", esp_get_minimum_free_heap_size());
