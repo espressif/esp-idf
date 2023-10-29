@@ -172,7 +172,7 @@ menu "Bootloader config"
     config BOOTLOADER_WAIT_AFTER_EN_TIME_MS
         int "Time to wait before the Factory Reset GPIO probe (ms)"
         depends on BOOTLOADER_WAIT_AFTER_EN
-        default 3000
+        default 1000
         range 0 10000
         help
             The specified waiting time after booting the bootloader and prior to probing the Factory Reset GPIO
