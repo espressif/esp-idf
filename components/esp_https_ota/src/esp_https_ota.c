@@ -452,9 +452,12 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 
     const int app_desc_offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
     esp_app_desc_t *app_info = (esp_app_desc_t *) &handle->ota_upgrade_buf[app_desc_offset];
+    if(handle->update_partition->type == ESP_PARTITION_TYPE_APP)
+    {
     if (app_info->magic_word != ESP_APP_DESC_MAGIC_WORD) {
         ESP_LOGE(TAG, "Incorrect app descriptor magic");
         return ESP_FAIL;
+    }
     }
 
     memcpy(new_app_info, app_info, sizeof(esp_app_desc_t));
@@ -528,9 +531,12 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 return ESP_FAIL;
             }
 #endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+            if(handle->update_partition->type == ESP_PARTITION_TYPE_APP)
+            {
             err = esp_ota_verify_chip_id(data_buf);
             if (err != ESP_OK) {
                 return err;
+            }
             }
             return _ota_write(handle, data_buf, binary_file_len);
         case ESP_HTTPS_OTA_IN_PROGRESS:
