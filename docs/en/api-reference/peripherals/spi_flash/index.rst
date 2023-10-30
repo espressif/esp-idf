@@ -251,7 +251,7 @@ Once the flash operation is complete, the function on CPU A sets another flag, `
 
 Additionally, all API functions are protected with a mutex (``s_flash_op_mutex``).
 
-In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
+In a single core environment (:ref:`CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
 
 Related Documents
 ------------------

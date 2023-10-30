@@ -112,7 +112,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
     const uint32_t core_id = esp_cpu_get_core_id();
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
     esp_rom_software_reset_cpu(other_core_id);
     esp_cpu_stall(other_core_id);
@@ -135,7 +135,7 @@ void IRAM_ATTR esp_restart_noos(void)
     rtc_clk_cpu_set_to_default_config();
 #endif
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // Clear entry point for APP CPU
     REG_WRITE(SYSTEM_CORE_1_CONTROL_1_REG, 0);
 #endif
@@ -143,12 +143,12 @@ void IRAM_ATTR esp_restart_noos(void)
     // Reset CPUs
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         esp_rom_software_reset_cpu(1);
 #endif
         esp_rom_software_reset_cpu(0);
     }
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU

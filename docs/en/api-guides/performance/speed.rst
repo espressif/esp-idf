@@ -54,7 +54,7 @@ Executing the target multiple times can help average out factors, e.g., RTOS con
 - It is also possible to use the standard Unix ``gettimeofday()`` and ``utime()`` functions, although the overhead is slightly higher.
 - Otherwise, including ``hal/cpu_hal.h`` and calling the HAL function ``cpu_hal_get_cycle_count()`` returns the number of CPU cycles executed. This function has lower overhead than the others, which is good for measuring very short execution times with high precision.
 
-  .. only:: not CONFIG_FREERTOS_UNICORE
+  .. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
       The CPU cycles are counted per-core, so only use this method from an interrupt handler, or a task that is pinned to a single core.
 

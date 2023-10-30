@@ -103,7 +103,7 @@ void bootloader_print_banner(void)
 #endif
     }
 
-#if CONFIG_FREERTOS_UNICORE
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #if (SOC_CPU_CORES_NUM > 1)
     ESP_EARLY_LOGW(TAG, "Unicore bootloader");
 #endif

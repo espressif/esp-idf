@@ -884,7 +884,7 @@ static void set_cache_and_start_app(
     bus_mask = cache_ll_l1_get_bus(0, irom_load_addr_aligned, irom_size);
     cache_ll_l1_enable_bus(0, bus_mask);
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     bus_mask = cache_ll_l1_get_bus(1, drom_load_addr_aligned, drom_size);
     cache_ll_l1_enable_bus(1, bus_mask);
     bus_mask = cache_ll_l1_get_bus(1, irom_load_addr_aligned, irom_size);

@@ -54,7 +54,7 @@
 - 也可以使用标准 Unix 函数 ``gettimeofday()`` 和 ``utime()`` 来进行计时测量，尽管其开销略高一些。
 - 此外，代码中包含 ``hal/cpu_hal.h`` 头文件，并调用 HAL 函数 ``cpu_hal_get_cycle_count()`` 可以返回已执行的 CPU 循环数。该函数开销较低，适用于高精度测量执行时间极短的代码。
 
-  .. only:: not CONFIG_FREERTOS_UNICORE
+  .. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
       CPU 周期是各核心独立计数的，因此本方法仅适用于测量中断处理程序或固定在单个核心上的任务。
 
