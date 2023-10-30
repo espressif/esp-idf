@@ -15,7 +15,7 @@
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
 #include "sdkconfig.h"
-#include "aes/esp_aes_internal.h"
+#include "esp_aes_internal.h"
 #include "mbedtls/aes.h"
 #include "hal/aes_hal.h"
 #include "hal/aes_types.h"

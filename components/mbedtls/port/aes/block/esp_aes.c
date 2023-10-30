@@ -33,7 +33,7 @@
 #include "soc/hwcrypto_periph.h"
 #include <sys/lock.h>
 #include "hal/aes_hal.h"
-#include "aes/esp_aes_internal.h"
+#include "esp_aes_internal.h"
 
 #include <freertos/FreeRTOS.h>
 

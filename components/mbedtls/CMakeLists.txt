@@ -206,6 +206,7 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c"
 )
 
 if(CONFIG_SOC_AES_SUPPORTED)
+    target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/include")
     target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
                                   "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"

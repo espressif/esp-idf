@@ -25,7 +25,8 @@ if(CONFIG_SOC_AES_SUPPORTED)
    list(APPEND srcs "aes/test_aes.c"
                      "$ENV{IDF_PATH}/components/mbedtls/port/aes/esp_aes_common.c"
                      "aes/aes_block.c")
-   list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/include")
+   list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/include"
+                                 "$ENV{IDF_PATH}/components/mbedtls/port/aes/include")
 
    if(CONFIG_SOC_AES_SUPPORT_DMA)
       list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/aes/dma/include")

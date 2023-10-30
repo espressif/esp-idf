@@ -266,7 +266,8 @@ static void test_cfb128_aes(size_t buffer_size, const uint8_t expected_cipher_en
     heap_caps_free(decryptedtext);
 }
 
-#if SOC_AES_SUPPORT_GCM
+#define CIPHER_ID_AES 2
+
 static void test_gcm_aes(size_t length, const uint8_t expected_last_block[16], const uint8_t expected_tag[16])
 {
     uint8_t iv[16];
@@ -295,10 +296,10 @@ static void test_gcm_aes(size_t length, const uint8_t expected_last_block[16], c
     memcpy(iv_buf, iv, iv_length);
 
     esp_aes_gcm_init(&ctx);
-    esp_aes_gcm_setkey(&ctx, 0, key, 8 * sizeof(key));
+    TEST_ASSERT(esp_aes_gcm_setkey(&ctx, CIPHER_ID_AES, key, 8 * sizeof(key)) == 0);
 
     /* Encrypt and authenticate */
-    esp_aes_gcm_crypt_and_tag(&ctx, ESP_AES_ENCRYPT, length, iv_buf, iv_length, add, add_length, plaintext, ciphertext, tag_len, tag_buf_encrypt);
+    TEST_ASSERT(esp_aes_gcm_crypt_and_tag(&ctx, ESP_AES_ENCRYPT, length, iv_buf, iv_length, add, add_length, plaintext, ciphertext, tag_len, tag_buf_encrypt) == 0);
     size_t offset = length > 16 ? length - 16 : 0;
     /* Sanity check: make sure the last ciphertext block matches what we expect to see. */
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_last_block, ciphertext + offset, MIN(16, length));
@@ -314,7 +315,6 @@ static void test_gcm_aes(size_t length, const uint8_t expected_last_block[16], c
     heap_caps_free(ciphertext);
     heap_caps_free(decryptedtext);
 }
-#endif /* SOC_AES_SUPPORT_GCM */
 #endif /* SOC_AES_SUPPORT_DMA */
 
 TEST(aes, cbc_aes_256_block_test)
@@ -457,8 +457,6 @@ TEST(aes, cfb128_aes_256_long_dma_test)
 
 #endif
 
-#if SOC_AES_SUPPORT_GCM
-
 TEST(aes, gcm_aes_dma_test)
 {
     size_t length = 16;
@@ -489,7 +487,6 @@ TEST(aes, gcm_aes_long_dma_test)
     test_gcm_aes(length, expected_last_block, expected_tag);
 }
 #endif /* CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT */
-#endif /* SOC_AES_SUPPORT_GCM */
 #endif /* SOC_AES_SUPPORT_DMA */
 
 TEST_GROUP_RUNNER(aes)
@@ -509,12 +506,10 @@ TEST_GROUP_RUNNER(aes)
     RUN_TEST_CASE(aes, cfb8_aes_256_long_dma_test);
     RUN_TEST_CASE(aes, cfb128_aes_256_long_dma_test);
 #endif /* CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT */
-#if SOC_AES_SUPPORT_GCM
     RUN_TEST_CASE(aes, gcm_aes_dma_test);
 #if CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT
     RUN_TEST_CASE(aes, gcm_aes_long_dma_test);
 #endif /* CONFIG_CRYPTO_TESTAPP_USE_AES_INTERRUPT */
-#endif /* SOC_AES_SUPPORT_GCM */
 #endif /* SOC_AES_SUPPORT_DMA */
 }
 

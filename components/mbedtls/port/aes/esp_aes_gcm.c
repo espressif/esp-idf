@@ -18,7 +18,7 @@
 
 #include "aes/esp_aes.h"
 #include "aes/esp_aes_gcm.h"
-#include "aes/esp_aes_internal.h"
+#include "esp_aes_internal.h"
 #include "hal/aes_hal.h"
 
 #include "mbedtls/aes.h"

@@ -42,7 +42,7 @@
 #endif
 #include "esp_crypto_lock.h"
 #include "hal/aes_hal.h"
-#include "aes/esp_aes_internal.h"
+#include "esp_aes_internal.h"
 #include "esp_aes_dma_priv.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
