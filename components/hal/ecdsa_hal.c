@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "hal/efuse_hal.h"
 
 #ifdef SOC_KEY_MANAGER_SUPPORTED
-#include "soc/keymng_reg.h" // TODO: IDF-7901
+#include "hal/key_mgr_hal.h"
 #endif
 
 #define ECDSA_HAL_P192_COMPONENT_LEN        24
@@ -18,13 +18,19 @@
 
 static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 {
-#ifdef SOC_KEY_MANAGER_SUPPORTED
-    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 1); // TODO: IDF-7901
-#endif
+
 
     if (conf->use_km_key == 0) {
         efuse_hal_set_ecdsa_key(conf->efuse_key_blk);
+#if SOC_KEY_MANAGER_SUPPORTED
+        key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+#endif
     }
+#if SOC_KEY_MANAGER_SUPPORTED
+    else {
+        key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_OWN_KEY);
+    }
+#endif
 
     ecdsa_ll_set_mode(conf->mode);
     ecdsa_ll_set_curve(conf->curve);

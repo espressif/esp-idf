@@ -12,6 +12,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
+
 #if SOC_KEY_MANAGER_SUPPORTED
 
 #include <stdint.h>

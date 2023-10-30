@@ -35,7 +35,8 @@ struct huk_key_block {
 #define KEY_HUK_SECTOR_MAGIC 0xDEA5CE5A
     uint32_t magic;
     uint32_t version; // for backward compatibility
-    uint8_t reserved[16];
+    uint8_t key_type;
+    uint8_t reserved[15];
     struct huk_info huk_info;
     struct key_info key_info[2]; // at most 2 key info (XTS-512_1 and XTS-512_2), at least use 1
 } WORD_ALIGNED_ATTR PACKED_ATTR;

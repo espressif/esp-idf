@@ -11,6 +11,7 @@
 
 #pragma once
 #include "soc/soc_caps.h"
+
 #if SOC_KEY_MANAGER_SUPPORTED
 #include <stdint.h>
 #include <stdbool.h>
@@ -118,14 +119,45 @@ static inline void key_mgr_ll_use_sw_init_key(void)
  */
 static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_usage_t key_usage)
 {
-    uint8_t read_value = ((0x03) & REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY));
-    uint8_t reg_value = (read_value & (~((uint8_t)key_type))) | (uint8_t) (key_type * key_usage);
-    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, reg_value);
+    switch (key_type) {
+        case ESP_KEY_MGR_ECDSA_KEY:
+            if (key_usage == ESP_KEY_MGR_USE_EFUSE_KEY) {
+                REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA);
+            } else {
+                REG_CLR_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA);
+            }
+            break;
+        case ESP_KEY_MGR_XTS_AES_128_KEY:
+        case ESP_KEY_MGR_XTS_AES_256_KEY:
+            if (key_usage == ESP_KEY_MGR_USE_EFUSE_KEY) {
+                REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_XTS);
+            } else {
+                REG_CLR_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_XTS);
+            }
+            break;
+        default:
+            HAL_ASSERT(false && "Unsupported mode");
+            return;
+    }
 }
 
 static inline esp_key_mgr_key_usage_t key_mgr_ll_get_key_usage(esp_key_mgr_key_type_t key_type)
 {
-    return (esp_key_mgr_key_usage_t) (key_type & REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY));
+    switch (key_type) {
+        case ESP_KEY_MGR_ECDSA_KEY:
+            return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA));
+            break;
+
+        case ESP_KEY_MGR_XTS_AES_128_KEY:
+        case ESP_KEY_MGR_XTS_AES_256_KEY:
+            return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_XTS));
+            break;
+
+        default:
+            HAL_ASSERT(false && "Unsupported mode");
+            return ESP_KEY_MGR_USAGE_INVALID;
+    }
+    return ESP_KEY_MGR_USAGE_INVALID;
 }
 
 /**
@@ -143,9 +175,17 @@ static inline void key_mgr_ll_lock_use_sw_init_key_reg(void)
  *        After this lock has been set,
  *        The Key manager configuration about whether to use a paricular key from efuse or key manager cannot be changed.
  */
-static inline void key_mgr_ll_lock_use_efuse_key_reg(void)
+static inline void key_mgr_ll_lock_use_efuse_key_reg(esp_key_mgr_key_type_t key_type)
 {
-    REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK);
+    switch(key_type) {
+        case ESP_KEY_MGR_ECDSA_KEY:
+            REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA);
+            break;
+        case ESP_KEY_MGR_XTS_AES_128_KEY:
+        case ESP_KEY_MGR_XTS_AES_256_KEY:
+            REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_XTS);
+            break;
+    }
 }
 
 /* @brief Configure the key purpose to be used by the Key Manager for key generator opearation */
@@ -180,15 +220,19 @@ static inline bool key_mgr_ll_is_result_success(void)
 static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-    case ESP_KEY_MGR_ECDSA_KEY:
-        return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_VLD);
-        break;
-    case ESP_KEY_MGR_XTS_KEY:
-        return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_XTS_VLD);
-        break;
-    default:
-        HAL_ASSERT(false && "Unsupported mode");
-        return 0;
+
+        case ESP_KEY_MGR_ECDSA_KEY:
+            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_VLD);
+            break;
+
+        case ESP_KEY_MGR_XTS_AES_128_KEY:
+        case ESP_KEY_MGR_XTS_AES_256_KEY:
+            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_XTS_VLD);
+            break;
+
+        default:
+            HAL_ASSERT(false && "Unsupported mode");
+            return 0;
     }
 }
 
@@ -255,13 +299,13 @@ static inline bool key_mgr_ll_is_huk_valid(void)
 }
 
 /* @brief Set the AES-XTS key length for the Key Manager */
-static inline void key_mgr_ll_set_aes_xts_key_len(const esp_key_mgr_xts_aes_key_len_t key_len)
+static inline void key_mgr_ll_set_xts_aes_key_len(const esp_key_mgr_xts_aes_key_len_t key_len)
 {
     REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_XTS_AES_KEY_LEN, key_len);
 }
 
 /* @brief Get the AES-XTS key length for the Key Manager */
-static inline esp_key_mgr_xts_aes_key_len_t key_mgr_ll_get_aes_xts_key_len(void)
+static inline esp_key_mgr_xts_aes_key_len_t key_mgr_ll_get_xts_aes_key_len(void)
 {
     return (esp_key_mgr_xts_aes_key_len_t) REG_GET_FIELD(KEYMNG_STATIC_REG, KEYMNG_XTS_AES_KEY_LEN);
 }

@@ -29,7 +29,7 @@ typedef struct {
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
     bool load_pubkey;                       /*!< Export ECDSA public key from the hardware */
 #endif
-} esp_ecdsa_pk_conf_t;  //TODO: IDF-7925 (Add a config to select the ecdsa key from the key manager peripheral)
+} esp_ecdsa_pk_conf_t;  //TODO: IDF-9008 (Add a config to select the ecdsa key from the key manager peripheral)
 
 #if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || __DOXYGEN__
 
