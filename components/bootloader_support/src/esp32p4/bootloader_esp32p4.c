@@ -72,7 +72,7 @@ static void bootloader_check_wdt_reset(void)
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         wdt_reset_info_dump(1);
 #endif
     }

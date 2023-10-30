@@ -402,9 +402,9 @@ FORCE_INLINE_ATTR uint32_t s_mapping_operation(mmu_target_t target, uint32_t vad
 
     mmu_hal_map_region(0, target, vaddr_start, paddr_start, size, &actual_mapped_len);
 #if (SOC_MMU_PERIPH_NUM == 2)
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     mmu_hal_map_region(1, target, vaddr_start, paddr_start, size, &actual_mapped_len);
-#endif //  #if !CONFIG_FREERTOS_UNICORE
+#endif //  #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #endif //  #if (SOC_MMU_PERIPH_NUM == 2)
 
     return actual_mapped_len;
@@ -424,7 +424,7 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_mapping(mmu_target_t target, uint32_t v
 
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, vaddr_start, size);
     cache_ll_l1_enable_bus(0, bus_mask);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     bus_mask = cache_ll_l1_get_bus(0, vaddr_start, size);
     cache_ll_l1_enable_bus(1, bus_mask);
 #endif
@@ -602,9 +602,9 @@ FORCE_INLINE_ATTR void s_unmapping_operation(uint32_t vaddr_start, uint32_t size
 {
     mmu_hal_unmap_region(0, vaddr_start, size);
 #if (SOC_MMU_PERIPH_NUM == 2)
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     mmu_hal_unmap_region(1, vaddr_start, size);
-#endif //  #if !CONFIG_FREERTOS_UNICORE
+#endif //  #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #endif //  #if (SOC_MMU_PERIPH_NUM == 2)
 }
 #endif

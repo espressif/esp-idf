@@ -201,7 +201,7 @@ typedef enum {
     PSRAM_VADDR_MODE_EVENODD,    ///< App and pro CPU share external RAM caches: pro CPU does even 32yte ranges, app does odd ones.
 } psram_vaddr_mode_t;
 
-#if CONFIG_FREERTOS_UNICORE
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
 #else
 #define PSRAM_MODE PSRAM_VADDR_MODE_LOWHIGH

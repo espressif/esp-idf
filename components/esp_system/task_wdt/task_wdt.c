@@ -386,7 +386,7 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
     const int current_core = xPortGetCoreID();
 
     if (panic) {
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         const int other_core = !current_core;
 
         if ((cores_fail & BIT(0)) && (cores_fail & BIT(1))) {
@@ -404,7 +404,7 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
             esp_crosscore_int_send_twdt_abort(other_core);
             while (1) {}
         }
-#endif // !CONFIG_FREERTOS_UNICORE
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         /* Current core is failing, abort right now */
         task_wdt_timeout_abort(true);
     } else {
@@ -413,13 +413,13 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
             ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
             esp_backtrace_print(100);
         }
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         const int other_core = !current_core;
         if (cores_fail & BIT(other_core)) {
             ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", other_core);
             esp_crosscore_int_send_print_backtrace(other_core);
         }
-#endif // !CONFIG_FREERTOS_UNICORE
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     }
 }
 

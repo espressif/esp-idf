@@ -96,7 +96,7 @@ static void IRAM_ATTR s_mapping(int v_start, int size)
     //Enable external RAM in MMU
     cache_sram_mmu_set(0, 0, v_start, 0, 32, (size / 1024 / 32));
     //Flush and enable icache for APP CPU
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DRAM1);
     cache_sram_mmu_set(1, 0, v_start, 0, 32, (size / 1024 / 32));
 #endif
@@ -126,7 +126,7 @@ esp_err_t esp_psram_init(void)
     ESP_EARLY_LOGI(TAG, "Found %dMB PSRAM device", psram_physical_size / (1024 * 1024));
     ESP_EARLY_LOGI(TAG, "Speed: %dMHz", CONFIG_SPIRAM_SPEED);
 #if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_FREERTOS_UNICORE
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in normal (1-core) mode.");
 #else
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in low/high (2-core) mode.");
@@ -206,7 +206,7 @@ esp_err_t esp_psram_init(void)
 
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)v_start_8bit_aligned, actual_mapped_len);
     cache_ll_l1_enable_bus(0, bus_mask);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     bus_mask = cache_ll_l1_get_bus(1, (uint32_t)v_start_8bit_aligned, actual_mapped_len);
     cache_ll_l1_enable_bus(1, bus_mask);
 #endif
