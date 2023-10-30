@@ -49,6 +49,8 @@
 #include "esp32s2/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/cache.h"
 #endif
 
 #include "freertos/FreeRTOS.h"
@@ -103,10 +105,10 @@ static bool s_check_dma_capable(const void *p);
  *  * Must be in DMA capable memory, so stack is not a safe place to put them
  *  * To avoid having to malloc/free them for every DMA operation
  */
-static DRAM_ATTR crypto_dma_desc_t s_stream_in_desc;
-static DRAM_ATTR crypto_dma_desc_t s_stream_out_desc;
-static DRAM_ATTR uint8_t s_stream_in[AES_BLOCK_BYTES];
-static DRAM_ATTR uint8_t s_stream_out[AES_BLOCK_BYTES];
+DMA_DESC_ALIGN_ATTR static DRAM_ATTR crypto_dma_desc_t s_stream_in_desc;
+DMA_DESC_ALIGN_ATTR static DRAM_ATTR crypto_dma_desc_t s_stream_out_desc;
+DMA_DESC_ALIGN_ATTR static DRAM_ATTR uint8_t s_stream_in[AES_BLOCK_BYTES];
+DMA_DESC_ALIGN_ATTR static DRAM_ATTR uint8_t s_stream_out[AES_BLOCK_BYTES];
 
 /** Append a descriptor to the chain, set head if chain empty
  *
@@ -265,7 +267,7 @@ static esp_err_t esp_aes_isr_initialise( void )
 #endif // CONFIG_MBEDTLS_AES_USE_INTERRUPT
 
 /* Wait for AES hardware block operation to complete */
-static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_desc)
+static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_desc_head, crypto_dma_desc_t *output_desc_tail)
 {
 #if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
     if (use_intr) {
@@ -285,7 +287,16 @@ static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_de
     */
     aes_hal_wait_done();
 
-    esp_aes_wait_dma_done(output_desc);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    const crypto_dma_desc_t *it = output_desc_head;
+    while(it != NULL) {
+        Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, (uint32_t)it->buffer, it->dw0.length);
+        Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, (uint32_t)it, sizeof(crypto_dma_desc_t));
+        it = (const crypto_dma_desc_t*) it->next;
+    };
+#endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
+
+    esp_aes_wait_dma_done(output_desc_tail);
     return 0;
 }
 
@@ -435,7 +446,7 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         crypto_dma_desc_num = dma_desc_get_required_num(block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED);
 
         /* Allocate both in and out descriptors to save a malloc/free per function call */
-        block_desc = heap_caps_calloc(crypto_dma_desc_num * 2, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA);
+        block_desc = heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, crypto_dma_desc_num * 2, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA);
         if (block_desc == NULL) {
             mbedtls_platform_zeroize(output, len);
             ESP_LOGE(TAG, "Failed to allocate memory");
@@ -501,7 +512,7 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
 
     aes_hal_transform_dma_start(blocks);
 
-    if (esp_aes_dma_wait_complete(use_intr, out_desc_tail) < 0) {
+    if (esp_aes_dma_wait_complete(use_intr, out_desc_head, out_desc_tail) < 0) {
         ESP_LOGE(TAG, "esp_aes_dma_wait_complete failed");
         ret = -1;
         goto cleanup;
@@ -645,7 +656,7 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
     aes_hal_transform_dma_gcm_start(blocks);
 
-    if (esp_aes_dma_wait_complete(use_intr, out_desc_tail) < 0) {
+    if (esp_aes_dma_wait_complete(use_intr, out_desc_head, out_desc_tail) < 0) {
         ESP_LOGE(TAG, "esp_aes_dma_wait_complete failed");
         ret = -1;
         goto cleanup;
