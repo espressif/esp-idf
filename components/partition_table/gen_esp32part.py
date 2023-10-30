@@ -191,7 +191,8 @@ class PartitionTable(list):
         # fix up missing offsets & negative sizes
         last_end = offset_part_table + PARTITION_TABLE_SIZE  # first offset after partition table
         for e in res:
-            if e.offset is not None and e.offset < last_end:
+            if e.offset is not None and e.offset < last_end and e.offset + e.size > offset_part_table:
+
                 if e == res[0]:
                     raise InputError('CSV Error at line %d: Partitions overlap. Partition sets offset 0x%x. '
                                      'But partition table occupies the whole sector 0x%x. '
@@ -260,7 +261,7 @@ class PartitionTable(list):
         # check for overlaps
         last = None
         for p in sorted(self, key=lambda x:x.offset):
-            if p.offset < offset_part_table + PARTITION_TABLE_SIZE:
+            if p.offset < offset_part_table + PARTITION_TABLE_SIZE and p.offset + p.size > offset_part_table:
                 raise InputError('Partition offset 0x%x is below 0x%x' % (p.offset, offset_part_table + PARTITION_TABLE_SIZE))
             if last is not None and p.offset < last.offset + last.size:
                 raise InputError('Partition at 0x%x overlaps 0x%x-0x%x' % (p.offset, last.offset, last.offset + last.size - 1))
