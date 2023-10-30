@@ -72,8 +72,14 @@ typedef enum {
 /*---------------------------------------------------------------
                 Color Space Struct Type
 ---------------------------------------------------------------*/
-#define COLOR_PIXEL_FORMAT_BITWIDTH    24    ///< Bitwidth of the `color_space_format_t:pixel_format` field
-#define COLOR_SPACE_BITWIDTH           8     ///< Bitwidth of the `color_space_format_t:color_space` field
+///< Bitwidth of the `color_space_format_t:color_space` field
+#define COLOR_SPACE_BITWIDTH                 8
+///< Bitwidth of the `color_space_format_t:pixel_format` field
+#define COLOR_PIXEL_FORMAT_BITWIDTH          24
+///< Helper to get `color_space_format_t:color_space` from its `color_space_pixel_format_t:color_type_id`
+#define COLOR_SPACE_TYPE(color_type_id)      (((color_type_id) >> COLOR_PIXEL_FORMAT_BITWIDTH) & ((1 << COLOR_SPACE_BITWIDTH) - 1))
+///< Helper to get `color_space_format_t:pixel_format` from its `color_space_pixel_format_t:color_type_id`
+#define COLOR_PIXEL_FORMAT(color_type_id)    ((color_type_id) & ((1 << COLOR_PIXEL_FORMAT_BITWIDTH) - 1))
 
 /**
  * @brief Color Space Info Structure
