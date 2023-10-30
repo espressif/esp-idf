@@ -35,6 +35,10 @@ config SOC_MCPWM_SUPPORTED
     bool
     default y
 
+config SOC_TWAI_SUPPORTED
+    bool
+    default y
+
 config SOC_ETM_SUPPORTED
     bool
     default y
@@ -1009,7 +1013,7 @@ config SOC_MWDT_SUPPORT_XTAL
 
 config SOC_TWAI_CONTROLLER_NUM
     int
-    default 2
+    default 3
 
 config SOC_TWAI_CLK_SUPPORT_XTAL
     bool

@@ -82,7 +82,6 @@ api-reference/peripherals/gpio/esp32p4.inc
 api-reference/peripherals/adc_continuous.rst
 api-reference/peripherals/adc_oneshot.rst
 api-reference/peripherals/usb_host.rst
-api-reference/peripherals/twai.rst
 api-reference/peripherals/usb_host/usb_host_notes_arch.rst
 api-reference/peripherals/usb_host/usb_host_notes_index.rst
 api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst

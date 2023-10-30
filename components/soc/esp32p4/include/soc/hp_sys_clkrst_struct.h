@@ -2350,18 +2350,18 @@ typedef union {
          *  Reserved
          */
         uint32_t reg_rst_en_pwm1:1;
-        /** reg_rst_en_can0 : R/W; bitpos: [26]; default: 0;
+        /** reg_rst_en_twai0 : R/W; bitpos: [26]; default: 0;
          *  Reserved
          */
-        uint32_t reg_rst_en_can0:1;
-        /** reg_rst_en_can1 : R/W; bitpos: [27]; default: 0;
+        uint32_t reg_rst_en_twai0:1;
+        /** reg_rst_en_twai1 : R/W; bitpos: [27]; default: 0;
          *  Reserved
          */
-        uint32_t reg_rst_en_can1:1;
-        /** reg_rst_en_can2 : R/W; bitpos: [28]; default: 0;
+        uint32_t reg_rst_en_twai1:1;
+        /** reg_rst_en_twai2 : R/W; bitpos: [28]; default: 0;
          *  Reserved
          */
-        uint32_t reg_rst_en_can2:1;
+        uint32_t reg_rst_en_twai2:1;
         /** reg_rst_en_ledc : R/W; bitpos: [29]; default: 0;
          *  Reserved
          */
@@ -2656,18 +2656,18 @@ typedef union {
          *  Reserved
          */
         uint32_t reg_force_norst_pwm1:1;
-        /** reg_force_norst_can0 : R/W; bitpos: [6]; default: 0;
+        /** reg_force_norst_twai0 : R/W; bitpos: [6]; default: 0;
          *  Reserved
          */
-        uint32_t reg_force_norst_can0:1;
-        /** reg_force_norst_can1 : R/W; bitpos: [7]; default: 0;
+        uint32_t reg_force_norst_twai0:1;
+        /** reg_force_norst_twai1 : R/W; bitpos: [7]; default: 0;
          *  Reserved
          */
-        uint32_t reg_force_norst_can1:1;
-        /** reg_force_norst_can2 : R/W; bitpos: [8]; default: 0;
+        uint32_t reg_force_norst_twai1:1;
+        /** reg_force_norst_twai2 : R/W; bitpos: [8]; default: 0;
          *  Reserved
          */
-        uint32_t reg_force_norst_can2:1;
+        uint32_t reg_force_norst_twai2:1;
         /** reg_force_norst_ledc : R/W; bitpos: [9]; default: 0;
          *  Reserved
          */
