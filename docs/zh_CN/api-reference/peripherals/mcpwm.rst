@@ -1044,7 +1044,7 @@ API Reference
 .. include-build-file:: inc/mcpwm_sync.inc
 .. include-build-file:: inc/mcpwm_cap.inc
 .. include-build-file:: inc/mcpwm_etm.inc
-.. include-build-file:: inc/components/driver/mcpwm/include/driver/mcpwm_types.inc
+.. include-build-file:: inc/components/esp_driver_mcpwm/include/driver/mcpwm_types.inc
 .. include-build-file:: inc/components/hal/include/hal/mcpwm_types.inc
 
 

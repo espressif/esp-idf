@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_mcpwm/test_apps/mcpwm:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm

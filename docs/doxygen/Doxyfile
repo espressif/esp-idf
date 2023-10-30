@@ -89,15 +89,6 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_tdm.h \
     $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_types.h \
     $(PROJECT_PATH)/components/driver/ledc/include/driver/ledc.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_cap.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_cmpr.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_etm.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_fault.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_gen.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_oper.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_sync.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_timer.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_types.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
     $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_common.h \
@@ -142,6 +133,15 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer.h \
     $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer_etm.h \
     $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer_types.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_cap.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_cmpr.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_etm.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_fault.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_gen.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_oper.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_sync.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_timer.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_types.h \
     $(PROJECT_PATH)/components/esp_driver_pcnt/include/driver/pulse_cnt.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \

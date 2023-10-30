@@ -35,7 +35,7 @@ set(extra_components_which_shouldnt_be_included
     cxx
     # [refactor-todo]: driver is a dependency of esp_pm, spi_flash, vfs, esp_wifi
     #   all of these should be removed from G1 except for spi_flash.
-    driver esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi
+    driver esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
     # esp_app_format is dependency of bootloader_support, app_update
     esp_app_format
     # esp_bootloader_format is dependency of bootloader_support, app_update

@@ -147,8 +147,6 @@ menu "Driver Configurations"
 
     orsource "./rmt/Kconfig.rmt"
 
-    orsource "./mcpwm/Kconfig.mcpwm"
-
     menu "I2S Configuration"
         depends on SOC_I2S_SUPPORTED
         config I2S_ISR_IRAM_SAFE

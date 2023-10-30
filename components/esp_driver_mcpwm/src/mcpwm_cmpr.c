@@ -255,8 +255,8 @@ esp_err_t mcpwm_comparator_register_event_callbacks(mcpwm_cmpr_handle_t cmpr, co
         int isr_flags = MCPWM_INTR_ALLOC_FLAG & ~ ESP_INTR_FLAG_INTRDISABLED;
         isr_flags |= mcpwm_get_intr_priority_flag(group);
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
-                            (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id),
-                            mcpwm_comparator_default_isr, oper_cmpr, &oper_cmpr->intr), TAG, "install interrupt service for comparator failed");
+                                                      (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CMP_EQUAL(oper_id, cmpr_id),
+                                                      mcpwm_comparator_default_isr, oper_cmpr, &oper_cmpr->intr), TAG, "install interrupt service for comparator failed");
     }
 
     portENTER_CRITICAL(&group->spinlock);

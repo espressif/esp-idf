@@ -163,7 +163,6 @@ TEST_CASE("mcpwm_group_set_prescale_dynamically", "[mcpwm]")
     carrier_config.first_pulse_duration_us = 5;
     TEST_ESP_OK(mcpwm_operator_apply_carrier(oper, &carrier_config));
 
-
     TEST_ESP_OK(mcpwm_del_generator(generator));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));

@@ -74,10 +74,14 @@ components/driver/test_apps/legacy_i2c_driver:
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/deprecated/**/*mcpwm*
 
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/deprecated/**/*pcnt*
 
 components/driver/test_apps/legacy_rmt_driver:
   disable:
@@ -98,10 +102,8 @@ components/driver/test_apps/legacy_sigma_delta_driver:
 components/driver/test_apps/legacy_timer_driver:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-
-components/driver/test_apps/mcpwm:
-  disable:
-    - if: SOC_MCPWM_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/deprecated/**/*timer*
 
 components/driver/test_apps/parlio:
   disable:

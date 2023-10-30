@@ -167,7 +167,7 @@ esp_err_t mcpwm_generator_set_action_on_timer_event(mcpwm_gen_handle_t gen, mcpw
         ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "UTEP and DTEZ can't be reached under MCPWM_TIMER_COUNT_MODE_UP_DOWN mode");
     }
     mcpwm_ll_generator_set_action_on_timer_event(group->hal.dev, oper->oper_id, gen->gen_id,
-            ev_act.direction, ev_act.event, ev_act.action);
+                                                 ev_act.direction, ev_act.event, ev_act.action);
     return ESP_OK;
 }
 
@@ -195,7 +195,7 @@ esp_err_t mcpwm_generator_set_actions_on_timer_event(mcpwm_gen_handle_t gen, mcp
             ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "UTEP and DTEZ can't be reached under MCPWM_TIMER_COUNT_MODE_UP_DOWN mode");
         }
         mcpwm_ll_generator_set_action_on_timer_event(group->hal.dev, oper->oper_id, gen->gen_id,
-                ev_act_itor.direction, ev_act_itor.event, ev_act_itor.action);
+                                                     ev_act_itor.direction, ev_act_itor.event, ev_act_itor.action);
         ev_act_itor = va_arg(it, mcpwm_gen_timer_event_action_t);
     }
     va_end(it);
@@ -209,7 +209,7 @@ esp_err_t mcpwm_generator_set_action_on_compare_event(mcpwm_gen_handle_t gen, mc
     mcpwm_oper_t *oper = gen->oper;
     mcpwm_group_t *group = oper->group;
     mcpwm_ll_generator_set_action_on_compare_event(group->hal.dev, oper->oper_id, gen->gen_id,
-            ev_act.direction, ev_act.comparator->cmpr_id, ev_act.action);
+                                                   ev_act.direction, ev_act.comparator->cmpr_id, ev_act.action);
     return ESP_OK;
 }
 
@@ -223,7 +223,7 @@ esp_err_t mcpwm_generator_set_actions_on_compare_event(mcpwm_gen_handle_t gen, m
     va_start(it, ev_act);
     while (ev_act_itor.comparator) {
         mcpwm_ll_generator_set_action_on_compare_event(group->hal.dev, oper->oper_id, gen->gen_id,
-                ev_act_itor.direction, ev_act_itor.comparator->cmpr_id, ev_act_itor.action);
+                                                       ev_act_itor.direction, ev_act_itor.comparator->cmpr_id, ev_act_itor.action);
         ev_act_itor = va_arg(it, mcpwm_gen_compare_event_action_t);
     }
     va_end(it);
@@ -237,7 +237,7 @@ esp_err_t mcpwm_generator_set_action_on_brake_event(mcpwm_gen_handle_t gen, mcpw
     mcpwm_oper_t *oper = gen->oper;
     mcpwm_group_t *group = oper->group;
     mcpwm_ll_generator_set_action_on_brake_event(group->hal.dev, oper->oper_id, gen->gen_id,
-            ev_act.direction, ev_act.brake_mode, ev_act.action);
+                                                 ev_act.direction, ev_act.brake_mode, ev_act.action);
     return ESP_OK;
 }
 
@@ -251,7 +251,7 @@ esp_err_t mcpwm_generator_set_actions_on_brake_event(mcpwm_gen_handle_t gen, mcp
     va_start(it, ev_act);
     while (ev_act_itor.brake_mode != MCPWM_OPER_BRAKE_MODE_INVALID) {
         mcpwm_ll_generator_set_action_on_brake_event(group->hal.dev, oper->oper_id, gen->gen_id,
-                ev_act_itor.direction, ev_act_itor.brake_mode, ev_act_itor.action);
+                                                     ev_act_itor.direction, ev_act_itor.brake_mode, ev_act_itor.action);
         ev_act_itor = va_arg(it, mcpwm_gen_brake_event_action_t);
     }
     va_end(it);
@@ -280,7 +280,7 @@ esp_err_t mcpwm_generator_set_action_on_fault_event(mcpwm_gen_handle_t gen, mcpw
     mcpwm_gpio_fault_t *gpio_fault = __containerof(fault, mcpwm_gpio_fault_t, base);
     mcpwm_ll_operator_set_trigger_from_gpio_fault(group->hal.dev, oper->oper_id, trigger_id, gpio_fault->fault_id);
     mcpwm_ll_generator_set_action_on_trigger_event(group->hal.dev, oper->oper_id, gen->gen_id,
-            ev_act.direction, trigger_id, ev_act.action);
+                                                   ev_act.direction, trigger_id, ev_act.action);
     return ESP_OK;
 }
 
@@ -308,7 +308,7 @@ esp_err_t mcpwm_generator_set_action_on_sync_event(mcpwm_gen_handle_t gen, mcpwm
     ESP_RETURN_ON_FALSE(trigger_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free trigger in operator (%d,%d)", group->group_id, oper->oper_id);
     mcpwm_ll_operator_set_trigger_from_sync(group->hal.dev, oper->oper_id, trigger_id);
     mcpwm_ll_generator_set_action_on_trigger_event(group->hal.dev, oper->oper_id, gen->gen_id,
-            ev_act.direction, trigger_id, ev_act.action);
+                                                   ev_act.direction, trigger_id, ev_act.action);
     return ESP_OK;
 }
 

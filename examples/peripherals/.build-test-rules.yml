@@ -151,10 +151,14 @@ examples/peripherals/ledc/ledc_gamma_curve_fade:
 examples/peripherals/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm
 
 examples/peripherals/mcpwm/mcpwm_bdc_speed_control:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm
   disable_test:
     - if: IDF_TARGET != "esp32s3"
       temporary: true
@@ -163,6 +167,8 @@ examples/peripherals/mcpwm/mcpwm_bdc_speed_control:
 examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm
   disable_test:
     - if: IDF_TARGET != "esp32s3"
       temporary: true
@@ -171,6 +177,8 @@ examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
 examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm
   disable_test:
     - if: IDF_TARGET != "esp32s3"
       temporary: true
