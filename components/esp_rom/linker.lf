@@ -1,0 +1,6 @@
+[mapping:esp_rom]
+archive: libesp_rom.a
+entries:
+    if IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C3 = y
+       || IDF_TARGET_ESP32H2 = y:
+        esp_rom_mmap (noflash)

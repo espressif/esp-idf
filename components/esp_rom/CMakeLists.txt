@@ -34,9 +34,14 @@ if(target STREQUAL "esp32s3")
     list(APPEND sources "patches/esp_rom_cache_writeback_esp32s3.S")
 endif()
 
+if(target STREQUAL "esp32s3" OR target STREQUAL "esp32c3" OR target STREQUAL "esp32h2")
+    list(APPEND sources "patches/esp_rom_mmap.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
-                       PRIV_REQUIRES ${private_required_comp})
+                       PRIV_REQUIRES ${private_required_comp}
+                       LDFRAGMENTS linker.lf)
 
 # Append a target linker script at the target-specific path,
 # only the 'name' part is different for each script
