@@ -380,7 +380,7 @@ static bt_status_t _btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_a
 
     BTIF_TRACE_DEBUG(" %s in bd addr:%s",__FUNCTION__, bdstr);
 
-    _btc_storage_remove_all_ble_keys(bdstr);
+    ret = _btc_storage_remove_all_ble_keys(bdstr);
 
     //here don't remove section, because config_save will check it
     _btc_storage_save();
