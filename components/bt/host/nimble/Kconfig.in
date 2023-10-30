@@ -620,6 +620,36 @@ config BT_NIMBLE_PERIODIC_ADV_ENH
     help
         Enable the periodic advertising enhancements
 
+menuconfig BT_NIMBLE_GATT_CACHING
+    bool "Enable GATT caching"
+    depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
+    help
+            Enable GATT caching
+config BT_NIMBLE_GATT_CACHING_MAX_CONNS
+    int "Maximum connections to be cached"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 1
+    help
+        Set this option to set the upper limit on number of connections to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_SVCS
+    int "Maximum number of services per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of services per connection to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_CHRS
+    int "Maximum number of characteristics per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of characteristics per connection to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_DSCS
+    int "Maximum number of descriptors per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of discriptors per connection to be cached.
+
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
     depends on BT_NIMBLE_ENABLED
