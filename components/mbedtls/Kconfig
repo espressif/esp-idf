@@ -239,7 +239,6 @@ menu "mbedTLS"
         config MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
             bool "Keep peer certificate after handshake completion"
             default y
-            depends on !MBEDTLS_DYNAMIC_FREE_PEER_CERT
             help
                 Keep the peer's certificate after completion of the handshake.
                 Disabling this option will save about 4kB of heap and some code size.
