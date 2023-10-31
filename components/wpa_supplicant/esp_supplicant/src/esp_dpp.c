@@ -70,6 +70,10 @@ end:
 
 static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
 {
+    if ( evt == ESP_SUPP_DPP_FAIL && s_dpp_ctx.dpp_auth) {
+        dpp_auth_deinit(s_dpp_ctx.dpp_auth);
+        s_dpp_ctx.dpp_auth = NULL;
+    }
     s_dpp_ctx.dpp_event_cb(evt, data);
 }
 
@@ -138,12 +142,14 @@ static void esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *dpp_d
         rc = ESP_ERR_DPP_INVALID_ATTR;
         goto fail;
     }
-
+    if (s_dpp_ctx.dpp_auth) {
+        wpa_printf(MSG_DEBUG, "DPP: Already in DPP authentication exchange - ignore new one");
+        return;
+    }
     s_dpp_ctx.dpp_auth = dpp_auth_req_rx(NULL, DPP_CAPAB_ENROLLEE, 0, NULL,
                                          own_bi, rx_param->channel,
                                          (const u8 *)&rx_param->action_frm->u.public_action.v, dpp_data, len);
     os_memcpy(s_dpp_ctx.dpp_auth->peer_mac_addr, rx_param->sa, ETH_ALEN);
-
     esp_send_action_frame(rx_param->sa, wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
                           wpabuf_len(s_dpp_ctx.dpp_auth->resp_msg),
                           rx_param->channel, OFFCHAN_TX_WAIT_TIME);
@@ -280,7 +286,7 @@ static void gas_query_resp_rx(struct action_rx_param *rx_param)
     int i, res;
 
     if (pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
-            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1) {
+            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth) {
         if (dpp_conf_resp_rx(auth, resp, rx_param->vendor_data_len - 2) < 0) {
             wpa_printf(MSG_DEBUG, "DPP: Configuration attempt failed");
             goto fail;
@@ -355,6 +361,10 @@ static void esp_dpp_task(void *pvParameters )
 
             switch (evt->id) {
             case SIG_DPP_DEL_TASK:
+                if (s_dpp_ctx.dpp_auth) {
+                    dpp_auth_deinit(s_dpp_ctx.dpp_auth);
+                    s_dpp_ctx.dpp_auth = NULL;
+                }
                 task_del = true;
                 break;
 
