@@ -12,13 +12,6 @@
 extern "C" {
 #endif
 
-/**
- * @background
- *
- * Color Space: a specific representation of colors, e.g. RGB, YUV, etc.
- * Color Pixel Format: a specific pixel format of a certain color space, e.g. RGB565, YUV422, etc.
- */
-
 /*---------------------------------------------------------------
                       Color Space
 ---------------------------------------------------------------*/
@@ -33,7 +26,7 @@ typedef enum {
 } color_space_t;
 
 /*---------------------------------------------------------------
-                      Color Space Format
+                      Color Pixel Format
 ---------------------------------------------------------------*/
 /**
  * @brief Raw Format
@@ -59,6 +52,7 @@ typedef enum {
     COLOR_PIXEL_YUV444,    ///< 24 bits, 8 bits per Y/U/V value
     COLOR_PIXEL_YUV422,    ///< 16 bits, 8-bit Y per pixel, 8-bit U and V per two pixels
     COLOR_PIXEL_YUV420,    ///< 12 bits, 8-bit Y per pixel, 8-bit U and V per four pixels
+    COLOR_PIXEL_YUV411,    ///< 12 bits, 8-bit Y per pixel, 8-bit U and V per four pixels
 } color_pixel_yuv_format_t;
 
 /**
@@ -70,16 +64,18 @@ typedef enum {
 } color_pixel_gray_format_t;
 
 /*---------------------------------------------------------------
-                Color Space Struct Type
+                Color Space Pixel Struct Type
 ---------------------------------------------------------------*/
-///< Bitwidth of the `color_space_format_t:color_space` field
+///< Bitwidth of the `color_space_pixel_format_t::color_space` field
 #define COLOR_SPACE_BITWIDTH                 8
-///< Bitwidth of the `color_space_format_t:pixel_format` field
+///< Bitwidth of the `color_space_pixel_format_t::pixel_format` field
 #define COLOR_PIXEL_FORMAT_BITWIDTH          24
-///< Helper to get `color_space_format_t:color_space` from its `color_space_pixel_format_t:color_type_id`
+///< Helper to get the color_space from a unique color type ID
 #define COLOR_SPACE_TYPE(color_type_id)      (((color_type_id) >> COLOR_PIXEL_FORMAT_BITWIDTH) & ((1 << COLOR_SPACE_BITWIDTH) - 1))
-///< Helper to get `color_space_format_t:pixel_format` from its `color_space_pixel_format_t:color_type_id`
+///< Helper to get the pixel_format from a unique color type ID
 #define COLOR_PIXEL_FORMAT(color_type_id)    ((color_type_id) & ((1 << COLOR_PIXEL_FORMAT_BITWIDTH) - 1))
+///< Make a unique ID of a color based on the value of color space and pixel format
+#define COLOR_TYPE_ID(color_space, pixel_format) (((color_space) << COLOR_PIXEL_FORMAT_BITWIDTH) | (pixel_format))
 
 /**
  * @brief Color Space Info Structure
@@ -92,6 +88,26 @@ typedef union {
     uint32_t color_type_id;                                    ///< Unique type of a certain color pixel format
 } color_space_pixel_format_t;
 
+/*---------------------------------------------------------------
+                      Color Conversion
+---------------------------------------------------------------*/
+/**
+ * @brief LCD color range
+ * @note The difference between a full range color and a limited range color is
+ *       the amount of shades of black and white that they can display.
+ */
+typedef enum {
+    COLOR_RANGE_LIMIT, /*!< Limited color range, 16 is the darkest black and 235 is the brightest white */
+    COLOR_RANGE_FULL,  /*!< Full color range, 0 is the darkest black and 255 is the brightest white */
+} color_range_t;
+
+/**
+ * @brief The standard used for conversion between RGB and YUV
+ */
+typedef enum {
+    COLOR_CONV_STD_RGB_YUV_BT601, /*!< YUV<->RGB conversion standard: BT.601 */
+    COLOR_CONV_STD_RGB_YUV_BT709, /*!< YUV<->RGB conversion standard: BT.709 */
+} color_conv_std_rgb_yuv_t;
 
 #ifdef __cplusplus
 }

@@ -448,8 +448,8 @@ More LCD panel drivers and touch drivers are available in `ESP-IDF Component Reg
 
     .. _lcd_panel_operations:
 
-LCD Panel IO Operations
------------------------
+LCD Panel Basic Operations
+--------------------------
 
 * :cpp:func:`esp_lcd_panel_reset` can reset the LCD panel.
 * :cpp:func:`esp_lcd_panel_init` performs a basic initialization of the panel. To perform more manufacture specific initialization, please go to :ref:`steps_add_manufacture_init`.
@@ -463,7 +463,7 @@ LCD Panel IO Operations
 Steps to Add Manufacture Specific Initialization
 -------------------------------------------------
 
-The LCD controller drivers (e.g., st7789) in esp-idf only provide basic initialization in the :cpp:func:`esp_lcd_panel_init`, leaving the vast majority of settings to the default values. Some LCD modules needs to set a bunch of manufacture specific configurations before it can display normally. These configurations usually include gamma, power voltage and so on. If you want to add manufacture specific initialization, please follow the steps below:
+The LCD controller drivers (e.g., st7789) in ESP-IDF only provide basic initialization in the :cpp:func:`esp_lcd_panel_init`, leaving the vast majority of settings to the default values. Some LCD modules needs to set a bunch of manufacture specific configurations before it can display normally. These configurations usually include gamma, power voltage and so on. If you want to add manufacture specific initialization, please follow the steps below:
 
 .. code:: c
 

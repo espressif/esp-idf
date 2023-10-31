@@ -228,6 +228,7 @@ INPUT = \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/task.h \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/timers.h \
     $(PROJECT_PATH)/components/hal/include/hal/adc_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/color_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
