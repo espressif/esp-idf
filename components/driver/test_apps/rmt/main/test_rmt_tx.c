@@ -367,7 +367,7 @@ TEST_CASE("rmt infinite loop transaction", "[rmt]")
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
         .gpio_num = TEST_RMT_GPIO_NUM_B,
-        .trans_queue_depth = 3,
+        .trans_queue_depth = 5,
         .intr_priority = 1
     };
     printf("install tx channel\r\n");
@@ -384,6 +384,7 @@ TEST_CASE("rmt infinite loop transaction", "[rmt]")
 
     rmt_transmit_config_t transmit_config = {
         .loop_count = -1, // infinite loop transmission
+        .flags.queue_nonblocking = true, // return immediately if the queue is full
     };
 
     printf("infinite loop transmission: keep spinning stepper motor\r\n");
