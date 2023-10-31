@@ -443,6 +443,23 @@ typedef enum {
     FLASH_CLK_SRC_SPLL = SOC_MOD_CLK_SPLL,            /*!< Select SOC_MOD_CLK_SPLL as FLASH source clock */
 } soc_periph_flash_clk_src_t;
 
+/////////////////////////////////////////////////ISP////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of ISP
+ */
+#define SOC_ISP_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_PLL_F240M}
+
+/**
+ * @brief Type of ISP clock source.
+ */
+typedef enum {
+    ISP_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,      /*!< Select SOC_MOD_CLK_PLL_F160M as ISP source clock */
+    ISP_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,              /*!< Select SOC_MOD_CLK_XTAL as ISP source clock */
+    ISP_CLK_SRC_PLL160 = SOC_MOD_CLK_PLL_F160M,       /*!< Select SOC_MOD_CLK_PLL_F160M as ISP source clock */
+    ISP_CLK_SRC_PLL240 = SOC_MOD_CLK_PLL_F240M,       /*!< Select SOC_MOD_CLK_PLL_F240M as ISP source clock */
+} soc_periph_isp_clk_src_t;
+
 //////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
