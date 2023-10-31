@@ -54,56 +54,6 @@
  * correct privileged Vs unprivileged linkage and placement. */
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE /*lint !e961 !e750 !e9021. */
 
-/* Some code sections require extra critical sections when building for SMP
- * ( configNUMBER_OF_CORES > 1 ). */
-#if ( configNUMBER_OF_CORES > 1 )
-/* Macros that Enter/exit a critical section only when building for SMP */
-    #define taskENTER_CRITICAL_SMP_ONLY( pxLock )         taskENTER_CRITICAL( pxLock )
-    #define taskEXIT_CRITICAL_SMP_ONLY( pxLock )          taskEXIT_CRITICAL( pxLock )
-    #define taskENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )    prvTaskEnterCriticalSafeSMPOnly( pxLock )
-    #define taskEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )     prvTaskExitCriticalSafeSMPOnly( pxLock )
-
-    static inline __attribute__( ( always_inline ) )
-    void prvTaskEnterCriticalSafeSMPOnly( portMUX_TYPE * pxLock )
-    {
-        if( portCHECK_IF_IN_ISR() == pdFALSE )
-        {
-            taskENTER_CRITICAL( pxLock );
-        }
-        else
-        {
-            #ifdef __clang_analyzer__
-                /* Teach clang-tidy that ISR version macro can be different */
-                configASSERT( 1 );
-            #endif
-            taskENTER_CRITICAL_ISR( pxLock );
-        }
-    }
-
-    static inline __attribute__( ( always_inline ) )
-    void prvTaskExitCriticalSafeSMPOnly( portMUX_TYPE * pxLock )
-    {
-        if( portCHECK_IF_IN_ISR() == pdFALSE )
-        {
-            taskEXIT_CRITICAL( pxLock );
-        }
-        else
-        {
-            #ifdef __clang_analyzer__
-                /* Teach clang-tidy that ISR version macro can be different */
-                configASSERT( 1 );
-            #endif
-            taskEXIT_CRITICAL_ISR( pxLock );
-        }
-    }
-#else /* configNUMBER_OF_CORES > 1 */
-    /* Macros that Enter/exit a critical section only when building for SMP */
-    #define taskENTER_CRITICAL_SMP_ONLY( pxLock )
-    #define taskEXIT_CRITICAL_SMP_ONLY( pxLock )
-    #define taskENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )
-    #define taskEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )
-#endif /* configNUMBER_OF_CORES > 1 */
-
 /* Single core FreeRTOS uses queue locks to ensure that vTaskPlaceOnEventList()
  * calls are deterministic (as queue locks use scheduler suspension instead of
  * critical sections). However, the SMP implementation is non-deterministic
@@ -3109,7 +3059,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
 
         /* For SMP, we need to take the queue registry lock in case another
          * core updates the register simultaneously. */
-        taskENTER_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
         {
             if( pcQueueName != NULL )
             {
@@ -3145,7 +3095,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
             }
         }
         /* Release the previously taken queue registry lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
     }
 
 #endif /* configQUEUE_REGISTRY_SIZE */
@@ -3162,7 +3112,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
 
         /* For SMP, we need to take the queue registry lock in case another
          * core updates the register simultaneously. */
-        taskENTER_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
         {
             /* Note there is nothing here to protect against another task adding or
              * removing entries from the registry while it is being searched. */
@@ -3181,7 +3131,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
             }
         }
         /* Release the previously taken queue registry lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
 
         return pcReturn;
     } /*lint !e818 xQueue cannot be a pointer to const because it is a typedef. */
@@ -3199,7 +3149,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
 
         /* For SMP, we need to take the queue registry lock in case another
          * core updates the register simultaneously. */
-        taskENTER_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
         {
             /* See if the handle of the queue being unregistered in actually in the
              * registry. */
@@ -3223,7 +3173,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
             }
         }
         /* Release the previously taken queue registry lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xQueueRegistryLock );
     } /*lint !e818 xQueue could not be pointer to const because it is a typedef. */
 
 #endif /* configQUEUE_REGISTRY_SIZE */
@@ -3247,7 +3197,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
 
         /* For SMP, we need to take the queue's xQueueLock as we are about to
          * access the queue. */
-        taskENTER_CRITICAL_SMP_ONLY( &( pxQueue->xQueueLock ) );
+        prvENTER_CRITICAL_SMP_ONLY( &( pxQueue->xQueueLock ) );
         {
             #if ( queueUSE_LOCKS == 1 )
             {
@@ -3278,7 +3228,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
             #endif /* queueUSE_LOCKS == 1 */
         }
         /* Release the previously taken xQueueLock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &( pxQueue->xQueueLock ) );
+        prvEXIT_CRITICAL_SMP_ONLY( &( pxQueue->xQueueLock ) );
     }
 
 #endif /* configUSE_TIMERS */
@@ -3413,7 +3363,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
 
         /* In SMP, queue sets have their own xQueueLock. Thus we need to also
          * acquire the queue set's xQueueLock before accessing it. */
-        taskENTER_CRITICAL_SAFE_SMP_ONLY( &( pxQueueSetContainer->xQueueLock ) );
+        prvENTER_CRITICAL_SAFE_SMP_ONLY( &( pxQueueSetContainer->xQueueLock ) );
         {
             if( pxQueueSetContainer->uxMessagesWaiting < pxQueueSetContainer->uxLength )
             {
@@ -3463,7 +3413,7 @@ BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue )
             }
         }
         /* Release the previously acquired queue set's xQueueLock. */
-        taskEXIT_CRITICAL_SAFE_SMP_ONLY( &( pxQueueSetContainer->xQueueLock ) );
+        prvEXIT_CRITICAL_SAFE_SMP_ONLY( &( pxQueueSetContainer->xQueueLock ) );
 
         return xReturn;
     }

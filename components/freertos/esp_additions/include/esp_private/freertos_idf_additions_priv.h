@@ -13,6 +13,7 @@
 
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
@@ -26,52 +27,117 @@
 
 /*
  * The following macros are convenience macros used to account for different
- * thread safety behavior between Vanilla FreeRTOS (i.e., single-core) and ESP-IDF
- * FreeRTOS (i.e., multi-core SMP).
+ * thread safety behavior between single-core and SMP in ESP-IDF FreeRTOS.
  *
  * For thread saftey...
  *
- * - Vanilla FreeRTOS will use the following for thread safety (depending on situation)
+ * - Single-core will use the following for thread safety (depending on situation)
  *      - `vTaskSuspendAll()`/`xTaskResumeAll()` for non-deterministic operations
  *      - Critical sections or disabling interrupts for deterministic operations
- * - ESP-IDF FreeRTOS will always use critical sections (determinism is not supported)
- *
- * [refactor-todo]: Define these locally in each kernel source file (IDF-8161)
+ * - SMP will always use critical sections (determinism is not supported)
  */
 #if ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
 
-    #define prvENTER_CRITICAL_OR_SUSPEND_ALL( x )    taskENTER_CRITICAL( ( x ) )
-    #define prvEXIT_CRITICAL_OR_RESUME_ALL( x )      ( { taskEXIT_CRITICAL( ( x ) ); pdFALSE; } )
-    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus ) \
-    {                                                                  \
-        taskENTER_CRITICAL_ISR( ( pxLock ) );                          \
-        ( void ) ( uxInterruptStatus );                                \
+/* Macros that use a critical section when building for SMP */
+    #define prvENTER_CRITICAL_OR_SUSPEND_ALL( pxLock )    taskENTER_CRITICAL( ( pxLock ) )
+    #define prvEXIT_CRITICAL_OR_RESUME_ALL( pxLock )      ( { taskEXIT_CRITICAL( ( pxLock ) ); pdFALSE; } )
+    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxStatus ) \
+    {                                                         \
+        taskENTER_CRITICAL_ISR( ( pxLock ) );                 \
+        ( void ) ( uxStatus );                                \
     }
-    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus ) \
-    {                                                                   \
-        taskEXIT_CRITICAL_ISR( ( pxLock ) );                            \
-        ( void ) ( uxInterruptStatus );                                 \
+    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxStatus ) \
+    {                                                          \
+        taskEXIT_CRITICAL_ISR( ( pxLock ) );                   \
+        ( void ) ( uxStatus );                                 \
     }
+
+/* Macros that enter/exit a critical section only when building for SMP */
+    #define prvENTER_CRITICAL_SMP_ONLY( pxLock )         taskENTER_CRITICAL( pxLock )
+    #define prvEXIT_CRITICAL_SMP_ONLY( pxLock )          taskEXIT_CRITICAL( pxLock )
+    #define prvENTER_CRITICAL_ISR_SMP_ONLY( pxLock )     taskENTER_CRITICAL_ISR( pxLock )
+    #define prvEXIT_CRITICAL_ISR_SMP_ONLY( pxLock )      taskEXIT_CRITICAL_ISR( pxLock )
+    #define prvENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )    prvTaskEnterCriticalSafeSMPOnly( pxLock )
+    #define prvEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )     prvTaskExitCriticalSafeSMPOnly( pxLock )
+
+    static inline __attribute__( ( always_inline ) )
+    void prvTaskEnterCriticalSafeSMPOnly( portMUX_TYPE * pxLock )
+    {
+        if( portCHECK_IF_IN_ISR() == pdFALSE )
+        {
+            taskENTER_CRITICAL( pxLock );
+        }
+        else
+        {
+            #ifdef __clang_analyzer__
+                /* Teach clang-tidy that ISR version macro can be different */
+                configASSERT( 1 );
+            #endif
+            taskENTER_CRITICAL_ISR( pxLock );
+        }
+    }
+
+    static inline __attribute__( ( always_inline ) )
+    void prvTaskExitCriticalSafeSMPOnly( portMUX_TYPE * pxLock )
+    {
+        if( portCHECK_IF_IN_ISR() == pdFALSE )
+        {
+            taskEXIT_CRITICAL( pxLock );
+        }
+        else
+        {
+            #ifdef __clang_analyzer__
+                /* Teach clang-tidy that ISR version macro can be different */
+                configASSERT( 1 );
+            #endif
+            taskEXIT_CRITICAL_ISR( pxLock );
+        }
+    }
+
+/* Macros that enter/exit a critical section only when building for single-core */
+    #define prvENTER_CRITICAL_SC_ONLY( pxLock )
+    #define prvEXIT_CRITICAL_SC_ONLY( pxLock )
+
+/* Macros that enable/disable interrupts only when building for SMP */
+    #define prvDISABLE_INTERRUPTS_ISR_SMP_ONLY()             portSET_INTERRUPT_MASK_FROM_ISR()
+    #define prvENABLE_INTERRUPTS_ISR_SMP_ONLY( uxStatus )    portCLEAR_INTERRUPT_MASK_FROM_ISR( uxStatus )
 
 #elif ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES == 1 ) )
 
-    #define prvENTER_CRITICAL_OR_SUSPEND_ALL( x )    ( { vTaskSuspendAll(); ( void ) ( x ); } )
-    #define prvEXIT_CRITICAL_OR_RESUME_ALL( x )      xTaskResumeAll()
-    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxInterruptStatus ) \
-    {                                                                  \
-        ( uxInterruptStatus ) = portSET_INTERRUPT_MASK_FROM_ISR();     \
-        ( void ) ( pxLock );                                           \
+/* Macros that suspend the scheduler or disables interrupts when building for single-core */
+    #define prvENTER_CRITICAL_OR_SUSPEND_ALL( pxLock )    ( { vTaskSuspendAll(); ( void ) ( pxLock ); } )
+    #define prvEXIT_CRITICAL_OR_RESUME_ALL( pxLock )      xTaskResumeAll()
+    #define prvENTER_CRITICAL_OR_MASK_ISR( pxLock, uxStatus ) \
+    {                                                         \
+        ( uxStatus ) = portSET_INTERRUPT_MASK_FROM_ISR();     \
+        ( void ) ( pxLock );                                  \
     }
-    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxInterruptStatus ) \
-    {                                                                   \
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( ( uxInterruptStatus ) );     \
-        ( void ) ( pxLock );                                            \
+    #define prvEXIT_CRITICAL_OR_UNMASK_ISR( pxLock, uxStatus ) \
+    {                                                          \
+        portCLEAR_INTERRUPT_MASK_FROM_ISR( ( uxStatus ) );     \
+        ( void ) ( pxLock );                                   \
     }
+
+/* Macros that enter/exit a critical section only when building for SMP */
+    #define prvENTER_CRITICAL_SMP_ONLY( pxLock )
+    #define prvEXIT_CRITICAL_SMP_ONLY( pxLock )
+    #define prvENTER_CRITICAL_ISR_SMP_ONLY( pxLock )
+    #define prvEXIT_CRITICAL_ISR_SMP_ONLY( pxLock )
+    #define prvENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )
+    #define prvEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )
+
+/* Macros that enter/exit a critical section only when building for single-core */
+    #define prvENTER_CRITICAL_SC_ONLY( pxLock )              taskENTER_CRITICAL( pxLock )
+    #define prvEXIT_CRITICAL_SC_ONLY( pxLock )               taskEXIT_CRITICAL( pxLock )
+
+/* Macros that enable/disable interrupts only when building for SMP */
+    #define prvDISABLE_INTERRUPTS_ISR_SMP_ONLY()             ( ( UBaseType_t ) 0 )
+    #define prvENABLE_INTERRUPTS_ISR_SMP_ONLY( uxStatus )    ( ( void ) uxStatus )
 
 #endif /* ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES == 1 ) ) */
 
 /*
- * In ESP-IDF FreeRTOS (i.e., multi-core SMP) uses spinlocks to protect different
+ * In ESP-IDF FreeRTOS under SMP builds, spinlocks are to protect different
  * groups of data. This function is a wrapper to take the "xKernelLock" spinlock
  * of tasks.c.
  *
@@ -87,8 +153,6 @@
  * vEventGroupDelete() as both those functions will directly access event lists
  * (which are kernel data structures). Thus, a wrapper function must be provided
  * to take/release the "xKernelLock" from outside tasks.c.
- *
- * [refactor-todo]: Extern this locally in event groups (IDF-8161)
  */
 #if ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) )
 
