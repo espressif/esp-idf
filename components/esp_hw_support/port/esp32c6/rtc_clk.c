@@ -425,3 +425,20 @@ bool rtc_dig_8m_enabled(void)
  * TODO: update the library to use rtc_clk_xtal_freq_get
  */
 rtc_xtal_freq_t rtc_get_xtal(void) __attribute__((alias("rtc_clk_xtal_freq_get")));
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG
+void rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(bool backup, int cpu_freq_mhz, void (*do_retention)(bool))
+{
+    rtc_cpu_freq_config_t config, pll_config;
+    rtc_clk_cpu_freq_get_config(&config);
+
+    rtc_clk_cpu_freq_mhz_to_config(cpu_freq_mhz, &pll_config);
+    rtc_clk_cpu_freq_set_config(&pll_config);
+
+    if (do_retention) {
+        (*do_retention)(backup);
+    }
+
+    rtc_clk_cpu_freq_set_config(&config);
+}
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
