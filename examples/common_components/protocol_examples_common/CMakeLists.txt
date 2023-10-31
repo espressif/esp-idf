@@ -22,6 +22,10 @@ if(CONFIG_EXAMPLE_CONNECT_ETHERNET)
     list(APPEND srcs "eth_connect.c")
 endif()
 
+if(CONFIG_EXAMPLE_CONNECT_PPP)
+    list(APPEND srcs "ppp_connect.c")
+endif()
+
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include"
@@ -33,4 +37,8 @@ endif()
 
 if(CONFIG_EXAMPLE_CONNECT_ETHERNET)
     idf_component_optional_requires(PRIVATE esp_eth)
+endif()
+
+if(CONFIG_EXAMPLE_CONNECT_PPP)
+    idf_component_optional_requires(PRIVATE esp_tinyusb espressif__esp_tinyusb)
 endif()

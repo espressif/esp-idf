@@ -101,6 +101,12 @@ esp_err_t example_connect(void)
     }
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&example_wifi_shutdown));
 #endif
+#if CONFIG_EXAMPLE_CONNECT_PPP
+    if (example_ppp_connect() != ESP_OK) {
+        return ESP_FAIL;
+    }
+    ESP_ERROR_CHECK(esp_register_shutdown_handler(&example_ppp_shutdown));
+#endif
 
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
     example_print_all_netif_ips(EXAMPLE_NETIF_DESC_ETH);
@@ -108,6 +114,10 @@ esp_err_t example_connect(void)
 
 #if CONFIG_EXAMPLE_CONNECT_WIFI
     example_print_all_netif_ips(EXAMPLE_NETIF_DESC_STA);
+#endif
+
+#if CONFIG_EXAMPLE_CONNECT_PPP
+    example_print_all_netif_ips(EXAMPLE_NETIF_DESC_PPP);
 #endif
 
     return ESP_OK;
