@@ -24,7 +24,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief I2C hardware cmd register fields.
  */
@@ -89,7 +88,7 @@ typedef enum {
  */
 static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2c_hal_clk_config_t *clk_cal)
 {
-    uint32_t clkm_div = source_clk / (bus_freq * 1024) +1;
+    uint32_t clkm_div = source_clk / (bus_freq * 1024) + 1;
     uint32_t sclk_freq = source_clk / clkm_div;
     uint32_t half_cycle = sclk_freq / bus_freq / 2;
     //SCL
@@ -98,7 +97,7 @@ static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_f
     // default, scl_wait_high < scl_high
     // Make 80KHz as a boundary here, because when working at lower frequency, too much scl_wait_high will faster the frequency
     // according to some hardware behaviors.
-    clk_cal->scl_wait_high = (bus_freq >= 80*1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
+    clk_cal->scl_wait_high = (bus_freq >= 80 * 1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
     clk_cal->scl_high = half_cycle - clk_cal->scl_wait_high;
     clk_cal->sda_hold = half_cycle / 4;
     clk_cal->sda_sample = half_cycle / 2;
@@ -305,8 +304,7 @@ static inline void i2c_ll_slave_broadcast_enable(i2c_dev_t *hw, bool broadcast_e
 __attribute__((always_inline))
 static inline void i2c_ll_slave_get_stretch_cause(i2c_dev_t *hw, i2c_slave_stretch_cause_t *stretch_cause)
 {
-    switch (hw->sr.stretch_cause)
-    {
+    switch (hw->sr.stretch_cause) {
     case 0:
         *stretch_cause = I2C_SLAVE_STRETCH_CAUSE_ADDRESS_MATCH;
         break;
@@ -594,7 +592,7 @@ static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *h
 __attribute__((always_inline))
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_t len)
 {
-    for (int i = 0; i< len; i++) {
+    for (int i = 0; i < len; i++) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->fifo_data, data, ptr[i]);
     }
 }
@@ -611,7 +609,7 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_
 __attribute__((always_inline))
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
-    for(int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         ptr[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->fifo_data, data);
     }
 }
@@ -623,14 +621,11 @@ static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
  * @param  len Amount of data needs to be writen
- *
- * @return None.
  */
 static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, const uint8_t *ptr, uint8_t len)
 {
-    uint32_t *fifo_addr = (uint32_t *)&hw->txfifo_start_addr;
     for (int i = 0; i < len; i++) {
-        fifo_addr[i + ram_offset] = ptr[i];
+        hw->txfifo_mem[i + ram_offset] = ptr[i];
     }
 }
 
@@ -641,15 +636,11 @@ static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, co
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
  * @param  len Amount of data needs read
- *
- * @return None
  */
 static inline void i2c_ll_read_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, uint8_t *ptr, uint8_t len)
 {
-    uint32_t *fifo_addr = (uint32_t *)&hw->rxfifo_start_addr;
-
     for (int i = 0; i < len; i++) {
-        ptr[i] = fifo_addr[i + ram_offset];
+        ptr[i] = hw->rxfifo_mem[i + ram_offset];
     }
 }
 
@@ -699,8 +690,6 @@ static inline void i2c_ll_master_get_filter(i2c_dev_t *hw, uint8_t *filter_conf)
 {
     *filter_conf = hw->filter_cfg.scl_thres;
 }
-
-
 
 /**
  * @brief Reste I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
@@ -920,7 +909,7 @@ static inline void i2c_ll_master_get_event(i2c_dev_t *hw, i2c_intr_event_t *even
         *event = I2C_INTR_EVENT_ARBIT_LOST;
     } else if (int_sts.nack) {
         *event = I2C_INTR_EVENT_NACK;
-    } else if (int_sts.time_out||int_sts.scl_st_to||int_sts.scl_main_st_to) {
+    } else if (int_sts.time_out || int_sts.scl_st_to || int_sts.scl_main_st_to) {
         *event = I2C_INTR_EVENT_TOUT;
     } else if (int_sts.end_detect) {
         *event = I2C_INTR_EVENT_END_DET;
@@ -1056,7 +1045,6 @@ static inline void i2c_ll_slave_disable_rx_it(i2c_dev_t *hw)
 {
     hw->int_ena.val &= (~I2C_LL_SLAVE_RX_INT);
 }
-
 
 /**
  * @brief  Configure I2C SCL timing
