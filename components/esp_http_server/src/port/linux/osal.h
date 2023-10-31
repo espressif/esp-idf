@@ -21,7 +21,7 @@ typedef TaskHandle_t othread_t;
 static inline int httpd_os_thread_create(othread_t *thread,
                                  const char *name, uint16_t stacksize, int prio,
                                  void (*thread_routine)(void *arg), void *arg,
-                                 BaseType_t core_id)
+                                 BaseType_t core_id, uint32_t caps)
 {
     pthread_attr_t thread_attr;
     pthread_attr_init(&thread_attr);

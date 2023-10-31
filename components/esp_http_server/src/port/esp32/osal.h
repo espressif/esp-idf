@@ -25,9 +25,9 @@ typedef TaskHandle_t othread_t;
 static inline int httpd_os_thread_create(othread_t *thread,
                                  const char *name, uint16_t stacksize, int prio,
                                  void (*thread_routine)(void *arg), void *arg,
-                                 BaseType_t core_id)
+                                 BaseType_t core_id, uint32_t caps)
 {
-    int ret = xTaskCreatePinnedToCore(thread_routine, name, stacksize, arg, prio, thread, core_id);
+    int ret = xTaskCreatePinnedToCoreWithCaps(thread_routine, name, stacksize, arg, prio, thread, core_id, caps);
     if (ret == pdPASS) {
         return OS_SUCCESS;
     }
