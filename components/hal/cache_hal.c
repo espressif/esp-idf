@@ -286,7 +286,7 @@ void cache_hal_unfreeze(uint32_t cache_level, cache_type_t type)
 
 uint32_t cache_hal_get_cache_line_size(uint32_t cache_level, cache_type_t type)
 {
-    HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
+    HAL_ASSERT(cache_level <= CACHE_LL_LEVEL_NUMS);
     uint32_t line_size = 0;
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE

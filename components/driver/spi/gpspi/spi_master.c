@@ -887,15 +887,15 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
     uint32_t tx_byte_len = (trans_desc->length + 7) / 8;
     uint32_t rx_byte_len = (trans_desc->rxlength + 7) / 8;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    bool tx_un_align = ((((uint32_t)send_ptr) | tx_byte_len) & (alignment - 1));
-    bool rx_un_align = ((((uint32_t)rcv_ptr) | rx_byte_len) & (alignment - 1));
+    bool tx_unaligned = ((((uint32_t)send_ptr) | tx_byte_len) & (alignment - 1));
+    bool rx_unaligned = ((((uint32_t)rcv_ptr) | rx_byte_len) & (alignment - 1));
 #else
-    bool tx_un_align = false;   //tx don't need align on addr or length, for other chips
-    bool rx_un_align = (((uint32_t)rcv_ptr) & (alignment - 1));
+    bool tx_unaligned = false;   //tx don't need align on addr or length, for other chips
+    bool rx_unaligned = (((uint32_t)rcv_ptr) & (alignment - 1));
 #endif
 
     if (send_ptr && bus_attr->dma_enabled) {
-        if ((!esp_ptr_dma_capable(send_ptr) || tx_un_align )) {
+        if ((!esp_ptr_dma_capable(send_ptr) || tx_unaligned )) {
             ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but TX buffer addr&len not align to %d, or not dma_capable", alignment);
             //if txbuf in the desc not DMA-capable, or not bytes aligned to alignment, malloc a new one
             ESP_EARLY_LOGD(SPI_TAG, "Allocate TX buffer for DMA" );
@@ -914,7 +914,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
 #endif
     }
 
-    if (rcv_ptr && bus_attr->dma_enabled && (!esp_ptr_dma_capable(rcv_ptr) || rx_un_align )) {
+    if (rcv_ptr && bus_attr->dma_enabled && (!esp_ptr_dma_capable(rcv_ptr) || rx_unaligned )) {
         ESP_RETURN_ON_FALSE(!(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL), ESP_ERR_INVALID_ARG, SPI_TAG, "Set flag SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL but RX buffer addr&len not align to %d, or not dma_capable", alignment);
         //if rxbuf in the desc not DMA-capable, or not aligned to alignment, malloc a new one
         ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA" );

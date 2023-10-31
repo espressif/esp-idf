@@ -1047,7 +1047,7 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
 
     spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, 0));
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, SPI_DMA_DISABLED));
 
     spitest_gpio_output_sel(bus_cfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
     spitest_gpio_output_sel(bus_cfg.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
@@ -1069,7 +1069,6 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
     master_free_device_bus(spi);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 /**
  * This test is to check when the first transaction of the HD master is to send data without receiving data via DMA,
  * then if the master could receive data correctly.
@@ -1113,6 +1112,7 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     spi_slave_transaction_t slave_trans = {
         .rx_buffer = slv_recv_buf,
         .length = buf_size * 8,
+        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_trans, portMAX_DELAY));
 
@@ -1137,6 +1137,7 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
         slave_trans = (spi_slave_transaction_t) {};
         slave_trans.tx_buffer = slv_send_buf;
         slave_trans.length = buf_size * 8;
+        slave_trans.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
         TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_trans, portMAX_DELAY));
 
         vTaskDelay(50);
@@ -1158,10 +1159,8 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     spi_slave_free(TEST_SLAVE_HOST);
     master_free_device_bus(spi);
 }
-#endif
 #endif  //#if (TEST_SPI_PERIPH_NUM >= 2)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
 #define FD_TEST_BUF_SIZE    32
 #define TEST_NUM            4
@@ -1337,7 +1336,6 @@ static void fd_slave(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", "[spi_ms][test_env=generic_multi_device]", fd_master, fd_slave);
 #endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
-#endif  //p4 slave support
 
 
 //NOTE: Explained in IDF-1445 | MR !14996
@@ -1491,7 +1489,6 @@ TEST_CASE("spi_speed", "[spi]")
 #endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 #endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 //****************************************spi master add device test************************************//
 //add dummy devices first
 #if CONFIG_IDF_TARGET_ESP32
@@ -1576,7 +1573,7 @@ void test_add_device_slave(void)
         .spics_io_num = CS_REAL_DEV,
         .queue_size = 3,
     };
-    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_DISABLED));
 
     spi_slave_transaction_t slave_trans = {};
     slave_trans.length = sizeof(slave_sendbuf) * 8;
@@ -1602,7 +1599,7 @@ void test_add_device_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms]", test_add_device_master, test_add_device_slave);
-#endif  //p4 slave support
+
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
 
@@ -1662,7 +1659,6 @@ TEST_CASE("test_master_isr_pin_to_core","[spi]")
 }
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 #if CONFIG_SPI_MASTER_IN_IRAM
 #define TEST_MASTER_IRAM_TRANS_LEN  120
 static IRAM_ATTR void test_master_iram_post_trans_cbk(spi_transaction_t *trans)
@@ -1768,4 +1764,3 @@ static void test_iram_slave_normal(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:IRAM_safe", "[spi_ms]", test_master_iram, test_iram_slave_normal);
 #endif
-#endif  //p4 slave support

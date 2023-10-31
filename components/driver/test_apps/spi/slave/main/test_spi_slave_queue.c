@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,6 @@
 
 #define TEST_BUF_SIZE    32
 #define TEST_TIMES       4
-
 
 static void test_master(void)
 {
@@ -144,6 +143,7 @@ static void test_slave(void)
     trans[0].tx_buffer = slv_tx_buf[0];
     trans[0].rx_buffer = slv_rx_buf[0];
     trans[0].length = TEST_BUF_SIZE * 8;
+    trans[0].flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
     TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &trans[0], portMAX_DELAY));
     unity_send_signal("Slave ready");
     TEST_ESP_OK(spi_slave_get_trans_result(SPI2_HOST, &ret_trans, portMAX_DELAY));
@@ -159,24 +159,28 @@ static void test_slave(void)
     spi_slave_transaction_t dummy_trans0 = {
         .tx_buffer = &dummy_data0,
         .length = sizeof(uint32_t) * 8,
+        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &dummy_trans0, portMAX_DELAY));
     uint32_t dummy_data1 = 0xBB;
     spi_slave_transaction_t dummy_trans1 = {
         .tx_buffer = &dummy_data1,
         .length = sizeof(uint32_t) * 8,
+        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &dummy_trans1, portMAX_DELAY));
     uint32_t dummy_data2 = 0xCC;
     spi_slave_transaction_t dummy_trans2 = {
         .tx_buffer = &dummy_data2,
         .length = sizeof(uint32_t) * 8,
+        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &dummy_trans2, portMAX_DELAY));
     uint32_t dummy_data3 = 0xDD;
     spi_slave_transaction_t dummy_trans3 = {
         .tx_buffer = &dummy_data3,
         .length = sizeof(uint32_t) * 8,
+        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
     TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &dummy_trans3, portMAX_DELAY));
 
@@ -185,16 +189,19 @@ static void test_slave(void)
     trans[1].tx_buffer = slv_tx_buf[1];
     trans[1].rx_buffer = slv_rx_buf[1];
     trans[1].length = TEST_BUF_SIZE * 8;
+    trans[1].flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
     TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &trans[1], portMAX_DELAY));
 
     trans[2].tx_buffer = slv_tx_buf[2];
     trans[2].rx_buffer = slv_rx_buf[2];
     trans[2].length = TEST_BUF_SIZE * 8;
+    trans[2].flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
     TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &trans[2], portMAX_DELAY));
 
     trans[3].tx_buffer = slv_tx_buf[3];
     trans[3].rx_buffer = slv_rx_buf[3];
     trans[3].length = TEST_BUF_SIZE * 8;
+    trans[3].flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
     TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &trans[3], portMAX_DELAY));
 
     unity_send_signal("Slave ready");

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,15 +65,19 @@ typedef struct {
                                              */
 } spi_slave_interface_config_t;
 
+
+#define SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO   (1<<0)    ///< Automatically re-malloc dma buffer if user buffer doesn't meet hardware alignment or dma_capable, this process may loss some memory and performance
+
 /**
  * This structure describes one SPI transaction
  */
 struct spi_slave_transaction_t {
+    uint32_t flags;                 ///< Bitwise OR of SPI_SLAVE_TRANS_* flags
     size_t length;                  ///< Total data length, in bits
     size_t trans_len;               ///< Transaction data length, in bits
     const void *tx_buffer;          ///< Pointer to transmit buffer, or NULL for no MOSI phase
     void *rx_buffer;                /**< Pointer to receive buffer, or NULL for no MISO phase.
-                                     * When the DMA is anabled, must start at WORD boundary (``rx_buffer%4==0``),
+                                     * When the DMA is enabled, must start at WORD boundary (``rx_buffer%4==0``),
                                      * and has length of a multiple of 4 bytes.
                                      */
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.
@@ -138,6 +142,8 @@ esp_err_t spi_slave_free(spi_host_device_t host);
  *                      never time out.
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_NO_MEM        if set flag `SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO` but there is no free memory
+ *         - ESP_ERR_INVALID_STATE if sync data between Cache and memory failed
  *         - ESP_OK                on success
  */
 esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait);

@@ -260,9 +260,6 @@ examples/peripherals/spi_master/lcd:
 examples/peripherals/spi_slave:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-7503 slave support
 
 examples/peripherals/spi_slave_hd/append_mode/master:
   disable:
