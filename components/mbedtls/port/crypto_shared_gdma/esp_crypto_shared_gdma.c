@@ -10,13 +10,10 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_cache.h"
 #include "esp_crypto_dma.h"
 #include "esp_crypto_lock.h"
 #include "soc/soc_caps.h"
-
-#if CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/cache.h"
-#endif
 
 #if SOC_AHB_GDMA_VERSION == 1
 #include "hal/gdma_ll.h"
@@ -152,15 +149,15 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
     // TODO: replace with `esp_cache_msync`
     const crypto_dma_desc_t *it = input;
     while(it != NULL) {
-        Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, (uint32_t)it->buffer, it->dw0.length); // try using esp_cache_msync()
-        Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, (uint32_t)it, sizeof(crypto_dma_desc_t));
+        esp_cache_msync(it->buffer, it->dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+        esp_cache_msync((void *)it, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         it = (const crypto_dma_desc_t*) it->next;
     }
 
     it = output;
     while(it != NULL) {
-        Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, (uint32_t)it->buffer, it->dw0.length);
-        Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, (uint32_t)it, sizeof(crypto_dma_desc_t));
+        esp_cache_msync(it->buffer, it->dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+        esp_cache_msync((void *)it, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         it = (const crypto_dma_desc_t*) it->next;
     };
 #endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */

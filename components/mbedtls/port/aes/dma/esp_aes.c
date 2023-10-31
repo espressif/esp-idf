@@ -36,6 +36,7 @@
 #include "esp_crypto_dma.h"
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
+#include "esp_cache.h"
 #include "sys/param.h"
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
@@ -44,14 +45,7 @@
 #include "hal/aes_hal.h"
 #include "esp_aes_dma_priv.h"
 #include "esp_aes_internal.h"
-
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/cache.h"
-#endif
+#include "esp_private/esp_cache_private.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -105,10 +99,10 @@ static bool s_check_dma_capable(const void *p);
  *  * Must be in DMA capable memory, so stack is not a safe place to put them
  *  * To avoid having to malloc/free them for every DMA operation
  */
-DMA_DESC_ALIGN_ATTR static DRAM_ATTR crypto_dma_desc_t s_stream_in_desc;
-DMA_DESC_ALIGN_ATTR static DRAM_ATTR crypto_dma_desc_t s_stream_out_desc;
-DMA_DESC_ALIGN_ATTR static DRAM_ATTR uint8_t s_stream_in[AES_BLOCK_BYTES];
-DMA_DESC_ALIGN_ATTR static DRAM_ATTR uint8_t s_stream_out[AES_BLOCK_BYTES];
+static DRAM_ATTR crypto_dma_desc_t s_stream_in_desc;
+static DRAM_ATTR crypto_dma_desc_t s_stream_out_desc;
+static DRAM_ATTR uint8_t s_stream_in[AES_BLOCK_BYTES];
+static DRAM_ATTR uint8_t s_stream_out[AES_BLOCK_BYTES];
 
 /** Append a descriptor to the chain, set head if chain empty
  *
@@ -290,8 +284,8 @@ static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_de
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     const crypto_dma_desc_t *it = output_desc_head;
     while(it != NULL) {
-        Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, (uint32_t)it->buffer, it->dw0.length);
-        Cache_Invalidate_Addr(CACHE_MAP_L1_DCACHE | CACHE_MAP_L2_CACHE, (uint32_t)it, sizeof(crypto_dma_desc_t));
+        esp_cache_msync(it->buffer, it->dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+        esp_cache_msync((void *)it, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         it = (const crypto_dma_desc_t*) it->next;
     };
 #endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
@@ -419,10 +413,15 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         /* Flush cache if input in external ram */
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
         if (esp_ptr_external_ram(input)) {
-            Cache_WriteBack_Addr((uint32_t)input, len);
+            esp_cache_msync((void *)input, len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         }
         if (esp_ptr_external_ram(output)) {
-            if ((((intptr_t)(output) & (DCACHE_LINE_SIZE - 1)) != 0) || (block_bytes % DCACHE_LINE_SIZE != 0)) {
+            uint32_t dcache_line_size;
+            esp_err_t ret = esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &dcache_line_size);
+            if (ret != ESP_OK) {
+                return ret;
+            }
+            if ((((intptr_t)(output) & (dcache_line_size - 1)) != 0) || (block_bytes % dcache_line_size != 0)) {
                 // Non aligned ext-mem buffer
                 output_needs_realloc = true;
             }
@@ -446,7 +445,7 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         crypto_dma_desc_num = dma_desc_get_required_num(block_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED);
 
         /* Allocate both in and out descriptors to save a malloc/free per function call */
-        block_desc = heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, crypto_dma_desc_num * 2, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA);
+        block_desc = heap_caps_aligned_calloc(8, crypto_dma_desc_num * 2, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA);
         if (block_desc == NULL) {
             mbedtls_platform_zeroize(output, len);
             ESP_LOGE(TAG, "Failed to allocate memory");
@@ -521,7 +520,7 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
     if (block_bytes > 0) {
         if (esp_ptr_external_ram(output)) {
-            Cache_Invalidate_Addr((uint32_t)output, block_bytes);
+            esp_cache_msync((void*)output, block_bytes, ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         }
     }
 #endif

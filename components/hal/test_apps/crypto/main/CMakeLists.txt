@@ -56,7 +56,7 @@ if(CONFIG_SOC_SHA_SUPPORTED)
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES efuse mbedtls
+                       PRIV_REQUIRES efuse mbedtls esp_mm
                        REQUIRES test_utils unity
                        WHOLE_ARCHIVE
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
