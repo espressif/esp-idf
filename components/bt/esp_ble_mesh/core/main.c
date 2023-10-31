@@ -95,6 +95,8 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
         bt_mesh_store_net();
         bt_mesh_store_subnet(&bt_mesh.sub[0]);
         bt_mesh_store_iv(false);
+        // store sub list idx for each model
+        bt_mesh_store_sub_list_idx();
     }
 
     bt_mesh_net_start();

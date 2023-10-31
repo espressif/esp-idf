@@ -479,7 +479,7 @@ uint16_t *bt_mesh_model_find_group(struct bt_mesh_model *mod, uint16_t addr)
 {
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]); i++) {
         if (mod->groups[i] == addr) {
             return &mod->groups[i];
         }

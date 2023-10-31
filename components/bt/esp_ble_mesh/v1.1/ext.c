@@ -901,7 +901,7 @@ void bt_mesh_ext_model_set_key(void *model, uint8_t index, uint16_t key)
 
 uint8_t bt_mesh_ext_model_get_groups_count(void *model)
 {
-    return ARRAY_SIZE(MODEL(model)->groups);
+    return ARRAY_SIZE(bt_mesh.sub_lists[MODEL(model)->sub_list_index]);
 }
 
 uint16_t bt_mesh_ext_model_get_groups_size(void *model)

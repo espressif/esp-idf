@@ -62,7 +62,7 @@ int bt_mesh_model_subscribe_group_addr(uint16_t elem_addr, uint16_t cid,
         return 0;
     }
 
-    for (i = 0; i < ARRAY_SIZE(model->groups); i++) {
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub_lists[model->sub_list_index]); i++) {
         if (model->groups[i] == BLE_MESH_ADDR_UNASSIGNED) {
             model->groups[i] = group_addr;
 

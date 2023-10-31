@@ -13,6 +13,8 @@
 
 #include "crypto.h"
 #include "adv.h"
+#include "mesh/access.h"
+#include "net.h"
 #include "scan.h"
 #include "mesh.h"
 #include "lpn.h"
@@ -76,6 +78,10 @@ struct bt_mesh_net bt_mesh = {
             .net_idx = BLE_MESH_KEY_UNUSED,
         }
     },
+    .sub_lists = {
+        [0 ... (SUB_LISTS_LENGTH - 1)] = {BLE_MESH_ADDR_UNASSIGNED}
+    },
+    .sub_list_idx = 0,
 };
 
 static uint32_t dup_cache[4];
@@ -176,6 +182,32 @@ struct bt_mesh_subnet *bt_mesh_subnet_get(uint16_t net_idx)
     }
 
     return NULL;
+}
+
+uint16_t *bt_mesh_sub_list_get(uint16_t sub_list_idx){
+
+    if(sub_list_idx >= SUB_LISTS_LENGTH){
+        return NULL;
+    }
+
+    return bt_mesh.sub_lists[sub_list_idx];
+
+}
+
+struct bt_mesh_sub_list_alloc_t bt_mesh_sub_list_alloc()
+{
+    uint16_t *sub_list = NULL;
+    struct bt_mesh_sub_list_alloc_t res = {
+        NULL,
+        0
+    };
+    if(bt_mesh.sub_list_idx < SUB_LISTS_LENGTH - 1){
+        sub_list = bt_mesh.sub_lists[bt_mesh.sub_list_idx];
+
+        res.sub_list = sub_list;
+        res.sub_list_idx = bt_mesh.sub_list_idx++;
+    }
+    return res;
 }
 
 int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
