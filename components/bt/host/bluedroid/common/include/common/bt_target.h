@@ -248,6 +248,12 @@
 #define GATTC_CONNECT_RETRY_EN     FALSE
 #endif
 
+#ifdef UC_BT_GATTC_NOTIF_REG_MAX
+#define BTA_GATTC_NOTIF_REG_MAX     UC_BT_GATTC_NOTIF_REG_MAX
+#else
+#define BTA_GATTC_NOTIF_REG_MAX     5
+#endif
+
 #if (UC_BT_SMP_ENABLE)
 #define SMP_INCLUDED                TRUE
 #if (BLE_INCLUDED == TRUE)

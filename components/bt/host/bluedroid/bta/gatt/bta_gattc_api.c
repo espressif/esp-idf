@@ -932,7 +932,7 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications (tBTA_GATTC_IF client_if,
             }
             if (i == BTA_GATTC_NOTIF_REG_MAX) {
                 status = BTA_GATT_NO_RESOURCES;
-                APPL_TRACE_ERROR("Max Notification Reached, registration failed.");
+                APPL_TRACE_ERROR("Max Notification Reached, registration failed,see CONFIG_BT_GATTC_NOTIF_REG_MAX in menuconfig");
             }
         }
     } else {
