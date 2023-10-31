@@ -54,6 +54,7 @@ initializer that should be kept in sync
         .task_priority      = tskIDLE_PRIORITY+5,       \
         .stack_size         = 4096,                     \
         .core_id            = tskNO_AFFINITY,           \
+        .task_caps          = (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),       \
         .server_port        = 80,                       \
         .ctrl_port          = ESP_HTTPD_DEF_CTRL_PORT,  \
         .max_open_sockets   = 7,                        \
@@ -168,6 +169,7 @@ typedef struct httpd_config {
     unsigned    task_priority;      /*!< Priority of FreeRTOS task which runs the server */
     size_t      stack_size;         /*!< The maximum stack size allowed for the server task */
     BaseType_t  core_id;            /*!< The core the HTTP server task will run on */
+    uint32_t    task_caps;          /*!< The memory capabilities to use when allocating the HTTP server task's stack */
 
     /**
      * TCP Port number for receiving and transmitting HTTP traffic
