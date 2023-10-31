@@ -507,12 +507,12 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             ulRunTimeCounter = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter;
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 
         return ulRunTimeCounter;
     }
@@ -539,12 +539,12 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         {
             /* For SMP, we need to take the kernel lock here as we are about
              * to access kernel data structures. */
-            taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+            prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
             {
                 ulReturn = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter / ulTotalTime;
             }
             /* Release the previously taken kernel lock. */
-            taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+            prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
         }
         else
         {
