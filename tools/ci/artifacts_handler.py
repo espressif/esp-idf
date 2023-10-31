@@ -21,6 +21,7 @@ class ArtifactType(str, Enum):
 
     LOGS = 'logs'
     SIZE_REPORTS = 'size_reports'
+    JUNIT_REPORTS = 'junit_reports'
 
 
 TYPE_PATTERNS_DICT = {
@@ -47,6 +48,9 @@ TYPE_PATTERNS_DICT = {
     ArtifactType.SIZE_REPORTS: [
         '**/build*/size.json',
         'size_info.txt',
+    ],
+    ArtifactType.JUNIT_REPORTS: [
+        'XUNIT_RESULT.xml',
     ],
 }
 
