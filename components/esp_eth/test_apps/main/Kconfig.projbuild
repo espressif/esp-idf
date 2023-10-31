@@ -76,7 +76,7 @@ menu "esp_eth TEST_APPS Configuration"
         config TARGET_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
             range 5 80
-            default 12
+            default 20
             help
                 Set the clock speed (MHz) of SPI interface.
 

@@ -243,7 +243,18 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
 
 TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]")
 {
+// *** SPI Ethernet modules deviation ***
+// Rationale: The SPI bus is bottleneck when reading received frames from the module. The Rx Task would
+//            occupy all the resources under heavy Rx traffic and it would not be possible to access
+//            the Ethernet module to stop it. Therfore, the Rx task priority is set lower than "test" task
+//            to be able to be preempted.
+#if CONFIG_TARGET_USE_SPI_ETHERNET
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    mac_config.rx_task_prio = uxTaskPriorityGet(NULL) - 1;
+    esp_eth_mac_t *mac = mac_init(NULL, &mac_config);
+#else
     esp_eth_mac_t *mac = mac_init(NULL, NULL);
+#endif // CONFIG_TARGET_USE_SPI_ETHERNET
     TEST_ASSERT_NOT_NULL(mac);
     esp_eth_phy_t *phy = phy_init(NULL);
     TEST_ASSERT_NOT_NULL(phy);
@@ -292,8 +303,13 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
         // this also serves as main PASS/FAIL criteria
         poke_and_wait(eth_handle, &tx_i, sizeof(tx_i), eth_event_rx_group);
 
-        // generate heavy Tx traffic
+// *** SPI Ethernet modules deviation ***
+// Rationale: Transmit errors are expected only for internal EMAC since it is possible to try to queue more
+//            data than it is able to process at a time.
+#if !CONFIG_TARGET_USE_SPI_ETHERNET
         printf("Note: transmit errors are expected...\n");
+#endif
+        // generate heavy Tx traffic
         for (int j = 0; j < 150; j++) {
             // return value is not checked on purpose since it is expected that it may fail time to time because
             // we may try to queue more packets than hardware is able to handle
