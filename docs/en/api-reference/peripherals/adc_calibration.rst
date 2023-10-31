@@ -104,7 +104,16 @@ If you use your custom ADC calibration schemes, you could either modify this fun
         -  :cpp:member:`adc_cali_curve_fitting_config_t::atten`, ADC attenuation that your ADC raw results use.
         -  :cpp:member:`adc_cali_curve_fitting_config_t::bitwidth`, bit width of ADC raw result.
 
-    After setting up the configuration structure, call :cpp:func:`adc_cali_create_scheme_curve_fitting` to create a Curve Fitting calibration scheme handle. This function may fail due to reasons such as :c:macro:`ESP_ERR_INVALID_ARG` or :c:macro:`ESP_ERR_NO_MEM`. Especially, when the function return :c:macro:`ESP_ERR_NOT_SUPPORTED`, this means the calibration scheme required eFuse bits are not burnt on your board.
+    After setting up the configuration structure, call :cpp:func:`adc_cali_create_scheme_curve_fitting` to create a Curve Fitting calibration scheme handle. This function may fail due to reasons such as :c:macro:`ESP_ERR_INVALID_ARG` or :c:macro:`ESP_ERR_NO_MEM`.
+
+    ADC Calibration Efuse Related Failures
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    When the function :cpp:func:`adc_cali_create_scheme_curve_fitting` returns :c:macro:`ESP_ERR_NOT_SUPPORTED`, this means the calibration scheme required eFuse bits are not correct on your board.
+
+    ESP-IDF provided ADC calibration scheme is based on the values in certain ADC calibration related on-chip eFuse bits. Espressif guarantees that these bits are burnt during module manufacturing, so you don't have to burn these eFuses bits yourself.
+
+    If you see such an error, please contact us at `Technical Inquiries <https://www.espressif.com/en/contact-us/technical-inquiries>`__ website.
 
     Create Curve Fitting Scheme
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
