@@ -16,7 +16,7 @@ Networking APIs
       esp_smartconfig
       esp_wifi
       esp_dpp
-      esp_nan
+      :SOC_WIFI_NAN_SUPPORT: esp_nan
 
    Code examples for the Wi-Fi API are provided in the :example:`wifi` directory of ESP-IDF examples.
 

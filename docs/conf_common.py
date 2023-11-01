@@ -63,11 +63,12 @@ BLUFI_DOCS = ['api-guides/blufi.rst',
 WIFI_DOCS = ['api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
              'api-guides/wireshark-user-guide.rst',
-             'api-reference/network/esp_nan.rst',
              'api-reference/network/esp_now.rst',
              'api-reference/network/esp_smartconfig.rst',
              'api-reference/network/esp_wifi.rst',
              'api-reference/network/esp_dpp.rst']
+
+NAN_DOCS = ['api-reference/network/esp_nan.rst']
 
 WIFI_MESH_DOCS = ['api-guides/esp-wifi-mesh.rst',
                   'api-reference/network/esp-wifi-mesh.rst']
@@ -223,6 +224,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_SDM_SUPPORTED':SDM_DOCS,
                             'SOC_WIFI_MESH_SUPPORT':WIFI_MESH_DOCS,
                             'SOC_SPI_SUPPORT_SLAVE_HD_VER2':SPI_SLAVE_HD_DOCS,
+                            'SOC_WIFI_NAN_SUPPORT':NAN_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,
