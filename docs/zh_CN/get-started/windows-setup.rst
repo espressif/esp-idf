@@ -132,7 +132,6 @@ ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 
     windows-setup-update
     establish-serial-connection
     flashing-troubleshooting
-    ../api-guides/tools/idf-monitor
 
 .. _CMake: https://cmake.org/download/
 .. _Ninja: https://ninja-build.org/
