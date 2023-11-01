@@ -439,11 +439,12 @@ class EspCoreDumpLoader(EspCoreDumpVersion):
 class ESPCoreDumpFlashLoader(EspCoreDumpLoader):
     ESP_COREDUMP_PART_TABLE_OFF = 0x8000
 
-    def __init__(self, offset, target=None, port=None, baud=None):
-        # type: (int, Optional[str], Optional[str], Optional[int]) -> None
+    def __init__(self, offset, target=None, port=None, baud=None, part_table_offset=None):
+        # type: (int, Optional[str], Optional[str], Optional[int], Optional[int]) -> None
         super(ESPCoreDumpFlashLoader, self).__init__()
         self.port = port
         self.baud = baud
+        self.part_table_offset = part_table_offset
 
         self._get_core_src(offset, target)
         self.target = self._load_core_src()
@@ -521,12 +522,15 @@ class ESPCoreDumpFlashLoader(EspCoreDumpLoader):
         tool_args = [sys.executable, PARTTOOL_PY]
         if self.port:
             tool_args.extend(['--port', self.port])
+        if self.part_table_offset:
+            tool_args.extend(['--partition-table-offset', str(self.part_table_offset)])
         tool_args.extend(['read_partition', '--partition-type', 'data', '--partition-subtype', 'coredump', '--output'])
 
         self.core_src_file = self._create_temp_file()
         try:
             tool_args.append(self.core_src_file)  # type: ignore
             # read core dump partition
+            print(f"Running {' '.join(tool_args)}")
             et_out = subprocess.check_output(tool_args)
             if et_out:
                 logging.info(et_out.decode('utf-8'))
@@ -542,8 +546,7 @@ class ESPCoreDumpFlashLoader(EspCoreDumpLoader):
         Get core dump partition info using parttool
         """
         logging.info('Retrieving core dump partition offset and size...')
-        if not part_off:
-            part_off = self.ESP_COREDUMP_PART_TABLE_OFF
+        part_off = part_off or self.part_table_offset or self.ESP_COREDUMP_PART_TABLE_OFF
         try:
             tool_args = [sys.executable, PARTTOOL_PY, '-q', '--partition-table-offset', str(part_off)]
             if self.port:

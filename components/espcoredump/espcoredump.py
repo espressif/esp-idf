@@ -3,11 +3,14 @@
 # ESP-IDF Core Dump Utility
 
 import argparse
+import json
 import logging
 import os
+import re
 import subprocess
 import sys
 from shutil import copyfile
+from typing import Any, List
 
 import serial
 from construct import GreedyRange, Int32ul, Struct
@@ -54,6 +57,39 @@ def load_aux_elf(elf_path):  # type: (str) -> str
     return sym_cmd
 
 
+def get_sdkconfig_value(sdkconfig_file, key):  # type: (str, str) -> Optional[str]
+    """
+    Return the value of given key from sdkconfig_file.
+    If sdkconfig_file does not exist or the option is not present, returns None.
+    """
+    assert key.startswith('CONFIG_')
+    if not os.path.exists(sdkconfig_file):
+        return None
+    # keep track of the last seen value for the given key
+    value = None
+    # if the value is quoted, this excludes the quotes from the value
+    pattern = re.compile(r"^{}=\"?([^\"]*)\"?$".format(key))
+    with open(sdkconfig_file, 'r') as f:
+        for line in f:
+            match = re.match(pattern, line)
+            if match:
+                value = match.group(1)
+    return value
+
+
+def get_project_desc(prog_path):  # type: (str) -> Any
+    build_dir = os.path.abspath(os.path.dirname(prog_path))
+    desc_path = os.path.abspath(os.path.join(build_dir, 'project_description.json'))
+    if not os.path.isfile(desc_path):
+        logging.warning('%s does not exist. Please build the app with "idf.py build"', desc_path)
+        return ''
+
+    with open(desc_path, 'r') as f:
+        project_desc = json.load(f)
+
+    return project_desc
+
+
 def get_core_dump_elf(e_machine=ESPCoreDumpFileLoader.ESP32):
     # type: (int) -> Tuple[str, Optional[str], Optional[list[str]]]
     loader = None
@@ -63,7 +99,10 @@ def get_core_dump_elf(e_machine=ESPCoreDumpFileLoader.ESP32):
 
     if not args.core:
         # Core file not specified, try to read core dump from flash.
-        loader = ESPCoreDumpFlashLoader(args.off, args.chip, port=args.port, baud=args.baud)
+        loader = ESPCoreDumpFlashLoader(
+            args.off, args.chip, port=args.port, baud=args.baud,
+            part_table_offset=getattr(args, 'parttable_off', None)
+        )
     elif args.core_format != 'elf':
         # Core file specified, but not yet in ELF format. Convert it from raw or base64 into ELF.
         loader = ESPCoreDumpFileLoader(args.core, args.core_format == 'b64')
@@ -381,7 +420,11 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
     print('espcoredump.py v%s' % __version__)
-    temp_core_files = None
+    project_desc = get_project_desc(args.prog)
+    if project_desc:
+        setattr(args, 'parttable_off', get_sdkconfig_value(project_desc['config_file'], 'CONFIG_PARTITION_TABLE_OFFSET'))
+
+    temp_core_files = []  # type: Optional[List[str]]
     try:
         if args.operation == 'info_corefile':
             temp_core_files = info_corefile()
