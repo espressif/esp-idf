@@ -353,4 +353,12 @@ menu "OpenThread"
             Select this option to enable time synchronization feature, the devices in the same Thread network could
             sync to the same network time.
 
+    config OPENTHREAD_RADIO_STATS_ENABLE
+        bool "Enable Radio Statistics feature"
+        depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+        default n
+        help
+            Select this option to enable the radio statistics feature, you can use radio command to print some radio
+            Statistics informations.
+
 endmenu
