@@ -196,6 +196,8 @@ build_docs_pdf_prod:
 
 .deploy_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
+  extends:
+    - .before_script:fetch:git_describe
   variables:
     DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
     PYTHONUNBUFFERED: 1
