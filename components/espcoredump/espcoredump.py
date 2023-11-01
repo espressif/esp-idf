@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -8,7 +8,8 @@
 import json
 import logging
 import os.path
-from typing import Any
+import re
+from typing import Any, Optional
 
 try:
     from esp_coredump import CoreDump
@@ -19,7 +20,27 @@ except ImportError:
 from esp_coredump.cli_ext import parser
 
 
-def get_prefix_map_gdbinit_path(prog_path):  # type: (str) -> Any
+def get_sdkconfig_value(sdkconfig_file, key):  # type: (str, str) -> Optional[str]
+    """
+    Return the value of given key from sdkconfig_file.
+    If sdkconfig_file does not exist or the option is not present, returns None.
+    """
+    assert key.startswith('CONFIG_')
+    if not os.path.exists(sdkconfig_file):
+        return None
+    # keep track of the last seen value for the given key
+    value = None
+    # if the value is quoted, this excludes the quotes from the value
+    pattern = re.compile(r"^{}=\"?([^\"]*)\"?$".format(key))
+    with open(sdkconfig_file, 'r') as f:
+        for line in f:
+            match = re.match(pattern, line)
+            if match:
+                value = match.group(1)
+    return value
+
+
+def get_project_desc(prog_path):  # type: (str) -> Any
     build_dir = os.path.abspath(os.path.dirname(prog_path))
     desc_path = os.path.abspath(os.path.join(build_dir, 'project_description.json'))
     if not os.path.isfile(desc_path):
@@ -29,7 +50,7 @@ def get_prefix_map_gdbinit_path(prog_path):  # type: (str) -> Any
     with open(desc_path, 'r') as f:
         project_desc = json.load(f)
 
-    return project_desc.get('debug_prefix_map_gdbinit')
+    return project_desc
 
 
 def main():  # type: () -> None
@@ -48,13 +69,24 @@ def main():  # type: () -> None
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
     kwargs = {k: v for k, v in vars(args).items() if v is not None}
+    project_desc = get_project_desc(kwargs['prog'])
     # pass the extra_gdbinit_file if the build is reproducible
-    kwargs['extra_gdbinit_file'] = get_prefix_map_gdbinit_path(kwargs['prog'])
+    kwargs['extra_gdbinit_file'] = project_desc.get('debug_prefix_map_gdbinit')
+    kwargs['parttable_off'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_PARTITION_TABLE_OFFSET')
 
     del kwargs['debug']
     del kwargs['operation']
 
-    espcoredump = CoreDump(**kwargs)
+    try:
+        espcoredump = CoreDump(**kwargs)
+    except TypeError as e:
+        # 'parttable_off' was added in esp-coredump 1.5.2
+        # remove argument and retry without it
+        if 'parttable_off' in str(e):
+            kwargs.pop('parttable_off')
+            espcoredump = CoreDump(**kwargs)
+        else:
+            raise
     temp_core_files = None
 
     try:
