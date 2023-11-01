@@ -442,8 +442,12 @@ bool ieee802_11_rsnx_capab_len(const u8 *rsnxe, size_t rsnxe_len,
 
 bool ieee802_11_rsnx_capab(const u8 *rsnxe, unsigned int capab)
 {
-       return ieee802_11_rsnx_capab_len(rsnxe ? rsnxe + 2 : NULL,
-                                        rsnxe ? rsnxe[1] : 0, capab);
+       if (!rsnxe)
+               return false;
+       if (rsnxe[0] == WLAN_EID_VENDOR_SPECIFIC && rsnxe[1] >= 4 + 1)
+               return ieee802_11_rsnx_capab_len(rsnxe + 2 + 4, rsnxe[1] - 4,
+                                                capab);
+       return ieee802_11_rsnx_capab_len(rsnxe + 2, rsnxe[1], capab);
 }
 
 u8 get_operating_class(u8 chan, int sec_channel)
