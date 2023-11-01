@@ -26,6 +26,7 @@
 #include "esp_err.h"
 #include "esp_private/wifi.h"
 #include "esp_wps_i.h"
+#include "esp_dpp_i.h"
 #include "esp_wps.h"
 #include "eap_common/eap_wsc_common.h"
 #include "esp_wpas_glue.h"
@@ -1863,6 +1864,11 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
 #endif
 }
 
+bool is_wps_enabled(void)
+{
+    return s_wps_enabled;
+}
+
 int wifi_wps_enable_internal(const esp_wps_config_t *config)
 {
     int ret = 0;
@@ -1873,7 +1879,10 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
         wpa_printf(MSG_ERROR, "wps enable: invalid wps type");
         return ESP_ERR_WIFI_WPS_TYPE;
     }
-
+    if (is_dpp_enabled()) {
+        wpa_printf(MSG_ERROR, "wps enabled failed since DPP is initialized");
+        return ESP_FAIL;
+    }
     wpa_printf(MSG_DEBUG, "Set factory information.");
     ret = wps_set_factory_info(config);
     if (ret != 0) {
