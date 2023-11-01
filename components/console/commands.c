@@ -125,14 +125,10 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         unused = asprintf(&item->hint, " %s", cmd->hint);
     } else if (cmd->argtable) {
         /* Generate hint based on cmd->argtable */
-        char *buf = NULL;
-        size_t buf_size = 0;
-        FILE *f = open_memstream(&buf, &buf_size);
-        if (f != NULL) {
-            arg_print_syntax(f, cmd->argtable, NULL);
-            fclose(f);
-        }
-        item->hint = buf;
+        arg_dstr_t ds = arg_dstr_create();
+        arg_print_syntax_ds(ds, cmd->argtable, NULL);
+        item->hint = strdup(arg_dstr_cstr(ds));
+        arg_dstr_destroy(ds);
     }
     item->argtable = cmd->argtable;
 
