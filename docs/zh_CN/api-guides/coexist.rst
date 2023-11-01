@@ -111,6 +111,7 @@ RF 共存
    	  Coexistence -> RF;
     }
 
+.. _coexist_policy-cn:
 
 共存策略
 ^^^^^^^^^^^^^^

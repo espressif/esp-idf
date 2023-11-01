@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,7 +114,7 @@ void esp_scan_deinit(struct wpa_supplicant *wpa_s)
 }
 
 int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
-			    u32 rssi, u8 channel, u64 current_tsf)
+			    int8_t rssi, u8 channel, u64 current_tsf)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 	struct os_reltime now;

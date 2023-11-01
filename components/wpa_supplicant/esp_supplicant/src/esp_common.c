@@ -36,7 +36,7 @@ static bool s_supplicant_task_init_done;
 #define SUPPLICANT_TASK_STACK_SIZE (6144 + TASK_STACK_SIZE_ADD)
 
 static int handle_action_frm(u8 *frame, size_t len,
-			     u8 *sender, u32 rssi, u8 channel)
+			     u8 *sender, int8_t rssi, u8 channel)
 {
 	struct ieee_mgmt_frame *frm = os_malloc(sizeof(struct ieee_mgmt_frame) + len);
 
@@ -62,7 +62,7 @@ static int handle_action_frm(u8 *frame, size_t len,
 
 #if defined(CONFIG_WPA_11KV_SUPPORT)
 static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
-			     u8 *payload, size_t len, u32 rssi)
+			     u8 *payload, size_t len, int8_t rssi)
 {
 	if (payload[0] == WLAN_RRM_NEIGHBOR_REPORT_RESPONSE) {
 		/* neighbor report parsing */
@@ -78,7 +78,7 @@ static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
 	}
 }
 
-static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, u32 rssi, u8 channel)
+static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 channel)
 {
 	u8 category;
 	u8 bssid[ETH_ALEN];
@@ -204,7 +204,7 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 
 #ifdef CONFIG_IEEE80211R
 static int handle_auth_frame(u8 *frame, size_t len,
-			     u8 *sender, u32 rssi, u8 channel)
+			     u8 *sender, int8_t rssi, u8 channel)
 {
 	if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK) {
 		if (gWpaSm.ft_protocol) {
@@ -219,7 +219,7 @@ static int handle_auth_frame(u8 *frame, size_t len,
 }
 
 static int handle_assoc_frame(u8 *frame, size_t len,
-			      u8 *sender, u32 rssi, u8 channel)
+			      u8 *sender, int8_t rssi, u8 channel)
 {
 	if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK) {
 		if (gWpaSm.ft_protocol) {
@@ -244,7 +244,7 @@ void esp_supplicant_unset_all_appie(void)
 }
 
 static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
-				   u32 rssi, u8 channel, u64 current_tsf)
+				   int8_t rssi, u8 channel, u64 current_tsf)
 {
 	int ret = 0;
 
