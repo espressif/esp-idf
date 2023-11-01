@@ -1591,7 +1591,6 @@ void test_add_device_slave(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms]", test_add_device_master, test_add_device_slave);
 
-
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
 
 #define TEST_ISR_CNT    100

@@ -62,7 +62,6 @@ typedef struct {
                                              */
 } spi_slave_interface_config_t;
 
-
 #define SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO   (1<<0)    ///< Automatically re-malloc dma buffer if user buffer doesn't meet hardware alignment or dma_capable, this process may loss some memory and performance
 
 /**

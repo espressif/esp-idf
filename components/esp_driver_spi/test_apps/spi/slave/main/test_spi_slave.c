@@ -652,7 +652,7 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
 
     uint8_t *slave_isr_send = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_isr_recv = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    uint8_t *dummy_data = heap_caps_aligned_alloc(64, 64*2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *dummy_data = heap_caps_aligned_alloc(64, 64 * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_isr_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     get_tx_buffer(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
     get_tx_buffer(1001, dummy_data, dummy_data + 64, 64);

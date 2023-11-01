@@ -36,7 +36,6 @@ static const char *SPI_TAG = "spi_slave";
 
 #define SPI_CHECK(a, str, ret_val)  ESP_RETURN_ON_FALSE(a, ret_val, SPI_TAG, str)
 
-
 #ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define SPI_SLAVE_ISR_ATTR IRAM_ATTR
 #else
@@ -98,7 +97,7 @@ static inline bool is_valid_host(spi_host_device_t host)
 
 static inline bool SPI_SLAVE_ISR_ATTR bus_is_iomux(spi_slave_t *host)
 {
-    return host->flags&SPICOMMON_BUSFLAG_IOMUX_PINS;
+    return host->flags & SPICOMMON_BUSFLAG_IOMUX_PINS;
 }
 
 static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
@@ -139,24 +138,24 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     esp_err_t err;
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
-    SPI_CHECK(dma_chan >= SPI_DMA_DISABLED && dma_chan <= SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG );
+    SPI_CHECK(dma_chan >= SPI_DMA_DISABLED && dma_chan <= SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG);
 #elif CONFIG_IDF_TARGET_ESP32S2
-    SPI_CHECK( dma_chan == SPI_DMA_DISABLED || dma_chan == (int)host || dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG );
+    SPI_CHECK(dma_chan == SPI_DMA_DISABLED || dma_chan == (int)host || dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel", ESP_ERR_INVALID_ARG);
 #elif SOC_GDMA_SUPPORTED
-    SPI_CHECK( dma_chan == SPI_DMA_DISABLED || dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG );
+    SPI_CHECK(dma_chan == SPI_DMA_DISABLED || dma_chan == SPI_DMA_CH_AUTO, "invalid dma channel, chip only support spi dma channel auto-alloc", ESP_ERR_INVALID_ARG);
 #endif
-    SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH | ESP_INTR_FLAG_EDGE | ESP_INTR_FLAG_INTRDISABLED)) == 0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
-    SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM)==0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
     SPI_CHECK(slave_config->spics_io_num < 0 || GPIO_IS_VALID_GPIO(slave_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
 
     //Check post_trans_cb status when `SPI_SLAVE_NO_RETURN_RESULT` flag is set.
-    if(slave_config->flags & SPI_SLAVE_NO_RETURN_RESULT) {
+    if (slave_config->flags & SPI_SLAVE_NO_RETURN_RESULT) {
         SPI_CHECK(slave_config->post_trans_cb != NULL, "use feature flag 'SPI_SLAVE_NO_RETURN_RESULT' but no post_trans_cb function sets", ESP_ERR_INVALID_ARG);
     }
 
-    spi_chan_claimed=spicommon_periph_claim(host, "spi slave");
+    spi_chan_claimed = spicommon_periph_claim(host, "spi slave");
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
     spihost[host] = malloc(sizeof(spi_slave_t));
@@ -181,7 +180,9 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 
         //See how many dma descriptors we need and allocate them
         int dma_desc_ct = (bus_config->max_transfer_sz + SPI_MAX_DMA_LEN - 1) / SPI_MAX_DMA_LEN;
-        if (dma_desc_ct == 0) dma_desc_ct = 1; //default to 4k when max is not given
+        if (dma_desc_ct == 0) {
+            dma_desc_ct = 1;    //default to 4k when max is not given
+        }
         spihost[host]->max_transfer_sz = dma_desc_ct * SPI_MAX_DMA_LEN;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         size_t alignment;
@@ -203,8 +204,8 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         spihost[host]->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
     }
 
-    err = spicommon_bus_initialize_io(host, bus_config, SPICOMMON_BUSFLAG_SLAVE|bus_config->flags, &spihost[host]->flags);
-    if (err!=ESP_OK) {
+    err = spicommon_bus_initialize_io(host, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &spihost[host]->flags);
+    if (err != ESP_OK) {
         ret = err;
         goto cleanup;
     }
@@ -216,11 +217,13 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     }
 
     // The slave DMA suffers from unexpected transactions. Forbid reading if DMA is enabled by disabling the CS line.
-    if (spihost[host]->dma_enabled) freeze_cs(spihost[host]);
+    if (spihost[host]->dma_enabled) {
+        freeze_cs(spihost[host]);
+    }
 
 #ifdef CONFIG_PM_ENABLE
     err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_slave",
-            &spihost[host]->pm_lock);
+                             &spihost[host]->pm_lock);
     if (err != ESP_OK) {
         ret = err;
         goto cleanup;
@@ -235,7 +238,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
-    if(!(slave_config->flags & SPI_SLAVE_NO_RETURN_RESULT)) {
+    if (!(slave_config->flags & SPI_SLAVE_NO_RETURN_RESULT)) {
         spihost[host]->ret_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_trans_priv_t));
         if (!spihost[host]->ret_queue) {
             ret = ESP_ERR_NO_MEM;
@@ -282,8 +285,12 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 
 cleanup:
     if (spihost[host]) {
-        if (spihost[host]->trans_queue) vQueueDelete(spihost[host]->trans_queue);
-        if (spihost[host]->ret_queue) vQueueDelete(spihost[host]->ret_queue);
+        if (spihost[host]->trans_queue) {
+            vQueueDelete(spihost[host]->trans_queue);
+        }
+        if (spihost[host]->ret_queue) {
+            vQueueDelete(spihost[host]->ret_queue);
+        }
 #ifdef CONFIG_PM_ENABLE
         if (spihost[host]->pm_lock) {
             esp_pm_lock_release(spihost[host]->pm_lock);
@@ -309,8 +316,12 @@ esp_err_t spi_slave_free(spi_host_device_t host)
 {
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
-    if (spihost[host]->trans_queue) vQueueDelete(spihost[host]->trans_queue);
-    if (spihost[host]->ret_queue) vQueueDelete(spihost[host]->ret_queue);
+    if (spihost[host]->trans_queue) {
+        vQueueDelete(spihost[host]->trans_queue);
+    }
+    if (spihost[host]->ret_queue) {
+        vQueueDelete(spihost[host]->ret_queue);
+    }
     if (spihost[host]->dma_enabled) {
         spicommon_dma_chan_free(host);
         free(spihost[host]->hal.dmadesc_tx);
@@ -357,10 +368,10 @@ static esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_setup_priv_trans(spi_host_device_t
     uint32_t buffer_byte_len = (trans->length + 7) / 8;
 
     if (spihost[host]->dma_enabled && trans->tx_buffer) {
-        if ((!esp_ptr_dma_capable( trans->tx_buffer ) || ((((uint32_t)trans->tx_buffer) | buffer_byte_len) & (alignment - 1)))) {
+        if ((!esp_ptr_dma_capable(trans->tx_buffer) || ((((uint32_t)trans->tx_buffer) | buffer_byte_len) & (alignment - 1)))) {
             ESP_RETURN_ON_FALSE_ISR(trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, SPI_TAG, "TX buffer addr&len not align to %d, or not dma_capable", alignment);
             //if txbuf in the desc not DMA-capable, or not align to "alignment", malloc a new one
-            ESP_EARLY_LOGD(SPI_TAG, "Allocate TX buffer for DMA" );
+            ESP_EARLY_LOGD(SPI_TAG, "Allocate TX buffer for DMA");
             buffer_byte_len = (buffer_byte_len + alignment - 1) & (~(alignment - 1));   // up align to "alignment"
             uint32_t *temp = heap_caps_aligned_alloc(alignment, buffer_byte_len, MALLOC_CAP_DMA);
             if (temp == NULL) {
@@ -376,11 +387,11 @@ static esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_setup_priv_trans(spi_host_device_t
     if (spihost[host]->dma_enabled && trans->rx_buffer && (!esp_ptr_dma_capable(trans->rx_buffer) || ((((uint32_t)trans->rx_buffer) | (trans->length + 7) / 8) & (alignment - 1)))) {
         ESP_RETURN_ON_FALSE_ISR(trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, SPI_TAG, "RX buffer addr&len not align to %d, or not dma_capable", alignment);
         //if rxbuf in the desc not DMA-capable, or not align to "alignment", malloc a new one
-        ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA" );
+        ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
         buffer_byte_len = (buffer_byte_len + alignment - 1) & (~(alignment - 1));   // up align to "alignment"
         priv_trans->rx_buffer = heap_caps_aligned_alloc(alignment, buffer_byte_len, MALLOC_CAP_DMA);
         if (priv_trans->rx_buffer == NULL) {
-            free (priv_trans->tx_buffer);
+            free(priv_trans->tx_buffer);
             return ESP_ERR_NO_MEM;
         }
     }
@@ -393,12 +404,12 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
     BaseType_t r;
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_enabled == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
-			"txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_enabled == 0 || trans_desc->rx_buffer==NULL ||
-        (esp_ptr_dma_capable(trans_desc->rx_buffer) && esp_ptr_word_aligned(trans_desc->rx_buffer) &&
-            (trans_desc->length%4==0)),
-        "rxdata not in DMA-capable memory or not WORD aligned", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(spihost[host]->dma_enabled == 0 || trans_desc->tx_buffer == NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
+              "txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(spihost[host]->dma_enabled == 0 || trans_desc->rx_buffer == NULL ||
+              (esp_ptr_dma_capable(trans_desc->rx_buffer) && esp_ptr_word_aligned(trans_desc->rx_buffer) &&
+               (trans_desc->length % 4 == 0)),
+              "rxdata not in DMA-capable memory or not WORD aligned", ESP_ERR_INVALID_ARG);
 
     SPI_CHECK(trans_desc->length <= spihost[host]->max_transfer_sz * 8, "data transfer > host maximum", ESP_ERR_INVALID_ARG);
 
@@ -406,7 +417,9 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
     SPI_CHECK(ESP_OK == spi_slave_setup_priv_trans(host, &priv_trans), "slave setup priv_trans failed", ESP_ERR_NO_MEM);
 
     r = xQueueSend(spihost[host]->trans_queue, (void *)&priv_trans, ticks_to_wait);
-    if (!r) return ESP_ERR_TIMEOUT;
+    if (!r) {
+        return ESP_ERR_TIMEOUT;
+    }
     esp_intr_enable(spihost[host]->intr);
     return ESP_OK;
 }
@@ -434,7 +447,7 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_reset(spi_host_device_t host)
     spi_ll_set_int_stat(spihost[host]->hal.hw);
 
     spi_slave_trans_priv_t trans;
-    while( uxQueueMessagesWaiting(spihost[host]->trans_queue)) {
+    while (uxQueueMessagesWaiting(spihost[host]->trans_queue)) {
         xQueueReceive(spihost[host]->trans_queue, &trans, 0);
         spi_slave_uninstall_priv_trans(host, &trans);
     }
@@ -455,17 +468,17 @@ esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_trans_isr(spi_host_device_t host, c
         uint32_t buffer_byte_len = (trans_desc->length + 7) / 8;
 
         ESP_RETURN_ON_FALSE_ISR(\
-            (trans_desc->tx_buffer && \
-            esp_ptr_dma_capable(trans_desc->tx_buffer) && \
-            ((((uint32_t)trans_desc->tx_buffer) | buffer_byte_len) & (alignment - 1)) == 0), \
-            ESP_ERR_INVALID_ARG, SPI_TAG, "txdata addr & len not align to %d bytes or not dma_capable", alignment\
-        );
+                                (trans_desc->tx_buffer && \
+                                 esp_ptr_dma_capable(trans_desc->tx_buffer) && \
+                                 ((((uint32_t)trans_desc->tx_buffer) | buffer_byte_len) & (alignment - 1)) == 0), \
+                                ESP_ERR_INVALID_ARG, SPI_TAG, "txdata addr & len not align to %d bytes or not dma_capable", alignment\
+                               );
         ESP_RETURN_ON_FALSE_ISR(\
-            (trans_desc->rx_buffer && \
-            esp_ptr_dma_capable(trans_desc->rx_buffer) && \
-            ((((uint32_t)trans_desc->rx_buffer) | buffer_byte_len) & (alignment - 1)) == 0), \
-            ESP_ERR_INVALID_ARG, SPI_TAG, "rxdata addr & len not align to %d bytes or not dma_capable", alignment\
-        );
+                                (trans_desc->rx_buffer && \
+                                 esp_ptr_dma_capable(trans_desc->rx_buffer) && \
+                                 ((((uint32_t)trans_desc->rx_buffer) | buffer_byte_len) & (alignment - 1)) == 0), \
+                                ESP_ERR_INVALID_ARG, SPI_TAG, "rxdata addr & len not align to %d bytes or not dma_capable", alignment\
+                               );
     }
 
     spi_slave_trans_priv_t priv_trans = {
@@ -490,7 +503,7 @@ esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_reset_isr(spi_host_device_t host)
 
     spi_slave_trans_priv_t trans;
     BaseType_t do_yield = pdFALSE;
-    while( pdFALSE == xQueueIsQueueEmptyFromISR(spihost[host]->trans_queue)) {
+    while (pdFALSE == xQueueIsQueueEmptyFromISR(spihost[host]->trans_queue)) {
         xQueueReceiveFromISR(spihost[host]->trans_queue, &trans, &do_yield);
         spi_slave_uninstall_priv_trans(host, &trans);
     }
@@ -512,13 +525,14 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_get_trans_result(spi_host_device_t host, spi_
 
     spi_slave_trans_priv_t priv_trans;
     r = xQueueReceive(spihost[host]->ret_queue, (void *)&priv_trans, ticks_to_wait);
-    if (!r) return ESP_ERR_TIMEOUT;
+    if (!r) {
+        return ESP_ERR_TIMEOUT;
+    }
 
     spi_slave_uninstall_priv_trans(host, &priv_trans);
     *trans_desc = priv_trans.trans;
     return ESP_OK;
 }
-
 
 esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
 {
@@ -526,9 +540,13 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_tr
     spi_slave_transaction_t *ret_trans;
     //ToDo: check if any spi transfers in flight
     ret = spi_slave_queue_trans(host, trans_desc, ticks_to_wait);
-    if (ret != ESP_OK) return ret;
+    if (ret != ESP_OK) {
+        return ret;
+    }
     ret = spi_slave_get_trans_result(host, &ret_trans, ticks_to_wait);
-    if (ret != ESP_OK) return ret;
+    if (ret != ESP_OK) {
+        return ret;
+    }
     assert(ret_trans == trans_desc);
     return ESP_OK;
 }
@@ -556,7 +574,9 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     bool use_dma = host->dma_enabled;
     if (host->cur_trans.trans) {
         // When DMA is enabled, the slave rx dma suffers from unexpected transactions. Forbid reading until transaction ready.
-        if (use_dma) freeze_cs(host);
+        if (use_dma) {
+            freeze_cs(host);
+        }
 
         spi_slave_hal_store_result(hal);
         host->cur_trans.trans->trans_len = spi_slave_hal_get_rcv_bitlen(hal);
@@ -579,9 +599,11 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
             assert(ret == ESP_OK);
         }
 #endif
-        if (host->cfg.post_trans_cb) host->cfg.post_trans_cb(host->cur_trans.trans);
+        if (host->cfg.post_trans_cb) {
+            host->cfg.post_trans_cb(host->cur_trans.trans);
+        }
 
-        if(!(host->cfg.flags & SPI_SLAVE_NO_RETURN_RESULT)) {
+        if (!(host->cfg.flags & SPI_SLAVE_NO_RETURN_RESULT)) {
             xQueueSendFromISR(host->ret_queue, &host->cur_trans, &do_yield);
         }
         host->cur_trans.trans = NULL;
@@ -595,7 +617,9 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         if (spicommon_dmaworkaround_reset_in_progress()) {
             //We need to wait for the reset to complete. Disable int (will be re-enabled on reset callback) and exit isr.
             esp_intr_disable(host->intr);
-            if (do_yield) portYIELD_FROM_ISR();
+            if (do_yield) {
+                portYIELD_FROM_ISR();
+            }
             return;
         }
     }
@@ -637,7 +661,11 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
 
         //Kick off transfer
         spi_slave_hal_user_start(hal);
-        if (host->cfg.post_setup_cb) host->cfg.post_setup_cb(priv_trans.trans);
+        if (host->cfg.post_setup_cb) {
+            host->cfg.post_setup_cb(priv_trans.trans);
+        }
     }
-    if (do_yield) portYIELD_FROM_ISR();
+    if (do_yield) {
+        portYIELD_FROM_ISR();
+    }
 }
