@@ -78,7 +78,7 @@ menu "ESP32C3-Specific"
     choice ESP32C3_REV_MAX_FULL_STR
         prompt "Maximum Supported ESP32-C3 Revision"
         config ESP32C3_REV_MAX_FULL_STR_OPT
-            bool "Rev v0.99"
+            bool "Rev v1.99"
     endchoice
 
     # Maximum revision that IDF supports.
@@ -88,17 +88,13 @@ menu "ESP32C3-Specific"
 
     config ESP32C3_REV_MAX_FULL
         int
-        default 199 if ESP32C3_REV101_DEVELOPMENT
-        default 99 if !ESP32C3_REV101_DEVELOPMENT
+        default 199
         # keep in sync the "Maximum Supported Revision" description with this value
 
     config ESP_REV_MAX_FULL
         int
         default ESP32C3_REV_MAX_FULL
 
-    config ESP32C3_REV101_DEVELOPMENT
-        bool "Develop on ESP32-C3 v1.1 (Preview)"
-        default y if IDF_CI_BUILD
 
     config ESP32C3_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
