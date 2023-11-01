@@ -113,6 +113,9 @@ static esp_err_t esp_openthread_host_interface_init(const esp_openthread_platfor
                           "esp_openthread_host_cli_usb_init failed");
         break;
 #endif
+    case HOST_CONNECTION_MODE_NONE:
+        ESP_LOGI(OT_PLAT_LOG_TAG, "Host connection mode none");
+        break;
     default:
         return ESP_FAIL;
     }
