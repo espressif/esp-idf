@@ -45,8 +45,15 @@ examples/openthread/ot_rcp:
       reason: only test on esp32c6
   <<: *openthread_dependencies
 
-# To add support for the ESP32-C6 in TZ-302
-examples/openthread/ot_sleepy_device:
+examples/openthread/ot_sleepy_device/deep_sleep:
   enable:
     - if: IDF_TARGET in ["esp32h2"]
+  disable_test:
+    - if: IDF_TARGET == "esp32h2"
+      temporary: true
+      reason: Unsupport
+
+examples/openthread/ot_sleepy_device/light_sleep:
+  enable:
+    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]

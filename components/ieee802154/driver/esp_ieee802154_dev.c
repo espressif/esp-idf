@@ -30,6 +30,7 @@
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_private/sleep_modem.h"
 static bool s_rf_closed = false;
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
 #define IEEE802154_LINK_OWNER  ENTRY(3)
@@ -613,6 +614,12 @@ void ieee802154_enable(void)
 void ieee802154_disable(void)
 {
     modem_clock_module_disable(ieee802154_periph.module);
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+    esp_pm_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_prepare,
+                                                     mac_bb_power_up_prepare);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
     ieee802154_set_state(IEEE802154_STATE_DISABLE);
 }
 
@@ -788,6 +795,12 @@ static esp_err_t ieee802154_sleep_init(void)
     err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_802154_MAC);
     ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to allocate memory for ieee802154 mac retention");
     ESP_LOGI(IEEE802154_TAG, "ieee802154 mac sleep retention initialization");
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+    esp_pm_register_mac_bb_module_prepare_callback(mac_bb_power_down_prepare,
+                                                   mac_bb_power_up_prepare);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+
 #endif
     return err;
 }
