@@ -103,20 +103,20 @@ static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_
     /* Share bck and ws signal in full-duplex mode */
     i2s_ll_share_bck_ws(handle->controller->hal.dev, handle->controller->full_duplex);
 
+    /* Update the mode info: slot configuration */
+    i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
+    memcpy(&(pdm_tx_cfg->slot_cfg), slot_cfg, sizeof(i2s_pdm_tx_slot_config_t));
+
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Configure the hardware to apply PDM format */
     bool is_slave = handle->role == I2S_ROLE_SLAVE;
-    i2s_hal_slot_config_t *slot_hal_cfg = (i2s_hal_slot_config_t *)slot_cfg;
+    i2s_hal_slot_config_t *slot_hal_cfg = (i2s_hal_slot_config_t *)(&(pdm_tx_cfg->slot_cfg));
 #if SOC_I2S_HW_VERSION_2
     /* Times 10 to transform the float type to integer because we should avoid float type in hal */
     slot_hal_cfg->pdm_tx.hp_cut_off_freq_hzx10 = (uint32_t)(slot_cfg->hp_cut_off_freq_hz * 10);
 #endif
     i2s_hal_pdm_set_tx_slot(&(handle->controller->hal), is_slave, slot_hal_cfg);
     portEXIT_CRITICAL(&g_i2s.spinlock);
-
-    /* Update the mode info: slot configuration */
-    i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
-    memcpy(&(pdm_tx_cfg->slot_cfg), slot_cfg, sizeof(i2s_pdm_tx_slot_config_t));
 
     return ESP_OK;
 }
@@ -389,15 +389,20 @@ static esp_err_t i2s_pdm_rx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_
     /* Share bck and ws signal in full-duplex mode */
     i2s_ll_share_bck_ws(handle->controller->hal.dev, handle->controller->full_duplex);
 
-    portENTER_CRITICAL(&g_i2s.spinlock);
-    /* Configure the hardware to apply PDM format */
-    bool is_slave = (handle->role == I2S_ROLE_SLAVE) | handle->controller->full_duplex;
-    i2s_hal_pdm_set_rx_slot(&(handle->controller->hal), is_slave, (i2s_hal_slot_config_t *)slot_cfg);
-    portEXIT_CRITICAL(&g_i2s.spinlock);
-
     /* Update the mode info: slot configuration */
     i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t *)handle->mode_info;
     memcpy(&(pdm_rx_cfg->slot_cfg), slot_cfg, sizeof(i2s_pdm_rx_slot_config_t));
+
+    portENTER_CRITICAL(&g_i2s.spinlock);
+    /* Configure the hardware to apply PDM format */
+    bool is_slave = (handle->role == I2S_ROLE_SLAVE) | handle->controller->full_duplex;
+    i2s_hal_slot_config_t *slot_hal_cfg = (i2s_hal_slot_config_t *)(&(pdm_rx_cfg->slot_cfg));
+#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+    /* Times 10 to transform the float type to integer because we should avoid float type in hal */
+    slot_hal_cfg->pdm_rx.hp_cut_off_freq_hzx10 = (uint32_t)(slot_cfg->hp_cut_off_freq_hz * 10);
+#endif
+    i2s_hal_pdm_set_rx_slot(&(handle->controller->hal), is_slave, slot_hal_cfg);
+    portEXIT_CRITICAL(&g_i2s.spinlock);
 
     return ESP_OK;
 }

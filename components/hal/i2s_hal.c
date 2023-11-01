@@ -255,7 +255,7 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
 #if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
     uint32_t param0;
     uint32_t param5;
-    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hz, &param0, &param5);
+    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hzx10, &param0, &param5);
     i2s_ll_rx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_rx.hp_en);
     i2s_ll_rx_set_pdm_hp_filter_param0(hal->dev, param0);
     i2s_ll_rx_set_pdm_hp_filter_param5(hal->dev, param5);
