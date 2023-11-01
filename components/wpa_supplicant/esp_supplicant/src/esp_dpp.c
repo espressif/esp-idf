@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_dpp_i.h"
 #include "esp_dpp.h"
 #include "esp_wpa.h"
 #include "esp_timer.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
+#include "esp_dpp_i.h"
 
 #ifdef CONFIG_DPP
 static TaskHandle_t s_dpp_task_hdl = NULL;
@@ -32,6 +32,7 @@ struct action_rx_param {
     u32 vendor_data_len;
     struct ieee80211_action *action_frm;
 };
+extern bool is_wps_enabled(void);
 
 static int esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
 {
@@ -631,11 +632,23 @@ void esp_supp_dpp_stop_listen(void)
     esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_CANCEL, 0, 0, NULL);
 }
 
+#ifdef CONFIG_WPA_DPP_SUPPORT
+bool is_dpp_enabled(void)
+{
+    return (s_dpp_ctx.dpp_global ? true : false);
+}
+#endif
+
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 {
     wifi_mode_t mode = 0;
     if (esp_wifi_get_mode(&mode) || ((mode != WIFI_MODE_STA) && (mode != WIFI_MODE_APSTA))) {
         wpa_printf(MSG_ERROR, "DPP: failed to init as not in station mode.");
+        return ESP_FAIL;
+    }
+
+    if (is_wps_enabled()) {
+        wpa_printf(MSG_ERROR, "DPP: failed to init since WPS is enabled");
         return ESP_FAIL;
     }
     if (s_dpp_ctx.dpp_global) {

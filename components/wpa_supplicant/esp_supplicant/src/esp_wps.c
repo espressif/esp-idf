@@ -14,6 +14,7 @@
 #include "common/ieee802_11_defs.h"
 #include "crypto/dh_group5.h"
 #include "wps/wps_i.h"
+#include "esp_dpp_i.h"
 #include "wps/wps_dev_attr.h"
 #include "eap_peer/eap_defs.h"
 #include "eap_peer/eap_common.h"
@@ -2147,6 +2148,11 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
 #endif
 }
 
+bool is_wps_enabled(void)
+{
+    return s_wps_enabled;
+}
+
 int wifi_wps_enable_internal(const esp_wps_config_t *config)
 {
     int ret = 0;
@@ -2163,6 +2169,10 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
         return ESP_ERR_WIFI_WPS_TYPE;
     }
 
+    if (is_dpp_enabled()) {
+        wpa_printf(MSG_ERROR, "wps enabled failed since DPP is initialized");
+        return ESP_FAIL;
+    }
     wpa_printf(MSG_DEBUG, "Set factory information.");
     ret = wps_set_factory_info(config);
     if (ret != 0) {
