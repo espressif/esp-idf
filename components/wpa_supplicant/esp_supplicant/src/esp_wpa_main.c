@@ -321,12 +321,15 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
     sta_info = ap_sta_add(hapd, bssid);
     if (!sta_info) {
         wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
-        return false;
+        goto fail;
     }
 
 #ifdef CONFIG_SAE
     if (sta_info->lock && os_semphr_take(sta_info->lock, 0) != TRUE) {
         wpa_printf(MSG_INFO, "Ignore assoc request as softap is busy with sae calculation for station "MACSTR, MAC2STR(bssid));
+        if (esp_send_assoc_resp(hapd, sta_info, bssid, WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY, rsnxe ? false : true, subtype) != WLAN_STATUS_SUCCESS) {
+            goto fail;
+        }
         return false;
     }
 #endif /* CONFIG_SAE */
@@ -357,10 +360,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
     }
 
 fail:
-    if (sta_info) {
-        ap_free_sta(hapd, sta_info);
-    }
-
+    esp_wifi_ap_deauth_internal(bssid, WLAN_REASON_PREV_AUTH_NOT_VALID);
     return false;
 }
 #endif
