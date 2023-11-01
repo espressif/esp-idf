@@ -6,15 +6,11 @@
 
 #pragma once
 
-#include <stdbool.h>
 #include <stdint.h>
-#include "sdkconfig.h"
+#include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
-
-#include "esp_err.h"
 #include "driver/gpio.h"
-#include "freertos/FreeRTOS.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +42,7 @@ esp_err_t esp_clock_output_start(soc_clkout_sig_id_t clk_sig, gpio_num_t gpio_nu
  *     - ESP_ERR_INVALID_STATE  The clock in handle is already in the disabled state
  */
 esp_err_t esp_clock_output_stop(esp_clock_output_mapping_handle_t clkout_mapping_hdl);
-#endif
+#endif // SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX || SOC_GPIO_CLOCKOUT_BY_IO_MUX
 
 #ifdef __cplusplus
 }
