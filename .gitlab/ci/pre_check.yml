@@ -5,27 +5,16 @@
     - host_test
   dependencies: []
 
-.check_pre_commit_template:
+check_pre_commit:
   extends:
     - .pre_check_template
     - .before_script:minimal
   image: $PRE_COMMIT_IMAGE
-
-check_pre_commit_master_release:
-  extends:
-    - .check_pre_commit_template
-    - .rules:protected
+  needs:
+    - pipeline_variables
   script:
     - fetch_submodules
-    - git diff-tree --no-commit-id --name-only -r $PIPELINE_COMMIT_SHA | xargs pre-commit run --files
-
-check_pre_commit_MR:
-  extends:
-    - .check_pre_commit_template
-    - .rules:mr
-  script:
-    - fetch_submodules
-    - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs pre-commit run --files
+    - pre-commit run --files $MODIFIED_FILES
 
 check_MR_style_dangerjs:
   extends:
@@ -60,6 +49,7 @@ check_version:
   extends:
     - .pre_check_template
     - .rules:protected
+    - .before_script:fetch:git_describe
   script:
     - export IDF_PATH=$PWD
     - tools/ci/check_idf_version.sh
@@ -148,10 +138,12 @@ check_esp_system:
 
 # For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
 # the version returned by 'git describe'
+# Don't forget to update the env var `LATEST_GIT_TAG` in .gitlab/ci/common.yml
 check_version_tag:
   extends:
     - .pre_check_template
     - .rules:tag:release
+    - .before_script:fetch:git_describe
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
 
@@ -179,22 +171,22 @@ check_configure_ci_environment_parsing:
     - cd tools/ci
     - python -m unittest ci_build_apps.py
 
-mr_variables:
+pipeline_variables:
   extends:
     - .pre_check_template
-    - .rules:mr
-    - .before_script:minimal
+    - .before_script:fetch:git_diff
   tags:
     - build
   script:
-    - echo "MR_MODIFIED_FILES=$(python tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
-    - echo "MR_MODIFIED_COMPONENTS=$(python tools/ci/ci_get_mr_info.py components ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
-    - >
+    - MODIFIED_FILES=$(echo $GIT_DIFF_OUTPUT | xargs)
+    - echo "MODIFIED_FILES=$MODIFIED_FILES" >> pipeline.env
+    - echo "MODIFIED_COMPONENTS=$(run_cmd python tools/ci/ci_get_mr_info.py components --modified-files $MODIFIED_FILES | xargs)" >> pipeline.env
+    - |
       if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
-        echo "BUILD_AND_TEST_ALL_APPS=1" >> mr.env
+        echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
       fi
-    - cat mr.env
+    - cat pipeline.env
   artifacts:
     reports:
-      dotenv: mr.env
+      dotenv: pipeline.env
     expire_in: 4 days
