@@ -5702,6 +5702,15 @@ void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data)
     BTM_BleTestEnd(p_data->dtm_stop.p_dtm_cmpl_cback);
 }
 
+void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
+{
+    if (BTM_BleClearAdv(p_data->ble_clear_adv.p_clear_adv_cback) == FALSE) {
+        if (p_data->ble_clear_adv.p_clear_adv_cback) {
+            (*p_data->ble_clear_adv.p_clear_adv_cback)(BTA_FAILURE);
+        }
+    }
+}
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
 {
