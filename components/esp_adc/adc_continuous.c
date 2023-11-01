@@ -9,6 +9,11 @@
 #include <ctype.h>
 #include <string.h>
 #include "sdkconfig.h"
+#if CONFIG_ADC_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_pm.h"
@@ -102,6 +107,9 @@ static esp_err_t adc_digi_gpio_init(adc_unit_t adc_unit, uint16_t channel_mask)
 
 esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_config, adc_continuous_handle_t *ret_handle)
 {
+#if CONFIG_ADC_ENABLE_DEBUG_LOG
+    esp_log_level_set(ADC_TAG, ESP_LOG_DEBUG);
+#endif
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((hdl_config->conv_frame_size % SOC_ADC_DIGI_DATA_BYTES_PER_CONV == 0), ESP_ERR_INVALID_ARG, ADC_TAG, "conv_frame_size should be in multiples of `SOC_ADC_DIGI_DATA_BYTES_PER_CONV`");
 

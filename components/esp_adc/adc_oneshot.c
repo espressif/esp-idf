@@ -7,6 +7,11 @@
 #include <esp_types.h>
 #include <sys/lock.h>
 #include "sdkconfig.h"
+#if CONFIG_ADC_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
 #include "stdatomic.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -69,6 +74,9 @@ esp_err_t adc_oneshot_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, i
 
 esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, adc_oneshot_unit_handle_t *ret_unit)
 {
+#if CONFIG_ADC_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     esp_err_t ret = ESP_OK;
     adc_oneshot_unit_ctx_t *unit = NULL;
     ESP_GOTO_ON_FALSE(init_config && ret_unit, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument: null pointer");
