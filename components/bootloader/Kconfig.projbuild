@@ -139,7 +139,7 @@ menu "Bootloader config"
 
         config BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
             bool
-            default y if ESPTOOLPY_OCT_FLASH && SPI_FLASH_32BIT_ADDRESS
+            default y if ESPTOOLPY_OCT_FLASH && BOOTLOADER_FLASH_32BIT_ADDR
             default n
 
     endmenu
