@@ -319,7 +319,7 @@ inline bool esp_core_dump_in_isr_context(void)
 
 inline core_dump_task_handle_t esp_core_dump_get_current_task_handle()
 {
-    return (core_dump_task_handle_t) xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID());
+    return (core_dump_task_handle_t) xTaskGetCurrentTaskHandleForCore(xPortGetCoreID());
 }
 
 #endif
