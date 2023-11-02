@@ -741,7 +741,6 @@ components/hal/spi_flash_encrypt_hal_iram.c
 components/hal/spi_flash_hal_gpspi.c
 components/hal/spi_slave_hal.c
 components/hal/spi_slave_hal_iram.c
-components/hal/spi_slave_hd_hal.c
 components/hal/test/test_mpu.c
 components/hal/touch_sensor_hal.c
 components/hal/twai_hal_iram.c
