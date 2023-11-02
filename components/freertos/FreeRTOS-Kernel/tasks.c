@@ -596,6 +596,11 @@ PRIVILEGED_DATA static portMUX_TYPE xKernelLock = portMUX_INITIALIZER_UNLOCKED;
 
 /* File private functions. --------------------------------*/
 
+/*
+ * Creates the idle tasks during scheduler start.
+ */
+static BaseType_t prvCreateIdleTasks( void );
+
 /**
  * Utility function to check whether a yield (on either core) is required after
  * unblocking (or changing the priority of) a particular task.
@@ -2278,14 +2283,73 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 #endif /* ( ( INCLUDE_xTaskResumeFromISR == 1 ) && ( INCLUDE_vTaskSuspend == 1 ) ) */
 /*-----------------------------------------------------------*/
 
-void vTaskStartScheduler( void )
+static BaseType_t prvCreateIdleTasks( void )
 {
-    BaseType_t xReturn;
-    UBaseType_t x;
+    BaseType_t xReturn = pdPASS;
+    BaseType_t xCoreID;
 
-    /* Create idle tasks that are pinned to each core */
-    for( x = 0; x < configNUMBER_OF_CORES; x++ )
+#if ( configNUMBER_OF_CORES > 1 )
+    char cIdleName[ configMAX_TASK_NAME_LEN ];
+#endif /* #if ( configNUMBER_OF_CORES > 1 ) */
+
+    /* Add each idle task at the lowest priority. */
+    for( xCoreID = ( BaseType_t ) 0; xCoreID < ( BaseType_t ) configNUMBER_OF_CORES; xCoreID++ )
     {
+        #if ( configNUMBER_OF_CORES > 1 )
+        {
+            BaseType_t x;
+
+            if( xReturn == pdFAIL )
+            {
+                /* TODO: IDF-8240 - Memory leaks occur if IDLE task creation fails on some core
+                 * as we do not free memory for the successfully created IDLE tasks. */
+                break;
+            }
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
+            }
+
+            for( x = ( BaseType_t ) 0; x < ( BaseType_t ) configMAX_TASK_NAME_LEN; x++ )
+            {
+                cIdleName[ x ] = configIDLE_TASK_NAME[ x ];
+
+                /* Don't copy all configMAX_TASK_NAME_LEN if the string is shorter than
+                 * configMAX_TASK_NAME_LEN characters just in case the memory after the
+                 * string is not accessible (extremely unlikely). */
+                if( cIdleName[ x ] == ( char ) 0x00 )
+                {
+                    break;
+                }
+                else
+                {
+                    mtCOVERAGE_TEST_MARKER();
+                }
+            }
+
+            /* Append the idle task number to the end of the name if there is space. */
+            if( x < ( BaseType_t ) configMAX_TASK_NAME_LEN )
+            {
+                cIdleName[ x ] = ( char ) ( xCoreID + '0' );
+                x++;
+
+                /* And append a null character if there is space. */
+                if( x < ( BaseType_t ) configMAX_TASK_NAME_LEN )
+                {
+                    cIdleName[ x ] = '\0';
+                }
+                else
+                {
+                    mtCOVERAGE_TEST_MARKER();
+                }
+            }
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
+            }
+        }
+        #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
+
         /* Add the idle task at the lowest priority. */
         #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
         {
@@ -2296,42 +2360,60 @@ void vTaskStartScheduler( void )
             /* The Idle task is created using user provided RAM - obtain the
              * address of the RAM then create the idle task. */
             vApplicationGetIdleTaskMemory( &pxIdleTaskTCBBuffer, &pxIdleTaskStackBuffer, &ulIdleTaskStackSize );
-            xIdleTaskHandle[ x ] = xTaskCreateStaticPinnedToCore( prvIdleTask,
-                                                                  configIDLE_TASK_NAME,
-                                                                  ulIdleTaskStackSize,
-                                                                  ( void * ) NULL,     /*lint !e961.  The cast is not redundant for all compilers. */
-                                                                  portPRIVILEGE_BIT,   /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
-                                                                  pxIdleTaskStackBuffer,
-                                                                  pxIdleTaskTCBBuffer, /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
-                                                                  x );
+            xIdleTaskHandle[ xCoreID ] = xTaskCreateStaticPinnedToCore( prvIdleTask,
+                                                                        #if ( configNUMBER_OF_CORES > 1 )
+                                                                            cIdleName,
+                                                                        #else /* #if ( configNUMBER_OF_CORES > 1 ) */
+                                                                            configIDLE_TASK_NAME,
+                                                                        #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
+                                                                        ulIdleTaskStackSize,
+                                                                        ( void * ) NULL,     /*lint !e961.  The cast is not redundant for all compilers. */
+                                                                        portPRIVILEGE_BIT,   /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
+                                                                        pxIdleTaskStackBuffer,
+                                                                        pxIdleTaskTCBBuffer, /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
+                                                                        xCoreID );
 
-            if( xIdleTaskHandle[ x ] != NULL )
+            if( xIdleTaskHandle[ xCoreID ] != NULL )
             {
                 xReturn = pdPASS;
             }
             else
             {
                 xReturn = pdFAIL;
-                break;
             }
         }
         #else /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
         {
             /* The Idle task is being created using dynamically allocated RAM. */
             xReturn = xTaskCreatePinnedToCore( prvIdleTask,
-                                               configIDLE_TASK_NAME,
+                                               #if ( configNUMBER_OF_CORES > 1 )
+                                                   cIdleName,
+                                               #else /* #if ( configNUMBER_OF_CORES > 1 ) */
+                                                   configIDLE_TASK_NAME,
+                                               #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
                                                configMINIMAL_STACK_SIZE,
                                                ( void * ) NULL,
                                                portPRIVILEGE_BIT,           /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
                                                &xIdleTaskHandle[ xCoreID ], /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
                                                xCoreID );
 
-            if( xReturn == pdFAIL )
-            {
-                break;
-            }
+        }
         #endif /* configSUPPORT_STATIC_ALLOCATION */
     }
+
+    return xReturn;
+}
+
+/*-----------------------------------------------------------*/
+
+void vTaskStartScheduler( void )
+{
+    BaseType_t xReturn;
+
+    /* The code for prvCreateIdleTasks() has been backported from the upstream
+     * FreeRTOS-Kernel source. The reference for the same is on the mainline
+     * at the commit id# 2f94b181a2f049ec342deba0927bed51f7174ab0. */
+    xReturn = prvCreateIdleTasks();
 
     #if ( configUSE_TIMERS == 1 )
     {
