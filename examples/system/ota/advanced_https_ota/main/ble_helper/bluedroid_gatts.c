@@ -9,7 +9,7 @@
 #include "esp_log.h"
 #include "string.h"
 
-#if CONFIG_BT_BLE_ENABLED
+#if CONFIG_BT_CONTROLLER_ENABLED && CONFIG_BT_BLE_ENABLED
 
 static const char *TAG = "bluedroid_gatts";
 static prepare_type_env_t a_prepare_write_env;

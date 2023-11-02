@@ -29,7 +29,9 @@
 #include "common/bt_trace.h"
 #include "common/bt_defs.h"
 #include "device/bdaddr.h"
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
+#endif
 #include "esp_hf_ag_api.h"
 #include "osi/allocator.h"
 
@@ -328,12 +330,14 @@ bt_status_t btc_hf_init(void)
     // custom initialization here
     hf_local_param[idx].btc_hf_cb.initialized = true;
 // set audio path
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #if BTM_SCO_HCI_INCLUDED
     uint8_t data_path = ESP_SCO_DATA_PATH_HCI;
 #else
     uint8_t data_path = ESP_SCO_DATA_PATH_PCM;
 #endif
     esp_bredr_sco_datapath_set(data_path);
+#endif
     return BT_STATUS_SUCCESS;
 }
 

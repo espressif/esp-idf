@@ -49,7 +49,7 @@ config BT_BLUEDROID_ESP_COEX_VSC
 
 config BT_CLASSIC_ENABLED
     bool "Classic Bluetooth"
-    depends on BT_BLUEDROID_ENABLED && IDF_TARGET_ESP32
+    depends on BT_BLUEDROID_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BT_CLASSIC_SUPPORTED) || BT_CONTROLLER_DISABLED)
     default n
     help
         For now this option needs "SMP_ENABLE" to be set to yes
@@ -1116,8 +1116,9 @@ config BT_MAX_DEVICE_NAME_LEN
 
 config BT_BLE_RPA_SUPPORTED
     bool "Update RPA to Controller"
-    depends on BT_BLUEDROID_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED
-    default n
+    depends on (BT_BLUEDROID_ENABLED && ((BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED) || BT_CONTROLLER_DISABLED))
+    default n if (BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED)
+    default y if BT_CONTROLLER_DISABLED
     help
         This enables controller RPA list function.
         For ESP32, ESP32 only support network privacy mode. If this option is enabled, ESP32 will only accept
@@ -1141,28 +1142,28 @@ config BT_BLE_RPA_TIMEOUT
 
 config BT_BLE_50_FEATURES_SUPPORTED
     bool "Enable BLE 5.0 features"
-    depends on (BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || SOC_ESP_NIMBLE_CONTROLLER))
+    depends on (BT_BLUEDROID_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
     default y
     help
         This enables BLE 5.0 features, this option only support esp32c3/esp32s3 chip
 
 config BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features"
-    depends on (BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || SOC_ESP_NIMBLE_CONTROLLER))
+    depends on (BT_BLUEDROID_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_SUPPORTED) || BT_CONTROLLER_DISABLED))
     default n
     help
         This enables BLE 4.2 features.
 
 config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     bool "Enable BLE periodic advertising sync transfer feature"
-    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && SOC_ESP_NIMBLE_CONTROLLER)
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED))
     default n
     help
         This enables BLE periodic advertising sync transfer feature
 
 config BT_BLE_FEAT_PERIODIC_ADV_ENH
     bool "Enable periodic adv enhancements(adi support)"
-    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && SOC_ESP_NIMBLE_CONTROLLER)
+    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED))
     default n
     help
         Enable the periodic advertising enhancements
