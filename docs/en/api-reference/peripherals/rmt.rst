@@ -550,7 +550,9 @@ There is a Kconfig option :ref:`CONFIG_RMT_ISR_IRAM_SAFE` that has the following
 2. Place all functions used by the ISR into IRAM [2]_
 3. Place the driver object into DRAM in case it is mapped to PSRAM by accident
 
-This Kconfig option allows the interrupt to run while the cache is disabled but comes at the cost of increased IRAM consumption.
+This Kconfig option allows the interrupt handler to run while the cache is disabled but comes at the cost of increased IRAM consumption.
+
+Another Kconfig option :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` can place :cpp:func:`rmt_receive` into the IRAM as well. So that the receive function can be used even when the flash cache is disabled.
 
 .. _rmt-thread-safety:
 
@@ -560,6 +562,10 @@ Thread Safety
 The factory function :cpp:func:`rmt_new_tx_channel`, :cpp:func:`rmt_new_rx_channel` and :cpp:func:`rmt_new_sync_manager` are guaranteed to be thread-safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
 Other functions that take the :cpp:type:`rmt_channel_handle_t` and :cpp:type:`rmt_sync_manager_handle_t` as the first positional parameter, are not thread-safe. which means the user should avoid calling them from multiple tasks.
 
+The following functions are allowed to use under ISR context as well.
+
+- :cpp:func:`rmt_receive`
+
 .. _rmt-kconfig-options:
 
 Kconfig Options
@@ -567,6 +573,7 @@ Kconfig Options
 
 - :ref:`CONFIG_RMT_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also :ref:`rmt-iram-safe` for more information.
 - :ref:`CONFIG_RMT_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
+- :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` controls where to place the RMT receive function (IRAM or Flash), see :ref:`rmt-iram-safe` for more information.
 
 Application Examples
 --------------------
