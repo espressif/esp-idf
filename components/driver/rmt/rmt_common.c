@@ -205,7 +205,6 @@ esp_err_t rmt_apply_carrier(rmt_channel_handle_t channel, const rmt_carrier_conf
 esp_err_t rmt_del_channel(rmt_channel_handle_t channel)
 {
     ESP_RETURN_ON_FALSE(channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(channel->fsm == RMT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
     gpio_reset_pin(channel->gpio_num);
     return channel->del(channel);
 }
@@ -213,14 +212,12 @@ esp_err_t rmt_del_channel(rmt_channel_handle_t channel)
 esp_err_t rmt_enable(rmt_channel_handle_t channel)
 {
     ESP_RETURN_ON_FALSE(channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(channel->fsm == RMT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
     return channel->enable(channel);
 }
 
 esp_err_t rmt_disable(rmt_channel_handle_t channel)
 {
     ESP_RETURN_ON_FALSE(channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(channel->fsm == RMT_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "channel not in enable state");
     return channel->disable(channel);
 }
 
