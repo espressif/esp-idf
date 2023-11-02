@@ -1225,6 +1225,15 @@ static void test_handler_give_sem(void* handler_arg, esp_event_base_t base, int3
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGive(sem));
 }
 
+const TickType_t ONE_TICK = 1;
+
+static void wait_taken(SemaphoreHandle_t sem, TickType_t delay_ticks_if_not_taken) {
+    while (xSemaphoreTake(sem, ONE_TICK) == pdTRUE) {
+        xSemaphoreGive(sem);
+        vTaskDelay(delay_ticks_if_not_taken);
+    }
+}
+
 TEST_CASE("can post while handler is executing - dedicated task", "[event][linux]")
 {
     EV_LoopFix loop_fix(1, "loop_task");
@@ -1247,6 +1256,9 @@ TEST_CASE("can post while handler is executing - dedicated task", "[event][linux
 
     // Trigger waiting by sending first event
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+
+    // Wait until semaphore is actually taken, which means handler is running and blocked
+    wait_taken(ev1_sem, 2);
 
     // Check that event can be posted while handler is running (waiting on the semaphore)
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
@@ -1317,10 +1329,7 @@ TEST_CASE("can not post while handler is executing - no dedicated task", "[event
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
 
     // Wait until semaphore is actually taken, which means handler is running and blocked
-    while (xSemaphoreTake(sem, 1) == pdTRUE) {
-        xSemaphoreGive(sem);
-        vTaskDelay(2);
-    }
+    wait_taken(sem, 2);
 
     // For loop without tasks, posting is more restrictive. Posting should wait until execution of handler finishes
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_fix.loop,
