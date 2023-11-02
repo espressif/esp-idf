@@ -13,6 +13,7 @@
 #include <sys/param.h>
 #include <stdlib.h>
 #include "unity.h"
+#include "esp_heap_caps.h"
 
 
 TEST_CASE("misc - posix_memalign", "[newlib_misc]")
@@ -41,6 +42,26 @@ TEST_CASE("misc - posix_memalign", "[newlib_misc]")
     TEST_ASSERT_NOT_NULL(outptr);
     TEST_ASSERT_EQUAL_INT(ret, 0);
     free(outptr);
+
+    outptr = magic;
+    heap_caps_malloc_extmem_enable(128);
+    ret = posix_memalign(&outptr, 16, 64);
+    TEST_ASSERT_TRUE(outptr != magic);
+    TEST_ASSERT_NOT_NULL(outptr);
+    TEST_ASSERT_EQUAL_INT(ret, 0);
+    free(outptr);
+
+    outptr = magic;
+    heap_caps_malloc_extmem_enable(64);
+    ret = posix_memalign(&outptr, 16, 128);
+    TEST_ASSERT_TRUE(outptr != magic);
+    TEST_ASSERT_NOT_NULL(outptr);
+    TEST_ASSERT_EQUAL_INT(ret, 0);
+    free(outptr);
+
+#if CONFIG_SPIRAM_USE_MALLOC
+    heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
+#endif
 }
 
 TEST_CASE("misc - sysconf", "[newlib_misc]")
