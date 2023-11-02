@@ -22,7 +22,8 @@ extern "C" {
  *       The variables used in the function should be in the SRAM as well.
  */
 typedef struct {
-    rmt_rx_done_callback_t on_recv_done; /*!< Event callback, invoked when one RMT channel receiving transaction completes */
+    rmt_rx_done_callback_t on_recv_done; /*!< Event callback, invoked when the RMT channel reception is finished
+                                              or partial data is received */
 } rmt_rx_event_callbacks_t;
 
 /**
@@ -35,13 +36,13 @@ typedef struct {
     size_t mem_block_symbols;   /*!< Size of memory block, in number of `rmt_symbol_word_t`, must be an even.
                                      In the DMA mode, this field controls the DMA buffer size, it can be set to a large value (e.g. 1024);
                                      In the normal mode, this field controls the number of RMT memory block that will be used by the channel. */
+    int intr_priority;          /*!< RMT interrupt priority,
+                                     if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     struct {
         uint32_t invert_in: 1;    /*!< Whether to invert the incoming RMT channel signal */
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
         uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
     } flags;                      /*!< RX channel config flags */
-    int intr_priority;            /*!< RMT interrupt priority,
-                                       if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } rmt_rx_channel_config_t;
 
 /**
@@ -50,6 +51,12 @@ typedef struct {
 typedef struct {
     uint32_t signal_range_min_ns; /*!< A pulse whose width is smaller than this threshold will be treated as glitch and ignored */
     uint32_t signal_range_max_ns; /*!< RMT will stop receiving if one symbol level has kept more than `signal_range_max_ns` */
+
+    /// Receive specific flags
+    struct extra_flags {
+        uint32_t en_partial_rx: 1; /*!< Set this flag if the incoming data is very long, and the driver can only receive the data piece by piece,
+                                        because the user buffer is not sufficient to save all the data. */
+    } flags;                       /*!< Receive specific config flags */
 } rmt_receive_config_t;
 
 /**

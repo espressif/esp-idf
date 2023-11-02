@@ -28,7 +28,8 @@
 #include "rmt_private.h"
 #include "rom/cache.h"
 
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 static const char *TAG = "rmt";
 
@@ -39,36 +40,20 @@ static esp_err_t rmt_rx_disable(rmt_channel_handle_t channel);
 static void rmt_rx_default_isr(void *args);
 
 #if SOC_RMT_SUPPORT_DMA
-static bool rmt_dma_rx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
-static void rmt_rx_mount_dma_buffer(rmt_dma_descriptor_t *desc_array, rmt_dma_descriptor_t *desc_array_nc, size_t array_size, const void *buffer, size_t buffer_size)
+static void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
 {
-    size_t prepared_length = 0;
     uint8_t *data = (uint8_t *)buffer;
-    int dma_node_i = 0;
-    rmt_dma_descriptor_t *desc = NULL;
-    while (buffer_size > RMT_DMA_DESC_BUF_MAX_SIZE) {
-        desc = &desc_array_nc[dma_node_i];
-        desc->dw0.suc_eof = 0;
-        desc->dw0.size = RMT_DMA_DESC_BUF_MAX_SIZE;
-        desc->dw0.length = 0;
-        desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc->buffer = &data[prepared_length];
-        desc->next = &desc_array[dma_node_i + 1]; // note, we must use the cache address for the "next" pointer
-        prepared_length += RMT_DMA_DESC_BUF_MAX_SIZE;
-        buffer_size -= RMT_DMA_DESC_BUF_MAX_SIZE;
-        dma_node_i++;
+    for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
+        rmt_dma_descriptor_t *desc_nc = &rx_chan->dma_nodes_nc[i];
+        desc_nc->buffer = data + i * per_block_size;
+        desc_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+        desc_nc->dw0.suc_eof = 0;
+        desc_nc->dw0.length = 0;
+        desc_nc->dw0.size = per_block_size;
     }
-    if (buffer_size) {
-        desc = &desc_array_nc[dma_node_i];
-        desc->dw0.suc_eof = 0;
-        desc->dw0.size = buffer_size;
-        desc->dw0.length = 0;
-        desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc->buffer = &data[prepared_length];
-        prepared_length += buffer_size;
-    }
-    desc->next = NULL; // one-off DMA chain
+    rx_chan->dma_nodes_nc[rx_chan->num_dma_nodes - 1].dw0.size = last_block_size;
 }
 
 static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx_channel_config_t *config)
@@ -77,8 +62,16 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
         .direction = GDMA_CHANNEL_DIRECTION_RX,
     };
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &rx_channel->base.dma_chan), TAG, "allocate RX DMA channel failed");
+
+    // circular DMA descriptor
+    for (int i = 0; i < rx_channel->num_dma_nodes; i++) {
+        rx_channel->dma_nodes_nc[i].next = &rx_channel->dma_nodes[i + 1];
+    }
+    rx_channel->dma_nodes_nc[rx_channel->num_dma_nodes - 1].next = &rx_channel->dma_nodes[0];
+
+    // register event callbacks
     gdma_rx_event_callbacks_t cbs = {
-        .on_recv_eof = rmt_dma_rx_eof_cb,
+        .on_recv_done = rmt_dma_rx_one_block_cb,
     };
     gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel);
     return ESP_OK;
@@ -204,6 +197,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     if (config->flags.with_dma) {
         mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
         num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_DESC_BUF_MAX_SIZE + 1;
+        num_dma_nodes = MAX(2, num_dma_nodes); // at least 2 DMA nodes for ping-pong
         // DMA descriptors must be placed in internal SRAM
         rx_channel->dma_nodes = heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, num_dma_nodes, sizeof(rmt_dma_descriptor_t), mem_caps);
         ESP_GOTO_ON_FALSE(rx_channel->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel DMA nodes");
@@ -347,6 +341,8 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     ESP_RETURN_ON_FALSE_ISR(channel && buffer && buffer_size && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(channel->direction == RMT_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
     rmt_rx_channel_t *rx_chan = __containerof(channel, rmt_rx_channel_t, base);
+    size_t per_dma_block_size = 0;
+    size_t last_dma_block_size = 0;
 
     if (channel->dma_chan) {
         ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "buffer must locate in internal RAM for DMA use");
@@ -356,11 +352,14 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
         ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buffer & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer must be aligned to cache line size");
         ESP_RETURN_ON_FALSE_ISR((buffer_size & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer size must be aligned to cache line size");
 #endif
-    }
-    if (channel->dma_chan) {
         ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * RMT_DMA_DESC_BUF_MAX_SIZE,
                                 ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity");
+        per_dma_block_size = buffer_size / rx_chan->num_dma_nodes;
+        per_dma_block_size = ALIGN_DOWN(per_dma_block_size, sizeof(rmt_symbol_word_t));
+        last_dma_block_size = buffer_size - per_dma_block_size * (rx_chan->num_dma_nodes - 1);
+        ESP_RETURN_ON_FALSE_ISR(last_dma_block_size <= RMT_DMA_DESC_BUF_MAX_SIZE, ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity");
     }
+
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;
@@ -377,14 +376,17 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     // fill in the transaction descriptor
     rmt_rx_trans_desc_t *t = &rx_chan->trans_desc;
+    memset(t, 0, sizeof(rmt_rx_trans_desc_t));
     t->buffer = buffer;
     t->buffer_size = buffer_size;
     t->received_symbol_num = 0;
     t->copy_dest_off = 0;
+    t->dma_desc_index = 0;
+    t->flags.en_partial_rx = config->flags.en_partial_rx;
 
     if (channel->dma_chan) {
 #if SOC_RMT_SUPPORT_DMA
-        rmt_rx_mount_dma_buffer(rx_chan->dma_nodes, rx_chan->dma_nodes_nc, rx_chan->num_dma_nodes, buffer, buffer_size);
+        rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, per_dma_block_size, last_dma_block_size);
         gdma_reset(channel->dma_chan);
         gdma_start(channel->dma_chan, (intptr_t)rx_chan->dma_nodes); // note, we must use the cached descriptor address to start the DMA
 #endif
@@ -531,16 +533,6 @@ static esp_err_t rmt_rx_disable(rmt_channel_handle_t channel)
     return ESP_OK;
 }
 
-static size_t IRAM_ATTR rmt_copy_symbols(rmt_symbol_word_t *symbol_stream, size_t symbol_num, void *buffer, size_t offset, size_t buffer_size)
-{
-    size_t mem_want = symbol_num * sizeof(rmt_symbol_word_t);
-    size_t mem_have = buffer_size - offset;
-    size_t copy_size = MIN(mem_want, mem_have);
-    // do memory copy
-    memcpy(buffer + offset, symbol_stream, copy_size);
-    return copy_size;
-}
-
 static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 {
     rmt_channel_t *channel = &rx_chan->base;
@@ -548,21 +540,55 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     rmt_hal_context_t *hal = &group->hal;
     uint32_t channel_id = channel->channel_id;
     rmt_rx_trans_desc_t *trans_desc = &rx_chan->trans_desc;
+    rmt_rx_done_callback_t cb = rx_chan->on_recv_done;
     bool need_yield = false;
 
     rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_DONE(channel_id));
-
     portENTER_CRITICAL_ISR(&channel->spinlock);
     // disable the RX engine, it will be enabled again when next time user calls `rmt_receive()`
     rmt_ll_rx_enable(hal->regs, channel_id, false);
+    portEXIT_CRITICAL_ISR(&channel->spinlock);
+
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
     // sanity check
     assert(offset >= rx_chan->mem_off);
+    size_t mem_want = (offset - rx_chan->mem_off) * sizeof(rmt_symbol_word_t);
+    size_t mem_have = trans_desc->buffer_size - trans_desc->copy_dest_off;
+    size_t copy_size = mem_want;
+    if (mem_want > mem_have) {
+        if (trans_desc->flags.en_partial_rx) { // check partial receive is enabled or not
+            // notify the user to process the received symbols if the buffer is going to be full
+            if (trans_desc->received_symbol_num) {
+                if (cb) {
+                    rmt_rx_done_event_data_t edata = {
+                        .received_symbols = trans_desc->buffer,
+                        .num_symbols = trans_desc->received_symbol_num,
+                        .flags.is_last = false,
+                    };
+                    if (cb(channel, &edata, rx_chan->user_data)) {
+                        need_yield = true;
+                    }
+                }
+                trans_desc->copy_dest_off = 0;
+                trans_desc->received_symbol_num = 0;
+                mem_have = trans_desc->buffer_size;
+
+                // even user process the partial received data, the remain buffer may still be insufficient
+                if (mem_want > mem_have) {
+                    ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+                    copy_size = mem_have;
+                }
+            }
+        } else {
+            ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+            copy_size = mem_have;
+        }
+    }
+
+    portENTER_CRITICAL_ISR(&channel->spinlock);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
-    // copy the symbols to user space
-    size_t stream_symbols = offset - rx_chan->mem_off;
-    size_t copy_size = rmt_copy_symbols(channel->hw_mem_base + rx_chan->mem_off, stream_symbols,
-                                        trans_desc->buffer, trans_desc->copy_dest_off, trans_desc->buffer_size);
+    // copy the symbols to the user buffer
+    memcpy((uint8_t *)trans_desc->buffer + trans_desc->copy_dest_off, channel->hw_mem_base + rx_chan->mem_off, copy_size);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_HW);
     portEXIT_CRITICAL_ISR(&channel->spinlock);
 
@@ -579,22 +605,19 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     }
 #endif // !SOC_RMT_SUPPORT_RX_PINGPONG
 
-    // check whether all symbols are copied
-    if (copy_size != stream_symbols * sizeof(rmt_symbol_word_t)) {
-        ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
-    }
     trans_desc->copy_dest_off += copy_size;
     trans_desc->received_symbol_num += copy_size / sizeof(rmt_symbol_word_t);
     // switch back to the enable state, then user can call `rmt_receive` to start a new receive
     atomic_store(&channel->fsm, RMT_FSM_ENABLE);
 
-    // notify the user with receive RMT symbols
-    if (rx_chan->on_recv_done) {
+    // notify the user that all RMT symbols are received done
+    if (cb) {
         rmt_rx_done_event_data_t edata = {
             .received_symbols = trans_desc->buffer,
             .num_symbols = trans_desc->received_symbol_num,
+            .flags.is_last = true,
         };
-        if (rx_chan->on_recv_done(channel, &edata, rx_chan->user_data)) {
+        if (cb(channel, &edata, rx_chan->user_data)) {
             need_yield = true;
         }
     }
@@ -604,6 +627,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 #if SOC_RMT_SUPPORT_RX_PINGPONG
 static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 {
+    bool need_yield = false;
     rmt_channel_t *channel = &rx_chan->base;
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
@@ -612,24 +636,54 @@ static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 
     rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_THRES(channel_id));
 
+    size_t mem_want = rx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t);
+    size_t mem_have = trans_desc->buffer_size - trans_desc->copy_dest_off;
+    size_t copy_size = mem_want;
+    if (mem_want > mem_have) {
+        if (trans_desc->flags.en_partial_rx) {
+            // notify the user to process the received symbols if the buffer is going to be full
+            if (trans_desc->received_symbol_num) {
+                rmt_rx_done_callback_t cb = rx_chan->on_recv_done;
+                if (cb) {
+                    rmt_rx_done_event_data_t edata = {
+                        .received_symbols = trans_desc->buffer,
+                        .num_symbols = trans_desc->received_symbol_num,
+                        .flags.is_last = false,
+                    };
+                    if (cb(channel, &edata, rx_chan->user_data)) {
+                        need_yield = true;
+                    }
+                }
+                trans_desc->copy_dest_off = 0;
+                trans_desc->received_symbol_num = 0;
+                mem_have = trans_desc->buffer_size;
+
+                // even user process the partial received data, the remain buffer size still insufficient
+                if (mem_want > mem_have) {
+                    ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+                    copy_size = mem_have;
+                }
+            }
+        } else {
+            ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+            copy_size = mem_have;
+        }
+    }
+
     portENTER_CRITICAL_ISR(&channel->spinlock);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
-    // copy the symbols to user space
-    size_t copy_size = rmt_copy_symbols(channel->hw_mem_base + rx_chan->mem_off, rx_chan->ping_pong_symbols,
-                                        trans_desc->buffer, trans_desc->copy_dest_off, trans_desc->buffer_size);
+    // copy the symbols to the user buffer
+    memcpy((uint8_t *)trans_desc->buffer + trans_desc->copy_dest_off, channel->hw_mem_base + rx_chan->mem_off, copy_size);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_HW);
     portEXIT_CRITICAL_ISR(&channel->spinlock);
 
-    // check whether all symbols are copied
-    if (copy_size != rx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t)) {
-        ESP_DRAM_LOGE(TAG, "received symbols truncated");
-    }
     trans_desc->copy_dest_off += copy_size;
     trans_desc->received_symbol_num += copy_size / sizeof(rmt_symbol_word_t);
+
     // update the hw memory offset, where stores the next RMT symbols to copy
     rx_chan->mem_off = rx_chan->ping_pong_symbols - rx_chan->mem_off;
 
-    return false;
+    return need_yield;
 }
 #endif // SOC_RMT_SUPPORT_RX_PINGPONG
 
@@ -666,18 +720,29 @@ static void IRAM_ATTR rmt_rx_default_isr(void *args)
 }
 
 #if SOC_RMT_SUPPORT_DMA
-static size_t IRAM_ATTR rmt_rx_get_received_symbol_num_from_dma(rmt_dma_descriptor_t *desc_nc)
+static size_t IRAM_ATTR rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
 {
     size_t received_bytes = 0;
-    while (desc_nc) {
-        received_bytes += desc_nc->dw0.length;
-        desc_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(desc_nc->next);
+    for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
+        received_bytes += rx_chan->dma_nodes_nc[start_index].dw0.length;
+        if (rx_chan->dma_nodes_nc[start_index].dw0.suc_eof) {
+            break;
+        }
+        start_index++;
+        start_index %= rx_chan->num_dma_nodes;
     }
     received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
 
-static bool IRAM_ATTR rmt_dma_rx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static size_t IRAM_ATTR rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
+{
+    size_t received_bytes = rx_chan->dma_nodes_nc[desc_index].dw0.length;
+    received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
+    return received_bytes / sizeof(rmt_symbol_word_t);
+}
+
+static bool IRAM_ATTR rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     bool need_yield = false;
     rmt_rx_channel_t *rx_chan = (rmt_rx_channel_t *)user_data;
@@ -687,11 +752,6 @@ static bool IRAM_ATTR rmt_dma_rx_eof_cb(gdma_channel_handle_t dma_chan, gdma_eve
     rmt_rx_trans_desc_t *trans_desc = &rx_chan->trans_desc;
     uint32_t channel_id = channel->channel_id;
 
-    portENTER_CRITICAL_ISR(&channel->spinlock);
-    // disable the RX engine, it will be enabled again in the next `rmt_receive()`
-    rmt_ll_rx_enable(hal->regs, channel_id, false);
-    portEXIT_CRITICAL_ISR(&channel->spinlock);
-
 #if CONFIG_IDF_TARGET_ESP32P4
     int invalidate_map = CACHE_MAP_L1_DCACHE;
     if (esp_ptr_external_ram((const void *)trans_desc->buffer)) {
@@ -700,19 +760,48 @@ static bool IRAM_ATTR rmt_dma_rx_eof_cb(gdma_channel_handle_t dma_chan, gdma_eve
     Cache_Invalidate_Addr(invalidate_map, (uint32_t)trans_desc->buffer, trans_desc->buffer_size);
 #endif
 
-    // switch back to the enable state, then user can call `rmt_receive` to start a new receive
-    atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+    if (event_data->flags.normal_eof) {
+        // if the DMA received an EOF, it means the RMT peripheral has received an "end marker"
+        portENTER_CRITICAL_ISR(&channel->spinlock);
+        // disable the RX engine, it will be enabled again in the next `rmt_receive()`
+        rmt_ll_rx_enable(hal->regs, channel_id, false);
+        portEXIT_CRITICAL_ISR(&channel->spinlock);
 
-    if (rx_chan->on_recv_done) {
-        rmt_rx_done_event_data_t edata = {
-            .received_symbols = trans_desc->buffer,
-            .num_symbols = rmt_rx_get_received_symbol_num_from_dma(rx_chan->dma_nodes_nc),
-        };
-        if (rx_chan->on_recv_done(channel, &edata, rx_chan->user_data)) {
-            need_yield = true;
+        // switch back to the enable state, then user can call `rmt_receive` to start a new receive
+        atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+
+        if (rx_chan->on_recv_done) {
+            int recycle_start_index = trans_desc->dma_desc_index;
+            rmt_rx_done_event_data_t edata = {
+                .received_symbols = rx_chan->dma_nodes_nc[recycle_start_index].buffer,
+                .num_symbols = rmt_rx_count_symbols_until_eof(rx_chan, recycle_start_index),
+                .flags.is_last = true,
+            };
+            if (rx_chan->on_recv_done(channel, &edata, rx_chan->user_data)) {
+                need_yield = true;
+            }
+        }
+    } else {
+        // it's a partial receive done event
+        if (trans_desc->flags.en_partial_rx) {
+            if (rx_chan->on_recv_done) {
+                size_t dma_desc_index = trans_desc->dma_desc_index;
+                rmt_rx_done_event_data_t edata = {
+                    .received_symbols = rx_chan->dma_nodes_nc[dma_desc_index].buffer,
+                    .num_symbols = rmt_rx_count_symbols_for_single_block(rx_chan, dma_desc_index),
+                    .flags.is_last = false,
+                };
+                if (rx_chan->on_recv_done(channel, &edata, rx_chan->user_data)) {
+                    need_yield = true;
+                }
+
+                dma_desc_index++;
+                trans_desc->dma_desc_index = dma_desc_index % rx_chan->num_dma_nodes;
+            }
         }
     }
 
     return need_yield;
 }
+
 #endif // SOC_RMT_SUPPORT_DMA
