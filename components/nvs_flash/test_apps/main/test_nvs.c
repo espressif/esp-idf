@@ -26,6 +26,9 @@
 #include "unity.h"
 #include "memory_checks.h"
 
+#include "esp_heap_caps.h"
+#include "esp_random.h"
+
 #ifdef CONFIG_NVS_ENCRYPTION
 #include "mbedtls/aes.h"
 #endif
@@ -34,7 +37,73 @@
 #include "esp_hmac.h"
 #endif
 
+extern void record_heap_free_sizes(void);
+extern int32_t get_heap_free_difference(const bool nvs_active_pool);
+
 static const char* TAG = "test_nvs";
+
+TEST_CASE("Kconfig option controls heap capability allocator for NVS", "[nvs_ram]")
+{
+    // number of keys used for test
+    const size_t max_key = 400;
+
+    char key_name[sizeof("keyXXXXX ")];
+    int32_t out_val = 0;
+    nvs_handle_t handle;
+
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    TEST_ESP_OK(nvs_open("test_namespace1", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_erase_all(handle));
+    record_heap_free_sizes();
+
+    for(size_t i=0; i<max_key; i++) {
+        // prepare key name
+        sprintf(key_name, "key%05u", i);
+
+        TEST_ESP_OK(nvs_set_i32(handle, key_name, 666));
+        TEST_ESP_OK(nvs_commit(handle));
+    }
+
+    // after writing records, active pool should decrease while inactive should stay same
+    TEST_ASSERT_LESS_THAN_INT32(0, get_heap_free_difference(true));
+    TEST_ASSERT_EQUAL_INT32(0, get_heap_free_difference(false));
+    record_heap_free_sizes();
+
+    for(size_t i=0; i<max_key; i++) {
+        // prepare random key name
+        uint32_t key_num = esp_random();
+        key_num = key_num % max_key;
+        sprintf(key_name, "key%05lu", (uint32_t) key_num);
+
+        TEST_ESP_OK(nvs_get_i32(handle, key_name, &out_val));
+    }
+
+    // after reading records, no changes on heap are expected
+    TEST_ASSERT_EQUAL_INT32(0, get_heap_free_difference(true));
+    TEST_ASSERT_EQUAL_INT32(0, get_heap_free_difference(false));
+    record_heap_free_sizes();
+
+    TEST_ESP_OK(nvs_erase_all(handle));
+
+    // after erasing records, active pool should increase while inactive should stay same
+    TEST_ASSERT_GREATER_THAN_INT32(0, get_heap_free_difference(true));
+    TEST_ASSERT_EQUAL_INT32(0, get_heap_free_difference(false));
+    record_heap_free_sizes();
+
+    nvs_close(handle);
+    TEST_ESP_OK(nvs_flash_deinit());
+
+    // after deinit, active pool should increase by space occupied by the page management while inactive should only slightly increase
+    TEST_ASSERT_GREATER_THAN_INT32(0, get_heap_free_difference(true));
+    TEST_ASSERT_GREATER_OR_EQUAL_INT32(0, get_heap_free_difference(false));
+}
 
 TEST_CASE("Partition name no longer than 16 characters", "[nvs]")
 {

@@ -19,6 +19,23 @@ Future versions of this library may have other storage backends to keep data in 
 
 .. note:: NVS works best for storing many small values, rather than a few large values of the type 'string' and 'blob'. If you need to store large blobs or strings, consider using the facilities provided by the FAT filesystem on top of the wear levelling library.
 
+.. note:: NVS component includes flash wear levelling by design. Set operations are appending new data to the free space after existing entries. Invalidation of old values doesn't require immediate flash erase operations. The organization of NVS space to pages and entries effectively reduces the frequency of flash erase to flash write operations by a factor of 126.
+
+Large Amount of Data in NVS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Although not recommended, NVS can store tens of thousands of keys and NVS partition can reach up to megabytes in size.
+
+.. note:: NVS component leaves RAM footprint on the heap. The footprint depends on the size of the NVS partition on flash and the number of keys in use. For RAM usage estimation, please use the following approximate figures: each 1 MB of NVS flash partition consumes 22 KB of RAM and each 1000 keys consumes 5.5 KB of RAM.
+
+.. note:: Duration of NVS initialization using :cpp:func:`nvs_flash_init` is proportional to the number of existing keys. Initialization of NVS requires approximately 0.5 seconds per 1000 keys.
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    By default, internal NVS allocates a heap in internal RAM. With a large NVS partition or big number of keys, the application can exhaust the internal RAM heap just on NVS overhead.
+    Applications using modules with SPI-connected PSRAM can overcome this limitation by enabling the Kconfig option :ref:`CONFIG_NVS_ALLOCATE_CACHE_IN_SPIRAM` which redirects RAM allocation to the SPI-connected PSRAM.
+    This option is available in the nvs_flash component of the menuconfig menu when SPIRAM is enabled and and :ref:`CONFIG_SPIRAM_USE` is set to ``CONFIG_SPIRAM_USE_CAPS_ALLOC``.
+    .. note:: Using SPI-connected PSRAM slows down NVS API for integer operations by an approximate factor of 2.5.
 
 Keys and Values
 ^^^^^^^^^^^^^^^
@@ -32,6 +49,10 @@ NVS operates on key-value pairs. Keys are ASCII strings; the maximum key length 
 .. note::
 
     String values are currently limited to 4000 bytes. This includes the null terminator. Blob values are limited to 508,000 bytes or 97.6% of the partition size - 4000 bytes, whichever is lower.
+
+.. note::
+
+    Before setting new or updating existing key-value pair, free entries in nvs pages have to be available. For integer types, at least one free entry has to be available. For the String value, at least one page capable of keeping the whole string in a contiguous row of free entries has to be available. For the Blob value, the size of new data has to be available in free entries.
 
 Additional types, such as ``float`` and ``double`` might be added later.
 
