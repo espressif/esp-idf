@@ -71,7 +71,7 @@ typedef struct
     uint8_t app_elf_sha256[ELF_APP_SHA256_SIZE]; // sha256 of elf file
 } core_dump_elf_version_info_t;
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_elf";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_elf";
 
 // Main ELF handle type
 typedef struct _core_dump_elf_t
