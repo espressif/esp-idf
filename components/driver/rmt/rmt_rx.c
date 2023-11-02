@@ -344,22 +344,22 @@ esp_err_t rmt_rx_register_event_callbacks(rmt_channel_handle_t channel, const rm
 
 esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_size, const rmt_receive_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(channel && buffer && buffer_size && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
+    ESP_RETURN_ON_FALSE_ISR(channel && buffer && buffer_size && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(channel->direction == RMT_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
     rmt_rx_channel_t *rx_chan = __containerof(channel, rmt_rx_channel_t, base);
 
     if (channel->dma_chan) {
-        ESP_RETURN_ON_FALSE(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "buffer must locate in internal RAM for DMA use");
+        ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "buffer must locate in internal RAM for DMA use");
 
 #if CONFIG_IDF_TARGET_ESP32P4
         uint32_t data_cache_line_mask = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA) - 1;
-        ESP_RETURN_ON_FALSE(((uintptr_t)buffer & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer must be aligned to cache line size");
-        ESP_RETURN_ON_FALSE((buffer_size & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer size must be aligned to cache line size");
+        ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buffer & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer must be aligned to cache line size");
+        ESP_RETURN_ON_FALSE_ISR((buffer_size & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer size must be aligned to cache line size");
 #endif
     }
     if (channel->dma_chan) {
-        ESP_RETURN_ON_FALSE(buffer_size <= rx_chan->num_dma_nodes * RMT_DMA_DESC_BUF_MAX_SIZE,
-                            ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity");
+        ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * RMT_DMA_DESC_BUF_MAX_SIZE,
+                                ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity");
     }
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
@@ -367,13 +367,13 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     uint32_t filter_reg_value = ((uint64_t)group->resolution_hz * config->signal_range_min_ns) / 1000000000UL;
     uint32_t idle_reg_value = ((uint64_t)channel->resolution_hz * config->signal_range_max_ns) / 1000000000UL;
-    ESP_RETURN_ON_FALSE(filter_reg_value <= RMT_LL_MAX_FILTER_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_min_ns too big");
-    ESP_RETURN_ON_FALSE(idle_reg_value <= RMT_LL_MAX_IDLE_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_max_ns too big");
+    ESP_RETURN_ON_FALSE_ISR(filter_reg_value <= RMT_LL_MAX_FILTER_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_min_ns too big");
+    ESP_RETURN_ON_FALSE_ISR(idle_reg_value <= RMT_LL_MAX_IDLE_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_max_ns too big");
 
     // check if we're in a proper state to start the receiver
     rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
-    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT),
-                        ESP_ERR_INVALID_STATE, TAG, "channel not in enable state");
+    ESP_RETURN_ON_FALSE_ISR(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT),
+                            ESP_ERR_INVALID_STATE, TAG, "channel not in enable state");
 
     // fill in the transaction descriptor
     rmt_rx_trans_desc_t *t = &rx_chan->trans_desc;
@@ -391,7 +391,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     }
 
     rx_chan->mem_off = 0;
-    portENTER_CRITICAL(&channel->spinlock);
+    portENTER_CRITICAL_SAFE(&channel->spinlock);
     // reset memory writer offset
     rmt_ll_rx_reset_pointer(hal->regs, channel_id);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_HW);
@@ -401,7 +401,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     rmt_ll_rx_set_idle_thres(hal->regs, channel_id, idle_reg_value);
     // turn on RMT RX machine
     rmt_ll_rx_enable(hal->regs, channel_id, true);
-    portEXIT_CRITICAL(&channel->spinlock);
+    portEXIT_CRITICAL_SAFE(&channel->spinlock);
 
     // saying we're in running state, this state will last until the receiving is done
     // i.e., we will switch back to the enable state in the receive done interrupt handler
@@ -585,6 +585,9 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     }
     trans_desc->copy_dest_off += copy_size;
     trans_desc->received_symbol_num += copy_size / sizeof(rmt_symbol_word_t);
+    // switch back to the enable state, then user can call `rmt_receive` to start a new receive
+    atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+
     // notify the user with receive RMT symbols
     if (rx_chan->on_recv_done) {
         rmt_rx_done_event_data_t edata = {
@@ -595,8 +598,6 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
             need_yield = true;
         }
     }
-    // switch back to the enable state, then user can call `rmt_receive` to start a new receive
-    atomic_store(&channel->fsm, RMT_FSM_ENABLE);
     return need_yield;
 }
 
@@ -699,6 +700,9 @@ static bool IRAM_ATTR rmt_dma_rx_eof_cb(gdma_channel_handle_t dma_chan, gdma_eve
     Cache_Invalidate_Addr(invalidate_map, (uint32_t)trans_desc->buffer, trans_desc->buffer_size);
 #endif
 
+    // switch back to the enable state, then user can call `rmt_receive` to start a new receive
+    atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+
     if (rx_chan->on_recv_done) {
         rmt_rx_done_event_data_t edata = {
             .received_symbols = trans_desc->buffer,
@@ -708,8 +712,7 @@ static bool IRAM_ATTR rmt_dma_rx_eof_cb(gdma_channel_handle_t dma_chan, gdma_eve
             need_yield = true;
         }
     }
-    // switch back to the enable state, then user can call `rmt_receive` to start a new receive
-    atomic_store(&channel->fsm, RMT_FSM_ENABLE);
+
     return need_yield;
 }
 #endif // SOC_RMT_SUPPORT_DMA

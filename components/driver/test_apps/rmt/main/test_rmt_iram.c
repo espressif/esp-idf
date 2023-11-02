@@ -87,21 +87,27 @@ TEST_CASE("rmt tx iram safe", "[rmt]")
 #endif
 }
 
+#define TEST_RMT_SYMBOLS 2
+
 static void IRAM_ATTR test_simulate_input_post_cache_disable(void *args)
 {
     int gpio_num = (int)args;
-    // simulate input signal, should only be recognized as one RMT symbol
-    gpio_set_level(gpio_num, 0);
-    esp_rom_delay_us(50);
-    gpio_set_level(gpio_num, 1);
-    esp_rom_delay_us(50);
-    gpio_set_level(gpio_num, 0);
-    esp_rom_delay_us(20000);
+    // simulate input signal, should only be recognized as two RMT symbols
+    for (int i = 0; i < TEST_RMT_SYMBOLS; i++) {
+        gpio_set_level(gpio_num, 0);
+        esp_rom_delay_us(50);
+        gpio_set_level(gpio_num, 1);
+        esp_rom_delay_us(50);
+        gpio_set_level(gpio_num, 0);
+        esp_rom_delay_us(20000);
+    }
 }
 
 typedef struct {
     TaskHandle_t task_to_notify;
     size_t received_symbol_num;
+    rmt_receive_config_t rx_config;
+    rmt_symbol_word_t remote_codes[128];
 } test_nec_rx_user_data_t;
 
 IRAM_ATTR
@@ -109,8 +115,15 @@ static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx
 {
     BaseType_t high_task_wakeup = pdFALSE;
     test_nec_rx_user_data_t *test_user_data = (test_nec_rx_user_data_t *)user_data;
-    test_user_data->received_symbol_num = edata->num_symbols;
-    vTaskNotifyGiveFromISR(test_user_data->task_to_notify, &high_task_wakeup);
+    test_user_data->received_symbol_num += edata->num_symbols;
+    // should receive one RMT symbol at a time
+    if (edata->num_symbols == 1) {
+        if (test_user_data->received_symbol_num == TEST_RMT_SYMBOLS) {
+            vTaskNotifyGiveFromISR(test_user_data->task_to_notify, &high_task_wakeup);
+        } else {
+            rmt_receive(channel, test_user_data->remote_codes, sizeof(test_user_data->remote_codes), &test_user_data->rx_config);
+        }
+    }
     return high_task_wakeup == pdTRUE;
 }
 
@@ -137,27 +150,25 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
     };
     test_nec_rx_user_data_t test_user_data = {
         .task_to_notify = xTaskGetCurrentTaskHandle(),
+        .received_symbol_num = 0,
+        .rx_config = {
+            .signal_range_min_ns = 1250,
+            .signal_range_max_ns = 12000000,
+        },
     };
     TEST_ESP_OK(rmt_rx_register_event_callbacks(rx_channel, &cbs, &test_user_data));
 
     printf("enable rx channel\r\n");
     TEST_ESP_OK(rmt_enable(rx_channel));
 
-    rmt_symbol_word_t remote_codes[128];
-
-    rmt_receive_config_t receive_config = {
-        .signal_range_min_ns = 1250,
-        .signal_range_max_ns = 12000000,
-    };
-
     // ready to receive
-    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, test_user_data.remote_codes, sizeof(test_user_data.remote_codes), &test_user_data.rx_config));
 
     // disable the flash cache, and simulate input signal by GPIO
     unity_utils_run_cache_disable_stub(test_simulate_input_post_cache_disable, 0);
 
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_EQUAL(1, test_user_data.received_symbol_num);
+    TEST_ASSERT_EQUAL(TEST_RMT_SYMBOLS, test_user_data.received_symbol_num);
 
     printf("disable rx channels\r\n");
     TEST_ESP_OK(rmt_disable(rx_channel));

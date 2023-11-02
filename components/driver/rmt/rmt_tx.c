@@ -893,16 +893,16 @@ static bool IRAM_ATTR rmt_isr_handle_tx_done(rmt_tx_channel_t *tx_chan)
         }
         tx_chan->cur_trans = NULL;
         atomic_store(&channel->fsm, RMT_FSM_ENABLE);
-    }
 
-    // invoke callback
-    rmt_tx_done_callback_t done_cb = tx_chan->on_trans_done;
-    if (done_cb) {
-        rmt_tx_done_event_data_t edata = {
-            .num_symbols = trans_desc->transmitted_symbol_num,
-        };
-        if (done_cb(channel, &edata, tx_chan->user_data)) {
-            need_yield = true;
+        // invoke callback
+        rmt_tx_done_callback_t done_cb = tx_chan->on_trans_done;
+        if (done_cb) {
+            rmt_tx_done_event_data_t edata = {
+                .num_symbols = trans_desc->transmitted_symbol_num,
+            };
+            if (done_cb(channel, &edata, tx_chan->user_data)) {
+                need_yield = true;
+            }
         }
     }
 
@@ -970,16 +970,16 @@ static bool IRAM_ATTR rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
             }
             tx_chan->cur_trans = NULL;
             atomic_store(&channel->fsm, RMT_FSM_ENABLE);
-        }
 
-        // invoke callback
-        rmt_tx_done_callback_t done_cb = tx_chan->on_trans_done;
-        if (done_cb) {
-            rmt_tx_done_event_data_t edata = {
-                .num_symbols = trans_desc->transmitted_symbol_num,
-            };
-            if (done_cb(channel, &edata, tx_chan->user_data)) {
-                need_yield = true;
+            // invoke callback
+            rmt_tx_done_callback_t done_cb = tx_chan->on_trans_done;
+            if (done_cb) {
+                rmt_tx_done_event_data_t edata = {
+                    .num_symbols = trans_desc->transmitted_symbol_num,
+                };
+                if (done_cb(channel, &edata, tx_chan->user_data)) {
+                    need_yield = true;
+                }
             }
         }
 
