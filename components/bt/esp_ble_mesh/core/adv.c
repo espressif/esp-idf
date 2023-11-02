@@ -32,8 +32,11 @@
 /* Pre-5.0 controllers enforce a minimum interval of 100ms
  * whereas 5.0+ controllers can go down to 20ms.
  */
-#define ADV_INT_DEFAULT_MS  100
-#define ADV_INT_FAST_MS     20
+#if CONFIG_BLE_MESH_HCI_5_0
+#define ADV_ITVL_MIN        20
+#else
+#define ADV_ITVL_MIN        100
+#endif
 
 static const uint8_t adv_type[] = {
     [BLE_MESH_ADV_PROV]   = BLE_MESH_DATA_MESH_PROV,
@@ -141,10 +144,19 @@ static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
     }
 }
 
+uint16_t bt_mesh_pdu_duration(uint8_t xmit)
+{
+    uint16_t duration = 0U;
+    uint16_t adv_int = 0U;
+
+    adv_int = MAX(ADV_ITVL_MIN, BLE_MESH_TRANSMIT_INT(xmit));
+    duration = (BLE_MESH_TRANSMIT_COUNT(xmit) + 1) * (adv_int + 10);
+
+    return duration;
+}
+
 static inline int adv_send(struct net_buf *buf)
 {
-    const int32_t adv_int_min = ((bt_mesh_dev.hci_version >= BLE_MESH_HCI_VERSION_5_0) ?
-                                  ADV_INT_FAST_MS : ADV_INT_DEFAULT_MS);
     const struct bt_mesh_send_cb *cb = BLE_MESH_ADV(buf)->cb;
     void *cb_data = BLE_MESH_ADV(buf)->cb_data;
     struct bt_mesh_adv_param param = {0};
@@ -158,7 +170,7 @@ static inline int adv_send(struct net_buf *buf)
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
     if (BLE_MESH_ADV(buf)->type != BLE_MESH_ADV_BLE) {
 #endif
-        adv_int = MAX(adv_int_min,
+        adv_int = MAX(ADV_ITVL_MIN,
                       BLE_MESH_TRANSMIT_INT(BLE_MESH_ADV(buf)->xmit));
         duration = (BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1) *
                    (adv_int + 10);

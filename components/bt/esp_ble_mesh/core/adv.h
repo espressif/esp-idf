@@ -25,6 +25,8 @@ extern "C" {
 
 #define BLE_MESH_ADV(buf)               (*(struct bt_mesh_adv **)net_buf_user_data(buf))
 
+uint16_t bt_mesh_pdu_duration(uint8_t xmit);
+
 typedef struct bt_mesh_msg {
     bool     relay;     /* Flag indicates if the packet is a relayed one */
     void    *arg;       /* Pointer to the struct net_buf */

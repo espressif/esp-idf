@@ -515,7 +515,6 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/core/rpl.c"
                     "esp_ble_mesh/core/scan.c"
                     "esp_ble_mesh/core/test.c"
-                    "esp_ble_mesh/core/transport.c"
                     "esp_ble_mesh/models/common/device_property.c"
                     "esp_ble_mesh/models/common/model_common.c"
                     "esp_ble_mesh/models/client/client_common.c"
@@ -552,6 +551,12 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/v1.1/btc/btc_ble_mesh_sar_model.c"
                     "esp_ble_mesh/v1.1/btc/btc_ble_mesh_srpl_model.c"
                     "esp_ble_mesh/v1.1/ext.c")
+
+        if(CONFIG_BLE_MESH_SAR_ENHANCEMENT)
+            list(APPEND srcs "esp_ble_mesh/core/transport.enh.c")
+        else()
+            list(APPEND srcs "esp_ble_mesh/core/transport.c")
+        endif()
     endif()
 
 
