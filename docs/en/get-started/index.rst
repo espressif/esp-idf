@@ -196,7 +196,7 @@ For the manual procedure, please select according to your operating system.
 Build Your First Project
 ========================
 
-If you already have the ESP-IDF installed and not using IDE, you can build your first project from the command line following the :ref:`Start a Project on Windows <get-started-windows-first-steps>` or :ref:`Start a Project on Linux and macOS <get-started-linux-macos-first-steps>`.
+If you already have the ESP-IDF installed and are not using an IDE, you can build your first project from the command line following the :ref:`Start a Project on Windows <get-started-windows-first-steps>` or :ref:`Start a Project on Linux and macOS <get-started-linux-macos-first-steps>`.
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 
