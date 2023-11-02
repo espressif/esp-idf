@@ -834,7 +834,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * The queue size value itself is platform-dependent, but is passed to
  * sys_mbox_new() when the acceptmbox is created.
  */
-#define DEFAULT_ACCEPTMBOX_SIZE         6
+#define DEFAULT_ACCEPTMBOX_SIZE         CONFIG_LWIP_ACCEPTMBOX_SIZE
 
 /**
  * DEFAULT_THREAD_STACKSIZE: The stack size used by any other lwIP thread.
