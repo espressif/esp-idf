@@ -46,3 +46,7 @@ config ESP_ROM_HAS_LAYOUT_TABLE
 config ESP_ROM_WDT_INIT_PATCH
     bool
     default y
+
+config ESP_ROM_HAS_LP_ROM
+    bool
+    default y

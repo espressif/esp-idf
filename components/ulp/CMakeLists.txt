@@ -55,8 +55,12 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
         "lp_core/lp_core.c"
         "lp_core/shared/ulp_lp_core_memory_shared.c"
         "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
-        "lp_core/lp_core_i2c.c"
         "lp_core/lp_core_uart.c")
+
+    if(CONFIG_IDF_TARGET_ESP32C6)
+        # Add to P4 TODO IDF-7540
+        list(APPEND srcs "lp_core/lp_core_i2c.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

@@ -34,6 +34,7 @@ menu "Ultra Low Power (ULP) Co-processor"
         default 4096 if !IDF_TARGET_ESP32
         range 32 8176 if !IDF_TARGET_ESP32C6
         range 32 16352 if IDF_TARGET_ESP32C6
+        range 32 32768 if IDF_TARGET_ESP32P4
         help
             Bytes of memory to reserve for ULP Co-processor firmware & data.
             Data is reserved at the beginning of RTC slow memory.

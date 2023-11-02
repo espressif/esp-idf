@@ -11,7 +11,11 @@
 #include "soc/pmu_reg.h"
 
 /* LP_FAST_CLK is not very accurate, for now use a rough estimate */
+#if CONFIG_IDF_TARGET_ESP32C6
 #define LP_CORE_CPU_FREQUENCY_HZ 16000000
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define LP_CORE_CPU_FREQUENCY_HZ 20000000
+#endif
 
 /**
  * @brief Wakeup main CPU from sleep or deep sleep.

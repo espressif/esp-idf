@@ -1252,7 +1252,6 @@ examples/system/ota/otatool/main/otatool_main.c
 examples/system/ota/otatool/otatool_example.py
 examples/system/ota/simple_ota_example/main/simple_ota_example.c
 examples/system/perfmon/main/perfmon_example_main.c
-examples/system/pthread/main/pthread_example.c
 examples/system/select/main/select_example.c
 examples/system/startup_time/main/hello_world_main.c
 examples/system/sysview_tracing/main/sysview_tracing.c
