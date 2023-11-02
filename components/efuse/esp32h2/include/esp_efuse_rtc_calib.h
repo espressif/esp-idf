@@ -15,7 +15,7 @@ extern "C" {
 #define ESP_EFUSE_ADC_CALIB_VER1     1
 #define ESP_EFUSE_ADC_CALIB_VER_MIN  ESP_EFUSE_ADC_CALIB_VER1
 #define ESP_EFUSE_ADC_CALIB_VER_MAX  ESP_EFUSE_ADC_CALIB_VER1
-#define VER2IDX(ver)    (ver - 1)    // Version number to index number of the array
+#define VER2IDX(ver)    ((ver) - 1)    // Version number to index number of the array
 
 /**
  * @brief Get the RTC calibration efuse version
@@ -38,10 +38,9 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
  * @brief Get the channel specific calibration compensation
  *
  * @param version   Version of the stored efuse
- * @param adc_unit  ADC unit. Not used, for compatibility. On ESP32H2, for calibration v1, both ADC units use the same init code (calibrated by ADC1)
- * @param adc_channel ADC channel number
+ * @param adc_unit  ADC unit. Not used, for compatibility. ESP32H2 only supports one ADC unit
  * @param atten     Attenuation of the init code
- * @return The channel calibration compensation value
+ * @return          The channel calibration compensation value
  */
 int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_t adc_channel, int atten);
 
