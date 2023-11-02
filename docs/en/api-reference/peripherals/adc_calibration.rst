@@ -47,9 +47,9 @@ If you use your custom ADC calibration schemes, you could either modify this fun
 
     .. only:: esp32
 
-        There is also a configuration :cpp:member:`adc_cali_line_fitting_config_t::default_vref`. Normally this can be simply set to 0. Line Fitting scheme does not rely on this value. However, if the Line Fitting scheme required eFuse bits are not burnt on your board, the driver will rely on this value to do the calibration.
+        There is also a configuration :cpp:member:`adc_cali_line_fitting_config_t::default_vref`. Normally this can be simply set to 0. Line Fitting scheme does not rely on this value. However, if the Line Fitting scheme required eFuse bits are not burned on your board, the driver will rely on this value to do the calibration.
 
-        You can use :cpp:func:`adc_cali_scheme_line_fitting_check_efuse` to check the eFuse bits. Normally the Line Fitting scheme eFuse value is :c:macro:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_TP` or :c:macro:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_VREF`. This means the Line Fitting scheme uses calibration parameters burnt in the eFuse to do the calibration.
+        You can use :cpp:func:`adc_cali_scheme_line_fitting_check_efuse` to check the eFuse bits. Normally the Line Fitting scheme eFuse value is :c:macro:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_TP` or :c:macro:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_VREF`. This means the Line Fitting scheme uses calibration parameters burned in the eFuse to do the calibration.
 
         When the Line Fitting scheme eFuse value is :c:macro:`ADC_CALI_LINE_FITTING_EFUSE_VAL_DEFAULT_VREF`, you need to set the :cpp:member:`esp_adc_cali_line_fitting_init::default_vref`. Default vref is an estimate of the ADC reference voltage provided as a parameter during calibration.
 
@@ -57,7 +57,7 @@ If you use your custom ADC calibration schemes, you could either modify this fun
 
     .. only:: esp32s2
 
-        This function may fail due to reasons such as :c:macro:`ESP_ERR_INVALID_ARG` or :c:macro:`ESP_ERR_NO_MEM`. Especially, when the function returns :c:macro:`ESP_ERR_NOT_SUPPORTED`, this means the calibration scheme required eFuse bits are not burnt on your board.
+        This function may fail due to reasons such as :c:macro:`ESP_ERR_INVALID_ARG` or :c:macro:`ESP_ERR_NO_MEM`. Especially, when the function returns :c:macro:`ESP_ERR_NOT_SUPPORTED`, this means the calibration scheme required eFuse bits are not burned on your board.
 
     .. code:: c
 
@@ -82,7 +82,7 @@ If you use your custom ADC calibration schemes, you could either modify this fun
         ESP_ERROR_CHECK(adc_cali_delete_scheme_line_fitting(handle));
 
 
-.. only:: esp32c3 or esp32s3 or esp32c6
+.. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
 
     ADC Calibration Curve Fitting Scheme
     ````````````````````````````````````
@@ -90,14 +90,14 @@ If you use your custom ADC calibration schemes, you could either modify this fun
     {IDF_TARGET_NAME} supports :c:macro:`ADC_CALI_SCHEME_VER_CURVE_FITTING` scheme. To create this scheme, set up :cpp:type:`adc_cali_curve_fitting_config_t` first.
 
 
-    .. only:: not esp32c6
+    .. only:: esp32c3 or esp32s3
 
         -  :cpp:member:`adc_cali_curve_fitting_config_t::unit_id`, the ADC that your ADC raw results are from.
         -  :cpp:member:`adc_cali_curve_fitting_config_t::chan`, this member is kept here for extensibility. The calibration scheme only differs by attenuation, there is no difference among different channels.
         -  :cpp:member:`adc_cali_curve_fitting_config_t::atten`, ADC attenuation that your ADC raw results use.
         -  :cpp:member:`adc_cali_curve_fitting_config_t::bitwidth`, bit width of ADC raw result.
 
-    .. only:: esp32c6
+    .. only:: esp32c6 or esp32h2
 
         -  :cpp:member:`adc_cali_curve_fitting_config_t::unit_id`, the ADC that your ADC raw results are from.
         -  :cpp:member:`adc_cali_curve_fitting_config_t::chan`, the ADC channel that your ADC raw results are from. The calibration scheme not only differs by attenuation but is also related to the channels.
@@ -111,7 +111,7 @@ If you use your custom ADC calibration schemes, you could either modify this fun
 
     When the function :cpp:func:`adc_cali_create_scheme_curve_fitting` returns :c:macro:`ESP_ERR_NOT_SUPPORTED`, this means the calibration scheme required eFuse bits are not correct on your board.
 
-    ESP-IDF provided ADC calibration scheme is based on the values in certain ADC calibration related on-chip eFuse bits. Espressif guarantees that these bits are burnt during module manufacturing, so you don't have to burn these eFuses bits yourself.
+    ESP-IDF provided ADC calibration scheme is based on the values in certain ADC calibration related on-chip eFuse bits. Espressif guarantees that these bits are burned during module manufacturing, so you don't have to burn these eFuses bits yourself.
 
     If you see such an error, please contact us at `Technical Inquiries <https://www.espressif.com/en/contact-us/technical-inquiries>`__ website.
 
@@ -140,10 +140,6 @@ If you use your custom ADC calibration schemes, you could either modify this fun
         ESP_LOGI(TAG, "delete %s calibration scheme", "Curve Fitting");
         ESP_ERROR_CHECK(adc_cali_delete_scheme_curve_fitting(handle));
 
-
-.. only:: esp32h2
-
-    There is no supported calibration scheme yet.
 
 .. note::
 
