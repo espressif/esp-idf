@@ -1,5 +1,4 @@
 components/app_update/otatool.py
-components/bt/esp_ble_mesh/v1.1/lib/lib_copy.sh
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
 components/esp_coex/test_md5/test_md5.sh
