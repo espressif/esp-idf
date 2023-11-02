@@ -15,7 +15,7 @@
 
 #define BLANK_COREDUMP_SIZE 0xFFFFFFFF
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
