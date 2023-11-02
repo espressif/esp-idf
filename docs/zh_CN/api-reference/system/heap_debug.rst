@@ -154,12 +154,6 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 如果检查到字节与上述值不同，通常表示缓冲区越界或下溢。其中越界表示在写入内存时，写入的数据超过了所分配内存的大小，导致写入到了未分配的内存区域；下溢表示在读取内存时，读取的数据超出了所分配内存的范围，读取了未分配的内存区域的数据。
 
-.. only:: CONFIG_ESP_ROM_HAS_HEAP_TLSF
-
-    .. warning::
-
-        需注意，使用 TLSF 堆的 ROM 实现时，:cpp:func:`heap_caps_check_integrity` 不会对 canary 字节执行检查。
-
 全面检测模式
 +++++++++++++++++++
 
@@ -183,12 +177,6 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 - 对于已释放的堆内存块，检测器会检查是否所有字节都设置为 ``0xFE``，检测到任何其他值都表示错误写入了已释放内存。
 - 对于已分配的堆内存块，检测器的检查模式与轻微影响模式相同，即在每个分配的缓冲区头部和尾部检查 canary 字节 ``0xABBA1234`` 和 ``0xBAAD5678``，检测到任何其他字节都表示缓冲区越界或下溢。
-
-.. only:: CONFIG_ESP_ROM_HAS_HEAP_TLSF
-
-    .. warning::
-
-        需注意，使用 TLSF 堆的 ROM 实现时，:cpp:func:`heap_caps_check_integrity` 不会对 canary 字节执行检查。
 
 .. _heap-task-tracking:
 

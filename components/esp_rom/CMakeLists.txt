@@ -30,7 +30,7 @@ else()
         endif()
     endif()
 
-    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND (CONFIG_ESP_ROM_TLSF_CHECK_PATCH OR CONFIG_HEAP_TLSF_CHECK_PATCH))
         # This file shall be included in the build if TLSF in ROM is activated
         list(APPEND sources "patches/esp_rom_tlsf.c")
     endif()
@@ -301,7 +301,7 @@ else() # Regular app build
         # to force the linker to integrate the whole `esp_rom_tlsf.c` object file inside the
         # final binary. This is necessary because tlsf_set_rom_patches is a constructor, thus,
         # there as no explicit reference/call to it in IDF.
-        if(CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+        if((CONFIG_ESP_ROM_TLSF_CHECK_PATCH OR CONFIG_HEAP_TLSF_CHECK_PATCH))
             target_link_libraries(${COMPONENT_LIB} PRIVATE "-u tlsf_set_rom_patches")
         endif()
 
