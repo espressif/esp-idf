@@ -136,8 +136,9 @@ FatFs 分区分析器
 
 可以使用::
 
-    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] fatfs_image.img
+    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] [--verbose] fatfs_image.img
 
+生成文件夹结构之前，参数 --verbose 将根据 FatFs 镜像的引导扇区在终端打印详细信息。
 
 高级 API 参考
 ------------------------
