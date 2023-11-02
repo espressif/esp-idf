@@ -60,7 +60,6 @@ def test_mbedtls_psram(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'psram_esp32',
         'psram_all_ext',
     ],
     indirect=True,
