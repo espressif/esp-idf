@@ -96,7 +96,7 @@ struct bt_mesh_ctl_friend_sub_confirm {
 
 uint8_t bt_mesh_get_seg_rtx_num(void);
 
-int32_t bt_mesh_get_seg_rtx_timeout(uint8_t ttl);
+int32_t bt_mesh_get_seg_rtx_timeout(uint16_t dst, uint8_t ttl);
 
 struct bt_mesh_app_key *bt_mesh_app_key_get(uint16_t app_idx);
 

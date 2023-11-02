@@ -678,6 +678,13 @@ if BLE_MESH
             When the above situation is encountered, this option can be used to decide whether
             to perform the IV index recovery procedure.
 
+    config BLE_MESH_SAR_ENHANCEMENT
+        bool "Segmentation and reassembly enhancement"
+        default n
+        help
+            Enable this option to use the enhanced segmentation and reassembly
+            mechanism introduced in Bluetooth Mesh Protocol 1.1.
+
     config BLE_MESH_TX_SEG_MSG_COUNT
         int "Maximum number of simultaneous outgoing segmented messages"
         default 1

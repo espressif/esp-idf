@@ -63,7 +63,7 @@ typedef struct {
             sar_unicast_retrans_interval_step:4;            /*!< SAR Unicast Retransmissions Interval Step state */
     uint8_t sar_unicast_retrans_interval_increment:4,       /*!< SAR Unicast Retransmissions Interval Increment state */
             sar_multicast_retrans_count:4;                  /*!< SAR Multicast Retransmissions Count state */
-    uint8_t sar_multicast_retrans_interval:4;               /*!< SAR Multicast Retransmissions Interval state */
+    uint8_t sar_multicast_retrans_interval_step:4;          /*!< SAR Multicast Retransmissions Interval state */
 } esp_ble_mesh_sar_transmitter_set_t;
 
 /** Parameters of SAR Receiver Set */
@@ -91,7 +91,7 @@ typedef struct {
             sar_unicast_retrans_interval_step:4;            /*!< SAR Unicast Retransmissions Interval Step state */
     uint8_t sar_unicast_retrans_interval_increment:4,       /*!< SAR Unicast Retransmissions Interval Increment state */
             sar_multicast_retrans_count:4;                  /*!< SAR Multicast Retransmissions Count state */
-    uint8_t sar_multicast_retrans_interval:4;               /*!< SAR Multicast Retransmissions Interval state */
+    uint8_t sar_multicast_retrans_interval_step:4;          /*!< SAR Multicast Retransmissions Interval state */
 } esp_ble_mesh_sar_transmitter_status_t;
 
 /** Parameters of SAR Receiver Status */

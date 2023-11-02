@@ -248,6 +248,30 @@ uint8_t bt_mesh_net_retrans_match(void *rx, uint8_t *cred, uint8_t *tag);
 
 bool bt_mesh_dev_key_ca_valid(void);
 
+uint8_t bt_mesh_get_sar_sis(void);
+
+uint8_t bt_mesh_get_sar_urc(void);
+
+uint8_t bt_mesh_get_sar_urwpc(void);
+
+uint8_t bt_mesh_get_sar_uris(void);
+
+uint8_t bt_mesh_get_sar_urii(void);
+
+uint8_t bt_mesh_get_sar_mrc(void);
+
+uint8_t bt_mesh_get_sar_mris(void);
+
+uint8_t bt_mesh_get_sar_st(void);
+
+uint8_t bt_mesh_get_sar_adi(void);
+
+uint8_t bt_mesh_get_sar_arc(void);
+
+uint8_t bt_mesh_get_sar_dt(void);
+
+uint8_t bt_mesh_get_sar_rsis(void);
+
 #ifdef __cplusplus
 }
 #endif
