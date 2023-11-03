@@ -1147,7 +1147,7 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
 static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
 {
     for (int i = 0; i < len; i++) {
-        esp_rom_printf("%02x,", addr[i]);
+        esp_rom_printf("%02x ", addr[i]);
     }
     if (end) {
         esp_rom_printf("\n");
