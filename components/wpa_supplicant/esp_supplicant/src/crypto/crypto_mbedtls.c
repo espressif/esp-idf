@@ -506,16 +506,19 @@ static int crypto_init_cipher_ctx(mbedtls_cipher_context_t *ctx,
 		return -1;
 	}
 
-	if (mbedtls_cipher_setkey(ctx, key, key_len * 8, operation) != 0) {
-		wpa_printf(MSG_ERROR, "mbedtls_cipher_setkey returned error");
+	ret = mbedtls_cipher_setkey(ctx, key, key_len * 8, operation);
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "mbedtls_cipher_setkey returned error=%d", ret);
 		return -1;
 	}
-	if (mbedtls_cipher_set_iv(ctx, iv, cipher_info->MBEDTLS_PRIVATE(iv_size)) != 0) {
-		wpa_printf(MSG_ERROR, "mbedtls_cipher_set_iv returned error");
+	ret = mbedtls_cipher_set_iv(ctx, iv, cipher_info->MBEDTLS_PRIVATE(iv_size) << MBEDTLS_IV_SIZE_SHIFT);
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "mbedtls_cipher_set_iv returned error=%d", ret);
 		return -1;
 	}
-	if (mbedtls_cipher_reset(ctx) != 0) {
-		wpa_printf(MSG_ERROR, "mbedtls_cipher_reset() returned error");
+	ret = mbedtls_cipher_reset(ctx);
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "mbedtls_cipher_reset() returned error=%d", ret);
 		return -1;
 	}
 
