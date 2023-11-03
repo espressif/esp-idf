@@ -3,7 +3,7 @@
 
 # OpenThread Sleepy Device Example
 
-The example demonstrates the Thread Sleepy End Device (SED), the device will enter [Light Sleep mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c6/api-reference/system/sleep_modes.html#sleep-modes) during idle state.
+The example demonstrates the Thread Sleepy End Device (SED), the device will enter [Light Sleep mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32h2/api-reference/system/sleep_modes.html#sleep-modes) during idle state.
 ## How to use example
 
 ### Hardware Required
@@ -14,7 +14,7 @@ The example demonstrates the Thread Sleepy End Device (SED), the device will ent
 
 ## Configure the Openthread Dataset
 
-* Run [ot_cli](../ot_cli/) on another 802.15.4 SoC device to create openthread dataset configuration and start an openthread network as the leader.
+* Run [ot_cli](../../ot_cli/) on another 802.15.4 SoC device to create openthread dataset configuration and start an openthread network as the leader.
 * Configure the Openthread dataset using `idf.py menuconfig` in `Component config ---> Openthread ---> Thread Operation Dataset`, ensuring that the openthread sleepy device's dataset matches the dataset of the leader.
 
 ### Build and Flash
