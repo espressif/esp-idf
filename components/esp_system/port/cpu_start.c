@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -414,10 +414,6 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Resume_DCache(0);
 #endif // CONFIG_IDF_TARGET_ESP32S3
 
-    if (esp_efuse_check_errors() != ESP_OK) {
-        esp_restart();
-    }
-
 #if CONFIG_ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
 #if CONFIG_APP_BUILD_TYPE_ELF_RAM
     // For RAM loadable ELF case, we don't need to reserve IROM/DROM as instructions and data
@@ -485,6 +481,10 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+
+    if (esp_efuse_check_errors() != ESP_OK) {
+        esp_restart();
+    }
 
     bootloader_init_mem();
 
