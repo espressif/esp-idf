@@ -1623,14 +1623,14 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn)
 
 }
 
-BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 filter_policy, UINT8 adv_sid,
+BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 option, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,
                                                                        UINT16 sync_timeout, UINT8 unused)
 {
     BT_HDR *p;
     UINT8 *pp;
-    HCI_TRACE_EVENT("%s, filter_policy = %d, adv_sid = %d, adv_addr_type = %d, sync_timeout = %d, unused = %d",
-                                   __func__, filter_policy, adv_sid, adv_addr_type, sync_timeout, unused);
+    HCI_TRACE_EVENT("%s, option = %d, adv_sid = %d, adv_addr_type = %d, sync_timeout = %d, unused = %d",
+                                   __func__, option, adv_sid, adv_addr_type, sync_timeout, unused);
 
     HCI_TRACE_EVENT("addr %02x %02x %02x %02x %02x %02x", adv_addr[0], adv_addr[1], adv_addr[2], adv_addr[3], adv_addr[4], adv_addr[5]);
     uint16_t skip = 0;
@@ -1638,7 +1638,7 @@ BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 filter_policy, UINT8 adv_s
 
     UINT16_TO_STREAM(pp, HCI_BLE_PERIOD_ADV_CREATE_SYNC);
     UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_PERIODIC_ADV_CREATE_SYNC + 2);
-    UINT8_TO_STREAM(pp, filter_policy);
+    UINT8_TO_STREAM(pp, option);
     UINT8_TO_STREAM(pp, adv_sid);
     UINT8_TO_STREAM(pp, adv_addr_type);
     BDADDR_TO_STREAM(pp, adv_addr);
