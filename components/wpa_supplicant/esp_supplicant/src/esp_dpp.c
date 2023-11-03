@@ -179,6 +179,7 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
 {
     wifi_config_t *wifi_cfg = &s_dpp_ctx.wifi_cfg;
 
+    os_memset(wifi_cfg, 0, sizeof(wifi_config_t));
     if (conf->ssid_len) {
         os_memcpy(wifi_cfg->sta.ssid, conf->ssid, conf->ssid_len);
     }
