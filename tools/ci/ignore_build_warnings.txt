@@ -15,8 +15,6 @@ CryptographyDeprecationWarning
 Warning: \d+/\d+ app partitions are too small for binary
 CMake Deprecation Warning at main/lib/tinyxml2/CMakeLists\.txt:11 \(cmake_policy\)
 The smallest .+ partition is nearly full \(\d+% free space left\)!
-warning: unknown kconfig symbol 'A2DP_SINK_ENABLE' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/bluedroid/coex/a2dp_gatts_coex/sdkconfig.defaults
-warning: unknown kconfig symbol 'A2DP_SRC_ENABLE' assigned to 'n' in /builds/espressif/esp-idf/examples/bluetooth/bluedroid/coex/a2dp_gatts_coex/sdkconfig.defaults
 warning: unknown kconfig symbol 'BT_CTRL_COEX_PARAMETERS_ENABLE' assigned to*
 warning: unknown kconfig symbol 'BT_CTRL_COEX_USE_HOOKS' assigned to*
 warning: unknown kconfig symbol 'BT_LE_50_FEATURE_SUPPORT' assigned to*
@@ -83,6 +81,5 @@ warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in /builds/espressif/es
 warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in /builds/espressif/esp-idf/examples/protocols/https_request/sdkconfig.ci.ssldyn
 warning: unknown kconfig symbol 'TINYUSB' assigned to 'y' in /builds/espressif/esp-idf/examples/peripherals/usb/device/tusb_composite_msc_serialdevice/sdkconfig.defaults
 warning: unknown kconfig symbol 'UNITY_FREERTOS_STACK_SIZE' assigned to '12288' in /builds/espressif/esp-idf/components/bt/test_apps/sdkconfig.defaults
-warning: unknown kconfig symbol 'WIFI_ENABLED' assigned to 'n' in /builds/espressif/esp-idf/examples/bluetooth/bluedroid/classic_bt/*
 warning: unknown kconfig symbol 'WPA3_SAE' assigned to 'y' in /builds/espressif/esp-idf/components/wpa_supplicant/test_apps/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_sleepy_device/deep_sleep/sdkconfig.defaults
