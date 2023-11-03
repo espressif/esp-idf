@@ -94,7 +94,7 @@ typedef struct {
             i2s_pdm_slot_mask_t     slot_mask;          /*!< Choose the slots to activate */
 #if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
             bool                    hp_en;              /*!< High pass filter enable */
-            float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
+            uint32_t                hp_cut_off_freq_hzx10; /*!< High pass filter cut-off frequency times 10, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
             uint32_t                amplify_num;        /*!< The amplification number of the final conversion result */
 #endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
 
