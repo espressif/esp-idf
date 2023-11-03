@@ -27,14 +27,6 @@ typedef enum {
 } ecdsa_curve_t;
 
 /**
- * @brief Source of 'K' used internally for generating signature
- */
-typedef enum {
-    ECDSA_K_USE_TRNG,
-    ECDSA_K_USER_PROVIDED,
-} ecdsa_k_mode_t;
-
-/**
  * @brief Source of SHA message that is to be signed/verified
  */
 typedef enum {
