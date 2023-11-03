@@ -8,7 +8,7 @@
   - "tools/**/*"
   - ".gitlab-ci.yml"
   - ".gitlab/ci/common.yml"
-  - ".gitlab/ci/integration-test.yml"
+  - ".gitlab/ci/integration_test.yml"
   - ".gitmodules"
   - "CMakeLists.txt"
   - "install.sh"
@@ -22,6 +22,10 @@
     - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       changes: *patterns-integration_test
+    # support trigger by ci labels
+    - if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*target_test(?:,[^,\n\r]+)*$/i'
+    - if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*integration_test(?:,[^,\n\r]+)*$/i'
+    - if: '$CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build(?:,[^,\n\r]+)*$/i'
 
 gen_integration_pipeline:
   extends:
