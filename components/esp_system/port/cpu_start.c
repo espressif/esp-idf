@@ -90,6 +90,7 @@
 
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/mspi_timing_tuning.h"
+#include "esp_private/esp_gpio_reserve.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_flash.h"
 #include "esp_private/crosscore_int.h"
@@ -576,6 +577,20 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     }
 #endif
+
+    //----------------------------------Separator-----------------------------//
+    /**
+     * @note
+     * After this stage, you can place non-internal ram code
+     */
+
+    /* Reserve the GPIO pins */
+    uint64_t reserve_pin_mask = 0;
+    for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
+        reserve_pin_mask |= BIT64(esp_mspi_get_io(i));
+    }
+    esp_gpio_reserve_pins(reserve_pin_mask);
+
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
