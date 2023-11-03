@@ -60,6 +60,35 @@ typedef struct name_uuid {
 } protocomm_ble_name_uuid_t;
 
 /**
+ * @brief Structure for BLE events in Protocomm.
+ */
+typedef struct {
+    /**
+     * This field indicates the type of BLE event that occurred.
+     */
+    uint16_t evt_type;
+    /**
+     * The handle of the relevant connection.
+     */
+    uint16_t conn_handle;
+
+    union {
+        /**
+         * The status of the connection attempt;
+         *     o 0: the connection was successfully established.
+         *     o BLE host error code: the connection attempt failed for
+         *       the specified reason.
+         */
+        uint16_t conn_status;
+
+        /**
+         * Return code indicating the reason for the disconnect.
+         */
+        uint16_t disconnect_reason;
+    };
+} protocomm_ble_event_t;
+
+/**
  * @brief   Config parameters for protocomm BLE service
  */
 typedef struct protocomm_ble_config {
