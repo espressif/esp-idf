@@ -355,7 +355,77 @@ void ieee80211_ftm_attach(void)
 #ifndef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 void net80211_softap_funcs_init(void)
 {
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
 }
+
+bool ieee80211_ap_try_sa_query(void *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return false;
+}
+
+bool ieee80211_ap_sa_query_timeout(void *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return false;
+}
+
+int add_mic_ie_bip(void *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+void ieee80211_free_beacon_eb(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+
+int ieee80211_pwrsave(void *p1, void *p2)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+void cnx_node_remove(void *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+
+int ieee80211_set_tim(void *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+bool ieee80211_is_bufferable_mmpdu(void *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return false;
+}
+
+void cnx_node_leave(void *p, uint8_t arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+
+void ieee80211_beacon_construct(void *p1, void *p2, void *p3, void *p4)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+
+void * ieee80211_assoc_resp_construct(void *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return NULL;
+}
+
+void * ieee80211_alloc_proberesp(void *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return NULL;
+}
+
 #endif
 
 #ifndef CONFIG_ESP_WIFI_NAN_ENABLE
