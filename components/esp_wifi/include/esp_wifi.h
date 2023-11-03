@@ -411,9 +411,9 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
 /**
   * @brief     Scan all available APs.
   *
-  * @attention If this API is called, the found APs are stored in WiFi driver dynamic allocated memory and the
-  *            will be freed in esp_wifi_scan_get_ap_records, so generally, call esp_wifi_scan_get_ap_records to cause
-  *            the memory to be freed once the scan is done
+  * @attention If this API is called, the found APs are stored in WiFi driver dynamic allocated memory. And then
+  *            can be freed in esp_wifi_scan_get_ap_records(), esp_wifi_scan_get_ap_record() or esp_wifi_clear_ap_list(),
+  *            so call any one to free the memory once the scan is done.
   * @attention The values of maximum active scan time and passive scan time per channel are limited to 1500 milliseconds.
   *            Values above 1500ms may cause station to disconnect from AP and are not recommended.
   *
@@ -460,7 +460,9 @@ esp_err_t esp_wifi_scan_stop(void);
 esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
 
 /**
-  * @brief     Get AP list found in last scan
+  * @brief     Get AP list found in last scan.
+  *
+  * @attention  This API will free all memory occupied by scanned AP list.
   *
   * @param[inout]  number As input param, it stores max AP number ap_records can hold.
   *                As output param, it receives the actual AP number this API returns.
@@ -475,11 +477,30 @@ esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
   */
 esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_records);
 
+/**
+ * @brief      Get one AP record from the scanned AP list.
+ *
+ * @attention  Different from esp_wifi_scan_get_ap_records(), this API only gets one AP record
+ *             from the scanned AP list each time. This API will free the memory of one AP record,
+ *             if the user doesn't get all records in the scannned AP list, then needs to call esp_wifi_clear_ap_list()
+ *             to free the remaining memory.
+ *
+ * @param[out] ap_record  pointer to one AP record
+ *
+ * @return
+ *    - ESP_OK: succeed
+ *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+ *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+ *    - ESP_ERR_INVALID_ARG: invalid argument
+ *    - ESP_FAIL: scan APs is NULL, means all AP records fetched or no AP found
+ */
+esp_err_t esp_wifi_scan_get_ap_record(wifi_ap_record_t *ap_record);
 
 /**
   * @brief     Clear AP list found in last scan
   *
-  * @attention When the obtained ap list fails,bss info must be cleared,otherwise it may cause memory leakage.
+  * @attention This API will free all memory occupied by scanned AP list.
+  *            When the obtained AP list fails, AP records must be cleared,otherwise it may cause memory leakage.
   *
   * @return
   *    - ESP_OK: succeed
