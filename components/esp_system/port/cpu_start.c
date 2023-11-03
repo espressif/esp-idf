@@ -440,17 +440,10 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    ESP_EARLY_LOGI(TAG, "Unicore app");
-#else
-    ESP_EARLY_LOGI(TAG, "Multicore app");
-#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
-#endif // !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #endif
-#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     // When the APP is loaded into ram for execution, some hardware initialization behaviors
     // in the bootloader are still necessary
@@ -585,6 +578,11 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    ESP_EARLY_LOGI(TAG, "Unicore app");
+#else
+    ESP_EARLY_LOGI(TAG, "Multicore app");
+#endif
     bootloader_init_mem();
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
