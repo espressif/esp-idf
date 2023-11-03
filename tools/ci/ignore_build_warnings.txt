@@ -99,3 +99,4 @@ warning: unknown kconfig symbol 'TINYUSB' assigned to 'y' in /builds/espressif/e
 warning: unknown kconfig symbol 'UNITY_FREERTOS_STACK_SIZE' assigned to '12288' in /builds/espressif/esp-idf/components/bt/test_apps/sdkconfig.defaults
 warning: unknown kconfig symbol 'WIFI_ENABLED' assigned to 'n' in /builds/espressif/esp-idf/examples/bluetooth/bluedroid/classic_bt/*
 warning: unknown kconfig symbol 'WPA3_SAE' assigned to 'y' in /builds/espressif/esp-idf/components/wpa_supplicant/test_apps/sdkconfig.defaults
+warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_sleepy_device/deep_sleep/sdkconfig.defaults
