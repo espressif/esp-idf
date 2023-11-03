@@ -29,8 +29,8 @@ static void example_ledc_init(void)
     // Prepare and then apply the LEDC PWM timer configuration
     ledc_timer_config_t ledc_timer = {
         .speed_mode       = LEDC_MODE,
-        .timer_num        = LEDC_TIMER,
         .duty_resolution  = LEDC_DUTY_RES,
+        .timer_num        = LEDC_TIMER,
         .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 4 kHz
         .clk_cfg          = LEDC_AUTO_CLK
     };
