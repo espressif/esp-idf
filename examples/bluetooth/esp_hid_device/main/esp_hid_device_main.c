@@ -1,7 +1,7 @@
-/* This example code is in the Public Domain (or CC0 licensed, at your option.)
-   Unless required by applicable law or agreed to in writing, this software is
-   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+/*
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 #include <stdio.h>
@@ -28,28 +28,17 @@
 #include "esp_hid_gap.h"
 
 static const char *TAG = "HID_DEV_DEMO";
+#define HIDD_BLE_MODE 0x01
 
-const unsigned char hidapiReportMap[] = { //8 bytes input, 8 bytes feature
-    0x06, 0x00, 0xFF,  // Usage Page (Vendor Defined 0xFF00)
-    0x0A, 0x00, 0x01,  // Usage (0x0100)
-    0xA1, 0x01,        // Collection (Application)
-    0x85, 0x01,        //   Report ID (1)
-    0x15, 0x00,        //   Logical Minimum (0)
-    0x26, 0xFF, 0x00,  //   Logical Maximum (255)
-    0x75, 0x08,        //   Report Size (8)
-    0x95, 0x08,        //   Report Count (8)
-    0x09, 0x01,        //   Usage (0x01)
-    0x82, 0x02, 0x01,  //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Buffered Bytes)
-    0x95, 0x08,        //   Report Count (8)
-    0x09, 0x02,        //   Usage (0x02)
-    0xB2, 0x02, 0x01,  //   Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile,Buffered Bytes)
-    0x95, 0x08,        //   Report Count (8)
-    0x09, 0x03,        //   Usage (0x03)
-    0x91, 0x02,        //   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
-    0xC0,              // End Collection
+typedef struct
+{
+    TaskHandle_t task_hdl;
+    esp_hidd_dev_t *hid_dev;
+    uint8_t protocol_mode;
+    uint8_t *buffer;
+} local_param_t;
 
-    // 38 bytes
-};
+static local_param_t s_ble_hid_param = {0};
 
 const unsigned char mediaReportMap[] = {
     0x05, 0x0C,        // Usage Page (Consumer)
@@ -111,30 +100,24 @@ const unsigned char mediaReportMap[] = {
     0xC0,              // End Collection
 };
 
-static esp_hid_raw_report_map_t report_maps[] = {
-    {
-        .data = hidapiReportMap,
-        .len = sizeof(hidapiReportMap)
-    },
+static esp_hid_raw_report_map_t ble_report_maps[] = {
     {
         .data = mediaReportMap,
         .len = sizeof(mediaReportMap)
     }
 };
 
-static esp_hid_device_config_t hid_config = {
+static esp_hid_device_config_t ble_hid_config = {
     .vendor_id          = 0x16C0,
     .product_id         = 0x05DF,
     .version            = 0x0100,
     .device_name        = "ESP BLE HID2",
     .manufacturer_name  = "Espressif",
     .serial_number      = "1234567890",
-    .report_maps        = report_maps,
-    .report_maps_len    = 2
+    .report_maps        = ble_report_maps,
+    .report_maps_len    = 1
 };
 
-static esp_hidd_dev_t *hid_dev = NULL;
-static bool dev_connected = false;
 
 #define HID_CC_RPT_MUTE                 1
 #define HID_CC_RPT_POWER                2
@@ -283,14 +266,52 @@ void esp_hidd_send_consumer_value(uint8_t key_cmd, bool key_pressed)
             break;
         }
     }
-    esp_hidd_dev_input_set(hid_dev, 1, HID_RPT_ID_CC_IN, buffer, HID_CC_IN_RPT_LEN);
+    esp_hidd_dev_input_set(s_ble_hid_param.hid_dev, 0, HID_RPT_ID_CC_IN, buffer, HID_CC_IN_RPT_LEN);
     return;
 }
 
-static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
+void ble_hid_demo_task(void *pvParameters)
+{
+    static bool send_volum_up = false;
+    while (1) {
+        ESP_LOGI(TAG, "Send the volume");
+        if (send_volum_up) {
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, true);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, false);
+        } else {
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, true);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, false);
+        }
+        send_volum_up = !send_volum_up;
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
+}
+
+void ble_hid_task_start_up(void)
+{
+    if (s_ble_hid_param.task_hdl) {
+        // Task already exists
+        return;
+    }
+    xTaskCreate(ble_hid_demo_task, "ble_hid_demo_task", 2 * 1024, NULL, configMAX_PRIORITIES - 3,
+                &s_ble_hid_param.task_hdl);
+}
+
+void ble_hid_task_shut_down(void)
+{
+    if (s_ble_hid_param.task_hdl) {
+        vTaskDelete(s_ble_hid_param.task_hdl);
+        s_ble_hid_param.task_hdl = NULL;
+    }
+}
+
+static void ble_hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
 {
     esp_hidd_event_t event = (esp_hidd_event_t)id;
     esp_hidd_event_data_t *param = (esp_hidd_event_data_t *)event_data;
+    static const char *TAG = "HID_DEV_BLE";
 
     switch (event) {
     case ESP_HIDD_START_EVENT: {
@@ -300,7 +321,6 @@ static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32
     }
     case ESP_HIDD_CONNECT_EVENT: {
         ESP_LOGI(TAG, "CONNECT");
-        dev_connected = true;//todo: this should be on auth_complete (in GAP)
         break;
     }
     case ESP_HIDD_PROTOCOL_MODE_EVENT: {
@@ -309,7 +329,15 @@ static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32
     }
     case ESP_HIDD_CONTROL_EVENT: {
         ESP_LOGI(TAG, "CONTROL[%u]: %sSUSPEND", param->control.map_index, param->control.control ? "EXIT_" : "");
-        break;
+        if (param->control.control)
+        {
+            // exit suspend
+            ble_hid_task_start_up();
+        } else {
+            // suspend
+            ble_hid_task_shut_down();
+        }
+    break;
     }
     case ESP_HIDD_OUTPUT_EVENT: {
         ESP_LOGI(TAG, "OUTPUT[%u]: %8s ID: %2u, Len: %d, Data:", param->output.map_index, esp_hid_usage_str(param->output.usage), param->output.report_id, param->output.length);
@@ -323,7 +351,7 @@ static void hidd_event_callback(void *handler_args, esp_event_base_t base, int32
     }
     case ESP_HIDD_DISCONNECT_EVENT: {
         ESP_LOGI(TAG, "DISCONNECT: %s", esp_hid_disconnect_reason_str(esp_hidd_dev_transport_get(param->disconnect.dev), param->disconnect.reason));
-        dev_connected = false;
+        ble_hid_task_shut_down();
         esp_hid_ble_gap_adv_start();
         break;
     }
@@ -341,19 +369,17 @@ void hid_demo_task(void *pvParameters)
 {
     static bool send_volum_up = false;
     while (1) {
-        if (dev_connected) {
-            ESP_LOGI(TAG, "Send the volume");
-            if (send_volum_up) {
-                esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, true);
-                vTaskDelay(100 / portTICK_PERIOD_MS);
-                esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, false);
-            } else {
-                esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, true);
-                vTaskDelay(100 / portTICK_PERIOD_MS);
-                esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, false);
-            }
-            send_volum_up = !send_volum_up;
+        ESP_LOGI(TAG, "Send the volume");
+        if (send_volum_up) {
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, true);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_UP, false);
+        } else {
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, true);
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+            esp_hidd_send_consumer_value(HID_CONSUMER_VOLUME_DOWN, false);
         }
+        send_volum_up = !send_volum_up;
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
 }
@@ -367,24 +393,22 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK( ret );
-
-#if CONFIG_BT_CLASSIC_ENABLED
-    ret = esp_hid_gap_init(ESP_BT_MODE_BTDM);
-#else
-    ret = esp_hid_gap_init(ESP_BT_MODE_BLE);
-#endif
-
+#if CONFIG_BT_BLE_ENABLED
+    // only BLE mode is supported in this version.
+    ESP_LOGI(TAG, "setting hid gap, mode:%d", HIDD_BLE_MODE);
+    ret = esp_hid_gap_init(HIDD_BLE_MODE);
     ESP_ERROR_CHECK( ret );
 
-    ret = esp_hid_ble_gap_adv_init(ESP_HID_APPEARANCE_GENERIC, hid_config.device_name);
+    ret = esp_hid_ble_gap_adv_init(ESP_HID_APPEARANCE_GENERIC, ble_hid_config.device_name);
     ESP_ERROR_CHECK( ret );
 
     if ((ret = esp_ble_gatts_register_callback(esp_hidd_gatts_event_handler)) != ESP_OK) {
         ESP_LOGE(TAG, "GATTS register callback failed: %d", ret);
         return;
     }
-
-    ESP_ERROR_CHECK( esp_hidd_dev_init(&hid_config, ESP_HID_TRANSPORT_BLE, hidd_event_callback, &hid_dev) );
-    xTaskCreate(&hid_demo_task, "hid_task", 2048, NULL, 2, NULL);
+    ESP_LOGI(TAG, "setting ble device");
+    ESP_ERROR_CHECK(
+        esp_hidd_dev_init(&ble_hid_config, ESP_HID_TRANSPORT_BLE, ble_hidd_event_callback, &s_ble_hid_param.hid_dev));
+#endif
 
 }

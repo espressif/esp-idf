@@ -1173,39 +1173,39 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
 
                 if ((op_code == GATT_SIGN_CMD_WRITE) && !(perm & GATT_WRITE_SIGNED_PERM)) {
                     status = GATT_WRITE_NOT_PERMIT;
-                    GATT_TRACE_DEBUG( "gatts_write_attr_perm_check - sign cmd write not allowed");
+                    GATT_TRACE_DEBUG( "gatts_write_attr_perm_check - sign cmd write not allowed,handle:0x%04x",handle);
                 }
                 if ((op_code == GATT_SIGN_CMD_WRITE) && (sec_flag & GATT_SEC_FLAG_ENCRYPTED)) {
                     status = GATT_INVALID_PDU;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - Error!! sign cmd write sent on a encypted link");
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - Error!! sign cmd write sent on a encypted link,handle:0x%04x",handle);
                 } else if (!(perm & GATT_WRITE_ALLOWED)) {
                     status = GATT_WRITE_NOT_PERMIT;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_WRITE_NOT_PERMIT");
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_WRITE_NOT_PERMIT,handle:0x%04x",handle);
                 }
                 /* require authentication, but not been authenticated */
                 else if ((perm & GATT_WRITE_AUTH_REQUIRED ) && !(sec_flag & GATT_SEC_FLAG_LKEY_UNAUTHED)) {
                     status = GATT_INSUF_AUTHENTICATION;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION");
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION,handle:0x%04x",handle);
                 } else if ((perm & GATT_WRITE_MITM_REQUIRED ) && !(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED)) {
                     status = GATT_INSUF_AUTHENTICATION;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION: MITM required");
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION: MITM required,handle:0x%04x",handle);
                 } else if ((perm & GATT_WRITE_ENCRYPTED_PERM ) && !(sec_flag & GATT_SEC_FLAG_ENCRYPTED)) {
                     status = GATT_INSUF_ENCRYPTION;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_ENCRYPTION");
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_ENCRYPTION,handle:0x%04x",handle);
                 } else if ((perm & GATT_WRITE_ENCRYPTED_PERM ) && (sec_flag & GATT_SEC_FLAG_ENCRYPTED) && (key_size < min_key_size)) {
                     status = GATT_INSUF_KEY_SIZE;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_KEY_SIZE");
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_KEY_SIZE,handle:0x%04x",handle);
                 }
                 /* LE Authorization check*/
                 else if ((perm & GATT_WRITE_AUTHORIZATION) && (!(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED) || !(sec_flag & GATT_SEC_FLAG_AUTHORIZATION))){
                     status = GATT_INSUF_AUTHORIZATION;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHORIZATION");
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHORIZATION,handle:0x%04x",handle);
                 }
                 /* LE security mode 2 attribute  */
                 else if (perm & GATT_WRITE_SIGNED_PERM && op_code != GATT_SIGN_CMD_WRITE && !(sec_flag & GATT_SEC_FLAG_ENCRYPTED)
                          &&  (perm & GATT_WRITE_ALLOWED) == 0) {
                     status = GATT_INSUF_AUTHENTICATION;
-                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION: LE security mode 2 required");
+                    GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INSUF_AUTHENTICATION: LE security mode 2 required,handle:0x%04x",handle);
                 } else { /* writable: must be char value declaration or char descritpors */
                     if (p_attr->uuid_type == GATT_ATTR_UUID_TYPE_16) {
                         switch (p_attr->uuid) {
@@ -1246,10 +1246,10 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
                     {
                         if (op_code == GATT_REQ_PREPARE_WRITE && offset != 0) { /* does not allow write blob */
                             status = GATT_NOT_LONG;
-                            GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_NOT_LONG");
+                            GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_NOT_LONG,handle:0x%04x",handle);
                         } else if (len != max_size) { /* data does not match the required format */
                             status = GATT_INVALID_ATTR_LEN;
-                            GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INVALID_PDU");
+                            GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INVALID_PDU,handle:0x%04x",handle);
                         } else {
                             status = GATT_SUCCESS;
                         }
