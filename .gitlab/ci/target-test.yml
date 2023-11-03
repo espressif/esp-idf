@@ -12,6 +12,8 @@
       paths:
         - .cache/pip
       policy: pull
+  after_script:
+    - python tools/ci/artifacts_handler.py upload --type logs junit_reports
 
 .pytest_template:
   extends:
@@ -50,7 +52,6 @@
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
       --app-info-filepattern \"list_job_*.txt\"
-    - python tools/ci/artifacts_handler.py upload --type logs junit_reports
 
 .pytest_examples_dir_template:
   extends: .pytest_template
@@ -1299,7 +1300,6 @@ pytest_examples_openthread_br:
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
       --app-info-filepattern \"list_job_*.txt\"
-    - python tools/ci/artifacts_handler.py upload --type logs junit_reports
 
 pytest_examples_openthread_bbr:
   extends:
@@ -1334,7 +1334,6 @@ pytest_examples_openthread_bbr:
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
       --app-info-filepattern \"list_job_*.txt\"
-    - python tools/ci/artifacts_handler.py upload --type logs junit_reports
 
 pytest_examples_openthread_sleep:
   extends:
@@ -1366,7 +1365,6 @@ pytest_examples_openthread_sleep:
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
       --app-info-filepattern \"list_job_*.txt\"
-    - python tools/ci/artifacts_handler.py upload --type logs junit_reports
 
 pytest_examples_esp32h2_zigbee:
   extends:
