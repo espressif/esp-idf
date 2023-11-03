@@ -583,6 +583,11 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     ESP_EARLY_LOGI(TAG, "Multicore app");
 #endif
+
+    if (esp_efuse_check_errors() != ESP_OK) {
+        esp_restart();
+    }
+
     bootloader_init_mem();
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
