@@ -51,6 +51,12 @@
 #define ESP_COEX_VSC_INCLUDED        FALSE
 #endif
 
+#if (UC_BT_CONTROLLER_INCLUDED == TRUE)
+#define BT_CONTROLLER_INCLUDED       TRUE
+#else
+#define BT_CONTROLLER_INCLUDED       FALSE
+#endif
+
 /******************************************************************************
 **
 ** Classic BT features
