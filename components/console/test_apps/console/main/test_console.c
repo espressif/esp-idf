@@ -78,6 +78,21 @@ TEST_CASE("esp console help command", "[console][ignore]")
     TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
     TEST_ESP_OK(esp_console_register_help_command());
 
+    const esp_console_cmd_t cmd_a = {
+        .command = "aaa",
+        .help = "should appear first in help",
+        .hint = NULL,
+        .func = do_hello_cmd,
+    };
+    const esp_console_cmd_t cmd_z = {
+        .command = "zzz",
+        .help = "should appear last in help",
+        .hint = NULL,
+        .func = do_hello_cmd,
+    };
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(5000));
 }
