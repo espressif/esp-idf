@@ -23,7 +23,9 @@
 
 static const char *TAG = "boot";
 
+#if !CONFIG_APP_BUILD_TYPE_RAM
 esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
+#endif
 
 void bootloader_clear_bss_section(void)
 {

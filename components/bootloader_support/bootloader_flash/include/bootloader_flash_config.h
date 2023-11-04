@@ -58,6 +58,7 @@ void bootloader_flash_clock_config(const esp_image_header_t* pfhdr);
  */
 void bootloader_flash_gpio_config(const esp_image_header_t* pfhdr);
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Configure SPI flash read dummy based on different mode and frequency.
  *
@@ -66,6 +67,10 @@ void bootloader_flash_gpio_config(const esp_image_header_t* pfhdr);
  * @return None
  */
 void bootloader_flash_dummy_config(const esp_image_header_t* pfhdr);
+#else
+// The meaning has changed on this chip. Deprecated, Call `bootloader_configure_spi_pins()` and `bootloader_flash_set_dummy_out()` directly.
+void bootloader_flash_dummy_config(const esp_image_header_t* pfhdr) __attribute__((deprecated));
+#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 /**

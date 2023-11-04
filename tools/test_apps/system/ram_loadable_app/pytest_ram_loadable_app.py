@@ -5,12 +5,7 @@ import pytest
 from pytest_embedded_idf.dut import IdfDut
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['pure_ram',], indirect=True,)
 def test_pure_ram_loadable_app(dut: IdfDut) -> None:
@@ -18,11 +13,7 @@ def test_pure_ram_loadable_app(dut: IdfDut) -> None:
     dut.expect('Time since boot: 3 seconds...', timeout=10)
 
 
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['defaults',], indirect=True,)
 def test_ram_loadable_app(dut: IdfDut) -> None:

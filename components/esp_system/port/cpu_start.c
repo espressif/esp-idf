@@ -101,6 +101,7 @@
 #if CONFIG_APP_BUILD_TYPE_RAM
 #include "esp_rom_spiflash.h"
 #include "bootloader_init.h"
+#include "esp_private/bootloader_flash_internal.h"
 #endif // CONFIG_APP_BUILD_TYPE_RAM
 
 //This dependency will be removed in the future
@@ -429,14 +430,10 @@ void IRAM_ATTR call_start_cpu0(void)
     // When the APP is loaded into ram for execution, some hardware initialization behaviors
     // in the bootloader are still necessary
 #if CONFIG_APP_BUILD_TYPE_RAM
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-#if SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
-    esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
-#else
-    esp_rom_spiflash_attach(0, false);
-#endif
-#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     bootloader_init();
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    bootloader_flash_hardware_init();
+#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 #endif  //#if CONFIG_APP_BUILD_TYPE_RAM
 
 #ifndef CONFIG_BOOTLOADER_WDT_ENABLE
@@ -722,22 +719,19 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
 
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    // External devices (including SPI0/1, cache) should be initialized
+
+#if !CONFIG_APP_BUILD_TYPE_RAM
+    // Normal startup flow. We arrive here with the help of 1st, 2nd bootloader. There are valid headers (app/bootloader)
+
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
     __attribute__((unused)) esp_image_header_t fhdr = {0};
-#if CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    fhdr.spi_mode = ESP_IMAGE_SPI_MODE_DIO;
-    fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2;
-    fhdr.spi_size = ESP_IMAGE_FLASH_SIZE_4MB;
 
-    bootloader_flash_unlock();
-#else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
     // the binary header through cache by accessing SOC_DROM_LOW address.
     hal_memcpy(&fhdr, (void *) SOC_DROM_LOW, sizeof(fhdr));
 
-#endif // CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 #if CONFIG_IDF_TARGET_ESP32
 #if !CONFIG_SPIRAM_BOOT_INIT
     // If psram is uninitialized, we need to improve some flash configuration.
@@ -756,6 +750,10 @@ void IRAM_ATTR call_start_cpu0(void)
     }
     bootloader_flash_update_size(app_flash_size);
 #endif //CONFIG_SPI_FLASH_SIZE_OVERRIDE
+#else
+    // CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    bootloader_flash_unlock();
+#endif
 #endif //!CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
