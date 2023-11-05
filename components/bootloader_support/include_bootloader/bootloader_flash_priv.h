@@ -35,6 +35,8 @@
 #define CMD_RDSFDP     0x5A /* Read the SFDP of the flash */
 #define CMD_WRAP       0x77 /* Set burst with wrap command */
 #define CMD_RESUME     0x7A /* Resume command to clear flash suspend bit */
+#define CMD_FASTRD_4B       0x0C
+#define CMD_SLOWRD_4B       0x13
 
 
 /* Provide a Flash API for bootloader_support code,

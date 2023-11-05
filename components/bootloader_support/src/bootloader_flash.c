@@ -482,6 +482,34 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
     return spi_to_esp_err(rc);
 }
 
+#if CONFIG_SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
+void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t flash_mode)
+{
+    esp_rom_opiflash_spi0rd_t cache_rd = {};
+    switch (flash_mode) {
+    case ESP_ROM_SPIFLASH_FASTRD_MODE:
+        cache_rd.addr_bit_len = 32;
+        cache_rd.dummy_bit_len = 8;
+        cache_rd.cmd = CMD_FASTRD_4B;
+        cache_rd.cmd_bit_len = 8;
+        break;
+     case ESP_ROM_SPIFLASH_SLOWRD_MODE:
+        cache_rd.addr_bit_len = 32;
+        cache_rd.dummy_bit_len = 0;
+        cache_rd.cmd = CMD_SLOWRD_4B;
+        cache_rd.cmd_bit_len = 8;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    esp_rom_opiflash_cache_mode_config(flash_mode, &cache_rd);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+}
+#endif
+
+
 #endif // BOOTLOADER_BUILD
 
 
