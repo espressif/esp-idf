@@ -840,10 +840,10 @@ esp_err_t esp_bt_controller_deinit(void)
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 
+    ble_controller_deinit();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    ble_controller_deinit();
 
 #if CONFIG_BT_NIMBLE_ENABLED
     /* De-initialize default event queue */
