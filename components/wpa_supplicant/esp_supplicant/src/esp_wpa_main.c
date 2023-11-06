@@ -33,6 +33,7 @@
 #include "esp_owe_i.h"
 
 #include "esp_wps.h"
+#include "esp_wps_i.h"
 #include "eap_server/eap.h"
 #include "eapol_auth/eapol_auth_sm.h"
 #include "ap/ieee802_1x.h"
@@ -302,6 +303,11 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
             wpa_sta_clear_curr_pmksa();
         }
         break;
+    }
+
+    struct wps_sm_funcs *wps_sm_cb = wps_get_wps_sm_cb();
+    if (wps_sm_cb && wps_sm_cb->wps_sm_notify_deauth) {
+        wps_sm_cb->wps_sm_notify_deauth();
     }
 #ifdef CONFIG_OWE_STA
     owe_deinit();
