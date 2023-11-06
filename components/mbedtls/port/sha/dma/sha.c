@@ -34,6 +34,7 @@
 #include "esp_crypto_lock.h"
 #include "esp_attr.h"
 #include "soc/lldesc.h"
+#include "esp_cache.h"
 #include "soc/ext_mem_defs.h"
 #include "soc/periph_defs.h"
 
@@ -47,16 +48,6 @@
 #include "hal/sha_hal.h"
 #include "soc/soc_caps.h"
 #include "esp_sha_dma_priv.h"
-
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/cache.h"
-#endif
 
 #if SOC_SHA_GDMA
 #define SHA_LOCK() esp_crypto_sha_aes_lock_acquire()
@@ -189,10 +180,10 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
 
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
     if (esp_ptr_external_ram(input)) {
-        Cache_WriteBack_Addr((uint32_t)input, ilen);
+        esp_cache_msync((void *)input, ilen, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     }
     if (esp_ptr_external_ram(buf)) {
-        Cache_WriteBack_Addr((uint32_t)buf, buf_len);
+        esp_cache_msync((void *)buf, buf_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     }
 #endif
 
