@@ -24,8 +24,8 @@ examples/bluetooth/bluedroid/ble:
 examples/bluetooth/bluedroid/ble/ble_hid_device_demo:
   disable:
     - if: SOC_BT_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/gpio/**/*
+  depends_components:
+    - esp_driver_gpio
 
 examples/bluetooth/bluedroid/ble_50:
   disable:
@@ -41,11 +41,11 @@ examples/bluetooth/bluedroid/classic_bt:
     - esp_log
     - esp_console
     - vfs
+    - esp_driver_gpio
   depends_filepatterns:
     - components/driver/dac/**/*
     - components/driver/i2s/**/*
     - components/driver/uart/**/*
-    - components/driver/gpio/**/*
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
   <<: *bt_default_depends
@@ -84,9 +84,9 @@ examples/bluetooth/esp_ble_mesh:
     - vfs
     - mbedtls
     - touch_element
+    - esp_driver_gpio
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
-    - components/driver/gpio/**/*
 
 examples/bluetooth/esp_ble_mesh/aligenie_demo:
   enable:
@@ -99,9 +99,9 @@ examples/bluetooth/esp_ble_mesh/aligenie_demo:
     - vfs
     - mbedtls
     - driver
+    - esp_driver_gpio
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
-    - components/driver/gpio/**/*
 
 examples/bluetooth/esp_ble_mesh/coex_test:
   enable:
@@ -117,9 +117,9 @@ examples/bluetooth/esp_ble_mesh/coex_test:
     - esp_coex
     - esp_wifi
     - esp_netif
+    - esp_driver_gpio
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
-    - components/driver/gpio/**/*
 
 examples/bluetooth/esp_ble_mesh/wifi_coexist:
   disable:
@@ -134,9 +134,9 @@ examples/bluetooth/esp_ble_mesh/wifi_coexist:
     - esp_coex
     - esp_wifi
     - esp_netif
+    - esp_driver_gpio
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
-    - components/driver/gpio/**/*
 
 examples/bluetooth/hci:
   <<: *bt_default_depends
@@ -271,8 +271,9 @@ examples/bluetooth/nimble/throughput_app:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  depends_components:
+    - esp_driver_gpio
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
     - examples/bluetooth/nimble/throughput_app/blecent_throughput/components/**/*
     - components/driver/uart/**/*
-    - components/driver/gpio/**/*

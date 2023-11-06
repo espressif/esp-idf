@@ -24,7 +24,7 @@ else()
 
     list(APPEND requires "sdmmc")
 
-    list(APPEND priv_requires "vfs")
+    list(APPEND priv_requires "vfs" "esp_driver_gpio")
 endif()
 
 idf_component_register(SRCS ${srcs}

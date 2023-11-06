@@ -16,12 +16,6 @@ components/driver/test_apps/dac_test_apps/legacy_dac_driver:
   disable:
     - if: SOC_DAC_SUPPORTED != 1
 
-components/driver/test_apps/gpio_extensions:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported yet # TODO: IDF-7551
-
 components/driver/test_apps/gptimer:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
@@ -97,6 +91,14 @@ components/driver/test_apps/legacy_rtc_temp_driver:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
 
+components/driver/test_apps/legacy_sigma_delta_driver:
+  disable:
+    - if: SOC_SDM_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/deprecated/**/*
+  depends_components:
+    - esp_driver_gpio
+
 components/driver/test_apps/legacy_timer_driver:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
@@ -119,9 +121,7 @@ components/driver/test_apps/rmt:
 
 components/driver/test_apps/rs485:
   disable:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-6511
+    - if: SOC_UART_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -134,6 +134,14 @@ components/driver/test_apps/sdio:
     - if: IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
+
+components/driver/test_apps/sigma_delta:
+  disable:
+    - if: SOC_SDM_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/sigma_delta/**/*
+  depends_components:
+    - esp_driver_gpio
 
 components/driver/test_apps/spi/master:
   disable:
@@ -174,17 +182,14 @@ components/driver/test_apps/twai:
 components/driver/test_apps/uart:
   disable:
     - if: SOC_UART_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-6511
 
 components/driver/test_apps/usb_serial_jtag:
   disable:
     - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
   depends_filepatterns:
-    - components/driver/gpio/**/*
     - components/driver/usb_serial_jtag/**/*
   depends_components:
     - hal
     - esp_hw_support # for clock
     - vfs
+    - esp_driver_gpio

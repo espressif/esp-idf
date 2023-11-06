@@ -8,8 +8,8 @@ examples/ethernet/basic:
     - esp_netif
     - lwip
     - esp_event
+    - esp_driver_gpio
   depends_filepatterns:
-    - components/driver/gpio/**/*
     - components/driver/spi/**/*
 
 examples/ethernet/enc28j60:
@@ -22,8 +22,8 @@ examples/ethernet/enc28j60:
     - esp_netif
     - lwip
     - esp_event
+    - esp_driver_gpio
   depends_filepatterns:
-    - components/driver/gpio/**/*
     - components/driver/spi/**/*
 
 examples/ethernet/iperf:
@@ -37,8 +37,8 @@ examples/ethernet/iperf:
     - lwip
     - esp_event
     - console
+    - esp_driver_gpio
   depends_filepatterns:
-    - components/driver/gpio/**/*
     - components/driver/spi/**/*
     - examples/common_components/iperf/**/*
     - examples/common_components/protocol_examples_common/**/*

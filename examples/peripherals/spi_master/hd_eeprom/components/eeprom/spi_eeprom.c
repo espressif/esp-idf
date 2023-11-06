@@ -51,16 +51,6 @@ typedef struct eeprom_context_t eeprom_context_t;
 
 static const char TAG[] = "eeprom";
 
-// Workaround: The driver depends on some data in the flash and cannot be placed to DRAM easily for
-// now. Using the version in LL instead.
-#define gpio_set_level  gpio_set_level_patch
-#include "hal/gpio_ll.h"
-static inline esp_err_t gpio_set_level_patch(gpio_num_t gpio_num, uint32_t level)
-{
-    gpio_ll_set_level(&GPIO, gpio_num, level);
-    return ESP_OK;
-}
-
 static esp_err_t eeprom_simple_cmd(eeprom_context_t *ctx, uint16_t cmd)
 {
     spi_transaction_t t = {

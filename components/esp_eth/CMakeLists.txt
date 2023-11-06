@@ -67,7 +67,7 @@ endif()
 
 if(CONFIG_ETH_ENABLED)
     if(CONFIG_ETH_USE_SPI_ETHERNET)
-        idf_component_optional_requires(PUBLIC driver)
+        idf_component_optional_requires(PUBLIC driver esp_driver_gpio)
     endif()
     idf_component_optional_requires(PRIVATE esp_netif esp_pm)
 endif()

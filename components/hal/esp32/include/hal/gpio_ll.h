@@ -508,6 +508,7 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t
  *     - 0 the GPIO input level is 0
  *     - 1 the GPIO input level is 1
  */
+__attribute__((always_inline))
 static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
 {
     if (gpio_num < 32) {

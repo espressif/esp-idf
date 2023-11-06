@@ -48,7 +48,9 @@ else()
         "spi_flash_os_func_noos.c")
 
     list(APPEND srcs ${cache_srcs})
-    set(priv_requires bootloader_support app_update soc driver esp_mm)
+    set(priv_requires bootloader_support app_update soc esp_mm
+                      driver esp_driver_gpio # TODO: IDF-8503 move spi_bus_lock to esp_hw_support component
+    )
 endif()
 
 idf_component_register(SRCS "${srcs}"
