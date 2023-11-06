@@ -132,6 +132,7 @@ build_docs_html_full_prod:
   extends:
     - .build_docs_template
     - .doc-rules:build:docs-full-prod
+  dependencies: [] # Stop build_docs jobs from downloading all previous job's artifacts
   artifacts:
     when: always
     paths:
@@ -184,6 +185,7 @@ build_docs_pdf_prod:
   extends:
     - .build_docs_template
     - .doc-rules:build:docs-full-prod
+  dependencies: [] # Stop build_docs jobs from downloading all previous job's artifacts
   artifacts:
     when: always
     paths:
