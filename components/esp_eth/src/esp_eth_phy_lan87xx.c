@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_eth_phy_802_3.h"
@@ -317,6 +319,19 @@ err:
     return ret;
 }
 
+static esp_err_t lan87xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+
+    /* It was observed that a delay needs to be introduced after setting speed and prior driver's start.
+    Otherwise, the very first read of PHY registers is not valid data (0xFFFF's). */
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_speed(phy_802_3, speed), err, TAG, "set speed failed");
+    vTaskDelay(pdMS_TO_TICKS(10));
+err:
+    return ret;
+}
+
 static esp_err_t lan87xx_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -359,6 +374,7 @@ esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config)
     lan87xx->phy_802_3.parent.get_link = lan87xx_get_link;
     lan87xx->phy_802_3.parent.autonego_ctrl = lan87xx_autonego_ctrl;
     lan87xx->phy_802_3.parent.loopback = lan87xx_loopback;
+    lan87xx->phy_802_3.parent.set_speed = lan87xx_set_speed;
 
     return &lan87xx->phy_802_3.parent;
 err:
