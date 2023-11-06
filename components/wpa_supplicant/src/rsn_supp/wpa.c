@@ -36,6 +36,7 @@
 #include "esp_owe_i.h"
 #include "common/sae.h"
 #include "esp_eap_client_i.h"
+#include "esp_wpa3_i.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -285,14 +286,12 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
     int key_info, ver;
     u8 bssid[ETH_ALEN], *rbuf, *key_mic;
 
-    if (sm->key_mgmt == WPA_KEY_MGMT_OSEN || wpa_key_mgmt_suite_b(sm->key_mgmt))
+    if (wpa_use_akm_defined(sm->key_mgmt))
         ver = WPA_KEY_INFO_TYPE_AKM_DEFINED;
     else if (wpa_key_mgmt_ft(sm->key_mgmt) || wpa_key_mgmt_sha256(sm->key_mgmt))
         ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
     else if (sm->pairwise_cipher != WPA_CIPHER_TKIP)
         ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
-    else if (sm->key_mgmt == WPA_KEY_MGMT_SAE || sm->key_mgmt == WPA_KEY_MGMT_OWE)
-        ver = 0;
     else
         ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
 
@@ -848,7 +847,7 @@ void   wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
             sm, addr, MLME_SETPROTECTION_PROTECT_TYPE_RX_TX,
             MLME_SETPROTECTION_KEY_TYPE_PAIRWISE);
 
-        if (wpa_key_mgmt_wpa_psk(sm->key_mgmt) || sm->key_mgmt == WPA_KEY_MGMT_OWE)
+        if (wpa_key_mgmt_wpa_psk(sm->key_mgmt) || sm->key_mgmt == WPA_KEY_MGMT_OWE || sm->key_mgmt == WPA_KEY_MGMT_DPP)
             eapol_sm_notify_eap_success(TRUE);
         /*
          * Start preauthentication after a short wait to avoid a
@@ -2280,17 +2279,19 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
     } else if (auth_mode == WPA2_AUTH_PSK_SHA256) {
         sm->key_mgmt = WPA_KEY_MGMT_PSK_SHA256;
     } else if (auth_mode == WPA3_AUTH_PSK) {
-         sm->key_mgmt = WPA_KEY_MGMT_SAE; /* for WPA3 PSK */
+        sm->key_mgmt = WPA_KEY_MGMT_SAE; /* for WPA3 PSK */
     } else if (auth_mode == WAPI_AUTH_PSK) {
-         sm->key_mgmt = WPA_KEY_MGMT_WAPI_PSK; /* for WAPI PSK */
+        sm->key_mgmt = WPA_KEY_MGMT_WAPI_PSK; /* for WAPI PSK */
     } else if (auth_mode == WPA2_AUTH_ENT_SHA384_SUITE_B) {
-         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
+        sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
     } else if (auth_mode == WPA2_AUTH_FT_PSK) {
-         sm->key_mgmt = WPA_KEY_MGMT_FT_PSK;
+        sm->key_mgmt = WPA_KEY_MGMT_FT_PSK;
     } else if (auth_mode == WPA3_AUTH_OWE) {
-         sm->key_mgmt = WPA_KEY_MGMT_OWE;
+        sm->key_mgmt = WPA_KEY_MGMT_OWE;
     } else if (auth_mode == WPA3_AUTH_PSK_EXT_KEY) {
-         sm->key_mgmt = WPA_KEY_MGMT_SAE_EXT_KEY; /* for WPA3 PSK */
+        sm->key_mgmt = WPA_KEY_MGMT_SAE_EXT_KEY; /* for WPA3 PSK */
+    } else if (auth_mode == WPA3_AUTH_DPP) {
+        sm->key_mgmt = WPA_KEY_MGMT_DPP;
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
@@ -2472,7 +2473,8 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
      */
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
         sm->key_mgmt == WPA_KEY_MGMT_OWE ||
-        sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY)
+        sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY ||
+        sm->key_mgmt == WPA_KEY_MGMT_DPP)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */

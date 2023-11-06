@@ -73,6 +73,7 @@ enum {
     WPA2_AUTH_FT_PSK    = 0x0e,
     WPA3_AUTH_OWE       = 0x0f,
     WPA3_AUTH_PSK_EXT_KEY = 0x10,
+    WPA3_AUTH_DPP       = 0x11,
     WPA2_AUTH_INVALID
 };
 
@@ -296,6 +297,7 @@ bool esp_wifi_ap_notify_node_sae_auth_done(uint8_t *mac);
 bool esp_wifi_ap_is_sta_sae_reauth_node(uint8_t *mac);
 uint8_t* esp_wifi_sta_get_sae_identifier_internal(void);
 bool esp_wifi_eb_tx_status_success_internal(void *eb);
-uint8_t* esp_wifi_sta_get_rsnxe(void);
+uint8_t* esp_wifi_sta_get_rsnxe(u8 *bssid);
+esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

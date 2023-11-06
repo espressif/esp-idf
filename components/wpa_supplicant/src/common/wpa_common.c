@@ -348,6 +348,11 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 	if(RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_OWE)
 		return WPA_KEY_MGMT_OWE;
 #endif /* CONFIG_OWE_STA */
+#ifdef CONFIG_DPP
+        if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_DPP)
+                return WPA_KEY_MGMT_DPP;
+#endif /* CONFIG_DPP */
+
 
 	return 0;
 }
@@ -855,19 +860,31 @@ int wpa_pmk_r1_to_ptk(const u8 *pmk_r1, const u8 *snonce, const u8 *anonce,
 */
 
 int wpa_use_akm_defined(int akmp){
-	return akmp == WPA_KEY_MGMT_OSEN ||
-		akmp == WPA_KEY_MGMT_OWE ||
-		wpa_key_mgmt_sae(akmp) ||
-		wpa_key_mgmt_suite_b(akmp);
+        return akmp == WPA_KEY_MGMT_OSEN ||
+               akmp == WPA_KEY_MGMT_OWE ||
+               akmp == WPA_KEY_MGMT_DPP ||
+               wpa_key_mgmt_sae(akmp) ||
+               wpa_key_mgmt_suite_b(akmp);
 }
 
+/**
+ * wpa_use_aes_key_wrap - Is AES Keywrap algorithm used for EAPOL-Key Key Data
+ * @akmp: WPA_KEY_MGMT_* used in key derivation
+ * Returns: 1 if AES Keywrap is used; 0 otherwise
+ *
+ * Note: AKM 00-0F-AC:1 and 00-0F-AC:2 have special rules for selecting whether
+ * to use AES Keywrap based on the negotiated pairwise cipher. This function
+ * does not cover those special cases.
+ */
 int wpa_use_aes_key_wrap(int akmp)
 {
-	return akmp == WPA_KEY_MGMT_OSEN ||
-		wpa_key_mgmt_ft(akmp) ||
-		wpa_key_mgmt_sha256(akmp) ||
-		wpa_key_mgmt_sae(akmp) ||
-		wpa_key_mgmt_suite_b(akmp);
+        return akmp == WPA_KEY_MGMT_OSEN ||
+               akmp == WPA_KEY_MGMT_OWE ||
+               akmp == WPA_KEY_MGMT_DPP ||
+               wpa_key_mgmt_ft(akmp) ||
+               wpa_key_mgmt_sha256(akmp) ||
+               wpa_key_mgmt_sae(akmp) ||
+               wpa_key_mgmt_suite_b(akmp);
 }
 
 /**
@@ -958,6 +975,24 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
                         break;
 
 #endif /* CONFIG_OWE_STA */
+#ifdef CONFIG_DPP
+                case WPA_KEY_MGMT_DPP:
+                        wpa_printf(MSG_DEBUG,
+                                   "WPA: EAPOL-Key MIC using HMAC-SHA%u (AKM-defined - DPP)",
+                                   (unsigned int) key_len * 8 * 2);
+                        if (key_len == 128 / 8) {
+                                if (hmac_sha256(key, key_len, buf, len, hash))
+                                        return -1;
+                        } else {
+                                wpa_printf(MSG_INFO,
+                                           "DPP: Unsupported KCK length: %u",
+                                           (unsigned int) key_len);
+                                return -1;
+                        }
+                        os_memcpy(mic, hash, key_len);
+                        break;
+#endif /* CONFIG_DPP */
+
 #endif /* CONFIG_IEEE80211W */
 		default:
 			return -1;

@@ -43,7 +43,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         use_pt = 1;
     }
 
-   rsnxe = esp_wifi_sta_get_rsnxe();
+   rsnxe = esp_wifi_sta_get_rsnxe(bssid);
    if (rsnxe && rsnxe[1] >= 1) {
        rsnxe_capa = rsnxe[2];
    }

@@ -30,6 +30,10 @@ struct dpp_global;
 #define PMK_LEN_SUITE_B_192 48
 #define PMK_LEN_MAX 64
 
+/* Use a hardcoded Transaction ID 1 in Peer Discovery frames since there is only
+ * a single transaction in progress at any point in time. */
+static const u8 TRANSACTION_ID = 1;
+
 /* DPP events */
 #define DPP_EVENT_AUTH_SUCCESS "DPP-AUTH-SUCCESS "
 #define DPP_EVENT_AUTH_INIT_FAILED "DPP-AUTH-INIT-FAILED "
@@ -502,6 +506,7 @@ struct wpabuf * dpp_build_conn_status_result(struct dpp_authentication *auth,
 					     enum dpp_status_error result,
 					     const u8 *ssid, size_t ssid_len,
 					     const char *channel_list);
+struct wpabuf * dpp_build_peer_disc_req(struct dpp_authentication *auth, struct dpp_config_obj *conf);
 struct wpabuf * dpp_alloc_msg(enum dpp_public_action_frame_type type,
 			      size_t len);
 const u8 * dpp_get_attr(const u8 *buf, size_t len, u16 req_id, u16 *ret_len);
@@ -586,6 +591,8 @@ struct dpp_global_config {
 struct dpp_global * dpp_global_init(struct dpp_global_config *config);
 void dpp_global_clear(struct dpp_global *dpp);
 void dpp_global_deinit(struct dpp_global *dpp);
+int dpp_connect(uint8_t *bssid, bool pdr_done);
+esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid);
 
 #endif /* CONFIG_DPP */
 #endif /* DPP_H */
