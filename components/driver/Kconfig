@@ -207,10 +207,6 @@ menu "Driver Configurations"
                 Note that, this option only controls the Analog Comparator driver log, won't affect other drivers.
     endmenu # Analog Comparator Configuration
 
-    orsource "./gptimer/Kconfig.gptimer"
-
-    orsource "../esp_driver_pcnt/Kconfig.pcnt"
-
     orsource "./rmt/Kconfig.rmt"
 
     orsource "./mcpwm/Kconfig.mcpwm"

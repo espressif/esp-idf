@@ -254,8 +254,8 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
             isr_flags |= 1 << (timer->intr_priority);
         }
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_id].timer_irq_id[timer_id], isr_flags,
-                            (uint32_t)timer_ll_get_intr_status_reg(timer->hal.dev), TIMER_LL_EVENT_ALARM(timer_id),
-                            gptimer_default_isr, timer, &timer->intr), TAG, "install interrupt service failed");
+                                                      (uint32_t)timer_ll_get_intr_status_reg(timer->hal.dev), TIMER_LL_EVENT_ALARM(timer_id),
+                                                      gptimer_default_isr, timer, &timer->intr), TAG, "install interrupt service failed");
     }
 
     // enable/disable GPTimer interrupt events

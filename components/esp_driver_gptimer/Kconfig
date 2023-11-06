@@ -1,4 +1,4 @@
-menu "GPTimer Configuration"
+menu "ESP-Driver:GPTimer Configurations"
     depends on SOC_GPTIMER_SUPPORTED
     config GPTIMER_ISR_HANDLER_IN_IRAM
         bool "Place GPTimer ISR handler into IRAM"
@@ -36,4 +36,4 @@ menu "GPTimer Configuration"
         help
             Wether to enable the debug log message for GPTimer driver.
             Note that, this option only controls the GPTimer driver log, won't affect other drivers.
-endmenu # GPTimer Configuration
+endmenu

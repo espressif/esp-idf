@@ -16,5 +16,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS include
                     REQUIRES esp_partition idf_test cmock
-                    PRIV_REQUIRES perfmon esp_driver_pcnt driver esp_netif)
+                    PRIV_REQUIRES perfmon esp_driver_pcnt esp_driver_gptimer esp_netif
+                                  driver # TODO: replace with esp_driver_rmt
+                                  )
 target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

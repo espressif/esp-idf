@@ -29,5 +29,6 @@ endif()
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity esp_timer driver
+                       PRIV_REQUIRES unity esp_timer esp_driver_gptimer esp_driver_gpio
+                                     driver # TODO: replace with esp_driver_mcpwm (IDF-8379), esp_driver_ana_cmpr
                        WHOLE_ARCHIVE)

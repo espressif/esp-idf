@@ -1,5 +1,5 @@
 [mapping:gptimer_driver]
-archive: libdriver.a
+archive: libesp_driver_gptimer.a
 entries:
     if GPTIMER_ISR_HANDLER_IN_IRAM = y:
         gptimer: gptimer_default_isr (noflash)

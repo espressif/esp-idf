@@ -1,4 +1,4 @@
-menu "PCNT Configuration"
+menu "ESP-Driver:PCNT Configurations"
     depends on SOC_PCNT_SUPPORTED
     config PCNT_CTRL_FUNC_IN_IRAM
         bool "Place PCNT control functions into IRAM"
@@ -29,4 +29,4 @@ menu "PCNT Configuration"
         help
             Wether to enable the debug log message for PCNT driver.
             Note that, this option only controls the PCNT driver log, won't affect other drivers.
-endmenu # PCNT Configuration
+endmenu
