@@ -33,12 +33,12 @@ examples/openthread/ot_br:
 
 examples/openthread/ot_cli:
   enable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
+    - if: SOC_IEEE802154_SUPPORTED == 1
   <<: *openthread_dependencies
 
 examples/openthread/ot_rcp:
   enable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
+    - if: SOC_IEEE802154_SUPPORTED == 1
   disable_test:
     - if: IDF_TARGET == "esp32h2"
       temporary: true
@@ -55,5 +55,5 @@ examples/openthread/ot_sleepy_device/deep_sleep:
 
 examples/openthread/ot_sleepy_device/light_sleep:
   enable:
-    - if: IDF_TARGET in ["esp32h2", "esp32c6"]
+    - if: SOC_IEEE802154_SUPPORTED == 1
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]

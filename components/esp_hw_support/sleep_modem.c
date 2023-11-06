@@ -399,8 +399,8 @@ static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_f
 #endif
 
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-void esp_pm_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
-                                                    mac_bb_power_up_cb_t pu_cb)
+void sleep_modem_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                         mac_bb_power_up_cb_t pu_cb)
 {
     _lock_acquire(&s_modem_prepare_lock);
     if (s_modem_prepare_ref++ == 0) {
@@ -410,8 +410,8 @@ void esp_pm_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb
     _lock_release(&s_modem_prepare_lock);
 }
 
-void esp_pm_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
-                                                      mac_bb_power_up_cb_t pu_cb)
+void sleep_modem_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                           mac_bb_power_up_cb_t pu_cb)
 {
     _lock_acquire(&s_modem_prepare_lock);
     assert(s_modem_prepare_ref);
@@ -423,7 +423,36 @@ void esp_pm_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_
 
 }
 
-void IRAM_ATTR mac_bb_power_down_prepare(void)
+/**
+ * @brief Switch root clock source to PLL do retention and switch back
+ *
+ * This function is used when Bluetooth/IEEE802154 module requires register backup/restore, this function
+ * is called ONLY when SOC_PM_RETENTION_HAS_CLOCK_BUG is set.
+ * @param backup true for backup, false for restore
+ * @param cpu_freq_mhz cpu frequency to do retention
+ * @param do_retention function for retention
+ */
+static void rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(bool backup, int cpu_freq_mhz, void (*do_retention)(bool))
+{
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+    if (pmu_sleep_pll_already_enabled()) {
+        return;
+    }
+#endif
+    rtc_cpu_freq_config_t config, pll_config;
+    rtc_clk_cpu_freq_get_config(&config);
+
+    rtc_clk_cpu_freq_mhz_to_config(cpu_freq_mhz, &pll_config);
+    rtc_clk_cpu_freq_set_config(&pll_config);
+
+    if (do_retention) {
+        (*do_retention)(backup);
+    }
+
+    rtc_clk_cpu_freq_set_config(&config);
+}
+
+void IRAM_ATTR sleep_modem_mac_bb_power_down_prepare(void)
 {
     if (s_modem_sleep == false) {
         rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(true,
@@ -433,7 +462,7 @@ void IRAM_ATTR mac_bb_power_down_prepare(void)
     }
 }
 
-void IRAM_ATTR mac_bb_power_up_prepare(void)
+void IRAM_ATTR sleep_modem_mac_bb_power_up_prepare(void)
 {
     if (s_modem_sleep) {
         rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(false,

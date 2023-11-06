@@ -481,19 +481,6 @@ bool rtc_dig_8m_enabled(void);
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
 
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG
-/**
- * @brief Switch root clock source to PLL do retention and switch back
- *
- * This function is used when Bluetooth/IEEE802154 module requires register backup/restore, this function
- * is called ONLY when SOC_PM_RETENTION_HAS_CLOCK_BUG is set.
- * @param backup true for backup, false for restore
- * @param cpu_freq_mhz cpu frequency to do retention
- * @param do_retention function for retention
- */
-void rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(bool backup, int cpu_freq_mhz, void (*do_retention)(bool));
-#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
-
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.
 // Please use the declarations in soc/clk_tree_defs.h instead.

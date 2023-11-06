@@ -26,7 +26,7 @@
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
@@ -37,7 +37,7 @@ static bool s_rf_closed = false;
 #else
 #define IEEE802154_LINK_OWNER  ENTRY(0) | ENTRY(2)
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
-#endif
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 #define CCA_DETECTION_TIME 8
 
@@ -614,12 +614,12 @@ void ieee802154_enable(void)
 void ieee802154_disable(void)
 {
     modem_clock_module_disable(ieee802154_periph.module);
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-    esp_pm_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_prepare,
-                                                     mac_bb_power_up_prepare);
+    sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
+                                                     sleep_modem_mac_bb_power_up_prepare);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     ieee802154_set_state(IEEE802154_STATE_DISABLE);
 }
 
@@ -797,32 +797,31 @@ static esp_err_t ieee802154_sleep_init(void)
     ESP_LOGI(IEEE802154_TAG, "ieee802154 mac sleep retention initialization");
 
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-    esp_pm_register_mac_bb_module_prepare_callback(mac_bb_power_down_prepare,
-                                                   mac_bb_power_up_prepare);
+    sleep_modem_register_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
+                                                   sleep_modem_mac_bb_power_up_prepare);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-
-#endif
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     return err;
 }
 
 IRAM_ATTR static void ieee802154_rf_disable(void)
 {
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     if (s_rf_closed == false) {
         esp_phy_disable(PHY_MODEM_IEEE802154);
         s_rf_closed = true;
     }
-#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 
 IRAM_ATTR static void ieee802154_rf_enable(void)
 {
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     if (s_rf_closed) {
         esp_phy_enable(PHY_MODEM_IEEE802154);
         s_rf_closed = false;
     }
-#endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 
 esp_err_t ieee802154_sleep(void)

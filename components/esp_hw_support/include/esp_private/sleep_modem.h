@@ -48,7 +48,7 @@ void mac_bb_power_up_cb_execute(void);
  * @param pd_cb function to call when power down
  * @param pu_cb function to call when power up
  */
-void esp_pm_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+void sleep_modem_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
                                                     mac_bb_power_up_cb_t pu_cb);
 
 /**
@@ -57,7 +57,7 @@ void esp_pm_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb
  * @param pd_cb function to call when power down
  * @param pu_cb function to call when power up
  */
-void esp_pm_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+void sleep_modem_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
                                                       mac_bb_power_up_cb_t pu_cb);
 
 /**
@@ -66,7 +66,7 @@ void esp_pm_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_
  * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
  * power down and backup prepare operations.
  */
-void mac_bb_power_down_prepare(void);
+void sleep_modem_mac_bb_power_down_prepare(void);
 
 /**
  * @brief MAC and baseband power up operation
@@ -74,7 +74,7 @@ void mac_bb_power_down_prepare(void);
  * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
  * power up and restore prepare operations.
  */
-void mac_bb_power_up_prepare(void);
+void sleep_modem_mac_bb_power_up_prepare(void);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
