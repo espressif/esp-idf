@@ -719,10 +719,10 @@ esp_err_t esp_bt_controller_deinit(void)
 
     controller_sleep_deinit();
 
+    ble_controller_deinit();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    ble_controller_deinit();
 
     periph_module_disable(PERIPH_BT_MODULE);
 
