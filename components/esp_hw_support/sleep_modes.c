@@ -37,8 +37,6 @@
 #include "hal/rtc_hal.h"
 #endif
 
-#include "driver/uart.h"
-
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 #include "regi2c_ctrl.h"    //For `REGI2C_ANA_CALI_PD_WORKAROUND`, temp
@@ -49,8 +47,6 @@
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
-#include "driver/touch_sensor.h"
-#include "driver/touch_sensor_common.h"
 #endif
 #include "hal/clk_gate_ll.h"
 
@@ -1423,9 +1419,8 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
         return TOUCH_PAD_MAX;
     }
     touch_pad_t pad_num;
-    esp_err_t ret = touch_pad_get_wakeup_status(&pad_num); //TODO 723diff commit id:fda9ada1b
-    assert(ret == ESP_OK && "wakeup reason is RTC_TOUCH_TRIG_EN but SENS_TOUCH_MEAS_EN is zero");
-    return (ret == ESP_OK) ? pad_num : TOUCH_PAD_MAX;
+    touch_hal_get_wakeup_status(&pad_num);
+    return pad_num;
 }
 
 #endif // SOC_TOUCH_SENSOR_SUPPORTED
