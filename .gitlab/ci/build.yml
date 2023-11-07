@@ -48,7 +48,8 @@
         examples/wifi/iperf
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - upload_artifacts_to_s3
+    # for detailed documents, please refer to .gitlab/ci/README.md#uploaddownload-artifacts-to-internal-minio-server
+    - python tools/ci/artifacts_handler.py upload
 
 .build_cmake_clang_template:
   extends:
@@ -67,7 +68,7 @@
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
-    - upload_artifacts_to_s3
+    - python tools/ci/artifacts_handler.py upload
 
 .build_pytest_template:
   extends:
@@ -83,7 +84,7 @@
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - upload_artifacts_to_s3
+    - python tools/ci/artifacts_handler.py upload
 
 .build_pytest_no_jtag_template:
   extends:
@@ -99,7 +100,7 @@
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - upload_artifacts_to_s3
+    - python tools/ci/artifacts_handler.py upload
 
 .build_pytest_jtag_template:
   extends:
@@ -115,7 +116,7 @@
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - upload_artifacts_to_s3
+    - python tools/ci/artifacts_handler.py upload
 
 build_pytest_examples_esp32:
   extends:
@@ -265,7 +266,7 @@ build_only_components_apps:
       --parallel-index ${CI_NODE_INDEX:-1}
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - upload_artifacts_to_s3
+    - python tools/ci/artifacts_handler.py upload
 
 build_pytest_test_apps_esp32:
   extends:
@@ -337,7 +338,7 @@ build_only_tools_test_apps:
       --parallel-index ${CI_NODE_INDEX:-1}
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - upload_artifacts_to_s3
+    - python tools/ci/artifacts_handler.py upload
 
 .build_template_app_template:
   extends:

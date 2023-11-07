@@ -169,6 +169,12 @@ variables:
   # Show ccache statistics if enabled globally
   test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
 
+.upload_failed_job_log_artifacts: &upload_failed_job_log_artifacts |
+  - |
+    if [ $CI_JOB_STATUS = "failed" ]; then
+      python tools/ci/artifacts_handler.py upload --type logs
+    fi
+
 .before_script:minimal:
   before_script:
     - *common-before_scripts
@@ -195,6 +201,7 @@ variables:
 .after_script:build:ccache:
   after_script:
     - *show_ccache_statistics
+    - *upload_failed_job_log_artifacts
 
 #############
 # `default` #
