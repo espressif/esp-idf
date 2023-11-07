@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -649,6 +649,18 @@ static void IRAM_ATTR esp_empty_wrapper(void)
 
 }
 
+static void esp_phy_enable_wrapper(void)
+{
+    esp_phy_enable();
+    phy_wifi_enable_set(1);
+}
+
+static void esp_phy_disable_wrapper(void)
+{
+    phy_wifi_enable_set(0);
+    esp_phy_disable();
+}
+
 wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._version = ESP_WIFI_OS_ADAPTER_VERSION,
     ._env_is_chip = env_is_chip_wrapper,
@@ -702,8 +714,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._dport_access_stall_other_cpu_end_wrap = esp_empty_wrapper,
     ._wifi_apb80m_request = wifi_apb80m_request_wrapper,
     ._wifi_apb80m_release = wifi_apb80m_release_wrapper,
-    ._phy_disable = esp_phy_disable,
-    ._phy_enable = esp_phy_enable,
+    ._phy_disable = esp_phy_disable_wrapper,
+    ._phy_enable = esp_phy_enable_wrapper,
     ._phy_update_country_info = esp_phy_update_country_info,
     ._read_mac = esp_read_mac_wrapper,
     ._timer_arm = timer_arm_wrapper,
