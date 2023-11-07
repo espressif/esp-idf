@@ -589,7 +589,11 @@ esp_err_t esp_ble_gap_set_security_param(esp_ble_sm_param_t param_type,
         LOG_ERROR("ESP_BLE_APP_ENC_KEY_SIZE is deprecated, use ESP_GATT_PERM_ENCRYPT_KEY_SIZE in characteristic definition");
         return ESP_ERR_NOT_SUPPORTED;
     }
-
+    if (param_type == ESP_BLE_SM_MAX_KEY_SIZE || param_type == ESP_BLE_SM_MIN_KEY_SIZE) {
+        if (((uint8_t *)value)[0] > 16 || ((uint8_t *)value)[0] < 7) {
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
     btc_msg_t msg = {0};
     btc_ble_gap_args_t arg;
 
