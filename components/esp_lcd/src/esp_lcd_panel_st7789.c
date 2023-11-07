@@ -77,11 +77,11 @@ esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel
         ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG, "configure GPIO for RST line failed");
     }
 
-    switch (panel_dev_config->rgb_endian) {
-    case LCD_RGB_ENDIAN_RGB:
+    switch (panel_dev_config->rgb_ele_order) {
+    case LCD_RGB_ELEMENT_ORDER_RGB:
         st7789->madctl_val = 0;
         break;
-    case LCD_RGB_ENDIAN_BGR:
+    case LCD_RGB_ELEMENT_ORDER_BGR:
         st7789->madctl_val |= LCD_CMD_BGR_BIT;
         break;
     default:

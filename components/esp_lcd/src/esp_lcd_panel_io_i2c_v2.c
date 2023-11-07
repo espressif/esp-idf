@@ -106,7 +106,7 @@ static esp_err_t panel_io_i2c_register_event_callbacks(esp_lcd_panel_io_handle_t
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
 
     if (i2c_panel_io->on_color_trans_done != NULL) {
-        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
+        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was overwritten!");
     }
 
     i2c_panel_io->on_color_trans_done = cbs->on_color_trans_done;
