@@ -24,8 +24,13 @@
 #include "freertos/event_groups.h"
 
 
-#define DEFAULT_SSID "TEST_WIFI_SSID"
-#define DEFAULT_PWD "TEST_WIFI_PASS"
+#ifndef TEST_SUFFIX_STR
+#define TEST_SUFFIX_STR "_0050"
+#endif
+
+#define DEFAULT_SSID "SSID_" CONFIG_IDF_TARGET TEST_SUFFIX_STR
+#define DEFAULT_PWD "PASS_" CONFIG_IDF_TARGET TEST_SUFFIX_STR
+
 #define TEST_DEFAULT_CHANNEL (6)
 #define CONNECT_TIMEOUT_MS   (8000)
 
@@ -33,6 +38,7 @@
 #define GOT_IP_EVENT        0x00000001
 #define DISCONNECT_EVENT    0x00000002
 #define STA_CONNECTED_EVENT    0x00000004
+#define SCAN_DONE_EVENT    0x00000008
 
 #define EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT 0x00000001
 
@@ -58,6 +64,13 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
             ESP_LOGI(TAG, "WIFI_EVENT_STA_CONNECTED");
             if (wifi_events) {
                 xEventGroupSetBits(wifi_events, STA_CONNECTED_EVENT);
+            }
+            break;
+
+        case WIFI_EVENT_SCAN_DONE:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_SCAN DONE");
+            if (wifi_events) {
+                xEventGroupSetBits(wifi_events, SCAN_DONE_EVENT);
             }
             break;
 
@@ -368,6 +381,32 @@ TEST_CASE_MULTIPLE_DEVICES("test wifi retain connection for 60s", "[wifi][test_e
 
 // single core have issue as WIFIBUG-92
 #if !CONFIG_FREERTOS_UNICORE
+
+static void wifi_scan(void)
+{
+    uint16_t number = 0;
+    uint8_t *ssid = (uint8_t *)DEFAULT_SSID;
+    wifi_ap_record_t *ap_info;
+    wifi_scan_config_t scan_config;
+    memset(&scan_config, 0, sizeof(wifi_scan_config_t));
+    scan_config.ssid = ssid;
+    scan_config.scan_time.active.min = 120;
+    scan_config.scan_time.active.max = 120;
+    TEST_ESP_OK(esp_wifi_scan_start(&scan_config, true));
+    TEST_ESP_OK(esp_wifi_scan_get_ap_num(&number));
+    ap_info = (wifi_ap_record_t *)malloc(number * sizeof(wifi_ap_record_t));
+    TEST_ASSERT_NOT_NULL(ap_info);
+    memset(ap_info, 0, sizeof(wifi_ap_record_t));
+    TEST_ESP_OK(esp_wifi_scan_get_ap_records(&number, ap_info));
+    for (int i = 0; i < number; i++) {
+        ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
+        ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
+        ESP_LOGI(TAG, "Channel \t\t%d\n", ap_info[i].primary);
+        ESP_LOGI(TAG, "Mac \t\t"MACSTR, MAC2STR(ap_info[i].bssid));
+    }
+    free(ap_info);
+}
+
 static void wifi_connect(void)
 {
     EventBits_t bits;
@@ -386,15 +425,21 @@ static void wifi_connect(void)
 
 static void esp_wifi_connect_first_time(void)
 {
+    EventBits_t bits;
     test_case_uses_tcpip();
     start_wifi_as_sta();
     // make sure softap has started
     vTaskDelay(1000/portTICK_PERIOD_MS);
 
+    // call wifi_scan to set scan_time for internal scan in esp_wifi_connect
+    wifi_scan();
+    bits = xEventGroupWaitBits(wifi_events, SCAN_DONE_EVENT, pdTRUE, pdFALSE, 5000/portTICK_PERIOD_MS);
+    TEST_ASSERT(bits & SCAN_DONE_EVENT);
     wifi_config_t w_config;
     memset(&w_config, 0, sizeof(w_config));
     memcpy(w_config.sta.ssid, DEFAULT_SSID, strlen(DEFAULT_SSID));
     memcpy(w_config.sta.password, DEFAULT_PWD, strlen(DEFAULT_PWD));
+    w_config.sta.channel = 1;
 
     wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
 
