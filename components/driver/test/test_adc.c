@@ -161,7 +161,7 @@ TEST_CASE("test_adc_dma", "[adc][ignore][manual]")
     bool print_figure;
     if (target_atten == ADC_ATTEN_MAX) {
         atten = ADC_ATTEN_DB_0;
-        target_atten = ADC_ATTEN_DB_11;
+        target_atten = ADC_ATTEN_DB_12;
         print_figure = false;
     } else {
         atten = target_atten;
@@ -228,7 +228,7 @@ TEST_CASE("test_adc_single", "[adc][ignore][manual]")
     bool print_figure;
     if (target_atten == ADC_ATTEN_MAX) {
         atten = ADC_ATTEN_DB_0;
-        target_atten = ADC_ATTEN_DB_11;
+        target_atten = ADC_ATTEN_DB_12;
         print_figure = false;
     } else {
         atten = target_atten;

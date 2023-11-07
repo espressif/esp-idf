@@ -62,7 +62,7 @@ Attenuation            Measurable input voltage range
 ``ADC_ATTEN_DB_0``     {IDF_TARGET_ADC_V_MIN_ATTEN0} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN0} mV
 ``ADC_ATTEN_DB_2_5``   {IDF_TARGET_ADC_V_MIN_ATTEN1} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN1} mV
 ``ADC_ATTEN_DB_6``     {IDF_TARGET_ADC_V_MIN_ATTEN2} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN2} mV
-``ADC_ATTEN_DB_11``    {IDF_TARGET_ADC_V_MIN_ATTEN3} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN3} mV
+``ADC_ATTEN_DB_12``    {IDF_TARGET_ADC_V_MIN_ATTEN3} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN3} mV
 =====================  =========================================================================================================
 
 

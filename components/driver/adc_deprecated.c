@@ -60,7 +60,7 @@ esp_pm_lock_handle_t adc_digi_arbiter_lock = NULL;
 #define ADC_MEAS_NUM_LIM_DEFAULT      (1)
 #define ADC_MAX_MEAS_NUM_DEFAULT      (255)
 #define DIG_ADC_OUTPUT_FORMAT_DEFUALT (ADC_DIGI_FORMAT_12BIT)
-#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_11)
+#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_12)
 #define DIG_ADC_BIT_WIDTH_DEFUALT     (ADC_WIDTH_BIT_12)
 
 esp_err_t adc_digi_init(void)
