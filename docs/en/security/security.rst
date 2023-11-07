@@ -1,6 +1,10 @@
 Security
 ========
 
+{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA or ECDSA", esp32p4="RSA or ECDSA"}
+
+{IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS or ECDSA", esp32p4="DS or ECDSA"}
+
 :link_to_translation:`zh_CN:[中文]`
 
 This guide provides an overview of the overall security features available in various Espressif solutions. It is highly recommended to consider this guide while designing the products with the Espressif platform and the ESP-IDF software stack from the **security** perspective.
@@ -73,9 +77,19 @@ Flash Encryption Best Practices
 
     The Digital Signature peripheral in {IDF_TARGET_NAME} produces hardware-accelerated RSA digital signatures with the assistance of HMAC, without the RSA private key being accessible by software. This allows the private key to be kept secured on the device without anyone other than the device hardware being able to access it.
 
-    This peripheral can help to establish the **Secure Device Identity** to the remote endpoint, e.g., in the case of TLS mutual authentication based on the RSA cipher scheme.
+    .. only:: SOC_ECDSA_SUPPORTED
 
-    Please refer to the :doc:`../api-reference/peripherals/ds` for detailed documentation.
+        {IDF_TARGET_NAME} also supportes ECDSA peripheral for generating hardware-accelerated ECDSA digital signatures. ECDSA private key can be directly programmed in an eFuse block and marked as read protected from the software.
+
+    {IDF_TARGET_SIG_PERI} peripheral can help to establish the **Secure Device Identity** to the remote endpoint, e.g., in the case of TLS mutual authentication based on the {IDF_TARGET_CIPHER_SCHEME} cipher scheme.
+
+    .. only:: not SOC_ECDSA_SUPPORTED
+
+        Please refer to the :doc:`../api-reference/peripherals/ds` for detailed documentation.
+
+    .. only:: SOC_ECDSA_SUPPORTED
+
+        Please refer to the :doc:`../api-reference/peripherals/ecdsa` and :doc:`../api-reference/peripherals/ds` guides for detailed documentation.
 
 .. only:: SOC_MEMPROT_SUPPORTED or SOC_CPU_IDRAM_SPLIT_USING_PMP
 
