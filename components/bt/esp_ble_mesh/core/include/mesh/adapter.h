@@ -810,6 +810,9 @@ enum {
     BLE_MESH_EXCEP_LIST_TYPE_MESH_BEACON,
     BLE_MESH_EXCEP_LIST_TYPE_MESH_PROV_ADV,
     BLE_MESH_EXCEP_LIST_TYPE_MESH_PROXY_ADV,
+    BLE_MESH_EXCEP_LIST_TYPE_MESH_SOLIC_PDU,
+    BLE_MESH_EXCEP_LIST_TYPE_MESH_URI,
+    BLE_MESH_EXCEP_LIST_TYPE_MAX,
 };
 
 #define BLE_MESH_EXCEP_LIST_CLEAN_ADDR_LIST              BIT(0)
@@ -817,8 +820,10 @@ enum {
 #define BLE_MESH_EXCEP_LIST_CLEAN_MESH_BEACON_LIST       BIT(2)
 #define BLE_MESH_EXCEP_LIST_CLEAN_MESH_PROV_ADV_LIST     BIT(3)
 #define BLE_MESH_EXCEP_LIST_CLEAN_MESH_PROXY_ADV_LIST    BIT(4)
-#define BLE_MESH_EXCEP_LIST_CLEAN_ALL_LIST               (BIT(0) | BIT(1) | \
-                                                          BIT(2) | BIT(3) | BIT(4))
+#define BLE_MESH_EXCEP_LIST_CLEAN_MESH_SOLIC_PDU_LIST    BIT(5)
+#define BLE_MESH_EXCEP_LIST_CLEAN_MESH_URI_LIST          BIT(6)
+#define BLE_MESH_EXCEP_LIST_CLEAN_ALL_LIST               (BIT(0) | BIT(1) | BIT(2) | BIT(3) | \
+                                                          BIT(4) | BIT(5) | BIT(6))
 
 int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info);
 

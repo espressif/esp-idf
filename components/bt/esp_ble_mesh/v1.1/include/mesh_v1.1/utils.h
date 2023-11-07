@@ -119,6 +119,11 @@ int bt_mesh_directed_update_dependent_node(void *sub, uint8_t type,
 int bt_mesh_directed_forwarding_ctl_recv(uint8_t ctl_op, void *rx,
                                          struct net_buf_simple *buf);
 
+void bt_mesh_restore_directed_forwarding_state(uint16_t net_idx,
+                                               uint8_t directed_forwarding);
+
+uint8_t bt_mesh_get_and_disable_directed_forwarding_state(void *sub);
+
 int bt_mesh_directed_forwarding_sub_init(void *sub);
 
 int bt_mesh_recovery_directed_forwarding_table(void *sub);
@@ -182,6 +187,8 @@ bool bt_mesh_bridge_change_net_key(void *rx, const uint8_t **enc,
                                    const uint8_t **priv,
                                    uint8_t *nid, uint8_t cred);
 
+int bt_mesh_print_subnet_bridge_table(void);
+
 void bt_mesh_disable_directed_proxy_state(uint16_t net_idx);
 
 void bt_mesh_disable_directed_friend_state(uint16_t net_idx);
@@ -240,6 +247,30 @@ int bt_mesh_directed_decrypt(void *sub, const uint8_t *data, size_t data_len,
 uint8_t bt_mesh_net_retrans_match(void *rx, uint8_t *cred, uint8_t *tag);
 
 bool bt_mesh_dev_key_ca_valid(void);
+
+uint8_t bt_mesh_get_sar_sis(void);
+
+uint8_t bt_mesh_get_sar_urc(void);
+
+uint8_t bt_mesh_get_sar_urwpc(void);
+
+uint8_t bt_mesh_get_sar_uris(void);
+
+uint8_t bt_mesh_get_sar_urii(void);
+
+uint8_t bt_mesh_get_sar_mrc(void);
+
+uint8_t bt_mesh_get_sar_mris(void);
+
+uint8_t bt_mesh_get_sar_st(void);
+
+uint8_t bt_mesh_get_sar_adi(void);
+
+uint8_t bt_mesh_get_sar_arc(void);
+
+uint8_t bt_mesh_get_sar_dt(void);
+
+uint8_t bt_mesh_get_sar_rsis(void);
 
 #ifdef __cplusplus
 }

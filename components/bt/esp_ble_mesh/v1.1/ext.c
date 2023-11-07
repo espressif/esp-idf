@@ -76,6 +76,7 @@
 #define CLI_PARAM(a)    ((bt_mesh_client_common_param_t *)(a))
 #define CLI_NODE(a)     ((bt_mesh_client_node_t *)(a))
 #define ADV_DATA(a)     ((const struct bt_mesh_adv_data *)(a))
+#define RPL(a)          ((struct bt_mesh_rpl *)(a))
 #define VOID(a)         ((void *)(a))
 
 /* Sys utilities */
@@ -737,6 +738,11 @@ const void *bt_mesh_ext_comp_get(void)
 size_t bt_mesh_ext_comp_get_elem_count(const void *comp)
 {
     return COMP(comp)->elem_count;
+}
+
+void *bt_mesh_ext_comp_get_elem_s(const void *comp)
+{
+    return COMP(comp)->elem;
 }
 
 void *bt_mesh_ext_comp_get_elem(const void *comp, uint8_t index)
@@ -2228,6 +2234,56 @@ bool bt_mesh_ext_lpn_match(uint16_t addr)
 #endif /* CONFIG_BLE_MESH_LOW_POWER */
 }
 
+uint16_t bt_mesh_ext_lpn_frnd(void)
+{
+#if CONFIG_BLE_MESH_LOW_POWER
+    return bt_mesh.lpn.frnd;
+#else
+    assert(0);
+    return 0;
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
+}
+
+/* RPL */
+uint16_t bt_mesh_ext_rpl_get_src(void *rpl)
+{
+#if CONFIG_BLE_MESH_LOW_POWER
+    return RPL(rpl)->src;
+#else
+    assert(0);
+    return 0;
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
+}
+
+bool bt_mesh_ext_rpl_get_old_iv(void *rpl)
+{
+#if CONFIG_BLE_MESH_LOW_POWER
+    return RPL(rpl)->old_iv;
+#else
+    assert(0);
+    return false;
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
+}
+
+uint32_t bt_mesh_ext_rpl_get_seq(void *rpl)
+{
+#if CONFIG_BLE_MESH_LOW_POWER
+    return RPL(rpl)->seq;
+#else
+    assert(0);
+    return 0;
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
+}
+
+void bt_mesh_ext_update_rpl(void *rpl, void *rx)
+{
+#if CONFIG_BLE_MESH_LOW_POWER
+    bt_mesh_update_rpl(RPL(rpl), NET_RX(rx));
+#else
+    assert(0);
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
+}
+
 /* Adv */
 uint8_t bt_mesh_ext_adv_data_get_type(const void *ad)
 {
@@ -2552,16 +2608,6 @@ uint8_t *bt_mesh_ext_sub_get_mpb_random(void *sub)
 {
 #if CONFIG_BLE_MESH_PRIVATE_BEACON
     return SUBNET(sub)->mpb_random;
-#else
-    assert(0);
-    return NULL;
-#endif /* CONFIG_BLE_MESH_PRIVATE_BEACON */
-}
-
-uint8_t *bt_mesh_ext_sub_get_mpb_random_last(void *sub)
-{
-#if CONFIG_BLE_MESH_PRIVATE_BEACON
-    return SUBNET(sub)->mpb_random_last;
 #else
     assert(0);
     return NULL;
@@ -3419,6 +3465,21 @@ void bt_mesh_ext_net_rx_set_net_if(void *rx, uint8_t net_if)
     NET_RX(rx)->net_if = net_if;
 }
 
+bool bt_mesh_ext_net_rx_get_old_iv(void *rx)
+{
+    return NET_RX(rx)->old_iv;
+}
+
+bool bt_mesh_ext_net_rx_get_sbr_rpl(void *rx)
+{
+    return NET_RX(rx)->sbr_rpl;
+}
+
+void bt_mesh_ext_net_rx_set_sbr_rpl(void *rx, bool sbr_rpl)
+{
+    NET_RX(rx)->sbr_rpl = sbr_rpl;
+}
+
 /* struct bt_mesh_msg_ctx */
 uint16_t bt_mesh_ext_msg_ctx_get_net_idx(void *ctx)
 {
@@ -3674,12 +3735,6 @@ int bt_mesh_ext_client_send_msg(void *param, struct net_buf_simple *msg,
     return bt_mesh_client_send_msg(param, msg, need_ack, VOID(timeout_cb));
 }
 
-/* Bridge Configuration */
-bool bt_mesh_ext_bridge_rpl_check(void *rx, void **match)
-{
-    return bt_mesh_bridge_rpl_check(rx, (struct bt_mesh_rpl **)match);
-}
-
 #if CONFIG_BLE_MESH_BRC_SRV
 struct bt_mesh_subnet_bridge_table {
     uint8_t  bridge_direction;
@@ -3695,12 +3750,24 @@ struct bt_mesh_bridge_cfg_srv {
     uint16_t bridging_table_size;
     struct bt_mesh_subnet_bridge_table bridge_table[CONFIG_BLE_MESH_MAX_BRIDGING_TABLE_ENTRY_COUNT];
 };
+
+static struct bt_mesh_rpl bridge_rpl[CONFIG_BLE_MESH_BRIDGE_CRPL];
 #endif /* CONFIG_BLE_MESH_BRC_SRV */
 
 void *bt_mesh_ext_brc_srv_get_bridge_table_entry(void *srv, uint8_t index)
 {
 #if CONFIG_BLE_MESH_BRC_SRV
     return &((struct bt_mesh_bridge_cfg_srv *)srv)->bridge_table[index];
+#else
+    assert(0);
+    return NULL;
+#endif /* CONFIG_BLE_MESH_BRC_SRV */
+}
+
+void *bt_mesh_ext_brc_srv_get_bridge_rpl(uint8_t index)
+{
+#if CONFIG_BLE_MESH_BRC_SRV
+    return &bridge_rpl[index];
 #else
     assert(0);
     return NULL;
@@ -3935,6 +4002,7 @@ typedef struct {
     uint16_t config_ble_mesh_proxy_solic_rx_crpl;
     uint16_t config_ble_mesh_proxy_solic_tx_src_count;
     uint16_t config_ble_mesh_max_bridging_table_entry_count;
+    uint16_t config_ble_mesh_bridge_crpl;
     uint16_t config_ble_mesh_max_disc_table_entry_count;
     uint16_t config_ble_mesh_max_forward_table_entry_count;
     uint16_t config_ble_mesh_max_deps_nodes_per_path;
@@ -4105,6 +4173,7 @@ static const bt_mesh_ext_config_t bt_mesh_ext_cfg = {
 #endif /* CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX */
 #if CONFIG_BLE_MESH_BRC_SRV
     .config_ble_mesh_max_bridging_table_entry_count = CONFIG_BLE_MESH_MAX_BRIDGING_TABLE_ENTRY_COUNT,
+    .config_ble_mesh_bridge_crpl                    = CONFIG_BLE_MESH_BRIDGE_CRPL,
 #endif /* CONFIG_BLE_MESH_BRC_SRV */
 #if CONFIG_BLE_MESH_DF_SRV
     .config_ble_mesh_max_disc_table_entry_count     = CONFIG_BLE_MESH_MAX_DISC_TABLE_ENTRY_COUNT,
@@ -4328,6 +4397,7 @@ typedef struct {
 
 /* CONFIG_BLE_MESH_LOW_POWER */
     bool (*_bt_mesh_ext_lpn_match)(uint16_t addr);
+    uint16_t (*_bt_mesh_ext_lpn_frnd)(void);
 /* CONFIG_BLE_MESH_LOW_POWER */
 
 /* CONFIG_BLE_MESH_USE_DUPLICATE_SCAN */
@@ -4448,7 +4518,6 @@ typedef struct {
     uint8_t (*_bt_mesh_ext_sub_get_mpb_ivi_last)(void *sub);
     void (*_bt_mesh_ext_sub_set_mpb_ivi_last)(void *sub, uint8_t mpb_ivi_last);
     uint8_t *(*_bt_mesh_ext_sub_get_mpb_random)(void *sub);
-    uint8_t *(*_bt_mesh_ext_sub_get_mpb_random_last)(void *sub);
     uint8_t (*_bt_mesh_ext_sub_get_private_node_id)(void *sub);
     uint8_t *(*_bt_mesh_ext_sub_get_keys_private_beacon)(void *sub, uint8_t index);
 /* CONFIG_BLE_MESH_PRIVATE_BEACON */
@@ -4457,6 +4526,7 @@ typedef struct {
     uint16_t (*_bt_mesh_ext_sub_get_sbr_net_idx)(void *sub);
     void (*_bt_mesh_ext_sub_set_sbr_net_idx)(void *sub, uint16_t sbr_net_idx);
     void *(*_bt_mesh_ext_brc_srv_get_bridge_table_entry)(void *srv, uint8_t index);
+    void *(*_bt_mesh_ext_brc_srv_get_bridge_rpl)(uint8_t index);
 /* CONFIG_BLE_MESH_BRC_SRV */
 
 /* CONFIG_BLE_MESH_AGG_CLI */
@@ -4649,6 +4719,7 @@ static const bt_mesh_ext_funcs_t bt_mesh_ext_func = {
 
 /* CONFIG_BLE_MESH_LOW_POWER */
     ._bt_mesh_ext_lpn_match                             = bt_mesh_ext_lpn_match,
+    ._bt_mesh_ext_lpn_frnd                              = bt_mesh_ext_lpn_frnd,
 /* CONFIG_BLE_MESH_LOW_POWER */
 
 /* CONFIG_BLE_MESH_USE_DUPLICATE_SCAN */
@@ -4770,7 +4841,6 @@ static const bt_mesh_ext_funcs_t bt_mesh_ext_func = {
     ._bt_mesh_ext_sub_get_mpb_ivi_last                  = bt_mesh_ext_sub_get_mpb_ivi_last,
     ._bt_mesh_ext_sub_set_mpb_ivi_last                  = bt_mesh_ext_sub_set_mpb_ivi_last,
     ._bt_mesh_ext_sub_get_mpb_random                    = bt_mesh_ext_sub_get_mpb_random,
-    ._bt_mesh_ext_sub_get_mpb_random_last               = bt_mesh_ext_sub_get_mpb_random_last,
     ._bt_mesh_ext_sub_get_private_node_id               = bt_mesh_ext_sub_get_private_node_id,
     ._bt_mesh_ext_sub_get_keys_private_beacon           = bt_mesh_ext_sub_get_keys_private_beacon,
 /* CONFIG_BLE_MESH_PRIVATE_BEACON */
@@ -4779,6 +4849,7 @@ static const bt_mesh_ext_funcs_t bt_mesh_ext_func = {
     ._bt_mesh_ext_sub_get_sbr_net_idx                   = bt_mesh_ext_sub_get_sbr_net_idx,
     ._bt_mesh_ext_sub_set_sbr_net_idx                   = bt_mesh_ext_sub_set_sbr_net_idx,
     ._bt_mesh_ext_brc_srv_get_bridge_table_entry        = bt_mesh_ext_brc_srv_get_bridge_table_entry,
+    ._bt_mesh_ext_brc_srv_get_bridge_rpl                = bt_mesh_ext_brc_srv_get_bridge_rpl,
 /* CONFIG_BLE_MESH_BRC_SRV */
 
 /* CONFIG_BLE_MESH_AGG_CLI */
