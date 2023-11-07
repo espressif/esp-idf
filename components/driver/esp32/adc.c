@@ -42,7 +42,7 @@
 #define ADC_MEAS_NUM_LIM_DEFAULT      (1)
 
 #define DIG_ADC_OUTPUT_FORMAT_DEFUALT (ADC_DIGI_FORMAT_12BIT)
-#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_11)
+#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_12)
 #define DIG_ADC_BIT_WIDTH_DEFUALT     (ADC_WIDTH_BIT_12)
 
 #define ADC_CHECK_RET(fun_ret) ({                  \

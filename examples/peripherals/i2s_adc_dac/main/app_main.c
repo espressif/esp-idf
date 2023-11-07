@@ -274,7 +274,7 @@ void adc_read_task(void* arg)
     adc1_config_width(ADC_WIDTH_12Bit);
     adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_11db);
     esp_adc_cal_characteristics_t characteristics;
-    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, V_REF, &characteristics);
+    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_12, ADC_WIDTH_BIT_12, V_REF, &characteristics);
     while(1) {
         uint32_t voltage;
         esp_adc_cal_get_voltage(ADC1_TEST_CHANNEL, &characteristics, &voltage);

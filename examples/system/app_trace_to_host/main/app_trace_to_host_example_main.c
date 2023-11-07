@@ -96,7 +96,7 @@ void app_main(void)
 #elif CONFIG_IDF_TARGET_ESP32S2
     adc1_config_width(ADC_WIDTH_BIT_13);
 #endif
-    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_DB_11);
+    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_DB_12);
 
     ESP_LOGI(TAG, "Enabling CW generator on DAC channel 1 / GPIO%d.", DAC_CHANNEL_1_GPIO_NUM);
     enable_cosine_generator();
