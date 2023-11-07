@@ -59,7 +59,7 @@
 - `example_test[_esp32/esp32s2/...]`
 - `fuzzer_test`
 - `host_test`
-- `integration_test[_wifi/ble]`
+- `integration_test`
 - `iperf_stress_test`
 - `macos`
 - `macos_test`
