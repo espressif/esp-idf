@@ -24,10 +24,10 @@ extern "C" {
  *        by the peripheral, a flag load_pubkey that is used specify if the public key has to be populated
  */
 typedef struct {
-    mbedtls_ecp_group_id grp_id;
-    uint8_t efuse_block;
+    mbedtls_ecp_group_id grp_id;            /*!< MbedTLS ECP group identifier */
+    uint8_t efuse_block;                    /*!< EFuse block id for ECDSA private key */
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
-    bool load_pubkey;
+    bool load_pubkey;                       /*!< Export ECDSA public key from the hardware */
 #endif
 } esp_ecdsa_pk_conf_t;  //TODO: IDF-7925 (Add a config to select the ecdsa key from the key manager peripheral)
 
