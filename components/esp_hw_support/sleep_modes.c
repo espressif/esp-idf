@@ -643,16 +643,25 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     }
 #endif
 
-#if CONFIG_ULP_COPROC_TYPE_FSM
+#if CONFIG_ULP_COPROC_ENABLED
     // Enable ULP wakeup
+#if CONFIG_ULP_COPROC_TYPE_FSM
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
+#elif CONFIG_ULP_COPROC_TYPE_RISCV
+    if (s_config.wakeup_triggers & (RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN)) {
+#elif CONFIG_ULP_COPROC_TYPE_LP_CORE
+    if (s_config.wakeup_triggers & RTC_LP_CORE_TRIG_EN) {
+#endif
 #ifdef CONFIG_IDF_TARGET_ESP32
         rtc_hal_ulp_wakeup_enable();
+#elif CONFIG_ULP_COPROC_TYPE_LP_CORE
+        pmu_ll_hp_clear_sw_intr_status(&PMU);
 #else
         rtc_hal_ulp_int_clear();
 #endif
     }
-#endif
+#endif // CONFIG_ULP_COPROC_ENABLED
+
     misc_modules_sleep_prepare(deep_sleep);
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -972,7 +981,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
 #endif
 
     // Enter sleep
-    esp_err_t reject = esp_sleep_start(pd_flags, ESP_SLEEP_MODE_LIGHT_SLEEP, false);
+    esp_err_t reject = esp_sleep_start(pd_flags, ESP_SLEEP_MODE_LIGHT_SLEEP, true);
 
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     // If VDDSDIO regulator was controlled by RTC registers before sleep,
