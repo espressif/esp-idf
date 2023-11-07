@@ -100,7 +100,7 @@ Configure Two ADC Channels
     adc_oneshot_chan_cfg_t config = {
         .channel = EXAMPLE_ADC1_CHAN0,
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, &config));
 
