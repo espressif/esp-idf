@@ -157,7 +157,7 @@ After setting up the calibration characteristics, you can call :cpp:func:`adc_ca
 
     .. note::
 
-        ADC calibration is only supported under :c:macro:`ADC_ATTEN_DB_0` and :c:macro:`ADC_ATTEN_DB_11`. Under :c:macro:`ADC_ATTEN_DB_0`, the attenuation of ADC is set to 0 dB, and input voltage higher than 950 mV is not supported. Under :c:macro:`ADC_ATTEN_DB_11`, the attenuation of ADC is set to 11 dB, and input voltage higher than 2800 mV is not supported.
+        ADC calibration is only supported under :c:macro:`ADC_ATTEN_DB_0` and :c:macro:`ADC_ATTEN_DB_12`. Under :c:macro:`ADC_ATTEN_DB_0`, the attenuation of ADC is set to 0 dB, and input voltage higher than 950 mV is not supported. Under :c:macro:`ADC_ATTEN_DB_12`, the attenuation of ADC is set to 11 dB, and input voltage higher than 2800 mV is not supported.
 
 Get Voltage
 ~~~~~~~~~~~
@@ -187,7 +187,7 @@ Other functions that take the :cpp:type:`adc_cali_handle_t` as the first positio
 
     - :ref:`CONFIG_ADC_CAL_EFUSE_TP_ENABLE` - disable this to decrease the code size, if the calibration eFuse value is not set to :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_TP`.
     - :ref:`CONFIG_ADC_CAL_EFUSE_VREF_ENABLE` - disable this to decrease the code size, if the calibration eFuse value is not set to :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_VREF`.
-    - :ref:`CONFIG_ADC_CAL_LUT_ENABLE` - disable this to decrease the code size, if you do not calibrate the ADC raw results under :c:macro:`ADC_ATTEN_DB_11`.
+    - :ref:`CONFIG_ADC_CAL_LUT_ENABLE` - disable this to decrease the code size, if you do not calibrate the ADC raw results under :c:macro:`ADC_ATTEN_DB_12`.
 
 
 .. _adc-minimize-noise:

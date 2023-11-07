@@ -190,7 +190,7 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
     chars->atten = config->atten;
     chars->bitwidth = (config->bitwidth == ADC_BITWIDTH_DEFAULT) ? ADC_BITWIDTH_12 : config->bitwidth;
     //Initialize fields for lookup table if necessary
-    if (LUT_ENABLED && config->atten == ADC_ATTEN_DB_11) {
+    if (LUT_ENABLED && config->atten == ADC_ATTEN_DB_12) {
         chars->low_curve = (config->unit_id == ADC_UNIT_1) ? lut_adc1_low : lut_adc2_low;
         chars->high_curve = (config->unit_id == ADC_UNIT_1) ? lut_adc1_high : lut_adc2_high;
     } else {
@@ -251,8 +251,8 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
         raw = ADC_12_BIT_RES - 1;    //Set to 12bit res max
     }
 
-    if (LUT_ENABLED && (ctx->atten == ADC_ATTEN_DB_11) && (raw >= LUT_LOW_THRESH)) {  //Check if in non-linear region
-        //Use lookup table to get voltage in non linear portion of ADC_ATTEN_DB_11
+    if (LUT_ENABLED && (ctx->atten == ADC_ATTEN_DB_12) && (raw >= LUT_LOW_THRESH)) {  //Check if in non-linear region
+        //Use lookup table to get voltage in non linear portion of ADC_ATTEN_DB_12
         uint32_t lut_voltage = calculate_voltage_lut(raw, ctx->vref, ctx->low_curve, ctx->high_curve);
         if (raw <= LUT_HIGH_THRESH) {   //If ADC is transitioning from linear region to non-linear region
             //Linearly interpolate between linear voltage and lut voltage

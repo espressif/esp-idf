@@ -148,7 +148,7 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 
     .. note::
 
-        ADC 校准仅在 :c:macro:`ADC_ATTEN_DB_0` 和 :c:macro:`ADC_ATTEN_DB_11` 时支持。在 :c:macro:`ADC_ATTEN_DB_0` 时，ADC 的衰减程度设置为 0 dB，仅支持低于 950 mV 的输入电压；在 :c:macro:`ADC_ATTEN_DB_11` 时，ADC 的衰减程度设置为 11 dB，仅支持低于 2800 mV 的输入电压。
+        ADC 校准仅在 :c:macro:`ADC_ATTEN_DB_0` 和 :c:macro:`ADC_ATTEN_DB_12` 时支持。在 :c:macro:`ADC_ATTEN_DB_0` 时，ADC 的衰减程度设置为 0 dB，仅支持低于 950 mV 的输入电压；在 :c:macro:`ADC_ATTEN_DB_12` 时，ADC 的衰减程度设置为 12 dB，仅支持低于 2800 mV 的输入电压。
 
 获取电压
 ~~~~~~~~~~~
@@ -178,7 +178,7 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 
     - :ref:`CONFIG_ADC_CAL_EFUSE_TP_ENABLE` - 如果校准相关的 eFuse 值没有配置为 :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_TP`，则可以禁用该选项，减小代码大小。
     - :ref:`CONFIG_ADC_CAL_EFUSE_VREF_ENABLE` - 如果校准相关的 eFuse 值没有配置为 :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_VREF`，则可以禁用该选项，减小代码大小。
-    - :ref:`CONFIG_ADC_CAL_LUT_ENABLE` - 如果校准 ADC 原始结果时，衰减没有设置成 :c:macro:`ADC_ATTEN_DB_11`，则可以禁用该选项，减小代码大小。
+    - :ref:`CONFIG_ADC_CAL_LUT_ENABLE` - 如果校准 ADC 原始结果时，衰减没有设置成 :c:macro:`ADC_ATTEN_DB_12`，则可以禁用该选项，减小代码大小。
 
 
 .. _adc-minimize-noise:
