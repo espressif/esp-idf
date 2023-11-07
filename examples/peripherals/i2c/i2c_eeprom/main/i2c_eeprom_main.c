@@ -37,6 +37,7 @@ void app_main(void)
         .i2c_port = PORT_NUMBER,
         .scl_io_num = SCL_IO_PIN,
         .sda_io_num = SDA_IO_PIN,
+        .glitch_ignore_cnt = 7,
     };
     i2c_master_bus_handle_t bus_handle;
 

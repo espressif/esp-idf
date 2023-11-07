@@ -28,7 +28,7 @@ typedef struct {
     size_t trans_queue_depth;             /*!< Depth of internal transfer queue, increase this value can support more transfers pending in the background, only valid in asynchronous transaction. (Typically max_device_num * per_transaction)*/
     struct {
         uint32_t enable_internal_pullup:1;   /*!< Enable internal pullups. Note: This is not strong enough to pullup buses under high-speed frequency. Recommend proper external pull-up if possible */
-    } flags;
+    } flags;                              /*!< I2C master config flags */
 } i2c_master_bus_config_t;
 
 /**
@@ -157,13 +157,15 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
 /**
  * @brief Probe I2C address, if address is correct and ACK is received, this function will return ESP_OK.
  *
- * @param[in] i2c_dev I2C master device handle that created by `i2c_master_bus_add_device`.
+ * @param[in] bus_handle I2C master device handle that created by `i2c_master_bus_add_device`.
+ * @param[in] address I2C device address that you want to probe.
  * @param[in] xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever (Not recommended in this function).
  * @return
  *      - ESP_OK: I2C device probe successfully
+ *      - ESP_ERR_NOT_FOUND: I2C probe failed, doesn't find the device with specific address you gave.
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
  */
-esp_err_t i2c_master_probe(i2c_master_bus_handle_t i2c_master, uint16_t address, int xfer_timeout_ms);
+esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address, int xfer_timeout_ms);
 
 /**
  * @brief Register I2C transaction callbacks for a master device
@@ -186,18 +188,18 @@ esp_err_t i2c_master_register_event_callbacks(i2c_master_dev_handle_t i2c_dev, c
 /**
  * @brief Reset the I2C master bus.
  *
- * @param handle I2C bus handle.
+ * @param bus_handle I2C bus handle.
  * @return
  *      - ESP_OK: Reset succeed.
  *      - ESP_ERR_INVALID_ARG: I2C master bus handle is not initialized.
  *      - Otherwise: Reset failed.
  */
-esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t handle);
+esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t bus_handle);
 
 /**
  * @brief Wait for all pending I2C transactions done
  *
- * @param[in] i2c_master I2C bus handle
+ * @param[in] bus_handle I2C bus handle
  * @param[in] timeout_ms Wait timeout, in ms. Specially, -1 means to wait forever.
  * @return
  *      - ESP_OK: Flush transactions successfully
@@ -205,7 +207,7 @@ esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t handle);
  *      - ESP_ERR_TIMEOUT: Flush transactions failed because of timeout
  *      - ESP_FAIL: Flush transactions failed because of other error
  */
-esp_err_t i2c_master_wait_all_done(i2c_master_bus_handle_t i2c_master, int timeout_ms);
+esp_err_t i2c_master_bus_wait_all_done(i2c_master_bus_handle_t bus_handle, int timeout_ms);
 
 #ifdef __cplusplus
 }
