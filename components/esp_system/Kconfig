@@ -564,6 +564,15 @@ menu "ESP System Settings"
             This config allows to trigger a panic interrupt when Stack Pointer register goes out of allocated stack
             memory bounds.
 
+    config ESP_SYSTEM_BBPLL_RECALIB
+        bool "Re-calibration BBPLL at startup"
+        depends on IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        default y
+        help
+            This configuration helps to address an BBPLL inaccurate issue when boot from certain bootloader version,
+            which may increase about the boot-up time by about 200 us. Disable this when your bootloader is built with
+            ESP-IDF version v5.2 and above.
+
 endmenu  # ESP System Settings
 
 menu "IPC (Inter-Processor Call)"
