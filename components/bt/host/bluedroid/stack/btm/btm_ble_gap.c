@@ -3355,7 +3355,11 @@ BOOLEAN btm_ble_update_inq_result(BD_ADDR bda, tINQ_DB_ENT *p_i, UINT8 addr_type
     if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
         p_cur->ble_evt_type     = evt_type;
     }
-
+#if BTM_BLE_ACTIVE_SCAN_REPORT_ADV_SCAN_RSP_INDIVIDUALLY
+    if (evt_type == BTM_BLE_SCAN_RSP_EVT) {
+        p_cur->ble_evt_type = evt_type;
+    }
+#endif
     p_i->inq_count = p_inq->inq_counter;   /* Mark entry for current inquiry */
 
     if (p_le_inq_cb->adv_len != 0) {
