@@ -317,6 +317,10 @@
     hint: "OpenOCD process does not have permissions to access the USB JTAG/serial device. Please use 'LIBUSB_DEBUG=1 idf.py openocd' to find out the device name and check its access rights."
 
 -
+    re: "Error: libusb_open\\(\\) failed with LIBUSB_ERROR_NOT_FOUND"
+    hint: "Device drivers are not correct.\nPlease check configuration of USB drivers: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/configure-ft2232h-jtag.html?highlight=zadig#configure-usb-drivers"
+
+-
     re: "(-Werror=address|-Werror=use-after-free)"
     hint: "The warning(s) '{}' may appear after compiler update above GCC-12\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disable new warnings introduced in GCC 12'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
     match_to_output: True
