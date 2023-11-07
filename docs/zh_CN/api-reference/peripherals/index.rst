@@ -12,6 +12,7 @@
     :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
     clk_tree
     :SOC_DAC_SUPPORTED: dac
+    :SOC_ECDSA_SUPPORTED: ecdsa
     :SOC_ETM_SUPPORTED: etm
     gpio
     gptimer
