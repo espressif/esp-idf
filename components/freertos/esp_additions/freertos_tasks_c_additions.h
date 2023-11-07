@@ -1173,7 +1173,7 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
                                                             UBaseType_t uxCoreAffinityMask,
                                                             UBaseType_t uxStackMemoryCaps,
                                                             TaskHandle_t * const pxCreatedTask )
-    #else
+    #else /* CONFIG_FREERTOS_SMP */
         BaseType_t prvTaskCreateDynamicPinnedToCoreWithCaps( TaskFunction_t pxTaskCode,
                                                              const char * const pcName,
                                                              const configSTACK_DEPTH_TYPE usStackDepth,
@@ -1182,7 +1182,7 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
                                                              const BaseType_t xCoreID,
                                                              UBaseType_t uxStackMemoryCaps,
                                                              TaskHandle_t * const pxCreatedTask )
-    #endif /* if CONFIG_FREERTOS_SMP */
+    #endif /* CONFIG_FREERTOS_SMP */
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn;
@@ -1203,11 +1203,7 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
 
             if( pxNewTCB != NULL )
             {
-                #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                {
-                    memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
-                }
-                #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
 
                 /* Store the stack location in the TCB. */
                 pxNewTCB->pxStack = pxStack;
@@ -1234,16 +1230,20 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
             #if CONFIG_FREERTOS_SMP
+            {
                 prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
-            #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+                #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
                 {
                     /* Set the task's affinity before scheduling it */
                     pxNewTCB->uxCoreAffinityMask = uxCoreAffinityMask;
                 }
-                #endif
-            #else
+                #endif /* ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) ) */
+            }
+            #else /* CONFIG_FREERTOS_SMP */
+            {
                 prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
-            #endif
+            }
+            #endif /* CONFIG_FREERTOS_SMP */
 
             prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
@@ -1256,5 +1256,5 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
         return xReturn;
     }
 
-#endif // SPIRAM
+#endif /* CONFIG_SPIRAM */
 /*----------------------------------------------------------*/
