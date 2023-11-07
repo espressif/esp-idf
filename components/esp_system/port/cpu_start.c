@@ -17,6 +17,8 @@
 #include "esp_efuse.h"
 #include "esp_private/cache_err_int.h"
 #include "esp_clk_internal.h"
+// For workaround `rtc_clk_recalib_bbpll()`
+#include "esp_private/rtc_clk.h"
 
 #include "esp_rom_efuse.h"
 #include "esp_rom_uart.h"
@@ -527,7 +529,14 @@ void IRAM_ATTR call_start_cpu0(void)
      * In this stage, we re-configure the Flash (and MSPI) to required configuration
      */
     spi_flash_init_chip_state();
+
+    // In earlier version of ESP-IDF, the PLL provided by bootloader is not stable enough.
+    // Do calibration again here so that we can use better clock for the timing tuning.
+#if CONFIG_ESP_SYSTEM_BBPLL_RECALIB
+    rtc_clk_recalib_bbpll();
+#endif
 #if SOC_MEMSPI_SRC_FREQ_120M
+    // This function needs to be called when PLL is enabled
     mspi_timing_flash_tuning();
 #endif
 
