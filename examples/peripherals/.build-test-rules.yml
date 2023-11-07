@@ -66,6 +66,8 @@ examples/peripherals/i2s/i2s_basic/i2s_pdm:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
 
 examples/peripherals/i2s/i2s_basic/i2s_std:
   disable:
@@ -74,6 +76,8 @@ examples/peripherals/i2s/i2s_basic/i2s_std:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
 
 examples/peripherals/i2s/i2s_basic/i2s_tdm:
   disable:
@@ -82,6 +86,8 @@ examples/peripherals/i2s/i2s_basic/i2s_tdm:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
 
 examples/peripherals/i2s/i2s_codec/i2s_es7210_tdm:
   disable:
@@ -91,6 +97,11 @@ examples/peripherals/i2s/i2s_codec/i2s_es7210_tdm:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
+    - esp_driver_spi
+  depends_filepatterns:
+    - components/driver/i2c/**/*
 
 examples/peripherals/i2s/i2s_codec/i2s_es8311:
   disable:
@@ -100,12 +111,19 @@ examples/peripherals/i2s/i2s_codec/i2s_es8311:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
+  depends_filepatterns:
+    - components/driver/i2c/**/*
 
 examples/peripherals/i2s/i2s_recorder:
   disable:
     - if: SOC_SDMMC_HOST_SUPPORTED != 1 or IDF_TARGET == "esp32p4"
   enable:
     - if: SOC_I2S_SUPPORTS_PDM_RX > 0
+  depends_components:
+    - esp_driver_spi
+    - esp_driver_i2s
 
 examples/peripherals/lcd/i2c_oled:
   disable:
@@ -120,8 +138,7 @@ examples/peripherals/lcd/i80_controller:
     - if: SOC_LCD_I80_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/i2s/**/* # i80 IO driver relies on I2S on esp32 and esp32s2
+    - esp_driver_i2s
 
 examples/peripherals/lcd/rgb_panel:
   disable:

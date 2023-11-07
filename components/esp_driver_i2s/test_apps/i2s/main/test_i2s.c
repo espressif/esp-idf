@@ -145,7 +145,7 @@ static void i2s_read_write_test(i2s_chan_handle_t tx_chan, i2s_chan_handle_t rx_
     // test the read data right or not
     for (int i = 0, j = 0; i < (I2S_RECV_BUF_LEN - I2S_SEND_BUF_LEN); i++) {
         if (recv_buf[i] == 1) {
-            for (j = 1; (j < I2S_SEND_BUF_LEN) && (recv_buf[i+j] == j + 1); j++) {}
+            for (j = 1; (j < I2S_SEND_BUF_LEN) && (recv_buf[i + j] == j + 1); j++) {}
             if (j == I2S_SEND_BUF_LEN) {
                 is_success = true;
                 goto finish;
@@ -217,7 +217,8 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
 
 static volatile bool task_run_flag;
 
-static void i2s_read_task(void *args) {
+static void i2s_read_task(void *args)
+{
     i2s_chan_handle_t rx_handle = (i2s_chan_handle_t)args;
     uint8_t *recv_buf = (uint8_t *)calloc(1, 2000);
     TEST_ASSERT(recv_buf);
@@ -236,7 +237,8 @@ static void i2s_read_task(void *args) {
     vTaskDelete(NULL);
 }
 
-static void i2s_write_task(void *args) {
+static void i2s_write_task(void *args)
+{
     i2s_chan_handle_t tx_handle = (i2s_chan_handle_t)args;
     uint8_t *send_buf = (uint8_t *)calloc(1, 2000);
     TEST_ASSERT(send_buf);
@@ -255,7 +257,8 @@ static void i2s_write_task(void *args) {
     vTaskDelete(NULL);
 }
 
-static void i2s_reconfig_task(void *args) {
+static void i2s_reconfig_task(void *args)
+{
     i2s_chan_handle_t tx_handle = (i2s_chan_handle_t)args;
     i2s_chan_info_t chan_info;
     TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
@@ -374,8 +377,8 @@ static bool whether_contains_exapected_data(uint16_t *src, uint32_t src_len, uin
         if (src[i] == val) {
             if (val == start_val && i < src_len - 8) {
                 printf("start index: %d ---> \n%d %d %d %d %d %d %d %d\n", i,
-                        src[i], src[i+1], src[i+2], src[i+3],
-                        src[i+4], src[i+5], src[i+6], src[i+7]);
+                       src[i], src[i + 1], src[i + 2], src[i + 3],
+                       src[i + 4], src[i + 5], src[i + 6], src[i + 7]);
             }
             index_step = src_step;
             val += val_step;
@@ -443,7 +446,7 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
     size_t r_bytes = 0;
     uint32_t retry = 0;
     for (int n = 0; n < WRITE_BUF_LEN / 2; n++) {
-        w_buf[n] = n%100;
+        w_buf[n] = n % 100;
     }
 
     /* rx right mono test
@@ -456,8 +459,8 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
         /* The data of tx/rx channels are flipped on ESP32 */
         for (int n = 0; n < READ_BUF_LEN / 2; n += 2) {
             int16_t temp = r_buf[n];
-            r_buf[n] = r_buf[n+1];
-            r_buf[n+1] = temp;
+            r_buf[n] = r_buf[n + 1];
+            r_buf[n + 1] = temp;
         }
 #endif
         /* Expected: 1 3 5 7 9 ... 97 99 */
@@ -488,8 +491,8 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
         /* The data of tx/rx channels are flipped on ESP32 */
         for (int n = 0; n < READ_BUF_LEN / 2; n += 2) {
             int16_t temp = r_buf[n];
-            r_buf[n] = r_buf[n+1];
-            r_buf[n+1] = temp;
+            r_buf[n] = r_buf[n + 1];
+            r_buf[n + 1] = temp;
         }
 #endif
         /* Expected: 2 4 6 8 10 ... 96 98 */
@@ -750,7 +753,8 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
     const uint32_t test_freq[] = {
         8000,  10000, 11025, 12000, 16000, 22050,
         24000, 32000, 44100, 48000, 64000, 88200,
-        96000, 128000,144000,196000};
+        96000, 128000, 144000, 196000
+    };
     int real_pulse = 0;
     int case_cnt = sizeof(test_freq) / sizeof(uint32_t);
 #if SOC_I2S_SUPPORTS_PLL_F96M
@@ -853,7 +857,7 @@ TEST_CASE("I2S_package_lost_test", "[i2s]")
      *    interrupt_interval = dma_frame_num / sample_rate = 3.549 ms
      * 2. dma_desc_num > polling_cycle / interrupt_interval = cell(2.818) = 3
      * 3. recv_buffer_size > dma_desc_num * dma_buffer_size = 3 * 4092 = 12276 bytes */
-    #define TEST_RECV_BUF_LEN   12276
+#define TEST_RECV_BUF_LEN   12276
     i2s_chan_handle_t rx_handle;
 
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);

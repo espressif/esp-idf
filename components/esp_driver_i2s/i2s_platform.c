@@ -15,8 +15,8 @@ static const char *TAG = "i2s_platform";
  */
 i2s_platform_t g_i2s = {
     .spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED,
-    .controller[0 ... (SOC_I2S_NUM - 1)] = NULL, // groups will be lazy installed
-    .comp_name[0 ... (SOC_I2S_NUM - 1)] = NULL,
+    .controller[0 ...(SOC_I2S_NUM - 1)] = NULL,  // groups will be lazy installed
+    .comp_name[0 ...(SOC_I2S_NUM - 1)] = NULL,
 };
 
 /*---------------------------------------------------------------------------
@@ -74,5 +74,5 @@ size_t i2s_platform_get_dma_buffer_offset(void)
 {
     /* Force to transfer address '0' into 'i2s_chan_handle_t' type,
      * then find the corresponding field , the address of this field is the offset of this type */
-    return (size_t)&(((i2s_chan_handle_t)0)->dma.bufs);
+    return (size_t) & (((i2s_chan_handle_t)0)->dma.bufs);
 }

@@ -113,7 +113,6 @@ extern "C" {
         I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask)  // Alias
 /** @endcond */
 
-
 /**
  * @brief I2S default TDM clock configuration
  * @note Please set the mclk_multiple to I2S_MCLK_MULTIPLE_384 while the data width in slot configuration is set to 24 bits
@@ -257,7 +256,6 @@ esp_err_t i2s_channel_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_
  *      - ESP_ERR_INVALID_STATE This channel is not initialized or not stopped
  */
 esp_err_t i2s_channel_reconfig_tdm_gpio(i2s_chan_handle_t handle, const i2s_tdm_gpio_config_t *gpio_cfg);
-
 
 #ifdef __cplusplus
 }

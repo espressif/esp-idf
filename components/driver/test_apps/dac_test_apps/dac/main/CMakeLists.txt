@@ -8,5 +8,6 @@ endif()
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity esp_driver_pcnt driver esp_adc
+                       PRIV_REQUIRES unity esp_driver_pcnt esp_adc
+                                     driver # TODO: IDF-8370 remove driver when esp_driver_dac created
                        WHOLE_ARCHIVE)

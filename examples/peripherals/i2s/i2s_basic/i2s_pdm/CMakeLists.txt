@@ -3,4 +3,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+set(COMPONENTS main)
+
 project(i2s_pdm_example)

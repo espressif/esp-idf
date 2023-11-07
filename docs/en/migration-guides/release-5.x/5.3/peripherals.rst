@@ -12,6 +12,7 @@ In order to control the dependence of other components on drivers at a smaller g
 - `esp_driver_mcpwm` - Driver for Motor Control PWM
 - `esp_driver_sdmmc` - Driver for SDMMC
 - `esp_driver_ana_cmpr` - Driver for Analog Comparator
+- `esp_driver_i2s` - Driver for I2S
 
 For compatibility, the original `driver`` component is still treated as an all-in-one component by registering these `esp_driver_xyz`` components as its public dependencies. In other words, you do not need to modify the CMake file of an existing project, but you now have a way to specify the specific peripheral driver that your project depends on.
 

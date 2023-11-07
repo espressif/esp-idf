@@ -147,8 +147,8 @@ struct i2s_channel_obj_t {
     QueueHandle_t           msg_queue;      /*!< Message queue handler, used for transporting data between interrupt and read/write task */
     i2s_event_callbacks_internal_t   callbacks;      /*!< Callback functions */
     void                    *user_data;     /*!< User data for callback functions */
-    void      (*start)(i2s_chan_handle_t);  /*!< start tx/rx channel */
-    void      (*stop)(i2s_chan_handle_t);   /*!< stop tx/rx channel */
+    void (*start)(i2s_chan_handle_t);       /*!< start tx/rx channel */
+    void (*stop)(i2s_chan_handle_t);        /*!< stop tx/rx channel */
 };
 
 /**

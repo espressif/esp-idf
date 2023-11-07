@@ -42,9 +42,9 @@ examples/bluetooth/bluedroid/classic_bt:
     - esp_console
     - vfs
     - esp_driver_gpio
+    - esp_driver_i2s
   depends_filepatterns:
     - components/driver/dac/**/*
-    - components/driver/i2s/**/*
     - components/driver/uart/**/*
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
@@ -53,9 +53,10 @@ examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: the other targets are not tested yet
+  depends_components:
+    - esp_driver_i2s
   depends_filepatterns:
     - components/driver/dac/**/*
-    - components/driver/i2s/**/*
 
 examples/bluetooth/blufi:
   disable:

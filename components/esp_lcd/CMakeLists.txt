@@ -18,6 +18,7 @@ set(priv_requires "esp_mm" "esp_psram")
 
 if(CONFIG_SOC_I2S_LCD_I80_VARIANT)
     list(APPEND srcs "src/esp_lcd_panel_io_i2s.c")
+    list(APPEND priv_requires "esp_driver_i2s")
 endif()
 
 if(CONFIG_SOC_LCDCAM_SUPPORTED)

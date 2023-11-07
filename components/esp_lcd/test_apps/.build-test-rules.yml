@@ -27,8 +27,7 @@ components/esp_lcd/test_apps/i2c_lcd_legacy:
 components/esp_lcd/test_apps/i80_lcd:
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/i2s/**/* # i80 IO driver relies on I2S on esp32 and esp32s2
+    - esp_driver_i2s
   disable:
     - if: SOC_LCD_I80_SUPPORTED != 1
 

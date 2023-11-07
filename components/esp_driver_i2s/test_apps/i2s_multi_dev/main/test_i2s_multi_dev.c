@@ -208,8 +208,7 @@ static void test_i2s_tdm_slave_48k_32bits_4slots(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_32bits_4slots", "[I2S_TDM]",
-                          test_i2s_tdm_master_48k_32bits_4slots, test_i2s_tdm_slave_48k_32bits_4slots);
-
+                           test_i2s_tdm_master_48k_32bits_4slots, test_i2s_tdm_slave_48k_32bits_4slots);
 
 static void test_i2s_tdm_master_48k_16bits_4slots(void)
 {
@@ -222,8 +221,7 @@ static void test_i2s_tdm_slave_48k_16bits_4slots(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_4slots", "[I2S_TDM]",
-                          test_i2s_tdm_master_48k_16bits_4slots, test_i2s_tdm_slave_48k_16bits_4slots);
-
+                           test_i2s_tdm_master_48k_16bits_4slots, test_i2s_tdm_slave_48k_16bits_4slots);
 
 static void test_i2s_tdm_master_48k_8bits_4slots(void)
 {
@@ -236,7 +234,7 @@ static void test_i2s_tdm_slave_48k_8bits_4slots(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S_TDM]",
-                          test_i2s_tdm_master_48k_8bits_4slots, test_i2s_tdm_slave_48k_8bits_4slots);
+                           test_i2s_tdm_master_48k_8bits_4slots, test_i2s_tdm_slave_48k_8bits_4slots);
 
 /* The I2S source clock can only reach 96Mhz on ESP32H2,
    which can't satisfy the following configurations in slave mode */
@@ -250,12 +248,11 @@ static void test_i2s_tdm_master_48k_16bits_8slots(void)
 static void test_i2s_tdm_slave_48k_16bits_8slots(void)
 {
     test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
-                        I2S_TDM_SLOT4 | I2S_TDM_SLOT5 | I2S_TDM_SLOT6 | I2S_TDM_SLOT7);
+                       I2S_TDM_SLOT4 | I2S_TDM_SLOT5 | I2S_TDM_SLOT6 | I2S_TDM_SLOT7);
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_8slots", "[I2S_TDM]",
-                          test_i2s_tdm_master_48k_16bits_8slots, test_i2s_tdm_slave_48k_16bits_8slots);
-
+                           test_i2s_tdm_master_48k_16bits_8slots, test_i2s_tdm_slave_48k_16bits_8slots);
 
 static void test_i2s_tdm_master_96k_16bits_4slots(void)
 {
@@ -268,7 +265,7 @@ static void test_i2s_tdm_slave_96k_16bits_4slots(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_96k_16bits_4slots", "[I2S_TDM]",
-                          test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
+                           test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
 #endif  // !CONFIG_IDF_TARGET_ESP32H2
 
 static void test_i2s_external_clk_src(bool is_master, bool is_external)
@@ -344,7 +341,7 @@ static void test_i2s_external_clk_src(bool is_master, bool is_external)
     // Check the data
     for (int i = 0; i < TEST_I2S_ARRAY_LENGTH; i++) {
         if (recv_buff[i] == 0x12 && recv_buff[i + 1] == 0x34 &&
-            recv_buff[i + 2] == 0x56 && recv_buff[i + 3] == 0x78) {
+                recv_buff[i + 2] == 0x56 && recv_buff[i + 3] == 0x78) {
             is_success = true;
             break;
         }
@@ -378,7 +375,7 @@ static void test_i2s_slave_clock_in(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_external_clock_master_output_slave_input", "[I2S]",
-                          test_i2s_master_clock_out, test_i2s_slave_clock_in);
+                           test_i2s_master_clock_out, test_i2s_slave_clock_in);
 
 static void test_i2s_master_clock_in(void)
 {
@@ -391,4 +388,4 @@ static void test_i2s_slave_clock_out(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_external_clock_master_input_slave_output", "[I2S]",
-                          test_i2s_master_clock_in, test_i2s_slave_clock_out);
+                           test_i2s_master_clock_in, test_i2s_slave_clock_out);

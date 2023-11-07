@@ -152,7 +152,7 @@ static esp_err_t i2s_tdm_set_gpio(i2s_chan_handle_t handle, const i2s_tdm_gpio_c
     i2s_tdm_config_t *tdm_cfg = (i2s_tdm_config_t *)(handle->mode_info);
     /* Loopback if dout = din */
     if (gpio_cfg->dout != -1 &&
-        gpio_cfg->dout == gpio_cfg->din) {
+            gpio_cfg->dout == gpio_cfg->din) {
         i2s_gpio_loopback_set(gpio_cfg->dout, i2s_periph_signal[id].data_out_sig, i2s_periph_signal[id].data_in_sig);
     } else if (handle->dir == I2S_DIR_TX) {
         /* Set data output GPIO */
@@ -197,7 +197,6 @@ static esp_err_t i2s_tdm_set_gpio(i2s_chan_handle_t handle, const i2s_tdm_gpio_c
 
     return ESP_OK;
 }
-
 
 esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_config_t *tdm_cfg)
 {
