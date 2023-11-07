@@ -10,6 +10,7 @@
 #include "driver/spi_master.h"
 #include "driver/spi_common.h"
 #include "driver/usb_serial_jtag.h"
+#include "driver/gpio.h"
 
 #include "Mockrmt_encoder.h"
 #include "Mockrmt_common.h"
@@ -20,6 +21,10 @@
 void app_main(void)
 {
     i2c_driver_delete(0);
+    int nc_gpio_num = GPIO_NUM_NC;
+    (void)nc_gpio_num;
+    int gpio_num = GPIO_NUM_39;
+    (void)gpio_num;
 
     rmt_channel_handle_t channel = 0;
     rmt_new_bytes_encoder(NULL, NULL);
