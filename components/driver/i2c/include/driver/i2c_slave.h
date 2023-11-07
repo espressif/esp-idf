@@ -40,7 +40,7 @@ typedef struct {
 #if SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
         uint32_t slave_unmatch_en:1;         /*!< Can trigger unmatch interrupt when slave address does not match what master sends*/
 #endif
-    } flags;
+    } flags;                                 /*!< I2C slave config flags */
 } i2c_slave_config_t;
 
 /**
