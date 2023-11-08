@@ -1851,7 +1851,7 @@ def add_variables_to_deactivate_file(args: List[str], new_idf_vars:Dict[str, Any
     return deactivate_file_path
 
 
-def deactivate_statement(args: List[str]) -> None:
+def print_deactivate_statement(args: List[str]) -> None:
     """
     Deactivate statement is sequence of commands, that remove IDF global variables from environment,
     so the environment gets to the state it was before calling export.{sh/fish} script.
@@ -2152,8 +2152,9 @@ def action_export(args: Any) -> None:
     """
     Exports all necessary environment variables and paths needed for tools used.
     """
-    if args.deactivate and different_idf_detected():
-        deactivate_statement(args)
+    if args.deactivate:
+        if different_idf_detected():
+            print_deactivate_statement(args)
         return
 
     tools_info = load_tools_info()
