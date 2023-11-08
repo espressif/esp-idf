@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || __DOXYGEN__
 
 /**
  * @brief Initialize MPI to notify mbedtls_ecdsa_sign to use the private key in efuse
@@ -46,7 +46,8 @@ int esp_ecdsa_privkey_load_mpi(mbedtls_mpi *key, int efuse_blk);
  *         - -1 otherwise
  */
 int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk);
-#endif
+
+#endif // CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || __DOXYGEN__
 
 #ifdef __cplusplus
 }
