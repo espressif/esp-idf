@@ -25,7 +25,7 @@ extern "C" {
   * @attention  Support at most 8 TWT agreements, otherwise ESP_ERR_WIFI_TWT_FULL will be returned.
   *             Support sleep time up to (1 << 35) us.
   *
-  * @param[in/out]   setup_config pointer to itwt setup config structure.
+  * @param[in,out]   setup_config pointer to itwt setup config structure.
   *
   * @return
   *    - ESP_OK: succeed
