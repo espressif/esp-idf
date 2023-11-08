@@ -17,7 +17,7 @@ static TaskHandle_t s_dpp_task_hdl = NULL;
 static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
 
-static bool s_dpp_stop_listening;
+static bool s_dpp_listen_in_progress;
 static int s_dpp_auth_retries;
 static struct esp_dpp_context_t s_dpp_ctx;
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
@@ -200,7 +200,7 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
         wpa_printf(MSG_INFO, DPP_EVENT_CONNECTOR "%s",
                    conf->connector);
     }
-    s_dpp_stop_listening = false;
+    s_dpp_listen_in_progress = true;
     esp_wifi_action_tx_req(WIFI_OFFCHAN_TX_CANCEL, 0, 0, NULL);
     esp_dpp_call_cb(ESP_SUPP_DPP_CFG_RECVD, wifi_cfg);
 
@@ -316,7 +316,7 @@ static void esp_dpp_rx_action(struct action_rx_param *rx_param)
                                         (size_t)(public_action->v.pa_vendor_spec.vendor_data -
                                                  (u8 *)rx_param->action_frm);
 
-            if (!s_dpp_stop_listening) {
+            if (s_dpp_listen_in_progress) {
                 esp_supp_dpp_stop_listen();
             }
 
@@ -379,14 +379,20 @@ static void esp_dpp_task(void *pvParameters )
                 struct dpp_bootstrap_params_t *p = &s_dpp_ctx.bootstrap_params;
                 static int counter;
                 int channel;
+                esp_err_t ret = 0;
 
                 if (p->num_chan <= 0) {
                     wpa_printf(MSG_ERROR, "Listen channel not set");
                     break;
                 }
                 channel = p->chan_list[counter++ % p->num_chan];
-                esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
+                ret = esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
                                            BOOTSTRAP_ROC_WAIT_TIME, s_action_rx_cb);
+                if (ret != ESP_OK) {
+                    wpa_printf(MSG_ERROR, "Failed ROC. error : 0x%x", ret);
+                    break;
+                }
+                s_dpp_listen_in_progress = true;
             }
             break;
 
@@ -466,7 +472,7 @@ static void offchan_event_handler(void *arg, esp_event_base_t event_base,
     } else if (event_id == WIFI_EVENT_ROC_DONE) {
         wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
 
-        if (!s_dpp_stop_listening && evt->context == (uint32_t)s_action_rx_cb) {
+        if (s_dpp_listen_in_progress && evt->context == (uint32_t)s_action_rx_cb) {
             esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
         }
     }
@@ -613,6 +619,11 @@ fail:
 
 esp_err_t esp_supp_dpp_start_listen(void)
 {
+    if (s_dpp_listen_in_progress) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to start listen as listen is already in progress.");
+        return ESP_FAIL;
+    }
+
     if (!s_dpp_ctx.dpp_global || s_dpp_ctx.id < 1) {
         wpa_printf(MSG_ERROR, "DPP: failed to start listen as dpp not initialized or bootstrapped.");
         return ESP_FAIL;
@@ -623,13 +634,12 @@ esp_err_t esp_supp_dpp_start_listen(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    s_dpp_stop_listening = false;
     return esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
 }
 
 void esp_supp_dpp_stop_listen(void)
 {
-    s_dpp_stop_listening = true;
+    s_dpp_listen_in_progress = false;
     esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_CANCEL, 0, 0, NULL);
 }
 
@@ -666,10 +676,10 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
     cfg.msg_ctx = &s_dpp_ctx;
     s_dpp_ctx.dpp_global = dpp_global_init(&cfg);
 
-    s_dpp_stop_listening = false;
+    s_dpp_listen_in_progress = false;
     s_dpp_evt_queue = xQueueCreate(3, sizeof(dpp_event_t));
     ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
-    if (ret != pdPASS) {
+    if (ret != TRUE) {
         wpa_printf(MSG_ERROR, "DPP: failed to create task");
         return ESP_FAIL;
     }

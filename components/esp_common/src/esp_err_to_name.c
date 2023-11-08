@@ -383,6 +383,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_DISCARD
     ERR_TBL_IT(ESP_ERR_WIFI_DISCARD),                           /* 12311 0x3017 Discard frame */
 #   endif
+#   ifdef      ESP_ERR_WIFI_ROC_IN_PROGRESS
+    ERR_TBL_IT(ESP_ERR_WIFI_ROC_IN_PROGRESS),                   /* 12316 0x301c ROC op is in progress */
+#   endif
     // components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
     ERR_TBL_IT(ESP_ERR_WIFI_REGISTRAR),                         /* 12339 0x3033 WPS registrar is not supported */
