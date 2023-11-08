@@ -65,74 +65,6 @@
     #include <stdio.h>
 #endif /* configUSE_STATS_FORMATTING_FUNCTIONS == 1 ) */
 
-/* Some code sections require extra critical sections when building for SMP
- * ( configNUMBER_OF_CORES > 1 ). */
-#if ( configNUMBER_OF_CORES > 1 )
-    /* Macros that enter/exit a critical section only when building for SMP */
-    #define taskENTER_CRITICAL_SMP_ONLY( pxLock )             taskENTER_CRITICAL( pxLock )
-    #define taskEXIT_CRITICAL_SMP_ONLY( pxLock )              taskEXIT_CRITICAL( pxLock )
-    #define taskENTER_CRITICAL_ISR_SMP_ONLY( pxLock )         taskENTER_CRITICAL_ISR( pxLock )
-    #define taskEXIT_CRITICAL_ISR_SMP_ONLY( pxLock )          taskEXIT_CRITICAL_ISR( pxLock )
-    #define taskENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )        prvTaskEnterCriticalSafeSMPOnly( pxLock )
-    #define taskEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )         prvTaskExitCriticalSafeSMPOnly( pxLock )
-    /* Macros that enter/exit a critical section only when building for single-core */
-    #define taskENTER_CRITICAL_SC_ONLY( pxLock )              taskENTER_CRITICAL( pxLock )
-    #define taskEXIT_CRITICAL_SC_ONLY( pxLock )               taskEXIT_CRITICAL( pxLock )
-    /* Macros that enable/disable interrupts only when building for SMP */
-    #define taskDISABLE_INTERRUPTS_ISR_SMP_ONLY()             portSET_INTERRUPT_MASK_FROM_ISR()
-    #define taskEnable_INTERRUPTS_ISR_SMP_ONLY( uxStatus )    portCLEAR_INTERRUPT_MASK_FROM_ISR( uxStatus )
-
-    static inline __attribute__( ( always_inline ) )
-    void prvTaskEnterCriticalSafeSMPOnly( portMUX_TYPE * pxLock )
-    {
-        if( portCHECK_IF_IN_ISR() == pdFALSE )
-        {
-            taskENTER_CRITICAL( pxLock );
-        }
-        else
-        {
-            #ifdef __clang_analyzer__
-                /* Teach clang-tidy that ISR version macro can be different */
-                configASSERT( 1 );
-            #endif
-            taskENTER_CRITICAL_ISR( pxLock );
-        }
-    }
-
-    static inline __attribute__( ( always_inline ) )
-    void prvTaskExitCriticalSafeSMPOnly( portMUX_TYPE * pxLock )
-    {
-        if( portCHECK_IF_IN_ISR() == pdFALSE )
-        {
-            taskEXIT_CRITICAL( pxLock );
-        }
-        else
-        {
-            #ifdef __clang_analyzer__
-                /* Teach clang-tidy that ISR version macro can be different */
-                configASSERT( 1 );
-            #endif
-            taskEXIT_CRITICAL_ISR( pxLock );
-        }
-    }
-
-#else /* configNUMBER_OF_CORES > 1 */
-    /* Macros that enter/exit a critical section only when building for SMP */
-    #define taskENTER_CRITICAL_SMP_ONLY( pxLock )
-    #define taskEXIT_CRITICAL_SMP_ONLY( pxLock )
-    #define taskENTER_CRITICAL_ISR_SMP_ONLY( pxLock )
-    #define taskEXIT_CRITICAL_ISR_SMP_ONLY( pxLock )
-    #define taskENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )
-    #define taskEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )
-    /* Macros that enter/exit a critical section only when building for single-core */
-    #define taskENTER_CRITICAL_SC_ONLY( pxLock )              taskENTER_CRITICAL( pxLock )
-    #define taskEXIT_CRITICAL_SC_ONLY( pxLock )               taskEXIT_CRITICAL( pxLock )
-    /* Macros that enable/disable interrupts only when building for SMP */
-    #define taskDISABLE_INTERRUPTS_ISR_SMP_ONLY()             ( ( UBaseType_t ) 0 )
-    #define taskEnable_INTERRUPTS_ISR_SMP_ONLY( uxStatus )    ( ( void ) uxStatus )
-
-#endif /* configNUMBER_OF_CORES > 1 */
-
 #if ( configUSE_PREEMPTION == 0 )
 
 /* If the cooperative scheduler is being used then a yield should not be
@@ -1475,7 +1407,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             /* Force a reschedule if it is the currently running task that has just
              * been deleted. */
@@ -1493,7 +1425,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
             }
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
     }
 
 #endif /* INCLUDE_vTaskDelete */
@@ -2448,7 +2380,7 @@ void vTaskStartScheduler( void )
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             #if ( ( configUSE_NEWLIB_REENTRANT == 1 ) || ( configUSE_C_RUNTIME_TLS_SUPPORT == 1 ) )
             {
@@ -2463,7 +2395,7 @@ void vTaskStartScheduler( void )
             xTickCount = ( TickType_t ) configINITIAL_TICK_COUNT;
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 
         /* If configGENERATE_RUN_TIME_STATS is defined then the following
          * macro must be defined to configure the timer/counter used to generate
@@ -2513,12 +2445,12 @@ void vTaskEndScheduler( void )
 
     /* For SMP, we need to take the kernel lock here as we are about to access
      * kernel data structures. */
-    taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+    prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
     {
         xSchedulerRunning = pdFALSE;
     }
     /* Release the previously taken kernel lock. */
-    taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+    prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
     vPortEndScheduler();
 }
 /*----------------------------------------------------------*/
@@ -2768,7 +2700,7 @@ TickType_t xTaskGetTickCountFromISR( void )
 
     /* For SMP, we need to take the kernel lock here as we are about to access
      * kernel data structures. */
-    taskENTER_CRITICAL_ISR_SMP_ONLY( &xKernelLock );
+    prvENTER_CRITICAL_ISR_SMP_ONLY( &xKernelLock );
     {
         uxSavedInterruptStatus = portTICK_TYPE_SET_INTERRUPT_MASK_FROM_ISR();
         {
@@ -2777,7 +2709,7 @@ TickType_t xTaskGetTickCountFromISR( void )
         portTICK_TYPE_CLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
     }
     /* Release the previously taken kernel lock. */
-    taskEXIT_CRITICAL_ISR_SMP_ONLY( &xKernelLock );
+    prvEXIT_CRITICAL_ISR_SMP_ONLY( &xKernelLock );
 
     return xReturn;
 }
@@ -3176,7 +3108,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                  * the event list too.  Interrupts can touch the event list item,
                  * even though the scheduler is suspended, so a critical section
                  * is used. */
-                taskENTER_CRITICAL_SC_ONLY( &xKernelLock );
+                prvENTER_CRITICAL_SC_ONLY( &xKernelLock );
                 {
                     if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL )
                     {
@@ -3192,7 +3124,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                         mtCOVERAGE_TEST_MARKER();
                     }
                 }
-                taskEXIT_CRITICAL_SC_ONLY( &xKernelLock );
+                prvEXIT_CRITICAL_SC_ONLY( &xKernelLock );
 
                 /* Place the unblocked task into the appropriate ready list. */
                 prvAddTaskToReadyList( pxTCB );
@@ -3255,7 +3187,7 @@ BaseType_t xTaskIncrementTick( void )
     /* For SMP, we need to take the kernel lock here as we are about to access
      * kernel data structures (unlike single core which calls this function with
      * interrupts disabled). */
-    taskENTER_CRITICAL_SAFE_SMP_ONLY( &xKernelLock );
+    prvENTER_CRITICAL_SAFE_SMP_ONLY( &xKernelLock );
     {
         if( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE )
         {
@@ -3423,7 +3355,7 @@ BaseType_t xTaskIncrementTick( void )
 
     /* Release the previously taken kernel lock as we have finished accessing
      * the kernel data structures. */
-    taskEXIT_CRITICAL_SAFE_SMP_ONLY( &xKernelLock );
+    prvEXIT_CRITICAL_SAFE_SMP_ONLY( &xKernelLock );
 
     #if ( configUSE_TICK_HOOK == 1 )
     {
@@ -3646,7 +3578,7 @@ void vTaskSwitchContext( void )
     /* For SMP, we need to take the kernel lock here as we are about to access
     * kernel data structures (unlike single core which calls this function with
     * either interrupts disabled or when the scheduler hasn't started yet). */
-    taskENTER_CRITICAL_SAFE_SMP_ONLY( &xKernelLock );
+    prvENTER_CRITICAL_SAFE_SMP_ONLY( &xKernelLock );
     {
         /* Get current core ID as we can no longer be preempted. */
         const BaseType_t xCurCoreID = portGET_CORE_ID();
@@ -3731,7 +3663,7 @@ void vTaskSwitchContext( void )
 
     /* Release the previously taken kernel lock as we have finished accessing
      * the kernel data structures. */
-    taskEXIT_CRITICAL_SAFE_SMP_ONLY( &xKernelLock );
+    prvEXIT_CRITICAL_SAFE_SMP_ONLY( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
 
@@ -3746,7 +3678,7 @@ void vTaskPlaceOnEventList( List_t * const pxEventList,
 
     /* For SMP, we need to take the kernel lock here as we are about to access
      * kernel data structures. */
-    taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+    prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
     {
         /* Place the event list item of the TCB in the appropriate event list.
          * This is placed in the list in priority order so the highest priority task
@@ -3764,7 +3696,7 @@ void vTaskPlaceOnEventList( List_t * const pxEventList,
         prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
     }
     /* Release the previously taken kernel lock. */
-    taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+    prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
 
@@ -3792,7 +3724,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
 
     /* For SMP, we need to take the kernel lock here as we are about to access
      * kernel data structures. */
-    taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+    prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
     {
         /* Store the item value in the event list item.  It is safe to access the
          * event list item here as interrupts won't access the event list item of a
@@ -3809,7 +3741,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
         prvAddCurrentTaskToDelayedList( xTicksToWait, pdTRUE );
     }
     /* Release the previously taken kernel lock. */
-    taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+    prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
 
@@ -3829,7 +3761,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
 
         /* For SMP, we need to take the kernel lock here as we are about to access
          * kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             /* Place the event list item of the TCB in the appropriate event list.
              * In this case it is assume that this is the only task that is going to
@@ -4628,7 +4560,7 @@ static void prvCheckTasksWaitingTermination( void )
 
         /* A critical section is required for SMP in case another core modifies
          * the task simultaneously. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             pxTaskStatus->xHandle = ( TaskHandle_t ) pxTCB;
             pxTaskStatus->pcTaskName = ( const char * ) &( pxTCB->pcTaskName[ 0 ] );
@@ -4730,7 +4662,7 @@ static void prvCheckTasksWaitingTermination( void )
             }
         }
         /* Exit the previously entered critical section. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
     }
 
 #endif /* configUSE_TRACE_FACILITY */
@@ -4952,11 +4884,11 @@ static void prvResetNextTaskUnblockTime( void )
          * For single-core a critical section is not required as this is not
          * called from an interrupt and the current TCB will always be the same
          * for any individual execution thread. */
-        uxSavedInterruptStatus = taskDISABLE_INTERRUPTS_ISR_SMP_ONLY();
+        uxSavedInterruptStatus = prvDISABLE_INTERRUPTS_ISR_SMP_ONLY();
         {
             xReturn = pxCurrentTCBs[ portGET_CORE_ID() ];
         }
-        taskEnable_INTERRUPTS_ISR_SMP_ONLY( uxSavedInterruptStatus );
+        prvENABLE_INTERRUPTS_ISR_SMP_ONLY( uxSavedInterruptStatus );
 
         return xReturn;
     }
@@ -4980,7 +4912,7 @@ static void prvResetNextTaskUnblockTime( void )
          *
          * We use the ISR versions of interrupt macros as this function could be
          * called inside critical sections. */
-        uxSavedInterruptStatus = taskDISABLE_INTERRUPTS_ISR_SMP_ONLY();
+        uxSavedInterruptStatus = prvDISABLE_INTERRUPTS_ISR_SMP_ONLY();
         {
             if( xSchedulerRunning == pdFALSE )
             {
@@ -4998,7 +4930,7 @@ static void prvResetNextTaskUnblockTime( void )
                 }
             }
         }
-        taskEnable_INTERRUPTS_ISR_SMP_ONLY( uxSavedInterruptStatus );
+        prvENABLE_INTERRUPTS_ISR_SMP_ONLY( uxSavedInterruptStatus );
 
         return xReturn;
     }
@@ -5015,7 +4947,7 @@ static void prvResetNextTaskUnblockTime( void )
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             /* Get current core ID as we can no longer be preempted. */
             const BaseType_t xCurCoreID = portGET_CORE_ID();
@@ -5098,7 +5030,7 @@ static void prvResetNextTaskUnblockTime( void )
             }
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 
         return xReturn;
     }
@@ -5115,7 +5047,7 @@ static void prvResetNextTaskUnblockTime( void )
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             if( pxMutexHolder != NULL )
             {
@@ -5185,7 +5117,7 @@ static void prvResetNextTaskUnblockTime( void )
             }
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 
         return xReturn;
     }
@@ -5204,7 +5136,7 @@ static void prvResetNextTaskUnblockTime( void )
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             if( pxMutexHolder != NULL )
             {
@@ -5300,7 +5232,7 @@ static void prvResetNextTaskUnblockTime( void )
             }
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
     }
 
 #endif /* configUSE_MUTEXES */
@@ -5635,7 +5567,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
     /* For SMP, we need to take the kernel lock here to ensure nothing else
      * modifies the task's event item value simultaneously. */
-    taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+    prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
     {
         /* Get current core ID as we can no longer be preempted. */
         const BaseType_t xCurCoreID = portGET_CORE_ID();
@@ -5646,7 +5578,7 @@ TickType_t uxTaskResetEventItemValue( void )
          * queues and semaphores. */
         listSET_LIST_ITEM_VALUE( &( pxCurrentTCBs[ xCurCoreID ]->xEventListItem ), ( ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) pxCurrentTCBs[ xCurCoreID ]->uxPriority ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
     }
-    taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+    prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
     /* Release the previously taken kernel lock. */
 
     return uxReturn;
@@ -5661,7 +5593,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             /* Get current core ID as we can no longer be preempted. */
             const BaseType_t xCurCoreID = portGET_CORE_ID();
@@ -5676,7 +5608,7 @@ TickType_t uxTaskResetEventItemValue( void )
             xReturn = pxCurrentTCBs[ xCurCoreID ];
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 
         return xReturn;
     }
