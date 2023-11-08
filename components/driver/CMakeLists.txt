@@ -133,6 +133,7 @@ if(CONFIG_SOC_RMT_SUPPORTED)
                      "rmt/rmt_rx.c"
                      "rmt/rmt_tx.c"
                      "deprecated/rmt_legacy.c")
+    list(APPEND ldfragments "rmt/linker.lf")
 endif()
 
 # SDIO Slave related source files
