@@ -7,18 +7,10 @@ archive: libeeprom.a
 entries:
     if EXAMPLE_USE_SPI1_PINS = y:
         * (noflash)
-
-[mapping:ext_driver]
-archive: libesp_driver_gpio.a
-entries:
-    if EXAMPLE_USE_SPI1_PINS = y:
-        gpio: gpio_intr_enable (noflash)
-
-[mapping:ext_soc]
-archive: libhal.a
-entries:
-    if EXAMPLE_USE_SPI1_PINS = y:
-        gpio_hal: gpio_hal_intr_enable_on_core (noflash)
+        # Following code are not used during SPI1 bus or bus option
+        spi_eeprom: eeprom_wait_done_by_intr (default)
+        spi_eeprom: spi_eeprom_deinit (default)
+        spi_eeprom: spi_eeprom_init (default)
 
 [mapping:ext_newlib]
 archive: libnewlib.a
