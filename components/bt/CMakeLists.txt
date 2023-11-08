@@ -45,10 +45,10 @@ set(ble_mesh_include_dirs
     "esp_ble_mesh/api/core/include"
     "esp_ble_mesh/api/models/include"
     "esp_ble_mesh/api"
+    "esp_ble_mesh/lib/include"
     "esp_ble_mesh/v1.1/api/core/include"
     "esp_ble_mesh/v1.1/api/models/include"
     "esp_ble_mesh/v1.1/btc/include"
-    "esp_ble_mesh/v1.1/include"
 )
 
 set(bluedroid_include_dirs host/bluedroid/api/include/api)
@@ -550,7 +550,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/v1.1/btc/btc_ble_mesh_rpr_model.c"
                     "esp_ble_mesh/v1.1/btc/btc_ble_mesh_sar_model.c"
                     "esp_ble_mesh/v1.1/btc/btc_ble_mesh_srpl_model.c"
-                    "esp_ble_mesh/v1.1/ext.c")
+                    "esp_ble_mesh/lib/ext.c")
 
         if(CONFIG_BLE_MESH_SAR_ENHANCEMENT)
             list(APPEND srcs "esp_ble_mesh/core/transport.enh.c")
@@ -826,20 +826,20 @@ endif()
 
 if(CONFIG_BLE_MESH)
     if(CONFIG_IDF_TARGET_ESP32)
-        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32/libmesh_v1.1.a")
-        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+        add_prebuilt_library(ble_mesh "esp_ble_mesh/lib/lib/esp32/libble_mesh.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
     elseif(CONFIG_IDF_TARGET_ESP32S3)
-        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32s3/libmesh_v1.1.a")
-        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+        add_prebuilt_library(ble_mesh "esp_ble_mesh/lib/lib/esp32s3/libble_mesh.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
     elseif(CONFIG_IDF_TARGET_ESP32C3)
-        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32c3/libmesh_v1.1.a")
-        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+        add_prebuilt_library(ble_mesh "esp_ble_mesh/lib/lib/esp32c3/libble_mesh.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
     elseif(CONFIG_IDF_TARGET_ESP32C6)
-        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32c6/libmesh_v1.1.a")
-        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+        add_prebuilt_library(ble_mesh "esp_ble_mesh/lib/lib/esp32c6/libble_mesh.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
     elseif(CONFIG_IDF_TARGET_ESP32H2)
-        add_prebuilt_library(mesh_v11 "esp_ble_mesh/v1.1/lib/esp32h2/libmesh_v1.1.a")
-        target_link_libraries(${COMPONENT_LIB} PRIVATE mesh_v11)
+        add_prebuilt_library(ble_mesh "esp_ble_mesh/lib/lib/esp32h2/libble_mesh.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
     endif()
 endif()
 
