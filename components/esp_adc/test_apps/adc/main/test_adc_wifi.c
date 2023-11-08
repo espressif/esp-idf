@@ -170,7 +170,7 @@ __attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_c
     //-------------ADC TEST Channel Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(adc_handle, channel, &config));
 

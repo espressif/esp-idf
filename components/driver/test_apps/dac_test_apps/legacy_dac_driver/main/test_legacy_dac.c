@@ -28,7 +28,7 @@ static const char *TAG = "test_dac";
 #elif defined CONFIG_IDF_TARGET_ESP32S2
 #define ADC_TEST_WIDTH         ADC_WIDTH_BIT_13   //ESP32S2 only support 13 bit width
 #endif
-#define ADC_TEST_ATTEN         ADC_ATTEN_DB_11
+#define ADC_TEST_ATTEN         ADC_ATTEN_DB_12
 
 #if CONFIG_IDF_TARGET_ESP32
 #define ADC_TEST_CHANNEL_NUM   ADC2_CHANNEL_8   // GPIO25
@@ -174,8 +174,8 @@ TEST_CASE("esp32s2_adc2-dac_with_adc2_calibration", "[dac_legacy]")
     subtest_adc_dac(1250, &chars);
 
     printf("Test 11dB atten...\n");
-    adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_11);
-    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_13, 0, &chars);
+    adc2_config_channel_atten((adc2_channel_t)ADC_TEST_CHANNEL_NUM, ADC_ATTEN_DB_12);
+    esp_adc_cal_characterize(ADC_UNIT_2, ADC_ATTEN_DB_12, ADC_WIDTH_BIT_13, 0, &chars);
     printf("a %"PRIu32", b %"PRIu32"\n", chars.coeff_a, chars.coeff_b);
     subtest_adc_dac(1500, &chars);
     subtest_adc_dac(2500, &chars);
