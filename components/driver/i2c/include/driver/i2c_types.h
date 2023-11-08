@@ -78,7 +78,7 @@ typedef bool (*i2c_master_callback_t)(i2c_master_dev_handle_t i2c_dev, const i2c
  * @brief Event structure used in I2C slave
  */
 typedef struct {
-    uint8_t *buffer;
+    uint8_t *buffer;  /**< Pointer for buffer received in callback. */
 } i2c_slave_rx_done_event_data_t;
 
 /**
@@ -98,7 +98,7 @@ typedef bool (*i2c_slave_received_callback_t)(i2c_slave_dev_handle_t i2c_slave, 
  * @brief Stretch cause event structure used in I2C slave
  */
 typedef struct {
-    i2c_slave_stretch_cause_t stretch_cause;
+    i2c_slave_stretch_cause_t stretch_cause;  /*!< Stretch cause can be got in callback */
 } i2c_slave_stretch_event_data_t;
 
 /**

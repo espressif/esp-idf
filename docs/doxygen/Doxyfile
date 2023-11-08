@@ -79,7 +79,9 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/dac/include/driver/dac_cosine.h \
     $(PROJECT_PATH)/components/driver/dac/include/driver/dac_oneshot.h \
     $(PROJECT_PATH)/components/driver/dac/include/driver/dac_types.h \
-    $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c.h \
+    $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_master.h \
+    $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_slave.h \
+    $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_types.h \
     $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_common.h \
     $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_pdm.h \
     $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_std.h \
