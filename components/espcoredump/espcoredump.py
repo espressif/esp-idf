@@ -71,8 +71,9 @@ def main():  # type: () -> None
     kwargs = {k: v for k, v in vars(args).items() if v is not None}
     project_desc = get_project_desc(kwargs['prog'])
     # pass the extra_gdbinit_file if the build is reproducible
-    kwargs['extra_gdbinit_file'] = project_desc.get('debug_prefix_map_gdbinit')
-    kwargs['parttable_off'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_PARTITION_TABLE_OFFSET')
+    if project_desc:
+        kwargs['extra_gdbinit_file'] = project_desc.get('debug_prefix_map_gdbinit')
+        kwargs['parttable_off'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_PARTITION_TABLE_OFFSET')
 
     del kwargs['debug']
     del kwargs['operation']
