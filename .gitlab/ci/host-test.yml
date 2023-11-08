@@ -334,6 +334,7 @@ test_pytest_linux:
     paths:
       - XUNIT_RESULT.xml
       - pytest_embedded_log/
+      - "**/build*/build_log.txt"
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
