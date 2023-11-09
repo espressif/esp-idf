@@ -107,9 +107,9 @@ void bt_mesh_disable_private_gatt_proxy(void);
 
 bool bt_mesh_proxy_server_is_node_id_enable(void);
 
-void disable_all_private_node_identity(void);
+int bt_mesh_proxy_private_identity_disable(void);
 
-void bt_mesh_prb_pnid_adv_local_set(bool start);
+int bt_mesh_proxy_private_identity_enable(void);
 #endif /* CONFIG_BLE_MESH_PRB_SRV */
 
 void bt_mesh_proxy_server_identity_start(struct bt_mesh_subnet *sub);

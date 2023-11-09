@@ -246,10 +246,10 @@ extern "C" {
 /* Defines the status codes for Opcodes Aggregator messages. */
 #define AGG_STATUS_SUCCESS                          0x00
 #define AGG_STATUS_INVALID_ADDRESS                  0x01
-#define AGG_STATUS_INVALID_MODEL                    0x02
-#define AGG_STATUS_WRONG_ACCESS_KEY                 0x03
-#define AGG_STATUS_WRONG_OPCODE                     0x04
-#define AGG_STATUS_MSG_NOT_UNDERSTOOD               0x05
+#define AGG_STATUS_WRONG_ACCESS_KEY                 0x02
+#define AGG_STATUS_WRONG_OPCODE                     0x03
+#define AGG_STATUS_MSG_NOT_UNDERSTOOD               0x04
+#define AGG_STATUS_RESPONSE_OVERFLOW                0x05
 
 enum {
     BLE_MESH_VA_CHANGED,    /* Label information changed */

@@ -30,6 +30,7 @@
 #include "mesh/common.h"
 #include "prov_pvnr.h"
 #include "net.h"
+#include "beacon.h"
 
 #include "mesh_v1.1/utils.h"
 
@@ -369,7 +370,15 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     }
 
 #if CONFIG_BLE_MESH_PRB_SRV
-    addr_type_own = bt_mesh_private_beacon_update_addr_type(ad);
+    /* NOTE: When a Mesh Private beacon is advertised, the Mesh Private beacon shall
+     * use a resolvable private address or a non-resolvable private address in the
+     * AdvA field of the advertising PDU.
+     */
+    if (ad->type == BLE_MESH_DATA_MESH_BEACON && ad->data[0] == BEACON_TYPE_PRIVATE) {
+        addr_type_own = BLE_MESH_ADDR_RANDOM;
+    } else {
+        addr_type_own = BLE_MESH_ADDR_PUBLIC;
+    }
 #else
     addr_type_own = BLE_MESH_ADDR_PUBLIC;
 #endif
@@ -1978,7 +1987,7 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
 
     if ((sub_code > BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN) ||
         (sub_code < BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN &&
-         type > BLE_MESH_EXCEP_LIST_TYPE_MESH_PROXY_ADV) ||
+         type >= BLE_MESH_EXCEP_LIST_TYPE_MAX) ||
         (sub_code == BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN &&
          !(type & BLE_MESH_EXCEP_LIST_CLEAN_ALL_LIST))) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -1990,6 +1999,16 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
             BT_ERR("Invalid Provisioning Link ID");
             return -EINVAL;
         }
+
+        /* When removing an unused link (i.e., Link ID is 0), and since
+         * Controller has never added this Link ID, it will cause error
+         * log been wrongly reported.
+         * Therefore, add this check here to avoid such occurrences.
+         */
+        if (*(uint32_t *)info == 0) {
+            return 0;
+        }
+
         sys_memcpy_swap(value, info, sizeof(uint32_t));
     }
 

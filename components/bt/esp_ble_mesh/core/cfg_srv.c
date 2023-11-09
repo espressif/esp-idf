@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2514,7 +2514,7 @@ static void node_identity_set(struct bt_mesh_model *model,
                  * any subnet is 0x01, then the value of the Private Node
                  * Identity state shall be Disable (0x00).
                  */
-                disable_all_private_node_identity();
+                bt_mesh_proxy_private_identity_disable();
 #endif
                 bt_mesh_proxy_server_identity_start(sub);
             } else {
@@ -3573,6 +3573,17 @@ uint8_t bt_mesh_net_transmit_get(void)
     }
 
     return 0;
+}
+
+void bt_mesh_relay_local_set(bool enable)
+{
+    if (conf && conf->relay != BLE_MESH_RELAY_NOT_SUPPORTED) {
+        if (enable) {
+            conf->relay = BLE_MESH_RELAY_ENABLED;
+        } else {
+            conf->relay = BLE_MESH_RELAY_DISABLED;
+        }
+    }
 }
 
 uint8_t bt_mesh_relay_get(void)

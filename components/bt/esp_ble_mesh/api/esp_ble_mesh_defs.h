@@ -916,6 +916,8 @@ typedef enum {
     ESP_BLE_MESH_NODE_PROV_INPUT_NUMBER_COMP_EVT,               /*!< Node input number completion event */
     ESP_BLE_MESH_NODE_PROV_INPUT_STRING_COMP_EVT,               /*!< Node input string completion event */
     ESP_BLE_MESH_NODE_PROXY_IDENTITY_ENABLE_COMP_EVT,           /*!< Enable BLE Mesh Proxy Identity advertising completion event */
+    ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_ENABLE_COMP_EVT,   /*!< Enable BLE Mesh Private Proxy Identity advertising completion event */
+    ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_DISABLE_COMP_EVT,  /*!< Disable BLE Mesh Private Proxy Identity advertising completion event */
     ESP_BLE_MESH_NODE_PROXY_GATT_ENABLE_COMP_EVT,               /*!< Enable BLE Mesh GATT Proxy Service completion event */
     ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT,              /*!< Disable BLE Mesh GATT Proxy Service completion event */
     ESP_BLE_MESH_NODE_ADD_LOCAL_NET_KEY_COMP_EVT,               /*!< Node add NetKey locally completion event */
@@ -1109,6 +1111,18 @@ typedef union {
     struct ble_mesh_proxy_gatt_disable_comp_param {
         int err_code;                           /*!< Indicate the result of disabling Mesh Proxy Service */
     } node_proxy_gatt_disable_comp;             /*!< Event parameter of ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_ENABLE_COMP_EVT
+     */
+    struct ble_mesh_proxy_private_identity_enable_comp_param {
+        int err_code;                           /*!< Indicate the result of enabling Mesh Proxy private advertising */
+    } node_private_proxy_identity_enable_comp;  /*!< Event parameter of ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_ENABLE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_DISABLE_COMP_EVT
+     */
+    struct ble_mesh_proxy_private_identity_disable_comp_param {
+        int err_code;                           /*!< Indicate the result of disabling Mesh Proxy private advertising */
+    } node_private_proxy_identity_disable_comp;  /*!< Event parameter of ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_DISABLE_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_ADD_LOCAL_NET_KEY_COMP_EVT
      */

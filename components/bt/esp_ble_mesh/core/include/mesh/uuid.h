@@ -141,6 +141,11 @@ struct bt_mesh_uuid_128 {
  */
 #define BLE_MESH_UUID_MESH_PROXY                BLE_MESH_UUID_DECLARE_16(0x1828)
 #define BLE_MESH_UUID_MESH_PROXY_VAL            0x1828
+/** @def BLE_MESH_UUID_MESH_PROXY_SOLIC_VAL
+ *  @brief Mesh Proxy Solicitation UUID
+ */
+#define BLE_MESH_UUID_MESH_PROXY_SOLIC          BLE_MESH_UUID_DECLARE_16(0x1859)
+#define BLE_MESH_UUID_MESH_PROXY_SOLIC_VAL      0x1859
 /** @def BLE_MESH_UUID_GATT_PRIMARY
  *  @brief GATT Primary Service
  */
@@ -466,10 +471,6 @@ struct bt_mesh_uuid_128 {
  */
 #define BLE_MESH_UUID_MESH_PROXY_DATA_OUT       BLE_MESH_UUID_DECLARE_16(0x2ade)
 #define BLE_MESH_UUID_MESH_PROXY_DATA_OUT_VAL   0x2ade
-/** @def BLE_MESH_UUID_MESH_PROXY_SOLIC_VAL
- *  @brief Mesh Proxy Solicitation UUID
- */
-#define BLE_MESH_UUID_MESH_PROXY_SOLIC_VAL      0x7fcb
 
 /*
  * Protocol UUIDs
