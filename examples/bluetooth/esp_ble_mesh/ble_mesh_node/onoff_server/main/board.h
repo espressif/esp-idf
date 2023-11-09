@@ -23,10 +23,16 @@
 #define LED_R GPIO_NUM_8
 #define LED_G GPIO_NUM_8
 #define LED_B GPIO_NUM_8
+#define LED_COLOR_R 0
+#define LED_COLOR_G 1
+#define LED_COLOR_B 2
 #elif defined(CONFIG_BLE_MESH_ESP32S3_DEV)
-#define LED_R GPIO_NUM_47
-#define LED_G GPIO_NUM_47
-#define LED_B GPIO_NUM_47
+#define LED_R GPIO_NUM_48
+#define LED_G GPIO_NUM_48
+#define LED_B GPIO_NUM_48
+#define LED_COLOR_R 0
+#define LED_COLOR_G 1
+#define LED_COLOR_B 2
 #endif
 
 #define LED_ON  1

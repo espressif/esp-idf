@@ -112,7 +112,11 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32
 {
     ESP_LOGI(TAG, "net_idx: 0x%04x, addr: 0x%04x", net_idx, addr);
     ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08x", flags, iv_index);
+#if defined(CONFIG_BLE_MESH_ESP32C3_DEV) || defined(CONFIG_BLE_MESH_ESP32S3_DEV)
+    board_led_operation(LED_COLOR_G, LED_OFF);
+#else
     board_led_operation(LED_G, LED_OFF);
+#endif
 }
 
 static void example_change_led_state(esp_ble_mesh_model_t *model,
@@ -120,24 +124,42 @@ static void example_change_led_state(esp_ble_mesh_model_t *model,
 {
     uint16_t primary_addr = esp_ble_mesh_get_primary_element_address();
     uint8_t elem_count = esp_ble_mesh_get_element_count();
-    struct _led_state *led = NULL;
     uint8_t i;
+#if defined(CONFIG_BLE_MESH_ESP32C3_DEV) || defined(CONFIG_BLE_MESH_ESP32S3_DEV)
+    uint8_t led_element;
+#else
+    struct _led_state *led = NULL;
+#endif
 
     if (ESP_BLE_MESH_ADDR_IS_UNICAST(ctx->recv_dst)) {
         for (i = 0; i < elem_count; i++) {
             if (ctx->recv_dst == (primary_addr + i)) {
+#if defined(CONFIG_BLE_MESH_ESP32C3_DEV) || defined(CONFIG_BLE_MESH_ESP32S3_DEV)
+                board_led_operation(i, onoff);
+#else
                 led = &led_state[i];
                 board_led_operation(led->pin, onoff);
+#endif
             }
         }
     } else if (ESP_BLE_MESH_ADDR_IS_GROUP(ctx->recv_dst)) {
         if (esp_ble_mesh_is_model_subscribed_to_group(model, ctx->recv_dst)) {
+#if defined(CONFIG_BLE_MESH_ESP32C3_DEV) || defined(CONFIG_BLE_MESH_ESP32S3_DEV)
+            led_element = model->element->element_addr - primary_addr;
+            board_led_operation(led_element, onoff);
+#else
             led = &led_state[model->element->element_addr - primary_addr];
             board_led_operation(led->pin, onoff);
+#endif
         }
     } else if (ctx->recv_dst == 0xFFFF) {
+#if defined(CONFIG_BLE_MESH_ESP32C3_DEV) || defined(CONFIG_BLE_MESH_ESP32S3_DEV)
+        led_element = model->element->element_addr - primary_addr;
+        board_led_operation(led_element, onoff);
+#else
         led = &led_state[model->element->element_addr - primary_addr];
         board_led_operation(led->pin, onoff);
+#endif
     }
 }
 
@@ -304,9 +326,11 @@ static esp_err_t ble_mesh_init(void)
     }
 
     ESP_LOGI(TAG, "BLE Mesh Node initialized");
-
+#if defined(CONFIG_BLE_MESH_ESP32C3_DEV) || defined(CONFIG_BLE_MESH_ESP32S3_DEV)
+    board_led_operation(LED_COLOR_G, LED_ON);
+#else
     board_led_operation(LED_G, LED_ON);
-
+#endif
     return err;
 }
 
