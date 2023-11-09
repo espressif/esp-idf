@@ -12,4 +12,4 @@
  * @brief Supported calibration schemes
  */
 
-//Now no scheme supported
+#define ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED    1

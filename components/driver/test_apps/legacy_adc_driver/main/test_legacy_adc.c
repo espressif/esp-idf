@@ -60,11 +60,11 @@
 #define ADC_TEST_HIGH_VAL        3350
 #define ADC_TEST_HIGH_THRESH     200
 
-#elif CONFIG_IDF_TARGET_ESP32H2  // TODO: IDF-6216
-#define ADC_TEST_LOW_VAL         2144
-#define ADC_TEST_LOW_THRESH      200
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define ADC_TEST_LOW_VAL         0
+#define ADC_TEST_LOW_THRESH      17
 
-#define ADC_TEST_HIGH_VAL        4081
+#define ADC_TEST_HIGH_VAL        3390
 #define ADC_TEST_HIGH_THRESH     200
 
 #endif

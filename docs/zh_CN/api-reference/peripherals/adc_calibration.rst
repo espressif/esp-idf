@@ -82,7 +82,7 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
         ESP_ERROR_CHECK(adc_cali_delete_scheme_line_fitting(handle));
 
 
-.. only:: esp32c3 or esp32s3 or esp32c6
+.. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
 
     ADC 校准曲线拟合方案
     ````````````````````````````````````
@@ -90,14 +90,14 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
     {IDF_TARGET_NAME} 支持 :c:macro:`ADC_CALI_SCHEME_VER_CURVE_FITTING` 方案。要创建此方案，请先根据以下配置选项，设置 :cpp:type:`adc_cali_curve_fitting_config_t`。
 
 
-    .. only:: not esp32c6
+    .. only:: esp32c3 or esp32s3
 
         -  :cpp:member:`adc_cali_curve_fitting_config_t::unit_id`，表示 ADC 原始结果来自哪个 ADC 单元。
         -  :cpp:member:`adc_cali_curve_fitting_config_t::chan`，此选项保留以供扩展。校准方案仅因衰减程度而异，与通道选择无关。
         -  :cpp:member:`adc_cali_curve_fitting_config_t::atten`，表示 ADC 原始结果的衰减程度。
         -  :cpp:member:`adc_cali_curve_fitting_config_t::bitwidth`，表示 ADC 原始结果的位宽。
 
-    .. only:: esp32c6
+    .. only:: esp32c6 or esp32h2
 
         -  :cpp:member:`adc_cali_curve_fitting_config_t::unit_id`，表示 ADC 原始结果来自哪个 ADC 单元。
         -  :cpp:member:`adc_cali_curve_fitting_config_t::chan`，表示获取 ADC 原始结果的 ADC 通道。校准方案不仅因衰减程度而异，还与通道选择有关。
@@ -131,10 +131,6 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
         ESP_LOGI(TAG, "delete %s calibration scheme", "Curve Fitting");
         ESP_ERROR_CHECK(adc_cali_delete_scheme_curve_fitting(handle));
 
-
-.. only:: esp32h2
-
-    目前尚不支持任何校准方案。
 
 .. note::
 
