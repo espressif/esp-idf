@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -117,6 +117,7 @@ esp_flash_t *esp_flash_default_chip = NULL;
     .auto_sus_en = true,\
     .cs_setup = 1,\
 }
+#define TSUS_VAL_SUSPEND CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US
 #endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
 #endif // Other target
 
@@ -355,6 +356,15 @@ esp_err_t esp_flash_init_default_chip(void)
     #endif // SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 
     cfg.clock_src_freq = spi_flash_ll_get_source_clock_freq_mhz(cfg.host_id);
+
+    #if CONFIG_SPI_FLASH_AUTO_SUSPEND
+    if (TSUS_VAL_SUSPEND > 400 || TSUS_VAL_SUSPEND < 20) {
+        // Assume that the tsus value cannot larger than 400 (because the performance might be really bad)
+        // And value cannot smaller than 20 (never see that small tsus value, might be wrong)
+        return ESP_ERR_INVALID_ARG;
+    }
+    cfg.tsus_val = TSUS_VAL_SUSPEND;
+    #endif // CONFIG_SPI_FLASH_AUTO_SUSPEND
 
     //the host is already initialized, only do init for the data and load it to the host
     esp_err_t err = memspi_host_init_pointers(&esp_flash_default_host, &cfg);

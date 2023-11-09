@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -596,8 +596,13 @@ spi_flash_caps_t spi_flash_chip_generic_get_caps(esp_flash_t *chip)
     // 32M-bits address support
 
     // flash suspend support
-    // Only `XMC` support suspend for now.
+    // XMC support suspend
     if (chip->chip_id >> 16 == 0x20) {
+        caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
+    }
+
+    // FM support suspend
+    if (chip->chip_id >> 16 == 0xa1) {
         caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
     }
     // flash read unique id.
@@ -790,8 +795,8 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
 
 esp_err_t spi_flash_chip_generic_suspend_cmd_conf(esp_flash_t *chip)
 {
-    // Only XMC support auto-suspend
-    if (chip->chip_id >> 16 != 0x20) {
+    // chips which support auto-suspend
+    if (chip->chip_id >> 16 != 0x20 && chip->chip_id >> 16 != 0xa1) {
         ESP_EARLY_LOGE(TAG, "The flash you use doesn't support auto suspend, only \'XMC\' is supported");
         return ESP_ERR_NOT_SUPPORTED;
     }
