@@ -66,7 +66,9 @@ WIFI_DOCS = ['api-guides/wifi.rst',
              'api-reference/network/esp_now.rst',
              'api-reference/network/esp_smartconfig.rst',
              'api-reference/network/esp_wifi.rst',
-             'api-reference/network/esp_dpp.rst']
+             'api-reference/network/esp_dpp.rst',
+             'api-reference/provisioning/provisioning.rst',
+             'api-reference/provisioning/wifi_provisioning.rst']
 
 NAN_DOCS = ['api-reference/network/esp_nan.rst']
 

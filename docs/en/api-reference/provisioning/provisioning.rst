@@ -1,5 +1,3 @@
-:orphan:
-
 Unified Provisioning
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -14,7 +12,7 @@ The unified provisioning support in the ESP-IDF provides an extensible mechanism
 
 The protocol is completely flexible and it offers the ability for the developers to send custom configuration in the provisioning process. The data representation is also left to the application to decide.
 
-2. **Transport Flexibility** 
+2. **Transport Flexibility**
 
 The protocol can work on Wi-Fi (SoftAP + HTTP server) or on Bluetooth LE as a transport protocol. The framework provides an ability to add support for any other transport easily as long as command-response behavior can be supported on the transport.
 
@@ -22,7 +20,7 @@ The protocol can work on Wi-Fi (SoftAP + HTTP server) or on Bluetooth LE as a tr
 
 It is understood that each use case may require different security scheme to secure the data that is exchanged in the provisioning process. Some applications may work with SoftAP that is WPA2 protected or Bluetooth LE with the "just-works" security. Or the applications may consider the transport to be insecure and may want application-level security. The unified provisioning framework allows the application to choose the security as deemed suitable.
 
-4. **Compact Data Representation** 
+4. **Compact Data Representation**
 
 The protocol uses `Google Protobufs <https://developers.google.com/protocol-buffers/>`_ as a data representation for session setup and Wi-Fi provisioning. They provide a compact data representation and ability to parse the data in multiple programming languages in native format. Please note that this data representation is not forced on application-specific data and the developers may choose the representation of their choice.
 
@@ -233,8 +231,8 @@ Details about the Security 2 scheme are shown in the below sequence diagram:
         Verifier v  = g^x where x = H(s | I | p)"];
                 DEVICE -> DEVICE [label = "Generate\nKey Pair", leftnote = "b (dev_privkey) = 256 bit random value
         B(dev_pubkey) = k*v + g^b where k = H(N, g)"];
-                DEVICE -> DEVICE [label = "Shared Key", leftnote = "Shared Key K = H(S) where, 
-        S = (A * v^u) ^ b 
+                DEVICE -> DEVICE [label = "Shared Key", leftnote = "Shared Key K = H(S) where,
+        S = (A * v^u) ^ b
         u = H(A, B)"];
                 DEVICE -> CLIENT [label = "SessionResp0(dev_pubkey B, dev_rand)"];
                 CLIENT -> CLIENT [label = "Shared Key", rightnote = "shared_key(K) = H(S) where,
@@ -243,7 +241,7 @@ Details about the Security 2 scheme are shown in the below sequence diagram:
         k = H(N, g),
         v = g^x,
         x = H(s | I | p).
-        
+
         "];
                 CLIENT -> CLIENT [label = "Verification\nToken", rightnote = "client_proof M =  H[H(N) XOR H(g) | H(I) | s | A | B | K]"];
                 CLIENT -> DEVICE [label = "SessionCmd1(client_proof M1)"];
