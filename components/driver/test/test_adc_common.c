@@ -32,8 +32,8 @@ static const char *TAG = "test_adc";
 #define ADC2_TEST_WIDTH         ADC_WIDTH_BIT_13   //ESP32S2 only support 13 bit width
 #endif
 
-#define ADC1_TEST_ATTEN         ADC_ATTEN_DB_11
-#define ADC2_TEST_ATTEN         ADC_ATTEN_DB_11
+#define ADC1_TEST_ATTEN         ADC_ATTEN_DB_12
+#define ADC2_TEST_ATTEN         ADC_ATTEN_DB_12
 
 #if CONFIG_IDF_TARGET_ESP32
 #define ADC1_TEST_CHANNEL_NUM   8

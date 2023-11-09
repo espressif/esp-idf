@@ -8,7 +8,7 @@
 #include "hal/adc_types.h"
 
 #define EXAMPLE_ADC_CHANNEL     ADC_CHANNEL_0
-#define EXAMPLE_ADC_ATTEN       ADC_ATTEN_DB_11
+#define EXAMPLE_ADC_ATTEN       ADC_ATTEN_DB_12
 #define EXAMPLE_ADC_WIDTH       ADC_WIDTH_BIT_12
 
 /* Set high threshold, approx. 1.75V*/

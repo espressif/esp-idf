@@ -33,7 +33,7 @@ static const char *TAG_CH[2][10] = {{"ADC1_CH2"}, {"ADC2_CH0"}};
 #endif
 
 //ADC Attenuation
-#define ADC_EXAMPLE_ATTEN           ADC_ATTEN_DB_11
+#define ADC_EXAMPLE_ATTEN           ADC_ATTEN_DB_12
 
 //ADC Calibration
 #if CONFIG_IDF_TARGET_ESP32

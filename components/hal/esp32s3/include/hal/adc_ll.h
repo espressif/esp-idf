@@ -1011,19 +1011,19 @@ static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t ad
  * - 0dB attenuaton (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
  * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
  * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
- * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
+ * - 12dB attenuation (ADC_ATTEN_DB_12) gives full-scale voltage 3.9V (see note below)
  *
  * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured
  * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
  *
- * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
+ * @note At 12dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
  *
  * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
  *
  * - 0dB attenuaton (ADC_ATTEN_DB_0) between 100 and 950mV
  * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
  * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
- * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV
+ * - 12dB attenuation (ADC_ATTEN_DB_12) between 150 to 2450mV
  *
  * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
  *

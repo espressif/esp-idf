@@ -19,7 +19,7 @@ Don't put any other code into this file. */
 static __attribute__((constructor)) void adc2_init_code_calibration(void)
 {
     const adc_ll_num_t adc_n = ADC_NUM_2;
-    const adc_atten_t atten = ADC_ATTEN_DB_11;
+    const adc_atten_t atten = ADC_ATTEN_DB_12;
     const adc_channel_t channel = 0;
     adc_cal_offset(adc_n, channel, atten);
 }

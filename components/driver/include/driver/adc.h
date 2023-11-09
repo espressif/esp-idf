@@ -89,7 +89,7 @@ typedef enum {
 #define ADC_ATTEN_0db   ADC_ATTEN_DB_0
 #define ADC_ATTEN_2_5db ADC_ATTEN_DB_2_5
 #define ADC_ATTEN_6db   ADC_ATTEN_DB_6
-#define ADC_ATTEN_11db  ADC_ATTEN_DB_11
+#define ADC_ATTEN_11db  ADC_ATTEN_DB_12
 
 /**
  * The default (max) bit width of the ADC of current version. You can also get the maximum bitwidth
