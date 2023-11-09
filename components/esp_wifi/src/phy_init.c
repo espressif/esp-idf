@@ -48,6 +48,10 @@
 #include "esp32s3/rom/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "soc/dport_reg.h"
+#endif
 #include "hal/efuse_hal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
