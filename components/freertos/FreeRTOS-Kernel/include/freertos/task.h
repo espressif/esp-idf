@@ -205,6 +205,15 @@ typedef enum
 /* Todo: Update tskNO_AFFINITY value to -1 (IDF-7908) */
 
 /**
+ * Macro to check if an xCoreID value is valid
+ *
+ * @return pdTRUE if valid, pdFALSE otherwise.
+ *
+ * \ingroup Tasks
+ */
+#define taskVALID_CORE_ID( xCoreID )       ( ( ( ( ( BaseType_t ) xCoreID ) >= 0 && ( ( BaseType_t ) xCoreID ) < configNUMBER_OF_CORES ) || ( ( ( BaseType_t ) xCoreID ) == tskNO_AFFINITY ) ) ? pdTRUE : pdFALSE )
+
+/**
  *
  * Macro for forcing a context switch.
  *
