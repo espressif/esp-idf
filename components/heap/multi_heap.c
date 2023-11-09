@@ -26,7 +26,14 @@
 /* Defines compile-time configuration macros */
 #include "multi_heap_config.h"
 
-#if (!defined MULTI_HEAP_POISONING) && (!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
+#if (!defined MULTI_HEAP_POISONING)
+
+void *multi_heap_aligned_alloc_offs(multi_heap_handle_t heap, size_t size, size_t alignment, size_t offset)
+{
+    return multi_heap_aligned_alloc_impl_offs(heap, size, alignment, offset);
+}
+
+#if (!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
 /* if no heap poisoning, public API aliases directly to these implementations */
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
     __attribute__((alias("multi_heap_malloc_impl")));
@@ -60,7 +67,9 @@ size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
 
 void *multi_heap_get_block_address(multi_heap_block_handle_t block)
     __attribute__((alias("multi_heap_get_block_address_impl")));
-#endif
+
+#endif // !CONFIG_HEAP_TLSF_USE_ROM_IMPL
+#endif // !MULTI_HEAP_POISONING
 
 #define ALIGN(X) ((X) & ~(sizeof(void *)-1))
 #define ALIGN_UP(X) ALIGN((X)+sizeof(void *)-1)
