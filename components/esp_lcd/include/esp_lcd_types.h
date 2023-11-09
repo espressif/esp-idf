@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,14 @@ extern "C" {
 
 typedef struct esp_lcd_panel_io_t *esp_lcd_panel_io_handle_t; /*!< Type of LCD panel IO handle */
 typedef struct esp_lcd_panel_t *esp_lcd_panel_handle_t;       /*!< Type of LCD panel handle */
+
+/**
+ * @brief RGB element order
+ */
+typedef enum {
+    LCD_RGB_ELEMENT_ORDER_RGB, /*!< RGB element order: RGB */
+    LCD_RGB_ELEMENT_ORDER_BGR, /*!< RGB element order: BGR */
+} lcd_rgb_element_order_t;
 
 /** @cond */
 /**
@@ -30,6 +38,11 @@ typedef enum {
 // Ensure binary compatibility with lcd_color_rgb_endian_t
 ESP_STATIC_ASSERT((lcd_rgb_element_order_t)ESP_LCD_COLOR_SPACE_RGB == LCD_RGB_ELEMENT_ORDER_RGB, "ESP_LCD_COLOR_SPACE_RGB is not compatible with LCD_RGB_ORDER_RGB");
 ESP_STATIC_ASSERT((lcd_rgb_element_order_t)ESP_LCD_COLOR_SPACE_BGR == LCD_RGB_ELEMENT_ORDER_BGR, "ESP_LCD_COLOR_SPACE_BGR is not compatible with LCD_RGB_ORDER_BGR");
+
+/// for backward compatible
+typedef lcd_rgb_element_order_t lcd_color_rgb_endian_t;
+#define LCD_RGB_ENDIAN_RGB LCD_RGB_ELEMENT_ORDER_RGB
+#define LCD_RGB_ENDIAN_BGR LCD_RGB_ELEMENT_ORDER_BGR
 /** @endcond */
 
 #ifdef __cplusplus

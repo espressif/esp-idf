@@ -38,7 +38,7 @@ static const char *TAG = "example";
 // The pixel number in horizontal and vertical
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_SSD1306
 #define EXAMPLE_LCD_H_RES              128
-#define EXAMPLE_LCD_V_RES              64
+#define EXAMPLE_LCD_V_RES              CONFIG_EXAMPLE_SSD1306_HEIGHT
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
 #define EXAMPLE_LCD_H_RES              64
 #define EXAMPLE_LCD_V_RES              128
@@ -48,16 +48,6 @@ static const char *TAG = "example";
 #define EXAMPLE_LCD_PARAM_BITS         8
 
 extern void example_lvgl_demo_ui(lv_disp_t *disp);
-
-/* The LVGL port component calls esp_lcd_panel_draw_bitmap API for send data to the screen. There must be called
-lvgl_port_flush_ready(disp) after each transaction to display. The best way is to use on_color_trans_done
-callback from esp_lcd IO config structure. In IDF 5.1 and higher, it is solved inside LVGL port component. */
-static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
-{
-    lv_disp_t * disp = (lv_disp_t *)user_ctx;
-    lvgl_port_flush_ready(disp);
-    return false;
-}
 
 void app_main(void)
 {
@@ -90,7 +80,7 @@ void app_main(void)
         }
 #endif
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)I2C_HOST, &io_config, &io_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(I2C_HOST, &io_config, &io_handle));
 
     ESP_LOGI(TAG, "Install SSD1306 panel driver");
     esp_lcd_panel_handle_t panel_handle = NULL;
@@ -99,6 +89,10 @@ void app_main(void)
         .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
     };
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_SSD1306
+    esp_lcd_panel_ssd1306_config_t ssd1306_config = {
+        .height = EXAMPLE_LCD_V_RES,
+    };
+    panel_config.vendor_config = &ssd1306_config;
     ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
     ESP_ERROR_CHECK(esp_lcd_new_panel_sh1107(io_handle, &panel_config, &panel_handle));
@@ -131,11 +125,6 @@ void app_main(void)
         }
     };
     lv_disp_t * disp = lvgl_port_add_disp(&disp_cfg);
-    /* Register done callback for IO */
-    const esp_lcd_panel_io_callbacks_t cbs = {
-        .on_color_trans_done = notify_lvgl_flush_ready,
-    };
-    esp_lcd_panel_io_register_event_callbacks(io_handle, &cbs, disp);
 
     /* Rotation of the screen */
     lv_disp_set_rotation(disp, LV_DISP_ROT_NONE);

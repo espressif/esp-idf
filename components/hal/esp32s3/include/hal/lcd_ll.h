@@ -29,10 +29,6 @@ extern "C" {
 #define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
 #define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
 
-#define LCD_LL_COLOR_RANGE_TO_REG(range) (uint8_t[]){0,1}[(range)]
-#define LCD_LL_CONV_STD_TO_REG(std)      (uint8_t[]){0,1}[(std)]
-#define LCD_LL_YUV_SAMPLE_TO_REG(sample) (uint8_t[]){0,1,2}[(sample)]
-
 /**
  * @brief Enable clock gating
  *
@@ -91,7 +87,6 @@ static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num,
     dev->lcd_clock.lcd_clkm_div_a = div_a;
     dev->lcd_clock.lcd_clkm_div_b = div_b;
 }
-
 
 /**
  * @brief Set the PCLK clock level state when there's no transaction undergoing
@@ -170,7 +165,11 @@ static inline void lcd_ll_set_convert_data_width(lcd_cam_dev_t *dev, uint32_t wi
  */
 static inline void lcd_ll_set_input_color_range(lcd_cam_dev_t *dev, lcd_color_range_t range)
 {
-    dev->lcd_rgb_yuv.lcd_conv_data_in_mode = LCD_LL_COLOR_RANGE_TO_REG(range);
+    if (range == LCD_COLOR_RANGE_LIMIT) {
+        dev->lcd_rgb_yuv.lcd_conv_data_in_mode = 0;
+    } else if (range == LCD_COLOR_RANGE_FULL) {
+        dev->lcd_rgb_yuv.lcd_conv_data_in_mode = 1;
+    }
 }
 
 /**
@@ -181,7 +180,11 @@ static inline void lcd_ll_set_input_color_range(lcd_cam_dev_t *dev, lcd_color_ra
  */
 static inline void lcd_ll_set_output_color_range(lcd_cam_dev_t *dev, lcd_color_range_t range)
 {
-    dev->lcd_rgb_yuv.lcd_conv_data_out_mode = LCD_LL_COLOR_RANGE_TO_REG(range);
+    if (range == LCD_COLOR_RANGE_LIMIT) {
+        dev->lcd_rgb_yuv.lcd_conv_data_out_mode = 0;
+    } else if (range == LCD_COLOR_RANGE_FULL) {
+        dev->lcd_rgb_yuv.lcd_conv_data_out_mode = 1;
+    }
 }
 
 /**
@@ -192,7 +195,11 @@ static inline void lcd_ll_set_output_color_range(lcd_cam_dev_t *dev, lcd_color_r
  */
 static inline void lcd_ll_set_yuv_convert_std(lcd_cam_dev_t *dev, lcd_yuv_conv_std_t std)
 {
-    dev->lcd_rgb_yuv.lcd_conv_protocol_mode = LCD_LL_CONV_STD_TO_REG(std);
+    if (std == LCD_YUV_CONV_STD_BT601) {
+        dev->lcd_rgb_yuv.lcd_conv_protocol_mode = 0;
+    } else if (std == LCD_YUV_CONV_STD_BT709) {
+        dev->lcd_rgb_yuv.lcd_conv_protocol_mode = 1;
+    }
 }
 
 /**
@@ -204,8 +211,20 @@ static inline void lcd_ll_set_yuv_convert_std(lcd_cam_dev_t *dev, lcd_yuv_conv_s
 static inline void lcd_ll_set_convert_mode_rgb_to_yuv(lcd_cam_dev_t *dev, lcd_yuv_sample_t yuv_sample)
 {
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
-    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(yuv_sample);
     dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
+    switch (yuv_sample) {
+    case LCD_YUV_SAMPLE_422:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 0;
+        break;
+    case LCD_YUV_SAMPLE_420:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 1;
+        break;
+    case LCD_YUV_SAMPLE_411:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 2;
+        break;
+    default:
+        abort();
+    }
 }
 
 /**
@@ -217,8 +236,20 @@ static inline void lcd_ll_set_convert_mode_rgb_to_yuv(lcd_cam_dev_t *dev, lcd_yu
 static inline void lcd_ll_set_convert_mode_yuv_to_rgb(lcd_cam_dev_t *dev, lcd_yuv_sample_t yuv_sample)
 {
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 0;
-    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(yuv_sample);
     dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
+    switch (yuv_sample) {
+    case LCD_YUV_SAMPLE_422:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 0;
+        break;
+    case LCD_YUV_SAMPLE_420:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 1;
+        break;
+    case LCD_YUV_SAMPLE_411:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 2;
+        break;
+    default:
+        abort();
+    }
 }
 
 /**
@@ -232,8 +263,32 @@ static inline void lcd_ll_set_convert_mode_yuv_to_yuv(lcd_cam_dev_t *dev, lcd_yu
 {
     HAL_ASSERT(src_sample != dst_sample);
     dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
-    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(src_sample);
-    dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(dst_sample);
+    switch (src_sample) {
+    case LCD_YUV_SAMPLE_422:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 0;
+        break;
+    case LCD_YUV_SAMPLE_420:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 1;
+        break;
+    case LCD_YUV_SAMPLE_411:
+        dev->lcd_rgb_yuv.lcd_conv_yuv_mode = 2;
+        break;
+    default:
+        abort();
+    }
+    switch (dst_sample) {
+    case LCD_YUV_SAMPLE_422:
+        dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 0;
+        break;
+    case LCD_YUV_SAMPLE_420:
+        dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 1;
+        break;
+    case LCD_YUV_SAMPLE_411:
+        dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 2;
+        break;
+    default:
+        abort();
+    }
 }
 
 /**
