@@ -9,8 +9,7 @@ examples/ethernet/basic:
     - lwip
     - esp_event
     - esp_driver_gpio
-  depends_filepatterns:
-    - components/driver/spi/**/*
+    - esp_driver_spi
 
 examples/ethernet/enc28j60:
   disable:
@@ -23,8 +22,7 @@ examples/ethernet/enc28j60:
     - lwip
     - esp_event
     - esp_driver_gpio
-  depends_filepatterns:
-    - components/driver/spi/**/*
+    - esp_driver_spi
 
 examples/ethernet/iperf:
   disable_test:
@@ -38,8 +36,8 @@ examples/ethernet/iperf:
     - esp_event
     - console
     - esp_driver_gpio
+    - esp_driver_spi
   depends_filepatterns:
-    - components/driver/spi/**/*
     - examples/common_components/iperf/**/*
     - examples/common_components/protocol_examples_common/**/*
     - examples/system/console/advanced/components/cmd_system/**/*

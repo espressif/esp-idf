@@ -131,16 +131,14 @@ examples/peripherals/lcd/spi_lcd_touch:
     - if: SOC_GPSPI_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/spi/**/*
+    - esp_driver_spi
 
 examples/peripherals/lcd/tjpgd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/spi/**/*
+    - esp_driver_spi
 
 examples/peripherals/ledc:
   disable:

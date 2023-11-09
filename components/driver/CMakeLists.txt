@@ -5,8 +5,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 # Always compiled source files
-set(srcs
-    "spi/spi_bus_lock.c")
+set(srcs)
 
 # Always included headers
 set(includes "include"
@@ -21,8 +20,8 @@ set(includes "include"
              "rmt/include"
              "sdio_slave/include"
              "sdmmc/include"
+             "sdspi/include"
              "sigma_delta/include"
-             "spi/include"
              "temperature_sensor/include"
              "touch_sensor/include"
              "twai/include"
@@ -153,19 +152,13 @@ if(CONFIG_SOC_SDM_SUPPORTED)
                      "deprecated/sigma_delta_legacy.c")
 endif()
 
-# SPI related source files
+# SDSPI related source files
 if(CONFIG_SOC_GPSPI_SUPPORTED)
-    list(APPEND srcs "spi/gpspi/spi_common.c"
-                     "spi/gpspi/spi_master.c"
-                     "spi/gpspi/spi_slave.c"
-                     "spi/sdspi/sdspi_crc.c"
-                     "spi/sdspi/sdspi_host.c"
-                     "spi/sdspi/sdspi_transaction.c")
+    list(APPEND srcs "sdspi/sdspi_crc.c"
+                     "sdspi/sdspi_host.c"
+                     "sdspi/sdspi_transaction.c")
 endif()
 
-if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
-    list(APPEND srcs "spi/gpspi/spi_slave_hd.c")
-endif()
 
 # Temperature Sensor related source files
 if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
@@ -218,7 +211,7 @@ else()
                            REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
-                                    esp_driver_gpio esp_driver_pcnt esp_driver_gptimer
+                                    esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

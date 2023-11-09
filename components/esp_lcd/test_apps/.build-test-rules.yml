@@ -41,7 +41,6 @@ components/esp_lcd/test_apps/rgb_lcd:
 components/esp_lcd/test_apps/spi_lcd:
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/spi/**/*
+    - esp_driver_spi
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
