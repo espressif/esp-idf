@@ -22,6 +22,7 @@ typedef enum {
 void IRAM_ATTR modem_clock_hal_enable_modem_adc_common_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     modem_syscon_ll_enable_fe_apb_clock(hal->syscon_dev, enable);
+    modem_syscon_ll_enable_fe_32m_clock(hal->syscon_dev, enable);
 }
 
 void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_context_t *hal, bool enable)
@@ -29,7 +30,6 @@ void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_con
     modem_lpcon_ll_enable_fe_mem_clock(hal->lpcon_dev, enable);
     modem_syscon_ll_enable_fe_sdm_clock(hal->syscon_dev, enable);
     modem_syscon_ll_enable_fe_adc_clock(hal->syscon_dev, enable);
-    modem_syscon_ll_enable_fe_32m_clock(hal->syscon_dev, enable);
     modem_syscon_ll_enable_fe_16m_clock(hal->syscon_dev, enable);
 }
 
