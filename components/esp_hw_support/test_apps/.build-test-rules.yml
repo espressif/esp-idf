@@ -18,7 +18,7 @@ components/esp_hw_support/test_apps/etm:
     - esp_driver_gpio
     - esp_driver_mcpwm
     - esp_timer
-    - driver # TODO: replace with esp_driver_ana_cmpr (IDF-8521)
+    - esp_driver_ana_cmpr
 
 components/esp_hw_support/test_apps/host_test_linux:
   enable:

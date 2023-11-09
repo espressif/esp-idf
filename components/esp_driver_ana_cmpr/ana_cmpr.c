@@ -63,7 +63,7 @@ static const char *TAG = "ana_cmpr";
 
 /* Global static object of the Analog Comparator unit */
 static ana_cmpr_handle_t s_ana_cmpr[SOC_ANA_CMPR_NUM] = {
-    [0 ... (SOC_ANA_CMPR_NUM - 1)] = NULL,
+    [0 ...(SOC_ANA_CMPR_NUM - 1)] = NULL,
 };
 
 /* Global spin lock */
@@ -149,9 +149,9 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
 
     /* Analog clock comes from IO MUX, but IO MUX clock might be shared with other submodules as well */
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)config->clk_src,
-                                                ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
-                                                &s_ana_cmpr[unit]->src_clk_freq_hz),
-                                                err, TAG, "get source clock frequency failed");
+                                                   ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+                                                   &s_ana_cmpr[unit]->src_clk_freq_hz),
+                      err, TAG, "get source clock frequency failed");
     ESP_GOTO_ON_ERROR(io_mux_set_clock_source((soc_module_clk_t)(config->clk_src)), err, TAG,
                       "potential clock source conflicts from other IOMUX peripherals");
 
@@ -298,7 +298,7 @@ esp_err_t ana_cmpr_register_event_callbacks(ana_cmpr_handle_t cmpr, const ana_cm
         intr_flags |= ESP_INTR_FLAG_SHARED;
 #endif  // SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(ana_cmpr_periph[cmpr->unit].intr_src, intr_flags, (uint32_t)analog_cmpr_ll_get_intr_status_reg(cmpr->dev),
-                        cmpr->intr_mask, s_ana_cmpr_default_intr_handler, cmpr, &cmpr->intr_handle), TAG, "allocate interrupt failed");
+                                                      cmpr->intr_mask, s_ana_cmpr_default_intr_handler, cmpr, &cmpr->intr_handle), TAG, "allocate interrupt failed");
     }
 
     /* Save the callback group */
