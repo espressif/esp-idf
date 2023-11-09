@@ -969,7 +969,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 
     #if ( configNUMBER_OF_CORES > 1 )
         /* Check that xCoreID is valid */
-        configASSERT( ( ( xCoreID >= 0 ) && ( xCoreID < configNUMBER_OF_CORES ) ) || ( xCoreID == tskNO_AFFINITY ) );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
     #else
         /* Hard code xCoreID to 0 */
         xCoreID = 0;
@@ -2220,9 +2220,9 @@ static BaseType_t prvCreateIdleTasks( void )
     BaseType_t xReturn = pdPASS;
     BaseType_t xCoreID;
 
-#if ( configNUMBER_OF_CORES > 1 )
-    char cIdleName[ configMAX_TASK_NAME_LEN ];
-#endif /* #if ( configNUMBER_OF_CORES > 1 ) */
+    #if ( configNUMBER_OF_CORES > 1 )
+        char cIdleName[ configMAX_TASK_NAME_LEN ];
+    #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
 
     /* Add each idle task at the lowest priority. */
     for( xCoreID = ( BaseType_t ) 0; xCoreID < ( BaseType_t ) configNUMBER_OF_CORES; xCoreID++ )
@@ -2328,7 +2328,6 @@ static BaseType_t prvCreateIdleTasks( void )
                                                portPRIVILEGE_BIT,           /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
                                                &xIdleTaskHandle[ xCoreID ], /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
                                                xCoreID );
-
         }
         #endif /* configSUPPORT_STATIC_ALLOCATION */
     }
