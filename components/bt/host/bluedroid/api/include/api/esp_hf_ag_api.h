@@ -505,7 +505,7 @@ esp_err_t esp_bt_hf_cops_response(esp_bd_addr_t remote_addr, char *name);
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
- * @param[in]       index: the index of current call
+ * @param[in]       index: the index of current call, starting with 1, finishing response with 0 (send OK)
  * @param[in]       dir: call direction (incoming/outgoing)
  * @param[in]       current_call_state: current call state
  * @param[in]       mode: current call mode (voice/data/fax)
@@ -529,14 +529,18 @@ esp_err_t esp_bt_hf_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
  *
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       number: registration number
- * @param[in]       type: service type (unknown/voice/fax)
+ * @param[in]       number_type: value of number type from
+ *                               128-143: national or international, may contain prefix and/or escape digits
+ *                               144-159: international, includes country code prefix, add "+" if needed
+ *                               160-175: national, but no prefix nor escape digits
+ * @param[in]       service_type: service type (unknown/voice/fax)
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_hf_subscriber_service_type_t type);
+esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, int number_type, esp_hf_subscriber_service_type_t service_type);
 
 /**
  *
@@ -601,6 +605,9 @@ esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int n
  *
  * @brief           Initiate a call from AG.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
+ *                  If the AG is driven by the HF to call esp_hf_ag_out_call, it needs to response an OK or ERROR
+ *                  to HF. But if the AG is actively calling esp_hf_ag_out_call, it does not need to take a response
+ *                  to HF.
  *
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       num_active: the number of active call
