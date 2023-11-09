@@ -280,8 +280,8 @@ typedef struct {
             .mem_dslp      = 0                                              \
         },                                                                  \
         .clk_power = {                                                      \
-            .xpd_xtal32k   = 1,                                             \
-            .xpd_rc32k     = 1,                                             \
+            .xpd_xtal32k   = ((pd_flags) & PMU_SLEEP_PD_XTAL32K) ? 0 : 1,   \
+            .xpd_rc32k     = ((pd_flags) & PMU_SLEEP_PD_RC32K) ? 0 : 1,     \
             .xpd_fosc      = 1                                              \
         }                                                                   \
     },                                                                      \
