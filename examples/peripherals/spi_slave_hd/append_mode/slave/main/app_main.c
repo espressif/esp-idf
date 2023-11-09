@@ -15,11 +15,15 @@
 #include "freertos/semphr.h"
 #include "driver/spi_slave_hd.h"
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your Hardware spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_MOSI           11
 #define GPIO_MISO           13
 #define GPIO_SCLK           12
 #define GPIO_CS             10
-#define HOST_ID             1
+
+#define HOST_ID             SPI2_HOST
 #define QUEUE_SIZE          6
 #define TRANSACTION_LEN     16
 #define SYNC_REG_FROM_HOST  (14 * 4)

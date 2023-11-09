@@ -146,9 +146,6 @@ components/driver/test_apps/spi/master:
 components/driver/test_apps/spi/param:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-7505
 
 components/driver/test_apps/spi/slave:
   disable:

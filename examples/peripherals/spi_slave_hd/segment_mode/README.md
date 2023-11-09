@@ -10,7 +10,7 @@ These two projects illustrate the SPI Slave Halfduplex Segment Mode.
 
 ### Hardware Required
 
-These two projects are supposed to be flashed onto two seperate boards and jumped together via correctly connected SPI pins defined in both of the ``app_main.c`` files. For the ``seg_master`` project, it could be flashed onto all the ESP Chips. Whereas the ``seg_slave`` currently could be flashed onto ESP32-S2. Once they are connected and flashed, they will use the SPI Master and SPI Slave Halfduplex drivers to communicate with each other.
+These two projects are supposed to be flashed onto two seperate boards and jumped together via correctly connected SPI pins defined in both of the ``app_main.c`` files. Once they are connected and flashed, they will use the SPI Master and SPI Slave Halfduplex drivers to communicate with each other.
 
 Following is the connection between 2 ESP32S2 boards:
 
@@ -21,8 +21,7 @@ Following is the connection between 2 ESP32S2 boards:
 | SCLK      | GPIO12 | GPIO12 |
 | CS        | GPIO10 | GPIO10 |
 
-Plase refer to the macro definations at the top of ``app_main.c`` files, to know the connection on different chips.
-Feel free to change the GPIO settings by editing the macro definations.
+Feel free to change the GPIO settings by editing the macro definations on the top of the ``app_main.c``
 
 ### Build and Flash
 

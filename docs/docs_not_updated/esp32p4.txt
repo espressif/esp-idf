@@ -106,7 +106,6 @@ api-reference/peripherals/spi_flash/auto_suspend.inc
 api-reference/peripherals/sdm.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/adc_calibration.rst
-api-reference/peripherals/spi_slave_hd.rst
 api-reference/peripherals/parlio.rst
 api-reference/peripherals/i2c.rst
 api-reference/peripherals/dedic_gpio.rst
@@ -168,7 +167,6 @@ api-reference/protocols/esp_local_ctrl.rst
 api-reference/protocols/esp_crt_bundle.rst
 api-reference/protocols/esp_http_client.rst
 api-reference/protocols/esp_https_server.rst
-api-reference/protocols/esp_spi_slave_protocol.rst
 api-reference/protocols/modbus.rst
 api-reference/protocols/esp_tls.rst
 api-reference/protocols/mdns.rst
