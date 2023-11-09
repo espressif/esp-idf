@@ -262,14 +262,13 @@ IDF monitor can be invoked as ``idf.py monitor --print-filter="xyz"``, where ``-
 
    When using both the environment variable ``ESP_IDF_MONITOR_PRINT_FILTER`` and the argument ``--print-filter``, the setting from the CLI argument will take precedence.
 
-
 Restrictions on what to print can be specified as a series of ``<tag>:<log_level>`` items where ``<tag>`` is the tag string and ``<log_level>`` is a character from the set ``{N, E, W, I, D, V, *}`` referring to a level for :doc:`logging <../../api-reference/system/log>`.
 
-For example, ``--print_filter="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e., ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to Verbose level.
+For example, ``--print_filter="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e., ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to a Verbose level.
 
 .. note::
 
-   Use primary logging to disable at compilation the outputs you do not need through the :doc:`logging library <../../api-reference/system/log>`. Output filtering with ESP- monitor is a secondary solution which can be useful for adjusting the filtering options without recompiling the application.
+   Use primary logging to disable at compilation the outputs you do not need through the :doc:`logging library <../../api-reference/system/log>`. Output filtering with the IDF monitor is a secondary solution that can be useful for adjusting the filtering options without recompiling the application.
 
 Your app tags must not contain spaces, asterisks ``*``, or colons ``:`` to be compatible with the output filtering feature.
 
