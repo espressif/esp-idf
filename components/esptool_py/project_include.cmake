@@ -122,7 +122,6 @@ idf_build_get_property(build_dir BUILD_DIR)
 
 idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
 idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
-idf_build_get_property(elf_dir EXECUTABLE_DIR GENERATOR_EXPRESSION)
 
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT BOOTLOADER_BUILD)
     set(unsigned_project_binary "${elf_name}-unsigned.bin")
@@ -138,10 +137,10 @@ set(PROJECT_BIN "${elf_name}.bin")
 if(CONFIG_APP_BUILD_GENERATE_BINARIES)
     add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
         COMMAND ${ESPTOOLPY} elf2image ${esptool_elf2image_args}
-            -o "${build_dir}/${unsigned_project_binary}" "${elf_dir}/${elf}"
+            -o "${build_dir}/${unsigned_project_binary}" "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
         COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
         COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
-        DEPENDS ${elf}
+        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
         VERBATIM
         WORKING_DIRECTORY ${build_dir}
         COMMENT "Generating binary image from built executable"
@@ -237,7 +236,7 @@ add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
     -D "IDF_PATH=${idf_path}"
     -D "SERIAL_TOOL=${ESPMONITOR}"
-    -D "SERIAL_TOOL_ARGS=--target;${target};${monitor_rev_args};${elf_dir}/${elf}"
+    -D "SERIAL_TOOL_ARGS=--target;${target};${monitor_rev_args};$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
     -D "WORKING_DIRECTORY=${build_dir}"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
