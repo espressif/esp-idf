@@ -674,7 +674,6 @@ components/soc/esp32c3/include/soc/sensitive_struct.h
 components/soc/esp32c3/include/soc/soc_pins.h
 components/soc/esp32c3/include/soc/spi_mem_reg.h
 components/soc/esp32c3/include/soc/spi_pins.h
-components/soc/esp32c3/include/soc/spi_reg.h
 components/soc/esp32c3/include/soc/systimer_reg.h
 components/soc/esp32c3/include/soc/systimer_struct.h
 components/soc/esp32c3/include/soc/uart_pins.h
@@ -711,9 +710,7 @@ components/soc/esp32s2/include/soc/rtc_io_reg.h
 components/soc/esp32s2/include/soc/sens_reg.h
 components/soc/esp32s2/include/soc/sensitive_reg.h
 components/soc/esp32s2/include/soc/soc_ulp.h
-components/soc/esp32s2/include/soc/spi_mem_reg.h
 components/soc/esp32s2/include/soc/spi_pins.h
-components/soc/esp32s2/include/soc/spi_reg.h
 components/soc/esp32s2/include/soc/systimer_reg.h
 components/soc/esp32s2/include/soc/systimer_struct.h
 components/soc/esp32s2/include/soc/touch_sensor_channel.h
