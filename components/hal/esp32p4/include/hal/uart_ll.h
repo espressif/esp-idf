@@ -316,34 +316,6 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 #define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    if ((hw) == &UART0) {
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart0_core = core_rst_en;
-    } else if ((hw) == &UART1) {
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart1_core = core_rst_en;
-    } else if ((hw) == &UART2) {
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart2_core = core_rst_en;
-    } else if ((hw) == &UART3) {
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart3_core = core_rst_en;
-    } else if ((hw) == &UART4) {
-        HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uart4_core = core_rst_en;
-    } else {
-        // Not going to implement LP_UART reset in this function, it will have its own LL function
-        abort();
-    }
-}
-// HP_SYS_CLKRST.hp_rst_en1 is a shared register, so this function must be used in an atomic way
-#define uart_ll_set_reset_core(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_set_reset_core(__VA_ARGS__)
-
-/**
  * @brief  Enable the UART clock.
  *
  * @param  hw Beginning address of the peripheral registers.

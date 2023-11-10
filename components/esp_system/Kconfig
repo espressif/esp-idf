@@ -275,13 +275,9 @@ menu "ESP System Settings"
         bool
         default y if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
 
-    config ESP_CONSOLE_MULTIPLE_UART
-        bool
-        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C6
-
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"
-        depends on ESP_CONSOLE_UART_CUSTOM && ESP_CONSOLE_MULTIPLE_UART
+        depends on ESP_CONSOLE_UART_CUSTOM
         default ESP_CONSOLE_UART_CUSTOM_NUM_0
         help
             This UART peripheral is used for console output from the ESP-IDF Bootloader and the app.
@@ -301,7 +297,6 @@ menu "ESP System Settings"
     config ESP_CONSOLE_UART_NUM
         int
         default 0 if ESP_CONSOLE_UART_DEFAULT
-        default 0 if !ESP_CONSOLE_MULTIPLE_UART
         default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
         default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
         default -1 if !ESP_CONSOLE_UART
@@ -309,7 +304,7 @@ menu "ESP System Settings"
     config ESP_CONSOLE_UART_TX_GPIO
         int "UART TX on GPIO#"
         depends on ESP_CONSOLE_UART_CUSTOM
-        range 0 46
+        range 0 SOC_GPIO_OUT_RANGE_MAX
         default 1 if IDF_TARGET_ESP32
         default 20 if IDF_TARGET_ESP32C2
         default 21 if IDF_TARGET_ESP32C3
@@ -327,7 +322,7 @@ menu "ESP System Settings"
     config ESP_CONSOLE_UART_RX_GPIO
         int "UART RX on GPIO#"
         depends on ESP_CONSOLE_UART_CUSTOM
-        range 0 46
+        range 0 SOC_GPIO_IN_RANGE_MAX
         default 3 if IDF_TARGET_ESP32
         default 19 if IDF_TARGET_ESP32C2
         default 20 if IDF_TARGET_ESP32C3
