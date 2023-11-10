@@ -6,6 +6,14 @@ if BLE_MESH
         help
             It is a temporary solution and needs further modifications.
 
+    config BLE_MESH_RANDOM_ADV_INTERVAL
+        bool "Support using random adv interval for mesh packets"
+        default n
+        help
+            Enable this option to allow using random advertising interval
+            for mesh packets. And this could help avoid collision of
+            advertising packets.
+
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
         depends on BT_BLUEDROID_ENABLED
