@@ -109,9 +109,9 @@ typedef enum {
 esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module);
 
 /**
- * @brief Print all runtime sleep retention linked lists
+ * @brief Dump all runtime sleep retention linked lists
  */
-void sleep_retention_entries_show_memories(void);
+void sleep_retention_dump_entries(FILE *out);
 
 /**
  * @brief Find the linked list node with the unique id
