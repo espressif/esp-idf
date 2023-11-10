@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -292,21 +292,9 @@ esp_err_t esp_pm_configure(const void* vconfig)
                   min_freq_mhz,
                   config->light_sleep_enable ? "ENABLED" : "DISABLED");
 
-    portENTER_CRITICAL(&s_switch_lock);
-
-    bool res __attribute__((unused));
-    res = rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_CPU_MAX]);
-    assert(res);
-    res = rtc_clk_cpu_freq_mhz_to_config(apb_max_freq, &s_cpu_freq_by_mode[PM_MODE_APB_MAX]);
-    assert(res);
-    res = rtc_clk_cpu_freq_mhz_to_config(min_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_APB_MIN]);
-    assert(res);
-    s_cpu_freq_by_mode[PM_MODE_LIGHT_SLEEP] = s_cpu_freq_by_mode[PM_MODE_APB_MIN];
-    s_light_sleep_en = config->light_sleep_enable;
-    s_config_changed = true;
-    portEXIT_CRITICAL(&s_switch_lock);
 
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_SUPPORT_CPU_PD
+    // must be initialized before s_light_sleep_en set true, to avoid entering idle and sleep in this function.
     esp_err_t ret = esp_sleep_cpu_pd_low_init(config->light_sleep_enable);
     if (config->light_sleep_enable && ret != ESP_OK) {
         ESP_LOGW(TAG, "Failed to enable CPU power down during light sleep.");
@@ -318,6 +306,19 @@ esp_err_t esp_pm_configure(const void* vconfig)
         esp_pm_light_sleep_default_params_config(min_freq_mhz, max_freq_mhz);
     }
 #endif
+
+    portENTER_CRITICAL(&s_switch_lock);
+    bool res __attribute__((unused));
+    res = rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_CPU_MAX]);
+    assert(res);
+    res = rtc_clk_cpu_freq_mhz_to_config(apb_max_freq, &s_cpu_freq_by_mode[PM_MODE_APB_MAX]);
+    assert(res);
+    res = rtc_clk_cpu_freq_mhz_to_config(min_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_APB_MIN]);
+    assert(res);
+    s_cpu_freq_by_mode[PM_MODE_LIGHT_SLEEP] = s_cpu_freq_by_mode[PM_MODE_APB_MIN];
+    s_light_sleep_en = config->light_sleep_enable;
+    s_config_changed = true;
+    portEXIT_CRITICAL(&s_switch_lock);
 
     return ESP_OK;
 }
