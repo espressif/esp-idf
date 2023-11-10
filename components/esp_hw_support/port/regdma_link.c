@@ -701,71 +701,81 @@ void * regdma_find_prev_module_link_tail(void *link, void *tail, int entry, uint
 }
 
 #if REGDMA_LINK_DBG
-static const char *TAG = "regdma_link";
+static __attribute__((unused)) const char *TAG = "regdma_link";
 
-static void print_info_continuous_wrapper(void *link)
+static void print_info_link_data(FILE *out, const uint32_t buf[], int len)
+{
+    for (int i = 0; i < len; i++) {
+        fprintf(out, ((i + 1) % 8) ? "%08lx " : "%08lx\n", buf[i]);
+    }
+    if (len % 8) {
+        fprintf(out, "\n");
+    }
+}
+
+static void print_info_continuous_wrapper(FILE *out, void *link)
 {
     regdma_link_head_t head = REGDMA_LINK_HEAD(link);
     regdma_link_continuous_t *cons = __containerof(link, regdma_link_continuous_t, head);
-    ESP_EARLY_LOGI(TAG, "[%08x/%04x] link:%x, head:%x, next:%x, backup:%x, restore:%x, buff:%x",
-             cons->stat.module, cons->stat.id, link, cons->head, cons->body.next,
+    fprintf(out, "[%08lx/%04x] link:%p, head:%lx, next:%p, backup:%p, restore:%p, buff:%p\n",
+             cons->stat.module, cons->stat.id, link, *(uint32_t *)&cons->head, cons->body.next,
              cons->body.backup, cons->body.restore, cons->body.mem);
-    ESP_LOG_BUFFER_HEX(TAG, (const void *)cons->body.mem, head.length);
+    print_info_link_data(out, (const uint32_t *)cons->body.mem, head.length);
 }
 
-static void print_info_addr_map_wrapper(void *link)
+static void print_info_addr_map_wrapper(FILE *out, void *link)
 {
     regdma_link_head_t head = REGDMA_LINK_HEAD(link);
     regdma_link_addr_map_t *map = __containerof(link, regdma_link_addr_map_t, head);
-    ESP_EARLY_LOGI(TAG, "[%08x/%04x] link:%x, head:%x, next:%x, backup:%x, restore:%x, buff:%x, map:{%x,%x,%x,%x}",
-            map->stat.module, map->stat.id, link, map->head, map->body.next, map->body.backup,
+    fprintf(out, "[%08lx/%04x] link:%p, head:%lx, next:%p, backup:%p, restore:%p, buff:%p, map:{%lx,%lx,%lx,%lx}\n",
+            map->stat.module, map->stat.id, link, *(uint32_t *)&map->head, map->body.next, map->body.backup,
             map->body.restore, map->body.mem, map->body.map[0], map->body.map[1],
             map->body.map[2], map->body.map[3]);
-    ESP_LOG_BUFFER_HEX(TAG, (const void *)map->body.mem, head.length);
+    print_info_link_data(out, (const uint32_t *)map->body.mem, head.length);
 }
 
-static void print_info_write_wait_wrapper(void *link)
+static void print_info_write_wait_wrapper(FILE *out, void *link)
 {
     regdma_link_write_wait_t *ww = __containerof(link, regdma_link_write_wait_t, head);
-    ESP_EARLY_LOGI(TAG, "[%08x/%04x] link:%x, head:%x, next:%x, backup:%x, value:%x, mask:%x",
-            ww->stat.module, ww->stat.id, link, ww->head, ww->body.next,
+    fprintf(out, "[%08lx/%04x] link:%p, head:%lx, next:%p, backup:%p, value:%lx, mask:%lx\n",
+            ww->stat.module, ww->stat.id, link, *(uint32_t *)&ww->head, ww->body.next,
             ww->body.backup, ww->body.value, ww->body.mask);
 }
 
-static void print_info_branch_continuous_wrapper(void *link)
+static void print_info_branch_continuous_wrapper(FILE *out, void *link)
 {
     regdma_link_head_t head = REGDMA_LINK_HEAD(link);
     regdma_link_branch_continuous_t *cons = __containerof(link, regdma_link_branch_continuous_t, head);
-    ESP_EARLY_LOGI(TAG, "[%08x/%04x] link:%x, head:%x, next:{%x,%x,%x,%x}, backup:%x, restore:%x, buff:%x",
-            cons->stat.module, cons->stat.id, link, cons->head, cons->body.next[0], cons->body.next[1],
+    fprintf(out, "[%08lx/%04x] link:%p, head:%lx, next:{%p,%p,%p,%p}, backup:%p, restore:%p, buff:%p\n",
+            cons->stat.module, cons->stat.id, link, *(uint32_t *)&cons->head, cons->body.next[0], cons->body.next[1],
             cons->body.next[2], cons->body.next[3], cons->body.backup, cons->body.restore,
             cons->body.mem);
-    ESP_LOG_BUFFER_HEX(TAG, (const void *)cons->body.mem, head.length);
+    print_info_link_data(out, (const uint32_t *)cons->body.mem, head.length);
 }
 
-static void print_info_branch_addr_map_wrapper(void *link)
+static void print_info_branch_addr_map_wrapper(FILE *out, void *link)
 {
     regdma_link_head_t head = REGDMA_LINK_HEAD(link);
     regdma_link_branch_addr_map_t *map = __containerof(link, regdma_link_branch_addr_map_t, head);
-    ESP_EARLY_LOGI(TAG, "[%08x/%04x] link:%x, head:%x, next:{%x,%x,%x,%x}, backup:%x, restore:%x, buff:%x, map:{%x,%x,%x,%x}",
-            map->stat.module, map->stat.id, link, map->head, map->body.next[0], map->body.next[1], map->body.next[2],
+    fprintf(out, "[%08lx/%04x] link:%p, head:%lx, next:{%p,%p,%p,%p}, backup:%p, restore:%p, buff:%p, map:{%lx,%lx,%lx,%lx}\n",
+            map->stat.module, map->stat.id, link, *(uint32_t *)&map->head, map->body.next[0], map->body.next[1], map->body.next[2],
             map->body.next[3], map->body.backup, map->body.restore, map->body.mem, map->body.map[0],
             map->body.map[1], map->body.map[2], map->body.map[3]);
-    ESP_LOG_BUFFER_HEX(TAG, (const void *)map->body.mem, head.length);
+    print_info_link_data(out, (const uint32_t *)map->body.mem, head.length);
 }
 
-static void print_info_branch_write_wait_wrapper(void *link)
+static void print_info_branch_write_wait_wrapper(FILE *out, void *link)
 {
     regdma_link_branch_write_wait_t *ww = __containerof(link, regdma_link_branch_write_wait_t, head);
-    ESP_EARLY_LOGI(TAG, "[%08x/%04x] link:%x, head:%x, next:{%x,%x,%x,%x}, backup:%x, value:%x, mask:%x",
-            ww->stat.module, ww->stat.id, link, ww->head, ww->body.next[0], ww->body.next[1],
+    fprintf(out, "[%08lx/%04x] link:%p, head:%lx, next:{%p,%p,%p,%p}, backup:%p, value:%lx, mask:%lx\n",
+            ww->stat.module, ww->stat.id, link, *(uint32_t *)&ww->head, ww->body.next[0], ww->body.next[1],
             ww->body.next[2], ww->body.next[3], ww->body.backup, ww->body.value,
             ww->body.mask);
 }
 
-static void print_link_info(void *args, int entry, int depth)
+static void print_link_info(FILE *out, void *args, int entry, int depth)
 {
-    typedef void (*prinf_fn_t)(void *);
+    typedef void (*prinf_fn_t)(FILE *, void *);
 
     const static prinf_fn_t prinf_fn[] = {
         [0] = (prinf_fn_t)print_info_continuous_wrapper,
@@ -782,20 +792,20 @@ static void print_link_info(void *args, int entry, int depth)
     int it = (head.branch << 2) | head.mode;
     assert(it < ARRAY_SIZE(prinf_fn));
 
-    (*prinf_fn[it])(args);
+    (*prinf_fn[it])(out, args);
 }
 
-void regdma_link_show_memories(void *link, int entry)
+void regdma_link_dump(FILE *out, void *link, int entry)
 {
     assert(entry < REGDMA_LINK_ENTRY_NUM);
 
     void *next = link;
     if (link) {
         do {
-            print_link_info(next, entry, 0);
+            print_link_info(out, next, entry, 0);
         } while ((next = regdma_link_get_next(next, entry)) != NULL);
     } else {
-        ESP_EARLY_LOGW(TAG, "This REGDMA linked list is empty!");
+        fprintf(out, "This REGDMA linked list is empty!\n");
     }
 }
 #endif

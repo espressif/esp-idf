@@ -324,11 +324,11 @@ void regdma_link_stats(void *link, int entry);
 void regdma_link_set_write_wait_content(void *link, uint32_t value, uint32_t mask);
 
 /**
- * @brief Print all node information of the REGDMA linked list indicated by the entry argument
+ * @brief Dump all node information of the REGDMA linked list indicated by the entry argument
  * @param link  The REGDMA linkded list head pointer
  * @param entry For nodes that support branching, use the branch specified by entry argument recursively
  */
-void regdma_link_show_memories(void *link, int entry);
+void regdma_link_dump(FILE *out, void *link, int entry);
 
 /**
  * @brief Update REGDMA linked list node next pointers
