@@ -402,7 +402,8 @@ esp_err_t esp_sleep_clear_ext1_wakeup_io(uint64_t io_mask);
  *      - ESP_ERR_INVALID_ARG if any of the selected GPIOs is not an RTC GPIO,
  *        or mode is invalid
  */
-esp_err_t esp_sleep_enable_ext1_wakeup_with_level_mask(uint64_t io_mask, uint64_t level_mask);
+esp_err_t esp_sleep_enable_ext1_wakeup_with_level_mask(uint64_t io_mask, uint64_t level_mask)
+__attribute__((deprecated("please use 'esp_sleep_set_ext1_wakeup_io' and 'esp_sleep_clear_ext1_wakeup_io' instead")));
 
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
