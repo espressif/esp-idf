@@ -22,8 +22,17 @@
  *
 */
 
+/*
+ * NOTE: These definitions are only meant to allow host-based unit testing of some features using CMock.
+ * They DO NOT imply any functionality on the host.
+ */
+
 #pragma once
 
-// No meaning to define GPIO number for Linux target, only to avoid build warning on Kconfig ESP_CONSOLE_UART_TX_GPIO, ESP_CONSOLE_UART_RX_GPIO
+/*-------------------------- GPIO CAPS ---------------------------------------*/
 #define SOC_GPIO_IN_RANGE_MAX           (65535)
 #define SOC_GPIO_OUT_RANGE_MAX          (65535)
+
+/*-------------------------- I2C CAPS ----------------------------------------*/
+#define SOC_I2C_SUPPORT_SLAVE   (1)
+#define SOC_I2C_SUPPORT_10BIT_ADDR   (1)
