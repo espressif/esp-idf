@@ -13,6 +13,17 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+/*
+ * NOTE: Most of these unit tests DO NOT work standalone. They require pytest to control
+ * the application and check for correct output.
+ * E.g., to run the test "esp console help command - reverse registration", type:
+ * pytest --target esp32 -m "generic" -k test_console_help_reverse_registration
+ * The pytest test cases are different than the unit test cases here, they can be found
+ * in the pytest_*.py file in the root directory of this test project.
+ * For more information on pytest, please refer to
+ * https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html.
+ */
+
 static int do_hello_cmd(int argc, char **argv)
 {
     printf("Hello World\n");
@@ -69,7 +80,20 @@ TEST_CASE("esp console repl test", "[console][ignore]")
     vTaskDelay(pdMS_TO_TICKS(2000));
 }
 
-TEST_CASE("esp console help command", "[console][ignore]")
+static const esp_console_cmd_t cmd_a = {
+    .command = "aaa",
+    .help = "should appear first in help",
+    .hint = NULL,
+    .func = do_hello_cmd,
+};
+static const esp_console_cmd_t cmd_z = {
+    .command = "zzz",
+    .help = "should appear last in help",
+    .hint = NULL,
+    .func = do_hello_cmd,
+};
+
+TEST_CASE("esp console help command - sorted registration", "[console][ignore]")
 {
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
@@ -77,21 +101,27 @@ TEST_CASE("esp console help command", "[console][ignore]")
 
     TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
     TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
 
-    const esp_console_cmd_t cmd_a = {
-        .command = "aaa",
-        .help = "should appear first in help",
-        .hint = NULL,
-        .func = do_hello_cmd,
-    };
-    const esp_console_cmd_t cmd_z = {
-        .command = "zzz",
-        .help = "should appear last in help",
-        .hint = NULL,
-        .func = do_hello_cmd,
-    };
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+/**
+ * The commands in the 'help'-command's output should be alphabetically sorted,
+ * regardless of their registration order.
+ */
+TEST_CASE("esp console help command - reverse registration", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
     TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
     TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
 
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(5000));
