@@ -137,7 +137,7 @@ const fifo_mps_limits_t mps_limits_bias_ptx = {
 
 #define XFER_LIST_LEN_CTRL                      3   // One descriptor for each stage
 #define XFER_LIST_LEN_BULK                      2   // One descriptor for transfer, one to support an extra zero length packet
-#define XFER_LIST_LEN_INTR                      32
+#define XFER_LIST_LEN_INTR                      FRAME_LIST_LEN
 #define XFER_LIST_LEN_ISOC                      FRAME_LIST_LEN  // Same length as the frame list makes it easier to schedule. Must be power of 2
 
 // ------------------------ Flags --------------------------
@@ -1642,22 +1642,6 @@ static bool pipe_alloc_hcd_support_verification(const usb_ep_desc_t *ep_desc, co
         return false;
     }
 
-    // Check if the pipe's interval is compatible with the periodic frame list's length
-    if (type == USB_TRANSFER_TYPE_INTR &&
-            (ep_desc->bInterval > FRAME_LIST_LEN)) {
-        ESP_LOGE(HCD_DWC_TAG, "bInterval value (%d) of Interrupt pipe exceeds max supported limit",
-                 ep_desc->bInterval);
-        return false;
-    }
-
-    if (type == USB_TRANSFER_TYPE_ISOCHRONOUS &&
-            ((1 << (ep_desc->bInterval - 1)) > FRAME_LIST_LEN)) {
-        // (where 0 < 2^(bInterval - 1) <= FRAME_LIST_LEN)
-        ESP_LOGE(HCD_DWC_TAG, "bInterval value (%d) of Isochronous pipe exceeds max supported limit",
-                 ep_desc->bInterval);
-        return false;
-    }
-
     // Check if pipe MPS exceeds HCD MPS limits (due to DWC FIFO sizing)
     int limit;
     if (USB_EP_DESC_GET_EP_DIR(ep_desc)) { // IN
@@ -1710,12 +1694,16 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
     ep_char->dev_addr = pipe_config->dev_addr;
     ep_char->ls_via_fs_hub = (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW);
     // Calculate the pipe's interval in terms of USB frames
+    // @see USB-OTG programming guide chapter 6.5 for more information
     if (type == USB_TRANSFER_TYPE_INTR || type == USB_TRANSFER_TYPE_ISOCHRONOUS) {
-        int interval_frames;
+        unsigned int interval_frames;
+        unsigned int xfer_list_len;
         if (type == USB_TRANSFER_TYPE_INTR) {
             interval_frames = pipe_config->ep_desc->bInterval;
+            xfer_list_len = XFER_LIST_LEN_INTR;
         } else {
             interval_frames = (1 << (pipe_config->ep_desc->bInterval - 1));
+            xfer_list_len = XFER_LIST_LEN_ISOC;
         }
         // Round down interval to nearest power of 2
         if (interval_frames >= 32) {
@@ -1733,7 +1721,7 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
         }
         ep_char->periodic.interval = interval_frames;
         // We are the Nth pipe to be allocated. Use N as a phase offset
-        ep_char->periodic.phase_offset_frames = pipe_idx & (XFER_LIST_LEN_ISOC - 1);
+        ep_char->periodic.phase_offset_frames = pipe_idx & (xfer_list_len - 1);
     } else {
         ep_char->periodic.interval = 0;
         ep_char->periodic.phase_offset_frames = 0;
