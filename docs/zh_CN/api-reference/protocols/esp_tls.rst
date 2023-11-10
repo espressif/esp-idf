@@ -244,6 +244,26 @@ ESP-TLS 不会检查 ``ciphersuites_list`` 的有效性，因此需调用 :cpp:f
 
    此功能仅在 MbedTLS 协议栈中有效。
 
+TLS 协议版本
+--------------------
+
+ESP-TLS 能够为 TLS 连接设置相应的 TLS 协议版本，指定版本将用于建立专用 TLS 连接。也就是说，在运行时不同的 TLS 连接可以配置到 TLS 1.2、TLS 1.3 等不同协议版本。
+
+.. note::
+
+   目前，仅在 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈时支持此功能。
+
+要在 ESP-TLS 中设置 TLS 协议版本，请设置 :cpp:member:`esp_tls_cfg_t::tls_version`，从 :cpp:type:`esp_tls_proto_ver_t` 中选择所需版本。如未指定协议版本字段，将默认根据服务器要求建立 TLS 连接。
+
+ESP-TLS 连接的协议版本可按如下方式配置：
+
+    .. code-block:: c
+
+        #include "esp_tls.h"
+        esp_tls_cfg_t cfg = {
+            .tls_version = ESP_TLS_VER_TLS_1_2,
+        };
+
 API 参考
 -------------
 
