@@ -71,13 +71,9 @@ To be added.
 
 ### ESP32-S3
 
-#### v0.1
+#### v0.1, v0.2
 
 Supported since ESP-IDF v4.4.
-
-#### v0.2
-
-To be added.
 
 ### ESP32-C2 & ESP8684
 
@@ -93,6 +89,17 @@ To be added.
 
 To be added.
 
+### ESP32-C6
+
+#### v0.0, v0.1
+
+Supported since ESP-IDF v5.1.
+
+### ESP32-H2
+
+#### v0.1, v0.2
+
+Supported since ESP-IDF v5.1.
 
 ## What If the ESP-IDF Version Is Lower than the `Required` Version?
 
