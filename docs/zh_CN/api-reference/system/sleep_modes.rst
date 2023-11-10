@@ -220,7 +220,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
     外部唤醒 (``ext1``)
     ^^^^^^^^^^^^^^^^^^^^^^
 
-    RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。从以下两个逻辑函数中任选其一，均可触发普通 ext1 唤醒：
+    RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。从以下两个逻辑函数中任选其一，均可触发 ext1 唤醒：
 
     .. only:: esp32
 
@@ -248,15 +248,15 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
         gpio_pullup_dis(gpio_num);
         gpio_pulldown_en(gpio_num);
 
-    可调用 :cpp:func:`esp_sleep_append_ext1_wakeup` 函数可用于增加 ext1 唤醒 IO 并设置相应的唤醒电平。
+    可调用 :cpp:func:`esp_sleep_set_ext1_wakeup_io` 函数可用于增加 ext1 唤醒 IO 并设置相应的唤醒电平。
 
-    可调用 :cpp:func:`esp_sleep_remove_ext1_wakeup` 函数可用于移除 ext1 唤醒 IO。
+    可调用 :cpp:func:`esp_sleep_clear_ext1_wakeup_io` 函数可用于移除 ext1 唤醒 IO。
 
     可调用 :cpp:func:`esp_sleep_enable_ext1_wakeup` 函数可用于重置所有先前的 ext1 唤醒配置，并启用新的 ext1 唤醒 IO 并设置相应的唤醒电平。
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 
-        当前的 RTC 控制器也包含更强大的逻辑，允许配置的 IO 同时使用不同的唤醒电平。这可以通过:cpp:func:`esp_sleep_append_ext1_wakeup` 函数来进行配置。
+        当前的 RTC 控制器也包含更强大的逻辑，允许配置的 IO 同时使用不同的唤醒电平。这可以通过:cpp:func:`esp_sleep_set_ext1_wakeup_io` 函数来进行配置。
 
     .. warning::
 

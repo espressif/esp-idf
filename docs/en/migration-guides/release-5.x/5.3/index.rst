@@ -7,3 +7,4 @@ Migration from 5.2 to 5.3
     :maxdepth: 1
 
     peripherals
+    system
