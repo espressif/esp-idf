@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,14 +27,15 @@
 #define DR_REG_EXT_MEM_ENC                      0x600CC000
 
 
-#define REG_UHCI_BASE(i)         (DR_REG_UHCI0_BASE - (i) * 0x8000)
-#define REG_UART_BASE( i )  (DR_REG_UART_BASE + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
-#define REG_UART_AHB_BASE(i)  (0x60000000 + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
-#define UART_FIFO_AHB_REG(i)  (REG_UART_AHB_BASE(i) + 0x0)
-#define REG_I2S_BASE( i ) (DR_REG_I2S_BASE + (i) * 0x1E000)
-#define REG_TIMG_BASE(i)              (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
+#define REG_UHCI_BASE(i)        (DR_REG_UHCI0_BASE - (i) * 0x8000)
+#define REG_UART_BASE( i )      (DR_REG_UART_BASE + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
+#define REG_UART_AHB_BASE(i)    (0x60000000 + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
+#define UART_FIFO_AHB_REG(i)    (REG_UART_AHB_BASE(i) + 0x0)
+#define REG_I2S_BASE( i )       (DR_REG_I2S_BASE + (i) * 0x1E000)
+#define REG_TIMG_BASE(i)        (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
 #define REG_SPI_MEM_BASE(i)     (DR_REG_SPI0_BASE - (i) * 0x1000)
-#define REG_I2C_BASE(i)    (DR_REG_I2C_EXT_BASE + (i) * 0x14000 )
+#define REG_SPI_BASE(i)         (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
+#define REG_I2C_BASE(i)         (DR_REG_I2C_EXT_BASE + (i) * 0x14000 )
 
 //Convenient way to replace the register ops when ulp riscv projects
 //consume this file
