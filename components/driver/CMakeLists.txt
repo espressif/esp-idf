@@ -18,7 +18,6 @@ set(includes "include"
              "parlio/include"
              "rmt/include"
              "sdio_slave/include"
-             "sdmmc/include"
              "sdspi/include"
              "sigma_delta/include"
              "temperature_sensor/include"
@@ -127,12 +126,6 @@ if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
     list(APPEND srcs "sdio_slave/sdio_slave.c")
 endif()
 
-# SDMMC related source files
-if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
-    list(APPEND srcs "sdmmc/sdmmc_transaction.c"
-                     "sdmmc/sdmmc_host.c")
-endif()
-
 # Sigma-Delta Modulation related source files
 if(CONFIG_SOC_SDM_SUPPORTED)
     list(APPEND srcs "sigma_delta/sdm.c"
@@ -199,6 +192,7 @@ else()
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
+                                    esp_driver_sd_common esp_driver_sdmmc
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

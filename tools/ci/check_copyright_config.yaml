@@ -121,7 +121,7 @@ spiffs:
 
 sdmmc:
   include:
-    - 'components/driver/sdmmc/include/driver/'
+    - 'components/esp_driver_sdmmc/include/driver/'
     - 'components/sdmmc/'
   allowed_licenses:
     - Apache-2.0

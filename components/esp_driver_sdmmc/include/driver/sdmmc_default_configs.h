@@ -50,8 +50,6 @@ extern "C" {
 #define SDMMC_SLOT_NO_WP      GPIO_NUM_NC     ///< indicates that write protect line is not used
 #define SDMMC_SLOT_WIDTH_DEFAULT 0 ///< use the maximum possible width for the slot
 
-
-
 #if SOC_SDMMC_USE_IOMUX && !SOC_SDMMC_USE_GPIO_MATRIX
 /**
  * Macro defining default configuration of SDMMC host slot

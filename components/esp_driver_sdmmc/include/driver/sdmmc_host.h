@@ -47,15 +47,15 @@ typedef struct {
     uint8_t width;          ///< Bus width used by the slot (might be less than the max width supported)
     uint32_t flags;         ///< Features used by this slot
 #define SDMMC_SLOT_FLAG_INTERNAL_PULLUP  BIT(0)
-        /**< Enable internal pullups on enabled pins. The internal pullups
-         are insufficient however, please make sure external pullups are
-         connected on the bus. This is for debug / example purpose only.
-         */
+    /**< Enable internal pullups on enabled pins. The internal pullups
+     are insufficient however, please make sure external pullups are
+     connected on the bus. This is for debug / example purpose only.
+     */
 #define SDMMC_SLOT_FLAG_WP_ACTIVE_HIGH   BIT(1)
-        /**< GPIO write protect polarity.
-         * 0 means "active low", i.e. card is protected when the GPIO is low;
-         * 1 means "active high", i.e. card is protected when GPIO is high.
-         */
+    /**< GPIO write protect polarity.
+     * 0 means "active low", i.e. card is protected when the GPIO is low;
+     * 1 means "active high", i.e. card is protected when GPIO is high.
+     */
 } sdmmc_slot_config_t;
 
 /**

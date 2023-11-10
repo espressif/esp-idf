@@ -1,24 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2006 Uwe Stuehler <uwe@openbsd.org>
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: ISC
- *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
- */
-/*
- * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
@@ -110,15 +93,15 @@ typedef struct {
  * SD/MMC command information
  */
 typedef struct {
-        uint32_t opcode;            /*!< SD or MMC command index */
-        uint32_t arg;               /*!< SD/MMC command argument */
-        sdmmc_response_t response;  /*!< response buffer */
-        void* data;                 /*!< buffer to send or read into */
-        size_t datalen;             /*!< length of data in the buffer */
-        size_t buflen;              /*!< length of the buffer */
-        size_t blklen;              /*!< block length */
-        int flags;                  /*!< see below */
-/** @cond */
+    uint32_t opcode;            /*!< SD or MMC command index */
+    uint32_t arg;               /*!< SD/MMC command argument */
+    sdmmc_response_t response;  /*!< response buffer */
+    void* data;                 /*!< buffer to send or read into */
+    size_t datalen;             /*!< length of data in the buffer */
+    size_t buflen;              /*!< length of the buffer */
+    size_t blklen;              /*!< block length */
+    int flags;                  /*!< see below */
+    /** @cond */
 #define SCF_ITSDONE      0x0001     /*!< command is complete */
 #define SCF_CMD(flags)   ((flags) & 0x00f0)
 #define SCF_CMD_AC       0x0000
@@ -131,7 +114,7 @@ typedef struct {
 #define SCF_RSP_CRC      0x0400
 #define SCF_RSP_IDX      0x0800
 #define SCF_RSP_PRESENT  0x1000
-/* response types */
+    /* response types */
 #define SCF_RSP_R0       0 /*!< none */
 #define SCF_RSP_R1       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
 #define SCF_RSP_R1B      (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX|SCF_RSP_BSY)
@@ -142,11 +125,11 @@ typedef struct {
 #define SCF_RSP_R5B      (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX|SCF_RSP_BSY)
 #define SCF_RSP_R6       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
 #define SCF_RSP_R7       (SCF_RSP_PRESENT|SCF_RSP_CRC|SCF_RSP_IDX)
-/* special flags */
+    /* special flags */
 #define SCF_WAIT_BUSY    0x2000     /*!< Wait for completion of card busy signal before returning */
-/** @endcond */
-        esp_err_t error;            /*!< error returned from transfer */
-        uint32_t timeout_ms;        /*!< response timeout, in milliseconds */
+    /** @endcond */
+    esp_err_t error;            /*!< error returned from transfer */
+    uint32_t timeout_ms;        /*!< response timeout, in milliseconds */
 } sdmmc_command_t;
 
 /**
