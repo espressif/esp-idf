@@ -138,6 +138,20 @@ ESP HTTP 客户端诊断信息
 
 在无法接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
 
+TLS 协议版本
+--------------------
+
+可在 :cpp:type:`esp_http_client_config_t` 中设置用于底层 TLS 连接的 TLS 协议版本。了解更多信息，请参考 :doc:`/api-reference/protocols/esp_tls` 中的 **TLS 协议版本** 章节。
+
+HTTP 客户端的 TLS 协议版本可按如下方式配置：
+
+    .. code-block:: c
+
+        #include "esp_http_client.h"
+        esp_http_client_config_t config = {
+            .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
+        };
+
 API 参考
 ---------
 

@@ -244,6 +244,26 @@ ESP-TLS will not check the validity of ``ciphersuites_list`` that was set, you s
 
    This feature is supported only in the MbedTLS stack.
 
+TLS Protocol Version
+--------------------
+
+ESP-TLS provides the ability to set the TLS protocol version for the respective TLS connection. Once the version is specified, it should be exclusively used to establish the TLS connection. This provides an ability to route different TLS connections to different protocol versions like TLS 1.2 and TLS 1.3 at runtime.
+
+.. note::
+
+   At the moment, the feature is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack.
+
+To set TLS protocol version with ESP-TLS, set :cpp:member:`esp_tls_cfg_t::tls_version` to the required protocol version from :cpp:type:`esp_tls_proto_ver_t`. If the protocol version field is not set, then the default policy is to allow TLS connection based on the server requirement.
+
+The ESP-TLS connection can be configured to use the specified protocol version as follows:
+
+    .. code-block:: c
+
+        #include "esp_tls.h"
+        esp_tls_cfg_t cfg = {
+            .tls_version = ESP_TLS_VER_TLS_1_2,
+        };
+
 API Reference
 -------------
 
