@@ -59,12 +59,20 @@ Following code snippet uses :cpp:func:`esp_efuse_write_key` to set physical key 
         // writing key failed, maybe written already
     }
 
+
+Dependency on TRNG
+------------------
+
+ECDSA peripheral relies on the hardware True Random Number Generator (TRNG) for its internal entropy requirement. During ECDSA signature creation, the algorithm requires a random integer to be generated as specified in the `RFC 6090 <https://tools.ietf.org/html/rfc6090>`_ section 5.3.2.
+
+Please ensure that hardware :doc:`RNG <../system/random>` is enabled before starting ECDSA computations (primarily signing) in the application.
+
 Application Outline
 -------------------
 
 Please refer to the :ref:`ecdsa-peri-with-esp-tls` guide for details on how-to use ECDSA peripheral for establishing a mutually authenticated TLS connection.
 
-The ECDSA peripheral in mbedTLS stack is integrated by overriding the ECDSA sign and verify APIs. Please note that, the ECDSA peripheral does not support all curvers or hash algorithms and hence for cases where the requirements do not meet the hardware, implementation falls back to the software.
+The ECDSA peripheral in mbedTLS stack is integrated by overriding the ECDSA sign and verify APIs. Please note that, the ECDSA peripheral does not support all curves or hash algorithms and hence for cases where the requirements do not meet the hardware, implementation falls back to the software.
 
 For a particular TLS context, additional APIs have been supplied to populate certain fields (e.g., private key ctx) to differentiate routing to hardware. ESP-TLS layer integrates these APIs internally and hence no additional work is required at the application layer. However, for custom use-cases please refer to API details below.
 
