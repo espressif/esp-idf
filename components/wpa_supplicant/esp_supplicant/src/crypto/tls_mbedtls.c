@@ -37,10 +37,21 @@
 #include "mbedtls/platform.h"
 #include "eap_peer/eap.h"
 
+#ifdef CONFIG_TLSV13
+#include "psa/crypto.h"
+#include "md_psa.h"
+#include "ssl_tls13_keys.h"
+#define PSA_TO_MBEDTLS_ERR(status) PSA_TO_MBEDTLS_ERR_LIST(status,   \
+                                                           psa_to_ssl_errors,             \
+                                                           psa_generic_status_to_mbedtls)
+#endif /* CONFIG_TLSV13 */
+
 
 #define TLS_RANDOM_LEN 32
+#define TLS_HASH_MAX_SIZE 64
 #define TLS_MASTER_SECRET_LEN 48
 #define MAX_CIPHERSUITE 32
+#define MAX_EXPORTER_CONTEXT_LEN 65535
 
 
 
@@ -82,8 +93,10 @@ struct tls_connection {
 	struct tls_data tls_io_data;
 	unsigned char master_secret[TLS_MASTER_SECRET_LEN];
 	unsigned char randbytes[2 * TLS_RANDOM_LEN];
-        mbedtls_tls_prf_types tls_prf_type;
-	mbedtls_md_type_t mac;
+	mbedtls_tls_prf_types tls_prf_type;
+#ifdef CONFIG_TLSV13
+	unsigned char exporter_master_secret[TLS_HASH_MAX_SIZE];
+#endif /* CONFIG_TLSV13 */
 };
 
 static void tls_mbedtls_cleanup(tls_context_t *tls)
@@ -201,6 +214,43 @@ static int set_ca_cert(tls_context_t *tls, const unsigned char *cacert, size_t c
 
 #ifdef CONFIG_SUITEB192
 static uint16_t tls_sig_algs_for_suiteb[] = {
+
+#ifdef CONFIG_TLSV13
+#if defined(MBEDTLS_KEY_EXCHANGE_ECDSA_CERT_REQ_ANY_ALLOWED_ENABLED) && \
+    defined(MBEDTLS_MD_CAN_SHA384) && \
+    defined(PSA_WANT_ECC_SECP_R1_384)
+    MBEDTLS_TLS1_3_SIG_ECDSA_SECP384R1_SHA384,
+    // == MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA384)
+#endif
+
+#if defined(MBEDTLS_KEY_EXCHANGE_ECDSA_CERT_REQ_ANY_ALLOWED_ENABLED) && \
+    defined(MBEDTLS_MD_CAN_SHA512) && \
+    defined(PSA_WANT_ECC_SECP_R1_521)
+    MBEDTLS_TLS1_3_SIG_ECDSA_SECP521R1_SHA512,
+    // == MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512)
+#endif
+
+#if defined(MBEDTLS_X509_RSASSA_PSS_SUPPORT) && \
+    defined(MBEDTLS_MD_CAN_SHA512)
+    MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA512,
+#endif \
+    /* MBEDTLS_X509_RSASSA_PSS_SUPPORT && MBEDTLS_MD_CAN_SHA512 */
+
+#if defined(MBEDTLS_X509_RSASSA_PSS_SUPPORT) && \
+    defined(MBEDTLS_MD_CAN_SHA384)
+    MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA384,
+#endif \
+    /* MBEDTLS_X509_RSASSA_PSS_SUPPORT && MBEDTLS_MD_CAN_SHA384 */
+
+#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA512)
+    MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA512,
+#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA512 */
+
+#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA384)
+    MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA384,
+#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA384 */
+#endif /* CONFIG_TLSV13 */
+
 #if defined(MBEDTLS_SHA512_C)
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512 ),
@@ -235,6 +285,60 @@ static void tls_set_suiteb_config(tls_context_t *tls)
 #endif
 
 static uint16_t tls_sig_algs_for_eap[] = {
+
+#ifdef CONFIG_TLSV13
+#if defined(MBEDTLS_KEY_EXCHANGE_ECDSA_CERT_REQ_ANY_ALLOWED_ENABLED) && \
+    defined(MBEDTLS_MD_CAN_SHA256) && \
+    defined(PSA_WANT_ECC_SECP_R1_256)
+    MBEDTLS_TLS1_3_SIG_ECDSA_SECP256R1_SHA256,
+    // == MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA256)
+#endif
+
+#if defined(MBEDTLS_KEY_EXCHANGE_ECDSA_CERT_REQ_ANY_ALLOWED_ENABLED) && \
+    defined(MBEDTLS_MD_CAN_SHA384) && \
+    defined(PSA_WANT_ECC_SECP_R1_384)
+    MBEDTLS_TLS1_3_SIG_ECDSA_SECP384R1_SHA384,
+    // == MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA384)
+#endif
+
+#if defined(MBEDTLS_KEY_EXCHANGE_ECDSA_CERT_REQ_ANY_ALLOWED_ENABLED) && \
+    defined(MBEDTLS_MD_CAN_SHA512) && \
+    defined(PSA_WANT_ECC_SECP_R1_521)
+    MBEDTLS_TLS1_3_SIG_ECDSA_SECP521R1_SHA512,
+    // == MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512)
+#endif
+
+#if defined(MBEDTLS_X509_RSASSA_PSS_SUPPORT) && \
+    defined(MBEDTLS_MD_CAN_SHA512)
+    MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA512,
+#endif \
+    /* MBEDTLS_X509_RSASSA_PSS_SUPPORT && MBEDTLS_MD_CAN_SHA512 */
+
+#if defined(MBEDTLS_X509_RSASSA_PSS_SUPPORT) && \
+    defined(MBEDTLS_MD_CAN_SHA384)
+    MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA384,
+#endif \
+    /* MBEDTLS_X509_RSASSA_PSS_SUPPORT && MBEDTLS_MD_CAN_SHA384 */
+
+#if defined(MBEDTLS_X509_RSASSA_PSS_SUPPORT) && \
+    defined(MBEDTLS_MD_CAN_SHA256)
+    MBEDTLS_TLS1_3_SIG_RSA_PSS_RSAE_SHA256,
+#endif \
+    /* MBEDTLS_X509_RSASSA_PSS_SUPPORT && MBEDTLS_MD_CAN_SHA256 */
+
+#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA512)
+    MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA512,
+#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA512 */
+
+#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA384)
+    MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA384,
+#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA384 */
+
+#if defined(MBEDTLS_RSA_C) && defined(MBEDTLS_MD_CAN_SHA256)
+    MBEDTLS_TLS1_3_SIG_RSA_PKCS1_SHA256,
+#endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA256 */
+#endif /* CONFIG_TLSV13 */
+
 #if defined(MBEDTLS_SHA512_C)
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512 ),
@@ -300,8 +404,20 @@ static int tls_disable_key_usages(void *data, mbedtls_x509_crt *cert, int depth,
 }
 #endif /*CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK*/
 
+#if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
+#define TLS1_3_CIPHER_SUITES \
+	MBEDTLS_TLS1_3_CHACHA20_POLY1305_SHA256,	\
+	MBEDTLS_TLS1_3_AES_256_GCM_SHA384,			\
+	MBEDTLS_TLS1_3_AES_128_GCM_SHA256,			\
+	MBEDTLS_TLS1_3_AES_128_CCM_8_SHA256,		\
+	MBEDTLS_TLS1_3_AES_128_CCM_SHA256
+#endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
+
 static const int eap_ciphersuite_preference[] =
 {
+#if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
+	TLS1_3_CIPHER_SUITES,
+#endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
 #if defined(MBEDTLS_CCM_C)
 	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM,
@@ -417,6 +533,9 @@ static const int eap_ciphersuite_preference[] =
 #ifdef CONFIG_SUITEB192
 static const int suiteb_rsa_ciphersuite_preference[] =
 {
+#if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
+	TLS1_3_CIPHER_SUITES,
+#endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
 #if defined(MBEDTLS_SHA512_C)
 	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -428,6 +547,9 @@ static const int suiteb_rsa_ciphersuite_preference[] =
 
 static const int suiteb_ecc_ciphersuite_preference[] =
 {
+#if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
+	TLS1_3_CIPHER_SUITES,
+#endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
 #if defined(MBEDTLS_SHA512_C)
 	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
@@ -437,6 +559,9 @@ static const int suiteb_ecc_ciphersuite_preference[] =
 };
 static const int suiteb_ciphersuite_preference[] =
 {
+#if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
+	TLS1_3_CIPHER_SUITES,
+#endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
 #if defined(MBEDTLS_SHA512_C)
 	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
@@ -469,12 +594,23 @@ static void tls_set_ciphersuite(const struct tls_connection_params *cfg, tls_con
 		}
 	} else
 #endif
+#ifdef CONFIG_TLSV13
+	/* Enable TLS1.3 ciphers if TLS1.3 is enabled */
+	mbedtls_ssl_conf_ciphersuites(&tls->conf, eap_ciphersuite_preference);
+#else
+	/* Set cipher suites if User has explicitly set those
+	 * TODO: public API to set EAP ciphers */
 	if (tls->ciphersuite[0]) {
 		mbedtls_ssl_conf_ciphersuites(&tls->conf, tls->ciphersuite);
 	} else if (mbedtls_pk_get_bitlen(&tls->clientkey) > 2048 ||
 		(tls->cacert_ptr && mbedtls_pk_get_bitlen(&tls->cacert_ptr->pk) > 2048)) {
+		/* Incase of big RSA keylen, ESP chips do not have sufficient processing
+		 * power to use high computation ciphers. This code will limit the ciphers
+		 * to less computational ones */
 		mbedtls_ssl_conf_ciphersuites(&tls->conf, eap_ciphersuite_preference);
 	}
+
+#endif /* CONFIG_TLSV13 */
 }
 
 static int set_client_config(const struct tls_connection_params *cfg, tls_context_t *tls)
@@ -548,6 +684,22 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
 	return 0;
 }
 
+#ifdef CONFIG_TLSV13
+static void tls13_extract_exporter_master_secret(struct tls_connection *conn)
+{
+	mbedtls_ssl_context *ssl = &conn->tls->ssl;
+	const mbedtls_ssl_ciphersuite_t *ciphersuite_info = ssl->handshake->ciphersuite_info;
+	psa_algorithm_t hash_alg = mbedtls_md_psa_alg_from_type(ciphersuite_info->mac);
+
+	size_t hash_len = PSA_HASH_LENGTH(hash_alg);
+	assert(hash_len != 0);
+
+	mbedtls_ssl_tls13_application_secrets *app_secrets =
+		&ssl->session_negotiate->app_secrets;
+	os_memcpy(conn->exporter_master_secret, app_secrets->exporter_master_secret, hash_len);
+}
+#endif /* CONFIG_TLSV13 */
+
 static void  tls_key_derivation(void *ctx,
 				mbedtls_ssl_key_export_type secret_type,
 				const unsigned char *secret,
@@ -562,6 +714,12 @@ static void  tls_key_derivation(void *ctx,
 	os_memcpy(conn->randbytes, client_random, TLS_RANDOM_LEN);
 	os_memcpy(conn->randbytes + 32, server_random, TLS_RANDOM_LEN);
 	conn->tls_prf_type = tls_prf_type;
+
+#ifdef CONFIG_TLSV13
+	if (secret_type == MBEDTLS_SSL_KEY_EXPORT_TLS1_3_SERVER_APPLICATION_TRAFFIC_SECRET) {
+		tls13_extract_exporter_master_secret(conn);
+	}
+#endif /* CONFIG_TLSV13 */
 }
 
 static int tls_create_mbedtls_handle(struct tls_connection *conn,
@@ -592,6 +750,12 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
 	}
 
 	mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3) && !defined(CONFIG_TLSV13)
+	/* Disable TLSv1.3 even when enabled in MbedTLS and not enabled in WiFi config.
+	 * TODO: Remove Kconfig option for TLSv1.3 when it is matured enough */
+	mbedtls_ssl_conf_max_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_2);
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && !CONFIG_TLSV13 */
 
 	ret = mbedtls_ssl_setup(&tls->ssl, &tls->conf);
 	if (ret != 0) {
@@ -749,17 +913,8 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	/* Multiple reads */
 	while (!mbedtls_ssl_is_handshake_over(&tls->ssl)) {
 		cli_state = tls->ssl.MBEDTLS_PRIVATE(state);
-		if (cli_state == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
-			/* Read random data before session completes, not present after handshake */
-			if (tls->ssl.MBEDTLS_PRIVATE(handshake)) {
-				os_memcpy(conn->randbytes, tls->ssl.MBEDTLS_PRIVATE(handshake)->randbytes,
-					  TLS_RANDOM_LEN * 2);
-				conn->mac = tls->ssl.MBEDTLS_PRIVATE(handshake)->ciphersuite_info->mac;
-			}
-		}
 		ret = mbedtls_ssl_handshake_step(&tls->ssl);
-
-		if (ret < 0) {
+		if (ret < 0)
 			break;
 		}
 #ifdef CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
@@ -782,7 +937,28 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	if (!conn->tls_io_data.out_data) {
 		wpa_printf(MSG_INFO, "application data is null, adding one byte for ack");
 		u8 *dummy = os_zalloc(1);
+		if (dummy == NULL) {
+			wpa_printf(MSG_INFO, "%s: memory allocation failure. line:%d", __func__, __LINE__);
+			goto end;
+		}
+
+#ifdef CONFIG_TLSV13
+		if (mbedtls_ssl_get_version_number(&conn->tls->ssl) == MBEDTLS_SSL_VERSION_TLS1_3) {
+			*appl_data = wpabuf_alloc_ext_data(dummy, 1);
+			if (appl_data == NULL) {
+				wpa_printf(MSG_INFO, "%s: memory allocation failure. line:%d", __func__, __LINE__);
+				os_free(dummy);
+				goto end;
+			}
+			return NULL;
+		}
+#endif /* CONFIG_TLSV13 */
 		conn->tls_io_data.out_data = wpabuf_alloc_ext_data(dummy, 0);
+		if (conn->tls_io_data.out_data == NULL) {
+			wpa_printf(MSG_INFO, "%s: memory allocation failure. line:%d", __func__, __LINE__);
+			os_free(dummy);
+			goto end;
+		}
 	}
 
 end:
@@ -1006,25 +1182,26 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	size_t seed_len = 2 * TLS_RANDOM_LEN;
 	mbedtls_ssl_context *ssl = &conn->tls->ssl;
 
-	if (context_len > 65535)
+	if (context_len > MAX_EXPORTER_CONTEXT_LEN) {
 		return -1;
+	}
 
-	if (context)
+	if (context) {
+		// The magic value 2 represents the memory required to store the context length.
 		seed_len += 2 + context_len;
-
-	seed = os_malloc(seed_len);
-	if (!seed) {
-		return -1;
 	}
 
 	if (!ssl) {
 		wpa_printf(MSG_ERROR, "TLS: %s, session ingo is null", __func__);
-		os_free(seed);
 		return -1;
 	}
 	if (!mbedtls_ssl_is_handshake_over(ssl)) {
 		wpa_printf(MSG_ERROR, "TLS: %s, incorrect tls state=%d", __func__, ssl->MBEDTLS_PRIVATE(state));
-		os_free(seed);
+		return -1;
+	}
+
+	seed = os_malloc(seed_len);
+	if (!seed) {
 		return -1;
 	}
 
@@ -1046,7 +1223,7 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	wpa_hexdump_key(MSG_MSGDUMP, "master",  ssl->MBEDTLS_PRIVATE(session)->MBEDTLS_PRIVATE(master), TLS_MASTER_SECRET_LEN);
 
 	ret = mbedtls_ssl_tls_prf(conn->tls_prf_type, conn->master_secret, TLS_MASTER_SECRET_LEN,
-				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
+				label, seed, seed_len, out, out_len);
 	os_free(seed);
 
 	if (ret < 0) {
@@ -1058,11 +1235,72 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	return ret;
 }
 
+#ifdef CONFIG_TLSV13
+/* RFC 8446 Section 7.5 */
+static int tls13_connection_export_key(void *tls_ctx, struct tls_connection *conn,
+			      const char *label, const u8 *context,
+			      size_t context_len, u8 *out, size_t out_len)
+{
+	int ret;
+	mbedtls_ssl_context *ssl = &conn->tls->ssl;
+	psa_algorithm_t hash_alg;
+	size_t hash_len;
+	unsigned char tmp_secret[PSA_MAC_MAX_SIZE] = { 0 };
+	unsigned char hashed_context[PSA_HASH_MAX_SIZE] = { 0 };
+	psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+
+	const mbedtls_ssl_ciphersuite_t *ciphersuite_info = ssl->handshake->ciphersuite_info;
+
+	hash_alg = mbedtls_md_psa_alg_from_type(ciphersuite_info->mac);
+	hash_len = PSA_HASH_LENGTH(hash_alg);
+
+	ret = mbedtls_ssl_tls13_derive_secret(hash_alg,
+			conn->exporter_master_secret, hash_len,
+			(unsigned char const *) label, (size_t) strlen(label),
+			NULL, 0,
+			MBEDTLS_SSL_TLS1_3_CONTEXT_UNHASHED,
+			tmp_secret, hash_len);
+
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "%s(): mbedtls_ssl_tls13_derive_secret() failed",
+				__func__);
+		return ret;
+	}
+
+	status = psa_hash_compute(hash_alg, context, context_len, hashed_context,
+				PSA_HASH_LENGTH(hash_alg), &context_len);
+	if (status != PSA_SUCCESS) {
+		wpa_printf(MSG_ERROR, "%s(): psa_hash_compute() failed",
+				__func__);
+		ret = PSA_TO_MBEDTLS_ERR(status);
+		return ret;
+	}
+
+	ret = mbedtls_ssl_tls13_hkdf_expand_label(hash_alg,
+			tmp_secret, hash_len,
+			MBEDTLS_SSL_TLS1_3_LBL_WITH_LEN(exporter),
+			hashed_context, context_len,
+			out, out_len);
+
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "%s(): psa_hash_compute() failed",
+				__func__);
+		return ret;
+	}
+	return 0;
+}
+#endif /* CONFIG_TLSV13 */
+
 int tls_connection_export_key(void *tls_ctx, struct tls_connection *conn,
 			      const char *label, const u8 *context,
 			      size_t context_len, u8 *out, size_t out_len)
 {
-	return tls_connection_prf(tls_ctx, conn, label,context, context_len,
+#ifdef CONFIG_TLSV13
+	if (mbedtls_ssl_get_version_number(&conn->tls->ssl) == MBEDTLS_SSL_VERSION_TLS1_3)
+		return tls13_connection_export_key(tls_ctx, conn, label, context, context_len,
+				out, out_len);
+#endif /* CONFIG_TLSV13 */
+	return tls_connection_prf(tls_ctx, conn, label, context, context_len,
 			0, out, out_len);
 }
 

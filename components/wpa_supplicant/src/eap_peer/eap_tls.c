@@ -16,6 +16,10 @@
 #include "eap_peer/eap_config.h"
 #include "eap_peer/eap_methods.h"
 
+#ifdef CONFIG_TLSV13
+#include "psa/crypto.h"
+#endif /* CONFIG_TLSV13 */
+
 
 static void eap_tls_deinit(struct eap_sm *sm, void *priv);
 
@@ -36,7 +40,13 @@ static void * eap_tls_init(struct eap_sm *sm)
 {
 	struct eap_tls_data *data;
 	struct eap_peer_config *config = eap_get_config(sm);
-
+#ifdef CONFIG_TLSV13
+	psa_status_t status = psa_crypto_init();
+	if (status != PSA_SUCCESS) {
+		wpa_printf(MSG_ERROR, "EAP-TLS: Failed to initialize PSA crypto, returned %d", (int) status);
+		return NULL;
+	}
+#endif /* CONFIG_TLSV13 */
 	if (config == NULL ||
 	    config->private_key == 0) {
 		wpa_printf(MSG_INFO, "EAP-TLS: Private key not configured");
