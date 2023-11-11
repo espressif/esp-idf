@@ -709,8 +709,6 @@ This is an equivalent to ``project_include.cmake`` for :ref:`component-configura
 
 Take care when adding configuration values in this file, as they will be included across the entire project configuration. Where possible, it's generally better to create a KConfig file for :ref:`component-configuration`.
 
-``project_include.cmake`` files are used inside ESP-IDF, for defining project-wide build features such as ``esptool.py`` command line arguments and the ``bootloader`` "special app".
-
 
 Wrappers to Redefine or Extend Existing Functions
 -------------------------------------------------
