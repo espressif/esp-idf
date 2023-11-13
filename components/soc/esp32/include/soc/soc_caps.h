@@ -225,6 +225,7 @@
 #define SOC_I2S_SUPPORTS_ADC        (1)
 #define SOC_I2S_SUPPORTS_DAC        (1)
 #define SOC_I2S_SUPPORTS_LCD_CAMERA (1)
+#define SOC_I2S_MAX_DATA_WIDTH      (24)
 
 #define SOC_I2S_TRANS_SIZE_ALIGN_WORD (1) // I2S DMA transfer size must be aligned to word
 #define SOC_I2S_LCD_I80_VARIANT       (1) // I2S has a special LCD mode that can generate Intel 8080 TX timing

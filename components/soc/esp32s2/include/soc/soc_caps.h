@@ -216,6 +216,7 @@
 #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_DMA_EQUAL  (1)
 #define SOC_I2S_SUPPORTS_LCD_CAMERA (1)
+#define SOC_I2S_MAX_DATA_WIDTH      (24)
 #define SOC_I2S_APLL_MIN_FREQ       (250000000)
 #define SOC_I2S_APLL_MAX_FREQ       (500000000)
 #define SOC_I2S_APLL_MIN_RATE       (10675) //in Hz, I2S Clock rate limited by hardware

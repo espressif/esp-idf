@@ -32,6 +32,8 @@
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_LCDCAM_SUPPORTED            1
+#define SOC_LCDCAM_I80_LCD_SUPPORTED    1
+#define SOC_LCDCAM_RGB_LCD_SUPPORTED    1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_CACHE_SUPPORT_WRAP          1
@@ -291,6 +293,10 @@
 #define SOC_LCD_I80_BUS_WIDTH           (16) /*!< Intel 8080 bus width */
 #define SOC_LCD_RGB_DATA_WIDTH          (16) /*!< Number of LCD data lines */
 #define SOC_LCD_SUPPORT_RGB_YUV_CONV    (1)  /*!< Support color format conversion between RGB and YUV */
+#define SOC_LCDCAM_I80_NUM_BUSES        (1U) /*!< LCD_CAM peripheral provides one LCD Intel 8080 bus */
+#define SOC_LCDCAM_I80_BUS_WIDTH        (16) /*!< Intel 8080 bus max data width */
+#define SOC_LCDCAM_RGB_NUM_PANELS       (1U) /*!< LCD_CAM peripheral provides one RGB panel */
+#define SOC_LCDCAM_RGB_DATA_WIDTH       (16) /*!< RGB panel max data width */
 
 /*-------------------------- RTC CAPS --------------------------------------*/
 #define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)
