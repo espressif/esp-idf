@@ -1751,9 +1751,7 @@ static bool ignore_net_msg(uint16_t src, uint16_t dst)
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
-        bt_mesh_is_provisioner_en() &&
-        BLE_MESH_ADDR_IS_UNICAST(dst) &&
-        bt_mesh_elem_find(dst)) {
+        bt_mesh_is_provisioner_en()) {
         /* If the destination address of the message is the element
          * address of Provisioner, but Provisioner fails to find the
          * node in its provisioning database, then this message will
