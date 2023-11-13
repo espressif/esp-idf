@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,7 @@ typedef struct {
     int tx_mtu;
     uint8_t *write_data;
     osi_alarm_t *close_alarm;
+    void *alarm_arg;
     uint8_t role;
     uint16_t security;
     esp_bd_addr_t addr;
@@ -192,6 +193,7 @@ static l2cap_slot_t *l2cap_malloc_slot(void)
             (*slot)->is_server = false;
             (*slot)->write_data = NULL;
             (*slot)->close_alarm = NULL;
+            (*slot)->alarm_arg = NULL;
             /* clear the old event bits */
             if (l2cap_local_param.tx_event_group) {
                 xEventGroupClearBits(l2cap_local_param.tx_event_group, SLOT_WRITE_BIT(i) | SLOT_CLOSE_BIT(i));
@@ -246,8 +248,24 @@ static void l2cap_free_slot(l2cap_slot_t *slot)
     free_slot_data(&slot->rx);
     if (slot->close_alarm) {
         osi_alarm_free(slot->close_alarm);
+        if (slot->alarm_arg) {
+            osi_free(slot->alarm_arg);
+            slot->alarm_arg = NULL;
+        }
     }
     osi_free(slot);
+}
+
+static void l2cap_free_pending_slots(void)
+{
+    l2cap_slot_t *slot = NULL;
+    for (size_t i = 1; i <= BTA_JV_MAX_L2C_CONN; i++) {
+        slot = l2cap_local_param.l2cap_slots[i];
+        if (slot) {
+            BTC_TRACE_WARNING("%s found slot(handle=0x%x) pending to close, close it now!", __func__, slot->handle);
+            l2cap_free_slot(slot);
+        }
+    }
 }
 
 static void close_timeout_handler(void *arg)
@@ -758,6 +776,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
         break;
     case BTA_JV_DISABLE_EVT:
         param.uninit.status = ESP_BT_L2CAP_SUCCESS;
+        l2cap_free_pending_slots();
         BTA_JvFree();
         osi_mutex_free(&l2cap_local_param.l2cap_slot_mutex);
         if (l2cap_local_param.tx_event_group) {
@@ -836,6 +855,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 }
                 BTC_TRACE_WARNING("%s slot rx data will be discard in %d milliseconds!",
                                     __func__, VFS_CLOSE_TIMEOUT);
+                slot->alarm_arg = (void *)p_arg;
                 slot->connected = false;
                 need_call = false;
             }
