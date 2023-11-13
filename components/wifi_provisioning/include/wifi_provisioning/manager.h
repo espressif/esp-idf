@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -281,6 +281,13 @@ void wifi_prov_mgr_deinit(void);
  *  - ESP_ERR_INVALID_ARG   : Null argument supplied
  */
 esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
+
+/**
+ * @brief   Checks whether the provisioning state machine is idle
+ *
+ * @return  True if state machine is idle, else false
+ */
+bool wifi_prov_mgr_is_sm_idle(void);
 
 /**
  * @brief   Start provisioning service

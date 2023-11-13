@@ -1214,6 +1214,11 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned)
     return ESP_OK;
 }
 
+bool wifi_prov_mgr_is_sm_idle(void)
+{
+    return (prov_ctx->prov_state == WIFI_PROV_STATE_IDLE);
+}
+
 static void wifi_connect_timer_cb(void *arg)
 {
     if (esp_wifi_connect() != ESP_OK) {
