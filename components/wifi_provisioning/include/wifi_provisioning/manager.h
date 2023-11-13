@@ -283,6 +283,17 @@ void wifi_prov_mgr_deinit(void);
 esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
 
 /**
+ * @brief   Checks if prov mgr is stopped
+ *
+ * This checks if prov_ctx->prov_state == WIFI_PROV_STATE_IDLE
+ * 
+ * @return
+ *  - ture        : prov mgr state is idle
+ *  - false       : prov mgr is not idle
+ */
+bool wifi_prov_mgr_is_stopped();
+
+/**
  * @brief   Start provisioning service
  *
  * This starts the provisioning service according to the scheme
