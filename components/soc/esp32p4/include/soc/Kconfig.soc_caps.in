@@ -727,6 +727,26 @@ config SOC_RMT_SUPPORT_DMA
     bool
     default y
 
+config SOC_LCD_I80_BUSES
+    int
+    default 1
+
+config SOC_LCD_RGB_PANELS
+    int
+    default 1
+
+config SOC_LCD_I80_BUS_WIDTH
+    int
+    default 24
+
+config SOC_LCD_RGB_DATA_WIDTH
+    int
+    default 24
+
+config SOC_LCD_SUPPORT_RGB_YUV_CONV
+    bool
+    default y
+
 config SOC_MCPWM_GROUPS
     int
     default 2

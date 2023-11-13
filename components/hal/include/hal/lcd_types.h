@@ -19,7 +19,9 @@ extern "C" {
  * @brief LCD clock source
  */
 typedef soc_periph_lcd_clk_src_t lcd_clock_source_t;
-#endif
+#else
+typedef int lcd_clock_source_t;
+#endif // SOC_LCD_I80_SUPPORTED || SOC_LCD_RGB_SUPPORTED
 
 /**
  * @brief RGB data endian

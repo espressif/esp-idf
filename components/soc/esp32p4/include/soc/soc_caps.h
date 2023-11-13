@@ -34,6 +34,7 @@
 #define SOC_AXI_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
+// #define SOC_LCDCAM_SUPPORTED            1 // TODO: IDF-7465
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_ETM_SUPPORTED               1
@@ -325,6 +326,16 @@
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
 // #define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
 #define SOC_RMT_SUPPORT_DMA                   1  /*!< RMT peripheral can connect to DMA channel */
+
+/*-------------------------- LCD CAPS ----------------------------------------*/
+/* I80 bus and RGB timing generator can't work at the same time */
+// #define SOC_LCD_I80_SUPPORTED           (1)  /*!< Intel 8080 LCD is supported */ // TODO: IDF-7465
+// #define SOC_LCD_RGB_SUPPORTED           (1)  /*!< RGB LCD is supported */        // TODO: IDF-7465
+#define SOC_LCD_I80_BUSES               (1U) /*!< Has one LCD Intel 8080 bus */
+#define SOC_LCD_RGB_PANELS              (1U) /*!< Support one RGB LCD panel */
+#define SOC_LCD_I80_BUS_WIDTH           (24) /*!< Intel 8080 bus width */
+#define SOC_LCD_RGB_DATA_WIDTH          (24) /*!< Number of LCD data lines */
+#define SOC_LCD_SUPPORT_RGB_YUV_CONV    (1)  /*!< Support color format conversion between RGB and YUV */
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_GROUPS                     (2U)   ///< 2 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)

@@ -32,16 +32,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
     // IDF-6500
     case PERIPH_MIPI_CSI_MODULE:
         return 0;
-    case PERIPH_I2C0_MODULE:
-        return HP_SYS_CLKRST_REG_I2C0_APB_CLK_EN;
-    case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_REG_I2C1_APB_CLK_EN;
-    case PERIPH_LCD_MODULE:
-        return HP_SYS_CLKRST_REG_LCD_CLK_EN;
     case PERIPH_I3C_MODULE:
         return HP_SYS_CLKRST_REG_I3C_MST_CLK_EN;
-    case PERIPH_CAM_MODULE:
-        return HP_SYS_CLKRST_REG_CAM_CLK_EN;
     case PERIPH_SYSTIMER_MODULE:
         return HP_SYS_CLKRST_REG_SYSTIMER_CLK_EN;
     case PERIPH_SARADC_MODULE:
@@ -99,12 +91,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_UHCI;
     case PERIPH_I3C_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_I3CMST | HP_SYS_CLKRST_REG_RST_EN_I3CSLV;
-    case PERIPH_I2C0_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_I2C0;
-    case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_I2C1;
-    case PERIPH_LCD_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_LCDCAM;
     case PERIPH_SARADC_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_ADC;
     case PERIPH_AES_MODULE:
@@ -157,15 +143,7 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return HP_SYS_CLKRST_PERI_CLK_CTRL00_REG;
     case PERIPH_MIPI_DSI_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL03_REG;
-    case PERIPH_I2C0_MODULE:
-    case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_SOC_CLK_CTRL2_REG;
-    case PERIPH_LCD_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL110_REG;
-        return HP_SYS_CLKRST_PERI_CLK_CTRL116_REG;
     case PERIPH_I3C_MODULE:
-    case PERIPH_CAM_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL119_REG;
     case PERIPH_SYSTIMER_MODULE:
     case PERIPH_SARADC_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL22_REG;
@@ -203,10 +181,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_SYSTIMER_MODULE:
     case PERIPH_UHCI_MODULE:
     case PERIPH_I3C_MODULE:
-    case PERIPH_I2C0_MODULE:
-    case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_HP_RST_EN1_REG;
-    case PERIPH_CAM_MODULE:
     case PERIPH_SARADC_MODULE:
     case PERIPH_AES_MODULE:
     case PERIPH_DS_MODULE:
