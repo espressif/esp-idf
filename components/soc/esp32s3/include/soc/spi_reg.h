@@ -20,6 +20,7 @@
 extern "C" {
 #endif
 
+#define REG_SPI_BASE(i)     (((i)==2) ? (DR_REG_SPI2_BASE) : (DR_REG_SPI0_BASE - ((i) * 0x1000)))
 #define SPI_CMD_REG(i)          (REG_SPI_BASE(i) + 0x0)
 /* SPI_USR : R/W/SC ;bitpos:[24] ;default: 1'b0 ; */
 /*description: User define command enable.  An operation will be triggered when the bit is set.
