@@ -455,7 +455,6 @@ components/esp_rom/esp32s3/ld/esp32s3.rom.version.ld
 components/esp_rom/include/esp32/rom/aes.h
 components/esp_rom/include/esp32/rom/bigint.h
 components/esp_rom/include/esp32/rom/crc.h
-components/esp_rom/include/esp32/rom/efuse.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/tbconsole.h
 components/esp_rom/include/esp32/rom/tjpgd.h

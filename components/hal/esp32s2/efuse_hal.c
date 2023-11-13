@@ -10,7 +10,7 @@
 #include "hal/assert.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
-#include "esp32s2/rom/efuse.h"
+#include "rom/efuse.h"
 #include "esp_attr.h"
 
 #define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))

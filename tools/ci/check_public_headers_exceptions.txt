@@ -108,7 +108,6 @@ components/esp_rom/include/esp32s2/rom/spi_flash.h
 components/esp_rom/include/esp32s2/rom/cache.h
 components/esp_rom/include/esp32s2/rom/secure_boot.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
-components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_ringbuf/include/freertos/ringbuf.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
