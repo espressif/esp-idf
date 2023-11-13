@@ -72,6 +72,8 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
  *
  * @note This function is non-blocking, it initiates a new receive job and then returns.
  *       User should check the received data from the `on_recv_done` callback that registered by `rmt_rx_register_event_callbacks()`.
+ * @note This function can also be called in ISR context.
+ * @note If you want this function to work even when the flash cache is disabled, please enable the `CONFIG_RMT_RECV_FUNC_IN_IRAM` option.
  *
  * @param[in] rx_channel RMT RX channel that created by `rmt_new_rx_channel()`
  * @param[in] buffer The buffer to store the received RMT symbols
