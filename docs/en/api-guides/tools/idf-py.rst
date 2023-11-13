@@ -140,8 +140,6 @@ For commands that are not known to ``idf.py``, an attempt to execute them as a b
 
 The command ``idf.py`` supports `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ for bash, zsh and fish shells.
 
-In order to make `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ supported, please make sure you have at least Python 3.5 and `click <https://click.palletsprojects.com/>`_ 7.1 or newer (:ref:`Software <get-started-get-prerequisites>`).
-
 To enable autocompletion for ``idf.py``, use the ``export`` command (:ref:`Step 4. Set up the environment variables <get-started-set-up-env>`). Autocompletion is initiated by pressing the TAB key. Type ``idf.py -`` and press the TAB key to autocomplete options.
 
 The autocomplete support for PowerShell is planned in the future.
