@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1314,7 +1314,7 @@ static void test_master_fd_dma(void)
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(master_recive, 0x00, TEST_STEP_LEN);
-                    get_tx_buffer(119 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
+                    test_fill_random_to_buffers_dualboard(119 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
 
                     uint32_t test_trans_len = TEST_STEP_LEN;
                     spi_transaction_t trans_cfg = {
@@ -1365,7 +1365,7 @@ static void test_slave_fd_dma(void)
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(slave_recive, 0x00, TEST_STEP_LEN);
-                    get_tx_buffer(119 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
+                    test_fill_random_to_buffers_dualboard(119 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
 
                     uint32_t test_trans_len = TEST_STEP_LEN;
                     spi_slave_transaction_t trans_cfg = {
@@ -1429,7 +1429,7 @@ static void test_master_fd_no_dma(void)
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(master_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
-                    get_tx_buffer(211 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    test_fill_random_to_buffers_dualboard(211 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
                     spi_transaction_t trans_cfg = {
@@ -1481,7 +1481,7 @@ static void test_slave_fd_no_dma(void)
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(slave_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
-                    get_tx_buffer(211 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    test_fill_random_to_buffers_dualboard(211 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
                     spi_slave_transaction_t trans_cfg = {
@@ -1536,7 +1536,7 @@ static void test_master_hd_dma(void)
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(master_recive, 0x00, TEST_STEP_LEN);
-                    get_tx_buffer(985 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
+                    test_fill_random_to_buffers_dualboard(985 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
 
                     uint32_t test_trans_len = TEST_STEP_LEN;
                     unity_wait_for_signal("Slave ready");
@@ -1580,7 +1580,7 @@ static void test_slave_hd_dma(void)
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(slave_recive, 0x00, TEST_STEP_LEN);
-                    get_tx_buffer(985 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
+                    test_fill_random_to_buffers_dualboard(985 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
                     uint32_t test_trans_len = TEST_STEP_LEN;
 
                     spi_slave_hd_data_t *ret_trans, slave_trans = {
@@ -1637,7 +1637,7 @@ static void test_master_hd_no_dma(void)
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(master_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
-                    get_tx_buffer(911 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    test_fill_random_to_buffers_dualboard(911 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
                     unity_wait_for_signal("Slave ready");
@@ -1681,7 +1681,7 @@ static void test_slave_hd_no_dma(void)
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(slave_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
-                    get_tx_buffer(911 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    test_fill_random_to_buffers_dualboard(911 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
 
                     spi_slave_hd_data_t *ret_trans, slave_trans = {
@@ -1756,7 +1756,7 @@ static void test_master_sio_dma(void)
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(master_recive, 0x00, TEST_STEP_LEN);
-                    get_tx_buffer(110 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
+                    test_fill_random_to_buffers_dualboard(110 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
                     spi_transaction_t trans = {};
                     if (sio_master_in) {
                         // master input only
@@ -1818,7 +1818,7 @@ static void test_slave_sio_dma(void)
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(slave_recive, 0x00, TEST_STEP_LEN);
-                    get_tx_buffer(110 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
+                    test_fill_random_to_buffers_dualboard(110 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
                     spi_slave_transaction_t trans = {
                         .length = TEST_STEP_LEN * 8,
                         .tx_buffer = slave_send,
@@ -1888,7 +1888,7 @@ static void test_master_sio_no_dma(void)
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(master_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
-                    get_tx_buffer(122 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    test_fill_random_to_buffers_dualboard(122 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     spi_transaction_t trans = {};
                     if (sio_master_in) {
                         // master input only
@@ -1951,7 +1951,7 @@ static void test_slave_sio_no_dma(void)
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
                     memset(slave_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
-                    get_tx_buffer(122 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    test_fill_random_to_buffers_dualboard(122 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     spi_slave_transaction_t trans = {
                         .length = SOC_SPI_MAXIMUM_BUFFER_SIZE * 8,
                         .tx_buffer = slave_send,

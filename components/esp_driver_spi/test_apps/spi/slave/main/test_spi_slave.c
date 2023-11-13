@@ -409,7 +409,7 @@ static void test_slave_iram_master_normal(void)
     uint8_t *master_send = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DMA);
     uint8_t *master_recv = heap_caps_calloc(1, TEST_BUFFER_SZ, MALLOC_CAP_DMA);
     uint8_t *master_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT);
-    get_tx_buffer(1001, master_send, master_exp, TEST_BUFFER_SZ);
+    test_fill_random_to_buffers_dualboard(1001, master_send, master_exp, TEST_BUFFER_SZ);
     spi_transaction_t trans_cfg = {
         .tx_buffer = master_send,
         .rx_buffer = master_recv,
@@ -490,7 +490,7 @@ static IRAM_ATTR void test_slave_isr_iram(void)
     uint8_t *slave_iram_send = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_iram_recv = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_iram_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-    get_tx_buffer(1001, slave_iram_exp, slave_iram_send, TEST_BUFFER_SZ);
+    test_fill_random_to_buffers_dualboard(1001, slave_iram_exp, slave_iram_send, TEST_BUFFER_SZ);
     spi_slave_transaction_t trans_cfg[TEST_IRAM_TRANS_NUM] = {0};
 
     unity_wait_for_signal("Master ready");
@@ -570,7 +570,7 @@ static IRAM_ATTR void spi_slave_trans_in_isr(void)
     uint8_t *slave_isr_send = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_isr_recv = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_isr_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-    get_tx_buffer(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
+    test_fill_random_to_buffers_dualboard(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
     spi_slave_transaction_t trans_cfg = {
         .tx_buffer = slave_isr_send,
         .rx_buffer = slave_isr_recv,
@@ -654,8 +654,8 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
     uint8_t *slave_isr_recv = heap_caps_aligned_alloc(64, TEST_BUFFER_SZ, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *dummy_data = heap_caps_aligned_alloc(64, 64 * 2, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *slave_isr_exp  = heap_caps_malloc(TEST_BUFFER_SZ, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-    get_tx_buffer(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
-    get_tx_buffer(1001, dummy_data, dummy_data + 64, 64);
+    test_fill_random_to_buffers_dualboard(1001, slave_isr_exp, slave_isr_send, TEST_BUFFER_SZ);
+    test_fill_random_to_buffers_dualboard(1001, dummy_data, dummy_data + 64, 64);
     spi_slave_transaction_t trans_cfg = {
         .tx_buffer = slave_isr_send,
         .rx_buffer = slave_isr_recv,

@@ -725,6 +725,37 @@ pytest_components_esp32_sdio:
       artifacts: false
   tags: [ esp32, sdio_master_slave ]
 
+pytest_components_esp32_esp32c6_sdio:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32-sdio
+  needs:
+    - job: build_pytest_components_esp32
+      artifacts: false
+    - job: build_pytest_components_esp32c6
+      artifacts: false
+  tags: [ esp32c6, sdio_multidev_32_c6 ]
+  script:
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    # get runner env config file
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # using runner tags as markers to filter the test cases
+    # Runner tags are comma separated, replace the comma with " and " for markers
+    - job_tags=$(python tools/ci/python_packages/gitlab_api.py get_job_tags $CI_PROJECT_ID --job_id $CI_JOB_ID)
+    - markers=$(echo $job_tags | sed -e "s/,/ and /g")
+    # download the artifacts, requires esp32 and esp32c6 chips
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_components_esp32"
+    - run_cmd python tools/ci/artifacts_handler.py download --job-name "build_pytest_components_esp32c6"
+    - run_cmd pytest $TEST_DIR
+      -m \"${markers}\"
+      --junitxml=XUNIT_RESULT.xml
+      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      ${PYTEST_EXTRA_FLAGS}
+      --app-info-filepattern \"list_job_*.txt\"
+
 pytest_components_esp32_ip101:
   extends:
     - .pytest_components_dir_template

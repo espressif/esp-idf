@@ -125,13 +125,15 @@ components/driver/test_apps/rs485:
       temporary: true
       reason: lack of runners
 
-components/driver/test_apps/sdio:
+components/driver/test_apps/sdio/sdio_common_tests/host_sdmmc:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      temporary: false
+      reason: always use ESP32 SDMMC as host
+
+components/driver/test_apps/sdio/sdio_common_tests/sdio:
   disable:
     - if: SOC_SDIO_SLAVE_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: lack of runners
 
 components/driver/test_apps/sigma_delta:
   disable:

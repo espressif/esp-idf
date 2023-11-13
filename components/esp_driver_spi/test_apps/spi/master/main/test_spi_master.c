@@ -1217,12 +1217,12 @@ static void fd_master(void)
     //Master FD DMA, RX without TX Test
     for (int i = 0; i < TEST_NUM; i++) {
         // 1. Master FD DMA, only receive, with NULL tx_buffer
-        get_tx_buffer(FD_SEED1 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(FD_SEED1 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
         memset(mst_recv_buf, 0x0, FD_TEST_BUF_SIZE);
         master_only_rx_trans(spi, mst_recv_buf, slv_send_buf, FD_TEST_BUF_SIZE);
 
         //2. Master FD DMA with TX and RX
-        get_tx_buffer(FD_SEED2 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(FD_SEED2 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
         memset(mst_recv_buf, 0x0, FD_TEST_BUF_SIZE);
         master_both_trans(spi, mst_send_buf, mst_recv_buf, slv_send_buf, FD_TEST_BUF_SIZE);
     }
@@ -1230,11 +1230,11 @@ static void fd_master(void)
     //Master FD DMA, TX without RX Test
     for (int i = 0; i < TEST_NUM; i++) {
         // 1. Master FD DMA, only send, with NULL rx_buffer
-        get_tx_buffer(FD_SEED3 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(FD_SEED3 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
         master_only_tx_trans(spi, mst_send_buf, FD_TEST_BUF_SIZE);
 
         //2. Master FD DMA with TX and RX
-        get_tx_buffer(FD_SEED4 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(FD_SEED4 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
         memset(mst_recv_buf, 0x0, FD_TEST_BUF_SIZE);
         master_both_trans(spi, mst_send_buf, mst_recv_buf, slv_send_buf, FD_TEST_BUF_SIZE);
     }
@@ -1299,23 +1299,23 @@ static void fd_slave(void)
 
     for (int i = 0; i < TEST_NUM; i++) {
         //1. Slave TX without RX (rx_buffer == NULL)
-        get_tx_buffer(FD_SEED1 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(FD_SEED1 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
         slave_only_tx_trans(slv_send_buf, FD_TEST_BUF_SIZE);
 
         //2. Slave both TX and RX
-        get_tx_buffer(FD_SEED2 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(FD_SEED2 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
         memset(slv_recv_buf, 0x0, FD_TEST_BUF_SIZE);
         slave_both_trans(slv_send_buf, slv_recv_buf, mst_send_buf, FD_TEST_BUF_SIZE);
     }
 
     for (int i = 0; i < TEST_NUM; i++) {
         // 1. Slave RX without TX (tx_buffer == NULL)
-        get_tx_buffer(FD_SEED3 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(FD_SEED3 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
         memset(slv_recv_buf, 0x0, FD_TEST_BUF_SIZE);
         slave_only_rx_trans(slv_recv_buf, mst_send_buf, FD_TEST_BUF_SIZE);
 
         //2. Slave both TX and RX
-        get_tx_buffer(FD_SEED4 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
+        test_fill_random_to_buffers_dualboard(FD_SEED4 + i, mst_send_buf, slv_send_buf, FD_TEST_BUF_SIZE);
         memset(slv_recv_buf, 0x0, FD_TEST_BUF_SIZE);
         slave_both_trans(slv_send_buf, slv_recv_buf, mst_send_buf, FD_TEST_BUF_SIZE);
     }
@@ -1530,7 +1530,7 @@ void test_add_device_master(void)
         TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devs[i]));
 
         memset(master_recvbuf, 0, sizeof(master_recvbuf));
-        get_tx_buffer(21, master_sendbuf, master_expect, TEST_TRANS_LEN);
+        test_fill_random_to_buffers_dualboard(21, master_sendbuf, master_expect, TEST_TRANS_LEN);
 
         unity_send_signal("Master ready");
         unity_wait_for_signal("Slave ready");
@@ -1573,7 +1573,7 @@ void test_add_device_slave(void)
 
     for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
         memset(slave_recvbuf, 0, sizeof(slave_recvbuf));
-        get_tx_buffer(21, slave_expect, slave_sendbuf, TEST_TRANS_LEN);
+        test_fill_random_to_buffers_dualboard(21, slave_expect, slave_sendbuf, TEST_TRANS_LEN);
 
         unity_wait_for_signal("Master ready");
         unity_send_signal("Slave ready");
@@ -1671,7 +1671,7 @@ static IRAM_ATTR void test_master_iram(void)
     uint8_t *master_send = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
     uint8_t *master_recv = heap_caps_calloc(1, TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DMA);
     uint8_t *master_exp  = heap_caps_malloc(TEST_MASTER_IRAM_TRANS_LEN, MALLOC_CAP_DEFAULT);
-    get_tx_buffer(211, master_send, master_exp, TEST_MASTER_IRAM_TRANS_LEN);
+    test_fill_random_to_buffers_dualboard(211, master_send, master_exp, TEST_MASTER_IRAM_TRANS_LEN);
     spi_transaction_t trans_cfg = {
         .tx_buffer = master_send,
         .rx_buffer = master_recv,
@@ -1698,7 +1698,7 @@ static IRAM_ATTR void test_master_iram(void)
 
     // Test polling trans api once -------------------------------
     unity_wait_for_signal("Slave ready");
-    get_tx_buffer(119, master_send, master_exp, TEST_MASTER_IRAM_TRANS_LEN);
+    test_fill_random_to_buffers_dualboard(119, master_send, master_exp, TEST_MASTER_IRAM_TRANS_LEN);
 
     spi_flash_disable_interrupts_caches_and_other_cpu();
     spi_device_polling_transmit(dev_handle, &trans_cfg);
@@ -1729,7 +1729,7 @@ static void test_iram_slave_normal(void)
     slave_trans.length = TEST_MASTER_IRAM_TRANS_LEN * 8;
     slave_trans.tx_buffer = slave_sendbuf;
     slave_trans.rx_buffer = slave_recvbuf;
-    get_tx_buffer(211, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    test_fill_random_to_buffers_dualboard(211, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
 
     unity_wait_for_signal("Master ready");
     unity_send_signal("Slave ready");
@@ -1739,7 +1739,7 @@ static void test_iram_slave_normal(void)
     spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
 
     unity_send_signal("Slave ready");
-    get_tx_buffer(119, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
+    test_fill_random_to_buffers_dualboard(119, slave_expect, slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
     spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY);
     ESP_LOG_BUFFER_HEX("slave tx", slave_sendbuf, TEST_MASTER_IRAM_TRANS_LEN);
     ESP_LOG_BUFFER_HEX("slave rx", slave_recvbuf, TEST_MASTER_IRAM_TRANS_LEN);
