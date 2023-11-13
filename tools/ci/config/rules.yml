@@ -39,23 +39,26 @@
 .if-ref-master: &if-ref-master
   if: '$CI_COMMIT_REF_NAME == "master"'
 
+.if-qa-test-tag: &if-qa-test-tag
+  if: '$CI_COMMIT_TAG =~ /^qa-test/'
+
 .if-tag-release-no_label: &if-tag-release-no_label
   if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/ && $BOT_TRIGGER_WITH_LABEL == null'
 
 .if-protected: &if-protected
-  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/)'
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) || $CI_COMMIT_TAG =~ /^qa-test/'
 
 .if-protected-no_label: &if-protected-no_label
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
 
 .if-dev-push: &if-dev-push
-  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
 
 .if-schedule: &if-schedule
   if: '$CI_PIPELINE_SOURCE == "schedule"'
 
 .if-trigger: &if-trigger
-  if: '$CI_PIPELINE_SOURCE == "trigger"'
+  if: '$BOT_TRIGGER_WITH_LABEL || $CI_PIPELINE_SOURCE == "trigger"'
 
 .if-label-regular_test: &if-label-regular_test
   if: '$BOT_LABEL_REGULAR_TEST'
@@ -120,6 +123,12 @@
   rules:
     - <<: *if-protected-no_label
 
+.rules:push_to_github:
+  rules:
+    - <<: *if-qa-test-tag
+      when: never
+    - <<: *if-protected-no_label
+
 .rules:protected-schedule:
   rules:
     - <<: *if-protected
@@ -143,16 +152,6 @@
   rules:
     - <<: *if-tag-release-no_label
 
-.rules:ref:master-schedule:
-  rules:
-    - <<: *if-ref-master
-    - <<: *if-schedule
-
-.rules:ref:master-always:
-  rules:
-    - <<: *if-ref-master
-      when: always
-
 .rules:labels:static_analysis-only:
   rules:
     - <<: *if-label-static_analysis
@@ -165,6 +164,8 @@
 
 .rules:labels:build_docs:
   rules:
+    - <<: *if-qa-test-tag
+      when: never
     - <<: *if-protected-no_label
     - <<: *if-label-build
     - <<: *if-label-regular_test
@@ -172,11 +173,15 @@
 
 .rules:labels:build_docs-slim:
   rules:
+    - <<: *if-qa-test-tag
+      when: never
     - <<: *if-protected-no_label
     - <<: *if-label-build_docs
 
 .rules:labels:build_docs-preview:
   rules:
+    - <<: *if-qa-test-tag
+      when: never
     - <<: *if-label-build_docs
 
 .rules:labels:weekend_test-only:
@@ -243,6 +248,7 @@
     - <<: *if-label-regular_test
     - <<: *if-label-example_test
     - <<: *if-label-custom_test
+    - <<: *if-label-unit_test-all_labels
     - <<: *if-label-weekend_test
 
 .rules:build_tests:weekend_test:

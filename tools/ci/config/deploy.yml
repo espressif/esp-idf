@@ -44,7 +44,7 @@ push_to_github:
   extends:
     - .deploy_job_template
     - .before_script_lesser
-    - .rules:protected-no_label
+    - .rules:push_to_github
   dependencies: []
   script:
     - add_github_ssh_keys
@@ -92,7 +92,7 @@ deploy_docs_production:
   # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
   extends:
     - .deploy_docs_template
-    - .rules:protected-no_label
+    - .rules:push_to_github
   stage: post_deploy
   needs: # ensure runs after push_to_github succeeded
     - build_docs_html
