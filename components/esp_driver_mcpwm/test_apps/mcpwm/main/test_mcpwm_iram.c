@@ -146,9 +146,9 @@ TEST_CASE("mcpwm_comparator_iram_safe", "[mcpwm]")
 
     printf("set generator actions on timer and compare events\r\n");
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gen,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator, MCPWM_GEN_ACTION_LOW)));
 
     printf("register compare event callback\r\n");
     mcpwm_comparator_event_callbacks_t cbs = {

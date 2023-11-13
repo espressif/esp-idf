@@ -170,7 +170,7 @@ TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
     TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 0, false));
     TEST_ASSERT_EQUAL(0, gpio_get_level(gen_gpio));
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(generator,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     // generator should output high level on tez event, the previous force level should disappear
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
     vTaskDelay(pdMS_TO_TICKS(200));
@@ -181,7 +181,7 @@ TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
     TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 1, false));
     TEST_ASSERT_EQUAL(1, gpio_get_level(gen_gpio));
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(generator,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW)));
     // generator should output low level on tez event, the previous force level should disappear
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
     vTaskDelay(pdMS_TO_TICKS(200));
@@ -230,9 +230,9 @@ TEST_CASE("mcpwm_generator_action_on_timer_event", "[mcpwm]")
 
     printf("set generator to output high on timer full\r\n");
     TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH),
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP),
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION_END()));
     printf("start timer\r\n");
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
     vTaskDelay(pdMS_TO_TICKS(100));
@@ -242,9 +242,9 @@ TEST_CASE("mcpwm_generator_action_on_timer_event", "[mcpwm]")
 
     printf("set generator to output low on timer full\r\n");
     TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW),
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_KEEP),
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION_END()));
     printf("start timer\r\n");
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
     vTaskDelay(pdMS_TO_TICKS(100));
@@ -262,7 +262,7 @@ TEST_CASE("mcpwm_generator_action_on_timer_event", "[mcpwm]")
 typedef void (*set_gen_actions_cb_t)(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb);
 
 static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t period, mcpwm_timer_count_mode_t count_mode,
-        uint32_t cmpa, uint32_t cmpb, int gpioa, int gpiob, set_gen_actions_cb_t set_generator_actions)
+                                           uint32_t cmpa, uint32_t cmpb, int gpioa, int gpiob, set_gen_actions_cb_t set_generator_actions)
 {
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -321,72 +321,72 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
 static void single_edge_active_high(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(genb,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(genb,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
 }
 
 static void single_edge_active_low(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(genb,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_LOW)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(genb,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_HIGH)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_HIGH)));
 }
 
 static void pulse_placement(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_actions_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
     TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(genb,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE),
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION_END()));
 }
 
 static void dual_edge_active_low_asym(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_actions_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
     TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(genb,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_TIMER_EVENT_ACTION_END()));
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW),
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_GEN_ACTION_HIGH),
+                                                           MCPWM_GEN_TIMER_EVENT_ACTION_END()));
 }
 
 static void dual_edge_active_low_sym(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_actions_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
     TEST_ESP_OK(mcpwm_generator_set_actions_on_compare_event(genb,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_HIGH),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_LOW),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
 }
 
 static void dual_edge_complementary(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_actions_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_HIGH),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpa, MCPWM_GEN_ACTION_LOW),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
     TEST_ESP_OK(mcpwm_generator_set_actions_on_compare_event(genb,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW),
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_HIGH),
-                MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_DOWN, cmpb, MCPWM_GEN_ACTION_HIGH),
+                                                             MCPWM_GEN_COMPARE_EVENT_ACTION_END()));
 }
 
 TEST_CASE("mcpwm_generator_action_on_compare_event", "[mcpwm]")
@@ -425,7 +425,7 @@ TEST_CASE("mcpwm_generator_action_on_compare_event", "[mcpwm]")
 typedef void (*set_dead_time_cb_t)(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb);
 
 static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t period, uint32_t cmpa, uint32_t cmpb, int gpioa, int gpiob,
-        set_gen_actions_cb_t set_generator_actions, set_dead_time_cb_t set_dead_time)
+                                         set_gen_actions_cb_t set_generator_actions, set_dead_time_cb_t set_dead_time)
 {
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
@@ -485,9 +485,9 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
 static void ahc_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
 }
 
 static void ahc_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
@@ -506,9 +506,9 @@ static void ahc_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
 static void alc_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
 }
 
 static void alc_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
@@ -528,9 +528,9 @@ static void alc_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
 static void ah_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
 }
 
 static void ah_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
@@ -548,9 +548,9 @@ static void ah_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
 static void al_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
 }
 
 static void al_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
@@ -569,13 +569,13 @@ static void al_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
 static void reda_only_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(genb,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(genb,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
 }
 
 static void reda_only_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
@@ -594,13 +594,13 @@ static void reda_only_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t 
 static void fedb_only_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(genb,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(genb,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
 }
 
 static void fedb_only_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
@@ -620,13 +620,13 @@ static void fedb_only_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t 
 static void redfedb_only_set_generator_actions(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb, mcpwm_cmpr_handle_t cmpa, mcpwm_cmpr_handle_t cmpb)
 {
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gena,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gena,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpa, MCPWM_GEN_ACTION_LOW)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(genb,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(genb,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, cmpb, MCPWM_GEN_ACTION_LOW)));
 }
 
 static void redfedb_only_set_dead_time(mcpwm_gen_handle_t gena, mcpwm_gen_handle_t genb)
@@ -727,9 +727,9 @@ TEST_CASE("mcpwm_duty_empty_full", "[mcpwm]")
 
     printf("set generator actions on timer and compare events\r\n");
     TEST_ESP_OK(mcpwm_generator_set_action_on_timer_event(gen,
-                MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(gen,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator, MCPWM_GEN_ACTION_LOW)));
 
     printf("start timer\r\n");
     TEST_ESP_OK(mcpwm_timer_enable(timer));
@@ -800,12 +800,12 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
 
     printf("set generator to output high on trigger0 and low on trigger1\r\n");
     TEST_ESP_OK(mcpwm_generator_set_action_on_fault_event(gen,
-                MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[0], MCPWM_GEN_ACTION_HIGH)));
+                                                          MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[0], MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_fault_event(gen,
-                MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[1], MCPWM_GEN_ACTION_LOW)));
+                                                          MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[1], MCPWM_GEN_ACTION_LOW)));
     // no free trigger
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_generator_set_action_on_fault_event(gen,
-                 MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[2], MCPWM_GEN_ACTION_LOW)));
+                                                                              MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[2], MCPWM_GEN_ACTION_LOW)));
 
     TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
     gpio_set_level(fault_gpio_num[0], 1);
@@ -872,13 +872,13 @@ TEST_CASE("mcpwm_generator_action_on_soft_sync_trigger_event", "[mcpwm]")
 
     printf("set generator to output high on soft sync trigger\r\n");
     TEST_ESP_OK(mcpwm_generator_set_action_on_sync_event(gen,
-                MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, soft_sync, MCPWM_GEN_ACTION_HIGH)));
+                                                         MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, soft_sync, MCPWM_GEN_ACTION_HIGH)));
 
     //more than 1 sync is not supported
     mcpwm_sync_handle_t invalid_soft_sync = NULL;
     TEST_ESP_OK(mcpwm_new_soft_sync_src(&soft_sync_config, &invalid_soft_sync));
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_generator_set_action_on_sync_event(gen,
-                 MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, invalid_soft_sync, MCPWM_GEN_ACTION_LOW)));
+                                                                                 MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, invalid_soft_sync, MCPWM_GEN_ACTION_LOW)));
 
     TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
     mcpwm_soft_sync_activate(soft_sync);
@@ -941,7 +941,7 @@ TEST_CASE("mcpwm_generator_action_on_timer_sync_trigger_event", "[mcpwm]")
 
     printf("set generator to output high on timer sync trigger\r\n");
     TEST_ESP_OK(mcpwm_generator_set_action_on_sync_event(gen,
-                MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, timer_sync, MCPWM_GEN_ACTION_HIGH)));
+                                                         MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, timer_sync, MCPWM_GEN_ACTION_HIGH)));
 
     TEST_ESP_OK(mcpwm_timer_enable(timer));
 
@@ -1011,7 +1011,7 @@ TEST_CASE("mcpwm_generator_action_on_gpio_sync_trigger_event", "[mcpwm]")
 
     printf("set generator to output high on gpio sync trigger\r\n");
     TEST_ESP_OK(mcpwm_generator_set_action_on_sync_event(gen,
-                MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_sync, MCPWM_GEN_ACTION_HIGH)));
+                                                         MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_sync, MCPWM_GEN_ACTION_HIGH)));
 
     TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
     gpio_set_level(gpio_sync_config.gpio_num, 1);

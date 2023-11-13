@@ -92,7 +92,7 @@ typedef union {
                       Color Conversion
 ---------------------------------------------------------------*/
 /**
- * @brief LCD color range
+ * @brief Color range
  * @note The difference between a full range color and a limited range color is
  *       the amount of shades of black and white that they can display.
  */

@@ -1,4 +1,4 @@
-menu "MCPWM Configuration"
+menu "ESP-Driver:MCPWM Configurations"
     depends on SOC_MCPWM_SUPPORTED
     config MCPWM_ISR_IRAM_SAFE
         bool "Place MCPWM ISR function into IRAM"
@@ -30,4 +30,4 @@ menu "MCPWM Configuration"
         help
             Wether to enable the debug log message for MCPWM driver.
             Note that, this option only controls the MCPWM driver log, won't affect other drivers.
-endmenu # MCPWM Configuration
+endmenu

@@ -15,7 +15,6 @@ set(includes "include"
              "i2c/include"
              "i2s/include"
              "ledc/include"
-             "mcpwm/include"
              "parlio/include"
              "rmt/include"
              "sdio_slave/include"
@@ -103,21 +102,9 @@ if(CONFIG_SOC_LEDC_SUPPORTED)
     list(APPEND ldfragments "ledc/linker.lf")
 endif()
 
-# MCPWM related source files
+# MCPWM legacy driver
 if(CONFIG_SOC_MCPWM_SUPPORTED)
-    list(APPEND srcs "mcpwm/mcpwm_cap.c"
-                     "mcpwm/mcpwm_cmpr.c"
-                     "mcpwm/mcpwm_com.c"
-                     "mcpwm/mcpwm_fault.c"
-                     "mcpwm/mcpwm_gen.c"
-                     "mcpwm/mcpwm_oper.c"
-                     "mcpwm/mcpwm_sync.c"
-                     "mcpwm/mcpwm_timer.c"
-                     "deprecated/mcpwm_legacy.c")
-    if(CONFIG_SOC_MCPWM_SUPPORT_ETM)
-        list(APPEND srcs "mcpwm/mcpwm_etm.c")
-    endif()
-    list(APPEND ldfragments "mcpwm/linker.lf")
+    list(APPEND srcs "deprecated/mcpwm_legacy.c")
 endif()
 
 # PCNT legacy driver
@@ -211,7 +198,7 @@ else()
                            REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
-                                    esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi
+                                    esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

@@ -392,8 +392,8 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
         int isr_flags = MCPWM_INTR_ALLOC_FLAG;
         isr_flags |= mcpwm_get_intr_priority_flag(group);
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
-                            (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CAPTURE(cap_chan_id),
-                            mcpwm_capture_default_isr, cap_channel, &cap_channel->intr), TAG, "install interrupt service for cap channel failed");
+                                                      (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_CAPTURE(cap_chan_id),
+                                                      mcpwm_capture_default_isr, cap_channel, &cap_channel->intr), TAG, "install interrupt service for cap channel failed");
     }
 
     portENTER_CRITICAL(&group->spinlock);

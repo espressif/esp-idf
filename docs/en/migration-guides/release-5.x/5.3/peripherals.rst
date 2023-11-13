@@ -9,6 +9,7 @@ In order to control the dependence of other components on drivers at a smaller g
 - `esp_driver_pcnt` - Driver for pulse counter
 - `esp_driver_gpio` - Driver for GPIO
 - `esp_driver_spi` - Driver for GPSPI
+- `esp_driver_mcpwm` - Driver for Motor Control PWM
 
 For compatibility, the original `driver`` component is still treated as an all-in-one component by registering these `esp_driver_xyz`` components as its public dependencies. In other words, you do not need to modify the CMake file of an existing project, but you now have a way to specify the specific peripheral driver that your project depends on.
 
