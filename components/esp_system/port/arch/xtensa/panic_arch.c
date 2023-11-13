@@ -146,7 +146,7 @@ static void print_debug_exception_details(const void *f)
             }
 #endif
 
-            const char *name = pcTaskGetName(xTaskGetCurrentTaskHandleForCPU(core));
+            const char *name = pcTaskGetName(xTaskGetCurrentTaskHandleForCore(core));
             panic_print_str("Stack canary watchpoint triggered (");
             panic_print_str(name);
             panic_print_str(") ");

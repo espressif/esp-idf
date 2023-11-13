@@ -595,7 +595,7 @@ static void test_pended_running_task(void *arg)
     // While tasks which do not have affinity to the current core are unblocked.
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
         // Note: We use eBlocked instead of eReady due to a bug in eTaskGetState(). See (IDF-5543)
-        if (xTaskGetAffinity(blkd_tsks[i]) == xPortGetCoreID()) {
+        if (xTaskGetCoreID(blkd_tsks[i]) == xPortGetCoreID()) {
             TEST_ASSERT_EQUAL(eBlocked, eTaskGetState(blkd_tsks[i]));
             TEST_ASSERT_EQUAL(false, has_run[i]);
         } else {

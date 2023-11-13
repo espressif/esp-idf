@@ -925,14 +925,14 @@ static int get_task_cpu_id(size_t index)
     if (!get_task_handle(index, &handle)) {
         return -1;
     }
-    BaseType_t core_id = xTaskGetAffinity(handle);
+    BaseType_t core_id = xTaskGetCoreID(handle);
     return (int)core_id;
 }
 
 /** Get the index of the task running on the current CPU, and save the result */
 static void find_paniced_task_index(void)
 {
-    TaskHandle_t cur_handle = (TaskHandle_t)xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID());
+    TaskHandle_t cur_handle = (TaskHandle_t)xTaskGetCurrentTaskHandleForCore(xPortGetCoreID());
     TaskHandle_t handle;
     for (int i = 0; i < s_scratch.task_count; i++) {
         if (get_task_handle(i, &handle) && cur_handle == handle) {

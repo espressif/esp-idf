@@ -167,7 +167,7 @@ static inline void print_assist_debug_details(const void *frame)
 {
     uint32_t core_id = esp_cpu_get_core_id();
     uint32_t sp_min, sp_max;
-    const char *task_name = pcTaskGetName(xTaskGetCurrentTaskHandleForCPU(core_id));
+    const char *task_name = pcTaskGetName(xTaskGetCurrentTaskHandleForCore(core_id));
     esp_hw_stack_guard_get_bounds(&sp_min, &sp_max);
 
     panic_print_str("\r\n");

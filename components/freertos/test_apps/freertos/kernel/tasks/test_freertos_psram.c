@@ -107,7 +107,7 @@ typedef struct {
 static void task_report_corenum(void *arg)
 {
     report_corenum_info_t *info = (report_corenum_info_t*) arg;
-    info->recorded_core_num = xTaskGetAffinity(NULL);
+    info->recorded_core_num = xTaskGetCoreID(NULL);
     xTaskNotifyGive(info->parent_handle);
     vTaskSuspend(NULL);
 }

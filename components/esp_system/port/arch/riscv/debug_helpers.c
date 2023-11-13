@@ -39,7 +39,7 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
     const int current_core = xPortGetCoreID();
 
     TaskSnapshot_t snapshot = { 0 };
-    BaseType_t ret = vTaskGetSnapshot(xTaskGetCurrentTaskHandleForCPU(current_core), &snapshot);
+    BaseType_t ret = vTaskGetSnapshot(xTaskGetCurrentTaskHandleForCore(current_core), &snapshot);
 
     if (ret != pdTRUE) {
         return ESP_ERR_NOT_FOUND;
