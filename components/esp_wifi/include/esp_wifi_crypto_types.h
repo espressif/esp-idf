@@ -14,6 +14,9 @@
    During normal operation, you don't need to use any of these types or functions in this header.
    See esp_wifi.h & esp_wifi_types.h instead.
 */
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {

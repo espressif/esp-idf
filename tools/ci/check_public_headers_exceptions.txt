@@ -88,7 +88,6 @@ components/esp_hw_support/include/esp_private/esp_memprot_internal.h
 
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
-components/esp_wifi/include/esp_private/wifi_os_adapter.h
 components/esp_coex/include/private/esp_coexist_adapter.h
 components/esp_coex/include/esp_coex_i154.h
 ### To be fixed: headers that rely on implicit inclusion
@@ -110,10 +109,6 @@ components/esp_rom/include/esp32s2/rom/secure_boot.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_ringbuf/include/freertos/ringbuf.h
-components/esp_wifi/include/esp_wifi_crypto_types.h
-components/esp_wifi/include/esp_wifi_netif.h
-components/esp_wifi/include/smartconfig_ack.h
-components/esp_wifi/include/esp_wifi_default.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
@@ -121,7 +116,6 @@ components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h
 components/fatfs/diskio/diskio_sdmmc.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
-components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
 components/usb/include/esp_private/usb_phy.h
 components/usb/include/usb/usb_types_stack.h
 
