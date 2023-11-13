@@ -186,6 +186,10 @@
 #define configTIMER_TASK_STACK_DEPTH     CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
 #define configTIMER_SERVICE_TASK_NAME    CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
 
+/* ------------------------ List --------------------------- */
+
+#define configLIST_VOLATILE    volatile                     /* We define List elements as volatile to prevent the compiler from optimizing out essential code */
+
 /* -------------------- API Includes ----------------------- */
 
 #if CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
