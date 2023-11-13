@@ -874,6 +874,28 @@ void bta_dm_get_page_timeout (tBTA_DM_MSG *p_data)
 {
     BTM_ReadPageTimeout(p_data->get_page_timeout.get_page_to_cb);
 }
+
+/*******************************************************************************
+**
+** Function         bta_dm_set_acl_pkt_types
+**
+** Description      Sets ACL packet types
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_set_acl_pkt_types (tBTA_DM_MSG *p_data)
+{
+    if (p_data->set_acl_pkt_types.set_acl_pkt_types_cb != NULL) {
+        BTM_SetAclPktTypes(p_data->set_acl_pkt_types.rmt_addr,
+                           p_data->set_acl_pkt_types.pkt_types,
+                           p_data->set_acl_pkt_types.set_acl_pkt_types_cb);
+    } else {
+        APPL_TRACE_ERROR("%s(), the callback function can't be NULL.", __func__);
+    }
+}
+
 #endif
 /*******************************************************************************
 **
