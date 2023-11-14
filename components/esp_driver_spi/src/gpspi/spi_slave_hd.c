@@ -13,6 +13,7 @@
 #include "freertos/ringbuf.h"
 #include "driver/gpio.h"
 #include "esp_private/spi_common_internal.h"
+#include "esp_private/spi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
 #include "driver/spi_slave_hd.h"
 #include "hal/spi_slave_hd_hal.h"

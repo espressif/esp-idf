@@ -4,7 +4,7 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-set(srcs "spi_bus_lock.c")
+set(srcs "")
 
 set(public_include "include")
 

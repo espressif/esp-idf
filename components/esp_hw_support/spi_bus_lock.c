@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #include "freertos/semphr.h"
 #include <stdatomic.h>
 #include "sdkconfig.h"
-#include "esp_private/spi_common_internal.h"
+#include "esp_private/spi_share_hw_ctrl.h"
 #include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
 #include "stdatomic.h"
@@ -16,6 +16,18 @@
 #include "esp_check.h"
 #include <strings.h>
 #include "esp_heap_caps.h"
+
+#ifdef CONFIG_ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
+#define SPI_BUS_LOCK_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_BUS_LOCK_ISR_ATTR
+#endif
+
+#ifdef CONFIG_ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
+#define SPI_BUSLOCK_ATTR IRAM_ATTR
+#else
+#define SPI_BUSLOCK_ATTR
+#endif
 
 /*
  * This lock is designed to solve the conflicts between SPI devices (used in tasks) and
@@ -262,7 +274,7 @@ static inline int dev_lock_get_id(spi_bus_lock_dev_t *dev_lock);
 /*******************************************************************************
  * atomic operations to the status
  ******************************************************************************/
-SPI_MASTER_ISR_ATTR static inline uint32_t lock_status_fetch_set(spi_bus_lock_t *lock, uint32_t set)
+SPI_BUS_LOCK_ISR_ATTR static inline uint32_t lock_status_fetch_set(spi_bus_lock_t *lock, uint32_t set)
 {
     return atomic_fetch_or(&lock->status, set);
 }
@@ -277,7 +289,7 @@ IRAM_ATTR static inline uint32_t lock_status_fetch(spi_bus_lock_t *lock)
     return atomic_load(&lock->status);
 }
 
-SPI_MASTER_ISR_ATTR static inline void lock_status_init(spi_bus_lock_t *lock)
+SPI_BUS_LOCK_ISR_ATTR static inline void lock_status_init(spi_bus_lock_t *lock)
 {
     atomic_store(&lock->status, 0);
 }
@@ -300,7 +312,7 @@ IRAM_ATTR static inline uint32_t lock_status_clear(spi_bus_lock_t* lock, uint32_
  * Most of them should be atomic, and special attention should be paid to the operation
  * sequence.
  ******************************************************************************/
-SPI_MASTER_ISR_ATTR static inline void resume_dev_in_isr(spi_bus_lock_dev_t *dev_lock, BaseType_t *do_yield)
+SPI_BUS_LOCK_ISR_ATTR static inline void resume_dev_in_isr(spi_bus_lock_dev_t *dev_lock, BaseType_t *do_yield)
 {
     xSemaphoreGiveFromISR(dev_lock->semphr, do_yield);
 }
@@ -310,7 +322,7 @@ IRAM_ATTR static inline void resume_dev(const spi_bus_lock_dev_t *dev_lock)
     xSemaphoreGive(dev_lock->semphr);
 }
 
-SPI_MASTER_ISR_ATTR static inline void bg_disable(spi_bus_lock_t *lock)
+SPI_BUS_LOCK_ISR_ATTR static inline void bg_disable(spi_bus_lock_t *lock)
 {
     BUS_LOCK_DEBUG_EXECUTE_CHECK(lock->bg_disable);
     lock->bg_disable(lock->bg_arg);
@@ -324,7 +336,7 @@ IRAM_ATTR static inline void bg_enable(spi_bus_lock_t* lock)
 
 // Set the REQ bit. If we become the acquiring processor, invoke the ISR and pass that to it.
 // The caller will never become the acquiring processor after this function returns.
-SPI_MASTER_ATTR static inline void req_core(spi_bus_lock_dev_t *dev_handle)
+SPI_BUSLOCK_ATTR static inline void req_core(spi_bus_lock_dev_t *dev_handle)
 {
     spi_bus_lock_t *lock = dev_handle->parent;
 
@@ -351,7 +363,7 @@ SPI_MASTER_ATTR static inline void req_core(spi_bus_lock_dev_t *dev_handle)
 }
 
 //Set the LOCK bit. Handle related stuff and return true if we become the acquiring processor.
-SPI_MASTER_ISR_ATTR static inline bool acquire_core(spi_bus_lock_dev_t *dev_handle)
+SPI_BUS_LOCK_ISR_ATTR static inline bool acquire_core(spi_bus_lock_dev_t *dev_handle)
 {
     spi_bus_lock_t* lock = dev_handle->parent;
 
@@ -455,7 +467,7 @@ IRAM_ATTR static inline void acquire_end_core(spi_bus_lock_dev_t *dev_handle)
 
 // Move the REQ bits to corresponding PEND bits. Must be called by acquiring processor.
 // Have no side effects on the acquiring device/processor.
-SPI_MASTER_ISR_ATTR static inline void update_pend_core(spi_bus_lock_t *lock, uint32_t status)
+SPI_BUS_LOCK_ISR_ATTR static inline void update_pend_core(spi_bus_lock_t *lock, uint32_t status)
 {
     uint32_t active_req_bits = status & REQ_MASK;
 #if PENDING_SHIFT > REQ_SHIFT
@@ -472,7 +484,7 @@ SPI_MASTER_ISR_ATTR static inline void update_pend_core(spi_bus_lock_t *lock, ui
 // Clear the PEND bit (not REQ bit!) of a device, return the suggestion whether we can try to quit the ISR.
 // Lost the acquiring processor immediately when the BG bits for active device are inactive, indiciating by the return value.
 // Can be called only when ISR is acting as the acquiring processor.
-SPI_MASTER_ISR_ATTR static inline bool clear_pend_core(spi_bus_lock_dev_t *dev_handle)
+SPI_BUS_LOCK_ISR_ATTR static inline bool clear_pend_core(spi_bus_lock_dev_t *dev_handle)
 {
     bool finished;
     spi_bus_lock_t *lock = dev_handle->parent;
@@ -495,7 +507,7 @@ SPI_MASTER_ISR_ATTR static inline bool clear_pend_core(spi_bus_lock_dev_t *dev_h
 // Return true if the ISR has already touched the HW, which means previous operations should
 // be terminated first, before we use the HW again. Otherwise return false.
 // In either case `in_isr` will be marked as true, until call to `bg_exit_core` with `wip=false` successfully.
-SPI_MASTER_ISR_ATTR static inline bool bg_entry_core(spi_bus_lock_t *lock)
+SPI_BUS_LOCK_ISR_ATTR static inline bool bg_entry_core(spi_bus_lock_t *lock)
 {
     BUS_LOCK_DEBUG_EXECUTE_CHECK(!lock->acquiring_dev || lock->acq_dev_bg_active);
     /*
@@ -521,7 +533,7 @@ SPI_MASTER_ISR_ATTR static inline bool bg_entry_core(spi_bus_lock_t *lock)
 // When called with `wip=true`, means the ISR is performing some operations. Will enable the interrupt again and exit unconditionally.
 // When called with `wip=false`, will only return `true` when there is no coming BG request. If return value is `false`, the ISR should try again.
 // Will not change acquiring device.
-SPI_MASTER_ISR_ATTR static inline bool bg_exit_core(spi_bus_lock_t *lock, bool wip, BaseType_t *do_yield)
+SPI_BUS_LOCK_ISR_ATTR static inline bool bg_exit_core(spi_bus_lock_t *lock, bool wip, BaseType_t *do_yield)
 {
     //See comments in `bg_entry_core`, re-enable interrupt disabled in entry if we do need the interrupt
     if (wip) {
@@ -558,7 +570,7 @@ IRAM_ATTR static inline void dev_wait_prepare(spi_bus_lock_dev_t *dev_handle)
     xSemaphoreTake(dev_handle->semphr, 0);
 }
 
-SPI_MASTER_ISR_ATTR static inline esp_err_t dev_wait(spi_bus_lock_dev_t *dev_handle, TickType_t wait)
+SPI_BUS_LOCK_ISR_ATTR static inline esp_err_t dev_wait(spi_bus_lock_dev_t *dev_handle, TickType_t wait)
 {
     BaseType_t ret = xSemaphoreTake(dev_handle->semphr, wait);
 
@@ -748,7 +760,7 @@ IRAM_ATTR esp_err_t spi_bus_lock_acquire_end(spi_bus_lock_dev_t *dev_handle)
     return ESP_OK;
 }
 
-SPI_MASTER_ISR_ATTR spi_bus_lock_dev_handle_t spi_bus_lock_get_acquiring_dev(spi_bus_lock_t *lock)
+SPI_BUS_LOCK_ISR_ATTR spi_bus_lock_dev_handle_t spi_bus_lock_get_acquiring_dev(spi_bus_lock_t *lock)
 {
     return lock->acquiring_dev;
 }
@@ -756,17 +768,17 @@ SPI_MASTER_ISR_ATTR spi_bus_lock_dev_handle_t spi_bus_lock_get_acquiring_dev(spi
 /*******************************************************************************
  * BG (background operation) service
  ******************************************************************************/
-SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_entry(spi_bus_lock_t* lock)
+SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_entry(spi_bus_lock_t* lock)
 {
     return bg_entry_core(lock);
 }
 
-SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_exit(spi_bus_lock_t* lock, bool wip, BaseType_t* do_yield)
+SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_exit(spi_bus_lock_t* lock, bool wip, BaseType_t* do_yield)
 {
     return bg_exit_core(lock, wip, do_yield);
 }
 
-SPI_MASTER_ATTR esp_err_t spi_bus_lock_bg_request(spi_bus_lock_dev_t *dev_handle)
+SPI_BUSLOCK_ATTR esp_err_t spi_bus_lock_bg_request(spi_bus_lock_dev_t *dev_handle)
 {
     req_core(dev_handle);
     return ESP_OK;
@@ -799,14 +811,14 @@ IRAM_ATTR esp_err_t spi_bus_lock_wait_bg_done(spi_bus_lock_dev_handle_t dev_hand
     return ESP_OK;
 }
 
-SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_clear_req(spi_bus_lock_dev_t *dev_handle)
+SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_clear_req(spi_bus_lock_dev_t *dev_handle)
 {
     bool finished = clear_pend_core(dev_handle);
     ESP_EARLY_LOGV(TAG, "dev %d served from bg.", dev_lock_get_id(dev_handle));
     return finished;
 }
 
-SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_check_dev_acq(spi_bus_lock_t *lock,
+SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_check_dev_acq(spi_bus_lock_t *lock,
                                                        spi_bus_lock_dev_handle_t *out_dev_lock)
 {
     BUS_LOCK_DEBUG_EXECUTE_CHECK(!lock->acquiring_dev);
@@ -814,7 +826,7 @@ SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_check_dev_acq(spi_bus_lock_t *lock,
     return schedule_core(lock, status, out_dev_lock);
 }
 
-SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_check_dev_req(spi_bus_lock_dev_t *dev_lock)
+SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_check_dev_req(spi_bus_lock_dev_t *dev_lock)
 {
     spi_bus_lock_t* lock = dev_lock->parent;
     uint32_t status = lock_status_fetch(lock);
@@ -830,7 +842,7 @@ SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_check_dev_req(spi_bus_lock_dev_t *dev_l
     }
 }
 
-SPI_MASTER_ISR_ATTR bool spi_bus_lock_bg_req_exist(spi_bus_lock_t *lock)
+SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_req_exist(spi_bus_lock_t *lock)
 {
     uint32_t status = lock_status_fetch(lock);
     return status & BG_MASK;
@@ -854,12 +866,6 @@ static spi_bus_lock_t main_spi_bus_lock = {
     .periph_cs_num = SOC_SPI_PERIPH_CS_NUM(0),
 };
 const spi_bus_lock_handle_t g_main_spi_bus_lock = &main_spi_bus_lock;
-
-esp_err_t spi_bus_lock_init_main_bus(void)
-{
-    spi_bus_main_set_lock(g_main_spi_bus_lock);
-    return ESP_OK;
-}
 
 static StaticSemaphore_t main_flash_semphr;
 

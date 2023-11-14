@@ -341,4 +341,11 @@ menu "Hardware Settings"
             clock support isn't done yet. So with this option,
             we use xtal on FPGA as the clock source.
 
+    config ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
+        bool
+        default n
+
+    config ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
+        bool
+        default n
 endmenu

@@ -5,6 +5,7 @@ menu "ESP-Driver:SPI Configurations"
         default n
         depends on !FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
         select SPI_MASTER_ISR_IN_IRAM
+        select ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
         help
             Normally only the ISR of SPI master is placed in the IRAM, so that it
             can work without the flash when interrupt is triggered.
@@ -24,6 +25,7 @@ menu "ESP-Driver:SPI Configurations"
         depends on !HEAP_PLACE_FUNCTION_INTO_FLASH
         select PERIPH_CTRL_FUNC_IN_IRAM
         select HAL_SPI_MASTER_FUNC_IN_IRAM
+        select ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
         help
             Place the SPI master ISR in to IRAM to avoid possible cache miss.
 
