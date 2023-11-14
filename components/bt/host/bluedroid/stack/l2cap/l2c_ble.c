@@ -807,6 +807,7 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         STREAM_TO_UINT16(mps, p);
         STREAM_TO_UINT16(credits, p);
         L2CAP_TRACE_DEBUG("%s spsm %x, scid %x", __func__, spsm, scid);
+        UNUSED(spsm);
 
         p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, scid);
         if (p_ccb) {

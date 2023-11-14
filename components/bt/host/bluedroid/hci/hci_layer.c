@@ -405,6 +405,7 @@ static void command_timed_out(void *context)
     {
         hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
         HCI_TRACE_ERROR("%s hci layer timeout waiting for response to a command. opcode: 0x%x", __func__, metadata->opcode);
+        UNUSED(metadata);
     }
 }
 
