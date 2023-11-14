@@ -449,9 +449,16 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
         return false;
     }
     // Check IN transfer returned the expected correct number of bytes
-    if (enum_ctrl->expect_num_bytes != 0 && enum_ctrl->expect_num_bytes != transfer->actual_num_bytes) {
-        ESP_LOGE(HUB_DRIVER_TAG, "Incorrect number of bytes returned %d: %s", transfer->actual_num_bytes, enum_stage_strings[enum_ctrl->stage]);
-        return false;
+    if (enum_ctrl->expect_num_bytes != 0 && transfer->actual_num_bytes != enum_ctrl->expect_num_bytes) {
+        if (transfer->actual_num_bytes > enum_ctrl->expect_num_bytes) {
+            // The device returned more bytes than requested.
+            // This violates the USB specs chapter 9.3.5, but we can continue
+            ESP_LOGW(HUB_DRIVER_TAG, "Incorrect number of bytes returned %d: %s", transfer->actual_num_bytes, enum_stage_strings[enum_ctrl->stage]);
+        } else {
+            // The device returned less bytes than requested. We cannot continue.
+            ESP_LOGE(HUB_DRIVER_TAG, "Incorrect number of bytes returned %d: %s", transfer->actual_num_bytes, enum_stage_strings[enum_ctrl->stage]);
+            return false;
+        }
     }
 
     // Stage specific checks and updates
