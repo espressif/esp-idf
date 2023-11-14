@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,15 +25,11 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 #include "hal/usb_types_private.h"
 #include "hal/assert.h"
 
-// ------------------------------------------------ Macros and Types ---------------------------------------------------
 #if SOC_USB_OTG_SUPPORTED
-// ------------------ Constants/Configs --------------------
 
-#define USB_DWC_HAL_DMA_MEM_ALIGN              512
-#define USB_DWC_HAL_FRAME_LIST_MEM_ALIGN       512     //The frame list needs to be 512 bytes aligned (contrary to the databook)
-#define USB_DWC_HAL_NUM_CHAN                   8
-#define USB_DWC_HAL_XFER_DESC_SIZE             (sizeof(usb_dwc_ll_dma_qtd_t))
-#define USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES    200     //Although we have a 256 lines, only 200 lines are usuable due to EPINFO_CTL
+// ------------------------------------------------ Macros and Types ---------------------------------------------------
+
+// ----------------------- Configs -------------------------
 
 /**
  * @brief FIFO size configuration structure
@@ -171,7 +167,7 @@ typedef struct {
     struct {
         int num_allocd;                             /**< Number of channels currently allocated */
         uint32_t chan_pend_intrs_msk;               /**< Bit mask of channels with pending interrupts */
-        usb_dwc_hal_chan_t *hdls[USB_DWC_HAL_NUM_CHAN];   /**< Handles of each channel. Set to NULL if channel has not been allocated */
+        usb_dwc_hal_chan_t *hdls[USB_DWC_NUM_HOST_CHAN];    /**< Handles of each channel. Set to NULL if channel has not been allocated */
     } channels;
 } usb_dwc_hal_context_t;
 
@@ -232,7 +228,7 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal);
  * may be situations where this function may need to be called again to resize the FIFOs. If resizing FIFOs dynamically,
  * it is the user's responsibility to ensure there are no active channels when this function is called.
  *
- * @note The totol size of all the FIFOs must be less than or equal to USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES
+ * @note The totol size of all the FIFOs must be less than or equal to USB_DWC_FIFO_TOTAL_USABLE_LINES
  * @note After a port reset, the FIFO size registers will reset to their default values, so this function must be called
  *       again post reset.
  *
@@ -788,7 +784,7 @@ usb_dwc_hal_chan_t *usb_dwc_hal_get_chan_pending_intr(usb_dwc_hal_context_t *hal
  */
 usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_obj);
 
-#endif
+#endif // SOC_USB_OTG_SUPPORTED
 
 #ifdef __cplusplus
 }
