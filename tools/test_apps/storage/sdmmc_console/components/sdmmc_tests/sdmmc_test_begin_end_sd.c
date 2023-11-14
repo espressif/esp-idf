@@ -11,7 +11,7 @@
 #include "unity.h"
 #include "sdmmc_test_board.h"
 #include "driver/sdmmc_host.h"
-#include "driver/sdmmc_defs.h"
+#include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end.h"
 #include "hal/gpio_hal.h"

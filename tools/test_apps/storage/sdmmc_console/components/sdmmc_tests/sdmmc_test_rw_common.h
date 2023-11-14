@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "driver/sdmmc_types.h"
+#include "sd_protocol_types.h"
 
 #ifdef __cplusplus
 extern "C" {

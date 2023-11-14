@@ -11,8 +11,8 @@
 #include "esp_check.h"
 #include "esp_console.h"
 #include "soc/soc_caps.h"
-#include "driver/sdmmc_defs.h"
-#include "driver/sdmmc_types.h"
+#include "sd_protocol_defs.h"
+#include "sd_protocol_types.h"
 #include "sdmmc_cmd.h"
 #ifdef SOC_SDMMC_HOST_SUPPORTED
 #include "driver/sdmmc_host.h"
