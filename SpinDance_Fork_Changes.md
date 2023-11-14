@@ -66,7 +66,7 @@ The features, their associated changes to ESP IDF and how the change is related 
 - **Protocomm BLE Connectivity Reporting**
   - Added reporting of BLE peer connectivity state (connected, connected securely, not connected)
   - Embedded Starter Kit reports these states to analagous pubsub topic IDs in the pubsub namespace `WIFI_TOPIC_NS`
-  - Note: We'd likely want to implement this for `Security2` if/when we migrate to ESP IDF v5. UV Angel used this to display LEDs of different colors depending upon the state.
+  - Note: We'd likely want to implement this for `Security2` if/when we migrate to ESP IDF v5. Used to display LEDs of different colors depending upon the state.
   - Impacted ESP IDF files:
     - protocomm_security.h
     - protocomm_ble.h
@@ -84,11 +84,10 @@ The features, their associated changes to ESP IDF and how the change is related 
     - protocomm_nimble.c
   - Commits
     - [spindance_changes for wifi_provisioning](https://github.com/spindance/esp-idf/commit/56c743a69cf9dce0bf4ce4eab4048a2c1088fdee)
-    - UV Angel [manufacturer-data-during-provisioning](https://github.com/UVAngel/esp-idf/commits/uvangel/manufacturer-data-during-provisioning)
 - **JWT Authorization for Protocomm WiFi Provisioning**
   - Added an auth token property to the Protocomm protobuf messages, which is supplied to an also added optional authorization callback for validation prior to scanning for or configuring a WiFi access point.
   - Embedded Starter Kit registers an authorization handler that validates the token as a JWT. This feature is disabled in the WiFi configuration in `devkit`.
-  - Note: This was added for UV Angel to validate device claiming. Gentex Connected Smoke is also using a JWT during provisioning, but transfer of the JWT is done via a custom BLE Protocomm endpoint.
+  - Note: This was added to validate device claiming.
   - Impacted ESP IDF files:
     - Protobuf definition files:
       - wifi_config.proto
@@ -111,7 +110,7 @@ The features, their associated changes to ESP IDF and how the change is related 
 - **WPA2 Enterprise NW Support**
   - Existing internal IDF helper functions that provide information about scanned WiFi access points were made public by moving their declarations to a public IDF header file.
   - Embedded Starter Kit uses these functions to determine if the access point attempting to be configured is a WPA2 enterprise NW, and then enables or disables support for WPA2 enterprise.
-  - Note: It's possible that a newer version of ESP IDF may sufficiently support WPA2 enterprise. _Also, it's possible that WPA2 enterprise NW support inside the Starter Kit's `wifi` component is not tested or fully functional. This feature was added for UV Angel just prior to work being putting on hold for that project._
+  - Note: It's possible that a newer version of ESP IDF may sufficiently support WPA2 enterprise. _Also, it's possible that WPA2 enterprise NW support inside the Starter Kit's `wifi` component is not tested or fully functional._
   - Impacted ESP IDF files:
     - manager.h
     - wifi_provisioning_priv.h
@@ -142,9 +141,7 @@ The features, their associated changes to ESP IDF and how the change is related 
     - idf_tools.py
   - Commits
     - [spindance_changes for wifi_provisioning](https://github.com/spindance/esp-idf/commit/56c743a69cf9dce0bf4ce4eab4048a2c1088fdee)
-    - Also see UV Angel:
-      - [Specify idf_tools.py Uses Python3](https://github.com/UVAngel/esp-idf/pull/8)
-      - [Don't automatically start wifi](https://github.com/UVAngel/esp-idf/commit/2068220d62c1c5834e9b7915f21985be3f81f68e)
+
 
 ## Feature / File Association
 | File                                                                 | SK Feature(s) |
