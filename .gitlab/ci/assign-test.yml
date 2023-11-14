@@ -5,6 +5,7 @@
     - assign_test
   variables:
     SUBMODULES_TO_FETCH: "none"
+    CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/.gitlab/ci/target-test.yml"
   artifacts:
     paths:
       - ${TEST_DIR}/test_configs/
