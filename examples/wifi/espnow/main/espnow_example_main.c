@@ -84,10 +84,21 @@ static void example_espnow_recv_cb(const esp_now_recv_info_t *recv_info, const u
     example_espnow_event_t evt;
     example_espnow_event_recv_cb_t *recv_cb = &evt.info.recv_cb;
     uint8_t * mac_addr = recv_info->src_addr;
+    uint8_t * des_addr = recv_info->des_addr;
 
     if (mac_addr == NULL || data == NULL || len <= 0) {
         ESP_LOGE(TAG, "Receive cb arg error");
         return;
+    }
+
+    if (IS_BROADCAST_ADDR(des_addr)) {
+        /* If added a peer with encryption before, the receive packets may be
+         * encrypted as peer-to-peer message or unencrypted over the broadcast channel.
+         * Users can check the destination address to distinguish it.
+         */
+        ESP_LOGD(TAG, "Receive broadcast ESPNOW data");
+    } else {
+        ESP_LOGD(TAG, "Receive unicast ESPNOW data");
     }
 
     evt.id = EXAMPLE_ESPNOW_RECV_CB;
