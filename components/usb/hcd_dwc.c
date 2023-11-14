@@ -53,7 +53,7 @@ typedef struct {
  *
  * RXFIFO
  * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES(200) - 48 - 48 = 104
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 48 - 48 = 104
  * - Worst case can accommodate two packets of 204 bytes, or one packet of 408
  * NPTXFIFO
  * - Recommended: (LPS/4) * 2
@@ -81,7 +81,7 @@ const fifo_mps_limits_t mps_limits_default = {
  *
  * RXFIFO
  * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES(200) - 32 - 16 = 152
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 32 - 16 = 152
  * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
  * NPTXFIFO
  * - Recommended: (LPS/4) * 2
@@ -117,7 +117,7 @@ const fifo_mps_limits_t mps_limits_bias_rx = {
  * - Worst case can accommodate one packet of 64 bytes
  * PTXFIFO
  * - Recommended: (LPS/4) * 2
- * - Actual: Whatever leftover size: USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES(200) - 34 - 16 = 150
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 34 - 16 = 150
  * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
  */
 const usb_dwc_hal_fifo_config_t fifo_config_bias_ptx = {
@@ -963,7 +963,7 @@ static port_t *port_obj_alloc(void)
 {
     port_t *port = calloc(1, sizeof(port_t));
     usb_dwc_hal_context_t *hal = malloc(sizeof(usb_dwc_hal_context_t));
-    void *frame_list = heap_caps_aligned_calloc(USB_DWC_HAL_FRAME_LIST_MEM_ALIGN, FRAME_LIST_LEN, sizeof(uint32_t), MALLOC_CAP_DMA);
+    void *frame_list = heap_caps_aligned_calloc(USB_DWC_FRAME_LIST_MEM_ALIGN, FRAME_LIST_LEN, sizeof(uint32_t), MALLOC_CAP_DMA);
     SemaphoreHandle_t port_mux = xSemaphoreCreateMutex();
     if (port == NULL || hal == NULL || frame_list == NULL || port_mux == NULL) {
         free(port);
@@ -1594,7 +1594,7 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
         break;
     }
     dma_buffer_block_t *buffer = calloc(1, sizeof(dma_buffer_block_t));
-    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_HAL_DMA_MEM_ALIGN, desc_list_len, sizeof(usb_dwc_ll_dma_qtd_t), MALLOC_CAP_DMA);
+    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len, sizeof(usb_dwc_ll_dma_qtd_t), MALLOC_CAP_DMA);
     if (buffer == NULL || xfer_desc_list == NULL) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
