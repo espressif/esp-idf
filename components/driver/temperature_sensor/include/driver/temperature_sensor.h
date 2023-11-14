@@ -98,10 +98,19 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 
 /**
+ * @brief Enum for temperature sensor interrupt condition.
+ */
+typedef enum {
+    TEMPERATURE_VAL_HIGHER_THAN_HIGH_THRESHOLD = 0,  /*!< temperature sensor value is higher than high threshold*/
+    TEMPERATURE_VAL_LOWER_THAN_LOW_THRESHOLD = 1,  /*!< temperature sensor value is lower than low threshold*/
+} temperature_val_intr_condition_t;
+
+/**
  * @brief Temperature sensor event data
  */
 typedef struct {
     int celsius_value; /**< Celsius value in interrupt callback. */
+    temperature_val_intr_condition_t intr_condition;  /*!< Can be used to judge temperature sensor interrupts in which reason*/
 } temperature_sensor_threshold_event_data_t;
 
 /**
