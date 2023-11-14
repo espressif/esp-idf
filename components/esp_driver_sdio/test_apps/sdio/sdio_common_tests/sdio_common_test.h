@@ -11,11 +11,9 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 #define TEST_RX_BUFFER_SIZE           2048
 

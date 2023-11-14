@@ -18,18 +18,17 @@ extern "C" {
 
 typedef void(*sdio_event_cb_t)(uint8_t event);
 
-
 /// Configuration of SDIO slave
 typedef struct {
     sdio_slave_timing_t timing;             ///< timing of sdio_slave. see `sdio_slave_timing_t`.
     sdio_slave_sending_mode_t sending_mode; ///< mode of sdio_slave. `SDIO_SLAVE_MODE_STREAM` if the data needs to be sent as much as possible; `SDIO_SLAVE_MODE_PACKET` if the data should be sent in packets.
     int                 send_queue_size;    ///< max buffers that can be queued before sending.
     size_t              recv_buffer_size;
-                            ///< If buffer_size is too small, it costs more CPU time to handle larger number of buffers.
-                            ///< If buffer_size is too large, the space larger than the transaction length is left blank but still counts a buffer, and the buffers are easily run out.
-                            ///< Should be set according to length of data really transferred.
-                            ///< All data that do not fully fill a buffer is still counted as one buffer. E.g. 10 bytes data costs 2 buffers if the size is 8 bytes per buffer.
-                            ///< Buffer size of the slave pre-defined between host and slave before communication. All receive buffer given to the driver should be larger than this.
+    ///< If buffer_size is too small, it costs more CPU time to handle larger number of buffers.
+    ///< If buffer_size is too large, the space larger than the transaction length is left blank but still counts a buffer, and the buffers are easily run out.
+    ///< Should be set according to length of data really transferred.
+    ///< All data that do not fully fill a buffer is still counted as one buffer. E.g. 10 bytes data costs 2 buffers if the size is 8 bytes per buffer.
+    ///< Buffer size of the slave pre-defined between host and slave before communication. All receive buffer given to the driver should be larger than this.
     sdio_event_cb_t     event_cb;           ///< when the host interrupts slave, this callback will be called with interrupt number (0-7).
     uint32_t            flags; ///< Features to be enabled for the slave, combinations of ``SDIO_SLAVE_FLAG_*``.
 #define SDIO_SLAVE_FLAG_DAT2_DISABLED       BIT(0)      /**< It is required by the SD specification that all 4 data
@@ -281,7 +280,6 @@ void sdio_slave_clear_host_int(sdio_slave_hostint_t mask);
  * @return ESP_OK if success, ESP_ERR_TIMEOUT if timeout.
  */
 esp_err_t sdio_slave_wait_int(int pos, TickType_t wait);
-
 
 #ifdef __cplusplus
 }

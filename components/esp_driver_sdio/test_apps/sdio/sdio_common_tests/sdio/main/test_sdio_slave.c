@@ -25,7 +25,6 @@
 
 static const char *TAG = "test_sdio";
 
-
 /*---------------------------------------------------------------
                     Slave Init Settings
 ---------------------------------------------------------------*/
@@ -69,8 +68,6 @@ static void s_slave_init(sdio_slave_sending_mode_t mode)
     TEST_ESP_OK(sdio_slave_initialize(&slave_config));
 }
 
-
-#include "esp_rom_sys.h"
 /*---------------------------------------------------------------
                 Function Tests
 ---------------------------------------------------------------*/
@@ -141,7 +138,6 @@ TEST_CASE("SDIO_Slave: test reset", "[sdio]")
         TEST_ASSERT_EQUAL(i, arg);
     }
 
-
     WORD_ALIGNED_ATTR uint8_t host_tx_buffer[TEST_RESET_DATA_LEN] = {};
     for (int i = 0; i < TEST_RESET_BUF_NUMS; i++) {
         test_fill_random_to_buffer(i, host_tx_buffer, TEST_RESET_DATA_LEN);
@@ -158,7 +154,6 @@ TEST_CASE("SDIO_Slave: test reset", "[sdio]")
     sdio_slave_stop();
     sdio_slave_deinit();
 }
-
 
 /*---------------------------------------------------------------
                 Transaction Tests
@@ -177,7 +172,6 @@ static void test_from_host(bool check_data)
         slave_rx_buffer[i] = (uint8_t *)heap_caps_calloc(1, TEST_RX_BUFFER_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
         TEST_ASSERT(slave_rx_buffer[i]);
     }
-
 
     for (int i = 0; i < TEST_TARNS_PARAM_NUMS; i++) {
         //slave init
@@ -214,7 +208,6 @@ static void test_from_host(bool check_data)
             TEST_ESP_OK(sdio_slave_recv_load_buf(used_buf_handle));
         }
 
-
         wait_for_finish(&s_test_slv_ctx);
         sdio_slave_stop();
         sdio_slave_deinit();
@@ -226,7 +219,6 @@ static void test_from_host(bool check_data)
     test_destroy_buffer_pool();
 }
 
-
 TEST_CASE("SDIO_Slave: test from host", "[sdio]")
 {
     test_from_host(true);
@@ -236,7 +228,6 @@ TEST_CASE("SDIO_Slave: test from host (Performance)", "[sdio_speed]")
 {
     test_from_host(false);
 }
-
 
 /*---------------------------------------------------------------
                 To Host Tests
@@ -262,7 +253,7 @@ static void test_to_host(void)
             do {
                 void* arg;
                 //when the queue is full, do a blocking wait for 10ms, otherwise non-blocking
-                err = sdio_slave_send_get_finished(&arg, QUEUE_FULL()? 1: 0);
+                err = sdio_slave_send_get_finished(&arg, QUEUE_FULL() ? 1 : 0);
                 if (err == ESP_OK) {
                     s_test_slv_ctx.queued_cnt --;
                     continue;
@@ -282,7 +273,6 @@ static void test_to_host(void)
             TEST_ESP_OK(sdio_slave_send_get_finished(&arg, portMAX_DELAY));
             s_test_slv_ctx.queued_cnt--;
         }
-
 
         wait_for_finish(&s_test_slv_ctx);
         sdio_slave_stop();

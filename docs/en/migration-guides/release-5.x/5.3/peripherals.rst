@@ -11,6 +11,8 @@ In order to control the dependence of other components on drivers at a smaller g
 - `esp_driver_spi` - Driver for GPSPI
 - `esp_driver_mcpwm` - Driver for Motor Control PWM
 - `esp_driver_sdmmc` - Driver for SDMMC
+- `esp_driver_sdspi` - Driver for SDSPI
+- `esp_driver_sdio` - Driver for SDIO
 - `esp_driver_ana_cmpr` - Driver for Analog Comparator
 - `esp_driver_i2s` - Driver for I2S
 

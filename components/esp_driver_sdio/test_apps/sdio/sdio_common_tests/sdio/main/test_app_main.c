@@ -14,7 +14,6 @@
 static size_t before_free_8bit;
 static size_t before_free_32bit;
 
-
 void setUp(void)
 {
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
