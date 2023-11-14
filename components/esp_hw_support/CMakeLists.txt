@@ -28,6 +28,7 @@ if(NOT BOOTLOADER_BUILD)
                      "rtc_module.c"
                      "sleep_modes.c"
                      "sleep_gpio.c"
+                     "sleep_event.c"
                      "sleep_modem.c"
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
