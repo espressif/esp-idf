@@ -15,7 +15,7 @@
 #include "diskio_impl.h"
 #include "diskio_sdmmc.h"
 #include "soc/soc_caps.h"
-#include "driver/sdmmc_defs.h"
+#include "sd_protocol_defs.h"
 
 #if SOC_SDMMC_HOST_SUPPORTED
 #include "driver/sdmmc_host.h"

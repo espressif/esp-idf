@@ -6,4 +6,4 @@
 
 #pragma once
 
-#include "driver/esp_sd_defs.h"
+#include "sd_protocol_defs.h"

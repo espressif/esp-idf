@@ -10,6 +10,6 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
-                       REQUIRES 
-                       PRIV_REQUIRES esp_timer esp_pm esp_mm esp_driver_gpio esp_driver_sd_common
+                       REQUIRES sdmmc esp_driver_gpio
+                       PRIV_REQUIRES esp_timer esp_pm esp_mm
                       )

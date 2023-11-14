@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
-#include "sdmmc_types.h"
+#include "driver/sdmmc_types.h"
 #include "driver/sdmmc_default_configs.h"
 #include "driver/gpio.h"
 

@@ -192,7 +192,7 @@ else()
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
-                                    esp_driver_sd_common esp_driver_sdmmc
+                                    esp_driver_sdmmc
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

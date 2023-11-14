@@ -15,7 +15,6 @@ examples/storage/emmc:
     - fatfs
     - vfs
     - esp_driver_sdmmc
-    - esp_driver_sd_common
   enable:
     - if: IDF_TARGET == "esp32s3"
       reason: only support on esp32s3
@@ -110,7 +109,6 @@ examples/storage/perf_benchmark:
     - wear_levelling
     - esp_partition
     - esp_driver_sdmmc
-    - esp_driver_sd_common
   disable:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
       temporary: true
@@ -125,7 +123,6 @@ examples/storage/sd_card/sdmmc:
     - vfs
     - sdmmc
     - esp_driver_sdmmc
-    - esp_driver_sd_common
   disable:
     - if: SOC_SDMMC_HOST_SUPPORTED != 1
   disable_test:
