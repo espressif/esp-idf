@@ -147,6 +147,9 @@ void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
     spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI1_HOST);
     spi_flash_hal_context_t* ctx = (spi_flash_hal_context_t*)host;
     spimem_flash_ll_auto_wait_idle_init(dev, true);
+    if (ctx->freq_mhz == 120) {
+        spimem_flash_ll_set_wait_idle_dummy_phase(dev, ctx->extra_dummy);
+    }
     spimem_flash_ll_auto_suspend_init(dev, true);
     // tsus = ceil(SPI_FLASH_TSUS_SAFE_VAL_US * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles);
     uint32_t tsus = (SPI_FLASH_TSUS_SAFE_VAL_US * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles(dev)) + ((SPI_FLASH_TSUS_SAFE_VAL_US * ctx->freq_mhz) % spimem_flash_ll_get_tsus_unit_in_cycles(dev) != 0);
