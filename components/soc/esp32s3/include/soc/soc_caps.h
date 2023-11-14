@@ -365,7 +365,7 @@
 #define SOC_UART_REQUIRE_CORE_RESET (1)
 
 /*-------------------------- USB CAPS ----------------------------------------*/
-#define SOC_USB_PERIPH_NUM 1
+#define SOC_USB_OTG_PERIPH_NUM          (1U)
 
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
