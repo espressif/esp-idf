@@ -15,7 +15,7 @@ This example is designed to run on commonly available ESP32 development board, e
 
 ### Configure the project
 
-Open the project configuration menu: 
+Open the project configuration menu:
 
 ```bash
 idf.py menuconfig
@@ -332,6 +332,5 @@ Due to the complexity of HFP, this example has more source files than other blue
 - The example will respond to user command through UART console. Please go to `console_uart.c`  for the configuration details.
 - For voice interface, ESP32 has provided PCM input/output signals which can be mapped to GPIO pins. So, please go to `gpio_pcm_config.c` for the configuration details.
 - If you want to update the command table, please refer to `app_hf_msg_set.c`.
-- If you want to update the command parse rules, please refer to `app_hf_msg_prs.c`.
 - If you want to update the responses of HF Unit or want to update the log, please refer to `bt_app_hf.c`.
 - Task configuration part is in `bt_app_core.c`.
