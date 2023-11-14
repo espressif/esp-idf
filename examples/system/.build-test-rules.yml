@@ -24,7 +24,7 @@ examples/system/console/advanced:
 
 examples/system/console/advanced_usb_cdc:
   disable:
-    - if: SOC_USB_PERIPH_NUM == 0
+    - if: SOC_USB_OTG_SUPPORTED != 1
   depends_components:
     - console
     - vfs
