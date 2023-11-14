@@ -13,7 +13,7 @@
 #include "hal/rtc_io_types.h"
 #include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/uart_private.h"
+#include "esp_private/uart_share_hw_ctrl.h"
 
 #define LP_UART_PORT_NUM    LP_UART_NUM_0
 #define LP_UART_TX_IDLE_NUM_DEFAULT     (0U)

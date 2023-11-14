@@ -51,8 +51,7 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     # [refactor-todo]
-    list(APPEND priv_requires driver            # for UART (by sleep_modes)
-                              esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
+    list(APPEND priv_requires esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
                               esp_timer
                               esp_pm)
 

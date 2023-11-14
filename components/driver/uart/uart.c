@@ -27,7 +27,7 @@
 #include "driver/rtc_io.h"
 #include "driver/uart_select.h"
 #include "driver/lp_io.h"
-#include "esp_private/uart_private.h"
+#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_clk_tree.h"
 #include "sdkconfig.h"

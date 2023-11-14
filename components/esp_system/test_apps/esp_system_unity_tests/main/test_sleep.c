@@ -26,7 +26,7 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
-#include "esp_private/uart_private.h"
+#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_random.h"
 #include "nvs_flash.h"
 #include "nvs.h"
