@@ -1157,6 +1157,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #endif
 
 /**
+ * LWIP_FORCE_ROUTER_FORWARDING==1: the router flag in NA packet will always set to 1,
+ * otherwise, never set router flag for NA packets.
+ */
+#ifdef CONFIG_LWIP_FORCE_ROUTER_FORWARDING
+#define LWIP_FORCE_ROUTER_FORWARDING    1
+#else
+#define LWIP_FORCE_ROUTER_FORWARDING    0
+#endif
+
+/**
  * LWIP_IPV6_NUM_ADDRESSES: Number of IPv6 addresses per netif.
  */
 #define LWIP_IPV6_NUM_ADDRESSES         CONFIG_LWIP_IPV6_NUM_ADDRESSES
