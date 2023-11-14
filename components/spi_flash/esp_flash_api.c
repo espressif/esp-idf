@@ -1218,7 +1218,7 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     }
 
     if ((address % 16) != 0) {
-        ESP_EARLY_LOGE(TAG, "flash encrypted write address must be 16 bytes aligned");
+        ESP_DRAM_LOGE(TAG, "flash encrypted write address must be 16 bytes aligned");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1227,13 +1227,19 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     }
 
     if ((length % 16) != 0) {
-        ESP_EARLY_LOGE(TAG, "flash encrypted write length must be multiple of 16");
+        ESP_DRAM_LOGE(TAG, "flash encrypted write length must be multiple of 16");
         return ESP_ERR_INVALID_SIZE;
     }
 
     bool bus_acquired = false;
 
-    const uint8_t *ssrc = (const uint8_t *)buffer;
+    // Copy buffer to IRAM.
+    uint8_t *ssrc = (uint8_t*)heap_caps_calloc(1, length, MALLOC_CAP_INTERNAL);
+    if (ssrc == NULL) {
+        ESP_DRAM_LOGE(TAG, "No extra memory for encryption flash write");
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(ssrc, buffer, length);
 
     COUNTER_START();
 
@@ -1252,6 +1258,27 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     */
     uint8_t encrypt_buf[64] __attribute__((aligned(4)));
     uint32_t row_size_length;
+#if CONFIG_IDF_TARGET_ESP32
+    uint8_t pre_buf[16] = {0};
+    uint8_t post_buf[16] = {0};
+
+    if((address % 32) != 0) {
+        esp_flash_read_encrypted(chip, address - 16, pre_buf, 16);
+    }
+    if(((address + length) % 32) != 0) {
+        esp_flash_read_encrypted(chip, address + length, post_buf, 16);
+    }
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32S2
+    esp_crypto_dma_lock_acquire();
+#endif //CONFIG_IDF_TARGET_ESP32S2
+
+    err = rom_spiflash_api_funcs->start(chip);
+    if (err != ESP_OK) {
+        goto restore_cache;
+    }
+    bus_acquired = true;
     for (size_t i = 0; i < length; i += row_size_length) {
         uint32_t row_addr = address + i;
         uint8_t row_size;
@@ -1264,14 +1291,14 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
             /* copy to second block in buffer */
             memcpy(encrypt_buf + 16, ssrc + i, row_size);
             /* decrypt the first block from flash, will reencrypt to same bytes */
-            esp_flash_read_encrypted(chip, row_addr, encrypt_buf, 16);
+            memcpy(encrypt_buf, pre_buf, 16);
         } else if (length - i == 16) {
             /* 16 bytes left, is first block of a 32 byte row */
             row_size = 16;
             /* copy to first block in buffer */
             memcpy(encrypt_buf, ssrc + i, row_size);
             /* decrypt the second block from flash, will reencrypt to same bytes */
-            esp_flash_read_encrypted(chip, row_addr + 16, encrypt_buf + 16, 16);
+            memcpy(encrypt_buf + 16, post_buf, 16);
         } else {
             /* Writing a full 32 byte row (2 blocks) */
             row_size = 32;
@@ -1297,27 +1324,18 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
 #if CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
         err = s_check_setting_zero_to_one(chip, row_addr, encrypt_byte, NULL, is_encrypted);
         if (err != ESP_OK) {
-            //Error happens, we end flash operation. Re-enable cache and flush it
-            goto restore_cache;
-        }
-#endif  //#if CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
-
-#if CONFIG_IDF_TARGET_ESP32S2
-        esp_crypto_dma_lock_acquire();
-#endif //CONFIG_IDF_TARGET_ESP32S2
-        err = rom_spiflash_api_funcs->start(chip);
-
-        if (err != ESP_OK) {
+            rom_spiflash_api_funcs->end(chip, ESP_OK);
 #if CONFIG_IDF_TARGET_ESP32S2
             esp_crypto_dma_lock_release();
 #endif //CONFIG_IDF_TARGET_ESP32S2
             //Error happens, we end flash operation. Re-enable cache and flush it
             goto restore_cache;
         }
-        bus_acquired = true;
+#endif  //#if CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
 
         err = chip->chip_drv->write_encrypted(chip, (uint32_t *)encrypt_buf, row_addr, encrypt_byte);
         if (err!= ESP_OK) {
+            rom_spiflash_api_funcs->end(chip, ESP_OK);
 #if CONFIG_IDF_TARGET_ESP32S2
             esp_crypto_dma_lock_release();
 #endif //CONFIG_IDF_TARGET_ESP32S2
@@ -1326,25 +1344,35 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
             //Error happens, we end flash operation. Re-enable cache and flush it
             goto restore_cache;
         }
-        err = rom_spiflash_api_funcs->end(chip, ESP_OK);
+
         COUNTER_ADD_BYTES(write, encrypt_byte);
-#if CONFIG_IDF_TARGET_ESP32S2
-        esp_crypto_dma_lock_release();
-#endif //CONFIG_IDF_TARGET_ESP32S2
-        if (err != ESP_OK) {
-            bus_acquired = false;
-            //Error happens, we end flash operation. Re-enable cache and flush it
-            goto restore_cache;
-        }
-        bus_acquired = false;
 
 #if CONFIG_SPI_FLASH_VERIFY_WRITE
         err = s_verify_write(chip, row_addr, encrypt_byte, (uint32_t *)encrypt_buf, is_encrypted);
         if (err != ESP_OK) {
+            rom_spiflash_api_funcs->end(chip, ESP_OK);
+#if CONFIG_IDF_TARGET_ESP32S2
+            esp_crypto_dma_lock_release();
+#endif //CONFIG_IDF_TARGET_ESP32S2
             //Error happens, we end flash operation. Re-enable cache and flush it
             goto restore_cache;
         }
 #endif //CONFIG_SPI_FLASH_VERIFY_WRITE
+    }
+
+    err = rom_spiflash_api_funcs->end(chip, ESP_OK);
+#if CONFIG_IDF_TARGET_ESP32S2
+    esp_crypto_dma_lock_release();
+#endif //CONFIG_IDF_TARGET_ESP32S2
+    if (err != ESP_OK) {
+        bus_acquired = false;
+        //Error happens, we end flash operation. Re-enable cache and flush it
+        goto restore_cache;
+    }
+    bus_acquired = false;
+
+    if(ssrc) {
+        free(ssrc);
     }
 
     COUNTER_STOP(write);
@@ -1353,6 +1381,9 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     return err;
 
 restore_cache:
+    if(ssrc) {
+        free(ssrc);
+    }
     COUNTER_STOP(write);
     ret = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
     if (ret != ESP_OK) {
