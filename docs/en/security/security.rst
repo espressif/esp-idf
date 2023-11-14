@@ -185,14 +185,14 @@ UART Download Mode
     Root certificates list update could have following reasons:
 
     - New firmware has different set of remote endpoint(s).
-    - Existing certificate has expired.
+    - The existing certificate has expired.
     - The certificate has been added or retracted from the upstream certificate bundle.
     - The certificate list changed due to market share statistics (``CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN`` case).
 
     Some guidelines to consider on this topic:
 
     - Please consider enabling :ref:`OTA rollback <ota_rollback>` and then keep the successful connection to the OTA update server as the checkpoint to cancel the rollback process. This ensures that the newly updated firmware can successfully reach till the OTA update server, otherwise rollback process will go back to the previous firmware on the device.
-    - If you plan to enable the :ref:`CONFIG_MBEDTLS_HAVE_TIME_DATE` option then please consider to have sufficient number of trusted certificates and the time sync mechanism (SNTP) in place.
+    - If you plan to enable the :ref:`CONFIG_MBEDTLS_HAVE_TIME_DATE` option, then please consider to have the time sync mechanism (SNTP) and sufficient number of trusted certificates in place.
 
 Product Security
 ----------------
