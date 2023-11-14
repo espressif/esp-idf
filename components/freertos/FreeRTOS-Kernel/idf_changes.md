@@ -193,3 +193,9 @@ List of changes made to Vanilla FreeRTOS V10.5.1 header files to allow for build
     - In functions/macros that are not meant to be directly called by users (i.e., internal), such as the various `Generic` variants of functions
 
 - Some types/functions/macros are manually documented, thus are documented with regular comment blocks (i.e., `/* */`) instead of doxygen comment blocks (i.e., `/** */`). Some of these blocks are changed into doxygen blocks.
+
+## Changes backported to IDF-FreeRTOS Kernel from upstream kernel beyond v10.5.1 LTS release
+
+### tasks.c
+
+- Backported a change where the IDLE tasks are created with the core ID as a suffix in the task name.
