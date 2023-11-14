@@ -446,8 +446,11 @@ esp_err_t esp_pm_configure(const void* vconfig)
                   min_freq_mhz,
                   config->light_sleep_enable ? "ENABLED" : "DISABLED");
 
-    portENTER_CRITICAL(&s_switch_lock);
+    // CPU & Modem power down initialization, which must be initialized before s_light_sleep_en set true,
+    // to avoid entering idle and sleep in this function.
+    esp_pm_sleep_configure(config);
 
+    portENTER_CRITICAL(&s_switch_lock);
     bool res __attribute__((unused));
     res = rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_CPU_MAX]);
     assert(res);
@@ -459,8 +462,6 @@ esp_err_t esp_pm_configure(const void* vconfig)
     s_light_sleep_en = config->light_sleep_enable;
     s_config_changed = true;
     portEXIT_CRITICAL(&s_switch_lock);
-
-    esp_pm_sleep_configure(config);
 
     return ESP_OK;
 }
