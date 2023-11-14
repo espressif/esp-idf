@@ -83,7 +83,7 @@ esp_err_t fetch_and_store_time_in_nvs(void *args)
     }
 
     nvs_close(my_handle);
-    esp_netif_deinit();
+    esp_netif_sntp_deinit();
 
 exit:
     if (err != ESP_OK) {
