@@ -248,6 +248,19 @@ static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool 
 }
 
 /**
+ * This function is used to set dummy phase when auto suspend is enabled.
+ *
+ * @note This function is only used when timing tuning is enabled.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param extra_dummy extra dummy length. Get from timing tuning.
+ */
+static inline void spimem_flash_ll_set_wait_idle_dummy_phase(spi_mem_dev_t *dev, uint32_t extra_dummy)
+{
+    // Not supported on this chip.
+}
+
+/**
  * Return the suspend status of erase or program operations.
  *
  * @param dev Beginning address of the peripheral registers.
