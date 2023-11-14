@@ -1088,8 +1088,10 @@
 #define DPORT_RW_BTMAC_RST     BIT(9)
 #define DPORT_RW_BTLP_RST      BIT(10)
 
+//ESP32 should not reset FE in esp_wifi_bt_power_domain_on().
+//The FE of ESP32 is not in the WIFI PD power domain.
+//When turning off WIFI PD, the FE will not power down, so phy_wakeup_init() did not rewrite the FE register.
 #define MODEM_RESET_FIELD_WHEN_PU   (DPORT_WIFIBB_RST       | \
-                                     DPORT_FE_RST           | \
                                      DPORT_WIFIMAC_RST      | \
                                      DPORT_BTBB_RST         | \
                                      DPORT_BTMAC_RST        | \
