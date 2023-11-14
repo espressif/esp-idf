@@ -85,7 +85,7 @@ During startup, ESP-IDF and FreeRTOS will automatically create multiple tasks th
       - Affinity
       - Priority
     * - Idle Tasks (``IDLEx``)
-      - An idle task (``IDLEx``) is created for (and pinned to) each CPU, where ``x`` is the CPU's number.
+      - An idle task (``IDLEx``) is created for (and pinned to) each CPU core, where ``x`` is the CPU core's number. The ``x`` is dropped when single-core configuration is enabled.
       - :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`
       - CPUx
       - ``0``
