@@ -11,7 +11,7 @@
 #include "freertos/task.h"
 
 // Some resources are lazy allocated, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (-800)
+#define TEST_MEMORY_LEAK_THRESHOLD (-900)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

@@ -48,7 +48,7 @@ void wpabuf_free2(struct wpabuf *buf)
 
 TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 {
-    set_leak_threshold(120);
+    set_leak_threshold(400);
     ESP_LOGI("SAE Test", "### Beginning SAE init and deinit ###");
     {
         /* Test init and deinit*/

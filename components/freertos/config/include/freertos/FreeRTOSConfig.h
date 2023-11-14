@@ -251,6 +251,9 @@
     #endif /* CONFIG_FREERTOS_SMP */
 #endif /* def __ASSEMBLER__ */
 
+/* -------------- List Data Integrity Checks --------------- */
+#define configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES    CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
+
 /* ----------------------------------------------- Amazon SMP FreeRTOS -------------------------------------------------
  * - All Amazon SMP FreeRTOS specific configurations
  * ------------------------------------------------------------------------------------------------------------------ */

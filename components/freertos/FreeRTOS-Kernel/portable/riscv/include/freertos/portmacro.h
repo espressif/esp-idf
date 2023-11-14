@@ -37,7 +37,11 @@
 #include "freertos/FreeRTOSConfig.h"
 
 /* Macros used instead ofsetoff() for better performance of interrupt handler */
+#if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
+#define PORT_OFFSET_PX_STACK 0x40
+#else
 #define PORT_OFFSET_PX_STACK 0x30
+#endif /* #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
 #define PORT_OFFSET_PX_END_OF_STACK (PORT_OFFSET_PX_STACK + \
                                      /* void * pxDummy6 */ 4 + \
                                      /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ CONFIG_FREERTOS_MAX_TASK_NAME_LEN + \

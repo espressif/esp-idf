@@ -720,7 +720,7 @@ bool test_event_on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event
 TEST_CASE("can post events from interrupt handler", "[event][intr]")
 {
     /* Lazy allocated resources in gptimer/intr_alloc */
-    unity_utils_set_leak_level(150);
+    unity_utils_set_leak_level(160);
 
     TEST_ESP_OK(esp_event_loop_create_default());
 
