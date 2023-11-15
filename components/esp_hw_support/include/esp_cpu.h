@@ -482,9 +482,15 @@ esp_err_t esp_cpu_clear_breakpoint(int bp_num);
  * the CPU accesses (according to the trigger type) on a certain memory range.
  *
  * @note Overwrites previously set watchpoint with same watchpoint number.
+ *       On RISC-V chips, this API uses method0(Exact matching) and method1(NAPOT matching) according to the
+ *       riscv-debug-spec-0.13 specification for address matching.
+ *       If the watch region size is 1byte, it uses exact matching (method 0).
+ *       If the watch region size is larger than 1byte, it uses NAPOT matching (method 1). This mode requires
+ *       the watching region start address to be aligned to the watching region size.
+ *
  * @param wp_num Hardware watchpoint number [0..SOC_CPU_WATCHPOINTS_NUM - 1]
- * @param wp_addr Watchpoint's base address
- * @param size Size of the region to watch. Must be one of 2^n, with n in [0..6].
+ * @param wp_addr Watchpoint's base address, must be naturally aligned to the size of the region
+ * @param size Size of the region to watch. Must be one of 2^n and in the range of [1 ... SOC_CPU_WATCHPOINT_MAX_REGION_SIZE]
  * @param trigger Trigger type
  * @return ESP_ERR_INVALID_ARG on invalid arg, ESP_OK otherwise
  */
