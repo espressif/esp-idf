@@ -22,6 +22,14 @@
 #if ( SOC_CPU_COPROC_NUM > 0 )
     /* Targets with coprocessors present a special CSR to get Illegal Instruction exception reason */
     .equ EXT_ILL_CSR, 0x7F0
+
+    /* EXT_ILL CSR reasons are stored as follows:
+     * - Bit 0: FPU core instruction (Load/Store instructions NOT concerned)
+     * - Bit 1: Low-power core
+     * - Bit 2: PIE core */
+    .equ EXT_ILL_RSN_FPU, 1
+    .equ EXT_ILL_RSN_LP, 2
+    .equ EXT_ILL_RSN_PIE, 4
 #endif /* SOC_CPU_COPROC_NUM > 0 */
 
 /* Macro which first allocates space on the stack to save general
@@ -157,10 +165,16 @@ _panic_handler:
     bne   s0, a1, _panic_handler_not_coproc
     /* In case this is due to a coprocessor, set ra right now to simplify the logic below */
     la    ra, _return_from_exception
-    /* EXT_ILL CSR should contain the reason for the Illegal Instruction. */
+    /* EXT_ILL CSR should contain the reason for the Illegal Instruction */
     csrr  a0, EXT_ILL_CSR
-    bnez  a0, _panic_handler_coproc
-#if SOC_CPU_HAS_FPU_EXT_ILL_BUG && SOC_CPU_HAS_FPU
+    mv    a2, a0
+    /* Check if the FPU bit is set. When targets have the FPU reason bug (SOC_CPU_HAS_FPU_EXT_ILL_BUG),
+     * it is possible that another bit is set even if the reason is an FPU instruction.
+     * For example, bit 1 can be set and bit 0 won't, even if the reason is an FPU instruction. */
+#if SOC_CPU_HAS_FPU
+    andi  a1, a0, EXT_ILL_RSN_FPU
+    bnez  a1, rtos_save_fpu_coproc
+#if SOC_CPU_HAS_FPU_EXT_ILL_BUG
     /* If the SOC present the hardware EXT_ILL CSR bug, it doesn't support FPU load/store detection
      * so we have to check the instruction's opcode (in `mtval` = `t0`) */
     andi  a0, t0, 0b1011111
@@ -173,21 +187,25 @@ _panic_handler:
     and   a0, t0, a0    /* a0 = mtval & 0x6001 */
     li    a1, 0x6000
     beq   a0, a1, rtos_save_fpu_coproc
+    /* Check if the instruction is CSR-related */
+    andi  a0, t0, 0b1111111
+    li    a1, 0b1110011
+    bne   a0, a1, _panic_handler_not_fpu
+    /* Check if it's CSR number 1 (fflags), 2 (frm) or 3 (fcsr) */
+    srli  a0, t0, 20
+    addi  a0, a0, -1
+    li    a1, 3
+    bltu  a0, a1, rtos_save_fpu_coproc
     /* The instruction was not an FPU one, continue the exception */
-#endif /* SOC_CPU_HAS_FPU_EXT_ILL_BUG && SOC_CPU_HAS_FPU */
-    j _panic_handler_not_coproc
-_panic_handler_coproc:
-    /* EXT_ILL CSR reasons are stored as follows:
-     * - Bit 0: FPU core instruction (Load/Store instructions NOT concerned)
-     * - Bit 1: Low-power core
-     * - Bit 2: PIE core
-     */
-#if SOC_CPU_HAS_FPU
-    li    a1, 1
-    beq   a0, a1, rtos_save_fpu_coproc
+_panic_handler_not_fpu:
+
+#endif /* SOC_CPU_HAS_FPU_EXT_ILL_BUG */
 #endif /* SOC_CPU_HAS_FPU */
+
+    /* Need to check the other coprocessors reason now, instruction is in register a2 */
     /* Ignore LP and PIE for now, continue the exception */
 _panic_handler_not_coproc:
+
 #endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
 
     /* Call panic_from_exception(sp) or panic_from_isr(sp)
