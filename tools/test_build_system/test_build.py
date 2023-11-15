@@ -128,3 +128,10 @@ def test_build_with_sdkconfig_build_abspath(idf_py: IdfPyFunc, test_app_copy: Pa
     build_path = test_app_copy / 'build_tmp'
     sdkconfig_path = build_path / 'sdkconfig'
     idf_py('-D', f'SDKCONFIG={sdkconfig_path}', '-B', str(build_path), 'build')
+
+
+def test_build_cmake_executable_suffix(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('idf.py can build with CMAKE_EXECUTABLE_SUFFIX set')
+    append_to_file((test_app_copy / 'CMakeLists.txt'), 'set(CMAKE_EXECUTABLE_SUFFIX_CXX ".ext")')
+    ret = idf_py('build')
+    assert 'Project build complete' in ret.stdout, 'Build with CMAKE_EXECUTABLE_SUFFIX set failed'
