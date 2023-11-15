@@ -803,7 +803,8 @@ void gdma_default_rx_isr(void *args)
     bool normal_eof = false;
 
     // clear pending interrupt event first
-    uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX);
+    // reading the raw interrupt status because we also want to know the EOF status, even if the EOF interrupt is not enabled
+    uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, true);
     gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, intr_status);
 
     // prepare data for different events
@@ -852,7 +853,7 @@ void gdma_default_tx_isr(void *args)
     int pair_id = pair->pair_id;
     bool need_yield = false;
     // clear pending interrupt event
-    uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX);
+    uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, false);
     gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, intr_status);
 
     if ((intr_status & GDMA_LL_EVENT_TX_EOF) && tx_chan->cbs.on_trans_eof) {
