@@ -70,15 +70,6 @@ void modem_clock_module_disable(periph_module_t module);
  */
 void modem_clock_module_mac_reset(periph_module_t module);
 
-/**
- * @brief Initialize the clock gating control signal of each clock domain of the modem
- *
- * This is a global modem clock gating signal initialization interface, which is
- * only configured during system initialization, and each modem module cannot
- * use this interface.
- */
-void modem_clock_domain_pmu_state_icg_map_init(void);
-
 #if SOC_PMU_SUPPORTED
 /**
  * @brief Enable modem clock domain clock gate to gate it's output
