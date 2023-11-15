@@ -1,2 +1,0 @@
-api-guides/RF_calibration
-api-guides/coexist
