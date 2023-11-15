@@ -950,7 +950,6 @@ static void wifi_prov_mgr_event_handler_internal(
 
         /* Set code corresponding to the reason for disconnection */
         switch (disconnected->reason) {
-        case WIFI_REASON_AUTH_EXPIRE:
         case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
         case WIFI_REASON_AUTH_FAIL:
         case WIFI_REASON_HANDSHAKE_TIMEOUT:
