@@ -21,15 +21,20 @@ variables:
 
 # GitLab-CI environment
 
-  # XXX_ATTEMPTS variables (https://docs.gitlab.com/ee/ci/runners/configure_runners.html#job-stages-attempts) are not defined here.
-  # Use values from  "CI / CD Settings" - "Variables".
-
-  # GIT_STRATEGY is not defined here.
-  # Use an option from  "CI / CD Settings" - "General pipelines".
-
+  # now we have pack-objects cache, so clone strategy is faster than fetch
+  GIT_STRATEGY: clone
   # we will download archive for each submodule instead of clone.
   # we don't do "recursive" when fetch submodule as they're not used in CI now.
   GIT_SUBMODULE_STRATEGY: none
+  # since we're using merged-result pipelines, the last commit should work for most cases
+  GIT_DEPTH: 1
+  # --no-recurse-submodules: we use cache for submodules
+  # --prune --prune-tags: in case remote branch or tag is force pushed
+  GIT_FETCH_EXTRA_FLAGS: "--no-recurse-submodules --prune --prune-tags"
+  # we're using .cache folder for caches
+  GIT_CLEAN_FLAGS: -ffdx -e .cache/
+  LATEST_GIT_TAG: v5.3-dev
+
   SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
   # by default we will fetch all submodules
   # jobs can overwrite this variable to only fetch submodules they required
@@ -39,20 +44,17 @@ variables:
   IDF_SKIP_CHECK_SUBMODULES: 1
 
   IDF_PATH: "$CI_PROJECT_DIR"
-  BATCH_BUILD: "1"
   V: "0"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
   PYTHON_VER: 3.8.17
 
   # Docker images
-  ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env-v5.3:1"
-  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env-v5.3:1-1"
+  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.3:1"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.3:1-1"
   QEMU_IMAGE: "${CI_DOCKER_REGISTRY}/qemu-v5.3:1-20230522"
-  TARGET_TEST_ENV_IMAGE: "$CI_DOCKER_REGISTRY/target-test-env-v5.3:1"
-
+  TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.3:1"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
-
-  PRE_COMMIT_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-pre-commit:1"
+  PRE_COMMIT_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-pre-commit:1"
 
   # target test repo parameters
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
@@ -202,6 +204,111 @@ variables:
   after_script:
     - *show_ccache_statistics
     - *upload_failed_job_log_artifacts
+
+##############################
+# Git Strategy Job Templates #
+##############################
+.git_init: &git_init |
+  mkdir -p "${CI_PROJECT_DIR}"
+  cd "${CI_PROJECT_DIR}"
+  git init
+
+.git_fetch_from_mirror_url_if_exists: &git_fetch_from_mirror_url_if_exists |
+  # check if set mirror
+  if [ -n "${LOCAL_GITLAB_HTTPS_HOST:-}" ] && [ -n "${ESPCI_TOKEN:-}" ]; then
+    MIRROR_REPO_URL="https://bot:${ESPCI_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"
+  elif [ -n "${LOCAL_GIT_MIRROR:-}" ]; then
+    MIRROR_REPO_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"
+  fi
+
+  # fetch from mirror first if set
+  if [ -n "${MIRROR_REPO_URL:-}" ]; then
+    if git remote -v | grep origin; then
+      git remote set-url origin "${MIRROR_REPO_URL}"
+    else
+      git remote add origin "${MIRROR_REPO_URL}"
+    fi
+    git fetch origin --no-recurse-submodules
+  fi
+
+  # set remote url to CI_REPOSITORY_URL
+  if git remote -v | grep origin; then
+    git remote set-url origin "${CI_REPOSITORY_URL}"
+  else
+    git remote add origin "${CI_REPOSITORY_URL}"
+  fi
+
+.git_checkout_fetch_head: &git_checkout_fetch_head |
+  git checkout FETCH_HEAD
+  git clean ${GIT_CLEAN_FLAGS}
+
+# git diff requires two commits, with different CI env var
+#
+# By default, we use git strategy "clone" with depth 1 to speed up the clone process.
+# But for jobs requires running `git diff`, we need to fetch more commits to get the correct diffs.
+#
+# Since there's no way to get the correct git_depth before the job starts,
+# we can't set `GIT_DEPTH` in the job definition.
+#
+# Set git strategy to "none" and fetch manually instead.
+.before_script:fetch:git_diff:
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - *git_init
+    - *git_fetch_from_mirror_url_if_exists
+    - |
+      # merged results pipelines, by default
+      if [[ -n $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA ]]; then
+        git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
+        git fetch origin $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
+        export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA)
+      # merge request pipelines, when the mr got conflicts
+      elif [[ -n $CI_MERGE_REQUEST_DIFF_BASE_SHA ]]; then
+        git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
+        git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
+        export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_COMMIT_SHA)
+      # other pipelines, like the protected branches pipelines
+      else
+        git fetch origin $CI_COMMIT_BEFORE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
+        git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
+        export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA)
+      fi
+    - *git_checkout_fetch_head
+    - *common-before_scripts
+    - *setup_tools_and_idf_python_venv
+    - add_gitlab_ssh_keys
+
+# git describe requires commit history until the latest tag
+.before_script:fetch:git_describe:
+  variables:
+    GIT_STRAEGY: none
+  before_script:
+    - *git_init
+    - *git_fetch_from_mirror_url_if_exists
+    - |
+      git fetch origin refs/tags/"${LATEST_GIT_TAG}":refs/tags/"${LATEST_GIT_TAG}" --depth=1
+      git repack -d
+      git fetch origin $CI_COMMIT_SHA --shallow-since=$(git log -1 --format=%as "${LATEST_GIT_TAG}")
+    - *git_checkout_fetch_head
+    - *common-before_scripts
+    - *setup_tools_and_idf_python_venv
+    - add_gitlab_ssh_keys
+
+# target test runners may locate in different places
+# for runners set git mirror, we fetch from the mirror first, then fetch the HEAD commit
+.before_script:fetch:target_test:
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - *git_init
+    - *git_fetch_from_mirror_url_if_exists
+    - git fetch origin "${CI_COMMIT_SHA}" --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
+    - *git_checkout_fetch_head
+    - *common-before_scripts
+    - *setup_tools_and_idf_python_venv
+    - add_gitlab_ssh_keys
+    # no submodules
 
 #############
 # `default` #

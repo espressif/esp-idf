@@ -13,8 +13,7 @@
     - job: upload-submodules-cache
       optional: true
       artifacts: false
-    - job: mr_variables
-      optional: true  # only MR pipelines would have this
+    - pipeline_variables
 
 test_nvs_on_host:
   extends: .host_test_template
@@ -314,8 +313,8 @@ test_pytest_qemu:
       --pytest-apps
       -m qemu
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - run_cmd pytest
       --target $IDF_TARGET
@@ -344,8 +343,8 @@ test_pytest_linux:
       --pytest-apps
       -m host_test
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - run_cmd pytest
       --target linux
