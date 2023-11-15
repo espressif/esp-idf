@@ -2258,6 +2258,23 @@ esp_err_t esp_netif_dhcps_option_api(esp_netif_api_msg_t *msg)
                 break;
             }
             case ESP_NETIF_SUBNET_MASK: {
+                esp_netif_ip_info_t *default_ip = esp_netif->ip_info;
+                ip4_addr_t *config_netmask = (ip4_addr_t *)opt->val;
+                if (!memcmp(&default_ip->netmask, config_netmask, sizeof(struct ip4_addr))) {
+                    ESP_LOGE(TAG, "Please use esp_netif_set_ip_info interface to configure subnet mask");
+                    /*
+                     * This API directly changes the subnet mask of dhcp server
+                     * but the subnet mask of the network interface has not changed
+                     * If you need to change the subnet mask of dhcp server
+                     * you need to change the subnet mask of the network interface first.
+                     * If the subnet mask of dhcp server is changed
+                     * and the subnet mask of network interface is inconsistent
+                     * with the subnet mask of dhcp sever, it may lead to the failure of sending packets.
+                     * If want to configure the subnet mask of dhcp server
+                     * please use esp_netif_set_ip_info to change the subnet mask of network interface first.
+                     */
+                    return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+                }
                 memcpy(opt_info, opt->val, opt->len);
                 break;
             }
