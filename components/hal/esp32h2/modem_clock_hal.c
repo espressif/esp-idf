@@ -79,7 +79,7 @@ void modem_clock_hal_select_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t
         lp_clkrst_ll_select_modem_32k_clock_source(&LP_CLKRST, MODEM_CLOCK_EXT32K_CODE);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
 }
 
@@ -119,6 +119,6 @@ void modem_clock_hal_select_coex_lpclk_source(modem_clock_hal_context_t *hal, mo
         lp_clkrst_ll_select_modem_32k_clock_source(&LP_CLKRST, MODEM_CLOCK_EXT32K_CODE);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
 }
