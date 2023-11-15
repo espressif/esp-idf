@@ -76,8 +76,10 @@ static void IRAM_ATTR temperature_sensor_isr(void *arg)
     temperature_sensor_ll_clear_intr();
     bool cbs_yield = false;
     temperature_sensor_handle_t tsens = (temperature_sensor_handle_t) arg;
+    temperature_val_intr_condition_t intr_condition = (temperature_sensor_ll_get_wakeup_reason() == 1 ? TEMPERATURE_VAL_HIGHER_THAN_HIGH_THRESHOLD: TEMPERATURE_VAL_LOWER_THAN_LOW_THRESHOLD);
     temperature_sensor_threshold_event_data_t data = {
         .celsius_value = s_temperature_regval_2_celsius(tsens, temperature_sensor_ll_get_raw_value()),
+        .intr_condition = intr_condition,
     };
     if (tsens->threshold_cbs) {
         if (tsens->threshold_cbs(tsens, &data, tsens->cb_user_arg)) {

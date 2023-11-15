@@ -156,6 +156,17 @@ static inline void temperature_sensor_ll_wakeup_mode(uint8_t mode)
 }
 
 /**
+ * @brief Get temperature sensor interrupt/wakeup in which reason
+ *
+ * @return uint8_t 0: temperature value lower than low threshold 1: otherwise, higher than high threshold.
+ */
+__attribute__((always_inline))
+static inline uint8_t temperature_sensor_ll_get_wakeup_reason(void)
+{
+    return APB_SARADC.tsens_wake.saradc_wakeup_over_upper_th;
+}
+
+/**
  * @brief Configure whether to enable temperature sensor wake up
  *
  * @param en true: enable, false: disable.
