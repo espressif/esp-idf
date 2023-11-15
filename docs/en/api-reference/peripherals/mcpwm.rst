@@ -204,10 +204,11 @@ Next, to allocate a capture channel, you can call the :cpp:func:`mcpwm_new_captu
 - :cpp:member:`mcpwm_capture_channel_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 - :cpp:member:`mcpwm_capture_channel_config_t::gpio_num` sets the GPIO number used by the capture channel.
 - :cpp:member:`mcpwm_capture_channel_config_t::prescale` sets the prescaler of the input signal.
-- :cpp:member:`mcpwm_capture_channel_config_t::pos_edge` and :cpp:member:`mcpwm_capture_channel_config_t::neg_edge` set whether to capture on the positive and/or falling edge of the input signal.
-- :cpp:member:`mcpwm_capture_channel_config_t::pull_up` and :cpp:member:`mcpwm_capture_channel_config_t::pull_down` set whether to pull up and/or pull down the GPIO internally.
-- :cpp:member:`mcpwm_capture_channel_config_t::invert_cap_signal` sets whether to invert the capture signal.
-- :cpp:member:`mcpwm_capture_channel_config_t::io_loop_back` sets whether to enable the Loop-back mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pos_edge` and :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::neg_edge` set whether to capture on the positive and/or falling edge of the input signal.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pull_up` and :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pull_down` set whether to pull up and/or pull down the GPIO internally.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::invert_cap_signal` sets whether to invert the capture signal.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::io_loop_back` sets whether to enable the Loop-back mode. It is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::keep_io_conf_at_exit` sets whether to keep the GPIO configuration when the capture channel is deleted.
 
 The :cpp:func:`mcpwm_new_capture_channel` will return a pointer to the allocated capture channel object if the allocation succeeds. Otherwise, it will return an error code. Specifically, when there is no free capture channel left in the capture timer, this function will return the :c:macro:`ESP_ERR_NOT_FOUND` error.
 

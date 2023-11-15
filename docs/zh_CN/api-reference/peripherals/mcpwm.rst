@@ -204,10 +204,11 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 - :cpp:member:`mcpwm_capture_channel_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_capture_channel_config_t::gpio_num` 设置捕获通道使用的 GPIO 编号。
 - :cpp:member:`mcpwm_capture_channel_config_t::prescale` 设置输入信号的预分频器。
-- :cpp:member:`mcpwm_capture_channel_config_t::pos_edge` 和 :cpp:member:`mcpwm_capture_channel_config_t::neg_edge` 设置是否在输入信号的上升沿和/或下降沿捕获时间戳。
-- :cpp:member:`mcpwm_capture_channel_config_t::pull_up` 和 :cpp:member:`mcpwm_capture_channel_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
-- :cpp:member:`mcpwm_capture_channel_config_t::invert_cap_signal` 设置是否取反捕获信号。
-- :cpp:member:`mcpwm_capture_channel_config_t::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pos_edge` 和 :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::neg_edge` 设置是否在输入信号的上升沿和/或下降沿捕获时间戳。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pull_up` 和 :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::invert_cap_signal` 设置是否取反捕获信号。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::keep_io_conf_at_exit` 设置是否在删除通道时保留 GPIO 的相关配置。
 
 分配成功后，:cpp:func:`mcpwm_new_capture_channel` 将返回一个指向已分配捕获通道的指针。否则，函数将返回错误代码。具体来说，当捕获定时器中没有空闲捕获通道时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。
 

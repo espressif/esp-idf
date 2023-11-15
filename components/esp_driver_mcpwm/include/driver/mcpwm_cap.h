@@ -136,7 +136,9 @@ typedef struct {
     int intr_priority;               /*!< MCPWM capture interrupt priority,
                                           if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     uint32_t prescale;               /*!< Prescale of input signal, effective frequency = cap_input_clk/prescale */
-    struct {
+
+    /// Extra configuration flags for capture channel
+    struct extra_flags {
         uint32_t pos_edge: 1;          /*!< Whether to capture on positive edge */
         uint32_t neg_edge: 1;          /*!< Whether to capture on negative edge */
         uint32_t pull_up: 1;           /*!< Whether to pull up internally */
