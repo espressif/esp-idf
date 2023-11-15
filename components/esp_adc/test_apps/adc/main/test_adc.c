@@ -124,7 +124,7 @@ TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_on
 
     int test_num = 100;
     adc_channel_t channel = ADC1_TEST_CHAN1;
-    adc_atten_t atten = ADC_ATTEN_DB_11;
+    adc_atten_t atten = ADC_ATTEN_DB_12;
     adc_unit_t unit_id = ADC_UNIT_1;
 
     adc_oneshot_unit_handle_t adc1_handle;
