@@ -185,6 +185,11 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
         case MBEDTLS_SSL_FLUSH_BUFFERS:
             break;
         case MBEDTLS_SSL_HANDSHAKE_WRAPUP:
+#if defined(MBEDTLS_SSL_RENEGOTIATION)
+            if (add && ssl->MBEDTLS_PRIVATE(renego_status)) {
+                CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
+            }
+#endif
             break;
         default:
             break;
