@@ -360,4 +360,4 @@ examples/peripherals/uart/uart_echo_rs485:
 
 examples/peripherals/usb:
   disable:
-    - if: SOC_USB_PERIPH_NUM != 1
+    - if: SOC_USB_OTG_SUPPORTED != 1
