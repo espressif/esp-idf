@@ -397,6 +397,7 @@ esp_err_t esp_hf_ag_vra_control(esp_bd_addr_t remote_bda, esp_hf_vr_state_t valu
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if arguments are invalid
  *                  - ESP_FAIL: others
  *
  */
@@ -448,6 +449,7 @@ esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_bda, esp_hf_at_response_code_
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if arguments are invalid
  *                  - ESP_FAIL: others
  *
  */
@@ -490,6 +492,7 @@ esp_err_t esp_hf_ag_ciev_report(esp_bd_addr_t remote_addr, esp_hf_ciev_report_ty
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if the arguments are invalid
  *                  - ESP_FAIL: others
  *
  */
@@ -567,6 +570,7 @@ esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, int n
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if arguments are invalid
  *                  - ESP_FAIL: others
  *
  */
