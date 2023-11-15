@@ -431,20 +431,14 @@ UART 输出处理
 应用程序示例
 -------------------
 
-- :example:`protocols/sntp`：如何实现 Deep-sleep 模式的基本功能，周期性唤醒 ESP 模块，以从 NTP 服务器获取时间。
-- :example:`wifi/power_save`：如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
+.. list::
 
-.. only:: SOC_BT_SUPPORTED
+    - :example:`protocols/sntp`：如何实现 Deep-sleep 模式的基本功能，周期性唤醒 ESP 模块，以从 NTP 服务器获取时间。
+    - :example:`wifi/power_save`：如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
+    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save`：如何通过 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式保持 Bluetooth 连接。
+    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何通过定时器触发 Deep-sleep 唤醒。
 
-    - :example:`bluetooth/nimble/power_save`：如何通过 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式保持 Bluetooth 连接。
-
-.. only:: SOC_ULP_SUPPORTED
-
-    - :example:`system/deep_sleep`：如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
-
-.. only:: esp32c3 or esp32c2
-
-    - :example:`system/deep_sleep`：如何通过定时器触发 Deep-sleep 唤醒。
 
 API 参考
 -------------

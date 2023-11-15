@@ -431,20 +431,14 @@ Checking Sleep Wakeup Cause
 Application Example
 -------------------
 
-- :example:`protocols/sntp`: the implementation of basic functionality of Deep-sleep, where ESP module is periodically waken up to retrieve time from NTP server.
-- :example:`wifi/power_save`: the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
+.. list::
 
-.. only:: SOC_BT_SUPPORTED
+    - :example:`protocols/sntp`: the implementation of basic functionality of Deep-sleep, where ESP module is periodically waken up to retrieve time from NTP server.
+    - :example:`wifi/power_save`: the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
+    :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save`: the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
+    :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of Deep-sleep wakeup triggered by timer.
 
-    - :example:`bluetooth/nimble/power_save`: the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
-
-.. only:: SOC_ULP_SUPPORTED
-
-    - :example:`system/deep_sleep`: the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
-
-.. only:: esp32c3 or esp32c2
-
-    - :example:`system/deep_sleep`: the usage of Deep-sleep wakeup triggered by timer.
 
 API Reference
 -------------
