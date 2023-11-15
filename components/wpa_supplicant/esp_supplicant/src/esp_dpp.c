@@ -14,6 +14,7 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
+#include "esp_wps_i.h"
 
 #ifdef CONFIG_DPP
 static void *s_dpp_task_hdl = NULL;
@@ -610,11 +611,21 @@ void esp_supp_dpp_stop_listen(void)
     esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_CANCEL, 0, 0, NULL);
 }
 
+bool is_dpp_enabled(void)
+{
+    return (s_dpp_ctx.dpp_global ? true : false);
+}
+
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 {
     wifi_mode_t mode = 0;
     if (esp_wifi_get_mode(&mode) || ((mode != WIFI_MODE_STA) && (mode != WIFI_MODE_APSTA))) {
         wpa_printf(MSG_ERROR, "DPP: failed to init as not in station mode.");
+        return ESP_FAIL;
+    }
+
+    if (is_wps_enabled()) {
+        wpa_printf(MSG_ERROR, "DPP: failed to init since WPS is enabled");
         return ESP_FAIL;
     }
     if (s_dpp_ctx.dpp_global) {
