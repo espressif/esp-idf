@@ -67,9 +67,6 @@
   - "tools/ci/ci_build_apps.py"
   - "tools/test_build_system/**/*"
 
-.patterns-sbom: &patterns-sbom
-  - "tools/test_sbom/*"
-
 .patterns-custom_test: &patterns-custom_test
   - "tools/ci/idf_pytest/**/*"
   - "tools/ci/python_packages/gitlab_api.py"
@@ -149,6 +146,8 @@
   - "tools/idf_tools.py"
   - "tools/test_idf_tools/**/*"
   - "tools/install_util.py"
+
+  - "tools/test_sbom/*"
 
   - "tools/requirements/*"
   - "tools/requirements.json"
@@ -444,14 +443,6 @@
       changes: *patterns-python-files
     - <<: *if-dev-push
       changes: *patterns-sonarqube-files
-
-.rules:patterns:sbom:
-  rules:
-    - <<: *if-protected
-    - <<: *if-dev-push
-      changes: *patterns-sbom
-    - <<: *if-dev-push
-      changes: *patterns-submodule
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # DO NOT place comments or maintain any code from this line

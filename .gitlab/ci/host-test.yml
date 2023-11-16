@@ -99,18 +99,9 @@ test_gdbstub_on_host:
     - cd components/esp_gdbstub/test_gdbstub_host
     - make test
 
-test_idf_py:
-  extends: .host_test_template
-  variables:
-    LC_ALL: C.UTF-8
-  script:
-    - cd ${IDF_PATH}/tools/test_idf_py
-    - ./test_idf_py.py
-    - ./test_hints.py
-
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
-test_idf_tools:
+test_cli_installer:
   extends:
     - .host_test_template
     - .before_script:minimal
@@ -199,45 +190,39 @@ test_sysviewtrace_proc:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
     - ./test.sh
 
-test_mkdfu:
-  extends: .host_test_template
-  variables:
-    LC_ALL: C.UTF-8
-  script:
-    - cd ${IDF_PATH}/tools/test_mkdfu
-    - ./test_mkdfu.py
-
-test_sbom:
-  extends:
-    - .host_test_template
-    - .rules:patterns:sbom
-  script:
-    - cd ${IDF_PATH}/tools/test_sbom
-    - pytest
-
-test_autocomplete:
+test_tools:
   extends:
     - .host_test_template
   artifacts:
-    when: on_failure
+    when: always
     paths:
       - ${IDF_PATH}/*.out
+      - ${IDF_PATH}/XUNIT_*.xml
+    reports:
+      junit: ${IDF_PATH}/XUNIT_*.xml
     expire_in: 1 week
+  variables:
+    LC_ALL: C.UTF-8
   script:
-    - ${IDF_PATH}/tools/ci/test_autocomplete.py
-
-test_detect_python:
-  extends:
-    - .host_test_template
-  script:
+    - stat=0
+    - cd ${IDF_PATH}/tools/ci
+    - python -m xmlrunner test_autocomplete.py        --output-file=${IDF_PATH}/XUNIT_AUTOCOMP.xml || stat=1
+    - cd ${IDF_PATH}/tools/test_idf_py
+    - python -m xmlrunner test_idf_py.py              --output-file=${IDF_PATH}/XUNIT_IDF_PY.xml   || stat=1
+    - python -m xmlrunner test_hints.py               --output-file=${IDF_PATH}/XUNIT_HINTS.xml    || stat=1
+    - cd ${IDF_PATH}/tools/test_mkdfu
+    - python -m xmlrunner test_mkdfu.py               --output-file=${IDF_PATH}/XUNIT_MKDFU.xml    || stat=1
+    - cd ${IDF_PATH}/tools/test_sbom
+    - pytest                                          --junitxml=${IDF_PATH}/XUNIT_SBOM.xml        || stat=1
     - cd ${IDF_PATH}
-    - shellcheck -s sh tools/detect_python.sh
-    - shellcheck -s bash tools/detect_python.sh
-    - shellcheck -s dash tools/detect_python.sh
+    - shellcheck -s sh tools/detect_python.sh                                                      || stat=1
+    - shellcheck -s bash tools/detect_python.sh                                                    || stat=1
+    - shellcheck -s dash tools/detect_python.sh                                                    || stat=1
     - "bash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "fish -c 'source tools/detect_python.fish && echo Our Python: $ESP_PYTHON'"
+    - exit "$stat"
 
 test_split_path_by_spaces:
   extends: .host_test_template
