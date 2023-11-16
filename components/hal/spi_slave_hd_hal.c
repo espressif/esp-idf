@@ -71,7 +71,9 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
     hal->rx_dma_head = &hal->rx_dummy_head;
 
     //Configure slave
-    s_spi_slave_hd_hal_dma_init_config(hal);
+    if (hal_config->dma_enabled) {
+        s_spi_slave_hd_hal_dma_init_config(hal);
+    }
 
     spi_ll_slave_hd_init(hw);
     spi_ll_set_addr_bitlen(hw, hal_config->address_bits);

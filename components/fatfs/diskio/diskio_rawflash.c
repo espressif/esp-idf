@@ -18,6 +18,7 @@ static const esp_partition_t* s_ff_raw_handles[FF_VOLUMES];
 // Determine the sector size and sector count by parsing the boot sector
 static size_t s_sector_size[FF_VOLUMES];
 static size_t s_sectors_count[FF_VOLUMES];
+static uint8_t s_initialized[FF_VOLUMES];
 
 #define BPB_BytsPerSec 11
 #define BPB_TotSec16 19
@@ -56,12 +57,17 @@ DSTATUS ff_raw_initialize (BYTE pdrv)
         s_sectors_count[pdrv] = sectors_count_tmp_32;
     }
 
-    return 0;
+    s_initialized[pdrv] = true;
+    return STA_PROTECT;
 }
 
 DSTATUS ff_raw_status (BYTE pdrv)
 {
-    return 0;
+    DSTATUS status = STA_PROTECT;
+    if (!s_initialized[pdrv]) {
+        status |= STA_NOINIT | STA_NODISK;
+    }
+    return status;
 }
 
 DRESULT ff_raw_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
@@ -80,7 +86,7 @@ DRESULT ff_raw_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 
 DRESULT ff_raw_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 {
-    return RES_ERROR;
+    return RES_WRPRT;
 }
 
 DRESULT ff_raw_ioctl (BYTE pdrv, BYTE cmd, void *buff)

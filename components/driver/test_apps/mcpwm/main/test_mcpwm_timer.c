@@ -177,9 +177,26 @@ TEST_CASE("mcpwm_timer_event_callbacks", "[mcpwm]")
     bits = xEventGroupWaitBits(event_group, TEST_MCPWM_TIMER_EVENT_BIT_STOP, pdTRUE, pdTRUE, pdMS_TO_TICKS(50));
     TEST_ASSERT_EQUAL(TEST_MCPWM_TIMER_EVENT_BIT_STOP, bits);
 
+    printf("update timer period\r\n");
+    TEST_ESP_OK(mcpwm_timer_set_period(timer, 50 * 1000)); // period: 50ms, 20Hz
+    udata.accumulate_empty_counts = 0;
+    udata.accumulate_full_counts = 0;
+
+    printf("start timer\r\n");
+    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
+
+    printf("wait for full and empty events\r\n");
+    bits = xEventGroupWaitBits(event_group, TEST_MCPWM_TIMER_EVENT_BIT_FULL | TEST_MCPWM_TIMER_EVENT_BIT_EMPTY, pdTRUE, pdTRUE, pdMS_TO_TICKS(1500));
+    // because the timer period changed, the previous wait time is not sufficient, so timeout
+    TEST_ASSERT_EQUAL(0, bits);
+
+    bits = xEventGroupWaitBits(event_group, TEST_MCPWM_TIMER_EVENT_BIT_FULL | TEST_MCPWM_TIMER_EVENT_BIT_EMPTY, pdTRUE, pdTRUE, pdMS_TO_TICKS(1500));
+    TEST_ASSERT_EQUAL(TEST_MCPWM_TIMER_EVENT_BIT_FULL | TEST_MCPWM_TIMER_EVENT_BIT_EMPTY, bits);
+
+    printf("stop timer\r\n");
+    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
     printf("disable timer\r\n");
     TEST_ESP_OK(mcpwm_timer_disable(timer));
-
     printf("delete timer\r\n");
     TEST_ESP_OK(mcpwm_del_timer(timer));
     vEventGroupDelete(event_group);

@@ -53,7 +53,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`ESP-MQTT <mqtt>` MQTT Package (contiki-mqtt) - Copyright (c) 2014, Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mqtt/esp-mqtt/LICENSE>`.
 
-* :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (c) 2017-2018 Intel Corporation and licensed under Apache License 2.0
+* :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (c) 2017-2018 Intel Corporation and licensed under Apache License 2.0.
 
 * `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file<bt/host/nimble/nimble/LICENSE>`.
 
@@ -88,6 +88,10 @@ ESP32, ESP32-S and ESP32-C Series SoCs mask ROM hardware includes binaries compi
 * `wpa_supplicant`_ Copyright (c) 2003-2022 Jouni Malinen <j@w1.fi> and contributors and licensed under the BSD license.
 
 * TJpgDec_ Copyright (C) 2011, ChaN, all right reserved. See below for license.
+
+.. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+
+    * `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited and licensed under Apache 2.0 License.
 
 Xtensa libhal MIT License
 =========================

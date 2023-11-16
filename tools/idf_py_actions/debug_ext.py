@@ -270,7 +270,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             r.append('set confirm on')
             r.append('end')
             r.append('')
-            return os.linesep.join(r)
+            return '\n'.join(r)
         raise FatalError(f'{ESP_ROM_INFO_FILE} file not found. Please check IDF integrity.')
 
     def generate_gdbinit_files(gdb: str, gdbinit: Optional[str], project_desc: Dict[str, Any]) -> None:
@@ -544,7 +544,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
     gdb_timeout_sec_opt = {
         'names': ['--gdb-timeout-sec'],
         'type': INT,
-        'default': 1,
+        'default': 3,
         'help': 'Overwrite the default internal delay for gdb responses',
     }
     fail_if_openocd_failed = {

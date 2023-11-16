@@ -95,7 +95,7 @@ static void set_time(void)
     if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
         printf("Failed to update system time, continuing");
     }
-    esp_netif_deinit();
+    esp_netif_sntp_deinit();
 }
 
 static void http2_task(void *args)

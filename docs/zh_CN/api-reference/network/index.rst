@@ -16,7 +16,7 @@
       esp_smartconfig
       esp_wifi
       esp_dpp
-      esp_nan
+      :SOC_WIFI_NAN_SUPPORT: esp_nan
 
    本部分的 Wi-Fi API 示例代码存放在 ESP-IDF 示例项目的 :example:`wifi` 目录下。
 
