@@ -437,7 +437,8 @@ UART 输出处理
     - :example:`wifi/power_save`：如何通过 Wi-Fi Modem-sleep 模式和自动 Light-sleep 模式保持 Wi-Fi 连接。
     :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save`：如何通过 Bluetooth Modem-sleep 模式和自动 Light-sleep 模式保持 Bluetooth 连接。
     :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
-    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何通过定时器触发 Deep-sleep 唤醒。
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`：如何通过多种芯片支持的唤醒源，如 RTC 定时器, GPIO, EXT0, EXT1, 触摸传感器等，触发 Deep-sleep 唤醒。
+    - :example:`system/light_sleep`: 如何使用多种芯片支持的唤醒源，如定时器，GPIO，触摸传感器等，触发 Light-sleep 唤醒。
 
 
 API 参考

@@ -437,7 +437,8 @@ Application Example
     - :example:`wifi/power_save`: the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
     :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save`: the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
     :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
-    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of Deep-sleep wakeup triggered by timer.
+    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep`: the usage of Deep-sleep wakeup triggered by various sources supported by the chip (RTC Timer, GPIO, EXT0, EXT1, Touch Sensor, etc.).
+    - :example:`system/light_sleep`: the usage of Light-sleep wakeup triggered by various sources supported by the chip (Timer, GPIO, Touch Sensor, etc.).
 
 
 API Reference
