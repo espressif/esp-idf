@@ -19,6 +19,9 @@
 #include "private/esp_coexist_internal.h"
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
+#if __has_include("esp_psram.h")
+#include "esp_psram.h"
+#endif
 #ifdef CONFIG_ESP_WIFI_NAN_ENABLE
 #include "apps_private/wifi_apps_private.h"
 #endif
@@ -44,22 +47,6 @@ static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 /* Callback function to update WiFi MAC time */
 wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
 #endif
-
-/* Set additional WiFi features and capabilities */
-uint64_t g_wifi_feature_caps =
-#if CONFIG_ESP_WIFI_ENABLE_WPA3_SAE
-    CONFIG_FEATURE_WPA3_SAE_BIT |
-#endif
-#if CONFIG_SPIRAM
-    CONFIG_FEATURE_CACHE_TX_BUF_BIT |
-#endif
-#if CONFIG_ESP_WIFI_FTM_INITIATOR_SUPPORT
-    CONFIG_FEATURE_FTM_INITIATOR_BIT |
-#endif
-#if CONFIG_ESP_WIFI_FTM_RESPONDER_SUPPORT
-    CONFIG_FEATURE_FTM_RESPONDER_BIT |
-#endif
-0;
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 # define WIFI_BEACON_MONITOR_CONFIG_DEFAULT(ena)   { \
@@ -235,17 +222,46 @@ static void esp_wifi_config_info(void)
 #endif
 }
 
+#if CONFIG_SPIRAM
+static esp_err_t esp_wifi_psram_check(const wifi_init_config_t *config)
+{
+#if CONFIG_SPIRAM_IGNORE_NOTFOUND
+    if (!esp_psram_is_initialized()) {
+        if (config->feature_caps & CONFIG_FEATURE_CACHE_TX_BUF_BIT) {
+            ESP_LOGW(TAG, "WiFi cache TX buffers should be disabled when initialize SPIRAM failed");
+        }
+        if (config->tx_buf_type == 0) {
+            ESP_LOGW(TAG, "TX buffers type should be changed from static to dynamic when initialize SPIRAM failed");
+        }
+#ifdef CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        ESP_LOGW(TAG, "WiFi/LWIP prefer SPIRAM should be disabled when initialize SPIRAM failed");
+#endif
+        if (config->amsdu_tx_enable) {
+            ESP_LOGW(TAG, "WiFi AMSDU TX should be disabled when initialize SPIRAM failed");
+        }
+    }
+#endif
+    if ((config->feature_caps & CONFIG_FEATURE_CACHE_TX_BUF_BIT) && (WIFI_CACHE_TX_BUFFER_NUM == 0)) {
+        ESP_LOGE(TAG, "Number of WiFi cache TX buffers should not equal 0 when enable SPIRAM");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    return ESP_OK;
+}
+#endif
+
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
     if (s_wifi_inited) {
         return ESP_OK;
     }
 
-    if ((config->feature_caps & CONFIG_FEATURE_CACHE_TX_BUF_BIT) && (WIFI_CACHE_TX_BUFFER_NUM == 0))
-    {
-        ESP_LOGE(TAG, "Number of WiFi cache TX buffers should not equal 0 when enable SPIRAM");
-        return ESP_ERR_NOT_SUPPORTED;
+    esp_err_t result = ESP_OK;
+#ifdef CONFIG_SPIRAM
+    result = esp_wifi_psram_check(config);
+    if (result != ESP_OK) {
+        return result;
     }
+#endif
 
 #if CONFIG_ESP_WIFI_SLP_IRAM_OPT
     int min_freq_mhz = esp_pm_impl_get_cpu_freq(PM_MODE_LIGHT_SLEEP);
@@ -302,7 +318,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #endif
     esp_wifi_set_log_level();
     esp_wifi_power_domain_on();
-    esp_err_t result = esp_wifi_init_internal(config);
+    result = esp_wifi_init_internal(config);
     if (result == ESP_OK) {
 #if CONFIG_MAC_BB_PD
         esp_mac_bb_pd_mem_init();
