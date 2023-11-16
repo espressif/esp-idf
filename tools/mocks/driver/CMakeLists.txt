@@ -14,11 +14,12 @@ set(include_dirs
     "${original_driver_dir}/usb_serial_jtag/include/driver"
     "${original_driver_dir}/i2c/include"
     "${original_driver_dir}/rmt/include"
-    "${original_driver_dir}/usb_serial_jtag/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../hal/include")
+    "${original_driver_dir}/usb_serial_jtag/include")
 
+# Note: "hal" and "soc" are only required for corresponding header files and their definitions
+# here, they don't provide functionality when built for running on the host.
 idf_component_mock(INCLUDE_DIRS ${include_dirs}
-    REQUIRES freertos
+    REQUIRES freertos hal soc
     MOCK_HEADER_FILES
     ${IDF_PATH}/components/esp_driver_gpio/include/driver/gpio.h
     ${IDF_PATH}/components/esp_driver_spi/include/driver/spi_master.h
@@ -29,5 +30,3 @@ idf_component_mock(INCLUDE_DIRS ${include_dirs}
     ${original_driver_dir}/rmt/include/driver/rmt_common.h
     ${original_driver_dir}/rmt/include/driver/rmt_encoder.h
     ${original_driver_dir}/usb_serial_jtag/include/driver/usb_serial_jtag.h)
-
-target_compile_definitions(${COMPONENT_LIB} PUBLIC SOC_I2C_NUM=2)
