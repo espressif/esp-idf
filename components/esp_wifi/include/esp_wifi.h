@@ -180,7 +180,6 @@ typedef struct {
 #endif
 
 extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
-extern uint64_t g_wifi_feature_caps;
 
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
 
@@ -214,10 +213,40 @@ extern uint64_t g_wifi_feature_caps;
 #define WIFI_STA_DISCONNECTED_PM_ENABLED false
 #endif
 
-#define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
+#if CONFIG_ESP_WIFI_ENABLE_WPA3_SAE
+#define WIFI_ENABLE_WPA3_SAE (1<<0)
+#else
+#define WIFI_ENABLE_WPA3_SAE 0
+#endif
+
+#if CONFIG_SPIRAM
+#define WIFI_ENABLE_SPIRAM (1<<1)
+#else
+#define WIFI_ENABLE_SPIRAM 0
+#endif
+
+#if CONFIG_ESP_WIFI_FTM_INITIATOR_SUPPORT
+#define WIFI_FTM_INITIATOR (1<<2)
+#else
+#define WIFI_FTM_INITIATOR 0
+#endif
+
+#if CONFIG_ESP_WIFI_FTM_RESPONDER_SUPPORT
+#define WIFI_FTM_RESPONDER (1<<3)
+#else
+#define WIFI_FTM_RESPONDER 0
+#endif
+
+#define CONFIG_FEATURE_WPA3_SAE_BIT (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
 #define CONFIG_FEATURE_FTM_RESPONDER_BIT (1<<3)
+
+/* Set additional WiFi features and capabilities */
+#define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
+                           WIFI_ENABLE_SPIRAM  | \
+                           WIFI_FTM_INITIATOR | \
+                           WIFI_FTM_RESPONDER)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .osi_funcs = &g_wifi_osi_funcs, \
@@ -240,7 +269,7 @@ extern uint64_t g_wifi_feature_caps;
     .wifi_task_core_id = WIFI_TASK_CORE_ID,\
     .beacon_max_len = WIFI_SOFTAP_BEACON_MAX_LEN, \
     .mgmt_sbuf_num = WIFI_MGMT_SBUF_NUM, \
-    .feature_caps = g_wifi_feature_caps, \
+    .feature_caps = WIFI_FEATURE_CAPS, \
     .sta_disconnected_pm = WIFI_STA_DISCONNECTED_PM_ENABLED,  \
     .espnow_max_encrypt_num = CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
