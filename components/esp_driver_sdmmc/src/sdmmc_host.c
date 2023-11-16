@@ -45,7 +45,6 @@
 #define SDMMC_CLK_SRC_ATOMIC()
 #endif
 
-
 static const char *TAG = "sdmmc_periph";
 
 /**
@@ -69,7 +68,6 @@ typedef struct host_ctx_t {
 } host_ctx_t;
 
 static host_ctx_t s_host_ctx;
-
 
 static void sdmmc_isr(void *arg);
 static void sdmmc_host_dma_init(void);
@@ -209,10 +207,10 @@ void sdmmc_host_get_clk_dividers(uint32_t freq_khz, int *host_div, int *card_div
          * effective frequency range: 400 kHz - 32 MHz (32.1 - 39.9 MHz cannot be covered with given divider scheme)
          */
         *host_div = (clk_src_freq_hz) / (freq_khz * 1000);
-        if (*host_div > 15 ) {
+        if (*host_div > 15) {
             *host_div = 2;
             *card_div = (clk_src_freq_hz / 2) / (2 * freq_khz * 1000);
-            if ( ((clk_src_freq_hz / 2) % (2 * freq_khz * 1000)) > 0 ) {
+            if (((clk_src_freq_hz / 2) % (2 * freq_khz * 1000)) > 0) {
                 (*card_div)++;
             }
         } else if ((clk_src_freq_hz % (freq_khz * 1000)) > 0) {
@@ -315,22 +313,22 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
     int delay_phase_num = 0;
     sdmmc_ll_delay_phase_t phase = SDMMC_LL_DELAY_PHASE_0;
     switch (delay_phase) {
-        case SDMMC_DELAY_PHASE_1:
-            phase = SDMMC_LL_DELAY_PHASE_1;
-            delay_phase_num = 1;
-            break;
-        case SDMMC_DELAY_PHASE_2:
-            phase = SDMMC_LL_DELAY_PHASE_2;
-            delay_phase_num = 2;
-            break;
-        case SDMMC_DELAY_PHASE_3:
-            phase = SDMMC_LL_DELAY_PHASE_3;
-            delay_phase_num = 3;
-            break;
-        default:
-            phase = SDMMC_LL_DELAY_PHASE_0;
-            delay_phase_num = 0;
-            break;
+    case SDMMC_DELAY_PHASE_1:
+        phase = SDMMC_LL_DELAY_PHASE_1;
+        delay_phase_num = 1;
+        break;
+    case SDMMC_DELAY_PHASE_2:
+        phase = SDMMC_LL_DELAY_PHASE_2;
+        delay_phase_num = 2;
+        break;
+    case SDMMC_DELAY_PHASE_3:
+        phase = SDMMC_LL_DELAY_PHASE_3;
+        delay_phase_num = 3;
+        break;
+    default:
+        phase = SDMMC_LL_DELAY_PHASE_0;
+        delay_phase_num = 0;
+        break;
     }
     SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_din_delay(s_host_ctx.hal.dev, phase);
@@ -433,13 +431,13 @@ esp_err_t sdmmc_host_init(void)
     }
     // Enable interrupts
     SDMMC.intmask.val =
-            SDMMC_INTMASK_CD |
-            SDMMC_INTMASK_CMD_DONE |
-            SDMMC_INTMASK_DATA_OVER |
-            SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC |
-            SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
-            SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
-            SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE; //sdio is enabled only when use.
+        SDMMC_INTMASK_CD |
+        SDMMC_INTMASK_CMD_DONE |
+        SDMMC_INTMASK_DATA_OVER |
+        SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC |
+        SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
+        SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
+        SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE; //sdio is enabled only when use.
     SDMMC.ctrl.int_enable = 1;
 
     // Disable generation of Busy Clear Interrupt
@@ -479,7 +477,7 @@ static void configure_pin_iomux(uint8_t gpio_num)
 
 static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char *name)
 {
-    assert (gpio_num != (uint8_t) GPIO_NUM_NC);
+    assert(gpio_num != (uint8_t) GPIO_NUM_NC);
     ESP_LOGD(TAG, "using GPIO%d as %s pin", gpio_num, name);
     gpio_reset_pin(gpio_num);
     gpio_set_direction(gpio_num, mode);
@@ -651,7 +649,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
     // As hardware expects an active-high signal,
     // if WP signal is active low, then invert it in GPIO matrix,
     // else keep it in its default state
-    esp_rom_gpio_connect_in_signal(matrix_in_wp, slot_info->write_protect, (gpio_wp_polarity? false : true));
+    esp_rom_gpio_connect_in_signal(matrix_in_wp, slot_info->write_protect, (gpio_wp_polarity ? false : true));
 
     // By default, set probing frequency (400kHz) and 1-bit bus
     esp_err_t ret = sdmmc_host_set_card_clk(slot, 400);
@@ -733,7 +731,7 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
 
 size_t sdmmc_host_get_slot_width(int slot)
 {
-    assert( slot == 0 || slot == 1 );
+    assert(slot == 0 || slot == 1);
     return s_host_ctx.slot_ctx[slot].slot_width;
 }
 

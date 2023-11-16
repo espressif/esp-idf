@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -74,7 +74,6 @@ extern "C" {
 #define SD_IO_SEND_OP_COND              5       /* R4 */
 #define SD_IO_RW_DIRECT                 52      /* R5 */
 #define SD_IO_RW_EXTENDED               53      /* R5 */
-
 
 /* OCR bits */
 #define MMC_OCR_MEM_READY               (1<<31) /* memory power-up status bit */
@@ -527,7 +526,6 @@ static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 #define CISTPL_CODE_SDIO_STD        0x91
 #define CISTPL_CODE_SDIO_EXT        0x92
 #define CISTPL_CODE_END             0xFF
-
 
 /* Timing */
 #define SDMMC_TIMING_LEGACY 0

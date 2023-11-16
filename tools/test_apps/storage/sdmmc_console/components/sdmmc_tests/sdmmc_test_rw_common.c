@@ -12,7 +12,7 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "unity.h"
-#include "driver/sdmmc_defs.h"
+#include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_rw_common.h"
 

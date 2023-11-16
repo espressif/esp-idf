@@ -11,5 +11,4 @@ idf_component_register(SRCS "sdmmc_cmd.c"
                             "sdmmc_mmc.c"
                             "sdmmc_sd.c"
                     INCLUDE_DIRS include
-                    REQUIRES driver
                     PRIV_REQUIRES soc esp_timer)
