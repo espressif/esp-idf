@@ -29,9 +29,7 @@
  */
 _Static_assert( offsetof( StaticTask_t, pxDummy6 ) == offsetof( TCB_t, pxStack ) );
 _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfStack ) );
-#if CONFIG_FREERTOS_SMP
-    _Static_assert( tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY" );
-#endif /* CONFIG_FREERTOS_SMP */
+_Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY" );
 
 /* ------------------------------------------------- Kernel Control ------------------------------------------------- */
 
@@ -343,7 +341,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
             configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
             configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
-            configASSERT( ( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) ) || ( xCoreID == tskNO_AFFINITY ) );
+            configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
             #if ( configASSERT_DEFINED == 1 )
             {
@@ -480,8 +478,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         }
         #else /* CONFIG_FREERTOS_SMP */
         {
-            configASSERT( xCoreID < configNUMBER_OF_CORES );
-            configASSERT( xCoreID != tskNO_AFFINITY );
+            configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
             /* A critical section is not required as this function does not
              * guarantee that the TCB will still be valid when this function
@@ -502,8 +499,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
     {
         uint32_t ulRunTimeCounter;
 
-        configASSERT( xCoreID < configNUMBER_OF_CORES );
-        configASSERT( xCoreID != tskNO_AFFINITY );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
@@ -526,8 +522,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
     {
         configRUN_TIME_COUNTER_TYPE ulTotalTime, ulReturn;
 
-        configASSERT( xCoreID < configNUMBER_OF_CORES );
-        configASSERT( xCoreID != tskNO_AFFINITY );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
         ulTotalTime = portGET_RUN_TIME_COUNTER_VALUE();
 
