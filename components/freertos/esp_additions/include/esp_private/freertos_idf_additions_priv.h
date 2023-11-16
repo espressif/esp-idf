@@ -314,8 +314,8 @@
  * should be set to ( 2 | portPRIVILEGE_BIT ).
  *
  * @param xCoreID (only IDF SMP FreeRTOS)
- * The core to which the task is pinned to, or tskNO_AFFINITY if
- * the task can run on any core.
+ * The core to which the task is pinned to, or tskNO_AFFINITY if the task has no
+ * core affinity.
  *
  * @param uxCoreAffinityMask (only Amazon SMP FreeRTOS)
  * A bitwise value that indicates the cores on which the task can run.

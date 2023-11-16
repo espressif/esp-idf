@@ -618,8 +618,12 @@ static void vPortCleanUpCoprocArea(void *pvTCB)
     uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pvTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
     uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
 
-    /* Get xTargetCoreID from the TCB.xCoreID */
-    xTargetCoreID = ( ( StaticTask_t * ) pvTCB )->xDummyCoreID;
+    #if ( configNUMBER_OF_CORES > 1 )
+        /* Get xTargetCoreID from the TCB.xCoreID */
+        xTargetCoreID = ( ( StaticTask_t * ) pvTCB )->xDummyCoreID;
+    #else /* configNUMBER_OF_CORES > 1 */
+        xTargetCoreID = 0;
+    #endif /* configNUMBER_OF_CORES > 1 */
 
     /* If task has live floating point registers somewhere, release them */
     void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);

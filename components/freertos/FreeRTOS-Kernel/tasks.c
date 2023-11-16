@@ -390,8 +390,9 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
     StackType_t * pxStack;                      /*< Points to the start of the stack. */
     char pcTaskName[ configMAX_TASK_NAME_LEN ]; /*< Descriptive name given to the task when created.  Facilitates debugging only. */ /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
-    /* Todo: Remove xCoreID for single core builds (IDF-7894) */
-    BaseType_t xCoreID; /*< The core that this task is pinned to */
+    #if ( configNUMBER_OF_CORES > 1 )
+        BaseType_t xCoreID; /*< The core that this task is pinned to */
+    #endif /* configNUMBER_OF_CORES > 1 */
 
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         StackType_t * pxEndOfStack; /*< Points to the highest valid address for the stack. */
@@ -971,14 +972,6 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     StackType_t * pxTopOfStack;
     UBaseType_t x;
 
-    #if ( configNUMBER_OF_CORES > 1 )
-        /* Check that xCoreID is valid */
-        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
-    #else
-        /* Hard code xCoreID to 0 */
-        xCoreID = 0;
-    #endif
-
     #if ( portUSING_MPU_WRAPPERS == 1 )
         /* Should the task be created in privileged mode? */
         BaseType_t xRunPrivileged;
@@ -1077,7 +1070,16 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     }
 
     pxNewTCB->uxPriority = uxPriority;
-    pxNewTCB->xCoreID = xCoreID; /* Todo: Remove xCoreID for single core builds (IDF-7894) */
+    #if ( configNUMBER_OF_CORES > 1 )
+    {
+        pxNewTCB->xCoreID = xCoreID;
+    }
+    #else /* configNUMBER_OF_CORES > 1 */
+    {
+        /* Avoid compiler warning about unreferenced parameter. */
+        ( void ) xCoreID;
+    }
+    #endif /* configNUMBER_OF_CORES > 1 */
     #if ( configUSE_MUTEXES == 1 )
     {
         pxNewTCB->uxBasePriority = uxPriority;
@@ -4573,8 +4575,19 @@ static void prvCheckTasksWaitingTermination( void )
                 pxTaskStatus->pxEndOfStack = pxTCB->pxEndOfStack;
             #endif
             pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
-            /* Todo: Remove xCoreID for single core builds (IDF-7894) */
-            pxTaskStatus->xCoreID = pxTCB->xCoreID;
+            #if ( configTASKLIST_INCLUDE_COREID == 1 )
+            {
+                #if ( configNUMBER_OF_CORES > 1 )
+                {
+                    pxTaskStatus->xCoreID = pxTCB->xCoreID;
+                }
+                #else /* configNUMBER_OF_CORES > 1 */
+                {
+                    pxTaskStatus->xCoreID = 0;
+                }
+                #endif /* configNUMBER_OF_CORES > 1 */
+            }
+            #endif /* configTASKLIST_INCLUDE_COREID == 1 */
 
             #if ( configUSE_MUTEXES == 1 )
             {
@@ -5425,8 +5438,16 @@ static void prvResetNextTaskUnblockTime( void )
                 pcWriteBuffer = prvWriteNameToBuffer( pcWriteBuffer, pxTaskStatusArray[ x ].pcTaskName );
 
                 /* Write the rest of the string. */
-                sprintf( pcWriteBuffer, "\t%c\t%u\t%d\t%u\t%u\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, pxTaskStatusArray[ x ].xCoreID, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
-                pcWriteBuffer += strlen( pcWriteBuffer );                                                                                                                                                                                                                                    /*lint !e9016 Pointer arithmetic ok on char pointers especially as in this case where it best denotes the intent of the code. */
+                #if ( configTASKLIST_INCLUDE_COREID == 1 )
+                {
+                    sprintf( pcWriteBuffer, "\t%c\t%u\t%d\t%u\t%u\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( unsigned int ) pxTaskStatusArray[ x ].xCoreID, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
+                }
+                #else /* configTASKLIST_INCLUDE_COREID == 1 */
+                {
+                    sprintf( pcWriteBuffer, "\t%c\t%u\t%u\t%u\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
+                }
+                #endif /* configTASKLIST_INCLUDE_COREID == 1 */
+                pcWriteBuffer += strlen( pcWriteBuffer ); /*lint !e9016 Pointer arithmetic ok on char pointers especially as in this case where it best denotes the intent of the code. */
             }
 
             /* Free the array again.  NOTE!  If configSUPPORT_DYNAMIC_ALLOCATION

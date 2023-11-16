@@ -1289,8 +1289,9 @@ typedef struct xSTATIC_TCB
     UBaseType_t uxDummy5;
     void * pxDummy6;
     uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ];
-    /* Todo: Remove xCoreID for single core builds (IDF-7894) */
-    BaseType_t xDummyCoreID;
+    #if ( configNUMBER_OF_CORES > 1 )
+        BaseType_t xDummyCoreID;
+    #endif /* configNUMBER_OF_CORES > 1 */
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         void * pxDummy8;
     #endif
