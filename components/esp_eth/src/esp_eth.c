@@ -467,7 +467,7 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set loopback to null");
         ESP_GOTO_ON_ERROR(phy->loopback(phy, *(bool *)data), err, TAG, "configuration of phy loopback mode failed");
         break;
-    case ETH_CMD_READ_PHY_REG:
+    case ETH_CMD_READ_PHY_REG: {
         uint32_t phy_addr;
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "invalid register read/write info");
         esp_eth_phy_reg_rw_data_t *phy_r_data = (esp_eth_phy_reg_rw_data_t *)data;
@@ -475,14 +475,17 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ESP_GOTO_ON_ERROR(phy->get_addr(phy, &phy_addr), err, TAG, "get phy address failed");
         ESP_GOTO_ON_ERROR(eth_driver->mediator.phy_reg_read(&eth_driver->mediator,
                           phy_addr, phy_r_data->reg_addr, phy_r_data->reg_value_p), err, TAG, "failed to read PHY register");
+        }
         break;
-    case ETH_CMD_WRITE_PHY_REG:
+    case ETH_CMD_WRITE_PHY_REG: {
+        uint32_t phy_addr;
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "invalid register read/write info");
         esp_eth_phy_reg_rw_data_t *phy_w_data = (esp_eth_phy_reg_rw_data_t *)data;
         ESP_GOTO_ON_FALSE(phy_w_data->reg_value_p, ESP_ERR_INVALID_ARG, err, TAG, "can't write registers from null");
         ESP_GOTO_ON_ERROR(phy->get_addr(phy, &phy_addr), err, TAG, "get phy address failed");
         ESP_GOTO_ON_ERROR(eth_driver->mediator.phy_reg_write(&eth_driver->mediator,
                           phy_addr, phy_w_data->reg_addr, *(phy_w_data->reg_value_p)), err, TAG, "failed to write PHY register");
+        }
         break;
     default:
         if (phy->custom_ioctl != NULL && cmd >= ETH_CMD_CUSTOM_PHY_CMDS) {
