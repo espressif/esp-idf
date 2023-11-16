@@ -32,9 +32,9 @@ ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 ``ulp_embed_binary`` 的第一个参数为 ULP 二进制文件的文件名，该文件名也用于其他生成的文件，如 ELF 文件、映射文件、头文件和链接器导出文件。第二个参数为 ULP 源文件。第三个参数为组件源文件列表，用于包含要生成的头文件。要正确构建依赖关系、确保在编译这些文件前创建要生成的头文件，都需要此文件列表。有关 ULP 应用程序生成头文件的概念，请参阅本文档后续章节。
 
-3. 在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED` 和 :ref:`CONFIG_ULP_COPROC_TYPE` 选项，并将后者设置为 ``CONFIG_ULP_COPROC_TYPE_LP_CORE``。:ref:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP LP-Core 代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
+1. 在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED` 和 :ref:`CONFIG_ULP_COPROC_TYPE` 选项，并将 :ref:`CONFIG_ULP_COPROC_TYPE` 设置为 ``CONFIG_ULP_COPROC_TYPE_LP_CORE``。:ref:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP LP-Core 代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
 
-4. 按照常规步骤构建应用程序（例如 ``idf.py app``）。
+2. 按照常规步骤构建应用程序（例如 ``idf.py app``）。
 
 在构建过程中，采取以下步骤来构建 ULP 程序：
 
@@ -153,12 +153,15 @@ ULP LP-Core 支持的外设
 
  * LP IO
  * LP I2C
+ * LP UART
 
 应用示例
 --------------------
 
 * 在示例 :example:`system/ulp/lp_core/gpio` 中，ULP LP-Core 协处理器在主 CPU 深度睡眠时轮询 GPIO。
 * 在示例 :example:`system/ulp/lp_core/lp_i2c` 中，ULP LP-Core 协处理器在主 CPU 深度睡眠时读取外部 I2C 环境光传感器 (BH1750)，并在达到阈值时唤醒主 CPU。
+* 在示例 :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` 中，低功耗内核上运行的 LP UART 驱动程序读取并回显写入串行控制台的数据。
+* :example:`system/ulp/lp_core/lp_uart/lp_uart_print` 展示了如何在低功耗内核上使用串口打印功能。
 
 API 参考
 -------------
@@ -168,6 +171,7 @@ API 参考
 
 .. include-build-file:: inc/ulp_lp_core.inc
 .. include-build-file:: inc/lp_core_i2c.inc
+.. include-build-file:: inc/lp_core_uart.inc
 
 LP 内核 API 参考
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -175,3 +179,5 @@ LP 内核 API 参考
 .. include-build-file:: inc/ulp_lp_core_utils.inc
 .. include-build-file:: inc/ulp_lp_core_gpio.inc
 .. include-build-file:: inc/ulp_lp_core_i2c.inc
+.. include-build-file:: inc/ulp_lp_core_uart.inc
+.. include-build-file:: inc/ulp_lp_core_print.inc
