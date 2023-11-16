@@ -256,11 +256,15 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
 输出筛选
 ~~~~~~~~~~~~~~~~
 
-可以调用 ``idf.py monitor --print-filter="xyz"`` 启动 IDF 监视器，其中，``--print-filter`` 是输出筛选的参数。参数默认值为空字符串，可打印任何内容。
+可以调用 ``idf.py monitor --print-filter="xyz"`` 启动 IDF 监视器，其中，``--print-filter`` 是输出筛选的参数。参数默认值为空字符串，即打印所有内容。支持使用环境变量 ``ESP_IDF_MONITOR_PRINT_FILTER`` 调整筛选设置。
+
+.. note::
+
+   同时使用环境变量 ``ESP_IDF_MONITOR_PRINT_FILTER`` 和参数 ``--print-filter`` 时，通过命令行输入的 CLI 参数 ``--print-filter`` 优先级更高。
 
 若需对打印内容设置限制，可指定 ``<tag>:<log_level>`` 等选项，其中 ``<tag>`` 是标签字符串，``<log_level>`` 是 ``{N, E, W, I, D, V, *}`` 集合中的一个字母，指的是 :doc:`日志 <../../api-reference/system/log>` 级别。
 
-例如，``PRINT_FILTER="tag1:W"`` 只匹配并打印 ``ESP_LOGW("tag1", ...)`` 所写的输出，或者写在较低日志详细度级别的输出，即 ``ESP_LOGE("tag1", ...)``。请勿指定 ``<log_level>`` 或使用详细级别默认值 ``*``。
+例如，``--print_filter="tag1:W"`` 只匹配并打印 ``ESP_LOGW("tag1", ...)`` 所写的输出，或者写在较低日志详细度级别的输出，即 ``ESP_LOGE("tag1", ...)``。请勿指定 ``<log_level>`` 或使用详细级别默认值 ``*``。
 
 .. note::
 
@@ -273,7 +277,7 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
 筛选规则示例
 ~~~~~~~~~~~~~~~~
 
-- ``*`` 可用于匹配任何类型标签。但 ``PRINT_FILTER="*:I tag1:E"`` 打印关于 ``tag1`` 的输出时会报错，这是因为 ``tag1`` 规则比 ``*`` 规则的优先级高。
+- ``*`` 可用于匹配任何类型标签。但 ``--print_filter="*:I tag1:E"`` 打印关于 ``tag1`` 的输出时会报错，这是因为 ``tag1`` 规则比 ``*`` 规则的优先级高。
 - 默认规则（空）等价于 ``*:V``，因为在详细级别或更低级别匹配任意标签即意味匹配所有内容。
 - ``"*:N"`` 不仅抑制了日志功能的输出，也抑制了 ``printf`` 的打印输出。为了避免这一问题，请使用 ``*:E`` 或更高的冗余级别。
 - 规则 ``"tag1:V"``、``"tag1:v"``、``"tag1:"``、``"tag1:*"`` 和 ``"tag1"`` 等同。
@@ -300,12 +304,12 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
     D (318) vfs: esp_vfs_register_fd_range is successful for range <54; 64) and VFS ID 1
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-``PRINT_FILTER="wifi esp_image:E light_driver:I"`` 筛选选项捕获的输出如下所示::
+``--print_filter="wifi esp_image:E light_driver:I"`` 筛选选项捕获的输出如下所示::
 
     E (31) esp_image: image at 0x30000 has invalid magic byte
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-``PRINT_FILTER="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` 选项的输出如下::
+``--print_filter="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` 选项的输出如下::
 
     load:0x40078000,len:13564
     entry 0x40078d4c
