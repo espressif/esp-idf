@@ -99,7 +99,7 @@ tools/test_apps/storage/sdmmc_console:
   depends_components:
     - sdmmc
     - esp_driver_sdmmc
-    - driver # driver will be replaced with esp_driver_sdspi
+    - esp_driver_sdspi
 
 tools/test_apps/system/bootloader_sections:
   disable:

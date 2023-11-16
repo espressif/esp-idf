@@ -16,7 +16,6 @@ set(includes "include"
              "parlio/include"
              "rmt/include"
              "sdio_slave/include"
-             "sdspi/include"
              "sigma_delta/include"
              "temperature_sensor/include"
              "touch_sensor/include"
@@ -113,14 +112,6 @@ if(CONFIG_SOC_SDM_SUPPORTED)
                      "deprecated/sigma_delta_legacy.c")
 endif()
 
-# SDSPI related source files
-if(CONFIG_SOC_GPSPI_SUPPORTED)
-    list(APPEND srcs "sdspi/sdspi_crc.c"
-                     "sdspi/sdspi_host.c"
-                     "sdspi/sdspi_transaction.c")
-endif()
-
-
 # Temperature Sensor related source files
 if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
     list(APPEND srcs "temperature_sensor/temperature_sensor.c"
@@ -173,7 +164,7 @@ else()
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
-                                    esp_driver_sdmmc esp_driver_ana_cmpr esp_driver_i2s
+                                    esp_driver_sdmmc esp_driver_sdspi esp_driver_ana_cmpr esp_driver_i2s
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

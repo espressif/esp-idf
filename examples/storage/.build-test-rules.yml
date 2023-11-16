@@ -10,11 +10,11 @@ examples/storage/custom_flash_driver:
 
 examples/storage/emmc:
   depends_components:
-    - sdmmc
-    - driver # `driver` will be replaced with `esp_driver_sdspi`
     - fatfs
     - vfs
+    - sdmmc
     - esp_driver_sdmmc
+    - esp_driver_sdspi
   enable:
     - if: IDF_TARGET == "esp32s3"
       reason: only support on esp32s3
@@ -134,7 +134,7 @@ examples/storage/sd_card/sdspi:
   depends_components:
     - vfs
     - sdmmc
-    - driver # To be updated to `esp_driver_sdspi`
+    - esp_driver_sdspi
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:
