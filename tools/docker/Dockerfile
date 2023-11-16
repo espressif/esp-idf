@@ -68,6 +68,7 @@ RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_B
       ${IDF_CLONE_SHALLOW:+--depth=1 --shallow-submodules} \
       ${IDF_CLONE_BRANCH_OR_TAG:+-b $IDF_CLONE_BRANCH_OR_TAG} \
       $IDF_CLONE_URL $IDF_PATH && \
+    git config --system --add safe.directory $IDF_PATH && \
     if [ -n "$IDF_CHECKOUT_REF" ]; then \
       cd $IDF_PATH && \
       if [ -n "$IDF_CLONE_SHALLOW" ]; then \
