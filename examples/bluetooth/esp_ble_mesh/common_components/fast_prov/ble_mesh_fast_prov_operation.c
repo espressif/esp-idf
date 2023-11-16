@@ -259,22 +259,22 @@ esp_err_t example_add_fast_prov_group_address(uint16_t model_id, uint16_t group_
         if (!model) {
             continue;
         }
-        for (j = 0; j < ARRAY_SIZE(model->groups); j++) {
+        for (j = 0; j < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; j++) {
             if (model->groups[j] == group_addr) {
                 break;
             }
         }
-        if (j != ARRAY_SIZE(model->groups)) {
+        if (j != CONFIG_BLE_MESH_MODEL_GROUP_COUNT) {
             ESP_LOGW(TAG, "%s: Group address already exists, element index: %d", __func__, i);
             continue;
         }
-        for (j = 0; j < ARRAY_SIZE(model->groups); j++) {
+        for (j = 0; j < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; j++) {
             if (model->groups[j] == ESP_BLE_MESH_ADDR_UNASSIGNED) {
                 model->groups[j] = group_addr;
                 break;
             }
         }
-        if (j == ARRAY_SIZE(model->groups)) {
+        if (j == CONFIG_BLE_MESH_MODEL_GROUP_COUNT) {
             ESP_LOGE(TAG, "%s: Model is full of group address, element index: %d", __func__, i);
         }
     }
@@ -305,7 +305,7 @@ esp_err_t example_delete_fast_prov_group_address(uint16_t model_id, uint16_t gro
         if (model == NULL) {
             continue;
         }
-        for (j = 0; j < ARRAY_SIZE(model->groups); j++) {
+        for (j = 0; j < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; j++) {
             if (model->groups[j] == group_addr) {
                 model->groups[j] = ESP_BLE_MESH_ADDR_UNASSIGNED;
                 break;

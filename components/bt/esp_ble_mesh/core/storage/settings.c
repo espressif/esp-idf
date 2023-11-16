@@ -1940,7 +1940,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
     int err = 0;
 
     sprintf(name, "mesh/sl/%04x",model->sub_list_index);
-    err = bt_mesh_save_core_settings(name, (const uint8_t *)model->groups, sizeof(model->groups));
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)model->groups, CONFIG_BLE_MESH_MODEL_GROUP_COUNT);
 
     if(err){
         BT_ERR("Failed to store %s", name);

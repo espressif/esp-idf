@@ -106,7 +106,7 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
                     break;
                 }
             }
-            for (k = 0; k < ARRAY_SIZE(model->groups); k++) {
+            for (k = 0; k < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; k++) {
                 if (model->groups[k] == BLE_MESH_ADDR_UNASSIGNED) {
                     model->groups[k] = info->group_addr;
                     break;
@@ -121,7 +121,7 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
                     break;
                 }
             }
-            for (k = 0; k <  ARRAY_SIZE(bt_mesh.sub_lists[model->sub_list_index]); k++) {
+            for (k = 0; k <  CONFIG_BLE_MESH_MODEL_GROUP_COUNT; k++) {
                 if (model->groups[k] == BLE_MESH_ADDR_UNASSIGNED) {
                     model->groups[k] = info->group_addr;
                     break;

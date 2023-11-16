@@ -1190,7 +1190,7 @@ static size_t mod_sub_list_clear(struct bt_mesh_model *mod)
     int i;
 
     /* Unref stored labels related to this model */
-    for (i = 0, clear_count = 0; i < ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]); i++) {
+    for (i = 0, clear_count = 0; i < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; i++) {
         if (!BLE_MESH_ADDR_IS_VIRTUAL(mod->groups[i])) {
             if (mod->groups[i] != BLE_MESH_ADDR_UNASSIGNED) {
                 mod->groups[i] = BLE_MESH_ADDR_UNASSIGNED;
@@ -1287,7 +1287,7 @@ static size_t mod_sub_list_clear(struct bt_mesh_model *mod)
     int i;
 
     /* Unref stored labels related to this model */
-    for (i = 0, clear_count = 0; i < ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]); i++) {
+    for (i = 0, clear_count = 0; i < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; i++) {
         if (mod->groups[i] != BLE_MESH_ADDR_UNASSIGNED) {
             mod->groups[i] = BLE_MESH_ADDR_UNASSIGNED;
             clear_count++;
@@ -1427,14 +1427,14 @@ static void mod_sub_add(struct bt_mesh_model *model,
            BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT,
            "SubGroupAddr: 0x%x", sub_addr);
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]); i++) {
+    for (i = 0; i < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; i++) {
         if (mod->groups[i] == BLE_MESH_ADDR_UNASSIGNED) {
             mod->groups[i] = sub_addr;
             break;
         }
     }
 
-    if (i == ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index])) {
+    if (i == CONFIG_BLE_MESH_MODEL_GROUP_COUNT) {
         status = STATUS_INSUFF_RESOURCES;
     } else {
         status = STATUS_SUCCESS;
@@ -1586,12 +1586,12 @@ static void mod_sub_overwrite(struct bt_mesh_model *model,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
-        bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]));
+        bt_mesh_lpn_group_del(mod->groups, CONFIG_BLE_MESH_MODEL_GROUP_COUNT);
     }
 
     mod_sub_list_clear(mod);
 
-    if (ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]) > 0) {
+    if (CONFIG_BLE_MESH_MODEL_GROUP_COUNT > 0) {
         mod->groups[0] = sub_addr;
         status = STATUS_SUCCESS;
 
@@ -1648,7 +1648,7 @@ static void mod_sub_del_all(struct bt_mesh_model *model,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
-        bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]));
+        bt_mesh_lpn_group_del(mod->groups, CONFIG_BLE_MESH_MODEL_GROUP_COUNT);
     }
 
     mod_sub_list_clear(mod);
@@ -1708,7 +1708,7 @@ static void mod_sub_get(struct bt_mesh_model *model,
     net_buf_simple_add_le16(&msg, addr);
     net_buf_simple_add_le16(&msg, id);
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]); i++) {
+    for (i = 0; i < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; i++) {
         if (mod->groups[i] != BLE_MESH_ADDR_UNASSIGNED) {
             net_buf_simple_add_le16(&msg, mod->groups[i]);
         }
@@ -1768,7 +1768,7 @@ static void mod_sub_get_vnd(struct bt_mesh_model *model,
     net_buf_simple_add_le16(&msg, company);
     net_buf_simple_add_le16(&msg, id);
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]); i++) {
+    for (i = 0; i < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; i++) {
         if (mod->groups[i] != BLE_MESH_ADDR_UNASSIGNED) {
             net_buf_simple_add_le16(&msg, mod->groups[i]);
         }
@@ -1836,14 +1836,14 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
            BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_TNPT,
            "SubVirtualAddr: 0x%x", sub_addr);
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]); i++) {
+    for (i = 0; i < CONFIG_BLE_MESH_MODEL_GROUP_COUNT; i++) {
         if (mod->groups[i] == BLE_MESH_ADDR_UNASSIGNED) {
             mod->groups[i] = sub_addr;
             break;
         }
     }
 
-    if (i == ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index])) {
+    if (i == CONFIG_BLE_MESH_MODEL_GROUP_COUNT) {
         status = STATUS_INSUFF_RESOURCES;
     } else {
         if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
@@ -1969,12 +1969,12 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
-        bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]));
+        bt_mesh_lpn_group_del(mod->groups, CONFIG_BLE_MESH_MODEL_GROUP_COUNT);
     }
 
     mod_sub_list_clear(mod);
 
-    if (ARRAY_SIZE(bt_mesh.sub_lists[mod->sub_list_index]) > 0) {
+    if (CONFIG_BLE_MESH_MODEL_GROUP_COUNT > 0) {
         status = va_add(label_uuid, &sub_addr);
         if (status == STATUS_SUCCESS) {
             mod->groups[0] = sub_addr;
