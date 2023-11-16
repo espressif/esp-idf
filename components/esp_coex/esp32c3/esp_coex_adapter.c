@@ -20,7 +20,7 @@
 #include "esp_timer.h"
 #include "soc/rtc.h"
 #include "esp_private/esp_clk.h"
-#include "esp_coexist_adapter.h"
+#include "private/esp_coexist_adapter.h"
 #include "esp32c3/rom/ets_sys.h"
 #include "soc/system_reg.h"
 

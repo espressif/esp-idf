@@ -37,7 +37,7 @@
 /***********************************************/
 // Headers for other components init functions
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
-#include "esp_coexist_internal.h"
+#include "private/esp_coexist_internal.h"
 #endif
 
 #if __has_include("esp_app_desc.h")
