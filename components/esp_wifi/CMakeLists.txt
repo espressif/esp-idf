@@ -58,4 +58,8 @@ if(CONFIG_ESP32_WIFI_ENABLED)
         endforeach()
     endif()
 
+    if(CONFIG_SPIRAM)
+        idf_component_optional_requires(PRIVATE esp_psram)
+    endif()
+
 endif()
