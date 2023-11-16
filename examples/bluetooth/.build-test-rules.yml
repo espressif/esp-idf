@@ -103,24 +103,6 @@ examples/bluetooth/esp_ble_mesh/aligenie_demo:
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
 
-examples/bluetooth/esp_ble_mesh/coex_test:
-  enable:
-    - if: IDF_TARGET in ["esp32"]
-      temporary: true
-      reason: the other targets are not tested yet
-  depends_components:
-    - bt
-    - esp_phy
-    - esp_console
-    - vfs
-    - mbedtls
-    - esp_coex
-    - esp_wifi
-    - esp_netif
-    - esp_driver_gpio
-  depends_filepatterns:
-    - examples/bluetooth/esp_ble_mesh/common_components/**/*
-
 examples/bluetooth/esp_ble_mesh/wifi_coexist:
   disable:
     - if: SOC_BLE_MESH_SUPPORTED != 1

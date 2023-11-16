@@ -17,7 +17,6 @@ CMake Deprecation Warning at main/lib/tinyxml2/CMakeLists\.txt:11 \(cmake_policy
 The smallest .+ partition is nearly full \(\d+% free space left\)!
 warning: unknown kconfig symbol 'A2DP_SINK_ENABLE' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/bluedroid/coex/a2dp_gatts_coex/sdkconfig.defaults
 warning: unknown kconfig symbol 'A2DP_SRC_ENABLE' assigned to 'n' in /builds/espressif/esp-idf/examples/bluetooth/bluedroid/coex/a2dp_gatts_coex/sdkconfig.defaults
-warning: unknown kconfig symbol 'APP_OFFSET' assigned to '0x10000' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/coex_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'BLE_ENABLE_SRVCHG_REG' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/bluedroid/coex/a2dp_gatts_coex/sdkconfig.defaults
 warning: unknown kconfig symbol 'BT_CTRL_BLE_MESH_SCAN_DUPL_EN' assigned to*
 warning: unknown kconfig symbol 'BT_CTRL_COEX_PARAMETERS_ENABLE' assigned to*
@@ -39,8 +38,6 @@ warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_240' assigned to 'y' i
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_240' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/wifi_coexist/
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in /builds/espressif/esp-idf/examples/system/deep_sleep/*
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in /builds/espressif/esp-idf/examples/system/light_sleep/*
-warning: unknown kconfig symbol 'ESP_WIFI_SW_COEXIST_PREFERENCE_BALANCE' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/coex_test/sdkconfig.defaults
-warning: unknown kconfig symbol 'ESP_WIFI_SW_COEXIST_PREFERENCE_VALUE' assigned to '2' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/coex_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/sdkconfig.ci.iram
 warning: unknown kconfig symbol 'ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/fast_provisioninging/fast_prov_server/sdkconfig.ci.iram
 warning: unknown kconfig symbol 'ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/nimble/ble_htp/htp_prph/sdkconfig.ci
@@ -50,7 +47,6 @@ warning: unknown kconfig symbol 'ESP32_REV_MIN_3' assigned to 'y' in /builds/esp
 warning: unknown kconfig symbol 'ESP32_REV_MIN' assigned to '3' in /builds/espressif/esp-idf/examples/system/ota/simple_ota_example/sdkconfig.ci.on_update_no_sb_rsa
 warning: unknown kconfig symbol 'ESP32H4_RTC_CLK_CAL_CYCLES' assigned to '576' in /builds/espressif/esp-idf/examples/bluetooth/nimble/blecent/sdkconfig.defaults.esp32h4
 warning: unknown kconfig symbol 'ESP32H4_RTC_CLK_SRC_EXT_CRYS' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/nimble/blecent/sdkconfig.defaults.esp32h4
-warning: unknown kconfig symbol 'ESPTOOLPY_BAUD_921600B' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/coex_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE_4MB' assigned to 'y' in /builds/espressif/esp-idf/components/esp_partition/host_test/partition_api_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE_4MB' assigned to 'y' in /builds/espressif/esp-idf/components/spiffs/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"4MB"' in /builds/espressif/esp-idf/components/esp_partition/host_test/partition_api_test/sdkconfig.defaults
@@ -66,13 +62,9 @@ warning: unknown kconfig symbol 'LIBSODIUM_USE_MBEDTLS_SHA' assigned to 'y' in /
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in /builds/espressif/esp-idf/examples/wifi/iperf/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in /builds/espressif/esp-idf/idf-app-test/apps/iperf/*
-warning: unknown kconfig symbol 'LWIP_IP_FRAG' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/coex_test/sdkconfig.defaults
-warning: unknown kconfig symbol 'LWIP_IP_REASSEMBLY' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/coex_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'MB_SLAVE_IP_FROM_STDIN' assigned to 'y' in /builds/espressif/esp-idf/examples/protocols/modbus/*
 warning: unknown kconfig symbol 'MDNS_STRICT_MODE' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_br/*
 warning: unknown kconfig symbol 'OPENTHREAD_TREL' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_br/*
-warning: unknown kconfig symbol 'PARTITION_TABLE_CUSTOM_APP_BIN_OFFSET' assigned to '0x10000' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/coex_test/sdkconfig.defaults
-warning: unknown kconfig symbol 'SDK_MAKE_WARN_UNDEFINED_VARIABLES' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/coex_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'SPI_FLASH_USE_LEGACY_IMPL' assigned to '1' in /builds/espressif/esp-idf/components/wear_levelling/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/sdkconfig.ci.psram
 warning: unknown kconfig symbol 'SPIRAM_FETCH_INSTRUCTIONS' assigned to 'y' in /builds/espressif/esp-idf/components/spi_flash/test_apps/mspi_test/sdkconfig.ci.psram
