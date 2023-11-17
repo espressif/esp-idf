@@ -874,6 +874,8 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t bus_handle, const i2
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((bus_handle != NULL), ESP_ERR_INVALID_ARG, TAG, "this bus is not initialized, please call `i2c_new_master_bus`");
+    ESP_RETURN_ON_FALSE(dev_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(dev_config->scl_speed_hz > 0, ESP_ERR_INVALID_ARG, TAG, "invalid scl frequency");
     if(bus_handle->base->bus_mode != I2C_BUS_MODE_MASTER) {
         ESP_LOGE(TAG, "This is not master bus!");
         return ESP_ERR_INVALID_ARG;
