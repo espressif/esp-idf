@@ -170,9 +170,11 @@ void wps_task(void *pvParameters )
                 if (e->sig == SIG_WPS_ENABLE) {
                     param->ret = wifi_wps_enable_internal((esp_wps_config_t *)(param->arg));
                 } else if (e->sig == SIG_WPS_DISABLE) {
+                    DATA_MUTEX_TAKE();
                     param->ret = wifi_wps_disable_internal();
                     del_task = true;
                     s_wps_task_hdl = NULL;
+                    DATA_MUTEX_GIVE();
                 } else {
                     param->ret = wifi_station_wps_start();
                 }
@@ -233,6 +235,12 @@ int wps_post(uint32_t sig, uint32_t par)
     wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " cnt=%d", sig, s_wps_sig_cnt[sig]);
 
     DATA_MUTEX_TAKE();
+
+    if (!s_wps_task_hdl) {
+        wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " failed as wps task has been deinited", sig);
+        DATA_MUTEX_GIVE();
+        return ESP_FAIL;
+    }
     if (s_wps_sig_cnt[sig]) {
         wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " processing", sig);
         DATA_MUTEX_GIVE();
@@ -1731,12 +1739,6 @@ int wps_task_deinit(void)
         wps_rxq_deinit();
     }
 
-    if (s_wps_data_lock) {
-        os_semphr_delete(s_wps_data_lock);
-        s_wps_data_lock = NULL;
-        wpa_printf(MSG_DEBUG, "wps task deinit: free data lock");
-    }
-
     return ESP_OK;
 }
 
@@ -1748,10 +1750,12 @@ int wps_task_init(void)
      */
     wps_task_deinit();
 
-    s_wps_data_lock = os_recursive_mutex_create();
     if (!s_wps_data_lock) {
-        wpa_printf(MSG_ERROR, "wps task init: failed to alloc data lock");
-        goto _wps_no_mem;
+        s_wps_data_lock = os_recursive_mutex_create();
+        if (!s_wps_data_lock) {
+            wpa_printf(MSG_ERROR, "wps task init: failed to alloc data lock");
+            goto _wps_no_mem;
+        }
     }
 
     s_wps_api_sem = os_semphr_create(1, 0);
@@ -1929,6 +1933,11 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
 int wifi_wps_disable_internal(void)
 {
     wps_set_status(WPS_STATUS_DISABLE);
+
+    /* Call wps_delete_timer to delete all WPS timer, no timer will call wps_post()
+     * to post message to wps_task once this function returns.
+     */
+    wps_delete_timer();
     wifi_station_wps_deinit();
     return ESP_OK;
 }
@@ -1955,11 +1964,6 @@ int esp_wifi_wps_disable(void)
     wps_status = wps_get_status();
     wpa_printf(MSG_INFO, "wifi_wps_disable");
     wps_set_type(WPS_TYPE_DISABLE); /* Notify WiFi task */
-
-    /* Call wps_delete_timer to delete all WPS timer, no timer will call wps_post()
-     * to post message to wps_task once this function returns.
-     */
-    wps_delete_timer();
 
 #ifdef USE_WPS_TASK
     ret = wps_post_block(SIG_WPS_DISABLE, 0);
