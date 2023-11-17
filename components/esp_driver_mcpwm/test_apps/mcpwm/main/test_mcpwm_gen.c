@@ -769,12 +769,24 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
     const int generator_gpio = 0;
     const int fault_gpio_num[3] = {2, 4, 5};
     printf("create timer and operator\r\n");
+    mcpwm_timer_config_t timer_config = {
+        .group_id = 0,
+        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000,
+        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+        .period_ticks = 1000,
+    };
+    mcpwm_timer_handle_t timer = NULL;
+    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
 
     mcpwm_operator_config_t oper_config = {
         .group_id = 0,
     };
     mcpwm_oper_handle_t oper = NULL;
     TEST_ESP_OK(mcpwm_new_operator(&oper_config, &oper));
+
+    printf("connect timer and operator\r\n");
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     printf("install gpio faults trigger\r\n");
     mcpwm_fault_handle_t gpio_faults[3];
@@ -825,6 +837,7 @@ TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_fault(gpio_faults[2]));
     TEST_ESP_OK(mcpwm_del_generator(gen));
     TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
 TEST_CASE("mcpwm_generator_action_on_soft_sync_trigger_event", "[mcpwm]")
