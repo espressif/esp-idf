@@ -165,6 +165,14 @@
     #define configUSE_STATS_FORMATTING_FUNCTIONS    1       /* Used by vTaskList() */
 #endif /* CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS */
 
+#if !CONFIG_FREERTOS_SMP
+    #if CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+        #define configRUN_TIME_COUNTER_TYPE    uint32_t
+    #elif CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64
+        #define configRUN_TIME_COUNTER_TYPE    uint64_t
+    #endif /* CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64 */
+#endif /* !CONFIG_FREERTOS_SMP */
+
 /* -------------------- Co-routines  ----------------------- */
 
 #define configUSE_CO_ROUTINES              0              /* CO_ROUTINES are not supported in ESP-IDF */
