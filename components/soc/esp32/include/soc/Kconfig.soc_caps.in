@@ -283,7 +283,7 @@ config SOC_CPU_WATCHPOINTS_NUM
     int
     default 2
 
-config SOC_CPU_WATCHPOINT_SIZE
+config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
     int
     default 64
 
