@@ -122,6 +122,19 @@ esp_err_t esp_ble_gap_stop_advertising(void)
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+esp_err_t esp_ble_gap_clear_advertising(void)
+{
+    btc_msg_t msg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_CLEAR_ADV;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 
 esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params)

@@ -731,6 +731,14 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
             }
             break;
         }
+        case HCI_VENDOR_BLE_CLEAR_ADV: {
+            uint8_t status;
+            STREAM_TO_UINT8(status, p);
+            if (ble_cb && ble_cb->inq_var.p_clear_adv_cb) {
+                ble_cb->inq_var.p_clear_adv_cb(status);
+            }
+            break;
+        }
         default:
         break;
     }
