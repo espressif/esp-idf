@@ -332,13 +332,16 @@ void btc_hf_deinit(bt_bdaddr_t *bd_addr)
 
     BTC_TRACE_EVENT("%s", __FUNCTION__);
     btc_dm_disable_service(BTA_HFP_SERVICE_ID);
+    hf_local_param[0].btc_hf_cb.initialized = false;
+}
+
+static void btc_hf_cb_release(void)
+{
 #if HFP_DYNAMIC_MEMORY == TRUE
     if (hf_local_param) {
         osi_free(hf_local_param);
         hf_local_param = NULL;
     }
-#else
-    hf_local_param[0].btc_hf_cb.initialized = false;
 #endif
 }
 
@@ -1219,9 +1222,12 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
     switch (event) {
         case BTA_AG_ENABLE_EVT:
-        case BTA_AG_DISABLE_EVT:
             break;
-
+        case BTA_AG_DISABLE_EVT:
+        {
+            btc_hf_cb_release();
+            break;
+        }
         case BTA_AG_REGISTER_EVT:
         {
             idx = p_data->hdr.handle - 1;
