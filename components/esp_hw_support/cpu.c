@@ -387,11 +387,19 @@ esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, e
 {
     /*
     Todo:
-    - Check that wp_num is in range
     - Check if the wp_num is already in use
     */
-    // Check if size is 2^n, where n is in [0...6]
-    if (size < 1 || size > 64 || (size & (size - 1)) != 0) {
+    if (wp_num < 0 || wp_num >= SOC_CPU_WATCHPOINTS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Check that the watched region's start address is naturally aligned to the size of the region
+    if ((uint32_t)wp_addr % size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Check if size is 2^n, and size is in the range of [1 ... SOC_CPU_WATCHPOINT_MAX_REGION_SIZE]
+    if (size < 1 || size > SOC_CPU_WATCHPOINT_MAX_REGION_SIZE || (size & (size - 1)) != 0) {
         return ESP_ERR_INVALID_ARG;
     }
     bool on_read = (trigger == ESP_CPU_WATCHPOINT_LOAD || trigger == ESP_CPU_WATCHPOINT_ACCESS);

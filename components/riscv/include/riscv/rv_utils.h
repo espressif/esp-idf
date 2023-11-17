@@ -298,30 +298,32 @@ FORCE_INLINE_ATTR void rv_utils_set_watchpoint(int wp_num,
     RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
     RV_WRITE_CSR(tdata1, TDATA1_USER                   |
                          TDATA1_MACHINE                |
-                         TDATA1_MATCH                  |
+                         ((size == 1) ? TDATA1_MATCH_EXACT : TDATA1_MATCH_NAPOT) |
                          (on_read  ? TDATA1_LOAD  : 0) |
                          (on_write ? TDATA1_STORE : 0));
     /* From RISC-V Debug Specification:
-     * NAPOT (Naturally Aligned Power-Of-Two):
+     * tdata1(mcontrol) match = 0 : Exact byte match
+     *
+     * tdata1(mcontrol) match = 1 : NAPOT (Naturally Aligned Power-Of-Two):
      * Matches when the top M bits of any compare value match the top M bits of tdata2.
      * M is XLEN − 1 minus the index of the least-significant bit containing 0 in tdata2.
+     * Note: Expecting that size is number power of 2 (numbers should be in the range of 1 ~ 31)
      *
-     * Note: Expectng that size is number power of 2
+     * Examples for understanding how to calculate match pattern to tdata2:
      *
-     * Examples for understanding how to calculate NAPOT:
-     *
+     * nnnn...nnnnn 1-byte  Exact byte match
      * nnnn...nnnn0 2-byte  NAPOT range
      * nnnn...nnn01 4-byte  NAPOT range
      * nnnn...nn011 8-byte  NAPOT range
      * nnnn...n0111 16-byte NAPOT range
      * nnnn...01111 32-byte NAPOT range
+     * ...
+     * n011...11111 2^31 byte NAPOT range
      *  * where n are bits from original address
      */
-    const uint32_t half_size = size >> 1;
-    uint32_t napot = wp_addr;
-    napot &= ~half_size;      /* set the least-significant bit with zero */
-    napot |= half_size - 1;   /* fill all bits with ones after least-significant bit */
-    RV_WRITE_CSR(tdata2, napot);
+    uint32_t match_pattern = (wp_addr & ~(size-1)) | ((size-1) >> 1);
+
+    RV_WRITE_CSR(tdata2, match_pattern);
 }
 
 FORCE_INLINE_ATTR void rv_utils_clear_breakpoint(int bp_num)
