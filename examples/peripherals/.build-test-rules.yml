@@ -324,11 +324,11 @@ examples/peripherals/touch_sensor/touch_element:
 
 examples/peripherals/touch_sensor/touch_sensor_v1:
   disable:
-    - if: SOC_TOUCH_VERSION_1 != 1
+    - if: SOC_TOUCH_SENSOR_VERSION != 1
 
 examples/peripherals/touch_sensor/touch_sensor_v2:
   disable:
-    - if: SOC_TOUCH_VERSION_2 != 1
+    - if: SOC_TOUCH_SENSOR_VERSION != 2
 
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:

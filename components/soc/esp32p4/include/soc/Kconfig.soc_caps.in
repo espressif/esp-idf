@@ -1039,6 +1039,26 @@ config SOC_MWDT_SUPPORT_XTAL
     bool
     default y
 
+config SOC_TOUCH_SENSOR_VERSION
+    int
+    default 3
+
+config SOC_TOUCH_SENSOR_NUM
+    int
+    default 14
+
+config SOC_TOUCH_PROXIMITY_CHANNEL_NUM
+    int
+    default 3
+
+config SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
+    bool
+    default y
+
+config SOC_TOUCH_SAMPLER_NUM
+    int
+    default 3
+
 config SOC_TWAI_CONTROLLER_NUM
     int
     default 3

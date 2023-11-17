@@ -149,11 +149,11 @@ components/driver/test_apps/temperature_sensor:
 
 components/driver/test_apps/touch_sensor_v1:
   disable:
-    - if: SOC_TOUCH_VERSION_1 != 1
+    - if: SOC_TOUCH_SENSOR_VERSION != 1
 
 components/driver/test_apps/touch_sensor_v2:
   disable:
-    - if: SOC_TOUCH_VERSION_2 != 1
+    - if: SOC_TOUCH_SENSOR_VERSION != 2
 
 components/driver/test_apps/twai:
   disable:

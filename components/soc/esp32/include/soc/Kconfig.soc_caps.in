@@ -659,21 +659,17 @@ config SOC_TIMER_GROUP_SUPPORT_APB
     bool
     default y
 
-config SOC_TOUCH_VERSION_1
-    bool
-    default y
+config SOC_TOUCH_SENSOR_VERSION
+    int
+    default 1
 
 config SOC_TOUCH_SENSOR_NUM
     int
     default 10
 
-config SOC_TOUCH_PAD_MEASURE_WAIT_MAX
-    hex
-    default 0xFF
-
-config SOC_TOUCH_PAD_THRESHOLD_MAX
-    bool
-    default n
+config SOC_TOUCH_SAMPLER_NUM
+    int
+    default 1
 
 config SOC_TWAI_CONTROLLER_NUM
     int

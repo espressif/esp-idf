@@ -83,6 +83,7 @@
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1  //TODO: IDF-7565
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
+// #define SOC_TOUCH_SENSOR_SUPPORTED      1  //TODO: IDF-7477
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -466,6 +467,13 @@
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)
+
+/*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
+#define SOC_TOUCH_SENSOR_VERSION            (3)         // Hardware version of touch sensor
+#define SOC_TOUCH_SENSOR_NUM                (14)        // Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)         // Sopport touch proximity channel number.
+#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1)     // Sopport touch proximity channel measure done interrupt type.
+#define SOC_TOUCH_SAMPLER_NUM               (3)         // The sampler number in total, each sampler can be used to sample on one frequency
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         3

@@ -142,7 +142,7 @@ void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable)
 {
     if (enable) {
         touch_ll_sleep_set_channel_num(pad_num);
-        touch_ll_sleep_set_threshold(SOC_TOUCH_PAD_THRESHOLD_MAX);
+        touch_ll_sleep_set_threshold(TOUCH_PAD_THRESHOLD_MAX);
         touch_ll_sleep_reset_benchmark();
     } else {
         touch_ll_sleep_set_channel_num(TOUCH_PAD_NUM0);
