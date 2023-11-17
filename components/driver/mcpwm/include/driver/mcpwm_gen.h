@@ -206,6 +206,62 @@ esp_err_t mcpwm_generator_set_action_on_brake_event(mcpwm_gen_handle_t generator
 esp_err_t mcpwm_generator_set_actions_on_brake_event(mcpwm_gen_handle_t generator, mcpwm_gen_brake_event_action_t ev_act, ...);
 
 /**
+ * @brief Generator action on specific fault event
+ */
+typedef struct {
+    mcpwm_timer_direction_t direction;       /*!< Timer direction */
+    mcpwm_fault_handle_t fault;              /*!< Which fault as the trigger. Only support GPIO fault */
+    mcpwm_generator_action_t action;         /*!< Generator action should perform */
+} mcpwm_gen_fault_event_action_t;
+
+/**
+ * @brief Help macros to construct a mcpwm_gen_fault_event_action_t entry
+ */
+#define MCPWM_GEN_FAULT_EVENT_ACTION(dir, flt, act) \
+    (mcpwm_gen_fault_event_action_t) { .direction = dir, .fault = flt, .action = act }
+
+/**
+ * @brief Set generator action on MCPWM Fault event
+ *
+ * @param[in] generator MCPWM generator handle, allocated by `mcpwm_new_generator()`
+ * @param[in] ev_act MCPWM trigger event action, can be constructed by `MCPWM_GEN_FAULT_EVENT_ACTION` helper macro
+ * @return
+ *      - ESP_OK: Set generator action successfully
+ *      - ESP_ERR_INVALID_ARG: Set generator action failed because of invalid argument
+ *      - ESP_FAIL: Set generator action failed because of other error
+ */
+esp_err_t mcpwm_generator_set_action_on_fault_event(mcpwm_gen_handle_t generator, mcpwm_gen_fault_event_action_t ev_act);
+
+/**
+ * @brief Generator action on specific sync event
+ */
+typedef struct {
+    mcpwm_timer_direction_t direction;       /*!< Timer direction */
+    mcpwm_sync_handle_t sync;                /*!< Which sync as the trigger*/
+    mcpwm_generator_action_t action;         /*!< Generator action should perform */
+} mcpwm_gen_sync_event_action_t;
+
+/**
+ * @brief Help macros to construct a mcpwm_gen_sync_event_action_t entry
+ */
+#define MCPWM_GEN_SYNC_EVENT_ACTION(dir, syn, act) \
+    (mcpwm_gen_sync_event_action_t) { .direction = dir, .sync = syn, .action = act }
+
+/**
+ * @brief Set generator action on MCPWM Sync event
+ *
+ * @note The trigger only support one sync action, regardless of the kinds. Should not call this function more than once.
+ *
+ * @param[in] generator MCPWM generator handle, allocated by `mcpwm_new_generator()`
+ * @param[in] ev_act MCPWM trigger event action, can be constructed by `MCPWM_GEN_SYNC_EVENT_ACTION` helper macro
+ * @return
+ *      - ESP_OK: Set generator action successfully
+ *      - ESP_ERR_INVALID_ARG: Set generator action failed because of invalid argument
+ *      - ESP_FAIL: Set generator action failed because of other error
+ */
+esp_err_t mcpwm_generator_set_action_on_sync_event(mcpwm_gen_handle_t generator, mcpwm_gen_sync_event_action_t ev_act);
+
+/**
  * @brief MCPWM dead time configuration structure
  */
 typedef struct {
