@@ -5633,6 +5633,16 @@ void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data)
                                     p_data->ble_multi_adv_disable.inst_id, p_ref, BTA_FAILURE);
     }
 }
+
+void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
+{
+    if (BTM_BleClearAdv(p_data->ble_clear_adv.p_clear_adv_cback) == FALSE) {
+        if (p_data->ble_clear_adv.p_clear_adv_cback) {
+            (*p_data->ble_clear_adv.p_clear_adv_cback)(BTA_FAILURE);
+        }
+    }
+}
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void bta_dm_ble_gap_read_phy(tBTA_DM_MSG *p_data)
 {

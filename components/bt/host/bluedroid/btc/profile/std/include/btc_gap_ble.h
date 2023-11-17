@@ -92,6 +92,9 @@ typedef enum {
     BTC_GAP_BLE_PERIODIC_ADV_SET_INFO_TRANS,
     BTC_GAP_BLE_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS,
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_CLEAR_ADV,
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
