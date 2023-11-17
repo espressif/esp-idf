@@ -256,6 +256,7 @@ void esp_sleep_periph_use_8m(bool use_or_not)
 static uint32_t get_power_down_flags(void);
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
 static void ext0_wakeup_prepare(void);
+static void IRAM_ATTR ext0_wakeup_clear(void);
 #endif
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
 static void ext1_wakeup_prepare(void);
@@ -634,6 +635,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
         ext0_wakeup_prepare();
+    } else {
+        ext0_wakeup_clear();
     }
 #endif
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
@@ -1474,6 +1477,12 @@ static void ext0_wakeup_prepare(void)
     rtcio_hal_function_select(rtc_gpio_num, RTCIO_LL_FUNC_RTC);
     rtcio_hal_input_enable(rtc_gpio_num);
 }
+
+static void ext0_wakeup_clear(void)
+{
+    rtcio_hal_ext0_clear_wakeup_pins();
+}
+
 #endif // SOC_PM_SUPPORT_EXT0_WAKEUP
 
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
