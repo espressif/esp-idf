@@ -774,7 +774,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif // CONFIG_BT_CONTROLLER_LOG_DUMP
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_log_init failed %d", ret);
-        goto modem_deint;
+        goto controller_init_err;
     }
 #endif // CONFIG_BT_CONTROLLER_LOG_ENABLED
 
@@ -806,12 +806,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
 free_controller:
     controller_sleep_deinit();
-    os_msys_deinit();
-modem_deint:
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+controller_init_err:
     ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    os_msys_deinit();
     ble_controller_deinit();
+modem_deint:
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -840,10 +841,10 @@ esp_err_t esp_bt_controller_deinit(void)
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 
-    ble_controller_deinit();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_log_deinit_async();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    ble_controller_deinit();
 
 #if CONFIG_BT_NIMBLE_ENABLED
     /* De-initialize default event queue */
