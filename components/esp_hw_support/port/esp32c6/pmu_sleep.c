@@ -264,7 +264,6 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
     pmu_ll_hp_clear_wakeup_intr_status(PMU_instance()->hal->dev);
     pmu_ll_hp_clear_reject_intr_status(PMU_instance()->hal->dev);
     pmu_ll_hp_clear_reject_cause(PMU_instance()->hal->dev);
-    pmu_ll_hp_clear_sw_intr_status(PMU_instance()->hal->dev);
 
     /* Start entry into sleep mode */
     pmu_ll_hp_set_sleep_enable(PMU_instance()->hal->dev);
