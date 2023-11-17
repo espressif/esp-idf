@@ -11,6 +11,7 @@
 - `esp_driver_spi` - 通用 SPI 驱动
 - `esp_driver_mcpwm` - 电机控制 PWM 驱动
 - `esp_driver_sdmmc` - SDMMC 驱动
+- `esp_driver_ana_cmpr` - 模拟比较器驱动
 
 为了兼容性，原来的 `driver` 组件仍然存在，并作为一个 “all-in-one" 的组件，将以上这些 `esp_driver_xyz` 组件注册成自己的公共依赖。换句话说，你无需修改既有项目的 CMake 文件，但是你现在多了一个途径去指定你项目依赖的具体的外设驱动。
 

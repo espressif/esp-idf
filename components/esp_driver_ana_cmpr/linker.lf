@@ -1,0 +1,7 @@
+[mapping:ana_cmpr_driver]
+archive: libesp_driver_ana_cmpr.a
+entries:
+    if ANA_CMPR_CTRL_FUNC_IN_IRAM = y:
+        ana_cmpr: ana_cmpr_set_internal_reference (noflash)
+        ana_cmpr: ana_cmpr_set_debounce (noflash)
+        ana_cmpr: ana_cmpr_set_cross_type (noflash)

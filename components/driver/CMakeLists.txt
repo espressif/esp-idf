@@ -10,7 +10,6 @@ set(srcs)
 # Always included headers
 set(includes "include"
              "deprecated"
-             "analog_comparator/include"
              "dac/include"
              "i2c/include"
              "i2s/include"
@@ -36,14 +35,6 @@ endif()
 
 if(CONFIG_SOC_ADC_DMA_SUPPORTED)
     list(APPEND srcs "deprecated/adc_dma_legacy.c")
-endif()
-
-# Analog comparator related source files
-if(CONFIG_SOC_ANA_CMPR_SUPPORTED)
-    list(APPEND srcs "analog_comparator/ana_cmpr.c")
-    if(CONFIG_SOC_ANA_CMPR_SUPPORT_ETM)
-        list(APPEND srcs "analog_comparator/ana_cmpr_etm.c")
-    endif()
 endif()
 
 # DAC related source files
@@ -192,7 +183,7 @@ else()
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
-                                    esp_driver_sdmmc
+                                    esp_driver_sdmmc esp_driver_ana_cmpr
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

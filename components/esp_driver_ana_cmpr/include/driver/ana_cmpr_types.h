@@ -105,7 +105,7 @@ typedef struct {
  *
  * @return Whether a high priority task has been waken up by this callback function
  */
-typedef bool (*ana_cmpr_cross_cb_t) (ana_cmpr_handle_t cmpr, const ana_cmpr_cross_event_data_t *edata, void *user_ctx);
+typedef bool (*ana_cmpr_cross_cb_t)(ana_cmpr_handle_t cmpr, const ana_cmpr_cross_event_data_t *edata, void *user_ctx);
 
 #ifdef __cplusplus
 }
