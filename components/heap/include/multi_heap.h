@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,6 +178,17 @@ typedef struct {
  * @param info Pointer to a structure to fill with heap metadata.
  */
 void multi_heap_get_info(multi_heap_handle_t heap, multi_heap_info_t *info);
+
+/**
+ * @brief Perform an aligned allocation from the provided offset
+ *
+ * @param heap The heap in which to perform the allocation
+ * @param size The size of the allocation
+ * @param alignment How the memory must be aligned
+ * @param offset The offset at which the alignment should start
+ * @return void* The ptr to the allocated memory
+ */
+void *multi_heap_aligned_alloc_offs(multi_heap_handle_t heap, size_t size, size_t alignment, size_t offset);
 
 #ifdef __cplusplus
 }
