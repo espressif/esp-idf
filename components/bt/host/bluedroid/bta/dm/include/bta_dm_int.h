@@ -1827,7 +1827,7 @@ extern void bta_dm_search_cancel_notify (tBTA_DM_MSG *p_data);
 extern void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG *p_data);
 extern void bta_dm_disc_rmt_name (tBTA_DM_MSG *p_data);
 extern tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr);
-void bta_dm_eir_update_uuid(UINT16 uuid16, BOOLEAN adding);
+void bta_dm_eir_update_uuid(tBT_UUID uuid, BOOLEAN adding);
 
 extern void bta_dm_enable_test_mode(tBTA_DM_MSG *p_data);
 extern void bta_dm_disable_test_mode(tBTA_DM_MSG *p_data);
