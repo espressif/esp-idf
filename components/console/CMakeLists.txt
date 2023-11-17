@@ -1,8 +1,14 @@
 idf_build_get_property(target IDF_TARGET)
 
+set(srcs "commands.c"
+         "esp_console_common.c"
+         "split_argv.c"
+         "linenoise/linenoise.c")
+
 if(${target} STREQUAL "linux")
-    return() # This component is currently not supported by the POSIX/Linux simulator, but we may support it in the
-             # future (TODO: IDF-8103)
+    list(APPEND srcs "esp_console_repl_linux.c")
+else()
+    list(APPEND srcs "esp_console_repl_chip.c")
 endif()
 
 set(argtable_srcs argtable3/arg_cmd.c
@@ -21,13 +27,21 @@ set(argtable_srcs argtable3/arg_cmd.c
                   argtable3/argtable3.c)
 
 
-idf_component_register(SRCS "commands.c"
-                            "esp_console_repl.c"
-                            "split_argv.c"
-                            "linenoise/linenoise.c"
+idf_component_register(SRCS ${srcs}
                             ${argtable_srcs}
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+                    PRIV_INCLUDE_DIRS private_include
                     REQUIRES vfs
                     PRIV_REQUIRES esp_driver_uart
                                   esp_driver_usb_serial_jtag
                     )
+
+if(${target} STREQUAL "linux")
+    # link bsd library for strlcpy
+    find_library(LIB_BSD bsd)
+    if(LIB_BSD)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
+    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
+    endif()
+endif()

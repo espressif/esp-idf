@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -52,16 +51,20 @@ def do_test_help_quit(dut: Dut) -> None:
 
 @pytest.mark.parametrize(
     'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
         pytest.param('target', marks=[pytest.mark.supported_targets, pytest.mark.generic]),
         pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
     ]
 )
 def test_console(dut: Dut, test_on: str) -> None:
-    dut.run_all_single_board_cases()
+    dut.expect_exact('Press ENTER to see the list of tests.')
+    dut.write('![ignore]')
+    dut.expect(r'\d{1} Tests 0 Failures 0 Ignored', timeout=120)
 
 
 @pytest.mark.parametrize(
     'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
         pytest.param('target', marks=[pytest.mark.supported_targets, pytest.mark.generic]),
         pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
     ]
@@ -72,6 +75,7 @@ def test_console_repl(dut: Dut, test_on: str) -> None:
 
 @pytest.mark.parametrize(
     'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
         pytest.param('target', marks=[pytest.mark.supported_targets, pytest.mark.generic]),
         pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
     ]
@@ -82,6 +86,7 @@ def test_console_help_sorted_registration(dut: Dut, test_on: str) -> None:
 
 @pytest.mark.parametrize(
     'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
         pytest.param('target', marks=[pytest.mark.supported_targets, pytest.mark.generic]),
         pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
     ]
@@ -92,6 +97,7 @@ def test_console_help_reverse_registration(dut: Dut, test_on: str) -> None:
 
 @pytest.mark.parametrize(
     'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
         pytest.param('target', marks=[pytest.mark.supported_targets, pytest.mark.generic]),
         pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
     ]

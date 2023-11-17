@@ -105,6 +105,7 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdio_ext.h>
 #include <errno.h>
@@ -114,6 +115,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/fcntl.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <assert.h>
 #include "linenoise.h"
@@ -237,7 +239,10 @@ static int getCursorPosition(void) {
     /* Send the command to the TTY on the other end of the UART.
      * Let's use unistd's write function. Thus, data sent through it are raw
      * reducing the overhead compared to using fputs, fprintf, etc... */
-    write(out_fd, get_cursor_cmd, sizeof(get_cursor_cmd));
+    int num_written = write(out_fd, get_cursor_cmd, sizeof(get_cursor_cmd));
+    if (num_written != sizeof(get_cursor_cmd)) {
+        return -1;
+    }
 
     /* For USB CDC, it is required to flush the output. */
     flushWrite();
