@@ -3,11 +3,11 @@
 Secure Boot V2
 ==============
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6 or esp32h2 or esp32p4="RSA-PSS or ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS or ECDSA", esp32h2="RSA-PSS or ECDSA", esp32p4="RSA-PSS or ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6 or esp32h2 or esp32p4="RSA-3072, ECDSA-256, or ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6="RSA-3072, ECDSA-256, or ECDSA-192", esp32h2="RSA-3072, ECDSA-256, or ECDSA-192", esp32p4="RSA-3072, ECDSA-256, or ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6 or esp32h2 or esp32p4="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu.", esp32h2="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu.", esp32p4="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="(ECO 3 onwards)", esp32c3="(ECO 3 onwards)"}
 
