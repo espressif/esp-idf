@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 #include "soc.h"
+#define REG_SPI_BASE(i)     (DR_REG_SPI1_BASE + (((i)>1) ? (((i)* 0x1000) + 0x20000) : (((~(i)) & 1)* 0x1000 )))
 
 #define SPI_CMD_REG(i)          (REG_SPI_BASE(i) + 0x0)
 /* SPI_USR : R/W/SC ;bitpos:[24] ;default: 1'b0 ; */
