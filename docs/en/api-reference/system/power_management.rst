@@ -142,7 +142,6 @@ Light-sleep Peripheral Power Down
     - SYSTIMER
 
     The following peripherals are not yet supported:
-    - GDMA
     - ETM
     - TIMG1
     - ASSIST_DEBUG
