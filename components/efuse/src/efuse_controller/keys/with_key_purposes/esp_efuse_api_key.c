@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -315,6 +315,12 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
             ESP_EFUSE_CHK(esp_efuse_set_key_dis_read(block));
         }
+#if SOC_EFUSE_ECDSA_USE_HARDWARE_K
+        if (purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY) {
+            // Permanently enable the hardware TRNG supplied k mode (most secure mode)
+            ESP_EFUSE_CHK(esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K));
+        }
+#endif
         ESP_EFUSE_CHK(esp_efuse_set_key_purpose(block, purpose));
         ESP_EFUSE_CHK(esp_efuse_set_keypurpose_dis_write(block));
         return esp_efuse_batch_write_commit();
