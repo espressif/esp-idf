@@ -758,6 +758,12 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     }
 #endif
 
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+    if (config->transport) {
+        client->transport = config->transport;
+    }
+#endif
+
     if (config->client_key_pem) {
         if (!config->client_key_len) {
             esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
@@ -1398,8 +1404,15 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
     }
 
     if (client->state < HTTP_STATE_CONNECTED) {
-        ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
-        client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+        // If the custom transport is enabled and defined, we skip the selection of appropriate transport from the list
+        // based on the scheme, since we already have the transport
+        if (!client->transport)
+#endif
+        {
+            ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
+            client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+        }
 
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
         if (client->session_ticket_state == SESSION_TICKET_SAVED) {
