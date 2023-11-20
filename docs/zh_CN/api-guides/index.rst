@@ -43,3 +43,4 @@ API 指南
    :SOC_WIFI_SUPPORTED: wifi-security
    :SOC_SUPPORT_COEXISTENCE: coexist
    reproducible-builds
+   low-power-mode
