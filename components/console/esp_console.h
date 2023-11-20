@@ -157,6 +157,15 @@ esp_err_t esp_console_deinit(void);
 typedef int (*esp_console_cmd_func_t)(int argc, char **argv);
 
 /**
+ * @brief Console command main function
+ * @param context a user context given at invocation.
+ * @param argc number of arguments
+ * @param argv array with argc entries, each pointing to a zero-terminated string argument
+ * @return console command return code, 0 indicates "success"
+ */
+typedef int (*esp_console_cmd_func_context_t)(void *context, int argc, char **argv);
+
+/**
  * @brief Console command description
  */
 typedef struct {
@@ -188,6 +197,10 @@ typedef struct {
      * Only used for the duration of esp_console_cmd_register call.
      */
     void *argtable;
+    /**
+     * Pointer to a context aware function which implements the command.
+     */
+    esp_console_cmd_func_context_t func_context;
 } esp_console_cmd_t;
 
 /**
@@ -199,6 +212,16 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG if command description includes invalid arguments
  */
 esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd);
+
+/**
+ * @brief Register context for a command
+ * @param cmd pointer to the command name
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if command was not found
+ *      - ESP_ERR_INVALID_ARG if invalid arguments
+ */
+esp_err_t esp_console_cmd_set_context(const char *cmd, void *context);
 
 /**
  * @brief Run command line
