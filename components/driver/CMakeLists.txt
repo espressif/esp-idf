@@ -10,7 +10,6 @@ set(srcs)
 # Always included headers
 set(includes "include"
              "deprecated"
-             "dac/include"
              "i2c/include"
              "ledc/include"
              "parlio/include"
@@ -36,12 +35,7 @@ endif()
 
 # DAC related source files
 if(CONFIG_SOC_DAC_SUPPORTED)
-    list(APPEND srcs "dac/dac_oneshot.c"
-                     "dac/dac_cosine.c"
-                     "dac/dac_continuous.c"
-                     "dac/dac_common.c"
-                     "dac/${target}/dac_dma.c"
-                     "deprecated/dac_common_legacy.c"
+    list(APPEND srcs "deprecated/dac_common_legacy.c"
                      "deprecated/${target}/dac_legacy.c")
 endif()
 
@@ -159,6 +153,7 @@ else()
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
                                     esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
+                                    esp_driver_dac
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

@@ -59,7 +59,6 @@ typedef struct {
     dac_continuous_channel_mode_t    chan_mode;      /*!< The channel mode of continuous mode, only take effect when multiple channels enabled, depends converting the buffer alternately or simultaneously */
 } dac_continuous_config_t;
 
-
 /**
  * @brief Event structure used in DAC event queue
  */
@@ -95,7 +94,6 @@ typedef struct {
                                              *   The event data will be NULL in this callback.
                                              */
 } dac_event_callbacks_t;
-
 
 /**
  * @brief Allocate new DAC channels in continuous mode

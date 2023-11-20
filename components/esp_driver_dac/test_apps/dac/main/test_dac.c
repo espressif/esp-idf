@@ -39,11 +39,15 @@ TEST_CASE("DAC_API_basic_logic_test", "[dac]")
 {
     /* Constant API test */
     dac_oneshot_handle_t oneshot_chan0_handle;
-    TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t){.chan_id = DAC_CHAN_0}, &oneshot_chan0_handle));
+    TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t) {
+        .chan_id = DAC_CHAN_0
+    }, &oneshot_chan0_handle));
     TEST_ESP_OK(dac_oneshot_output_voltage(oneshot_chan0_handle, 128));
     TEST_ESP_OK(dac_oneshot_del_channel(oneshot_chan0_handle));
     dac_oneshot_handle_t oneshot_chan1_handle;
-    TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t){.chan_id = DAC_CHAN_1}, &oneshot_chan1_handle));
+    TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t) {
+        .chan_id = DAC_CHAN_1
+    }, &oneshot_chan1_handle));
     TEST_ESP_OK(dac_oneshot_output_voltage(oneshot_chan1_handle, 100));
     TEST_ESP_OK(dac_oneshot_del_channel(oneshot_chan1_handle));
 

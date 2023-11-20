@@ -53,7 +53,9 @@ static bool IRAM_ATTR test_dac_on_convert_done_cb(dac_continuous_handle_t handle
 TEST_CASE("DAC_IRAM_safe_test", "[dac]")
 {
     dac_oneshot_handle_t oneshot_handle;
-    TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t){.chan_id = DAC_CHAN_0}, &oneshot_handle));
+    TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t) {
+        .chan_id = DAC_CHAN_0
+    }, &oneshot_handle));
 
     /* Test direct voltage setting safety */
     unity_utils_run_cache_disable_stub(test_dac_direct_set_safety, oneshot_handle);

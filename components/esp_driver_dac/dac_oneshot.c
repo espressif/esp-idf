@@ -19,7 +19,7 @@
 #include "esp_pm.h"
 #endif
 
- struct dac_oneshot_s {
+struct dac_oneshot_s {
     dac_oneshot_config_t cfg;       /*!< Oneshot mode configurations */
 };
 

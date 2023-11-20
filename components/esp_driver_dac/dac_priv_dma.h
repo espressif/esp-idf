@@ -9,7 +9,6 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

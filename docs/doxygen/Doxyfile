@@ -73,10 +73,6 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/dac/include/driver/dac_continuous.h \
-    $(PROJECT_PATH)/components/driver/dac/include/driver/dac_cosine.h \
-    $(PROJECT_PATH)/components/driver/dac/include/driver/dac_oneshot.h \
-    $(PROJECT_PATH)/components/driver/dac/include/driver/dac_types.h \
     $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_master.h \
     $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_slave.h \
     $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_types.h \
@@ -110,6 +106,10 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_etm.h \
     $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_types.h \
+    $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_continuous.h \
+    $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_cosine.h \
+    $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_oneshot.h \
+    $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_types.h \
     $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/dedic_gpio.h \
     $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/gpio.h \
     $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/gpio_etm.h \

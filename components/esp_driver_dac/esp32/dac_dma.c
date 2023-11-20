@@ -178,7 +178,7 @@ static void s_dac_dma_periph_reset(void)
 
 static void s_dac_dma_periph_start(void)
 {
-    i2s_ll_enable_dma(s_ddp->periph_dev,true);
+    i2s_ll_enable_dma(s_ddp->periph_dev, true);
     i2s_ll_tx_enable_intr(s_ddp->periph_dev);
     i2s_ll_tx_start(s_ddp->periph_dev);
     i2s_ll_dma_enable_eof_on_fifo_empty(s_ddp->periph_dev, true);
