@@ -12,7 +12,7 @@ stages:
 workflow:
   rules:
     # Disable those non-protected push triggered pipelines
-    - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && $CI_PIPELINE_SOURCE == "push"'
       when: never
     # when running merged result pipelines, it would create a temp commit id. use $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA instead of $CI_COMMIT_SHA.
     # Please use PIPELINE_COMMIT_SHA at all places that require a commit sha
@@ -62,7 +62,7 @@ variables:
   CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis:v4.4-1-2"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:3"
 
-  # target test config file, used by assign test job
+  # target test config file, used by scan test and assign test job
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/.gitlab/ci/target-test.yml"
 
   # target test repo parameters
@@ -140,6 +140,7 @@ include:
   - '.gitlab/ci/pre_check.yml'
   - '.gitlab/ci/build.yml'
   - '.gitlab/ci/assign-test.yml'
+  - '.gitlab/ci/integration_test.yml'
   - '.gitlab/ci/host-test.yml'
   - '.gitlab/ci/target-test.yml'
   - '.gitlab/ci/deploy.yml'

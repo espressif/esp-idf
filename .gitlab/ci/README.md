@@ -48,7 +48,7 @@
 - `example_test[_esp32/esp32s2/...]`
 - `fuzzer_test`
 - `host_test`
-- `integration_test[_wifi/ble]`
+- `integration_test`
 - `iperf_stress_test`
 - `macos`
 - `macos_test`
@@ -136,10 +136,11 @@ check if there's a suitable `.if-<if-anchor-you-need>` anchor
 1. if there is, create a rule following [`rules` Template Naming Rules](#rules-template-naming-rules).For detail information, please refer to [GitLab Documentation `rules-if`](https://docs.gitlab.com/ee/ci/yaml/README.html#rulesif). Here's an example.
 
     ```yaml
-    .rules:dev:
+    .rules:patterns:python-files:
       rules:
-        - <<: *if-trigger
+        - <<: *if-protected
         - <<: *if-dev-push
+          changes: *patterns-python-files
     ```
 
 2. if there isn't
