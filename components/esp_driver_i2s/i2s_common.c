@@ -32,7 +32,6 @@
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #include "hal/adc_ll.h"
-#include "driver/adc_i2s_legacy.h"
 #endif
 #if SOC_I2S_SUPPORTS_APLL
 #include "hal/clk_tree_ll.h"
@@ -70,7 +69,8 @@
 static const char *TAG = "i2s_common";
 
 __attribute__((always_inline))
-inline void *i2s_dma_calloc(size_t num, size_t size, uint32_t caps, size_t *actual_size) {
+inline void *i2s_dma_calloc(size_t num, size_t size, uint32_t caps, size_t *actual_size)
+{
     void *ptr = NULL;
     esp_dma_calloc(num, size, caps, &ptr, actual_size);
     return ptr;
@@ -205,7 +205,7 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
         portEXIT_CRITICAL(&g_i2s.spinlock);
 #if SOC_I2S_SUPPORTS_ADC_DAC
         if (id == I2S_NUM_0) {
-            adc_ll_digi_set_data_source(ADC_I2S_DATA_SRC_IO_SIG);
+            adc_ll_digi_set_data_source(0);
         }
 #endif
     } else {
@@ -703,12 +703,12 @@ esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag)
     /* Initialize I2S module interrupt */
     if (handle->dir == I2S_DIR_TX) {
         esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
-                                    (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev), I2S_LL_TX_EVENT_MASK,
-                                    i2s_dma_tx_callback, handle, &handle->dma.dma_chan);
+                                  (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev), I2S_LL_TX_EVENT_MASK,
+                                  i2s_dma_tx_callback, handle, &handle->dma.dma_chan);
     } else {
         esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
-                                    (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev), I2S_LL_RX_EVENT_MASK,
-                                    i2s_dma_rx_callback, handle, &handle->dma.dma_chan);
+                                  (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev), I2S_LL_RX_EVENT_MASK,
+                                  i2s_dma_rx_callback, handle, &handle->dma.dma_chan);
     }
     /* Start DMA */
     i2s_ll_enable_dma(handle->controller->hal.dev, true);
@@ -957,7 +957,7 @@ esp_err_t i2s_channel_get_info(i2s_chan_handle_t handle, i2s_chan_info_t *chan_i
     for (int i = 0; i < SOC_I2S_NUM; i++) {
         if (g_i2s.controller[i] != NULL) {
             if (g_i2s.controller[i]->tx_chan == handle ||
-                g_i2s.controller[i]->rx_chan == handle) {
+                    g_i2s.controller[i]->rx_chan == handle) {
                 goto found;
             }
         }
@@ -983,7 +983,6 @@ found:
 
     return ESP_OK;
 }
-
 
 esp_err_t i2s_channel_enable(i2s_chan_handle_t handle)
 {
@@ -1064,7 +1063,7 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
     /* Loop until no bytes in source buff remain or the descriptors are full */
     while (remain_bytes) {
         size_t bytes_can_load = remain_bytes > (tx_handle->dma.buf_size - tx_handle->dma.rw_pos) ?
-                            (tx_handle->dma.buf_size - tx_handle->dma.rw_pos) : remain_bytes;
+                                (tx_handle->dma.buf_size - tx_handle->dma.rw_pos) : remain_bytes;
         /* When all the descriptors has loaded data, no more bytes can be loaded, break directly */
         if (bytes_can_load == 0) {
             break;
@@ -1085,7 +1084,7 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
              * will remain at the end of the last dma buffer */
             if (STAILQ_NEXT((lldesc_t *)tx_handle->dma.curr_desc, qe) != tx_handle->dma.desc[0]) {
                 tx_handle->dma.curr_desc = STAILQ_NEXT((lldesc_t *)tx_handle->dma.curr_desc, qe);
-                tx_handle->dma.curr_ptr =  (void *)(((lldesc_t *)tx_handle->dma.curr_desc)->buf);
+                tx_handle->dma.curr_ptr = (void *)(((lldesc_t *)tx_handle->dma.curr_desc)->buf);
                 tx_handle->dma.rw_pos = 0;
             } else {
                 break;

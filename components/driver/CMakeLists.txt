@@ -12,7 +12,6 @@ set(includes "include"
              "deprecated"
              "dac/include"
              "i2c/include"
-             "i2s/include"
              "ledc/include"
              "parlio/include"
              "rmt/include"
@@ -73,16 +72,7 @@ endif()
 
 # I2S related source files
 if(CONFIG_SOC_I2S_SUPPORTED)
-    list(APPEND srcs "i2s/i2s_common.c"
-                     "i2s/i2s_platform.c"
-                     "i2s/i2s_std.c"
-                     "deprecated/i2s_legacy.c")
-    if(CONFIG_SOC_I2S_SUPPORTS_PDM)
-        list(APPEND srcs "i2s/i2s_pdm.c")
-    endif()
-    if(CONFIG_SOC_I2S_SUPPORTS_TDM)
-        list(APPEND srcs "i2s/i2s_tdm.c")
-    endif()
+    list(APPEND srcs "deprecated/i2s_legacy.c")
 endif()
 
 # LEDC related source files
@@ -183,7 +173,7 @@ else()
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
-                                    esp_driver_sdmmc esp_driver_ana_cmpr
+                                    esp_driver_sdmmc esp_driver_ana_cmpr esp_driver_i2s
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

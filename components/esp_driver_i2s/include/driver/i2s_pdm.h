@@ -66,8 +66,6 @@ extern "C" {
     .bclk_div = 8, \
 }
 
-
-
 /**
  * @brief I2S slot configuration for PDM RX mode
  */
@@ -190,9 +188,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_slot(i2s_chan_handle_t handle, const i2s_p
  */
 esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_pdm_rx_gpio_config_t *gpio_cfg);
 
-
 #endif // SOC_I2S_SUPPORTS_PDM_RX
-
 
 #if SOC_I2S_SUPPORTS_PDM_TX
 #if SOC_I2S_HW_VERSION_2

@@ -297,7 +297,7 @@ The clock config helper macro is:
 
 - :c:macro:`I2S_STD_CLK_DEFAULT_CONFIG`
 
-Please refer to :ref:`i2s-api-reference-i2s_std` for  information about STD API. And for more details, please refer to :component_file:`driver/i2s/include/driver/i2s_std.h`.
+Please refer to :ref:`i2s-api-reference-i2s_std` for  information about STD API. And for more details, please refer to :component_file:`esp_driver_i2s/include/driver/i2s_std.h`.
 
 STD TX Mode
 ~~~~~~~~~~~
@@ -551,7 +551,7 @@ Here is the table of the data received in the buffer with different :cpp:member:
 
     - :c:macro:`I2S_PDM_TX_CLK_DEFAULT_CONFIG`
 
-    Please refer to :ref:`i2s-api-reference-i2s_pdm` for information about PDM TX API. And for more details, please refer to :component_file:`driver/i2s/include/driver/i2s_pdm.h`.
+    Please refer to :ref:`i2s-api-reference-i2s_pdm` for information about PDM TX API. And for more details, please refer to :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h`.
 
     The PDM data width is fixed to 16-bit. When the data in an ``int16_t`` writing buffer is:
 
@@ -647,7 +647,7 @@ Here is the table of the data received in the buffer with different :cpp:member:
 
     - :c:macro:`I2S_PDM_RX_CLK_DEFAULT_CONFIG`
 
-    Please refer to :ref:`i2s-api-reference-i2s_pdm` for information about PDM RX API. And for more details, please refer to :component_file:`driver/i2s/include/driver/i2s_pdm.h`.
+    Please refer to :ref:`i2s-api-reference-i2s_pdm` for information about PDM RX API. And for more details, please refer to :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h`.
 
     The PDM data width is fixed to 16-bit. When the data on the line (The PDM format on the line is transferred to PCM format for easier comprehension) is:
 
@@ -733,7 +733,7 @@ Here is the table of the data received in the buffer with different :cpp:member:
 
     - :c:macro:`I2S_TDM_CLK_DEFAULT_CONFIG`
 
-    Please refer to :ref:`i2s-api-reference-i2s_tdm` for information about TDM API. And for more details, please refer to :component_file:`driver/i2s/include/driver/i2s_tdm.h`.
+    Please refer to :ref:`i2s-api-reference-i2s_tdm` for information about TDM API. And for more details, please refer to :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h`.
 
     .. note::
 
@@ -1070,5 +1070,5 @@ I2S Driver
 I2S Types
 ^^^^^^^^^
 
-.. include-build-file:: inc/components/driver/i2s/include/driver/i2s_types.inc
+.. include-build-file:: inc/components/esp_driver_i2s/include/driver/i2s_types.inc
 .. include-build-file:: inc/components/hal/include/hal/i2s_types.inc

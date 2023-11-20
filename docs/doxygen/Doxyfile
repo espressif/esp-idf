@@ -80,11 +80,6 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_master.h \
     $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_slave.h \
     $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c_types.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_common.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_pdm.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_std.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_tdm.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_types.h \
     $(PROJECT_PATH)/components/driver/ledc/include/driver/ledc.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
@@ -142,6 +137,11 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_sync.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_timer.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_types.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_common.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_pdm.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_std.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_tdm.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_types.h \
     $(PROJECT_PATH)/components/esp_driver_pcnt/include/driver/pulse_cnt.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \

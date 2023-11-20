@@ -147,8 +147,7 @@ static esp_err_t i2s_std_set_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_c
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)(handle->mode_info);
 
     /* Loopback if dout = din */
-    if (gpio_cfg->dout != -1 &&
-        gpio_cfg->dout == gpio_cfg->din) {
+    if (gpio_cfg->dout != -1 && gpio_cfg->dout == gpio_cfg->din) {
         i2s_gpio_loopback_set(gpio_cfg->dout, i2s_periph_signal[id].data_out_sig, i2s_periph_signal[id].data_in_sig);
     } else if (handle->dir == I2S_DIR_TX) {
         /* Set data output GPIO */
