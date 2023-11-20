@@ -11,16 +11,17 @@
 #include <sys/lock.h>
 #include <sys/fcntl.h>
 #include <sys/param.h>
+#include "sdkconfig.h"
+#include "esp_attr.h"
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
-#include "esp_attr.h"
-#include "soc/uart_periph.h"
-#include "driver/uart.h"
-#include "sdkconfig.h"
-#include "driver/uart_select.h"
+#include "esp_vfs_private.h"
 #include "esp_rom_uart.h"
-#include "soc/soc_caps.h"
+#include "driver/uart.h"
+#include "driver/uart_select.h"
 #include "hal/uart_ll.h"
+#include "soc/soc_caps.h"
+#include "soc/uart_periph.h"
 
 #define UART_NUM SOC_UART_HP_NUM
 
@@ -365,7 +366,7 @@ static esp_err_t register_select(uart_select_args_t *args)
         portENTER_CRITICAL(&s_registered_select_lock);
         const int new_size = s_registered_select_num + 1;
         uart_select_args_t **new_selects;
-        if ((new_selects = realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *))) == NULL) {
+        if ((new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), VFS_MALLOC_FLAGS)) == NULL) {
             ret = ESP_ERR_NO_MEM;
         } else {
             s_registered_selects = new_selects;
@@ -391,7 +392,7 @@ static esp_err_t unregister_select(uart_select_args_t *args)
                 // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
                 // last item.
                 s_registered_selects[i] = s_registered_selects[new_size];
-                s_registered_selects = realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *));
+                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), VFS_MALLOC_FLAGS);
                 // Shrinking a buffer with realloc is guaranteed to succeed.
                 s_registered_select_num = new_size;
                 ret = ESP_OK;
@@ -448,7 +449,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
         }
     }
 
-    uart_select_args_t *args = malloc(sizeof(uart_select_args_t));
+    uart_select_args_t *args = heap_caps_malloc(sizeof(uart_select_args_t), VFS_MALLOC_FLAGS);
 
     if (args == NULL) {
         return ESP_ERR_NO_MEM;
