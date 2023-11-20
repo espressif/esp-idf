@@ -286,14 +286,14 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
 #define ADC2_SLEEP_TEST_CHAN          ADC_CHANNEL_0
 #endif
 
-TEST_CASE("test ADC1 Single Read with Light Sleep", "[adc][manul][ignore]")
+TEST_CASE("test ADC1 Single Read with Light Sleep", "[adc]")
 {
     s_adc_oneshot_with_sleep(ADC_UNIT_1, ADC1_SLEEP_TEST_CHAN);
 }
 
 #if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
 //ESP32C3 ADC2 oneshot mode is not supported anymore
-TEST_CASE("test ADC2 Single Read with Light Sleep", "[adc][manul][ignore]")
+TEST_CASE("test ADC2 Single Read with Light Sleep", "[adc]")
 {
     s_adc_oneshot_with_sleep(ADC_UNIT_2, ADC2_SLEEP_TEST_CHAN);
 }
