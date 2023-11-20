@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -369,6 +369,15 @@ void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char
     ssl->cfg.clientcert_pem_buf = (void *)data;
     ssl->cfg.clientcert_pem_bytes = len + 1;
 }
+
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+void esp_transport_ssl_set_client_key_ecdsa_peripheral(esp_transport_handle_t t, uint8_t ecdsa_efuse_blk)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.use_ecdsa_peripheral = true;
+    ssl->cfg.ecdsa_key_efuse_blk = ecdsa_efuse_blk;
+}
+#endif
 
 void esp_transport_ssl_set_client_cert_data_der(esp_transport_handle_t t, const char *data, int len)
 {
