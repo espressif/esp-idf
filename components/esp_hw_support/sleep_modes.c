@@ -1483,7 +1483,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
         return ESP_ERR_INVALID_ARG;
     }
     // Reset all EXT1 configs
-    esp_sleep_clear_ext1_wakeup_io(0);
+    esp_sleep_disable_ext1_wakeup_io(0);
 
     return esp_sleep_enable_ext1_wakeup_io(io_mask, level_mode);
 }
@@ -1533,7 +1533,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup_io(uint64_t io_mask, esp_sleep_ext1_wakeu
     return ESP_OK;
 }
 
-esp_err_t esp_sleep_clear_ext1_wakeup_io(uint64_t io_mask)
+esp_err_t esp_sleep_disable_ext1_wakeup_io(uint64_t io_mask)
 {
     if (io_mask == 0) {
         s_config.ext1_rtc_gpio_mask = 0;

@@ -250,7 +250,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
     可调用 :cpp:func:`esp_sleep_enable_ext1_wakeup_io` 函数可用于增加 ext1 唤醒 IO 并设置相应的唤醒电平。
 
-    可调用 :cpp:func:`esp_sleep_clear_ext1_wakeup_io` 函数可用于移除 ext1 唤醒 IO。
+    可调用 :cpp:func:`esp_sleep_disable_ext1_wakeup_io` 函数可用于移除 ext1 唤醒 IO。
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 

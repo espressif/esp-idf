@@ -250,7 +250,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
     :cpp:func:`esp_sleep_enable_ext1_wakeup_io` function can be used to append ext1 wakeup IO and set corresponding wakeup level.
 
-    :cpp:func:`esp_sleep_clear_ext1_wakeup_io` function can be used to remove ext1 wakeup IO.
+    :cpp:func:`esp_sleep_disable_ext1_wakeup_io` function can be used to remove ext1 wakeup IO.
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 
