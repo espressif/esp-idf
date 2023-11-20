@@ -67,6 +67,12 @@ These third party libraries can be included into the application (firmware) prod
 
 * `SEGGER SystemView`_ target-side library, Copyright (c) 1995-2021 SEGGER Microcontroller GmbH, is licensed under BSD 1-clause license.
 
+* `protobuf-c`_ Protocol Buffers implementation in C, Copyright (c) 2008-2022, Dave Benson and the protobuf-c authors. For details please check :component_file:`LICENSE file <protobuf-c/protobuf-c/LICENSE>`.
+
+* `CMock`_ Mock/stub generator for C, Copyright (c) 2007-14 Mike Karlesky, Mark VanderVoord, Greg Williams, is licensed under MIT license as described in :component_file:`LICENSE file <cmock/CMock/LICENSE.txt>`.
+
+* `Unity`_ Simple Unit Testing library, Copyright (c) <year> 2007-23 Mike Karlesky, Mark VanderVoord, Greg Williams, is licensed under MIT license as described in :component_file:`LICENSE file <unity/unity/docs/license.txt>`.
+
 Documentation
 -------------
 
@@ -165,6 +171,9 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
 .. _Mbed TLS: https://github.com/Mbed-TLS/mbedtls
 .. _spiffs: https://github.com/pellepl/spiffs
+.. _CMock: https://github.com/ThrowTheSwitch/CMock
+.. _protobuf-c: https://github.com/protobuf-c/protobuf-c
+.. _Unity: https://github.com/ThrowTheSwitch/Unity
 .. _asio: https://github.com/chriskohlhoff/asio
 .. _mqtt: https://github.com/espressif/esp-mqtt
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
