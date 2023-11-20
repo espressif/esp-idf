@@ -1,14 +1,21 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_vfs.h"
 #include "esp_vfs_common.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if CONFIG_VFS_SELECT_IN_RAM
+#define VFS_MALLOC_FLAGS MALLOC_CAP_INTERNAL
+#else
+#define VFS_MALLOC_FLAGS MALLOC_CAP_DEFAULT
 #endif
 
 typedef struct vfs_entry_ {
