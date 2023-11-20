@@ -71,26 +71,19 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 /**
  * Register the shared buffer area of the last memory block into the heap during heap initialization
  */
-#define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
+#define APP_USABLE_DIRAM_END    (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE) // 0x4ff3cfc0 - 0x2000 = 0x4ff3afc0
+#define STARTUP_DATA_SIZE      (SOC_DRAM_HIGH - CONFIG_CACHE_L2_CACHE_SIZE - APP_USABLE_DIRAM_END) // 0x4ffc0000 - 0x20000/0x40000/0x80000 - 0x4ff3afc0 = 0x65040 / 0x45040 / 0x5040
 
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_LOW,   SOC_EXTRAM_SIZE,    SOC_MEMORY_TYPE_SPIRAM, 0,             false}, //PSRAM, if available
+    { SOC_EXTRAM_LOW,       SOC_EXTRAM_SIZE,                        SOC_MEMORY_TYPE_SPIRAM, 0,                      false}, //PSRAM, if available
 #endif
-    // base 192k is always avaible, even if we config l2 cache size to 512k
-    { 0x4ff00000,       0x30000,            SOC_MEMORY_TYPE_L2MEM,  0x4ff00000,    false},
-    // 64k for rom startup stack
-    { 0x4ff30000,       0x10000,            SOC_MEMORY_TYPE_L2MEM,  0x4ff30000,    true},
-#if CONFIG_ESP32P4_L2_CACHE_256KB // 768-256 = 512k avaible for l2 memory, add extra 256k
-    { 0x4ff40000,       0x40000,            SOC_MEMORY_TYPE_L2MEM,  0x4ff40000,    false},
-#endif
-#if CONFIG_ESP32P4_L2_CACHE_128KB // 768 - 128 = 640k avaible for l2 memory, add extra 384k
-    { 0x4ff40000,       0x60000,            SOC_MEMORY_TYPE_L2MEM,  0x4ff40000,    false},
-#endif
+    { SOC_DRAM_LOW,         APP_USABLE_DIRAM_END - SOC_DRAM_LOW,    SOC_MEMORY_TYPE_L2MEM,  SOC_IRAM_LOW,           false},
+    { APP_USABLE_DIRAM_END, STARTUP_DATA_SIZE,                      SOC_MEMORY_TYPE_L2MEM,  APP_USABLE_DIRAM_END,   true},
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50108000,       0x8000,             SOC_MEMORY_TYPE_RTCRAM, 0,             false}, //LPRAM
+    { 0x50108000,           0x8000,                                 SOC_MEMORY_TYPE_RTCRAM, 0,                      false}, //LPRAM
 #endif
-    { 0x30100000,       0x2000,             SOC_MEMORY_TYPE_TCM,    0,             false},
+    { 0x30100000,           0x2000,                                 SOC_MEMORY_TYPE_TCM,    0,                      false},
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
@@ -98,6 +91,7 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_m
 
 extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
 extern int _tcm_text_start, _tcm_data_end;
+extern int _rtc_reserved_start, _rtc_reserved_end;
 
 /**
  * Reserved memory regions.
@@ -118,6 +112,7 @@ SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH, extram_region);
 #endif
 
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-// TODO: IDF-6019 check reserved lp mem region
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
 #endif
+
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);
