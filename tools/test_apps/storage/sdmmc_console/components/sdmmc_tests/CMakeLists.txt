@@ -3,8 +3,7 @@ idf_component_register(
         sdmmc_test_cd_wp_common.c
         sdmmc_test_rw_common.c
      PRIV_REQUIRES
-          sdmmc esp_driver_sdmmc sdmmc_test_board esp_timer unity test_utils
-          driver # driver will be replaced with esp_driver_sdspi later
+          sdmmc esp_driver_sdmmc esp_driver_sdspi sdmmc_test_board esp_timer unity test_utils
      WHOLE_ARCHIVE TRUE
 )
 

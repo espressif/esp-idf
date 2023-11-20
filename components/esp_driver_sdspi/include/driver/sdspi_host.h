@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
-#include "driver/sdmmc_types.h"
+#include "sd_protocol_types.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 

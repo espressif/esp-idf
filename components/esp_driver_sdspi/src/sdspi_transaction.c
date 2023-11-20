@@ -8,9 +8,8 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "sys/lock.h"
-#include "driver/sdmmc_types.h"
-#include "driver/sdmmc_defs.h"
-#include "driver/sdmmc_types.h"
+#include "sd_protocol_defs.h"
+#include "sd_protocol_types.h"
 #include "sdspi_private.h"
 #include "sdspi_crc.h"
 

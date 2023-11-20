@@ -13,7 +13,7 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "driver/gpio.h"
-#include "driver/sdmmc_defs.h"
+#include "sd_protocol_defs.h"
 #include "driver/sdspi_host.h"
 #include "sdspi_private.h"
 #include "sdspi_crc.h"
