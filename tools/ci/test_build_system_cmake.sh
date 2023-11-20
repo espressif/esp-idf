@@ -1027,6 +1027,15 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     rm -f sdkconfig.defaults
     rm -f sdkconfig
 
+    print_status "Can build with custom CMAKE_EXECUTABLE_SUFFIX set"
+    clean_build_dir
+    # Backup original project CMakeLists.txt
+    cp CMakeLists.txt CMakeLists.txt.bak
+    echo "set(CMAKE_EXECUTABLE_SUFFIX_CXX \".ext\")" >> CMakeLists.txt
+    idf.py build || failure "Failed to set custom CMAKE_EXECUTABLE_SUFFIX_CXX"
+    # Restore original CMakeLists.txt
+    mv CMakeLists.txt.bak CMakeLists.txt
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
