@@ -266,11 +266,6 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  */
 #define rtcio_hal_ext0_set_wakeup_pin(rtcio_num, level)     rtcio_ll_ext0_set_wakeup_pin(rtcio_num, level)
 
-/**
- * Clear ext0 wakeup trigger.
- */
-#define rtcio_hal_ext0_clear_wakeup_pins()     rtcio_ll_ext0_clear_wakeup_pins()
-
 #endif
 
 #if SOC_RTCIO_HOLD_SUPPORTED && SOC_RTCIO_INPUT_OUTPUT_SUPPORTED

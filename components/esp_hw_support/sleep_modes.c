@@ -256,11 +256,9 @@ void esp_sleep_periph_use_8m(bool use_or_not)
 static uint32_t get_power_down_flags(void);
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
 static void ext0_wakeup_prepare(void);
-static void IRAM_ATTR ext0_wakeup_clear(void);
 #endif
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
 static void ext1_wakeup_prepare(void);
-static void IRAM_ATTR ext1_wakeup_clear(void);
 #endif
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -635,16 +633,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
         ext0_wakeup_prepare();
-    } else {
-        ext0_wakeup_clear();
     }
+    // for !(s_config.wakeup_triggers & RTC_EXT0_TRIG_EN), ext0 wakeup will be turned off in hardware in the real call to sleep
 #endif
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
     if (s_config.wakeup_triggers & RTC_EXT1_TRIG_EN) {
         ext1_wakeup_prepare();
-    } else {
-        ext1_wakeup_clear();
     }
+    // for !(s_config.wakeup_triggers & RTC_EXT1_TRIG_EN), ext1 wakeup will be turned off in hardware in the real call to sleep
 #endif
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
@@ -1478,11 +1474,6 @@ static void ext0_wakeup_prepare(void)
     rtcio_hal_input_enable(rtc_gpio_num);
 }
 
-static void ext0_wakeup_clear(void)
-{
-    rtcio_hal_ext0_clear_wakeup_pins();
-}
-
 #endif // SOC_PM_SUPPORT_EXT0_WAKEUP
 
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
@@ -1639,14 +1630,6 @@ static void ext1_wakeup_prepare(void)
     rtc_hal_ext1_clear_wakeup_status();
     // Set RTC IO pins and mode to be used for wakeup
     rtc_hal_ext1_set_wakeup_pins(s_config.ext1_rtc_gpio_mask, s_config.ext1_trigger_mode);
-}
-
-static void ext1_wakeup_clear(void)
-{
-    // Clear state from previous wakeup
-    rtc_hal_ext1_clear_wakeup_status();
-    // Clear all ext1 wakup-source setting
-    rtc_hal_ext1_clear_wakeup_pins();
 }
 
 uint64_t esp_sleep_get_ext1_wakeup_status(void)

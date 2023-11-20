@@ -373,16 +373,6 @@ static inline void rtcio_ll_ext0_set_wakeup_pin(int rtcio_num, int level)
             level , RTC_CNTL_EXT_WAKEUP0_LV_S);
 }
 
-/**
- * Clear ext0 wakeup trigger.
- */
-static inline void  rtcio_ll_ext0_clear_wakeup_pins(void)
-{
-    REG_SET_FIELD(RTC_IO_EXT_WAKEUP0_REG, RTC_IO_EXT_WAKEUP0_SEL, 0);
-    // Clear level which will trigger wakeup
-    SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
-            0 , RTC_CNTL_EXT_WAKEUP0_LV_S);
-}
 #ifdef __cplusplus
 }
 #endif
