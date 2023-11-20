@@ -166,6 +166,27 @@ menu "FreeRTOS"
             help
                 Sets the timer task's name (see configTIMER_SERVICE_TASK_NAME documentation for more details).
 
+        choice FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+            prompt "configTIMER_SERVICE_TASK_CORE_AFFINITY"
+            default FREERTOS_TIMER_TASK_NO_AFFINITY
+            help
+                Sets the timer task's core affinity (see configTIMER_SERVICE_TASK_CORE_AFFINITY documentation for more details).
+
+            config FREERTOS_TIMER_TASK_AFFINITY_CPU0
+                bool "CPU0"
+            config FREERTOS_TIMER_TASK_AFFINITY_CPU1
+                bool "CPU1"
+                depends on !FREERTOS_UNICORE
+            config FREERTOS_TIMER_TASK_NO_AFFINITY
+                bool "No affinity"
+        endchoice
+
+        config FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+            hex
+            default 0x0 if FREERTOS_TIMER_TASK_AFFINITY_CPU0
+            default 0x1 if FREERTOS_TIMER_TASK_AFFINITY_CPU1
+            default FREERTOS_NO_AFFINITY if FREERTOS_TIMER_TASK_NO_AFFINITY
+
         config FREERTOS_TIMER_TASK_PRIORITY
             int "configTIMER_TASK_PRIORITY"
             range 1 25

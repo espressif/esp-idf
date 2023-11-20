@@ -199,3 +199,8 @@ List of changes made to Vanilla FreeRTOS V10.5.1 header files to allow for build
 ### tasks.c
 
 - Backported a change where the IDLE tasks are created with the core ID as a suffix in the task name.
+
+### timers.c
+
+- Backported configTIMER_SERVICE_TASK_CORE_AFFINITY config option to enable configurability of the Timer Service task's core affinity.
+  - The change also entails updating the task creation APIs to use IDF-FreeRTOS task creation APIs, adding a assert check for valid affinity values and dropping the use of configUSE_CORE_AFFINITY.
