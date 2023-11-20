@@ -1494,11 +1494,11 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
     // Reset all EXT1 configs
     esp_sleep_clear_ext1_wakeup_io(0);
 
-    return esp_sleep_set_ext1_wakeup_io(io_mask, level_mode);
+    return esp_sleep_enable_ext1_wakeup_io(io_mask, level_mode);
 }
 
 
-esp_err_t esp_sleep_set_ext1_wakeup_io(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode)
+esp_err_t esp_sleep_enable_ext1_wakeup_io(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode)
 {
     if (io_mask == 0 && level_mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
         return ESP_ERR_INVALID_ARG;

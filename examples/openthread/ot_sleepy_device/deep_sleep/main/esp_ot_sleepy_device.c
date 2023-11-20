@@ -151,7 +151,7 @@ static void ot_deep_sleep_init(void)
     // The configuration mode depends on your hardware design.
     // Since the BOOT button is connected to a pull-up resistor, the wake-up mode is configured as LOW.
     const uint64_t ext_wakeup_mode = 0;
-    ESP_ERROR_CHECK(esp_sleep_set_ext1_wakeup_io(gpio_wakeup_pin_mask, ext_wakeup_mode));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(gpio_wakeup_pin_mask, ext_wakeup_mode));
 
     // Also these two GPIO configurations are also depended on the hardware design.
     // The BOOT button is connected to the pull-up resistor, so enable the pull-up mode and disable the pull-down mode.

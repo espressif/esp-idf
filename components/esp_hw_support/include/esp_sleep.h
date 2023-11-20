@@ -269,7 +269,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *
  * @note Call this func will reset the previous ext1 configuration.
  *
- * @note This function will be deprecated in release/v6.0. Please switch to use `esp_sleep_set_ext1_wakeup_io` and `esp_sleep_clear_ext1_wakeup_io`
+ * @note This function will be deprecated in release/v6.0. Please switch to use `esp_sleep_enable_ext1_wakeup_io` and `esp_sleep_clear_ext1_wakeup_io`
  *
  * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *                 which have RTC functionality can be used in this bit map.
@@ -320,8 +320,6 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
  *       the pins during sleep. HOLD feature will be acted on the pin internally
  *       before the system entering sleep, and this can further reduce power consumption.
  *
- * @note this func allows to increase the configuration for ext1 without resetting the previous configuration.
- *
  * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *                 which have RTC functionality can be used in this bit map.
  *                 For different SoCs, the related GPIOs are:
@@ -344,7 +342,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
  *      - ESP_ERR_NOT_ALLOWED when wakeup level will become different between
  *        ext1 IOs if !SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
  */
-esp_err_t esp_sleep_set_ext1_wakeup_io(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode);
+esp_err_t esp_sleep_enable_ext1_wakeup_io(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode);
 
 /**
  * @brief Disable ext1 wakeup pins with IO masks. This will remove selected IOs from the wakeup IOs.
@@ -403,7 +401,7 @@ esp_err_t esp_sleep_clear_ext1_wakeup_io(uint64_t io_mask);
  *        or mode is invalid
  */
 esp_err_t esp_sleep_enable_ext1_wakeup_with_level_mask(uint64_t io_mask, uint64_t level_mask)
-__attribute__((deprecated("please use 'esp_sleep_set_ext1_wakeup_io' and 'esp_sleep_clear_ext1_wakeup_io' instead")));
+__attribute__((deprecated("please use 'esp_sleep_enable_ext1_wakeup_io' and 'esp_sleep_clear_ext1_wakeup_io' instead")));
 
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
