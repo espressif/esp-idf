@@ -23,10 +23,10 @@
 #define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                        // only one I2S on C6
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_SPI0_BASE + (i) * 0x1000)        // SPIMEM0 and SPIMEM1
-#define REG_SPI_BASE(i)                         (DR_REG_SPI2_BASE)                       // only one GPSPI on C6
+#define REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (0))    // only one GPSPI on C6
 #define REG_I2C_BASE(i)                         (DR_REG_I2C_EXT_BASE)                    // only one I2C on C6
 #define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE)                      // only one MCPWM on C6
-#define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x2000)        // TWAI0 and TWAI1
+#define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x2000)       // TWAI0 and TWAI1
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)

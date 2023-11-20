@@ -43,9 +43,17 @@ In the half duplex mode, the master has to use the protocol defined by the slave
 
     For some commands (WRBUF, RDBUF), this phase specifies the address of the shared register to write to/read from. For other commands with this phase, they are meaningless but still have to exist in the transaction.
 
-- Dummy: 8-bit, floating, optional
+.. only:: esp32s2
 
-    This phase is the turnaround time between the master and the slave on the bus, and also provides enough time for the slave to prepare the data to send to the master.
+    - Dummy: 8-bit (for 1-bit mode) or 4-bit (for 2/4-bit mode), floating, optional
+
+        This phase is the turnaround time between the master and the slave on the bus, and also provides enough time for the slave to prepare the data to send to the master.
+
+.. only:: not esp32s2
+
+    - Dummy: 8-bit, floating, optional
+
+        This phase is the turnaround time between the master and the slave on the bus, and also provides enough time for the slave to prepare the data to send to the master.
 
 - Data: variable length, the direction is also determined by the command.
 
