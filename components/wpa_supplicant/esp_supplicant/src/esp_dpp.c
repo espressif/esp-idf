@@ -18,7 +18,6 @@ static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
 
 static bool s_dpp_listen_in_progress;
-static int s_dpp_auth_retries;
 static struct esp_dpp_context_t s_dpp_ctx;
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
 
@@ -361,6 +360,21 @@ static void esp_dpp_task(void *pvParameters )
 
             switch (evt->id) {
             case SIG_DPP_DEL_TASK:
+                struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
+                if (params->info) {
+                    os_free(params->info);
+                    params->info = NULL;
+                }
+
+                if (params->key) {
+                    os_free(params->key);
+                    params->key = NULL;
+                }
+
+                if (s_dpp_ctx.dpp_global) {
+                    dpp_global_deinit(s_dpp_ctx.dpp_global);
+                    s_dpp_ctx.dpp_global = NULL;
+                }
                 if (s_dpp_ctx.dpp_auth) {
                     dpp_auth_deinit(s_dpp_ctx.dpp_auth);
                     s_dpp_ctx.dpp_auth = NULL;
@@ -713,25 +727,14 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 
 void esp_supp_dpp_deinit(void)
 {
-    struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
-    if (params->info) {
-        os_free(params->info);
-        params->info = NULL;
-    }
-    if (params->key) {
-        os_free(params->key);
-        params->key = NULL;
-    }
-
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                &offchan_event_handler);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                &offchan_event_handler);
-    s_dpp_auth_retries = 0;
     if (s_dpp_ctx.dpp_global) {
-        dpp_global_deinit(s_dpp_ctx.dpp_global);
-        s_dpp_ctx.dpp_global = NULL;
-        esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
+        if (esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0)) {
+            wpa_printf(MSG_ERROR, "DPP Deinit Failed");
+        }
     }
 }
 #endif
