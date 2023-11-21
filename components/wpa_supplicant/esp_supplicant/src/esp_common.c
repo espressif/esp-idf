@@ -21,6 +21,7 @@
 #include "esp_rrm.h"
 #include "esp_wnm.h"
 #include "rsn_supp/wpa.h"
+#include "esp_private/wifi.h"
 
 
 struct wpa_supplicant g_wpa_supp;
@@ -550,6 +551,7 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 	uint8_t ext_caps_ie[5] = {0};
 	uint8_t ext_caps_ie_len = 3;
 	uint8_t *pos = ext_caps_ie;
+	wifi_ioctl_config_t cfg = {0};
 
 	if (!esp_wifi_is_btm_enabled_internal(WIFI_IF_STA)) {
 		return 0;
@@ -557,7 +559,12 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 
 	*pos++ = WLAN_EID_EXT_CAPAB;
 	*pos++ = ext_caps_ie_len;
-	*pos++ = 0;
+	esp_err_t err = esp_wifi_internal_ioctl(WIFI_IOCTL_GET_STA_HT2040_COEX, &cfg);
+	if (err == ESP_OK && cfg.data.ht2040_coex.enable) {
+		*pos++ |= BIT(WLAN_EXT_CAPAB_20_40_COEX);
+	} else {
+		*pos++ = 0;
+    }
 	*pos++ = 0;
 #define CAPAB_BSS_TRANSITION BIT(3)
 	*pos |= CAPAB_BSS_TRANSITION;
