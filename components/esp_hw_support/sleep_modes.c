@@ -57,6 +57,7 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_private/brownout.h"
+#include "esp_private/sleep_console.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_modem.h"
 #include "esp_private/esp_clk.h"
@@ -508,6 +509,10 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
             }
         }
     } else {
+#if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
+        // Only avoid USJ pad leakage here, USB OTG pad leakage is prevented through USB Host driver.
+        sleep_console_usj_pad_backup_and_disable();
+#endif
 #if CONFIG_MAC_BB_PD
         mac_bb_power_down_cb_execute();
 #endif
@@ -536,6 +541,9 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
  */
 inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
+#if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
+    sleep_console_usj_pad_restore();
+#endif
 #if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
     sleep_retention_do_system_retention(false);
 #endif

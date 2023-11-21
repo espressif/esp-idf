@@ -27,6 +27,7 @@ if(NOT BOOTLOADER_BUILD)
                      "revision.c"
                      "rtc_module.c"
                      "sleep_modes.c"
+                     "sleep_console.c"
                      "sleep_gpio.c"
                      "sleep_event.c"
                      "sleep_modem.c"

@@ -151,6 +151,9 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
         goto _exit;
     }
 
+    // Enable USB-Serial-JTAG peripheral module clock
+    usb_serial_jtag_ll_enable_bus_clock(true);
+
     // Configure PHY
     usb_phy_ll_int_jtag_enable(&USB_SERIAL_JTAG);
 
@@ -214,6 +217,7 @@ esp_err_t usb_serial_jtag_driver_uninstall(void)
         return ESP_OK;
     }
 
+    /* Not disable the module clock and usb_pad_enable here since the USJ stdout might still depends on it. */
     //Disable tx/rx interrupt.
     usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY | USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
     esp_intr_free(p_usb_serial_jtag_obj->intr_handle);
