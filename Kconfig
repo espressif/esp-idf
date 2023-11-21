@@ -119,7 +119,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "y" if IDF_TARGET="esp32c5"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
-	select IDF_ENV_FPGA
+	    select IDF_ENV_FPGA
 
     config IDF_TARGET_ESP32P4
         bool
