@@ -1174,7 +1174,8 @@ esp_err_t esp_wifi_statis_dump(uint32_t modules);
   * @attention  If the user wants to receive another WIFI_EVENT_STA_BSS_RSSI_LOW event after receiving one, this API needs to be
   *             called again with an updated/same RSSI threshold.
   *
-  * @param      rssi threshold value in dbm between -100 to 0
+  * @param      rssi threshold value in dbm between -100 to 10
+  *             Note that in some rare cases where signal strength is very strong, rssi values can be slightly positive.
   *
   * @return
   *    - ESP_OK: succeed
