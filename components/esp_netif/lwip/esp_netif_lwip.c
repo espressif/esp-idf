@@ -1879,32 +1879,42 @@ esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
             }
             case REQUESTED_IP_ADDRESS: {
                 esp_netif_ip_info_t info;
-                uint32_t softap_ip = 0;
+                uint32_t server_ip = 0;
                 uint32_t start_ip = 0;
                 uint32_t end_ip = 0;
+                uint32_t range_start_ip = 0;
+                uint32_t range_end_ip = 0;
                 dhcps_lease_t *poll = opt_val;
 
                 if (poll->enable) {
                     memset(&info, 0x00, sizeof(esp_netif_ip_info_t));
                     esp_netif_get_ip_info(esp_netif, &info);
 
-                    softap_ip = htonl(info.ip.addr);
+                    server_ip = htonl(info.ip.addr);
+                    range_start_ip = server_ip & htonl(info.netmask.addr);
+                    range_end_ip = range_start_ip | ~htonl(info.netmask.addr);
+                    if (server_ip == range_start_ip || server_ip == range_end_ip) {
+                        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+                    }
                     start_ip = htonl(poll->start_ip.addr);
                     end_ip = htonl(poll->end_ip.addr);
 
                     /*config ip information can't contain local ip*/
-                    if ((start_ip <= softap_ip) && (softap_ip <= end_ip)) {
+                    if ((server_ip >= start_ip) && (server_ip <= end_ip)) {
                         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                     }
 
                     /*config ip information must be in the same segment as the local ip*/
-                    softap_ip >>= 8;
-                    if ((start_ip >> 8 != softap_ip)
-                        || (end_ip >> 8 != softap_ip)) {
+                    if (start_ip <= range_start_ip || start_ip >= range_end_ip) {
                         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                     }
 
-                    if (end_ip - start_ip > DHCPS_MAX_LEASE) {
+                    if (end_ip <= range_start_ip || end_ip >= range_end_ip) {
+                        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+                    }
+
+                    /*The number of configured ip is less than DHCPS_MAX_LEASE*/
+                    if ((end_ip - start_ip + 1 > DHCPS_MAX_LEASE) || (start_ip >= end_ip)) {
                         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                     }
                 }
