@@ -203,6 +203,8 @@ MbedTLS 与 WolfSSL 对比
 
 .. only:: SOC_ECDSA_SUPPORTED
 
+    .. _ecdsa-peri-with-esp-tls:
+
     在 ESP-TLS 中使用 ECDSA 外设
     -----------------------------
 

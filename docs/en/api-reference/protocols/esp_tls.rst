@@ -203,6 +203,8 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
 .. only:: SOC_ECDSA_SUPPORTED
 
+    .. _ecdsa-peri-with-esp-tls:
+
     ECDSA Peripheral with ESP-TLS
     -----------------------------
 

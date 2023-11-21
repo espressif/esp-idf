@@ -50,7 +50,6 @@ static int test_ecdsa_verify(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t*
 
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_VERIFY,
-        .k_mode = ECDSA_K_USE_TRNG,
         .sha_mode = ECDSA_Z_USER_PROVIDED,
     };
 
@@ -119,7 +118,6 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
 
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_GEN,
-        .k_mode = ECDSA_K_USE_TRNG,
         .sha_mode = ECDSA_Z_USER_PROVIDED,
         .use_km_key = use_km_key,
     };
@@ -144,7 +142,7 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
     ecdsa_enable_and_reset();
 
     do {
-        ecdsa_hal_gen_signature(&conf, NULL, sha_le, r_le, s_le, len);
+        ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
     } while(!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
 
     ecdsa_disable();

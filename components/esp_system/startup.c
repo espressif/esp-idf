@@ -27,6 +27,7 @@
 #include "esp_newlib.h"
 #include "esp_timer.h"
 #include "esp_efuse.h"
+#include "esp_efuse_table.h"
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
 #include "esp_xt_wdt.h"
@@ -346,6 +347,15 @@ static void do_core_init(void)
 #if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
     // Note: in some configs this may read flash, so placed after flash init
     esp_secure_boot_init_checks();
+#endif
+
+#if SOC_EFUSE_ECDSA_USE_HARDWARE_K
+    if (esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, NULL)) {
+        // ECDSA key purpose block is present and hence permanently enable
+        // the hardware TRNG supplied k mode (most secure mode)
+        err = esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K);
+        assert(err == ESP_OK && "Failed to enable ECDSA hardware k mode");
+    }
 #endif
 
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
