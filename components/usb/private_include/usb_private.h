@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,6 @@ struct urb_s {
     uint32_t hcd_var;
     // Host Lib Layer:
     void *usb_host_client;  // Currently only used when submitted to shared pipes (i.e., Device default pipes)
-    size_t usb_host_header_size; // USB Host may need the data buffer to have a transparent header
     bool usb_host_inflight; // Debugging variable, used to prevent re-submitting URBs already inflight
     // Public transfer structure. Must be last due to variable length array
     usb_transfer_t transfer;
@@ -76,15 +75,13 @@ typedef bool (*usb_proc_req_cb_t)(usb_proc_req_source_t source, bool in_isr, voi
  *
  * - Data buffer is allocated in DMA capable memory
  * - The constant fields of the URB are also set
- * - The data_buffer field of the URB is set to point to start of the allocated data buffer AFTER the header. To access
- *   the header, users need a negative offset from data_buffer.
+ * - The data_buffer field of the URB is set to point to start of the allocated data buffer.
  *
  * @param data_buffer_size Size of the URB's data buffer
- * @param header_size Size of header to put in front of URB's data buffer
  * @param num_isoc_packets Number of isochronous packet descriptors
  * @return urb_t* URB object
  */
-urb_t *urb_alloc(size_t data_buffer_size, size_t header_size, int num_isoc_packets);
+urb_t *urb_alloc(size_t data_buffer_size, int num_isoc_packets);
 
 /**
  * @brief Free a URB
