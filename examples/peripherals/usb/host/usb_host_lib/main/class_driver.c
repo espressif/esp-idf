@@ -74,7 +74,6 @@ static void action_get_info(class_driver_t *driver_obj)
     ESP_ERROR_CHECK(usb_host_device_info(driver_obj->dev_hdl, &dev_info));
     ESP_LOGI(TAG, "\t%s speed", (dev_info.speed == USB_SPEED_LOW) ? "Low" : "Full");
     ESP_LOGI(TAG, "\tbConfigurationValue %d", dev_info.bConfigurationValue);
-    //Todo: Print string descriptors
 
     //Get the device descriptor next
     driver_obj->actions &= ~ACTION_GET_DEV_INFO;
