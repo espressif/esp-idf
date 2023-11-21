@@ -1245,7 +1245,7 @@ exit:
 
 esp_err_t usb_host_transfer_alloc(size_t data_buffer_size, int num_isoc_packets, usb_transfer_t **transfer)
 {
-    urb_t *urb = urb_alloc(data_buffer_size, 0, num_isoc_packets);
+    urb_t *urb = urb_alloc(data_buffer_size, num_isoc_packets);
     if (urb == NULL) {
         return ESP_ERR_NO_MEM;
     }
