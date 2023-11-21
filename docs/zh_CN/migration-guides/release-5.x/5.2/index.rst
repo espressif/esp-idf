@@ -9,5 +9,6 @@
     gcc
     peripherals
     protocols
+    storage
     system
     wifi
