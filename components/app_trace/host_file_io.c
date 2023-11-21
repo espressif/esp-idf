@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -228,8 +228,11 @@ size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t siz
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return 0;
     }
-
-    return resp/size; // return the number of items written
+    /* OpenOCD writes it like that:
+     *      fwrite(buf, size, 1, file);
+     * So, if 1 was returned that means fwrite succeed
+     */
+    return resp == 1 ? nmemb : 0;
 }
 
 static void esp_apptrace_fread_args_prepare(uint8_t *buf, void *priv)
@@ -275,6 +278,10 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
         ESP_EARLY_LOGE(TAG, "Failed to read file data (%d)!", ret);
         return 0;
     }
+    /* OpenOCD reads it like that:
+     *      fread(buf, 1 ,size, file);
+     * So, total read bytes count returns
+     */
     return resp/size; // return the number of items read
 }
 
