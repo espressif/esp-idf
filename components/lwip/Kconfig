@@ -681,7 +681,7 @@ menu "LWIP"
                 Control the number of out-of-order pbufs to ensure that the MAC layer
                 has enough RX buffer to receive packets.
 
-                In the Wi-Fi scenario,recommended OOSEQ PBUFS Range:
+                In the Wi-Fi scenario, recommended OOSEQ PBUFS Range:
                 0 <= TCP_OOSEQ_MAX_PBUFS <= CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM/(MAX_TCP_NUMBER + 1)
 
                 In the Ethernet scenario,recommended Ethernet OOSEQ PBUFS Range:
@@ -1021,6 +1021,33 @@ menu "LWIP"
                 (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
 
     endmenu # SNTP
+
+    menu "DNS"
+
+        config LWIP_DNS_MAX_SERVERS
+            int "Maximum number of DNS servers"
+            default 3
+            range 1 4
+            help
+                Set maximum number of DNS servers.
+                If fallback DNS servers are supported,
+                the number of DNS servers needs to be greater than or equal to 3.
+
+        config LWIP_FALLBACK_DNS_SERVER_SUPPORT
+            bool "Enable DNS fallback server support"
+            default n
+            depends on LWIP_DNS_MAX_SERVERS >= 3
+            help
+                Enable this feature to support DNS fallback server.
+
+        config LWIP_FALLBACK_DNS_SERVER_ADDRESS
+            string "DNS fallback server address"
+            default "114.114.114.114"
+            depends on LWIP_FALLBACK_DNS_SERVER_SUPPORT
+            help
+                This option allows you to config dns fallback server address.
+
+    endmenu # DNS
 
     config LWIP_BRIDGEIF_MAX_PORTS
         int "Maximum number of bridge ports"
