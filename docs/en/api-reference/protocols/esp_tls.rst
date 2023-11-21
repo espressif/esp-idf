@@ -194,6 +194,8 @@ SSL/TLS libraries and with all respective configurations set to default.
 
 .. only:: SOC_ECDSA_SUPPORTED
 
+    .. _ecdsa-peri-with-esp-tls:
+
     ECDSA Peripheral with ESP-TLS
     -----------------------------
 

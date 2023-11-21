@@ -1,7 +1,7 @@
 Random Number Generation
 ========================
 
-{IDF_TARGET_RF_NAME: default="Wi-Fi or Bluetooth", esp32s2="Wi-Fi"}
+{IDF_TARGET_RF_NAME: default="Wi-Fi or Bluetooth", esp32s2="Wi-Fi", esp32h2="Bluetooth or 802.15.4 Thread/Zigbee", esp32c6="Wi-Fi or Bluetooth or 802.15.4 Thread/Zigbee"}
 {IDF_TARGET_RF_IS: default="are", esp32s2="is"}
 {IDF_TARGET_BOOTLOADER_RANDOM_INCOMPATIBLE: default="", esp32="I2S, "}
 
