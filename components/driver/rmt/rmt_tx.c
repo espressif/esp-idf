@@ -65,6 +65,11 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
     ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &tx_channel->base.dma_chan), TAG, "allocate TX DMA channel failed");
+    gdma_strategy_config_t gdma_strategy_conf = {
+        .auto_update_desc = true,
+        .owner_check = true,
+    };
+    gdma_apply_strategy(tx_channel->base.dma_chan, &gdma_strategy_conf);
     gdma_tx_event_callbacks_t cbs = {
         .on_trans_eof = rmt_dma_tx_eof_cb,
     };
