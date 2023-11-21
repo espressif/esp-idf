@@ -12,7 +12,7 @@
 #include "bootloader_clock.h"
 #include "hal/wdt_hal.h"
 
-#include "esp_private/spi_common_internal.h" // [refactor-todo]: for spicommon_periph_in_use
+#include "esp_private/spi_share_hw_ctrl.h"
 
 #include "esp_log.h"
 #include "esp_cpu.h"

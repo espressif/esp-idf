@@ -31,6 +31,7 @@
 #include "esp_private/spi_slave_internal.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/spi_share_hw_ctrl.h"
 
 static const char *SPI_TAG = "spi_slave";
 

@@ -63,11 +63,9 @@ else()
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    # [refactor-todo] requires "esp_driver_spi" for headers:
-                                    # - spi_common_internal.h
                                     # [refactor-todo] esp_partition required for virtual efuse
                                     # init code. Move to esp_efuse component.
-                                    pthread bootloader_support efuse esp_driver_spi esp_partition
+                                    pthread bootloader_support efuse esp_partition esp_pm
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

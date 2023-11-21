@@ -17,6 +17,7 @@
 #include "driver/spi_master.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/spi_common_internal.h"
+#include "esp_private/spi_share_hw_ctrl.h"
 #include "hal/spi_hal.h"
 #include "hal/gpio_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
@@ -26,12 +27,6 @@
 #include "esp_private/gdma.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define SPI_COMMON_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define SPI_COMMON_RCC_CLOCK_ATOMIC()
 #endif
 
 static const char *SPI_TAG = "spi";
@@ -67,19 +62,18 @@ typedef struct {
 #endif
 } spicommon_bus_context_t;
 
-//Periph 1 is 'claimed' by SPI flash code.
-static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false),
-#if (SOC_SPI_PERIPH_NUM >= 3)
-                                                              ATOMIC_VAR_INIT(false),
-#endif
-#if (SOC_SPI_PERIPH_NUM >= 4)
-                                                              ATOMIC_VAR_INIT(false),
-#endif
-                                                            };
-
-static const char* spi_claiming_func[3] = {NULL, NULL, NULL};
 static spicommon_bus_context_t s_mainbus = SPI_MAIN_BUS_DEFAULT();
 static spicommon_bus_context_t* bus_ctx[SOC_SPI_PERIPH_NUM] = {&s_mainbus};
+
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+/* The lock for the share SPI1 bus is registered here in a constructor due to need to access the context
+   This way we are able to decouple the SPI-flash driver from the spi-master driver */
+static __attribute__((constructor)) void spi_bus_lock_init_main_bus(void)
+{
+    /* Initialize bus context about the main SPI bus lock, called during chip startup. */
+    spi_bus_main_set_lock(g_main_spi_bus_lock);
+}
+#endif
 
 #if !SOC_GDMA_SUPPORTED
 //Each bit stands for 1 dma channel, BIT(0) should be used for SPI1
@@ -94,42 +88,6 @@ static inline bool is_valid_host(spi_host_device_t host)
 #elif (SOC_SPI_PERIPH_NUM == 3)
     return host >= SPI1_HOST && host <= SPI3_HOST;
 #endif
-}
-
-//----------------------------------------------------------alloc spi periph-------------------------------------------------------//
-//Returns true if this peripheral is successfully claimed, false if otherwise.
-bool spicommon_periph_claim(spi_host_device_t host, const char* source)
-{
-    bool false_var = false;
-    bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &false_var, true);
-    if (ret) {
-        spi_claiming_func[host] = source;
-        SPI_COMMON_RCC_CLOCK_ATOMIC() {
-            spi_ll_enable_bus_clock(host, true);
-            spi_ll_reset_register(host);
-        }
-    } else {
-        ESP_EARLY_LOGE(SPI_TAG, "SPI%d already claimed by %s.", host + 1, spi_claiming_func[host]);
-    }
-    return ret;
-}
-
-bool spicommon_periph_in_use(spi_host_device_t host)
-{
-    return atomic_load(&spi_periph_claimed[host]);
-}
-
-//Returns true if this peripheral is successfully freed, false if otherwise.
-bool spicommon_periph_free(spi_host_device_t host)
-{
-    bool true_var = true;
-    bool ret = atomic_compare_exchange_strong(&spi_periph_claimed[host], &true_var, false);
-    if (ret) {
-        SPI_COMMON_RCC_CLOCK_ATOMIC() {
-            spi_ll_enable_bus_clock(host, false);
-        }
-    }
-    return ret;
 }
 
 int spicommon_irqsource_for_host(spi_host_device_t host)

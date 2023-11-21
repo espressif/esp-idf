@@ -49,7 +49,7 @@ else()
 
     list(APPEND srcs ${cache_srcs})
     set(priv_requires bootloader_support app_update soc esp_mm
-                      esp_driver_gpio esp_driver_spi # TODO: IDF-8503 move spi_bus_lock to esp_hw_support component
+                      esp_driver_gpio
     )
 endif()
 
