@@ -1,22 +1,17 @@
-// Copyright 2021 Espressif Systems (Shanghai)
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer of the USB-serial-jtag controller
 
 #pragma once
+#include <stdbool.h>
+#include "esp_attr.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -164,6 +159,59 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
 static inline void usb_serial_jtag_ll_txfifo_flush(void)
 {
     USB_SERIAL_JTAG.ep1_conf.wr_done=1;
+}
+
+/**
+ * @brief Disable usb serial jtag pad during light sleep to avoid current leakage
+ *
+ * @return Initial configuration of usb serial jtag pad enable before light sleep
+ */
+FORCE_INLINE_ATTR bool usb_serial_jtag_ll_pad_backup_and_disable(void)
+{
+    bool pad_enabled = USB_SERIAL_JTAG.conf0.usb_pad_enable;
+
+    // Disable USB pad function
+    USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
+
+    return pad_enabled;
+}
+
+/**
+ * @brief Enable the internal USJ PHY control to D+/D- pad
+ *
+ * @param enable_pad Enable the USJ PHY control to D+/D- pad
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_pad(bool enable_pad)
+{
+    USB_SERIAL_JTAG.conf0.usb_pad_enable = enable_pad;
+}
+
+/**
+ * @brief Enable the bus clock for  USB Serial_JTAG module
+ * @param clk_en True if enable the clock of USB Serial_JTAG module
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
+{
+    SYSTEM.perip_clk_en0.reg_usb_device_clk_en = clk_en;
+}
+
+/**
+ * @brief Reset the usb serial jtag module
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
+{
+    SYSTEM.perip_rst_en0.reg_usb_device_rst = 1;
+    SYSTEM.perip_rst_en0.reg_usb_device_rst = 0;
+}
+
+/**
+ * Get the enable status USB Serial_JTAG module
+ *
+ * @return Return true if USB Serial_JTAG module is enabled
+ */
+FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
+{
+    return (SYSTEM.perip_clk_en0.reg_usb_device_clk_en && !SYSTEM.perip_rst_en0.reg_usb_device_rst);
 }
 
 
