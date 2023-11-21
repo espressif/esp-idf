@@ -228,7 +228,8 @@ variables:
     else
       git remote add origin "${MIRROR_REPO_URL}"
     fi
-    git fetch origin --no-recurse-submodules
+    # mirror url may fail with authentication issue
+    git fetch origin --no-recurse-submodules || true
   fi
 
   # set remote url to CI_REPOSITORY_URL
