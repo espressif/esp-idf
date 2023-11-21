@@ -32,10 +32,10 @@ TEST_CASE("test atoX functions", "[newlib]")
     TEST_ASSERT_EQUAL_INT(2147483647, atoi("2147483647"));
     TEST_ASSERT_EQUAL_INT(42, atoi("000000042"));
     TEST_ASSERT_EQUAL_INT(0, strtol("foo", NULL, 10));
-    TEST_ASSERT_EQUAL(0.123443, atof("0.123443"));
-    TEST_ASSERT_EQUAL(0.123443f, atoff("0.123443"));
-    TEST_ASSERT_EQUAL(31.41238, strtod("0.3141238e2", NULL));
-    TEST_ASSERT_EQUAL(0.025f, strtof("0.025", NULL));
+    TEST_ASSERT_EQUAL_DOUBLE(0.123443, atof("0.123443"));
+    TEST_ASSERT_EQUAL_FLOAT(0.123443f, atoff("0.123443"));
+    TEST_ASSERT_EQUAL_DOUBLE(31.41238, strtod("0.3141238e2", NULL));
+    TEST_ASSERT_EQUAL_FLOAT(0.025f, strtof("0.025", NULL));
 }
 
 TEST_CASE("test sprintf function", "[newlib]")
