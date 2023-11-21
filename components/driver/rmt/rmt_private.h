@@ -176,6 +176,10 @@ typedef struct {
     size_t buffer_size;         // size of the buffer, in bytes
     size_t received_symbol_num; // track the number of received symbols
     size_t copy_dest_off;       // tracking offset in the copy destination
+    int dma_desc_index;         // tracking the DMA descriptor used by ping-pong
+    struct {
+        uint32_t en_partial_rx: 1; // packet is too long, we need to notify the user to process the data piece by piece, in a ping-pong approach
+    } flags;
 } rmt_rx_trans_desc_t;
 
 struct rmt_rx_channel_t {

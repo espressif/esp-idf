@@ -205,6 +205,10 @@ RMT 发射器可以生成载波信号，并将其调制到消息信号上。载�
 
 也可使用参数 ``user_data``，在 :cpp:func:`rmt_tx_register_event_callbacks` 和 :cpp:func:`rmt_rx_register_event_callbacks` 中保存自定义上下文。用户数据将直接传递给每个回调函数。
 
+.. note::
+
+    "receive-done" 不等同于 "receive-finished". 这个回调函数也可以在 "partial-receive-done" 时间发生的时候被调用。
+
 在回调函数中可以获取驱动程序在 ``edata`` 中填充的特定事件数据。注意，``edata`` 指针仅在回调的持续时间内有效。
 
 有关 TX 完成事件数据的定义，请参阅 :cpp:type:`rmt_tx_done_event_data_t`：
@@ -213,8 +217,9 @@ RMT 发射器可以生成载波信号，并将其调制到消息信号上。载�
 
 有关 RX 完成事件数据的定义，请参阅 :cpp:type:`rmt_rx_done_event_data_t`：
 
-- :cpp:member:`rmt_rx_done_event_data_t::received_symbols` 指向接收到的 RMT 符号，这些符号存储在 :cpp:func:`rmt_receive` 函数的 ``buffer`` 参数中，在回调函数返回前不应释放此接收缓冲区。
+- :cpp:member:`rmt_rx_done_event_data_t::received_symbols` 指向接收到的 RMT 符号，这些符号存储在 :cpp:func:`rmt_receive` 函数的 ``buffer`` 参数中，在回调函数返回前不应释放此接收缓冲区。如果你还启用了部分接收的功能，则这个用户缓冲区会被用作“二级缓冲区”，其中的内容可以被随后传入的数据覆盖。在这种情况下，如果你想要保存或者稍后处理一些数据，则需要将接收到的数据复制到其他位置。
 - :cpp:member:`rmt_rx_done_event_data_t::num_symbols` 表示接收到的 RMT 符号数量，该值不会超过 :cpp:func:`rmt_receive` 函数的 ``buffer_size`` 参数。如果 ``buffer_size`` 不足以容纳所有接收到的 RMT 符号，驱动程序将只保存缓冲区能够容纳的最大数量的符号，并丢弃或忽略多余的符号。
+- :cpp:member:`rmt_rx_done_event_data_t::is_last` 指示收到的数据包是否是当前的接收任务中的最后一个。这个标志在你使能 :cpp:member:`rmt_receive_config_t::extra_flags::en_partial_rx` 部分接收功能时非常有用。
 
 .. _rmt-enable-and-disable-channel:
 
@@ -326,6 +331,7 @@ RMT 是一种特殊的通信外设，无法像 SPI 和 I2C 那样发送原始字
 
 - :cpp:member:`rmt_receive_config_t::signal_range_min_ns` 指定高电平或低电平有效脉冲的最小持续时间。如果脉冲宽度小于指定值，硬件会将其视作干扰信号并忽略。
 - :cpp:member:`rmt_receive_config_t::signal_range_max_ns` 指定高电平或低电平有效脉冲的最大持续时间。如果脉冲宽度大于指定值，接收器会将其视作 **停止信号**，并立即生成接收完成事件。
+- 如果传入的数据包很长，无法一次性保存在用户缓冲区中，可以通过将 :cpp:member:`rmt_receive_config_t::extra_flags::en_partial_rx` 设置为 ``true`` 来开启部分接收功能。在这种情况下，当用户缓冲区快满的时候，驱动会多次调用 :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` 回调函数来通知用户去处理已经收到的数据。你可以检查 :cpp:member::`rmt_rx_done_event_data_t::is_last` 的值来了解当前事务是否已经结束。
 
 根据以上配置调用 :cpp:func:`rmt_receive` 后，RMT 接收器会启动 RX 机制。注意，以上配置均针对特定事务存在，也就是说，要开启新一轮的接收时，需要再次设置 :cpp:type:`rmt_receive_config_t` 选项。接收器会将传入信号以 :cpp:type:`rmt_symbol_word_t` 的格式保存在内部内存块或 DMA 缓冲区中。
 
@@ -337,7 +343,7 @@ RMT 是一种特殊的通信外设，无法像 SPI 和 I2C 那样发送原始字
 
     由于内存块大小有限，RMT 接收器只能保存长度不超过内存块容量的短帧。硬件会将长帧截断，并由驱动程序报错：``hw buffer too small, received symbols truncated``。
 
-应在 :cpp:func:`rmt_receive` 函数的 ``buffer`` 参数中提供复制目标。如果由于缓冲区大小不足而导致缓冲区溢出，接收器仍可继续工作，但会丢弃溢出的符号，并报告此错误信息：``user buffer too small, received symbols truncated``。请注意 ``buffer`` 参数的生命周期，确保在接收器完成或停止工作前不会回收缓冲区。
+应在 :cpp:func:`rmt_receive` 函数的 ``buffer`` 参数中提供复制目标。如果由于缓冲区大小不足而导致缓冲区溢出，接收器仍可继续工作，但会丢弃溢出的符号，并报告此错误信息： ``user buffer too small, received symbols truncated``。请注意 ``buffer`` 参数的生命周期，确保在接收器完成或停止工作前不会回收缓冲区。
 
 当接收器完成工作，即接收到持续时间大于 :cpp:member:`rmt_receive_config_t::signal_range_max_ns` 的信号时，驱动程序将停止接收器。如有需要，应再次调用 :cpp:func:`rmt_receive` 重新启动接收器。在 :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` 的回调中可以获取接收到的数据。要获取更多有关详情，请参阅 :ref:`rmt-register-event-callbacks`。
 
@@ -573,7 +579,7 @@ Kconfig 选项
 
 - :ref:`CONFIG_RMT_ISR_IRAM_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。详情请参阅 :ref:`rmt-iram-safe`。
 - :ref:`CONFIG_RMT_ENABLE_DEBUG_LOG` 用于启用调试日志输出，启用此选项将增加固件的二进制文件大小。
-- :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 用于控制 RMT 接收函数被链接到系统内存的哪个位置（IRAM 还是 Flash）。详情请参阅 :ref:`rmt-iram-safe`。
+- :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 用于控制 RMT 接收函数被链接到系统存储的哪个位置（IRAM 还是 Flash）。详情请参阅 :ref:`rmt-iram-safe`。
 
 应用示例
 --------------------

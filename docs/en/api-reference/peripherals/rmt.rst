@@ -203,9 +203,13 @@ The RX channel-supported event callbacks are listed in the :cpp:type:`rmt_rx_eve
 
 - :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` sets a callback function for "receive-done" event. The function prototype is declared in :cpp:type:`rmt_rx_done_callback_t`.
 
+.. note::
+
+    The "receive-done" is not equivalent to "receive-finished". This callback can also be called at a "partial-receive-done" time, for many times during one receive transaction.
+
 Users can save their own context in :cpp:func:`rmt_tx_register_event_callbacks` and :cpp:func:`rmt_rx_register_event_callbacks` as well, via the parameter ``user_data``. The user data is directly passed to each callback function.
 
-In the callback function, users can fetch the event-specific data that is filled by the driver in the ``edata``. Note that the ``edata`` pointer is only valid during the callback.
+In the callback function, users can fetch the event-specific data that is filled by the driver in the ``edata``. Note that the ``edata`` pointer is **only** valid during the callback, please do not try to save this pointer and use that outside of the callback function.
 
 The TX-done event data is defined in :cpp:type:`rmt_tx_done_event_data_t`:
 
@@ -213,8 +217,9 @@ The TX-done event data is defined in :cpp:type:`rmt_tx_done_event_data_t`:
 
 The RX-complete event data is defined in :cpp:type:`rmt_rx_done_event_data_t`:
 
-- :cpp:member:`rmt_rx_done_event_data_t::received_symbols` points to the received RMT symbols. These symbols are saved in the ``buffer`` parameter of the :cpp:func:`rmt_receive` function. Users should not free this receive buffer before the callback returns.
+- :cpp:member:`rmt_rx_done_event_data_t::received_symbols` points to the received RMT symbols. These symbols are saved in the ``buffer`` parameter of the :cpp:func:`rmt_receive` function. Users should not free this receive buffer before the callback returns. If you also enabled the partial receive feature, then the user buffer will be used as a "second level buffer", where its content can be overwritten by data comes in afterwards. In this case, you should copy the received data to another place if you want to keep it or process it later.
 - :cpp:member:`rmt_rx_done_event_data_t::num_symbols` indicates the number of received RMT symbols. This value is not larger than the ``buffer_size`` parameter of :cpp:func:`rmt_receive` function. If the ``buffer_size`` is not sufficient to accommodate all the received RMT symbols, the driver only keeps the maximum number of symbols that the buffer can hold, and excess symbols are discarded or ignored.
+- :cpp:member:`rmt_rx_done_event_data_t::is_last` indicates whether the current received buffer is the last one in the transaction. This is useful when you enable the partial reception feature by :cpp:member:`rmt_receive_config_t::extra_flags::en_partial_rx`.
 
 .. _rmt-enable-and-disable-channel:
 
@@ -326,6 +331,7 @@ As also discussed in the :ref:`rmt-enable-and-disable-channel`, calling :cpp:fun
 
 - :cpp:member:`rmt_receive_config_t::signal_range_min_ns` specifies the minimal valid pulse duration in either high or low logic levels. A pulse width that is smaller than this value is treated as a glitch, and ignored by the hardware.
 - :cpp:member:`rmt_receive_config_t::signal_range_max_ns` specifies the maximum valid pulse duration in either high or low logic levels. A pulse width that is bigger than this value is treated as **Stop Signal**, and the receiver generates receive-complete event immediately.
+- If the incoming packet is long, that they cannot be stored in the user buffer at once, you can enable the partial reception feature by setting :cpp:member:`rmt_receive_config_t::extra_flags::en_partial_rx` to ``true``. In this case, the driver invokes :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` callback multiple times during one transaction, when the user buffer is **almost full**. You can check the value of :cpp:member::`rmt_rx_done_event_data_t::is_last` to know if the transaction is about to finish.
 
 The RMT receiver starts the RX machine after the user calls :cpp:func:`rmt_receive` with the provided configuration above. Note that, this configuration is transaction specific, which means, to start a new round of reception, the user needs to set the :cpp:type:`rmt_receive_config_t` again. The receiver saves the incoming signals into its internal memory block or DMA buffer, in the format of :cpp:type:`rmt_symbol_word_t`.
 
@@ -337,7 +343,7 @@ The RMT receiver starts the RX machine after the user calls :cpp:func:`rmt_recei
 
     Due to the limited size of the memory block, the RMT receiver can only save short frames whose length is not longer than the memory block capacity. Long frames are truncated by the hardware, and the driver reports an error message: ``hw buffer too small, received symbols truncated``.
 
-The copy destination should be provided in the ``buffer`` parameter of :cpp:func:`rmt_receive` function. If this buffer overlfows due to an insufficient buffer size, the receiver can continue to work, but overflowed symbols are dropped and the following error message is reported: ``user buffer too small, received symbols truncated``. Please take care of the lifecycle of the ``buffer`` parameter, ensuring that the buffer is not recycled before the receiver is finished or stopped.
+The copy destination should be provided in the ``buffer`` parameter of :cpp:func:`rmt_receive` function. If this buffer overflows due to an insufficient buffer size, the receiver can continue to work, but overflowed symbols are dropped and the following error message is reported: ``user buffer too small, received symbols truncated``. Please take care of the lifecycle of the ``buffer`` parameter, ensuring that the buffer is not recycled before the receiver is finished or stopped.
 
 The receiver is stopped by the driver when it finishes working, i.e., receive a signal whose duration is bigger than :cpp:member:`rmt_receive_config_t::signal_range_max_ns`. The user needs to call :cpp:func:`rmt_receive` again to restart the receiver, if necessary. The user can get the received data in the :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` callback. See also :ref:`rmt-register-event-callbacks` for more information.
 

@@ -11,6 +11,7 @@
 #include "unity.h"
 #include "driver/rmt_tx.h"
 #include "driver/rmt_rx.h"
+#include "driver/gpio.h"
 #include "soc/soc_caps.h"
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
@@ -45,7 +46,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
 {
     uint32_t const test_rx_buffer_symbols = 128;
     rmt_symbol_word_t *remote_codes = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
-                                      MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+                                                               MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(remote_codes);
 
     rmt_rx_channel_config_t rx_channel_cfg = {
@@ -201,3 +202,108 @@ TEST_CASE("rmt rx nec with carrier", "[rmt]")
     test_rmt_rx_nec_carrier(128, true, RMT_CLK_SRC_DEFAULT);
 #endif
 }
+
+#if SOC_RMT_SUPPORT_RX_PINGPONG
+#define TEST_RMT_SYMBOLS 10000   // a very long frame, contains 10000 symbols
+
+static void pwm_bit_bang(int gpio_num)
+{
+    for (int i = 0; i < TEST_RMT_SYMBOLS; i++) {
+        gpio_set_level(gpio_num, 1);
+        esp_rom_delay_us(50);
+        gpio_set_level(gpio_num, 0);
+        esp_rom_delay_us(50);
+    }
+}
+
+typedef struct {
+    TaskHandle_t task_to_notify;
+    size_t received_symbol_num;
+} test_rx_user_data_t;
+
+TEST_RMT_CALLBACK_ATTR
+static bool test_rmt_partial_receive_done(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
+{
+    BaseType_t high_task_wakeup = pdFALSE;
+    test_rx_user_data_t *test_user_data = (test_rx_user_data_t *)user_data;
+    test_user_data->received_symbol_num += edata->num_symbols;
+    // when receive done, notify the task to check the received data
+    if (edata->flags.is_last) {
+        vTaskNotifyGiveFromISR(test_user_data->task_to_notify, &high_task_wakeup);
+    }
+    return high_task_wakeup == pdTRUE;
+}
+
+static void test_rmt_partial_receive(size_t mem_block_symbols, bool with_dma, rmt_clock_source_t clk_src)
+{
+    uint32_t const test_rx_buffer_symbols = 128; // the user buffer is small, it can't hold all the received symbols
+    rmt_symbol_word_t *receive_user_buf = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
+                                                                   MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(receive_user_buf);
+
+    rmt_rx_channel_config_t rx_channel_cfg = {
+        .clk_src = clk_src,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
+        .mem_block_symbols = mem_block_symbols,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
+        .flags.with_dma = with_dma,
+        .flags.io_loop_back = true, // the GPIO will act like a loopback
+    };
+    printf("install rx channel\r\n");
+    rmt_channel_handle_t rx_channel = NULL;
+    TEST_ESP_OK(rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
+
+    // initialize the GPIO level to low
+    TEST_ESP_OK(gpio_set_level(TEST_RMT_GPIO_NUM_A, 0));
+
+    printf("register rx event callbacks\r\n");
+    rmt_rx_event_callbacks_t cbs = {
+        .on_recv_done = test_rmt_partial_receive_done,
+    };
+    test_rx_user_data_t test_user_data = {
+        .task_to_notify = xTaskGetCurrentTaskHandle(),
+        .received_symbol_num = 0,
+    };
+    TEST_ESP_OK(rmt_rx_register_event_callbacks(rx_channel, &cbs, &test_user_data));
+
+    printf("enable rx channel\r\n");
+    TEST_ESP_OK(rmt_enable(rx_channel));
+
+    rmt_receive_config_t rx_config = {
+        .signal_range_min_ns = 1250,
+        .signal_range_max_ns = 12000000,
+        .flags.en_partial_rx = true,  // enable partial receive
+    };
+    // ready to receive
+    TEST_ESP_OK(rmt_receive(rx_channel, receive_user_buf, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &rx_config));
+
+    // simulate input signal by GPIO
+    pwm_bit_bang(TEST_RMT_GPIO_NUM_A);
+
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(2000)));
+    printf("received %zu symbols\r\n", test_user_data.received_symbol_num);
+    TEST_ASSERT_EQUAL(TEST_RMT_SYMBOLS, test_user_data.received_symbol_num);
+    // verify the received data
+    for (int i = 0; i < 10; i++) {
+        printf("{%d:%d},{%d:%d}\r\n", receive_user_buf[i].level0, receive_user_buf[i].duration0, receive_user_buf[i].level1, receive_user_buf[i].duration1);
+        TEST_ASSERT_EQUAL(1, receive_user_buf[i].level0);
+        TEST_ASSERT_INT_WITHIN(20, 50, receive_user_buf[i].duration0);
+        TEST_ASSERT_EQUAL(0, receive_user_buf[i].level1);
+        TEST_ASSERT_INT_WITHIN(20, 50, receive_user_buf[i].duration1);
+    }
+
+    printf("disable rx channels\r\n");
+    TEST_ESP_OK(rmt_disable(rx_channel));
+    printf("delete channels and encoder\r\n");
+    TEST_ESP_OK(rmt_del_channel(rx_channel));
+    free(receive_user_buf);
+}
+
+TEST_CASE("rmt rx long frame partially", "[rmt]")
+{
+    test_rmt_partial_receive(SOC_RMT_MEM_WORDS_PER_CHANNEL, false, RMT_CLK_SRC_DEFAULT);
+#if SOC_RMT_SUPPORT_DMA
+    test_rmt_partial_receive(256, true, RMT_CLK_SRC_DEFAULT);
+#endif
+}
+#endif // SOC_RMT_SUPPORT_RX_PINGPONG

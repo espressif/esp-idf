@@ -120,12 +120,12 @@ void gdma_axi_hal_clear_intr(gdma_hal_context_t *hal, int chan_id, gdma_channel_
     }
 }
 
-uint32_t gdma_axi_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+uint32_t gdma_axi_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool raw)
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
-        return axi_dma_ll_rx_get_interrupt_status(hal->axi_dma_dev, chan_id);
+        return axi_dma_ll_rx_get_interrupt_status(hal->axi_dma_dev, chan_id, raw);
     } else {
-        return axi_dma_ll_tx_get_interrupt_status(hal->axi_dma_dev, chan_id);
+        return axi_dma_ll_tx_get_interrupt_status(hal->axi_dma_dev, chan_id, raw);
     }
 }
 

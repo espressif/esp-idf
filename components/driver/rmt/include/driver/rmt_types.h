@@ -56,6 +56,9 @@ typedef bool (*rmt_tx_done_callback_t)(rmt_channel_handle_t tx_chan, const rmt_t
 typedef struct {
     rmt_symbol_word_t *received_symbols; /*!< Point to the received RMT symbols */
     size_t num_symbols;                  /*!< The number of received RMT symbols */
+    struct {
+        uint32_t is_last: 1; /*!< Indicating if the current received data are the last part of the transaction */
+    } flags;                 /*!< Extra flags */
 } rmt_rx_done_event_data_t;
 
 /**
