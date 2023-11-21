@@ -48,15 +48,10 @@ warning: unknown kconfig symbol 'ESPTOOLPY_MONITOR_BAUD_921600B' assigned to 'y'
 warning: unknown kconfig symbol 'FMB_TIMER_GROUP' assigned to '0' in /builds/espressif/esp-idf/examples/protocols/modbus/tcp/*
 warning: unknown kconfig symbol 'FMB_TIMER_INDEX' assigned to '0' in /builds/espressif/esp-idf/examples/protocols/modbus/tcp/*
 warning: unknown kconfig symbol 'FMB_TIMER_ISR_IN_IRAM' assigned to 'y' in /builds/espressif/esp-idf/examples/protocols/modbus/*
-warning: unknown kconfig symbol 'LIBSODIUM_USE_MBEDTLS_SHA' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_br/*
-warning: unknown kconfig symbol 'LIBSODIUM_USE_MBEDTLS_SHA' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_cli/*
-warning: unknown kconfig symbol 'LIBSODIUM_USE_MBEDTLS_SHA' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_rcp/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in /builds/espressif/esp-idf/examples/wifi/iperf/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in /builds/espressif/esp-idf/idf-app-test/apps/iperf/*
 warning: unknown kconfig symbol 'MB_SLAVE_IP_FROM_STDIN' assigned to 'y' in /builds/espressif/esp-idf/examples/protocols/modbus/*
-warning: unknown kconfig symbol 'MDNS_STRICT_MODE' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_br/*
-warning: unknown kconfig symbol 'OPENTHREAD_TREL' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_br/*
 warning: unknown kconfig symbol 'SPI_FLASH_USE_LEGACY_IMPL' assigned to '1' in /builds/espressif/esp-idf/components/wear_levelling/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/sdkconfig.ci.psram
 warning: unknown kconfig symbol 'SPIRAM_FETCH_INSTRUCTIONS' assigned to 'y' in /builds/espressif/esp-idf/components/spi_flash/test_apps/mspi_test/sdkconfig.ci.psram
@@ -82,4 +77,3 @@ warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in /builds/espressif/es
 warning: unknown kconfig symbol 'TINYUSB' assigned to 'y' in /builds/espressif/esp-idf/examples/peripherals/usb/device/tusb_composite_msc_serialdevice/sdkconfig.defaults
 warning: unknown kconfig symbol 'UNITY_FREERTOS_STACK_SIZE' assigned to '12288' in /builds/espressif/esp-idf/components/bt/test_apps/sdkconfig.defaults
 warning: unknown kconfig symbol 'WPA3_SAE' assigned to 'y' in /builds/espressif/esp-idf/components/wpa_supplicant/test_apps/sdkconfig.defaults
-warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in /builds/espressif/esp-idf/examples/openthread/ot_sleepy_device/deep_sleep/sdkconfig.defaults
