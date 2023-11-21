@@ -55,6 +55,7 @@ typedef enum {
      * Argument is unused and should be set to 0.
      */
     ESP_PM_NO_LIGHT_SLEEP,
+    ESP_PM_LOCK_MAX,
 } esp_pm_lock_type_t;
 
 /**
@@ -100,10 +101,13 @@ typedef struct esp_pm_lock* esp_pm_lock_handle_t;
  * @param[out] out_handle  handle returned from this function. Use this handle when calling
  *                         esp_pm_lock_delete, esp_pm_lock_acquire, esp_pm_lock_release.
  *                         Must not be NULL.
+ *
+ * @note If the lock_type argument is not valid, it will cause an abort.
+ *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NO_MEM if the lock structure can not be allocated
- *      - ESP_ERR_INVALID_ARG if out_handle is NULL or type argument is not valid
+ *      - ESP_ERR_INVALID_ARG if out_handle is NULL
  *      - ESP_ERR_NOT_SUPPORTED if CONFIG_PM_ENABLE is not enabled in sdkconfig
  */
 esp_err_t esp_pm_lock_create(esp_pm_lock_type_t lock_type, int arg,
