@@ -45,8 +45,8 @@ Pin Configurations
 
     .. list::
 
-        - slot 0 pins are dedicated for UHS-I mode. This is not yet supported in the driver.
-        - slot 1 pins are routed via GPIO Matrix, and it's for non UHS-I usage. You will need to configure the pins in :cpp:type:`sdmmc_slot_config_t` to use the slot 1.
+        - Slot 0 pins are dedicated for UHS-I mode. This is not yet supported in the driver.
+        - Slot 1 pins are routed via GPIO Matrix, and it's for non UHS-I usage. You will need to configure the pins in :cpp:type:`sdmmc_slot_config_t` to use the slot 1.
 
 Application Example
 -------------------
