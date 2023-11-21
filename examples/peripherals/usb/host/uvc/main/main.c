@@ -170,34 +170,36 @@ static uvc_error_t uvc_negotiate_stream_profile(uvc_device_handle_t *devh,
                                                 uvc_stream_ctrl_t *ctrl)
 {
     uvc_error_t res;
+    int attempt = CONFIG_EXAMPLE_NEGOTIATION_ATTEMPTS;
 #if (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_AUTO)
     for (int idx = 0; idx < EXAMPLE_UVC_PROTOCOL_AUTO_COUNT; idx++) {
-        ESP_LOGI(TAG, "Negotiate streaming profile %s ...", uvc_stream_profiles[idx].name);
-        res = uvc_get_stream_ctrl_format_size(devh,
-                                              ctrl,
-                                              uvc_stream_profiles[idx].format,
-                                              uvc_stream_profiles[idx].width,
-                                              uvc_stream_profiles[idx].height,
-                                              uvc_stream_profiles[idx].fps);
-
+        do {
+            /*
+            The uvc_get_stream_ctrl_format_size() function will attempt to set the desired format size.
+            On first attempt, some cameras would reject the format, even if they support it.
+            So we ask 3x by default. The second attempt is usually successful.
+            */
+            ESP_LOGI(TAG, "Negotiate streaming profile %s ...", uvc_stream_profiles[idx].name);
+            res = uvc_get_stream_ctrl_format_size(devh,
+                                                  ctrl,
+                                                  uvc_stream_profiles[idx].format,
+                                                  uvc_stream_profiles[idx].width,
+                                                  uvc_stream_profiles[idx].height,
+                                                  uvc_stream_profiles[idx].fps);
+        } while (--attempt && !(UVC_SUCCESS == res));
         if (UVC_SUCCESS == res) {
-            break; // stream profile negotiated
+            break;
         }
-        sleep(1);
-        ESP_LOGE(TAG, "Negotiation failed with error %d.", res);
     }
 #endif // CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_AUTO
 
 #if (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM)
-    int attempt = CONFIG_EXAMPLE_NEGOTIATION_ATTEMPTS;
     while (attempt--) {
         ESP_LOGI(TAG, "Negotiate streaming profile %dx%d, %d fps ...", WIDTH, HEIGHT, FPS);
         res = uvc_get_stream_ctrl_format_size(devh, ctrl, FORMAT, WIDTH, HEIGHT, FPS);
         if (UVC_SUCCESS == res) {
             break;
         }
-        sleep(1);
-
         ESP_LOGE(TAG, "Negotiation failed. Try again (%d) ...", attempt);
     }
 #endif // CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM
