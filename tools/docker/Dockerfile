@@ -46,6 +46,7 @@ ARG IDF_CLONE_URL=https://github.com/espressif/esp-idf.git
 ARG IDF_CLONE_BRANCH_OR_TAG=master
 ARG IDF_CHECKOUT_REF=
 ARG IDF_CLONE_SHALLOW=
+ARG IDF_CLONE_SHALLOW_DEPTH=1
 ARG IDF_INSTALL_TARGETS=all
 
 ENV IDF_PATH=/opt/esp/idf
@@ -61,13 +62,13 @@ RUN if [ "$IDF_INSTALL_TARGETS" = "all" ]; then \
 
 RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_BRANCH_OR_TAG && \
     git clone --recursive \
-      ${IDF_CLONE_SHALLOW:+--depth=1 --shallow-submodules} \
+      ${IDF_CLONE_SHALLOW:+--depth=${IDF_CLONE_SHALLOW_DEPTH} --shallow-submodules} \
       ${IDF_CLONE_BRANCH_OR_TAG:+-b $IDF_CLONE_BRANCH_OR_TAG} \
       $IDF_CLONE_URL $IDF_PATH && \
     if [ -n "$IDF_CHECKOUT_REF" ]; then \
       cd $IDF_PATH && \
       if [ -n "$IDF_CLONE_SHALLOW" ]; then \
-        git fetch origin --depth=1 --recurse-submodules ${IDF_CHECKOUT_REF}; \
+        git fetch origin --depth=${IDF_CLONE_SHALLOW_DEPTH} --recurse-submodules ${IDF_CHECKOUT_REF}; \
       fi && \
       git checkout $IDF_CHECKOUT_REF && \
       git submodule update --init --recursive; \
