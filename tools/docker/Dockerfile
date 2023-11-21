@@ -34,6 +34,9 @@ RUN : \
   && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
   && :
 
+# Configure git to allow access to all git repositories in the Filesystem
+RUN git config --global --add safe.directory '*'
+
 # To build the image for a branch or a tag of IDF, pass --build-arg IDF_CLONE_BRANCH_OR_TAG=name.
 # To build the image with a specific commit ID of IDF, pass --build-arg IDF_CHECKOUT_REF=commit-id.
 # It is possibe to combine both, e.g.:
