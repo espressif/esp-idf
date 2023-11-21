@@ -79,11 +79,10 @@ SDMMC Host driver supports the following speed modes:
 
 - Default Speed (20 MHz): 1-line or 4-line with SD cards, and 1-line, 4-line, or 8-line with 3.3 V eMMC
 - High Speed (40 MHz): 1-line or 4-line with SD cards, and 1-line, 4-line, or 8-line with 3.3 V eMMC
-- High Speed DDR (40 MHz): 4-line with 3.3 V eMMC
+- High Speed DDR (40 MHz): 4-line and 8-line with 3.3 V eMMC
 
 Speed modes not supported at present:
 
-- High Speed DDR mode: 8-line eMMC
 - UHS-I 1.8 V modes: 4-line SD cards
 
 
