@@ -242,31 +242,31 @@
 .patterns-custom_test-wifi: &patterns-custom_test-wifi
   - "tools/test_apps/phy/**/*"
 
-# for jobs: example_test_pytest_sdio related
+# for jobs: SDIO related example_test
 .patterns-example_test-sdio: &patterns-example_test-sdio
   - "components/hal/sdio*.c"
   - "components/hal/include/hal/sdio*.h"
-  - "components/driver/sdspi*.c"
-  - "components/driver/sdio*.c"
-  - "components/driver/sdmmc*.c"
-  - "components/driver/include/driver/sdspi*.h"
-  - "components/driver/include/driver/sdio*.h"
-  - "components/driver/include/driver/sdmmc*.h"
+  - "components/esp_driver_sdspi/src/sdspi*.c"
+  - "components/esp_driver_sdio/src/sdio*.c"
+  - "components/esp_driver_sdmmc/src/sdmmc*.c"
+  - "components/esp_driver_sdspi/include/driver/sdspi*.h"
+  - "components/esp_driver_sdio/include/driver/sdio*.h"
+  - "components/esp_driver_sdmmc/include/driver/sdmmc*.h"
   - "components/sdmmc/??[!s][!t]*/**/*"
   - "components/sdmmc/???/**/*"
   - "components/sdmmc/*"
   - "examples/peripherals/sdio/**/*"
 
-# for jobs: component_ut_pytest_sdio related
+# for jobs: SDIO related component_test
 .patterns-component_ut-sdio: &patterns-component_ut-sdio
   - "components/hal/sdio*.c"
   - "components/hal/include/hal/sdio*.h"
-  - "components/driver/sdspi*.c"
-  - "components/driver/sdio*.c"
-  - "components/driver/sdmmc*.c"
-  - "components/driver/include/driver/sdspi*.h"
-  - "components/driver/include/driver/sdio*.h"
-  - "components/driver/include/driver/sdmmc*.h"
+  - "components/esp_driver_sdspi/src/sdspi*.c"
+  - "components/esp_driver_sdio/src/sdio*.c"
+  - "components/esp_driver_sdmmc/src/sdmmc*.c"
+  - "components/esp_driver_sdspi/include/driver/sdspi*.h"
+  - "components/esp_driver_sdio/include/driver/sdio*.h"
+  - "components/esp_driver_sdmmc/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
 
 # for jobs: component_ut_pytest_flash_multi
