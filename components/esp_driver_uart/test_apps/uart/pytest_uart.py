@@ -5,6 +5,7 @@ import pytest
 
 
 @pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='skip due to duplication with test_uart_single_dev_psram')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -15,4 +16,18 @@ import pytest
     indirect=True,
 )
 def test_uart_single_dev(case_tester) -> None:                # type: ignore
+    case_tester.run_all_normal_cases(reset=True)
+
+
+@pytest.mark.esp32s3
+@pytest.mark.octal_psram
+@pytest.mark.parametrize(
+    'config',
+    [
+        'iram_safe',
+        'release',
+    ],
+    indirect=True,
+)
+def test_uart_single_dev_psram(case_tester) -> None:          # type: ignore
     case_tester.run_all_normal_cases(reset=True)

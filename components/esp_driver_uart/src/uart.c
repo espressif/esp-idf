@@ -11,7 +11,6 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_check.h"
-#include "malloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
@@ -525,7 +524,7 @@ esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length)
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_ERR_INVALID_STATE, UART_TAG, "uart driver error");
 
-    int *pdata = (int *) malloc(queue_length * sizeof(int));
+    int *pdata = (int *)heap_caps_malloc(queue_length * sizeof(int), UART_MALLOC_CAPS);
     if (pdata == NULL) {
         return ESP_ERR_NO_MEM;
     }
