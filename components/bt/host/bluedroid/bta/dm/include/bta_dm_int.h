@@ -61,6 +61,7 @@ enum {
     BTA_DM_API_CONFIG_EIR_EVT,
     BTA_DM_API_PAGE_TO_SET_EVT,
     BTA_DM_API_PAGE_TO_GET_EVT,
+    BTA_DM_API_SET_ACL_PKT_TYPES_EVT,
 #endif
     BTA_DM_API_SET_AFH_CHANNELS_EVT,
 #if (SDP_INCLUDED == TRUE)
@@ -298,6 +299,14 @@ typedef struct {
     BT_HDR              hdr;
     tBTM_CMPL_CB        *get_page_to_cb;
 } tBTA_DM_API_PAGE_TO_GET;
+
+/* data type for BTA_DM_API_SET_ACL_PKT_TYPES_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    BD_ADDR             rmt_addr;
+    UINT16              pkt_types;
+    tBTM_CMPL_CB        *set_acl_pkt_types_cb;
+} tBTA_DM_API_SET_ACL_PKT_TYPES;
 
 /* data type for BTA_DM_API_GET_REMOTE_NAME_EVT */
 typedef struct {
@@ -1158,6 +1167,7 @@ typedef union {
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
     tBTA_DM_API_PAGE_TO_SET set_page_timeout;
     tBTA_DM_API_PAGE_TO_GET get_page_timeout;
+    tBTA_DM_API_SET_ACL_PKT_TYPES set_acl_pkt_types;
 #if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_GET_REMOTE_NAME  get_rmt_name;
 #endif
@@ -1670,6 +1680,7 @@ extern void bta_dm_cfg_coex_status(tBTA_DM_MSG *p_data);
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_page_timeout (tBTA_DM_MSG *p_data);
 extern void bta_dm_get_page_timeout (tBTA_DM_MSG *p_data);
+extern void bta_dm_set_acl_pkt_types (tBTA_DM_MSG *p_data);
 #endif
 extern void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data);
 extern void bta_dm_read_rmt_name(tBTA_DM_MSG *p_data);
