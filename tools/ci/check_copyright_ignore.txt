@@ -685,7 +685,6 @@ components/hal/esp32c3/include/hal/mpu_ll.h
 components/hal/esp32c3/include/hal/sha_ll.h
 components/hal/esp32c3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32c3/include/hal/uhci_ll.h
-components/hal/esp32c3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32c3/rtc_cntl_hal.c
 components/hal/esp32h2/hmac_hal.c
 components/hal/esp32h2/include/hal/aes_ll.h
@@ -697,7 +696,6 @@ components/hal/esp32h2/include/hal/sha_ll.h
 components/hal/esp32h2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32h2/include/hal/uhci_ll.h
 components/hal/esp32h2/include/hal/uhci_types.h
-components/hal/esp32h2/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32s2/include/hal/aes_ll.h
 components/hal/esp32s2/include/hal/crypto_dma_ll.h
 components/hal/esp32s2/include/hal/dac_hal.h
@@ -713,7 +711,6 @@ components/hal/esp32s3/include/hal/sha_ll.h
 components/hal/esp32s3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s3/include/hal/uhci_ll.h
 components/hal/esp32s3/include/hal/usb_ll.h
-components/hal/esp32s3/include/hal/usb_serial_jtag_ll.h
 components/hal/include/hal/aes_hal.h
 components/hal/include/hal/aes_types.h
 components/hal/include/hal/dac_hal.h

@@ -14,6 +14,7 @@ if(NOT BOOTLOADER_BUILD)
                      "revision.c"
                      "rtc_module.c"
                      "sleep_modes.c"
+                     "sleep_console.c"
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
                      "regi2c_ctrl.c"
