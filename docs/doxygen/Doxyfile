@@ -78,7 +78,6 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
     $(PROJECT_PATH)/components/driver/touch_sensor/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/twai/include/driver/twai.h \
-    $(PROJECT_PATH)/components/driver/uart/include/driver/uart.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
@@ -143,6 +142,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave_hd.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave.h \
     $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \

@@ -11,6 +11,7 @@ list(APPEND sources "vfs.c"
                     "vfs_console.c")
 
 list(APPEND pr driver
+               esp_driver_uart
                esp_timer)
 
 idf_component_register(SRCS ${sources}
