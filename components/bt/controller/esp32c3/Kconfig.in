@@ -346,7 +346,7 @@ config BT_CTRL_MESH_DUPL_SCAN_CACHE_SIZE
 choice BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
     default BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS
-    depends on ESP_WIFI_SW_COEXIST_ENABLE
+    depends on ESP_COEX_SW_COEXIST_ENABLE
     help
         When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
         better avoid dramatic performance deterioration of Wi-Fi.
@@ -364,7 +364,7 @@ endchoice
 
 config BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int
-    default 0 if (!ESP_WIFI_SW_COEXIST_ENABLE)
+    default 0 if !ESP_COEX_SW_COEXIST_ENABLE
     default 1 if BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EN
     default 0 if BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
