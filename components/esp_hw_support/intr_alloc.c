@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,6 +96,8 @@ struct non_shared_isr_arg_t {
     void *isr_arg;
     int source;
 };
+
+static esp_err_t intr_free_for_current_cpu(intr_handle_t handle);
 
 //Linked list of vector descriptions, sorted by cpu.intno value
 static vector_desc_t *vector_desc_head = NULL;
@@ -264,7 +266,7 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
     }
     //check if edge/level type matches what we want
     if (((flags & ESP_INTR_FLAG_EDGE) && (intr_desc.type == ESP_CPU_INTR_TYPE_LEVEL)) ||
-        (((!(flags & ESP_INTR_FLAG_EDGE)) && (intr_desc.type == ESP_CPU_INTR_TYPE_EDGE)))) {
+            (((!(flags & ESP_INTR_FLAG_EDGE)) && (intr_desc.type == ESP_CPU_INTR_TYPE_EDGE)))) {
         ALCHLOG("....Unusable: incompatible trigger type");
         return false;
     }
@@ -371,8 +373,8 @@ static int get_available_int(int flags, int cpu, int force, int source)
         esp_cpu_intr_get_desc(cpu, x, &intr_desc);
 
         ALCHLOG("Int %d reserved %d priority %d %s hasIsr %d",
-            x, intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD, intr_desc.priority,
-            intr_desc.type == ESP_CPU_INTR_TYPE_LEVEL? "LEVEL" : "EDGE", esp_cpu_intr_has_handler(x));
+                x, intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD, intr_desc.priority,
+                intr_desc.type == ESP_CPU_INTR_TYPE_LEVEL? "LEVEL" : "EDGE", esp_cpu_intr_has_handler(x));
 
         if (!is_vect_desc_usable(vd, flags, cpu, force)) {
             continue;
@@ -472,7 +474,7 @@ static void IRAM_ATTR non_shared_intr_isr(void *arg)
 
 //We use ESP_EARLY_LOG* here because this can be called before the scheduler is running.
 esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
-                                        void *arg, intr_handle_t *ret_handle)
+                                    void *arg, intr_handle_t *ret_handle)
 {
     intr_handle_data_t *ret=NULL;
     int force = -1;
@@ -670,7 +672,7 @@ esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
     }
     vector_desc_t *vd = handle->vector_desc;
     if (vd->flags & VECDESC_FL_SHARED) {
-      return ESP_ERR_INVALID_ARG;
+        return ESP_ERR_INVALID_ARG;
     }
     portENTER_CRITICAL(&spinlock);
     uint32_t mask = (1 << vd->intno);
@@ -686,26 +688,44 @@ esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 }
 
 #if !CONFIG_FREERTOS_UNICORE
-static void esp_intr_free_cb(void *arg)
+static void intr_free_for_other_cpu(void *arg)
 {
-    (void)esp_intr_free((intr_handle_t)arg);
+    (void)intr_free_for_current_cpu((intr_handle_t)arg);
 }
 #endif /* !CONFIG_FREERTOS_UNICORE */
 
 esp_err_t esp_intr_free(intr_handle_t handle)
 {
-    bool free_shared_vector=false;
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
 
 #if !CONFIG_FREERTOS_UNICORE
     //Assign this routine to the core where this interrupt is allocated on.
-    if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
-        esp_err_t ret = esp_ipc_call_blocking(handle->vector_desc->cpu, &esp_intr_free_cb, (void *)handle);
+
+    bool task_can_be_run_on_any_core;
+#if CONFIG_FREERTOS_SMP
+    UBaseType_t core_affinity = vTaskCoreAffinityGet(NULL);
+    task_can_be_run_on_any_core = (__builtin_popcount(core_affinity) > 1);
+#else
+    UBaseType_t core_affinity = xTaskGetCoreID(NULL);
+    task_can_be_run_on_any_core = (core_affinity == tskNO_AFFINITY);
+#endif
+
+    if (task_can_be_run_on_any_core || handle->vector_desc->cpu != esp_cpu_get_core_id()) {
+        // If the task can be run on any core then we can not rely on the current CPU id (in case if task switching occurs).
+        // It is safer to call intr_free_for_current_cpu() from a pinned to a certain CPU task. It is done through the IPC call.
+        esp_err_t ret = esp_ipc_call_blocking(handle->vector_desc->cpu, &intr_free_for_other_cpu, (void *)handle);
         return ret == ESP_OK ? ESP_OK : ESP_FAIL;
     }
 #endif /* !CONFIG_FREERTOS_UNICORE */
+
+    return intr_free_for_current_cpu(handle);
+}
+
+static esp_err_t intr_free_for_current_cpu(intr_handle_t handle)
+{
+    bool free_shared_vector = false;
 
     portENTER_CRITICAL(&spinlock);
     esp_intr_disable(handle);
