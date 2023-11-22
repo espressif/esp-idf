@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -458,6 +458,11 @@ esp_err_t esp_partition_register_external(esp_flash_t* flash_chip, size_t offset
  *        esp_partition_register_external function.
  */
 esp_err_t esp_partition_deregister_external(const esp_partition_t* partition);
+
+/**
+ * @brief Unload partitions and free space allocated by them
+ */
+void esp_partition_unload_all(void);
 
 #ifdef __cplusplus
 }
