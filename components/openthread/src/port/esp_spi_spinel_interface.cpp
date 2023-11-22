@@ -25,17 +25,39 @@ using ot::Spinel::SpinelInterface;
 namespace esp {
 namespace openthread {
 
-SpiSpinelInterface::SpiSpinelInterface(SpinelInterface::ReceiveFrameCallback callback, void *callback_context,
-                                       SpinelInterface::RxFrameBuffer &frame_buffer)
+SpiSpinelInterface::SpiSpinelInterface(void)
     : m_event_fd(-1)
-    , m_receiver_frame_callback(callback)
-    , m_receiver_frame_context(callback_context)
-    , m_receive_frame_buffer(frame_buffer)
+    , m_receiver_frame_callback(nullptr)
+    , m_receiver_frame_context(nullptr)
+    , m_receive_frame_buffer(nullptr)
     , mRcpFailureHandler(nullptr)
 {
 }
 
-esp_err_t SpiSpinelInterface::Init(const esp_openthread_spi_host_config_t &spi_config)
+SpiSpinelInterface::~SpiSpinelInterface(void)
+{
+    Deinit();
+}
+
+otError SpiSpinelInterface::Init(ReceiveFrameCallback aCallback, void *aCallbackContext, RxFrameBuffer &aFrameBuffer)
+{
+    otError error = OT_ERROR_NONE;
+
+    m_receiver_frame_callback = aCallback;
+    m_receiver_frame_context = aCallbackContext;
+    m_receive_frame_buffer = &aFrameBuffer;
+
+    return error;
+}
+
+void SpiSpinelInterface::Deinit(void)
+{
+    m_receiver_frame_callback = nullptr;
+    m_receiver_frame_context = nullptr;
+    m_receive_frame_buffer = nullptr;
+}
+
+esp_err_t SpiSpinelInterface::Enable(const esp_openthread_spi_host_config_t &spi_config)
 {
     ESP_RETURN_ON_FALSE(m_event_fd < 0, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "event fd was initialized");
     m_spi_config = spi_config;
@@ -62,10 +84,16 @@ esp_err_t SpiSpinelInterface::Init(const esp_openthread_spi_host_config_t &spi_c
 
     ESP_LOGI(OT_PLAT_LOG_TAG, "spinel SPI interface initialization completed");
 
+    return ESP_OK;
+}
+
+esp_err_t SpiSpinelInterface::AfterRadioInit(void)
+{
     return ConductSPITransaction(true, 0, 0);
 }
 
-esp_err_t SpiSpinelInterface::Deinit(void)
+
+esp_err_t SpiSpinelInterface::Disable(void)
 {
     if (m_event_fd >= 0) {
         close(m_event_fd);
@@ -78,11 +106,6 @@ esp_err_t SpiSpinelInterface::Deinit(void)
         gpio_uninstall_isr_service();
     }
     return ESP_OK;
-}
-
-SpiSpinelInterface::~SpiSpinelInterface(void)
-{
-    Deinit();
 }
 
 otError SpiSpinelInterface::SendFrame(const uint8_t *frame, uint16_t length)
@@ -113,13 +136,13 @@ esp_err_t SpiSpinelInterface::ConductSPITransaction(bool reset, uint16_t tx_data
     tx_frame.SetHeaderAcceptLen(rx_data_size);
 
     uint8_t *rx_buffer;
-    otError err = m_receive_frame_buffer.SetSkipLength(kSPIFrameHeaderSize);
+    otError err = m_receive_frame_buffer->SetSkipLength(kSPIFrameHeaderSize);
 
     ESP_RETURN_ON_FALSE(err == OT_ERROR_NONE, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "buffer space is insufficient");
 
-    rx_buffer = m_receive_frame_buffer.GetFrame() - kSPIFrameHeaderSize;
-    if (m_receive_frame_buffer.GetFrameMaxLength() < rx_data_size) {
-        rx_data_size = m_receive_frame_buffer.GetFrameMaxLength();
+    rx_buffer = m_receive_frame_buffer->GetFrame() - kSPIFrameHeaderSize;
+    if (m_receive_frame_buffer->GetFrameMaxLength() < rx_data_size) {
+        rx_data_size = m_receive_frame_buffer->GetFrameMaxLength();
     }
     uint16_t data_size = tx_data_size > rx_data_size ? tx_data_size : rx_data_size;
     data_size += kSPIFrameHeaderSize;
@@ -143,7 +166,7 @@ esp_err_t SpiSpinelInterface::ConductSPITransaction(bool reset, uint16_t tx_data
 
     if (rx_frame.IsResetFlagSet()) {
         ESP_LOGW(OT_PLAT_LOG_TAG, "RCP Reset");
-        m_receive_frame_buffer.DiscardFrame();
+        m_receive_frame_buffer->DiscardFrame();
         return ESP_OK;
     }
     if (rx_frame.GetHeaderDataLen() == 0 && rx_frame.GetHeaderAcceptLen() == 0) {
@@ -156,16 +179,16 @@ esp_err_t SpiSpinelInterface::ConductSPITransaction(bool reset, uint16_t tx_data
         if (gpio_get_level(m_spi_config.intr_pin) == 1) {
             m_pending_data_len = 0;
         }
-        if (m_receive_frame_buffer.SetLength(rx_frame.GetHeaderDataLen()) != OT_ERROR_NONE) {
+        if (m_receive_frame_buffer->SetLength(rx_frame.GetHeaderDataLen()) != OT_ERROR_NONE) {
             ESP_LOGW(OT_PLAT_LOG_TAG, "insufficient buffer space to hold a frame of length %d...",
                      rx_frame.GetHeaderDataLen());
-            m_receive_frame_buffer.DiscardFrame();
+            m_receive_frame_buffer->DiscardFrame();
             return ESP_ERR_NO_MEM;
         }
         m_receiver_frame_callback(m_receiver_frame_context);
     } else {
         m_pending_data_len = 0;
-        m_receive_frame_buffer.DiscardFrame();
+        m_receive_frame_buffer->DiscardFrame();
     }
     m_pending_data_len = 0;
 
@@ -180,26 +203,26 @@ void SpiSpinelInterface::GpioIntrHandler(void *arg)
     write(instance->m_event_fd, &event, sizeof(event));
 }
 
-void SpiSpinelInterface::Update(void *mainloop)
+void SpiSpinelInterface::UpdateFdSet(void *aMainloopContext)
 {
     if (m_pending_data_len > 0) {
-        ((esp_openthread_mainloop_context_t *)mainloop)->timeout.tv_sec = 0;
-        ((esp_openthread_mainloop_context_t *)mainloop)->timeout.tv_usec = 0;
+        ((esp_openthread_mainloop_context_t *)aMainloopContext)->timeout.tv_sec = 0;
+        ((esp_openthread_mainloop_context_t *)aMainloopContext)->timeout.tv_usec = 0;
     }
-    FD_SET(m_event_fd, &((esp_openthread_mainloop_context_t *)mainloop)->read_fds);
-    FD_SET(m_event_fd, &((esp_openthread_mainloop_context_t *)mainloop)->error_fds);
-    if (m_event_fd > ((esp_openthread_mainloop_context_t *)mainloop)->max_fd) {
-        ((esp_openthread_mainloop_context_t *)mainloop)->max_fd = m_event_fd;
+    FD_SET(m_event_fd, &((esp_openthread_mainloop_context_t *)aMainloopContext)->read_fds);
+    FD_SET(m_event_fd, &((esp_openthread_mainloop_context_t *)aMainloopContext)->error_fds);
+    if (m_event_fd > ((esp_openthread_mainloop_context_t *)aMainloopContext)->max_fd) {
+        ((esp_openthread_mainloop_context_t *)aMainloopContext)->max_fd = m_event_fd;
     }
 }
 
-void SpiSpinelInterface::Process(const void *mainloop)
+void SpiSpinelInterface::Process(const void *aMainloopContext)
 {
-    if (FD_ISSET(m_event_fd, &((esp_openthread_mainloop_context_t *)mainloop)->error_fds)) {
+    if (FD_ISSET(m_event_fd, &((esp_openthread_mainloop_context_t *)aMainloopContext)->error_fds)) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "SPI INTR GPIO error event");
         return;
     }
-    if (FD_ISSET(m_event_fd, &((esp_openthread_mainloop_context_t *)mainloop)->read_fds)) {
+    if (FD_ISSET(m_event_fd, &((esp_openthread_mainloop_context_t *)aMainloopContext)->read_fds)) {
         uint64_t event;
         read(m_event_fd, &event, sizeof(event));
         m_pending_data_len = SpinelInterface::kMaxFrameSize;
@@ -247,6 +270,11 @@ otError SpiSpinelInterface::HardwareReset(void)
         ConductSPITransaction(true, 0, 0); // clear
     }
     return OT_ERROR_NONE;
+}
+
+uint32_t SpiSpinelInterface::GetBusSpeed(void) const
+{
+    return m_spi_config.spi_device.clock_speed_hz;
 }
 
 } // namespace openthread
