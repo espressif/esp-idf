@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/ets_sys.h"
 #include "esp32c2/rom/uart.h"
+#endif
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#include "hal/usb_phy_ll.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
@@ -107,6 +110,9 @@ void bootloader_console_init(void)
     esp_rom_uart_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
     esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
     esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+    usb_phy_ll_int_otg_enable(&USB_WRAP);
+#endif
 }
 #endif //CONFIG_ESP_CONSOLE_USB_CDC
 
