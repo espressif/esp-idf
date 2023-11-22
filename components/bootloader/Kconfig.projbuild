@@ -1071,6 +1071,22 @@ menu "Security features"
                 DIS_DOWNLOAD_MANUAL_ENCRYPT, DIS_USB_JTAG, DIS_USB_SERIAL_JTAG, STRAP_JTAG_SEL, USB_PHY_SEL.
     endmenu  # Potentially Insecure
 
+    config SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
+        bool "Encrypt only the app image that is present in the partition of type app"
+        depends on SECURE_FLASH_ENC_ENABLED && !SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+        default n
+        help
+            If set, optimise encryption time for the partition of type APP,
+            by only encrypting the app image that is present in the partition,
+            instead of the whole partition.
+            The image length used for encryption is derived from the image metadata, which
+            includes the size of the app image, checksum, hash and also the signature sector
+            when secure boot is enabled.
+
+            If not set (default), the whole partition of type APP would be encrypted,
+            which increases the encryption time but might be useful if there
+            is any custom data appended to the firmware image.
+
     config SECURE_FLASH_CHECK_ENC_EN_IN_APP
         bool "Check Flash Encryption enabled on app startup"
         depends on SECURE_FLASH_ENC_ENABLED
