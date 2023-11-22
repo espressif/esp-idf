@@ -131,7 +131,10 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
 #endif
     esp_err_t ret = ESP_OK;
     esp_lcd_i80_bus_t *bus = NULL;
-    ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // although LCD_CAM can support up to 24 data lines, we restrict users to only use 8 or 16 bit width
+    ESP_RETURN_ON_FALSE(bus_config->bus_width == 8 || bus_config->bus_width == 16, ESP_ERR_INVALID_ARG,
+                        TAG, "invalid bus width:%d", bus_config->bus_width);
     size_t num_dma_nodes = bus_config->max_transfer_bytes / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
     // DMA descriptors must be placed in internal SRAM
     bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
@@ -153,13 +156,15 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     }
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&bus->hal, bus_id);
-    // reset peripheral and FIFO
-    lcd_ll_reset(bus->hal.dev);
-    lcd_ll_fifo_reset(bus->hal.dev);
-    lcd_ll_enable_clock(bus->hal.dev, true);
+    LCD_CLOCK_SRC_ATOMIC() {
+        lcd_ll_enable_clock(bus->hal.dev, true);
+    }
     // set peripheral clock resolution
     ret = lcd_i80_select_periph_clock(bus, bus_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock %d failed", bus_config->clk_src);
+    // reset peripheral and FIFO after we select a correct clock source
+    lcd_ll_reset(bus->hal.dev);
+    lcd_ll_fifo_reset(bus->hal.dev);
     // install interrupt service, (LCD peripheral shares the same interrupt source with Camera peripheral with different mask)
     // interrupt is disabled by default
     int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
@@ -172,12 +177,17 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // install DMA service
     bus->psram_trans_align = bus_config->psram_trans_align;
     bus->sram_trans_align = bus_config->sram_trans_align;
+    bus->bus_width = bus_config->bus_width;
     ret = lcd_i80_init_dma_link(bus);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
-    // enable 8080 mode and set bus width
+    // disable RGB-LCD mode
     lcd_ll_enable_rgb_mode(bus->hal.dev, false);
-    lcd_ll_set_data_width(bus->hal.dev, bus_config->bus_width);
-    bus->bus_width = bus_config->bus_width;
+    // disable YUV-RGB converter
+    lcd_ll_enable_rgb_yuv_convert(bus->hal.dev, false);
+    // set how much data to read from DMA each time
+    lcd_ll_set_dma_read_stride(bus->hal.dev, bus->bus_width);
+    // sometime, we need to change the output data order: ABAB->BABA
+    lcd_ll_set_swizzle_mode(bus->hal.dev, LCD_LL_SWIZZLE_AB2BA);
     // number of data cycles is controlled by DMA buffer size
     lcd_ll_enable_output_always_on(bus->hal.dev, true);
     // enable trans done interrupt
@@ -435,8 +445,9 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     // switch devices if necessary
     lcd_i80_switch_devices(cur_device, next_device);
     // set data format
-    lcd_ll_reverse_bit_order(bus->hal.dev, false);
-    lcd_ll_swap_byte_order(bus->hal.dev, bus->bus_width, next_device->lcd_param_bits > bus->bus_width);
+    lcd_ll_reverse_dma_data_bit_order(bus->hal.dev, false);
+    // whether to swap the adjacent data bytes
+    lcd_ll_enable_swizzle(bus->hal.dev, next_device->lcd_param_bits > bus->bus_width);
     bus->cur_trans = NULL;
     bus->cur_device = next_device;
     // package a transaction
@@ -514,9 +525,11 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
 
-    // force to use integer division, as fractional division might lead to clock jitter
-    lcd_ll_select_clk_src(bus->hal.dev, clk_src);
-    lcd_ll_set_group_clock_coeff(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
+    LCD_CLOCK_SRC_ATOMIC() {
+        lcd_ll_select_clk_src(bus->hal.dev, clk_src);
+        // force to use integer division, as fractional division might lead to clock jitter
+        lcd_ll_set_group_clock_coeff(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
+    }
 
     // save the resolution of the i80 bus
     bus->resolution_hz = src_clk_hz / LCD_PERIPH_CLOCK_PRE_SCALE;
@@ -578,6 +591,8 @@ static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const 
     if (!valid_gpio) {
         return ESP_ERR_INVALID_ARG;
     }
+    // Set the number of output data lines
+    lcd_ll_set_data_wire_width(bus->hal.dev, bus_config->bus_width);
     // connect peripheral signals via GPIO matrix
     for (size_t i = 0; i < bus_config->bus_width; i++) {
         gpio_set_direction(bus_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
@@ -700,8 +715,8 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
                 // switch devices if necessary
                 lcd_i80_switch_devices(cur_device, next_device);
                 // only reverse data bit/bytes for color data
-                lcd_ll_reverse_bit_order(bus->hal.dev, next_device->flags.reverse_color_bits);
-                lcd_ll_swap_byte_order(bus->hal.dev, bus->bus_width, next_device->flags.swap_color_bytes);
+                lcd_ll_reverse_dma_data_bit_order(bus->hal.dev, next_device->flags.reverse_color_bits);
+                lcd_ll_enable_swizzle(bus->hal.dev, next_device->flags.swap_color_bytes);
                 bus->cur_trans = trans_desc;
                 bus->cur_device = next_device;
                 // mount data to DMA links

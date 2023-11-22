@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 #include "soc/lcd_cam_struct.h"
 #include "hal/assert.h"
 #include "hal/lcd_types.h"
-#include "soc/system_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +33,12 @@ extern "C" {
  * @brief LCD data byte swizzle mode
  */
 typedef enum {
-    LCD_LL_SWIZZLE_AB2BA, /*!< AB -> BA */
+    LCD_LL_SWIZZLE_AB2BA,   /*!< AB -> BA */
+    LCD_LL_SWIZZLE_ABC2ACB, /*!< ABC -> ACB */
+    LCD_LL_SWIZZLE_ABC2BAC, /*!< ABC -> BAC */
+    LCD_LL_SWIZZLE_ABC2BCA, /*!< ABC -> BCA */
+    LCD_LL_SWIZZLE_ABC2CAB, /*!< ABC -> CAB */
+    LCD_LL_SWIZZLE_ABC2CBA, /*!< ABC -> CBA */
 } lcd_ll_swizzle_mode_t;
 
 /**
@@ -44,7 +49,7 @@ typedef enum {
 static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
-    SYSTEM.perip_clk_en1.lcd_cam_clk_en = enable;
+    HP_SYS_CLKRST.soc_clk_ctrl3.reg_lcdcam_apb_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -57,8 +62,8 @@ static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 static inline void lcd_ll_reset_register(int group_id)
 {
     (void)group_id;
-    SYSTEM.perip_rst_en1.lcd_cam_rst = 0x01;
-    SYSTEM.perip_rst_en1.lcd_cam_rst = 0x00;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_lcdcam = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_lcdcam = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -73,8 +78,12 @@ static inline void lcd_ll_reset_register(int group_id)
  */
 static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 {
-    dev->lcd_clock.clk_en = en;
+    HP_SYS_CLKRST.peri_clk_ctrl19.reg_lcd_clk_en = en;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define lcd_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lcd_ll_enable_clock(__VA_ARGS__)
 
 /**
  * @brief Select clock source for LCD peripheral
@@ -85,22 +94,25 @@ static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 static inline void lcd_ll_select_clk_src(lcd_cam_dev_t *dev, lcd_clock_source_t src)
 {
     switch (src) {
-    case LCD_CLK_SRC_PLL160M:
-        dev->lcd_clock.lcd_clk_sel = 3;
-        break;
-    case LCD_CLK_SRC_PLL240M:
-        dev->lcd_clock.lcd_clk_sel = 2;
-        break;
     case LCD_CLK_SRC_XTAL:
-        dev->lcd_clock.lcd_clk_sel = 1;
+        HP_SYS_CLKRST.peri_clk_ctrl19.reg_lcd_clk_src_sel = 0;
+        break;
+    case LCD_CLK_SRC_PLL160M:
+        HP_SYS_CLKRST.peri_clk_ctrl19.reg_lcd_clk_src_sel = 1;
+        break;
+    case LCD_CLK_SRC_APLL:
+        HP_SYS_CLKRST.peri_clk_ctrl19.reg_lcd_clk_src_sel = 2;
         break;
     default:
-        // disable LCD clock source
-        dev->lcd_clock.lcd_clk_sel = 0;
-        HAL_ASSERT(false);
+        // disable the clock
+        HP_SYS_CLKRST.peri_clk_ctrl19.reg_lcd_clk_src_sel = 3;
         break;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define lcd_ll_select_clk_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; lcd_ll_select_clk_src(__VA_ARGS__)
 
 /**
  * @brief Set clock coefficient of LCD peripheral
@@ -119,10 +131,14 @@ static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num,
     if (div_num >= LCD_LL_CLK_FRAC_DIV_N_MAX) {
         div_num = 0;
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
-    dev->lcd_clock.lcd_clkm_div_a = div_a;
-    dev->lcd_clock.lcd_clkm_div_b = div_b;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl110, reg_lcd_clk_div_num, div_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl110, reg_lcd_clk_div_denominator, div_a);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl110, reg_lcd_clk_div_numerator, div_b);
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define lcd_ll_set_group_clock_coeff(...) (void)__DECLARE_RCC_ATOMIC_ENV; lcd_ll_set_group_clock_coeff(__VA_ARGS__)
 
 /**
  * @brief Set the PCLK clock level state when there's no transaction undergoing
@@ -178,14 +194,14 @@ static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t 
  */
 static inline void lcd_ll_enable_rgb_yuv_convert(lcd_cam_dev_t *dev, bool en)
 {
-    dev->lcd_rgb_yuv.lcd_conv_bypass = en;
+    dev->lcd_rgb_yuv.lcd_conv_enable = en;
 }
 
 /**
  * @brief Set convert data line width
  *
  * @param dev LCD register base address
- * @param width data line width (8 or 16)
+ * @param width data line width
  */
 static inline void lcd_ll_set_convert_data_width(lcd_cam_dev_t *dev, uint32_t width)
 {
@@ -365,20 +381,25 @@ static inline void lcd_ll_set_blank_cycles(lcd_cam_dev_t *dev, uint32_t fk_cycle
  * @brief Set data read stride, i.e., number of bytes the LCD reads from the DMA in each step
  *
  * @param dev LCD register base address
- * @param stride data stride size
+ * @param stride data stride size, in bits
  */
 static inline void lcd_ll_set_dma_read_stride(lcd_cam_dev_t *dev, uint32_t stride)
 {
     switch (stride) {
     case 8:
-        dev->lcd_user.lcd_2byte_en = 0;
+        dev->lcd_user.lcd_byte_mode = 0;
         break;
     case 16:
-        dev->lcd_user.lcd_2byte_en = 1;
+        dev->lcd_user.lcd_byte_mode = 1;
+        break;
+    case 24:
+        dev->lcd_user.lcd_byte_mode = 2;
+        break;
+    case 32:
+        dev->lcd_user.lcd_byte_mode = 3;
         break;
     default:
         abort();
-        break;
     }
 }
 
@@ -390,7 +411,19 @@ static inline void lcd_ll_set_dma_read_stride(lcd_cam_dev_t *dev, uint32_t strid
  */
 static inline void lcd_ll_set_data_wire_width(lcd_cam_dev_t *dev, uint32_t width)
 {
-    // data line width is same as data stride that set in `lcd_ll_set_dma_read_stride`
+    switch (width) {
+    case 8:
+        dev->lcd_misc.lcd_wire_mode = 0;
+        break;
+    case 16:
+        dev->lcd_misc.lcd_wire_mode = 1;
+        break;
+    case 24:
+        dev->lcd_misc.lcd_wire_mode = 2;
+        break;
+    default:
+        abort();
+    }
 }
 
 /**
@@ -413,7 +446,7 @@ static inline void lcd_ll_enable_output_always_on(lcd_cam_dev_t *dev, bool en)
 __attribute__((always_inline))
 static inline void lcd_ll_start(lcd_cam_dev_t *dev)
 {
-    dev->lcd_user.lcd_update = 1; // update parameters before start transaction
+    dev->lcd_user.lcd_update_reg = 1; // update parameters before start transaction
     dev->lcd_user.lcd_start = 1;
 }
 
@@ -426,7 +459,7 @@ __attribute__((always_inline))
 static inline void lcd_ll_stop(lcd_cam_dev_t *dev)
 {
     dev->lcd_user.lcd_start = 0;
-    dev->lcd_user.lcd_update = 1; // self clear
+    dev->lcd_user.lcd_update_reg = 1; // self clear
 }
 
 /**
@@ -456,15 +489,14 @@ static inline void lcd_ll_reverse_dma_data_bit_order(lcd_cam_dev_t *dev, bool en
 /**
  * @brief Whether to reverse the output data bit order
  *
- * @note ESP32S3 doesn't support to reverse the data bit after the YUV-RGB converter
+ * @note It acts after the YUV-RGB converter
  *
  * @param dev LCD register base address
  * @param en True to reverse, False to not reverse
  */
 static inline void lcd_ll_reverse_wire_bit_order(lcd_cam_dev_t *dev, bool en)
 {
-    (void)dev;
-    (void)en;
+    dev->lcd_user.lcd_dout_bit_order = en;
 }
 
 /**
@@ -485,7 +517,7 @@ static inline void lcd_ll_swap_dma_data_byte_order(lcd_cam_dev_t *dev, bool en)
 /**
  * @brief Enable the byte swizzle
  *
- * @note The swizzle module acts after the YUV-RGB converter, used to reorder the data bytes before the data wire
+ * @note The swizzle module acts after the YUV-RGB converter, used to reorder the data bytes before the data output line
  *
  * @param dev LCD register base address
  * @param en True to enable, False to disable
@@ -493,7 +525,7 @@ static inline void lcd_ll_swap_dma_data_byte_order(lcd_cam_dev_t *dev, bool en)
 __attribute__((always_inline))
 static inline void lcd_ll_enable_swizzle(lcd_cam_dev_t *dev, bool en)
 {
-    dev->lcd_user.lcd_8bits_order = en;
+    dev->lcd_user.lcd_dout_byte_swizzle_enable = en;
 }
 
 /**
@@ -504,7 +536,7 @@ static inline void lcd_ll_enable_swizzle(lcd_cam_dev_t *dev, bool en)
  */
 static inline void lcd_ll_set_swizzle_mode(lcd_cam_dev_t *dev, lcd_ll_swizzle_mode_t mode)
 {
-    HAL_ASSERT(mode == LCD_LL_SWIZZLE_AB2BA);
+    dev->lcd_user.lcd_dout_byte_swizzle_mode = mode;
 }
 
 /**
@@ -544,7 +576,7 @@ static inline void lcd_ll_set_dc_level(lcd_cam_dev_t *dev, bool idle_phase, bool
  */
 static inline void lcd_ll_set_dc_delay_ticks(lcd_cam_dev_t *dev, uint32_t delay)
 {
-    dev->lcd_dly_mode.lcd_cd_mode = delay;
+    dev->lcd_dly_mode_cfg1.lcd_cd_mode = delay;
 }
 
 /**
@@ -557,13 +589,16 @@ static inline void lcd_ll_set_dc_delay_ticks(lcd_cam_dev_t *dev, uint32_t delay)
 __attribute__((always_inline))
 static inline void lcd_ll_set_command(lcd_cam_dev_t *dev, uint32_t data_width, uint32_t command)
 {
+    // i80 interface only supports 8-bit or 16-bit data width
     HAL_ASSERT(data_width == 8 || data_width == 16);
-    // if command phase has two cycles, in the first cycle, command[15:0] is sent out via lcd_data_out[15:0]
-    // in the second cycle, command[31:16] is sent out via lcd_data_out[15:0]
+    // if command phase has two cycles, in the first cycle we use lcd_first_cmd_val
+    // in the second cycle, we use lcd_latter_cmd_val
     if (data_width == 8) {
-        command = (command & 0xFF) | (command & 0xFF00) << 8;
+        dev->lcd_first_cmd_val.val = command & 0xFF;
+        dev->lcd_latter_cmd_val.val = (command >> 8) & 0xFF;
+    } else if (data_width == 16) {
+        dev->lcd_first_cmd_val.val = command;
     }
-    dev->lcd_cmd_val.lcd_cmd_value = command;
 }
 
 /**
@@ -670,24 +705,9 @@ static inline void lcd_ll_set_idle_level(lcd_cam_dev_t *dev, bool hsync_idle_lev
  */
 static inline void lcd_ll_set_delay_ticks(lcd_cam_dev_t *dev, uint32_t hsync_delay, uint32_t vsync_delay, uint32_t de_delay)
 {
-    dev->lcd_dly_mode.lcd_hsync_mode = hsync_delay;
-    dev->lcd_dly_mode.lcd_vsync_mode = vsync_delay;
-    dev->lcd_dly_mode.lcd_de_mode = de_delay;
-}
-
-/**
- * @brief Set extra delay for data lines
- *
- * @param dev LCD register base address
- * @param delay Data line delay
- */
-static inline void lcd_ll_set_data_delay_ticks(lcd_cam_dev_t *dev, uint32_t delay)
-{
-    uint32_t reg_val = 0;
-    for (int i = 0; i < 16; i++) {
-        reg_val |= (delay & 0x03) << (2 * i);
-    }
-    dev->lcd_data_dout_mode.val = reg_val;
+    dev->lcd_dly_mode_cfg1.lcd_hsync_mode = hsync_delay;
+    dev->lcd_dly_mode_cfg1.lcd_vsync_mode = vsync_delay;
+    dev->lcd_dly_mode_cfg1.lcd_de_mode = de_delay;
 }
 
 /**
