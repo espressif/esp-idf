@@ -609,7 +609,7 @@ API 参考
 .. include-build-file:: inc/rmt_rx.inc
 .. include-build-file:: inc/rmt_common.inc
 .. include-build-file:: inc/rmt_encoder.inc
-.. include-build-file:: inc/components/driver/rmt/include/driver/rmt_types.inc
+.. include-build-file:: inc/components/esp_driver_rmt/include/driver/rmt_types.inc
 .. include-build-file:: inc/components/hal/include/hal/rmt_types.inc
 
 

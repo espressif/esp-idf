@@ -8,12 +8,10 @@ endif()
 set(srcs)
 
 # Always included headers
-set(includes "include"
-             "deprecated"
+set(includes "deprecated"
              "i2c/include"
              "ledc/include"
              "parlio/include"
-             "rmt/include"
              "sigma_delta/include"
              "temperature_sensor/include"
              "touch_sensor/include"
@@ -84,14 +82,9 @@ if(CONFIG_SOC_PCNT_SUPPORTED)
     list(APPEND srcs "deprecated/pcnt_legacy.c")
 endif()
 
-# RMT related source files
+# RMT legacy driver
 if(CONFIG_SOC_RMT_SUPPORTED)
-    list(APPEND srcs "rmt/rmt_common.c"
-                     "rmt/rmt_encoder.c"
-                     "rmt/rmt_rx.c"
-                     "rmt/rmt_tx.c"
-                     "deprecated/rmt_legacy.c")
-    list(APPEND ldfragments "rmt/linker.lf")
+    list(APPEND srcs "deprecated/rmt_legacy.c")
 endif()
 
 # Sigma-Delta Modulation related source files
@@ -153,7 +146,7 @@ else()
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
                                     esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
-                                    esp_driver_dac
+                                    esp_driver_dac esp_driver_rmt
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

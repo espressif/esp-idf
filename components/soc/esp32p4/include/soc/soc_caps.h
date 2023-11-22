@@ -48,7 +48,6 @@
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_I2S_SUPPORTED               1
-// #define SOC_RMT_SUPPORTED               1  //TODO: IDF-7476
 // #define SOC_SDM_SUPPORTED               1  //TODO: IDF-7551
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1

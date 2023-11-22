@@ -1,4 +1,4 @@
-menu "RMT Configuration"
+menu "ESP-Driver:RMT Configurations"
     depends on SOC_RMT_SUPPORTED
     config RMT_ISR_IRAM_SAFE
         bool "RMT ISR IRAM-Safe"
@@ -32,4 +32,4 @@ menu "RMT Configuration"
         help
             Wether to enable the debug log message for RMT driver.
             Note that, this option only controls the RMT driver log, won't affect other drivers.
-endmenu # RMT Configuration
+endmenu
