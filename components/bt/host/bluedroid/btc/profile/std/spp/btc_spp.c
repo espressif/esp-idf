@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,7 @@ typedef struct {
     int fd;
     uint8_t *write_data;
     osi_alarm_t *close_alarm;
+    void *alarm_arg;
     esp_spp_role_t role;
     esp_spp_sec_t security;
     esp_bd_addr_t addr;
@@ -149,6 +150,7 @@ static spp_slot_t *spp_malloc_slot(void)
             (*slot)->write_data_len = 0;
             (*slot)->is_writing = false;
             (*slot)->close_alarm = NULL;
+            (*slot)->alarm_arg = NULL;
             /* clear the old event bits */
             if (spp_local_param.tx_event_group) {
                 xEventGroupClearBits(spp_local_param.tx_event_group, SLOT_WRITE_BIT(i) | SLOT_CLOSE_BIT(i));
@@ -284,8 +286,24 @@ static void spp_free_slot(spp_slot_t *slot)
     free_slot_data(&slot->rx);
     if (slot->close_alarm) {
         osi_alarm_free(slot->close_alarm);
+        if (slot->alarm_arg) {
+            osi_free(slot->alarm_arg);
+            slot->alarm_arg = NULL;
+        }
     }
     osi_free(slot);
+}
+
+static void spp_free_pending_slots(void)
+{
+    spp_slot_t *slot = NULL;
+    for (size_t i = 1; i <= MAX_RFC_PORTS; i++) {
+        slot = spp_local_param.spp_slots[i];
+        if (slot) {
+            BTC_TRACE_WARNING("%s found slot(rfc_handle=0x%x) pending to close, close it now!", __func__, slot->rfc_handle);
+            spp_free_slot(slot);
+        }
+    }
 }
 
 static inline void btc_spp_cb_to_app(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
@@ -1211,6 +1229,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                     }
                     BTC_TRACE_WARNING("%s slot rx data will be discard in %d milliseconds!",
                                       __func__, VFS_CLOSE_TIMEOUT);
+                    slot->alarm_arg = (void *)p_arg;
                     slot->connected = false;
                     need_call = false;
                 }
@@ -1314,6 +1333,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         break;
     case BTA_JV_DISABLE_EVT:
         param.uninit.status = ESP_SPP_SUCCESS;
+        spp_free_pending_slots();
         BTA_JvFree();
         osi_mutex_free(&spp_local_param.spp_slot_mutex);
         if (spp_local_param.tx_event_group) {
