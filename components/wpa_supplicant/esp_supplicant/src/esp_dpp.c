@@ -359,7 +359,7 @@ static void esp_dpp_task(void *pvParameters )
             }
 
             switch (evt->id) {
-            case SIG_DPP_DEL_TASK:
+            case SIG_DPP_DEL_TASK: {
                 struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
                 if (params->info) {
                     os_free(params->info);
@@ -381,7 +381,7 @@ static void esp_dpp_task(void *pvParameters )
                 }
                 task_del = true;
                 break;
-
+            }
             case SIG_DPP_BOOTSTRAP_GEN: {
                 char *command = (char *)evt->data;
                 const char *uri;
@@ -676,6 +676,7 @@ bool is_dpp_enabled(void)
 
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 {
+    esp_err_t ret = ESP_OK;
     wifi_mode_t mode = 0;
     if (esp_wifi_get_mode(&mode) || ((mode != WIFI_MODE_STA) && (mode != WIFI_MODE_APSTA))) {
         wpa_printf(MSG_ERROR, "DPP: failed to init as not in station mode.");
@@ -690,30 +691,41 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
         wpa_printf(MSG_ERROR, "DPP: failed to init as init already done.");
         return ESP_FAIL;
     }
-    struct dpp_global_config cfg = {0};
-    int ret;
 
     os_bzero(&s_dpp_ctx, sizeof(s_dpp_ctx));
-    s_dpp_ctx.dpp_event_cb = cb;
-
+    struct dpp_global_config cfg = {0};
     cfg.cb_ctx = &s_dpp_ctx;
     cfg.msg_ctx = &s_dpp_ctx;
     s_dpp_ctx.dpp_global = dpp_global_init(&cfg);
-
-    s_dpp_listen_in_progress = false;
-    s_dpp_evt_queue = xQueueCreate(3, sizeof(dpp_event_t));
-    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
-    if (ret != TRUE) {
-        wpa_printf(MSG_ERROR, "DPP: failed to create task");
-        return ESP_FAIL;
+    if (!s_dpp_ctx.dpp_global) {
+        wpa_printf(MSG_ERROR, "DPP: failed to allocate memory for dpp_global");
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
     }
 
     s_dpp_api_lock = xSemaphoreCreateRecursiveMutex();
     if (!s_dpp_api_lock) {
-        esp_supp_dpp_deinit();
         wpa_printf(MSG_ERROR, "DPP: dpp_init: failed to create DPP API lock");
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
     }
+
+    s_dpp_evt_queue = xQueueCreate(3, sizeof(dpp_event_t));
+    if (!s_dpp_evt_queue) {
+        wpa_printf(MSG_ERROR, "DPP: dpp_init: failed to create DPP API queue");
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
+    }
+
+    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
+    if (ret != pdTRUE) {
+        wpa_printf(MSG_ERROR, "DPP: failed to create task");
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
+    }
+
+    s_dpp_listen_in_progress = false;
+    s_dpp_ctx.dpp_event_cb = cb;
 
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                &offchan_event_handler, NULL);
@@ -723,8 +735,21 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
     wpa_printf(MSG_INFO, "esp_dpp_task prio:%d, stack:%d\n", 2, DPP_TASK_STACK_SIZE);
 
     return ESP_OK;
+init_fail:
+    if (s_dpp_ctx.dpp_global) {
+        dpp_global_deinit(s_dpp_ctx.dpp_global);
+        s_dpp_ctx.dpp_global = NULL;
+    }
+    if (s_dpp_api_lock) {
+        vSemaphoreDelete(s_dpp_api_lock);
+        s_dpp_api_lock = NULL;
+    }
+    if (s_dpp_evt_queue) {
+        vQueueDelete(s_dpp_evt_queue);
+        s_dpp_evt_queue = NULL;
+    }
+    return ret;
 }
-
 void esp_supp_dpp_deinit(void)
 {
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
