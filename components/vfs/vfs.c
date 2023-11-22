@@ -1194,6 +1194,7 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken)
             // matter here stop_socket_select() will be called for only valid VFS drivers.
             const vfs_entry_t *vfs = s_vfs[i];
             if (vfs != NULL && vfs->vfs.stop_socket_select_isr != NULL) {
+                // Note: If the UART ISR resides in IRAM, the function referenced by stop_socket_select_isr should also be placed in IRAM.
                 vfs->vfs.stop_socket_select_isr(sem.sem, woken);
                 break;
             }
