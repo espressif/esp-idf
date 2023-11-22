@@ -115,6 +115,15 @@ static inline void brownout_ll_intr_clear(void)
     LP_ANA_PERI.int_clr.bod_mode0 = 1;
 }
 
+/**
+ * @brief Clear BOD internal count.
+ */
+static inline void brownout_ll_clear_count(void)
+{
+    LP_ANA_PERI.bod_mode0_cntl.bod_mode0_cnt_clr = 1;
+    LP_ANA_PERI.bod_mode0_cntl.bod_mode0_cnt_clr = 0;
+}
+
 #ifdef __cplusplus
 }
 #endif
