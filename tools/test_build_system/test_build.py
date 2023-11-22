@@ -201,3 +201,10 @@ def test_build_with_crlf_files(idf_py: IdfPyFunc, test_app_copy: Path, idf_copy:
     change_files_to_crlf(idf_copy)
     idf_py('build')
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
+
+
+def test_build_cmake_executable_suffix(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('idf.py can build with CMAKE_EXECUTABLE_SUFFIX set')
+    append_to_file((test_app_copy / 'CMakeLists.txt'), 'set(CMAKE_EXECUTABLE_SUFFIX_CXX ".ext")')
+    ret = idf_py('build')
+    assert 'Project build complete' in ret.stdout, 'Build with CMAKE_EXECUTABLE_SUFFIX set failed'
