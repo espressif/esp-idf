@@ -38,7 +38,6 @@ typedef struct {
     bool check_data;
 } test_sdio_param_t;
 
-
 /*---------------------------------------------------------------
                     Host Init Settings
 ---------------------------------------------------------------*/
@@ -91,7 +90,6 @@ static void s_send_finish_test(essl_handle_t handle)
     essl_send_slave_intr(handle, BIT(7), TEST_TIMEOUT_MAX);
 }
 
-
 /*---------------------------------------------------------------
                 Function Tests
 ---------------------------------------------------------------*/
@@ -132,8 +130,6 @@ TEST_CASE("SDIO_SDMMC: test interrupt", "[sdio]")
     sdmmc_host_deinit();
 }
 
-
-
 /*---------------------------------------------------------------
                 SDMMC_SDIO: test register
 ---------------------------------------------------------------*/
@@ -167,8 +163,6 @@ TEST_CASE("SDIO_SDMMC: test register", "[sdio]")
     s_send_finish_test(handle);
     sdmmc_host_deinit();
 }
-
-
 
 /*---------------------------------------------------------------
                 SDMMC_SDIO: test reset
@@ -212,7 +206,6 @@ TEST_CASE("SDIO_SDMMC: test reset", "[sdio]")
     s_send_finish_test(handle);
     sdmmc_host_deinit();
 }
-
 
 /*---------------------------------------------------------------
                 Transaction Tests
@@ -285,7 +278,6 @@ TEST_CASE("SDIO_SDMMC: test from host (Performance)", "[sdio_speed]")
     test_from_host(false);
 }
 
-
 static void test_to_host(bool check_data)
 {
     //prepare buffer
@@ -329,15 +321,15 @@ static void test_to_host(bool check_data)
             remain_length -= rcv_len;
         } while (remain_length > 0);
 
-        int64_t c_time_ms = ccomp_timer_stop()/1000;
+        int64_t c_time_ms = ccomp_timer_stop() / 1000;
         int64_t end_us = esp_timer_get_time();
 
-        uint32_t total_time_ms = (end_us - pre_us)/1000;
+        uint32_t total_time_ms = (end_us - pre_us) / 1000;
         ESP_LOGI(TAG, "test done, total time: %" PRIu32 " ms (%d ms compensated), bytes transferred: %"PRIu32, total_time_ms, (int)c_time_ms, expected_length);
 
         uint32_t throughput_byte_per_ms = expected_length / c_time_ms;
         ESP_LOGI(TAG, "Throughput: compensated %"PRIu32"KB/s %.2lf MB/s, typical %.2lf MB/s",
-                 throughput_byte_per_ms, throughput_byte_per_ms/1000., expected_length/(total_time_ms*1000.));
+                 throughput_byte_per_ms, throughput_byte_per_ms / 1000., expected_length / (total_time_ms * 1000.));
 
         esp_rom_delay_us(50 * 1000);
         s_send_finish_test(handle);

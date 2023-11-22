@@ -75,8 +75,6 @@ The driver of FIFOs works as below:
         driver also fix the STAILQ_NEXT pointer of the last descriptor so that the descriptors are now in a ring again.
 */
 
-
-
 #include <string.h>
 #include "driver/sdio_slave.h"
 #include "soc/sdio_slave_periph.h"
@@ -92,7 +90,6 @@ The driver of FIFOs works as below:
 #include "hal/sdio_slave_hal.h"
 #include "hal/gpio_hal.h"
 
-
 #define SDIO_SLAVE_CHECK(res, str, ret_val) do { if(!(res)){\
     SDIO_SLAVE_LOGE("%s", str);\
     return ret_val;\
@@ -102,7 +99,6 @@ static const char TAG[] = "sdio_slave";
 
 #define SDIO_SLAVE_LOGE(s, ...) ESP_LOGE(TAG, "%s(%d): "s, __FUNCTION__,__LINE__,##__VA_ARGS__)
 #define SDIO_SLAVE_LOGW(s, ...) ESP_LOGW(TAG, "%s: "s, __FUNCTION__,##__VA_ARGS__)
-
 
 // sdio_slave_buf_handle_t is of type recv_desc_t*;
 typedef struct recv_desc_s {
@@ -121,7 +117,6 @@ typedef struct recv_desc_s {
         };
     };
 } recv_desc_t;
-
 
 typedef TAILQ_HEAD(recv_tailq_head_s, recv_desc_s) recv_tailq_t;
 

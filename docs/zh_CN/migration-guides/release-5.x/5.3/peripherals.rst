@@ -11,6 +11,8 @@
 - `esp_driver_spi` - 通用 SPI 驱动
 - `esp_driver_mcpwm` - 电机控制 PWM 驱动
 - `esp_driver_sdmmc` - SDMMC 驱动
+- `esp_driver_sdspi` - SDSPI 驱动
+- `esp_driver_sdio` - SDIO 驱动
 - `esp_driver_ana_cmpr` - 模拟比较器驱动
 - `esp_driver_i2s` - I2S 驱动
 

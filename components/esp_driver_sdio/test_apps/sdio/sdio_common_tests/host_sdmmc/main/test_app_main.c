@@ -14,7 +14,6 @@
 static size_t before_free_8bit;
 static size_t before_free_32bit;
 
-
 void setUp(void)
 {
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
@@ -45,8 +44,6 @@ void app_main(void)
     printf(" ___/ / /_/ // // /_/ /   ___/ / /_/ / /  / / /  / / /___   \n");
     printf("/____/_____/___/\\____/   /____/_____/_/  /_/_/  /_/\\____/   \n");
     printf("                                                            \n");
-
-
 
     unity_run_menu();
 }

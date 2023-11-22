@@ -15,7 +15,6 @@ set(includes "include"
              "ledc/include"
              "parlio/include"
              "rmt/include"
-             "sdio_slave/include"
              "sigma_delta/include"
              "temperature_sensor/include"
              "touch_sensor/include"
@@ -101,11 +100,6 @@ if(CONFIG_SOC_RMT_SUPPORTED)
     list(APPEND ldfragments "rmt/linker.lf")
 endif()
 
-# SDIO Slave related source files
-if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
-    list(APPEND srcs "sdio_slave/sdio_slave.c")
-endif()
-
 # Sigma-Delta Modulation related source files
 if(CONFIG_SOC_SDM_SUPPORTED)
     list(APPEND srcs "sigma_delta/sdm.c"
@@ -164,7 +158,7 @@ else()
                            # for backward compatibility, the driver component needs to
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
-                                    esp_driver_sdmmc esp_driver_sdspi esp_driver_ana_cmpr esp_driver_i2s
+                                    esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

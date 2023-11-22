@@ -260,6 +260,8 @@ examples/peripherals/sdio/host:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_sdio
 
 examples/peripherals/sdio/slave:
   disable:
@@ -268,6 +270,8 @@ examples/peripherals/sdio/slave:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_sdio
 
 examples/peripherals/secure_element/atecc608_ecdsa:
   enable:
