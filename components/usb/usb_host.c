@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -46,6 +47,10 @@ static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
 
 #define PROCESS_REQUEST_PENDING_FLAG_USBH       0x01
 #define PROCESS_REQUEST_PENDING_FLAG_HUB        0x02
+
+#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+#define ENABLE_ENUM_FILTER_CALLBACK
+#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
 
 typedef struct ep_wrapper_s ep_wrapper_t;
 typedef struct interface_s interface_t;
@@ -404,10 +409,18 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
         goto usbh_err;
     }
 
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+    if (config->enum_filter_cb == NULL) {
+        ESP_LOGW(USB_HOST_TAG, "User callback to set USB device configuration is enabled, but not used");
+    }
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     // Install Hub
     hub_config_t hub_config = {
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+        .enum_filter_cb = config->enum_filter_cb,
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     };
     ret = hub_install(&hub_config);
     if (ret != ESP_OK) {
