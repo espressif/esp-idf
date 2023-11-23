@@ -11,6 +11,8 @@
 #include "driver/mcpwm_oper.h"
 #include "driver/mcpwm_cmpr.h"
 #include "driver/mcpwm_gen.h"
+#include "driver/mcpwm_fault.h"
+#include "driver/mcpwm_sync.h"
 #include "driver/gpio.h"
 
 TEST_CASE("mcpwm_generator_install_uninstall", "[mcpwm]")
@@ -758,6 +760,281 @@ TEST_CASE("mcpwm_duty_empty_full", "[mcpwm]")
     TEST_ESP_OK(mcpwm_timer_disable(timer));
     TEST_ESP_OK(mcpwm_del_generator(gen));
     TEST_ESP_OK(mcpwm_del_comparator(comparator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_timer(timer));
+}
+
+TEST_CASE("mcpwm_generator_action_on_fault_trigger_event", "[mcpwm]")
+{
+    const int generator_gpio = 0;
+    const int fault_gpio_num[3] = {2, 4, 5};
+    printf("create timer and operator\r\n");
+    mcpwm_timer_config_t timer_config = {
+        .group_id = 0,
+        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000,
+        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+        .period_ticks = 1000,
+    };
+    mcpwm_timer_handle_t timer = NULL;
+    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
+
+    mcpwm_operator_config_t oper_config = {
+        .group_id = 0,
+    };
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&oper_config, &oper));
+
+    printf("connect timer and operator\r\n");
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
+
+    printf("install gpio faults trigger\r\n");
+    mcpwm_fault_handle_t gpio_faults[3];
+    mcpwm_gpio_fault_config_t gpio_fault_config = {
+        .group_id = 0,
+        .flags.active_level = 1,
+        .flags.pull_down = 1,
+        .flags.pull_up = 0,
+        .flags.io_loop_back = 1, // so that we can write the GPIO value by GPIO driver
+    };
+    for (int i = 0 ; i < 3; i++) {
+        gpio_fault_config.gpio_num = fault_gpio_num[i];
+        TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &gpio_faults[i]));
+    }
+
+    printf("create generator\r\n");
+    mcpwm_generator_config_t gen_config = {
+        .gen_gpio_num = generator_gpio,
+        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
+    };
+    mcpwm_gen_handle_t gen = NULL;
+    TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
+
+    printf("set generator to output high on trigger0 and low on trigger1\r\n");
+    TEST_ESP_OK(mcpwm_generator_set_action_on_fault_event(gen,
+                MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[0], MCPWM_GEN_ACTION_HIGH)));
+    TEST_ESP_OK(mcpwm_generator_set_action_on_fault_event(gen,
+                MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[1], MCPWM_GEN_ACTION_LOW)));
+    // no free trigger
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_generator_set_action_on_fault_event(gen,
+                 MCPWM_GEN_FAULT_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_faults[2], MCPWM_GEN_ACTION_LOW)));
+
+    TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
+    gpio_set_level(fault_gpio_num[0], 1);
+    gpio_set_level(fault_gpio_num[0], 0);
+    TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
+    gpio_set_level(fault_gpio_num[1], 1);
+    gpio_set_level(fault_gpio_num[1], 0);
+    TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    printf("delete falut trigger, operator, generator\r\n");
+    TEST_ESP_OK(mcpwm_del_fault(gpio_faults[0]));
+    TEST_ESP_OK(mcpwm_del_fault(gpio_faults[1]));
+    TEST_ESP_OK(mcpwm_del_fault(gpio_faults[2]));
+    TEST_ESP_OK(mcpwm_del_generator(gen));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_timer(timer));
+}
+
+TEST_CASE("mcpwm_generator_action_on_soft_sync_trigger_event", "[mcpwm]")
+{
+    const int generator_gpio = 0;
+    printf("create timer and operator\r\n");
+    mcpwm_timer_config_t timer_config = {
+        .group_id = 0,
+        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000,
+        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+        .period_ticks = 1000,
+    };
+    mcpwm_timer_handle_t timer = NULL;
+    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
+
+    mcpwm_operator_config_t oper_config = {
+        .group_id = 0,
+    };
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&oper_config, &oper));
+
+    printf("connect timer and operator\r\n");
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
+
+    printf("install soft sync source trigger\r\n");
+    mcpwm_sync_handle_t soft_sync = NULL;
+    mcpwm_soft_sync_config_t soft_sync_config = {};
+    TEST_ESP_OK(mcpwm_new_soft_sync_src(&soft_sync_config, &soft_sync));
+
+    mcpwm_timer_sync_phase_config_t sync_phase_config = {
+        .count_value = 0,
+        .direction = MCPWM_TIMER_DIRECTION_UP,
+        .sync_src = soft_sync,
+    };
+    TEST_ESP_OK(mcpwm_timer_set_phase_on_sync(timer, &sync_phase_config));
+
+    printf("create generator\r\n");
+    mcpwm_generator_config_t gen_config = {
+        .gen_gpio_num = generator_gpio,
+        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
+    };
+    mcpwm_gen_handle_t gen = NULL;
+    TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
+
+    printf("set generator to output high on soft sync trigger\r\n");
+    TEST_ESP_OK(mcpwm_generator_set_action_on_sync_event(gen,
+                MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, soft_sync, MCPWM_GEN_ACTION_HIGH)));
+
+    //more than 1 sync is not supported
+    mcpwm_sync_handle_t invalid_soft_sync = NULL;
+    TEST_ESP_OK(mcpwm_new_soft_sync_src(&soft_sync_config, &invalid_soft_sync));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_generator_set_action_on_sync_event(gen,
+                 MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, invalid_soft_sync, MCPWM_GEN_ACTION_LOW)));
+
+    TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
+    mcpwm_soft_sync_activate(soft_sync);
+    TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    printf("delete soft sync trigger, timer, operator, generator\r\n");
+    TEST_ESP_OK(mcpwm_del_sync_src(soft_sync));
+    TEST_ESP_OK(mcpwm_del_sync_src(invalid_soft_sync));
+    TEST_ESP_OK(mcpwm_del_generator(gen));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_timer(timer));
+}
+
+TEST_CASE("mcpwm_generator_action_on_timer_sync_trigger_event", "[mcpwm]")
+{
+    const int generator_gpio = 0;
+    printf("create timer and operator\r\n");
+    mcpwm_timer_config_t timer_config = {
+        .group_id = 0,
+        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000,
+        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+        .period_ticks = 1000,
+    };
+    mcpwm_timer_handle_t timer = NULL;
+    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
+
+    mcpwm_operator_config_t oper_config = {
+        .group_id = 0,
+    };
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&oper_config, &oper));
+
+    printf("connect timer and operator\r\n");
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
+
+    printf("install timer sync source trigger\r\n");
+    mcpwm_sync_handle_t timer_sync = NULL;
+    mcpwm_timer_sync_src_config_t timer_sync_config = {
+        .timer_event = MCPWM_TIMER_EVENT_EMPTY,
+    };
+
+    TEST_ESP_OK(mcpwm_new_timer_sync_src(timer, &timer_sync_config, &timer_sync));
+
+    mcpwm_timer_sync_phase_config_t sync_phase_config = {
+        .count_value = 0,
+        .direction = MCPWM_TIMER_DIRECTION_UP,
+        .sync_src = timer_sync,
+    };
+    TEST_ESP_OK(mcpwm_timer_set_phase_on_sync(timer, &sync_phase_config));
+
+    printf("create generator\r\n");
+    mcpwm_generator_config_t gen_config = {
+        .gen_gpio_num = generator_gpio,
+        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
+    };
+    mcpwm_gen_handle_t gen = NULL;
+    TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
+
+    printf("set generator to output high on timer sync trigger\r\n");
+    TEST_ESP_OK(mcpwm_generator_set_action_on_sync_event(gen,
+                MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, timer_sync, MCPWM_GEN_ACTION_HIGH)));
+
+    TEST_ESP_OK(mcpwm_timer_enable(timer));
+
+    TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
+    TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_STOP_FULL));
+    TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    printf("delete timer sync trigger, timer, operator, generator\r\n");
+    TEST_ESP_OK(mcpwm_timer_disable(timer));
+    TEST_ESP_OK(mcpwm_del_sync_src(timer_sync));
+    TEST_ESP_OK(mcpwm_del_generator(gen));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
+    TEST_ESP_OK(mcpwm_del_timer(timer));
+}
+
+TEST_CASE("mcpwm_generator_action_on_gpio_sync_trigger_event", "[mcpwm]")
+{
+    const int generator_gpio = 0;
+    printf("create timer and operator\r\n");
+    mcpwm_timer_config_t timer_config = {
+        .group_id = 0,
+        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000,
+        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+        .period_ticks = 1000,
+    };
+    mcpwm_timer_handle_t timer = NULL;
+    TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
+
+    mcpwm_operator_config_t oper_config = {
+        .group_id = 0,
+    };
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&oper_config, &oper));
+
+    printf("connect timer and operator\r\n");
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
+
+    printf("install gpio sync source trigger\r\n");
+    mcpwm_sync_handle_t gpio_sync = NULL;
+    mcpwm_gpio_sync_src_config_t gpio_sync_config = {
+        .group_id = 0,
+        .gpio_num = 2,
+        .flags.io_loop_back = true, // so that we can use gpio driver to simulate the sync signal
+        .flags.pull_down = true, // internally pull down
+    };
+    TEST_ESP_OK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync));
+
+    // put the GPIO into initial state
+    gpio_set_level(gpio_sync_config.gpio_num, 0);
+
+    mcpwm_timer_sync_phase_config_t sync_phase_config = {
+        .count_value = 0,
+        .direction = MCPWM_TIMER_DIRECTION_UP,
+        .sync_src = gpio_sync,
+    };
+    TEST_ESP_OK(mcpwm_timer_set_phase_on_sync(timer, &sync_phase_config));
+
+    printf("create generator\r\n");
+    mcpwm_generator_config_t gen_config = {
+        .gen_gpio_num = generator_gpio,
+        .flags.io_loop_back = 1, // so that we can read the GPIO value by GPIO driver
+    };
+    mcpwm_gen_handle_t gen = NULL;
+    TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));
+
+    printf("set generator to output high on gpio sync trigger\r\n");
+    TEST_ESP_OK(mcpwm_generator_set_action_on_sync_event(gen,
+                MCPWM_GEN_SYNC_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, gpio_sync, MCPWM_GEN_ACTION_HIGH)));
+
+    TEST_ASSERT_EQUAL(0, gpio_get_level(generator_gpio));
+    gpio_set_level(gpio_sync_config.gpio_num, 1);
+    gpio_set_level(gpio_sync_config.gpio_num, 0);
+    TEST_ASSERT_EQUAL(1, gpio_get_level(generator_gpio));
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    printf("delete gpio sync trigger, timer, operator, generator\r\n");
+    TEST_ESP_OK(mcpwm_del_sync_src(gpio_sync));
+    TEST_ESP_OK(mcpwm_del_generator(gen));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
