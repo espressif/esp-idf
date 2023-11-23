@@ -174,8 +174,6 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-    modem_clock_domain_pmu_state_icg_map_init();
-
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
 #if 0 // TODO: IDF-5658
     uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
