@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_eth_phy_802_3.h"
@@ -217,12 +219,20 @@ static esp_err_t lan87xx_update_link_duplex_speed(phy_lan87xx_t *lan87xx)
     eth_speed_t speed = ETH_SPEED_10M;
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
     bmsr_reg_t bmsr;
+    bmcr_reg_t bmcr;
     pscsr_reg_t pscsr;
     uint32_t peer_pause_ability = false;
     anlpar_reg_t anlpar;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)), err, TAG, "read ANLPAR failed");
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
-    eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    /* link status is forced up because LAN87xx reports link down when loopback is enabled and cable is unplugged */
+    eth_link_t link;
+    if(bmcr.en_loopback) {
+        link = ETH_LINK_UP;
+    } else {
+        link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
+    }
     /* check if link status changed */
     if (lan87xx->phy_802_3.link_status != link) {
         /* when link up, read negotiation result */
@@ -282,6 +292,45 @@ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
     /* It was observed that assert nRST signal on LAN87xx needs to be a little longer than the minimum specified in datasheet */
     return esp_eth_phy_802_3_reset_hw(esp_eth_phy_into_phy_802_3(phy), 150);
 }
+static esp_err_t lan87xx_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
+{
+    esp_err_t ret = ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+    if (cmd == ESP_ETH_PHY_AUTONEGO_EN) {
+        bmcr_reg_t bmcr;
+        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+        ESP_GOTO_ON_FALSE(bmcr.en_loopback == 0, ESP_ERR_INVALID_STATE, err, TAG, "Autonegotiation can't be enabled while in loopback operation");
+    }
+    return esp_eth_phy_802_3_autonego_ctrl(phy_802_3, cmd, autonego_en_stat);
+err:
+    return ret;
+}
+
+static esp_err_t lan87xx_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    bool auto_nego_en;
+    ESP_GOTO_ON_ERROR(lan87xx_autonego_ctrl(phy, ESP_ETH_PHY_AUTONEGO_G_STAT, &auto_nego_en), err, TAG, "get status of autonegotiation failed");
+    ESP_GOTO_ON_FALSE(!(auto_nego_en && enable), ESP_ERR_INVALID_STATE, err, TAG, "Unable to set loopback while autonegotiation is enabled. Disable it to use loopback");
+    return esp_eth_phy_802_3_loopback(phy_802_3, enable);
+err:
+    return ret;
+}
+
+static esp_err_t lan87xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+
+    /* It was observed that a delay needs to be introduced after setting speed and prior driver's start.
+    Otherwise, the very first read of PHY registers is not valid data (0xFFFF's). */
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_speed(phy_802_3, speed), err, TAG, "set speed failed");
+    vTaskDelay(pdMS_TO_TICKS(10));
+err:
+    return ret;
+}
 
 static esp_err_t lan87xx_init(esp_eth_phy_t *phy)
 {
@@ -323,6 +372,9 @@ esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config)
     lan87xx->phy_802_3.parent.reset_hw = lan87xx_reset_hw;
     lan87xx->phy_802_3.parent.init = lan87xx_init;
     lan87xx->phy_802_3.parent.get_link = lan87xx_get_link;
+    lan87xx->phy_802_3.parent.autonego_ctrl = lan87xx_autonego_ctrl;
+    lan87xx->phy_802_3.parent.loopback = lan87xx_loopback;
+    lan87xx->phy_802_3.parent.set_speed = lan87xx_set_speed;
 
     return &lan87xx->phy_802_3.parent;
 err:

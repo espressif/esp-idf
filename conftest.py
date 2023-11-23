@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 # pylint: disable=W0621  # redefined-outer-name
@@ -80,7 +80,13 @@ ENV_MARKERS = {
     'generic': 'tests should be run on generic runners',
     'flash_suspend': 'support flash suspend feature',
     'ip101': 'connected via wired 10/100M ethernet',
-    'lan8720': 'connected via LAN8720 ethernet transceiver',
+    'eth_lan8720': 'connected via LAN8720 ethernet transceiver',
+    'eth_rtl8201': 'connected via RTL8201 ethernet transceiver',
+    'eth_ksz8041': 'connected via KSZ8041 ethernet transceiver',
+    'eth_dp83848': 'connected via DP83848 ethernet transceiver',
+    'eth_w5500': 'SPI Ethernet module with two W5500',
+    'eth_ksz8851snl': 'SPI Ethernet module with two KSZ8851SNL',
+    'eth_dm9051': 'SPI Ethernet module with two DM9051',
     'quad_psram': 'runners with quad psram',
     'octal_psram': 'runners with octal psram',
     'usb_host': 'usb host runners',

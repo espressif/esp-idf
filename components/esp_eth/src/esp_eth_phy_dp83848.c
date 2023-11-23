@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,6 +123,33 @@ err:
     return ret;
 }
 
+static esp_err_t dp83848_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
+{
+    esp_err_t ret = ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+    if (cmd == ESP_ETH_PHY_AUTONEGO_EN) {
+        bmcr_reg_t bmcr;
+        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+        ESP_GOTO_ON_FALSE(bmcr.en_loopback == 0, ESP_ERR_INVALID_STATE, err, TAG, "Autonegotiation can't be enabled while in loopback operation");
+    }
+    return esp_eth_phy_802_3_autonego_ctrl(phy_802_3, cmd, autonego_en_stat);
+err:
+    return ret;
+}
+
+static esp_err_t dp83848_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    bool auto_nego_en = true;
+    ESP_GOTO_ON_ERROR(dp83848_autonego_ctrl(phy, ESP_ETH_PHY_AUTONEGO_G_STAT, &auto_nego_en), err, TAG, "get status of autonegotiation failed");
+    ESP_GOTO_ON_FALSE(!(auto_nego_en && enable), ESP_ERR_INVALID_STATE, err, TAG, "Unable to set loopback while autonegotiation is enabled. Disable it to use loopback");
+    return esp_eth_phy_802_3_loopback(phy_802_3, enable);
+err:
+    return ret;
+}
+
 static esp_err_t dp83848_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -154,6 +181,8 @@ esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config)
     // redefine functions which need to be customized for sake of dp83848
     dp83848->phy_802_3.parent.init = dp83848_init;
     dp83848->phy_802_3.parent.get_link = dp83848_get_link;
+    dp83848->phy_802_3.parent.autonego_ctrl = dp83848_autonego_ctrl;
+    dp83848->phy_802_3.parent.loopback = dp83848_loopback;
 
     return &dp83848->phy_802_3.parent;
 err:

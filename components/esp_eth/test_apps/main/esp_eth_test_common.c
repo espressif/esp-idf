@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -35,6 +35,10 @@ esp_eth_mac_t *mac_init(void *vendor_emac_config, eth_mac_config_t *mac_config)
     }
 #if CONFIG_TARGET_USE_INTERNAL_ETHERNET
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+#if !CONFIG_TARGET_USE_DEFAULT_EMAC_CONFIG
+    esp32_emac_config.smi_mdc_gpio_num = CONFIG_TARGET_IO_MDC;
+    esp32_emac_config.smi_mdio_gpio_num = CONFIG_TARGET_IO_MDIO;
+#endif // CONFIG_TARGET_USE_DEFAULT_EMAC_CONFIG
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &esp32_emac_config;
     }
@@ -92,9 +96,9 @@ esp_eth_phy_t *phy_init(eth_phy_config_t *phy_config)
     phy_config->phy_addr = ESP_ETH_PHY_ADDR_AUTO;
 #if CONFIG_TARGET_ETH_PHY_DEVICE_IP101
     phy = esp_eth_phy_new_ip101(phy_config);
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX
+#elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
     phy = esp_eth_phy_new_lan87xx(phy_config);
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ80XX
+#elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8041
     phy = esp_eth_phy_new_ksz80xx(phy_config);
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201
     phy = esp_eth_phy_new_rtl8201(phy_config);
