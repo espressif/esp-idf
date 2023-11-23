@@ -105,8 +105,10 @@ void app_main(void)
     // * task queue
     // * border router
     esp_vfs_eventfd_config_t eventfd_config = {
-#if CONFIG_OPENTHREAD_RADIO_NATIVE
+#if CONFIG_OPENTHREAD_RADIO_NATIVE || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
         // * radio driver (A native radio device needs a eventfd for radio driver.)
+        // * SpiSpinelInterface (The Spi Spinel Interface needs a eventfd.)
+        // The above will not exist at the same time.
         .max_fds = 4,
 #else
         .max_fds = 3,
