@@ -1,5 +1,3 @@
-api-guides/RF_calibration
-api-guides/coexist
 api-guides/cplusplus
 api-guides/dfu
 api-guides/index
