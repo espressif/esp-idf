@@ -465,12 +465,12 @@ static inline bool usb_dwc_hal_port_check_if_connected(usb_dwc_hal_context_t *ha
 }
 
 /**
- * @brief Check the speed (LS/FS) of the device connected to the host port
+ * @brief Check the speed of the device connected to the host port
  *
  * @note This function should only be called after confirming that a device is connected to the host port
  *
  * @param hal Context of the HAL layer
- * @return usb_priv_speed_t Speed of the connected device (FS or LS only on the esp32-s2 and esp32-s3)
+ * @return usb_priv_speed_t Speed of the connected device
  */
 static inline usb_priv_speed_t usb_dwc_hal_port_get_conn_speed(usb_dwc_hal_context_t *hal)
 {
