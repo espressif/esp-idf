@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,6 +106,8 @@ typedef struct {
                                      set this if they want to use an external USB PHY. Otherwise, the USB Host Library
                                      will automatically configure the internal USB PHY */
     int intr_flags;             /**< Interrupt flags for the underlying ISR used by the USB Host stack */
+    usb_host_enum_filter_cb_t enum_filter_cb; /**< Enumeration filter callback. Enable CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+                                                   to use this feature. Set to NULL otherwise. */
 } usb_host_config_t;
 
 /**
