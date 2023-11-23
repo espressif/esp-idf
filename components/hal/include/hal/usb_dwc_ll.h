@@ -560,13 +560,15 @@ static inline uint32_t usb_dwc_ll_hflbaddr_get_base_addr(usb_dwc_dev_t *hw)
 
 static inline usb_priv_speed_t usb_dwc_ll_hprt_get_speed(usb_dwc_dev_t *hw)
 {
-    usb_priv_speed_t speed;
-    //esp32-s2 and esp32-s3 only support FS or LS
+    usb_priv_speed_t speed = USB_PRIV_SPEED_HIGH;
     switch (hw->hprt_reg.prtspd) {
+        case 0:
+            speed = USB_PRIV_SPEED_HIGH;
+            break;
         case 1:
             speed = USB_PRIV_SPEED_FULL;
             break;
-        default:
+        case 2:
             speed = USB_PRIV_SPEED_LOW;
             break;
     }

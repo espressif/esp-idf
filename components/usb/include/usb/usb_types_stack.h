@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@ extern "C" {
 typedef enum {
     USB_SPEED_LOW = 0,                  /**< USB Low Speed (1.5 Mbit/s) */
     USB_SPEED_FULL,                     /**< USB Full Speed (12 Mbit/s) */
+    USB_SPEED_HIGH,                     /**< USB High Speed (480 Mbit/s) */
 } usb_speed_t;
 
 /**
