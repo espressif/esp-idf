@@ -22,6 +22,7 @@ extern "C"
  * @brief USB speeds supported by the DWC OTG controller
  */
 typedef enum {
+    USB_PRIV_SPEED_HIGH,
     USB_PRIV_SPEED_FULL,
     USB_PRIV_SPEED_LOW,
 } usb_priv_speed_t;
