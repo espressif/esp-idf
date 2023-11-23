@@ -72,7 +72,7 @@ static void init_ulp_program(void)
     //-------------ADC1 Channel Config---------------//
     // Note: when changing channel here, also change 'adc_channel' constant in adc.S
     adc_oneshot_chan_cfg_t config = {
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
         .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_6, &config));

@@ -151,7 +151,7 @@ TEST_CASE("adc2 work with wifi","[adc]")
     //-------------ADC2 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(adc2_handle, TEST_ADC2_CHAN0, &config));
 

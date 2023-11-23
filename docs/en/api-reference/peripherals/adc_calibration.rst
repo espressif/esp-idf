@@ -159,7 +159,7 @@ Other functions that take the :cpp:type:`adc_cali_handle_t` as the first positio
 
     - :ref:`CONFIG_ADC_CAL_EFUSE_TP_ENABLE`, disable this to decrease the code size, if you are aware of the calibration eFuse value :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_TP` isn't this one.
     - :ref:`CONFIG_ADC_CAL_EFUSE_VREF_ENABLE`, disable this to decrease the code size, if you are aware of the calibration eFuse value :cpp:type:`ADC_CALI_LINE_FITTING_EFUSE_VAL_EFUSE_VREF` isn't this one.
-    - :ref:`CONFIG_ADC_CAL_LUT_ENABLE`, disable this to decrease the code size, if you don't calibrate the ADC raw results under :c:macro:`ADC_ATTEN_DB_11`.
+    - :ref:`CONFIG_ADC_CAL_LUT_ENABLE`, disable this to decrease the code size, if you don't calibrate the ADC raw results under :c:macro:`ADC_ATTEN_DB_12`.
 
 
 Minimize Noise

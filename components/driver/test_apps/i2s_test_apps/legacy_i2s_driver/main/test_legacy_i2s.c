@@ -114,7 +114,7 @@ TEST_CASE("I2S_adc_test", "[i2s_legacy]")
     i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
     // init ADC pad
     i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_4);
-    // enable adc sampling, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_11 hard-coded in adc_i2s_mode_init
+    // enable adc sampling, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_12 hard-coded in adc_i2s_mode_init
     i2s_adc_enable(I2S_NUM_0);
     // init read buffer
     uint16_t *i2sReadBuffer = (uint16_t *)calloc(1024, sizeof(uint16_t));
