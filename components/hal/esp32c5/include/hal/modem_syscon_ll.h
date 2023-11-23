@@ -413,6 +413,24 @@ static inline void modem_syscon_ll_enable_fe_apb_clock(modem_syscon_dev_t *hw, b
 }
 
 __attribute__((always_inline))
+static inline void modem_syscon_ll_enable_fe_adc_clock(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf1.clk_fe_adc_en = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_fe_dac_clock(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf1.clk_fe_dac_en = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_fe_pwdet_clock(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf1.clk_fe_pwdet_adc_en = en;
+}
+
+__attribute__((always_inline))
 static inline void modem_syscon_ll_enable_bt_apb_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_bt_apb_en = en;

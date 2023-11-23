@@ -75,6 +75,7 @@ static void IRAM_ATTR modem_clock_wifi_bb_configure(modem_clock_context_t *ctx, 
 #if SOC_BT_SUPPORTED
 static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
+    modem_syscon_ll_enable_bt_mac_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_modem_sec_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ble_timer_clock(ctx->hal->syscon_dev, enable);
 }
@@ -309,6 +310,7 @@ static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
     [MODEM_CLOCK_DOMAIN_WIFIPWR]        = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
 };
 
+#if !CONFIG_IDF_TARGET_ESP32H2  //TODO: PM-92
 static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 {
     portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
@@ -318,12 +320,12 @@ static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
     }
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 }
-#endif // SOC_PM_SUPPORT_PMU_MODEM_STATE
+#endif
 
 void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if !CONFIG_IDF_TARGET_ESP32H2
     modem_clock_module_icg_map_init_all();
 #endif
     uint32_t deps = modem_clock_get_module_deps(module);
