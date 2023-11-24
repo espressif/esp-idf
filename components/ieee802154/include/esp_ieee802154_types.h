@@ -74,6 +74,7 @@ typedef enum {
  */
 typedef struct {
     bool pending;                /*!< The frame was acked with frame pending set */
+    bool process;                /*!< The frame needs to be processed by the upper layer */
     uint8_t channel;             /*!< Channel */
     int8_t rssi;                 /*!< RSSI */
     uint8_t lqi;                 /*!< LQI */
