@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+#ifndef ESP_WIFI_MAX_CONN_NUM
+// Number of maximum wifi connection may be undefined if we have no native wifi support on this target
+//   and at the same time there's no native interface injected by the wifi_remote component.
+// In this case, we just let the header compilable, since no wifi API could be used (let's make a sanity check)
+#if !CONFIG_SOC_WIFI_SUPPORTED && !CONFIG_ESP_WIFI_REMOTE_ENABLED
+#define ESP_WIFI_MAX_CONN_NUM  (15)
+typedef struct wifi_sta_list_t wifi_sta_list_t;
+#else
+#error WiFi header mismatch! Please make sure you use the correct version of WiFi API
+#endif
+#endif // ESP_WIFI_MAX_CONN_NUM
 
 /**
  * @brief station list structure

@@ -7,10 +7,14 @@
 #pragma once
 
 #include "sdkconfig.h"
+#include "esp_wifi_types_generic.h"
 #if CONFIG_SOC_WIFI_HE_SUPPORT
 #include "esp_wifi_he_types.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #define ESP_WIFI_MAX_CONN_NUM  (4)        /**< max number of stations which can connect to ESP32C2 soft-AP */
@@ -78,20 +82,11 @@ typedef struct wifi_pkt_rx_ctrl_t{
     unsigned :12;                 /**< reserved */
     unsigned rx_state:8;          /**< state of the packet. 0: no error; others: error numbers which are not public */
 } wifi_pkt_rx_ctrl_t;
-#endif
-
-/** @brief Payload passed to 'buf' parameter of promiscuous mode RX callback.
- */
-typedef struct {
-    wifi_pkt_rx_ctrl_t rx_ctrl; /**< metadata header */
-    uint8_t payload[0];       /**< Data or management payload. Length of payload is described by rx_ctrl.sig_len. Type of content determined by packet type argument of callback. */
-} wifi_promiscuous_pkt_t;
 
 /**
   * @brief Channel state information(CSI) configuration type
   *
   */
-#if !CONFIG_SOC_WIFI_HE_SUPPORT
 typedef struct wifi_csi_config_t{
     bool lltf_en;           /**< enable to receive legacy long training field(lltf) data. Default enabled */
     bool htltf_en;          /**< enable to receive HT long training field(htltf) data. Default enabled */
@@ -105,6 +100,13 @@ typedef struct wifi_csi_config_t{
 #endif // !CONFIG_SOC_WIFI_HE_SUPPORT
 
 typedef wifi_pkt_rx_ctrl_t esp_wifi_rxctrl_t;
+
+/** @brief Payload passed to 'buf' parameter of promiscuous mode RX callback.
+ */
+typedef struct {
+    wifi_pkt_rx_ctrl_t rx_ctrl; /**< metadata header */
+    uint8_t payload[0];       /**< Data or management payload. Length of payload is described by rx_ctrl.sig_len. Type of content determined by packet type argument of callback. */
+} wifi_promiscuous_pkt_t;
 
 /**
   * @brief CSI data type
@@ -121,3 +123,7 @@ typedef struct wifi_csi_info_t {
     uint8_t *payload;          /**< payload of the wifi packet */
     uint16_t payload_len;      /**< payload len of the wifi packet */
 } wifi_csi_info_t;
+
+#ifdef __cplusplus
+}
+#endif

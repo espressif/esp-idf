@@ -84,9 +84,8 @@ else()
         idf_component_get_property(esp_wifi_remote esp_wifi_remote COMPONENT_LIB)
         target_link_libraries(${COMPONENT_LIB} PUBLIC ${esp_wifi_remote})
     endif()
+endif()
 
-    if(CONFIG_SPIRAM)
-        idf_component_optional_requires(PRIVATE esp_psram)
-    endif()
-
+if(CONFIG_SPIRAM)
+    idf_component_optional_requires(PRIVATE esp_psram)
 endif()

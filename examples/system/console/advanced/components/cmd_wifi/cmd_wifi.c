@@ -24,6 +24,11 @@
 #include "esp_event.h"
 #include "cmd_wifi.h"
 
+/**
+ * This component will be supported using esp_wifi_remote
+ */
+#if CONFIG_SOC_WIFI_SUPPORTED
+
 #define JOIN_TIMEOUT_MS (10000)
 
 static EventGroupHandle_t wifi_event_group;
@@ -134,3 +139,5 @@ void register_wifi(void)
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&join_cmd) );
 }
+
+#endif // CONFIG_SOC_WIFI_SUPPORTED

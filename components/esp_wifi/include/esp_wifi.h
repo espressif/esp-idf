@@ -183,6 +183,7 @@ typedef struct {
 #endif
 
 extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
+extern wifi_osi_funcs_t g_wifi_osi_funcs;
 
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
 

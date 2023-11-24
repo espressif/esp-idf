@@ -8,6 +8,9 @@
 #ifndef __ESP_WIFI_TYPES_H__
 #define __ESP_WIFI_TYPES_H__
 
+#include <stdbool.h>
+#include <stddef.h>
+#include "sdkconfig.h"
 #include "esp_event_base.h"
 #include "esp_interface.h"
 
@@ -430,6 +433,15 @@ typedef struct {
     uint8_t payload[0];      /**< Payload. Length is equal to value in 'length' field, minus 4. */
 } vendor_ie_data_t;
 
+/**
+ * @brief Forward declare the Rx ctrl packet struct, as it is TARGET dependent and will be defined
+ * in the "native" wifi types (types tightly coupled to wifi-lib implementation)
+ */
+typedef struct wifi_pkt_rx_ctrl_t wifi_pkt_rx_ctrl_t;
+
+/**
+ * @brief Rx Control Packet alias used in wifi-lib implementation
+ */
 typedef struct wifi_pkt_rx_ctrl_t esp_wifi_rxctrl_t;
 
 /**

@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include "sdkconfig.h"
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
@@ -201,3 +204,5 @@ esp_err_t esp_wifi_sta_set_bss_color_collision_detection(int threshold, int dura
 #ifdef __cplusplus
 }
 #endif
+
+#endif // CONFIG_SOC_WIFI_HE_SUPPORT
