@@ -45,8 +45,28 @@ extern void bt_bb_set_zb_tx_on_delay(uint16_t time);
 
 IEEE802154_STATIC volatile ieee802154_state_t s_ieee802154_state;
 static uint8_t *s_tx_frame = NULL;
-static uint8_t s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE][127 + 1 + 1]; // +1: len, +1: for dma test
+#define IEEE802154_RX_FRAME_SIZE (127 + 1 + 1) // +1: len, +1: for dma test
+
+#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
+// +1: for the stub buffer when the valid buffers are full.
+//
+// |--------------------VB[0]--------------------|
+// |--------------------VB[1]--------------------|
+// |--------------------VB[2]--------------------|
+// |--------------------VB[3]--------------------|
+// |--------------------.....--------------------|
+// |-----VB[CONFIG_IEEE802154_RX_BUFFER_SIZE]----|
+// |---------------------STUB--------------------|
+//
+// VB: Valid buffer, used for storing the frame received by HW.
+// STUB : Stub buffer, used when all valid buffers are under processing, the received frame will be dropped.
+static uint8_t s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE + 1][IEEE802154_RX_FRAME_SIZE];
+static esp_ieee802154_frame_info_t s_rx_frame_info[CONFIG_IEEE802154_RX_BUFFER_SIZE + 1];
+#else
+static uint8_t s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE][IEEE802154_RX_FRAME_SIZE];
 static esp_ieee802154_frame_info_t s_rx_frame_info[CONFIG_IEEE802154_RX_BUFFER_SIZE];
+#endif
+
 static uint8_t s_rx_index = 0;
 static uint8_t s_enh_ack_frame[128];
 static uint8_t s_recent_rx_frame_info_index;
@@ -54,6 +74,58 @@ static portMUX_TYPE s_ieee802154_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static intr_handle_t s_ieee802154_isr_handle = NULL;
 
 static esp_err_t ieee802154_sleep_init(void);
+static void next_operation(void);
+
+#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
+static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
+{
+    // If the RX done packet is written in the stub buffer, drop it silently.
+    if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+        esp_rom_printf("receive buffer full, drop the current frame.\n");
+    } else {
+        // Otherwise, post it to the upper layer.
+        frame_info->process = true;
+        esp_ieee802154_receive_done(data, frame_info);
+    }
+}
+
+static void ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, esp_ieee802154_frame_info_t *ack_frame_info)
+{
+    if (ack && ack_frame_info) {
+        if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+            esp_rom_printf("receive buffer full, drop the current ack frame.\n");
+            esp_ieee802154_transmit_failed(frame, ESP_IEEE802154_TX_ERR_NO_ACK);
+        } else {
+            ack_frame_info->process = true;
+            esp_ieee802154_transmit_done(frame, ack, ack_frame_info);
+        }
+    } else {
+        esp_ieee802154_transmit_done(frame, ack, ack_frame_info);
+    }
+}
+
+esp_err_t ieee802154_receive_handle_done(uint8_t *data)
+{
+    uint16_t size = data - &s_rx_frame[0][0];
+    if ((size % IEEE802154_RX_FRAME_SIZE) != 0
+            || (size / IEEE802154_RX_FRAME_SIZE) >= CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+        return ESP_FAIL;
+    }
+    s_rx_frame_info[size / IEEE802154_RX_FRAME_SIZE].process = false;
+    return ESP_OK;
+}
+#else
+static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
+{
+    esp_ieee802154_receive_done(data, frame_info);
+}
+
+static void ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, esp_ieee802154_frame_info_t *ack_frame_info)
+{
+    esp_ieee802154_transmit_done(frame, ack, ack_frame_info);
+}
+
+#endif
 
 static IRAM_ATTR void event_end_process(void)
 {
@@ -97,15 +169,43 @@ uint8_t ieee802154_get_recent_lqi(void)
 
 IEEE802154_STATIC void set_next_rx_buffer(void)
 {
+    uint8_t* next_rx_buffer = NULL;
+#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
+    uint8_t index = 0;
+    if (s_rx_index != CONFIG_IEEE802154_RX_BUFFER_SIZE && s_rx_frame_info[s_rx_index].process == false) {
+        // If buffer is not full, and current index is empty, set it to hardware.
+        next_rx_buffer = s_rx_frame[s_rx_index];
+    } else {
+        // Otherwise, trave the buffer to find an empty one.
+        // Notice, the s_rx_index + 1 is more like an empty one, so check it first.
+        for (uint8_t i = 1; i <= CONFIG_IEEE802154_RX_BUFFER_SIZE; i++) {
+            index = (i + s_rx_index) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
+            if (s_rx_frame_info[index].process == true) {
+                continue;
+            } else {
+                s_rx_index = index;
+                next_rx_buffer = s_rx_frame[s_rx_index];
+                break;
+            }
+        }
+    }
+    // If all buffer is under processing by the upper layer, we set the stub buffer, and
+    // will not post the received frame to the upper layer.
+    if (!next_rx_buffer) {
+        s_rx_index = CONFIG_IEEE802154_RX_BUFFER_SIZE;
+        next_rx_buffer = s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE];
+    }
+#else
     if (s_rx_frame[s_rx_index][0] != 0) {
         s_rx_index++;
         if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
             s_rx_index = 0;
+            memset(s_rx_frame[s_rx_index], 0, sizeof(s_rx_frame[s_rx_index]));
         }
-        memset(s_rx_frame[s_rx_index], 0, sizeof(s_rx_frame[s_rx_index]));
     }
-
-    ieee802154_ll_set_rx_addr((uint8_t *)&s_rx_frame[s_rx_index]);
+    next_rx_buffer = (uint8_t *)&s_rx_frame[s_rx_index];
+#endif
+    ieee802154_ll_set_rx_addr(next_rx_buffer);
 }
 
 static bool stop_rx(void)
@@ -116,7 +216,7 @@ static bool stop_rx(void)
 
     events = ieee802154_ll_get_events();
     if (events & IEEE802154_EVENT_RX_DONE) {
-        esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
     }
 
     ieee802154_ll_clear_events(IEEE802154_EVENT_RX_DONE | IEEE802154_EVENT_RX_ABORT | IEEE802154_EVENT_RX_SFD_DONE);
@@ -128,7 +228,7 @@ static bool stop_tx_ack(void)
 {
     ieee802154_set_cmd(IEEE802154_CMD_STOP);
 
-    esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+    ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
 
     ieee802154_ll_clear_events(IEEE802154_EVENT_ACK_TX_DONE | IEEE802154_EVENT_RX_ABORT | IEEE802154_EVENT_TX_SFD_DONE); // ZB-81: clear TX_SFD_DONE event
 
@@ -145,11 +245,11 @@ static bool stop_tx(void)
 
     if (s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK) {
         // if current operation is sending 2015 Enh-ack, SW should create the receive-done event.
-        esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
         ieee802154_ll_clear_events(IEEE802154_EVENT_ACK_TX_DONE);
     } else if ((events & IEEE802154_EVENT_TX_DONE) && (!ieee802154_frame_is_ack_required(s_tx_frame) || !ieee802154_ll_get_rx_auto_ack())) {
         // if the tx is already done, and the frame is not ack request OR auto ack rx is disabled.
-        esp_ieee802154_transmit_done(s_tx_frame, NULL, NULL);
+        ieee802154_transmit_done(s_tx_frame, NULL, NULL);
     } else {
         esp_ieee802154_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_ABORT);
     }
@@ -185,7 +285,7 @@ static bool stop_rx_ack(void)
     ieee802154_ll_disable_events(IEEE802154_EVENT_TIMER0_OVERFLOW);
 
     if (events & IEEE802154_EVENT_ACK_RX_DONE) {
-        esp_ieee802154_transmit_done(s_tx_frame, (uint8_t *)&s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+        ieee802154_transmit_done(s_tx_frame, (uint8_t *)&s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
     } else {
         esp_ieee802154_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_NO_ACK);
     }
@@ -298,11 +398,11 @@ static IRAM_ATTR void isr_handle_tx_done(void)
 {
     event_end_process();
     if (s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK) {
-        esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
         next_operation();
     } else {
         if (s_ieee802154_state == IEEE802154_STATE_TEST_TX) {
-            esp_ieee802154_transmit_done(s_tx_frame, NULL, NULL);
+            ieee802154_transmit_done(s_tx_frame, NULL, NULL);
             next_operation();
         } else if (s_ieee802154_state == IEEE802154_STATE_TX || s_ieee802154_state == IEEE802154_STATE_TX_CCA) {
             if (ieee802154_frame_is_ack_required(s_tx_frame) && ieee802154_ll_get_rx_auto_ack()) {
@@ -311,7 +411,7 @@ static IRAM_ATTR void isr_handle_tx_done(void)
                 receive_ack_timeout_timer_start(200000); // 200ms for receive ack timeout
 #endif
             } else {
-                esp_ieee802154_transmit_done(s_tx_frame, NULL, NULL);
+                ieee802154_transmit_done(s_tx_frame, NULL, NULL);
                 next_operation();
             }
         }
@@ -345,11 +445,11 @@ static IRAM_ATTR void isr_handle_rx_done(void)
             } else {
                 // Stop current process if generator returns errors.
                 ieee802154_set_cmd(IEEE802154_CMD_STOP);
-                esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+                ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
                 next_operation();
             }
         } else {
-            esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+            ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
             next_operation();
         }
     }
@@ -357,7 +457,7 @@ static IRAM_ATTR void isr_handle_rx_done(void)
 
 static IRAM_ATTR void isr_handle_ack_tx_done(void)
 {
-    esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+    ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
     next_operation();
 }
 
@@ -366,7 +466,7 @@ static IRAM_ATTR void isr_handle_ack_rx_done(void)
     ieee802154_timer0_stop();
     ieee802154_ll_disable_events(IEEE802154_EVENT_TIMER0_OVERFLOW);
     ieee802154_rx_frame_info_update();
-    esp_ieee802154_transmit_done(s_tx_frame, (uint8_t *)&s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+    ieee802154_transmit_done(s_tx_frame, (uint8_t *)&s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
     next_operation();
 }
 
@@ -408,7 +508,7 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
     case IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK:
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
 #if !CONFIG_IEEE802154_TEST
-        esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
         next_operation();
 #else
         esp_ieee802154_receive_failed(rx_status);
@@ -417,7 +517,7 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
     case IEEE802154_RX_ABORT_BY_ENHACK_SECURITY_ERROR:
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
 #if !CONFIG_IEEE802154_TEST
-        esp_ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
         next_operation();
 #else
         esp_ieee802154_receive_failed(rx_status);
@@ -657,6 +757,7 @@ esp_err_t ieee802154_mac_init(void)
 #endif
 
     memset(s_rx_frame, 0, sizeof(s_rx_frame));
+
     ieee802154_set_state(IEEE802154_STATE_IDLE);
 
     // TODO: Add flags for IEEE802154 ISR allocating. TZ-102

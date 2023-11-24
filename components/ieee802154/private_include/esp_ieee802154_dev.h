@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "soc/soc.h"
@@ -108,6 +109,21 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca);
  *
  */
 esp_err_t ieee802154_receive(void);
+
+#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
+/**
+ * @brief  Notify the IEEE 802.15.4 Radio that the frame is handled done by upper layer.
+ *
+ * @param[in]  frame  The pointer to the frame which was passed from the function esp_ieee802154_receive_done.
+ *                    or ack frame from esp_ieee802154_transmit_done.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL if frame is invalid.
+ *
+ */
+esp_err_t ieee802154_receive_handle_done(uint8_t* frame);
+#endif
 
 /**
  * @brief  Transmit the given frame at a specific time.
