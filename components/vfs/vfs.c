@@ -1381,5 +1381,5 @@ void rewinddir(DIR* pdir)
 
 void vfs_include_syscalls_impl(void)
 {
-    // Linker hook function, exists to make the linker examine this fine
+    // Linker hook function, exists to make the linker examine this file
 }

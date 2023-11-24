@@ -9,3 +9,11 @@ idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES esp_pm esp_driver_gpio esp_ringbuf
                        LDFRAGMENTS "linker.lf"
                       )
+
+if(CONFIG_VFS_SUPPORT_IO)
+   target_link_libraries(${COMPONENT_LIB} PUBLIC idf::vfs)
+   target_sources(${COMPONENT_LIB} PRIVATE "src/uart_vfs.c")
+   if(CONFIG_ESP_CONSOLE_UART)
+      target_link_libraries(${COMPONENT_LIB} INTERFACE "-u uart_vfs_include_dev_init")
+   endif()
+endif()

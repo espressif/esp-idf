@@ -10,15 +10,15 @@
 #include <fcntl.h>
 #include <sys/termios.h>
 #include <sys/errno.h>
+#include <unistd.h>
 #include "unity.h"
 #include "esp_rom_uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "driver/uart_vfs.h"
 #include "driver/uart.h"
 #include "hal/uart_ll.h"
-#include "esp_vfs_dev.h"
-#include "esp_vfs.h"
 #include "esp_clk_tree.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
@@ -45,7 +45,7 @@ static void flush_stdin_stdout(void)
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 }
 
-TEST_CASE("can read from stdin", "[vfs]")
+TEST_CASE("can read from stdin", "[vfs_uart]")
 {
     flush_stdin_stdout();
 
@@ -68,11 +68,10 @@ TEST_CASE("can read from stdin", "[vfs]")
     free(buf);
 }
 
-
-TEST_CASE("CRs are removed from the stdin correctly", "[vfs]")
+TEST_CASE("CRs are removed from the stdin correctly", "[vfs_uart]")
 {
-    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
-    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+    uart_vfs_dev_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+    uart_vfs_dev_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     flush_stdin_stdout();
     const char* send_str = "1234567890\n\r123\r\n4\n";
@@ -155,33 +154,31 @@ static void write_task_fn(void* varg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("can write to UART while another task is reading", "[vfs]")
+TEST_CASE("can write to UART while another task is reading", "[vfs_uart]")
 {
     char out_buffer[32];
     size_t out_buffer_len = sizeof(out_buffer);
 
     struct read_task_arg_t read_arg = {
-            .out_buffer = out_buffer,
-            .out_buffer_len = out_buffer_len,
-            .done = xSemaphoreCreateBinary()
+        .out_buffer = out_buffer,
+        .out_buffer_len = out_buffer_len,
+        .done = xSemaphoreCreateBinary()
     };
 
     struct write_task_arg_t write_arg = {
-            .str = "!(@*#&(!*@&#((SDasdkjhadsl\n",
-            .done = xSemaphoreCreateBinary()
+        .str = "!(@*#&(!*@&#((SDasdkjhadsl\n",
+        .done = xSemaphoreCreateBinary()
     };
 
     flush_stdin_stdout();
 
-    ESP_ERROR_CHECK( uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM,
-            256, 0, 0, NULL, 0) );
-    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
-
+    ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM,
+                                        256, 0, 0, NULL, 0));
+    uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 
     xTaskCreate(&read_task_fn, "vfs_read", 4096, &read_arg, 5, NULL);
     vTaskDelay(10);
     xTaskCreate(&write_task_fn, "vfs_write", 4096, &write_arg, 6, NULL);
-
 
     int res = xSemaphoreTake(write_arg.done, 100 / portTICK_PERIOD_MS);
     TEST_ASSERT(res);
@@ -191,13 +188,14 @@ TEST_CASE("can write to UART while another task is reading", "[vfs]")
 
     TEST_ASSERT_EQUAL(0, strcmp(write_arg.str, read_arg.out_buffer));
 
-    esp_vfs_dev_uart_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
+    uart_vfs_dev_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
     uart_driver_delete(CONFIG_ESP_CONSOLE_UART_NUM);
     vSemaphoreDelete(read_arg.done);
     vSemaphoreDelete(write_arg.done);
+    vTaskDelay(2);  // wait for tasks to exit
 }
 
-TEST_CASE("fcntl supported in UART VFS", "[vfs]")
+TEST_CASE("fcntl supported in UART VFS", "[vfs_uart]")
 {
     int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     TEST_ASSERT_NOT_EQUAL(-1, flags);
@@ -209,7 +207,7 @@ TEST_CASE("fcntl supported in UART VFS", "[vfs]")
 }
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-TEST_CASE("Can use termios for UART", "[vfs]")
+TEST_CASE("Can use termios for UART", "[vfs_uart]")
 {
     uint32_t clk_src_hz = 0;
     TEST_ESP_OK(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)UART_SCLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz));
@@ -226,7 +224,7 @@ TEST_CASE("Can use termios for UART", "[vfs]")
 
     const int uart_fd = open("/dev/uart/1", O_RDWR);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(uart_fd, -1, "Cannot open UART");
-    esp_vfs_dev_uart_use_driver(1);
+    uart_vfs_dev_use_driver(1);
 
     TEST_ASSERT_EQUAL(-1, tcgetattr(uart_fd, NULL));
     TEST_ASSERT_EQUAL(EINVAL, errno);
@@ -343,7 +341,7 @@ TEST_CASE("Can use termios for UART", "[vfs]")
         memset(&tios_result, 0xFF, sizeof(struct termios));
     }
 
-    esp_vfs_dev_uart_use_nonblocking(1);
+    uart_vfs_dev_use_nonblocking(1);
     close(uart_fd);
     uart_driver_delete(UART_NUM_1);
 }

@@ -37,12 +37,17 @@ CORE: 100: init_heap in components/esp_system/startup_funcs.c on BIT(0)
 # esp_timer early initialization is required for esp_timer_get_time to work.
 CORE: 101: init_timer in components/esp_system/startup_funcs.c on BIT(0)
 
-CORE: 102: init_newlib in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 102: init_newlib in components/newlib/newlib_init.c on BIT(0)
 CORE: 103: init_psram_heap in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 104: init_brownout in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 105: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
-CORE: 110: init_vfs_console in components/esp_system/startup_funcs.c on BIT(0)
-CORE: 115: init_newlib_stdio in components/esp_system/startup_funcs.c on BIT(0)
+
+# Peripheral-specific implementation operators should be filled first
+# Then register vfs console, and follow by newlib stdio initialization
+CORE: 110: init_vfs_uart in components/esp_driver_uart/src/uart_vfs.c on BIT(0)
+CORE: 114: init_vfs_console in components/vfs/vfs_console.c on BIT(0)
+CORE: 115: init_newlib_stdio in components/newlib/newlib_init.c on BIT(0)
+
 CORE: 120: init_pthread in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 140: init_virtual_efuse in components/esp_system/startup_funcs.c on BIT(0)

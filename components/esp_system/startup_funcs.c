@@ -52,11 +52,6 @@
 #include "esp_private/pm_impl.h"
 #endif
 
-#if CONFIG_VFS_SUPPORT_IO
-#include "esp_vfs_dev.h"
-#include "esp_vfs_console.h"
-#endif
-
 #include "esp_pthread.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/spi_flash_os.h"
@@ -135,12 +130,6 @@ ESP_SYSTEM_INIT_FN(init_timer, CORE, BIT(0), 101)
     return ESP_OK;
 }
 
-ESP_SYSTEM_INIT_FN(init_newlib, CORE, BIT(0), 102)
-{
-    esp_newlib_init();
-    return ESP_OK;
-}
-
 ESP_SYSTEM_INIT_FN(init_psram_heap, CORE, BIT(0), 103)
 {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
@@ -171,24 +160,6 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 105)
 {
     esp_newlib_time_init();
-    return ESP_OK;
-}
-
-#if CONFIG_VFS_SUPPORT_IO
-ESP_SYSTEM_INIT_FN(init_vfs_console, CORE, BIT(0), 110)
-{
-    // VFS console register.
-    return esp_vfs_console_register();
-}
-#endif // CONFIG_VFS_SUPPORT_IO
-
-ESP_SYSTEM_INIT_FN(init_newlib_stdio, CORE, BIT(0), 115)
-{
-#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
-    esp_newlib_init_global_stdio(ESP_VFS_DEV_CONSOLE);
-#else
-    esp_newlib_init_global_stdio(NULL);
-#endif
     return ESP_OK;
 }
 

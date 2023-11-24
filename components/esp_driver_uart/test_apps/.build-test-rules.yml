@@ -17,3 +17,8 @@ components/esp_driver_uart/test_apps/uart:
   depends_components:
     - esp_driver_uart
     - esp_driver_gpio
+
+components/esp_driver_uart/test_apps/uart_vfs:
+  depends_components:
+    - esp_driver_uart
+    - vfs

@@ -7,4 +7,5 @@
     :maxdepth: 1
 
     peripherals
+    storage
     system

@@ -143,6 +143,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave.h \
     $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_vfs.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
