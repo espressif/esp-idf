@@ -18,6 +18,7 @@ workflow:
 # Place the default settings in `.gitlab/ci/common.yml` instead
 
 include:
+  - '.gitlab/ci/danger.yml'
   - '.gitlab/ci/common.yml'
   - '.gitlab/ci/rules.yml'
   - '.gitlab/ci/upload_cache.yml'
