@@ -15,6 +15,7 @@
 
 #include "nimble/nimble_npl.h"
 #include "../../../../controller/esp32c2/esp_bt_cfg.h"
+#include "hal/efuse_hal.h"
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #include "driver/uart.h"
@@ -165,7 +166,7 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
  */
 uint8_t esp_ble_get_chip_rev_version(void);
 
-#define CONFIG_VERSION  0x20230629
+#define CONFIG_VERSION  0x20231124
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -222,7 +223,7 @@ typedef struct {
     uint8_t cca_drop_mode;                       /*!< CCA drop mode */
     int8_t cca_low_tx_pwr;                       /*!< Low TX power setting for CCA */
     uint8_t main_xtal_freq;                      /*!< Main crystal frequency */
-    uint8_t version_num;                         /*!< Version number */
+    uint32_t version_num;                        /*!< Version number */
     uint8_t ignore_wl_for_direct_adv;            /*!< Ignore the white list for directed advertising */
     uint32_t config_magic;                       /*!< Configuration magic value */
 } esp_bt_controller_config_t;
@@ -274,7 +275,7 @@ typedef struct {
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
     .ble_scan_classify_filter_enable         = 0,                                       \
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
-    .version_num                = esp_ble_get_chip_rev_version(),                       \
+    .version_num                = efuse_hal_chip_revision(),                            \
     .ignore_wl_for_direct_adv   = 0,                                                    \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
