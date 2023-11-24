@@ -1,0 +1,6 @@
+[mapping:dac_driver]
+archive: libesp_driver_dac.a
+entries:
+    if DAC_CTRL_FUNC_IN_IRAM = y:
+        dac_oneshot: dac_oneshot_output_voltage (noflash)
+        dac_continuous: dac_continuous_write_asynchronously (noflash)

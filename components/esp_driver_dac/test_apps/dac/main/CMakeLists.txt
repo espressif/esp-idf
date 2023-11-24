@@ -9,5 +9,5 @@ endif()
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES unity esp_driver_pcnt esp_adc
-                                     driver # TODO: IDF-8370 remove driver when esp_driver_dac created
+                                     esp_driver_dac esp_driver_gpio esp_driver_i2s esp_driver_spi
                        WHOLE_ARCHIVE)

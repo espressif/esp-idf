@@ -113,7 +113,7 @@ esp_err_t dac_cosine_start(dac_cosine_handle_t handle)
     periph_rtc_dig_clk8m_enable();
     /* Enabled DAC channel */
     ESP_RETURN_ON_ERROR(dac_priv_enable_channel(handle->cfg.chan_id), TAG,
-                      "enable dac channel %d failed", handle->cfg.chan_id);
+                        "enable dac channel %d failed", handle->cfg.chan_id);
     /* Enabled the cosine wave generator if no channel using it before */
     DAC_RTC_ENTER_CRITICAL();
     if (s_cwg_refer_cnt == 0) {
@@ -136,7 +136,7 @@ esp_err_t dac_cosine_stop(dac_cosine_handle_t handle)
 
     /* Enabled DAC channel */
     ESP_RETURN_ON_ERROR(dac_priv_disable_channel(handle->cfg.chan_id), TAG,
-                      "disable dac channel %d failed", handle->cfg.chan_id);
+                        "disable dac channel %d failed", handle->cfg.chan_id);
     DAC_RTC_ENTER_CRITICAL();
     /* Disconnect the DAC channel from the cosine wave generator */
     dac_ll_cw_enable_channel(handle->cfg.chan_id, false);

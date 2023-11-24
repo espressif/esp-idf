@@ -194,7 +194,6 @@ static void IRAM_ATTR s_dac_default_intr_handler(void *arg)
     }
 }
 
-
 esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, dac_continuous_handle_t *ret_handle)
 {
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
@@ -250,7 +249,7 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
                       err2, TAG, "Failed to initialize DAC DMA peripheral");
     /* Register DMA interrupt */
     ESP_GOTO_ON_ERROR(esp_intr_alloc(dac_dma_periph_get_intr_signal(), DAC_INTR_ALLOC_FLAGS,
-                      s_dac_default_intr_handler, handle, &(handle->intr_handle)),
+                                     s_dac_default_intr_handler, handle, &(handle->intr_handle)),
                       err1, TAG, "Failed to register DAC DMA interrupt");
     /* Connect DAC module to the DMA peripheral */
     DAC_RTC_ENTER_CRITICAL();
@@ -359,7 +358,7 @@ esp_err_t dac_continuous_enable(dac_continuous_handle_t handle)
     esp_err_t ret = ESP_OK;
     /* Reset the descriptor pool */
     xQueueReset(handle->desc_pool);
-    for ( int i = 0; i < handle->cfg.desc_num; i++) {
+    for (int i = 0; i < handle->cfg.desc_num; i++) {
         ESP_GOTO_ON_FALSE(xQueueSend(handle->desc_pool, &handle->desc[i], 0) == pdTRUE,
                           ESP_ERR_INVALID_STATE, err, TAG, "the descriptor pool is not cleared");
     }
@@ -475,8 +474,8 @@ static size_t s_dac_load_data_into_buf(dac_continuous_handle_t handle, uint8_t *
 }
 
 esp_err_t dac_continuous_write_asynchronously(dac_continuous_handle_t handle, uint8_t *dma_buf,
-                                         size_t dma_buf_len, const uint8_t *data,
-                                         size_t data_len, size_t *bytes_loaded)
+                                              size_t dma_buf_len, const uint8_t *data,
+                                              size_t data_len, size_t *bytes_loaded)
 {
     DAC_NULL_POINTER_CHECK_ISR(handle);
     DAC_NULL_POINTER_CHECK_ISR(dma_buf);
@@ -533,7 +532,7 @@ esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_
         buf += load_bytes / DAC_16BIT_ALIGN_COEFF;
     }
     /* Link the tail to the head as a ring */
-    STAILQ_NEXT(handle->desc[i-1], qe) = handle->desc[0];
+    STAILQ_NEXT(handle->desc[i - 1], qe) = handle->desc[0];
 
     dac_dma_periph_dma_trans_start((uint32_t)handle->desc[0]);
     atomic_store(&handle->is_running, true);
@@ -607,8 +606,8 @@ esp_err_t dac_continuous_write(dac_continuous_handle_t handle, uint8_t *buf, siz
         /* Wait for the previous DMA stop */
         while (atomic_load(&handle->is_running)) {}
         for (int i = 0;
-            i < handle->cfg.desc_num && buf_size > 0;
-            i++, buf += w_size, buf_size -= w_size) {
+                i < handle->cfg.desc_num && buf_size > 0;
+                i++, buf += w_size, buf_size -= w_size) {
             ESP_GOTO_ON_ERROR(s_dac_wait_to_load_dma_data(handle, buf, buf_size, &w_size, timeout_tick), err, TAG, "Load data failed");
         }
         dac_dma_periph_dma_trans_start((uint32_t)(STAILQ_FIRST(&handle->head)));
