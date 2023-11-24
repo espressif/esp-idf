@@ -87,7 +87,7 @@ esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_v
             return ESP_ERR_INVALID_ARG;
         }
     }
-    vfs_entry_t *entry = (vfs_entry_t*) malloc(sizeof(vfs_entry_t));
+    vfs_entry_t *entry = (vfs_entry_t*) heap_caps_malloc(sizeof(vfs_entry_t), VFS_MALLOC_FLAGS);
     if (entry == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -970,7 +970,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
     // because that could block the registration of new driver.
     const size_t vfs_count = s_vfs_count;
     fds_triple_t *vfs_fds_triple;
-    if ((vfs_fds_triple = calloc(vfs_count, sizeof(fds_triple_t))) == NULL) {
+    if ((vfs_fds_triple = heap_caps_calloc(vfs_count, sizeof(fds_triple_t), VFS_MALLOC_FLAGS)) == NULL) {
         __errno_r(r) = ENOMEM;
         ESP_LOGD(TAG, "calloc is unsuccessful");
         return -1;
@@ -1047,7 +1047,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         }
     }
 
-    void **driver_args = calloc(vfs_count, sizeof(void *));
+    void **driver_args = heap_caps_calloc(vfs_count, sizeof(void *), VFS_MALLOC_FLAGS);
 
     if (driver_args == NULL) {
         free(vfs_fds_triple);
