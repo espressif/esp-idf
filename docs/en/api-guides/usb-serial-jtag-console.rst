@@ -58,6 +58,10 @@ There are several limitations to the USB Serial/JTAG console feature. These may 
 {IDF_TARGET_BOOT_PIN:default = "Not Updated!", esp32c3 = "GPIO9", esp32s3 = "GPIO0", esp32c6 = "GPIO9"}
 
 1. If the application accidentally reconfigures the USB peripheral pins, or disables the USB Serial/JTAG Controller, the device will disappear from the system. After fixing the issue in the application, you will need to manually put the {IDF_TARGET_NAME} into download mode by pulling low {IDF_TARGET_BOOT_PIN} and resetting the chip.
+.. note::
+
+    In rare cases it's possible that data sent from the {IDF_TARGET_NAME} to the host gets 'stuck' in host memory. Sending more data will get it 'unstuck', but if the application does not send more data, depending on the driver, this data needs to be flushed to the host manually. The non-blocking (default) driver and the VFS implementation will flush automatically after a newline. The blocking (interrupt-based) driver will automatically flush when its transmit buffer becomes empty.
+
 
 2. If the application enters deep sleep mode, the USB Serial/JTAG device will disappear from the system.
 
