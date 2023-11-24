@@ -274,7 +274,7 @@ typedef void (* esp_hf_cb_t) (esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
  *
  * @return
  *                  - ESP_OK: success
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
@@ -289,7 +289,7 @@ esp_err_t esp_bt_hf_register_callback(esp_hf_cb_t callback);
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -304,7 +304,7 @@ esp_err_t esp_bt_hf_init(esp_bd_addr_t remote_addr);
  *
  * @return
  *                  - ESP_OK: success
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -319,7 +319,7 @@ esp_err_t esp_bt_hf_deinit(esp_bd_addr_t remote_addr);
  *
  * @return
  *                  - ESP_OK: connect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -334,7 +334,7 @@ esp_err_t esp_bt_hf_connect(esp_bd_addr_t remote_bda);
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -348,8 +348,8 @@ esp_err_t esp_bt_hf_disconnect(esp_bd_addr_t remote_bda);
  * @param[in]       remote_bda: remote bluetooth device address
  *
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: audio connect request is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -363,8 +363,8 @@ esp_err_t esp_bt_hf_connect_audio(esp_bd_addr_t remote_bda);
  * @param[in]       remote_bda: remote bluetooth device address
  *
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: audio disconnect request is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -380,8 +380,8 @@ esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_bda);
  * @param[in]       value: 0 - voice recognition disabled, 1- voice recognition enabled
  *
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: response of volume recognition is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -399,8 +399,9 @@ esp_err_t esp_bt_hf_vra(esp_bd_addr_t remote_bda, esp_hf_vr_state_t value);
  * @param[in]       volume: gain of the speaker of microphone, ranges 0 to 15
  *
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: volume synchronization control is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if arguments are invalid
  *                  - ESP_FAIL: others
  *
  */
@@ -416,8 +417,8 @@ esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_bda, esp_hf_volume_contr
  * @param[in]       unat: User AT command response to HF Client.
  *                        It will response "ERROR" by default if unat is NULL.
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: response of unknown AT command is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -432,8 +433,8 @@ esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat);
  * @param[in]       response_code: AT command response code
  * @param[in]       error_code: CME error code
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: extend error code is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -450,8 +451,9 @@ esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_bda, esp_hf_at_response_c
  * @param[in]       ntk_state: network service state
  * @param[in]       signal: signal strength from 0 to 5
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: device status notification is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if arguments are invalid
  *                  - ESP_FAIL: others
  *
  */
@@ -473,8 +475,9 @@ esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, esp_hf_cal
  * @param[in]       batt_lev: batery level from 0 to 5
  * @param[in]       call_held_status: call held status
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: response to device individual indicators is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if the arguments are invalid
  *                  - ESP_FAIL: others
  *
  */
@@ -492,8 +495,8 @@ esp_err_t esp_bt_hf_cind_response(esp_bd_addr_t remote_addr,
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       name: current operator name
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: reponse for AT+COPS command is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -513,8 +516,8 @@ esp_err_t esp_bt_hf_cops_response(esp_bd_addr_t remote_addr, char *name);
  * @param[in]       number: current call number
  * @param[in]       type: international type or unknow
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: response to AT+CLCC command is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -535,8 +538,8 @@ esp_err_t esp_bt_hf_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
  *                               160-175: national, but no prefix nor escape digits
  * @param[in]       service_type: service type (unknown/voice/fax)
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: response for AT+CNUM command is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -550,8 +553,9 @@ esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, int n
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       state: in-band ring tone state
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: information of in-band ring tone is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if arguments are invalid
  *                  - ESP_FAIL: others
  *
  */
@@ -570,8 +574,8 @@ esp_err_t esp_bt_hf_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t 
  * @param[in]       number: number of the incoming call
  * @param[in]       call_addr_type: call address type
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: answer incoming call is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -592,8 +596,8 @@ esp_err_t esp_bt_hf_answer_call(esp_bd_addr_t remote_addr, int num_active, int n
  * @param[in]       number: number of the incoming call
  * @param[in]       call_addr_type: call address type
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: reject incoming call is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -617,8 +621,8 @@ esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int n
  * @param[in]       number: number of the outgoing call
  * @param[in]       call_addr_type: call address type
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: a call initiation is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -639,8 +643,8 @@ esp_err_t esp_bt_hf_out_call(esp_bd_addr_t remote_addr, int num_active, int num_
  * @param[in]       number: number of the call
  * @param[in]       call_addr_type: call address type
  * @return
- *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_OK: end an ongoing call is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -657,7 +661,7 @@ esp_err_t esp_bt_hf_end_call(esp_bd_addr_t remote_addr, int num_active, int num_
  *
  * @return
  *                  - ESP_OK: success
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
@@ -674,7 +678,7 @@ esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_h
  *
  * @return
  *                  - ESP_OK: if the request is sent successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
