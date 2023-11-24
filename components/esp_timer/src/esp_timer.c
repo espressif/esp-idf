@@ -574,7 +574,7 @@ esp_err_t esp_timer_init(void)
     return err;
 }
 
-ESP_SYSTEM_INIT_FN(esp_timer_startup_init, CONFIG_ESP_TIMER_ISR_AFFINITY, 100)
+ESP_SYSTEM_INIT_FN(esp_timer_startup_init, SECONDARY, CONFIG_ESP_TIMER_ISR_AFFINITY, 100)
 {
     return esp_timer_init();
 }

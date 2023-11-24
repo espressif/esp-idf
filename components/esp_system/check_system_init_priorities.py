@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # This file is used to check the order of execution of ESP_SYSTEM_INIT_FN functions.
@@ -18,19 +18,20 @@ import typing
 
 ESP_SYSTEM_INIT_FN_STR = r'ESP_SYSTEM_INIT_FN'
 ESP_SYSTEM_INIT_FN_REGEX_SIMPLE = re.compile(r'ESP_SYSTEM_INIT_FN')
-ESP_SYSTEM_INIT_FN_REGEX = re.compile(r'ESP_SYSTEM_INIT_FN\(([a-zA-Z0-9_]+)\s*,\s*([a-zA-Z\ _0-9\(\)|]+)\s*,\s*([0-9]+)\)')
+ESP_SYSTEM_INIT_FN_REGEX = re.compile(r'ESP_SYSTEM_INIT_FN\(([a-zA-Z0-9_]+)\s*,\s*([a-zA-Z\ _0-9\(\)|]+)\s*,\s*([a-zA-Z\ _0-9\(\)|]+)\s*,\s*([0-9]+)\)')
 STARTUP_ENTRIES_FILE = 'components/esp_system/system_init_fn.txt'
 
 
 class StartupEntry:
-    def __init__(self, filename: str, func: str, affinity: str, priority: int) -> None:
+    def __init__(self, filename: str, func: str, stage: str, affinity: str, priority: int) -> None:
         self.filename = filename
         self.func = func
+        self.stage = stage
         self.affinity = affinity
         self.priority = priority
 
     def __str__(self) -> str:
-        return f'{self.priority:3d}: {self.func} in {self.filename} on {self.affinity}'
+        return f'{self.stage}: {self.priority:3d}: {self.func} in {self.filename} on {self.affinity}'
 
 
 def main() -> None:
@@ -65,15 +66,20 @@ def main() -> None:
             entry = StartupEntry(
                 filename=os.path.relpath(filename, idf_path),
                 func=match[0],
-                affinity=match[1],
-                priority=int(match[2])
+                stage=match[1],
+                affinity=match[2],
+                priority=int(match[3])
             )
             startup_entries.append(entry)
 
     #
-    # 2. Sort the ESP_SYSTEM_INIT_FN functions in C source files by priority
+    # 2. Sort the ESP_SYSTEM_INIT_FN functions in C source files by stage and then priority
     #
-    startup_entries = list(sorted(startup_entries, key=lambda e: e.priority))
+    def sort_key(entry: StartupEntry) -> typing.Tuple[str, int]:
+        # luckily 'core' and 'secondary' are in alphabetical order, so we can return the string
+        return (entry.stage, entry.priority)
+
+    startup_entries = list(sorted(startup_entries, key=sort_key))
     startup_entries_lines = [str(entry) for entry in startup_entries]
 
     #

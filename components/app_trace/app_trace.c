@@ -77,7 +77,7 @@ esp_err_t esp_apptrace_init(void)
     return ESP_OK;
 }
 
-ESP_SYSTEM_INIT_FN(esp_apptrace_init, ESP_SYSTEM_INIT_ALL_CORES, 115)
+ESP_SYSTEM_INIT_FN(esp_apptrace_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES, 115)
 {
     return esp_apptrace_init();
 }

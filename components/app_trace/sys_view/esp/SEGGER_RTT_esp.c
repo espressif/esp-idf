@@ -296,7 +296,7 @@ int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* p
  * linked whenever SystemView is used.
  */
 
-ESP_SYSTEM_INIT_FN(sysview_init, BIT(0), 120)
+ESP_SYSTEM_INIT_FN(sysview_init, SECONDARY, BIT(0), 120)
 {
     SEGGER_SYSVIEW_Conf();
     return ESP_OK;
