@@ -77,7 +77,7 @@ menu "IEEE 802.15.4"
     config IEEE802154_SLEEP_ENABLE
         # Todo: Remove when support safe power-down of the power domain (IDF-7317)
         bool "Enable IEEE802154 light sleep"
-        depends on PM_ENABLE && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        depends on PM_ENABLE
         default n
         help
             Enabling this option allows the IEEE802.15.4 module to be powered down during automatic light sleep,
