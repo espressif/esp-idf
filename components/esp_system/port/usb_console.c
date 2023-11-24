@@ -27,6 +27,8 @@
 #include "hal/soc_hal.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_caps.h"
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/usb_dc.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_dfu.h"
@@ -34,7 +36,15 @@
 #include "esp32s2/rom/usb/usb_os_glue.h"
 #include "esp32s2/rom/usb/usb_persist.h"
 #include "esp32s2/rom/usb/chip_usb_dw_wrapper.h"
-
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/usb/usb_dc.h"
+#include "esp32s3/rom/usb/cdc_acm.h"
+#include "esp32s3/rom/usb/usb_dfu.h"
+#include "esp32s3/rom/usb/usb_device.h"
+#include "esp32s3/rom/usb/usb_os_glue.h"
+#include "esp32s3/rom/usb/usb_persist.h"
+#include "esp32s3/rom/usb/chip_usb_dw_wrapper.h"
+#endif
 
 #define CDC_WORK_BUF_SIZE (ESP_ROM_CDC_ACM_WORK_BUF_MIN + CONFIG_ESP_CONSOLE_USB_CDC_RX_BUF_SIZE)
 
@@ -60,8 +70,17 @@ static esp_timer_handle_t s_restart_timer;
 
 static const char* TAG = "usb_console";
 
+/* This lock is used for two purposes:
+ * - To protect functions which write something to USB, e.g. esp_usb_console_write_buf.
+ *   This is necessary since these functions may be called by esp_rom_printf, so the calls
+ *   may preempt each other or happen concurrently.
+ *   (The calls coming from regular 'printf', i.e. via VFS layer, are already protected
+ *   by a mutex in the VFS driver.)
+ * - To implement "osglue" functions of the USB stack. These normally require interrupts
+ *   to be disabled. However on multi-core chips a critical section is necessary.
+ */
+static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
-static portMUX_TYPE s_write_lock = portMUX_INITIALIZER_UNLOCKED;
 void esp_usb_console_write_char(char c);
 #define ISR_FLAG  ESP_INTR_FLAG_IRAM
 #else
@@ -73,8 +92,6 @@ void esp_usb_console_write_char(char c);
 static inline void write_lock_acquire(void);
 static inline void write_lock_release(void);
 
-/* The two functions below need to be revisited in the multicore case */
-_Static_assert(SOC_CPU_CORES_NUM == 1, "usb_osglue_*_int is not multicore capable");
 
 /* Other forward declarations */
 void esp_usb_console_before_restart(void);
@@ -84,9 +101,7 @@ void esp_usb_console_before_restart(void);
  */
 void esp_usb_console_osglue_dis_int(void)
 {
-    if (s_usb_int_handle) {
-        esp_intr_disable(s_usb_int_handle);
-    }
+    portENTER_CRITICAL_SAFE(&s_lock);
 }
 
 /* Called by ROM to enable the interrupts
@@ -94,9 +109,7 @@ void esp_usb_console_osglue_dis_int(void)
  */
 void esp_usb_console_osglue_ena_int(void)
 {
-    if (s_usb_int_handle) {
-        esp_intr_enable(s_usb_int_handle);
-    }
+    portEXIT_CRITICAL_SAFE(&s_lock);
 }
 
 /* Delay function called by ROM USB driver.
@@ -231,12 +244,9 @@ void esp_usb_console_before_restart(void)
  */
 static void esp_usb_console_rom_cleanup(void)
 {
-    extern char rom_usb_dev, rom_usb_dev_end;
-    extern char rom_usb_dw_ctrl, rom_usb_dw_ctrl_end;
-
+    usb_dev_deinit();
+    usb_dw_ctrl_deinit();
     uart_acm_dev = NULL;
-    memset((void *) &rom_usb_dev, 0, &rom_usb_dev_end - &rom_usb_dev);
-    memset((void *) &rom_usb_dw_ctrl, 0, &rom_usb_dw_ctrl_end - &rom_usb_dw_ctrl);
 }
 
 esp_err_t esp_usb_console_init(void)
@@ -288,7 +298,8 @@ esp_err_t esp_usb_console_init(void)
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
     /* Install esp_rom_printf handler */
-    ets_install_putc1(&esp_usb_console_write_char);
+    esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
+    esp_rom_install_channel_putc(1, &esp_usb_console_write_char);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 
     return ESP_OK;
@@ -451,11 +462,11 @@ void esp_usb_console_write_char(char c)
 }
 static inline void write_lock_acquire(void)
 {
-    portENTER_CRITICAL_SAFE(&s_write_lock);
+    portENTER_CRITICAL_SAFE(&s_lock);
 }
 static inline void write_lock_release(void)
 {
-    portEXIT_CRITICAL_SAFE(&s_write_lock);
+    portEXIT_CRITICAL_SAFE(&s_lock);
 }
 
 #else // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF

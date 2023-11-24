@@ -157,6 +157,15 @@ tinyusb:
     - Unlicense
     - CC0-1.0
 
+# Portions of the USB stack in ROM are derived from Zephyr project,
+# with files licensed under a mix of Apache and BSD-3-Clause licenses.
+esp_rom_usb:
+  include:
+    - 'components/esp_rom/include/*/rom/usb/'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-3-Clause
+
 protocol_examples_common_component:
   include:
     - 'examples/common_components/protocol_examples_common/'

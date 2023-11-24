@@ -1,7 +1,5 @@
-/* usb_cdc.h - USB CDC-ACM and CDC-ECM public header */
-
 /*
- * Copyright (c) 2017 PHYTEC Messtechnik GmbH
+ * SPDX-FileCopyrightText: 2017 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */

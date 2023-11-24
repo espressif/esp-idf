@@ -30,3 +30,7 @@ config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 config ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG
     bool
     default y
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default 3

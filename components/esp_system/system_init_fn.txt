@@ -31,7 +31,7 @@
 
 # usb_console needs to create an esp_timer at startup.
 # This can be done only after esp_timer initialization, which is now in init_components0.
-220: esp_usb_console_init_restart_timer in components/esp_system/port/soc/esp32s2/usb_console.c on BIT(0)
+220: esp_usb_console_init_restart_timer in components/esp_system/port/usb_console.c on BIT(0)
 
 # usb_serial_jtag needs to create and acquire a PM clock at startup.
 # This makes more sense to be done after esp_pm_impl_init, which is initialized in init_components0.

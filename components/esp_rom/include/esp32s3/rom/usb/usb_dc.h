@@ -1,7 +1,5 @@
-/* usb_dc.h - USB device controller driver interface */
-
 /*
- * Copyright (c) 2016 Intel Corporation.
+ * SPDX-FileCopyrightText: 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -372,19 +370,42 @@ int usb_dc_ep_read_continue(uint8_t ep);
 int usb_dc_ep_mps(uint8_t ep);
 
 
-
-//Hack - fake interrupts by pollinfg
+/**
+ * @brief Poll for interrupts that need to be handled
+ *
+ * When the USB interrupt is not hooked up to an actual CPU interrupt, you
+ * can call this periodically to handle the USB events that need handling.
+ */
 void usb_dc_check_poll_for_interrupts(void);
 
 
-//Prepare for USB persist. You should reboot after this.
+/*
+ * @brief Prepare for USB persist
+ *
+ * This takes the USB peripheral offline in such a way that it seems 'just busy' to the
+ * host. This way, the chip can reboot (e.g. into bootloader mode) and pick up the USB
+ * configuration again, without the conenction to the host being interrupted.
+ *
+ * @note Actual persistence is depending on USBDC_PERSIST_ENA being set in flags, as this
+ * is also used to e.g. reboot into DFU mode.
+ *
+ * @note Please reboot soon after calling this.
+ */
 int usb_dc_prepare_persist(void);
 
-
+/*
+ * @brief USB interrupt handler
+ *
+ * This can be hooked up by the OS to the USB peripheral interrupt.
+ */
 void usb_dw_isr_handler(void);
 
-
-int usb_dc_ep_write_would_block(const uint8_t ep);
+/**
+ * @brief Provide IDF with an interface to clear the static variable usb_dw_ctrl
+ *
+ *
+ */
+void usb_dw_ctrl_deinit(void);
 
 
 #ifdef __cplusplus
