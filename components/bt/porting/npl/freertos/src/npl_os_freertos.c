@@ -720,12 +720,12 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
     }
 #else
     xTimerDelete(callout->handle, portMAX_DELAY);
+#endif // BLE_NPL_USE_ESP_TIMER
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_co_pool,callout);
 #else
     free((void *)callout);
 #endif // OS_MEM_ALLOC
-#endif // BLE_NPL_USE_ESP_TIMER
     co->co = NULL;
     memset(co, 0, sizeof(struct ble_npl_callout));
 }
