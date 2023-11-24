@@ -171,6 +171,10 @@ else() # Regular app build
             rom_linker_script("eco3")
         endif()
 
+        if(CONFIG_ESP32C3_REV_MIN_FULL EQUAL 101 OR CONFIG_ESP32C3_REV_MIN_FULL GREATER 101)
+            rom_linker_script("eco7")
+        endif()
+
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
         rom_linker_script("version")

@@ -44,6 +44,8 @@ menu "ESP32C3-Specific"
             bool "Rev v0.3 (ECO3)"
         config ESP32C3_REV_MIN_4
             bool "Rev v0.4 (ECO4)"
+        config ESP32C3_REV_MIN_101
+            bool "Rev v1.1"
     endchoice
 
     config ESP32C3_REV_MIN
@@ -54,6 +56,7 @@ menu "ESP32C3-Specific"
         default 2 if ESP32C3_REV_MIN_2
         default 3 if ESP32C3_REV_MIN_3
         default 4 if ESP32C3_REV_MIN_4
+        default 101 if ESP32C3_REV_MIN_101
 
     config ESP32C3_REV_MIN_FULL
         int
@@ -62,6 +65,7 @@ menu "ESP32C3-Specific"
         default 2 if ESP32C3_REV_MIN_2
         default 3 if ESP32C3_REV_MIN_3
         default 4 if ESP32C3_REV_MIN_4
+        default 101 if ESP32C3_REV_MIN_101
 
     config ESP_REV_MIN_FULL
         int
@@ -84,13 +88,17 @@ menu "ESP32C3-Specific"
 
     config ESP32C3_REV_MAX_FULL
         int
-        default 99
+        default 199 if ESP32C3_REV101_DEVELOPMENT
+        default 99 if !ESP32C3_REV101_DEVELOPMENT
         # keep in sync the "Maximum Supported Revision" description with this value
 
     config ESP_REV_MAX_FULL
         int
         default ESP32C3_REV_MAX_FULL
 
+    config ESP32C3_REV101_DEVELOPMENT
+        bool "Develop on ESP32-C3 v1.1 (Preview)"
+        default y if IDF_CI_BUILD
 
     config ESP32C3_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"

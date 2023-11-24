@@ -703,14 +703,8 @@ r_ble_util_data_rx_buf_reset = 0x40000b8c;
 r_bt_bb_get_intr_mask = 0x40000b90;
 r_bt_bb_intr_clear = 0x40000b94;
 r_bt_bb_intr_mask_set = 0x40000b98;
-/*
-r_bt_bb_isr = 0x40000b9c;
-*/
 r_bt_rf_coex_cfg_set = 0x40000ba0;
 r_bt_rf_coex_conn_dynamic_pti_en_get = 0x40000ba4;
-/*
-r_bt_rf_coex_conn_phy_coded_data_time_limit_en_get = 0x40000ba8;
-*/
 r_bt_rf_coex_ext_adv_dynamic_pti_en_get = 0x40000bac;
 r_bt_rf_coex_ext_scan_dynamic_pti_en_get = 0x40000bb0;
 r_bt_rf_coex_legacy_adv_dynamic_pti_en_get = 0x40000bb4;
@@ -732,18 +726,10 @@ r_bt_rtp_apply_rule_cs_fmt = 0x40000bf0;
 r_bt_rtp_apply_rule_cs_idx = 0x40000bf4;
 r_bt_rtp_deregister_rule_cs_fmt = 0x40000bf8;
 r_bt_rtp_deregister_rule_cs_idx = 0x40000bfc;
-/*
-r_bt_rtp_get_txpwr_idx_by_act = 0x40000c00;
-*/
 r_bt_rtp_init = 0x40000c04;
 r_bt_rtp_register_rule_cs_fmt = 0x40000c08;
 r_bt_rtp_register_rule_cs_idx = 0x40000c0c;
 r_btdm_isr = 0x40000c10;
-/*
-r_btdm_task_post = 0x40000c14;
-r_btdm_task_post_from_isr = 0x40000c18;
-r_btdm_task_recycle = 0x40000c1c;
-*/
 r_cali_phase_match_p = 0x40000c20;
 r_cmp_abs_time = 0x40000c24;
 r_cmp_dest_id = 0x40000c28;
@@ -839,9 +825,6 @@ r_hci_look_for_evt_desc = 0x40000d8c;
 r_hci_look_for_le_evt_desc = 0x40000d90;
 r_hci_look_for_le_evt_desc_esp = 0x40000d94;
 r_hci_pack_bytes = 0x40000d98;
-/*
-r_hci_register_vendor_desc_tab = 0x40000d9c;
-*/
 r_hci_send_2_controller = 0x40000da0;
 r_hci_send_2_host = 0x40000da4;
 r_hci_tl_c2h_data_flow_on = 0x40000da8;
@@ -898,9 +881,6 @@ r_ke_task_handler_get = 0x40000e70;
 r_ke_task_init = 0x40000e74;
 r_ke_task_msg_flush = 0x40000e78;
 r_ke_task_saved_update = 0x40000e7c;
-/*
-r_ke_task_schedule = 0x40000e80;
-*/
 r_ke_time = 0x40000e84;
 r_ke_time_cmp = 0x40000e88;
 r_ke_time_past = 0x40000e8c;
@@ -928,9 +908,6 @@ r_llc_dl_chg_check = 0x40000ee0;
 r_llc_dle_proc_err_cb = 0x40000ee4;
 r_llc_feats_exch_proc_err_cb = 0x40000ee8;
 r_llc_hci_cmd_handler_tab_p_get = 0x40000eec;
-/*
-r_llc_hci_command_handler = 0x40000ef0;
-*/
 r_llc_hci_con_param_req_evt_send = 0x40000ef4;
 r_llc_hci_con_upd_info_send = 0x40000ef8;
 r_llc_hci_disconnected_dis = 0x40000efc;
@@ -958,17 +935,11 @@ r_llc_llcp_state_set = 0x40000f50;
 r_llc_llcp_trans_timer_set = 0x40000f54;
 r_llc_llcp_tx_check = 0x40000f58;
 r_llc_loc_ch_map_proc_continue = 0x40000f5c;
-/*
-r_llc_loc_con_upd_proc_continue = 0x40000f60;
-*/
 r_llc_loc_con_upd_proc_err_cb = 0x40000f64;
 r_llc_loc_dl_upd_proc_continue = 0x40000f68;
 r_llc_loc_encrypt_proc_continue = 0x40000f6c;
 r_llc_loc_encrypt_proc_err_cb = 0x40000f70;
 r_llc_loc_feats_exch_proc_continue = 0x40000f74;
-/*
-r_llc_loc_phy_upd_proc_continue = 0x40000f78;
-*/
 r_llc_loc_phy_upd_proc_err_cb = 0x40000f7c;
 r_llc_msg_handler_tab_p_get = 0x40000f80;
 r_llc_pref_param_compute = 0x40000f84;
@@ -983,9 +954,6 @@ r_llc_proc_timer_pause_set = 0x40000fa4;
 r_llc_proc_timer_set = 0x40000fa8;
 r_llc_proc_unreg = 0x40000fac;
 r_llc_rem_ch_map_proc_continue = 0x40000fb0;
-/*
-r_llc_rem_con_upd_proc_continue = 0x40000fb4;
-*/
 r_llc_rem_con_upd_proc_err_cb = 0x40000fb8;
 r_llc_rem_dl_upd_proc = 0x40000fbc;
 r_llc_rem_encrypt_proc_continue = 0x40000fc0;
@@ -1074,14 +1042,8 @@ r_lld_con_rx_isr = 0x40001108;
 r_lld_con_rx_link_info_check = 0x4000110c;
 r_lld_con_rx_llcp_check = 0x40001110;
 r_lld_con_rx_sync_time_update = 0x40001114;
-/*
-r_lld_con_sched = 0x40001118;
-*/
 r_lld_con_set_tx_power = 0x4000111c;
 r_lld_con_start = 0x40001120;
-/*
-r_lld_con_stop = 0x40001124;
-*/
 r_lld_con_tx = 0x40001128;
 r_lld_con_tx_enc = 0x4000112c;
 r_lld_con_tx_isr = 0x40001130;
@@ -1116,9 +1078,6 @@ r_lld_init_set_tx_power = 0x400011a0;
 r_lld_init_start = 0x400011a4;
 r_lld_init_stop = 0x400011a8;
 r_lld_instant_proc_end = 0x400011ac;
-/*
-r_lld_llcp_rx_ind_handler = 0x400011b0;
-*/
 r_lld_per_adv_ch_map_update = 0x400011b4;
 r_lld_per_adv_chain_construct = 0x400011b8;
 r_lld_per_adv_cleanup = 0x400011bc;
@@ -1136,9 +1095,6 @@ r_lld_per_adv_init = 0x400011e8;
 r_lld_per_adv_init_info_get = 0x400011ec;
 r_lld_per_adv_list_add = 0x400011f0;
 r_lld_per_adv_list_rem = 0x400011f4;
-/*
-r_lld_per_adv_sched = 0x400011f8;
-*/
 r_lld_per_adv_set_tx_power = 0x400011fc;
 r_lld_per_adv_start = 0x40001200;
 r_lld_per_adv_stop = 0x40001204;
@@ -1147,17 +1103,11 @@ r_lld_process_cca_data = 0x4000120c;
 r_lld_ral_search = 0x40001210;
 r_lld_read_clock = 0x40001214;
 r_lld_res_list_add = 0x40001218;
-/*
-r_lld_res_list_clear = 0x4000121c;
-*/
 r_lld_res_list_is_empty = 0x40001220;
 r_lld_res_list_local_rpa_get = 0x40001224;
 r_lld_res_list_peer_rpa_get = 0x40001228;
 r_lld_res_list_peer_update = 0x4000122c;
 r_lld_res_list_priv_mode_update = 0x40001230;
-/*
-r_lld_res_list_rem = 0x40001234;
-*/
 r_lld_reset_reg = 0x40001238;
 r_lld_rpa_renew = 0x4000123c;
 r_lld_rpa_renew_evt_canceled_cbk = 0x40001240;
@@ -1176,10 +1126,6 @@ r_lld_scan_frm_rx_isr = 0x40001270;
 r_lld_scan_frm_skip_isr = 0x40001274;
 r_lld_scan_init = 0x40001278;
 r_lld_scan_params_update = 0x4000127c;
-/*
-r_lld_scan_process_pkt_rx = 0x40001280;
-r_lld_scan_process_pkt_rx_adv_rep = 0x40001284;
-*/
 r_lld_scan_process_pkt_rx_aux_adv_ind = 0x40001288;
 r_lld_scan_process_pkt_rx_aux_chain_ind = 0x4000128c;
 r_lld_scan_process_pkt_rx_aux_scan_rsp = 0x40001290;
@@ -1254,9 +1200,6 @@ r_llm_is_dev_synced = 0x400013a0;
 r_llm_is_non_con_act_ongoing_check = 0x400013a4;
 r_llm_is_wl_accessible = 0x400013a8;
 r_llm_le_evt_mask_check = 0x400013ac;
-/*
-r_llm_le_features_get = 0x400013b0;
-*/
 r_llm_link_disc = 0x400013b4;
 r_llm_master_ch_map_get = 0x400013b8;
 r_llm_msg_handler_tab_p_get = 0x400013bc;
@@ -1276,9 +1219,6 @@ r_misc_msg_handler_tab_p_get = 0x400013f0;
 r_notEqual256 = 0x400013f4;
 r_phy_upd_proc_start = 0x400013f8;
 r_platform_reset = 0x400013fc;
-/*
-r_register_esp_vendor_cmd_handler = 0x40001400;
-*/
 r_rf_em_init = 0x40001404;
 r_rf_force_agc_enable = 0x40001408;
 r_rf_reg_rd = 0x4000140c;
@@ -1288,10 +1228,6 @@ r_rf_rssi_convert = 0x40001418;
 r_rf_rw_v9_le_disable = 0x4000141c;
 r_rf_rw_v9_le_enable = 0x40001420;
 r_rf_sleep = 0x40001424;
-/*
-r_rf_txpwr_cs_get = 0x40001428;
-r_rf_txpwr_dbm_get = 0x4000142c;
-*/
 r_rf_util_cs_fmt_convert = 0x40001430;
 r_rw_crypto_aes_ccm = 0x40001434;
 r_rw_crypto_aes_encrypt = 0x40001438;
@@ -1305,9 +1241,6 @@ r_rw_crypto_aes_result_handler = 0x40001454;
 r_rw_crypto_aes_s1 = 0x40001458;
 r_rw_cryto_aes_cmac = 0x4000145c;
 r_rw_v9_init_em_radio_table = 0x40001460;
-/*
-r_rwble_isr = 0x40001464;
-*/
 r_rwble_sleep_enter = 0x40001468;
 r_rwble_sleep_wakeup_end = 0x4000146c;
 r_rwbtdm_isr_wrapper = 0x40001470;
@@ -1344,9 +1277,6 @@ r_sch_alarm_set = 0x400014e8;
 r_sch_alarm_timer_isr = 0x400014ec;
 r_sch_arb_conflict_check = 0x400014f0;
 r_sch_arb_elt_cancel = 0x400014f4;
-/*
-r_sch_arb_event_start_isr = 0x400014f8;
-*/
 r_sch_arb_init = 0x400014fc;
 r_sch_arb_insert = 0x40001500;
 r_sch_arb_prog_timer = 0x40001504;
@@ -1361,10 +1291,6 @@ r_sch_plan_offset_req = 0x40001524;
 r_sch_plan_position_range_compute = 0x40001528;
 r_sch_plan_rem = 0x4000152c;
 r_sch_plan_req = 0x40001530;
-/*
-r_sch_plan_set = 0x40001534;
-r_sch_prog_end_isr = 0x40001538;
-*/
 r_sch_prog_init = 0x4000153c;
 r_sch_prog_push = 0x40001540;
 r_sch_prog_rx_isr = 0x40001544;
@@ -1543,14 +1469,8 @@ r_llc_loc_phy_upd_proc_continue_hook = 0x40001c64;
 r_llc_rem_phy_upd_proc_continue_hook = 0x40001c68;
 r_lld_scan_frm_eof_isr_hook = 0x40001c6c;
 r_lld_scan_evt_start_cbk_hook = 0x40001c70;
-/*
-r_lld_scan_start_hook = 0x40001c74;
-*/
 r_lld_scan_process_pkt_rx_ext_adv_hook = 0x40001c78;
 r_lld_scan_sched_hook = 0x40001c7c;
-/*
-r_lld_adv_start_hook = 0x40001c80;
-*/
 r_lld_adv_evt_start_cbk_hook = 0x40001c84;
 r_lld_adv_aux_evt_start_cbk_hook = 0x40001c88;
 r_lld_adv_frm_isr_hook = 0x40001c8c;
@@ -1560,15 +1480,9 @@ r_lld_con_frm_isr_hook = 0x40001c98;
 r_lld_con_tx_hook = 0x40001c9c;
 r_lld_con_rx_hook = 0x40001ca0;
 r_lld_con_evt_start_cbk_hook = 0x40001ca4;
-/*
-r_lld_con_start_hook = 0x40001ca8;
-*/
 r_lld_con_tx_prog_new_packet_hook = 0x40001cac;
 r_lld_init_frm_eof_isr_hook = 0x40001cb0;
 r_lld_init_evt_start_cbk_hook = 0x40001cb4;
-/*
-r_lld_init_start_hook = 0x40001cb8;
-*/
 r_lld_init_sched_hook = 0x40001cbc;
 r_lld_init_process_pkt_tx_hook = 0x40001cc0;
 r_lld_per_adv_evt_start_cbk_hook = 0x40001cc4;
