@@ -15,7 +15,7 @@ The ESP-BLE-MESH networking enables many-to-many (m:m) device communications and
 - [FAQ](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/esp_ble_mesh/ble_mesh_faq.html)
 - [API Reference](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/bluetooth/ble_mesh.html)
 
- 
-### [ESP-BLE-MESH Examples](https://github.com/espressif/esp-idf/tree/master/examples/bluetooth/esp_ble_mesh)
+
+### [ESP-BLE-MESH Examples](../../../examples/bluetooth/esp_ble_mesh)
 
 - Refer to **ESP-BLE-MESH Examples** of [Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/esp_ble_mesh/index.html##getting-started-with-ble-mesh) for the tutorials of ESP BLE Mesh examples.
