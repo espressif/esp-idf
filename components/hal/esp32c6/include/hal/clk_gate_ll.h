@@ -93,7 +93,7 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 
     switch (periph) {
         case PERIPH_SARADC_MODULE:
-            return PCR_SARADC_RST_EN;
+            return PCR_SARADC_REG_RST_EN;
         case PERIPH_RMT_MODULE:
             return PCR_RMT_RST_EN;
         case PERIPH_PCNT_MODULE:
