@@ -270,10 +270,14 @@ variables:
         git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
         export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_COMMIT_SHA)
       # other pipelines, like the protected branches pipelines
-      else
+      elif [[ "$CI_COMMIT_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
         git fetch origin $CI_COMMIT_BEFORE_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
         git fetch origin $CI_COMMIT_SHA --depth=1 ${GIT_FETCH_EXTRA_FLAGS}
         export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_COMMIT_BEFORE_SHA $CI_COMMIT_SHA)
+      else
+        # pipeline source could be web, scheduler, etc.
+        git fetch origin $CI_COMMIT_SHA --depth=2 ${GIT_FETCH_EXTRA_FLAGS}
+        export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_COMMIT_SHA~1 $CI_COMMIT_SHA)
       fi
     - *git_checkout_fetch_head
     - *common-before_scripts
