@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -574,7 +574,16 @@ esp_err_t esp_timer_init(void)
     return err;
 }
 
-ESP_SYSTEM_INIT_FN(esp_timer_startup_init, SECONDARY, CONFIG_ESP_TIMER_ISR_AFFINITY, 100)
+#if CONFIG_ESP_TIMER_ISR_AFFINITY_CPU0
+#define ESP_TIMER_INIT_MASK BIT(0)
+#elif CONFIG_ESP_TIMER_ISR_AFFINITY_CPU1
+#define ESP_TIMER_INIT_MASK BIT(1)
+#elif CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
+#define ESP_TIMER_INIT_MASK ESP_SYSTEM_INIT_ALL_CORES
+#endif // CONFIG_ESP_TIMER_ISR_AFFINITY_*
+
+
+ESP_SYSTEM_INIT_FN(esp_timer_startup_init, SECONDARY, ESP_TIMER_INIT_MASK, 100)
 {
     return esp_timer_init();
 }

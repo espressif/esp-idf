@@ -54,7 +54,7 @@ CORE: 170: init_xt_wdt in components/esp_system/startup_funcs.c on BIT(0)
 ########### SECONDARY startup stage ###########
 
 # esp_timer has to be initialized early, since it is used by several other components
-SECONDARY: 100: esp_timer_startup_init in components/esp_timer/src/esp_timer.c on CONFIG_ESP_TIMER_ISR_AFFINITY
+SECONDARY: 100: esp_timer_startup_init in components/esp_timer/src/esp_timer.c on ESP_TIMER_INIT_MASK
 
 # HW stack guard via assist-debug module.
 SECONDARY: 101: esp_hw_stack_guard_init in components/esp_system/hw_stack_guard.c on ESP_SYSTEM_INIT_ALL_CORES
