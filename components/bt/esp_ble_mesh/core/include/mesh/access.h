@@ -511,6 +511,7 @@ struct bt_mesh_model_cb {
 #endif /* CONFIG_BLE_MESH_DEINIT */
 };
 
+typedef uint16_t sub_list_t[CONFIG_BLE_MESH_MODEL_GROUP_COUNT];
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
     union {
@@ -536,7 +537,10 @@ struct bt_mesh_model {
     uint16_t keys[CONFIG_BLE_MESH_MODEL_KEY_COUNT];
 
     /* Subscription List (group or virtual addresses) */
-    uint16_t groups[CONFIG_BLE_MESH_MODEL_GROUP_COUNT];
+    uint16_t *groups;
+
+    /** The index of the subscription List in bt_mesh_net.subscription_lists */
+    uint16_t sub_list_index;
 
     /** Opcode handler list */
     const struct bt_mesh_model_op *const op;

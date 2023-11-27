@@ -33,6 +33,9 @@ extern "C" {
 #define BLE_MESH_IVU_HOURS          (BLE_MESH_IVU_MIN_HOURS / CONFIG_BLE_MESH_IVU_DIVIDER)
 #define BLE_MESH_IVU_TIMEOUT        K_HOURS(BLE_MESH_IVU_HOURS)
 
+/* How many subscription list could be used */
+# define SUB_LISTS_LENGTH 32
+
 struct bt_mesh_app_key {
     uint16_t net_idx;
     uint16_t app_idx;
@@ -314,7 +317,8 @@ enum {
     BLE_MESH_CFG_PENDING,
     BLE_MESH_MOD_PENDING,
     BLE_MESH_VA_PENDING,
-
+    // store the subscription list index for each model
+    BLE_MESH_SUB_LIST_IDX_PENDING,
     /* Don't touch - intentionally last */
     BLE_MESH_FLAG_COUNT,
 };
@@ -351,6 +355,9 @@ struct bt_mesh_net {
     struct bt_mesh_subnet sub[CONFIG_BLE_MESH_SUBNET_COUNT];
 
     struct bt_mesh_rpl rpl[CONFIG_BLE_MESH_CRPL];
+
+    sub_list_t sub_lists[SUB_LISTS_LENGTH];
+    uint16_t sub_list_idx;
 
 #if CONFIG_BLE_MESH_PROVISIONER
     /* Application keys stored by provisioner */
@@ -404,6 +411,13 @@ struct bt_mesh_net_tx {
     uint8_t  friend_cred:1 __attribute__((deprecated)),
              aszmic:1,
              aid:6;
+};
+
+struct bt_mesh_sub_list_alloc_t {
+    /** Pointer to a subscription list in the list of subscription lists*/
+    uint16_t *sub_list;
+    /** Index of the subscription list in the list of subscription lists*/
+    uint16_t sub_list_idx;
 };
 
 extern struct bt_mesh_net bt_mesh;
@@ -474,6 +488,9 @@ void bt_mesh_net_start(void);
 void bt_mesh_net_init(void);
 void bt_mesh_net_reset(void);
 void bt_mesh_net_deinit(void);
+
+uint16_t *bt_mesh_sub_list_get(uint16_t sub_list_idx);
+struct bt_mesh_sub_list_alloc_t bt_mesh_sub_list_alloc();
 
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
                               struct bt_mesh_net_rx *rx);

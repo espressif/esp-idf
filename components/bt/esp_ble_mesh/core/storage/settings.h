@@ -34,6 +34,7 @@ void bt_mesh_store_mod_bind(struct bt_mesh_model *mod);
 void bt_mesh_store_mod_sub(struct bt_mesh_model *mod);
 void bt_mesh_store_mod_pub(struct bt_mesh_model *mod);
 void bt_mesh_store_label(void);
+void bt_mesh_store_sub_list_idx(void);
 
 void bt_mesh_clear_role(void);
 void bt_mesh_clear_net(void);

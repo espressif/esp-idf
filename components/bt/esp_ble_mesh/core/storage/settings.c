@@ -663,19 +663,31 @@ static int cfg_set(const char *name)
     return 0;
 }
 
-static int model_set_bind(bool vnd, struct bt_mesh_model *model, uint16_t model_key)
+static char *set_key_name(char * name, bool vnd, struct bt_mesh_model *model, char bsp){
+    if(vnd){
+        return name + sprintf(name, "v/%02x/%04x%04x/%c", model->elem_idx, model->vnd.company, model->vnd.id, bsp);
+    }
+
+    return name + sprintf(name, "s/%02x/%04x/%c", model->elem_idx, model->id, bsp);
+}
+
+static int model_set_bind(bool vnd, struct bt_mesh_model *model, char* name)
 {
-    char name[16] = {'\0'};
+
     bool exist = false;
     int err = 0;
     int i;
+
+    // ignore configuration server since it uses the device key
+    if(!vnd && model->id == 0x0000){
+        return 0;
+    }
 
     /* Start with empty array regardless of cleared or set value */
     for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
         model->keys[i] = BLE_MESH_KEY_UNUSED;
     }
 
-    sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
     err = bt_mesh_load_core_settings(name, (uint8_t *)model->keys, sizeof(model->keys), &exist);
     if (err) {
         BT_ERR("Failed to load model bound keys");
@@ -689,46 +701,74 @@ static int model_set_bind(bool vnd, struct bt_mesh_model *model, uint16_t model_
     return 0;
 }
 
-static int model_set_sub(bool vnd, struct bt_mesh_model *model, uint16_t model_key)
+struct swap_index{
+    uint16_t old_index;
+    uint16_t new_index;
+};
+/**
+* @brief swap the subscription list index for the model if it changed from the previous run for some reason e.g. adding new models
+*/
+void swap_sub_list_index(struct bt_mesh_model *mod,
+                                        struct bt_mesh_elem *elem,
+                                        bool vnd, bool primary,
+                                        void *user_data){
+
+    struct swap_index * swap = (struct swap_index *)user_data;
+
+    if(mod->sub_list_index == swap->old_index){
+        mod->sub_list_index = swap->new_index;
+        mod->groups = bt_mesh.sub_lists[mod->sub_list_index];
+    }else if(mod->sub_list_index == swap->new_index){
+        mod->sub_list_index = swap->old_index;
+        mod->groups = bt_mesh.sub_lists[mod->sub_list_index];
+    }
+}
+static int model_set_sub(bool vnd, struct bt_mesh_model *model,char * name)
 {
-    char name[16] = {'\0'};
     bool exist = false;
     int err = 0;
     int i;
 
-    /* Start with empty array regardless of cleared or set value */
-    for (i = 0; i < ARRAY_SIZE(model->groups); i++) {
-        model->groups[i] = BLE_MESH_ADDR_UNASSIGNED;
-    }
+    BT_INFO("%s: Restoring subscription list for modelId[0x%04x]", __func__, vnd? model->vnd.id : model->id);
 
-    sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
-    err = bt_mesh_load_core_settings(name, (uint8_t *)model->groups, sizeof(model->groups), &exist);
+    struct swap_index swap ={
+        .old_index = model->sub_list_index,
+        .new_index = 0,
+    };
+
+    err = bt_mesh_load_core_settings(name, (uint8_t *)&swap.new_index, sizeof(swap.new_index), &exist);
     if (err) {
-        BT_ERR("Failed to load model subscriptions");
+        BT_ERR("Failed to load model subscription list index");
         return -EIO;
     }
 
     if (exist == true) {
-        BT_INFO("Restored Model Subscription, address %s", bt_hex(model->groups, sizeof(model->groups)));
+        BT_INFO("Restored Model Subscription list index %d", model->sub_list_index);
+        if(swap.old_index != swap.new_index){
+            BT_DBG("Model Subscription list index changed from %d to %d", swap.old_index, swap.new_index);
+            bt_mesh_model_foreach(swap_sub_list_index, &swap);
+        }
+    }else{
+        // if not exist, then it is a new model, so we need to save the index
+        // FIXME: this flash will only be handled if another flag changes
+        model->flags |= BLE_MESH_MOD_SUB_LIST_IDX_PENDING;
     }
 
     return 0;
 }
 
-static int model_set_pub(bool vnd, struct bt_mesh_model *model, uint16_t model_key)
+static int model_set_pub(bool vnd, struct bt_mesh_model *model, char* name)
 {
     struct mod_pub_val pub = {0};
-    char name[16] = {'\0'};
     bool exist = false;
     int err = 0;
 
     if (!model->pub) {
         BT_INFO("Not support publication, model_id 0x%04x, cid 0x%04x",
-                vnd ? model->vnd.id : model->id, vnd ? model->vnd.company : 0xFFFF);
+            vnd ? model->vnd.id : model->id, vnd ? model->vnd.company : 0xFFFF);
         return 0;
     }
 
-    sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
     err = bt_mesh_load_core_settings(name, (uint8_t *)&pub, sizeof(pub), &exist);
     if (err) {
         BT_ERR("Failed to load model publication");
@@ -764,52 +804,39 @@ static int model_set_pub(bool vnd, struct bt_mesh_model *model, uint16_t model_k
     return 0;
 }
 
-static int model_set(bool vnd, const char *name)
+static void load_model(struct bt_mesh_model *model, struct bt_mesh_elem *elem, bool vnd, bool primary, void *user_data)
 {
-    struct bt_mesh_model *model = NULL;
-    struct net_buf_simple *buf = NULL;
-    uint8_t elem_idx = 0U, model_idx = 0U;
-    size_t length = 0U;
-    int i;
+        char name[16] = {'\0'};
+        char * pos = set_key_name(name, vnd, model,'b') -1;
 
-    buf = bt_mesh_get_core_settings_item(name);
-    if (!buf) {
-        return 0;
-    }
+        model_set_bind(vnd, model,name);
+        *pos = 's';
+        model_set_sub(vnd, model,name);
+        *pos = 'p';
+        model_set_pub(vnd, model,name);
+}
 
-    length = buf->len;
+static int mod_set(const char *name)
+{
+    bt_mesh_model_foreach(load_model, NULL);
+    return 0;
+}
+// restore subscription lists for each list index
+static int sub_lists_set(const char *name){
+    for(int index = 0; index < SUB_LISTS_LENGTH; index++){
+        struct net_buf_simple *buf = NULL;
+        char get_name[16] = {'\0'};
+        sprintf(get_name,"mesh/sl/%04x", index);
 
-    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
-        uint16_t model_key = net_buf_simple_pull_le16(buf);
-
-        elem_idx = BLE_MESH_GET_ELEM_IDX(model_key);
-        model_idx = BLE_MESH_GET_MODEL_IDX(model_key);
-
-        model = bt_mesh_model_get(vnd, elem_idx, model_idx);
-        if (!model) {
-            BT_ERR("%s model not found, elem_idx %u, model_idx %u",
-                vnd ? "vnd" : "sig", elem_idx, model_idx);
+        buf = bt_mesh_get_core_settings_item(get_name);
+        if (!buf) {
             continue;
         }
-
-        model_set_bind(vnd, model, model_key);
-        model_set_sub(vnd, model, model_key);
-        model_set_pub(vnd, model, model_key);
+        memcpy(bt_mesh.sub_lists[index], buf->data, buf->len);
     }
-
-    bt_mesh_free_buf(buf);
     return 0;
 }
 
-static int sig_mod_set(const char *name)
-{
-    return model_set(false, name);
-}
-
-static int vnd_mod_set(const char *name)
-{
-    return model_set(true, name);
-}
 
 #if CONFIG_BLE_MESH_LABEL_COUNT > 0
 static int va_set(const char *name)
@@ -1280,8 +1307,8 @@ const struct bt_mesh_setting {
     { "mesh/appkey",   app_key_set   }, /* For Node */
     { "mesh/hb_pub",   hb_pub_set    }, /* For Node */
     { "mesh/cfg",      cfg_set       }, /* For Node */
-    { "mesh/sig",      sig_mod_set   }, /* For Node & Provisioner */
-    { "mesh/vnd",      vnd_mod_set   }, /* For Node & Provisioner */
+    {"mesh/sublists",  sub_lists_set}, /* For Node & Provisioner */
+    { "mesh/sig",      mod_set   }, /* For Node & Provisioner */
 #if CONFIG_BLE_MESH_LABEL_COUNT > 0
     { "mesh/vaddr",    va_set        }, /* For Node */
 #endif
@@ -1516,7 +1543,8 @@ int settings_core_commit(void)
 #define GENERIC_PENDING_BITS (BIT(BLE_MESH_KEYS_PENDING) |      \
                               BIT(BLE_MESH_HB_PUB_PENDING) |    \
                               BIT(BLE_MESH_CFG_PENDING) |       \
-                              BIT(BLE_MESH_MOD_PENDING))
+                              BIT(BLE_MESH_MOD_PENDING) |       \
+                              BIT(BLE_MESH_SUB_LIST_IDX_PENDING))
 
 static void schedule_store(int flag)
 {
@@ -1895,44 +1923,27 @@ static void store_pending_keys(void)
 static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    uint16_t model_key = 0U;
     int err = 0;
 
-    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-    sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
+    set_key_name(name, vnd, model, 'b');
 
     err = bt_mesh_save_core_settings(name, (const uint8_t *)model->keys, sizeof(model->keys));
     if (err) {
         BT_ERR("Failed to store %s", name);
         return;
     }
-
-    err = bt_mesh_add_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
-    if (err) {
-        BT_ERR("Failed to add bound key to %s, model_key 0x%04x",
-            vnd ? "mesh/vnd" : "mesh/sig", model_key);
-    }
 }
 
 static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    uint16_t model_key = 0U;
     int err = 0;
 
-    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-    sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
+    sprintf(name, "mesh/sl/%04x",model->sub_list_index);
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)model->groups, CONFIG_BLE_MESH_MODEL_GROUP_COUNT);
 
-    err = bt_mesh_save_core_settings(name, (const uint8_t *)model->groups, sizeof(model->groups));
-    if (err) {
+    if(err){
         BT_ERR("Failed to store %s", name);
-        return;
-    }
-
-    err = bt_mesh_add_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
-    if (err) {
-        BT_ERR("Failed to add subscription to %s, model_key 0x%04x",
-            vnd ? "mesh/vnd" : "mesh/sig", model_key);
     }
 }
 
@@ -1940,7 +1951,6 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
 {
     struct mod_pub_val pub = {0};
     char name[16] = {'\0'};
-    uint16_t model_key = 0U;
     int err = 0;
 
     if (!model->pub) {
@@ -1948,8 +1958,9 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
         return;
     }
 
-    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-    sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
+    BT_INFO("%s: Storing pub model[0x%04x] key", __func__, vnd? model->vnd.id : model->id);
+
+    set_key_name(name, vnd, model, 'p');
 
     pub.addr = model->pub->addr;
     pub.key = model->pub->key;
@@ -1966,14 +1977,29 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
     err = bt_mesh_save_core_settings(name, (const uint8_t *)&pub, sizeof(pub));
     if (err) {
         BT_ERR("Failed to store %s", name);
+    }
+}
+
+static void store_pending_mod_sub_list_idx(struct bt_mesh_model *model, bool vnd)
+{
+    char name[16] = {'\0'};
+    int err = 0;
+
+    set_key_name(name, vnd, model, 's');
+
+    err = bt_mesh_save_core_settings(name, (const uint8_t *)&model->sub_list_index, sizeof(model->sub_list_index));
+    if (err) {
+        BT_ERR("Failed to store %s", name);
         return;
     }
 
-    err = bt_mesh_add_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
-    if (err) {
-        BT_ERR("Failed to add publication to %s, model_key 0x%04x",
-               vnd ? "mesh/vnd" : "mesh/sig", model_key);
-    }
+}
+
+static void store_pending_sub_list_idx(struct bt_mesh_model *mod,
+                                        struct bt_mesh_elem *elem,
+                                        bool vnd, bool primary,
+                                        void *user_data){
+    store_pending_mod_sub_list_idx(mod, vnd);
 }
 
 static void store_pending_mod(struct bt_mesh_model *model,
@@ -1998,42 +2024,82 @@ static void store_pending_mod(struct bt_mesh_model *model,
         model->flags &= ~BLE_MESH_MOD_PUB_PENDING;
         store_pending_mod_pub(model, vnd);
     }
+
+    if (model->flags & BLE_MESH_MOD_SUB_LIST_IDX_PENDING) {
+        model->flags &= ~BLE_MESH_MOD_SUB_LIST_IDX_PENDING;
+        store_pending_mod_sub_list_idx(model, vnd);
+    }
 }
 
 static void clear_mod_bind(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    uint16_t model_key = 0U;
+    int err = 0;
 
-    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-    sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
+    set_key_name(name, vnd, model, 'b');
 
-    bt_mesh_erase_core_settings(name);
-    bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+    err = bt_mesh_erase_core_settings(name);
+
+    if (err) {
+        BT_ERR("Failed to clear %s", name);
+    }
 }
-
+// erase sub list idx for the model
 static void clear_mod_sub(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    uint16_t model_key = 0U;
+    int err = 0;
 
-    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-    sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
+    set_key_name(name, vnd, model, 's');
 
-    bt_mesh_erase_core_settings(name);
-    bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+    err = bt_mesh_erase_core_settings(name);
+
+    if (err) {
+        BT_ERR("Failed to clear %s", name);
+        return;
+    }
+}
+// can be used with foreach model to clear all sub list idx
+void clear_pending_sub_list_idx(struct bt_mesh_model *mod,
+                                        struct bt_mesh_elem *elem,
+                                        bool vnd, bool primary,
+                                        void *user_data){
+    clear_mod_sub(mod, vnd);
+}
+
+// erase sub list saved in flash
+static void clear_sub_list(uint16_t idx)
+{
+    char name[16] = {'\0'};
+    int err = 0;
+
+    sprintf(name, "mesh/sl/%04x",idx);
+
+    err = bt_mesh_erase_core_settings(name);
+
+    if (err) {
+        BT_ERR("Failed to clear %s", name);
+        return;
+    }
+}
+
+static void clear_mod_sub_list(struct bt_mesh_model *model, bool vnd){
+    clear_mod_sub(model, vnd);
+    clear_sub_list(model->sub_list_index);
 }
 
 static void clear_mod_pub(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    uint16_t model_key = 0U;
+    int err = 0;
 
-    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
-    sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
+    set_key_name(name, vnd, model, 'p');
 
-    bt_mesh_erase_core_settings(name);
-    bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+    err = bt_mesh_erase_core_settings(name);
+
+    if (err) {
+        BT_ERR("Failed to clear %s", name);
+    }
 }
 
 static void clear_pending_mod(struct bt_mesh_model *model,
@@ -2051,7 +2117,7 @@ static void clear_pending_mod(struct bt_mesh_model *model,
 
     if (model->flags & BLE_MESH_MOD_SUB_PENDING) {
         model->flags &= ~BLE_MESH_MOD_SUB_PENDING;
-        clear_mod_sub(model, vnd);
+        clear_mod_sub_list(model, vnd);
     }
 
     if (model->flags & BLE_MESH_MOD_PUB_PENDING) {
@@ -2169,8 +2235,14 @@ static void store_pending(struct k_work *work)
             bt_mesh_model_foreach(store_pending_mod, NULL);
         } else {
             bt_mesh_model_foreach(clear_pending_mod, NULL);
-            bt_mesh_erase_core_settings("mesh/sig");
-            bt_mesh_erase_core_settings("mesh/vnd");
+        }
+    }
+
+    if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_SUB_LIST_IDX_PENDING)) {
+        if (bt_mesh_is_provisioned() || bt_mesh_is_provisioner_en()) {
+            bt_mesh_model_foreach(store_pending_sub_list_idx, NULL);
+        } else {
+            bt_mesh_model_foreach(clear_pending_sub_list_idx, NULL);
         }
     }
 
@@ -2390,6 +2462,11 @@ void bt_mesh_store_mod_pub(struct bt_mesh_model *model)
 void bt_mesh_store_label(void)
 {
     schedule_store(BLE_MESH_VA_PENDING);
+}
+
+void bt_mesh_store_sub_list_idx(void)
+{
+    schedule_store(BLE_MESH_SUB_LIST_IDX_PENDING);
 }
 
 void bt_mesh_store_dkca(void)
