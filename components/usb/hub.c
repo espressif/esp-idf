@@ -938,7 +938,7 @@ esp_err_t hub_install(hub_config_t *hub_config)
     HUB_DRIVER_EXIT_CRITICAL();
     // Allocate Hub driver object
     hub_driver_t *hub_driver_obj = heap_caps_calloc(1, sizeof(hub_driver_t), MALLOC_CAP_DEFAULT);
-    urb_t *enum_urb = urb_alloc(sizeof(usb_setup_packet_t) + ENUM_CTRL_TRANSFER_MAX_DATA_LEN, 0, 0);
+    urb_t *enum_urb = urb_alloc(sizeof(usb_setup_packet_t) + ENUM_CTRL_TRANSFER_MAX_DATA_LEN, 0);
     if (hub_driver_obj == NULL || enum_urb == NULL) {
         return ESP_ERR_NO_MEM;
     }
