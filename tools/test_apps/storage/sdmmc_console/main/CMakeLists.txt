@@ -4,7 +4,7 @@ set(requires
         # for console history
         vfs fatfs
         # sdmmc tests, themselves
-        sdmmc_test_boards sdmmc_tests sdspi_tests sdmmc_tests_tools
+        sdmmc_test_boards sdmmc_tests sdspi_tests
         # various console comamnds
         cmd_unity cmd_system cmd_sdmmc
 )
