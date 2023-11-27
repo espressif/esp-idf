@@ -120,8 +120,6 @@ menu "Driver Configurations"
                 Note that, this option only controls the SDM driver log, won't affect other drivers.
     endmenu # Sigma Delta Modulator Configuration
 
-    orsource "./rmt/Kconfig.rmt"
-
     menu "USB Serial/JTAG Configuration"
         depends on SOC_USB_SERIAL_JTAG_SUPPORTED
         config USJ_NO_AUTO_LS_ON_CONNECTION

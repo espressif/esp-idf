@@ -229,6 +229,8 @@ examples/peripherals/pcnt:
 examples/peripherals/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
+  depends_components:
+    - esp_driver_rmt
 
 examples/peripherals/rmt/ir_nec_transceiver:
   disable:
@@ -237,14 +239,20 @@ examples/peripherals/rmt/ir_nec_transceiver:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_rmt
 
 examples/peripherals/rmt/musical_buzzer:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT != 1
+  depends_components:
+    - esp_driver_rmt
 
 examples/peripherals/rmt/stepper_motor:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
+  depends_components:
+    - esp_driver_rmt
 
 examples/peripherals/sdio/host:
   disable:

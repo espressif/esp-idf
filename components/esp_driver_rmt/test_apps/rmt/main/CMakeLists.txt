@@ -9,5 +9,5 @@ if(CONFIG_RMT_ISR_IRAM_SAFE)
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                       PRIV_REQUIRES unity driver esp_timer esp_psram
+                       PRIV_REQUIRES unity esp_driver_rmt esp_driver_gpio esp_timer esp_psram
                        WHOLE_ARCHIVE)

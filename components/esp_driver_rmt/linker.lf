@@ -1,5 +1,5 @@
 [mapping:rmt_driver]
-archive: libdriver.a
+archive: libesp_driver_rmt.a
 entries:
     if RMT_RECV_FUNC_IN_IRAM = y:
         rmt_rx: rmt_receive (noflash)

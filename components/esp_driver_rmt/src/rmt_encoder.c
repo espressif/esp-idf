@@ -48,7 +48,7 @@ static esp_err_t rmt_bytes_encoder_reset(rmt_encoder_t *encoder)
 }
 
 static size_t IRAM_ATTR rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
-        const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
+                                         const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_bytes_encoder_t *bytes_encoder = __containerof(encoder, rmt_bytes_encoder_t, base);
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
