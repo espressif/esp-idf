@@ -31,8 +31,11 @@
 void IRAM_ATTR esp_system_reset_modules_on_exit(void)
 {
     // Flush any data left in UART FIFOs
-    esp_rom_uart_tx_wait_idle(0);
-    esp_rom_uart_tx_wait_idle(1);
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
+        if (uart_ll_is_enabled(i)) {
+            esp_rom_uart_tx_wait_idle(i);
+        }
+    }
 
     // Set Peripheral clk rst
     SET_PERI_REG_MASK(HP_SYS_CLKRST_HP_RST_EN1_REG, HP_SYS_CLKRST_REG_RST_EN_TIMERGRP0);
