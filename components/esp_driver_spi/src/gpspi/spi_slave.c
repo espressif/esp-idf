@@ -401,10 +401,16 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]->dma_enabled == 0 || trans_desc->tx_buffer == NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
               "txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
+
+    // We don't check length WORD alignment for rx when using DMA, seems break DMA requirement,
+    // however peripheral can also stop DMA from over writing memory even if it not aligned (except esp32).
+    // ATTENTION!: On esp32, peripheral can NOT stop DMA, if length not WORD aligned,
+    // remain bytes in last word domain will overwritten by DMA HW, which may cause unexpected issues!
+    // But driver already used for long time, to avoid breaking changes, we still don't add alignment limit.
     SPI_CHECK(spihost[host]->dma_enabled == 0 || trans_desc->rx_buffer == NULL ||
               (esp_ptr_dma_capable(trans_desc->rx_buffer) && esp_ptr_word_aligned(trans_desc->rx_buffer) &&
-               (trans_desc->length % 4 == 0)),
-              "rxdata not in DMA-capable memory or not WORD aligned", ESP_ERR_INVALID_ARG);
+               (trans_desc->length % 8 == 0)),
+              "rxdata not in DMA-capable memory or not BYTE aligned", ESP_ERR_INVALID_ARG);
 
     SPI_CHECK(trans_desc->length <= spihost[host]->max_transfer_sz * 8, "data transfer > host maximum", ESP_ERR_INVALID_ARG);
 
@@ -423,6 +429,7 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
  * @note
  * This API is used to reset SPI Slave transaction queue. After calling this function:
  * - The SPI Slave transaction queue will be reset.
+ * - The transaction which already mount on hardware will NOT be reset, and can be overwritten by next `trans_queue`
  *
  * Therefore, this API shouldn't be called when the corresponding SPI Master is doing an SPI transaction.
  *
@@ -460,20 +467,20 @@ esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_trans_isr(spi_host_device_t host, c
     ESP_RETURN_ON_FALSE_ISR(trans_desc->length <= spihost[host]->max_transfer_sz * 8, ESP_ERR_INVALID_ARG, SPI_TAG, "data transfer > host maximum");
     if (spihost[host]->dma_enabled) {
         uint16_t alignment = spihost[host]->internal_mem_align_size;
-        uint32_t buffer_byte_len = (trans_desc->length + 7) / 8;
+        (void) alignment;
 
-        ESP_RETURN_ON_FALSE_ISR(\
-                                (trans_desc->tx_buffer && \
-                                 esp_ptr_dma_capable(trans_desc->tx_buffer) && \
-                                 ((((uint32_t)trans_desc->tx_buffer) | buffer_byte_len) & (alignment - 1)) == 0), \
-                                ESP_ERR_INVALID_ARG, SPI_TAG, "txdata addr & len not align to %d bytes or not dma_capable", alignment\
-                               );
-        ESP_RETURN_ON_FALSE_ISR(\
-                                (trans_desc->rx_buffer && \
-                                 esp_ptr_dma_capable(trans_desc->rx_buffer) && \
-                                 ((((uint32_t)trans_desc->rx_buffer) | buffer_byte_len) & (alignment - 1)) == 0), \
-                                ESP_ERR_INVALID_ARG, SPI_TAG, "rxdata addr & len not align to %d bytes or not dma_capable", alignment\
-                               );
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        // For those targets length and addr alignment is still required from Cache side
+        uint32_t buffer_byte_len = (trans_desc->length + 7) / 8;
+        bool tx_aligned = (trans_desc->tx_buffer == NULL) || (esp_ptr_dma_capable(trans_desc->tx_buffer) && ((((uint32_t)trans_desc->tx_buffer | buffer_byte_len) & (alignment - 1)) == 0));
+        bool rx_aligned = (trans_desc->rx_buffer == NULL) || (esp_ptr_dma_capable(trans_desc->rx_buffer) && ((((uint32_t)trans_desc->rx_buffer | buffer_byte_len) & (alignment - 1)) == 0));
+#else
+        bool tx_aligned = (trans_desc->tx_buffer == NULL) || esp_ptr_dma_capable(trans_desc->tx_buffer);
+        bool rx_aligned = (trans_desc->rx_buffer == NULL) || (esp_ptr_dma_capable(trans_desc->rx_buffer) && esp_ptr_word_aligned(trans_desc->rx_buffer) && (trans_desc->length % 8 == 0));
+#endif
+
+        ESP_RETURN_ON_FALSE_ISR(tx_aligned, ESP_ERR_INVALID_ARG, SPI_TAG, "txdata addr & len not align to %d bytes or not dma_capable", alignment);
+        ESP_RETURN_ON_FALSE_ISR(rx_aligned, ESP_ERR_INVALID_ARG, SPI_TAG, "rxdata addr & len not align to %d bytes or not dma_capable", alignment);
     }
 
     spi_slave_trans_priv_t priv_trans = {

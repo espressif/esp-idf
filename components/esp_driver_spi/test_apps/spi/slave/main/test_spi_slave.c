@@ -664,6 +664,8 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
     };
 
     unity_wait_for_signal("Master ready");
+    queue_reset_isr_trans_cnt = 0;
+    test_queue_reset_isr_fail = 0;
     for (uint8_t i = 0; i < 2; i++) {
         dummy_trans[i].tx_buffer = dummy_data + i * 64;
         dummy_trans[i].rx_buffer = dummy_data + i * 64;
@@ -672,12 +674,12 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
     }
     // start a trans by normal API first to trigger spi isr
     spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY);
-    // spi_flash_disable_interrupts_caches_and_other_cpu();
+    spi_flash_disable_interrupts_caches_and_other_cpu();
     esp_rom_printf(DRAM_STR("Send signal: [Slave ready]!\n"));
     while (queue_reset_isr_trans_cnt <= TEST_IRAM_TRANS_NUM) {
         esp_rom_delay_us(10);
     }
-    // spi_flash_enable_interrupts_caches_and_other_cpu();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
     if (test_queue_reset_isr_fail) {
         TEST_FAIL();
     }
