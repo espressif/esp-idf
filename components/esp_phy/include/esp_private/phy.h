@@ -114,9 +114,9 @@ uint8_t phy_dig_reg_backup(bool backup_en, uint32_t *mem_addr);
 void phy_freq_mem_backup(bool backup_en, uint32_t *mem);
 #endif
 
-#if CONFIG_ESP_PHY_ENABLE_USB
+#if CONFIG_ESP_PHY_ENABLE_USB && (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
 /**
- * @brief Enable or disable USB when phy init.
+ * @brief Work-around for phy init on ESP32S3 and ESP32C3
  */
 void phy_bbpll_en_usb(bool en);
 #endif

@@ -816,7 +816,8 @@ void esp_phy_load_cal_and_init(void)
     }
 #endif
 
-#if CONFIG_ESP_PHY_ENABLE_USB
+// Work-around only defined for ESP32-C3 and ESP32-S3
+#if CONFIG_ESP_PHY_ENABLE_USB && (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
     phy_bbpll_en_usb(true);
 #endif
 
