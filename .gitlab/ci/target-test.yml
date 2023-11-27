@@ -715,6 +715,24 @@ pytest_components_esp32_adc:
       artifacts: false
   tags: [ esp32, adc ]
 
+pytest_components_esp32_sdmmc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - job: build_pytest_components_esp32
+      artifacts: false
+  tags: [ esp32, sdcard ]
+
+pytest_components_esp32s3_sdmmc:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - job: build_pytest_components_esp32s3
+      artifacts: false
+  tags: [ esp32s3, sdcard ]
+
 pytest_components_esp32_sdio:
   extends:
     - .pytest_components_dir_template
@@ -1170,15 +1188,6 @@ pytest_components_esp32c3_flash_multi:
     - job: build_pytest_components_esp32c3
       artifacts: false
   tags: [ esp32c3, flash_multi ]
-
-pytest_components_esp32_sdmmc:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32
-  needs:
-    - job: build_pytest_components_esp32
-      artifacts: false
-  tags: [ esp32, sdcard_sdmode ]
 
 pytest_components_esp32_sdspi:
   extends:
