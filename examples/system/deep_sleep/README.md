@@ -11,8 +11,8 @@ The following wake up sources are demonstrated in this example (refer to the [Wa
 
 - **Timer:** An RTC timer that can be programmed to trigger a wake up after a preset time. This example will trigger a wake up every 20 seconds.
 - **EXT0:** External wake up 0 can trigger wakeup when one predefined RTC GPIO is at a predefined logic level. This example uses GPIO25 in ESP32 or GPIO3 in ESP32-S2/S3 to trigger a wake up when the pin is HIGH. (This wake up source is only available on ESP32, ESP32-S2, and ESP32-S3.)
-- **EXT1:** External wake up 1 which is tied to multiple RTC GPIOs. This example uses GPIO2 and GPIO4 to trigger a wake up with any one of the two pins are HIGH. (This wake up source is available on ESP32, ESP32-S2, ESP32-S3 and ESP32-C6.)
-- **GPIO:** Pads powered by VDD3P3_RTC can be used to trigger a wake up from deep sleep. You may choose the pin and trigger level in menuconfig. (This wake up source is unavailable on ESP32, ESP32-S2, and ESP32-S3.)
+- **EXT1:** External wake up 1 which is tied to multiple RTC GPIOs. This example uses GPIO2 and GPIO4 to trigger a wake up with any one of the two pins are HIGH. (This wake up source is available on ESP32, ESP32-S2, ESP32-S3, ESP32-C6 and ESP32-H2.)
+- **GPIO:** Pads powered by VDD3P3_RTC can be used to trigger a wake up from deep sleep. You may choose the pin and trigger level in menuconfig. (This wake up source is unavailable on ESP32, ESP32-S2, ESP32-S3 and ESP32-H2.)
 - **Touch:** Touch pad sensor interrupt. This example uses touch pads connected to GPIO32, GPIO33 in ESP32 or GPIO9 in ESP32-S2/S3 to trigger a wake up when any of the pads are pressed.
 - **ULP:** Ultra Low Power Coprocessor which can continue to run during deep sleep. This example utilizes the ULP and constantly sample the chip's temperature and trigger a wake up if the chips temperature exceeds ~5 degrees Celsius.
 
