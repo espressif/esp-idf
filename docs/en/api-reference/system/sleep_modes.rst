@@ -320,6 +320,12 @@ When {IDF_TARGET_NAME} receives UART input from external devices, it is often ne
 
 :cpp:func:`esp_sleep_enable_uart_wakeup` function can be used to enable this wakeup source.
 
+    .. only:: esp32c6 or esp32h2
+
+       .. note::
+
+           In Light-sleep mode, setting Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` will invalidate UART wakeup.
+
 .. _disable_sleep_wakeup_source:
 
 Disable Sleep Wakeup Source

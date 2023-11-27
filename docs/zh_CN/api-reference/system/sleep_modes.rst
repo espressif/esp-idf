@@ -320,6 +320,12 @@ UART 唤醒（仅适用于 Light-sleep 模式）
 
 可调用 :cpp:func:`esp_sleep_enable_uart_wakeup` 函数来启用此唤醒源。
 
+    .. only:: esp32c6 or esp32h2
+
+       .. note::
+
+           在 Light-sleep 模式下，设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 将使 UART 唤醒失效。
+
 .. _disable_sleep_wakeup_source:
 
 禁用睡眠模式唤醒源
