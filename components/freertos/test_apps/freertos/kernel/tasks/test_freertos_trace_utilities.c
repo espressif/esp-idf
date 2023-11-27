@@ -47,13 +47,13 @@ void task_test_trace_utilities(void *arg)
     //Tests on this core
     TEST_ASSERT(uxTaskGetTaskNumber(task_handles[core]) == (0x0F << (core)));
     TEST_ASSERT(uxQueueGetQueueNumber(test_queues[core]) == (0x0F << (core)));
-    TEST_ASSERT(ucQueueGetQueueType(test_queues[core]) == BIN_SEM_QUEUE_TYPE)
+    TEST_ASSERT(ucQueueGetQueueType(test_queues[core]) == BIN_SEM_QUEUE_TYPE);
 
     //Test on other core
 #ifndef CONFIG_FREERTOS_UNICORE
     TEST_ASSERT(uxTaskGetTaskNumber(task_handles[!core]) == (0x0F << (!core)));
     TEST_ASSERT(uxQueueGetQueueNumber(test_queues[!core]) == (0x0F << (!core)));
-    TEST_ASSERT(ucQueueGetQueueType(test_queues[!core]) == BIN_SEM_QUEUE_TYPE)
+    TEST_ASSERT(ucQueueGetQueueType(test_queues[!core]) == BIN_SEM_QUEUE_TYPE);
 #endif
 
     xSemaphoreGive(test_queues[core]);      //Signal done

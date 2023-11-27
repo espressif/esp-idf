@@ -303,7 +303,7 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
 static SemaphoreHandle_t loopback_test_case_data_received;
 static esp_err_t loopback_test_case_incoming_handler(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
 {
-    TEST_ASSERT(memcmp(priv, buffer, LOOPBACK_TEST_PACKET_SIZE) == 0)
+    TEST_ASSERT(memcmp(priv, buffer, LOOPBACK_TEST_PACKET_SIZE) == 0);
     xSemaphoreGive(loopback_test_case_data_received);
     free(buffer);
     return ESP_OK;

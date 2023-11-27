@@ -77,7 +77,7 @@ TEST_CASE("Test FreeRTOS Queue Registry", "[freertos]")
     }
     for(int i = 0; i < NO_OF_QUEUES_TOTAL; i++){
         const char *addr = pcQueueGetName(handles[i]);
-        TEST_ASSERT(addr == names[i])   //Check vQueueAddToRegistry was successful
+        TEST_ASSERT(addr == names[i]);   //Check vQueueAddToRegistry was successful
     }
 
     portDISABLE_INTERRUPTS();
@@ -90,7 +90,7 @@ TEST_CASE("Test FreeRTOS Queue Registry", "[freertos]")
     }
     for(int i = 0; i <  NO_OF_QUEUES_TOTAL; i++){
         const char *addr = pcQueueGetName(handles[i]);
-        TEST_ASSERT(addr == NULL)   //Check vQueueUnregisterQueue was successful
+        TEST_ASSERT(addr == NULL);   //Check vQueueUnregisterQueue was successful
         handles[i] = NULL;
     }
 
