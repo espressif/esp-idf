@@ -141,6 +141,7 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 #if SOC_SHA_SUPPORT_SHA512
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_espsha, sha512_mbedtls, sizeof(sha512_espsha), "SHA512 results should match");
 #endif
+}
 
 #if CONFIG_MBEDTLS_HARDWARE_SHA
 
@@ -160,7 +161,8 @@ TEST_CASE("Test mbedtls_internal_sha_process()", "[hw_crypto]")
                                         0xa4, 0xae, 0x4d, 0xe9 };
 
     mbedtls_sha1_init(&sha1_ctx);
-    mbedtls_sha1_starts(&sha1_ctx);
+    ret = mbedtls_sha1_starts_ret(&sha1_ctx);
+    TEST_ASSERT_EQUAL(0, ret);
 
     ret = mbedtls_internal_sha1_process(&sha1_ctx, buffer);
     TEST_ASSERT_EQUAL(0, ret);
@@ -180,7 +182,7 @@ TEST_CASE("Test mbedtls_internal_sha_process()", "[hw_crypto]")
     // Check if the intermediate states are correct
     TEST_ASSERT_EQUAL_HEX8_ARRAY(sha1_expected, output, sizeof(sha1_expected));
 
-    ret = mbedtls_sha1_finish(&sha1_ctx, output);
+    ret = mbedtls_sha1_finish_ret(&sha1_ctx, output);
     TEST_ASSERT_EQUAL(0, ret);
 
     mbedtls_sha1_free(&sha1_ctx);
@@ -198,7 +200,8 @@ TEST_CASE("Test mbedtls_internal_sha_process()", "[hw_crypto]")
                                         0x07, 0x0a, 0x3a, 0x03, 0x44, 0xf0, 0xb8, 0xfe };
 
     mbedtls_sha512_init(&sha512_ctx);
-    mbedtls_sha512_starts(&sha512_ctx, 0);
+    ret = mbedtls_sha512_starts_ret(&sha512_ctx, 0);
+    TEST_ASSERT_EQUAL(0, ret);
 
     ret = mbedtls_internal_sha512_process(&sha512_ctx, buffer);
     TEST_ASSERT_EQUAL(0, ret);
@@ -218,7 +221,7 @@ TEST_CASE("Test mbedtls_internal_sha_process()", "[hw_crypto]")
     // Check if the intermediate states are correct
     TEST_ASSERT_EQUAL_HEX8_ARRAY(sha512_expected, output, sizeof(sha512_expected));
 
-    ret = mbedtls_sha512_finish(&sha512_ctx, output);
+    ret = mbedtls_sha512_finish_ret(&sha512_ctx, output);
     TEST_ASSERT_EQUAL(0, ret);
 
     mbedtls_sha512_free(&sha512_ctx);
@@ -228,5 +231,3 @@ TEST_CASE("Test mbedtls_internal_sha_process()", "[hw_crypto]")
 
 }
 #endif
-
-}

@@ -301,13 +301,13 @@ static inline void sha1_xor(mbedtls_sha1_context *restrict out, const mbedtls_sh
 
 static int mbedtls_sha1_init_start(mbedtls_sha1_context *ctx)
 {
-  mbedtls_sha1_init(ctx);
-  mbedtls_sha1_starts(ctx);
+    mbedtls_sha1_init(ctx);
+    mbedtls_sha1_starts_ret(ctx);
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(MBEDTLS_SHA1_ALT)
-  /* Use software mode for esp32 since hardware can't give output more than 20 */
-  esp_mbedtls_set_sha1_mode(ctx, ESP_MBEDTLS_SHA1_SOFTWARE);
+    /* Use software mode for esp32 since hardware can't give output more than 20 */
+    esp_mbedtls_set_sha1_mode(ctx, ESP_MBEDTLS_SHA1_SOFTWARE);
 #endif
-  return 0;
+    return 0;
 }
 
 #ifndef MBEDTLS_SHA1_ALT
@@ -374,10 +374,10 @@ DECL_PBKDF2(sha1,                           // _name
             20,                             // _hashsz
             mbedtls_sha1_context,           // _ctx
             mbedtls_sha1_init_start,        // _init
-            mbedtls_sha1_update,            // _update
+            mbedtls_sha1_update_ret,        // _update
             mbedtls_internal_sha1_process,  // _xform
 #if defined(MBEDTLS_SHA1_ALT)
-            mbedtls_sha1_finish,            // _final
+            mbedtls_sha1_finish_ret,        // _final
 #else
             sha1_finish,                   // _final
 #endif
