@@ -13,7 +13,7 @@
 #include "driver/sdmmc_host.h"
 #include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
-#include "sdmmc_test_begin_end.h"
+#include "sdmmc_test_begin_end_sd.h"
 #include "hal/gpio_hal.h"
 
 void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr)

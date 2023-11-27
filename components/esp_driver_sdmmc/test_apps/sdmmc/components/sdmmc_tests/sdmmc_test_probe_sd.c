@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include "unity.h"
 #include "sdmmc_cmd.h"
-#include "sdmmc_test_begin_end.h"
+#include "sdmmc_test_begin_end_sd.h"
 
 static void do_one_sdmmc_probe_test(int slot, int width, int freq_khz, int ddr)
 {
