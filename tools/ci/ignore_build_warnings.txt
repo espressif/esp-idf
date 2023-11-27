@@ -40,6 +40,7 @@ warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE_4MB' assigned to 'y' in /bu
 warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"4MB"' in /builds/espressif/esp-idf/components/esp_partition/host_test/partition_api_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"4MB"' in /builds/espressif/esp-idf/components/spiffs/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"8MB"' in /builds/espressif/esp-idf/components/wear_levelling/host_test/sdkconfig.defaults
+warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"8MB"' in /builds/espressif/esp-idf/components/fatfs/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_MONITOR_BAUD_921600B' assigned to 'y' in /builds/espressif/esp-idf/examples/bluetooth/esp_ble_mesh/vendor_models/*
 warning: unknown kconfig symbol 'FMB_TIMER_GROUP' assigned to '0' in /builds/espressif/esp-idf/examples/protocols/modbus/tcp/*
 warning: unknown kconfig symbol 'FMB_TIMER_INDEX' assigned to '0' in /builds/espressif/esp-idf/examples/protocols/modbus/tcp/*
