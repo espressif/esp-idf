@@ -40,10 +40,11 @@ struct temperature_sensor_obj_t {
 
 static void start_wifi_as_softap(void)
 {
+    uint8_t ssid_len = strlen(TEST_DEFAULT_SSID);
     wifi_config_t w_config = {
         .ap.ssid = TEST_DEFAULT_SSID,
         .ap.password = TEST_DEFAULT_PWD,
-        .ap.ssid_len = strlen(TEST_DEFAULT_SSID),
+        .ap.ssid_len = ssid_len,
         .ap.channel = TEST_DEFAULT_CHANNEL,
         .ap.authmode = WIFI_AUTH_WPA2_PSK,
         .ap.ssid_hidden = false,
@@ -66,7 +67,7 @@ static void start_wifi_as_sta(void)
 static void stop_wifi(void)
 {
     TEST_ESP_OK(esp_wifi_stop());
-    vTaskDelay(500/portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
 }
 
 static void wifi_connect(void)
@@ -91,7 +92,7 @@ static void test_wifi_establish_sta(void)
     unity_wait_for_signal("AP start");
 
     // make sure softap has started
-    vTaskDelay(1000/portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     wifi_connect();
     unity_send_signal("connect");
     unity_wait_for_signal("tsens test done");
