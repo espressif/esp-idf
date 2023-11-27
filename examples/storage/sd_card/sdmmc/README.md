@@ -182,3 +182,72 @@ Connections between the card and the ESP32 are too long for the frequency used. 
 example: Failed to mount filesystem. If you want the card to be formatted, set the EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.
 ```
 The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code. Enable the `EXAMPLE_FORMAT_IF_MOUNT_FAILED` menuconfig option, then build and flash the example.
+
+### Debug SD connections and pullup strength
+
+> If the initialization of the SD card fails, initially follow the above options. If the issue persists, confirm the connection of pullups to the SD pins. To do this, enable the` Debug sd pin connections and pullup strength` option from menuconfig and rerun the code. This will provide the following result:
+
+```
+**** PIN recovery time ****
+
+PIN 14 CLK  10044 cycles
+PIN 15 CMD  10034 cycles
+PIN  2  D0  10034 cycles
+PIN  4  D1  10034 cycles
+PIN 12  D2  10034 cycles
+PIN 13  D3  10034 cycles
+
+**** PIN recovery time with weak pullup ****
+
+PIN 14 CLK  100 cycles
+PIN 15 CMD  100 cycles
+PIN  2  D0  100 cycles
+PIN  4  D1  100 cycles
+PIN 12  D2  100 cycles
+PIN 13  D3  100 cycles
+
+**** PIN voltage levels ****
+
+PIN 14 CLK  0.6V
+PIN 15 CMD  0.3V
+PIN  2  D0  0.8V
+PIN  4  D1  0.6V
+PIN 12  D2  0.4V
+PIN 13  D3  0.8V
+
+**** PIN voltage levels with weak pullup ****
+
+PIN 14 CLK  1.0V
+PIN 15 CMD  1.1V
+PIN  2  D0  1.0V
+PIN  4  D1  1.0V
+PIN 12  D2  1.0V
+PIN 13  D3  1.2V
+
+**** PIN cross-talk ****
+
+              CLK   CMD    D0    D1    D2    D3
+PIN 14 CLK     --   0.2V  0.1V  0.1V  0.1V  0.2V
+PIN 15 CMD    0.1V   --   0.1V  0.1V  0.1V  0.1V
+PIN  2  D0    0.1V  0.1V   --   0.2V  0.1V  0.1V
+PIN  4  D1    0.1V  0.1V  0.3V   --   0.1V  0.1V
+PIN 12  D2    0.1V  0.2V  0.2V  0.1V   --   0.1V
+PIN 13  D3    0.1V  0.2V  0.1V  0.1V  0.1V   --
+
+**** PIN cross-talk with weak pullup ****
+
+              CLK   CMD    D0    D1    D2    D3
+PIN 14 CLK     --   1.0V  1.0V  1.0V  1.0V  1.2V
+PIN 15 CMD    0.9V   --   1.0V  1.0V  1.0V  1.2V
+PIN  2  D0    0.9V  1.0V   --   1.0V  1.0V  1.2V
+PIN  4  D1    0.9V  1.0V  1.2V   --   1.0V  1.2V
+PIN 12  D2    0.9V  1.1V  1.2V  0.9V   --   1.2V
+PIN 13  D3    0.9V  1.2V  1.1V  0.9V  0.9V   --
+I (845) main_task: Returned from app_main()
+```
+
+In the absence of connected pullups and having the weak pullups enabled, you can assess the pullup connections by comparing PIN recovery time measured in CPU cycles. To check pullup connections, configure the pin as open drain, set it to low state, and count the cpu cycles consumed before returning to high state. If a pullup is connected, the pin will get back to high state after reasonably small cycle count, typically around 50-300 cycles, depending on pullup strength. If no pullup is connected, the PIN stays low and the measurement times out after 10000 cycles.
+
+It will also provide the voltage levels at the corresponding SD pins. By default, this information is provided for ESP32 chip only, and for other chipsets, verify the availability of ADC pins for the respective GPIO using [this](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html#gpio-summary) and configure ADC mapped pins using menuconfig. Then test the voltage levels accordingly.
+
+You can monitor the voltage levels of individual pins using `PIN voltage levels` and `PIN voltage levels with weak pullup`. However, if one pin being pulled low and experiencing interference with another pin, you can detect it through `PIN cross-talk` and `PIN cross-talk with weak pullup`. In the absence of pullups, voltage levels at each pin should range from 0 to 0.3V. With 10k pullups connected, the voltage will be between 3.1V to 3.3V, contingent on the connection between ADC pins and SD pins, and with weak pullups connected, it can fluctuate between 0.8V to 1.2V, depending on pullup strength.

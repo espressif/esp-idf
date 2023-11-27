@@ -42,4 +42,49 @@ menu "SD SPI Example Configuration"
         default 10 if IDF_TARGET_ESP32P4
         default 1  # C3 and others
 
+    config EXAMPLE_DEBUG_PIN_CONNECTIONS
+        bool "Debug sd pin connections and pullup strength"
+        default n
+
+    config EXAMPLE_ENABLE_ADC_FEATURE
+        bool "Enable ADC feature"
+        depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+        default y if IDF_TARGET_ESP32
+        default n
+
+    config EXAMPLE_ADC_UNIT
+        int "ADC Unit"
+        depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+        default 1 if IDF_TARGET_ESP32
+        default 0 if IDF_TARGET_ESP32S3
+        default 1
+
+    config EXAMPLE_ADC_PIN_MOSI
+        int "MOSI mapped ADC pin"
+        depends on EXAMPLE_ENABLE_ADC_FEATURE
+        default 3 if IDF_TARGET_ESP32
+        default 7 if IDF_TARGET_ESP32S3
+        default 1
+
+    config EXAMPLE_ADC_PIN_MISO
+        int "MISO mapped ADC pin"
+        depends on EXAMPLE_ENABLE_ADC_FEATURE
+        default 2 if IDF_TARGET_ESP32
+        default 1 if IDF_TARGET_ESP32S3
+        default 1
+
+    config EXAMPLE_ADC_PIN_CLK
+        int "CLK mapped ADC pin"
+        depends on EXAMPLE_ENABLE_ADC_FEATURE
+        default 6 if IDF_TARGET_ESP32
+        default 0 if IDF_TARGET_ESP32S3
+        default 1
+
+    config EXAMPLE_ADC_PIN_CS
+        int "CS mapped ADC pin"
+        depends on EXAMPLE_ENABLE_ADC_FEATURE
+        default 4 if IDF_TARGET_ESP32
+        default 6 if IDF_TARGET_ESP32S3
+        default 1
+
 endmenu

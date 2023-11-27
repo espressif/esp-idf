@@ -60,4 +60,90 @@ menu "SD/MMC Example Configuration"
 
     endif  # SOC_SDMMC_USE_GPIO_MATRIX
 
+    config EXAMPLE_DEBUG_PIN_CONNECTIONS
+        bool "Debug sd pin connections and pullup strength"
+        default n
+
+    if !SOC_SDMMC_USE_GPIO_MATRIX
+        config EXAMPLE_PIN_CMD
+            depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+            default 15 if IDF_TARGET_ESP32
+
+        config EXAMPLE_PIN_CLK
+            depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+            default 14 if IDF_TARGET_ESP32
+
+        config EXAMPLE_PIN_D0
+            depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+            default 2 if IDF_TARGET_ESP32
+
+        if EXAMPLE_SDMMC_BUS_WIDTH_4
+
+            config EXAMPLE_PIN_D1
+                depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+                default 4 if IDF_TARGET_ESP32
+
+            config EXAMPLE_PIN_D2
+                depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+                default 12 if IDF_TARGET_ESP32
+
+            config EXAMPLE_PIN_D3
+                depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+                default 13 if IDF_TARGET_ESP32
+
+        endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
+    endif
+
+    config EXAMPLE_ENABLE_ADC_FEATURE
+        bool "Enable ADC feature"
+        depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
+        default y if IDF_TARGET_ESP32
+        default n
+
+    config EXAMPLE_ADC_UNIT
+        int "ADC Unit"
+        depends on EXAMPLE_ENABLE_ADC_FEATURE
+        default 1 if IDF_TARGET_ESP32
+        default 1
+
+    config EXAMPLE_ADC_PIN_CLK
+        int "CLK mapped ADC pin"
+        depends on EXAMPLE_ENABLE_ADC_FEATURE
+        default 6 if IDF_TARGET_ESP32
+        default 1
+
+    config EXAMPLE_ADC_PIN_CMD
+        int "CMD mapped ADC pin"
+        depends on EXAMPLE_ENABLE_ADC_FEATURE
+        default 3 if IDF_TARGET_ESP32
+        default 1
+
+    config EXAMPLE_ADC_PIN_D0
+        int "D0 mapped ADC pin"
+        depends on EXAMPLE_ENABLE_ADC_FEATURE
+        default 2 if IDF_TARGET_ESP32
+        default 1
+
+    if EXAMPLE_SDMMC_BUS_WIDTH_4
+
+        config EXAMPLE_ADC_PIN_D1
+            int "D1 mapped ADC pin"
+            depends on EXAMPLE_ENABLE_ADC_FEATURE
+            default 0 if IDF_TARGET_ESP32
+            default 1
+
+        config EXAMPLE_ADC_PIN_D2
+            int "D2 mapped ADC pin"
+            depends on EXAMPLE_ENABLE_ADC_FEATURE
+            default 5 if IDF_TARGET_ESP32
+            default 1
+
+        config EXAMPLE_ADC_PIN_D3
+            int "D3 mapped ADC pin"
+            depends on EXAMPLE_ENABLE_ADC_FEATURE
+            default 4 if IDF_TARGET_ESP32
+            default 1
+
+    endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
+
 endmenu
