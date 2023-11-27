@@ -15,14 +15,13 @@ components/fatfs/test_apps/flash_wl:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: only one target per arch needed
-
   depends_components:
     - esp_partition
     - spi_flash
     - fatfs
     - vfs
     - wear_leveling
-    
+
 components/fatfs/test_apps/sdcard:
   disable:
     - if: IDF_TARGET == "esp32p4"
