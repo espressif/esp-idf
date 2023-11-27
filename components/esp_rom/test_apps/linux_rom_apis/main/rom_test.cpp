@@ -15,7 +15,6 @@
 
     Note that the printf function is roughly tested in the log host test.
 */
-#define CATCH_CONFIG_MAIN
 #include <cstdio>
 #include <regex>
 #include <cstring>
@@ -24,11 +23,9 @@
 #include "esp_rom_crc.h"
 #include "esp_rom_md5.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using namespace std;
-
-static const char *TEST_TAG = "test";
 
 // ESP_LOG_EARLY functions are tested in the log host tests and also test rom printf.
 TEST_CASE("esp_rom printf returns correct char num")
