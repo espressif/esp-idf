@@ -24,8 +24,15 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <linux/if.h>
 #include <sys/time.h>
+
+#ifdef __linux__
+#include <linux/if.h>
+#endif
+
+#ifdef __APPLE__
+#include <net/if.h>
+#endif
 
 typedef struct in_addr ip_addr_t;
 typedef struct in6_addr ip6_addr_t;
@@ -278,6 +285,7 @@ static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
                 ESP_LOGE(TAG, "Fail to setsockopt SO_KEEPALIVE");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             }
+#ifndef __APPLE__
             if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_alive_idle, sizeof(keep_alive_idle)) != 0) {
                 ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPIDLE");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
@@ -290,11 +298,22 @@ static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
                 ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPCNT");
                 return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             }
+#else // __APPLE__
+            if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPALIVE, &keep_alive_idle, sizeof(keep_alive_idle)) != 0) {
+                ESP_LOGE(TAG, "Fail to setsockopt TCP_KEEPALIVE");
+                return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
+            }
+#endif // __APPLE__
         }
         if (cfg->if_name) {
             if (cfg->if_name->ifr_name[0] != 0) {
                 ESP_LOGD(TAG, "Bind [sock=%d] to interface %s", fd, cfg->if_name->ifr_name);
+#ifndef __APPLE__
                 if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,  cfg->if_name, sizeof(struct ifreq)) != 0) {
+#else
+                int idx = if_nametoindex(cfg->if_name->ifr_name);
+                if (setsockopt(fd, IPPROTO_IP, IP_BOUND_IF, &idx, sizeof(idx)) != 0) {
+#endif
                     ESP_LOGE(TAG, "Bind [sock=%d] to interface %s fail", fd, cfg->if_name->ifr_name);
                     return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
                 }
