@@ -455,6 +455,9 @@ static IRAM_ATTR void isr_handle_tx_abort(void)
         next_operation();
         break;
     case IEEE802154_TX_ABORT_BY_TX_COEX_BREAK:
+#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+        esp_coex_ieee802154_coex_break_notify();
+#endif
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX || s_ieee802154_state == IEEE802154_STATE_TX_CCA);
         esp_ieee802154_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_COEXIST);
         next_operation();
