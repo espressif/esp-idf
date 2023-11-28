@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #include "esp_log.h"
 #include "hal/usb_serial_jtag_ll.h"
 #include "hal/usb_fsls_phy_ll.h"
@@ -17,12 +18,19 @@
 #include "soc/periph_defs.h"
 #include "esp_check.h"
 
+typedef enum {
+    FIFO_IDLE = 0,  /*!< Indicates the fifo is in idle state */
+    FIFO_BUSY = 1,  /*!< Indicates the fifo is in busy state */
+} fifo_status_t;
+
 // The hardware buffer max size is 64
 #define USB_SER_JTAG_ENDP_SIZE          (64)
 #define USB_SER_JTAG_RX_MAX_SIZE        (64)
 
 typedef struct{
     intr_handle_t intr_handle;          /*!< USB-SERIAL-JTAG interrupt handler */
+    portMUX_TYPE spinlock;              /*!< Spinlock for usb_serial_jtag */
+    _Atomic fifo_status_t fifo_status;  /*!< Record the status of fifo */
 
     // RX parameters
     RingbufHandle_t rx_ring_buf;        /*!< RX ring buffer handler */
@@ -59,7 +67,7 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
         // If the hardware fifo is available, write in it. Otherwise, do nothing.
         if (usb_serial_jtag_ll_txfifo_writable() == 1) {
             // We disable the interrupt here so that the interrupt won't be triggered if there is no data to send.
-            usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+
             size_t queued_size;
             uint8_t *queued_buff = NULL;
             bool is_stashed_data = false;
@@ -83,7 +91,10 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
 
                 // On ringbuffer wrap-around the size can be 0 even though the buffer returned is not NULL
                 if (queued_size > 0) {
+                    portENTER_CRITICAL_ISR(&p_usb_serial_jtag_obj->spinlock);
+                    atomic_store(&p_usb_serial_jtag_obj->fifo_status, FIFO_BUSY);
                     uint32_t sent_size = usb_serial_jtag_write_and_flush(queued_buff, queued_size);
+                    portEXIT_CRITICAL_ISR(&p_usb_serial_jtag_obj->spinlock);
 
                     if (sent_size < queued_size) {
                         // Not all bytes could be sent at once; stash the unwritten bytes in a tx buffer
@@ -100,7 +111,6 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
                 if (is_stashed_data == false) {
                     vRingbufferReturnItemFromISR(p_usb_serial_jtag_obj->tx_ring_buf, queued_buff, &xTaskWoken);
                 }
-                usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
             } else {
                 // The last transmit may have sent a full EP worth of data. The host will interpret
                 // this as a transaction that hasn't finished yet and keep the data in its internal
@@ -111,6 +121,7 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
                 // flush will not by itself cause this ISR to be called again.
             }
         } else {
+            atomic_store(&p_usb_serial_jtag_obj->fifo_status, FIFO_IDLE);
             usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
         }
     }
@@ -139,6 +150,7 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     p_usb_serial_jtag_obj->rx_buf_size = usb_serial_jtag_config->rx_buffer_size;
     p_usb_serial_jtag_obj->tx_buf_size = usb_serial_jtag_config->tx_buffer_size;
     p_usb_serial_jtag_obj->tx_stash_cnt = 0;
+    p_usb_serial_jtag_obj->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     if (p_usb_serial_jtag_obj == NULL) {
         ESP_LOGE(USB_SERIAL_JTAG_TAG, "memory allocate error");
         err = ESP_ERR_NO_MEM;
@@ -161,6 +173,7 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
 
     // Enable USB-Serial-JTAG peripheral module clock
     usb_serial_jtag_ll_enable_bus_clock(true);
+    atomic_store(&p_usb_serial_jtag_obj->fifo_status, FIFO_IDLE);
 
     // Configure PHY
     usb_fsls_phy_ll_int_jtag_enable(&USB_SERIAL_JTAG);
@@ -210,10 +223,22 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
     ESP_RETURN_ON_FALSE(src != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "Invalid buffer pointer.");
     ESP_RETURN_ON_FALSE(p_usb_serial_jtag_obj != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "The driver hasn't been initialized");
 
+    size_t sent_data = 0;
+    BaseType_t result = pdTRUE;
     const uint8_t *buff = (const uint8_t *)src;
+    if (p_usb_serial_jtag_obj->fifo_status == FIFO_IDLE) {
+        portENTER_CRITICAL(&p_usb_serial_jtag_obj->spinlock);
+        atomic_store(&p_usb_serial_jtag_obj->fifo_status, FIFO_BUSY);
+        sent_data = usb_serial_jtag_write_and_flush(src, size);
+        portEXIT_CRITICAL(&p_usb_serial_jtag_obj->spinlock);
+    }
+
     // Blocking method, Sending data to ringbuffer, and handle the data in ISR.
-    BaseType_t result = xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*) (buff), size, ticks_to_wait);
-    // Now trigger the ISR to read data from the ring buffer.
+    if (size - sent_data > 0) {
+        result = xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*) (buff+sent_data), size-sent_data, ticks_to_wait);
+    } else {
+        atomic_store(&p_usb_serial_jtag_obj->fifo_status, FIFO_IDLE);
+    }
     usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
     return (result == pdFALSE) ? 0 : size;
 }
