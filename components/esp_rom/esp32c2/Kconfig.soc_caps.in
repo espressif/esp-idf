@@ -62,3 +62,7 @@ config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
 config ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
     bool
     default y
+
+config ESP_ROM_HAS_SW_FLOAT
+    bool
+    default y

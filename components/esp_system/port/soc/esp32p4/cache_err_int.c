@@ -53,7 +53,7 @@ void esp_cache_err_int_init(void)
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
 }
 
-int IRAM_ATTR esp_cache_err_get_cpuid(void)
+int esp_cache_err_get_cpuid(void)
 {
     //TODO: IDF-7515
     //Should return hart ID according to the cache error

@@ -115,9 +115,7 @@ tools/test_apps/system/build_test:
     - if: CONFIG_NAME == "no_rvfplib" and ESP_ROM_HAS_RVFPLIB != 1
     - if: CONFIG_NAME == "usb_serial_jtag" AND SOC_USB_SERIAL_JTAG_SUPPORTED != 1
     - if: CONFIG_NAME == "usb_console_ets_printf" AND SOC_USB_OTG_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) not supported yet #TODO: IDF-8119
+    - if: CONFIG_NAME == "phy_multiple_init_data" AND IDF_TARGET == "esp32p4" # Update with caps here when IDF-7460 is resolved
 
 tools/test_apps/system/cxx_no_except:
   enable:
