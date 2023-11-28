@@ -1,0 +1,27 @@
+menu "Example Configuration"
+
+    config EXAMPLE_PEER_ADDR
+        string "Peer Address"
+        default "ADDR_ANY"
+        help
+            Enter the peer address in aa:bb:cc:dd:ee:ff form to connect to a specific peripheral
+
+    config EXAMPLE_ENCRYPTION
+        bool
+        prompt "Enable Link Encryption"
+        default y
+        help
+            This enables bonding and encryption after connection has been established.
+
+    config EXAMPLE_EXTENDED_ADV
+        bool
+        depends on SOC_BLE_50_SUPPORTED
+        default y if SOC_ESP_NIMBLE_CONTROLLER
+        select BT_NIMBLE_EXT_ADV
+        prompt "Enable Extended Adv"
+        help
+            Use this option to enable extended advertising in the example.
+            If this option is disabled, ensure config BT_NIMBLE_EXT_ADV is
+            also disabled from Nimble stack menuconfig
+
+endmenu
