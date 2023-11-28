@@ -128,7 +128,7 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req);
 /**
   * @brief      Respond to a NAN Datapath request with Accept or Reject
   *
-  * @attention  This API should be called if ndp_auto_accept is not set True by the Publisher and
+  * @attention  This API should be called if ndp_resp_needed is set True by the Publisher and
   *             a WIFI_EVENT_NDP_INDICATION event is received due to an incoming NDP request.
   *
   * @param      resp  NAN Datapath Response parameters.
