@@ -78,11 +78,32 @@ static inline void temperature_sensor_ll_set_range(uint32_t tsens_dac)
  */
 static inline uint32_t temperature_sensor_ll_get_raw_value(void)
 {
-    SENS.sar_tctrl.tsens_dump_out = 1;
-    while (!SENS.sar_tctrl.tsens_ready) {
-    }
-    SENS.sar_tctrl.tsens_dump_out = 0;
-    return SENS.sar_tctrl.tsens_out;
+        if (!SENS.sar_peri_clk_gate_conf.tsens_clk_en ||
+            !SENS.sar_tctrl2.tsens_xpd_force ||
+            !SENS.sar_tctrl.tsens_power_up_force ||
+            !SENS.sar_tctrl.tsens_power_up ||
+            !SENS.sar_tctrl.tsens_dump_out
+        ) {
+s:              SENS.sar_peri_clk_gate_conf.tsens_clk_en = true;
+                SENS.sar_tctrl2.tsens_xpd_force = true;
+                SENS.sar_tctrl.tsens_power_up_force = true;
+                SENS.sar_tctrl.tsens_power_up = true;
+                vTaskDelay(pdMS_TO_TICKS(10));
+        }
+
+        SENS.sar_tctrl.tsens_dump_out = 1;
+        while (!SENS.sar_tctrl.tsens_ready) {
+                if (!SENS.sar_peri_clk_gate_conf.tsens_clk_en ||
+                    !SENS.sar_tctrl2.tsens_xpd_force ||
+                    !SENS.sar_tctrl.tsens_power_up_force ||
+                    !SENS.sar_tctrl.tsens_power_up ||
+                    !SENS.sar_tctrl.tsens_dump_out
+                ) {
+                        goto s;
+                }
+        }
+        SENS.sar_tctrl.tsens_dump_out = 0;
+        return SENS.sar_tctrl.tsens_out;
 }
 
 /**
