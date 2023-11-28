@@ -392,6 +392,17 @@ void panic_arch_fill_info(void *f, panic_info_t *info)
     info->addr = ((void *) ((XtExcFrame *) frame)->pc);
 }
 
+/**
+ * This function will be called before the SoC-level panic is handled,
+ * allowing us to check and override the exception cause for certain
+ * pseudo-causes that do not have their own trigger
+ */
+bool panic_soc_check_pseudo_cause(void *f, panic_info_t *info)
+{
+    // Currently only needed on riscv targets
+    return false;
+}
+
 void panic_soc_fill_info(void *f, panic_info_t *info)
 {
     // [refactor-todo] this should be in the common port panic_handler.c, once
