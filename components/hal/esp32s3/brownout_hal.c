@@ -33,6 +33,8 @@ void brownout_hal_config(const brownout_hal_config_t *cfg)
         .rst_sel = 1,
     };
     RTCCNTL.brown_out = brown_out_reg;
+    // If brownout software control is enabled, hw ana reset should be disabled, because it always has the highest priority.
+    RTCCNTL.brown_out.ana_rst_en = false;
 }
 
 void brownout_hal_intr_enable(bool enable)
