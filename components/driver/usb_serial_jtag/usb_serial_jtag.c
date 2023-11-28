@@ -94,7 +94,7 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
                     uint32_t sent_size = usb_serial_jtag_write_and_flush(queued_buff, queued_size);
 
                     if (sent_size < queued_size) {
-                        // Not all bytes could be sent at once, stash the unwritten bytes in a tx buffer
+                        // Not all bytes could be sent at once; stash the unwritten bytes in a tx buffer
                         // stash_size will not larger than USB_SER_JTAG_ENDP_SIZE because queued_size is got from xRingbufferReceiveUpToFromISR
                         size_t stash_size = queued_size - sent_size;
                         memcpy(p_usb_serial_jtag_obj->tx_data_buf, &queued_buff[sent_size], stash_size);
@@ -109,6 +109,14 @@ static void usb_serial_jtag_isr_handler_default(void *arg) {
                     vRingbufferReturnItemFromISR(p_usb_serial_jtag_obj->tx_ring_buf, queued_buff, &xTaskWoken);
                 }
                 usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+            } else {
+                // The last transmit may have sent a full EP worth of data. The host will interpret
+                // this as a transaction that hasn't finished yet and keep the data in its internal
+                // buffers rather than releasing it to the program listening on the CDC serial port.
+                // We need to flush again in order to send a 0-byte packet that ends the transaction.
+                usb_serial_jtag_ll_txfifo_flush();
+                // Note that since this doesn't re-enable USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY, the
+                // flush will not by itself cause this ISR to be called again.
             }
         } else {
             usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
