@@ -80,7 +80,6 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
     $(PROJECT_PATH)/components/driver/sigma_delta/include/driver/sdm.h \
-    $(PROJECT_PATH)/components/driver/temperature_sensor/include/driver/temperature_sensor.h \
     $(PROJECT_PATH)/components/driver/touch_sensor/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/twai/include/driver/twai.h \
     $(PROJECT_PATH)/components/driver/uart/include/driver/uart.h \
@@ -143,6 +142,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_master.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave_hd.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave.h \
+    $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \

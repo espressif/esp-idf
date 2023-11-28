@@ -96,10 +96,6 @@ components/driver/test_apps/sigma_delta:
   depends_components:
     - esp_driver_gpio
 
-components/driver/test_apps/temperature_sensor:
-  disable:
-    - if: SOC_TEMP_SENSOR_SUPPORTED != 1
-
 components/driver/test_apps/touch_sensor_v1:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 1

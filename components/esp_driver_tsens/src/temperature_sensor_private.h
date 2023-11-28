@@ -43,7 +43,6 @@ struct temperature_sensor_obj_t {
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 };
 
-
 #ifdef __cplusplus
 }
 #endif

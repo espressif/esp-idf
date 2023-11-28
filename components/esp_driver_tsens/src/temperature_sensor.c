@@ -76,7 +76,7 @@ static void IRAM_ATTR temperature_sensor_isr(void *arg)
     temperature_sensor_ll_clear_intr();
     bool cbs_yield = false;
     temperature_sensor_handle_t tsens = (temperature_sensor_handle_t) arg;
-    temperature_val_intr_condition_t intr_condition = (temperature_sensor_ll_get_wakeup_reason() == 1 ? TEMPERATURE_VAL_HIGHER_THAN_HIGH_THRESHOLD: TEMPERATURE_VAL_LOWER_THAN_LOW_THRESHOLD);
+    temperature_val_intr_condition_t intr_condition = (temperature_sensor_ll_get_wakeup_reason() == 1 ? TEMPERATURE_VAL_HIGHER_THAN_HIGH_THRESHOLD : TEMPERATURE_VAL_LOWER_THAN_LOW_THRESHOLD);
     temperature_sensor_threshold_event_data_t data = {
         .celsius_value = s_temperature_regval_2_celsius(tsens, temperature_sensor_ll_get_raw_value()),
         .intr_condition = intr_condition,
@@ -243,7 +243,7 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
 
 static uint8_t s_temperature_celsius_2_regval(temperature_sensor_handle_t tsens, int8_t celsius)
 {
-    return (uint8_t)((celsius + TEMPERATURE_SENSOR_LL_OFFSET_FACTOR + TEMPERATURE_SENSOR_LL_DAC_FACTOR * tsens->tsens_attribute->offset)/TEMPERATURE_SENSOR_LL_ADC_FACTOR);
+    return (uint8_t)((celsius + TEMPERATURE_SENSOR_LL_OFFSET_FACTOR + TEMPERATURE_SENSOR_LL_DAC_FACTOR * tsens->tsens_attribute->offset) / TEMPERATURE_SENSOR_LL_ADC_FACTOR);
 }
 
 IRAM_ATTR static int8_t s_temperature_regval_2_celsius(temperature_sensor_handle_t tsens, uint8_t regval)
@@ -305,8 +305,8 @@ esp_err_t temperature_sensor_register_callbacks(temperature_sensor_handle_t tsen
     // lazy install interrupt service.
     if (!tsens->temp_sensor_isr_handle) {
         ret = esp_intr_alloc_intrstatus(ETS_APB_ADC_INTR_SOURCE, isr_flags,
-                                    (uint32_t)temperature_sensor_ll_get_intr_status(),
-                                    TEMPERATURE_SENSOR_LL_INTR_MASK, temperature_sensor_isr, tsens, &tsens->temp_sensor_isr_handle);
+                                        (uint32_t)temperature_sensor_ll_get_intr_status(),
+                                        TEMPERATURE_SENSOR_LL_INTR_MASK, temperature_sensor_isr, tsens, &tsens->temp_sensor_isr_handle);
     }
 
     if (cbs->on_threshold != NULL) {

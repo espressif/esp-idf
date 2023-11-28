@@ -322,10 +322,14 @@ examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
 examples/peripherals/temperature_sensor/temp_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+  depends_components:
+    - esp_driver_tsens
 
 examples/peripherals/temperature_sensor/temp_sensor_monitor:
   disable:
     - if: SOC_TEMPERATURE_SENSOR_INTR_SUPPORT != 1
+  depends_components:
+    - esp_driver_tsens
 
 examples/peripherals/timer_group/gptimer:
   disable:
