@@ -281,7 +281,6 @@ test_pytest_qemu:
   extends:
     - .host_test_template
     - .before_script:build
-  image: $QEMU_IMAGE
   artifacts:
     when: always
     paths:
@@ -294,6 +293,8 @@ test_pytest_qemu:
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
+  variables:
+    INSTALL_QEMU: 1
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -vv
       --target $IDF_TARGET
