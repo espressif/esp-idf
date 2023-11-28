@@ -144,6 +144,14 @@ menu "Ethernet"
                 making it compatible with the software TCP/IP stack.
                 Say yes to enable W5500 driver.
 
+        if ETH_SPI_ETHERNET_W5500
+            config ETH_SPI_ETHERNET_W5500_POLLING
+                bool "Use W5500 in polling mode (without interrupt)"
+                help
+                    Running W5500 in polling mode is not ideal, but it allows this driver to be used on
+                    hardware where the interrupt line of the W5500 chip is not connected.
+        endif # ETH_SPI_ETHERNET_W5500
+
         config ETH_SPI_ETHERNET_KSZ8851SNL
             bool "Use KSZ8851SNL"
             help
