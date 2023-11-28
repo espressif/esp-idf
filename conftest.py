@@ -19,9 +19,9 @@ import logging
 import os
 import re
 import sys
+import typing as t
 from copy import deepcopy
 from datetime import datetime
-from typing import Callable, Optional
 
 import pytest
 from _pytest.config import Config
@@ -34,13 +34,13 @@ try:
     from idf_ci_utils import IDF_PATH
     from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS
     from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, IdfPytestEmbedded
-    from idf_pytest.utils import format_case_id, get_target_marker_from_expr
+    from idf_pytest.utils import format_case_id
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
     from idf_ci_utils import IDF_PATH
     from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS
     from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, IdfPytestEmbedded
-    from idf_pytest.utils import format_case_id, get_target_marker_from_expr
+    from idf_pytest.utils import format_case_id
 
 try:
     import common_test_methods  # noqa: F401
@@ -102,7 +102,7 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 @pytest.fixture
 @multi_dut_fixture
-def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> str:
+def build_dir(app_path: str, target: t.Optional[str], config: t.Optional[str]) -> str:
     """
     Check local build dir with the following priority:
 
@@ -138,7 +138,7 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
 
 @pytest.fixture(autouse=True)
 @multi_dut_fixture
-def junit_properties(test_case_name: str, record_xml_attribute: Callable[[str, object], None]) -> None:
+def junit_properties(test_case_name: str, record_xml_attribute: t.Callable[[str, object], None]) -> None:
     """
     This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
     """
@@ -154,7 +154,7 @@ def set_test_case_name(request: FixtureRequest, test_case_name: str) -> None:
 # Log Util Functions #
 ######################
 @pytest.fixture
-def log_performance(record_property: Callable[[str, object], None]) -> Callable[[str, str], None]:
+def log_performance(record_property: t.Callable[[str, object], None]) -> t.Callable[[str, str], None]:
     """
     log performance item with pre-defined format to the console
     and record it under the ``properties`` tag in the junit report if available.
@@ -172,7 +172,7 @@ def log_performance(record_property: Callable[[str, object], None]) -> Callable[
 
 
 @pytest.fixture
-def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
+def check_performance(idf_path: str) -> t.Callable[[str, float, str], None]:
     """
     check if the given performance item meets the passing standard or not
     """
@@ -186,9 +186,9 @@ def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
         """
 
         def _find_perf_item(operator: str, path: str) -> float:
-            with open(path, 'r') as f:
+            with open(path) as f:
                 data = f.read()
-            match = re.search(r'#define\s+IDF_PERFORMANCE_{}_{}\s+([\d.]+)'.format(operator, item.upper()), data)
+            match = re.search(fr'#define\s+IDF_PERFORMANCE_{operator}_{item.upper()}\s+([\d.]+)', data)
             return float(match.group(1))  # type: ignore
 
         def _check_perf(operator: str, standard_value: float) -> None:
@@ -198,7 +198,7 @@ def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
                 ret = value >= standard_value
             if not ret:
                 raise AssertionError(
-                    "[Performance] {} value is {}, doesn't meet pass standard {}".format(item, value, standard_value)
+                    f"[Performance] {item} value is {value}, doesn't meet pass standard {standard_value}"
                 )
 
         path_prefix = os.path.join(idf_path, 'components', 'idf_test', 'include')
@@ -212,7 +212,7 @@ def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
             for performance_file in performance_files:
                 try:
                     standard = _find_perf_item(op, performance_file)
-                except (IOError, AttributeError):
+                except (OSError, AttributeError):
                     # performance file doesn't exist or match is not found in it
                     continue
 
@@ -221,13 +221,13 @@ def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
                 break
 
         if not found_item:
-            raise AssertionError('Failed to get performance standard for {}'.format(item))
+            raise AssertionError(f'Failed to get performance standard for {item}')
 
     return real_func
 
 
 @pytest.fixture
-def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
+def log_minimum_free_heap_size(dut: IdfDut, config: str) -> t.Callable[..., None]:
     def real_func() -> None:
         res = dut.expect(r'Minimum free heap size: (\d+) bytes')
         logging.info(
@@ -278,28 +278,52 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--app-info-basedir',
         default=IDF_PATH,
         help='app info base directory. specify this value when you\'re building under a '
-             'different IDF_PATH. (Default: $IDF_PATH)',
+        'different IDF_PATH. (Default: $IDF_PATH)',
     )
     idf_group.addoption(
         '--app-info-filepattern',
         help='glob pattern to specify the files that include built app info generated by '
-             '`idf-build-apps --collect-app-info ...`. will not raise ValueError when binary '
-             'paths not exist in local file system if not listed recorded in the app info.',
+        '`idf-build-apps --collect-app-info ...`. will not raise ValueError when binary '
+        'paths not exist in local file system if not listed recorded in the app info.',
     )
 
 
 def pytest_configure(config: Config) -> None:
     # cli option "--target"
-    target = config.getoption('target') or ''
+    target = [_t.strip().lower() for _t in (config.getoption('target', '') or '').split(',') if _t.strip()]
+
+    # add markers based on idf_pytest/constants.py
+    for name, description in {
+        **TARGET_MARKERS,
+        **ENV_MARKERS,
+        **SPECIAL_MARKERS,
+    }.items():
+        config.addinivalue_line('markers', f'{name}: {description}')
 
     help_commands = ['--help', '--fixtures', '--markers', '--version']
     for cmd in help_commands:
         if cmd in config.invocation_params.args:
-            target = 'unneeded'
+            target = ['unneeded']
             break
 
-    if not target:  # also could specify through markexpr via "-m"
-        target = get_target_marker_from_expr(config.getoption('markexpr') or '')
+    markexpr = config.getoption('markexpr') or ''
+    # check marker expr set via "pytest -m"
+    if not target and markexpr:
+        # we use `-m "esp32 and generic"` in our CI to filter the test cases
+        # this doesn't cover all use cases, but fit what we do in CI.
+        for marker in markexpr.split('and'):
+            marker = marker.strip()
+            if marker in TARGET_MARKERS:
+                target.append(marker)
+
+    # "--target" must be set
+    if not target:
+        raise SystemExit(
+            """Pass `--target TARGET[,TARGET...]` to specify all targets the test cases are using.
+    - for single DUT, we run with `pytest --target esp32`
+    - for multi DUT, we run with `pytest --target esp32,esp32,esp32s2` to indicate all DUTs
+"""
+        )
 
     apps_list = None
     app_info_basedir = config.getoption('app_info_basedir')
@@ -326,13 +350,9 @@ def pytest_configure(config: Config) -> None:
 
     config.stash[IDF_PYTEST_EMBEDDED_KEY] = IdfPytestEmbedded(
         target=target,
-        sdkconfig=config.getoption('sdkconfig'),
         apps_list=apps_list,
     )
     config.pluginmanager.register(config.stash[IDF_PYTEST_EMBEDDED_KEY])
-
-    for name, description in {**TARGET_MARKERS, **ENV_MARKERS, **SPECIAL_MARKERS}.items():
-        config.addinivalue_line('markers', f'{name}: {description}')
 
 
 def pytest_unconfigure(config: Config) -> None:
