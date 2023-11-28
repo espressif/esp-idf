@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -46,10 +46,9 @@ typedef union {
     struct {
         /** apb_fifo_mask : R/W; bitpos: [0]; default: 0;
          *  1'b0: fifo mode to wr/rd clut0/clut1 RAM through register
-         *  PPA_SR_CLUT_DATA_REG/PPA_BLEND0_CLUT_DATA_REG/PPA_BLEND1_CLUT_DATA_REG. 1'b1:
-         *  memory mode to wr/rd sr/blend0/blend1 clut RAM. The bit 11 and 10 of the waddr
-         *  should be 01 to access sr clut and should be 10 to access blend0 clut and should be
-         *  11 to access blend 1 clut in memory mode.
+         *  PPA_BLEND0_CLUT_DATA_REG/PPA_BLEND1_CLUT_DATA_REG. 1'b1:
+         *  memory mode to wr/rd blend0/blend1 clut RAM. The bit 11 and 10 of the waddr
+         *  should be 01 to access blend0 clut and should be 10 to access blend1 clut in memory mode.
          */
         uint32_t apb_fifo_mask:1;
         /** blend0_clut_mem_rst : R/W; bitpos: [1]; default: 0;
@@ -68,18 +67,18 @@ typedef union {
          *  Write 1 then write 0 to reset the read address of BLEND1 CLUT in fifo mode.
          */
         uint32_t blend1_clut_mem_rdaddr_rst:1;
-        /** blend0_clut_mem_force_pd : R/W; bitpos: [5]; default: 0;
+        /** blend_clut_mem_force_pd : R/W; bitpos: [5]; default: 0;
          *  1: force power down BLEND CLUT memory.
          */
-        uint32_t blend0_clut_mem_force_pd:1;
-        /** blend0_clut_mem_force_pu : R/W; bitpos: [6]; default: 0;
+        uint32_t blend_clut_mem_force_pd:1;
+        /** blend_clut_mem_force_pu : R/W; bitpos: [6]; default: 0;
          *  1: force power up BLEND CLUT memory.
          */
-        uint32_t blend0_clut_mem_force_pu:1;
-        /** blend0_clut_mem_clk_ena : R/W; bitpos: [7]; default: 0;
+        uint32_t blend_clut_mem_force_pu:1;
+        /** blend_clut_mem_clk_ena : R/W; bitpos: [7]; default: 0;
          *  1: Force clock on for BLEND CLUT memory.
          */
-        uint32_t blend0_clut_mem_clk_ena:1;
+        uint32_t blend_clut_mem_clk_ena:1;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -108,14 +107,14 @@ typedef union {
          *  YUV output range when reg_sr_tx_cm is 4'd8. 0: limit range. 1: full range
          */
         uint32_t yuv_tx_range:1;
-        /** yuv2rgb_protocal : R/W; bitpos: [10]; default: 0;
-         *  YUV to RGB protocal when reg_sr_rx_cm is 4'd8. 0: BT601. 1: BT709
+        /** yuv2rgb_protocol : R/W; bitpos: [10]; default: 0;
+         *  YUV to RGB protocol when reg_sr_rx_cm is 4'd8. 0: BT601. 1: BT709
          */
-        uint32_t yuv2rgb_protocal:1;
-        /** rgb2yuv_protocal : R/W; bitpos: [11]; default: 0;
-         *  RGB to YUV protocal when reg_sr_tx_cm is 4'd8. 0: BT601. 1: BT709
+        uint32_t yuv2rgb_protocol:1;
+        /** rgb2yuv_protocol : R/W; bitpos: [11]; default: 0;
+         *  RGB to YUV protocol when reg_sr_tx_cm is 4'd8. 0: BT601. 1: BT709
          */
-        uint32_t rgb2yuv_protocal:1;
+        uint32_t rgb2yuv_protocol:1;
         uint32_t reserved_12:20;
     };
     uint32_t val;
@@ -857,7 +856,7 @@ typedef union {
 } ppa_date_reg_t;
 
 
-typedef struct {
+typedef struct ppa_dev_t {
     volatile ppa_blend0_clut_data_reg_t blend0_clut_data;
     volatile ppa_blend1_clut_data_reg_t blend1_clut_data;
     uint32_t reserved_008;
@@ -898,6 +897,7 @@ typedef struct {
     volatile ppa_date_reg_t date;
 } ppa_dev_t;
 
+extern ppa_dev_t PPA;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(ppa_dev_t) == 0x104, "Invalid size of ppa_dev_t structure");

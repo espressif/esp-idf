@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,12 +17,17 @@ extern "C" {
 ---------------------------------------------------------------*/
 /**
  * @brief Color Space
+ *
+ * @note Save enum 0 for special purpose
  */
 typedef enum {
-    COLOR_SPACE_RAW,     ///< Color space raw
-    COLOR_SPACE_RGB,     ///< Color space rgb
-    COLOR_SPACE_YUV,     ///< Color space yuv
-    COLOR_SPACE_GRAY,    ///< Color space gray
+    COLOR_SPACE_RAW = 1,     ///< Color space raw
+    COLOR_SPACE_RGB,         ///< Color space rgb
+    COLOR_SPACE_YUV,         ///< Color space yuv
+    COLOR_SPACE_GRAY,        ///< Color space gray
+    COLOR_SPACE_ARGB,        ///< Color space argb
+    COLOR_SPACE_ALPHA,       ///< Color space alpha (A)
+    COLOR_SPACE_CLUT,        ///< Color look-up table (L)
 } color_space_t;
 
 /*---------------------------------------------------------------
@@ -63,6 +68,29 @@ typedef enum {
     COLOR_PIXEL_GRAY4,    ///< 4 bits, grayscale
     COLOR_PIXEL_GRAY8,    ///< 8 bits, grayscale
 } color_pixel_gray_format_t;
+
+/**
+ * @brief ARGB Format
+ */
+typedef enum {
+    COLOR_PIXEL_ARGB8888,   ///< 32 bits, 8 bits per A(alpha)/R/G/B value
+} color_pixel_argb_format_t;
+
+/**
+ * @brief Alpha(A) Format
+ */
+typedef enum {
+    COLOR_PIXEL_A4,   ///< 4 bits, opacity only
+    COLOR_PIXEL_A8,   ///< 8 bits, opacity only
+} color_pixel_alpha_format_t;
+
+/**
+ * @brief CLUT(L) Format
+ */
+typedef enum {
+    COLOR_PIXEL_L4,   ///< 4 bits, color look-up table
+    COLOR_PIXEL_L8,   ///< 8 bits, color look-up table
+} color_pixel_clut_format_t;
 
 /*---------------------------------------------------------------
                 Color Space Pixel Struct Type
