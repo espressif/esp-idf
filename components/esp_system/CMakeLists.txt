@@ -29,6 +29,7 @@ else()
             "panic.c"
             "esp_system.c"
             "startup.c"
+            "startup_funcs.c"
             "system_time.c"
             "stack_check.c"
             "ubsan.c"
@@ -97,6 +98,7 @@ endif()
 # due to -ffunction-sections -Wl,--gc-sections options.
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __ubsan_include")
 
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_system_include_startup_funcs")
 
 # [refactor-todo] requirements due to init code, should be removable
 # once link-time registration of component init functions is used.

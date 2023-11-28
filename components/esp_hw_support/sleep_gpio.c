@@ -185,7 +185,7 @@ void esp_deep_sleep_wakeup_io_reset(void)
 }
 
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
-ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, BIT(0), 105)
+ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, SECONDARY, BIT(0), 105)
 {
 /* If the TOP domain is powered off, the GPIO will also be powered off during sleep,
    and all configurations in the sleep state of GPIO will not take effect.*/

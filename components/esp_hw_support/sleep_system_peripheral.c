@@ -259,7 +259,7 @@ bool peripheral_domain_pd_allowed(void)
 }
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-ESP_SYSTEM_INIT_FN(sleep_sys_periph_startup_init, BIT(0), 107)
+ESP_SYSTEM_INIT_FN(sleep_sys_periph_startup_init, SECONDARY, BIT(0), 107)
 {
     sleep_sys_periph_retention_init();
     return ESP_OK;

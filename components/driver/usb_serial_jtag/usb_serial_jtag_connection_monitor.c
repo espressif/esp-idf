@@ -68,7 +68,7 @@ static void IRAM_ATTR usb_serial_jtag_sof_tick_hook(void)
     }
 }
 
-ESP_SYSTEM_INIT_FN(usb_serial_jtag_conn_status_init, BIT(0), 230)
+ESP_SYSTEM_INIT_FN(usb_serial_jtag_conn_status_init, SECONDARY, BIT(0), 230)
 {
 #if CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION
     ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "usb_serial_jtag", &s_usb_serial_jtag_pm_lock),
