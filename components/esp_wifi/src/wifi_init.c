@@ -145,6 +145,7 @@ static esp_err_t wifi_deinit_internal(void)
 #ifdef CONFIG_PM_ENABLE
     if (s_wifi_modem_sleep_lock) {
         esp_pm_lock_delete(s_wifi_modem_sleep_lock);
+        s_wifi_modem_sleep_lock = NULL;
     }
 #endif
     esp_wifi_power_domain_off();
