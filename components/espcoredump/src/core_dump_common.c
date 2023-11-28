@@ -151,8 +151,10 @@ inline void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *wr
     esp_err_t err = ESP_ERR_NOT_SUPPORTED;
     s_exc_frame = (void*) info->frame;
 
+    bool isr_context = esp_core_dump_in_isr_context();
+
     esp_core_dump_setup_stack();
-    esp_core_dump_port_init(info);
+    esp_core_dump_port_init(info, isr_context);
 #if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
     err = esp_core_dump_write_binary(write_cfg);
 #elif CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
