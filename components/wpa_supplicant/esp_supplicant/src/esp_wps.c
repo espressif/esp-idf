@@ -1852,6 +1852,11 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
         return ESP_ERR_WIFI_MODE;
     }
 
+    if (is_dpp_enabled()) {
+        wpa_printf(MSG_ERROR, "wps enabled failed since DPP is initialized");
+        return ESP_FAIL;
+    }
+
     API_MUTEX_TAKE();
     if (s_wps_enabled) {
         if (sm && os_memcmp(sm->identity, WSC_ID_REGISTRAR, sm->identity_len) == 0) {
@@ -1903,10 +1908,6 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
     if (config->wps_type == WPS_TYPE_DISABLE) {
         wpa_printf(MSG_ERROR, "wps enable: invalid wps type");
         return ESP_ERR_WIFI_WPS_TYPE;
-    }
-    if (is_dpp_enabled()) {
-        wpa_printf(MSG_ERROR, "wps enabled failed since DPP is initialized");
-        return ESP_FAIL;
     }
     wpa_printf(MSG_DEBUG, "Set factory information.");
     ret = wps_set_factory_info(config);
