@@ -217,6 +217,14 @@ pytest_examples_esp32c6_generic:
     - build_pytest_examples_esp32c6
   tags: [ esp32c6, generic ]
 
+pytest_examples_esp32c6_usj_device:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c6
+  needs:
+    - job: build_pytest_examples_esp32c6
+  tags: [ esp32c6, usj_device ]
+
 pytest_examples_esp32h2_generic:
   extends:
     - .pytest_examples_dir_template
