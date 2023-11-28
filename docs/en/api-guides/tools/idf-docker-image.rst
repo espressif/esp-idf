@@ -68,7 +68,7 @@ The above command explained:
 
 .. note::
 
-   When the mounted directory, ``/project``, contains a git repository owned by a different user (``UID``) than the one running the Docker container, git commands executed within ``/project`` might fail, displaying an error message ``fatal: detected dubious ownership in repository at '/project'``. To resolve this issue, you can designate the ``/project`` directory as safe by setting the IDF_GIT_SAFE_DIR environment variable during the docker container startup. For instance, you can achieve this by including ``-e IDF_GIT_SAFE_DIR='/project'`` as a parameter. Additionally, multiple directories can be specified by using a ``:`` separator. To entirely disable this git security check, ``*`` can be used.
+   When the mounted directory, ``/project``, contains a git repository owned by a different user (``UID``) than the one running the Docker container, git commands executed within ``/project`` might fail, displaying an error message ``fatal: detected dubious ownership in repository at '/project'``. To resolve this issue, you can designate the ``/project`` directory as safe by setting the IDF_GIT_SAFE_DIR environment variable during the Docker container startup. For instance, you can achieve this by including ``-e IDF_GIT_SAFE_DIR='/project'`` as a parameter. Additionally, multiple directories can be specified by using a ``:`` separator. To entirely disable this git security check, ``*`` can be used.
 
 To build with a specific Docker image tag, specify it as ``espressif/idf:TAG``, for example:
 

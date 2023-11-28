@@ -66,6 +66,10 @@ IDF Docker 镜像 (``espressif/idf``) 为使用特定版本的 ESP-IDF 自动化
 - ``espressif/idf``：使用标签为 ``latest`` 的 Docker 镜像 ``espressif/idf``。未指定标签时，Docker 会隐式添加 ``latest`` 标签。
 - ``idf.py build``：在容器内运行此命令。
 
+.. note::
+
+   如果挂载目录 ``/project`` 包含的 git 仓库的用户 (``UID``) 不同于运行 Docker 容器的用户，在 ``/project`` 中执行 git 命令可能会失败，并显示错误信息 ``fatal: detected dubious ownership in repository at '/project'``。如需解决此问题，可以在启动 Docker 容器时设置 IDF_GIT_SAFE_DIR 环境变量，将 ``/project`` 目录指定为安全目录。例如，可以将 ``-e IDF_GIT_SAFE_DIR='/project'`` 作为参数包含，还可以使用分隔符 ``:`` 指定多个目录，或使用 ``*`` 完全禁用此项 git 安全检查。
+
 要以特定 Docker 镜像标签进行构建，请将其指定为 ``espressif/idf:TAG``，示例如下：
 
 .. code-block:: bash
