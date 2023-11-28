@@ -6,6 +6,7 @@
 
 #include "utils/includes.h"
 #include "utils/common.h"
+#include "utils/eloop.h"
 #include "common/defs.h"
 
 #include "esp_dpp_i.h"
@@ -35,6 +36,7 @@ struct action_rx_param {
     u32 vendor_data_len;
     struct ieee80211_action *action_frm;
 };
+
 
 static int esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
 {
@@ -77,6 +79,20 @@ static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
         s_dpp_ctx.dpp_auth = NULL;
     }
     s_dpp_ctx.dpp_event_cb(evt, data);
+}
+
+static void esp_dpp_auth_conf_wait_timeout(void *eloop_ctx, void *timeout_ctx)
+{
+    if (!s_dpp_ctx.dpp_auth || !s_dpp_ctx.dpp_auth->waiting_auth_conf)
+        return;
+
+    wpa_printf(MSG_DEBUG,
+           "DPP: Terminate authentication exchange due to Auth Confirm timeout");
+    if (s_dpp_ctx.dpp_auth) {
+        dpp_auth_deinit(s_dpp_ctx.dpp_auth);
+        s_dpp_ctx.dpp_auth = NULL;
+    }
+    esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_AUTH_TIMEOUT);
 }
 
 void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
@@ -155,6 +171,9 @@ static void esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *dpp_d
     esp_send_action_frame(rx_param->sa, wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
                           wpabuf_len(s_dpp_ctx.dpp_auth->resp_msg),
                           rx_param->channel, OFFCHAN_TX_WAIT_TIME);
+    eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL,NULL);
+    eloop_register_timeout(ESP_DPP_AUTH_TIMEOUT_SECS, 0, esp_dpp_auth_conf_wait_timeout,NULL, NULL);
+
     return;
 fail:
     esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)rc);
@@ -238,6 +257,8 @@ static void esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_
         rc = ESP_ERR_DPP_FAILURE;
         goto fail;
     }
+
+    eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
 
     if (dpp_auth_conf_rx(auth, (const u8 *)&public_action->v,
                          dpp_data, len) < 0) {
@@ -362,6 +383,7 @@ static void esp_dpp_task(void *pvParameters )
             switch (evt->id) {
             case SIG_DPP_DEL_TASK:
                 struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
+                eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
                 if (params->info) {
                     os_free(params->info);
                     params->info = NULL;
@@ -485,6 +507,7 @@ static void offchan_event_handler(void *arg, esp_event_base_t event_base,
                    evt->status, (uint32_t)evt->context);
 
         if (evt->status) {
+            eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
             esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
         }
 
