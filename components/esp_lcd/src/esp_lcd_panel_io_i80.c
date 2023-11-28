@@ -455,8 +455,9 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->i80_device = next_device;
     trans_desc->cmd_cycles = cmd_cycles;
     trans_desc->cmd_value = lcd_cmd;
-    trans_desc->data = param ? bus->format_buffer : NULL;
-    trans_desc->data_length = param ? param_len : 0;
+    // either the param is NULL or the param_size is zero, means there isn't a data phase in this transaction
+    trans_desc->data = (param && param_len) ? bus->format_buffer : NULL;
+    trans_desc->data_length = trans_desc->data ? param_len : 0;
     trans_desc->trans_done_cb = NULL; // no callback for parameter transaction
     // mount data to DMA links
     lcd_com_mount_dma_data(bus->dma_nodes, trans_desc->data, trans_desc->data_length);
