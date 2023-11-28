@@ -159,7 +159,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         coredump_to_flash = coredump_to_flash_config.rstrip().endswith('y') if coredump_to_flash_config else False
 
         prog = os.path.join(project_desc['build_dir'], project_desc['app_elf'])
-        args.port = args.port or get_default_serial_port()
 
         espcoredump_kwargs = dict()
 
