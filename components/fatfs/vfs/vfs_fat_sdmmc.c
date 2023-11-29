@@ -464,16 +464,19 @@ esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card)
         return ESP_ERR_INVALID_STATE;
     }
 
+    //unmount
+    char drv[3] = {(char)('0' + pdrv), ':', 0};
+    FRESULT res = f_mount(0, drv, 0);
+    if (res != FR_OK) {
+        ESP_LOGE(TAG, "f_mount unmount failed (%d)", res);
+        return ESP_FAIL;
+    }
+
     const size_t workbuf_size = 4096;
     void *workbuf = ff_memalloc(workbuf_size);
     if (workbuf == NULL) {
         return ESP_ERR_NO_MEM;
     }
-
-    //unmount
-    char drv[3] = {(char)('0' + pdrv), ':', 0};
-    FRESULT res = f_mount(0, drv, 0);
-    ESP_RETURN_ON_FALSE(res != FR_INVALID_DRIVE, ESP_FAIL, TAG, "f_mount unmount failed (%d) - the logical drive number is invalid", res);
 
     //format
     uint32_t id = FF_VOLUMES;
