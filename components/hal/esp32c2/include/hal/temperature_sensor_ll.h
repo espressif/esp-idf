@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "soc/soc_caps.h"
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,7 +93,7 @@ static inline void temperature_sensor_ll_set_range(uint32_t range)
  */
 static inline uint32_t temperature_sensor_ll_get_raw_value(void)
 {
-    return APB_SARADC.saradc_apb_tsens_ctrl.saradc_reg_tsens_out;
+    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_reg_tsens_out);
 }
 
 /**
@@ -116,7 +117,7 @@ static inline uint32_t temperature_sensor_ll_get_offset(void)
  */
 static inline uint32_t temperature_sensor_ll_get_clk_div(void)
 {
-    return APB_SARADC.saradc_apb_tsens_ctrl.saradc_reg_tsens_clk_div;
+    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_reg_tsens_clk_div);
 }
 
 /**
@@ -129,7 +130,7 @@ static inline uint32_t temperature_sensor_ll_get_clk_div(void)
  */
 static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 {
-    APB_SARADC.saradc_apb_tsens_ctrl.saradc_reg_tsens_clk_div = clk_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_reg_tsens_clk_div, clk_div);
 }
 
 #ifdef __cplusplus
