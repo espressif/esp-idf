@@ -331,7 +331,7 @@ esp_err_t esp_partition_file_munmap(void)
         return ESP_ERR_NOT_FOUND;
     }
 
-    unload_partitions();
+    esp_partition_unload_all();
 
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
     free(s_esp_partition_stat_sector_erase_count);
