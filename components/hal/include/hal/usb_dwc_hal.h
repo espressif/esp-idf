@@ -32,6 +32,30 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 // ----------------------- Configs -------------------------
 
 /**
+ * @brief Possible FIFO biases
+ */
+typedef enum {
+    USB_HAL_FIFO_BIAS_DEFAULT,           /**< Default (balanced) FIFO sizes */
+    USB_HAL_FIFO_BIAS_RX,                /**< Bigger RX FIFO for IN transfers */
+    USB_HAL_FIFO_BIAS_PTX,               /**< Bigger periodic TX FIFO for ISOC OUT transfers */
+} usb_hal_fifo_bias_t;
+
+/**
+ * @brief MPS limits based on FIFO configuration
+ *
+ * In bytes
+ *
+ * The resulting values depend on
+ * 1. FIFO total size (chip specific)
+ * 2. Set FIFO bias
+ */
+typedef struct {
+    unsigned int in_mps;                 /**< Maximum packet size of IN packet */
+    unsigned int non_periodic_out_mps;   /**< Maximum packet size of BULK and CTRL OUT packets */
+    unsigned int periodic_out_mps;       /**< Maximum packet size of INTR and ISOC OUT packets */
+} usb_hal_fifo_mps_limits_t;
+
+/**
  * @brief FIFO size configuration structure
  */
 typedef struct {
@@ -151,8 +175,10 @@ typedef struct {
     //Context
     usb_dwc_dev_t *dev;                            /**< Pointer to base address of DWC_OTG registers */
     //Host Port related
-    uint32_t *periodic_frame_list;              /**< Pointer to scheduling frame list */
-    usb_hal_frame_list_len_t frame_list_len;    /**< Length of the periodic scheduling frame list */
+    uint32_t *periodic_frame_list;                 /**< Pointer to scheduling frame list */
+    usb_hal_frame_list_len_t frame_list_len;       /**< Length of the periodic scheduling frame list */
+    //FIFO related
+    const usb_dwc_hal_fifo_config_t *fifo_config;  /**< FIFO sizes configuration */
     union {
         struct {
             uint32_t dbnc_lock_enabled: 1;      /**< Debounce lock enabled */
@@ -221,21 +247,28 @@ void usb_dwc_hal_deinit(usb_dwc_hal_context_t *hal);
 void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal);
 
 /**
- * @brief Set FIFO sizes
+ * @brief Set FIFO bias
  *
  * This function will set the sizes of each of the FIFOs (RX FIFO, Non-periodic TX FIFO, Periodic TX FIFO) and must be
- * called at least once before allocating the channel. Based on the type of endpoints (and the endpionts' MPS), there
+ * called at least once before allocating the channel. Based on the type of endpoints (and the endpoints' MPS), there
  * may be situations where this function may need to be called again to resize the FIFOs. If resizing FIFOs dynamically,
  * it is the user's responsibility to ensure there are no active channels when this function is called.
  *
- * @note The totol size of all the FIFOs must be less than or equal to USB_DWC_FIFO_TOTAL_USABLE_LINES
  * @note After a port reset, the FIFO size registers will reset to their default values, so this function must be called
  *       again post reset.
  *
- * @param hal Context of the HAL layer
- * @param fifo_config FIFO configuration
+ * @param[in] hal       Context of the HAL layer
+ * @param[in] fifo_bias FIFO bias configuration
  */
-void usb_dwc_hal_set_fifo_size(usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *fifo_config);
+void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias);
+
+/**
+ * @brief Get MPS limits
+ *
+ * @param[in]  hal        Context of the HAL layer
+ * @param[out] mps_limits MPS limits
+ */
+void usb_dwc_hal_get_mps_limits(usb_dwc_hal_context_t *hal, usb_hal_fifo_mps_limits_t *mps_limits);
 
 // ---------------------------------------------------- Host Port ------------------------------------------------------
 
