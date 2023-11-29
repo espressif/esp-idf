@@ -27,6 +27,35 @@
 #define CORE_REG_GHWCFG3    0x00C804B5
 #define CORE_REG_GHWCFG4    0xD3F0A030
 
+// ----------------------- Configs -------------------------
+
+/**
+ * @brief Default FIFO sizes (see 2.1.2.4 for programming guide)
+ */
+const usb_dwc_hal_fifo_config_t fifo_config_default = {
+    .rx_fifo_lines =   USB_DWC_FIFO_RX_LINES_DEFAULT,
+    .nptx_fifo_lines = USB_DWC_FIFO_NPTX_LINES_DEFAULT,
+    .ptx_fifo_lines =  USB_DWC_FIFO_PTX_LINES_DEFAULT,
+};
+
+/**
+ * @brief FIFO sizes that bias to giving RX FIFO more capacity
+ */
+const usb_dwc_hal_fifo_config_t fifo_config_bias_rx = {
+    .rx_fifo_lines = USB_DWC_FIFO_RX_LINES_BIASRX,
+    .nptx_fifo_lines = USB_DWC_FIFO_NPTX_LINES_BIASRX,
+    .ptx_fifo_lines = USB_DWC_FIFO_PTX_LINES_BIASRX,
+};
+
+/**
+ * @brief FIFO sizes that bias to giving Periodic TX FIFO more capacity (i.e., ISOC OUT)
+ */
+const usb_dwc_hal_fifo_config_t fifo_config_bias_ptx = {
+    .rx_fifo_lines = USB_DWC_FIFO_RX_LINES_BIASTX,
+    .nptx_fifo_lines = USB_DWC_FIFO_NPTX_LINES_BIASTX,
+    .ptx_fifo_lines = USB_DWC_FIFO_PTX_LINES_BIASTX,
+};
+
 // -------------------- Configurable -----------------------
 
 /**
@@ -162,8 +191,23 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal)
     memset(hal->channels.hdls, 0, sizeof(usb_dwc_hal_chan_t *) * USB_DWC_NUM_HOST_CHAN);
 }
 
-void usb_dwc_hal_set_fifo_size(usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *fifo_config)
+void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias)
 {
+    const usb_dwc_hal_fifo_config_t *fifo_config;
+    switch (fifo_bias) {
+        case USB_HAL_FIFO_BIAS_DEFAULT:
+            fifo_config = &fifo_config_default;
+            break;
+        case USB_HAL_FIFO_BIAS_RX:
+            fifo_config = &fifo_config_bias_rx;
+            break;
+        case USB_HAL_FIFO_BIAS_PTX:
+            fifo_config = &fifo_config_bias_ptx;
+            break;
+        default:
+            abort();
+    }
+
     HAL_ASSERT((fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines + fifo_config->ptx_fifo_lines) <= USB_DWC_FIFO_TOTAL_USABLE_LINES);
     //Check that none of the channels are active
     for (int i = 0; i < USB_DWC_NUM_HOST_CHAN; i++) {
@@ -179,7 +223,19 @@ void usb_dwc_hal_set_fifo_size(usb_dwc_hal_context_t *hal, const usb_dwc_hal_fif
     usb_dwc_ll_grstctl_flush_nptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_ptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_rx_fifo(hal->dev);
+    hal->fifo_config = fifo_config;
     hal->flags.fifo_sizes_set = 1;
+}
+
+void usb_dwc_hal_get_mps_limits(usb_dwc_hal_context_t *hal, usb_hal_fifo_mps_limits_t *mps_limits)
+{
+    HAL_ASSERT(hal && mps_limits);
+    HAL_ASSERT(hal->flags.fifo_sizes_set);
+
+    const usb_dwc_hal_fifo_config_t *fifo_config = hal->fifo_config;
+    mps_limits->in_mps = (fifo_config->rx_fifo_lines - 2) * 4; // Two lines are reserved for status quadlets internally by USB_DWC
+    mps_limits->non_periodic_out_mps = fifo_config->nptx_fifo_lines * 4;
+    mps_limits->periodic_out_mps = fifo_config->ptx_fifo_lines * 4;
 }
 
 // ---------------------------------------------------- Host Port ------------------------------------------------------

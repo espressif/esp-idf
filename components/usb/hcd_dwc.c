@@ -39,72 +39,6 @@
 
 // ----------------------- Configs -------------------------
 
-/**
- * @brief Default FIFO sizes (see 2.1.2.4 for programming guide)
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 48 - 48 = 104
- * - Worst case can accommodate two packets of 204 bytes, or one packet of 408
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 3 = 48
- * - Worst case can accommodate three packets of 64 bytes or one packet of 192
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 3 = 48
- * - Worst case can accommodate three packets of 64 bytes or one packet of 192
- */
-const usb_dwc_hal_fifo_config_t fifo_config_default = {
-    .rx_fifo_lines = 104,
-    .nptx_fifo_lines = 48,
-    .ptx_fifo_lines = 48,
-};
-
-/**
- * @brief FIFO sizes that bias to giving RX FIFO more capacity
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 32 - 16 = 152
- * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 1 packets: (64/4) * 1 = 16
- * - Worst case can accommodate one packet of 64 bytes
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 2 = 32
- * - Worst case can accommodate two packets of 64 bytes or one packet of 128
- */
-const usb_dwc_hal_fifo_config_t fifo_config_bias_rx = {
-    .rx_fifo_lines = 152,
-    .nptx_fifo_lines = 16,
-    .ptx_fifo_lines = 32,
-};
-
-/**
- * @brief FIFO sizes that bias to giving Periodic TX FIFO more capacity (i.e., ISOC OUT)
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Assume LPS is 64, and 2 packets: ((64/4) * 2) + 2 = 34
- * - Worst case can accommodate two packets of 64 bytes or one packet of 128
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 1 packets: (64/4) * 1 = 16
- * - Worst case can accommodate one packet of 64 bytes
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 34 - 16 = 150
- * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
- */
-const usb_dwc_hal_fifo_config_t fifo_config_bias_ptx = {
-    .rx_fifo_lines = 34,
-    .nptx_fifo_lines = 16,
-    .ptx_fifo_lines = 150,
-};
-
 #define FRAME_LIST_LEN                          USB_HAL_FRAME_LIST_LEN_32
 #define NUM_BUFFERS                             2
 
@@ -280,7 +214,7 @@ struct port_obj {
     } flags;
     bool initialized;
     // FIFO biasing related
-    const usb_dwc_hal_fifo_config_t *fifo_config;
+    usb_hal_fifo_bias_t fifo_bias;                  // Bias is saved so it can be reconfigured upon reset
     // Port callback and context
     hcd_port_callback_t callback;
     void *callback_arg;
@@ -729,7 +663,7 @@ static bool _internal_pipe_event_notify(pipe_t *pipe, bool from_isr)
     return ret;
 }
 
-// ----------------- Interrupt Handlers --------------------
+// ----------------- HAL <-> USB helpers --------------------
 
 static usb_speed_t get_usb_port_speed(usb_dwc_speed_t priv)
 {
@@ -740,6 +674,18 @@ static usb_speed_t get_usb_port_speed(usb_dwc_speed_t priv)
         default: abort();
     }
 }
+
+static usb_hal_fifo_bias_t get_hal_fifo_bias(hcd_port_fifo_bias_t public)
+{
+    switch (public) {
+        case HCD_PORT_FIFO_BIAS_BALANCED: return USB_HAL_FIFO_BIAS_DEFAULT;
+        case HCD_PORT_FIFO_BIAS_RX: return USB_HAL_FIFO_BIAS_RX;
+        case HCD_PORT_FIFO_BIAS_PTX: return USB_HAL_FIFO_BIAS_PTX;
+        default: abort();
+    }
+}
+
+// ----------------- Interrupt Handlers --------------------
 
 /**
  * @brief Handle a HAL port interrupt and obtain the corresponding port event
@@ -1192,7 +1138,7 @@ static esp_err_t _port_cmd_reset(port_t *port)
         goto bailout;
     }
     // Set FIFO sizes based on the selected biasing
-    usb_dwc_hal_set_fifo_size(port->hal, port->fifo_config);
+    usb_dwc_hal_set_fifo_bias(port->hal, port->fifo_bias);
     // We start periodic scheduling only after a RESET command since SOFs only start after a reset
     usb_dwc_hal_port_set_frame_list(port->hal, port->frame_list, FRAME_LIST_LEN);
     usb_dwc_hal_port_periodic_enable(port->hal);
@@ -1289,24 +1235,6 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     HCD_CHECK(port_number > 0 && port_config != NULL && port_hdl != NULL, ESP_ERR_INVALID_ARG);
     HCD_CHECK(port_number <= NUM_PORTS, ESP_ERR_NOT_FOUND);
 
-    // Get a pointer to the correct FIFO bias constant values
-    const usb_dwc_hal_fifo_config_t *fifo_config;
-    switch (port_config->fifo_bias) {
-    case HCD_PORT_FIFO_BIAS_BALANCED:
-        fifo_config = &fifo_config_default;
-        break;
-    case HCD_PORT_FIFO_BIAS_RX:
-        fifo_config = &fifo_config_bias_rx;
-        break;
-    case HCD_PORT_FIFO_BIAS_PTX:
-        fifo_config = &fifo_config_bias_ptx;
-        break;
-    default:
-        fifo_config = NULL;
-        abort();
-        break;
-    }
-
     HCD_ENTER_CRITICAL();
     HCD_CHECK_FROM_CRIT(s_hcd_obj != NULL && !s_hcd_obj->port_obj->initialized, ESP_ERR_INVALID_STATE);
     // Port object memory and resources (such as the mutex) already be allocated. Just need to initialize necessary fields only
@@ -1315,7 +1243,7 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     TAILQ_INIT(&port_obj->pipes_active_tailq);
     port_obj->state = HCD_PORT_STATE_NOT_POWERED;
     port_obj->last_event = HCD_PORT_EVENT_NONE;
-    port_obj->fifo_config = fifo_config;
+    port_obj->fifo_bias = get_hal_fifo_bias(port_config->fifo_bias);
     port_obj->callback = port_config->callback;
     port_obj->callback_arg = port_config->callback_arg;
     port_obj->context = port_config->context;
@@ -1483,31 +1411,16 @@ void *hcd_port_get_context(hcd_port_handle_t port_hdl)
 esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_t bias)
 {
     esp_err_t ret;
-    // Get a pointer to the correct FIFO bias constant values
-    const usb_dwc_hal_fifo_config_t *fifo_config;
-    switch (bias) {
-    case HCD_PORT_FIFO_BIAS_BALANCED:
-        fifo_config = &fifo_config_default;
-        break;
-    case HCD_PORT_FIFO_BIAS_RX:
-        fifo_config = &fifo_config_bias_rx;
-        break;
-    case HCD_PORT_FIFO_BIAS_PTX:
-        fifo_config = &fifo_config_bias_ptx;
-        break;
-    default:
-        fifo_config = NULL;
-        abort();
-        break;
-    }
+    usb_hal_fifo_bias_t hal_bias = get_hal_fifo_bias(bias);
+
     // Configure the new FIFO sizes and store the pointers
     port_t *port = (port_t *)port_hdl;
     xSemaphoreTake(port->port_mux, portMAX_DELAY);
     HCD_ENTER_CRITICAL();
     // Check that port is in the correct state to update FIFO sizes
     if (port->initialized && !port->flags.event_pending && port->num_pipes_idle == 0 && port->num_pipes_queued == 0) {
-        usb_dwc_hal_set_fifo_size(port->hal, fifo_config);
-        port->fifo_config = fifo_config;
+        usb_dwc_hal_set_fifo_bias(port->hal, hal_bias);
+        port->fifo_bias = hal_bias;
         ret = ESP_OK;
     } else {
         ret = ESP_ERR_INVALID_STATE;
@@ -1594,13 +1507,13 @@ static bool pipe_args_usb_compliance_verification(const hcd_pipe_config_t *pipe_
     return true;
 }
 
-static bool pipe_alloc_hcd_support_verification(const usb_ep_desc_t * ep_desc, const usb_dwc_hal_fifo_config_t *fifo_config)
+static bool pipe_alloc_hcd_support_verification(usb_dwc_hal_context_t *hal, const usb_ep_desc_t * ep_desc)
 {
+    assert(hal != NULL);
     assert(ep_desc != NULL);
 
-    const uint32_t limit_in_mps = (fifo_config->rx_fifo_lines - 2) * 4; // Two lines are reserved for status quadlets internally by USB_DWC
-    const uint32_t limit_non_periodic_out_mps = fifo_config->nptx_fifo_lines * 4;
-    const uint32_t limit_periodic_out_mps = fifo_config->ptx_fifo_lines * 4;
+    usb_hal_fifo_mps_limits_t mps_limits = {0};
+    usb_dwc_hal_get_mps_limits(hal, &mps_limits);
     const usb_transfer_type_t type = USB_EP_DESC_GET_XFERTYPE(ep_desc);
 
     // Check the pipe's interval is not zero
@@ -1614,12 +1527,12 @@ static bool pipe_alloc_hcd_support_verification(const usb_ep_desc_t * ep_desc, c
     // Check if pipe MPS exceeds HCD MPS limits (due to DWC FIFO sizing)
     int limit;
     if (USB_EP_DESC_GET_EP_DIR(ep_desc)) { // IN
-        limit = limit_in_mps;
+        limit = mps_limits.in_mps;
     } else {    // OUT
         if (type == USB_TRANSFER_TYPE_CTRL || type == USB_TRANSFER_TYPE_BULK) {
-            limit = limit_non_periodic_out_mps;
+            limit = mps_limits.non_periodic_out_mps;
         } else {
-            limit = limit_periodic_out_mps;
+            limit = mps_limits.periodic_out_mps;
         }
     }
 
@@ -1829,7 +1742,7 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
         return ESP_ERR_NOT_SUPPORTED;
     }
     // Default pipes have a NULL ep_desc thus should skip the HCD support verification
-    if (!is_default && !pipe_alloc_hcd_support_verification(pipe_config->ep_desc, port->fifo_config)) {
+    if (!is_default && !pipe_alloc_hcd_support_verification(port->hal, pipe_config->ep_desc)) {
         return ESP_ERR_NOT_SUPPORTED;
     }
     // Allocate the pipe resources
