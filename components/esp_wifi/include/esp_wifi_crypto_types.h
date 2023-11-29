@@ -134,7 +134,7 @@ typedef int (*esp_sha256_prf_t)(const unsigned char *key, int key_len, const cha
  *
  * @param key Key for HMAC operations
  * @param key_len Length of the key in bytes
- * @param dataPointers to the data area
+ * @param data Pointers to the data area
  * @param data_len Length of the data area
  * @param mac Buffer for the hash (16 bytes)
  * Returns: 0 on success, -1 on failure
@@ -327,7 +327,7 @@ typedef int (*esp_omac1_aes_128_t)(const uint8_t *key, const uint8_t *data, size
  *        Counter Mode Cipher Block Chaining Message Authentication
  *        Code Protocol) which is used in IEEE 802.11i RSN standard.
  * @param tk 128-bit Temporal Key for obtained during 4-way handshake
- * @param hdr Pointer to IEEE802.11 frame headeri needed for AAD
+ * @param ieee80211_hdr Pointer to IEEE802.11 frame headeri needed for AAD
  * @param data Pointer to encrypted data buffer
  * @param data_len Encrypted data length in bytes
  * @param decrypted_len Length of decrypted data
@@ -373,7 +373,7 @@ typedef int (*esp_aes_gmac_t)(const uint8_t *key, size_t keylen, const uint8_t *
  * @param num_elem Number of elements in the data vector
  * @param addr Pointers to the data areas
  * @param len Lengths of the data blocks
- * @param mac Buffer for the hash
+ * @param buf Buffer for the hash
  * Returns: 0 on success, -1 on failure
  */
 typedef int (*esp_sha256_vector_t)(size_t num_elem, const uint8_t *addr[], const size_t *len, uint8_t *buf);
