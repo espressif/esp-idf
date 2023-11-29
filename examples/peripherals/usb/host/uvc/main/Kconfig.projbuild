@@ -30,14 +30,14 @@ menu "Example Configuration"
 
     endchoice
 
-    menu "UVC Protocol parameters"
-        depends on EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM
-
-        config EXAMPLE_NEGOTIATION_ATTEMPTS
-            int "Attempts"
+    config EXAMPLE_NEGOTIATION_ATTEMPTS
+            int "Negotiation attempts"
             default 3
             help
                 Number of attempts to negotiate custom protocol parameters.
+
+    menu "UVC Protocol parameters"
+        depends on EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM
 
         config EXAMPLE_WIDTH_PARAM
             int "Width resolution in pixels"
