@@ -525,9 +525,6 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
 #if REGI2C_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
 #endif
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
-        sleep_retention_do_system_retention(true);
-#endif
     }
 
     // TODO: IDF-7370
@@ -543,9 +540,6 @@ inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
-#endif
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
-    sleep_retention_do_system_retention(false);
 #endif
     sar_periph_ctrl_power_enable();
 #if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
@@ -604,6 +598,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     } else {
         should_skip_sleep = light_sleep_uart_prepare(pd_flags, sleep_duration);
     }
+
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+    if (!deep_sleep && (pd_flags & PMU_SLEEP_PD_TOP)) {
+        sleep_retention_do_system_retention(true);
+    }
+#endif
 
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
@@ -805,6 +805,18 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         rtc_clk_cpu_freq_set_config(&cpu_freq_config);
     }
 
+    esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
+
+    if (!deep_sleep) {
+        s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
+#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+        if (pd_flags & PMU_SLEEP_PD_TOP) {
+            sleep_retention_do_system_retention(false);
+        }
+#endif
+        misc_modules_wake_prepare();
+    }
+
     // Set mspi clock to ROM default one.
     if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
 #if SOC_MEMSPI_CLOCK_IS_INDEPENDENT
@@ -814,13 +826,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         // Turn up MSPI speed if switch to PLL
         mspi_timing_change_speed_mode_cache_safe(false);
 #endif
-    }
-
-    esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
-
-    if (!deep_sleep) {
-        s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
-        misc_modules_wake_prepare();
     }
 
     // re-enable UART output
