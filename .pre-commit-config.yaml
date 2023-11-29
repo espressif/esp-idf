@@ -200,7 +200,7 @@ repos:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
   - repo: https://github.com/espressif/conventional-precommit-linter
-    rev: v1.2.1
+    rev: v1.3.0
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]

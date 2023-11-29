@@ -16,33 +16,6 @@ check_pre_commit:
     - fetch_submodules
     - pre-commit run --files $MODIFIED_FILES
 
-check_MR_style_dangerjs:
-  extends:
-    - .pre_check_template
-  image: node:18.15.0-alpine3.16
-  variables:
-    DANGER_GITLAB_API_TOKEN: ${ESPCI_TOKEN}
-    DANGER_GITLAB_HOST: ${GITLAB_HTTP_SERVER}
-    DANGER_GITLAB_API_BASE_URL: ${GITLAB_HTTP_SERVER}/api/v4
-    DANGER_JIRA_USER: ${DANGER_JIRA_USER}
-    DANGER_JIRA_PASSWORD: ${DANGER_JIRA_PASSWORD}
-  cache:
-    # pull only for most of the use cases since it's cache dir.
-    # Only set "push" policy for "upload_cache" stage jobs
-    key:
-      files:
-        - .gitlab/dangerjs/package-lock.json
-    paths:
-      - .gitlab/dangerjs/node_modules/
-    policy: pull
-  before_script:
-    - cd .gitlab/dangerjs
-    - npm install --no-progress --no-update-notifier  # Install danger dependencies
-  script:
-    - npx danger ci --failOnErrors -v
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
   # esp_idf_version.h in a branch before tagging the next version.
