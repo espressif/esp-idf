@@ -16,7 +16,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "hal/usb_dwc_hal.h"
-#include "hal/usb_types_private.h"
+#include "hal/usb_dwc_types.h"
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
@@ -373,7 +373,7 @@ static void _buffer_exec(pipe_t *pipe);
  */
 static inline bool _buffer_check_done(pipe_t *pipe)
 {
-    if (pipe->ep_char.type != USB_PRIV_XFER_TYPE_CTRL) {
+    if (pipe->ep_char.type != USB_DWC_XFER_TYPE_CTRL) {
         return true;
     }
     // Only control transfers need to be continued
@@ -731,12 +731,12 @@ static bool _internal_pipe_event_notify(pipe_t *pipe, bool from_isr)
 
 // ----------------- Interrupt Handlers --------------------
 
-static usb_speed_t speed_priv_to_public(usb_priv_speed_t priv)
+static usb_speed_t get_usb_port_speed(usb_dwc_speed_t priv)
 {
     switch (priv) {
-        case USB_PRIV_SPEED_LOW: return USB_SPEED_LOW;
-        case USB_PRIV_SPEED_FULL: return USB_SPEED_FULL;
-        case USB_PRIV_SPEED_HIGH: return USB_SPEED_HIGH;
+        case USB_DWC_SPEED_LOW: return USB_SPEED_LOW;
+        case USB_DWC_SPEED_FULL: return USB_SPEED_FULL;
+        case USB_DWC_SPEED_HIGH: return USB_SPEED_HIGH;
         default: abort();
     }
 }
@@ -766,7 +766,7 @@ static hcd_port_event_t _intr_hdlr_hprt(port_t *port, usb_dwc_hal_port_event_t h
     }
     case USB_DWC_HAL_PORT_EVENT_ENABLED: {
         usb_dwc_hal_port_enable(port->hal);  // Initialize remaining host port registers
-        port->speed = speed_priv_to_public(usb_dwc_hal_port_get_conn_speed(port->hal));
+        port->speed = get_usb_port_speed(usb_dwc_hal_port_get_conn_speed(port->hal));
         port->state = HCD_PORT_STATE_ENABLED;
         port->flags.conn_dev_ena = 1;
         // This was triggered by a command, so no event needs to be propagated.
@@ -1407,7 +1407,7 @@ esp_err_t hcd_port_get_speed(hcd_port_handle_t port_hdl, usb_speed_t *speed)
     HCD_ENTER_CRITICAL();
     // Device speed is only valid if there is device connected to the port that has been reset
     HCD_CHECK_FROM_CRIT(port->flags.conn_dev_ena, ESP_ERR_INVALID_STATE);
-    *speed = speed_priv_to_public(usb_dwc_hal_port_get_conn_speed(port->hal));
+    *speed = get_usb_port_speed(usb_dwc_hal_port_get_conn_speed(port->hal));
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -1636,19 +1636,19 @@ static bool pipe_alloc_hcd_support_verification(const usb_ep_desc_t * ep_desc, c
 static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_type_t type, bool is_default_pipe, int pipe_idx, usb_speed_t port_speed, usb_dwc_hal_ep_char_t *ep_char)
 {
     // Initialize EP characteristics
-    usb_priv_xfer_type_t hal_xfer_type;
+    usb_dwc_xfer_type_t hal_xfer_type;
     switch (type) {
     case USB_TRANSFER_TYPE_CTRL:
-        hal_xfer_type = USB_PRIV_XFER_TYPE_CTRL;
+        hal_xfer_type = USB_DWC_XFER_TYPE_CTRL;
         break;
     case USB_TRANSFER_TYPE_ISOCHRONOUS:
-        hal_xfer_type = USB_PRIV_XFER_TYPE_ISOCHRONOUS;
+        hal_xfer_type = USB_DWC_XFER_TYPE_ISOCHRONOUS;
         break;
     case USB_TRANSFER_TYPE_BULK:
-        hal_xfer_type = USB_PRIV_XFER_TYPE_BULK;
+        hal_xfer_type = USB_DWC_XFER_TYPE_BULK;
         break;
     default:    // USB_TRANSFER_TYPE_INTR
-        hal_xfer_type = USB_PRIV_XFER_TYPE_INTR;
+        hal_xfer_type = USB_DWC_XFER_TYPE_INTR;
         break;
     }
     ep_char->type = hal_xfer_type;
@@ -1749,7 +1749,7 @@ static esp_err_t _pipe_cmd_flush(pipe_t *pipe)
             // URBs were never executed, Update the actual_num_bytes and status
             urb->transfer.actual_num_bytes = 0;
             urb->transfer.status = (canceled) ? USB_TRANSFER_STATUS_CANCELED : USB_TRANSFER_STATUS_NO_DEVICE;
-            if (pipe->ep_char.type == USB_PRIV_XFER_TYPE_ISOCHRONOUS) {
+            if (pipe->ep_char.type == USB_DWC_XFER_TYPE_ISOCHRONOUS) {
                 // Update the URB's isoc packet descriptors as well
                 for (int pkt_idx = 0; pkt_idx < urb->transfer.num_isoc_packets; pkt_idx++) {
                     urb->transfer.isoc_packet_desc[pkt_idx].actual_num_bytes = 0;
@@ -2198,11 +2198,11 @@ static void _buffer_fill(pipe_t *pipe)
     int mps = pipe->ep_char.mps;
     usb_transfer_t *transfer = &urb->transfer;
     switch (pipe->ep_char.type) {
-    case USB_PRIV_XFER_TYPE_CTRL: {
+    case USB_DWC_XFER_TYPE_CTRL: {
         _buffer_fill_ctrl(buffer_to_fill, transfer);
         break;
     }
-    case USB_PRIV_XFER_TYPE_ISOCHRONOUS: {
+    case USB_DWC_XFER_TYPE_ISOCHRONOUS: {
         uint32_t start_idx;
         if (pipe->multi_buffer_control.buffer_num_to_exec == 0) {
             // There are no more previously filled buffers to execute. We need to calculate a new start index based on HFNUM and the pipe's schedule
@@ -2228,11 +2228,11 @@ static void _buffer_fill(pipe_t *pipe)
         _buffer_fill_isoc(buffer_to_fill, transfer, is_in, mps, (int)pipe->ep_char.periodic.interval, start_idx);
         break;
     }
-    case USB_PRIV_XFER_TYPE_BULK: {
+    case USB_DWC_XFER_TYPE_BULK: {
         _buffer_fill_bulk(buffer_to_fill, transfer, is_in, mps);
         break;
     }
-    case USB_PRIV_XFER_TYPE_INTR: {
+    case USB_DWC_XFER_TYPE_INTR: {
         _buffer_fill_intr(buffer_to_fill, transfer, is_in, mps);
         break;
     }
@@ -2258,7 +2258,7 @@ static void _buffer_exec(pipe_t *pipe)
     uint32_t start_idx;
     int desc_list_len;
     switch (pipe->ep_char.type) {
-    case USB_PRIV_XFER_TYPE_CTRL: {
+    case USB_DWC_XFER_TYPE_CTRL: {
         start_idx = 0;
         desc_list_len = XFER_LIST_LEN_CTRL;
         // Set the channel's direction to OUT and PID to 0 respectively for the the setup stage
@@ -2266,17 +2266,17 @@ static void _buffer_exec(pipe_t *pipe)
         usb_dwc_hal_chan_set_pid(pipe->chan_obj, 0);   // Setup stage always has a PID of DATA0
         break;
     }
-    case USB_PRIV_XFER_TYPE_ISOCHRONOUS: {
+    case USB_DWC_XFER_TYPE_ISOCHRONOUS: {
         start_idx = buffer_to_exec->flags.isoc.start_idx;
         desc_list_len = XFER_LIST_LEN_ISOC;
         break;
     }
-    case USB_PRIV_XFER_TYPE_BULK: {
+    case USB_DWC_XFER_TYPE_BULK: {
         start_idx = 0;
         desc_list_len = (buffer_to_exec->flags.bulk.zero_len_packet) ? XFER_LIST_LEN_BULK : 1;
         break;
     }
-    case USB_PRIV_XFER_TYPE_INTR: {
+    case USB_DWC_XFER_TYPE_INTR: {
         start_idx = 0;
         desc_list_len = (buffer_to_exec->flags.intr.zero_len_packet) ? buffer_to_exec->flags.intr.num_qtds + 1 : buffer_to_exec->flags.intr.num_qtds;
         break;
@@ -2297,7 +2297,7 @@ static void _buffer_exec(pipe_t *pipe)
 static void _buffer_exec_cont(pipe_t *pipe)
 {
     // This should only ever be called on control transfers
-    assert(pipe->ep_char.type == USB_PRIV_XFER_TYPE_CTRL);
+    assert(pipe->ep_char.type == USB_DWC_XFER_TYPE_CTRL);
     dma_buffer_block_t *buffer_inflight = pipe->buffers[pipe->multi_buffer_control.rd_idx];
     bool next_dir_is_in;
     int next_pid;
@@ -2481,19 +2481,19 @@ static void _buffer_parse(pipe_t *pipe)
     if (buffer_to_parse->status_flags.pipe_event == HCD_PIPE_EVENT_URB_DONE) {
         // URB was successful
         switch (pipe->ep_char.type) {
-        case USB_PRIV_XFER_TYPE_CTRL: {
+        case USB_DWC_XFER_TYPE_CTRL: {
             _buffer_parse_ctrl(buffer_to_parse);
             break;
         }
-        case USB_PRIV_XFER_TYPE_ISOCHRONOUS: {
+        case USB_DWC_XFER_TYPE_ISOCHRONOUS: {
             _buffer_parse_isoc(buffer_to_parse, is_in);
             break;
         }
-        case USB_PRIV_XFER_TYPE_BULK: {
+        case USB_DWC_XFER_TYPE_BULK: {
             _buffer_parse_bulk(buffer_to_parse);
             break;
         }
-        case USB_PRIV_XFER_TYPE_INTR: {
+        case USB_DWC_XFER_TYPE_INTR: {
             _buffer_parse_intr(buffer_to_parse, is_in, mps);
             break;
         }

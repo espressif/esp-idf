@@ -22,7 +22,7 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 #include "soc/usb_dwc_struct.h"
 #include "hal/usb_dwc_ll.h"
 #endif
-#include "hal/usb_types_private.h"
+#include "hal/usb_dwc_types.h"
 #include "hal/assert.h"
 
 #if SOC_USB_OTG_SUPPORTED
@@ -107,7 +107,7 @@ typedef enum {
 typedef struct {
     union {
         struct {
-            usb_priv_xfer_type_t type: 2;   /**< The type of endpoint */
+            usb_dwc_xfer_type_t type: 2;    /**< The type of endpoint */
             uint32_t bEndpointAddress: 8;   /**< Endpoint address (containing endpoint number and direction) */
             uint32_t mps: 11;               /**< Maximum Packet Size */
             uint32_t dev_addr: 8;           /**< Device Address */
@@ -138,9 +138,9 @@ typedef struct {
         };
         uint32_t val;
     } flags;                                /**< Flags regarding channel's status and information */
-    usb_dwc_host_chan_regs_t *regs;            /**< Pointer to the channel's register set */
-    usb_dwc_hal_chan_error_t error;            /**< The last error that occurred on the channel */
-    usb_priv_xfer_type_t type;              /**< The transfer type of the channel */
+    usb_dwc_host_chan_regs_t *regs;         /**< Pointer to the channel's register set */
+    usb_dwc_hal_chan_error_t error;         /**< The last error that occurred on the channel */
+    usb_dwc_xfer_type_t type;               /**< The transfer type of the channel */
     void *chan_ctx;                         /**< Context variable for the owner of the channel */
 } usb_dwc_hal_chan_t;
 
@@ -473,9 +473,9 @@ static inline bool usb_dwc_hal_port_check_if_connected(usb_dwc_hal_context_t *ha
  * @note This function should only be called after confirming that a device is connected to the host port
  *
  * @param hal Context of the HAL layer
- * @return usb_priv_speed_t Speed of the connected device
+ * @return usb_dwc_speed_t Speed of the connected device
  */
-static inline usb_priv_speed_t usb_dwc_hal_port_get_conn_speed(usb_dwc_hal_context_t *hal)
+static inline usb_dwc_speed_t usb_dwc_hal_port_get_conn_speed(usb_dwc_hal_context_t *hal)
 {
     return usb_dwc_ll_hprt_get_speed(hal->dev);
 }

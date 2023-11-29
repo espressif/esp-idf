@@ -193,7 +193,7 @@ static inline void debounce_lock_enable(usb_dwc_hal_context_t *hal)
 
 void usb_dwc_hal_port_enable(usb_dwc_hal_context_t *hal)
 {
-    usb_priv_speed_t speed = usb_dwc_ll_hprt_get_speed(hal->dev);
+    usb_dwc_speed_t speed = usb_dwc_ll_hprt_get_speed(hal->dev);
     //Host Configuration
     usb_dwc_ll_hcfg_set_defaults(hal->dev, speed);
     //Configure HFIR
@@ -238,7 +238,7 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
 
 void usb_dwc_hal_chan_free(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan_obj)
 {
-    if (chan_obj->type == USB_PRIV_XFER_TYPE_INTR || chan_obj->type == USB_PRIV_XFER_TYPE_ISOCHRONOUS) {
+    if (chan_obj->type == USB_DWC_XFER_TYPE_INTR || chan_obj->type == USB_DWC_XFER_TYPE_ISOCHRONOUS) {
         //Unschedule this channel
         for (int i = 0; i < hal->frame_list_len; i++) {
             hal->periodic_frame_list[i] &= ~(1 << chan_obj->flags.chan_idx);
@@ -271,7 +271,7 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
     //Save channel type
     chan_obj->type = ep_char->type;
     //If this is a periodic endpoint/channel, set its schedule in the frame list
-    if (ep_char->type == USB_PRIV_XFER_TYPE_ISOCHRONOUS || ep_char->type == USB_PRIV_XFER_TYPE_INTR) {
+    if (ep_char->type == USB_DWC_XFER_TYPE_ISOCHRONOUS || ep_char->type == USB_DWC_XFER_TYPE_INTR) {
         HAL_ASSERT((int)ep_char->periodic.interval <= (int)hal->frame_list_len);    //Interval cannot exceed the length of the frame list
         //Find the effective offset in the frame list (in case the phase_offset_frames > interval)
         int offset = ep_char->periodic.phase_offset_frames % ep_char->periodic.interval;
