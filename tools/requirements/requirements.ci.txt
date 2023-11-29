@@ -11,4 +11,3 @@ pyyaml
 SimpleWebSocketServer
 pylint-gitlab
 minio
-unittest-xml-reporting

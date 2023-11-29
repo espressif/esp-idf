@@ -20,7 +20,7 @@ TESTS = (Test('fish', 'vt100', 'all.*app.*app-flash.*bootloader.*', 'fish'),
 pargs = (pexpect.EOF, pexpect.TIMEOUT)
 
 
-def get_fail_msg(pproc, msg, index):
+def get_fail_msg(pproc: pexpect.spawn, msg: str, index: int) -> str:
     try:
         buf = pproc._buffer.getvalue()
     except AttributeError:
@@ -33,7 +33,7 @@ def get_fail_msg(pproc, msg, index):
 
 class UTTest(unittest.TestCase):
 
-    def test_shell(self):
+    def test_shell(self) -> None:
         idf_path = os.environ['IDF_PATH']
         env = os.environ.copy()
         for test in TESTS:
