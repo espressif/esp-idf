@@ -86,3 +86,7 @@ config ESP_ROM_HAS_CACHE_SUSPEND_WAITI_BUG
 config ESP_ROM_HAS_CACHE_WRITEBACK_BUG
     bool
     default y
+
+config ESP_ROM_HAS_SW_FLOAT
+    bool
+    default y
