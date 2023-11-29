@@ -13,7 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/usb_dwc_struct.h"
-#include "hal/usb_types_private.h"
+#include "hal/usb_dwc_types.h"
 #include "hal/misc.h"
 
 
@@ -446,7 +446,7 @@ static inline void usb_dwc_ll_hcfg_set_fsls_pclk_sel(usb_dwc_dev_t *hw)
  * @param hw Start address of the DWC_OTG registers
  * @param speed Speed to initialize the host port at
  */
-static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_priv_speed_t speed)
+static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
 {
     hw->hcfg_reg.descdma = 1;   //Enable scatt/gatt
     hw->hcfg_reg.fslssupp = 1;  //FS/LS support only
@@ -455,13 +455,13 @@ static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_priv_spee
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hw->hcfg_reg.fslspclksel = (speed == USB_PRIV_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
+    hw->hcfg_reg.fslspclksel = (speed == USB_DWC_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
     hw->hcfg_reg.perschedena = 0;   //Disable perio sched
 }
 
 // ----------------------------- HFIR Register ---------------------------------
 
-static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_priv_speed_t speed)
+static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
 {
     usb_dwc_hfir_reg_t hfir;
     hfir.val = hw->hfir_reg.val;
@@ -471,7 +471,7 @@ static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_priv_spee
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hfir.frint = (speed == USB_PRIV_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
+    hfir.frint = (speed == USB_DWC_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
     hw->hfir_reg.val = hfir.val;
 }
 
@@ -554,21 +554,9 @@ static inline uint32_t usb_dwc_ll_hflbaddr_get_base_addr(usb_dwc_dev_t *hw)
 
 // ----------------------------- HPRT Register ---------------------------------
 
-static inline usb_priv_speed_t usb_dwc_ll_hprt_get_speed(usb_dwc_dev_t *hw)
+static inline usb_dwc_speed_t usb_dwc_ll_hprt_get_speed(usb_dwc_dev_t *hw)
 {
-    usb_priv_speed_t speed = USB_PRIV_SPEED_HIGH;
-    switch (hw->hprt_reg.prtspd) {
-        case 0:
-            speed = USB_PRIV_SPEED_HIGH;
-            break;
-        case 1:
-            speed = USB_PRIV_SPEED_FULL;
-            break;
-        case 2:
-            speed = USB_PRIV_SPEED_LOW;
-            break;
-    }
-    return speed;
+    return (usb_dwc_speed_t)hw->hprt_reg.prtspd;
 }
 
 static inline uint32_t usb_dwc_ll_hprt_get_test_ctl(usb_dwc_dev_t *hw)
@@ -727,24 +715,9 @@ static inline void usb_dwc_ll_hcchar_set_dev_addr(volatile usb_dwc_host_chan_reg
     chan->hcchar_reg.devaddr = addr;
 }
 
-static inline void usb_dwc_ll_hcchar_set_ep_type(volatile usb_dwc_host_chan_regs_t *chan, usb_priv_xfer_type_t type)
+static inline void usb_dwc_ll_hcchar_set_ep_type(volatile usb_dwc_host_chan_regs_t *chan, usb_dwc_xfer_type_t type)
 {
-    uint32_t ep_type;
-    switch (type) {
-        case USB_PRIV_XFER_TYPE_CTRL:
-            ep_type = 0;
-            break;
-        case USB_PRIV_XFER_TYPE_ISOCHRONOUS:
-            ep_type = 1;
-            break;
-        case USB_PRIV_XFER_TYPE_BULK:
-            ep_type = 2;
-            break;
-        default:    //USB_PRIV_XFER_TYPE_INTR
-            ep_type = 3;
-            break;
-    }
-    chan->hcchar_reg.eptype = ep_type;
+    chan->hcchar_reg.eptype = (uint32_t)type;
 }
 
 //Indicates whether channel is commuunicating with a LS device connected via a FS hub. Setting this bit to 1 will cause
@@ -769,7 +742,7 @@ static inline void usb_dwc_ll_hcchar_set_mps(volatile usb_dwc_host_chan_regs_t *
     chan->hcchar_reg.mps = mps;
 }
 
-static inline void usb_dwc_ll_hcchar_init(volatile usb_dwc_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_priv_xfer_type_t type, bool is_in, bool is_ls)
+static inline void usb_dwc_ll_hcchar_init(volatile usb_dwc_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_dwc_xfer_type_t type, bool is_in, bool is_ls)
 {
     //Sets all persistent fields of the channel over its lifetimez
     usb_dwc_ll_hcchar_set_dev_addr(chan, dev_addr);

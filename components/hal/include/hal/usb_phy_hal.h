@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include "usb_types_private.h"
+#include <stdbool.h>
+#include "usb_dwc_types.h"
 #include "usb_phy_types.h"
 #include "soc/soc_caps.h"
 #include "soc/usb_wrap_struct.h"
@@ -66,7 +67,7 @@ void usb_phy_hal_int_load_conf_host(usb_phy_hal_context_t *hal);
  * @param hal Context of the HAL layer
  * @param speed USB speed
  */
-void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_priv_speed_t speed);
+void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_phy_speed_t speed);
 
 /**
  * @brief Enable/Disable test mode for internal PHY to mimick host-device disconnection
