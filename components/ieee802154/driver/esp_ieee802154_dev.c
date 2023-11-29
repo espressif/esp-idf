@@ -51,6 +51,7 @@ static uint8_t s_rx_index = 0;
 static uint8_t s_enh_ack_frame[128];
 static uint8_t s_recent_rx_frame_info_index;
 static portMUX_TYPE s_ieee802154_spinlock = portMUX_INITIALIZER_UNLOCKED;
+static intr_handle_t ieee802154_isr_handle = NULL;
 
 static esp_err_t ieee802154_sleep_init(void);
 static void ieee802154_rf_enable(void);
@@ -655,11 +656,19 @@ esp_err_t ieee802154_mac_init(void)
     ieee802154_set_state(IEEE802154_STATE_IDLE);
 
     // TODO: Add flags for IEEE802154 ISR allocating. TZ-102
-    ret = esp_intr_alloc(ieee802154_periph.irq_id, 0, ieee802154_isr, NULL, NULL);
+    ret = esp_intr_alloc(ieee802154_periph.irq_id, 0, ieee802154_isr, NULL, &ieee802154_isr_handle);
     ESP_RETURN_ON_FALSE(ret == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC init failed");
 
     ESP_RETURN_ON_FALSE(ieee802154_sleep_init() == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC sleep init failed");
 
+    return ret;
+}
+
+esp_err_t ieee802154_mac_deinit(void)
+{
+    esp_err_t ret = ESP_OK;
+    ret = esp_intr_free(ieee802154_isr_handle);
+    ieee802154_isr_handle = NULL;
     return ret;
 }
 

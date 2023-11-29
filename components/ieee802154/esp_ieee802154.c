@@ -29,8 +29,10 @@ esp_err_t esp_ieee802154_enable(void)
 
 esp_err_t esp_ieee802154_disable(void)
 {
+    esp_btbb_disable();
+    esp_phy_disable(PHY_MODEM_IEEE802154);
     ieee802154_disable();
-    return ESP_OK;
+    return ieee802154_mac_deinit();
 }
 
 uint8_t esp_ieee802154_get_channel(void)
