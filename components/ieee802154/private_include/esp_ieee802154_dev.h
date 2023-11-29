@@ -66,6 +66,16 @@ void ieee802154_disable(void);
 esp_err_t ieee802154_mac_init(void);
 
 /**
+ * @brief  Deinitialize the IEEE 802.15.4 MAC.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ *
+ */
+esp_err_t ieee802154_mac_deinit(void);
+
+/**
  * @brief  Transmit the given frame.
  *
  * @param[in]  frame  The pointer to the frame
