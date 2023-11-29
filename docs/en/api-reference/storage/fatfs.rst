@@ -34,17 +34,25 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 6. Optionally, by enabling the option :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`, you can enable automatic calling of :cpp:func:`f_sync` to flush recent file changes after each call of :cpp:func:`vfs_fat_write`, :cpp:func:`vfs_fat_pwrite`, :cpp:func:`vfs_fat_link`, :cpp:func:`vfs_fat_truncate` and :cpp:func:`vfs_fat_ftruncate` functions. This feature improves file-consistency and size reporting accuracy for the FatFs, at a price on decreased performance due to frequent disk operations.
 
-7. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix, for example, ``"/hello.txt"``.
+7. Optionally, by disabling the option :ref:`CONFIG_FATFS_LINK_LOCK`, you can make the copying performed by :cpp:func:`vfs_fat_link` non-atomic. This is safe and might be necessary for applications that require frequent small file operations (e.g. logging to a file), while using :cpp:func:`vfs_fat_link` on a large file on the same volume in a different task.
 
-8. Close all open files.
+8. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix, for example, ``"/hello.txt"``.
 
-9. Call the FatFs function :cpp:func:`f_mount` for the same drive number with NULL ``FATFS*`` argument to unmount the filesystem.
+9. Close all open files.
 
-10. Call the FatFs function :cpp:func:`ff_diskio_register` with NULL ``ff_diskio_impl_t*`` argument and the same drive number to unregister the disk I/O driver.
+10. Call the FatFs function :cpp:func:`f_mount` for the same drive number with NULL ``FATFS*`` argument to unmount the filesystem.
 
-11. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
+11. Call the FatFs function :cpp:func:`ff_diskio_register` with NULL ``ff_diskio_impl_t*`` argument and the same drive number to unregister the disk I/O driver.
+
+12. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
 
 The convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount`, and :cpp:func:`esp_vfs_fat_sdcard_unmount` wrap the steps described above and also handle SD card initialization. These functions are described in the next section.
+
+.. note::
+
+   Because FAT filesystem does not support hard links, :cpp:func:`vfs_fat_link` copies contents of the file instead.
+
+   This is also true for the POSIX system call :cpp:func:`link`, which is implemented in the VFS layer as a call to :cpp:func:`vfs_fat_link`. This only applies to files on FatFs volumes.
 
 
 Using FatFs with VFS and SD Cards
