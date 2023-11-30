@@ -55,6 +55,14 @@ config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
 
+config SOC_ULP_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_CORE_SUPPORTED
+    bool
+    default y
+
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
@@ -124,6 +132,10 @@ config SOC_FLASH_ENC_SUPPORTED
     default y
 
 config SOC_SECURE_BOOT_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_TIMER_SUPPORTED
     bool
     default y
 
