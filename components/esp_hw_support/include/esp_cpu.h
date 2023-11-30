@@ -69,20 +69,24 @@ static inline void esp_cpu_set_ccount(esp_cpu_ccount_t val)
 }
 
 /**
- * @brief Set a watchpoint to break/panic when a certain memory range is accessed.
+ * @brief Set and enable a hardware watchpoint on the current CPU
  *
- * @param no Watchpoint number. On the ESP32, this can be 0 or 1.
- * @param adr Base address to watch
- * @param size Size of the region, starting at the base address, to watch. Must
- *             be one of 2^n, with n in [0..6].
+ * Set and enable a hardware watchpoint on the current CPU, specifying the
+ * memory range and trigger operation. Watchpoints will break/panic the CPU when
+ * the CPU accesses (according to the trigger type) on a certain memory range.
+ *
+ * @note Overwrites previously set watchpoint with same watchpoint number.
+ *       On RISC-V chips, this API uses method0(Exact matching) and method1(NAPOT matching) according to the
+ *       riscv-debug-spec-0.13 specification for address matching.
+ *       If the watch region size is 1byte, it uses exact matching (method 0).
+ *       If the watch region size is larger than 1byte, it uses NAPOT matching (method 1). This mode requires
+ *       the watching region start address to be aligned to the watching region size.
+ *
+ * @param no    Hardware watchpoint number [0..SOC_CPU_WATCHPOINTS_NUM - 1]
+ * @param adr   Watchpoint's base address, must be naturally aligned to the size of the region
+ * @param size  Size of the region to watch. Must be one of 2^n and in the range of [1 ... SOC_CPU_WATCHPOINT_SIZE]
  * @param flags One of ESP_WATCHPOINT_* flags
- *
  * @return ESP_ERR_INVALID_ARG on invalid arg, ESP_OK otherwise
- *
- * @warning The ESP32 watchpoint hardware watches a region of bytes by effectively
- *          masking away the lower n bits for a region with size 2^n. If adr does
- *          not have zero for these lower n bits, you may not be watching the
- *          region you intended.
  */
 esp_err_t esp_cpu_set_watchpoint(int no, void *adr, int size, int flags);
 

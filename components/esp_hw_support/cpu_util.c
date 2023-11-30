@@ -44,6 +44,20 @@ esp_err_t IRAM_ATTR esp_cpu_set_watchpoint(int no, void *adr, int size, int flag
 {
     watchpoint_trigger_t trigger;
 
+    if (no < 0 || no >= SOC_CPU_WATCHPOINTS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Check that the watched region's start address is naturally aligned to the size of the region
+    if ((uint32_t)adr % (uint32_t)size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Check if size is 2^n, and size is in the range of [1 ... SOC_CPU_WATCHPOINT_SIZE]
+    if (size < 1 || size > SOC_CPU_WATCHPOINT_SIZE || (size & (size - 1)) != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     switch (flags)
     {
     case ESP_WATCHPOINT_LOAD:
