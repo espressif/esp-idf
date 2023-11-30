@@ -14,22 +14,22 @@
  *  http://csrc.nist.gov/encryption/aes/rijndael/Rijndael.pdf
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
-#include "soc/soc_caps.h"
-
+#include <string.h>
 
 #include "aes/esp_aes.h"
 #include "aes/esp_aes_gcm.h"
 #include "aes/esp_aes_internal.h"
 #include "hal/aes_hal.h"
 
-#include "esp_log.h"
 #include "mbedtls/aes.h"
+#include "mbedtls/error.h"
 #include "mbedtls/gcm.h"
+
 #include "esp_heap_caps.h"
+#include "esp_log.h"
+#include "soc/soc_caps.h"
 #include "soc/soc_memory_layout.h"
 
-#include "mbedtls/error.h"
-#include <string.h>
 #include "sdkconfig.h"
 
 #if SOC_AES_SUPPORT_DMA
