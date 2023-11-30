@@ -665,7 +665,7 @@ menu "LWIP"
                 mail box is full, the LWIP drops the packets. So generally we need to make sure the TCP
                 receive mail box is big enough to avoid packet drop between LWIP core and application.
 
-        config LWIP_ACCEPTMBOX_SIZE
+        config LWIP_TCP_ACCEPTMBOX_SIZE
             int "Default TCP accept mail box size"
             default 6
             range 1 64 if !LWIP_WND_SCALE
