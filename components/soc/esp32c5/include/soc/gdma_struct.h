@@ -2040,7 +2040,7 @@ typedef union {
 } gdma_bt_rx_sel_reg_t;
 
 
-typedef struct {
+typedef struct gdma_dev_t {
     volatile gdma_in_int_raw_chn_reg_t in_int_raw_ch0;
     volatile gdma_in_int_st_chn_reg_t in_int_st_ch0;
     volatile gdma_in_int_ena_chn_reg_t in_int_ena_ch0;

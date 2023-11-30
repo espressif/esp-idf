@@ -2112,7 +2112,7 @@ typedef union {
 } efuse_date_reg_t;
 
 
-typedef struct {
+typedef struct efuse_dev_t {
     volatile efuse_pgm_data0_reg_t pgm_data0;
     volatile efuse_pgm_data1_reg_t pgm_data1;
     volatile efuse_pgm_data2_reg_t pgm_data2;

@@ -79,7 +79,7 @@ typedef union {
 } lp_tee_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_tee_dev_t {
     volatile lp_tee_m0_mode_ctrl_reg_t m0_mode_ctrl;
     volatile lp_tee_clock_gate_reg_t clock_gate;
     uint32_t reserved_008[34];
@@ -88,6 +88,7 @@ typedef struct {
     volatile lp_tee_date_reg_t date;
 } lp_tee_dev_t;
 
+extern lp_tee_dev_t LP_TEE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_tee_dev_t) == 0x100, "Invalid size of lp_tee_dev_t structure");

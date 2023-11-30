@@ -465,7 +465,7 @@ typedef union {
 } pcnt_date_reg_t;
 
 
-typedef struct {
+typedef struct pcnt_dev_t {
     volatile pcnt_un_conf0_reg_t u0_conf0;
     volatile pcnt_un_conf1_reg_t u0_conf1;
     volatile pcnt_un_conf2_reg_t u0_conf2;

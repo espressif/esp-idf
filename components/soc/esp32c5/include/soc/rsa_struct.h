@@ -238,7 +238,7 @@ typedef union {
 } rsa_date_reg_t;
 
 
-typedef struct {
+typedef struct rsa_dev_t {
     volatile uint32_t m[4];
     uint32_t reserved_010[124];
     volatile uint32_t z[4];

@@ -1946,7 +1946,7 @@ typedef union {
 } spi_mem_date_reg_t;
 
 
-typedef struct {
+typedef struct spi_mem_dev_t {
     volatile spi_mem_cmd_reg_t mem_cmd;
     uint32_t reserved_004;
     volatile spi_mem_ctrl_reg_t mem_ctrl;

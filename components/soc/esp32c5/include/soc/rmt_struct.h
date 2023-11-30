@@ -24,6 +24,19 @@ typedef union {
     uint32_t val;
 } rmt_chndata_reg_t;
 
+/** Type of chmdata register
+ *  The read and write  data register for CHANNELn by apb fifo access.
+ */
+typedef union {
+    struct {
+        /** chmdata : HRO; bitpos: [31:0]; default: 0;
+         *  Read and write data for channel n via APB FIFO.
+         */
+        uint32_t chmdata:32;
+    };
+    uint32_t val;
+} rmt_chmdata_reg_t;
+
 
 /** Group: Configuration registers */
 /** Type of chnconf0 register
@@ -753,13 +766,14 @@ typedef union {
 } rmt_date_reg_t;
 
 
-typedef struct {
-    volatile rmt_chndata_reg_t chndata[4];
+typedef struct rmt_dev_t {
+    volatile rmt_chndata_reg_t chndata[2];
+    volatile rmt_chmdata_reg_t chmdata[2];
     volatile rmt_chnconf0_reg_t chnconf0[2];
-    volatile rmt_chmconf0_reg_t ch2conf0;
-    volatile rmt_chmconf1_reg_t ch2conf1;
-    volatile rmt_chmconf0_reg_t ch3conf0;
-    volatile rmt_chmconf1_reg_t ch3conf1;
+    volatile struct {
+        rmt_chmconf0_reg_t conf0;
+        rmt_chmconf1_reg_t conf1;
+    } chmconf[2];;
     volatile rmt_chnstatus_reg_t chnstatus[2];
     volatile rmt_chmstatus_reg_t chmstatus[2];
     volatile rmt_int_raw_reg_t int_raw;

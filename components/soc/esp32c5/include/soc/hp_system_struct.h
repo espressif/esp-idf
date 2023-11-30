@@ -391,7 +391,7 @@ typedef union {
 } hp_sys_date_reg_t;
 
 
-typedef struct {
+typedef struct hp_sys_dev_t {
     volatile hp_sys_external_device_encrypt_decrypt_control_reg_t external_device_encrypt_decrypt_control;
     volatile hp_sys_sram_usage_conf_reg_t sram_usage_conf;
     volatile hp_sys_sec_dpa_conf_reg_t sec_dpa_conf;

@@ -193,7 +193,7 @@ typedef union {
 } mem_monitor_date_reg_t;
 
 
-typedef struct {
+typedef struct mem_monitor_dev_t {
     volatile mem_monitor_log_setting_reg_t log_setting;
     volatile mem_monitor_log_check_data_reg_t log_check_data;
     volatile mem_monitor_log_data_mask_reg_t log_data_mask;

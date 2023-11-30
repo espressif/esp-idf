@@ -391,7 +391,7 @@ typedef union {
 } aes_date_reg_t;
 
 
-typedef struct {
+typedef struct aes_dev_t {
     volatile aes_key_0_reg_t key_0;
     volatile aes_key_1_reg_t key_1;
     volatile aes_key_2_reg_t key_2;

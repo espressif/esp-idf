@@ -11,67 +11,36 @@ extern "C" {
 #endif
 
 /** Group: configure_register */
-/** Type of tar0_low register
+/** Type of tar_low register
  *  need_des
  */
 typedef union {
     struct {
-        /** main_timer_tar_low0 : R/W; bitpos: [31:0]; default: 0;
+        /** main_timer_tar_low : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t main_timer_tar_low0:32;
+        uint32_t main_timer_tar_low:32;
     };
     uint32_t val;
-} lp_timer_tar0_low_reg_t;
+} lp_timer_tar_low_reg_t;
 
-/** Type of tar0_high register
+/** Type of tar_high register
  *  need_des
  */
 typedef union {
     struct {
-        /** main_timer_tar_high0 : R/W; bitpos: [15:0]; default: 0;
+        /** main_timer_tar_high : R/W; bitpos: [15:0]; default: 0;
          *  need_des
          */
-        uint32_t main_timer_tar_high0:16;
+        uint32_t main_timer_tar_high:16;
         uint32_t reserved_16:15;
-        /** main_timer_tar_en0 : WT; bitpos: [31]; default: 0;
+        /** main_timer_tar_en : WT; bitpos: [31]; default: 0;
          *  need_des
          */
-        uint32_t main_timer_tar_en0:1;
+        uint32_t main_timer_tar_en:1;
     };
     uint32_t val;
-} lp_timer_tar0_high_reg_t;
-
-/** Type of tar1_low register
- *  need_des
- */
-typedef union {
-    struct {
-        /** main_timer_tar_low1 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t main_timer_tar_low1:32;
-    };
-    uint32_t val;
-} lp_timer_tar1_low_reg_t;
-
-/** Type of tar1_high register
- *  need_des
- */
-typedef union {
-    struct {
-        /** main_timer_tar_high1 : R/W; bitpos: [15:0]; default: 0;
-         *  need_des
-         */
-        uint32_t main_timer_tar_high1:16;
-        uint32_t reserved_16:15;
-        /** main_timer_tar_en1 : WT; bitpos: [31]; default: 0;
-         *  need_des
-         */
-        uint32_t main_timer_tar_en1:1;
-    };
-    uint32_t val;
-} lp_timer_tar1_high_reg_t;
+} lp_timer_tar_high_reg_t;
 
 /** Type of update register
  *  need_des
@@ -99,32 +68,32 @@ typedef union {
     uint32_t val;
 } lp_timer_update_reg_t;
 
-/** Type of main_buf0_low register
+/** Type of main_buf_low register
  *  need_des
  */
 typedef union {
     struct {
-        /** main_timer_buf0_low : RO; bitpos: [31:0]; default: 0;
+        /** main_timer_buf_low : RO; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t main_timer_buf0_low:32;
+        uint32_t main_timer_buf_low:32;
     };
     uint32_t val;
-} lp_timer_main_buf0_low_reg_t;
+} lp_timer_main_buf_low_reg_t;
 
-/** Type of main_buf0_high register
+/** Type of main_buf_high register
  *  need_des
  */
 typedef union {
     struct {
-        /** main_timer_buf0_high : RO; bitpos: [15:0]; default: 0;
+        /** main_timer_buf_high : RO; bitpos: [15:0]; default: 0;
          *  need_des
          */
-        uint32_t main_timer_buf0_high:16;
+        uint32_t main_timer_buf_high:16;
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} lp_timer_main_buf0_high_reg_t;
+} lp_timer_main_buf_high_reg_t;
 
 /** Type of main_buf1_low register
  *  need_des
@@ -328,18 +297,20 @@ typedef union {
     uint32_t val;
 } lp_timer_date_reg_t;
 
+typedef struct {
+    volatile lp_timer_tar_low_reg_t lo;
+    volatile lp_timer_tar_high_reg_t hi;
+} lp_timer_target_reg_t;
 
 typedef struct {
-    volatile lp_timer_tar0_low_reg_t tar0_low;
-    volatile lp_timer_tar0_high_reg_t tar0_high;
-    volatile lp_timer_tar1_low_reg_t tar1_low;
-    volatile lp_timer_tar1_high_reg_t tar1_high;
+    volatile lp_timer_main_buf_low_reg_t lo;
+    volatile lp_timer_main_buf_high_reg_t hi;
+} lp_timer_counter_reg_t;
+
+typedef struct lp_timer_dev_t {
+    volatile lp_timer_target_reg_t target[2];
     volatile lp_timer_update_reg_t update;
-    volatile lp_timer_main_buf0_low_reg_t main_buf0_low;
-    volatile lp_timer_main_buf0_high_reg_t main_buf0_high;
-    volatile lp_timer_main_buf1_low_reg_t main_buf1_low;
-    volatile lp_timer_main_buf1_high_reg_t main_buf1_high;
-    volatile lp_timer_main_overflow_reg_t main_overflow;
+    volatile lp_timer_counter_reg_t counter[2];
     volatile lp_timer_int_raw_reg_t int_raw;
     volatile lp_timer_int_st_reg_t int_st;
     volatile lp_timer_int_ena_reg_t int_ena;

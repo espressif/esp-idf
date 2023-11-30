@@ -1319,7 +1319,7 @@ typedef union {
 } cache_date_reg_t;
 
 
-typedef struct {
+typedef struct cache_dev_t {
     uint32_t reserved_000;
     volatile cache_l1_cache_ctrl_reg_t l1_cache_ctrl;
     uint32_t reserved_008[6];
@@ -1399,6 +1399,7 @@ typedef struct {
     volatile cache_date_reg_t date;
 } cache_dev_t;
 
+extern cache_dev_t CACHE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(cache_dev_t) == 0x400, "Invalid size of cache_dev_t structure");

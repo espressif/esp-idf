@@ -307,7 +307,7 @@ typedef union {
 } keymng_date_reg_t;
 
 
-typedef struct {
+typedef struct keymng_dev_t {
     uint32_t reserved_000;
     volatile keymng_clk_reg_t clk;
     volatile keymng_int_raw_reg_t int_raw;
@@ -329,6 +329,7 @@ typedef struct {
     volatile uint32_t sw_init_key[8];
 } keymng_dev_t;
 
+extern keymng_dev_t KEYMNG;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(keymng_dev_t) == 0x1a0, "Invalid size of keymng_dev_t structure");

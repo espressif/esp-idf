@@ -151,339 +151,94 @@ typedef union {
     uint32_t val;
 } lp_io_in_reg_t;
 
-/** Type of pin0 register
+/** Type of pin n register
  *  need des
  */
 typedef union {
     struct {
-        /** lp_gpio0_sync_bypass : R/W; bitpos: [1:0]; default: 0;
+        /** lp_gpio_sync_bypass : R/W; bitpos: [1:0]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio0_sync_bypass:2;
-        /** lp_gpio0_pad_driver : R/W; bitpos: [2]; default: 0;
+        uint32_t lp_gpio_sync_bypass:2;
+        /** lp_gpio_pad_driver : R/W; bitpos: [2]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio0_pad_driver:1;
-        /** lp_gpio0_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
+        uint32_t lp_gpio_pad_driver:1;
+        /** lp_gpio_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio0_edge_wakeup_clr:1;
+        uint32_t lp_gpio_edge_wakeup_clr:1;
         uint32_t reserved_4:3;
-        /** lp_gpio0_int_type : R/W; bitpos: [9:7]; default: 0;
+        /** lp_gpio_int_type : R/W; bitpos: [9:7]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio0_int_type:3;
-        /** lp_gpio0_wakeup_enable : R/W; bitpos: [10]; default: 0;
+        uint32_t lp_gpio_int_type:3;
+        /** lp_gpio_wakeup_enable : R/W; bitpos: [10]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio0_wakeup_enable:1;
-        /** lp_gpio0_filter_en : R/W; bitpos: [11]; default: 0;
+        uint32_t lp_gpio_wakeup_enable:1;
+        /** lp_gpio_filter_en : R/W; bitpos: [11]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio0_filter_en:1;
+        uint32_t lp_gpio_filter_en:1;
         uint32_t reserved_12:20;
     };
     uint32_t val;
-} lp_io_pin0_reg_t;
+} lp_io_pin_reg_t;
 
-/** Type of pin1 register
+/** Type of gpio n register
  *  need des
  */
 typedef union {
     struct {
-        /** lp_gpio1_sync_bypass : R/W; bitpos: [1:0]; default: 0;
+        /** lp_gpio_mcu_oe : R/W; bitpos: [0]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio1_sync_bypass:2;
-        /** lp_gpio1_pad_driver : R/W; bitpos: [2]; default: 0;
+        uint32_t lp_gpio_mcu_oe:1;
+        /** lp_gpio_slp_sel : R/W; bitpos: [1]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio1_pad_driver:1;
-        /** lp_gpio1_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
+        uint32_t lp_gpio_slp_sel:1;
+        /** lp_gpio_mcu_wpd : R/W; bitpos: [2]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio1_edge_wakeup_clr:1;
-        uint32_t reserved_4:3;
-        /** lp_gpio1_int_type : R/W; bitpos: [9:7]; default: 0;
+        uint32_t lp_gpio_mcu_wpd:1;
+        /** lp_gpio_mcu_wpu : R/W; bitpos: [3]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio1_int_type:3;
-        /** lp_gpio1_wakeup_enable : R/W; bitpos: [10]; default: 0;
+        uint32_t lp_gpio_mcu_wpu:1;
+        /** lp_gpio_mcu_ie : R/W; bitpos: [4]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio1_wakeup_enable:1;
-        /** lp_gpio1_filter_en : R/W; bitpos: [11]; default: 0;
+        uint32_t lp_gpio_mcu_ie:1;
+        /** lp_gpio_mcu_drv : R/W; bitpos: [6:5]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio1_filter_en:1;
-        uint32_t reserved_12:20;
-    };
-    uint32_t val;
-} lp_io_pin1_reg_t;
-
-/** Type of pin2 register
- *  need des
- */
-typedef union {
-    struct {
-        /** lp_gpio2_sync_bypass : R/W; bitpos: [1:0]; default: 0;
+        uint32_t lp_gpio_mcu_drv:2;
+        /** lp_gpio_fun_wpd : R/W; bitpos: [7]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio2_sync_bypass:2;
-        /** lp_gpio2_pad_driver : R/W; bitpos: [2]; default: 0;
+        uint32_t lp_gpio_fun_wpd:1;
+        /** lp_gpio_fun_wpu : R/W; bitpos: [8]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio2_pad_driver:1;
-        /** lp_gpio2_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
+        uint32_t lp_gpio_fun_wpu:1;
+        /** lp_gpio_fun_ie : R/W; bitpos: [9]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio2_edge_wakeup_clr:1;
-        uint32_t reserved_4:3;
-        /** lp_gpio2_int_type : R/W; bitpos: [9:7]; default: 0;
+        uint32_t lp_gpio_fun_ie:1;
+        /** lp_gpio_fun_drv : R/W; bitpos: [11:10]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio2_int_type:3;
-        /** lp_gpio2_wakeup_enable : R/W; bitpos: [10]; default: 0;
+        uint32_t lp_gpio_fun_drv:2;
+        /** lp_gpio_mcu_sel : R/W; bitpos: [14:12]; default: 0;
          *  need des
          */
-        uint32_t lp_gpio2_wakeup_enable:1;
-        /** lp_gpio2_filter_en : R/W; bitpos: [11]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio2_filter_en:1;
-        uint32_t reserved_12:20;
-    };
-    uint32_t val;
-} lp_io_pin2_reg_t;
-
-/** Type of pin3 register
- *  need des
- */
-typedef union {
-    struct {
-        /** lp_gpio3_sync_bypass : R/W; bitpos: [1:0]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio3_sync_bypass:2;
-        /** lp_gpio3_pad_driver : R/W; bitpos: [2]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio3_pad_driver:1;
-        /** lp_gpio3_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio3_edge_wakeup_clr:1;
-        uint32_t reserved_4:3;
-        /** lp_gpio3_int_type : R/W; bitpos: [9:7]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio3_int_type:3;
-        /** lp_gpio3_wakeup_enable : R/W; bitpos: [10]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio3_wakeup_enable:1;
-        /** lp_gpio3_filter_en : R/W; bitpos: [11]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio3_filter_en:1;
-        uint32_t reserved_12:20;
-    };
-    uint32_t val;
-} lp_io_pin3_reg_t;
-
-/** Type of pin4 register
- *  need des
- */
-typedef union {
-    struct {
-        /** lp_gpio4_sync_bypass : R/W; bitpos: [1:0]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio4_sync_bypass:2;
-        /** lp_gpio4_pad_driver : R/W; bitpos: [2]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio4_pad_driver:1;
-        /** lp_gpio4_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio4_edge_wakeup_clr:1;
-        uint32_t reserved_4:3;
-        /** lp_gpio4_int_type : R/W; bitpos: [9:7]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio4_int_type:3;
-        /** lp_gpio4_wakeup_enable : R/W; bitpos: [10]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio4_wakeup_enable:1;
-        /** lp_gpio4_filter_en : R/W; bitpos: [11]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio4_filter_en:1;
-        uint32_t reserved_12:20;
-    };
-    uint32_t val;
-} lp_io_pin4_reg_t;
-
-/** Type of pin5 register
- *  need des
- */
-typedef union {
-    struct {
-        /** lp_gpio5_sync_bypass : R/W; bitpos: [1:0]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio5_sync_bypass:2;
-        /** lp_gpio5_pad_driver : R/W; bitpos: [2]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio5_pad_driver:1;
-        /** lp_gpio5_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio5_edge_wakeup_clr:1;
-        uint32_t reserved_4:3;
-        /** lp_gpio5_int_type : R/W; bitpos: [9:7]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio5_int_type:3;
-        /** lp_gpio5_wakeup_enable : R/W; bitpos: [10]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio5_wakeup_enable:1;
-        /** lp_gpio5_filter_en : R/W; bitpos: [11]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio5_filter_en:1;
-        uint32_t reserved_12:20;
-    };
-    uint32_t val;
-} lp_io_pin5_reg_t;
-
-/** Type of pin6 register
- *  need des
- */
-typedef union {
-    struct {
-        /** lp_gpio6_sync_bypass : R/W; bitpos: [1:0]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio6_sync_bypass:2;
-        /** lp_gpio6_pad_driver : R/W; bitpos: [2]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio6_pad_driver:1;
-        /** lp_gpio6_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio6_edge_wakeup_clr:1;
-        uint32_t reserved_4:3;
-        /** lp_gpio6_int_type : R/W; bitpos: [9:7]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio6_int_type:3;
-        /** lp_gpio6_wakeup_enable : R/W; bitpos: [10]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio6_wakeup_enable:1;
-        /** lp_gpio6_filter_en : R/W; bitpos: [11]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio6_filter_en:1;
-        uint32_t reserved_12:20;
-    };
-    uint32_t val;
-} lp_io_pin6_reg_t;
-
-/** Type of pin7 register
- *  need des
- */
-typedef union {
-    struct {
-        /** lp_gpio7_sync_bypass : R/W; bitpos: [1:0]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio7_sync_bypass:2;
-        /** lp_gpio7_pad_driver : R/W; bitpos: [2]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio7_pad_driver:1;
-        /** lp_gpio7_edge_wakeup_clr : WT; bitpos: [3]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio7_edge_wakeup_clr:1;
-        uint32_t reserved_4:3;
-        /** lp_gpio7_int_type : R/W; bitpos: [9:7]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio7_int_type:3;
-        /** lp_gpio7_wakeup_enable : R/W; bitpos: [10]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio7_wakeup_enable:1;
-        /** lp_gpio7_filter_en : R/W; bitpos: [11]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio7_filter_en:1;
-        uint32_t reserved_12:20;
-    };
-    uint32_t val;
-} lp_io_pin7_reg_t;
-
-/** Type of gpio0 register
- *  need des
- */
-typedef union {
-    struct {
-        /** lp_gpio0_mcu_oe : R/W; bitpos: [0]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_mcu_oe:1;
-        /** lp_gpio0_slp_sel : R/W; bitpos: [1]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_slp_sel:1;
-        /** lp_gpio0_mcu_wpd : R/W; bitpos: [2]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_mcu_wpd:1;
-        /** lp_gpio0_mcu_wpu : R/W; bitpos: [3]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_mcu_wpu:1;
-        /** lp_gpio0_mcu_ie : R/W; bitpos: [4]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_mcu_ie:1;
-        /** lp_gpio0_mcu_drv : R/W; bitpos: [6:5]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_mcu_drv:2;
-        /** lp_gpio0_fun_wpd : R/W; bitpos: [7]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_fun_wpd:1;
-        /** lp_gpio0_fun_wpu : R/W; bitpos: [8]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_fun_wpu:1;
-        /** lp_gpio0_fun_ie : R/W; bitpos: [9]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_fun_ie:1;
-        /** lp_gpio0_fun_drv : R/W; bitpos: [11:10]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_fun_drv:2;
-        /** lp_gpio0_mcu_sel : R/W; bitpos: [14:12]; default: 0;
-         *  need des
-         */
-        uint32_t lp_gpio0_mcu_sel:3;
+        uint32_t lp_gpio_mcu_sel:3;
         uint32_t reserved_15:17;
     };
     uint32_t val;
-} lp_io_gpio0_reg_t;
+} lp_io_gpio_reg_t;
 
 /** Type of gpio1 register
  *  need des
@@ -953,7 +708,7 @@ typedef union {
 } lp_io_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_io_dev_t {
     volatile lp_io_out_data_reg_t out_data;
     volatile lp_io_out_data_w1ts_reg_t out_data_w1ts;
     volatile lp_io_out_data_w1tc_reg_t out_data_w1tc;
@@ -964,22 +719,8 @@ typedef struct {
     volatile lp_io_status_w1ts_reg_t status_w1ts;
     volatile lp_io_status_w1tc_reg_t status_w1tc;
     volatile lp_io_in_reg_t in;
-    volatile lp_io_pin0_reg_t pin0;
-    volatile lp_io_pin1_reg_t pin1;
-    volatile lp_io_pin2_reg_t pin2;
-    volatile lp_io_pin3_reg_t pin3;
-    volatile lp_io_pin4_reg_t pin4;
-    volatile lp_io_pin5_reg_t pin5;
-    volatile lp_io_pin6_reg_t pin6;
-    volatile lp_io_pin7_reg_t pin7;
-    volatile lp_io_gpio0_reg_t gpio0;
-    volatile lp_io_gpio1_reg_t gpio1;
-    volatile lp_io_gpio2_reg_t gpio2;
-    volatile lp_io_gpio3_reg_t gpio3;
-    volatile lp_io_gpio4_reg_t gpio4;
-    volatile lp_io_gpio5_reg_t gpio5;
-    volatile lp_io_gpio6_reg_t gpio6;
-    volatile lp_io_gpio7_reg_t gpio7;
+    volatile lp_io_pin_reg_t pin[8];
+    volatile lp_io_gpio_reg_t gpio[8];
     volatile lp_io_status_interrupt_reg_t status_interrupt;
     volatile lp_io_debug_sel0_reg_t debug_sel0;
     volatile lp_io_debug_sel1_reg_t debug_sel1;

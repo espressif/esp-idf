@@ -160,7 +160,7 @@ typedef union {
 
 /** Group: memory type */
 
-typedef struct {
+typedef struct sha_dev_t {
     volatile sha_mode_reg_t mode;
     uint32_t reserved_004[2];
     volatile sha_dma_block_num_reg_t dma_block_num;

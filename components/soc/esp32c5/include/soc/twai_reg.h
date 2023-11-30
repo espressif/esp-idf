@@ -14,7 +14,7 @@ extern "C" {
 /** TWAI_MODE_REG register
  *  TWAI mode register.
  */
-#define TWAI_MODE_REG (DR_REG_TWAI_BASE + 0x0)
+#define TWAI_MODE_REG(i) (REG_TWAI_BASE(i) + 0x0)
 /** TWAI_RESET_MODE : R/W; bitpos: [0]; default: 1;
  *  1: reset, detection of a set reset mode bit results in aborting the current
  *  transmission/reception of a message and entering the reset mode. 0: normal, on the
@@ -57,7 +57,7 @@ extern "C" {
 /** TWAI_CMD_REG register
  *  TWAI command register.
  */
-#define TWAI_CMD_REG (DR_REG_TWAI_BASE + 0x4)
+#define TWAI_CMD_REG(i) (REG_TWAI_BASE(i) + 0x4)
 /** TWAI_TX_REQUEST : WO; bitpos: [0]; default: 0;
  *  1: present, a message shall be transmitted. 0: absent
  */
@@ -99,7 +99,7 @@ extern "C" {
 /** TWAI_STATUS_REG register
  *  TWAI status register.
  */
-#define TWAI_STATUS_REG (DR_REG_TWAI_BASE + 0x8)
+#define TWAI_STATUS_REG(i) (REG_TWAI_BASE(i) + 0x8)
 /** TWAI_STATUS_RECEIVE_BUFFER : RO; bitpos: [0]; default: 0;
  *  1: full, one or more complete messages are available in the RXFIFO. 0: empty, no
  *  message is available
@@ -176,7 +176,7 @@ extern "C" {
 /** TWAI_INTERRUPT_REG register
  *  Interrupt signals' register.
  */
-#define TWAI_INTERRUPT_REG (DR_REG_TWAI_BASE + 0xc)
+#define TWAI_INTERRUPT_REG(i) (REG_TWAI_BASE(i) + 0xc)
 /** TWAI_RECEIVE_INT_ST : RO; bitpos: [0]; default: 0;
  *  1: this bit is set while the receive FIFO is not empty and the RIE bit is set
  *  within the interrupt enable register. 0: reset
@@ -256,7 +256,7 @@ extern "C" {
 /** TWAI_INTERRUPT_ENABLE_REG register
  *  Interrupt enable register.
  */
-#define TWAI_INTERRUPT_ENABLE_REG (DR_REG_TWAI_BASE + 0x10)
+#define TWAI_INTERRUPT_ENABLE_REG(i) (REG_TWAI_BASE(i) + 0x10)
 /** TWAI_EXT_RECEIVE_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  1: enabled, when the receive buffer status is 'full' the TWAI controller requests
  *  the respective interrupt. 0: disable
@@ -333,7 +333,7 @@ extern "C" {
 /** TWAI_BUS_TIMING_0_REG register
  *  Bit timing configuration register 0.
  */
-#define TWAI_BUS_TIMING_0_REG (DR_REG_TWAI_BASE + 0x18)
+#define TWAI_BUS_TIMING_0_REG(i) (REG_TWAI_BASE(i) + 0x18)
 /** TWAI_BAUD_PRESC : R/W; bitpos: [13:0]; default: 0;
  *  The period of the TWAI system clock is programmable and determines the individual
  *  bit timing. Software has R/W permission in reset mode and RO permission in
@@ -356,7 +356,7 @@ extern "C" {
 /** TWAI_BUS_TIMING_1_REG register
  *  Bit timing configuration register 1.
  */
-#define TWAI_BUS_TIMING_1_REG (DR_REG_TWAI_BASE + 0x1c)
+#define TWAI_BUS_TIMING_1_REG(i) (REG_TWAI_BASE(i) + 0x1c)
 /** TWAI_TIME_SEGMENT1 : R/W; bitpos: [3:0]; default: 0;
  *  The number of clock cycles in TSEG1 per bit timing. Software has R/W permission in
  *  reset mode and RO in operation mode.
@@ -385,7 +385,7 @@ extern "C" {
 /** TWAI_ARB_LOST_CAP_REG register
  *  TWAI arbiter lost capture register.
  */
-#define TWAI_ARB_LOST_CAP_REG (DR_REG_TWAI_BASE + 0x2c)
+#define TWAI_ARB_LOST_CAP_REG(i) (REG_TWAI_BASE(i) + 0x2c)
 /** TWAI_ARBITRATION_LOST_CAPTURE : RO; bitpos: [4:0]; default: 0;
  *  This register contains information about the bit position of losing arbitration.
  */
@@ -397,7 +397,7 @@ extern "C" {
 /** TWAI_ERR_CODE_CAP_REG register
  *  TWAI error info capture register.
  */
-#define TWAI_ERR_CODE_CAP_REG (DR_REG_TWAI_BASE + 0x30)
+#define TWAI_ERR_CODE_CAP_REG(i) (REG_TWAI_BASE(i) + 0x30)
 /** TWAI_ERR_CAPTURE_CODE_SEGMENT : RO; bitpos: [4:0]; default: 0;
  *  This register contains information about the location of errors on the bus.
  */
@@ -423,7 +423,7 @@ extern "C" {
 /** TWAI_ERR_WARNING_LIMIT_REG register
  *  TWAI error threshold configuration register.
  */
-#define TWAI_ERR_WARNING_LIMIT_REG (DR_REG_TWAI_BASE + 0x34)
+#define TWAI_ERR_WARNING_LIMIT_REG(i) (REG_TWAI_BASE(i) + 0x34)
 /** TWAI_ERR_WARNING_LIMIT : R/W; bitpos: [7:0]; default: 96;
  *  The threshold that trigger error warning interrupt when this interrupt is enabled.
  *  Software has R/W permission in reset mode and RO in operation mode.
@@ -436,7 +436,7 @@ extern "C" {
 /** TWAI_RX_ERR_CNT_REG register
  *  Rx error counter register.
  */
-#define TWAI_RX_ERR_CNT_REG (DR_REG_TWAI_BASE + 0x38)
+#define TWAI_RX_ERR_CNT_REG(i) (REG_TWAI_BASE(i) + 0x38)
 /** TWAI_RX_ERR_CNT : R/W; bitpos: [7:0]; default: 0;
  *  The RX error counter register reflects the current value of the transmit error
  *  counter. Software has R/W permission in reset mode and RO in operation mode.
@@ -449,7 +449,7 @@ extern "C" {
 /** TWAI_TX_ERR_CNT_REG register
  *  Tx error counter register.
  */
-#define TWAI_TX_ERR_CNT_REG (DR_REG_TWAI_BASE + 0x3c)
+#define TWAI_TX_ERR_CNT_REG(i) (REG_TWAI_BASE(i) + 0x3c)
 /** TWAI_TX_ERR_CNT : R/W; bitpos: [7:0]; default: 0;
  *  The TX error counter register reflects the current value of the transmit error
  *  counter. Software has R/W permission in reset mode and RO in operation mode.
@@ -462,7 +462,7 @@ extern "C" {
 /** TWAI_DATA_0_REG register
  *  Data register 0.
  */
-#define TWAI_DATA_0_REG (DR_REG_TWAI_BASE + 0x40)
+#define TWAI_DATA_0_REG(i) (REG_TWAI_BASE(i) + 0x40)
 /** TWAI_DATA_0 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, it is acceptance code register 0 with R/W Permission. In operation
  *  mode, when software initiate write operation, it is tx data register 0 and when
@@ -476,7 +476,7 @@ extern "C" {
 /** TWAI_DATA_1_REG register
  *  Data register 1.
  */
-#define TWAI_DATA_1_REG (DR_REG_TWAI_BASE + 0x44)
+#define TWAI_DATA_1_REG(i) (REG_TWAI_BASE(i) + 0x44)
 /** TWAI_DATA_1 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, it is acceptance code register 1 with R/W Permission. In operation
  *  mode, when software initiate write operation, it is tx data register 1 and when
@@ -490,7 +490,7 @@ extern "C" {
 /** TWAI_DATA_2_REG register
  *  Data register 2.
  */
-#define TWAI_DATA_2_REG (DR_REG_TWAI_BASE + 0x48)
+#define TWAI_DATA_2_REG(i) (REG_TWAI_BASE(i) + 0x48)
 /** TWAI_DATA_2 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, it is acceptance code register 2 with R/W Permission. In operation
  *  mode, when software initiate write operation, it is tx data register 2 and when
@@ -504,7 +504,7 @@ extern "C" {
 /** TWAI_DATA_3_REG register
  *  Data register 3.
  */
-#define TWAI_DATA_3_REG (DR_REG_TWAI_BASE + 0x4c)
+#define TWAI_DATA_3_REG(i) (REG_TWAI_BASE(i) + 0x4c)
 /** TWAI_DATA_3 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, it is acceptance code register 3 with R/W Permission. In operation
  *  mode, when software initiate write operation, it is tx data register 3 and when
@@ -518,7 +518,7 @@ extern "C" {
 /** TWAI_DATA_4_REG register
  *  Data register 4.
  */
-#define TWAI_DATA_4_REG (DR_REG_TWAI_BASE + 0x50)
+#define TWAI_DATA_4_REG(i) (REG_TWAI_BASE(i) + 0x50)
 /** TWAI_DATA_4 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, it is acceptance mask register 0 with R/W Permission. In operation
  *  mode, when software initiate write operation, it is tx data register 4 and when
@@ -532,7 +532,7 @@ extern "C" {
 /** TWAI_DATA_5_REG register
  *  Data register 5.
  */
-#define TWAI_DATA_5_REG (DR_REG_TWAI_BASE + 0x54)
+#define TWAI_DATA_5_REG(i) (REG_TWAI_BASE(i) + 0x54)
 /** TWAI_DATA_5 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, it is acceptance mask register 1 with R/W Permission. In operation
  *  mode, when software initiate write operation, it is tx data register 5 and when
@@ -546,7 +546,7 @@ extern "C" {
 /** TWAI_DATA_6_REG register
  *  Data register 6.
  */
-#define TWAI_DATA_6_REG (DR_REG_TWAI_BASE + 0x58)
+#define TWAI_DATA_6_REG(i) (REG_TWAI_BASE(i) + 0x58)
 /** TWAI_DATA_6 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, it is acceptance mask register 2 with R/W Permission. In operation
  *  mode, when software initiate write operation, it is tx data register 6 and when
@@ -560,7 +560,7 @@ extern "C" {
 /** TWAI_DATA_7_REG register
  *  Data register 7.
  */
-#define TWAI_DATA_7_REG (DR_REG_TWAI_BASE + 0x5c)
+#define TWAI_DATA_7_REG(i) (REG_TWAI_BASE(i) + 0x5c)
 /** TWAI_DATA_7 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, it is acceptance mask register 3 with R/W Permission. In operation
  *  mode, when software initiate write operation, it is tx data register 7 and when
@@ -574,7 +574,7 @@ extern "C" {
 /** TWAI_DATA_8_REG register
  *  Data register 8.
  */
-#define TWAI_DATA_8_REG (DR_REG_TWAI_BASE + 0x60)
+#define TWAI_DATA_8_REG(i) (REG_TWAI_BASE(i) + 0x60)
 /** TWAI_DATA_8 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, reserved with RO. In operation mode, when software initiate write
  *  operation, it is tx data register 8 and when software initiate read operation, it
@@ -588,7 +588,7 @@ extern "C" {
 /** TWAI_DATA_9_REG register
  *  Data register 9.
  */
-#define TWAI_DATA_9_REG (DR_REG_TWAI_BASE + 0x64)
+#define TWAI_DATA_9_REG(i) (REG_TWAI_BASE(i) + 0x64)
 /** TWAI_DATA_9 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, reserved with RO. In operation mode, when software initiate write
  *  operation, it is tx data register 9 and when software initiate read operation, it
@@ -602,7 +602,7 @@ extern "C" {
 /** TWAI_DATA_10_REG register
  *  Data register 10.
  */
-#define TWAI_DATA_10_REG (DR_REG_TWAI_BASE + 0x68)
+#define TWAI_DATA_10_REG(i) (REG_TWAI_BASE(i) + 0x68)
 /** TWAI_DATA_10 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, reserved with RO. In operation mode, when software initiate write
  *  operation, it is tx data register 10 and when software initiate read operation, it
@@ -616,7 +616,7 @@ extern "C" {
 /** TWAI_DATA_11_REG register
  *  Data register 11.
  */
-#define TWAI_DATA_11_REG (DR_REG_TWAI_BASE + 0x6c)
+#define TWAI_DATA_11_REG(i) (REG_TWAI_BASE(i) + 0x6c)
 /** TWAI_DATA_11 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, reserved with RO. In operation mode, when software initiate write
  *  operation, it is tx data register 11 and when software initiate read operation, it
@@ -630,7 +630,7 @@ extern "C" {
 /** TWAI_DATA_12_REG register
  *  Data register 12.
  */
-#define TWAI_DATA_12_REG (DR_REG_TWAI_BASE + 0x70)
+#define TWAI_DATA_12_REG(i) (REG_TWAI_BASE(i) + 0x70)
 /** TWAI_DATA_12 : R/W; bitpos: [7:0]; default: 0;
  *  In reset mode, reserved with RO. In operation mode, when software initiate write
  *  operation, it is tx data register 12 and when software initiate read operation, it
@@ -644,7 +644,7 @@ extern "C" {
 /** TWAI_RX_MESSAGE_COUNTER_REG register
  *  Received message counter register.
  */
-#define TWAI_RX_MESSAGE_COUNTER_REG (DR_REG_TWAI_BASE + 0x74)
+#define TWAI_RX_MESSAGE_COUNTER_REG(i) (REG_TWAI_BASE(i) + 0x74)
 /** TWAI_RX_MESSAGE_COUNTER : RO; bitpos: [6:0]; default: 0;
  *  Reflects the number of messages available within the RXFIFO. The value is
  *  incremented with each receive event and decremented by the release receive buffer
@@ -658,7 +658,7 @@ extern "C" {
 /** TWAI_CLOCK_DIVIDER_REG register
  *  Clock divider register.
  */
-#define TWAI_CLOCK_DIVIDER_REG (DR_REG_TWAI_BASE + 0x7c)
+#define TWAI_CLOCK_DIVIDER_REG(i) (REG_TWAI_BASE(i) + 0x7c)
 /** TWAI_CD : R/W; bitpos: [7:0]; default: 0;
  *  These bits are used to define the frequency at the external CLKOUT pin.
  */
@@ -678,7 +678,7 @@ extern "C" {
 /** TWAI_SW_STANDBY_CFG_REG register
  *  Software configure standby pin directly.
  */
-#define TWAI_SW_STANDBY_CFG_REG (DR_REG_TWAI_BASE + 0x80)
+#define TWAI_SW_STANDBY_CFG_REG(i) (REG_TWAI_BASE(i) + 0x80)
 /** TWAI_SW_STANDBY_EN : R/W; bitpos: [0]; default: 0;
  *  Enable standby pin.
  */
@@ -697,7 +697,7 @@ extern "C" {
 /** TWAI_HW_CFG_REG register
  *  Hardware configure standby pin.
  */
-#define TWAI_HW_CFG_REG (DR_REG_TWAI_BASE + 0x84)
+#define TWAI_HW_CFG_REG(i) (REG_TWAI_BASE(i) + 0x84)
 /** TWAI_HW_STANDBY_EN : R/W; bitpos: [0]; default: 0;
  *  Enable function that hardware control standby pin.
  */
@@ -709,7 +709,7 @@ extern "C" {
 /** TWAI_HW_STANDBY_CNT_REG register
  *  Configure standby counter.
  */
-#define TWAI_HW_STANDBY_CNT_REG (DR_REG_TWAI_BASE + 0x88)
+#define TWAI_HW_STANDBY_CNT_REG(i) (REG_TWAI_BASE(i) + 0x88)
 /** TWAI_STANDBY_WAIT_CNT : R/W; bitpos: [31:0]; default: 1;
  *  Configure the number of cycles before standby becomes high when TWAI_HW_STANDBY_EN
  *  is enabled.
@@ -722,7 +722,7 @@ extern "C" {
 /** TWAI_IDLE_INTR_CNT_REG register
  *  Configure idle interrupt counter.
  */
-#define TWAI_IDLE_INTR_CNT_REG (DR_REG_TWAI_BASE + 0x8c)
+#define TWAI_IDLE_INTR_CNT_REG(i) (REG_TWAI_BASE(i) + 0x8c)
 /** TWAI_IDLE_INTR_CNT : R/W; bitpos: [31:0]; default: 1;
  *  Configure the number of cycles before triggering idle interrupt.
  */
@@ -734,7 +734,7 @@ extern "C" {
 /** TWAI_ECO_CFG_REG register
  *  ECO configuration register.
  */
-#define TWAI_ECO_CFG_REG (DR_REG_TWAI_BASE + 0x90)
+#define TWAI_ECO_CFG_REG(i) (REG_TWAI_BASE(i) + 0x90)
 /** TWAI_RDN_ENA : R/W; bitpos: [0]; default: 0;
  *  Enable eco module.
  */
@@ -753,7 +753,7 @@ extern "C" {
 /** TWAI_TIMESTAMP_DATA_REG register
  *  Timestamp data register
  */
-#define TWAI_TIMESTAMP_DATA_REG (DR_REG_TWAI_BASE + 0x94)
+#define TWAI_TIMESTAMP_DATA_REG(i) (REG_TWAI_BASE(i) + 0x94)
 /** TWAI_TIMESTAMP_DATA : RO; bitpos: [31:0]; default: 0;
  *  Data of timestamp of a CAN frame.
  */
@@ -765,7 +765,7 @@ extern "C" {
 /** TWAI_TIMESTAMP_PRESCALER_REG register
  *  Timestamp configuration register
  */
-#define TWAI_TIMESTAMP_PRESCALER_REG (DR_REG_TWAI_BASE + 0x98)
+#define TWAI_TIMESTAMP_PRESCALER_REG(i) (REG_TWAI_BASE(i) + 0x98)
 /** TWAI_TS_DIV_NUM : R/W; bitpos: [15:0]; default: 31;
  *  Configures the clock division number of timestamp counter.
  */
@@ -777,7 +777,7 @@ extern "C" {
 /** TWAI_TIMESTAMP_CFG_REG register
  *  Timestamp configuration register
  */
-#define TWAI_TIMESTAMP_CFG_REG (DR_REG_TWAI_BASE + 0x9c)
+#define TWAI_TIMESTAMP_CFG_REG(i) (REG_TWAI_BASE(i) + 0x9c)
 /** TWAI_TS_ENABLE : R/W; bitpos: [0]; default: 0;
  *  enable the timestamp collection function.
  */

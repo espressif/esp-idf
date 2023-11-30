@@ -898,7 +898,7 @@ typedef union {
 } usb_serial_jtag_date_reg_t;
 
 
-typedef struct {
+typedef struct usb_serial_jtag_dev_t {
     volatile usb_serial_jtag_ep1_reg_t ep1;
     volatile usb_serial_jtag_ep1_conf_reg_t ep1_conf;
     volatile usb_serial_jtag_int_raw_reg_t int_raw;

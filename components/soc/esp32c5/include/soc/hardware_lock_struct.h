@@ -80,7 +80,7 @@ typedef union {
 } atomic_counter_reg_t;
 
 
-typedef struct {
+typedef struct atomic_dev_t {
     volatile atomic_addr_lock_reg_t addr_lock;
     volatile atomic_lr_addr_reg_t lr_addr;
     volatile atomic_lr_value_reg_t lr_value;
@@ -88,7 +88,6 @@ typedef struct {
     volatile atomic_counter_reg_t counter;
 } atomic_dev_t;
 
-extern atomic_dev_t ATOMIC_LOCKER;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(atomic_dev_t) == 0x14, "Invalid size of atomic_dev_t structure");

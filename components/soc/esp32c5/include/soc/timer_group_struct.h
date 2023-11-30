@@ -509,7 +509,7 @@ typedef union {
 } timg_regclk_reg_t;
 
 
-typedef struct {
+typedef struct timg_dev_t {
     volatile timg_txconfig_reg_t t0config;
     volatile timg_txlo_reg_t t0lo;
     volatile timg_txhi_reg_t t0hi;

@@ -639,18 +639,18 @@ typedef union {
 
 
 /** Group: Memory data buffer register */
-/** Type of w0 register
- *  SPI1 memory data buffer0
+/** Type of wn register
+ *  SPI1 memory data buffer n
  */
 typedef union {
     struct {
-        /** buf0 : R/W/SS; bitpos: [31:0]; default: 0;
+        /** buf : R/W/SS; bitpos: [31:0]; default: 0;
          *  data buffer
          */
-        uint32_t buf0:32;
+        uint32_t buf:32;
     };
     uint32_t val;
-} spi1_mem_w0_reg_t;
+} spi1_mem_wn_reg_t;
 
 /** Type of w1 register
  *  SPI1 memory data buffer1
@@ -1036,7 +1036,7 @@ typedef union {
 } spi1_mem_date_reg_t;
 
 
-typedef struct {
+typedef struct spi1_mem_dev_t {
     volatile spi1_mem_cmd_reg_t cmd;
     volatile spi1_mem_addr_reg_t addr;
     volatile spi1_mem_ctrl_reg_t ctrl;
@@ -1052,22 +1052,7 @@ typedef struct {
     uint32_t reserved_030;
     volatile spi1_mem_misc_reg_t misc;
     uint32_t reserved_038[8];
-    volatile spi1_mem_w0_reg_t w0;
-    volatile spi1_mem_w1_reg_t w1;
-    volatile spi1_mem_w2_reg_t w2;
-    volatile spi1_mem_w3_reg_t w3;
-    volatile spi1_mem_w4_reg_t w4;
-    volatile spi1_mem_w5_reg_t w5;
-    volatile spi1_mem_w6_reg_t w6;
-    volatile spi1_mem_w7_reg_t w7;
-    volatile spi1_mem_w8_reg_t w8;
-    volatile spi1_mem_w9_reg_t w9;
-    volatile spi1_mem_w10_reg_t w10;
-    volatile spi1_mem_w11_reg_t w11;
-    volatile spi1_mem_w12_reg_t w12;
-    volatile spi1_mem_w13_reg_t w13;
-    volatile spi1_mem_w14_reg_t w14;
-    volatile spi1_mem_w15_reg_t w15;
+    volatile spi1_mem_wn_reg_t data_buf[16];
     volatile spi1_mem_flash_waiti_ctrl_reg_t flash_waiti_ctrl;
     volatile spi1_mem_flash_sus_ctrl_reg_t flash_sus_ctrl;
     volatile spi1_mem_flash_sus_cmd_reg_t flash_sus_cmd;

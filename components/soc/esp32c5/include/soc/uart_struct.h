@@ -1216,7 +1216,7 @@ typedef union {
 } uart_id_reg_t;
 
 
-typedef struct {
+typedef struct uart_dev_t {
     volatile uart_fifo_reg_t fifo;
     volatile uart_int_raw_reg_t int_raw;
     volatile uart_int_st_reg_t int_st;

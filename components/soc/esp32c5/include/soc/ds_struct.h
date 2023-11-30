@@ -118,7 +118,7 @@ typedef union {
 } ds_date_reg_t;
 
 
-typedef struct {
+typedef struct ds_dev_t {
     volatile uint32_t y[128];
     volatile uint32_t m[128];
     volatile uint32_t rb[128];

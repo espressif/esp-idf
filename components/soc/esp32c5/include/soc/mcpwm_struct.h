@@ -1938,7 +1938,7 @@ typedef union {
 } mcpwm_version_reg_t;
 
 
-typedef struct {
+typedef struct mcpwm_dev_t {
     volatile mcpwm_clk_cfg_reg_t clk_cfg;
     volatile mcpwm_timern_cfg0_reg_t timer0_cfg0;
     volatile mcpwm_timern_cfg1_reg_t timer0_cfg1;

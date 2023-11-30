@@ -478,7 +478,7 @@ typedef union {
 } lp_apm0_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_apm0_dev_t {
     volatile lp_apm0_region_filter_en_reg_t region_filter_en;
     volatile lp_apm0_region0_addr_start_reg_t region0_addr_start;
     volatile lp_apm0_region0_addr_end_reg_t region0_addr_end;
@@ -504,6 +504,7 @@ typedef struct {
     volatile lp_apm0_date_reg_t date;
 } lp_apm0_dev_t;
 
+extern lp_apm0_dev_t LP_APM0;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_apm0_dev_t) == 0x800, "Invalid size of lp_apm0_dev_t structure");

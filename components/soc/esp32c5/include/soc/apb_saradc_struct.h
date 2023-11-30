@@ -655,7 +655,7 @@ typedef union {
 } apb_saradc_ctrl_date_reg_t;
 
 
-typedef struct {
+typedef struct apb_dev_t {
     volatile apb_saradc_ctrl_reg_t saradc_ctrl;
     volatile apb_saradc_ctrl2_reg_t saradc_ctrl2;
     volatile apb_saradc_filter_ctrl1_reg_t saradc_filter_ctrl1;

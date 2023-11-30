@@ -1991,7 +1991,7 @@ typedef union {
 } otp_debug_date_reg_t;
 
 
-typedef struct {
+typedef struct otp_debug_dev_t {
     volatile otp_debug_wr_dis_reg_t wr_dis;
     volatile otp_debug_blk0_backup1_w1_reg_t blk0_backup1_w1;
     volatile otp_debug_blk0_backup1_w2_reg_t blk0_backup1_w2;
