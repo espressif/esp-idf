@@ -54,7 +54,7 @@
 - 也可以使用标准 Unix 函数 ``gettimeofday()`` 和 ``utime()`` 来进行计时测量，尽管其开销略高一些。
 - 此外，代码中包含 ``hal/cpu_hal.h`` 头文件，并调用 HAL 函数 ``cpu_hal_get_cycle_count()`` 可以返回已执行的 CPU 循环数。该函数开销较低，适用于高精度测量执行时间极短的代码。
 
-  .. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+  .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
       CPU 周期是各核心独立计数的，因此本方法仅适用于测量中断处理程序或固定在单个核心上的任务。
 
@@ -159,7 +159,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 
 .. Note: 以下两个列表应保持一致，但第二个列表还展示了 CPU 亲和性。
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. list::
 
@@ -176,7 +176,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
         - 如果使用 :doc:`/api-reference/protocols/mqtt` 组件，它会创建优先级默认为 5 的任务（ :ref:`可配置 <CONFIG_MQTT_TASK_PRIORITY>` ），可通过 :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG` 调整，也可以在运行时通过 :cpp:class:`esp_mqtt_client_config_t` 结构体中的 ``task_prio`` 字段调整。
         - 关于 ``mDNS`` 服务的任务优先级，参见 `性能优化 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__ 。
 
-.. only :: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. list::
 
@@ -204,11 +204,11 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 设定应用程序任务优先级
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     由于 {IDF_TARGET_RF_TYPE} 操作饥饿可能导致系统不稳定，通常不建议让特定任务的优先级高于 {IDF_TARGET_RF_TYPE} 操作的内置优先级。对于非常短且无需网络的实时操作，可以使用中断服务程序或极受限的任务（仅运行极短时间）并设置为最高优先级 (24)。将特定任务优先级设为 19 不会妨碍较低层级的 {IDF_TARGET_RF_TYPE} 功能无延迟运行，但仍然会抢占 lwIP TCP/IP 堆栈以及其他非实时内部功能，这对于不执行网络操作的实时任务而言是最佳选项。lwIP TCP/IP 任务优先级 (18) 应高于所有执行 TCP/IP 网络操作的任务，以保证任务正常执行。
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     默认配置下，除了个别例外，尤其是 lwIP TCP/IP 任务，大多数内置任务都固定在核心 0 上执行。因此，应用程序可以方便地将高优先级任务放置在核心 1 上执行。优先级大于等于 19 的应用程序任务在核心 1 上运行时可以确保不会被任何内置任务抢占。为了进一步隔离各个 CPU 上运行的任务，配置 :ref:`lwIP 任务 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ，可以使 lwIP 任务仅在核心 0 上运行，而非上述任一核心，这可能会根据其他任务的运行情况减少总 TCP/IP 吞吐量。
 
@@ -234,7 +234,7 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 .. list::
 
     - 调用 :cpp:func:`esp_intr_alloc` 时使用 ``ESP_INTR_FLAG_LEVEL2`` 或 ``ESP_INTR_FLAG_LEVEL3`` 等标志，可以为更重要的中断设定更高优先级。
-    :not CONFIG_FREERTOS_UNICORE: - 将中断分配到不运行内置 {IDF_TARGET_RF_TYPE} 任务的 CPU 上执行，即默认情况下，将中断分配到核心 1 上执行，参见 :ref:`built-in-task-priorities` 。调用 :cpp:func:`esp_intr_alloc`  函数即可将中断分配到函数所在 CPU。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 将中断分配到不运行内置 {IDF_TARGET_RF_TYPE} 任务的 CPU 上执行，即默认情况下，将中断分配到核心 1 上执行，参见 :ref:`built-in-task-priorities` 。调用 :cpp:func:`esp_intr_alloc`  函数即可将中断分配到函数所在 CPU。
     - 如果确定整个中断处理程序可以在 IRAM 中运行（参见 :ref:`iram-safe-interrupt-handlers` ），那么在调用 :cpp:func:`esp_intr_alloc` 分配中断时，请设置 ``ESP_INTR_FLAG_IRAM`` 标志，这样可以防止在应用程序固件写入内置 SPI flash 时临时禁用中断。
     - 即使是非 IRAM 安全的中断处理程序，如果需要频繁执行，可以考虑将处理程序的函数移到 IRAM 中，从而尽可能规避执行中断代码时发生 flash 缓存缺失的可能性（参见 :ref:`speed-targeted-optimizations` ）。如果可以确保只有部分处理程序位于 IRAM 中，则无需添加 ``ESP_INTR_FLAG_IRAM`` 标志将程序标记为 IRAM 安全。
 

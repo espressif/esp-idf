@@ -51,7 +51,7 @@ For the full list of user configurable kernel options, see :doc:`/api-reference/
 
 - :ref:`CONFIG_FREERTOS_UNICORE` runs FreeRTOS only on CPU0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Furthermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running FreeRTOS on a single core, refer to :ref:`freertos-smp-single-core` (if using ESP-IDF FreeRTOS) or the official Amazon SMP FreeRTOS documentation. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. note::
         As {IDF_TARGET_NAME} is a single core SoC, the :ref:`CONFIG_FREERTOS_UNICORE` configuration is always set.

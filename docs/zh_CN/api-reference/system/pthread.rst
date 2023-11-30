@@ -189,7 +189,7 @@ ESP-IDF 扩展
 .. list::
     - 如果调用 ``pthread_create()`` 时未指定默认堆栈大小，可设置新线程的默认堆栈大小（覆盖 :ref:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`）。
     - 新线程的 RTOS 优先级（覆盖 :ref:`CONFIG_PTHREAD_TASK_PRIO_DEFAULT`）。
-    :not CONFIG_FREERTOS_UNICORE: - 新线程的内核亲和性/内核固定（覆盖 :ref:`CONFIG_PTHREAD_TASK_CORE_DEFAULT`）。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 新线程的内核亲和性/内核固定（覆盖 :ref:`CONFIG_PTHREAD_TASK_CORE_DEFAULT`）。
     - 新线程的 FreeRTOS 任务名称（覆盖 :ref:`CONFIG_PTHREAD_TASK_NAME_DEFAULT`）
 
 此配置的作用范围是调用线程或 FreeRTOS 任务，这意味着 :cpp:func:`esp_pthread_set_cfg` 可以在不同的线程或任务中独立调用。如果在当前配置中设置了 ``inherit_cfg`` 标志，那么当一个线程递归调用 ``pthread_create()`` 时，任何新创建的线程都会继承该线程的配置，否则新线程将采用默认配置。

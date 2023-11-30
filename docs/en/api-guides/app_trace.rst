@@ -420,7 +420,7 @@ Data Visualization
 
 After trace data are collected, users can use a special tool to visualize the results and inspect behavior of the program.
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     Unfortunately, SystemView does not support tracing from multiple cores. So when tracing from {IDF_TARGET_NAME} with JTAG interfaces in the dual-core mode, two files are generated: one for PRO CPU and another for APP CPU. Users can load each file into separate instances of the tool. For tracing over UART, users can select ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` in menuconfig Pro or App to choose which CPU has to be traced.
 
@@ -432,7 +432,7 @@ Good instructions on how to install, configure, and visualize data in Impulse fr
 
     ESP-IDF uses its own mapping for SystemView FreeRTOS events IDs, so users need to replace the original file mapping ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` with ``$IDF_PATH/tools/esp_app_trace/SYSVIEW_FreeRTOS.txt``. Also, contents of that ESP-IDF-specific file should be used when configuring SystemView serializer using the above link.
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     Configure Impulse for Dual Core Traces
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

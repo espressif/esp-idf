@@ -143,7 +143,7 @@ CPU 中断在大多数 Espressif SoC 上都是有限的资源。因此，一个�
 
 .. list::
 
-    :not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE: - 在多核 SoC 上，尝试通过固定在第二个核的任务来初始化某些外设驱动程序。中断通常分配在运行外设驱动程序初始化函数的同一个内核上，因此，通过在第二个内核上运行初始化函数，就可以使用更多的中断输入。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 在多核 SoC 上，尝试通过固定在第二个核的任务来初始化某些外设驱动程序。中断通常分配在运行外设驱动程序初始化函数的同一个内核上，因此，通过在第二个内核上运行初始化函数，就可以使用更多的中断输入。
     - 找到可接受更高延迟的中断，并用 ``ESP_INTR_FLAG_SHARED`` flag （或与 ``ESP_INTR_FLAG_LOWMED`` 进行 OR 运算）分配这些中断。对两个或更多外设使用此 flag 能让它们使用单个中断输入，从而为其他外设节约中断输入。参见 :ref:`intr-alloc-shared-interrupts`。
     :not SOC_CPU_HAS_FLEXIBLE_INTC: - 一些外设驱动程序可能默认使用 ``ESP_INTR_FLAG_LEVEL1`` flag 来分配中断，因此默认情况下不会使用优先级为 2 或 3 的中断。如果 :cpp:func:`esp_intr_dump` 显示某些优先级为 2 或 3 的中断可用，尝试在初始化驱动程序时将中断分配 flag 改为 ``ESP_INTR_FLAG_LEVEL2`` 或 ``ESP_INTR_FLAG_LEVEL3``。
     - 检查是否有些外设驱动程序不需要一直启用，并按需将其初始化或取消初始化。这样可以减少同时分配的中断数量。
