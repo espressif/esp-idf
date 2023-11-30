@@ -103,31 +103,6 @@
     - "build:{0}-{1}"
     - build:target_test
 
-# -------------
-# Special Cases
-# -------------
-
-# To reduce the specific runners' usage.
-# Do not create these jobs by default patterns on development branches
-# Can be triggered by labels or related changes
-"test:{0}-{1}-{2}":
-  matrix:
-    - *target_test
-    - *all_targets
-    - - wifi      # pytest*wifi*
-  patterns:
-    - "{0}-{1}-{2}"
-    - "{0}-{2}"
-    - "target_test-{2}"
-  labels:
-    - "{0}_{1}"
-    - "{0}"
-    - target_test
-  included_in:
-    - "build:{0}-{1}"
-    - "build:{0}"
-    - build:target_test
-
 "test:host_test":
   labels:
     - host_test

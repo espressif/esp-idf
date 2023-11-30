@@ -18,6 +18,17 @@ examples/network/simple_sniffer:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - examples/common_components/protocol_examples_common/**/*
+    - examples/protocols/**/*
+    - examples/wifi/**/*
+    - examples/network/simple_sniffer/**/*
+    - components/mbedtls/port/dynamic/*
+    - examples/system/ota/**/*
+  depends_components:
+    - app_update
+    - esp_https_ota
 
 examples/network/sta2eth:
   disable:

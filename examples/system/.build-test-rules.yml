@@ -157,7 +157,21 @@ examples/system/ota/advanced_https_ota:
     - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
-  <<: *ethernet_dependencies
+  depends_filepatterns:
+    - components/esp_netif/esp_netif_handlers.c
+    - components/mbedtls/port/dynamic/*
+    - examples/common_components/**/*
+    - examples/ethernet/iperf/**/*
+    - examples/network/simple_sniffer/**/*
+    - examples/network/vlan_support/**/*
+    - examples/protocols/**/*
+    - examples/system/ota/**/*
+    - examples/wifi/**/*
+    - tools/ci/python_packages/common_test_methods.py
+  depends_components:
+    - app_update
+    - esp_https_ota
+    - esp_eth
 
 examples/system/ota/native_ota_example:
   disable:
