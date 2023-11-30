@@ -28,6 +28,8 @@ typedef enum periph_retention_module {
      * TEE, APM, UART, Timer Group, IOMUX, SPIMEM, SysTimer, etc.. */
     SLEEP_RETENTION_MODULE_SYS_PERIPH   = 16,
 
+    SLEEP_RETENTION_MODULE_ADC          = 17,
+
     SLEEP_RETENTION_MODULE_GDMA_CH0     = 24,
     SLEEP_RETENTION_MODULE_GDMA_CH1     = 25,
     SLEEP_RETENTION_MODULE_GDMA_CH2     = 26,
@@ -50,6 +52,8 @@ typedef enum periph_retention_module_bitmap {
     /* digital peripheral module, which includes Interrupt Matrix, HP_SYSTEM,
      * TEE, APM, UART, Timer Group, IOMUX, SPIMEM, SysTimer, etc.. */
     SLEEP_RETENTION_MODULE_BM_SYS_PERIPH   = BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH),
+
+    SLEEP_RETENTION_MODULE_BM_ADC          = BIT(SLEEP_RETENTION_MODULE_ADC),
 
     SLEEP_RETENTION_MODULE_BM_GDMA_CH0     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH0),
     SLEEP_RETENTION_MODULE_BM_GDMA_CH1     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH1),
