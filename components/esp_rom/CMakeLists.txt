@@ -125,12 +125,6 @@ if(BOOTLOADER_BUILD)
 
     elseif(target STREQUAL "esp32c5")
         rom_linker_script("newlib")
-        # The linking of the bootloader needs to use the rom_i2c_writeReg_Mask in esp32c6.rom.phy.ld
-        rom_linker_script("phy")
-        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-            rom_linker_script("wdt")
-        endif()
-        rom_linker_script("version")
 
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
@@ -252,6 +246,7 @@ else() # Regular app build
         rom_linker_script("version")
 
         # esp32c6.rom.api.ld has been split to several lds by components.
+        # esp32c6.rom.api.ld is still reserved to map the APIs
         rom_linker_script("phy")
         rom_linker_script("coexist")
         rom_linker_script("net80211")
@@ -274,18 +269,10 @@ else() # Regular app build
         rom_linker_script("newlib")
         rom_linker_script("version")
 
-        # esp32c6.rom.api.ld has been split to several lds by components.
-        rom_linker_script("phy")
-        rom_linker_script("coexist")
-        rom_linker_script("net80211")
-        rom_linker_script("pp")
-
+        # esp32c5.rom.api.ld has been split to several lds by components.
+        # esp32c5.rom.api.ld is still reserved to map the APIs
         if(CONFIG_SPI_FLASH_ROM_IMPL)
             rom_linker_script("spiflash")
-        endif()
-
-        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-            rom_linker_script("wdt")
         endif()
 
         if(NOT CONFIG_NEWLIB_NANO_FORMAT)

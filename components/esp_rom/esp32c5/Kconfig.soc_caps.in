@@ -59,7 +59,7 @@ config ESP_ROM_HAS_SPI_FLASH
     bool
     default y
 
-config ESP_ROM_HAS_REGI2C_BUG
+config ESP_ROM_WITHOUT_REGI2C
     bool
     default y
 
@@ -72,10 +72,6 @@ config ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE
     default y
 
 config ESP_ROM_WDT_INIT_PATCH
-    bool
-    default y
-
-config ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
     bool
     default y
 
