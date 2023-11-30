@@ -232,31 +232,7 @@ menu "Hardware Settings"
                 Note that, this option only controls the ETM related driver log, won't affect other drivers.
     endmenu # ETM Configuration
 
-    menu "GDMA Configuration"
-        depends on SOC_GDMA_SUPPORTED
-        config GDMA_CTRL_FUNC_IN_IRAM
-            bool "Place GDMA control functions into IRAM"
-            default n
-            help
-                Place GDMA control functions (like start/stop/append/reset) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
-                Enabling this option can improve driver performance as well.
-
-        config GDMA_ISR_IRAM_SAFE
-            bool "GDMA ISR IRAM-Safe"
-            default n
-            help
-                This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
-                cache misses, and also be able to run whilst the cache is disabled.
-                (e.g. SPI Flash write).
-
-        config GDMA_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                Wether to enable the debug log message for GDMA driver.
-                Note that, this option only controls the GDMA driver log, won't affect other drivers.
-    endmenu # GDMA Configuration
+    rsource "./dma/Kconfig.dma"
 
     menu "Main XTAL Config"
         choice XTAL_FREQ_SEL

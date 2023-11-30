@@ -157,6 +157,12 @@
 #define DR_REG_LP_TSENSOR_BASE        (DR_REG_LPPERIPH_BASE + 0xF000)
 
 /**
+ * @brief: Special memory address
+ */
+#define MIPI_CSI_MEM_BASE             0x50104000
+#define MIPI_DSI_MEM_BASE             0x50105000
+
+/**
  * This are module helper MACROs for quick module reference
  * including some module(renamed) address
  */
