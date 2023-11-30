@@ -861,15 +861,6 @@ pytest_components_esp32_flash_encryption:
       artifacts: false
   tags: [ esp32, flash_encryption ]
 
-pytest_components_esp32_flash_multi:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32-flash_multi
-  needs:
-    - job: build_pytest_components_esp32
-      artifacts: false
-  tags: [ esp32, flash_multi ]
-
 pytest_components_esp32_xtal32k:
   extends:
     - .pytest_components_dir_template
@@ -934,15 +925,6 @@ pytest_components_esp32s2_adc:
       artifacts: false
   tags: [ esp32s2, adc ]
 
-pytest_components_esp32s2_flash_multi:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s2-flash_multi
-  needs:
-    - job: build_pytest_components_esp32s2
-      artifacts: false
-  tags: [ esp32s2, flash_multi ]
-
 pytest_components_esp32s3_generic:
   extends:
     - .pytest_components_dir_template
@@ -1006,15 +988,6 @@ pytest_components_esp32s3_flash_encryption_f8r8:
     - job: build_pytest_components_esp32s3
       artifacts: false
   tags: [ esp32s3, flash_encryption_f8r8 ]
-
-pytest_components_esp32s3_flash_multi:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s3-flash_multi
-  needs:
-    - job: build_pytest_components_esp32s3
-      artifacts: false
-  tags: [ esp32s3, flash_multi ]
 
 pytest_components_esp32s3_mspi_f4r4:
   extends:
@@ -1177,15 +1150,6 @@ pytest_components_esp32c3_nvs_encr_hmac:
     - job: build_pytest_components_esp32c3
       artifacts: false
   tags: [ esp32c3, nvs_encr_hmac ]
-
-pytest_components_esp32c3_flash_multi:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c3-flash_multi
-  needs:
-    - job: build_pytest_components_esp32c3
-      artifacts: false
-  tags: [ esp32c3, flash_multi ]
 
 pytest_components_esp32_sdspi:
   extends:

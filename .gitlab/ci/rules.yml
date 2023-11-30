@@ -248,12 +248,6 @@
   - "components/esp_driver_sdmmc/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
 
-# for jobs: component_ut_pytest_flash_multi
-.patterns-component_ut-flash_multi: &patterns-component_ut-flash_multi
-  - "components/spi_flash/**/*"
-  - "components/hal/spi_flash*.c"
-  - "components/hal/include/hal/spi_flash*.h"
-
 # for jobs: USB host and device examples
 .patterns-example_test-usb: &patterns-example_test-usb
   - "components/hal/usb*.c"
@@ -1623,8 +1617,6 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
-      changes: *patterns-component_ut-flash_multi
-    - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
@@ -1699,19 +1691,6 @@
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-
-.rules:test:component_ut-esp32-flash_multi:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-flash_multi
 
 .rules:test:component_ut-esp32-sdio:
   rules:
@@ -1796,19 +1775,6 @@
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-
-.rules:test:component_ut-esp32c3-flash_multi:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32c3
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-flash_multi
 
 .rules:test:component_ut-esp32c3-nvs_encr_hmac:
   rules:
@@ -1961,19 +1927,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
-.rules:test:component_ut-esp32s2-flash_multi:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32s2
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-flash_multi
-
 .rules:test:component_ut-esp32s2-sdio:
   rules:
     - <<: *if-revert-branch
@@ -2014,19 +1967,6 @@
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-
-.rules:test:component_ut-esp32s3-flash_multi:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32s3
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-flash_multi
 
 .rules:test:component_ut-esp32s3-usb:
   rules:

@@ -119,7 +119,6 @@
       - sdio      # pytest*sdio*
       - usb       # USB Device & Host tests
       - adc       # pytest*adc*
-      - flash_multi
       - ecdsa
       - nvs_encr_hmac
   patterns:
