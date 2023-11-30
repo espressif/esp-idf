@@ -465,6 +465,21 @@ examples/peripherals/usb:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
 
+examples/peripherals/usb/device:
+  enable:
+    - if: SOC_USB_OTG_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - usb
+  depends_filepatterns:
+    - components/hal/usb*.c
+    - components/hal/esp32*/include/hal/usb*.h
+    - examples/peripherals/usb/host/**/*
+    - examples/peripherals/usb/device/**/*
+
 examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
   disable:
     - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1

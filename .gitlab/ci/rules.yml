@@ -248,21 +248,6 @@
   - "components/esp_driver_sdmmc/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
 
-# for jobs: USB host and device examples
-.patterns-example_test-usb: &patterns-example_test-usb
-  - "components/hal/usb*.c"
-  - "components/hal/esp32s*/include/hal/usb*.h"
-  - "components/usb/*include/**/*"
-  - "components/usb/*"
-  - "examples/peripherals/usb/host/**/**/**/*"
-  - "examples/peripherals/usb/device/**/**/*"
-
-# for jobs: USB component (Host) pytest test_app
-.patterns-component_ut-usb: &patterns-component_ut-usb
-  - "components/hal/usb*.c"
-  - "components/hal/esp32s*/include/hal/usb*.h"
-  - "components/usb/**/*"
-
 ##############
 # if anchors #
 ##############
@@ -1559,8 +1544,6 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
-      changes: *patterns-component_ut-usb
-    - <<: *if-dev-push
       changes: *patterns-component_ut-wifi
     - <<: *if-dev-push
       changes: *patterns-custom_test
@@ -1574,8 +1557,6 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
-    - <<: *if-dev-push
-      changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
@@ -1766,19 +1747,6 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut
-
-.rules:test:component_ut-esp32s3-usb:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32s3
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-usb
 
 .rules:test:component_ut-esp32s3-wifi:
   rules:
@@ -2193,19 +2161,6 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
-
-.rules:test:example_test-esp32s2-usb:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32s2
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-usb
 
 .rules:test:example_test-esp32s2-wifi:
   rules:

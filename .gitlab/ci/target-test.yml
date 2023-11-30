@@ -544,15 +544,6 @@ pytest_examples_esp32c3_flash_encryption:
       artifacts: false
   tags: [ esp32c3, flash_encryption ]
 
-pytest_examples_esp32s2_usb_device:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32s2-usb
-  needs:
-    - job: build_pytest_examples_esp32s2
-      artifacts: false
-  tags: [ esp32s2, usb_device ]
-
 pytest_examples_esp32_sdmmc:
   extends:
     - .pytest_examples_dir_template
@@ -1155,15 +1146,6 @@ pytest_examples_esp32h2_zigbee:
     - job: build_pytest_examples_esp32h2
       artifacts: false
   tags: [ esp32h2, zigbee_multi_dut ]
-
-pytest_components_esp32s3_usb_host:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s3-usb
-  needs:
-    - job: build_pytest_components_esp32s3
-      artifacts: false
-  tags: [ esp32s3, usb_host_flash_disk ]
 
 .pytest_test_apps_dir_template:
   extends: .pytest_template
