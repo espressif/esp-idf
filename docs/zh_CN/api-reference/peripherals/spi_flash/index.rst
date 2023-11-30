@@ -251,7 +251,7 @@ flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
 
 另外，所有 API 函数均受互斥量 ``s_flash_op_mutex`` 保护。
 
-在单核环境中（启用 :ref:`CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE`），需要禁用上述两个 cache，以防发生 CPU 间通信。
+在单核环境中（启用 :ref:`CONFIG_FREERTOS_UNICORE`），需要禁用上述两个 cache，以防发生 CPU 间通信。
 
 相关文档
 -----------------
