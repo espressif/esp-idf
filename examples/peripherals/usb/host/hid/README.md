@@ -63,10 +63,11 @@ Hello, ESP32 USB HID Keyboard is here!
 Mouse input data starts with the word "Mouse" and has the following structure. 
 ```
 Mouse
-X: -00343   Y: 000183   | |o|
-     |            |      | |
-     |            |      | +- Right mouse button pressed status ("o" - pressed, " " - not pressed)
-     |            |      +--- Left mouse button pressed status ("o" - pressed, " " - not pressed)
+X: -00343   Y: 000183   Wheel: 000004   | |o| |
+     |            |              |       | | +- Right mouse button pressed status ("o" - pressed, " " - not pressed)
+     |            |              |       | +- Middle mouse button pressed status ("o" - pressed, " " - not pressed)
+     |            |              |       +--- Left mouse button pressed status ("o" - pressed, " " - not pressed)
+     |            |              +---------- Mouse wheel scroll status
      |            +---------- Y relative coordinate of the cursor 
      +----------------------- X relative coordinate of the cursor 
 ```
