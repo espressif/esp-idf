@@ -277,14 +277,6 @@
 .patterns-example_test-adc: &patterns-example_test-adc
   - "examples/peripherals/adc/**/*"
 
-.patterns-target_test-ecdsa: &patterns-target_test-ecdsa
-  - "components/{hal,efuse}/???[!t]*/**/*"
-  - "components/{hal,efuse}/??[!s]?*/**/*"
-  - "components/{hal,efuse}/???/**/*"
-  - "components/{hal,efuse}/??/**/*"
-  - "components/{hal,efuse}/*"
-  - "components/mbedtls/port/ecdsa/*"
-
 ##############
 # if anchors #
 ##############
@@ -602,8 +594,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32:
@@ -639,8 +629,6 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-    - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -678,8 +666,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:component_ut-esp32c3:
@@ -715,8 +701,6 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-    - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -940,8 +924,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:build:custom_test-esp32:
@@ -965,8 +947,6 @@
       changes: *patterns-downloadable-tools
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-    - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
@@ -1631,8 +1611,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
     - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
-    - <<: *if-dev-push
       changes: *patterns-target_test-wifi
 
 .rules:labels:nvs_coverage:
@@ -1843,19 +1821,6 @@
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-
-.rules:test:component_ut-esp32h2-ecdsa:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32h2
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-target_test-ecdsa
 
 .rules:test:component_ut-esp32p4:
   rules:

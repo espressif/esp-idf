@@ -1216,15 +1216,6 @@ pytest_components_esp32h2_adc:
       artifacts: false
   tags: [ esp32h2, adc ]
 
-pytest_components_esp32h2_ecdsa:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32h2-ecdsa
-  needs:
-    - job: build_pytest_components_esp32h2
-      artifacts: false
-  tags: [ esp32h2, ecdsa_efuse ]
-
 pytest_components_esp32h2_usb_serial_jtag:
   extends:
     - .pytest_components_dir_template

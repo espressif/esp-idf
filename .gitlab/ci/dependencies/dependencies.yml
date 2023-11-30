@@ -119,7 +119,6 @@
       - sdio      # pytest*sdio*
       - usb       # USB Device & Host tests
       - adc       # pytest*adc*
-      - ecdsa
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
