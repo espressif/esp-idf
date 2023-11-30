@@ -183,23 +183,9 @@ static void uart_module_enable(uart_port_t uart_num)
                 uart_ll_enable_bus_clock(uart_num, true);
             }
             if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-                // Workaround for ESP32C3/S3: enable core reset before enabling uart module clock to prevent uart output
-                // garbage value.
-#if SOC_UART_REQUIRE_CORE_RESET
-                HP_UART_SRC_CLK_ATOMIC(){
-                    uart_hal_set_reset_core(&(uart_context[uart_num].hal), true);
-                }
                 HP_UART_BUS_CLK_ATOMIC() {
                     uart_ll_reset_register(uart_num);
                 }
-                HP_UART_SRC_CLK_ATOMIC(){
-                    uart_hal_set_reset_core(&(uart_context[uart_num].hal), false);
-                }
-#else
-                HP_UART_BUS_CLK_ATOMIC() {
-                    uart_ll_reset_register(uart_num);
-                }
-#endif
             }
         }
 #if (SOC_UART_LP_NUM >= 1)

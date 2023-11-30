@@ -122,19 +122,6 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 #define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    hw->clk_conf.rst_core = core_rst_en;
-}
-
-/**
  * @brief  Enable the UART clock.
  *
  * @param  hw Beginning address of the peripheral registers.
