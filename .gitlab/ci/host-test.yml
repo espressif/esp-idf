@@ -205,19 +205,19 @@ test_tools:
     LC_ALL: C.UTF-8
   script:
     - stat=0
-    - cd ${IDF_PATH}/tools/ci
-    - python -m xmlrunner test_autocomplete.py        --output-file=${IDF_PATH}/XUNIT_AUTOCOMP.xml || stat=1
+    - cd ${IDF_PATH}/tools/ci/test_autocomplete
+    - pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml                  || stat=1
     - cd ${IDF_PATH}/tools/test_idf_py
-    - python -m xmlrunner test_idf_py.py              --output-file=${IDF_PATH}/XUNIT_IDF_PY.xml   || stat=1
-    - python -m xmlrunner test_hints.py               --output-file=${IDF_PATH}/XUNIT_HINTS.xml    || stat=1
+    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml                    || stat=1
+    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml                     || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
-    - python -m xmlrunner test_mkdfu.py               --output-file=${IDF_PATH}/XUNIT_MKDFU.xml    || stat=1
+    - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
     - cd ${IDF_PATH}/tools/test_sbom
-    - pytest                                          --junitxml=${IDF_PATH}/XUNIT_SBOM.xml        || stat=1
+    - pytest                                   --junitxml=${IDF_PATH}/XUNIT_SBOM.xml                      || stat=1
     - cd ${IDF_PATH}
-    - shellcheck -s sh tools/detect_python.sh                                                      || stat=1
-    - shellcheck -s bash tools/detect_python.sh                                                    || stat=1
-    - shellcheck -s dash tools/detect_python.sh                                                    || stat=1
+    - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
+    - shellcheck -s bash tools/detect_python.sh                                                           || stat=1
+    - shellcheck -s dash tools/detect_python.sh                                                           || stat=1
     - "bash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"

@@ -126,7 +126,7 @@
 
   - "components/**/*"
 
-  - "tools/ci/test_autocomplete.py"
+  - "tools/ci/test_autocomplete/*"
 
   - "tools/mass_mfg/**/*"
 
