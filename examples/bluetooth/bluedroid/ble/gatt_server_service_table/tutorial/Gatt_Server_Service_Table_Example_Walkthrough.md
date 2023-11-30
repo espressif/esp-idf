@@ -158,6 +158,7 @@ The application registration takes place inside ``app_main()`` using the ``esp_b
 ```c
 esp_ble_gatts_app_register(ESP_HEART_RATE_APP_ID);
 ```
+The ``ESP_HEART_RATE_APP_ID`` serves as an application ID, distinguishing between various application layer callbacks. This identifier corresponds to the ``app_id`` found within the ``gatts_reg_evt_param`` in ESP_GATTS_REG_EVT.
 
 ## Setting GAP Parameters
 
