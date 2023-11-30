@@ -13,7 +13,7 @@
 #include "driver/sdmmc_host.h"
 #include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
-#include "sdmmc_test_begin_end.h"
+#include "sdmmc_test_begin_end_sd.h"
 #include "hal/gpio_hal.h"
 
 void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr)
@@ -33,7 +33,8 @@ void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz,
         TEST_IGNORE_MESSAGE("Board doesn't support required bus width");
     }
 }
-void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_t *out_card) {
+void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_t *out_card)
+{
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
 
@@ -87,18 +88,18 @@ void sdmmc_test_sd_end(sdmmc_card_t *card)
     int slot = card->host.slot;
     const sdmmc_test_board_slot_info_t *slot_info = sdmmc_test_board_get_slot_info(slot);
     const int pins[] = {
-            slot_info->clk,
-            slot_info->cmd_mosi,
-            slot_info->d0_miso,
-            slot_info->d1,
-            slot_info->d2,
-            slot_info->d3_cs,
-            slot_info->d4,
-            slot_info->d5,
-            slot_info->d6,
-            slot_info->d7,
-            slot_info->cd,
-            slot_info->wp,
+        slot_info->clk,
+        slot_info->cmd_mosi,
+        slot_info->d0_miso,
+        slot_info->d1,
+        slot_info->d2,
+        slot_info->d3_cs,
+        slot_info->d4,
+        slot_info->d5,
+        slot_info->d6,
+        slot_info->d7,
+        slot_info->cd,
+        slot_info->wp,
     };
     const int num_pins = sizeof(pins) / sizeof(pins[0]);
     // Silence logging in gpio_reset_pin, which logs at INFO level

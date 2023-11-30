@@ -1,3 +1,3 @@
 idf_component_register(SRCS sdmmc_test_board.c sdmmc_test_board_defs.c
                        INCLUDE_DIRS include
-                       PRIV_REQUIRES sdmmc esp_driver_sdmmc esp_driver_sdspi)
+                       REQUIRES esp_driver_sdmmc esp_driver_sdspi esp_driver_gpio)

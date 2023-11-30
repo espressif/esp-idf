@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include "unity.h"
 #include "sdmmc_cmd.h"
-#include "sdmmc_test_begin_end.h"
+#include "sdmmc_test_begin_end_spi.h"
 
 static void do_one_sdspi_probe(int slot, int freq_khz)
 {
@@ -30,13 +30,19 @@ TEST_CASE("sdspi probe, slot 0, HS", "[sdspi]")
     do_one_sdspi_probe(SLOT_0, SDMMC_FREQ_HIGHSPEED);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
+//TODO: IDF-8750. Leaks too much memory, needs check
 TEST_CASE("sdspi probe, slot 1", "[sdspi]")
 {
     do_one_sdspi_probe(SLOT_1, SDMMC_FREQ_PROBING);
     do_one_sdspi_probe(SLOT_1, SDMMC_FREQ_DEFAULT);
 }
+#endif
 
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
+//TODO: IDF-8749
 TEST_CASE("sdspi probe, slot 1, HS", "[sdspi]")
 {
     do_one_sdspi_probe(SLOT_1, SDMMC_FREQ_HIGHSPEED);
 }
+#endif

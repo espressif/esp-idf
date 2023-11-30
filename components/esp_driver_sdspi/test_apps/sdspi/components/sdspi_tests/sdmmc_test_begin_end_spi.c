@@ -13,7 +13,7 @@
 #include "driver/sdspi_host.h"
 #include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
-#include "sdmmc_test_begin_end.h"
+#include "sdmmc_test_begin_end_spi.h"
 
 void sdmmc_test_spi_skip_if_board_incompatible(int slot, int freq_khz)
 {

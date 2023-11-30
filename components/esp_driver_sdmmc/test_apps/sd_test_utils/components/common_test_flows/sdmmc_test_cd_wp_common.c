@@ -11,7 +11,6 @@
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_cd_wp_common.h"
 
-
 void sdmmc_test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
 {
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));

@@ -19,7 +19,8 @@
 static void do_single_rw_perf_test(sdmmc_card_t* card, size_t start_block,
                                    size_t block_count, size_t alignment, FILE* performance_log);
 
-static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count) {
+static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count)
+{
     srand(seed);
     for (size_t i = 0; i < count; ++i) {
         uint32_t val = rand();
@@ -29,7 +30,8 @@ static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count) {
 
 // Check if the buffer pointed to by 'dst' contains 'count' 32-bit
 // ints generated from 'rand' with the starting value of 'seed'
-static void check_buffer(uint32_t seed, const uint8_t* src, size_t count) {
+static void check_buffer(uint32_t seed, const uint8_t* src, size_t count)
+{
     srand(seed);
     for (size_t i = 0; i < count; ++i) {
         uint32_t val;
@@ -77,7 +79,7 @@ static void do_single_rw_perf_test(sdmmc_card_t* card, size_t start_block,
         stdout = performance_log;
         static const char wr_speed_str[] = "SDMMC_WR_SPEED";
         static const char rd_speed_str[] = "SDMMC_RD_SPEED";
-        int aligned = ((alignment % 4) == 0)? 1: 0;
+        int aligned = ((alignment % 4) == 0) ? 1 : 0;
         IDF_LOG_PERFORMANCE(wr_speed_str, "%d, blk_n: %d, aligned: %d",
                             (int)(total_size * 1000 / time_wr), block_count, aligned);
         IDF_LOG_PERFORMANCE(rd_speed_str, "%d, blk_n: %d, aligned: %d",
@@ -142,15 +144,15 @@ void sdmmc_test_rw_with_offset(sdmmc_card_t* card)
     do_single_rw_perf_test(card, card->csd.capacity - 64, 32, 4, NULL);
     do_single_rw_perf_test(card, card->csd.capacity - 64, 64, 4, NULL);
     do_single_rw_perf_test(card, card->csd.capacity - 8, 1, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 1, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 4, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 8, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 16, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 32, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 64, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 128, 4, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 1, 4, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 4, 4, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 8, 4, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 16, 4, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 32, 4, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 64, 4, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 128, 4, NULL);
     /* unaligned */
-    do_single_rw_perf_test(card, card->csd.capacity/2, 1, 1, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 8, 1, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity/2, 128, 1, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 1, 1, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 8, 1, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 128, 1, NULL);
 }

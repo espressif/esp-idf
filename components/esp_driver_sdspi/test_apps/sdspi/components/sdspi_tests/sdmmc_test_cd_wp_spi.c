@@ -9,7 +9,7 @@
 #include "driver/sdspi_host.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_board.h"
-#include "sdmmc_test_begin_end.h"
+#include "sdmmc_test_begin_end_spi.h"
 #include "sdmmc_test_cd_wp_common.h"
 
 TEST_CASE("CD input works in SPI mode", "[sdspi]")

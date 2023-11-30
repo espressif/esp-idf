@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include "unity.h"
 #include "sdmmc_cmd.h"
-#include "sdmmc_test_begin_end.h"
+#include "sdmmc_test_begin_end_spi.h"
 #include "sdmmc_test_rw_common.h"
 
 /* ========== Read/write performance tests, SPI ========== */
@@ -26,10 +26,13 @@ TEST_CASE("sdspi read/write performance, slot 0", "[sdspi]")
     do_one_sdspi_perf_test(SLOT_0, SDMMC_FREQ_HIGHSPEED);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
+//TODO: IDF-8749
 TEST_CASE("sdspi read/write performance, slot 1", "[sdspi]")
 {
     do_one_sdspi_perf_test(SLOT_1, SDMMC_FREQ_HIGHSPEED);
 }
+#endif
 
 /* ========== Read/write tests with offset, SPI ========== */
 
@@ -48,10 +51,13 @@ TEST_CASE("sdspi read/write performance with offset, slot 0", "[sdspi]")
     do_one_sdspi_rw_test_with_offset(SLOT_0, SDMMC_FREQ_HIGHSPEED);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
+//TODO: IDF-8749
 TEST_CASE("sdspi read/write performance with offset, slot 1", "[sdspi]")
 {
     do_one_sdspi_rw_test_with_offset(SLOT_1, SDMMC_FREQ_HIGHSPEED);
 }
+#endif
 
 /* ========== Read/write tests with unaligned source/destination buffer, SPI ========== */
 

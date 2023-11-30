@@ -19,7 +19,6 @@ extern "C" {
 
 /* Helper functions to initialize/deinintalize the host (SDMMC/SDSPI) inside the test */
 
-
 #if SOC_SDMMC_HOST_SUPPORTED
 /**
  * @brief Skip the test if the board is incompatible with the given slot, width, frequency and DDR mode
@@ -48,25 +47,6 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
  */
 void sdmmc_test_sd_end(sdmmc_card_t *card);
 #endif
-
-/**
- * @brief Skip the test if the board is incompatible with the given slot and frequency, for SPI mode.
- * @see sdmmc_test_sd_skip_if_board_incompatible
- */
-void sdmmc_test_spi_skip_if_board_incompatible(int slot, int freq_khz);
-
-/**
- * @brief Helper function to initialize the SDMMC host and slot for the test using the given settings, for SPI mode
- * @see sdmmc_test_sd_begin
- */
-void sdmmc_test_spi_begin(int slot, int freq_khz, sdmmc_card_t *out_card);
-
-/**
- * @brief Helper function to deinitialize the SDMMC host and slot after the test, for SPI mode
- * @see sdmmc_test_sd_end
- */
-void sdmmc_test_spi_end(int slot, sdmmc_card_t *card);
-
 
 #ifdef __cplusplus
 };

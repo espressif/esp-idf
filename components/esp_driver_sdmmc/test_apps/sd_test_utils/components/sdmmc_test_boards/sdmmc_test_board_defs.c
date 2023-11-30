@@ -385,7 +385,6 @@ static const sdmmc_test_board_info_t s_board_info = {
 
 #endif  // CONFIG_SDMMC_BOARD_*
 
-
 const sdmmc_test_board_info_t* sdmmc_test_board_get_info(void)
 {
     return &s_board_info;

@@ -56,7 +56,6 @@ typedef struct {
     void (*card_power_set)(bool);                                       /*< function to turn card power on or off */
 } sdmmc_test_board_info_t;
 
-
 /**
  * @brief Get information about the test board
  * @return Pointer to the board information structure
@@ -91,7 +90,6 @@ void sdmmc_test_board_get_config_sdmmc(int slot_index, sdmmc_host_t *out_host_co
  */
 void sdmmc_test_board_get_config_sdspi(int slot_index, sdmmc_host_t *out_host_config,
                                        spi_bus_config_t *out_spi_bus_config, sdspi_device_config_t *out_dev_config);
-
 
 /**
  * @brief Set card power on or off

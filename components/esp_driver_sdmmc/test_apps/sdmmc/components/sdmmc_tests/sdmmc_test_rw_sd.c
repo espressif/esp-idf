@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include "unity.h"
 #include "sdmmc_cmd.h"
-#include "sdmmc_test_begin_end.h"
+#include "sdmmc_test_begin_end_sd.h"
 #include "sdmmc_test_rw_common.h"
 
 /* ========== Read/write performance tests, SD ========== */

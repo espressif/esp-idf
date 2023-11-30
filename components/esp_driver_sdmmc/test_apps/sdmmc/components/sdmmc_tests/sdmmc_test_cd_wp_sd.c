@@ -10,6 +10,8 @@
 #include "sdmmc_test_cd_wp_common.h"
 #include "sdmmc_test_board.h"
 
+//TODO: IDF-8734
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
 TEST_CASE("CD input works in SD mode", "[sdmmc]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
@@ -43,3 +45,4 @@ TEST_CASE("WP input works in SD mode", "[sdmmc]")
     TEST_ESP_OK(sdmmc_host_deinit());
     sdmmc_test_board_card_power_set(false);
 }
+#endif

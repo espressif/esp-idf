@@ -8,7 +8,6 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 
-
 const sdmmc_test_board_slot_info_t* sdmmc_test_board_get_slot_info(int slot_index)
 {
     assert(slot_index >= 0 && slot_index < SDMMC_TEST_BOARD_MAX_SLOTS);
