@@ -120,7 +120,6 @@
       - usb       # USB Device & Host tests
       - adc       # pytest*adc*
       - ecdsa
-      - nvs_encr_hmac
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"

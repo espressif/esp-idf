@@ -285,18 +285,6 @@
   - "components/{hal,efuse}/*"
   - "components/mbedtls/port/ecdsa/*"
 
-.patterns-component_ut-nvs_encr_hmac: &patterns-component_ut-nvs_encr_hmac
-  - "components/nvs_flash/**/*"
-  - "components/nvs_sec_provider/**/*"
-
-.patterns-example_test-nvs_encr_hmac: &patterns-example_test-nvs_encr_hmac
-  - "components/{nvs_flash,nvs_sec_provider}/???[!t]*/**/*"
-  - "components/{nvs_flash,nvs_sec_provider}/??[!s]?*/**/*"
-  - "components/{nvs_flash,nvs_sec_provider}/???/**/*"
-  - "components/{nvs_flash,nvs_sec_provider}/??/**/*"
-  - "components/{nvs_flash,nvs_sec_provider}/*"
-  - "examples/security/nvs_encryption_hmac/**/*"
-
 ##############
 # if anchors #
 ##############
@@ -1617,8 +1605,6 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
-      changes: *patterns-component_ut-nvs_encr_hmac
-    - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
     - <<: *if-dev-push
       changes: *patterns-component_ut-usb
@@ -1636,8 +1622,6 @@
       changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
-    - <<: *if-dev-push
-      changes: *patterns-example_test-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
@@ -1775,19 +1759,6 @@
       changes: *patterns-component_ut-adc
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
-
-.rules:test:component_ut-esp32c3-nvs_encr_hmac:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32c3
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-nvs_encr_hmac
 
 .rules:test:component_ut-esp32c3-sdio:
   rules:
@@ -2323,19 +2294,6 @@
     - <<: *if-label-build-only
       when: never
     - <<: *if-example_test-ota-include_nightly_run-rule
-
-.rules:test:example_test-esp32c3-nvs_encr_hmac:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32c3
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-nvs_encr_hmac
 
 .rules:test:example_test-esp32c3-sdio:
   rules:
