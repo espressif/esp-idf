@@ -119,7 +119,6 @@
       - sdio      # pytest*sdio*
       - usb       # USB Device & Host tests
       - adc       # pytest*adc*
-      - i154
       - flash_multi
       - ecdsa
       - nvs_encr_hmac
@@ -146,21 +145,6 @@
     - "if-example_test-ota-include_nightly_run-rule"
   included_in:
     - "build:example_test-{0}"
-    - "build:example_test"
-    - build:target_test
-
-# For i154 runners
-"test:example_test-i154":
-  patterns:
-    - "example_test-i154"
-    - "target_test-i154"
-  labels:
-    - target_test
-    - example_test
-  included_in:
-    - "build:example_test-esp32s3"
-    - "build:example_test-esp32c6"
-    - "build:example_test-esp32h2"
     - "build:example_test"
     - build:target_test
 

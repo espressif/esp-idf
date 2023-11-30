@@ -83,22 +83,6 @@
 
   - "components/**/*"
 
-.patterns-component_ut-i154: &patterns-component_ut-i154
-  - "components/{esp_phy,esp_coex}/???[!t]*/**/*"
-  - "components/{esp_phy,esp_coex}/??[!s]?*/**/*"
-  - "components/{esp_phy,esp_coex}/???/**/*"
-  - "components/{esp_phy,esp_coex}/*"
-  - "components/ieee802154/**/*"
-
-.patterns-example_test-i154: &patterns-example_test-i154
-  - "components/{esp_netif,ieee802154,lwip,openthread}/???[!t]*/**/*"
-  - "components/{esp_netif,ieee802154,lwip,openthread}/??[!s]?*/**/*"
-  - "components/{esp_netif,ieee802154,lwip,openthread}/???/**/*"
-  - "components/{esp_netif,ieee802154,lwip,openthread}/??/**/*"
-  - "components/{esp_netif,ieee802154,lwip,openthread}/*"
-  - "examples/common_components/iperf/**/*"
-  - "examples/openthread/**/*"
-
 .patterns-target_test-wifi: &patterns-target_test-wifi
   - "components/{esp_wifi,esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/???[!t]*/**/*"
   - "components/{esp_wifi,esp_netif,lwip,esp_phy,wpa_supplicant,esp_coex}/??[!s]?*/**/*"
@@ -1641,8 +1625,6 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut-flash_multi
     - <<: *if-dev-push
-      changes: *patterns-component_ut-i154
-    - <<: *if-dev-push
       changes: *patterns-component_ut-nvs_encr_hmac
     - <<: *if-dev-push
       changes: *patterns-component_ut-sdio
@@ -1662,8 +1644,6 @@
       changes: *patterns-example_test-adc
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
-    - <<: *if-dev-push
-      changes: *patterns-example_test-i154
     - <<: *if-dev-push
       changes: *patterns-example_test-nvs_encr_hmac
     - <<: *if-dev-push
@@ -2650,18 +2630,6 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
-
-.rules:test:example_test-i154:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-i154
 
 .rules:test:host_test:
   rules:
