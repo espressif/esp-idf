@@ -1037,7 +1037,7 @@ config BT_ACL_CONNECTIONS
 
 config BT_MULTI_CONNECTION_ENBALE
     bool "Enable BLE multi-conections"
-    depends on BT_BLUEDROID_ENABLED
+    depends on BT_BLE_ENABLED
     default y
     help
         Enable this option if there are multiple connections
@@ -1058,7 +1058,7 @@ config BT_BLE_DYNAMIC_ENV_MEMORY
 
 config BT_BLE_HOST_QUEUE_CONG_CHECK
     bool "BLE queue congestion check"
-    depends on BT_BLUEDROID_ENABLED
+    depends on BT_BLE_ENABLED
     default n
     help
         When scanning and scan duplicate is not enabled, if there are a lot of adv packets around
@@ -1083,7 +1083,7 @@ config BT_BLE_ACT_SCAN_REP_ADV_SCAN
 
 config BT_BLE_ESTAB_LINK_CONN_TOUT
     int "Timeout of BLE connection establishment"
-    depends on BT_BLUEDROID_ENABLED
+    depends on BT_BLE_ENABLED
     range 1 60
     default 30
     help
@@ -1118,7 +1118,7 @@ config BT_BLE_RPA_SUPPORTED
 
 config BT_BLE_RPA_TIMEOUT
     int "Timeout of resolvable private address"
-    depends on BT_BLUEDROID_ENABLED
+    depends on BT_BLE_ENABLED
     range 1 3600
     default 900
     help
@@ -1127,35 +1127,35 @@ config BT_BLE_RPA_TIMEOUT
 
 config BT_BLE_50_FEATURES_SUPPORTED
     bool "Enable BLE 5.0 features"
-    depends on (BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3))
+    depends on (BT_BLE_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3))
     default y
     help
         This enables BLE 5.0 features, this option only support esp32c3/esp32s3 chip
 
 config BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features"
-    depends on (BT_BLUEDROID_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3))
+    depends on (BT_BLE_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3))
     default n
     help
         This enables BLE 4.2 features.
 
 config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     bool "Enable BLE periodic advertising sync transfer feature"
-    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && SOC_ESP_NIMBLE_CONTROLLER)
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && SOC_ESP_NIMBLE_CONTROLLER)
     default n
     help
         This enables BLE periodic advertising sync transfer feature
 
 config BT_BLE_FEAT_PERIODIC_ADV_ENH
     bool "Enable periodic adv enhancements(adi support)"
-    depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && SOC_ESP_NIMBLE_CONTROLLER)
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && SOC_ESP_NIMBLE_CONTROLLER)
     default n
     help
         Enable the periodic advertising enhancements
 
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"
-    depends on BT_BLUEDROID_ENABLED
+    depends on BT_BLE_ENABLED
     default n
     help
         This enable BLE high duty advertising interval feature
