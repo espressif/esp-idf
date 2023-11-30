@@ -71,7 +71,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * `CMock`_ Mock/stub generator for C, Copyright (c) 2007-14 Mike Karlesky, Mark VanderVoord, Greg Williams, is licensed under MIT license as described in :component_file:`LICENSE file <cmock/CMock/LICENSE.txt>`.
 
-* `Unity`_ Simple Unit Testing library, Copyright (c) <year> 2007-23 Mike Karlesky, Mark VanderVoord, Greg Williams, is licensed under MIT license as described in :component_file:`LICENSE file <unity/unity/docs/license.txt>`.
+* `Unity`_ Simple Unit Testing library, Copyright (c) 2007-23 Mike Karlesky, Mark VanderVoord, Greg Williams, is licensed under MIT license as described in :component_file:`LICENSE file <unity/unity/LICENSE.txt>`.
 
 Documentation
 -------------

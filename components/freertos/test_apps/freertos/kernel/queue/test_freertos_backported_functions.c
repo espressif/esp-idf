@@ -184,7 +184,7 @@ TEST_CASE("Test FreeRTOS static task allocation", "[freertos]")
                                                             (StaticTask_t *)&task_buffer, core);
         vTaskDelay(5); //Allow for static task to run, delete, and idle to clean up
         TEST_ASSERT_NOT_EQUAL(NULL, handle);    //Check static task was successfully allocated
-        TEST_ASSERT_TRUE(has_run[core])    //Check static task has run
+        TEST_ASSERT_TRUE(has_run[core]);    //Check static task has run
     }
 }
 

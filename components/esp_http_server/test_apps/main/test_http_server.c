@@ -92,7 +92,7 @@ httpd_handle_t test_httpd_start(uint16_t id)
     config.max_uri_handlers = HTTPD_TEST_MAX_URI_HANDLERS;
     config.server_port += id;
     config.ctrl_port += id;
-    TEST_ASSERT(httpd_start(&hd, &config) == ESP_OK)
+    TEST_ASSERT(httpd_start(&hd, &config) == ESP_OK);
     return hd;
 }
 
