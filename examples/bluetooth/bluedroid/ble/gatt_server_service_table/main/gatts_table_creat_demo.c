@@ -404,6 +404,11 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                         {
                             indicate_data[i] = i % 0xff;
                         }
+
+                        // if want to change the value in server database, call:
+                        // esp_ble_gatts_set_attr_value(heart_rate_handle_table[IDX_CHAR_VAL_A], sizeof(indicate_data), indicate_data);
+
+
                         //the size of indicate_data[] need less than MTU size
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, heart_rate_handle_table[IDX_CHAR_VAL_A],
                                             sizeof(indicate_data), indicate_data, true);
