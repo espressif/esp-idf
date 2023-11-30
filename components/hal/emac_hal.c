@@ -12,6 +12,18 @@
 
 #define ETH_CRC_LENGTH (4)
 
+#ifndef NDEBUG
+#define EMAC_HAL_BUF_MAGIC_ID 0x1E1C8416
+#endif // NDEBUG
+
+typedef struct {
+#ifndef NDEBUG
+    uint32_t magic_id;
+#endif // NDEBUG
+    uint32_t copy_len;
+}__attribute__((packed)) emac_hal_auto_buf_info_t;
+
+
 static esp_err_t emac_hal_flush_trans_fifo(emac_hal_context_t *hal)
 {
     emac_ll_flush_trans_fifo_enable(hal->dma_regs, true);
@@ -299,7 +311,7 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal)
     /* Receive Threshold Control */
     emac_ll_set_recv_threshold(hal->dma_regs, EMAC_LL_RECEIVE_THRESHOLD_CONTROL_64);
     /* Allow the DMA to process a second frame of Transmit data even before obtaining the status for the first frame */
-    emac_ll_opt_second_frame_enable(hal->dma_regs, true);;
+    emac_ll_opt_second_frame_enable(hal->dma_regs, true);
 
     /* DMABMR Configuration */
     /* Enable Mixed Burst */
@@ -395,11 +407,6 @@ esp_err_t emac_hal_stop(emac_hal_context_t *hal)
     return ESP_OK;
 }
 
-uint32_t emac_hal_get_tx_desc_owner(emac_hal_context_t *hal)
-{
-    return hal->tx_desc->TDES0.Own;
-}
-
 uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length)
 {
     /* Get the number of Tx buffers to use for the frame */
@@ -464,41 +471,85 @@ err:
     return 0;
 }
 
-uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc)
+uint8_t *emac_hal_alloc_recv_buf(emac_hal_context_t *hal, uint32_t *size)
 {
-    eth_dma_rx_descriptor_t *desc_iter = NULL;
-    eth_dma_rx_descriptor_t *first_desc = NULL;
+    eth_dma_rx_descriptor_t *desc_iter = hal->rx_desc;
     uint32_t used_descs = 0;
-    uint32_t seg_count = 0;
     uint32_t ret_len = 0;
     uint32_t copy_len = 0;
-    uint32_t write_len = 0;
-    uint32_t frame_count = 0;
+    uint8_t *buf = NULL;
 
-    first_desc = hal->rx_desc;
-    desc_iter = hal->rx_desc;
     /* Traverse descriptors owned by CPU */
-    while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM) && !frame_count) {
+    while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
         used_descs++;
-        seg_count++;
         /* Last segment in frame */
         if (desc_iter->RDES0.LastDescriptor) {
             /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
             ret_len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
             /* packets larger than expected will be truncated */
-            copy_len = ret_len > size ? size : ret_len;
-            /* update unhandled frame count */
-            frame_count++;
-        }
-        /* First segment in frame */
-        if (desc_iter->RDES0.FirstDescriptor) {
-            first_desc = desc_iter;
+            copy_len = ret_len > *size ? *size : ret_len;
+            break;
         }
         /* point to next descriptor */
         desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
     }
-    /* there's at least one frame to process */
-    if (frame_count) {
+    if (copy_len > 0) {
+        buf = malloc(copy_len);
+        if (buf != NULL) {
+            emac_hal_auto_buf_info_t *buff_info = (emac_hal_auto_buf_info_t *)buf;
+            /* no need to check allocated buffer min lenght prior writing since we know that EMAC DMA is configured to
+            not forward erroneous or undersized frames (less than 64B), see emac_hal_init_dma_default */
+#ifndef NDEBUG
+            buff_info->magic_id = EMAC_HAL_BUF_MAGIC_ID;
+#endif // NDEBUG
+            buff_info->copy_len = copy_len;
+        }
+    }
+    /* indicate actual size of received frame */
+    *size = ret_len;
+    return buf;
+}
+
+uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc)
+{
+    eth_dma_rx_descriptor_t *desc_iter = hal->rx_desc;
+    eth_dma_rx_descriptor_t *first_desc = hal->rx_desc;
+    uint32_t used_descs = 0;
+    uint32_t ret_len = 0;
+    uint32_t copy_len = 0;
+    uint32_t frame_count = 0;
+
+    if (size != EMAC_HAL_BUF_SIZE_AUTO) {
+        /* Traverse descriptors owned by CPU */
+        while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM) && !frame_count) {
+            used_descs++;
+            /* Last segment in frame */
+            if (desc_iter->RDES0.LastDescriptor) {
+                /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
+                ret_len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
+                /* packets larger than expected will be truncated */
+                copy_len = ret_len > size ? size : ret_len;
+                /* update unhandled frame count */
+                frame_count++;
+            }
+            /* First segment in frame */
+            if (desc_iter->RDES0.FirstDescriptor) {
+                first_desc = desc_iter;
+            }
+            /* point to next descriptor */
+            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+        }
+    } else {
+        emac_hal_auto_buf_info_t *buff_info = (emac_hal_auto_buf_info_t *)buf;
+#ifndef NDEBUG
+        /* check that buffer was allocated by emac_hal_alloc_recv_buf */
+        assert(buff_info->magic_id == EMAC_HAL_BUF_MAGIC_ID);
+#endif // NDEBUG
+        copy_len = buff_info->copy_len;
+        ret_len = copy_len;
+    }
+
+    if (copy_len) {
         /* check how many frames left to handle */
         while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
             used_descs++;
@@ -509,27 +560,88 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
             desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
         }
         desc_iter = first_desc;
-        for (size_t i = 0; i < seg_count - 1; i++) {
+        while(copy_len > CONFIG_ETH_DMA_BUFFER_SIZE) {
             used_descs--;
-            write_len = copy_len < CONFIG_ETH_DMA_BUFFER_SIZE ? copy_len : CONFIG_ETH_DMA_BUFFER_SIZE;
-            /* copy data to buffer */
-            memcpy(buf, (void *)(desc_iter->Buffer1Addr), write_len);
-            buf += write_len;
-            copy_len -= write_len;
+            memcpy(buf, (void *)(desc_iter->Buffer1Addr), CONFIG_ETH_DMA_BUFFER_SIZE);
+            buf += CONFIG_ETH_DMA_BUFFER_SIZE;
+            copy_len -= CONFIG_ETH_DMA_BUFFER_SIZE;
             /* Set Own bit in Rx descriptors: gives the buffers back to DMA */
             desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
             desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
         }
         memcpy(buf, (void *)(desc_iter->Buffer1Addr), copy_len);
         desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+        used_descs--;
+        /* `copy_len` does not include CRC, hence check if we reached the last descriptor */
+        while (!desc_iter->RDES0.LastDescriptor) {
+            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+            desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+            used_descs--;
+        }
         /* update rxdesc */
         hal->rx_desc = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
         /* poll rx demand */
         emac_ll_receive_poll_demand(hal->dma_regs, 0);
         frame_count--;
-        used_descs--;
     }
     *frames_remain = frame_count;
     *free_desc = CONFIG_ETH_DMA_RX_BUFFER_NUM - used_descs;
     return ret_len;
+}
+
+uint32_t emac_hal_flush_recv_frame(emac_hal_context_t *hal, uint32_t *frames_remain, uint32_t *free_desc)
+{
+    eth_dma_rx_descriptor_t *desc_iter = hal->rx_desc;
+    eth_dma_rx_descriptor_t *first_desc = hal->rx_desc;
+    uint32_t used_descs = 0;
+    uint32_t frame_len = 0;
+    uint32_t frame_count = 0;
+
+    /* Traverse descriptors owned by CPU */
+    while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM) && !frame_count) {
+        used_descs++;
+        /* Last segment in frame */
+        if (desc_iter->RDES0.LastDescriptor) {
+            /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
+            frame_len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
+            /* update unhandled frame count */
+            frame_count++;
+        }
+        /* First segment in frame */
+        if (desc_iter->RDES0.FirstDescriptor) {
+            first_desc = desc_iter;
+        }
+        /* point to next descriptor */
+        desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+    }
+
+    /* if there is at least one frame waiting */
+    if (frame_len) {
+        /* check how many frames left to handle */
+        while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
+            used_descs++;
+            if (desc_iter->RDES0.LastDescriptor) {
+                frame_count++;
+            }
+            /* point to next descriptor */
+            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+        }
+        desc_iter = first_desc;
+        /* return descriptors to DMA */
+        while (!desc_iter->RDES0.LastDescriptor) {
+            desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+            used_descs--;
+        }
+        desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+        used_descs--;
+        /* update rxdesc */
+        hal->rx_desc = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+        /* poll rx demand */
+        emac_ll_receive_poll_demand(hal->dma_regs, 0);
+        frame_count--;
+    }
+    *frames_remain = frame_count;
+    *free_desc = CONFIG_ETH_DMA_RX_BUFFER_NUM - used_descs;
+    return frame_len;
 }
