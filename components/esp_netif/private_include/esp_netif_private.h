@@ -145,4 +145,17 @@ void esp_netif_list_unlock(void);
  */
 bool esp_netif_is_netif_listed(esp_netif_t *esp_netif);
 
+/**
+ * @brief Initialize netif objects for handling lists of interfaces one esp_netif level
+ *
+ * @return esp_err_t ESP_OK on success
+ */
+esp_err_t esp_netif_objects_init(void);
+
+/**
+ * @brief Deinitialize netif objects
+ *
+ */
+void esp_netif_objects_deinit(void);
+
 #endif //_ESP_NETIF_PRIVATE_H_

@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_netif.h"
 #include "sys/queue.h"
@@ -40,25 +32,41 @@ static xSemaphoreHandle  s_list_lock = NULL;
 
 ESP_EVENT_DEFINE_BASE(IP_EVENT);
 
+esp_err_t esp_netif_objects_init(void)
+{
+    if (s_list_lock != NULL) {
+        // already initialized
+        return ESP_OK;
+    }
+    s_list_lock = xSemaphoreCreateMutex();
+    if (s_list_lock == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
+
+void esp_netif_objects_deinit(void)
+{
+    vSemaphoreDelete(s_list_lock);
+    s_list_lock = NULL;
+}
+
 esp_err_t esp_netif_list_lock(void)
 {
-    if (s_list_lock == NULL) {
-        s_list_lock = xSemaphoreCreateMutex();
-        if (s_list_lock == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
+    if (s_list_lock) {
+        xSemaphoreTake(s_list_lock, portMAX_DELAY);
+    } else {
+        ESP_LOGD(TAG, "%s list not locked (s_list_lock not initialized)", __func__);
     }
-    xSemaphoreTake(s_list_lock, portMAX_DELAY);
     return ESP_OK;
 }
 
 void esp_netif_list_unlock(void)
 {
-    assert(s_list_lock);
-    xSemaphoreGive(s_list_lock);
-    if (s_esp_netif_counter == 0) {
-        vQueueDelete(s_list_lock);
-        s_list_lock = NULL;
+    if (s_list_lock) {
+        xSemaphoreGive(s_list_lock);
+    } else {
+        ESP_LOGD(TAG, "%s list not unlocked (s_list_lock not initialized)", __func__);
     }
 }
 
