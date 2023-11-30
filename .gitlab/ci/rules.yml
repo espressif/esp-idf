@@ -221,33 +221,6 @@
 .patterns-custom_test-wifi: &patterns-custom_test-wifi
   - "tools/test_apps/phy/**/*"
 
-# for jobs: SDIO related example_test
-.patterns-example_test-sdio: &patterns-example_test-sdio
-  - "components/hal/sdio*.c"
-  - "components/hal/include/hal/sdio*.h"
-  - "components/esp_driver_sdspi/src/sdspi*.c"
-  - "components/esp_driver_sdio/src/sdio*.c"
-  - "components/esp_driver_sdmmc/src/sdmmc*.c"
-  - "components/esp_driver_sdspi/include/driver/sdspi*.h"
-  - "components/esp_driver_sdio/include/driver/sdio*.h"
-  - "components/esp_driver_sdmmc/include/driver/sdmmc*.h"
-  - "components/sdmmc/??[!s][!t]*/**/*"
-  - "components/sdmmc/???/**/*"
-  - "components/sdmmc/*"
-  - "examples/peripherals/sdio/**/*"
-
-# for jobs: SDIO related component_test
-.patterns-component_ut-sdio: &patterns-component_ut-sdio
-  - "components/hal/sdio*.c"
-  - "components/hal/include/hal/sdio*.h"
-  - "components/esp_driver_sdspi/src/sdspi*.c"
-  - "components/esp_driver_sdio/src/sdio*.c"
-  - "components/esp_driver_sdmmc/src/sdmmc*.c"
-  - "components/esp_driver_sdspi/include/driver/sdspi*.h"
-  - "components/esp_driver_sdio/include/driver/sdio*.h"
-  - "components/esp_driver_sdmmc/include/driver/sdmmc*.h"
-  - "components/sdmmc/**/*"
-
 ##############
 # if anchors #
 ##############
@@ -1542,8 +1515,6 @@
     - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
-      changes: *patterns-component_ut-sdio
-    - <<: *if-dev-push
       changes: *patterns-component_ut-wifi
     - <<: *if-dev-push
       changes: *patterns-custom_test
@@ -1555,8 +1526,6 @@
       changes: *patterns-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
-    - <<: *if-dev-push
-      changes: *patterns-example_test-sdio
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
@@ -1587,19 +1556,6 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut
-
-.rules:test:component_ut-esp32-sdio:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-sdio
 
 .rules:test:component_ut-esp32c2:
   rules:
@@ -1641,19 +1597,6 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut
-
-.rules:test:component_ut-esp32c3-sdio:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32c3
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-sdio
 
 .rules:test:component_ut-esp32c3-wifi:
   rules:
@@ -1721,19 +1664,6 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut
-
-.rules:test:component_ut-esp32s2-sdio:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32s2
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-sdio
 
 .rules:test:component_ut-esp32s3:
   rules:
@@ -1964,19 +1894,6 @@
       when: never
     - <<: *if-example_test-ota-include_nightly_run-rule
 
-.rules:test:example_test-esp32-sdio:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-sdio
-
 .rules:test:example_test-esp32-wifi:
   rules:
     - <<: *if-revert-branch
@@ -2045,19 +1962,6 @@
     - <<: *if-label-build-only
       when: never
     - <<: *if-example_test-ota-include_nightly_run-rule
-
-.rules:test:example_test-esp32c3-sdio:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32c3
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-sdio
 
 .rules:test:example_test-esp32c3-wifi:
   rules:
@@ -2148,19 +2052,6 @@
       changes: *patterns-build-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test
-
-.rules:test:example_test-esp32s2-sdio:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32s2
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-sdio
 
 .rules:test:example_test-esp32s2-wifi:
   rules:

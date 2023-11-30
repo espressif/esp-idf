@@ -116,7 +116,6 @@
     - *all_targets
     - - wifi      # pytest*wifi*
       - ethernet  # pytest*ethernet*
-      - sdio      # pytest*sdio*
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
