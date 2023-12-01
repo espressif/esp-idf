@@ -210,7 +210,7 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     ESP_GOTO_ON_FALSE(group->clk_src == 0 || group->clk_src == config->clk_src, ESP_ERR_INVALID_ARG, err, TAG, "clock source conflict");
     uint32_t src_clk_hz = 0;
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)config->clk_src,
-        ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz), err, TAG, "get source clock frequency failed");
+                                                   ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz), err, TAG, "get source clock frequency failed");
 
 #if CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_NO_LIGHT_SLEEP;

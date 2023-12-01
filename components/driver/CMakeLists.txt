@@ -12,14 +12,13 @@ set(includes "deprecated"
              "i2c/include"
              "ledc/include"
              "parlio/include"
-             "sigma_delta/include"
              "touch_sensor/include"
              "twai/include"
              "uart/include"
              "usb_serial_jtag/include")
 
 # Always included linker fragments
-set(ldfragments "linker.lf")
+set(ldfragments "")
 
 # ADC related source files (dprecated)
 if(CONFIG_SOC_ADC_SUPPORTED)
@@ -86,10 +85,9 @@ if(CONFIG_SOC_RMT_SUPPORTED)
     list(APPEND srcs "deprecated/rmt_legacy.c")
 endif()
 
-# Sigma-Delta Modulation related source files
+# Sigma-Delta Modulation legacy driver
 if(CONFIG_SOC_SDM_SUPPORTED)
-    list(APPEND srcs "sigma_delta/sdm.c"
-                     "deprecated/sigma_delta_legacy.c")
+    list(APPEND srcs "deprecated/sigma_delta_legacy.c")
 endif()
 
 # Temperature Sensor related source files
@@ -144,7 +142,7 @@ else()
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
                                     esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
-                                    esp_driver_dac esp_driver_rmt esp_driver_tsens
+                                    esp_driver_dac esp_driver_rmt esp_driver_tsens esp_driver_sdm
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

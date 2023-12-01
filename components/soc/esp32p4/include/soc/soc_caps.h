@@ -49,7 +49,7 @@
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_I2S_SUPPORTED               1
-// #define SOC_SDM_SUPPORTED               1  //TODO: IDF-7551
+#define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1  //TODO: IDF-6507, TODO: IDF-7491
@@ -408,7 +408,7 @@
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS               1U
-#define SOC_SDM_CHANNELS_PER_GROUP   4
+#define SOC_SDM_CHANNELS_PER_GROUP   8
 #define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
 #define SOC_SDM_CLK_SUPPORT_XTAL     1
 

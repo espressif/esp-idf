@@ -290,6 +290,8 @@ examples/peripherals/secure_element/atecc608_ecdsa:
 examples/peripherals/sigma_delta:
   disable:
     - if: SOC_SDM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_sdm
 
 examples/peripherals/spi_master/hd_eeprom:
   disable:
