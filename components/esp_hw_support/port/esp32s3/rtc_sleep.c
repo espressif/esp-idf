@@ -180,8 +180,6 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     if (cfg.lslp_mem_inf_fpu) {
         rtc_sleep_pu(pu_cfg);
     }
-    /* mem force pu */
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU);
     if (cfg.wifi_pd_en) {
         REG_CLR_BIT(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_NOISO | RTC_CNTL_WIFI_FORCE_ISO);
         REG_CLR_BIT(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PU);
@@ -239,8 +237,10 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         REG_SET_FIELD(RTC_CNTL_REGULATOR_DRV_CTRL_REG, RTC_CNTL_DG_VDD_DRV_B_SLP, RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_PD_EN);
     }
-    /* mem pd */
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU);
+    /* mem force pu */
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU);
+    SET_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_FASTMEM_FORCE_LPU);
+    SET_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_SLOWMEM_FORCE_LPU);
 
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU, cfg.rtc_regulator_fpu);
     if (!cfg.int_8m_pd_en) {
