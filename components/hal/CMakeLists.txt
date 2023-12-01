@@ -163,6 +163,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "lcd_hal.c")
     endif()
 
+    if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
+        list(APPEND srcs "mipi_dsi_hal.c")
+    endif()
+
     if(CONFIG_SOC_ECC_SUPPORTED)
         list(APPEND srcs "ecc_hal.c")
     endif()
