@@ -7,3 +7,5 @@
     - ignore_arg
     - callback
   :when_ptr: :compare_ptr
+  :strippables:
+    - '(?:esp_transport_ssl_session_ticket_operation\s*\(+.*?\)+)'

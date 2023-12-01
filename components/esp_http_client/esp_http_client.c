@@ -88,6 +88,13 @@ typedef enum {
     HTTP_STATE_RES_COMPLETE_DATA,
     HTTP_STATE_CLOSE
 } esp_http_state_t;
+
+typedef enum {
+    SESSION_TICKET_UNUSED = 0,
+    SESSION_TICKET_NOT_SAVED,
+    SESSION_TICKET_SAVED,
+} session_ticket_state_t;
+
 /**
  * HTTP client class
  */
@@ -127,6 +134,9 @@ struct esp_http_client {
     esp_transport_keep_alive_t  keep_alive_cfg;
     struct ifreq                *if_name;
     unsigned                    cache_data_in_fetch_hdr: 1;
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    session_ticket_state_t      session_ticket_state;
+#endif
 };
 
 typedef struct esp_http_client esp_http_client_t;
@@ -739,6 +749,18 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     if (config->ds_data != NULL) {
         esp_transport_ssl_set_ds_data(ssl, config->ds_data);
+    }
+#endif
+
+#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    if (config->save_client_session) {
+        client->session_ticket_state = SESSION_TICKET_NOT_SAVED;
+    }
+#endif
+
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+    if (config->transport) {
+        client->transport = config->transport;
     }
 #endif
 
@@ -1387,8 +1409,21 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
     }
 
     if (client->state < HTTP_STATE_CONNECTED) {
-        ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
-        client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+        // If the custom transport is enabled and defined, we skip the selection of appropriate transport from the list
+        // based on the scheme, since we already have the transport
+        if (!client->transport)
+#endif
+        {
+            ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
+            client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+        }
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        if (client->session_ticket_state == SESSION_TICKET_SAVED) {
+            esp_transport_ssl_session_ticket_operation(client->transport, ESP_TRANSPORT_SESSION_TICKET_USE);
+        }
+#endif
         if (client->transport == NULL) {
             ESP_LOGE(TAG, "No transport found");
 #ifndef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
@@ -1420,6 +1455,13 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
         client->state = HTTP_STATE_CONNECTED;
         http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);
         http_dispatch_event_to_event_loop(HTTP_EVENT_ON_CONNECTED, &client, sizeof(esp_http_client_handle_t));
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        if (client->session_ticket_state != SESSION_TICKET_UNUSED) {
+            esp_transport_ssl_session_ticket_operation(client->transport, ESP_TRANSPORT_SESSION_TICKET_SAVE);
+            client->session_ticket_state = SESSION_TICKET_SAVED;
+        }
+#endif
+
     }
     return ESP_OK;
 }
