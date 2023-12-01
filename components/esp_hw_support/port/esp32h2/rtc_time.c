@@ -208,6 +208,7 @@ static bool rtc_clk_cal_32k_valid(rtc_xtal_freq_t xtal_freq, uint32_t slowclk_cy
 
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
+    assert(slowclk_cycles);
     rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
 
     /*The Fosc CLK of calibration circuit is divided by 32 for ECO2.
@@ -233,6 +234,7 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
 uint64_t rtc_time_us_to_slowclk(uint64_t time_in_us, uint32_t period)
 {
+    assert(period);
     /* Overflow will happen in this function if time_in_us >= 2^45, which is about 400 days.
      * TODO: fix overflow.
      */
