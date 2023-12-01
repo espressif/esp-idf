@@ -241,13 +241,22 @@ same for the periodic sync:
 * @brief periodic adv sync parameters
 */
 typedef struct {
-    esp_ble_gap_sync_t filter_policy;   /*!< periodic advertising sync filter policy */
-    uint8_t sid;                        /*!< periodic advertising sid */
-    esp_ble_addr_type_t addr_type;      /*!< periodic advertising address type */
-    esp_bd_addr_t addr;                 /*!< periodic advertising address */
-    uint16_t skip;                      /*!< the maximum number of periodic advertising events t
-hat can be skipped */
-    uint16_t sync_timeout;              /*!< synchronization timeout */
+    esp_ble_gap_sync_t filter_policy;       /*!< Configures the filter policy for periodic advertising sync:
+                                                 0: Use Advertising SID, Advertiser Address Type, and Advertiser Address parameters to determine the advertiser to listen to.
+                                                 1: Use the Periodic Advertiser List to determine the advertiser to listen to. */
+    #if (BLE_FEAT_CREATE_SYNC_ENH)
+    esp_ble_gap_sync_t reports_disabled;    /*!< Supported only by esp32c2, esp32c6, and esp32h2; can be set by menuconfig:
+                                                 0: Reporting initially enabled.
+                                                 1: Reporting initially disabled. */
+    esp_ble_gap_sync_t filter_duplicates;   /*!< Supported only by esp32c2, esp32c6, and esp32h2; can be set by menuconfig:
+                                                 0: Duplicate filtering initially disabled.
+                                                 1: Duplicate filtering initially enabled. */
+    #endif
+    uint8_t sid;                            /*!< SID of the periodic advertising */
+    esp_ble_addr_type_t addr_type;          /*!< Address type of the periodic advertising */
+    esp_bd_addr_t addr;                     /*!< Address of the periodic advertising */
+    uint16_t skip;                          /*!< Maximum number of periodic advertising events that can be skipped */
+    uint16_t sync_timeout;                  /*!< Synchronization timeout */
 } esp_ble_gap_periodic_adv_sync_params_t;
 
 ```
