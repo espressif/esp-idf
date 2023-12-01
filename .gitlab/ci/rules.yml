@@ -351,6 +351,9 @@
 .if-schedule: &if-schedule
   if: '$CI_PIPELINE_SOURCE == "schedule"'
 
+.if-schedule-test-build-system-windows: &if-schedule-test-build-system-windows
+  if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_BUILD_SYSTEM_TEST_WIN == "true"'
+
 .if-trigger: &if-trigger
   if: '$CI_PIPELINE_SOURCE == "trigger"'
 
@@ -561,6 +564,9 @@
 
 .if-label-target_test: &if-label-target_test
   if: '$BOT_LABEL_TARGET_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*target_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-windows: &if-label-windows
+  if: '$BOT_LABEL_WINDOWS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*windows(?:,[^,\n\r]+)*$/i'
 
 .rules:build:
   rules:
@@ -2575,3 +2581,13 @@
     - <<: *if-label-submodule
     - <<: *if-dev-push
       changes: *patterns-submodule
+
+.rules:test:windows_pytest_build_system:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-schedule-test-build-system-windows
+    - <<: *if-label-windows

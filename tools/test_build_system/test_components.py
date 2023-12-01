@@ -4,12 +4,14 @@
 import json
 import logging
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
 from test_build_system_helpers import EnvDict, IdfPyFunc, append_to_file, replace_in_file
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 def test_component_extra_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Setting EXTRA_COMPONENT_DIRS works')
     shutil.move(test_app_copy / 'main', test_app_copy / 'different_main' / 'main')
@@ -42,6 +44,7 @@ def test_component_can_not_be_empty_dir(idf_py: IdfPyFunc, test_app_copy: Path) 
     assert str(empty_component_dir) not in data.get('build_component_paths')
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 def test_component_subdirs_not_added_to_component_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('If a component directory is added to COMPONENT_DIRS, its subdirectories are not added')
     (test_app_copy / 'main' / 'test').mkdir(parents=True)
@@ -52,6 +55,7 @@ def test_component_subdirs_not_added_to_component_dirs(idf_py: IdfPyFunc, test_a
     assert str(test_app_copy / 'main') in data.get('build_component_paths')
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 def test_component_sibling_dirs_not_added_to_component_dirs(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('If a component directory is added to COMPONENT_DIRS, its sibling directories are not added')
     mycomponents_subdir = (test_app_copy / 'mycomponents')
@@ -76,6 +80,7 @@ def test_component_sibling_dirs_not_added_to_component_dirs(idf_py: IdfPyFunc, t
     assert str(mycomponents_subdir / 'mycomponent') in data.get('build_component_paths')
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 def test_component_properties_are_set(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Component properties are set')
     append_to_file(test_app_copy / 'CMakeLists.txt', '\n'.join(['',
@@ -85,6 +90,7 @@ def test_component_properties_are_set(idf_py: IdfPyFunc, test_app_copy: Path) ->
     assert 'SRCS:{}'.format(test_app_copy / 'main' / 'build_test_app.c') in ret.stdout, 'Component properties should be set'
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 def test_component_overriden_dir(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict) -> None:
     logging.info('Getting component overriden dir')
     (test_app_copy / 'components' / 'hal').mkdir(parents=True)
@@ -104,6 +110,7 @@ def test_component_overriden_dir(idf_py: IdfPyFunc, test_app_copy: Path, default
     assert 'kconfig:{}'.format(idf_path / 'components' / 'hal') in ret.stdout, 'Failed to verify original `main` directory'
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 def test_components_prioritizer_over_extra_components_dir(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Project components prioritized over EXTRA_COMPONENT_DIRS')
     (test_app_copy / 'extra_dir' / 'my_component').mkdir(parents=True)

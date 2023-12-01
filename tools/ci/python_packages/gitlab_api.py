@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import re
+import sys
 import tarfile
 import tempfile
 import time
@@ -230,9 +231,19 @@ class Gitlab(object):
 
     @staticmethod
     def decompress_archive(path: str, destination: str) -> str:
-        with tarfile.open(path, 'r') as archive_file:
-            root_name = archive_file.getnames()[0]
-            archive_file.extractall(destination)
+        full_destination = os.path.abspath(destination)
+        # By default max path lenght is set to 260 characters
+        # Prefix `\\?\` extends it to 32,767 characters
+        if sys.platform == 'win32':
+            full_destination = '\\\\?\\' + full_destination
+
+        try:
+            with tarfile.open(path, 'r') as archive_file:
+                root_name = archive_file.getnames()[0]
+                archive_file.extractall(full_destination)
+        except tarfile.TarError as e:
+            logging.error(f'Error while decompressing archive {path}')
+            raise e
 
         return os.path.join(os.path.realpath(destination), root_name)
 
