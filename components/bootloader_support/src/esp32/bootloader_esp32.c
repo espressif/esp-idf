@@ -44,15 +44,15 @@ static void bootloader_reset_mmu(void)
 {
     /* completely reset MMU in case serial bootloader was running */
     Cache_Read_Disable(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     Cache_Read_Disable(1);
 #endif
     Cache_Flush(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     Cache_Flush(1);
 #endif
     mmu_init(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     /* The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are
         necessary to work around a hardware bug. */
     DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
@@ -63,7 +63,7 @@ static void bootloader_reset_mmu(void)
     /* normal ROM boot exits with DROM0 cache unmasked,
         but serial bootloader exits with it masked. */
     DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
 #endif
 }
@@ -104,7 +104,7 @@ static void wdt_reset_info_dump(int cpu)
         lsaddr = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0ADDR_REG);
         lsdata = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0DATA_REG);
     } else {
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         stat = DPORT_REG_READ(DPORT_APP_CPU_RECORD_STATUS_REG);
         pid = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PID_REG);
         inst = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGINST_REG);
@@ -154,7 +154,7 @@ static void bootloader_check_wdt_reset(void)
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         wdt_reset_info_dump(1);
 #endif
     }

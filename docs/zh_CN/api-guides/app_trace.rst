@@ -420,7 +420,7 @@ Start 子命令语法：
 
 收集到跟踪数据后，用户可以使用特殊的工具对结果进行可视化并分析程序行为。
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     遗憾的是，SystemView 不支持从多个核心进行跟踪。所以当使用 JTAG 追踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可以将每个文件加载到工具中单独分析。使用 UART 进行追踪时，用户可以在 menuconfig Pro 或 App 中点击 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 并选择要追踪的 CPU。
 
@@ -432,7 +432,7 @@ Start 子命令语法：
 
     ESP-IDF 使用自己的 SystemView FreeRTOS 事件 ID 映射，因此用户需要将 ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` 替换成 ``$IDF_PATH/tools/esp_app_trace/SYSVIEW_FreeRTOS.txt``。在使用上述链接配置 SystemView 序列化程序时，也应该使用该特定文件的内容。
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     配置 Impulse 实现双核跟踪
     ~~~~~~~~~~~~~~~~~~~~~~~~~

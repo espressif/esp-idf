@@ -92,7 +92,7 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
         bool
-        default y if IDF_TARGET_ESP32 && FREERTOS_UNICORE
+        default y if IDF_TARGET_ESP32 && ESP_SYSTEM_SINGLE_CORE_MODE
         default y if IDF_TARGET_ESP32S2
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
@@ -590,7 +590,7 @@ menu "IPC (Inter-Processor Call)"
 
     config ESP_IPC_ISR_ENABLE
         bool
-        default y if !FREERTOS_UNICORE
+        default y if !ESP_SYSTEM_SINGLE_CORE_MODE
         help
             The IPC ISR feature is similar to the IPC feature except that the callback function is executed in the
             context of a High Priority Interrupt. The IPC ISR feature is intended for low latency execution of simple

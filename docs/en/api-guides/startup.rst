@@ -22,11 +22,11 @@ This process is explained in detail in the following sections.
 First Stage Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     After SoC reset, PRO CPU will start running immediately, executing reset vector code, while APP CPU will be held in reset. During startup process, PRO CPU does all the initialization. APP CPU reset is de-asserted in the ``call_start_cpu0`` function of application startup code. Reset vector code is located in the mask ROM of the {IDF_TARGET_NAME} chip and cannot be modified.
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     After SoC reset, the CPU will start running immediately to perform initialization. The reset vector code is located in the mask ROM of the {IDF_TARGET_NAME} chip and cannot be modified.
 
@@ -76,7 +76,7 @@ For the selected partition, second stage bootloader reads the binary image from 
 - For segments with load addresses in internal :ref:`iram` or :ref:`dram`, the contents are copied from flash to the load address.
 - For segments which have load addresses in :ref:`drom` or :ref:`irom` regions, the flash MMU is configured to provide the correct mapping from the flash to the load address.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     Note that the second stage bootloader configures flash MMU for both PRO and APP CPUs, but it only enables flash MMU for PRO CPU. Reason for this is that second stage bootloader code is loaded into the memory region used by APP CPU cache. The duty of enabling cache for APP CPU is passed on to the application.
 
@@ -114,13 +114,13 @@ This port-layer initialization function initializes the basic C Runtime Environm
    - Set the CPU clocks to the frequencies configured for the project.
    :CONFIG_ESP_SYSTEM_MEMPROT_FEATURE: - Initialize memory protection if configured.
    :esp32: - Reconfigure the main SPI flash based on the app header settings (necessary for compatibility with bootloader versions before ESP-IDF V4.0, see :ref:`bootloader-compatibility`).
-   :not CONFIG_FREERTOS_UNICORE: - If the app is configured to run on multiple cores, start the other core and wait for it to initialize as well (inside the similar "port layer" initialization function ``call_start_cpu1``).
+   :not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE: - If the app is configured to run on multiple cores, start the other core and wait for it to initialize as well (inside the similar "port layer" initialization function ``call_start_cpu1``).
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     Once ``call_start_cpu0`` completes running, it calls the "system layer" initialization function ``start_cpu0`` found in :idf_file:`components/esp_system/startup.c`. Other cores will also complete port-layer initialization and call ``start_other_cores`` found in the same file.
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     Once ``call_start_cpu0`` completes running, it calls the "system layer" initialization function ``start_cpu0`` found in :idf_file:`components/esp_system/startup.c`.
 
@@ -156,13 +156,13 @@ After doing some more initialization tasks (that require the scheduler to have s
 
 The main task that runs ``app_main`` has a fixed RTOS priority (one higher than the minimum) and a :ref:`configurable stack size <CONFIG_ESP_MAIN_TASK_STACK_SIZE>`.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
    The main task core affinity is also configurable: :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`.
 
 Unlike normal FreeRTOS tasks (or embedded C ``main`` functions), the ``app_main`` task is allowed to return. If this happens, The task is cleaned up and the system will continue running with other RTOS tasks scheduled normally. Therefore, it is possible to implement ``app_main`` as either a function that creates other application tasks and then returns, or as a main application task itself.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     Second Core Startup
     -------------------

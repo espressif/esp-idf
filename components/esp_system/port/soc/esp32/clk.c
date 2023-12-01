@@ -199,14 +199,14 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     uint32_t hwcrypto_perip_clk;
     uint32_t wifi_bt_sdio_clk;
 
-#if CONFIG_FREERTOS_UNICORE
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     soc_reset_reason_t rst_reas[1];
 #else
     soc_reset_reason_t rst_reas[2];
 #endif
 
     rst_reas[0] = esp_rom_get_reset_reason(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     rst_reas[1] = esp_rom_get_reset_reason(1);
 #endif
 
@@ -214,7 +214,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
      * that have been enabled before reset.
      */
     if ((rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_SW || rst_reas[0] == RESET_REASON_CPU0_RTC_WDT)
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         || (rst_reas[1] == RESET_REASON_CPU1_MWDT1 || rst_reas[1] == RESET_REASON_CPU1_SW || rst_reas[1] == RESET_REASON_CPU1_RTC_WDT)
 #endif
     ) {

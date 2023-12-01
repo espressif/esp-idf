@@ -47,7 +47,7 @@ def test_examples_app_trace_basic(dut: IdfDut, openocd: OpenOcd) -> None:
     apptrace_wait_stop(dut.openocd)
 
     with open(openocd._logfile) as oocd_log:  # pylint: disable=protected-access
-        cores = 1 if dut.app.sdkconfig.get('FREERTOS_UNICORE') is True else 2
+        cores = 1 if dut.app.sdkconfig.get('ESP_SYSTEM_SINGLE_CORE_MODE') is True else 2
         params_str = 'App trace params: from {} cores,'.format(cores)
         found = False
         for line in oocd_log:
