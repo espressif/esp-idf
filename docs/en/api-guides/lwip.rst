@@ -471,9 +471,7 @@ TCP/IP performance is a complex subject, and performance can be optimized toward
 Maximum Throughput
 ^^^^^^^^^^^^^^^^^^
 
-Espressif tests ESP-IDF TCP/IP throughput using the :example:`wifi/iperf` example in an RF-sealed enclosure.
-
-The :example_file:`wifi/iperf/sdkconfig.defaults` file for the iperf example contains settings known to maximize TCP/IP throughput, usually at the expense of higher RAM usage. To get maximum TCP/IP throughput in an application at the expense of other factors, it is suggested to apply settings from this file into the project sdkconfig.
+Espressif tests ESP-IDF TCP/IP throughput using the iperf test application: https://iperf.fr/, please refer to :ref:`improve-network-speed` for more details about the actual testing and using the optimized configuration.
 
 .. important::
 

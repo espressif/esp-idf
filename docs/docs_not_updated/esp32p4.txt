@@ -29,7 +29,6 @@ api-guides/tools/idf-docker-image.rst
 api-guides/tools/index.rst
 api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
-api-guides/lwip.rst
 api-guides/coexist.rst
 api-guides/flash_psram_config.rst
 api-guides/usb-serial-jtag-console.rst
@@ -94,8 +93,6 @@ api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/uart.rst
 api-reference/network/esp_openthread.rst
-api-reference/network/esp_eth.rst
-api-reference/network/esp_netif_driver.rst
 api-reference/network/esp_dpp.rst
 api-reference/network/esp_now.rst
 api-reference/network/esp-wifi-mesh.rst
@@ -103,7 +100,6 @@ api-reference/network/esp_smartconfig.rst
 api-reference/network/esp_nan.rst
 api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
-api-reference/network/esp_netif.rst
 api-reference/system/sleep_modes.rst
 api-reference/system/ota.rst
 api-reference/system/app_trace.rst
@@ -121,7 +117,6 @@ api-reference/system/intr_alloc.rst
 api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_serial_slave_link.rst
-api-reference/protocols/mqtt.rst
 api-reference/protocols/mbedtls.rst
 api-reference/protocols/esp_http_server.rst
 api-reference/protocols/esp_sdio_slave_protocol.rst
@@ -129,11 +124,8 @@ api-reference/protocols/esp_local_ctrl.rst
 api-reference/protocols/esp_crt_bundle.rst
 api-reference/protocols/esp_http_client.rst
 api-reference/protocols/esp_https_server.rst
-api-reference/protocols/modbus.rst
 api-reference/protocols/esp_tls.rst
-api-reference/protocols/mdns.rst
 api-reference/protocols/index.rst
-api-reference/protocols/asio.rst
 security/host-based-security-workflows.rst
 security/flash-encryption.rst
 security/security.rst
