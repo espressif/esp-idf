@@ -263,7 +263,7 @@ typedef union {
 } lpperi_date_reg_t;
 
 
-typedef struct {
+typedef struct lpperi_dev_t {
     volatile lpperi_clk_en_reg_t clk_en;
     volatile lpperi_reset_en_reg_t reset_en;
     volatile lpperi_rng_data_reg_t rng_data;

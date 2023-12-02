@@ -125,7 +125,7 @@ typedef union {
 } io_mux_date_reg_t;
 
 
-typedef struct {
+typedef struct io_mux_dev_t {
     volatile io_mux_pin_ctrl_reg_t pin_ctrl;
     volatile io_mux_gpion_reg_t gpion[27];
     uint32_t reserved_070[35];

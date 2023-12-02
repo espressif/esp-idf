@@ -139,7 +139,7 @@ typedef union {
 } ecc_mult_date_reg_t;
 
 
-typedef struct {
+typedef struct ecc_mult_dev_t {
     uint32_t reserved_000[3];
     volatile ecc_mult_int_raw_reg_t int_raw;
     volatile ecc_mult_int_st_reg_t int_st;

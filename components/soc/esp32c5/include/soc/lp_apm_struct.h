@@ -558,7 +558,7 @@ typedef union {
 } lp_apm_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_apm_dev_t {
     volatile lp_apm_region_filter_en_reg_t region_filter_en;
     volatile lp_apm_region0_addr_start_reg_t region0_addr_start;
     volatile lp_apm_region0_addr_end_reg_t region0_addr_end;

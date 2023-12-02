@@ -238,201 +238,33 @@ typedef union {
     uint32_t val;
 } uhci_quick_sent_reg_t;
 
-/** Type of reg_q0_word0 register
- *  UHCI Q0_WORD0 Quick Send Register
+/** Type of reg_qn_word0 register
+ *  UHCI QN_WORD0 Quick Send Register
  */
 typedef union {
     struct {
-        /** send_q0_word0 : R/W; bitpos: [31:0]; default: 0;
+        /** send_word0 : R/W; bitpos: [31:0]; default: 0;
          *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
          *  UHCI_SINGLE_SEND_NUM.
          */
-        uint32_t send_q0_word0:32;
+        uint32_t send_word0:32;
     };
     uint32_t val;
-} uhci_reg_q0_word0_reg_t;
+} uhci_reg_qn_word0_reg_t;
 
-/** Type of reg_q0_word1 register
- *  UHCI Q0_WORD1 Quick Send Register
+/** Type of reg_qn_word1 register
+ *  UHCI QN_WORD1 Quick Send Register
  */
 typedef union {
     struct {
-        /** send_q0_word1 : R/W; bitpos: [31:0]; default: 0;
+        /** send_word1 : R/W; bitpos: [31:0]; default: 0;
          *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
          *  UHCI_SINGLE_SEND_NUM.
          */
-        uint32_t send_q0_word1:32;
+        uint32_t send_word1:32;
     };
     uint32_t val;
-} uhci_reg_q0_word1_reg_t;
-
-/** Type of reg_q1_word0 register
- *  UHCI Q1_WORD0 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q1_word0 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q1_word0:32;
-    };
-    uint32_t val;
-} uhci_reg_q1_word0_reg_t;
-
-/** Type of reg_q1_word1 register
- *  UHCI Q1_WORD1 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q1_word1 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q1_word1:32;
-    };
-    uint32_t val;
-} uhci_reg_q1_word1_reg_t;
-
-/** Type of reg_q2_word0 register
- *  UHCI Q2_WORD0 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q2_word0 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q2_word0:32;
-    };
-    uint32_t val;
-} uhci_reg_q2_word0_reg_t;
-
-/** Type of reg_q2_word1 register
- *  UHCI Q2_WORD1 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q2_word1 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q2_word1:32;
-    };
-    uint32_t val;
-} uhci_reg_q2_word1_reg_t;
-
-/** Type of reg_q3_word0 register
- *  UHCI Q3_WORD0 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q3_word0 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q3_word0:32;
-    };
-    uint32_t val;
-} uhci_reg_q3_word0_reg_t;
-
-/** Type of reg_q3_word1 register
- *  UHCI Q3_WORD1 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q3_word1 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q3_word1:32;
-    };
-    uint32_t val;
-} uhci_reg_q3_word1_reg_t;
-
-/** Type of reg_q4_word0 register
- *  UHCI Q4_WORD0 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q4_word0 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q4_word0:32;
-    };
-    uint32_t val;
-} uhci_reg_q4_word0_reg_t;
-
-/** Type of reg_q4_word1 register
- *  UHCI Q4_WORD1 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q4_word1 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q4_word1:32;
-    };
-    uint32_t val;
-} uhci_reg_q4_word1_reg_t;
-
-/** Type of reg_q5_word0 register
- *  UHCI Q5_WORD0 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q5_word0 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q5_word0:32;
-    };
-    uint32_t val;
-} uhci_reg_q5_word0_reg_t;
-
-/** Type of reg_q5_word1 register
- *  UHCI Q5_WORD1 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q5_word1 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q5_word1:32;
-    };
-    uint32_t val;
-} uhci_reg_q5_word1_reg_t;
-
-/** Type of reg_q6_word0 register
- *  UHCI Q6_WORD0 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q6_word0 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q6_word0:32;
-    };
-    uint32_t val;
-} uhci_reg_q6_word0_reg_t;
-
-/** Type of reg_q6_word1 register
- *  UHCI Q6_WORD1 Quick Send Register
- */
-typedef union {
-    struct {
-        /** send_q6_word1 : R/W; bitpos: [31:0]; default: 0;
-         *  Serves as quick sending register in specified mode in UHCI_ALWAYS_SEND_NUM or
-         *  UHCI_SINGLE_SEND_NUM.
-         */
-        uint32_t send_q6_word1:32;
-    };
-    uint32_t val;
-} uhci_reg_q6_word1_reg_t;
+} uhci_reg_qn_word1_reg_t;
 
 /** Type of esc_conf0 register
  *  UHCI Escapes Sequence Configuration Register0
@@ -797,7 +629,7 @@ typedef union {
 } uhci_date_reg_t;
 
 
-typedef struct {
+typedef struct uhci_dev_t {
     volatile uhci_conf0_reg_t conf0;
     volatile uhci_int_raw_reg_t int_raw;
     volatile uhci_int_st_reg_t int_st;
@@ -811,20 +643,10 @@ typedef struct {
     volatile uhci_ack_num_reg_t ack_num;
     volatile uhci_rx_head_reg_t rx_head;
     volatile uhci_quick_sent_reg_t quick_sent;
-    volatile uhci_reg_q0_word0_reg_t reg_q0_word0;
-    volatile uhci_reg_q0_word1_reg_t reg_q0_word1;
-    volatile uhci_reg_q1_word0_reg_t reg_q1_word0;
-    volatile uhci_reg_q1_word1_reg_t reg_q1_word1;
-    volatile uhci_reg_q2_word0_reg_t reg_q2_word0;
-    volatile uhci_reg_q2_word1_reg_t reg_q2_word1;
-    volatile uhci_reg_q3_word0_reg_t reg_q3_word0;
-    volatile uhci_reg_q3_word1_reg_t reg_q3_word1;
-    volatile uhci_reg_q4_word0_reg_t reg_q4_word0;
-    volatile uhci_reg_q4_word1_reg_t reg_q4_word1;
-    volatile uhci_reg_q5_word0_reg_t reg_q5_word0;
-    volatile uhci_reg_q5_word1_reg_t reg_q5_word1;
-    volatile uhci_reg_q6_word0_reg_t reg_q6_word0;
-    volatile uhci_reg_q6_word1_reg_t reg_q6_word1;
+    volatile struct {
+        uhci_reg_qn_word0_reg_t word0;
+        uhci_reg_qn_word1_reg_t word1;
+    } q_data[7];
     volatile uhci_esc_conf0_reg_t esc_conf0;
     volatile uhci_esc_conf1_reg_t esc_conf1;
     volatile uhci_esc_conf2_reg_t esc_conf2;

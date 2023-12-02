@@ -11,135 +11,18 @@ extern "C" {
 #endif
 
 /** Group: configure_register */
-/** Type of store0 register
+/** Type of store n register
  *  need_des
  */
 typedef union {
     struct {
-        /** lp_aon_store0 : R/W; bitpos: [31:0]; default: 0;
+        /** lp_aon_store : R/W; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t lp_aon_store0:32;
+        uint32_t lp_aon_store:32;
     };
     uint32_t val;
-} lp_aon_store0_reg_t;
-
-/** Type of store1 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store1 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store1:32;
-    };
-    uint32_t val;
-} lp_aon_store1_reg_t;
-
-/** Type of store2 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store2 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store2:32;
-    };
-    uint32_t val;
-} lp_aon_store2_reg_t;
-
-/** Type of store3 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store3 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store3:32;
-    };
-    uint32_t val;
-} lp_aon_store3_reg_t;
-
-/** Type of store4 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store4 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store4:32;
-    };
-    uint32_t val;
-} lp_aon_store4_reg_t;
-
-/** Type of store5 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store5 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store5:32;
-    };
-    uint32_t val;
-} lp_aon_store5_reg_t;
-
-/** Type of store6 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store6 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store6:32;
-    };
-    uint32_t val;
-} lp_aon_store6_reg_t;
-
-/** Type of store7 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store7 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store7:32;
-    };
-    uint32_t val;
-} lp_aon_store7_reg_t;
-
-/** Type of store8 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store8 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store8:32;
-    };
-    uint32_t val;
-} lp_aon_store8_reg_t;
-
-/** Type of store9 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** lp_aon_store9 : R/W; bitpos: [31:0]; default: 0;
-         *  need_des
-         */
-        uint32_t lp_aon_store9:32;
-    };
-    uint32_t val;
-} lp_aon_store9_reg_t;
+} lp_aon_store_reg_t;
 
 /** Type of gpio_mux register
  *  need_des
@@ -449,17 +332,8 @@ typedef union {
 } lp_aon_sprf_ctrl_reg_t;
 
 
-typedef struct {
-    volatile lp_aon_store0_reg_t store0;
-    volatile lp_aon_store1_reg_t store1;
-    volatile lp_aon_store2_reg_t store2;
-    volatile lp_aon_store3_reg_t store3;
-    volatile lp_aon_store4_reg_t store4;
-    volatile lp_aon_store5_reg_t store5;
-    volatile lp_aon_store6_reg_t store6;
-    volatile lp_aon_store7_reg_t store7;
-    volatile lp_aon_store8_reg_t store8;
-    volatile lp_aon_store9_reg_t store9;
+typedef struct lp_aon_dev_t {
+    volatile lp_aon_store_reg_t store[10];
     volatile lp_aon_gpio_mux_reg_t gpio_mux;
     volatile lp_aon_gpio_hold0_reg_t gpio_hold0;
     volatile lp_aon_gpio_hold1_reg_t gpio_hold1;

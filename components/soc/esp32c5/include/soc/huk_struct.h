@@ -213,7 +213,7 @@ typedef union {
 } huk_date_reg_t;
 
 
-typedef struct {
+typedef struct huk_dev_t {
     uint32_t reserved_000;
     volatile huk_clk_reg_t clk;
     volatile huk_int_raw_reg_t int_raw;
@@ -231,6 +231,7 @@ typedef struct {
     volatile uint32_t info[96];
 } huk_dev_t;
 
+extern huk_dev_t HUK;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(huk_dev_t) == 0x280, "Invalid size of huk_dev_t structure");

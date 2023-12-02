@@ -508,7 +508,7 @@ typedef union {
 } assist_debug_date_reg_t;
 
 
-typedef struct {
+typedef struct assist_debug_dev_t {
     volatile assist_debug_core_0_montr_ena_reg_t core_0_montr_ena;
     volatile assist_debug_core_0_intr_raw_reg_t core_0_intr_raw;
     volatile assist_debug_core_0_intr_ena_reg_t core_0_intr_ena;
@@ -538,6 +538,7 @@ typedef struct {
     volatile assist_debug_date_reg_t date;
 } assist_debug_dev_t;
 
+extern assist_debug_dev_t ASSIST_DEBUG;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(assist_debug_dev_t) == 0x400, "Invalid size of assist_debug_dev_t structure");

@@ -1335,18 +1335,18 @@ typedef union {
 
 
 /** Group: CPU-controlled data buffer */
-/** Type of w0 register
- *  SPI CPU-controlled buffer0
+/** Type of wn register
+ *  SPI CPU-controlled buffer n
  */
 typedef union {
     struct {
-        /** buf0 : R/W/SS; bitpos: [31:0]; default: 0;
+        /** buf : R/W/SS; bitpos: [31:0]; default: 0;
          *  data buffer
          */
-        uint32_t buf0:32;
+        uint32_t buf:32;
     };
     uint32_t val;
-} spi_w0_reg_t;
+} spi_wn_reg_t;
 
 /** Type of w1 register
  *  SPI CPU-controlled buffer1
@@ -1560,7 +1560,7 @@ typedef union {
 } spi_date_reg_t;
 
 
-typedef struct {
+typedef struct spi_dev_t {
     volatile spi_cmd_reg_t cmd;
     volatile spi_addr_reg_t addr;
     volatile spi_ctrl_reg_t ctrl;
@@ -1580,22 +1580,7 @@ typedef struct {
     volatile spi_dma_int_st_reg_t dma_int_st;
     volatile spi_dma_int_set_reg_t dma_int_set;
     uint32_t reserved_048[20];
-    volatile spi_w0_reg_t w0;
-    volatile spi_w1_reg_t w1;
-    volatile spi_w2_reg_t w2;
-    volatile spi_w3_reg_t w3;
-    volatile spi_w4_reg_t w4;
-    volatile spi_w5_reg_t w5;
-    volatile spi_w6_reg_t w6;
-    volatile spi_w7_reg_t w7;
-    volatile spi_w8_reg_t w8;
-    volatile spi_w9_reg_t w9;
-    volatile spi_w10_reg_t w10;
-    volatile spi_w11_reg_t w11;
-    volatile spi_w12_reg_t w12;
-    volatile spi_w13_reg_t w13;
-    volatile spi_w14_reg_t w14;
-    volatile spi_w15_reg_t w15;
+    volatile spi_wn_reg_t data_buf[16];
     uint32_t reserved_0d8[2];
     volatile spi_slave_reg_t slave;
     volatile spi_slave1_reg_t slave1;

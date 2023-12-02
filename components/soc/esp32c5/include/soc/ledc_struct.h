@@ -1014,60 +1014,56 @@ typedef union {
     uint32_t val;
 } ledc_date_reg_t;
 
+typedef struct {
+    volatile ledc_chn_conf0_reg_t conf0;
+    volatile ledc_chn_hpoint_reg_t hpoint;
+    volatile ledc_chn_duty_reg_t duty;
+    volatile ledc_chn_conf1_reg_t conf1;
+    volatile ledc_chn_duty_r_reg_t duty_rd;
+} ledc_chn_reg_t;
 
 typedef struct {
-    volatile ledc_chn_conf0_reg_t ch0_conf0;
-    volatile ledc_chn_hpoint_reg_t ch0_hpoint;
-    volatile ledc_chn_duty_reg_t ch0_duty;
-    volatile ledc_chn_conf1_reg_t ch0_conf1;
-    volatile ledc_chn_duty_r_reg_t ch0_duty_r;
-    volatile ledc_chn_conf0_reg_t ch1_conf0;
-    volatile ledc_chn_hpoint_reg_t ch1_hpoint;
-    volatile ledc_chn_duty_reg_t ch1_duty;
-    volatile ledc_chn_conf1_reg_t ch1_conf1;
-    volatile ledc_chn_duty_r_reg_t ch1_duty_r;
-    volatile ledc_chn_conf0_reg_t ch2_conf0;
-    volatile ledc_chn_hpoint_reg_t ch2_hpoint;
-    volatile ledc_chn_duty_reg_t ch2_duty;
-    volatile ledc_chn_conf1_reg_t ch2_conf1;
-    volatile ledc_chn_duty_r_reg_t ch2_duty_r;
-    volatile ledc_chn_conf0_reg_t ch3_conf0;
-    volatile ledc_chn_hpoint_reg_t ch3_hpoint;
-    volatile ledc_chn_duty_reg_t ch3_duty;
-    volatile ledc_chn_conf1_reg_t ch3_conf1;
-    volatile ledc_chn_duty_r_reg_t ch3_duty_r;
-    volatile ledc_chn_conf0_reg_t ch4_conf0;
-    volatile ledc_chn_hpoint_reg_t ch4_hpoint;
-    volatile ledc_chn_duty_reg_t ch4_duty;
-    volatile ledc_chn_conf1_reg_t ch4_conf1;
-    volatile ledc_chn_duty_r_reg_t ch4_duty_r;
-    volatile ledc_chn_conf0_reg_t ch5_conf0;
-    volatile ledc_chn_hpoint_reg_t ch5_hpoint;
-    volatile ledc_chn_duty_reg_t ch5_duty;
-    volatile ledc_chn_conf1_reg_t ch5_conf1;
-    volatile ledc_chn_duty_r_reg_t ch5_duty_r;
+    volatile ledc_chn_reg_t channel[6];
+} ledc_ch_group_reg_t;
+
+typedef struct {
+    volatile ledc_timern_conf_reg_t conf;
+    volatile ledc_timern_value_reg_t value;
+} ledc_timerx_reg_t;
+
+typedef struct {
+    volatile ledc_timerx_reg_t timer[4];
+} ledc_timer_group_reg_t;
+
+typedef struct {
+    volatile ledc_chn_gamma_conf_reg_t gamma_conf[6];
+} ledc_ch_gamma_conf_group_reg_t;
+
+typedef struct {
+    volatile ledc_timern_cmp_reg_t cmp[4];
+} ledc_timer_cmp_group_reg_t;
+
+typedef struct {
+    volatile ledc_timern_cnt_cap_reg_t cnt_cap[4];
+} ledc_timer_cnt_cap_group_reg_t;
+
+typedef struct ledc_dev_t {
+    volatile ledc_ch_group_reg_t channel_group[1];
     uint32_t reserved_078[10];
-    volatile ledc_timern_conf_reg_t timer0_conf;
-    volatile ledc_timern_value_reg_t timer0_value;
-    volatile ledc_timern_conf_reg_t timer1_conf;
-    volatile ledc_timern_value_reg_t timer1_value;
-    volatile ledc_timern_conf_reg_t timer2_conf;
-    volatile ledc_timern_value_reg_t timer2_value;
-    volatile ledc_timern_conf_reg_t timer3_conf;
-    volatile ledc_timern_value_reg_t timer3_value;
+    volatile ledc_timer_group_reg_t timer_group[1];
     volatile ledc_int_raw_reg_t int_raw;
     volatile ledc_int_st_reg_t int_st;
     volatile ledc_int_ena_reg_t int_ena;
     volatile ledc_int_clr_reg_t int_clr;
     uint32_t reserved_0d0[12];
-    volatile ledc_chn_gamma_conf_reg_t chn_gamma_conf[6];
+    volatile ledc_ch_gamma_conf_group_reg_t channel_gamma_conf_group[1];
     uint32_t reserved_118[2];
     volatile ledc_evt_task_en0_reg_t evt_task_en0;
     volatile ledc_evt_task_en1_reg_t evt_task_en1;
     volatile ledc_evt_task_en2_reg_t evt_task_en2;
     uint32_t reserved_12c[5];
-    volatile ledc_timern_cmp_reg_t timern_cmp[4];
-    volatile ledc_timern_cnt_cap_reg_t timern_cnt_cap[4];
+    volatile ledc_timer_cmp_group_reg_t timer_cmp_group[1];
+    volatile ledc_timer_cnt_cap_group_reg_t timer_cnt_cap_group[1];
     uint32_t reserved_160[4];
     volatile ledc_conf_reg_t conf;
     volatile ledc_date_reg_t date;

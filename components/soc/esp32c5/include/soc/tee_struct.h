@@ -652,7 +652,7 @@ typedef union {
 } tee_date_reg_t;
 
 
-typedef struct {
+typedef struct tee_dev_t {
     volatile tee_m0_mode_ctrl_reg_t m0_mode_ctrl;
     volatile tee_m1_mode_ctrl_reg_t m1_mode_ctrl;
     volatile tee_m2_mode_ctrl_reg_t m2_mode_ctrl;

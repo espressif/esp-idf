@@ -428,7 +428,7 @@ typedef union {
 } trace_date_reg_t;
 
 
-typedef struct {
+typedef struct trace_dev_t {
     volatile trace_mem_start_addr_reg_t mem_start_addr;
     volatile trace_mem_end_addr_reg_t mem_end_addr;
     volatile trace_mem_current_addr_reg_t mem_current_addr;
@@ -451,6 +451,7 @@ typedef struct {
     volatile trace_date_reg_t date;
 } trace_dev_t;
 
+extern trace_dev_t TRACE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(trace_dev_t) == 0x400, "Invalid size of trace_dev_t structure");

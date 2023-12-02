@@ -281,7 +281,7 @@ typedef union {
 } lp_wdt_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_wdt_dev_t {
     volatile lp_wdt_config0_reg_t config0;
     volatile lp_wdt_config1_reg_t config1;
     volatile lp_wdt_config2_reg_t config2;
@@ -299,6 +299,7 @@ typedef struct {
     volatile lp_wdt_date_reg_t date;
 } lp_wdt_dev_t;
 
+extern lp_wdt_dev_t LP_WDT;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_wdt_dev_t) == 0x400, "Invalid size of lp_wdt_dev_t structure");

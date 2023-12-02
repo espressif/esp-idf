@@ -100,7 +100,7 @@ typedef union {
 } intpri_clock_gate_reg_t;
 
 
-typedef struct {
+typedef struct intpri_dev_t {
     uint32_t reserved_000[36];
     volatile intpri_cpu_intr_from_cpu_0_reg_t cpu_intr_from_cpu_0;
     volatile intpri_cpu_intr_from_cpu_1_reg_t cpu_intr_from_cpu_1;
@@ -110,6 +110,7 @@ typedef struct {
     volatile intpri_clock_gate_reg_t clock_gate;
 } intpri_dev_t;
 
+extern intpri_dev_t INTPRI;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(intpri_dev_t) == 0xa8, "Invalid size of intpri_dev_t structure");

@@ -1077,7 +1077,7 @@ typedef union {
 } lp_uart_id_reg_t;
 
 
-typedef struct {
+typedef struct lp_uart_dev_t {
     volatile lp_uart_fifo_reg_t fifo;
     volatile lp_uart_int_raw_reg_t int_raw;
     volatile lp_uart_int_st_reg_t int_st;

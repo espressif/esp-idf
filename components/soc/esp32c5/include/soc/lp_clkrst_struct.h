@@ -326,7 +326,7 @@ typedef union {
 } lp_clkrst_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_clkrst_dev_t {
     volatile lp_clkrst_lp_clk_conf_reg_t lp_clk_conf;
     volatile lp_clkrst_lp_clk_po_en_reg_t lp_clk_po_en;
     volatile lp_clkrst_lp_clk_en_reg_t lp_clk_en;

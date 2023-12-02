@@ -965,7 +965,7 @@ typedef union {
 } i2s_date_reg_t;
 
 
-typedef struct {
+typedef struct i2s_dev_t {
     uint32_t reserved_000[3];
     volatile i2s_int_raw_reg_t int_raw;
     volatile i2s_int_st_reg_t int_st;

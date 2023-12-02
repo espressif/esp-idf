@@ -284,7 +284,7 @@ typedef union {
 } ecdsa_date_reg_t;
 
 
-typedef struct {
+typedef struct ecdsa_dev_t {
     uint32_t reserved_000;
     volatile ecdsa_conf_reg_t conf;
     volatile ecdsa_clk_reg_t clk;
@@ -313,6 +313,7 @@ typedef struct {
     volatile uint32_t qay[8];
 } ecdsa_dev_t;
 
+extern ecdsa_dev_t ECDSA;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(ecdsa_dev_t) == 0xaa0, "Invalid size of ecdsa_dev_t structure");

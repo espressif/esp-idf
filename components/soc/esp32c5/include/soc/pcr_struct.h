@@ -2125,7 +2125,7 @@ typedef union {
 } pcr_date_reg_t;
 
 
-typedef struct {
+typedef struct pcr_dev_t {
     volatile pcr_uart0_conf_reg_t uart0_conf;
     volatile pcr_uart0_sclk_conf_reg_t uart0_sclk_conf;
     volatile pcr_uart0_pd_ctrl_reg_t uart0_pd_ctrl;

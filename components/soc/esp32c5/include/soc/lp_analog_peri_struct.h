@@ -224,7 +224,7 @@ typedef union {
 } lp_ana_date_reg_t;
 
 
-typedef struct {
+typedef struct lp_ana_dev_t {
     volatile lp_ana_bod_mode0_cntl_reg_t bod_mode0_cntl;
     volatile lp_ana_bod_mode1_cntl_reg_t bod_mode1_cntl;
     volatile lp_ana_ck_glitch_cntl_reg_t ck_glitch_cntl;

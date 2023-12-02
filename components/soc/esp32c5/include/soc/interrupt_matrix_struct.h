@@ -1280,7 +1280,7 @@ typedef union {
 } interrupt_core0_interrupt_date_reg_t;
 
 
-typedef struct {
+typedef struct intmtx_core0_dev_t {
     volatile interrupt_core0_wifi_mac_intr_map_reg_t wifi_mac_intr_map;
     volatile interrupt_core0_wifi_mac_nmi_map_reg_t wifi_mac_nmi_map;
     volatile interrupt_core0_wifi_pwr_intr_map_reg_t wifi_pwr_intr_map;

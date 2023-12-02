@@ -255,7 +255,7 @@ typedef union {
 } hmac_date_reg_t;
 
 
-typedef struct {
+typedef struct hmac_dev_t {
     uint32_t reserved_000[16];
     volatile hmac_set_start_reg_t set_start;
     volatile hmac_set_para_purpose_reg_t set_para_purpose;

@@ -2512,7 +2512,7 @@ typedef union {
 } gpio_date_reg_t;
 
 
-typedef struct {
+typedef struct gpio_dev_t {
     volatile gpio_bt_select_reg_t bt_select;
     volatile gpio_out_reg_t out;
     volatile gpio_out_w1ts_reg_t out_w1ts;

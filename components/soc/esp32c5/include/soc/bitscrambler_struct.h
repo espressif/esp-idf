@@ -406,7 +406,7 @@ typedef union {
 } bitscrambler_version_reg_t;
 
 
-typedef struct {
+typedef struct bitscrambler_dev_t {
     volatile bitscrambler_tx_inst_cfg0_reg_t tx_inst_cfg0;
     volatile bitscrambler_tx_inst_cfg1_reg_t tx_inst_cfg1;
     volatile bitscrambler_rx_inst_cfg0_reg_t rx_inst_cfg0;
@@ -426,6 +426,7 @@ typedef struct {
     volatile bitscrambler_version_reg_t version;
 } bitscrambler_dev_t;
 
+extern bitscrambler_dev_t BITSCRAMBLER;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(bitscrambler_dev_t) == 0x100, "Invalid size of bitscrambler_dev_t structure");
