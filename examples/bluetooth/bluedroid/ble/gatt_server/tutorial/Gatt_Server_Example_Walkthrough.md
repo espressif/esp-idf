@@ -192,6 +192,7 @@ static struct gatts_profile_inst gl_profile_tab[PROFILE_NUM] = {
     [PROFILE_A_APP_ID] = {
         .gatts_cb = gatts_profile_a_event_handler,
         .gatts_if = ESP_GATT_IF_NONE,
+    },
     [PROFILE_B_APP_ID] = {
         .gatts_cb = gatts_profile_b_event_handler,
         .gatts_if = ESP_GATT_IF_NONE,
