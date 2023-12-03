@@ -20,21 +20,26 @@ extern "C"
 
 /**
  * @brief USB speeds supported by the DWC OTG controller
+ *
+ * @note usb_dwc_speed_t enum values must match the values of the DWC_OTG prtspd register field
  */
 typedef enum {
-    USB_PRIV_SPEED_FULL,
-    USB_PRIV_SPEED_LOW,
-} usb_priv_speed_t;
+    USB_DWC_SPEED_HIGH = 0,
+    USB_DWC_SPEED_FULL = 1,
+    USB_DWC_SPEED_LOW = 2,
+} usb_dwc_speed_t;
 
 /**
  * @brief USB transfer types supported by the DWC OTG controller
+ *
+ * @note usb_dwc_xfer_type_t enum values must match the values of the DWC_OTG hcchar register field
  */
 typedef enum {
-    USB_PRIV_XFER_TYPE_CTRL,
-    USB_PRIV_XFER_TYPE_ISOCHRONOUS,
-    USB_PRIV_XFER_TYPE_BULK,
-    USB_PRIV_XFER_TYPE_INTR,
-} usb_priv_xfer_type_t;
+    USB_DWC_XFER_TYPE_CTRL = 0,
+    USB_DWC_XFER_TYPE_ISOCHRONOUS = 1,
+    USB_DWC_XFER_TYPE_BULK = 2,
+    USB_DWC_XFER_TYPE_INTR = 3,
+} usb_dwc_xfer_type_t;
 
 /**
  * @brief Enumeration of different possible lengths of the periodic frame list
