@@ -17,6 +17,7 @@ esp-idf-monitor
 esp-idf-size
 esp-idf-panic-decoder
 pyclang
+construct
 
 # gdb extensions dependencies
 freertos_gdb
