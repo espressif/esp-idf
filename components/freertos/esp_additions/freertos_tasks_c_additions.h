@@ -175,6 +175,8 @@ _Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "C
     {
         BaseType_t xReturn;
 
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+
         #if CONFIG_FREERTOS_SMP
         {
             /* If using Amazon SMP FreeRTOS. This function is just a wrapper around
@@ -309,6 +311,10 @@ _Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "C
     {
         TaskHandle_t xReturn;
 
+        configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
+        configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+
         #if CONFIG_FREERTOS_SMP
         {
             /* If using Amazon SMP FreeRTOS. This function is just a wrapper around
@@ -317,6 +323,10 @@ _Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "C
             {
                 /* Convert xCoreID into an affinity mask */
                 UBaseType_t uxCoreAffinityMask;
+
+                /* Bit shifting << xCoreID is only valid if we have less than
+                 * 32 cores. */
+                ESP_STATIC_ASSERT( configNUM_CORES < 32 );
 
                 if( xCoreID == tskNO_AFFINITY )
                 {
@@ -338,10 +348,6 @@ _Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "C
         #else /* CONFIG_FREERTOS_SMP */
         {
             TCB_t * pxNewTCB;
-
-            configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
-            configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
-            configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
             #if ( configASSERT_DEFINED == 1 )
             {
@@ -458,7 +464,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
     {
         /* If xTaskGetIdleTaskHandle() is called before the scheduler has been
          * started, then xIdleTaskHandle will be NULL. */
-        configASSERT( ( xCoreID < configNUMBER_OF_CORES ) && ( xCoreID != tskNO_AFFINITY ) );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
         configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
         return xIdleTaskHandle[ xCoreID ];
     }
@@ -472,14 +478,14 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
     {
         TaskHandle_t xReturn;
 
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+
         #if ( CONFIG_FREERTOS_SMP )
         {
             xReturn = xTaskGetCurrentTaskHandleCPU( ( UBaseType_t ) xCoreID );
         }
         #else /* CONFIG_FREERTOS_SMP */
         {
-            configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
-
             /* A critical section is not required as this function does not
              * guarantee that the TCB will still be valid when this function
              * returns. */
@@ -1109,7 +1115,8 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
 {
     void * pvRet;
 
-    configASSERT( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) );
+    configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+
     #if CONFIG_FREERTOS_SMP
         /* SMP FreeRTOS defines pxCurrentTCB as a macro function call */
         pvRet = ( void * ) pxCurrentTCB;
@@ -1187,6 +1194,11 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
         configASSERT( uxStackMemoryCaps & ( MALLOC_CAP_8BIT ) );
         configASSERT( ( uxStackMemoryCaps & MALLOC_CAP_SPIRAM ) ||
                       ( uxStackMemoryCaps & MALLOC_CAP_INTERNAL ) );
+        #if ( !CONFIG_FREERTOS_SMP )
+        {
+            configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+        }
+        #endif /* !CONFIG_FREERTOS_SMP */
 
         /* Allocate space for the stack used by the task being created. */
         pxStack = heap_caps_malloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ), uxStackMemoryCaps );
