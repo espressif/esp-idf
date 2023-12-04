@@ -33,8 +33,8 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      - Send the exit character itself to remote
      -
    * - * Ctrl + P
-     - Reset target into bootloader to pause app via RTS line
-     - Resets the target into the bootloader using the RTS and DTR lines (if connected). This stops the board from executing the application, making it useful when waiting for another device to start. For additional details, refer to `Target Reset into Bootloader`_.
+     - Reset target into bootloader to pause app via RTS and DTR lines
+     - Resets the target into the bootloader using the RTS and DTR lines (if connected). This stops the board from executing the application, making it useful when waiting for another device to start. For additional details, refer to :ref:`target-reset-into-bootloader`.
    * - * Ctrl + R
      - Reset target board via RTS
      - Resets the target board and re-starts the application via the RTS line (if connected).
@@ -235,6 +235,8 @@ By default, IDF Monitor will reset the target when connecting to it. The reset o
     The ``--no-reset`` option applies the same behavior even when connecting IDF Monitor to a particular port (e.g., ``idf.py monitor --no-reset -p [PORT]``).
 
 
+.. _target-reset-into-bootloader:
+
 Target Reset into Bootloader
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -248,7 +250,7 @@ IDF Monitor's default reset sequence is designed to work seamlessly across a wid
 Custom Reset Sequence
 ---------------------
 
-For more advanced users or specific use cases, IDF Monitor supports the configuration of a custom reset sequence using `Configuration File`_. This is particularly useful in extreme edge cases where the default sequence may not suffice.
+For more advanced users or specific use cases, IDF Monitor supports the configuration of a custom reset sequence using :ref:`configuration-file`. This is particularly useful in extreme edge cases where the default sequence may not suffice.
 
 The sequence is defined with a string in the following format:
 
@@ -390,6 +392,8 @@ The options ``--print_filter="light_driver:D esp_image:N boot:N cpu_start:N vfs:
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
 
 
+.. _configuration-file:
+
 Configuration File
 ==================
 
@@ -471,7 +475,7 @@ Below is a table listing the available configuration options:
       - ``False``
     * - custom_reset_sequence
       - Custom reset sequence for resetting into the bootloader.
-      -
+      - N/A
 
 
 Syntax
