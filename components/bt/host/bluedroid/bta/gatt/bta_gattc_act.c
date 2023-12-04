@@ -122,8 +122,11 @@ void bta_gattc_reset_discover_st(tBTA_GATTC_SERV *p_srcb, tBTA_GATT_STATUS statu
 static void bta_gattc_enable(tBTA_GATTC_CB *p_cb)
 {
     APPL_TRACE_DEBUG("bta_gattc_enable");
-
-    if (p_cb->state == BTA_GATTC_STATE_DISABLED) {
+    /* This is a workaround because the task priority of btc (BTA_GATTC_CLOSE_EVT
+    in that task) is lower than the priority of the btu task.
+    Consequently, the p_cb->state fails to be restored to BTA_GATTC_STATE_DISABLED
+    and remains in the BTA_GATTC_STATE_DISABLING state. */
+    if (p_cb->state == BTA_GATTC_STATE_DISABLED || p_cb->state == BTA_GATTC_STATE_DISABLING) {
         /* initialize control block */
         memset(&bta_gattc_cb, 0, sizeof(tBTA_GATTC_CB));
         bta_gattc_cb.auto_disc = true;
@@ -158,6 +161,7 @@ void bta_gattc_disable(tBTA_GATTC_CB *p_cb)
     for (i = 0; i < BTA_GATTC_CL_MAX; i ++) {
         if (p_cb->cl_rcb[i].in_use) {
             p_cb->state = BTA_GATTC_STATE_DISABLING;
+            p_cb->cl_rcb[i].in_use = false;
             /* don't deregister HH GATT IF */
             /* HH GATT IF will be deregistered by bta_hh_le_deregister when disable HH */
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
@@ -200,7 +204,11 @@ void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data)
     cb_data.reg_oper.status = BTA_GATT_NO_RESOURCES;
 
     /* check if  GATTC module is already enabled . Else enable */
-    if (p_cb->state == BTA_GATTC_STATE_DISABLED) {
+    /* This is a workaround because the task priority of btc (BTA_GATTC_CLOSE_EVT
+    in that task) is lower than the priority of the btu task.
+    Consequently, the p_cb->state fails to be restored to BTA_GATTC_STATE_DISABLED
+    and remains in the BTA_GATTC_STATE_DISABLING state. */
+    if (p_cb->state == BTA_GATTC_STATE_DISABLED || p_cb->state == BTA_GATTC_STATE_DISABLING) {
         bta_gattc_enable (p_cb);
     }
     /* todo need to check duplicate uuid */
