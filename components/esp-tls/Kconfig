@@ -21,7 +21,7 @@ menu "ESP-TLS"
         select ATCA_MBEDTLS_ECDSA_VERIFY
         help
             Enable use of Secure Element for ESP-TLS, this enables internal support for
-            ATECC608A peripheral on ESPWROOM32SE, which can be used for TLS connection.
+            ATECC608A peripheral, which can be used for TLS connection.
 
     config ESP_TLS_USE_DS_PERIPHERAL
         bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
