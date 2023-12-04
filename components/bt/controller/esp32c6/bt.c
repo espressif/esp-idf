@@ -127,6 +127,7 @@ extern int ble_log_init_async(interface_func_t bt_controller_log_interface, bool
 extern int ble_log_deinit_async(void);
 extern void ble_log_async_select_dump_buffers(uint8_t buffers);
 extern void ble_log_async_output_dump_all(bool output);
+extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int ble_controller_deinit(void);
 extern int ble_controller_enable(uint8_t mode);
@@ -202,7 +203,7 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-const static uint32_t log_bufs_size[] = {6144, 1024, 2048};
+const static uint32_t log_bufs_size[] = {CONFIG_BT_LE_LOG_CTRL_BUF1_SIZE, CONFIG_BT_LE_LOG_HCI_BUF_SIZE, CONFIG_BT_LE_LOG_CTRL_BUF2_SIZE};
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* This variable tells if BLE is running */
@@ -1185,9 +1186,10 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
 
 void esp_ble_controller_log_dump_all(bool output)
 {
-    portMUX_TYPE spinlock;
+    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
     portENTER_CRITICAL_SAFE(&spinlock);
+    esp_panic_handler_reconfigure_wdts(5000);
     BT_ASSERT_PRINT("\r\n[DUMP_START:");
     ble_log_async_output_dump_all(output);
     BT_ASSERT_PRINT("]\r\n");
