@@ -118,7 +118,6 @@
       - ethernet  # pytest*ethernet*
       - sdio      # pytest*sdio*
       - usb       # USB Device & Host tests
-      - adc       # pytest*adc*
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"

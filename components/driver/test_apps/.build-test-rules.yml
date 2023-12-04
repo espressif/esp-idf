@@ -21,6 +21,12 @@ components/driver/test_apps/i2s_test_apps/legacy_i2s_driver:
 components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
+  depends_components:
+    - efuse
+    - esp_driver_i2s
+    - esp_driver_spi
+  depends_filepatterns:
+    - components/driver/deprecated/**/*adc*
 
 components/driver/test_apps/legacy_i2c_driver:
   disable_test:

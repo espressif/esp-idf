@@ -598,69 +598,6 @@ pytest_examples_esp32_extflash:
       artifacts: false
   tags: [ esp32, external_flash ]
 
-pytest_examples_esp32_adc:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32-adc
-  needs:
-    - job: build_pytest_examples_esp32
-      artifacts: false
-  tags: [ esp32, adc ]
-
-pytest_examples_esp32s2_adc:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32s2-adc
-  needs:
-    - job: build_pytest_examples_esp32s2
-      artifacts: false
-  tags: [ esp32s2, adc ]
-
-pytest_examples_esp32s3_adc:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32s3-adc
-  needs:
-    - job: build_pytest_examples_esp32s3
-      artifacts: false
-  tags: [ esp32s3, adc ]
-
-pytest_examples_esp32c3_adc:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32c3-adc
-  needs:
-    - job: build_pytest_examples_esp32c3
-      artifacts: false
-  tags: [ esp32c3, adc ]
-
-pytest_examples_esp32c2_adc:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32c2-adc
-  needs:
-    - job: build_pytest_examples_esp32c2
-      artifacts: false
-  tags: [ esp32c2, adc, xtal_26mhz]
-
-pytest_examples_esp32c6_adc:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32c6-adc
-  needs:
-    - job: build_pytest_examples_esp32c6
-      artifacts: false
-  tags: [ esp32c6, adc ]
-
-pytest_examples_esp32h2_adc:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32h2-adc
-  needs:
-    - job: build_pytest_examples_esp32h2
-      artifacts: false
-  tags: [ esp32h2, adc ]
-
 pytest_examples_esp32s3_emmc:
   extends:
     - .pytest_examples_dir_template
@@ -703,15 +640,6 @@ pytest_components_esp32_wifi_two_dut:
     - job: build_pytest_components_esp32
       artifacts: false
   tags: [ esp32, wifi_two_dut ]
-
-pytest_components_esp32_adc:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32-adc
-  needs:
-    - job: build_pytest_components_esp32
-      artifacts: false
-  tags: [ esp32, adc ]
 
 pytest_components_esp32_sdmmc:
   extends:
@@ -907,15 +835,6 @@ pytest_components_esp32s2_generic_multi_device:
       artifacts: false
   tags: [ esp32s2, generic_multi_device ]
 
-pytest_components_esp32s2_adc:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s2-adc
-  needs:
-    - job: build_pytest_components_esp32s2
-      artifacts: false
-  tags: [ esp32s2, adc ]
-
 pytest_components_esp32s3_generic:
   extends:
     - .pytest_components_dir_template
@@ -934,15 +853,6 @@ pytest_components_esp32s3_generic_multi_device:
     - job: build_pytest_components_esp32s3
       artifacts: false
   tags: [ esp32s3, generic_multi_device ]
-
-pytest_components_esp32s3_adc:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32s3-adc
-  needs:
-    - job: build_pytest_components_esp32s3
-      artifacts: false
-  tags: [ esp32s3, adc ]
 
 pytest_components_esp32s3_octal_psram:
   extends:
@@ -1025,15 +935,6 @@ pytest_components_esp32c2_generic:
   tags: [ esp32c2, generic, xtal_40mhz ]
   parallel: 3
 
-pytest_components_esp32c2_adc:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c2-adc
-  needs:
-    - job: build_pytest_components_esp32c2
-      artifacts: false
-  tags: [ esp32c2, adc, xtal_26mhz ]
-
 pytest_components_esp32c2_generic_multi_device:
   extends:
     - .pytest_components_dir_template
@@ -1114,15 +1015,6 @@ pytest_components_esp32c2_wifi_two_dut:
     - job: build_pytest_components_esp32c2
       artifacts: false
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
-
-pytest_components_esp32c3_adc:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c3-adc
-  needs:
-    - job: build_pytest_components_esp32c3
-      artifacts: false
-  tags: [ esp32c3, adc ]
 
 pytest_components_esp32c3_flash_encryption:
   extends:
@@ -1207,15 +1099,6 @@ pytest_components_esp32h2_generic_multi_device:
       artifacts: false
   tags: [ esp32h2, generic_multi_device ]
 
-pytest_components_esp32h2_adc:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32h2-adc
-  needs:
-    - job: build_pytest_components_esp32h2
-      artifacts: false
-  tags: [ esp32h2, adc ]
-
 pytest_components_esp32h2_usb_serial_jtag:
   extends:
     - .pytest_components_dir_template
@@ -1232,15 +1115,6 @@ pytest_components_esp32c6_generic_multi_device:
     - job: build_pytest_components_esp32c6
       artifacts: false
   tags: [ esp32c6, generic_multi_device ]
-
-pytest_components_esp32c6_adc:
-  extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c6-adc
-  needs:
-    - job: build_pytest_components_esp32c6
-      artifacts: false
-  tags: [ esp32c6, adc ]
 
 pytest_examples_openthread_sleep:
   extends:
