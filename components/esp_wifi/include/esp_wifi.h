@@ -95,6 +95,8 @@ typedef struct {
     int                    tx_buf_type;            /**< WiFi TX buffer type */
     int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
     int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
+    int                    rx_mgmt_buf_type;       /**< WiFi RX MGMT buffer type */
+    int                    rx_mgmt_buf_num;        /**< WiFi RX MGMT buffer number */
     int                    cache_tx_buf_num;       /**< WiFi TX cache buffer number */
     int                    csi_enable;             /**< WiFi channel state information enable flag */
     int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
@@ -128,6 +130,12 @@ typedef struct {
 #define WIFI_DYNAMIC_TX_BUFFER_NUM CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 #else
 #define WIFI_DYNAMIC_TX_BUFFER_NUM 0
+#endif
+
+#ifdef CONFIG_ESP_WIFI_RX_MGMT_BUF_NUM_DEF
+#define WIFI_RX_MGMT_BUF_NUM_DEF CONFIG_ESP_WIFI_RX_MGMT_BUF_NUM_DEF
+#else
+#define WIFI_RX_MGMT_BUF_NUM_DEF 0
 #endif
 
 #if CONFIG_ESP32_WIFI_CSI_ENABLED
@@ -215,6 +223,8 @@ extern uint64_t g_wifi_feature_caps;
     .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\
     .static_tx_buf_num = WIFI_STATIC_TX_BUFFER_NUM,\
     .dynamic_tx_buf_num = WIFI_DYNAMIC_TX_BUFFER_NUM,\
+    .rx_mgmt_buf_type = CONFIG_ESP_WIFI_DYNAMIC_RX_MGMT_BUF,\
+    .rx_mgmt_buf_num = WIFI_RX_MGMT_BUF_NUM_DEF,\
     .cache_tx_buf_num = WIFI_CACHE_TX_BUFFER_NUM,\
     .csi_enable = WIFI_CSI_ENABLED,\
     .ampdu_rx_enable = WIFI_AMPDU_RX_ENABLED,\
@@ -431,7 +441,7 @@ esp_err_t esp_wifi_scan_stop(void);
 /**
   * @brief     Get number of APs found in last scan
   *
-  * @param[out] number  store number of APIs found in last scan
+  * @param[out] number  store number of APs found in last scan
   *
   * @attention This API can only be called when the scan is completed, otherwise it may get wrong value.
   *
@@ -812,7 +822,7 @@ esp_err_t esp_wifi_get_promiscuous_ctrl_filter(wifi_promiscuous_filter_t *filter
   *    - ESP_ERR_WIFI_MODE: invalid mode
   *    - ESP_ERR_WIFI_PASSWORD: invalid password
   *    - ESP_ERR_WIFI_NVS: WiFi internal NVS error
-  *    - others: refer to the erro code in esp_err.h
+  *    - others: refer to the error code in esp_err.h
   */
 esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
 
