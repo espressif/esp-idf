@@ -134,8 +134,6 @@ static inline void cpu_ll_set_watchpoint(int id,
                                         bool on_read,
                                         bool on_write)
 {
-    uint32_t addr_napot;
-
     if (cpu_ll_is_debugger_attached()) {
         /* see description in cpu_ll_set_breakpoint()  */
         long args[] = {true, id, (long)addr, (long)size,
@@ -149,17 +147,38 @@ static inline void cpu_ll_set_watchpoint(int id,
     RV_WRITE_CSR(tselect,id);
     RV_SET_CSR(CSR_TCONTROL, TCONTROL_MPTE | TCONTROL_MTE);
     RV_SET_CSR(CSR_TDATA1, TDATA1_USER|TDATA1_MACHINE);
-    RV_SET_CSR_FIELD(CSR_TDATA1, TDATA1_MATCH, 1);
-    // add 0 in napot encoding
-    addr_napot = ((uint32_t) addr) | ((size >> 1) - 1);
+    RV_SET_CSR_FIELD(CSR_TDATA1, TDATA1_MATCH, (size == 1) ? 0 : 1);
+
     if (on_read) {
         RV_SET_CSR(CSR_TDATA1, TDATA1_LOAD);
     }
     if (on_write) {
         RV_SET_CSR(CSR_TDATA1, TDATA1_STORE);
     }
-    RV_WRITE_CSR(tdata2,addr_napot);
-   return;
+
+    /* From RISC-V Debug Specification:
+     * tdata1(mcontrol) match = 0 : Exact byte match
+     *
+     * tdata1(mcontrol) match = 1 : NAPOT (Naturally Aligned Power-Of-Two):
+     * Matches when the top M bits of any compare value match the top M bits of tdata2.
+     * M is XLEN − 1 minus the index of the least-significant bit containing 0 in tdata2.
+     * Note: Expecting that size is number power of 2 (numbers should be in the range of 1 ~ 31)
+     *
+     * Examples for understanding how to calculate match pattern to tdata2:
+     *
+     * nnnn...nnnnn 1-byte  Exact byte match
+     * nnnn...nnnn0 2-byte  NAPOT range
+     * nnnn...nnn01 4-byte  NAPOT range
+     * nnnn...nn011 8-byte  NAPOT range
+     * nnnn...n0111 16-byte NAPOT range
+     * nnnn...01111 32-byte NAPOT range
+     * ...
+     * n011...11111 2^31 byte NAPOT range
+     *  * where n are bits from original address
+     */
+    uint32_t match_pattern = ((uint32_t)addr & ~(size-1)) | ((size-1) >> 1);
+
+    RV_WRITE_CSR(tdata2, match_pattern);
 }
 
 static inline void cpu_ll_clear_watchpoint(int id)
