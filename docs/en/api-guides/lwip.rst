@@ -13,6 +13,8 @@ ESP-IDF supports the following lwIP TCP/IP stack functions:
 - `BSD Sockets API`_
 - `Netconn API`_ is enabled but not officially supported for ESP-IDF applications
 
+.. _lwip-dns-limitation:
+
 Adapted APIs
 ^^^^^^^^^^^^
 
@@ -23,6 +25,12 @@ Adapted APIs
 Some common lwIP app APIs are supported indirectly by ESP-IDF:
 
 - Dynamic Host Configuration Protocol (DHCP) Server & Client are supported indirectly via the :doc:`/api-reference/network/esp_netif` functionality.
+- Domain Name System (DNS) is supported in lwIP; DNS servers could be assigned automatically when acquiring a DHCP address, or manually configured using the :doc:`/api-reference/network/esp_netif` API.
+
+.. note::
+
+    DNS server configuration in lwIP is global, not interface-specific. If you are using multiple network interfaces with distinct DNS servers, exercise caution to prevent inadvertent overwrites of one interface's DNS settings when acquiring a DHCP lease from another interface.
+
 - Simple Network Time Protocol (SNTP) is also supported via the :doc:`/api-reference/network/esp_netif`, or directly via the :component_file:`lwip/include/apps/esp_sntp.h` functions, which also provide thread-safe API to :component_file:`lwip/lwip/src/include/lwip/apps/sntp.h` functions, see also :ref:`system-time-sntp-sync`.
 - ICMP Ping is supported using a variation on the lwIP ping API, see :doc:`/api-reference/protocols/icmp_echo`.
 - ICMPv6 Ping, supported by lwIP's ICMPv6 Echo API, is used to test IPv6 network connectivity. For more information, see :example:`protocols/sockets/icmpv6_ping`.
@@ -411,6 +419,8 @@ IP Layer Features
 
 - IPV4-mapped IPV6 addresses are supported
 
+.. _lwip-custom-hooks:
+
 Customized lwIP Hooks
 +++++++++++++++++++++
 
@@ -422,9 +432,24 @@ The original lwIP supports implementing custom compile-time modifications via ``
    target_compile_options(${lwip} PRIVATE "-I${PROJECT_DIR}/main")
    target_compile_definitions(${lwip} PRIVATE "-DESP_IDF_LWIP_HOOK_FILENAME=\"my_hook.h\"")
 
+Customized lwIP Options From ESP-IDF Build System
+++++++++++++++++++++++++++++++++++++++++++++++++++
+
+The most common lwIP options are configurable through the component configuration menu. However, certain definitions need to be injected from the command line. The CMake function ``target_compile_definitions()`` can be employed to define macros, as illustrated below:
+
+.. code-block:: cmake
+
+   idf_component_get_property(lwip lwip COMPONENT_LIB)
+   target_compile_definitions(${lwip} PRIVATE "-DETHARP_SUPPORT_VLAN=1")
+
+This approach may not work for function-like macros, as there is no guarantee that the definition will be accepted by all compilers, although it is supported in GCC. To address this limitation, the ``add_definitions()`` function can be utilized to define the macro for the entire project, for example: ``add_definitions("-DFALLBACK_DNS_SERVER_ADDRESS(addr)=\"IP_ADDR4((addr), 8,8,8,8)\"")``.
+
+Alternatively, you can define your function-like macro in a header file which will be pre-included as an lwIP hook file, see :ref:`lwip-custom-hooks`.
 
 Limitations
 ^^^^^^^^^^^
+
+ESP-IDF additions to lwIP still suffer from the global DNS limitation, described in :ref:`lwip-dns-limitation`. To address this limitation from application code, the ``FALLBACK_DNS_SERVER_ADDRESS()`` macro can be utilized to define a global DNS fallback server accessible from all interfaces. Alternatively, you have the option to maintain per-interface DNS servers and reconfigure them whenever the default interface changes.
 
 Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fail with ``errno`` equal to ``ENOMEM``. This failure occurs due to the limitations of buffer sizes in the lower-layer network interface drivers. If all driver transmit buffers are full, the UDP transmission will fail. For applications that transmit a high volume of UDP datagrams and aim to avoid any dropped datagrams by the sender, it is advisable to implement error code checking and employ a retransmission mechanism with a short delay.
 
