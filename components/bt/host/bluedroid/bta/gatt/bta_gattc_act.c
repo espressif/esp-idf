@@ -122,9 +122,9 @@ void bta_gattc_reset_discover_st(tBTA_GATTC_SERV *p_srcb, tBTA_GATT_STATUS statu
 static void bta_gattc_enable(tBTA_GATTC_CB *p_cb)
 {
     APPL_TRACE_DEBUG("bta_gattc_enable");
-    /* This is a workaround because the task priority of btc (BTA_GATTC_CLOSE_EVT 
-    in that task) is lower than the priority of the btu task. 
-    Consequently, the p_cb->state fails to be restored to BTA_GATTC_STATE_DISABLED 
+    /* This is a workaround because the task priority of btc (BTA_GATTC_CLOSE_EVT
+    in that task) is lower than the priority of the btu task.
+    Consequently, the p_cb->state fails to be restored to BTA_GATTC_STATE_DISABLED
     and remains in the BTA_GATTC_STATE_DISABLING state. */
     if (p_cb->state == BTA_GATTC_STATE_DISABLED || p_cb->state == BTA_GATTC_STATE_DISABLING) {
         /* initialize control block */
@@ -204,9 +204,9 @@ void bta_gattc_register(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_data)
     cb_data.reg_oper.status = BTA_GATT_NO_RESOURCES;
 
     /* check if  GATTC module is already enabled . Else enable */
-    /* This is a workaround because the task priority of btc (BTA_GATTC_CLOSE_EVT 
-    in that task) is lower than the priority of the btu task. 
-    Consequently, the p_cb->state fails to be restored to BTA_GATTC_STATE_DISABLED 
+    /* This is a workaround because the task priority of btc (BTA_GATTC_CLOSE_EVT
+    in that task) is lower than the priority of the btu task.
+    Consequently, the p_cb->state fails to be restored to BTA_GATTC_STATE_DISABLED
     and remains in the BTA_GATTC_STATE_DISABLING state. */
     if (p_cb->state == BTA_GATTC_STATE_DISABLED || p_cb->state == BTA_GATTC_STATE_DISABLING) {
         bta_gattc_enable (p_cb);
