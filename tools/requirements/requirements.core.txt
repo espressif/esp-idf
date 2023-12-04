@@ -13,6 +13,7 @@ pyelftools
 idf-component-manager
 esp-coredump
 esptool
+construct
 
 # kconfig and menuconfig dependencies
 kconfiglib
