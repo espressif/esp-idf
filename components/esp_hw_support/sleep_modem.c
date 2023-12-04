@@ -432,7 +432,7 @@ void sleep_modem_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_
  * @param cpu_freq_mhz cpu frequency to do retention
  * @param do_retention function for retention
  */
-static void rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(bool backup, int cpu_freq_mhz, void (*do_retention)(bool))
+static void IRAM_ATTR rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(bool backup, int cpu_freq_mhz, void (*do_retention)(bool))
 {
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
     if (pmu_sleep_pll_already_enabled()) {
