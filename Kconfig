@@ -22,7 +22,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     config IDF_ENV_BRINGUP
         bool
-        default "y" if IDF_TARGET_ESP32P4
         help
             - This option is ONLY used when doing new chip bringup.
             - This option will only enable necessary hw / sw settings for running
