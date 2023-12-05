@@ -17,6 +17,7 @@
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_bt_device.h"
 #include "esp_gattc_api.h"
 #include "esp_gatt_defs.h"
 #include "esp_gatt_common_api.h"
@@ -331,7 +332,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     switch (event) {
     case ESP_GATTC_REG_EVT:
         ESP_LOGI(BLE_ANCS_TAG, "REG_EVT");
-        esp_ble_gap_set_device_name(EXAMPLE_DEVICE_NAME);
+        esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
         esp_ble_gap_config_local_icon (ESP_BLE_APPEARANCE_GENERIC_WATCH);
         //generate a resolvable random address
         esp_ble_gap_config_local_privacy(true);

@@ -6,5 +6,6 @@
 .. toctree::
     :maxdepth: 1
 
+    bluetooth-low-energy
     peripherals
     system
