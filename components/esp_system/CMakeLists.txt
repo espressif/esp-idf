@@ -13,7 +13,11 @@ endif()
 set(srcs "esp_err.c")
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
-    list(APPEND srcs "fpga_overrides.c")
+    list(APPEND srcs "fpga_overrides_clk.c")
+endif()
+
+if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING)
+    list(APPEND srcs "fpga_overrides_rng.c")
 endif()
 
 if(BOOTLOADER_BUILD)
@@ -91,7 +95,12 @@ endif()
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
     # Forces the linker to include fpga stubs from this component
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides_clk")
+endif()
+
+if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING)
+    # Forces the linker to include fpga stubs from this component
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides_rng")
 endif()
 
 # Force linking UBSAN hooks. If UBSAN is not enabled, the hooks will ultimately be removed
