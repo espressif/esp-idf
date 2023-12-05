@@ -31,13 +31,12 @@
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
-#include "esp_attr.h"
 
-static const char *TAG = "fpga";
+static const char *TAG = "fpga_clk";
 
 static void s_warn(void)
 {
-    ESP_EARLY_LOGW(TAG, "Project configuration is for internal FPGA use, not all functions will work");
+    ESP_EARLY_LOGE(TAG, "Project configuration is for internal FPGA use, clock functions will not work");
 }
 
 void bootloader_clock_configure(void)
@@ -58,15 +57,6 @@ void bootloader_clock_configure(void)
     REG_WRITE(RTC_XTAL_FREQ_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
 }
 
-/* Placed in IRAM since test_apps expects it to be */
-void IRAM_ATTR bootloader_fill_random(void *buffer, size_t length)
-{
-    uint8_t *buffer_bytes = (uint8_t *)buffer;
-    for (int i = 0; i < length; i++) {
-        buffer_bytes[i] = 0x5A;
-    }
-}
-
 void esp_clk_init(void)
 {
     s_warn();
@@ -83,6 +73,6 @@ void esp_perip_clk_init(void)
  * @brief No-op function, used to force linking this file
  *
  */
-void esp_common_include_fpga_overrides(void)
+void esp_common_include_fpga_overrides_clk(void)
 {
 }
