@@ -123,3 +123,7 @@ repos:
     hooks:
       - id: file-contents-sorter
         files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt)'
+  - repo: https://github.com/espressif/esp-idf-sbom.git
+    rev: v0.11.0
+    hooks:
+      - id: validate-sbom-manifest

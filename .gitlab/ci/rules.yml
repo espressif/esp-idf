@@ -48,9 +48,6 @@
   - "tools/tools.json"
   - "tools/ci/test_build_system*.sh"
 
-.patterns-sbom: &patterns-sbom
-  - "tools/test_sbom/*"
-
 .patterns-custom_test: &patterns-custom_test
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
@@ -256,14 +253,6 @@
       changes: *patterns-python-files
     - <<: *if-dev-push
       changes: *patterns-sonarqube-files
-
-.rules:patterns:sbom:
-  rules:
-    - <<: *if-protected
-    - <<: *if-dev-push
-      changes: *patterns-sbom
-    - <<: *if-dev-push
-      changes: *patterns-submodule
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # DO NOT place comments or maintain any code from this line
