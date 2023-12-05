@@ -31,7 +31,7 @@
 
 #include <xtensa/config/core.h>
 #include "esp_attr.h"
-#include "xtensa/xtensa_api.h"
+#include "xtensa_api.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 

@@ -12,7 +12,7 @@
 #include <assert.h>
 #include "soc/soc_caps.h"
 #ifdef __XTENSA__
-#include "xtensa/xtensa_api.h"
+#include "xtensa_api.h"
 #include "xt_utils.h"
 #elif __riscv
 #include "riscv/rv_utils.h"

@@ -36,7 +36,7 @@
 #include <xtensa/hal.h>
 #include <xtensa/config/core.h>
 
-#include "xtensa/xtensa_context.h"
+#include "xtensa_context.h"
 
 /*
  * When compiling for G0-only, we don't have FreeRTOS component.
