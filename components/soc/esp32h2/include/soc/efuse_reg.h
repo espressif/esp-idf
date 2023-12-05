@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -612,74 +612,119 @@ extern "C" {
  *  BLOCK1 data register $n.
  */
 #define EFUSE_RD_MAC_SYS_2_REG (DR_REG_EFUSE_BASE + 0x4c)
-/** EFUSE_RXIQ_VERSION : R; bitpos: [2:0]; default: 0;
- *  RF Calibration data. RXIQ version
+/** EFUSE_RXIQ_VERSION : RO; bitpos: [2:0]; default: 0;
+ *  Stores RF Calibration data. RXIQ version.
  */
 #define EFUSE_RXIQ_VERSION    0x00000007U
 #define EFUSE_RXIQ_VERSION_M  (EFUSE_RXIQ_VERSION_V << EFUSE_RXIQ_VERSION_S)
 #define EFUSE_RXIQ_VERSION_V  0x00000007U
 #define EFUSE_RXIQ_VERSION_S  0
-/** EFUSE_RXIQ_0 : R; bitpos: [9:3]; default: 0;
- *  RF Calibration data. RXIQ data 0
+/** EFUSE_RXIQ_0 : RO; bitpos: [9:3]; default: 0;
+ *  Stores RF Calibration data. RXIQ data 0.
  */
 #define EFUSE_RXIQ_0    0x0000007FU
 #define EFUSE_RXIQ_0_M  (EFUSE_RXIQ_0_V << EFUSE_RXIQ_0_S)
 #define EFUSE_RXIQ_0_V  0x0000007FU
 #define EFUSE_RXIQ_0_S  3
-/** EFUSE_RXIQ_1 : R; bitpos: [16:10]; default: 0;
- *  RF Calibration data. RXIQ data 1
+/** EFUSE_RXIQ_1 : RO; bitpos: [16:10]; default: 0;
+ *  Stores RF Calibration data. RXIQ data 1.
  */
 #define EFUSE_RXIQ_1    0x0000007FU
 #define EFUSE_RXIQ_1_M  (EFUSE_RXIQ_1_V << EFUSE_RXIQ_1_S)
 #define EFUSE_RXIQ_1_V  0x0000007FU
 #define EFUSE_RXIQ_1_S  10
-/** EFUSE_RESERVED_1_81 : R; bitpos: [31:17]; default: 0;
- *  reserved
+/** EFUSE_ACTIVE_HP_DBIAS : RO; bitpos: [21:17]; default: 0;
+ *  Stores the PMU active hp dbias.
  */
-#define EFUSE_RESERVED_1_81    0x00007FFFU
-#define EFUSE_RESERVED_1_81_M  (EFUSE_RESERVED_1_81_V << EFUSE_RESERVED_1_81_S)
-#define EFUSE_RESERVED_1_81_V  0x00007FFFU
-#define EFUSE_RESERVED_1_81_S  17
+#define EFUSE_ACTIVE_HP_DBIAS    0x0000001FU
+#define EFUSE_ACTIVE_HP_DBIAS_M  (EFUSE_ACTIVE_HP_DBIAS_V << EFUSE_ACTIVE_HP_DBIAS_S)
+#define EFUSE_ACTIVE_HP_DBIAS_V  0x0000001FU
+#define EFUSE_ACTIVE_HP_DBIAS_S  17
+/** EFUSE_ACTIVE_LP_DBIAS : RO; bitpos: [26:22]; default: 0;
+ *  Stores the PMU active lp dbias.
+ */
+#define EFUSE_ACTIVE_LP_DBIAS    0x0000001FU
+#define EFUSE_ACTIVE_LP_DBIAS_M  (EFUSE_ACTIVE_LP_DBIAS_V << EFUSE_ACTIVE_LP_DBIAS_S)
+#define EFUSE_ACTIVE_LP_DBIAS_V  0x0000001FU
+#define EFUSE_ACTIVE_LP_DBIAS_S  22
+/** EFUSE_DSLP_DBIAS : RO; bitpos: [30:27]; default: 0;
+ *  Stores the PMU sleep dbias.
+ */
+#define EFUSE_DSLP_DBIAS    0x0000000FU
+#define EFUSE_DSLP_DBIAS_M  (EFUSE_DSLP_DBIAS_V << EFUSE_DSLP_DBIAS_S)
+#define EFUSE_DSLP_DBIAS_V  0x0000000FU
+#define EFUSE_DSLP_DBIAS_S  27
+/** EFUSE_DBIAS_VOL_GAP_VALUE1 : RO; bitpos: [31]; default: 0;
+ *  Stores the low 1 bit of dbias_vol_gap.
+ */
+#define EFUSE_DBIAS_VOL_GAP_VALUE1    (BIT(31))
+#define EFUSE_DBIAS_VOL_GAP_VALUE1_M  (EFUSE_DBIAS_VOL_GAP_VALUE1_V << EFUSE_DBIAS_VOL_GAP_VALUE1_S)
+#define EFUSE_DBIAS_VOL_GAP_VALUE1_V  0x00000001U
+#define EFUSE_DBIAS_VOL_GAP_VALUE1_S  31
 
 /** EFUSE_RD_MAC_SYS_3_REG register
  *  BLOCK1 data register $n.
  */
 #define EFUSE_RD_MAC_SYS_3_REG (DR_REG_EFUSE_BASE + 0x50)
-/** EFUSE_MAC_RESERVED_2 : RO; bitpos: [17:0]; default: 0;
+/** EFUSE_DBIAS_VOL_GAP_VALUE2 : RO; bitpos: [2:0]; default: 0;
+ *  Stores the high 3 bits of dbias_vol_gap.
+ */
+#define EFUSE_DBIAS_VOL_GAP_VALUE2    0x00000007U
+#define EFUSE_DBIAS_VOL_GAP_VALUE2_M  (EFUSE_DBIAS_VOL_GAP_VALUE2_V << EFUSE_DBIAS_VOL_GAP_VALUE2_S)
+#define EFUSE_DBIAS_VOL_GAP_VALUE2_V  0x00000007U
+#define EFUSE_DBIAS_VOL_GAP_VALUE2_S  0
+/** EFUSE_DBIAS_VOL_GAP_SIGN : RO; bitpos: [3]; default: 0;
+ *  Stores the sign bit of dbias_vol_gap.
+ */
+#define EFUSE_DBIAS_VOL_GAP_SIGN    (BIT(3))
+#define EFUSE_DBIAS_VOL_GAP_SIGN_M  (EFUSE_DBIAS_VOL_GAP_SIGN_V << EFUSE_DBIAS_VOL_GAP_SIGN_S)
+#define EFUSE_DBIAS_VOL_GAP_SIGN_V  0x00000001U
+#define EFUSE_DBIAS_VOL_GAP_SIGN_S  3
+/** EFUSE_MAC_RESERVED_2 : RO; bitpos: [17:4]; default: 0;
  *  Reserved.
  */
-#define EFUSE_MAC_RESERVED_2    0x0003FFFFU
+#define EFUSE_MAC_RESERVED_2    0x00003FFFU
 #define EFUSE_MAC_RESERVED_2_M  (EFUSE_MAC_RESERVED_2_V << EFUSE_MAC_RESERVED_2_S)
-#define EFUSE_MAC_RESERVED_2_V  0x0003FFFFU
-#define EFUSE_MAC_RESERVED_2_S  0
-/** EFUSE_WAFER_VERSION_MINOR : R; bitpos: [20:18]; default: 0; */
+#define EFUSE_MAC_RESERVED_2_V  0x00003FFFU
+#define EFUSE_MAC_RESERVED_2_S  4
+/** EFUSE_WAFER_VERSION_MINOR : RO; bitpos: [20:18]; default: 0;
+ *  Stores the wafer version minor.
+ */
 #define EFUSE_WAFER_VERSION_MINOR    0x00000007U
 #define EFUSE_WAFER_VERSION_MINOR_M  (EFUSE_WAFER_VERSION_MINOR_V << EFUSE_WAFER_VERSION_MINOR_S)
 #define EFUSE_WAFER_VERSION_MINOR_V  0x00000007U
 #define EFUSE_WAFER_VERSION_MINOR_S  18
-/** EFUSE_WAFER_VERSION_MAJOR : R; bitpos: [22:21]; default: 0; */
+/** EFUSE_WAFER_VERSION_MAJOR : RO; bitpos: [22:21]; default: 0;
+ *  Stores the wafer version major.
+ */
 #define EFUSE_WAFER_VERSION_MAJOR    0x00000003U
 #define EFUSE_WAFER_VERSION_MAJOR_M  (EFUSE_WAFER_VERSION_MAJOR_V << EFUSE_WAFER_VERSION_MAJOR_S)
 #define EFUSE_WAFER_VERSION_MAJOR_V  0x00000003U
 #define EFUSE_WAFER_VERSION_MAJOR_S  21
-/** EFUSE_DISABLE_WAFER_VERSION_MAJOR : R; bitpos: [23]; default: 0;
- *  Disables check of wafer version major
+/** EFUSE_DISABLE_WAFER_VERSION_MAJOR : RO; bitpos: [23]; default: 0;
+ *  Disables check of wafer version major.
  */
 #define EFUSE_DISABLE_WAFER_VERSION_MAJOR    (BIT(23))
 #define EFUSE_DISABLE_WAFER_VERSION_MAJOR_M  (EFUSE_DISABLE_WAFER_VERSION_MAJOR_V << EFUSE_DISABLE_WAFER_VERSION_MAJOR_S)
 #define EFUSE_DISABLE_WAFER_VERSION_MAJOR_V  0x00000001U
 #define EFUSE_DISABLE_WAFER_VERSION_MAJOR_S  23
-/** EFUSE_FLASH_CAP : R; bitpos: [26:24]; default: 0; */
+/** EFUSE_FLASH_CAP : RO; bitpos: [26:24]; default: 0;
+ *  Stores the flash cap.
+ */
 #define EFUSE_FLASH_CAP    0x00000007U
 #define EFUSE_FLASH_CAP_M  (EFUSE_FLASH_CAP_V << EFUSE_FLASH_CAP_S)
 #define EFUSE_FLASH_CAP_V  0x00000007U
 #define EFUSE_FLASH_CAP_S  24
-/** EFUSE_FLASH_TEMP : R; bitpos: [28:27]; default: 0; */
+/** EFUSE_FLASH_TEMP : RO; bitpos: [28:27]; default: 0;
+ *  Stores the flash temp.
+ */
 #define EFUSE_FLASH_TEMP    0x00000003U
 #define EFUSE_FLASH_TEMP_M  (EFUSE_FLASH_TEMP_V << EFUSE_FLASH_TEMP_S)
 #define EFUSE_FLASH_TEMP_V  0x00000003U
 #define EFUSE_FLASH_TEMP_S  27
-/** EFUSE_FLASH_VENDOR : R; bitpos: [31:29]; default: 0; */
+/** EFUSE_FLASH_VENDOR : RO; bitpos: [31:29]; default: 0;
+ *  Stores the flash vendor.
+ */
 #define EFUSE_FLASH_VENDOR    0x00000007U
 #define EFUSE_FLASH_VENDOR_M  (EFUSE_FLASH_VENDOR_V << EFUSE_FLASH_VENDOR_S)
 #define EFUSE_FLASH_VENDOR_V  0x00000007U

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table e3fb625011fff48d5d8b7569075d0bb3
+// md5_digest_table 1b79da735c5daed71ed7a91a0c55c5b6
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -193,6 +193,22 @@ static const esp_efuse_desc_t WR_DIS_RXIQ_0[] = {
 
 static const esp_efuse_desc_t WR_DIS_RXIQ_1[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of RXIQ_1,
+};
+
+static const esp_efuse_desc_t WR_DIS_ACTIVE_HP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_HP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_ACTIVE_LP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_LP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_DSLP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DSLP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_DBIAS_VOL_GAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DBIAS_VOL_GAP,
 };
 
 static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
@@ -554,23 +570,39 @@ static const esp_efuse_desc_t MAC_EXT[] = {
 };
 
 static const esp_efuse_desc_t RXIQ_VERSION[] = {
-    {EFUSE_BLK1, 64, 3}, 	 // [] RF Calibration data. RXIQ version,
+    {EFUSE_BLK1, 64, 3}, 	 // [] Stores RF Calibration data. RXIQ version,
 };
 
 static const esp_efuse_desc_t RXIQ_0[] = {
-    {EFUSE_BLK1, 67, 7}, 	 // [] RF Calibration data. RXIQ data 0,
+    {EFUSE_BLK1, 67, 7}, 	 // [] Stores RF Calibration data. RXIQ data 0,
 };
 
 static const esp_efuse_desc_t RXIQ_1[] = {
-    {EFUSE_BLK1, 74, 7}, 	 // [] RF Calibration data. RXIQ data 1,
+    {EFUSE_BLK1, 74, 7}, 	 // [] Stores RF Calibration data. RXIQ data 1,
+};
+
+static const esp_efuse_desc_t ACTIVE_HP_DBIAS[] = {
+    {EFUSE_BLK1, 81, 5}, 	 // [] Stores the PMU active hp dbias,
+};
+
+static const esp_efuse_desc_t ACTIVE_LP_DBIAS[] = {
+    {EFUSE_BLK1, 86, 5}, 	 // [] Stores the PMU active lp dbias,
+};
+
+static const esp_efuse_desc_t DSLP_DBIAS[] = {
+    {EFUSE_BLK1, 91, 4}, 	 // [] Stores the PMU sleep dbias,
+};
+
+static const esp_efuse_desc_t DBIAS_VOL_GAP[] = {
+    {EFUSE_BLK1, 95, 5}, 	 // [] Stores the low 1 bit of dbias_vol_gap,
 };
 
 static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
-    {EFUSE_BLK1, 114, 3}, 	 // [],
+    {EFUSE_BLK1, 114, 3}, 	 // [] Stores the wafer version minor,
 };
 
 static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
-    {EFUSE_BLK1, 117, 2}, 	 // [],
+    {EFUSE_BLK1, 117, 2}, 	 // [] Stores the wafer version major,
 };
 
 static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
@@ -578,15 +610,15 @@ static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
 };
 
 static const esp_efuse_desc_t FLASH_CAP[] = {
-    {EFUSE_BLK1, 120, 3}, 	 // [],
+    {EFUSE_BLK1, 120, 3}, 	 // [] Stores the flash cap,
 };
 
 static const esp_efuse_desc_t FLASH_TEMP[] = {
-    {EFUSE_BLK1, 123, 2}, 	 // [],
+    {EFUSE_BLK1, 123, 2}, 	 // [] Stores the flash temp,
 };
 
 static const esp_efuse_desc_t FLASH_VENDOR[] = {
-    {EFUSE_BLK1, 125, 3}, 	 // [],
+    {EFUSE_BLK1, 125, 3}, 	 // [] Stores the flash vendor,
 };
 
 static const esp_efuse_desc_t PKG_VERSION[] = {
@@ -927,6 +959,26 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_0[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_1[] = {
     &WR_DIS_RXIQ_1[0],    		// [] wr_dis of RXIQ_1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[] = {
+    &WR_DIS_ACTIVE_HP_DBIAS[0],    		// [] wr_dis of ACTIVE_HP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[] = {
+    &WR_DIS_ACTIVE_LP_DBIAS[0],    		// [] wr_dis of ACTIVE_LP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_DBIAS[] = {
+    &WR_DIS_DSLP_DBIAS[0],    		// [] wr_dis of DSLP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DBIAS_VOL_GAP[] = {
+    &WR_DIS_DBIAS_VOL_GAP[0],    		// [] wr_dis of DBIAS_VOL_GAP
     NULL
 };
 
@@ -1377,27 +1429,47 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_RXIQ_VERSION[] = {
-    &RXIQ_VERSION[0],    		// [] RF Calibration data. RXIQ version
+    &RXIQ_VERSION[0],    		// [] Stores RF Calibration data. RXIQ version
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_RXIQ_0[] = {
-    &RXIQ_0[0],    		// [] RF Calibration data. RXIQ data 0
+    &RXIQ_0[0],    		// [] Stores RF Calibration data. RXIQ data 0
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_RXIQ_1[] = {
-    &RXIQ_1[0],    		// [] RF Calibration data. RXIQ data 1
+    &RXIQ_1[0],    		// [] Stores RF Calibration data. RXIQ data 1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[] = {
+    &ACTIVE_HP_DBIAS[0],    		// [] Stores the PMU active hp dbias
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[] = {
+    &ACTIVE_LP_DBIAS[0],    		// [] Stores the PMU active lp dbias
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DSLP_DBIAS[] = {
+    &DSLP_DBIAS[0],    		// [] Stores the PMU sleep dbias
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DBIAS_VOL_GAP[] = {
+    &DBIAS_VOL_GAP[0],    		// [] Stores the low 1 bit of dbias_vol_gap
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
-    &WAFER_VERSION_MINOR[0],    		// []
+    &WAFER_VERSION_MINOR[0],    		// [] Stores the wafer version minor
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
-    &WAFER_VERSION_MAJOR[0],    		// []
+    &WAFER_VERSION_MAJOR[0],    		// [] Stores the wafer version major
     NULL
 };
 
@@ -1407,17 +1479,17 @@ const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[] = {
-    &FLASH_CAP[0],    		// []
+    &FLASH_CAP[0],    		// [] Stores the flash cap
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[] = {
-    &FLASH_TEMP[0],    		// []
+    &FLASH_TEMP[0],    		// [] Stores the flash temp
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[] = {
-    &FLASH_VENDOR[0],    		// []
+    &FLASH_VENDOR[0],    		// [] Stores the flash vendor
     NULL
 };
 
