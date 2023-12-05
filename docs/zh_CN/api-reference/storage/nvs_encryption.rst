@@ -20,7 +20,13 @@ NVS 加密：基于 flash 加密的方案
 
 在这个方案中，NVS 加密所需的密钥存储在另一个分区中，该分区用 :doc:`../../security/flash-encryption` 进行保护。因此，使用该方案时，必须先启用 :doc:`../../security/flash-encryption`。
 
-启用 :doc:`../../security/flash-encryption` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动程序会将凭证（如 SSID 和密码）储存在默认的 NVS 分区中。如已启用平台级加密，那么同时默认启用 NVS 加密有其必要性。
+.. only:: SOC_HMAC_SUPPORTED
+
+    启用 :doc:`../../security/flash-encryption` 时需同时启用 NVS 加密，因为 Wi-Fi 驱动程序会将凭据（如 SSID 和密码）储存在默认的 NVS 分区中。如已启用平台级加密，那么则需要同时启用 NVS 加密。
+
+.. only:: not SOC_HMAC_SUPPORTED
+
+    启用 :doc:`../../security/flash-encryption` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动程序会将凭据（如 SSID 和密码）储存在默认的 NVS 分区中。如已启用平台级加密，那么则需要同时默认启用 NVS 加密。
 
 要用这一方案进行 NVS 加密，分区表中必须包含 :ref:`nvs_encr_key_partition`。在分区表选项 ( ``menuconfig`` > ``Partition Table`` ) 中，有两个包含 :ref:`nvs_encr_key_partition` 的分区表，可通过项目配置菜单 ( ``idf.py menuconfig``) 进行选择。要了解如何配置和使用 NVS 加密功能，请参考示例 :example:`security/flash_encryption`。
 
