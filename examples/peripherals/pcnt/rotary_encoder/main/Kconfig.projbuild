@@ -1,8 +1,0 @@
-menu "Example Configuration"
-    config EXAMPLE_WAKE_UP_LIGHT_SLEEP
-        bool "Configure the EC11 to wake up light sleep"
-        default "n"
-        help
-            Whether to use one of the EC11 channel to wake up the chip from light sleep.
-            The wake up is not triggered by PCNT peripheral, but by the digital GPIO.
-endmenu

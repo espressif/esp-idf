@@ -1,5 +1,0 @@
-# For ESP32-S3 and ESP32-C3, keep secondary console disabled
-# This is to avoid any timing impact on test behavior
-CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
-
-CONFIG_NEWLIB_TIME_SYSCALL_USE_RTC=y

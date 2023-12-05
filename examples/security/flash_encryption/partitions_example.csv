@@ -1,9 +1,0 @@
-# Name,   Type, SubType, Offset,  Size, Flags
-nvs,        data, nvs,      ,  0x6000,
-# Extra partition to demonstrate reading/writing of encrypted flash
-storage,    data, 0xff,     ,  0x1000, encrypted
-factory,    app,  factory,  , 1M,
-# nvs_key partition contains the key that encrypts the NVS partition named nvs. The nvs_key partition needs to be encrypted.
-nvs_key,    data, nvs_keys, , 0x1000, encrypted,
-# Custom NVS data partition
-custom_nvs, data, nvs,      ,  0x6000,

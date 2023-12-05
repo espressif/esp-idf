@@ -1,1 +1,0 @@
-.. include:: ../en/COPYRIGHT.rst

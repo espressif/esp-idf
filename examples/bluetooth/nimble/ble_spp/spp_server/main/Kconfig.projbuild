@@ -1,7 +1,0 @@
-menu "Example Configuration"
-
-    config EXAMPLE_IO_TYPE
-        int "IO Type"
-        default 3
-
-endmenu

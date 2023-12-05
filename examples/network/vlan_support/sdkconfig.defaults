@@ -1,7 +1,0 @@
-# This file was generated using idf.py save-defconfig. It can be edited manually.
-# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
-#
-CONFIG_EXAMPLE_EXTRA_VLAN_INTERFACE=y
-CONFIG_LWIP_IP_FORWARD=y
-CONFIG_LWIP_IPV4_NAPT=y
-CONFIG_LWIP_NUM_NETIF_CLIENT_DATA=1

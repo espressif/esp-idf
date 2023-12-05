@@ -1,6 +1,0 @@
-# This file was generated using idf.py save-defconfig. It can be edited manually.
-# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
-#
-CONFIG_ESP_TASK_WDT_INIT=n
-CONFIG_LV_COLOR_DEPTH_8=y
-CONFIG_LV_THEME_DEFAULT_DARK=y

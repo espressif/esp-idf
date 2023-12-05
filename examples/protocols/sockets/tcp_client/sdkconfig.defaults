@@ -1,4 +1,0 @@
-# This file was generated using idf.py save-defconfig. It can be edited manually.
-# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
-#
-# CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER is not set

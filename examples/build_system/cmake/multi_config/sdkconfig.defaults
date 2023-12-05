@@ -1,6 +1,0 @@
-# In this example, the default build (obtained with 'idf.py build')
-# targets a hypothetical development platform.
-CONFIG_EXAMPLE_PRODUCT_NAME="Blinky Development Board"
-
-# This selects 'func_dev.c' file to be compiled and linked, see CMakeLists.txt.
-CONFIG_EXAMPLE_FUNC_IMPL_DEV=y

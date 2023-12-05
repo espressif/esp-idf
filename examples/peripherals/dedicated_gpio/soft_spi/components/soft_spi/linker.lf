@@ -1,4 +1,0 @@
-[mapping:main_default]
-archive: libsoft_spi.a
-entries:
-    * (noflash)

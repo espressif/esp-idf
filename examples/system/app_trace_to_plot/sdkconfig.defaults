@@ -1,3 +1,0 @@
-# Enable application tracing by default
-CONFIG_APPTRACE_DEST_JTAG=y
-CONFIG_APPTRACE_ENABLE=y

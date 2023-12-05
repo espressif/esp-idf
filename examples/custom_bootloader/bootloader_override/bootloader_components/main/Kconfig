@@ -1,8 +1,0 @@
-menu "Bootloader welcome message"
-
-    config EXAMPLE_BOOTLOADER_WELCOME_MESSAGE
-        string "Bootloader welcome message"
-        default "Custom bootloader message defined in the KConfig file."
-        help
-            Message to print by the custom bootloader when booting up.
-endmenu

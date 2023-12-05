@@ -1,1 +1,0 @@
-.. include:: ../../../en/api-reference/system/bootloader_image_format.rst

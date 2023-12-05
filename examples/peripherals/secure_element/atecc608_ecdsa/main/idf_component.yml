@@ -1,3 +1,0 @@
-## IDF Component Manager Manifest File
-dependencies:
-  espressif/esp-cryptoauthlib: "^3.3.1"

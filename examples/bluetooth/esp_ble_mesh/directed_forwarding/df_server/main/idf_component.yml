@@ -1,9 +1,0 @@
-dependencies:
-  button:
-    path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/button
-  light_driver:
-    path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/light_driver
-  example_init:
-    path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/example_init
-  example_nvs:
-    path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/example_nvs

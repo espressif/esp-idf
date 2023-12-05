@@ -1,9 +1,0 @@
-menu "SPIFFS Example menu"
-
-    config EXAMPLE_SPIFFS_CHECK_ON_START
-        bool "Run SPIFFS_check on every start-up"
-        default y
-        help
-            If this config item is set, esp_spiffs_check() will be run on every start-up.
-            Slow on large flash sizes.
-endmenu

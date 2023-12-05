@@ -1,5 +1,0 @@
-dependencies:
-  idf: ">=4.4"
-  lvgl/lvgl: "~8.3.0"
-  esp_lcd_sh1107: "^1"
-  esp_lvgl_port: "^1"

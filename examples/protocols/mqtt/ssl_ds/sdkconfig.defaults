@@ -1,7 +1,0 @@
-CONFIG_PARTITION_TABLE_CUSTOM=y
-# Setting partition table offset to 0xC000 would make the address of
-# `esp_secure_cert` partition as 0xD000 (comes next in the sequence).
-# Modules that are programmed with  Espressif Secure Pre Provisioining service
-# uses this offset for `esp_secure_cert` and hence this change aligns this example
-# to work on those modules.
-CONFIG_PARTITION_TABLE_OFFSET=0xC000

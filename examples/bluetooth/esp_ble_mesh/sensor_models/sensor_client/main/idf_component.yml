@@ -1,5 +1,0 @@
-dependencies:
-  button:
-    path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/button
-  example_init:
-    path: ${IDF_PATH}/examples/bluetooth/esp_ble_mesh/common_components/example_init

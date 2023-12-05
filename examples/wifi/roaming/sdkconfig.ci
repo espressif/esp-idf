@@ -1,2 +1,0 @@
-# Add CI coverage for WPA supplicant debug feature
-CONFIG_ESP_WIFI_DEBUG_PRINT=y

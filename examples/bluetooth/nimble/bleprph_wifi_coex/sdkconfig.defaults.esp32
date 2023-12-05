@@ -1,4 +1,0 @@
-# Place FreeRTOS functions into flash to save some IRAM on the ESP32
-CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y
-# Use the SINGLE_APP_LARGE partition to ensure the partition has enough space for the ESP32 build
-CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y

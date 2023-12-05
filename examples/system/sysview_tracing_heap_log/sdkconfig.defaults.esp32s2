@@ -1,4 +1,0 @@
-#
-# Heap memory debugging
-#
-CONFIG_HEAP_TRACING_STACK_DEPTH=10

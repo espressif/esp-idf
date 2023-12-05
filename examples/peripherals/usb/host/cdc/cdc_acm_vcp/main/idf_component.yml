@@ -1,7 +1,0 @@
-## IDF Component Manager Manifest File
-dependencies:
-  usb_host_ch34x_vcp: "^2"
-  usb_host_cp210x_vcp: "^2"
-  usb_host_ftdi_vcp: "^2"
-  usb_host_vcp: "^1"
-  idf: ">=5.1.0"

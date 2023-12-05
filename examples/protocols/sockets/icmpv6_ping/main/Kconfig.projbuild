@@ -1,9 +1,0 @@
-menu "Example Configuration"
-
-    config EXAMPLE_DST_IPV6_ADDR
-        string "Destination IPV6 Address"
-        default "2001:DB8::56AF:97FF:FEB3:2195"
-        help
-            The example will connect to this IPV6 address.
-
-endmenu

@@ -1,3 +1,0 @@
-# Check the README.md file for more info about why we need to disable these options
-CONFIG_ESP_INT_WDT=n
-CONFIG_ESP_TASK_WDT_EN=n

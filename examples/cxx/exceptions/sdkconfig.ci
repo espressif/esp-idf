@@ -1,3 +1,0 @@
-# Enable C++ exceptions and set emergency pool size for exception objects
-CONFIG_COMPILER_CXX_EXCEPTIONS=y
-CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE=1024

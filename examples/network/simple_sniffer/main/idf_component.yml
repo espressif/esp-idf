@@ -1,4 +1,0 @@
-dependencies:
-  pcap: "^1.0.0"
-  ethernet_init:
-    path: ${IDF_PATH}/examples/ethernet/basic/components/ethernet_init
