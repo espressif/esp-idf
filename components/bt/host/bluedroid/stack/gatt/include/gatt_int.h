@@ -539,6 +539,7 @@ typedef struct {
     tGATT_PROFILE_CLCB  profile_clcb[GATT_MAX_APPS];
 #endif  ///GATTS_INCLUDED == TRUE
     UINT16              handle_of_h_r;          /* Handle of the handles reused characteristic value */
+#if GATTS_ROBUST_CACHING_ENABLED
     UINT16              handle_of_database_hash;
     UINT16              handle_of_cl_supported_feat;
     UINT16              handle_of_sr_supported_feat;
@@ -546,6 +547,7 @@ typedef struct {
     UINT8               gatt_sr_supported_feat_mask;
     UINT8               gatt_cl_supported_feat_mask;
 
+#endif
     tGATT_APPL_INFO       cb_info;
 
 
