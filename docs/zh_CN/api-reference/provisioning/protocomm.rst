@@ -28,8 +28,11 @@ Protocomm 为以下各种传输提供框架：
     :SOC_WIFI_SUPPORTED: - Wi-Fi (SoftAP + HTTPD)
     - 控制台：使用该传输方案时，设备端会自动调用处理程序。相关代码片段，请参见下文传输示例。
 
+请注意，对于 ``protocomm_security1`` 和 ``protocomm_security2``，客户端仍需要执行双向握手来建立会话。
 
-请注意，对于 ``protocomm_security1`` 和 ``protocomm_security2``，客户端仍需要执行双向握手来建立会话。关于安全握手逻辑的详情，请参阅 :doc:`provisioning`。
+.. only:: SOC_WIFI_SUPPORTED
+
+    关于安全握手逻辑的详情，请参阅 :doc:`provisioning`。
 
 .. _enabling-protocomm-security-version:
 

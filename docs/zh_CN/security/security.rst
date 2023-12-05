@@ -197,18 +197,20 @@ UART 下载模式
 产品安全
 ----------------
 
-安全配网
-~~~~~~~~~~~~~~~~~~~
+.. only:: SOC_WIFI_SUPPORTED
 
-安全配网是指将 ESP 设备安全接入 Wi-Fi 网络的过程。该机制还支持在初始配网阶段从配网实体（如智能手机等）获取额外的自定义配置数据。
+    安全配网
+    ~~~~~~~~~~~~~~~~~~~
 
-ESP-IDF 提供了多种安全方案，可以在 ESP 设备和配网实体之间建立安全会话，具体方案请参阅 :ref:`provisioning_security_schemes`。
+    安全配网是指将 ESP 设备安全接入 Wi-Fi 网络的过程。该机制还支持在初始配网阶段从配网实体（如智能手机等）获取额外的自定义配置数据。
 
-关于该功能的更多详情和代码示例，请参阅 :doc:`../api-reference/provisioning/wifi_provisioning`。
+    ESP-IDF 提供了多种安全方案，可以在 ESP 设备和配网实体之间建立安全会话，具体方案请参阅 :ref:`provisioning_security_schemes`。
 
-.. note::
+    关于该功能的更多详情和代码示例，请参阅 :doc:`../api-reference/provisioning/wifi_provisioning`。
 
-    乐鑫提供了 Android 和 iOS 手机应用程序及其源代码，以便进一步根据产品需求定制安全配网方案。
+    .. note::
+
+        乐鑫提供了 Android 和 iOS 手机应用程序及其源代码，以便进一步根据产品需求定制安全配网方案。
 
 安全 OTA 更新
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
