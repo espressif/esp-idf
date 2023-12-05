@@ -207,7 +207,10 @@ config BT_GATTS_ROBUST_CACHING_ENABLED
     depends on BT_GATTS_ENABLE
     default n
     help
-        This option enable gatt robust caching feature on server
+        This option enables the GATT robust caching feature on the server.
+        if turned on, the Client Supported Features characteristic, Database Hash characteristic,
+        and Server Supported Features characteristic will be included in the GAP SERVICE.
+
 
 config BT_GATTS_DEVICE_NAME_WRITABLE
     bool "Allow to write device name by GATT clients"
