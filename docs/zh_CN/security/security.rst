@@ -1,6 +1,10 @@
 安全
 ====
 
+{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA"}
+
+{IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS 或 ECDSA", esp32p4="DS 或 ECDSA"}
+
 :link_to_translation:`en:[English]`
 
 本指南概述了乐鑫解决方案中可用的整体安全功能。从 **安全** 角度考虑，强烈建议在使用乐鑫平台和 ESP-IDF 软件栈设计产品时参考本指南。
@@ -73,9 +77,19 @@ flash 加密最佳实践
 
     在 {IDF_TARGET_NAME} 中，数字签名外设借助硬件加速，通过 HMAC 算法生成 RSA 数字签名。RSA 私钥仅限设备硬件访问，软件无法获取，保证了设备上存储密钥的安全性。
 
-    数字签名外设可以建立与远程终端之间的 **安全设备身份**，如基于 RSA 加密算法的 TLS 双向认证。
+    .. only:: SOC_ECDSA_SUPPORTED
 
-    更多详情请参阅 :doc:`../api-reference/peripherals/ds`。
+        {IDF_TARGET_NAME} 还支持 ECDSA 外设，用于生成硬件加速的 ECDSA 数字签名。ECDSA 私钥支持直接编程到 eFuse 块中，并在软件中标记为读保护。
+
+    {IDF_TARGET_SIG_PERI} 外设可以建立与远程终端之间的 **安全设备身份**，如基于 {IDF_TARGET_CIPHER_SCHEME} 加密算法的 TLS 双向认证。
+
+    .. only:: not SOC_ECDSA_SUPPORTED
+
+        详情请参阅 :doc:`../api-reference/peripherals/ds`。
+
+    .. only:: SOC_ECDSA_SUPPORTED
+
+        详情请参阅 :doc:`../api-reference/peripherals/ecdsa` 及 :doc:`../api-reference/peripherals/ds`。
 
 .. only:: SOC_MEMPROT_SUPPORTED or SOC_CPU_IDRAM_SPLIT_USING_PMP
 
