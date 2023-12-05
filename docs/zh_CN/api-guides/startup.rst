@@ -22,11 +22,11 @@
 一级引导程序
 ~~~~~~~~~~~~
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    SoC 复位后，PRO CPU 会立即开始运行，执行复位向量代码，而 APP CPU 仍然保持复位状态。在启动过程中，PRO CPU 会执行所有的初始化操作。APP CPU 的复位状态会在应用程序启动代码的 ``call_start_cpu0`` 函数中失效。复位向量代码位于 {IDF_TARGET_NAME} 芯片掩膜 ROM 处，且不能被修改。
 
-.. only:: CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    SoC 复位后，CPU 会立即开始运行，执行所有的初始化操作。复位向量代码位于 {IDF_TARGET_NAME} 芯片掩膜 ROM 处，且不能被修改。
 
@@ -76,7 +76,7 @@
 - 对于在内部 :ref:`iram` 或 :ref:`dram` 中具有加载地址的段，将把数据从 flash 复制到它们的加载地址处。
 - 对于一些加载地址位于 :ref:`drom` 或 :ref:`irom` 区域的段，通过配置 flash MMU，可为从 flash 到加载地址提供正确的映射。
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     请注意，二级引导程序同时为 PRO CPU 和 APP CPU 配置 flash MMU，但仅使能 PRO CPU 的 flash MMU。原因是二级引导程序代码已加载到 APP CPU 的高速缓存使用的内存区域中。因此使能 APP CPU 高速缓存的任务就交给了应用程序。
 
@@ -114,13 +114,13 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
    - 将 CPU 时钟设置为项目配置的频率。
    :CONFIG_ESP_SYSTEM_MEMPROT_FEATURE: - 如果配置了内存保护，则初始化内存保护。
    :esp32: - 根据应用程序头部设置重新配置主 SPI flash，这是为了与 ESP-IDF V4.0 之前的引导程序版本兼容，请参考 :ref:`bootloader-compatibility`。
-   :not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE: - 如果应用程序被配置为在多个内核上运行，则启动另一个内核并等待其初始化（在类似的“端口层”初始化函数 ``call_start_cpu1`` 内）。
+   :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 如果应用程序被配置为在多个内核上运行，则启动另一个内核并等待其初始化（在类似的“端口层”初始化函数 ``call_start_cpu1`` 内）。
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    ``call_start_cpu0`` 完成运行后，将调用在 :idf_file:`components/esp_system/startup.c` 中找到的“系统层”初始化函数 ``start_cpu0``。其他内核也将完成端口层的初始化，并调用同一文件中的 ``start_other_cores``。
 
-.. only:: CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    ``call_start_cpu0`` 完成运行后，将调用在 :idf_file:`components/esp_system/startup.c` 中找到的“系统层”初始化函数 ``start_cpu0``。
 
@@ -156,13 +156,13 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
 
 运行 ``app_main`` 的主任务有一个固定的 RTOS 优先级（比最小值高）和一个 :ref:`可配置的堆栈大小<CONFIG_ESP_MAIN_TASK_STACK_SIZE>`。
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    主任务的内核亲和性也是可以配置的，请参考 :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`。
 
 与普通的 FreeRTOS 任务（或嵌入式 C 的 ``main`` 函数）不同，``app_main`` 任务可以返回。如果``app_main`` 函数返回，那么主任务将会被删除。系统将继续运行其他的 RTOS 任务。因此可以将 ``app_main`` 实现为一个创建其他应用任务然后返回的函数，或主应用任务本身。
 
-.. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     APP CPU 的内核启动流程
     ------------------------------------

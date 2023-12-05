@@ -54,7 +54,7 @@ Executing the target multiple times can help average out factors, e.g., RTOS con
 - It is also possible to use the standard Unix ``gettimeofday()`` and ``utime()`` functions, although the overhead is slightly higher.
 - Otherwise, including ``hal/cpu_hal.h`` and calling the HAL function ``cpu_hal_get_cycle_count()`` returns the number of CPU cycles executed. This function has lower overhead than the others, which is good for measuring very short execution times with high precision.
 
-  .. only:: not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+  .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
       The CPU cycles are counted per-core, so only use this method from an interrupt handler, or a task that is pinned to a single core.
 
@@ -159,7 +159,7 @@ Common priorities are:
 
 .. Note: the following two lists should be kept the same, but the second list also shows CPU affinities
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. list::
 
@@ -176,7 +176,7 @@ Common priorities are:
         - If using the :doc:`/api-reference/protocols/mqtt` component, it creates a task with default priority 5 (:ref:`configurable<CONFIG_MQTT_TASK_PRIORITY>`), depending on :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG`, and also configurable at runtime by ``task_prio`` field in the :cpp:class:`esp_mqtt_client_config_t`)
         - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__.
 
-.. only :: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. list::
 
@@ -204,11 +204,11 @@ Common priorities are:
 Choosing Task Priorities of the Application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     In general, it is not recommended to set task priorities higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable. For very short timing-critical operations that do not use the network, use an ISR or a very restricted task (with very short bursts of runtime only) at the highest priority (24). Choosing priority 19 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still preempts the lwIP TCP/IP stack and other less time-critical internal functionality - this is the best option for time-critical tasks that do not perform network operations. Any task that does TCP/IP network operations should run at a lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     With a few exceptions, most importantly the lwIP TCP/IP task, in the default configuration most built-in tasks are pinned to Core 0. This makes it quite easy for the application to place high priority tasks on Core 1. Using priority 19 or higher guarantees that an application task can run on Core 1 without being preempted by any built-in task. To further isolate the tasks running on each CPU, configure the :ref:`lwIP task <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` to only run on Core 0 instead of either core, which may reduce total TCP/IP throughput depending on what other tasks are running.
 
@@ -234,7 +234,7 @@ To obtain the best performance for a particular interrupt handler:
 .. list::
 
     - Assign more important interrupts a higher priority using a flag such as ``ESP_INTR_FLAG_LEVEL2`` or ``ESP_INTR_FLAG_LEVEL3`` when calling :cpp:func:`esp_intr_alloc`.
-    :not CONFIG_FREERTOS_UNICORE: - Assign the interrupt on a CPU where built-in {IDF_TARGET_RF_TYPE} tasks are not configured to run, which means assigning the interrupt on Core 1 by default, see :ref:`built-in-task-priorities`. Interrupts are assigned on the same CPU where the :cpp:func:`esp_intr_alloc` function call is made.
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - Assign the interrupt on a CPU where built-in {IDF_TARGET_RF_TYPE} tasks are not configured to run, which means assigning the interrupt on Core 1 by default, see :ref:`built-in-task-priorities`. Interrupts are assigned on the same CPU where the :cpp:func:`esp_intr_alloc` function call is made.
     - If you are sure the entire interrupt handler can run from IRAM (see :ref:`iram-safe-interrupt-handlers`) then set the ``ESP_INTR_FLAG_IRAM`` flag when calling :cpp:func:`esp_intr_alloc` to assign the interrupt. This prevents it being temporarily disabled if the application firmware writes to the internal SPI flash.
     - Even if the interrupt handler is not IRAM-safe, if it is going to be executed frequently then consider moving the handler function to IRAM anyhow. This minimizes the chance of a flash cache miss when the interrupt code is executed (see :ref:`speed-targeted-optimizations`). It is possible to do this without adding the ``ESP_INTR_FLAG_IRAM`` flag to mark the interrupt as IRAM-safe, if only part of the handler is guaranteed to be in IRAM.
 
