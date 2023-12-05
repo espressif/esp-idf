@@ -31,7 +31,10 @@ ESP-IDF 应用程序使用常见的计算机架构模式：由程序控制流动
 
 所有的 DRAM 内存都可以单字节访问，因此所有的 DRAM 堆都具有 ``MALLOC_CAP_8BIT`` 属性。要获取所有 DRAM 堆的剩余空间大小，请调用 ``heap_caps_get_free_size(MALLOC_CAP_8BIT)``。
 
-如果占用了所有的 ``MALLOC_CAP_8BIT`` 堆空间，则可以用 ``MALLOC_CAP_IRAM_8BIT`` 代替。此时，若只以 32 位对齐的方式访问 IRAM 内存，或者启用了 ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY``，则仍然可以将 IRAM 用作内部内存的“储备池”。
+.. only:: esp32
+
+    如果占用了所有的 ``MALLOC_CAP_8BIT`` 堆空间，则可以用 ``MALLOC_CAP_IRAM_8BIT`` 代替。此时，若只以 32 位对齐的方式访问 IRAM 内存，或者启用了 ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY``，则仍然可以将 IRAM 用作内部内存的“储备池”。
+
 
 调用 ``malloc()`` 时，ESP-IDF ``malloc()`` 内部调用 ``heap_caps_malloc_default(size)``，使用属性 ``MALLOC_CAP_DEFAULT`` 分配内存。该属性可实现字节寻址功能，即存储空间的最小编址单位为字节。
 
@@ -122,11 +125,11 @@ DMA 存储器
     外部 SPI 内存
     ^^^^^^^^^^^^^^^^^^^
 
-    当启用 :doc:`片外 RAM </api-guides/external-ram>` 时，可以根据配置调用标准 ``malloc`` 或通过 ``heap_caps_malloc(MALLOC_CAP_SPIRAM)`` 分配小于 4 MiB 的外部 SPI RAM，详情请参阅 :ref:`external_ram_config`。
+    当启用 :doc:`片外 RAM </api-guides/external-ram>` 时，可以根据配置调用标准 ``malloc`` 或通过 ``heap_caps_malloc(MALLOC_CAP_SPIRAM)`` 分配外部 SPI RAM，详情请参阅 :ref:`external_ram_config`。
 
     .. only:: esp32
 
-        要使用超过 4 MiB 限制的区域，可以使用 :doc:`himem API</api-reference/system/himem>`。
+        在 ESP32 上，只有不超过 4 MiB 的外部 SPI RAM 可以通过上述方式分配。要使用超过 4 MiB 限制的区域，可以使用 :doc:`himem API</api-reference/system/himem>`。
 
 线程安全性
 -------------
