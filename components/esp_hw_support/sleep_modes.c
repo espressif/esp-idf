@@ -30,6 +30,10 @@
 #include "hal/rtc_io_hal.h"
 #include "hal/clk_tree_hal.h"
 
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+#include "hal/systimer_ll.h"
+#endif
+
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 #include "esp_private/pm_impl.h"
 #endif
@@ -870,11 +874,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         }
     }
 
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-        rtc_sleep_systimer_enable(false);
-    }
-#endif
 
     if (should_skip_sleep) {
         result = ESP_ERR_SLEEP_REJECT;
@@ -883,9 +882,9 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
     } else {
 #if CONFIG_ESP_SLEEP_DEBUG
-    if (s_sleep_ctx != NULL) {
-        s_sleep_ctx->wakeup_triggers = s_config.wakeup_triggers;
-    }
+        if (s_sleep_ctx != NULL) {
+            s_sleep_ctx->wakeup_triggers = s_config.wakeup_triggers;
+        }
 #endif
         if (deep_sleep) {
 #if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
@@ -913,6 +912,13 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
         } else {
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+            if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+                for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
+                    systimer_ll_enable_counter(&SYSTIMER, counter_id, false);
+                }
+            }
+#endif
             /* Cache Suspend 1: will wait cache idle in cache suspend */
             suspend_cache();
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
@@ -977,13 +983,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
             /* Cache Resume 1: Resume cache for continue running*/
             resume_cache();
-        }
-
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
             if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-                rtc_sleep_systimer_enable(true);
+                for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
+                    systimer_ll_enable_counter(&SYSTIMER, counter_id, true);
+                }
             }
 #endif
+        }
     }
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
     if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
