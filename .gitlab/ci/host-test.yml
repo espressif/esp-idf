@@ -203,6 +203,7 @@ test_tools:
     expire_in: 1 week
   variables:
     LC_ALL: C.UTF-8
+    INSTALL_QEMU: 1  # for test_idf_qemu.py
   script:
     - stat=0
     - cd ${IDF_PATH}/tools/ci/test_autocomplete
@@ -210,6 +211,7 @@ test_tools:
     - cd ${IDF_PATH}/tools/test_idf_py
     - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml                    || stat=1
     - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml                     || stat=1
+    - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
     - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
     - cd ${IDF_PATH}/tools/test_sbom
@@ -279,7 +281,6 @@ test_pytest_qemu:
   extends:
     - .host_test_template
     - .before_script:build
-  image: $QEMU_IMAGE
   artifacts:
     when: always
     paths:
@@ -292,6 +293,8 @@ test_pytest_qemu:
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
+  variables:
+    INSTALL_QEMU: 1
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -vv
       --target $IDF_TARGET

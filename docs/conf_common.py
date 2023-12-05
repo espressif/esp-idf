@@ -147,6 +147,8 @@ ANA_CMPR_DOCS = ['api-reference/peripherals/ana_cmpr.rst']
 
 SPI_SLAVE_HD_DOCS = ['api-reference/peripherals/spi_slave_hd.rst']
 
+QEMU_DOCS = ['api-guides/tools/qemu.rst']
+
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
@@ -155,7 +157,7 @@ ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-reference/peripherals/dac.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst',
               'hw-reference/esp32/**',
-              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
+              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS + QEMU_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/usb-console.rst',
@@ -173,7 +175,7 @@ ESP32S3_DOCS = ['hw-reference/esp32s3/**',
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
-                'api-guides/RF_calibration.rst']
+                'api-guides/RF_calibration.rst'] + QEMU_DOCS
 
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
 
