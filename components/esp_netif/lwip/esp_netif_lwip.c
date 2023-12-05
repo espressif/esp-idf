@@ -1940,37 +1940,64 @@ esp_err_t esp_netif_dhcps_option_api(esp_netif_api_msg_t *msg)
                 break;
             }
             case ESP_NETIF_SUBNET_MASK: {
+                esp_netif_ip_info_t *default_ip = esp_netif->ip_info;
+                ip4_addr_t *config_netmask = (ip4_addr_t *)opt->val;
+                if (!memcmp(&default_ip->netmask, config_netmask, sizeof(struct ip4_addr))) {
+                    ESP_LOGE(TAG, "Please use esp_netif_set_ip_info interface to configure subnet mask");
+                    /*
+                     * This API directly changes the subnet mask of dhcp server
+                     * but the subnet mask of the network interface has not changed
+                     * If you need to change the subnet mask of dhcp server
+                     * you need to change the subnet mask of the network interface first.
+                     * If the subnet mask of dhcp server is changed
+                     * and the subnet mask of network interface is inconsistent
+                     * with the subnet mask of dhcp sever, it may lead to the failure of sending packets.
+                     * If want to configure the subnet mask of dhcp server
+                     * please use esp_netif_set_ip_info to change the subnet mask of network interface first.
+                     */
+                    return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+                }
                 memcpy(opt_info, opt->val, opt->len);
                 break;
             }
             case REQUESTED_IP_ADDRESS: {
                 esp_netif_ip_info_t info;
-                uint32_t softap_ip = 0;
+                uint32_t server_ip = 0;
                 uint32_t start_ip = 0;
                 uint32_t end_ip = 0;
+                uint32_t range_start_ip = 0;
+                uint32_t range_end_ip = 0;
                 dhcps_lease_t *poll = opt->val;
 
                 if (poll->enable) {
                     memset(&info, 0x00, sizeof(esp_netif_ip_info_t));
                     esp_netif_get_ip_info(esp_netif, &info);
 
-                    softap_ip = htonl(info.ip.addr);
+                    server_ip = htonl(info.ip.addr);
+                    range_start_ip = server_ip & htonl(info.netmask.addr);
+                    range_end_ip = range_start_ip | ~htonl(info.netmask.addr);
+                    if (server_ip == range_start_ip || server_ip == range_end_ip) {
+                        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+                    }
                     start_ip = htonl(poll->start_ip.addr);
                     end_ip = htonl(poll->end_ip.addr);
 
                     /*config ip information can't contain local ip*/
-                    if ((start_ip <= softap_ip) && (softap_ip <= end_ip)) {
+                    if ((server_ip >= start_ip) && (server_ip <= end_ip)) {
                         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                     }
 
                     /*config ip information must be in the same segment as the local ip*/
-                    softap_ip >>= 8;
-                    if ((start_ip >> 8 != softap_ip)
-                        || (end_ip >> 8 != softap_ip)) {
+                    if (start_ip <= range_start_ip || start_ip >= range_end_ip) {
                         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                     }
 
-                    if (end_ip - start_ip > DHCPS_MAX_LEASE) {
+                    if (end_ip <= range_start_ip || end_ip >= range_end_ip) {
+                        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+                    }
+
+                    /*The number of configured ip is less than DHCPS_MAX_LEASE*/
+                    if ((end_ip - start_ip + 1 > DHCPS_MAX_LEASE) || (start_ip >= end_ip)) {
                         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                     }
                 }
