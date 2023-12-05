@@ -9,28 +9,19 @@ permissions:
   contents: write
 
 jobs:
-  danger-check:
+  pull-request-style-linter:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .github/dangerjs
     steps:
     - name: Check out PR head
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Setup NodeJS environment
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
-        cache: npm
-        cache-dependency-path: .github/dangerjs/package-lock.json
-
-    - name: Install DangerJS dependencies
-      run: npm install
-
-    - name: Run DangerJS
-      run: npx danger ci --failOnErrors -v
+    - name: DangerJS pull request linter
+      uses: espressif/shared-github-dangerjs@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        instructions-gitlab-mirror: 'true'
+        instructions-contributions-file: 'CONTRIBUTING.md'
+        instructions-cla-link: 'https://cla-assistant.io/espressif/esp-idf'
