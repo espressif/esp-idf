@@ -11,4 +11,4 @@
     protocols
     storage
     system
-    wifi
+    :SOC_WIFI_SUPPORTED: wifi

@@ -3,8 +3,6 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
-
 ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 1. 内部模块的最小化初始配置；
@@ -12,7 +10,7 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 3. 根据分区表和 ota_data（如果存在）选择需要引导的应用程序 (app) 分区；
 4. 将此应用程序镜像加载到 RAM（IRAM 和 DRAM）中，最后把控制权转交给此应用程序。
 
-引导加载程序位于 flash 的 {IDF_TARGET_BOOTLOADER_OFFSET} 偏移地址处。
+引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处。
 
 关于启动过程以及 ESP-IDF 引导加载程序的更多信息，请参考 :doc:`startup`。
 
@@ -95,7 +93,7 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
     如果应用程序需要知道设备是否触发了出厂重置，可以通过调用 :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state` 函数来确定：
-    
+
     - 如果读取到设备出厂重置状态为 true，会返回状态 true，说明设备已经触发出厂重置。此后会重置状态为 false，以便后续的出厂重置触发判断。
     - 如果读取到设备出厂重置状态为 false，会返回状态 false，说明设备并未触发出厂重置，或者保存此状态的内存区域已失效。
 
