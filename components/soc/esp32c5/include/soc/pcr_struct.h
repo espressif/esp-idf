@@ -1795,11 +1795,11 @@ typedef union {
  */
 typedef union {
     struct {
-        /** 32k_sel : R/W; bitpos: [1:0]; default: 0;
+        /** clk_32k_sel : R/W; bitpos: [1:0]; default: 0;
          *  This field indicates which one 32KHz clock will be used by timergroup. 0:
          *  OSC32K(default), 1: XTAL32K, 2/3: 32KHz from pad GPIO0.
          */
-        uint32_t 32k_sel:2;
+        uint32_t clk_32k_sel:2;
         uint32_t reserved_2:30;
     };
     uint32_t val;

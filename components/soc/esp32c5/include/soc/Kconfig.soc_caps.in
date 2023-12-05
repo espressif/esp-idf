@@ -1,0 +1,48 @@
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
+
+config SOC_INT_HW_NESTED_SUPPORTED
+    bool
+    default y
+
+config SOC_CPU_CORES_NUM
+    int
+    default 1
+
+config SOC_INT_CLIC_SUPPORTED
+    bool
+    default y
+
+config SOC_GPIO_PIN_COUNT
+    int
+    default 31
+
+config SOC_SPI_PERIPH_NUM
+    int
+    default 2
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
+
+config SOC_TIMER_GROUPS
+    int
+    default 2
+
+config SOC_TIMER_GROUP_TIMERS_PER_GROUP
+    int
+    default 1
+
+config SOC_UART_NUM
+    int
+    default 3
+
+config SOC_UART_HP_NUM
+    int
+    default 2
+
+config SOC_UART_LP_NUM
+    int
+    default 1

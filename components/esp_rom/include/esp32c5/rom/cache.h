@@ -181,7 +181,7 @@ void ROM_Boot_Cache_Init(void);
   * @param uint32_t senitive : Config this page should apply flash encryption or not
   *
   * @param uint32_t ext_ram : DPORT_MMU_ACCESS_FLASH for flash, DPORT_MMU_INVALID for invalid. In
-  *                 esp32c6, external memory is always flash
+  *                 esp32c5, external memory is always flash
   *
   * @param  uint32_t vaddr : virtual address in CPU address space.
   *                              Can be Iram0,Iram1,Irom0,Drom0 and AHB buses address.
@@ -209,7 +209,7 @@ int Cache_MSPI_MMU_Set(uint32_t sensitive, uint32_t ext_ram, uint32_t vaddr, uin
   *        Please do not call this function in your SDK application.
   *
   * @param uint32_t ext_ram : DPORT_MMU_ACCESS_FLASH for flash, DPORT_MMU_INVALID for invalid. In
-  *                 esp32c6, external memory is always flash
+  *                 esp32c5, external memory is always flash
   *
   * @param  uint32_t vaddr : virtual address in CPU address space.
   *                              Can be DRam0, DRam1, DRom0, DPort and AHB buses address.
