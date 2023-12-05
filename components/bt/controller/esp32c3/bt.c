@@ -652,7 +652,7 @@ static bool IRAM_ATTR is_in_isr_wrapper(void)
 
 static void *malloc_internal_wrapper(size_t size)
 {
-    void *p = heap_caps_malloc(size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA);
+    void *p = heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA);
     if(p == NULL) {
         ESP_LOGE(BT_LOG_TAG, "Malloc failed");
     }
