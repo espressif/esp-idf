@@ -441,7 +441,7 @@ Deep-sleep 有如下可配置选项：
       ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_ON));
       ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_OFF));
 
-.. only:: esp32 or esp32s2 or esp32c3 or esp32s3 or esp32c6 or esp32c2
+.. only:: SOC_WIFI_SUPPORTED
   
   Wi-Fi 场景下低功耗模式介绍
   ----------------------------------
