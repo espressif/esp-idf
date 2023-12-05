@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1882,9 +1882,13 @@ wifi_wps_scan_done(void *arg, STATUS status)
     } else if (sm->discover_ssid_cnt == 0)  {
         wps_set_status(WPS_STATUS_SCANNING);
     } else {
-        wpa_printf(MSG_INFO, "PBC session overlap!");
-        wps_set_status(WPS_STATUS_DISABLE);
-        esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP, 0, 0, portMAX_DELAY);
+        if (wps_get_type() == WPS_TYPE_PBC) {
+            wpa_printf(MSG_INFO, "PBC session overlap!");
+            wps_set_status(WPS_STATUS_DISABLE);
+	    esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP, 0, 0, portMAX_DELAY);
+        } else {
+            wps_set_status(WPS_STATUS_PENDING);
+        }
     }
 
     wpa_printf(MSG_DEBUG, "wps scan_done discover_ssid_cnt = %d", sm->discover_ssid_cnt);
