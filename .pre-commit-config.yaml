@@ -177,12 +177,6 @@ repos:
         always_run: true
         pass_filenames: false
         require_serial: true
-      - id: submodule-sbom-hash-check
-        name: Check if sbom-hash values for submodules in .gitmodules match submodules checkout hash in git tree
-        entry: python tools/test_sbom/test_submodules.py
-        language: python
-        always_run: true
-        pass_filenames: false
       - id: cleanup-ignore-lists
         name: Remove non-existing patterns from ignore lists
         entry: tools/ci/cleanup_ignore_lists.py
@@ -221,3 +215,7 @@ repos:
       name: shellcheck dash (export.sh)
       args: ['--shell', 'dash', '-x']
       files: 'export.sh'
+  - repo: https://github.com/espressif/esp-idf-sbom.git
+    rev: v0.11.0
+    hooks:
+      - id: validate-sbom-manifest
