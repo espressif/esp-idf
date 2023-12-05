@@ -24,8 +24,6 @@
 extern "C" {
 #endif
 
-//TODO: IDF-7545
-
 /// Choose type of chip you want to encrypt manully
 typedef enum
 {
@@ -38,10 +36,9 @@ typedef enum
  */
 static inline void spi_flash_encrypt_ll_enable(void)
 {
-    // REG_SET_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
-    //             HP_SYSTEM_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
-    //             HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
-    abort();
+    REG_SET_BIT(HP_SYSTEM_CRYPTO_CTRL_REG,
+                HP_SYSTEM_REG_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
+                HP_SYSTEM_REG_ENABLE_SPI_MANUAL_ENCRYPT);
 }
 
 /*
@@ -49,9 +46,8 @@ static inline void spi_flash_encrypt_ll_enable(void)
  */
 static inline void spi_flash_encrypt_ll_disable(void)
 {
-    // REG_CLR_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
-    //             HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
-    abort();
+    REG_CLR_BIT(HP_SYSTEM_CRYPTO_CTRL_REG,
+                HP_SYSTEM_REG_ENABLE_SPI_MANUAL_ENCRYPT);
 }
 
 /**
