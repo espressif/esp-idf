@@ -218,6 +218,8 @@ typedef struct {
     uint8_t     modify_icg_cntl_wait_cycle;
     uint8_t     switch_icg_cntl_wait_cycle;
     uint8_t     min_slp_slow_clk_cycle;
+    uint8_t     isolate_wait_cycle;
+    uint8_t     reset_wait_cycle;
 } pmu_hp_param_t;
 
 typedef struct {
@@ -226,6 +228,8 @@ typedef struct {
     uint8_t     analog_wait_target_cycle;
     uint8_t     digital_power_down_wait_cycle;
     uint8_t     digital_power_up_wait_cycle;
+    uint8_t     isolate_wait_cycle;
+    uint8_t     reset_wait_cycle;
 } pmu_lp_param_t;
 
 typedef struct {
@@ -421,11 +425,12 @@ typedef struct pmu_sleep_machine_constant {
         uint16_t    min_slp_time_us;            /* Minimum sleep protection time (unit: microsecond) */
         uint8_t     wakeup_wait_cycle;          /* Modem wakeup signal (WiFi MAC and BEACON wakeup) waits for the slow & fast clock domain synchronization and the wakeup signal triggers the PMU FSM switching wait cycle (unit: slow clock cycle) */
         uint8_t     reserved0;
-        uint16_t    reserved1;
         uint16_t    analog_wait_time_us;        /* LP LDO power up wait time (unit: microsecond) */
         uint16_t    xtal_wait_stable_time_us;   /* Main XTAL stabilization wait time (unit: microsecond) */
         uint8_t     clk_switch_cycle;           /* Clock switch to FOSC (unit: slow clock cycle) */
         uint8_t     clk_power_on_wait_cycle;    /* Clock power on wait cycle (unit: slow clock cycle) */
+        uint8_t     isolate_wait_time_us;       /* Waiting for all isolate signals to be ready (unit: microsecond) */
+        uint8_t     reset_wait_time_us;         /* Waiting for all reset signals to be ready (unit: microsecond) */
         uint16_t    power_supply_wait_time_us;  /* (unit: microsecond) */
         uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
     } lp;
@@ -434,6 +439,8 @@ typedef struct pmu_sleep_machine_constant {
         uint16_t    clock_domain_sync_time_us;  /* The Slow OSC clock domain synchronizes time with the Fast OSC domain, at least 4 slow clock cycles (unit: microsecond) */
         uint16_t    system_dfs_up_work_time_us; /* System DFS up scaling work time (unit: microsecond) */
         uint16_t    analog_wait_time_us;        /* HP LDO power up wait time (unit: microsecond) */
+        uint8_t     isolate_wait_time_us;       /* Waiting for all isolate signals to be ready (unit: microsecond) */
+        uint8_t     reset_wait_time_us;         /* Waiting for all reset signals to be ready (unit: microsecond) */
         uint16_t    power_supply_wait_time_us;  /* (unit: microsecond) */
         uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
         uint16_t    regdma_s2m_work_time_us;    /* Modem Subsystem (S2M switch) REGDMA restore time (unit: microsecond) */
@@ -455,6 +462,8 @@ typedef struct pmu_sleep_machine_constant {
         .xtal_wait_stable_time_us       = 250,  \
         .clk_switch_cycle               = 1,    \
         .clk_power_on_wait_cycle        = 1,    \
+        .isolate_wait_time_us           = 1,    \
+        .reset_wait_time_us             = 1,    \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2     \
     },                                          \
@@ -463,6 +472,8 @@ typedef struct pmu_sleep_machine_constant {
         .clock_domain_sync_time_us      = 150,  \
         .system_dfs_up_work_time_us     = 124,  \
         .analog_wait_time_us            = 154,  \
+        .isolate_wait_time_us           = 1,    \
+        .reset_wait_time_us             = 1,    \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
         .regdma_s2m_work_time_us        = 172,  \
