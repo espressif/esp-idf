@@ -223,14 +223,6 @@ test_mkuf2:
     - cd ${IDF_PATH}/tools/test_mkuf2
     - ./test_mkuf2.py
 
-test_sbom:
-  extends:
-    - .host_test_template
-    - .rules:patterns:sbom
-  script:
-    - cd ${IDF_PATH}/tools/test_sbom
-    - pytest
-
 test_autocomplete:
   extends:
     - .host_test_template
