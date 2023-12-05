@@ -37,13 +37,13 @@ idf.py build
 
 esptool.py -p PORT --no-stub load_ram build/ram_loadable_app.bin
 
-idf.py -p PORT monitor
+idf.py -p PORT monitor --no-reset
 ```
 
 (Replace PORT with the name of the serial port to use.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-(For ram_loadable_app, after the chip is reset, it will start from flash by default, so the program will be executed directly after loading to ram. Therefore, manually open idf.py monitor will lose part of the log at startup because the serial port cannot be opened in time, so it is recommended to use a separate serial converter to monitor the output of the UART TX pin)
+(For ram_loadable_app, after the chip is reset, it will start from flash by default, so the program will be executed directly after loading to ram. This is the reason why we use `--no-reset`. Besides, manually opening idf.py monitor will lose part of the log at startup because the serial port cannot be opened in time, so it is recommended to use a separate serial converter to monitor the output of the UART TX pin)
 
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
