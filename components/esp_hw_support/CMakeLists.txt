@@ -68,6 +68,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "dma/gdma.c")
     endif()
 
+    if(CONFIG_SOC_MULTI_USAGE_LDO_SUPPORTED)
+        list(APPEND srcs "ldo/esp_ldo.c")
+    endif()
+
     if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
         list(APPEND srcs "dma/esp_async_memcpy.c")
         if(CONFIG_SOC_GDMA_SUPPORTED)

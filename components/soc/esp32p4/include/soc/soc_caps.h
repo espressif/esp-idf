@@ -79,6 +79,7 @@
 #define SOC_SPI_FLASH_SUPPORTED         1
 // #define SOC_TOUCH_SENSOR_SUPPORTED      1  //TODO: IDF-7477
 // #define SOC_RNG_SUPPORTED               1  //TODO: IDF-6522
+#define SOC_MULTI_USAGE_LDO_SUPPORTED   1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
