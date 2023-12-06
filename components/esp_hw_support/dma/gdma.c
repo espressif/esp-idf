@@ -213,9 +213,6 @@ esp_err_t gdma_new_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_c
     };
     return do_allocate_gdma_channel(&search_info, config, ret_chan);
 }
-
-esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
-__attribute__((alias("gdma_new_ahb_channel")));
 #endif // SOC_AHB_GDMA_SUPPORTED
 
 #if SOC_AXI_GDMA_SUPPORTED
@@ -231,6 +228,14 @@ esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_c
     return do_allocate_gdma_channel(&search_info, config, ret_chan);
 }
 #endif // SOC_AXI_GDMA_SUPPORTED
+
+#if SOC_AHB_GDMA_SUPPORTED
+esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
+__attribute__((alias("gdma_new_ahb_channel")));
+#elif SOC_AXI_GDMA_SUPPORTED
+esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
+__attribute__((alias("gdma_new_axi_channel")));
+#endif
 
 esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan)
 {

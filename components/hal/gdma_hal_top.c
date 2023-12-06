@@ -106,3 +106,10 @@ uint32_t gdma_hal_get_crc_result(gdma_hal_context_t *hal, int chan_id, gdma_chan
     return hal->get_crc_result(hal, chan_id, dir);
 }
 #endif // SOC_GDMA_SUPPORT_CRC
+
+#if SOC_GDMA_SUPPORT_ETM
+void gdma_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis)
+{
+    hal->enable_etm_task(hal, chan_id, dir, en_or_dis);
+}
+#endif // SOC_GDMA_SUPPORT_ETM

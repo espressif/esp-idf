@@ -159,7 +159,7 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_handle_t mcp);
  */
 esp_err_t esp_async_memcpy(async_memcpy_handle_t mcp, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args);
 
-#if SOC_GDMA_SUPPORT_ETM
+#if SOC_ETM_SUPPORTED
 /**
  * @brief Async memory copy specific events that supported by the ETM module
  */
@@ -182,7 +182,7 @@ typedef enum {
  *      - ESP_FAIL: Get ETM event failed because of other error
  */
 esp_err_t esp_async_memcpy_new_etm_event(async_memcpy_handle_t mcp, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event);
-#endif // SOC_GDMA_SUPPORT_ETM
+#endif // SOC_ETM_SUPPORTED
 
 #ifdef __cplusplus
 }
