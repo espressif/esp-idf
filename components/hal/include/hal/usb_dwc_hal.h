@@ -139,7 +139,7 @@ typedef struct {
         uint32_t val;
     };
     struct {
-        usb_hal_interval_t interval;        /**< The interval of the endpoint */
+        unsigned int interval;              /**< The interval of the endpoint in frames (FS) or microframes (HS) */
         uint32_t phase_offset_frames;       /**< Phase offset in number of frames */
     } periodic;     /**< Characteristic for periodic (interrupt/isochronous) endpoints only */
 } usb_dwc_hal_ep_char_t;
