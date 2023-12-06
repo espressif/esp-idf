@@ -22,7 +22,7 @@ else()
 
     # Override regi2c implementation in ROM
     if(CONFIG_ESP_ROM_HAS_REGI2C_BUG OR CONFIG_ESP_ROM_WITHOUT_REGI2C)
-        if(target STREQUAL "esp32c6")
+        if(target STREQUAL "esp32c6" OR target STREQUAL "esp32c5")
             list(APPEND sources "patches/esp_rom_hp_regi2c_${target}.c")
         else()
             list(APPEND sources "patches/esp_rom_regi2c_${target}.c")
@@ -122,6 +122,9 @@ if(BOOTLOADER_BUILD)
             rom_linker_script("wdt")
         endif()
         rom_linker_script("version")
+
+    elseif(target STREQUAL "esp32c5")
+        rom_linker_script("newlib")
 
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
@@ -243,6 +246,7 @@ else() # Regular app build
         rom_linker_script("version")
 
         # esp32c6.rom.api.ld has been split to several lds by components.
+        # esp32c6.rom.api.ld is still reserved to map the APIs
         rom_linker_script("phy")
         rom_linker_script("coexist")
         rom_linker_script("net80211")
@@ -254,6 +258,21 @@ else() # Regular app build
 
         if(CONFIG_HAL_WDT_USE_ROM_IMPL)
             rom_linker_script("wdt")
+        endif()
+
+        if(NOT CONFIG_NEWLIB_NANO_FORMAT)
+            # Normal(Non-nano) formatting functions in ROM are also built for 64-bit time_t.
+            rom_linker_script("newlib-normal")
+        endif()
+
+    elseif(target STREQUAL "esp32c5")
+        rom_linker_script("newlib")
+        rom_linker_script("version")
+
+        # esp32c5.rom.api.ld has been split to several lds by components.
+        # esp32c5.rom.api.ld is still reserved to map the APIs
+        if(CONFIG_SPI_FLASH_ROM_IMPL)
+            rom_linker_script("spiflash")
         endif()
 
         if(NOT CONFIG_NEWLIB_NANO_FORMAT)
