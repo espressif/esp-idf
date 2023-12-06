@@ -823,9 +823,9 @@ config SOC_SPIRAM_XIP_SUPPORTED
     bool
     default y
 
-config SOC_USB_PERIPH_NUM
-    bool
-    default y
+config SOC_USB_OTG_PERIPH_NUM
+    int
+    default 1
 
 config SOC_SHA_DMA_MAX_BUFFER_SIZE
     int

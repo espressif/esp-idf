@@ -386,7 +386,7 @@
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 
 /*-------------------------- USB CAPS ----------------------------------------*/
-#define SOC_USB_PERIPH_NUM 1
+#define SOC_USB_OTG_PERIPH_NUM          (1U)
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 /* Max amount of bytes in a single DMA operation is 4095,

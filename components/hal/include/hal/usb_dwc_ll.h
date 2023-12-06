@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,34 @@ extern "C" {
 #include "hal/usb_types_private.h"
 #include "hal/misc.h"
 
+
+/* -----------------------------------------------------------------------------
+--------------------------------- DWC Constants --------------------------------
+----------------------------------------------------------------------------- */
+
+#define USB_DWC_QTD_LIST_MEM_ALIGN              512
+#define USB_DWC_FRAME_LIST_MEM_ALIGN            512     // The frame list needs to be 512 bytes aligned (contrary to the databook)
+/*
+Although we have a 256 lines, only 200 lines are useable due to EPINFO_CTL.
+Todo: Check sizes again and express this macro in terms of DWC config options (IDF-7384)
+*/
+#define USB_DWC_FIFO_TOTAL_USABLE_LINES         200
+
+/* -----------------------------------------------------------------------------
+------------------------------ DWC Configuration -------------------------------
+----------------------------------------------------------------------------- */
+
+/*
+ * List of relevant DWC configurations. See DWC OTG databook Chapter 3 for more
+ * details.
+ */
+#define USB_DWC_FSPHY_INTERFACE             1
+#define USB_DWC_NUM_EPS                     6
+#define USB_DWC_NUM_IN_EPS                  5       // Todo: Add check for when number of IN channels exceeds limit (IDF-8556)
+#define USB_DWC_NUM_HOST_CHAN               8
+#define USB_DWC_DFIFO_DEPTH                 256
+#define USB_DWC_RX_DFIFO_DEPTH              256
+#define USB_DWC_TX_DFIFO_DEPTH              256     // Same value applies to HNPERIO, NPERIO, HPERIO, and DINEP
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------

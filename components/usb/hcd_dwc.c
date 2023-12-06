@@ -53,7 +53,7 @@ typedef struct {
  *
  * RXFIFO
  * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES(200) - 48 - 48 = 104
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 48 - 48 = 104
  * - Worst case can accommodate two packets of 204 bytes, or one packet of 408
  * NPTXFIFO
  * - Recommended: (LPS/4) * 2
@@ -81,7 +81,7 @@ const fifo_mps_limits_t mps_limits_default = {
  *
  * RXFIFO
  * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES(200) - 32 - 16 = 152
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 32 - 16 = 152
  * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
  * NPTXFIFO
  * - Recommended: (LPS/4) * 2
@@ -117,7 +117,7 @@ const fifo_mps_limits_t mps_limits_bias_rx = {
  * - Worst case can accommodate one packet of 64 bytes
  * PTXFIFO
  * - Recommended: (LPS/4) * 2
- * - Actual: Whatever leftover size: USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES(200) - 34 - 16 = 150
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 34 - 16 = 150
  * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
  */
 const usb_dwc_hal_fifo_config_t fifo_config_bias_ptx = {
@@ -137,7 +137,7 @@ const fifo_mps_limits_t mps_limits_bias_ptx = {
 
 #define XFER_LIST_LEN_CTRL                      3   // One descriptor for each stage
 #define XFER_LIST_LEN_BULK                      2   // One descriptor for transfer, one to support an extra zero length packet
-#define XFER_LIST_LEN_INTR                      32
+#define XFER_LIST_LEN_INTR                      FRAME_LIST_LEN
 #define XFER_LIST_LEN_ISOC                      FRAME_LIST_LEN  // Same length as the frame list makes it easier to schedule. Must be power of 2
 
 // ------------------------ Flags --------------------------
@@ -963,7 +963,7 @@ static port_t *port_obj_alloc(void)
 {
     port_t *port = calloc(1, sizeof(port_t));
     usb_dwc_hal_context_t *hal = malloc(sizeof(usb_dwc_hal_context_t));
-    void *frame_list = heap_caps_aligned_calloc(USB_DWC_HAL_FRAME_LIST_MEM_ALIGN, FRAME_LIST_LEN, sizeof(uint32_t), MALLOC_CAP_DMA);
+    void *frame_list = heap_caps_aligned_calloc(USB_DWC_FRAME_LIST_MEM_ALIGN, FRAME_LIST_LEN, sizeof(uint32_t), MALLOC_CAP_DMA);
     SemaphoreHandle_t port_mux = xSemaphoreCreateMutex();
     if (port == NULL || hal == NULL || frame_list == NULL || port_mux == NULL) {
         free(port);
@@ -1594,7 +1594,7 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
         break;
     }
     dma_buffer_block_t *buffer = calloc(1, sizeof(dma_buffer_block_t));
-    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_HAL_DMA_MEM_ALIGN, desc_list_len, sizeof(usb_dwc_ll_dma_qtd_t), MALLOC_CAP_DMA);
+    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len, sizeof(usb_dwc_ll_dma_qtd_t), MALLOC_CAP_DMA);
     if (buffer == NULL || xfer_desc_list == NULL) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
@@ -1638,22 +1638,6 @@ static bool pipe_alloc_hcd_support_verification(const usb_ep_desc_t *ep_desc, co
     if ((type == USB_TRANSFER_TYPE_INTR || type == USB_TRANSFER_TYPE_ISOCHRONOUS) &&
             (ep_desc->bInterval == 0)) {
         ESP_LOGE(HCD_DWC_TAG, "bInterval value (%d) invalid for pipe type INTR/ISOC",
-                 ep_desc->bInterval);
-        return false;
-    }
-
-    // Check if the pipe's interval is compatible with the periodic frame list's length
-    if (type == USB_TRANSFER_TYPE_INTR &&
-            (ep_desc->bInterval > FRAME_LIST_LEN)) {
-        ESP_LOGE(HCD_DWC_TAG, "bInterval value (%d) of Interrupt pipe exceeds max supported limit",
-                 ep_desc->bInterval);
-        return false;
-    }
-
-    if (type == USB_TRANSFER_TYPE_ISOCHRONOUS &&
-            ((1 << (ep_desc->bInterval - 1)) > FRAME_LIST_LEN)) {
-        // (where 0 < 2^(bInterval - 1) <= FRAME_LIST_LEN)
-        ESP_LOGE(HCD_DWC_TAG, "bInterval value (%d) of Isochronous pipe exceeds max supported limit",
                  ep_desc->bInterval);
         return false;
     }
@@ -1710,12 +1694,16 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
     ep_char->dev_addr = pipe_config->dev_addr;
     ep_char->ls_via_fs_hub = (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW);
     // Calculate the pipe's interval in terms of USB frames
+    // @see USB-OTG programming guide chapter 6.5 for more information
     if (type == USB_TRANSFER_TYPE_INTR || type == USB_TRANSFER_TYPE_ISOCHRONOUS) {
-        int interval_frames;
+        unsigned int interval_frames;
+        unsigned int xfer_list_len;
         if (type == USB_TRANSFER_TYPE_INTR) {
             interval_frames = pipe_config->ep_desc->bInterval;
+            xfer_list_len = XFER_LIST_LEN_INTR;
         } else {
             interval_frames = (1 << (pipe_config->ep_desc->bInterval - 1));
+            xfer_list_len = XFER_LIST_LEN_ISOC;
         }
         // Round down interval to nearest power of 2
         if (interval_frames >= 32) {
@@ -1733,7 +1721,7 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
         }
         ep_char->periodic.interval = interval_frames;
         // We are the Nth pipe to be allocated. Use N as a phase offset
-        ep_char->periodic.phase_offset_frames = pipe_idx & (XFER_LIST_LEN_ISOC - 1);
+        ep_char->periodic.phase_offset_frames = pipe_idx & (xfer_list_len - 1);
     } else {
         ep_char->periodic.interval = 0;
         ep_char->periodic.phase_offset_frames = 0;
