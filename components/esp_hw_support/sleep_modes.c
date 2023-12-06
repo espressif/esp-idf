@@ -1043,6 +1043,18 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
 
     // If SPI flash was powered down, wait for it to become ready
     if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+#if SOC_PM_SUPPORT_TOP_PD
+        if (pd_flags & PMU_SLEEP_PD_TOP) {
+            uint32_t flash_ready_hw_waited_time_us = pmu_sleep_get_wakup_retention_cost();
+            uint32_t flash_ready_sw_waited_time_us = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / MHZ);
+            uint32_t flash_ready_waited_time_us = flash_ready_hw_waited_time_us + flash_ready_sw_waited_time_us;
+            if (flash_enable_time_us > flash_ready_waited_time_us){
+                flash_enable_time_us -= flash_ready_waited_time_us;
+            } else {
+                flash_enable_time_us = 0;
+            }
+        }
+#endif
         // Wait for the flash chip to start up
         esp_rom_delay_us(flash_enable_time_us);
     }
@@ -1155,9 +1167,6 @@ esp_err_t esp_light_sleep_start(void)
                                      + rtc_time_slowclk_to_us(rtc_cntl_xtl_buf_wait_slp_cycles + RTC_CNTL_CK8M_WAIT_SLP_CYCLES + RTC_CNTL_WAKEUP_DELAY_CYCLES, s_config.rtc_clk_cal_period);
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6930
-    const uint32_t flash_enable_time_us = 0;
-#else
     // Decide if VDD_SDIO needs to be powered down;
     // If it needs to be powered down, adjust sleep time.
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US + DEEP_SLEEP_WAKEUP_DELAY;
@@ -1199,7 +1208,6 @@ esp_err_t esp_light_sleep_start(void)
             }
         }
     }
-#endif
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
 
