@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,12 +17,68 @@
 #include "hal/lp_aon_hal.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
+#include "esp_hw_log.h"
+
+static __attribute__((unused)) const char *TAG = "pmu_sleep";
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 
-
 static bool s_pmu_sleep_regdma_backup_enabled;
+
+uint32_t get_lslp_dbg(void)
+{
+    uint32_t pmu_dbg_atten_lightsleep = PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 3) {
+        pmu_dbg_atten_lightsleep = efuse_ll_get_lslp_dbg();
+    } else {
+        ESP_HW_LOGD(TAG, "blk_version is less than 3, lslp dbg not burnt in efuse\n");
+    }
+
+    return pmu_dbg_atten_lightsleep;
+}
+
+uint32_t get_lslp_hp_dbias(void)
+{
+    uint32_t pmu_hp_dbias_lightsleep_0v6 = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 3) {
+        pmu_hp_dbias_lightsleep_0v6 = efuse_ll_get_lslp_hp_dbias();
+    } else {
+        ESP_HW_LOGD(TAG, "blk_version is less than 3, lslp hp dbias not burnt in efuse\n");
+    }
+
+    return pmu_hp_dbias_lightsleep_0v6;
+}
+
+uint32_t get_dslp_dbg(void)
+{
+    uint32_t pmu_dbg_atten_deepsleep = PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 3) {
+        pmu_dbg_atten_deepsleep = efuse_ll_get_dslp_dbg() + EFUSE_BURN_OFFSET_DSLP_DBG;
+    } else {
+        ESP_HW_LOGD(TAG, "blk_version is less than 3, dslp dbg not burnt in efuse\n");
+    }
+
+    return pmu_dbg_atten_deepsleep;
+}
+
+uint32_t get_dslp_lp_dbias(void)
+{
+    uint32_t pmu_lp_dbias_deepsleep_0v7 = PMU_LP_DBIAS_DEEPSLEEP_0V7_DEFAULT;
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 3) {
+        pmu_lp_dbias_deepsleep_0v7 = efuse_ll_get_dslp_lp_dbias() + EFUSE_BURN_OFFSET_DSLP_LP_DBIAS;
+    } else {
+        ESP_HW_LOGD(TAG, "blk_version is less than 3, dslp lp dbias not burnt in efuse\n");
+    }
+
+    return pmu_lp_dbias_deepsleep_0v7;
+}
 
 void pmu_sleep_enable_regdma_backup(void)
 {
@@ -158,21 +214,28 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
+        analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = get_dslp_dbg();
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_dslp_lp_dbias();
         config->analog = analog_default;
     } else {
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags);
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
+        analog_default.hp_sys.analog.dbg_atten = get_lslp_dbg();
+        analog_default.hp_sys.analog.dbias = get_lslp_hp_dbias();
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT;
 
         if (!(pd_flags & PMU_SLEEP_PD_XTAL)){
             analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.hp_sys.analog.dbias = HP_CALI_DBIAS;
+            analog_default.hp_sys.analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
+            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
 
             analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbg_atten = PMU_DBG_ATTEN_ACTIVE_DEFAULT;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
         }
 
         config->analog = analog_default;
