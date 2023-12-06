@@ -19,9 +19,9 @@ def assert_built(paths: Union[List[str], List[Path]]) -> None:
         assert os.path.exists(path)
 
 
-def test_build_alternative_directories(idf_py: IdfPyFunc, session_work_dir: Path, test_app_copy: Path) -> None:
+def test_build_alternative_directories(idf_py: IdfPyFunc, func_work_dir: Path, test_app_copy: Path) -> None:
     logging.info('Moving BUILD_DIR_BASE out of tree')
-    alt_build_dir = session_work_dir / 'alt_build'
+    alt_build_dir = func_work_dir / 'alt_build'
     idf_py('-B', str(alt_build_dir), 'build')
     assert os.listdir(alt_build_dir) != [], 'No files found in new build directory!'
     default_build_dir = test_app_copy / 'build'
