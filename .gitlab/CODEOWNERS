@@ -47,8 +47,6 @@
 * @esp-idf-codeowners/other
 
 /.*                                   @esp-idf-codeowners/tools
-/.github/dangerjs/                    @esp-idf-codeowners/ci @esp-idf-codeowners/tools
-/.github/dependabot.yml               @esp-idf-codeowners/ci
 /.github/workflows/                   @esp-idf-codeowners/ci
 /.gitlab-ci.yml                       @esp-idf-codeowners/ci
 /.gitlab/ci/                          @esp-idf-codeowners/ci
