@@ -286,3 +286,8 @@ void pmu_sleep_enable_hp_sleep_sysclk(bool enable)
 {
     pmu_ll_hp_set_icg_sysclk_enable(PMU_instance()->hal->dev, HP(SLEEP), enable);
 }
+
+uint32_t pmu_sleep_get_wakup_retention_cost(void)
+{
+    return PMU_REGDMA_S2A_WORK_TIME_US;
+}
