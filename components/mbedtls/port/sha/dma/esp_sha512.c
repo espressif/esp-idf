@@ -146,6 +146,26 @@ void mbedtls_sha512_starts( mbedtls_sha512_context *ctx,
 }
 #endif
 
+static int esp_internal_sha_update_state(mbedtls_sha512_context *ctx)
+{
+    if (ctx->sha_state == ESP_SHA512_STATE_INIT) {
+        if (ctx->mode == SHA2_512T) {
+            int ret = -1;
+            if ((ret = esp_sha_512_t_init_hash(ctx->t_val)) != 0) {
+                return ret;
+            }
+            ctx->first_block = false;
+        } else {
+            ctx->first_block = true;
+        }
+        ctx->sha_state = ESP_SHA512_STATE_IN_PROCESS;
+    } else if (ctx->sha_state == ESP_SHA512_STATE_IN_PROCESS) {
+        ctx->first_block = false;
+        esp_sha_write_digest_state(ctx->mode, ctx->state);
+    }
+    return 0;
+}
+
 static int esp_internal_sha512_dma_process(mbedtls_sha512_context *ctx,
         const uint8_t *data, size_t len,
         uint8_t *buf, size_t buf_len)
@@ -159,9 +179,22 @@ static int esp_internal_sha512_dma_process(mbedtls_sha512_context *ctx,
 
 int mbedtls_internal_sha512_process( mbedtls_sha512_context *ctx, const unsigned char data[128] )
 {
-    int ret;
+    int ret = -1;
     esp_sha_acquire_hardware();
+
+    ret = esp_internal_sha_update_state(ctx);
+    if (ret != 0) {
+        esp_sha_release_hardware();
+        return ret;
+    }
+
     ret = esp_internal_sha512_dma_process(ctx, data, 128, 0, 0);
+    if (ret != 0) {
+        esp_sha_release_hardware();
+        return ret;
+    }
+
+    esp_sha_read_digest_state(ctx->mode, ctx->state);
     esp_sha_release_hardware();
 
     return ret;
@@ -182,7 +215,6 @@ void mbedtls_sha512_process( mbedtls_sha512_context *ctx,
 int mbedtls_sha512_update_ret( mbedtls_sha512_context *ctx, const unsigned char *input,
                                size_t ilen )
 {
-    int ret;
     size_t fill;
     unsigned int left, len, local_len = 0;
 
@@ -214,30 +246,23 @@ int mbedtls_sha512_update_ret( mbedtls_sha512_context *ctx, const unsigned char 
 
         esp_sha_acquire_hardware();
 
-        if (ctx->sha_state == ESP_SHA512_STATE_INIT) {
+        int ret = esp_internal_sha_update_state(ctx);
 
-            if (ctx->mode == SHA2_512T) {
-                esp_sha_512_t_init_hash(ctx->t_val);
-                ctx->first_block = false;
-            } else {
-                ctx->first_block = true;
-            }
-            ctx->sha_state = ESP_SHA512_STATE_IN_PROCESS;
-
-        } else if (ctx->sha_state == ESP_SHA512_STATE_IN_PROCESS) {
-            ctx->first_block = false;
-            esp_sha_write_digest_state(ctx->mode, ctx->state);
+        if (ret != 0) {
+            esp_sha_release_hardware();
+            return ret;
         }
 
         ret = esp_internal_sha512_dma_process(ctx, input, len, ctx->buffer, local_len);
 
+        if (ret != 0) {
+            esp_sha_release_hardware();
+            return ret;
+        }
+
         esp_sha_read_digest_state(ctx->mode, ctx->state);
 
         esp_sha_release_hardware();
-
-        if (ret != 0) {
-            return ret;
-        }
 
     }
 
@@ -275,7 +300,7 @@ static const unsigned char sha512_padding[128] = {
  */
 int mbedtls_sha512_finish_ret( mbedtls_sha512_context *ctx, unsigned char output[64] )
 {
-    int ret;
+    int ret = -1;
     size_t last, padn;
     uint64_t high, low;
     unsigned char msglen[16];

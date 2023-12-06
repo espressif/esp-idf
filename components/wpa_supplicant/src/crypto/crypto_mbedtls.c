@@ -37,6 +37,10 @@
 #include "crypto.h"
 #include "mbedtls/esp_config.h"
 
+#ifdef CONFIG_FAST_PBKDF2
+#include "fastpbkdf2.h"
+#endif
+
 static int digest_vector(mbedtls_md_type_t md_type, size_t num_elem,
 			 const u8 *addr[], const size_t *len, u8 *mac)
 {
@@ -658,6 +662,12 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 		int iterations, u8 *buf, size_t buflen)
 {
 
+#ifdef CONFIG_FAST_PBKDF2
+       fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
+                            ssid, ssid_len, iterations, buf, buflen);
+       return 0;
+#else
+
 	mbedtls_md_context_t sha1_ctx;
 	const mbedtls_md_info_t *info_sha1;
 	int ret;
@@ -677,7 +687,7 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 
 	ret = mbedtls_pkcs5_pbkdf2_hmac(&sha1_ctx, (const u8 *) passphrase,
 					os_strlen(passphrase) , ssid,
-					ssid_len, iterations, 32, buf);
+					ssid_len, iterations, buflen, buf);
 	if (ret != 0) {
 		ret = -1;
 		goto cleanup;
@@ -686,6 +696,7 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 cleanup:
 	mbedtls_md_free(&sha1_ctx);
 	return ret;
+#endif
 }
 
 #ifdef MBEDTLS_DES_C
