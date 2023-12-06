@@ -1,0 +1,50 @@
+#Test sources
+
+cfg trailing_bytes 0			#End program as soon as the input EOFs.
+cfg prefetch true				#We expect M0/M1 to be filled
+cfg lut_width_bits 32			#32-bit lut
+
+main:
+	set 0..31 0..31
+
+	set 0..31 32..63
+
+	set 0 bl<=O0,
+	set 1 bL>O0,
+	set 2 bl=O0,
+	set 3 bl<=O8,
+	set 4 bL>O8,
+	set 5 bl=O8,
+	set 6 bl<=O16,
+	set 7 bL>O16,
+	set 8 bl=O16,
+	set 9 bl<=O24,
+	set 10 bL>O24,
+	set 11 bl=O24,
+	set 12 bh<=O0,
+	set 13 bh>O0,
+	set 14 bh=O0,
+	set 15 bh<=O8,
+	set 16 bh>O8,
+	set 17 bh=O8,
+	set 18 bh<=O16,
+	set 19 bh>O16,
+	set 20 bh=O16,
+	set 21 bh<=O24,
+	set 22 bh>O24,
+	set 23 bh=O24,
+	set 24 b<=O0,
+	set 25 b>O0,
+	set 26 b=O0,
+	set 27 b<=O16,
+	set 28 b>O16,
+	set 29 b=O16,
+	set 30 l,
+	set 31 h
+
+	set 0..31 O0..O31
+
+	set 0..15 A0..A15,
+	set 16..31 B0..B15
+
+	set 0..31 L0..L31

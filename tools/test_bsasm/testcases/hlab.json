@@ -1,0 +1,38 @@
+{
+    "binary_ver": 1,
+    "hw_rev": 0,
+    "hdr_len": 3,
+    "inst_ct": 6,
+    "inst": [
+        {
+            "opcode": {
+                "op": "ADDA"
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDAH"
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDAL"
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDB"
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDBH"
+            }
+        },
+        {
+            "opcode": {
+                "op": "ADDBL"
+            }
+        }
+    ]
+}

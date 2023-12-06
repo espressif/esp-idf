@@ -38,6 +38,12 @@ examples/peripherals/analog_comparator:
     - esp_driver_gpio
     - esp_driver_ana_cmpr
 
+examples/peripherals/bitscrambler:
+  disable:
+    - if: SOC_BITSCRAMBLER_SUPPORTED != 1
+  depends_components:
+    - esp_driver_bitscrambler
+
 examples/peripherals/camera/dvp_isp_dsi:
   disable:
     - if: SOC_ISP_DVP_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1

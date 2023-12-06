@@ -1,0 +1,61 @@
+{
+    "binary_ver": 1,
+    "hw_rev": 0,
+    "hdr_len": 3,
+    "inst_ct": 1,
+    "lut_size_words": 0,
+    "lut_width_bits": 0,
+    "prefetch": 1,
+    "trailing_bits": 0,
+    "eof_on": 1,
+    "padding": 0,
+    "inst": [
+        {
+            "mux_val": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                95,
+                95,
+                95,
+                95,
+                95,
+                95,
+                95,
+                95,
+                94,
+                94,
+                94,
+                94,
+                94,
+                94,
+                94,
+                94
+            ],
+            "opcode": {
+                "val": 65631,
+                "op": "IF",
+                "src": 95
+            },
+            "read_in": 3,
+            "wr_out": 3,
+            "mux_rel": 0,
+            "ctr_src_sel": 0,
+            "lut_src_sel": 0
+        }
+    ],
+    "lut": []
+}

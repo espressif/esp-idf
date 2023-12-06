@@ -205,6 +205,8 @@ test_tools:
     - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml                    || stat=1
     - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml                     || stat=1
     - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
+    - cd ${IDF_PATH}/tools/test_bsasm
+    - pytest --noconftest test_bsasm.py        --junitxml=${IDF_PATH}/XUNIT_BSASM.xml                     || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
     - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
     - cd ${IDF_PATH}/tools/test_idf_size
