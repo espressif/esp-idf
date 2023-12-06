@@ -554,6 +554,10 @@ class ToolExecError(RuntimeError):
     pass
 
 
+class ToolBinaryError(RuntimeError):
+    pass
+
+
 class IDFToolDownload(object):
     def __init__(self, platform_name, url, size, sha256, rename_dist):  # type: (str, str, int, str, str) -> None
         self.platform_name = platform_name
@@ -780,9 +784,13 @@ class IDFTool(object):
         """
         Checks whether the tool can be found in PATH and in global_idf_tools_path.
         Writes results to self.version_in_path and self.versions_installed.
+
+        Raises ToolBinaryError if an error occurred when running any version of the tool
         """
+
         # this function can not be called for a different platform
         assert self._platform == CURRENT_PLATFORM
+        tool_error = False
         # First check if the tool is in system PATH
         try:
             ver_str = self.get_version()
@@ -790,8 +798,9 @@ class IDFTool(object):
             # not in PATH
             pass
         except ToolExecError as e:
-            warn('tool {} found in path, but {}'.format(
+            fatal('tool {} found in path, but {}'.format(
                 self.name, e))
+            tool_error = True
         else:
             self.version_in_path = ver_str
 
@@ -813,14 +822,17 @@ class IDFTool(object):
                 warn('directory for tool {} version {} is present, but tool was not found'.format(
                     self.name, version))
             except ToolExecError as e:
-                warn('tool {} version {} is installed, but {}'.format(
+                fatal('tool {} version {} is installed, but {}'.format(
                     self.name, version, e))
+                tool_error = True
             else:
                 if ver_str != version:
                     warn('tool {} version {} is installed, but has reported version {}'.format(
                         self.name, version, ver_str))
                 else:
                     self.versions_installed.append(version)
+        if tool_error:
+            raise ToolBinaryError;
 
     def latest_installed_version(self):  # type: () -> Optional[str]
         """
@@ -1633,12 +1645,16 @@ def active_repo_id() -> str:
 
 def list_default(args):  # type: ignore
     tools_info = load_tools_info()
+    tool_error = False
     for name, tool in tools_info.items():
         if tool.get_install_type() == IDFTool.INSTALL_NEVER:
             continue
         optional_str = ' (optional)' if tool.get_install_type() == IDFTool.INSTALL_ON_REQUEST else ''
         info('* {}: {}{}'.format(name, tool.description, optional_str))
-        tool.find_installed_versions()
+        try:
+            tool.find_installed_versions()
+        except ToolBinaryError:
+            tool_error = True
         versions_for_platform = {k: v for k, v in tool.versions.items() if v.compatible_with_platform()}
         if not versions_for_platform:
             info('  (no versions compatible with platform {})'.format(PYTHON_PLATFORM))
@@ -1648,6 +1664,8 @@ def list_default(args):  # type: ignore
             version_obj = tool.versions[version]
             info('  - {} ({}{})'.format(version, version_obj.status,
                                         ', installed' if version in tool.versions_installed else ''))
+    if tool_error:
+        raise SystemExit(1)
 
 
 def list_outdated(args):  # type: ignore
@@ -1677,13 +1695,17 @@ def action_check(args):  # type: ignore
     tools_info = load_tools_info()
     tools_info = filter_tools_info(IDFEnv.get_idf_env(), tools_info)
     not_found_list = []
+    tool_error = False
     info('Checking for installed tools...')
     for name, tool in tools_info.items():
         if tool.get_install_type() == IDFTool.INSTALL_NEVER:
             continue
         tool_found_somewhere = False
         info('Checking tool %s' % name)
-        tool.find_installed_versions()
+        try:
+            tool.find_installed_versions()
+        except ToolBinaryError:
+            tool_error = True
         if tool.version_in_path:
             info('    version found in PATH: %s' % tool.version_in_path)
             tool_found_somewhere = True
@@ -1697,6 +1719,8 @@ def action_check(args):  # type: ignore
             not_found_list.append(name)
     if not_found_list:
         fatal('The following required tools were not found: ' + ' '.join(not_found_list))
+        raise SystemExit(1)
+    if tool_error:
         raise SystemExit(1)
 
 
@@ -1750,7 +1774,10 @@ def process_tool(
     tool_export_paths: List[str] = []
     tool_export_vars: Dict[str, str] = {}
 
-    tool.find_installed_versions()
+    try:
+        tool.find_installed_versions()
+    except:
+        tool_found = False
     recommended_version_to_use = tool.get_preferred_installed_version()
 
     if not tool.is_executable and recommended_version_to_use:
@@ -1813,6 +1840,9 @@ def action_export(args):  # type: ignore
         paths_to_export += tool_export_paths
         export_vars = {**export_vars, **tool_export_vars}
 
+    if not all_tools_found:
+        raise SystemExit(1)
+
     current_path = os.getenv('PATH')
     idf_python_env_path, idf_python_export_path, virtualenv_python, _ = get_python_env_path()
     if os.path.exists(virtualenv_python):
@@ -1858,9 +1888,6 @@ def action_export(args):  # type: ignore
         export_vars[ENVState.env_key] = deactivate_file_path
         export_statements = export_sep.join([export_format.format(k, v) for k, v in export_vars.items()])
         print(export_statements)
-
-    if not all_tools_found:
-        raise SystemExit(1)
 
 
 def get_idf_download_url_apply_mirrors(args=None, download_url=IDF_DL_URL):  # type: (Any, str) -> str
@@ -2012,6 +2039,7 @@ def action_install(args):  # type: ignore
     tools_info = load_tools_info()
     tools_spec = expand_tools_arg(tools_spec, tools_info, targets)
     info('Installing tools: {}'.format(', '.join(tools_spec)))
+    tool_error = False
     for tool_spec in tools_spec:
         if '@' not in tool_spec:
             tool_name = tool_spec
@@ -2031,7 +2059,10 @@ def action_install(args):  # type: ignore
         if tool_version is None:
             tool_version = tool_obj.get_recommended_version()
         assert tool_version is not None
-        tool_obj.find_installed_versions()
+        try:
+            tool_obj.find_installed_versions()
+        except ToolBinaryError:
+            tool_error = True
         tool_spec = '{}@{}'.format(tool_name, tool_version)
         if tool_version in tool_obj.versions_installed:
             info('Skipping {} (already installed)'.format(tool_spec))
@@ -2043,6 +2074,9 @@ def action_install(args):  # type: ignore
 
         tool_obj.download(tool_version)
         tool_obj.install(tool_version)
+
+    if tool_error:
+        raise SystemExit(1)
 
 
 def get_wheels_dir():  # type: () -> Optional[str]
