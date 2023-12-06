@@ -141,24 +141,34 @@ menu "Hardware Settings"
                 This option provides a software workaround for this issue. Configure to isolate all
                 GPIO pins in sleep state.
 
-        config ESP_SLEEP_DEEP_SLEEP_WAKEUP_DELAY
-            int "Extra delay in deep sleep wake stub (in us)"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
-            default 2000
+        config ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
+            int "Extra delay (in us) after flash powerdown sleep wakeup to wait flash ready"
+            default 2000 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+            default 0
             range 0 5000
             help
-                When the chip exits deep sleep, the CPU and the flash chip are powered on
-                at the same time. CPU will run deep sleep stub first, and then
-                proceed to load code from flash. Some flash chips need sufficient
-                time to pass between power on and first read operation. By default,
-                without any extra delay, this time is approximately 900us, although
+                When the chip exits sleep, the CPU and the flash chip are powered on at the same time.
+                CPU will run rom code (deepsleep) or ram code (lightsleep) first, and then load or execute
+                code from flash.
+
+                Some flash chips need sufficient time to pass between power on and first read operation.
+                By default, without any extra delay, this time is approximately 900us, although
                 some flash chip types need more than that.
 
-                By default extra delay is set to 2000us. When optimizing startup time
+                (!!! Please adjust this value according to the Data Sheet of SPI Flash used in your project.)
+                In Flash Data Sheet, the parameters that define the Flash ready timing after power-up (minimum
+                time from Vcc(min) to CS activeare) usually named tVSL in ELECTRICAL CHARACTERISTICS chapter,
+                and the configuration value here should be:
+                ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY = tVSL - 900
+
+                For esp32 and esp32s3, the default extra delay is set to 2000us. When optimizing startup time
                 for applications which require it, this value may be reduced.
 
-                If you are seeing "flash read err, 1000" message printed to the
-                console after deep sleep reset, try increasing this value.
+                If you are seeing "flash read err, 1000" message printed to the console after deep sleep reset
+                on esp32, or triggered RTC_WDT/LP_WDT after lightsleep wakeup, try increasing this value.
+                (For esp32, the delay will be executed in both deep sleep and light sleep wake up flow.
+                For chips after esp32, the delay will be executed only in light sleep flow, the delay
+                controlled by the EFUSE_FLASH_TPUW in ROM will be executed in deepsleep wake up flow.)
 
         config ESP_SLEEP_CACHE_SAFE_ASSERTION
             bool "Check the cache safety of the sleep wakeup code in sleep process"
