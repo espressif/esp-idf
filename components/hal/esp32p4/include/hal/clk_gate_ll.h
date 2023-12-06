@@ -21,10 +21,6 @@ extern "C" {
 static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
 {
     switch (periph) {
-    case PERIPH_MSPI_FLASH_MODULE:
-        return HP_SYS_CLKRST_REG_FLASH_CORE_CLK_EN;
-    case PERIPH_MSPI_PSRAM_MODULE:
-        return HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN;
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_HP_PAD_EMAC_TXRX_CLK_EN | LP_CLKRST_HP_PAD_EMAC_RX_CLK_EN | LP_CLKRST_HP_PAD_EMAC_TX_CLK_EN;
     case PERIPH_MIPI_DSI_MODULE:
@@ -67,10 +63,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     switch (periph) {
     case PERIPH_PVT_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_PVT_TOP;
-    case PERIPH_MSPI_FLASH_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_MSPI_AXI;
-    case PERIPH_MSPI_PSRAM_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_DUAL_MSPI_AXI;
     case PERIPH_MIPI_DSI_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_DSI_BRG;
     case PERIPH_MIPI_CSI_MODULE:
@@ -134,9 +126,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {
     switch (periph) {
-    case PERIPH_MSPI_FLASH_MODULE:
-    case PERIPH_MSPI_PSRAM_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL00_REG;
     case PERIPH_MIPI_DSI_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL03_REG;
     case PERIPH_I3C_MODULE:
@@ -166,8 +155,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
 {
     switch (periph) {
     case PERIPH_PVT_MODULE:
-    case PERIPH_MSPI_FLASH_MODULE:
-    case PERIPH_MSPI_PSRAM_MODULE:
     case PERIPH_ISP_MODULE:
     case PERIPH_JPEG_MODULE:
     case PERIPH_DMA2D_MODULE:

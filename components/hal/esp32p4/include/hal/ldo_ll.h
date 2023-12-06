@@ -35,8 +35,8 @@ extern "C" {
 #define LDO_LL_EXT_LDO_DREF_VOL_H_STEP 100
 #define LDO_LL_EXT_LDO_DREF_VOL_L_BASE 500
 #define LDO_LL_EXT_LDO_DREF_VOL_L_STEP 50
-#define LDO_LL_EXT_LDO_MUL_VOL_BASE 1000
-#define LDO_LL_EXT_LDO_MUL_VOL_STEP 250
+#define LDO_LL_EXT_LDO_MUL_VOL_BASE    1000
+#define LDO_LL_EXT_LDO_MUL_VOL_STEP    250
 
 /**
  * Trick to be adapted to the LDO register structure
@@ -47,7 +47,12 @@ extern "C" {
  * - ext_ldo[1] is LDO3
  * - ext_ldo[4] is LDO4
  */
-#define LDO_ID2INDEX(id) (uint8_t[]){0,3,1,4}[id]
+#define LDO_ID2INDEX(id)       (uint8_t[]){0,3,1,4}[id]
+
+/**
+ * LDO ID to real unit ID
+ */
+#define LDO_ID2UNIT(ldo_id)    ((ldo_id) - 1)
 
 /**
  * @brief Enable a LDO
