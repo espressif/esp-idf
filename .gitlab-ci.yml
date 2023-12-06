@@ -68,6 +68,9 @@ variables:
   # target test repo parameters
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
 
+  # Set this variable to specify the file name for the known failure cases.
+  KNOWN_FAILURE_CASES_FILE_NAME: "4.4.txt"
+
   IDF_CI_BUILD: 1
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |

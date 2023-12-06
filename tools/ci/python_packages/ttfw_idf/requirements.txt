@@ -2,3 +2,4 @@
 pexpect
 python-gitlab
 pygdbmi>=0.9.0.0
+minio
