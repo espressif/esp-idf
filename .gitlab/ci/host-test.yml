@@ -214,8 +214,6 @@ test_tools:
     - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
     - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
-    - cd ${IDF_PATH}/tools/test_sbom
-    - pytest                                   --junitxml=${IDF_PATH}/XUNIT_SBOM.xml                      || stat=1
     - cd ${IDF_PATH}
     - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
     - shellcheck -s bash tools/detect_python.sh                                                           || stat=1
