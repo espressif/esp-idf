@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -436,6 +436,12 @@ ESP_STATIC_ASSERT(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_des
 #define USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK              0x80
 
 /**
+ * @brief Bit masks belonging to the wMaxPacketSize field of endpoint descriptor
+ */
+#define USB_W_MAX_PACKET_SIZE_MPS_MASK                  0x07ff
+#define USB_W_MAX_PACKET_SIZE_MULT_MASK                 0x1800
+
+/**
  * @brief Bit masks belonging to the bmAttributes field of an endpoint descriptor
  */
 #define USB_BM_ATTRIBUTES_XFERTYPE_MASK                 0x03
@@ -459,7 +465,8 @@ ESP_STATIC_ASSERT(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_des
 #define USB_EP_DESC_GET_XFERTYPE(desc_ptr) ((usb_transfer_type_t) ((desc_ptr)->bmAttributes & USB_BM_ATTRIBUTES_XFERTYPE_MASK))
 #define USB_EP_DESC_GET_EP_NUM(desc_ptr) ((desc_ptr)->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK)
 #define USB_EP_DESC_GET_EP_DIR(desc_ptr) (((desc_ptr)->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK) ? 1 : 0)
-#define USB_EP_DESC_GET_MPS(desc_ptr) ((desc_ptr)->wMaxPacketSize & 0x7FF)
+#define USB_EP_DESC_GET_MPS(desc_ptr) ((desc_ptr)->wMaxPacketSize & USB_W_MAX_PACKET_SIZE_MPS_MASK)
+#define USB_EP_DESC_GET_MULT(desc_ptr) (((desc_ptr)->wMaxPacketSize & USB_W_MAX_PACKET_SIZE_MULT_MASK) >> 11)
 
 // ------------------ String Descriptor --------------------
 
