@@ -1578,31 +1578,31 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
     // Calculate the pipe's interval in terms of USB frames
     // @see USB-OTG programming guide chapter 6.5 for more information
     if (type == USB_TRANSFER_TYPE_INTR || type == USB_TRANSFER_TYPE_ISOCHRONOUS) {
-        unsigned int interval_frames;
-        unsigned int xfer_list_len;
-        if (type == USB_TRANSFER_TYPE_INTR) {
-            interval_frames = pipe_config->ep_desc->bInterval;
-            xfer_list_len = XFER_LIST_LEN_INTR;
+        // Convert bInterval field to real value
+        // @see USB 2.0 specs, Table 9-13
+        unsigned int interval_value;
+        if (type == USB_TRANSFER_TYPE_INTR && pipe_config->dev_speed != USB_SPEED_HIGH) {
+            interval_value = pipe_config->ep_desc->bInterval;
         } else {
-            interval_frames = (1 << (pipe_config->ep_desc->bInterval - 1));
-            xfer_list_len = XFER_LIST_LEN_ISOC;
+            interval_value = (1 << (pipe_config->ep_desc->bInterval - 1));
         }
         // Round down interval to nearest power of 2
-        if (interval_frames >= 32) {
-            interval_frames = 32;
-        } else if (interval_frames >= 16) {
-            interval_frames = 16;
-        } else if (interval_frames >= 8) {
-            interval_frames = 8;
-        } else if (interval_frames >= 4) {
-            interval_frames = 4;
-        } else if (interval_frames >= 2) {
-            interval_frames = 2;
-        } else if (interval_frames >= 1) {
-            interval_frames = 1;
+        if (interval_value >= 32) {
+            interval_value = 32;
+        } else if (interval_value >= 16) {
+            interval_value = 16;
+        } else if (interval_value >= 8) {
+            interval_value = 8;
+        } else if (interval_value >= 4) {
+            interval_value = 4;
+        } else if (interval_value >= 2) {
+            interval_value = 2;
+        } else if (interval_value >= 1) {
+            interval_value = 1;
         }
-        ep_char->periodic.interval = interval_frames;
+        ep_char->periodic.interval = interval_value;
         // We are the Nth pipe to be allocated. Use N as a phase offset
+        unsigned int xfer_list_len = (type == USB_TRANSFER_TYPE_INTR) ? XFER_LIST_LEN_INTR : XFER_LIST_LEN_ISOC;
         ep_char->periodic.phase_offset_frames = pipe_idx & (xfer_list_len - 1);
     } else {
         ep_char->periodic.interval = 0;
