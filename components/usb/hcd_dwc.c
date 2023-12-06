@@ -1536,9 +1536,9 @@ static bool pipe_alloc_hcd_support_verification(usb_dwc_hal_context_t *hal, cons
         }
     }
 
-    if (ep_desc->wMaxPacketSize > limit) {
+    if (USB_EP_DESC_GET_MPS(ep_desc) > limit) {
         ESP_LOGE(HCD_DWC_TAG, "EP MPS (%d) exceeds supported limit (%d)",
-                 ep_desc->wMaxPacketSize,
+                 USB_EP_DESC_GET_MPS(ep_desc),
                  limit);
         return false;
     }
@@ -1571,7 +1571,7 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
         ep_char->mps = (pipe_config->dev_speed == USB_SPEED_LOW) ? CTRL_EP_MAX_MPS_LS : CTRL_EP_MAX_MPS_HSFS;
     } else {
         ep_char->bEndpointAddress = pipe_config->ep_desc->bEndpointAddress;
-        ep_char->mps = pipe_config->ep_desc->wMaxPacketSize;
+        ep_char->mps = USB_EP_DESC_GET_MPS(pipe_config->ep_desc);
     }
     ep_char->dev_addr = pipe_config->dev_addr;
     ep_char->ls_via_fs_hub = (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW);
