@@ -908,8 +908,8 @@ TEST_CASE_MULTIPLE_DEVICES("SPI quad hd test ", "[spi_ms][test_env=generic_multi
 #endif  // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 //***************************************TEST FOR APPEND MODE******************************************//
-#define TEST_APPEND_CACHE_SIZE      4
-#define TEST_TRANS_LEN              TEST_DMA_MAX_SIZE
+#define TEST_APPEND_NUM      4
+#define TEST_TRANS_LEN       TEST_DMA_MAX_SIZE
 
 void prepare_data(uint8_t *buff, uint32_t len, int8_t diff)
 {
@@ -930,20 +930,20 @@ void slave_run_append(void)
     TEST_ESP_OK(spi_slave_hd_init(TEST_SPI_HOST, &bus_cfg, &slave_hd_cfg));
 
     unity_wait_for_signal("Master ready");
-    spi_slave_hd_data_t *ret_trans, slave_rx_trans[TEST_APPEND_CACHE_SIZE] = {};
+    spi_slave_hd_data_t *ret_trans, slave_rx_trans[TEST_APPEND_NUM] = {};
     uint8_t *slave_exp = heap_caps_malloc(TEST_TRANS_LEN, MALLOC_CAP_DEFAULT);
 
     // append some data first
-    for (uint32_t cache_instans = 0; cache_instans < TEST_APPEND_CACHE_SIZE; cache_instans++) {
-        int trans_len = 16 << (cache_instans + 1);
+    for (uint32_t append_idx = 0; append_idx < TEST_APPEND_NUM; append_idx++) {
+        int trans_len = 16 << (append_idx + 1);
         if (trans_len > TEST_TRANS_LEN) {
             trans_len = TEST_TRANS_LEN;
         }
 
-        slave_rx_trans[cache_instans].data = heap_caps_calloc(1, TEST_TRANS_LEN, MALLOC_CAP_DMA);
-        TEST_ASSERT_NOT_NULL(slave_rx_trans[cache_instans].data);
-        slave_rx_trans[cache_instans].len = trans_len;
-        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_rx_trans[cache_instans], portMAX_DELAY));
+        slave_rx_trans[append_idx].data = heap_caps_aligned_calloc(4, 1, TEST_TRANS_LEN, MALLOC_CAP_DMA);
+        TEST_ASSERT_NOT_NULL(slave_rx_trans[append_idx].data);
+        slave_rx_trans[append_idx].len = trans_len;
+        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_rx_trans[append_idx], portMAX_DELAY));
     }
 
     for (int trans_num = 1; trans_num <= 8; trans_num ++) {
@@ -960,7 +960,7 @@ void slave_run_append(void)
         ESP_LOG_BUFFER_HEX_LEVEL("slave exp", slave_exp, trans_len, ESP_LOG_DEBUG);
         spitest_cmp_or_dump(slave_exp, ret_trans->data, trans_len);
 
-        if (trans_num <= TEST_APPEND_CACHE_SIZE) {
+        if (trans_num <= TEST_APPEND_NUM) {
             // append one more transaction
             int new_append_len = trans_len << 4;
             if (new_append_len > TEST_TRANS_LEN) {
@@ -976,16 +976,16 @@ void slave_run_append(void)
     free(slave_exp);
 
     //------------------------------------tx direction------------------------------
-    spi_slave_hd_data_t slave_tx_trans[TEST_APPEND_CACHE_SIZE] = {};
-    for (uint32_t cache_instans = 0; cache_instans < TEST_APPEND_CACHE_SIZE; cache_instans ++) {
-        int trans_len = 16 << (cache_instans + 1);
+    spi_slave_hd_data_t slave_tx_trans[TEST_APPEND_NUM] = {};
+    for (uint32_t append_idx = 0; append_idx < TEST_APPEND_NUM; append_idx ++) {
+        int trans_len = 16 << (append_idx + 1);
         if (trans_len >= TEST_TRANS_LEN) {
             trans_len = TEST_TRANS_LEN;
         }
-        slave_tx_trans[cache_instans].data = slave_rx_trans[cache_instans].data;
-        slave_tx_trans[cache_instans].len = trans_len;
-        prepare_data(slave_tx_trans[cache_instans].data, trans_len, -3);
-        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_tx_trans[cache_instans], portMAX_DELAY));
+        slave_tx_trans[append_idx].data = slave_rx_trans[append_idx].data;
+        slave_tx_trans[append_idx].len = trans_len;
+        prepare_data(slave_tx_trans[append_idx].data, trans_len, -3);
+        TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_tx_trans[append_idx], portMAX_DELAY));
     }
 
     //Get one result and load a new transaction
@@ -995,7 +995,7 @@ void slave_run_append(void)
         ESP_LOGI("slave", "trasacted len: %d", ret_trans->len);
         ESP_LOG_BUFFER_HEX_LEVEL("slave tx", ret_trans->data, ret_trans->len, ESP_LOG_DEBUG);
 
-        if (trans_num <= TEST_APPEND_CACHE_SIZE) {
+        if (trans_num <= TEST_APPEND_NUM) {
             // append one more transaction
             int new_append_len = 16 << (trans_num + 4);
             if (new_append_len > TEST_TRANS_LEN) {
@@ -1008,7 +1008,7 @@ void slave_run_append(void)
         }
     }
     printf("================Master Rx Done==================\n");
-    for (int i = 0; i < TEST_APPEND_CACHE_SIZE; i++) {
+    for (int i = 0; i < TEST_APPEND_NUM; i++) {
         free(slave_tx_trans[i].data);
     }
 
