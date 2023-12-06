@@ -426,6 +426,7 @@ typedef struct {
     volatile bitscrambler_version_reg_t version;
 } bitscrambler_dev_t;
 
+extern bitscrambler_dev_t BITSCRAMBLER;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(bitscrambler_dev_t) == 0x100, "Invalid size of bitscrambler_dev_t structure");
