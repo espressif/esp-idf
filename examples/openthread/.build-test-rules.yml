@@ -21,10 +21,8 @@
     - esp_hw_support
 
 examples/openthread/ot_br:
-  disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4"]
-      temporary: true
-      reason: target(s) not supported yet
+  enable:
+    - if: SOC_WIFI_SUPPORTED == 1
   disable_test:
     - if: IDF_TARGET in ["esp32", "esp32c3", "esp32c2", "esp32c6", "esp32s2"]
       temporary: true
@@ -47,11 +45,8 @@ examples/openthread/ot_rcp:
 
 examples/openthread/ot_sleepy_device/deep_sleep:
   enable:
-    - if: IDF_TARGET in ["esp32h2"]
-  disable_test:
-    - if: IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: Unsupport
+    - if: SOC_IEEE802154_SUPPORTED == 1
+  <<: [*openthread_dependencies, *openthread_sleep_dependencies]
 
 examples/openthread/ot_sleepy_device/light_sleep:
   enable:
