@@ -566,6 +566,7 @@ typedef struct {
     bool channel_filter_en; /**< enable to turn on channel filter to smooth adjacent sub-carrier. Disable it to keep independence of adjacent sub-carrier. Default enabled */
     bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually. Default false */
     uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
+    bool dump_ack_en;       /**< enable to dump 802.11 ACK frame, default disabled */
 } wifi_csi_config_t;
 #endif
 
