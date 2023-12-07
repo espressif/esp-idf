@@ -1539,6 +1539,10 @@ typedef struct {
 
 typedef struct {
     UINT8 filter_policy;
+    #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+    UINT8 reports_disabled;
+    UINT8 filter_duplicates;
+    #endif
     UINT8 sid;
     tBLE_ADDR_TYPE addr_type;
     BD_ADDR addr;
