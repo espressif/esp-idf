@@ -569,7 +569,7 @@ pytest_build_system_macos:
 pytest_build_system_win:
   extends:
     - .test_build_system_template_win
-    - .rules:test:windows_pytest_build_system
+    - .rules:labels:windows_pytest_build_system
   needs: []
   tags:
     - windows-target
