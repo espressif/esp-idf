@@ -235,7 +235,6 @@ hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_ep_d
     //Create a queue for pipe callback to queue up pipe events
     QueueHandle_t pipe_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(pipe_event_msg_t));
     TEST_ASSERT_NOT_NULL(pipe_evt_queue);
-    printf("Creating pipe\n");
     hcd_pipe_config_t pipe_config = {
         .callback = pipe_callback,
         .callback_arg = (void *)pipe_evt_queue,
