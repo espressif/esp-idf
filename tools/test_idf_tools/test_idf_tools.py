@@ -85,9 +85,6 @@ RISCV_ELF_ARCHIVE_PATTERN = RISCV_ELF + '-' \
 XTENSA_ELF_ARCHIVE_PATTERN = XTENSA_ELF + '-' \
     + (XTENSA_ELF_VERSION[len('esp-'):] if XTENSA_ELF_VERSION.startswith('esp-') else XTENSA_ELF_VERSION)
 
-QEMU_RISCV_ARCHIVE_PATTERN = 'esp-' + QEMU_RISCV
-QEMU_XTENSA_ARCHIVE_PATTERN = 'esp-' + QEMU_XTENSA
-
 
 class TestUsage(unittest.TestCase):
 
@@ -375,8 +372,8 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_installed(output, XTENSA_ESP_GDB, XTENSA_ESP_GDB_VERSION)
         self.assert_tool_installed(output, RISCV_ESP_GDB, RISCV_ESP_GDB_VERSION)
         self.assert_tool_installed(output, ESP_ROM_ELFS, ESP_ROM_ELFS_VERSION)
-        self.assert_tool_installed(output, QEMU_RISCV, QEMU_RISCV_VERSION, QEMU_RISCV_ARCHIVE_PATTERN)
-        self.assert_tool_installed(output, QEMU_XTENSA, QEMU_XTENSA_VERSION, QEMU_XTENSA_ARCHIVE_PATTERN)
+        self.assert_tool_installed(output, QEMU_RISCV, QEMU_RISCV_VERSION)
+        self.assert_tool_installed(output, QEMU_XTENSA, QEMU_XTENSA_VERSION)
         self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 

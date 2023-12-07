@@ -8,11 +8,11 @@ Espressif maintains a `fork <https://github.com/espressif/qemu>`_ of the QEMU em
 Prerequisites
 -------------
 
-To use QEMU with ``idf.py`` you first need to install the above-mentioned fork of QEMU. ESP-IDF provides pre-built binaries for x86_64 Linux. If you are using this platform, you can install the pre-built binaries with the following command:
+To use QEMU with ``idf.py`` you first need to install the above-mentioned fork of QEMU. ESP-IDF provides pre-built binaries for x86_64 and arm64 Linux and macOS, as well as x86_64 Windows. If you are using this platform, you can install the pre-built binaries with the following command:
 
 .. code-block:: console
 
-    python $IDF_PATH/tools/idf_tools.py install qemu-xtensa qemu-riscv
+    python $IDF_PATH/tools/idf_tools.py install qemu-xtensa qemu-riscv32
 
 After installing QEMU, make sure it is added to PATH by running ``. ./export.sh`` in the IDF directory.
 
