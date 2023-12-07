@@ -554,7 +554,9 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0     : 26;
+        uint32_t reserved0     : 24;
+        uint32_t xpd_tc5g_i2c  : 1;
+        uint32_t xpd_rx5g_i2c  : 1;
         uint32_t perif_i2c_rstb: 1;
         uint32_t xpd_perif_i2c : 1;
         uint32_t xpd_txrf_i2c  : 1;
