@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,7 +141,8 @@ typedef struct {
     };
     struct {
         unsigned int interval;              /**< The interval of the endpoint in frames (FS) or microframes (HS) */
-        uint32_t phase_offset_frames;       /**< Phase offset in number of frames */
+        uint32_t offset;                    /**< Offset of this channel in the periodic scheduler */
+        bool is_hs;                         /**< This endpoint is HighSpeed. Needed for Periodic Frame List (HAL layer) scheduling */
     } periodic;     /**< Characteristic for periodic (interrupt/isochronous) endpoints only */
 } usb_dwc_hal_ep_char_t;
 
@@ -423,17 +424,6 @@ static inline void usb_dwc_hal_port_set_frame_list(usb_dwc_hal_context_t *hal, u
     //Clear and save frame list
     hal->periodic_frame_list = frame_list;
     hal->frame_list_len = len;
-}
-
-/**
- * @brief Get the pointer to the periodic scheduling frame list
- *
- * @param hal Context of the HAL layer
- * @return uint32_t* Base address of the periodic scheduling frame list
- */
-static inline uint32_t *usb_dwc_hal_port_get_frame_list(usb_dwc_hal_context_t *hal)
-{
-    return hal->periodic_frame_list;
 }
 
 /**

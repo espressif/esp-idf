@@ -801,6 +801,40 @@ static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *cha
     chan->hctsiz_reg.val = hctsiz.val;
 }
 
+static inline void usb_dwc_ll_hctsiz_set_sched_info(volatile usb_dwc_host_chan_regs_t *chan, int tokens_per_frame, int offset)
+{
+    // @see USB-OTG databook: Table 5-47
+    // This function is relevant only for HS
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    uint8_t sched_info_val;
+    switch (tokens_per_frame) {
+        case 1:
+            offset %= 8; // If the required offset > 8, we must wrap around to SCHED_INFO size = 8
+            sched_info_val = 0b00000001;
+            break;
+        case 2:
+            offset %= 4;
+            sched_info_val = 0b00010001;
+            break;
+        case 4:
+            offset %= 2;
+            sched_info_val = 0b01010101;
+            break;
+        case 8:
+            offset = 0;
+            sched_info_val = 0b11111111;
+            break;
+        default:
+            abort();
+            break;
+    }
+    sched_info_val <<= offset;
+    hctsiz.xfersize &= ~(0xFF);
+    hctsiz.xfersize |= sched_info_val;
+    chan->hctsiz_reg.val = hctsiz.val;
+}
+
 // ---------------------------- HCDMAi Register --------------------------------
 
 static inline void usb_dwc_ll_hcdma_set_qtd_list_addr(volatile usb_dwc_host_chan_regs_t *chan, void *dmaaddr, uint32_t qtd_idx)
