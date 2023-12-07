@@ -885,6 +885,7 @@ static void i2s_adc_set_slot_legacy(void)
     i2s_ll_rx_set_ws_width(dev, slot_cfg->slot_bit_width);
     i2s_ll_rx_enable_msb_right(dev, false);
     i2s_ll_rx_enable_right_first(dev, false);
+    i2s_ll_rx_select_std_slot(dev, I2S_STD_SLOT_LEFT, false);
     /* Should always enable fifo */
     i2s_ll_rx_force_enable_fifo_mod(dev, true);
 }
@@ -1473,15 +1474,14 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
             sar_periph_ctrl_adc_continuous_power_acquire();
             adc_set_i2s_data_source(ADC_I2S_DATA_SRC_ADC);
-            i2s_ll_enable_builtin_adc(p_i2s[i2s_num]->hal.dev, true);
+            i2s_ll_enable_builtin_adc_dac(p_i2s[i2s_num]->hal.dev, true);
         }
         if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-            i2s_ll_enable_builtin_dac(p_i2s[i2s_num]->hal.dev, true);
+            i2s_ll_enable_builtin_adc_dac(p_i2s[i2s_num]->hal.dev, true);
         }
     } else {
         adc_set_i2s_data_source(ADC_I2S_DATA_SRC_IO_SIG);
-        i2s_ll_enable_builtin_adc(p_i2s[i2s_num]->hal.dev, false);
-        i2s_ll_enable_builtin_dac(p_i2s[i2s_num]->hal.dev, false);
+        i2s_ll_enable_builtin_adc_dac(p_i2s[i2s_num]->hal.dev, false);
     }
 #endif
 
