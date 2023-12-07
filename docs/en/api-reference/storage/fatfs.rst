@@ -26,9 +26,9 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 #. Call :cpp:func:`ff_diskio_register` to register the disk I/O driver for the drive number used in Step 1.
 
-#. To mount the filesystem using the same drive number which was passed to :cpp:func:`esp_vfs_fat_register`, call the FatFs function :cpp:func:`f_mount`. If the file-system is not present on the target logical drive f_mount fails with FR_NO_FILESYSTEM error - call :cpp:func:`f_mkfs` to create fresh FatFS structure on the drive first, and the call f_mount again. NOTE: SD cards need to be partitioned with :cpp:func:`f_fdisk` prior to previously described steps. For more information, see `FatFs documentation <http://elm-chan.org/fsw/ff/doc/mount.html>`_.
+#. To mount the filesystem using the same drive number which was passed to :cpp:func:`esp_vfs_fat_register`, call the FatFs function :cpp:func:`f_mount`. If the filesystem is not present on the target logical drive, :cpp:func:`f_mount` will fail with the ``FR_NO_FILESYSTEM`` error. In such case, call :cpp:func:`f_mkfs` to create a fresh FatFS structure on the drive first, and then call:cpp:func:`f_mount` again. Note that SD cards need to be partitioned with :cpp:func:`f_fdisk` prior to previously described steps. For more information, see `FatFs documentation <http://elm-chan.org/fsw/ff/doc/mount.html>`_.
 
-#. Call the C standard library and POSIX API functions to perform such actions on files as open, read, write, erase, copy, etc. Use paths starting with the path prefix passed to :cpp:func:`esp_vfs_register` (for example, ``"/sdcard/hello.txt"``). The filesystem uses `8.3 filenames <https://en.wikipedia.org/wiki/8.3_filename>`_ format (SFN) by default. If you need to use long filenames (LFN), enable the :ref:`CONFIG_FATFS_LONG_FILENAMES` option. More details on the FatFs filenames are available `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
+#. Call the C standard library and POSIX API functions to perform such actions on files as open, read, write, erase, copy, etc. Use paths starting with the path prefix passed to :cpp:func:`esp_vfs_register` (for example, ``"/sdcard/hello.txt"``). The filesystem uses `8.3 filenames <https://en.wikipedia.org/wiki/8.3_filename>`_ format (SFN) by default. If you need to use long filenames (LFN), enable the :ref:`CONFIG_FATFS_LONG_FILENAMES` option. Please refer to `FatFs filenames <http://elm-chan.org/fsw/ff/doc/filename.html>`_ for more details.
 
 #. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix, for example, ``"/hello.txt"``.
 
@@ -64,9 +64,10 @@ Configuration options
 ---------------------
 
 The following configuration options are available for the FatFs component:
+
 * :ref:`CONFIG_FATFS_USE_FASTSEEK` - If enabled, the POSIX :cpp:func:`lseek` function will be performed faster. The fast seek does not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
 * :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - If enabled, the FatFs will automatically call :cpp:func:`f_sync` to flush recent file changes after each call of :cpp:func:`write`, :cpp:func:`pwrite`, :cpp:func:`link`, :cpp:func:`truncate` and :cpp:func:`ftruncate` functions. This feature improves file-consistency and size reporting accuracy for the FatFs, at a price on decreased performance due to frequent disk operations.
-* :ref:`CONFIG_FATFS_LINK_LOCK` - If disabled, the copying performed by :cpp:func:`link` will be non-atomic. This is safe and might be necessary for applications that require fast frequent small file operations (e.g. logging to a file), while using :cpp:func:`link` on a large file on the same volume in a different task.
+* :ref:`CONFIG_FATFS_LINK_LOCK` - If enabled, this option guarantees the API thread safety, while disabling this option might be necessary for applications that require fast frequent small file operations (e.g., logging to a file). Note that if this option is disabled, the copying performed by :cpp:func:`link` will be non-atomic. In such case, using :cpp:func:`link` on a large file on the same volume in a different task is not guaranteed to be thread safe.
 
 
 FatFS Disk IO Layer
