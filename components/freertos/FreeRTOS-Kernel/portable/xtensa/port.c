@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <xtensa/config/core.h>
-#include <xtensa/xtensa_context.h>
+#include <xtensa_context.h>
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 #include "esp_private/crosscore_int.h"

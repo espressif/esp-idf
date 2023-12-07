@@ -11,7 +11,6 @@
 #include "sys/lock.h"
 #include "soc/soc_pins.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "esp_intr_alloc.h"

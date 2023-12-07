@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include "freertos/xtensa_api.h"
 #include "freertos/FreeRTOSConfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
