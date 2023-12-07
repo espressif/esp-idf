@@ -175,15 +175,15 @@
   patterns:
     - submodule
 
-"test:windows_pytest_build_system":
-  labels:
-    - windows
-  specific_rules:
-    - if-schedule-test-build-system-windows
-
 #################################
 # Triggered Only By Labels Jobs #
 #################################
 "labels:nvs_coverage": # host_test
   labels:
     - nvs_coverage
+
+"labels:windows_pytest_build_system":
+  labels:
+    - windows
+  specific_rules:
+    - if-schedule-test-build-system-windows

@@ -1615,6 +1615,13 @@
       when: never
     - <<: *if-label-nvs_coverage
 
+.rules:labels:windows_pytest_build_system:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-schedule-test-build-system-windows
+    - <<: *if-label-windows
+
 .rules:test:component_ut-esp32:
   rules:
     - <<: *if-revert-branch
@@ -2579,13 +2586,3 @@
     - <<: *if-label-submodule
     - <<: *if-dev-push
       changes: *patterns-submodule
-
-.rules:test:windows_pytest_build_system:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-schedule-test-build-system-windows
-    - <<: *if-label-windows
