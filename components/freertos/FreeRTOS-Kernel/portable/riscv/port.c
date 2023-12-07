@@ -301,7 +301,11 @@ static void vPortCleanUpCoprocArea(void *pvTCB)
      * If yes, reset the owner. */
     if (sa->sa_enable != 0) {
         /* Get the core the task is pinned on */
-        const BaseType_t coreID = task->xDummyCoreID;
+        #if ( configNUM_CORES > 1 )
+            const BaseType_t coreID = task->xDummyCoreID;
+        #else /* configNUM_CORES > 1 */
+            const BaseType_t coreID = 0;
+        #endif /* configNUM_CORES > 1 */
 
         for (int i = 0; i < SOC_CPU_COPROC_NUM; i++) {
             StaticTask_t** owner = &port_uxCoprocOwner[coreID][i];
@@ -767,11 +771,12 @@ void vPortTCBPreDeleteHook( void *pxTCB )
  * are saved lazily, as soon as a task starts using one, it must always be scheduled on the core
  * it is currently executing on.
  */
+#if ( configNUM_CORES > 1 )
 void vPortTaskPinToCore(StaticTask_t* task, int coreid)
 {
     task->xDummyCoreID = coreid;
 }
-
+#endif /* configNUM_CORES > 1 */
 
 /**
  * @brief Get coprocessor save area out of the given task. If the coprocessor area is not created,

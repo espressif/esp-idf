@@ -51,7 +51,6 @@ variables:
   # Docker images
   ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.3:1"
   ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.3:1-1"
-  QEMU_IMAGE: "${CI_DOCKER_REGISTRY}/qemu-v5.3:1-20230522"
   TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.3:1"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
   PRE_COMMIT_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-pre-commit:1"
@@ -140,6 +139,11 @@ variables:
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
   fi
 
+  # Install QEMU if necessary
+  if [[ ! -z "$INSTALL_QEMU" ]]; then
+    $IDF_PATH/tools/idf_tools.py --non-interactive install qemu-xtensa qemu-riscv32
+  fi
+
   source ./export.sh
 
   # Custom clang
@@ -172,10 +176,9 @@ variables:
   test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
 
 .upload_failed_job_log_artifacts: &upload_failed_job_log_artifacts |
-  - |
-    if [ $CI_JOB_STATUS = "failed" ]; then
-      python tools/ci/artifacts_handler.py upload --type logs
-    fi
+  if [ $CI_JOB_STATUS = "failed" ]; then
+    python tools/ci/artifacts_handler.py upload --type logs
+  fi
 
 .before_script:minimal:
   before_script:

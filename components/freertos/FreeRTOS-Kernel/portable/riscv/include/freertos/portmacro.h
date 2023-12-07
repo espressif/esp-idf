@@ -42,10 +42,19 @@
 #else
 #define PORT_OFFSET_PX_STACK 0x30
 #endif /* #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
-#define PORT_OFFSET_PX_END_OF_STACK (PORT_OFFSET_PX_STACK + \
-                                     /* void * pxDummy6 */ 4 + \
-                                     /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ CONFIG_FREERTOS_MAX_TASK_NAME_LEN + \
-                                     /* BaseType_t xDummyCoreID */ 4)
+
+#if CONFIG_FREERTOS_UNICORE
+#define CORE_ID_SIZE        0
+#else
+#define CORE_ID_SIZE        4
+#endif
+
+#define PORT_OFFSET_PX_END_OF_STACK ( \
+    PORT_OFFSET_PX_STACK \
+    + 4                                 /* void * pxDummy6 */ \
+    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ \
+    + CORE_ID_SIZE                      /* BaseType_t xDummyCoreID */ \
+)
 
 #ifndef __ASSEMBLER__
 

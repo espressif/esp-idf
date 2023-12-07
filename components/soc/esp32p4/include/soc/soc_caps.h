@@ -41,15 +41,15 @@
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1  //TODO: IDF-7496
 // #define SOC_TEMP_SENSOR_SUPPORTED       1  //TODO: IDF-7482
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
-// #define SOC_RISCV_COPROC_SUPPORTED      1
+#define SOC_ULP_SUPPORTED               1
+#define SOC_LP_CORE_SUPPORTED           1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_EFUSE_SUPPORTED             1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_I2S_SUPPORTED               1
-// #define SOC_RMT_SUPPORTED               1  //TODO: IDF-7476
-// #define SOC_SDM_SUPPORTED               1  //TODO: IDF-7551
+#define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1  //TODO: IDF-6507, TODO: IDF-7491
@@ -69,7 +69,7 @@
 // #define SOC_APM_SUPPORTED               1  //TODO: IDF-7542
 // #define SOC_PMU_SUPPORTED               1  //TODO: IDF-7531
 // #define SOC_PAU_SUPPORTED               1  //TODO: IDF-7531
-// #define SOC_LP_TIMER_SUPPORTED          1  //TODO: IDF-7532
+#define SOC_LP_TIMER_SUPPORTED          1
 // #define SOC_ULP_LP_UART_SUPPORTED       1  //TODO: IDF-7533
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
@@ -408,7 +408,7 @@
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 #define SOC_SDM_GROUPS               1U
-#define SOC_SDM_CHANNELS_PER_GROUP   4
+#define SOC_SDM_CHANNELS_PER_GROUP   8
 #define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
 #define SOC_SDM_CLK_SUPPORT_XTAL     1
 

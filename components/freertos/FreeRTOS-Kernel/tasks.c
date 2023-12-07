@@ -130,27 +130,29 @@
 
 /* Macros to check if an unblocked task causes a yield on the current core.
  * - pxTCB is the TCB of the task to check
- * - xCurCoreID is the current core's ID
- * - xYieldEqualPriority indicates whether a yield should occur if the unblocked
- * task's priority is equal to the priority of the task currently running on the
- * current core.
  * - uxTaskPriority is the task's priority
- * - xTaskCoreID is the task's core affinity */
+ * - xYieldEqualPriority if the task having equal priority as the currently
+ * executing task should cause a yield.
+ *
+ * In single-core, this macro simply checks the unblocked task has a high enough
+ * priority to preempt the current task, and returns pdTRUE if so.
+ *
+ * In SMP, this macro checks if the unblocked task can preempt either core:
+ *   - If a yield is required on the current core, this macro return pdTRUE
+ *   - if a yield is required on the other core, this macro will internally
+ *     trigger it.
+ */
 #if ( configNUMBER_OF_CORES > 1 )
-    #define taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, xYieldEqualPriority )                                         prvIsYieldUsingPrioritySMP( ( pxTCB )->uxPriority, ( pxTCB )->xCoreID, xCurCoreID, xYieldEqualPriority )
-    #define taskIS_YIELD_REQUIRED_USING_PRIORITY( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )    prvIsYieldUsingPrioritySMP( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )
+    #define taskIS_YIELD_REQUIRED( pxTCB, xYieldEqualPriority )                                   prvIsYieldRequiredSMP( ( pxTCB ), ( pxTCB )->uxPriority, xYieldEqualPriority )
+    #define taskIS_YIELD_REQUIRED_USING_PRIORITY( pxTCB, uxTaskPriority, xYieldEqualPriority )    prvIsYieldRequiredSMP( ( pxTCB ), uxTaskPriority, xYieldEqualPriority )
 #else
-    #define taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, xYieldEqualPriority )                                                                \
+    #define taskIS_YIELD_REQUIRED( pxTCB, xYieldEqualPriority )                                                                            \
     ( {                                                                                                                                    \
-        /* xCurCoreID is unused */                                                                                                         \
-        ( void ) xCurCoreID;                                                                                                               \
         ( ( ( pxTCB )->uxPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) > pxCurrentTCBs[ 0 ]->uxPriority ) ? pdTRUE : pdFALSE; \
     } )
-    #define taskIS_YIELD_REQUIRED_USING_PRIORITY( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )                     \
+    #define taskIS_YIELD_REQUIRED_USING_PRIORITY( pxTCB, uxTaskPriority, xYieldEqualPriority )                                       \
     ( {                                                                                                                              \
-        /* xTaskCoreID and xCurCoreID are unused */                                                                                  \
-        ( void ) xTaskCoreID;                                                                                                        \
-        ( void ) xCurCoreID;                                                                                                         \
+        ( void ) pxTCB;                                                                                                              \
         ( ( uxTaskPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) >= pxCurrentTCBs[ 0 ]->uxPriority ) ? pdTRUE : pdFALSE; \
     } )
 #endif /* configNUMBER_OF_CORES > 1 */
@@ -158,18 +160,19 @@
 
 /* Macros to check if a task has a compatible affinity with a particular core.
  * - xCore is the target core
- * - xCoreID is the affinity of the task to check
+ * - pxTCB is the task to check
  *
  * This macro will always return true on single core as the concept of core
  * affinity doesn't exist. */
 #if ( configNUMBER_OF_CORES > 1 )
-    #define taskIS_AFFINITY_COMPATIBLE( xCore, xCoreID )    ( ( ( ( xCoreID ) == xCore ) || ( ( xCoreID ) == tskNO_AFFINITY ) ) ? pdTRUE : pdFALSE )
+    #define taskIS_AFFINITY_COMPATIBLE( xCore, pxTCB )    ( ( ( ( pxTCB )->xCoreID == xCore ) || ( ( pxTCB )->xCoreID == tskNO_AFFINITY ) ) ? pdTRUE : pdFALSE )
 #else
-    #define taskIS_AFFINITY_COMPATIBLE( xCore, xCoreID ) \
-    ( {                                                  \
-        /* xCoreID is unused */                          \
-        ( void ) xCoreID;                                \
-        pdTRUE;                                          \
+    #define taskIS_AFFINITY_COMPATIBLE( xCore, pxTCB ) \
+    ( {                                                \
+        /* xCore and pxTCB are unused */               \
+        ( void ) xCore;                                \
+        ( void ) pxTCB;                                \
+        pdTRUE;                                        \
     } )
 #endif /* configNUMBER_OF_CORES > 1 */
 /*-----------------------------------------------------------*/
@@ -387,8 +390,9 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
     StackType_t * pxStack;                      /*< Points to the start of the stack. */
     char pcTaskName[ configMAX_TASK_NAME_LEN ]; /*< Descriptive name given to the task when created.  Facilitates debugging only. */ /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 
-    /* Todo: Remove xCoreID for single core builds (IDF-7894) */
-    BaseType_t xCoreID; /*< The core that this task is pinned to */
+    #if ( configNUMBER_OF_CORES > 1 )
+        BaseType_t xCoreID; /*< The core that this task is pinned to */
+    #endif /* configNUMBER_OF_CORES > 1 */
 
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         StackType_t * pxEndOfStack; /*< Points to the highest valid address for the stack. */
@@ -568,10 +572,9 @@ static BaseType_t prvCreateIdleTasks( void );
  */
 #if ( configNUMBER_OF_CORES > 1 )
 
-    static BaseType_t prvIsYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
-                                                  BaseType_t xTaskCoreID,
-                                                  BaseType_t xCurCoreID,
-                                                  BaseType_t xYieldEqualPriority ) PRIVILEGED_FUNCTION;
+    static BaseType_t prvIsYieldRequiredSMP( TCB_t * pxTCB,
+                                             UBaseType_t uxTaskPriority,
+                                             BaseType_t xYieldEqualPriority ) PRIVILEGED_FUNCTION;
 
 #endif /* configNUMBER_OF_CORES > 1 */
 
@@ -765,12 +768,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
 #if ( configNUMBER_OF_CORES > 1 )
 
-    static BaseType_t prvIsYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
-                                                  BaseType_t xTaskCoreID,
-                                                  BaseType_t xCurCoreID,
-                                                  BaseType_t xYieldEqualPriority )
+    static BaseType_t prvIsYieldRequiredSMP( TCB_t * pxTCB,
+                                             UBaseType_t uxTaskPriority,
+                                             BaseType_t xYieldEqualPriority )
     {
         configASSERT( uxTaskPriority < configMAX_PRIORITIES );
+
+        /* Save core ID as we can no longer be preempted. */
+        const BaseType_t xCurCoreID = portGET_CORE_ID();
 
         if( xYieldEqualPriority == pdTRUE )
         {
@@ -786,7 +791,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
          * priority than the current core, and the core has not suspended
          * scheduling, then yield the current core.
          * Todo: Make fair scheduling a configurable option (IDF-5772). */
-        if( ( taskIS_AFFINITY_COMPATIBLE( xCurCoreID, xTaskCoreID ) == pdTRUE ) &&
+        if( ( taskIS_AFFINITY_COMPATIBLE( xCurCoreID, pxTCB ) == pdTRUE ) &&
             ( uxTaskPriority > pxCurrentTCBs[ xCurCoreID ]->uxPriority ) &&
             ( uxSchedulerSuspended[ xCurCoreID ] == ( UBaseType_t ) 0U ) )
         {
@@ -797,7 +802,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
         /* If the target task can run on the other core, and has a higher
          * priority then the other core, and the other core has not suspended
          * scheduling, then yield the other core */
-        else if( ( taskIS_AFFINITY_COMPATIBLE( !xCurCoreID, xTaskCoreID ) == pdTRUE ) &&
+        else if( ( taskIS_AFFINITY_COMPATIBLE( !xCurCoreID, pxTCB ) == pdTRUE ) &&
                  ( uxTaskPriority > pxCurrentTCBs[ !xCurCoreID ]->uxPriority ) &&
                  ( uxSchedulerSuspended[ !xCurCoreID ] == ( UBaseType_t ) 0U ) )
         {
@@ -967,14 +972,6 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     StackType_t * pxTopOfStack;
     UBaseType_t x;
 
-    #if ( configNUMBER_OF_CORES > 1 )
-        /* Check that xCoreID is valid */
-        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
-    #else
-        /* Hard code xCoreID to 0 */
-        xCoreID = 0;
-    #endif
-
     #if ( portUSING_MPU_WRAPPERS == 1 )
         /* Should the task be created in privileged mode? */
         BaseType_t xRunPrivileged;
@@ -1073,7 +1070,16 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     }
 
     pxNewTCB->uxPriority = uxPriority;
-    pxNewTCB->xCoreID = xCoreID; /* Todo: Remove xCoreID for single core builds (IDF-7894) */
+    #if ( configNUMBER_OF_CORES > 1 )
+    {
+        pxNewTCB->xCoreID = xCoreID;
+    }
+    #else /* configNUMBER_OF_CORES > 1 */
+    {
+        /* Avoid compiler warning about unreferenced parameter. */
+        ( void ) xCoreID;
+    }
+    #endif /* configNUMBER_OF_CORES > 1 */
     #if ( configUSE_MUTEXES == 1 )
     {
         pxNewTCB->uxBasePriority = uxPriority;
@@ -1194,7 +1200,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
             mtCOVERAGE_TEST_MARKER();
         }
 
-        if( ( pxCurrentTCBs[ 0 ] == NULL ) && ( taskIS_AFFINITY_COMPATIBLE( 0, pxNewTCB->xCoreID ) == pdTRUE ) )
+        if( ( pxCurrentTCBs[ 0 ] == NULL ) && ( taskIS_AFFINITY_COMPATIBLE( 0, pxNewTCB ) == pdTRUE ) )
         {
             /* On core 0, there are no other tasks, or all the other tasks
              * are in the suspended state - make this the current task. */
@@ -1202,7 +1208,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
         }
 
         #if ( configNUMBER_OF_CORES > 1 )
-            else if( ( pxCurrentTCBs[ 1 ] == NULL ) && ( taskIS_AFFINITY_COMPATIBLE( 1, pxNewTCB->xCoreID ) == pdTRUE ) )
+            else if( ( pxCurrentTCBs[ 1 ] == NULL ) && ( taskIS_AFFINITY_COMPATIBLE( 1, pxNewTCB ) == pdTRUE ) )
             {
                 /* On core 1, there are no other tasks, or all the other tasks
                  * are in the suspended state - make this the current task. */
@@ -1217,7 +1223,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
             if( xSchedulerRunning == pdFALSE )
             {
                 if( ( pxCurrentTCBs[ 0 ] != NULL ) &&
-                    ( taskIS_AFFINITY_COMPATIBLE( 0, pxNewTCB->xCoreID ) == pdTRUE ) &&
+                    ( taskIS_AFFINITY_COMPATIBLE( 0, pxNewTCB ) == pdTRUE ) &&
                     ( pxCurrentTCBs[ 0 ]->uxPriority <= pxNewTCB->uxPriority ) )
                 {
                     pxCurrentTCBs[ 0 ] = pxNewTCB;
@@ -1225,7 +1231,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
                 #if ( configNUMBER_OF_CORES > 1 )
                     else if( ( pxCurrentTCBs[ 1 ] != NULL ) &&
-                             ( taskIS_AFFINITY_COMPATIBLE( 1, pxNewTCB->xCoreID ) == pdTRUE ) &&
+                             ( taskIS_AFFINITY_COMPATIBLE( 1, pxNewTCB ) == pdTRUE ) &&
                              ( pxCurrentTCBs[ 1 ]->uxPriority <= pxNewTCB->uxPriority ) )
                     {
                         pxCurrentTCBs[ 1 ] = pxNewTCB;
@@ -1260,7 +1266,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
         {
             /* If the created task is of a higher priority than the current task
              * then it should run now. */
-            if( taskIS_YIELD_REQUIRED( pxNewTCB, portGET_CORE_ID(), pdTRUE ) == pdTRUE )
+            if( taskIS_YIELD_REQUIRED( pxNewTCB, pdTRUE ) == pdTRUE )
             {
                 taskYIELD_IF_USING_PREEMPTION();
             }
@@ -1777,7 +1783,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                         /* The priority of a task other than the currently
                          * running task is being raised.  Is the priority being
                          * raised above that of the running task? */
-                        if( taskIS_YIELD_REQUIRED_USING_PRIORITY( uxNewPriority, pxTCB->xCoreID, portGET_CORE_ID(), pdTRUE ) == pdTRUE )
+                        if( taskIS_YIELD_REQUIRED_USING_PRIORITY( pxTCB, uxNewPriority, pdTRUE ) == pdTRUE )
                         {
                             xYieldRequired = pdTRUE;
                         }
@@ -2106,7 +2112,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                     prvAddTaskToReadyList( pxTCB );
 
                     /* A higher priority task may have just been resumed. */
-                    if( taskIS_YIELD_REQUIRED( pxTCB, portGET_CORE_ID(), pdTRUE ) == pdTRUE )
+                    if( taskIS_YIELD_REQUIRED( pxTCB, pdTRUE ) == pdTRUE )
                     {
                         /* This yield may not cause the task just resumed to run,
                          * but will leave the lists in the correct state for the
@@ -2177,7 +2183,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                 {
                     /* Ready lists can be accessed so move the task from the
                      * suspended list to the ready list directly. */
-                    if( taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, pdTRUE ) == pdTRUE )
+                    if( taskIS_YIELD_REQUIRED( pxTCB, pdTRUE ) == pdTRUE )
                     {
                         xYieldRequired = pdTRUE;
 
@@ -2575,7 +2581,7 @@ BaseType_t xTaskResumeAll( void )
 
                     /* If the moved task has a priority higher than or equal to
                      * the current task then a yield must be performed. */
-                    if( taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, pdTRUE ) == pdTRUE )
+                    if( taskIS_YIELD_REQUIRED( pxTCB, pdTRUE ) == pdTRUE )
                     {
                         xYieldPending[ xCurCoreID ] = pdTRUE;
                     }
@@ -3137,7 +3143,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                     /* Preemption is on, but a context switch should only be
                      * performed if the unblocked task has a priority that is
                      * higher than the currently executing task. */
-                    if( taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, pdFALSE ) == pdTRUE )
+                    if( taskIS_YIELD_REQUIRED( pxTCB, pdFALSE ) == pdTRUE )
                     {
                         /* Pend the yield to be performed when the scheduler
                          * is unsuspended. */
@@ -3279,7 +3285,7 @@ BaseType_t xTaskIncrementTick( void )
                              * 0, we only need to context switch if the unblocked
                              * task can run on core 0 and has a higher priority
                              * than the current task. */
-                            if( ( taskIS_AFFINITY_COMPATIBLE( 0, pxTCB->xCoreID ) == pdTRUE ) && ( pxTCB->uxPriority > pxCurrentTCBs[ 0 ]->uxPriority ) )
+                            if( ( taskIS_AFFINITY_COMPATIBLE( 0, pxTCB ) == pdTRUE ) && ( pxTCB->uxPriority > pxCurrentTCBs[ 0 ]->uxPriority ) )
                             {
                                 xSwitchRequired = pdTRUE;
                             }
@@ -3542,7 +3548,7 @@ BaseType_t xTaskIncrementTick( void )
                 }
 
                 /* Check if the current task has a compatible affinity */
-                if( taskIS_AFFINITY_COMPATIBLE( xCurCoreID, pxTCBCur->xCoreID ) == pdFALSE )
+                if( taskIS_AFFINITY_COMPATIBLE( xCurCoreID, pxTCBCur ) == pdFALSE )
                 {
                     goto get_next_task;
                 }
@@ -3858,7 +3864,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
                     listINSERT_END( &( xPendingReadyList[ uxPendCore ] ), &( pxUnblockedTCB->xEventListItem ) );
                 }
 
-                if( taskIS_YIELD_REQUIRED( pxUnblockedTCB, xCurCoreID, pdFALSE ) == pdTRUE )
+                if( taskIS_YIELD_REQUIRED( pxUnblockedTCB, pdFALSE ) == pdTRUE )
                 {
                     /* The unblocked task requires a the current core to yield */
                     xReturn = pdTRUE;
@@ -4043,7 +4049,7 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
         listREMOVE_ITEM( &( pxUnblockedTCB->xStateListItem ) );
         prvAddTaskToReadyList( pxUnblockedTCB );
 
-        if( taskIS_YIELD_REQUIRED( pxUnblockedTCB, xCurCoreID, pdFALSE ) == pdTRUE )
+        if( taskIS_YIELD_REQUIRED( pxUnblockedTCB, pdFALSE ) == pdTRUE )
         {
             /* The unblocked task has a priority above that of the calling task, so
              * a context switch is required.  This function is called with the
@@ -4569,8 +4575,19 @@ static void prvCheckTasksWaitingTermination( void )
                 pxTaskStatus->pxEndOfStack = pxTCB->pxEndOfStack;
             #endif
             pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
-            /* Todo: Remove xCoreID for single core builds (IDF-7894) */
-            pxTaskStatus->xCoreID = pxTCB->xCoreID;
+            #if ( configTASKLIST_INCLUDE_COREID == 1 )
+            {
+                #if ( configNUMBER_OF_CORES > 1 )
+                {
+                    pxTaskStatus->xCoreID = pxTCB->xCoreID;
+                }
+                #else /* configNUMBER_OF_CORES > 1 */
+                {
+                    pxTaskStatus->xCoreID = 0;
+                }
+                #endif /* configNUMBER_OF_CORES > 1 */
+            }
+            #endif /* configTASKLIST_INCLUDE_COREID == 1 */
 
             #if ( configUSE_MUTEXES == 1 )
             {
@@ -5421,8 +5438,16 @@ static void prvResetNextTaskUnblockTime( void )
                 pcWriteBuffer = prvWriteNameToBuffer( pcWriteBuffer, pxTaskStatusArray[ x ].pcTaskName );
 
                 /* Write the rest of the string. */
-                sprintf( pcWriteBuffer, "\t%c\t%u\t%d\t%u\t%u\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, pxTaskStatusArray[ x ].xCoreID, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
-                pcWriteBuffer += strlen( pcWriteBuffer );                                                                                                                                                                                                                                    /*lint !e9016 Pointer arithmetic ok on char pointers especially as in this case where it best denotes the intent of the code. */
+                #if ( configTASKLIST_INCLUDE_COREID == 1 )
+                {
+                    sprintf( pcWriteBuffer, "\t%c\t%u\t%d\t%u\t%u\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( unsigned int ) pxTaskStatusArray[ x ].xCoreID, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
+                }
+                #else /* configTASKLIST_INCLUDE_COREID == 1 */
+                {
+                    sprintf( pcWriteBuffer, "\t%c\t%u\t%u\t%u\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
+                }
+                #endif /* configTASKLIST_INCLUDE_COREID == 1 */
+                pcWriteBuffer += strlen( pcWriteBuffer ); /*lint !e9016 Pointer arithmetic ok on char pointers especially as in this case where it best denotes the intent of the code. */
             }
 
             /* Free the array again.  NOTE!  If configSUPPORT_DYNAMIC_ALLOCATION
@@ -5883,7 +5908,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 }
                 #endif
 
-                if( taskIS_YIELD_REQUIRED( pxTCB, portGET_CORE_ID(), pdFALSE ) == pdTRUE )
+                if( taskIS_YIELD_REQUIRED( pxTCB, pdFALSE ) == pdTRUE )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */
@@ -6021,7 +6046,7 @@ TickType_t uxTaskResetEventItemValue( void )
                     listINSERT_END( &( xPendingReadyList[ xCurCoreID ] ), &( pxTCB->xEventListItem ) );
                 }
 
-                if( taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, pdFALSE ) == pdTRUE )
+                if( taskIS_YIELD_REQUIRED( pxTCB, pdFALSE ) == pdTRUE )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */
@@ -6115,7 +6140,7 @@ TickType_t uxTaskResetEventItemValue( void )
                     listINSERT_END( &( xPendingReadyList[ xCurCoreID ] ), &( pxTCB->xEventListItem ) );
                 }
 
-                if( taskIS_YIELD_REQUIRED( pxTCB, xCurCoreID, pdFALSE ) == pdTRUE )
+                if( taskIS_YIELD_REQUIRED( pxTCB, pdFALSE ) == pdTRUE )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */

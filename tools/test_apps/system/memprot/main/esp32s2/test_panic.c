@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "esp_private/panic_internal.h"
 
 extern void esp_panic_handler(panic_info_t *info);

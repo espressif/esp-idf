@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,14 +125,6 @@ void systimer_hal_counter_can_stall_by_cpu(systimer_hal_context_t *hal, uint32_t
  */
 void systimer_hal_set_steps_per_tick(systimer_hal_context_t *hal, int clock_source, uint32_t steps);
 #endif
-
-/**
- * @brief Set Systimer clock source
- *
- * Use this function as - PERIPH_RCC_ATOMIC(){ systimer_hal_set_clock_source(hal, clk_src); }
- * due to Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
- */
-void systimer_hal_set_clock_source(systimer_hal_context_t *hal, systimer_clock_source_t clk_src);
 
 /**
  * @brief Get Systimer clock source

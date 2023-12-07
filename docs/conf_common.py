@@ -66,7 +66,9 @@ WIFI_DOCS = ['api-guides/wifi.rst',
              'api-reference/network/esp_now.rst',
              'api-reference/network/esp_smartconfig.rst',
              'api-reference/network/esp_wifi.rst',
-             'api-reference/network/esp_dpp.rst']
+             'api-reference/network/esp_dpp.rst',
+             'api-reference/provisioning/provisioning.rst',
+             'api-reference/provisioning/wifi_provisioning.rst']
 
 NAN_DOCS = ['api-reference/network/esp_nan.rst']
 
@@ -145,6 +147,8 @@ ANA_CMPR_DOCS = ['api-reference/peripherals/ana_cmpr.rst']
 
 SPI_SLAVE_HD_DOCS = ['api-reference/peripherals/spi_slave_hd.rst']
 
+QEMU_DOCS = ['api-guides/tools/qemu.rst']
+
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
@@ -153,7 +157,7 @@ ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-reference/peripherals/dac.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst',
               'hw-reference/esp32/**',
-              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
+              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS + QEMU_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/usb-console.rst',
@@ -171,7 +175,7 @@ ESP32S3_DOCS = ['hw-reference/esp32s3/**',
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
-                'api-guides/RF_calibration.rst']
+                'api-guides/RF_calibration.rst'] + QEMU_DOCS
 
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
 
@@ -251,6 +255,8 @@ extensions += ['sphinx_copybutton',
 
 # Use wavedrompy as backend, insted of wavedrom-cli
 render_using_wavedrompy = True
+
+smartquotes = False
 
 # link roles config
 github_repo = 'espressif/esp-idf'

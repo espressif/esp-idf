@@ -161,8 +161,14 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
  * @brief  Flushes the TX buffer, that is, make it available for the
  *         host to pick up.
  *
- * @note  When fifo is full (with 64 byte), HW will flush the buffer automatically.
- *        It won't be executed if there is nothing in the fifo.
+ * @note  When fifo is full (with 64 byte), HW will flush the buffer automatically,
+ *        if this function is called directly after, this effectively turns into a
+ *        no-op. Because a 64-byte packet will be interpreted as a not-complete USB
+ *        transaction, you need to transfer either more data or a zero-length packet
+ *        for the data to actually end up at the program listening to the CDC-ACM
+ *        serial port. To send a zero-length packet, call
+ *        usb_serial_jtag_ll_txfifo_flush() again when
+ *        usb_serial_jtag_ll_txfifo_writable() returns true.
  *
  * @return na
  */

@@ -1,5 +1,3 @@
-:orphan:
-
 统一配网
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -18,11 +16,11 @@ ESP-IDF 支持统一配网，提供可扩展的机制，支持开发者使用不
 
 该协议可以作为 Wi-Fi（SoftAP + HTTP 服务器）或低功耗蓝牙上的传输方式，并且可轻松应用于任何支持请求—响应行为的传输方式。
 
-3. **安全方案灵活** 
+3. **安全方案灵活**
 
 配网过程中，各使用场景可能需要不同安全方案来保护传输的数据。部分应用程序可能使用 WPA2 保护的 SoftAP 或具有“即插即用 (just-works)”安全方案的低功耗蓝牙。亦或者，应用程序可能认为传输不安全，需要应用层的安全方案。统一配网框架支持应用程序根据需要选择合适的安全方案。
 
-4. **数据格式紧凑** 
+4. **数据格式紧凑**
 
 该协议使用 `Google Protobufs <https://developers.google.com/protocol-buffers/>`_ 作为会话设置和 Wi-Fi 配网的数据格式。该方案提供紧凑的数据格式，并可以使用不同编程语言进行数据解析。请注意，该配网的应用数据格式并不只局限于 Protobufs，开发者可以自行选择自己想用的数据格式。
 
@@ -97,7 +95,7 @@ ESP-IDF 支持统一配网，提供可扩展的机制，支持开发者使用不
 
 有两种安全方案层级可供选择，开发者可以根据需求选择其中一种或结合使用。
 
-1. **传输层安全** 
+1. **传输层安全**
 
 对于 SoftAP 配网，可以使用 WPA2 保护的安全方案，则每个设备都会有唯一密码，且该密码也可以用作 PoP。对于低功耗蓝牙配网，在考量其支持的安全层级后，可以使用“即插即用”方案保护传输层的安全。
 
@@ -152,8 +150,8 @@ ESP-IDF 支持统一配网，提供可扩展的机制，支持开发者使用不
 
 基于 SRP6a 的共享密钥派生和 AES256-GCM 模式的数据加密。
 
-.. note:: 
-    
+.. note::
+
     要启用相应安全方案，需要设置项目配置菜单，更多详情请参考 :ref:`enabling-protocomm-security-version`。
 
 Security 1 方案
@@ -233,8 +231,8 @@ Security 2 方案基于 Secure Remote Password (SRP6a) 协议，详情请参阅 
         验证器 v = g^x，其中 x = H(s | I | p)"];
                 DEVICE -> DEVICE [label = "生成密钥对", leftnote = "b (dev_privkey) = 256 位随机值
         B(dev_pubkey) = k*v + g^b，其中 k = H(N, g)"];
-                DEVICE -> DEVICE [label = "共享密钥", leftnote = "共享密钥 K = H(S)，其中 
-        S = (A * v^u) ^ b 
+                DEVICE -> DEVICE [label = "共享密钥", leftnote = "共享密钥 K = H(S)，其中
+        S = (A * v^u) ^ b
         u = H(A, B)"];
                 DEVICE -> CLIENT [label = "SessionResp0(dev_pubkey B, dev_rand)"];
                 CLIENT -> CLIENT [label = "共享密钥", rightnote = "shared_key(K) = H(S)，其中
@@ -243,7 +241,7 @@ Security 2 方案基于 Secure Remote Password (SRP6a) 协议，详情请参阅 
         k = H(N, g),
         v = g^x,
         x = H(s | I | p).
-        
+
         "];
                 CLIENT -> CLIENT [label = "验证令牌", rightnote = "client_proof M =  H[H(N) XOR H(g) | H(I) | s | A | B | K]"];
                 CLIENT -> DEVICE [label = "SessionCmd1(client_proof M1)"];

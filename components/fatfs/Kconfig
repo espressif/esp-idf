@@ -245,4 +245,12 @@ menu "FAT Filesystem support"
         default n
         help
             Allows FATFS volume label to be specified using f_setlabel
+
+    config FATFS_LINK_LOCK
+        bool "Perform the whole link operation under lock"
+        default y
+        help
+            If enabled, the whole link operation (including file copying) is performed under lock.
+            This ensures that the link operation is atomic, but may cause perfomance for large files.
+            It may create less fragmented file copy.
 endmenu

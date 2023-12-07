@@ -92,6 +92,7 @@
         "esp32c3",
         "esp32c2",
         "esp32c6",
+        "esp32c5",
         "esp32h2",
         "esp32p4"
       ],
@@ -247,6 +248,7 @@
         "esp32c3",
         "esp32c2",
         "esp32c6",
+        "esp32c5",
         "esp32h2"
       ],
       "version_cmd": [
@@ -311,6 +313,7 @@
         "esp32c3",
         "esp32c2",
         "esp32c6",
+        "esp32c5",
         "esp32h2"
       ],
       "version_cmd": [

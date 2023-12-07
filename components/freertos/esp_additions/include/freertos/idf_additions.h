@@ -43,7 +43,8 @@
  * task. The task's pinned core is specified by the xCoreID argument. If xCoreID
  * is set to tskNO_AFFINITY, then the task is unpinned and can run on any core.
  *
- * @note If ( configNUM_CORES == 1 ), xCoreID is ignored.
+ * @note If ( configNUMBER_OF_CORES == 1 ), setting xCoreID to tskNO_AFFINITY will be
+ * be treated as 0.
  *
  * @param pxTaskCode Pointer to the task entry function.
  * @param pcName A descriptive name for the task.
@@ -55,7 +56,7 @@
  * @param pxCreatedTask Used to pass back a handle by which the created task can
  * be referenced.
  * @param xCoreID The core to which the task is pinned to, or tskNO_AFFINITY if
- * the task has no core affinity
+ * the task has no core affinity.
  * @return pdPASS if the task was successfully created and added to a ready
  * list, otherwise an error code defined in the file projdefs.h
  */
@@ -79,7 +80,8 @@
  * xCoreID is set to tskNO_AFFINITY, then the task is unpinned and can run on any
  * core.
  *
- * @note If ( configNUM_CORES == 1 ), xCoreID is ignored.
+ * @note If ( configNUMBER_OF_CORES == 1 ), setting xCoreID to tskNO_AFFINITY will be
+ * be treated as 0.
  *
  * @param pxTaskCode Pointer to the task entry function.
  * @param pcName A descriptive name for the task.
@@ -93,7 +95,7 @@
  * @param pxTaskBuffer Must point to a variable of type StaticTask_t, which will
  * then be used to hold the task's data structures,
  * @param xCoreID The core to which the task is pinned to, or tskNO_AFFINITY if
- * the task has no core affinity
+ * the task has no core affinity.
  * @return The task handle if the task was created, NULL otherwise.
  */
     TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,

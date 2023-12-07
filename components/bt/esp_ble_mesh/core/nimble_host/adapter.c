@@ -1940,10 +1940,6 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
     uint8_t value[6] =  {0};
     int rc = 0;
 
-#if MYNEWT_VAL(BLE_HCI_VS)
-    struct ble_hci_vs_duplicate_exception_list_cp cmd;
-#endif
-
     if ((sub_code > BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN) ||
         (sub_code < BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN &&
          type > BLE_MESH_EXCEP_LIST_TYPE_MESH_PROXY_ADV) ||
@@ -1974,12 +1970,7 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
     BT_DBG("%s exceptional list, type 0x%08x", sub_code ? "Remove" : "Add", type);
 
 #if MYNEWT_VAL(BLE_HCI_VS)
-    cmd.operation = sub_code;
-    cmd.type = htole32(type);
-    memcpy(&cmd.device_info, value, 6);
-
-    rc = ble_hs_hci_send_vs_cmd(BLE_HCI_OCF_VS_DUPLICATE_EXCEPTION_LIST,
-                                &cmd, sizeof(cmd), NULL, 0);
+    rc = ble_gap_duplicate_exception_list(sub_code, type, value, NULL);
 #endif
 
     return rc;

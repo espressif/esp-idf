@@ -1,0 +1,35 @@
+menu "ESP-Driver:RMT Configurations"
+    depends on SOC_RMT_SUPPORTED
+    config RMT_ISR_IRAM_SAFE
+        bool "RMT ISR IRAM-Safe"
+        default n
+        select GDMA_ISR_IRAM_SAFE if SOC_RMT_SUPPORT_DMA     # RMT basic functionality relies on GDMA callback
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_RMT_SUPPORT_DMA # RMT needs to restart the GDMA in the interrupt
+        help
+            Ensure the RMT interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+    config RMT_RECV_FUNC_IN_IRAM
+        bool "Place RMT receive function into IRAM"
+        default n
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_RMT_SUPPORT_DMA # RMT needs to start the GDMA in the receive function
+        help
+            Place RMT receive function into IRAM,
+            so that the receive function can be IRAM-safe and able to be called when the flash cache is disabled.
+            Enabling this option can improve driver performance as well.
+
+    config RMT_SUPPRESS_DEPRECATE_WARN
+        bool "Suppress legacy driver deprecated warning"
+        default n
+        help
+            Wether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
+            If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+            you can enable this option.
+
+    config RMT_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            Wether to enable the debug log message for RMT driver.
+            Note that, this option only controls the RMT driver log, won't affect other drivers.
+endmenu

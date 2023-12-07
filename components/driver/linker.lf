@@ -1,5 +1,0 @@
-[mapping:driver]
-archive: libdriver.a
-entries:
-    if SDM_CTRL_FUNC_IN_IRAM = y:
-        sdm: sdm_channel_set_pulse_density (noflash)

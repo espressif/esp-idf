@@ -15,7 +15,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/xtensa_api.h"
+#include "xtensa_api.h" // Replace with interrupt allocator API (IDF-3891)
 #include "esp_intr_alloc.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"

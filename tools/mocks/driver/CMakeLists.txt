@@ -9,11 +9,11 @@ set(include_dirs
     "${IDF_PATH}/components/esp_driver_gpio/include"
     "${IDF_PATH}/components/esp_driver_spi/include/driver"
     "${IDF_PATH}/components/esp_driver_spi/include"
+    "${IDF_PATH}/components/esp_driver_rmt/include/driver"
+    "${IDF_PATH}/components/esp_driver_rmt/include"
     "${original_driver_dir}/i2c/include/driver"
-    "${original_driver_dir}/rmt/include/driver"
     "${original_driver_dir}/usb_serial_jtag/include/driver"
     "${original_driver_dir}/i2c/include"
-    "${original_driver_dir}/rmt/include"
     "${original_driver_dir}/usb_serial_jtag/include")
 
 # Note: "hal" and "soc" are only required for corresponding header files and their definitions
@@ -24,9 +24,9 @@ idf_component_mock(INCLUDE_DIRS ${include_dirs}
     ${IDF_PATH}/components/esp_driver_gpio/include/driver/gpio.h
     ${IDF_PATH}/components/esp_driver_spi/include/driver/spi_master.h
     ${IDF_PATH}/components/esp_driver_spi/include/driver/spi_common.h
+    ${IDF_PATH}/components/esp_driver_rmt/include/driver/rmt_rx.h
+    ${IDF_PATH}/components/esp_driver_rmt/include/driver/rmt_tx.h
+    ${IDF_PATH}/components/esp_driver_rmt/include/driver/rmt_common.h
+    ${IDF_PATH}/components/esp_driver_rmt/include/driver/rmt_encoder.h
     ${original_driver_dir}/i2c/include/driver/i2c.h
-    ${original_driver_dir}/rmt/include/driver/rmt_rx.h
-    ${original_driver_dir}/rmt/include/driver/rmt_tx.h
-    ${original_driver_dir}/rmt/include/driver/rmt_common.h
-    ${original_driver_dir}/rmt/include/driver/rmt_encoder.h
     ${original_driver_dir}/usb_serial_jtag/include/driver/usb_serial_jtag.h)

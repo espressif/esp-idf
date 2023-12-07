@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "sdkconfig.h"
+#include "soc/soc.h"
 
 ENTRY(reset_vector)
 
 MEMORY
 {
     /*first 128byte for exception/interrupt vectors*/
-    vector_table(RX) :   ORIGIN = 0x50000000, LENGTH = 0x80
-    ram(RWX) :           ORIGIN = 0x50000080, LENGTH = CONFIG_ULP_COPROC_RESERVE_MEM - 0x80 - CONFIG_ULP_SHARED_MEM
+    vector_table(RX) :   ORIGIN = SOC_RTC_DRAM_LOW, LENGTH = 0x80
+    ram(RWX) :           ORIGIN = SOC_RTC_DRAM_LOW + 0x80, LENGTH = CONFIG_ULP_COPROC_RESERVE_MEM - 0x80 - CONFIG_ULP_SHARED_MEM
 }
 
 SECTIONS

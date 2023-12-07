@@ -125,7 +125,7 @@ BOOLEAN SMP_Register (tSMP_CALLBACK *p_cback)
     SMP_TRACE_EVENT ("SMP_Register state=%d", smp_cb.state);
 
     if (smp_cb.p_callback != NULL) {
-        SMP_TRACE_ERROR ("SMP_Register: duplicate registration, overwrite it");
+        SMP_TRACE_WARNING ("SMP_Register: duplicate registration, overwrite it");
     }
     smp_cb.p_callback = p_cback;
 

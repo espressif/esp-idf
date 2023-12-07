@@ -211,18 +211,20 @@ UART Download Mode
 Product Security
 ----------------
 
-Secure Provisioning
-~~~~~~~~~~~~~~~~~~~
+.. only:: SOC_WIFI_SUPPORTED
 
-Secure Provisioning refers to a process of secure on-boarding of the ESP device on to the Wi-Fi network. This mechanism also allows provision of additional custom configuration data during the initial provisioning phase from the provisioning entity, e.g., Smartphone.
+    Secure Provisioning
+    ~~~~~~~~~~~~~~~~~~~
 
-ESP-IDF provides various security schemes to establish a secure session between ESP and the provisioning entity, they are highlighted at :ref:`provisioning_security_schemes`.
+    Secure Provisioning refers to a process of secure on-boarding of the ESP device on to the Wi-Fi network. This mechanism also allows provision of additional custom configuration data during the initial provisioning phase from the provisioning entity, e.g., Smartphone.
 
-Please refer to the :doc:`../api-reference/provisioning/wifi_provisioning` documentation for details and the example code for this feature.
+    ESP-IDF provides various security schemes to establish a secure session between ESP and the provisioning entity, they are highlighted at :ref:`provisioning_security_schemes`.
 
-.. note::
+    Please refer to the :doc:`../api-reference/provisioning/wifi_provisioning` documentation for details and the example code for this feature.
 
-    Espressif provides Android and iOS Phone Apps along with their sources, so that it could be easy to further customize them as per the product requirement.
+    .. note::
+
+        Espressif provides Android and iOS Phone Apps along with their sources, so that it could be easy to further customize them as per the product requirement.
 
 Secure OTA (Over-the-air) Updates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

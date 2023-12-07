@@ -11,7 +11,7 @@
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
 
-ESP_SYSTEM_INIT_FN(esp_hw_stack_guard_init, ESP_SYSTEM_INIT_ALL_CORES, 101)
+ESP_SYSTEM_INIT_FN(esp_hw_stack_guard_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES, 101)
 {
     uint32_t core_id = esp_cpu_get_core_id();
 

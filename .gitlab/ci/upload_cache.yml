@@ -48,27 +48,3 @@ upload-submodules-cache:
   parallel:
     matrix:
       - GEO: [ 'shiny',  'brew' ]
-
-upload-danger-npm-cache:
-  stage: upload_cache
-  image: node:18.15.0-alpine3.16
-  extends:
-    - .rules:patterns:dangerjs
-  tags:
-    - $GEO
-    - cache
-  cache:
-    key:
-      files:
-        - .gitlab/dangerjs/package-lock.json
-    paths:
-      - .gitlab/dangerjs/node_modules/
-    policy: push
-  before_script:
-    - echo "Skip before scripts ...."
-  script:
-    - cd .gitlab/dangerjs
-    - npm install --no-progress --no-update-notifier
-  parallel:
-    matrix:
-      - GEO: [ 'shiny', 'brew' ]

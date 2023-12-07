@@ -1,0 +1,10 @@
+components/esp_driver_sdspi/test_apps/sdspi:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: SOC_GPSPI_SUPPORTED == 1
+      temporary: true
+      reason: will add runners later # TODO: IDF-8747
+  depends_components:
+    - sdmmc
+    - esp_driver_sdspi

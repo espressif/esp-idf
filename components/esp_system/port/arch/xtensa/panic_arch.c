@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 

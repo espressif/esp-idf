@@ -55,6 +55,14 @@ config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
 
+config SOC_ULP_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_CORE_SUPPORTED
+    bool
+    default y
+
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
@@ -76,6 +84,10 @@ config SOC_RMT_SUPPORTED
     default y
 
 config SOC_I2S_SUPPORTED
+    bool
+    default y
+
+config SOC_SDM_SUPPORTED
     bool
     default y
 
@@ -124,6 +136,10 @@ config SOC_FLASH_ENC_SUPPORTED
     default y
 
 config SOC_SECURE_BOOT_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_TIMER_SUPPORTED
     bool
     default y
 
@@ -897,7 +913,7 @@ config SOC_SDM_GROUPS
 
 config SOC_SDM_CHANNELS_PER_GROUP
     int
-    default 4
+    default 8
 
 config SOC_SDM_CLK_SUPPORT_PLL_F80M
     bool

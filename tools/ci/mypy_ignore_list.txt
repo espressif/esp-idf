@@ -34,7 +34,6 @@ tools/ci/python_packages/idf_iperf_test_util/LineChart.py
 tools/ci/python_packages/idf_iperf_test_util/PowerControl.py
 tools/ci/python_packages/idf_iperf_test_util/TestReport.py
 tools/ci/python_packages/wifi_tools.py
-tools/ci/test_autocomplete.py
 tools/esp_app_trace/espytrace/apptrace.py
 tools/esp_app_trace/espytrace/sysview.py
 tools/esp_app_trace/logtrace_proc.py

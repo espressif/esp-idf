@@ -12,7 +12,7 @@
 #include "diskio_impl.h"
 #include "diskio_wl.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Create volume, open file, write and read back data", "[fatfs]")
 {
@@ -158,7 +158,6 @@ TEST_CASE("Test mounting 2 volumes, writing data and formating the 2nd one, read
     FATFS fs1;
     wl_handle_t wl_handle1 = WL_INVALID_HANDLE;
 
-    size_t allocation_unit_size = CONFIG_WL_SECTOR_SIZE;
     size_t data_size = 10;
 
 

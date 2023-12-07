@@ -160,7 +160,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20230113
+#define CONFIG_VERSION  0x20231124
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**

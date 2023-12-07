@@ -175,6 +175,12 @@
   patterns:
     - submodule
 
+"test:windows_pytest_build_system":
+  labels:
+    - windows
+  specific_rules:
+    - if-schedule-test-build-system-windows
+
 #################################
 # Triggered Only By Labels Jobs #
 #################################

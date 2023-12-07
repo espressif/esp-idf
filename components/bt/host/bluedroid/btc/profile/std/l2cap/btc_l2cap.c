@@ -272,15 +272,17 @@ static void close_timeout_handler(void *arg)
 {
     btc_msg_t msg;
     bt_status_t status;
+    l2cap_slot_t *slot = (l2cap_slot_t *)arg;
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_L2CAP;
     msg.act = BTA_JV_L2CAP_CLOSE_EVT;
 
-    status = btc_transfer_context(&msg, arg, sizeof(tBTA_JV), NULL, NULL);
+    status = btc_transfer_context(&msg, slot->alarm_arg, sizeof(tBTA_JV), NULL, NULL);
 
-    if (arg) {
-        free(arg);
+    if (slot->alarm_arg) {
+        free(slot->alarm_arg);
+        slot->alarm_arg = NULL;
     }
 
     if (status != BT_STATUS_SUCCESS) {
@@ -837,9 +839,11 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                     break;
                 }
                 memcpy(p_arg, p_data, sizeof(tBTA_JV));
+                slot->alarm_arg = (void *)p_arg;
                 if ((slot->close_alarm =
-                            osi_alarm_new("slot", close_timeout_handler, (void *)p_arg, VFS_CLOSE_TIMEOUT)) == NULL) {
+                            osi_alarm_new("slot", close_timeout_handler, (void *)slot, VFS_CLOSE_TIMEOUT)) == NULL) {
                     free(p_arg);
+                    slot->alarm_arg = NULL;
                     param.close.status = ESP_BT_L2CAP_NO_RESOURCE;
                     osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
                     BTC_TRACE_ERROR("%s unable to malloc slot close_alarm!", __func__);
@@ -847,6 +851,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 }
                 if (osi_alarm_set(slot->close_alarm, VFS_CLOSE_TIMEOUT) != OSI_ALARM_ERR_PASS) {
                     free(p_arg);
+                    slot->alarm_arg = NULL;
                     osi_alarm_free(slot->close_alarm);
                     param.close.status = ESP_BT_L2CAP_BUSY;
                     osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
@@ -855,7 +860,6 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 }
                 BTC_TRACE_WARNING("%s slot rx data will be discard in %d milliseconds!",
                                     __func__, VFS_CLOSE_TIMEOUT);
-                slot->alarm_arg = (void *)p_arg;
                 slot->connected = false;
                 need_call = false;
             }

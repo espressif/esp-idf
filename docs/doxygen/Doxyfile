@@ -79,13 +79,6 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/ledc/include/driver/ledc.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_common.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_encoder.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_rx.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_tx.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_types.h \
-    $(PROJECT_PATH)/components/driver/sigma_delta/include/driver/sdm.h \
-    $(PROJECT_PATH)/components/driver/temperature_sensor/include/driver/temperature_sensor.h \
     $(PROJECT_PATH)/components/driver/touch_sensor/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/twai/include/driver/twai.h \
     $(PROJECT_PATH)/components/driver/uart/include/driver/uart.h \
@@ -134,7 +127,13 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_tdm.h \
     $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_types.h \
     $(PROJECT_PATH)/components/esp_driver_pcnt/include/driver/pulse_cnt.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_common.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_encoder.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_rx.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_tx.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_types.h \
     $(PROJECT_PATH)/components/esp_driver_sdio/include/driver/sdio_slave.h \
+    $(PROJECT_PATH)/components/esp_driver_sdm/include/driver/sdm.h \
     $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_default_configs.h \
     $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_host.h \
     $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_types.h \
@@ -143,6 +142,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_master.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave_hd.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave.h \
+    $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \

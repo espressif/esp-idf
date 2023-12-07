@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include "nvs.hpp"
 #include "sdkconfig.h"
 #include "nvs_partition_manager.hpp"
@@ -383,7 +383,6 @@ TEST_CASE("storage can find items on second page if first is not fully written a
     PartitionEmulationFixture f(0, 3);
     nvs::Storage storage(f.part());
     TEST_ESP_OK(storage.init(0, 3));
-    int bar = 0;
     uint8_t bigdata[(nvs::Page::CHUNK_MAX_SIZE - nvs::Page::ENTRY_SIZE) / 2] = {0};
     // write one big chunk of data
     ESP_ERROR_CHECK(storage.writeItem(0, nvs::ItemType::BLOB, "1", bigdata, sizeof(bigdata)));
@@ -635,8 +634,6 @@ TEST_CASE("deinit partition doesn't affect other partition's open handles", "[nv
     const char *OTHER_PARTITION_NAME = "other_part";
     PartitionEmulationFixture f(0, 10);
     PartitionEmulationFixture f_other(0, 10, OTHER_PARTITION_NAME);
-    const char *str = "value 0123456789abcdef0123456789abcdef";
-    const uint8_t blob[8] = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
 
     nvs_handle_t handle_1;
     const uint32_t NVS_FLASH_SECTOR = 6;
@@ -696,7 +693,6 @@ TEST_CASE("nvs_entry_info fails with ESP_ERR_INVALID_ARG if a parameter is NULL"
 TEST_CASE("nvs_entry_info doesn't change iterator on parameter error", "[nvs]")
 {
     nvs_iterator_t it = reinterpret_cast<nvs_iterator_t>(0xbeef);
-    nvs_entry_info_t info;
     REQUIRE(nvs_entry_info(it, nullptr) == ESP_ERR_INVALID_ARG);
     CHECK(it == reinterpret_cast<nvs_iterator_t>(0xbeef));
 
@@ -1001,8 +997,8 @@ TEST_CASE("wifi test", "[nvs]")
     TEST_ESP_OK(nvs_set_u8(net80211_handle, "wifi.opmode", opmode));
 
     uint8_t country = 0;
-    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "wifi.country", &opmode), ESP_ERR_NVS_NOT_FOUND);
-    TEST_ESP_OK(nvs_set_u8(net80211_handle, "wifi.country", opmode));
+    TEST_ESP_ERR(nvs_get_u8(net80211_handle, "wifi.country", &country), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_OK(nvs_set_u8(net80211_handle, "wifi.country", country));
 
     char ssid[36];
     size_t size = sizeof(ssid);
@@ -1330,7 +1326,6 @@ public:
 
             case nvs::ItemType::SZ: {
                 char buf[strBufLen];
-                size_t len = strBufLen;
 
                 size_t strLen = gen() % (strBufLen - 1);
                 std::generate_n(buf, strLen, [&]() -> char {
@@ -1896,8 +1891,6 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
 {
     const size_t blob_size = nvs::Page::CHUNK_MAX_SIZE * 3 ;
     uint8_t blob[blob_size] = {0x11};
-    uint8_t blob2[blob_size] = {0x22};
-    uint8_t blob3[blob_size] = {0x33};
     PartitionEmulationFixture f(0, 5);
     nvs::Storage storage(f.part());
 
@@ -2807,7 +2800,6 @@ static void check_nvs_part_gen_args(char const *flash_binary_filename,      // n
     char buf[64] = {0};
     uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
     size_t buflen = 64;
-    int j;
     TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
     CHECK(memcmp(buf, hexdata, buflen) == 0);
 
@@ -2876,7 +2868,6 @@ static void check_nvs_part_gen_args_mfg(char const *flash_binary_filename,  // n
 
     uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
     buflen = 64;
-    int j;
     TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
     CHECK(memcmp(buf, hexdata, buflen) == 0);
 

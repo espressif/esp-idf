@@ -21,7 +21,7 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
       FuncSel: 1 (GPIO)
       GPIO Matrix SigIn ID: (simple GPIO input)
       SleepSelEn: 1
-    
+
     IO[18] -
       Pullup: 0, Pulldown: 0, DriveCap: 2
       InputEn: 0, OutputEn: 1, OpenDrain: 0
@@ -34,7 +34,7 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
       InputEn: 1, OutputEn: 0, OpenDrain: 0
       FuncSel: 0 (IOMUX)
       SleepSelEn: 1
-    
+
     =================IO DUMP End==================
 
 当 IO 管脚是通过 GPIO 交换矩阵连接到内部外设信号，输出信息打印中的外设信号 ID 定义可以在 ``soc/gpio_sig_map.h`` 文件中查看。``**RESERVED**`` 字样则表示此 IO 被用于连接 FLASH 或 PSRAM，因此该引脚不应该被其他任何应用场景所征用并进行重新配置。
@@ -52,7 +52,9 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
     .. list::
 
         - 处于 Deep-sleep 模式时
-        :SOC_ULP_SUPPORTED and not esp32c6: - :doc:`超低功耗协处理器 (ULP) <../../api-reference/system/ulp>` 运行时
+        :SOC_ULP_FSM_SUPPORTED: - :doc:`超低功耗协处理器 (ULP-FSM) <../../api-reference/system/ulp>` 运行时
+        :SOC_RISCV_COPROC_SUPPORTED: - :doc:`超低功耗协处理器 (ULP-RISC-V) <../../api-reference/system/ulp-risc-v>` 运行时
+        :SOC_LP_CORE_SUPPORTED: - :doc:`超低功耗协处理器 (ULP-LP-Core) <../../api-reference/system/ulp-lp-core>` 运行时
         - 使用 ADC/DAC 等模拟功能时
         :SOC_LP_PERIPHERALS_SUPPORTED: - 使用低功耗外设时，例如： LP_UART ， LP_I2C 等
 

@@ -74,12 +74,6 @@ menu "High resolution timer (esp_timer)"
             depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
     endchoice
 
-    config ESP_TIMER_ISR_AFFINITY
-        hex
-        default 0x1 if ESP_TIMER_ISR_AFFINITY_CPU0
-        default 0x2 if ESP_TIMER_ISR_AFFINITY_CPU1
-        default FREERTOS_NO_AFFINITY if ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
-
     choice ESP_TIMER_ISR_AFFINITY
         prompt "timer interrupt core affinity"
         default ESP_TIMER_ISR_AFFINITY_CPU0

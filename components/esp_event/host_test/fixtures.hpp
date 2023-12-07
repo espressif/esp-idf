@@ -9,11 +9,12 @@
 
 #include "esp_event.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 extern "C" {
 #include "Mocktask.h"
 #include "Mockqueue.h"
+#include "Mockidf_additions.h"
 }
 
 /**
@@ -129,11 +130,11 @@ struct MockTask : public CMockFix {
             xTaskCreatePinnedToCore_ExpectAnyArgsAndReturn(pdFALSE);
         } else if (flags == CreateAnd::IGNORE) {
             xTaskCreatePinnedToCore_IgnoreAndReturn(pdTRUE);
-            xTaskCreatePinnedToCore_ReturnThruPtr_pvCreatedTask(&task);
+            xTaskCreatePinnedToCore_ReturnThruPtr_pxCreatedTask(&task);
             vTaskDelete_Ignore();
         } else {
             xTaskCreatePinnedToCore_ExpectAnyArgsAndReturn(pdTRUE);
-            xTaskCreatePinnedToCore_ReturnThruPtr_pvCreatedTask(&task);
+            xTaskCreatePinnedToCore_ReturnThruPtr_pxCreatedTask(&task);
             vTaskDelete_Expect(task);
         }
     }

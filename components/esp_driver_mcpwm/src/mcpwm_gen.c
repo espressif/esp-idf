@@ -297,7 +297,8 @@ esp_err_t mcpwm_generator_set_action_on_sync_event(mcpwm_gen_handle_t gen, mcpwm
         if (oper->triggers[i] == MCPWM_TRIGGER_SYNC_EVENT) {
             trigger_sync_used = 1;
             break;
-        } else if (oper->triggers[i] == MCPWM_TRIGGER_NO_ASSIGN) {
+        }
+        if (oper->triggers[i] == MCPWM_TRIGGER_NO_ASSIGN) {
             trigger_id = i;
             oper->triggers[i] = MCPWM_TRIGGER_SYNC_EVENT;
             break;

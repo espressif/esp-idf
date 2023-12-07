@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,11 @@ ESP_EVENT_DECLARE_BASE(ESP_HTTP_CLIENT_EVENT);
 
 typedef struct esp_http_client *esp_http_client_handle_t;
 typedef struct esp_http_client_event *esp_http_client_event_handle_t;
+
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+// Forward declares transport handle item to keep the dependency private (even if ENABLE_CUSTOM_TRANSPORT=y)
+struct esp_transport_item_t;
+#endif
 
 /**
  * @brief   HTTP Client events id
@@ -177,6 +182,12 @@ typedef struct {
 #endif
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     void *ds_data;                          /*!< Pointer for digital signature peripheral context, see ESP-TLS Documentation for more details */
+#endif
+#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    bool save_client_session;
+#endif
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+    struct esp_transport_item_t *transport;
 #endif
 } esp_http_client_config_t;
 

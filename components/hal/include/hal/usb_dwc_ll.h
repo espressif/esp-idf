@@ -16,7 +16,7 @@ extern "C" {
 #if SOC_USB_OTG_SUPPORTED
 #include "soc/usb_dwc_struct.h"
 #endif
-#include "hal/usb_types_private.h"
+#include "hal/usb_dwc_types.h"
 #include "hal/misc.h"
 
 
@@ -35,6 +35,67 @@ Todo: Check sizes again and express this macro in terms of DWC config options (I
 /* -----------------------------------------------------------------------------
 ------------------------------ DWC Configuration -------------------------------
 ----------------------------------------------------------------------------- */
+
+/**
+ * @brief Default FIFO sizes (see 2.1.2.4 for programming guide)
+ *
+ * RXFIFO
+ * - Recommended: ((LPS/4) * 2) + 2
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 48 - 48 = 104
+ * - Worst case can accommodate two packets of 204 bytes, or one packet of 408
+ * NPTXFIFO
+ * - Recommended: (LPS/4) * 2
+ * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 3 = 48
+ * - Worst case can accommodate three packets of 64 bytes or one packet of 192
+ * PTXFIFO
+ * - Recommended: (LPS/4) * 2
+ * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 3 = 48
+ * - Worst case can accommodate three packets of 64 bytes or one packet of 192
+ */
+#define USB_DWC_FIFO_RX_LINES_DEFAULT    104
+#define USB_DWC_FIFO_NPTX_LINES_DEFAULT  48
+#define USB_DWC_FIFO_PTX_LINES_DEFAULT   48
+
+/**
+ * @brief FIFO sizes that bias to giving RX FIFO more capacity
+ *
+ * RXFIFO
+ * - Recommended: ((LPS/4) * 2) + 2
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 32 - 16 = 152
+ * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
+ * NPTXFIFO
+ * - Recommended: (LPS/4) * 2
+ * - Actual: Assume LPS is 64, and 1 packets: (64/4) * 1 = 16
+ * - Worst case can accommodate one packet of 64 bytes
+ * PTXFIFO
+ * - Recommended: (LPS/4) * 2
+ * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 2 = 32
+ * - Worst case can accommodate two packets of 64 bytes or one packet of 128
+ */
+#define USB_DWC_FIFO_RX_LINES_BIASRX     152
+#define USB_DWC_FIFO_NPTX_LINES_BIASRX   16
+#define USB_DWC_FIFO_PTX_LINES_BIASRX    32
+
+/**
+ * @brief FIFO sizes that bias to giving Periodic TX FIFO more capacity (i.e., ISOC OUT)
+ *
+ * RXFIFO
+ * - Recommended: ((LPS/4) * 2) + 2
+ * - Actual: Assume LPS is 64, and 2 packets: ((64/4) * 2) + 2 = 34
+ * - Worst case can accommodate two packets of 64 bytes or one packet of 128
+ * NPTXFIFO
+ * - Recommended: (LPS/4) * 2
+ * - Actual: Assume LPS is 64, and 1 packets: (64/4) * 1 = 16
+ * - Worst case can accommodate one packet of 64 bytes
+ * PTXFIFO
+ * - Recommended: (LPS/4) * 2
+ * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 34 - 16 = 150
+ * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
+ */
+#define USB_DWC_FIFO_RX_LINES_BIASTX     34
+#define USB_DWC_FIFO_NPTX_LINES_BIASTX   16
+#define USB_DWC_FIFO_PTX_LINES_BIASTX    150
+
 
 /*
  * List of relevant DWC configurations. See DWC OTG databook Chapter 3 for more
@@ -450,7 +511,7 @@ static inline void usb_dwc_ll_hcfg_set_fsls_pclk_sel(usb_dwc_dev_t *hw)
  * @param hw Start address of the DWC_OTG registers
  * @param speed Speed to initialize the host port at
  */
-static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_priv_speed_t speed)
+static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
 {
     hw->hcfg_reg.descdma = 1;   //Enable scatt/gatt
     hw->hcfg_reg.fslssupp = 1;  //FS/LS support only
@@ -459,13 +520,13 @@ static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_priv_spee
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hw->hcfg_reg.fslspclksel = (speed == USB_PRIV_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
+    hw->hcfg_reg.fslspclksel = (speed == USB_DWC_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
     hw->hcfg_reg.perschedena = 0;   //Disable perio sched
 }
 
 // ----------------------------- HFIR Register ---------------------------------
 
-static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_priv_speed_t speed)
+static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
 {
     usb_dwc_hfir_reg_t hfir;
     hfir.val = hw->hfir_reg.val;
@@ -475,7 +536,7 @@ static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_priv_spee
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hfir.frint = (speed == USB_PRIV_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
+    hfir.frint = (speed == USB_DWC_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
     hw->hfir_reg.val = hfir.val;
 }
 
@@ -558,19 +619,9 @@ static inline uint32_t usb_dwc_ll_hflbaddr_get_base_addr(usb_dwc_dev_t *hw)
 
 // ----------------------------- HPRT Register ---------------------------------
 
-static inline usb_priv_speed_t usb_dwc_ll_hprt_get_speed(usb_dwc_dev_t *hw)
+static inline usb_dwc_speed_t usb_dwc_ll_hprt_get_speed(usb_dwc_dev_t *hw)
 {
-    usb_priv_speed_t speed;
-    //esp32-s2 and esp32-s3 only support FS or LS
-    switch (hw->hprt_reg.prtspd) {
-        case 1:
-            speed = USB_PRIV_SPEED_FULL;
-            break;
-        default:
-            speed = USB_PRIV_SPEED_LOW;
-            break;
-    }
-    return speed;
+    return (usb_dwc_speed_t)hw->hprt_reg.prtspd;
 }
 
 static inline uint32_t usb_dwc_ll_hprt_get_test_ctl(usb_dwc_dev_t *hw)
@@ -729,24 +780,9 @@ static inline void usb_dwc_ll_hcchar_set_dev_addr(volatile usb_dwc_host_chan_reg
     chan->hcchar_reg.devaddr = addr;
 }
 
-static inline void usb_dwc_ll_hcchar_set_ep_type(volatile usb_dwc_host_chan_regs_t *chan, usb_priv_xfer_type_t type)
+static inline void usb_dwc_ll_hcchar_set_ep_type(volatile usb_dwc_host_chan_regs_t *chan, usb_dwc_xfer_type_t type)
 {
-    uint32_t ep_type;
-    switch (type) {
-        case USB_PRIV_XFER_TYPE_CTRL:
-            ep_type = 0;
-            break;
-        case USB_PRIV_XFER_TYPE_ISOCHRONOUS:
-            ep_type = 1;
-            break;
-        case USB_PRIV_XFER_TYPE_BULK:
-            ep_type = 2;
-            break;
-        default:    //USB_PRIV_XFER_TYPE_INTR
-            ep_type = 3;
-            break;
-    }
-    chan->hcchar_reg.eptype = ep_type;
+    chan->hcchar_reg.eptype = (uint32_t)type;
 }
 
 //Indicates whether channel is commuunicating with a LS device connected via a FS hub. Setting this bit to 1 will cause
@@ -771,7 +807,7 @@ static inline void usb_dwc_ll_hcchar_set_mps(volatile usb_dwc_host_chan_regs_t *
     chan->hcchar_reg.mps = mps;
 }
 
-static inline void usb_dwc_ll_hcchar_init(volatile usb_dwc_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_priv_xfer_type_t type, bool is_in, bool is_ls)
+static inline void usb_dwc_ll_hcchar_init(volatile usb_dwc_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_dwc_xfer_type_t type, bool is_in, bool is_ls)
 {
     //Sets all persistent fields of the channel over its lifetimez
     usb_dwc_ll_hcchar_set_dev_addr(chan, dev_addr);
