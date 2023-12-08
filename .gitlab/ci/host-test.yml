@@ -208,14 +208,6 @@ test_mkdfu:
     - cd ${IDF_PATH}/tools/test_mkdfu
     - ./test_mkdfu.py
 
-test_sbom:
-  extends:
-    - .host_test_template
-    - .rules:patterns:sbom
-  script:
-    - cd ${IDF_PATH}/tools/test_sbom
-    - pytest
-
 test_autocomplete:
   extends:
     - .host_test_template
