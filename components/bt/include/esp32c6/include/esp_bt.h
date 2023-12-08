@@ -216,6 +216,7 @@ typedef struct {
     uint8_t cpu_freq_mhz;                            /*!< CPU frequency in megahertz (MHz) */
     uint8_t ignore_wl_for_direct_adv;                /*!< Ignore the whitelist for direct advertising */
     uint8_t enable_pcl;                              /*!< Enable power control */
+    uint8_t csa2_select;                             /*!< Select CSA#2*/
     uint32_t config_magic;                           /*!< Magic number for configuration validation */
 } esp_bt_controller_config_t;
 
@@ -270,6 +271,7 @@ typedef struct {
     .cpu_freq_mhz               = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,                      \
     .ignore_wl_for_direct_adv   = 0,                                                    \
     .enable_pcl                 = DEFAULT_BT_LE_POWER_CONTROL_ENABLED,                  \
+    .csa2_select                = DEFAULT_BT_LE_50_FEATURE_SUPPORT,                     \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
