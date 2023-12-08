@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import json
 import os
+import shutil
 import subprocess
 import sys
-from unittest import TestCase, main, mock
+from typing import Any
+from typing import List
+from unittest import main
+from unittest import mock
+from unittest import TestCase
 
 import elftools.common.utils as ecu
 import jsonschema
@@ -234,19 +238,31 @@ class TestDeprecations(TestWithoutExtensions):
 
 
 class TestHelpOutput(TestWithoutExtensions):
-    def test_output(self):
-        def action_test(commands, schema):
-            output_file = 'idf_py_help_output.json'
-            with open(output_file, 'w') as outfile:
-                subprocess.run(commands, env=os.environ, stdout=outfile)
-            with open(output_file, 'r') as outfile:
-                help_obj = json.load(outfile)
-            self.assertIsNone(jsonschema.validate(help_obj, schema))
+    def action_test_idf_py(self, commands: List[str], schema: Any) -> None:
+        env = dict(**os.environ)
+        python = shutil.which('python', path=env['PATH'])
+        if python is None:
+            raise ValueError('python not found')
+        idf_path = env.get('IDF_PATH')
+        if idf_path is None:
+            raise ValueError('Empty IDF_PATH')
+        idf_py_cmd = [
+            python,
+            os.path.join(idf_path, 'tools', 'idf.py')
+        ]
+        commands = idf_py_cmd + commands
+        output_file = 'idf_py_help_output.json'
+        with open(output_file, 'w') as outfile:
+            subprocess.run(commands, env=env, stdout=outfile)
+        with open(output_file, 'r') as outfile:
+            help_obj = json.load(outfile)
+        self.assertIsNone(jsonschema.validate(help_obj, schema))
 
+    def test_output(self):
         with open(os.path.join(current_dir, 'idf_py_help_schema.json'), 'r') as schema_file:
             schema_json = json.load(schema_file)
-        action_test(['idf.py', 'help', '--json'], schema_json)
-        action_test(['idf.py', 'help', '--json', '--add-options'], schema_json)
+        self.action_test_idf_py(['help', '--json'], schema_json)
+        self.action_test_idf_py(['help', '--json', '--add-options'], schema_json)
 
 
 class TestROMs(TestWithoutExtensions):

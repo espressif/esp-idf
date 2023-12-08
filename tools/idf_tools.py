@@ -2180,6 +2180,7 @@ def apply_mirror_prefix_map(args: Any, idf_download_url: str) -> str:
                 warn('invalid mirror-prefix-map item (missing \'{}\') {}'.format(URL_PREFIX_MAP_SEPARATOR, item))
                 continue
             search, replace = item.split(URL_PREFIX_MAP_SEPARATOR, 1)
+            replace = replace.replace('\\', '\\\\')  # On windows replace single \ with double \\
             new_url = re.sub(search, replace, idf_download_url)
             if new_url != idf_download_url:
                 info('Changed download URL: {} => {}'.format(idf_download_url, new_url))
