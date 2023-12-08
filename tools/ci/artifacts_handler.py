@@ -22,6 +22,7 @@ class ArtifactType(str, Enum):
     LOGS = 'logs'
     SIZE_REPORTS = 'size_reports'
     JUNIT_REPORTS = 'junit_reports'
+    MODIFIED_FILES_AND_COMPONENTS_REPORT = 'modified_files_and_components_report'
 
 
 TYPE_PATTERNS_DICT = {
@@ -51,6 +52,9 @@ TYPE_PATTERNS_DICT = {
     ],
     ArtifactType.JUNIT_REPORTS: [
         'XUNIT_RESULT.xml',
+    ],
+    ArtifactType.MODIFIED_FILES_AND_COMPONENTS_REPORT: [
+        'pipeline.env',
     ],
 }
 
