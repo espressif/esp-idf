@@ -132,7 +132,6 @@ For advanced users who want to customize the install process:
     windows-setup-update
     establish-serial-connection
     flashing-troubleshooting
-    ../api-guides/tools/idf-monitor
 
 .. _CMake: https://cmake.org/download/
 .. _Ninja: https://ninja-build.org/

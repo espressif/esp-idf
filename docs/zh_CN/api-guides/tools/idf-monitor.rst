@@ -33,8 +33,8 @@ IDF 监视器是一个串行终端程序，使用了 esp-idf-monitor_ 包，用�
      - 将 exit 字符发送至远程
      -
    * - * Ctrl + P
-     - 重置目标设备，进入引导加载程序，通过 RTS 线暂停应用程序
-     - 重置目标设备，通过 RTS 线（如已连接）进入引导加载程序，此时开发板不运行任何程序。等待其他设备启动时可以使用此操作。
+     - 重置目标设备，进入引导加载程序，通过 RTS 和 DTR 线暂停应用程序
+     - 重置目标设备，通过 RTS 和 DTR 线（如已连接）进入引导加载程序。这会阻止开发板运行任何程序，在等待其他设备启动时可以使用此操作。更多详细信息，请参考 :ref:`target-reset-into-bootloader`。
    * - * Ctrl + R
      - 通过 RTS 线重置目标设备
      - 重置设备，并通过 RTS 线（如已连接）重新启动应用程序。
@@ -235,6 +235,81 @@ ROM ELF 文件会根据 ``IDF_PATH`` 和 ``ESP_ROM_ELF_DIR`` 环境变量的路�
     ``--no-reset`` 选项在 IDF 监视器连接到特定端口时可以实现同样的效果，如 ``idf.py monitor --no-reset -p [PORT]``。
 
 
+.. _target-reset-into-bootloader:
+
+复位目标到引导加载程序
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+IDF 监视器可以通过预定义的复位序列将芯片复位到引导加载程序，该序列已经经过调整，可以在大多数环境中正常工作。此外，用户可以设置自定义复位序列。通过对复位序列进行微调，使其适应各种情况。
+
+使用预定义的复位序列
+--------------------------------
+
+IDF 监视器的默认复位序列可在大多数环境中使用。使用默认序列复位芯片到引导加载程序中，无需进行额外配置。
+
+自定义复位序列
+---------------------
+
+对于高级用户或特定用例，IDF 监视器支持使用 :ref:`configuration-file` 配置自定义复位序列。这在默认序列可能不足的极端情况下特别有用。
+
+复位序列可通过以下格式的字符串定义：
+
+- 各个命令由 ``|`` 分隔（例如 ``R0|D1|W0.5``）。
+- 命令（例如 ``R0``）由代码（``R``）和参数（``0``）定义。
+
+.. list-table::
+    :header-rows: 1
+    :widths: 15 50 35
+    :align: center
+
+    * - 代码
+      - 操作
+      - 参数
+    * - D
+      - 设置 DTR 控制线
+      - ``1``/``0``
+    * - R
+      - 设置 RTS 控制线
+      - ``1``/``0``
+    * - U
+      - 同时设置 DTR 和 RTS 控制线（仅适用于类 Unix 系统）
+      - ``0,0``/``0,1``/``1,0``/``1,1``
+    * - W
+      - 等待 ``N`` 秒（其中 ``N`` 为浮点数）
+      - N
+
+示例：
+
+.. code-block:: ini
+
+    [esp-idf-monitor]
+    custom_reset_sequence = U0,1|W0.1|D1|R0|W0.5|D0
+
+有关更多详细信息，请参阅 Esptool 文档中 `custom reset sequence`_ 章节。请注意，IDF 监视器只使用了 Esptool 配置中的 ``custom_reset_sequence`` 值，其他值会被 IDF 监视器忽略。
+
+IDF 监视器和 Esptool 之间共享配置
+----------------------------------------------
+
+自定义复位序列的配置可以在 IDF 监视器和 Esptool 之间的共享配置文件中指定。在这种情况下，为了使两个工具都能识别配置文件，其名称应为 ``setup.cfg`` 或 ``tox.ini``。
+
+共享配置文件的示例：
+
+.. code-block:: ini
+
+    [esp-idf-monitor]
+    menu_key = T
+    skip_menu_key = True
+
+    [esptool]
+    custom_reset_sequence = U0,1|W0.1|D1|R0|W0.5|D0
+
+.. note::
+
+    当在 ``[esp-idf-monitor]`` 部分和 ``[esptool]`` 部分都使用 ``custom_reset_sequence`` 参数时，IDF 监视器会优先使用 ``[esp-idf-monitor]`` 部分的配置。``[esptool]`` 部分中任何与之冲突的配置都将被忽略。
+
+    当配置分散在多个文件中时，此优先规则也适用。全局 esp-idf-monitor 配置将优先于本地 esptool 配置。
+
+
 配置 GDBStub 以启用 GDB
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -317,6 +392,8 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
 
 
+.. _configuration-file:
+
 配置文件
 ========
 
@@ -396,6 +473,9 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
     * - skip_menu_key
       - 设置使用菜单命令时无需按下主菜单键
       - ``False``
+    * - custom_reset_sequence
+      - 复位目标到引导加载程序的自定义复位序列
+      - 无默认值
 
 
 语法
@@ -403,7 +483,7 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
 
 配置文件为 .ini 文件格式，必须以 ``[esp-idf-monitor]`` 标头引入才能被识别为有效文件。以下语法以“配置名称 = 配置值”形式列出。以 ``#`` 或 ``;`` 开头的行是注释，将被忽略。
 
-.. code-block:: text
+.. code-block:: ini
 
     # esp-idf-monitor.cfg file to configure internal settings of esp-idf-monitor
     [esp-idf-monitor]
@@ -423,12 +503,7 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
 IDF 监视器已知问题
 =================================
 
-Windows 环境下已知问题
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- 由于 Windows 控制台限制，有些箭头键及其他一些特殊键无法在 GDB 中使用。
-- 偶然情况下，``idf.py`` 退出时，可能会在 IDF 监视器恢复之前暂停 30 秒。
-- GDB 运行时，可能会暂停一段时间，然后才开始与 GDBStub 进行通信。
+如果在使用 IDF 监视器过程中遇到任何问题，请查看我们的 `GitHub 仓库 <https://github.com/espressif/esp-idf-monitor/issues>`_ 以获取已知问题列表及其当前状态。如果遇到的问题没有相关记录，请创建一个新的问题报告。
 
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
@@ -436,3 +511,4 @@ Windows 环境下已知问题
 .. _pySerial: https://github.com/pyserial/pyserial
 .. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm
 .. _C0 控制字符: https://zh.wikipedia.org/wiki/C0%E4%B8%8EC1%E6%8E%A7%E5%88%B6%E5%AD%97%E7%AC%A6#C0_(ASCII%E5%8F%8A%E5%85%B6%E6%B4%BE%E7%94%9F)
+.. _custom reset sequence: https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/esptool/configuration-file.html#custom-reset-sequence
