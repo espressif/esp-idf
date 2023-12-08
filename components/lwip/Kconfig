@@ -113,6 +113,15 @@ menu "LWIP"
             This option is used to disable the Network Discovery Protocol (NDP) if it is not required.
             Please use this option with caution, as the NDP is essential for IPv6 functionality within a local network.
 
+    config LWIP_FORCE_ROUTER_FORWARDING
+        bool "LWIP Force Router Forwarding Enable/Disable"
+        default n
+        depends on LWIP_ND6
+        help
+            This option is used to set the the router flag for the NA packets.
+            When enabled, the router flag in NA packet will always set to 1,
+            otherwise, never set router flag for NA packets.
+
     config LWIP_MAX_SOCKETS
         int "Max number of open sockets"
         range 1 16
