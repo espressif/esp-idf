@@ -358,15 +358,15 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
     ESP_RETURN_ON_FALSE((sram_alignment & (sram_alignment - 1)) == 0, ESP_ERR_INVALID_ARG,
                         TAG, "invalid sram alignment: %zu", sram_alignment);
 
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+    uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     if (psram_alignment == 0) {
         // fall back to use the same size of the psram data cache line size
-        psram_alignment = data_cache_line_size;
+        psram_alignment = ext_mem_cache_line_size;
     }
-    if (psram_alignment > data_cache_line_size) {
-        ESP_RETURN_ON_FALSE(((psram_alignment % data_cache_line_size) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "psram_alignment(%d) should be multiple of the data_cache_line_size(%"PRIu32")",
-                            psram_alignment, data_cache_line_size);
+    if (psram_alignment > ext_mem_cache_line_size) {
+        ESP_RETURN_ON_FALSE(((psram_alignment % ext_mem_cache_line_size) == 0), ESP_ERR_INVALID_ARG,
+                            TAG, "psram_alignment(%d) should be multiple of the ext_mem_cache_line_size(%"PRIu32")",
+                            psram_alignment, ext_mem_cache_line_size);
     }
 
     // if the DMA can't access the PSRAM, this HAL function is no-op
