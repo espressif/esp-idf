@@ -2623,8 +2623,15 @@ static esp_err_t esp_netif_add_ip6_address_api(esp_netif_api_msg_t *msg)
     return error;
 }
 
-esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const ip_event_add_ip6_t *addr)
+esp_err_t esp_netif_add_ip6_address_priv(esp_netif_t *esp_netif, const ip_event_add_ip6_t *addr)
     _RUN_IN_LWIP_TASK(esp_netif_add_ip6_address_api, esp_netif, addr)
+
+esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t addr)
+{
+    const ip_event_add_ip6_t addr_evt = {.addr = addr, .preferred = true};
+
+    return esp_netif_add_ip6_address_priv(esp_netif, &addr_evt);
+}
 
 static esp_err_t esp_netif_remove_ip6_address_api(esp_netif_api_msg_t *msg)
 {
