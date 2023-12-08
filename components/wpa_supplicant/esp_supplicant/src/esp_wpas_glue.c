@@ -93,14 +93,32 @@ int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
 
 }
 
+static void disable_wpa_wpa2() {
+    esp_wifi_sta_disable_wpa2_authmode_internal();
+}
+
 void wpa_supplicant_transition_disable(struct wpa_sm *sm, u8 bitmap)
 {
     wpa_printf(MSG_DEBUG, "TRANSITION_DISABLE %02x", bitmap);
 
     if  ((bitmap & TRANSITION_DISABLE_WPA3_PERSONAL) &&
           wpa_key_mgmt_sae(sm->key_mgmt)) {
-        esp_wifi_sta_disable_wpa2_authmode_internal();
+        disable_wpa_wpa2();
     }
+
+    if ((bitmap & TRANSITION_DISABLE_SAE_PK) &&
+        wpa_key_mgmt_sae(sm->key_mgmt)) {
+        wpa_printf(MSG_INFO,
+            "SAE-PK: SAE authentication without PK disabled based on AP notification");
+        disable_wpa_wpa2();
+        esp_wifi_enable_sae_pk_only_mode_internal();
+    }
+
+    if ((bitmap & TRANSITION_DISABLE_WPA3_ENTERPRISE) &&
+        wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
+        disable_wpa_wpa2();
+    }
+
 }
 
 u8 *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
