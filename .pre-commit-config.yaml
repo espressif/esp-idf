@@ -162,3 +162,7 @@ repos:
     hooks:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
+  - repo: https://github.com/espressif/esp-idf-sbom.git
+    rev: v0.11.0
+    hooks:
+      - id: validate-sbom-manifest
