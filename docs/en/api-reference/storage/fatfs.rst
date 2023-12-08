@@ -136,8 +136,9 @@ It is a reverse tool of (:component_file:`fatfsgen.py <fatfs/fatfsgen.py>`), i.e
 
 Usage::
 
-    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] fatfs_image.img
+    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] [--verbose] fatfs_image.img
 
+Parameter --verbose prints detailed information from boot sector of the FatFs image to the terminal before folder structure is generated. 
 
 High-level API Reference
 ------------------------
