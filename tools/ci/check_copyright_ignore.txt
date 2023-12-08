@@ -582,8 +582,6 @@ components/mbedtls/port/sha/parallel_engine/sha.c
 components/nvs_flash/include/nvs_handle.hpp
 components/nvs_flash/src/nvs_cxx_api.cpp
 components/nvs_flash/src/nvs_encrypted_partition.hpp
-components/nvs_flash/src/nvs_handle_locked.cpp
-components/nvs_flash/src/nvs_handle_locked.hpp
 components/nvs_flash/src/nvs_item_hash_list.cpp
 components/nvs_flash/src/nvs_pagemanager.hpp
 components/nvs_flash/src/nvs_partition_lookup.cpp
