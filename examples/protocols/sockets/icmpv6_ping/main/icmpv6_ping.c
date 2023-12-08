@@ -215,34 +215,41 @@ static void send_ping(char *src_addr_str, char *dst_addr_str, char *interface)
     free(msghdr.msg_control);
 }
 
+/**
+ * @brief API struct to pass interface name and source addresses in TCPIP context
+ *
+ * @param[out] interface Name of the interface.
+ * @param[out] src_addr_str Global/Unique local IPv6 address of the interface
+ */
+typedef struct src_iface_api {
+    char *interface;
+    char *src_addr_str;
+} src_iface_api_t;
 
 /**
  * @brief Goes over each interface and searches for one Global/Unique local IPv6 address.
  *        Returns the interface name and IPv6 address of the interface in case of success.
  *
- * @param[out] interface Name of the interface.
- * @param[out] src_addr_str Global/Unique local IPv6 address of the interface
  * @return
- *          >0 : Successfully found an interface with Global/Unique local IPv6 address.
- *          -1 : Unable to to find a valid interface with Global/Unique local  IPv6 address.
+ *          ESP_OK : Successfully found an interface with Global/Unique local IPv6 address.
+ *          ESP_FAIL : Unable to to find a valid interface with Global/Unique local  IPv6 address.
  */
-bool get_src_iface(char *interface, char *src_addr_str)
+static esp_err_t get_src_iface(void* ctx)
 {
+    src_iface_api_t *api = ctx;
     esp_netif_t *netif = NULL;
     int ip6_addrs_count = 0;
     esp_ip6_addr_t ip6[LWIP_IPV6_NUM_ADDRESSES];
-    esp_err_t ret = ESP_FAIL;
 
     // Get interface details and own global ipv6 address
-    for (int i = 0; i < esp_netif_get_nr_of_ifs(); ++i) {
-        netif = esp_netif_next(netif);
-        ret = esp_netif_get_netif_impl_name(netif, interface);
+    while ((netif = esp_netif_next_unsafe(netif)) != NULL) {
+        esp_err_t ret = esp_netif_get_netif_impl_name(netif, api->interface);
 
         if ((ESP_FAIL == ret) || (NULL == netif)) {
             ESP_LOGE(TAG, "No interface available");
-            return false;
+            return ESP_FAIL;
         }
-        ESP_LOGI(TAG, "Interface: %s", interface);
+        ESP_LOGI(TAG, "Interface: %s", api->interface);
 
         ip6_addrs_count = esp_netif_get_all_ip6(netif, ip6);
         for (int j = 0; j < ip6_addrs_count; ++j) {
@@ -252,13 +259,13 @@ bool get_src_iface(char *interface, char *src_addr_str)
             if ((ESP_IP6_ADDR_IS_GLOBAL == ipv6_type) ||
                     (ESP_IP6_ADDR_IS_UNIQUE_LOCAL == ipv6_type)) {
                 // Break as we have the source address
-                sprintf(src_addr_str, IPV6STR, IPV62STR(ip6[j]));
-                return true;
+                sprintf(api->src_addr_str, IPV6STR, IPV62STR(ip6[j]));
+                return ESP_OK;
             }
         }
     }
 
-    return false;
+    return ESP_FAIL;
 }
 
 
@@ -268,7 +275,8 @@ static void ping6_test_task(void *pvParameters)
     char interface[10];
     char dst_addr_str[] = CONFIG_EXAMPLE_DST_IPV6_ADDR;
 
-    if (true == get_src_iface(interface, src_addr_str)) {
+    src_iface_api_t api = { .interface = interface, .src_addr_str = src_addr_str };
+    if (esp_netif_tcpip_exec(get_src_iface, &api) == ESP_OK) {
         ESP_LOGI(TAG, "Source address: %s", src_addr_str);
         ESP_LOGI(TAG, "Destination address: %s", dst_addr_str);
         ESP_LOGI(TAG, "Interface name: %s", interface);

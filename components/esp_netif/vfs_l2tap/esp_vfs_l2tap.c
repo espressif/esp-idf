@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -333,6 +333,12 @@ static int l2tap_close(int fd)
     return 0;
 }
 
+// used to find a netif with the attached driver matching the argument
+static bool netif_driver_matches(esp_netif_t *netif, void* driver)
+{
+    return esp_netif_get_io_driver(netif) == driver;
+}
+
 static int l2tap_ioctl(int fd, int cmd, va_list args)
 {
     esp_netif_t *esp_netif;
@@ -383,11 +389,8 @@ static int l2tap_ioctl(int fd, int cmd, va_list args)
     case L2TAP_G_INTF_DEVICE: ;
         const char **str_p = va_arg(args, const char **);
         *str_p = NULL;
-        esp_netif = NULL;
-        while ((esp_netif = esp_netif_next(esp_netif)) != NULL) {
-            if (s_l2tap_sockets[fd].driver_handle == esp_netif_get_io_driver(esp_netif)) {
-                *str_p = esp_netif_get_ifkey(esp_netif);
-            }
+        if ((esp_netif = esp_netif_find_if(netif_driver_matches, s_l2tap_sockets[fd].driver_handle)) != NULL) {
+            *str_p = esp_netif_get_ifkey(esp_netif);
         }
         break;
     case L2TAP_S_DEVICE_DRV_HNDL: ;

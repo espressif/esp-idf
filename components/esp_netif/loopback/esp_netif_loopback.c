@@ -187,7 +187,7 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     }
     esp_netif->ip_info_old = ip_info;
 
-    esp_netif_add_to_list(esp_netif);
+    esp_netif_add_to_list_unsafe(esp_netif);
 
     // Configure the created object with provided configuration
     esp_err_t ret =  esp_netif_init_configuration(esp_netif, esp_netif_config);
@@ -203,7 +203,7 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
 void esp_netif_destroy(esp_netif_t *esp_netif)
 {
     if (esp_netif) {
-        esp_netif_remove_from_list(esp_netif);
+        esp_netif_remove_from_list_unsafe(esp_netif);
         free(esp_netif->ip_info);
         free(esp_netif->ip_info_old);
         free(esp_netif->if_key);
