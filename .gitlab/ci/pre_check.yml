@@ -159,6 +159,7 @@ pipeline_variables:
         echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
       fi
     - cat pipeline.env
+    - python tools/ci/artifacts_handler.py upload --type modified_files_and_components_report
   artifacts:
     reports:
       dotenv: pipeline.env
