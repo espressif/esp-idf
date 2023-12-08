@@ -51,7 +51,7 @@ ESP-IDF FreeRTOS
 
 - :ref:`CONFIG_FREERTOS_UNICORE`：仅在 CPU0 上运行 FreeRTOS。注意，这 **不等同于运行原生 FreeRTOS。** 另外，此选项还可能影响除 :component:`freertos` 外其他组件的行为。关于在单核上运行 FreeRTOS 的更多内容，请参考 :ref:`freertos-smp-single-core` （使用 ESP-IDF FreeRTOS 时）或参考 Amazon SMP FreeRTOS 的官方文档，还可以在 ESP-IDF 组件中搜索 ``CONFIG_FREERTOS_UNICORE``。
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. note::
         由于 {IDF_TARGET_NAME} 是一个单核 SoC，所以总是会启用 :ref:`CONFIG_FREERTOS_UNICORE` 配置。
