@@ -144,6 +144,10 @@ variables:
     $IDF_PATH/tools/idf_tools.py --non-interactive install qemu-xtensa qemu-riscv32
   fi
 
+  # Since the version 3.21 CMake passes source files and include dirs to ninja using absolute paths.
+  # Needed for pytest junit reports.
+  $IDF_PATH/tools/idf_tools.py --non-interactive install cmake
+
   source ./export.sh
 
   # Custom clang

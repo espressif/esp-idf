@@ -90,6 +90,10 @@ class TestUsage(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        with open(os.path.join(os.getenv('IDF_PATH'), 'tools/tools.json'), 'r') as json_file:
+            tools_dict = json.load(json_file)
+        cls.tools_dict = tools_dict
+
         old_tools_dir = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF_TOOLS_PATH_DEFAULT)
 
         mirror_prefix_map = None
@@ -451,6 +455,57 @@ class TestUsage(unittest.TestCase):
         deactivate_file = re.findall(r'(?:IDF_DEACTIVATE_FILE_PATH=")(.*)(?:")', output)[0]
         self.assertTrue(os.path.isfile(deactivate_file), 'File {} was not found. '.format(deactivate_file))
         self.assertNotEqual(os.stat(self.idf_env_json).st_size, 0, 'File {} is empty. '.format(deactivate_file))
+
+    def test_export_recommended_version(self):
+        always_install_and_recommended_tools = []
+        for tool in self.tools_dict['tools']:
+            if tool['install'] != 'always':
+                continue
+            for version in tool['versions']:
+                if version['status'] != 'recommended':
+                    continue
+                always_install_and_recommended_tools.append({
+                    'name': tool['name'],
+                    'version': version['name']
+                })
+        self.run_idf_tools_with_action(['install'])
+        output = self.run_idf_tools_with_action(['export'])
+
+        for tool in always_install_and_recommended_tools:
+            self.assertIn(f"{tool['name']}/{tool['version']}", output)
+
+    def test_export_recommended_version_cmake(self):
+        tool_to_test = 'cmake'
+        tool_version = ''
+        for tool in self.tools_dict['tools']:
+            if tool['name'] != tool_to_test:
+                continue
+            for version in tool['versions']:
+                if version['status'] == 'recommended':
+                    tool_version = version['name']
+                    break
+
+        self.run_idf_tools_with_action(['install'])
+        self.run_idf_tools_with_action(['install', tool_to_test])
+        output = self.run_idf_tools_with_action(['export'])
+
+        self.assertIn(f'{tool_to_test}/{tool_version}', output)
+
+    def test_export_prefer_system_cmake(self):
+        tool_to_test = 'cmake'
+        self.run_idf_tools_with_action(['install'])
+        self.run_idf_tools_with_action(['install', tool_to_test])
+        # cmake is installed via apt
+        output = self.run_idf_tools_with_action(['export', '--prefer-system'])
+
+        self.assertNotIn(tool_to_test, output)
+
+    def test_export_supported_version_cmake(self):
+        tool_to_test = 'cmake'
+        self.run_idf_tools_with_action(['install'])
+        output = self.run_idf_tools_with_action(['export'])
+
+        self.assertNotIn(tool_to_test, output)
 
 
 class TestMaintainer(unittest.TestCase):
