@@ -2315,10 +2315,7 @@ esp_err_t esp_netif_dhcps_option_api(esp_netif_api_msg_t *msg)
                     if ((end_ip - start_ip + 1 > DHCPS_MAX_LEASE) || (start_ip >= end_ip)) {
                         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                     }
-                } else {
-                    return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
                 }
-
                 memcpy(opt_info, opt->val, opt->len);
                 break;
             }
