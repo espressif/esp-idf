@@ -588,6 +588,44 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(void)
 #endif
 }
 
+static IRAM_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
+{
+    // Calibrate rtc slow clock
+#ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
+    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        uint64_t time_per_us = 1000000ULL;
+        s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
+    } else {
+        // If the external 32 kHz XTAL does not exist, use the internal 150 kHz RC oscillator
+        // as the RTC slow clock source.
+        s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+        esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+    }
+#elif CONFIG_RTC_CLK_SRC_INT_RC && CONFIG_IDF_TARGET_ESP32S2
+    s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+    esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+#else
+#if CONFIG_PM_ENABLE
+    if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
+#endif
+    {
+        s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+        esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+    }
+#endif
+
+    // Calibrate rtc fast clock, only PMU supported chips sleep process is needed.
+#if SOC_PMU_SUPPORTED
+#if CONFIG_PM_ENABLE
+    if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
+#endif
+    {
+        s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
+    }
+#endif
+}
+
+
 inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp);
 
 static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mode, bool allow_sleep_rejection)
@@ -905,7 +943,8 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
 
-    s_config.rtc_clk_cal_period = esp_clk_slowclk_cal_get();
+    // Re-calibrate the RTC clock
+    sleep_low_power_clock_calibration(true);
 
     // Correct the sleep time
     s_config.sleep_time_adjustment = DEEP_SLEEP_TIME_OVERHEAD_US;
@@ -1091,29 +1130,8 @@ esp_err_t esp_light_sleep_start(void)
     pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
 #endif
 
-    // Re-calibrate the RTC Timer clock
-#ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
-    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-        uint64_t time_per_us = 1000000ULL;
-        s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
-    } else {
-        // If the external 32 kHz XTAL does not exist, use the internal 150 kHz RC oscillator
-        // as the RTC slow clock source.
-        s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
-        esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
-    }
-#elif CONFIG_RTC_CLK_SRC_INT_RC && CONFIG_IDF_TARGET_ESP32S2
-    s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
-    esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
-#else
-#if CONFIG_PM_ENABLE
-    if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0)
-#endif
-    {
-        s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
-        esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
-    }
-#endif
+    // Re-calibrate the RTC clock
+    sleep_low_power_clock_calibration(false);
 
     /*
      * Adjustment time consists of parts below:
@@ -1122,14 +1140,7 @@ esp_err_t esp_light_sleep_start(void)
      * 3. Code execution time when clock is not stable;
      * 4. Code execution time which can be measured;
      */
-
 #if SOC_PMU_SUPPORTED
-#if CONFIG_PM_ENABLE
-    if (s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0)
-#endif
-    {
-        s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
-    }
     int sleep_time_sw_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out;
     int sleep_time_hw_adjustment = pmu_sleep_calculate_hw_wait_time(pd_flags, s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period);
     s_config.sleep_time_adjustment = sleep_time_sw_adjustment + sleep_time_hw_adjustment;
