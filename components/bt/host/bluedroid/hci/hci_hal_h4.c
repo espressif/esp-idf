@@ -596,7 +596,8 @@ int
 ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
 {
     if(esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
-	return 0;
+        ble_hci_trans_buf_free(hci_ev);
+        return 0;
     }
     uint16_t len = hci_ev[1] + 3;
     uint8_t *data = (uint8_t *)malloc(len);
