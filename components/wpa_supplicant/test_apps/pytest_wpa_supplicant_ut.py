@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
-from idf_unity_tester import CaseTester
 from pytest_embedded import Dut
+from pytest_embedded_idf.unity_tester import CaseTester
 
 
 @pytest.mark.generic
@@ -19,6 +19,13 @@ def test_wpa_supplicant_ut(dut: Dut) -> None:
 
 @pytest.mark.esp32
 @pytest.mark.wifi_two_dut
+@pytest.mark.parametrize(
+    'count',
+    [
+        2,
+    ],
+    indirect=True
+)
 def test_wpa_supplicant_ut_offchan(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
         if case.attributes.get('test_env') == 'wifi_two_dut':
