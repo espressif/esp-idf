@@ -13,6 +13,9 @@
 #include "private_include/regi2c_saradc.h"
 #include "driver/temp_sensor.h"
 #include "regi2c_ctrl.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/apb_saradc_struct.h"
+#include "soc/system_reg.h"
 
 
 extern __attribute__((unused)) portMUX_TYPE rtc_spinlock;
@@ -36,6 +39,10 @@ void temperature_sensor_power_acquire(void)
     s_temperature_sensor_power_cnt++;
     if (s_temperature_sensor_power_cnt == 1) {
         APB_SARADC.apb_tsens_ctrl.tsens_pu = true;
+        REG_SET_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
+        CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
+        SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
+        APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 1;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
 }
@@ -51,6 +58,8 @@ void temperature_sensor_power_release(void)
         abort();
     } else if (s_temperature_sensor_power_cnt == 0) {
         APB_SARADC.apb_tsens_ctrl.tsens_pu = false;
+        REG_CLR_BIT(SYSTEM_PERIP_CLK_EN1_REG, SYSTEM_TSENS_CLK_EN);
+        APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 0;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
 }

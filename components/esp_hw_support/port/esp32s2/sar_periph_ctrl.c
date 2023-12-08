@@ -23,7 +23,9 @@ extern __attribute__((unused)) portMUX_TYPE rtc_spinlock;
 -----------------------------------------Temperature Sensor---------------------------------------------------
 ------------------------------------------------------------------------------------------------------------*/
 static const char *TAG_TSENS = "temperature_sensor";
-
+#include "regi2c_ctrl.h"
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 #define INT_NOT_USED 999999
 
 static int s_record_min = INT_NOT_USED;
@@ -40,6 +42,10 @@ void temperature_sensor_power_acquire(void)
         SENS.sar_tctrl.tsens_power_up_force = true;
         SENS.sar_tctrl2.tsens_xpd_force = true;
         SENS.sar_tctrl.tsens_power_up = true;
+        SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+        CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+        SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+        SENS.sar_tctrl2.tsens_clkgate_en = 1;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
 }
@@ -57,6 +63,7 @@ void temperature_sensor_power_release(void)
         SENS.sar_tctrl.tsens_power_up_force = false;
         SENS.sar_tctrl2.tsens_xpd_force = false;
         SENS.sar_tctrl.tsens_power_up = false;
+        SENS.sar_tctrl2.tsens_clkgate_en = 0;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
 }

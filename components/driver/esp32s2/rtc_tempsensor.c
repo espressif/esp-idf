@@ -58,10 +58,6 @@ static float s_deltaT = NAN; // Unused number
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
-    CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
-    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, dac_offset[tsens.dac_offset].set_val);
     SENS.sar_tctrl.tsens_clk_div = tsens.clk_div;
     SENS.sar_tctrl2.tsens_xpd_wait = TSENS_XPD_WAIT_DEFAULT;
@@ -101,14 +97,12 @@ esp_err_t temp_sensor_start(void)
     TSENS_CHECK(rtc_tsens_mux != NULL, ESP_ERR_NO_MEM);
     temperature_sensor_power_acquire();
     SENS.sar_tctrl.tsens_dump_out = 0;
-    SENS.sar_tctrl2.tsens_clkgate_en = 1;
     return ESP_OK;
 }
 
 esp_err_t temp_sensor_stop(void)
 {
     temperature_sensor_power_release();
-    SENS.sar_tctrl2.tsens_clkgate_en = 0;
     if (rtc_tsens_mux != NULL) {
         vSemaphoreDelete(rtc_tsens_mux);
         rtc_tsens_mux = NULL;
