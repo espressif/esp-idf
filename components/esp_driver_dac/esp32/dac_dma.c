@@ -125,7 +125,7 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     }
     ESP_GOTO_ON_ERROR(s_dac_dma_periph_set_clock(freq_hz, is_apll), err, TAG, "Failed to set clock of DMA peripheral");
 
-    i2s_ll_enable_builtin_dac(s_ddp->periph_dev, true);
+    i2s_ll_enable_builtin_adc_dac(s_ddp->periph_dev, true);
     i2s_ll_tx_reset(s_ddp->periph_dev);
     i2s_ll_tx_set_slave_mod(s_ddp->periph_dev, false);
     i2s_ll_tx_set_sample_bit(s_ddp->periph_dev, DAC_DMA_PERIPH_I2S_BIT_WIDTH, DAC_DMA_PERIPH_I2S_BIT_WIDTH);
