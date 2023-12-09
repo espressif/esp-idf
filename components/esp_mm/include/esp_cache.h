@@ -36,6 +36,15 @@ extern "C" {
  * @brief Cache msync direction: from memory to Cache
  */
 #define ESP_CACHE_MSYNC_FLAG_DIR_M2C       BIT(3)
+/**
+ * @brief Cache msync type: data
+ * @note If you don't set type (ESP_CACHE_MSYNC_FLAG_TYPE_x flags), it is by default data type
+ */
+#define ESP_CACHE_MSYNC_FLAG_TYPE_DATA     BIT(4)
+/**
+ * @brief Cache msync type: instruction
+ */
+#define ESP_CACHE_MSYNC_FLAG_TYPE_INST     BIT(5)
 
 /**
  * @brief Memory sync between Cache and storage memory
@@ -54,6 +63,7 @@ extern "C" {
  * This API is cache-safe and thread-safe
  *
  * @note If you don't set direction (ESP_CACHE_MSYNC_FLAG_DIR_x flags), this API is by default C2M direction
+ * @note If you don't set type (ESP_CACHE_MSYNC_FLAG_TYPE_x flags), this API is by default doing msync for data
  * @note You should not call this during any Flash operations (e.g. esp_flash APIs, nvs and some other APIs that are based on esp_flash APIs)
  * @note If XIP_From_PSRAM is enabled (by enabling both CONFIG_SPIRAM_FETCH_INSTRUCTIONS and CONFIG_SPIRAM_RODATA), you can call this API during Flash operations
  *

@@ -12,6 +12,7 @@
 #include "soc/sens_reg.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/i2c_ll.h"
+#include "hal/misc.h"
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -215,7 +216,8 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
     i2c_dev->command[cmd_idx].ack_en = ack_check_en;        // I2C controller verifies that the ACK bit sent by the
                                                             // slave device matches the ACK expected bit during WRITE.
                                                             // Ignored during RSTART, STOP, END and READ cmds.
-    i2c_dev->command[cmd_idx].byte_num = byte_num;          // Byte Num
+    HAL_FORCE_MODIFY_U32_REG_FIELD(i2c_dev->command[cmd_idx], byte_num, byte_num);  // Byte Num
+
 #elif CONFIG_IDF_TARGET_ESP32S3
     /* Reset cmd register */
     i2c_dev->i2c_cmd[cmd_idx].val = 0;
@@ -230,7 +232,7 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
     i2c_dev->i2c_cmd[cmd_idx].i2c_ack_en = ack_check_en;    // I2C controller verifies that the ACK bit sent by the
                                                             // slave device matches the ACK expected bit during WRITE.
                                                             // Ignored during RSTART, STOP, END and READ cmds.
-    i2c_dev->i2c_cmd[cmd_idx].i2c_byte_num = byte_num;      // Byte Num
+    HAL_FORCE_MODIFY_U32_REG_FIELD(i2c_dev->i2c_cmd[cmd_idx], i2c_byte_num, byte_num);  // Byte Num
 #endif // CONFIG_IDF_TARGET_ESP32S2
 }
 

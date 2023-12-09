@@ -81,7 +81,7 @@ Light-sleep 模式下的 ``esp_timer``
 
 通过在 Light-sleep 模式前调用函数 :cpp:func:`esp_timer_stop` 可以改变上述行为。但在某些情况下这可能并不方便。比起使用停止函数，在 :cpp:func:`esp_timer_create` 中使用 ``skip_unhandled_events`` 选项将更加便利。 当 ``skip_unhandled_events`` 为真时，如果一个周期性定时器在 Light-sleep 期间超时一次或多次，那么在唤醒时只有一个回调会被调用。
 
-使用带有自动 Light-sleep 的 ``skip_unhandled_events`` 选项（请参阅 :doc:`电源管理 <power_management>`），有助于在系统处于 Light-sleep 状态时降低功耗。 Light-sleep 的持续时间也在一定程度上由下一个事件发生的时间确定。具有 ``skip_unhandled_events``` 选项的定时器不会唤醒系统。
+使用带有自动 Light-sleep 的 ``skip_unhandled_events`` 选项（请参阅 :doc:`电源管理 <power_management>`），有助于在系统处于 Light-sleep 状态时降低功耗。Light-sleep 的持续时间也在一定程度上由下一个事件发生的时间确定。具有 ``skip_unhandled_events``` 选项的定时器不会唤醒系统。
 
 处理回调
 ------------------

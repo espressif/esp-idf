@@ -9,3 +9,4 @@ archive: libhal.a
 entries:
     if LCD_RGB_ISR_IRAM_SAFE = y:
         lcd_hal: lcd_hal_cal_pclk_freq (noflash)
+        hal_utils: hal_utils_calc_clk_div_frac_fast (noflash)

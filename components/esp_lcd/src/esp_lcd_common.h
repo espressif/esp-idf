@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,12 @@ extern "C" {
 #define LCD_I80_MEM_ALLOC_CAPS       MALLOC_CAP_DEFAULT
 
 #define LCD_PERIPH_CLOCK_PRE_SCALE (2) // This is the minimum divider that can be applied to LCD peripheral
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define LCD_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define LCD_CLOCK_SRC_ATOMIC()
+#endif
 
 #if SOC_LCDCAM_SUPPORTED
 

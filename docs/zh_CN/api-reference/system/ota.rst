@@ -8,7 +8,7 @@ OTA 流程概览
 
 OTA 升级机制可以让设备在固件正常运行时根据接收数据（如通过 Wi-Fi 或蓝牙）进行自我更新。
 
-要运行 OTA 机制，需配置设备的 :doc:`分区表 <../../api-guides/partition-tables>`，该分区表至少包括两个 OTA 应用程序分区（即 ``ota_0`` 和 ``ota_1``）和一个 OTA 数据分区。
+要运行 OTA 机制，需配置设备的 :doc:`../../api-guides/partition-tables`，该分区表至少包括两个 OTA 应用程序分区（即 ``ota_0`` 和 ``ota_1``）和一个 OTA 数据分区。
 
 OTA 功能启动后，向当前未用于启动的 OTA 应用分区写入新的应用固件镜像。镜像验证后，OTA 数据分区更新，指定在下一次启动时使用该镜像。
 
@@ -17,7 +17,7 @@ OTA 功能启动后，向当前未用于启动的 OTA 应用分区写入新的�
 OTA 数据分区
 ------------
 
-所有使用 OTA 功能项目，其 :doc:`分区表 <../../api-guides/partition-tables>` 必须包含一个 OTA 数据分区（类型为 ``data``，子类型为 ``ota``）。
+所有使用 OTA 功能项目，其 :doc:`../../api-guides/partition-tables` 必须包含一个 OTA 数据分区（类型为 ``data``，子类型为 ``ota``）。
 
 工厂启动设置下，OTA 数据分区中应没有数据（所有字节擦写成 0xFF）。如果分区表中有工厂应用程序，ESP-IDF 软件引导加载程序会启动工厂应用程序。如果分区表中没有工厂应用程序，则启动第一个可用的 OTA 分区（通常是 ``ota_0``）。
 
@@ -201,7 +201,7 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 OTA 工具 ``otatool.py``
 ----------------------------
 
-``app_update`` 组件中有 :component_file:`otatool.py<app_update/otatool.py>` 工具，用于在目标设备上完成下列 OTA 分区相关操作：
+``app_update`` 组件中有 :component_file:`app_update/otatool.py` 工具，用于在目标设备上完成下列 OTA 分区相关操作：
 
   - 读取 otadata 分区 (read_otadata)
   - 擦除 otadata 分区，将设备复位至工厂应用程序 (erase_otadata)
@@ -297,10 +297,10 @@ Python API
 相关文档
 --------
 
-* :doc:`分区表 <../../api-guides/partition-tables>`
-* :doc:`分区表 API <../storage/partition>`
-* :doc:`低层 SPI Flash API <../peripherals/spi_flash/index>`
-* :doc:`ESP HTTPS OTA <esp_https_ota>`
+* :doc:`../../api-guides/partition-tables`
+* :doc:`../storage/partition`
+* :doc:`../peripherals/spi_flash/index`
+* :doc:`esp_https_ota`
 
 应用程序示例
 ------------

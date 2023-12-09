@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "freertos/xtensa_context.h"
 #include "esp_private/panic_internal.h"
 
 #include "esp_rom_sys.h"

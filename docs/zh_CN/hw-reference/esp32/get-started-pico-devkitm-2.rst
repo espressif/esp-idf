@@ -6,11 +6,11 @@ ESP32-PICO-DevKitM-2
 概述
 ======
 
-ESP32-PICO-DevKitM-2 是一款基于 `ESP32 <https://www.espressif.com/zh-hans/products/socs/esp32>`_ 的乐鑫开发板，板上搭载 `ESP32-PICO-MINI-02(02U) <https://www.espressif.com/zh-hans/products/modules>`_ 模组。ESP32-PICO-MINI-02(02U) 模组具备完整的 Wi-Fi 和蓝牙功能。
+ESP32-PICO-DevKitM-2 是一款基于 `ESP32 <https://www.espressif.com/zh-hans/products/socs/esp32>`_ 的乐鑫开发板，板上搭载 `ESP32-PICO-MINI-02/02U <https://www.espressif.com/zh-hans/products/modules>`_ 模组。ESP32-PICO-MINI-02/02U 模组具备完整的 Wi-Fi 和蓝牙功能。
 
 ESP32-PICO-DevKitM-2 开发板同时集成了 USB-to-UART 桥接电路，方便开发人员直接通过 PC 的 USB 端口直接进行固件烧录和调试。
 
-为方便硬件连接，ESP32-PICO-MINI-02(02U) 上的所有 IO 信号和系统电源管脚均引出至开发板两侧焊盘 (18 x 0.1")。上述 18 个焊盘也均引出至排针，可使用杜邦线连接。
+为方便硬件连接，ESP32-PICO-MINI-02/02U 上的所有 IO 信号和系统电源管脚均引出至开发板两侧焊盘 (18 x 0.1")。上述 18 个焊盘也均引出至排针，可使用杜邦线连接。
 
 .. note::
 

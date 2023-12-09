@@ -14,8 +14,6 @@ menu "Hardware Settings"
                 software recognize the chip version based on the rev selected in menuconfig.
     endmenu
 
-    orsource "./port/$IDF_TARGET/Kconfig.spiram"
-
     menu "MAC Config"
         config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
             bool
@@ -52,6 +50,13 @@ menu "Hardware Settings"
                 If you have an invalid MAC CRC (ESP_ERR_INVALID_CRC) problem
                 and you still want to use this chip, you can enable this option to bypass such an error.
                 This applies to both MAC_FACTORY and CUSTOM_MAC efuses.
+
+        config ESP_MAC_USE_CUSTOM_MAC_AS_BASE_MAC
+            bool "Enable using custom mac as base mac"
+            default n
+            help
+                When this configuration is enabled, the user can invoke `esp_read_mac` to obtain the desired type of
+                MAC using a custom MAC as the base MAC.
     endmenu
 
     menu "Sleep Config"
@@ -170,6 +175,26 @@ menu "Hardware Settings"
             help
                 Enable esp sleep debug.
 
+        config ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS
+            bool "Allow to enable internal pull-up/downs for the Deep-Sleep wakeup IOs"
+            default y
+            help
+                When using rtc gpio wakeup source during deepsleep without external pull-up/downs, you may want to
+                make use of the internal ones.
+
+        config ESP_SLEEP_EVENT_CALLBACKS
+            bool "Enable registration of sleep event callbacks"
+            depends on FREERTOS_USE_TICKLESS_IDLE
+            default n
+            help
+                If enabled, it allows user to register sleep event callbacks. It is primarily designed for internal
+                developers and customers can use PM_LIGHT_SLEEP_CALLBACKS as an alternative.
+
+                NOTE: These callbacks are executed from the IDLE task context hence you cannot have any blocking calls
+                in your callbacks.
+
+                NOTE: Enabling these callbacks may change sleep duration calculations based on time spent in
+                callback and hence it is highly recommended to keep them as short as possible.
     endmenu
 
     menu "ESP_SLEEP_WORKAROUND"
@@ -323,4 +348,21 @@ menu "Hardware Settings"
             clock support isn't done yet. So with this option,
             we use xtal on FPGA as the clock source.
 
+    # Invisible bringup bypass options for esp_hw_support component
+    config ESP_BRINGUP_BYPASS_RANDOM_SETTING
+        bool
+        default y if !SOC_RNG_SUPPORTED
+        default n
+        help
+            This option is only used for new chip bringup, when
+            RNG isn't done yet. So with this option, we use 0x5A
+            to fill the random buffers
+
+    config ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
+        bool
+        default n
+
+    config ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
+        bool
+        default n
 endmenu

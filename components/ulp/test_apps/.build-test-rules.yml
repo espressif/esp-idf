@@ -1,0 +1,19 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/ulp/test_apps/lp_core:
+  disable:
+    - if: SOC_LP_CORE_SUPPORTED != 1
+  depends_components:
+    - ulp
+
+components/ulp/test_apps/ulp_fsm:
+  enable:
+    - if: SOC_ULP_FSM_SUPPORTED == 1
+  depends_components:
+    - ulp
+
+components/ulp/test_apps/ulp_riscv:
+  disable:
+    - if: SOC_RISCV_COPROC_SUPPORTED != 1
+  depends_components:
+    - ulp

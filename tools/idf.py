@@ -105,6 +105,15 @@ def check_environment() -> List:
         debug_print_idf_version()
         raise SystemExit(1)
 
+    # Check used Python interpreter
+    checks_output.append('Checking used Python interpreter...')
+    try:
+        python_venv_path = os.environ['IDF_PYTHON_ENV_PATH']
+        if python_venv_path and not sys.executable.startswith(python_venv_path):
+            print_warning(f'WARNING: Python interpreter "{sys.executable}" used to start idf.py is not from installed venv "{python_venv_path}"')
+    except KeyError:
+        print_warning('WARNING: The IDF_PYTHON_ENV_PATH is missing in environmental variables!')
+
     return checks_output
 
 
@@ -432,9 +441,9 @@ def init_cli(verbose_output: List=None) -> Any:
                 return None
 
         def _print_closing_message(self, args: PropertyDict, actions: _OrderedDictKeysView) -> None:
-            # print a closing message of some kind
-            #
-            if any(t in str(actions) for t in ('flash', 'dfu', 'uf2', 'uf2-app')):
+            # print a closing message of some kind,
+            # except if any of the following actions were requested
+            if any(t in str(actions) for t in ('flash', 'dfu', 'uf2', 'uf2-app', 'qemu')):
                 print('Done')
                 return
 
@@ -501,7 +510,7 @@ def init_cli(verbose_output: List=None) -> Any:
 
                 if os.path.exists(os.path.join(args.build_dir, 'flash_args')):
                     print(f'or from the "{args.build_dir}" directory')
-                    print(' {}'.format(' '.join(esptool_cmd + ['@flash_args'])))
+                    print(' {}'.format(' '.join(esptool_cmd + ['"@flash_args"'])))
 
             if 'all' in actions or 'build' in actions:
                 print_flashing_message('Project', 'project')

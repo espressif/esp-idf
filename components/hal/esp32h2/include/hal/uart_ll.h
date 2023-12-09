@@ -17,6 +17,7 @@
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "soc/pcr_struct.h"
+#include "soc/pcr_reg.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -81,6 +82,66 @@ typedef enum {
 } uart_intr_t;
 
 /**
+ * @brief Check if UART is enabled or disabled.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return true: enabled; false: disabled
+ */
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
+{
+    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
+                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
+    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
+                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
+    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
+                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
+    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
+        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
+}
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num) {
+    case 0:
+        PCR.uart0_conf.uart0_clk_en = enable;
+        break;
+    case 1:
+        PCR.uart1_conf.uart1_clk_en = enable;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        PCR.uart0_conf.uart0_rst_en = 1;
+        PCR.uart0_conf.uart0_rst_en = 0;
+        break;
+    case 1:
+        PCR.uart1_conf.uart1_rst_en = 1;
+        PCR.uart1_conf.uart1_rst_en = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
  * @brief Sync the update to UART core clock domain
  *
  * @param hw Beginning address of the peripheral registers.
@@ -91,19 +152,6 @@ FORCE_INLINE_ATTR void uart_ll_update(uart_dev_t *hw)
 {
     hw->reg_update.reg_update = 1;
     while (hw->reg_update.reg_update);
-}
-
-/**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    UART_LL_PCR_REG_SET(hw, conf, rst_en, core_rst_en);
 }
 
 /**
@@ -194,7 +242,9 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
 {
 #define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
-    int sclk_div = DIV_UP(sclk_freq, max_div * baud);
+    uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
+
+    if (sclk_div == 0) abort();
 
     uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
     // The baud rate configuration register is divided into
@@ -231,7 +281,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
  */
 FORCE_INLINE_ATTR void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
-    hw->int_ena.val |= mask;
+    hw->int_ena.val = hw->int_ena.val | mask;
 }
 
 /**
@@ -244,7 +294,7 @@ FORCE_INLINE_ATTR void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
  */
 FORCE_INLINE_ATTR void uart_ll_disable_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
-    hw->int_ena.val &= (~mask);
+    hw->int_ena.val = hw->int_ena.val & (~mask);
 }
 
 /**

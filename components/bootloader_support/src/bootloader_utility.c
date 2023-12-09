@@ -836,7 +836,7 @@ static void set_cache_and_start_app(
     Cache_Read_Disable(0);
     Cache_Flush(0);
 #else
-    cache_hal_disable(CACHE_TYPE_ALL);
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
     //reset MMU table first
     mmu_hal_unmap_all();
@@ -884,7 +884,7 @@ static void set_cache_and_start_app(
     bus_mask = cache_ll_l1_get_bus(0, irom_load_addr_aligned, irom_size);
     cache_ll_l1_enable_bus(0, bus_mask);
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     bus_mask = cache_ll_l1_get_bus(1, drom_load_addr_aligned, drom_size);
     cache_ll_l1_enable_bus(1, bus_mask);
     bus_mask = cache_ll_l1_get_bus(1, irom_load_addr_aligned, irom_size);
@@ -896,7 +896,7 @@ static void set_cache_and_start_app(
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)
     Cache_Read_Enable(0);
 #else
-    cache_hal_enable(CACHE_TYPE_ALL);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 
     ESP_LOGD(TAG, "start: 0x%08"PRIx32, entry_addr);

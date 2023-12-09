@@ -171,8 +171,8 @@ Many of the ESP-IDF components use :ref:`api_reference_config_structures` as arg
 C and C++ languages have different rules with regards to the designated initializers. For example, C++23 (currently the default in ESP-IDF) does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
 
 
-iostream
-^^^^^^^^
+``iostream``
+^^^^^^^^^^^^
 
 ``iostream`` functionality is supported in ESP-IDF, with a couple of caveats:
 

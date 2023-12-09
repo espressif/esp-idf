@@ -27,14 +27,19 @@ if(NOT BOOTLOADER_BUILD)
                      "revision.c"
                      "rtc_module.c"
                      "sleep_modes.c"
+                     "sleep_console.c"
                      "sleep_gpio.c"
+                     "sleep_event.c"
                      "sleep_modem.c"
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
                      "sar_periph_ctrl_common.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
-                     "port/esp_clk_tree_common.c")
+                     "port/esp_clk_tree_common.c"
+                     "dma/esp_dma_utils.c"
+                     "spi_share_hw_ctrl.c"
+                     "spi_bus_lock.c")
 
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")
@@ -48,8 +53,12 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sleep_retention.c"  "sleep_system_peripheral.c" "sleep_clock.c")
     endif()
 
-    # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
-    list(APPEND priv_requires driver esp_timer)
+    # [refactor-todo]
+    list(APPEND priv_requires esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
+                              esp_timer
+                              esp_pm)
+
+    list(APPEND priv_requires esp_mm)
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")
@@ -121,6 +130,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "sleep_wake_stub.c")
     endif()
 
+    if(CONFIG_SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX OR CONFIG_SOC_GPIO_CLOCKOUT_BY_IO_MUX)
+        list(APPEND srcs "esp_clock_output.c")
+    endif()
+
     if(CONFIG_IDF_TARGET_ESP32P4)
         list(REMOVE_ITEM srcs
                 "sleep_cpu.c"         # TODO: IDF-7528, IDF-7529
@@ -153,5 +166,3 @@ if(NOT BOOTLOADER_BUILD)
         target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_crypto_dpa_prot_include_impl")
     endif()
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

@@ -1,0 +1,12 @@
+[mapping:ledc_driver]
+archive: libdriver.a
+entries:
+    if LEDC_CTRL_FUNC_IN_IRAM = y:
+        ledc: ledc_stop (noflash)
+        ledc: ledc_update_duty (noflash)
+        ledc: _ledc_update_duty (noflash)
+
+[mapping:ledc_hal]
+archive: libhal.a
+entries:
+    ledc_hal_iram (noflash)

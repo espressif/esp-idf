@@ -17,7 +17,6 @@
 #include "hal/adc_hal_common.h"
 #include "soc/adc_periph.h"
 
-
 static const char *TAG = "adc_common";
 static portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
 extern portMUX_TYPE rtc_spinlock;

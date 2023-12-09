@@ -8,7 +8,7 @@ import subprocess
 import typing
 from pathlib import Path
 
-from test_build_system_helpers import EnvDict, IdfPyFunc, run_idf_py
+from test_build_system_helpers import EnvDict, run_idf_py
 
 
 def run_git_cmd(*args: str,
@@ -23,13 +23,6 @@ def run_git_cmd(*args: str,
 
     return subprocess.run(cmd, cwd=workdir, env=env_dict,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-
-def test_get_version_from_git_describe(test_git_template_app: Path, idf_py: IdfPyFunc) -> None:
-    logging.info('Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit.')
-    idf_ret = idf_py('reconfigure')
-    git_ret = run_git_cmd('describe', '--always', '--tags', '--dirty', workdir=test_git_template_app)
-    assert f'App "app-template" version: {git_ret.stdout.decode("utf-8")}' in idf_ret.stdout, 'Project version should have a hash commit'
 
 
 # In this test, the action needs to be performed in ESP-IDF that is valid git directory

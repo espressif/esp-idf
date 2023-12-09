@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -64,12 +64,15 @@ static const twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPI
 static const twai_timing_config_t t_config = TWAI_TIMING_CONFIG_25KBITS();
 static const twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 static const twai_message_t ping_resp = {.identifier = ID_SLAVE_PING_RESP, .data_length_code = 0,
-                                        .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                         .data = {0, 0, 0, 0, 0, 0, 0, 0}
+                                        };
 static const twai_message_t stop_resp = {.identifier = ID_SLAVE_STOP_RESP, .data_length_code = 0,
-                                        .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                         .data = {0, 0, 0, 0, 0, 0, 0, 0}
+                                        };
 //Data bytes of data message will be initialized in the transmit task
 static twai_message_t data_message = {.identifier = ID_SLAVE_DATA, .data_length_code = 4,
-                                     .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                      .data = {0, 0, 0, 0, 0, 0, 0, 0}
+                                     };
 
 static QueueHandle_t tx_task_queue;
 static QueueHandle_t rx_task_queue;
@@ -229,7 +232,6 @@ void app_main(void)
         printf("Slave starting in %d\n", i);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-
 
     //Create semaphores and tasks
     tx_task_queue = xQueueCreate(1, sizeof(tx_task_action_t));

@@ -62,6 +62,14 @@
 #include "hal/usb_serial_jtag_ll.h"
 #endif
 
+#ifdef __XTENSA__
+#include "xtensa/semihosting.h"
+#elif __riscv
+#include "riscv/semihosting.h"
+#endif
+
+#define ESP_SEMIHOSTING_SYS_PANIC_REASON	0x116
+
 #define MWDT_DEFAULT_TICKS_PER_US       500
 
 bool g_panic_abort = false;
@@ -288,7 +296,19 @@ void esp_panic_handler(panic_info_t *info)
     // If on-chip-debugger is attached, and system is configured to be aware of this,
     // then only print up to details. Users should be able to probe for the other information
     // in debug mode.
+#if CONFIG_ESP_DEBUG_OCDAWARE
     if (esp_cpu_dbgr_is_attached()) {
+		char *panic_reason_str = NULL;
+		if (info->pseudo_excause) {
+			panic_reason_str = (char *)info->reason;
+		} else if (g_panic_abort && strlen(g_panic_abort_details)) {
+			panic_reason_str = g_panic_abort_details;
+		}
+		if (panic_reason_str) {
+			/* OpenOCD will print the halt cause when target is stopped at the below breakpoint (info->addr) */
+			long args[] = {(long)panic_reason_str, strlen(panic_reason_str)};
+			semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_PANIC_REASON, args);
+		}
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");
@@ -305,7 +325,7 @@ void esp_panic_handler(panic_info_t *info)
         esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
         return;
     }
-
+#endif //CONFIG_ESP_DEBUG_OCDAWARE
     // start panic WDT to restart system if we hang in this handler
     if (!wdt_hal_is_enabled(&rtc_wdt_ctx)) {
         wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);

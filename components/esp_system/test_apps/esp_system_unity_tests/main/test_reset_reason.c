@@ -36,6 +36,7 @@
 #define BROWNOUT            "SW_CPU_RESET"
 #endif // CONFIG_ESP32_REV_MIN_FULL >= 300
 #define STORE_ERROR         "StoreProhibited"
+#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
 
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define DEEPSLEEP           "DSLEEP"
@@ -46,6 +47,7 @@
 #define RTC_WDT             "RTCWDT_RTC_RST"
 #define BROWNOUT            "BROWN_OUT_RST"
 #define STORE_ERROR         "StoreProhibited"
+#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
 
 #elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 #define DEEPSLEEP           "DSLEEP"
@@ -56,6 +58,7 @@
 #define RTC_WDT             "RTCWDT_RTC_RST"
 #define BROWNOUT            "BROWNOUT_RST"
 #define STORE_ERROR         LOAD_STORE_ERROR
+#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
 #elif CONFIG_IDF_TARGET_ESP32C2
 #define DEEPSLEEP           "DSLEEP"
 #define LOAD_STORE_ERROR    "Store access fault"
@@ -65,6 +68,7 @@
 #define RTC_WDT             "RTCWDT_RTC_RST"
 #define BROWNOUT            "BROWNOUT_RST"
 #define STORE_ERROR         LOAD_STORE_ERROR
+#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
 
 #elif CONFIG_IDF_TARGET_ESP32C6
 #define DEEPSLEEP           "DSLEEP"
@@ -75,6 +79,18 @@
 #define RTC_WDT             "LP_WDT_SYS"
 #define BROWNOUT            "LP_BOD_SYS"
 #define STORE_ERROR         LOAD_STORE_ERROR
+#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
+
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define DEEPSLEEP           "DSLEEP"
+#define LOAD_STORE_ERROR    "Store access fault"
+#define RESET               "SW_CPU_RESET"
+#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
+#define INT_WDT             "HP_SYS_HP_WDT_RESET"
+#define RTC_WDT             "LP_WDT_SYS"
+#define BROWNOUT            "LP_BOD_SYS"
+#define STORE_ERROR         LOAD_STORE_ERROR
+#define INT_WDT_HW_ESP_RST  ESP_RST_WDT // On P4 there is only one reset reason for MWDT0/1
 
 #endif // CONFIG_IDF_TARGET_ESP32
 
@@ -88,7 +104,6 @@ TEST_CASE("reset reason ESP_RST_POWERON", "[reset][ignore]")
 }
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32H2)
 static __NOINIT_ATTR uint32_t s_noinit_val;
 
 #if CHECK_RTC_MEM
@@ -118,6 +133,8 @@ static void setup_values(void)
 #endif //CHECK_RTC_MEM
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7529
+
 static void do_deep_sleep(void)
 {
     setup_values();
@@ -143,6 +160,8 @@ static void check_reset_reason_deep_sleep(void)
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][reset="DEEPSLEEP"]",
         do_deep_sleep,
         check_reset_reason_deep_sleep);
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 
 static void do_exception(void)
 {
@@ -232,6 +251,7 @@ static void do_int_wdt(void)
     while(1);
 }
 
+
 static void do_int_wdt_hw(void)
 {
     setup_values();
@@ -240,12 +260,20 @@ static void do_int_wdt_hw(void)
 #else
     XTOS_SET_INTLEVEL(XCHAL_NMILEVEL);
 #endif
-    while(1);
+    while(1) { }
 }
 
-static void check_reset_reason_int_wdt(void)
+static void check_reset_reason_int_wdt_sw(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_INT_WDT, esp_reset_reason());
+#if CHECK_RTC_MEM
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
+#endif //CHECK_RTC_MEM
+}
+
+static void check_reset_reason_int_wdt_hw(void)
+{
+    TEST_ASSERT_EQUAL(INT_WDT_HW_ESP_RST, esp_reset_reason());
 #if CHECK_RTC_MEM
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
 #endif //CHECK_RTC_MEM
@@ -254,12 +282,12 @@ static void check_reset_reason_int_wdt(void)
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog (panic)",
         "[reset_reason][reset="INT_WDT_PANIC","RESET"]",
         do_int_wdt,
-        check_reset_reason_int_wdt);
+        check_reset_reason_int_wdt_sw);
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog (hw)",
         "[reset_reason][reset="INT_WDT"]",
         do_int_wdt_hw,
-        check_reset_reason_int_wdt);
+        check_reset_reason_int_wdt_hw);
 
 #if CONFIG_ESP_TASK_WDT_EN
 static void do_task_wdt(void)
@@ -350,11 +378,10 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
         do_brownout,
         check_reset_reason_brownout);
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
-
 
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 #ifndef CONFIG_FREERTOS_UNICORE
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xt_instr_macros.h"
 #include "xtensa/config/specreg.h"
 
@@ -434,6 +461,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a ta
         init_task_do_exception,
         test2_finish);
 
+#endif //CONFIG_IDF_TARGET_ARCH_XTENSA
 #endif // CONFIG_FREERTOS_UNICORE
 #endif // CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 

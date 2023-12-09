@@ -54,13 +54,14 @@ static esp_err_t obtain_time(void)
 
 esp_err_t fetch_and_store_time_in_nvs(void *args)
 {
+    nvs_handle_t my_handle = 0;
+    esp_err_t err;
+
     initialize_sntp();
     if (obtain_time() != ESP_OK) {
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto exit;
     }
-
-    nvs_handle_t my_handle;
-    esp_err_t err;
 
     time_t now;
     time(&now);
@@ -82,10 +83,12 @@ esp_err_t fetch_and_store_time_in_nvs(void *args)
         goto exit;
     }
 
-    nvs_close(my_handle);
-    esp_netif_deinit();
-
 exit:
+    if (my_handle != 0) {
+        nvs_close(my_handle);
+    }
+    esp_netif_sntp_deinit();
+
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Error updating time in nvs");
     } else {
@@ -96,7 +99,7 @@ exit:
 
 esp_err_t update_time_from_nvs(void)
 {
-    nvs_handle_t my_handle;
+    nvs_handle_t my_handle = 0;
     esp_err_t err;
 
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
@@ -122,6 +125,8 @@ esp_err_t update_time_from_nvs(void)
     }
 
 exit:
-    nvs_close(my_handle);
+    if (my_handle != 0) {
+        nvs_close(my_handle);
+    }
     return err;
 }

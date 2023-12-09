@@ -952,7 +952,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
         return -EADDRNOTAVAIL;
     }
 
-    tx.sub = bt_mesh_subnet_get(ctx.net_idx);
+    tx.sub = bt_mesh_subnet_get(key->net_idx);
     if (!tx.sub) {
         BT_ERR("Publish, NetKey 0x%04x not found", ctx.net_idx);
         return -EADDRNOTAVAIL;
@@ -964,6 +964,9 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     ctx.send_ttl = pub->ttl;
     ctx.send_cred = pub->cred ? BLE_MESH_FRIENDSHIP_CRED : BLE_MESH_FLOODING_CRED;
     ctx.send_szmic = pub->send_szmic;
+#if 0
+    ctx.send_tag |= BLE_MESH_TAG_IMMUTABLE_CRED;
+#endif
     if (pub->send_rel) {
         /* Tag with send-segmented */
         ctx.send_tag |= BLE_MESH_TAG_SEND_SEGMENTED;

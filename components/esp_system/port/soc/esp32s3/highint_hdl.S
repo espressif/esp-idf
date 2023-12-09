@@ -8,7 +8,7 @@
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
@@ -37,12 +37,12 @@ _l4_intr_stack:
     .align      4
 xt_highint4:
 
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     /* See if we're here for the IPC_ISR interrupt */
     rsr     a0, INTERRUPT
     extui   a0, a0, ETS_IPC_ISR_INUM, 1
     bnez    a0, jump_to_esp_ipc_isr_handler
-#endif // not CONFIG_FREERTOS_UNICORE
+#endif // not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     /* Allocate exception frame and save minimal context. */
     mov     a0, sp

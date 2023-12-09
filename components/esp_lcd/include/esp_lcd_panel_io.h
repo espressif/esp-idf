@@ -13,6 +13,8 @@
 #include "hal/i2c_types.h"
 #include "driver/i2c_types.h"
 
+#define ESP_LCD_I80_BUS_WIDTH_MAX 16 /*!< Maximum width of I80 bus */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,7 +45,6 @@ typedef bool (*esp_lcd_panel_io_color_trans_done_cb_t)(esp_lcd_panel_io_handle_t
 typedef struct {
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
 } esp_lcd_panel_io_callbacks_t;
-
 
 /**
  * @brief Transmit LCD command and receive corresponding parameters
@@ -232,7 +233,7 @@ typedef struct {
     int dc_gpio_num; /*!< GPIO used for D/C line */
     int wr_gpio_num; /*!< GPIO used for WR line */
     lcd_clock_source_t clk_src; /*!< Clock source for the I80 LCD peripheral */
-    int data_gpio_nums[SOC_LCD_I80_BUS_WIDTH]; /*!< GPIOs used for data lines */
+    int data_gpio_nums[ESP_LCD_I80_BUS_WIDTH_MAX]; /*!< GPIOs used for data lines */
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
     size_t psram_trans_align;  /*!< DMA transfer alignment for data allocated from PSRAM */

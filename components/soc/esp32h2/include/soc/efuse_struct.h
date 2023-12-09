@@ -636,10 +636,18 @@ typedef union {
          *  Disables check of blk version major
          */
         uint32_t disable_blk_version_major:1;
-        /** reserved_2_136 : R; bitpos: [31:8]; default: 0;
-         *  reserved
+        /** temp_calib : R; bitpos: [16:8]; default: 0;
+         *  Temperature calibration data
          */
-        uint32_t reserved_2_136:24;
+        uint32_t temp_calib:9;
+        /** adc1_ave_initcode_atten0 : R; bitpos: [26:17]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ave_initcode_atten0:10;
+        /** adc1_ave_initcode_atten1 : R; bitpos: [31:27]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ave_initcode_atten1:5;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
@@ -649,10 +657,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the fifth 32 bits of the first part of system data.
+        /** adc1_ave_initcode_atten1_1 : R; bitpos: [4:0]; default: 0;
+         *  ADC1 calibration data
          */
-        uint32_t sys_data_part1_5:32;
+        uint32_t adc1_ave_initcode_atten1_1:5;
+        /** adc1_ave_initcode_atten2 : R; bitpos: [14:5]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ave_initcode_atten2:10;
+        /** adc1_ave_initcode_atten3 : R; bitpos: [24:15]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ave_initcode_atten3:10;
+        /** adc1_hi_dout_atten0 : R; bitpos: [31:25]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_hi_dout_atten0:7;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data5_reg_t;
@@ -662,10 +682,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the sixth 32 bits of the first part of system data.
+        /** adc1_hi_dout_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  ADC1 calibration data
          */
-        uint32_t sys_data_part1_6:32;
+        uint32_t adc1_hi_dout_atten0_1:3;
+        /** adc1_hi_dout_atten1 : R; bitpos: [12:3]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_hi_dout_atten1:10;
+        /** adc1_hi_dout_atten2 : R; bitpos: [22:13]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_hi_dout_atten2:10;
+        /** adc1_hi_dout_atten3 : R; bitpos: [31:23]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_hi_dout_atten3:9;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data6_reg_t;
@@ -675,10 +707,34 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the seventh 32 bits of the first part of system data.
+        /** adc1_hi_dout_atten3_1 : R; bitpos: [0]; default: 0;
+         *  ADC1 calibration data
          */
-        uint32_t sys_data_part1_7:32;
+        uint32_t adc1_hi_dout_atten3_1:1;
+        /** adc1_ch0_atten0_initcode_diff : R; bitpos: [4:1]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch0_atten0_initcode_diff:4;
+        /** adc1_ch1_atten0_initcode_diff : R; bitpos: [8:5]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch1_atten0_initcode_diff:4;
+        /** adc1_ch2_atten0_initcode_diff : R; bitpos: [12:9]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch2_atten0_initcode_diff:4;
+        /** adc1_ch3_atten0_initcode_diff : R; bitpos: [16:13]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch3_atten0_initcode_diff:4;
+        /** adc1_ch4_atten0_initcode_diff : R; bitpos: [20:17]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch4_atten0_initcode_diff:4;
+        /** reserved_2_245 : R; bitpos: [31:21]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_245:11;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;

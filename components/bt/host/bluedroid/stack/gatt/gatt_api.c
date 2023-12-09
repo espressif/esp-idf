@@ -122,6 +122,7 @@ BOOLEAN  GATTS_NVRegister (const tGATT_APPL_INFO *p_cb_info)
     return status;
 }
 
+#if GATTS_ROBUST_CACHING_ENABLED
 static void gatt_update_for_database_change(void)
 {
     UINT8 i;
@@ -135,7 +136,7 @@ static void gatt_update_for_database_change(void)
         }
     }
 }
-
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
 /*******************************************************************************
 **
 ** Function         GATTS_CreateService
@@ -414,7 +415,9 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
         GATT_TRACE_DEBUG ("Delete a new service changed item - the service has not yet started");
         osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
     } else {
+#if GATTS_ROBUST_CACHING_ENABLED
         gatt_update_for_database_change();
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
         if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
             gatt_proc_srv_chg();
         }
@@ -527,7 +530,11 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
     if ( (p_buf = gatt_sr_is_new_srv_chg(&p_list->asgn_range.app_uuid128,
                                          &p_list->asgn_range.svc_uuid,
                                          p_list->asgn_range.svc_inst)) != NULL) {
+
+        #if GATTS_ROBUST_CACHING_ENABLED
         gatt_update_for_database_change();
+        #endif /* GATTS_ROBUST_CACHING_ENABLED */
+
         if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
             gatt_proc_srv_chg();
         }
@@ -781,7 +788,7 @@ tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *v
 **
 ** Function         GATTS_GetAttributeValue
 **
-** Description      This function sends to set the attribute value .
+** Description      This function sends to get the attribute value .
 **
 ** Parameter        attr_handle: the attribute handle
 **                  length:the attribute value length in the database
@@ -806,6 +813,26 @@ tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 *
 
      status =  gatts_get_attribute_value(&p_decl->svc_db, attr_handle, length, value);
      return status;
+}
+
+/*******************************************************************************
+**
+** Function         GATTS_GetAttributeValueInternal
+**
+** Description      This function sends to get the attribute value of internal gatt and gap service.
+**
+** Parameter        attr_handle: the attribute handle
+**                  length:the attribute value length in the database
+**                  value: the attribute value out put
+*
+**
+** Returns          tGATT_STATUS - GATT status indicating success or failure in
+**                  retrieving the attribute value.
+**
+*******************************************************************************/
+tGATT_STATUS GATTS_GetAttributeValueInternal(UINT16 attr_handle, UINT16 *length, UINT8 **value)
+{
+    return gatts_get_attr_value_internal(attr_handle, length, value);
 }
 #endif  ///GATTS_INCLUDED == TRUE
 

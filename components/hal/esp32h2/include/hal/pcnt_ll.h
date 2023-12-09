@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include "soc/pcnt_struct.h"
 #include "hal/pcnt_types.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,7 +93,9 @@ static inline void pcnt_ll_set_level_action(pcnt_dev_t *hw, uint32_t unit, uint3
 __attribute__((always_inline))
 static inline int pcnt_ll_get_count(pcnt_dev_t *hw, uint32_t unit)
 {
-    pcnt_un_cnt_reg_t cnt_reg = hw->cnt_unit[unit];
+    pcnt_un_cnt_reg_t cnt_reg;
+    cnt_reg.val = hw->cnt_unit[unit].val;
+
     int16_t value = cnt_reg.pulse_cnt;
     return value;
 }
@@ -248,9 +251,11 @@ static inline void pcnt_ll_disable_all_events(pcnt_dev_t *hw, uint32_t unit)
  */
 static inline void pcnt_ll_set_high_limit_value(pcnt_dev_t *hw, uint32_t unit, int value)
 {
-    pcnt_un_conf2_reg_t conf2_reg = hw->conf_unit[unit].conf2;
+    pcnt_un_conf2_reg_t conf2_reg;
+    conf2_reg.val = hw->conf_unit[unit].conf2.val;
+
     conf2_reg.cnt_h_lim = value;
-    hw->conf_unit[unit].conf2 = conf2_reg;
+    hw->conf_unit[unit].conf2.val = conf2_reg.val;
 }
 
 /**
@@ -262,9 +267,11 @@ static inline void pcnt_ll_set_high_limit_value(pcnt_dev_t *hw, uint32_t unit, i
  */
 static inline void pcnt_ll_set_low_limit_value(pcnt_dev_t *hw, uint32_t unit, int value)
 {
-    pcnt_un_conf2_reg_t conf2_reg = hw->conf_unit[unit].conf2;
+    pcnt_un_conf2_reg_t conf2_reg;
+    conf2_reg.val = hw->conf_unit[unit].conf2.val;
+
     conf2_reg.cnt_l_lim = value;
-    hw->conf_unit[unit].conf2 = conf2_reg;
+    hw->conf_unit[unit].conf2.val = conf2_reg.val;
 }
 
 /**
@@ -277,13 +284,15 @@ static inline void pcnt_ll_set_low_limit_value(pcnt_dev_t *hw, uint32_t unit, in
  */
 static inline void pcnt_ll_set_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32_t thres, int value)
 {
-    pcnt_un_conf1_reg_t conf1_reg = hw->conf_unit[unit].conf1;
+    pcnt_un_conf1_reg_t conf1_reg;
+    conf1_reg.val = hw->conf_unit[unit].conf1.val;
+
     if (thres == 0) {
         conf1_reg.cnt_thres0 = value;
     } else {
         conf1_reg.cnt_thres1 = value;
     }
-    hw->conf_unit[unit].conf1 = conf1_reg;
+    hw->conf_unit[unit].conf1.val = conf1_reg.val;
 }
 
 /**
@@ -295,7 +304,9 @@ static inline void pcnt_ll_set_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32
  */
 static inline int pcnt_ll_get_high_limit_value(pcnt_dev_t *hw, uint32_t unit)
 {
-    pcnt_un_conf2_reg_t conf2_reg = hw->conf_unit[unit].conf2;
+    pcnt_un_conf2_reg_t conf2_reg;
+    conf2_reg.val = hw->conf_unit[unit].conf2.val;
+
     int16_t value = conf2_reg.cnt_h_lim ;
     return value;
 }
@@ -309,7 +320,9 @@ static inline int pcnt_ll_get_high_limit_value(pcnt_dev_t *hw, uint32_t unit)
  */
 static inline int pcnt_ll_get_low_limit_value(pcnt_dev_t *hw, uint32_t unit)
 {
-    pcnt_un_conf2_reg_t conf2_reg = hw->conf_unit[unit].conf2;
+    pcnt_un_conf2_reg_t conf2_reg;
+    conf2_reg.val = hw->conf_unit[unit].conf2.val;
+
     int16_t value = conf2_reg.cnt_l_lim ;
     return value;
 }
@@ -325,7 +338,9 @@ static inline int pcnt_ll_get_low_limit_value(pcnt_dev_t *hw, uint32_t unit)
 static inline int pcnt_ll_get_thres_value(pcnt_dev_t *hw, uint32_t unit, uint32_t thres)
 {
     int16_t value;
-    pcnt_un_conf1_reg_t conf1_reg = hw->conf_unit[unit].conf1;
+    pcnt_un_conf1_reg_t conf1_reg;
+    conf1_reg.val = hw->conf_unit[unit].conf1.val;
+
     if (thres == 0) {
         value = conf1_reg.cnt_thres0 ;
     } else {
@@ -356,7 +371,7 @@ static inline uint32_t pcnt_ll_get_unit_status(pcnt_dev_t *hw, uint32_t unit)
 __attribute__((always_inline))
 static inline pcnt_unit_zero_cross_mode_t pcnt_ll_get_zero_cross_mode(pcnt_dev_t *hw, uint32_t unit)
 {
-    return hw->status_unit[unit].val & 0x03;
+    return (pcnt_unit_zero_cross_mode_t)(hw->status_unit[unit].val & 0x03);
 }
 
 /**
@@ -419,6 +434,27 @@ static inline void pcnt_ll_enable_glitch_filter(pcnt_dev_t *hw, uint32_t unit, b
 static inline volatile void *pcnt_ll_get_intr_status_reg(pcnt_dev_t *hw)
 {
     return &hw->int_st.val;
+}
+
+/**
+ * @brief Enable or disable the bus clock for the PCNT module
+ *
+ * @param set_bit True to set bit, false to clear bit
+ */
+static inline void pcnt_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    PCR.pcnt_conf.pcnt_clk_en = enable;
+}
+
+/**
+ * @brief Reset the PCNT module
+ */
+static inline void pcnt_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    PCR.pcnt_conf.pcnt_rst_en = 1;
+    PCR.pcnt_conf.pcnt_rst_en = 0;
 }
 
 #ifdef __cplusplus

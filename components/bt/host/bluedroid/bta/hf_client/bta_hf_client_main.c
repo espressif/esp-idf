@@ -25,6 +25,10 @@
 #include "bta/bta_hf_client_api.h"
 #include "bta_hf_client_int.h"
 
+#if BT_HF_CLIENT_BQB_INCLUDED
+static BOOLEAN s_bta_hf_client_bqb_clip_flag = TRUE;
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
+
 #if (BTA_HF_INCLUDED == TRUE)
 /* uncomment to enable extra debug */
 /* #define BTA_HF_CLIENT_DEBUG TRUE */
@@ -247,6 +251,21 @@ tBTA_HF_CLIENT_CB  bta_hf_client_cb;
 tBTA_HF_CLIENT_CB  *bta_hf_client_cb_ptr;
 #endif
 
+/*******************************************************************************
+**
+** Function     bta_hf_client_bqb_clip_ctrl
+**
+** Description  Control if send the command AT+CLIP for BQB test
+**
+** Returns      void
+**
+*******************************************************************************/
+#if BT_HF_CLIENT_BQB_INCLUDED
+void bta_hf_client_bqb_clip_ctrl(BOOLEAN enable)
+{
+    s_bta_hf_client_bqb_clip_flag = enable;
+}
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
 
 /*******************************************************************************
 **
@@ -538,7 +557,14 @@ static void send_post_slc_cmd(void)
     bta_hf_client_send_at_cmee(TRUE);
     bta_hf_client_send_at_cops(FALSE);
     bta_hf_client_send_at_btrh(TRUE, 0);
+
+#if BT_HF_CLIENT_BQB_INCLUDED
+    if (s_bta_hf_client_bqb_clip_flag == TRUE) {
+        bta_hf_client_send_at_clip(TRUE);
+    }
+#else
     bta_hf_client_send_at_clip(TRUE);
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
 }
 
 /*******************************************************************************

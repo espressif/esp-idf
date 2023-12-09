@@ -37,9 +37,7 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-/// This is the expected clock frequency
-#define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
-#define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):&GPSPI2)
+#define SPI_LL_GET_HW(ID) (((ID)==1) ? &GPSPI2 : NULL)
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
@@ -66,7 +64,6 @@ typedef enum {
     SPI_LL_INTR_CMDA =          BIT(13),    ///< Has received CMDA command. Only available in slave HD.
     SPI_LL_INTR_SEG_DONE =      BIT(14),
 } spi_ll_intr_t;
-FLAG_ATTR(spi_ll_intr_t)
 
 // Flags for conditions under which the transaction length should be recorded
 typedef enum {
@@ -75,7 +72,6 @@ typedef enum {
     SPI_LL_TRANS_LEN_COND_WRDMA =   BIT(2), ///< WRDMA length will be recorded
     SPI_LL_TRANS_LEN_COND_RDDMA =   BIT(3), ///< RDDMA length will be recorded
 } spi_ll_trans_len_cond_t;
-FLAG_ATTR(spi_ll_trans_len_cond_t)
 
 // SPI base command
 typedef enum {
@@ -94,7 +90,56 @@ typedef enum {
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
+/**
+ * Enable peripheral register clock
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+    switch (host_id)
+    {
+    case SPI1_HOST:
+        PCR.mspi_conf.mspi_clk_en = enable;
+        break;
+    case SPI2_HOST:
+        PCR.spi2_conf.spi2_clk_en = enable;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
 
+/**
+ * Reset whole peripheral register to init value defined by HW design
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ */
+static inline void spi_ll_reset_register(spi_host_device_t host_id) {
+    switch (host_id)
+    {
+    case SPI1_HOST:
+        PCR.mspi_conf.mspi_rst_en = 1;
+        PCR.mspi_conf.mspi_rst_en = 0;
+        break;
+    case SPI2_HOST:
+        PCR.spi2_conf.spi2_rst_en = 1;
+        PCR.spi2_conf.spi2_rst_en = 0;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Enable functional output clock within peripheral
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
+{
+    (void) host_id;
+    PCR.spi2_clkm_conf.spi2_clkm_en = enable;
+}
 
 /**
  * Select SPI peripheral clock source (master).
@@ -102,6 +147,7 @@ typedef enum {
  * @param hw Beginning address of the peripheral registers.
  * @param clk_source clock source to select, see valid sources in type `spi_clock_source_t`
  */
+__attribute__((always_inline))
 static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_source)
 {
     switch (clk_source)
@@ -137,7 +183,6 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     hw->slave.val = 0;
     hw->user.val = 0;
 
-    PCR.spi2_clkm_conf.spi2_clkm_en = 1;
     PCR.spi2_clkm_conf.spi2_clkm_sel = 0;
 
     hw->dma_conf.val = 0;

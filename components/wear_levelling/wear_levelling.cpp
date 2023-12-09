@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -136,14 +136,14 @@ esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
     // Configure data needed by WL layer for respective flash driver
     result = wl_flash->config(&cfg, part);
     if (ESP_OK != result) {
-        ESP_LOGE(TAG, "%s: config instance=0x%08x, result=0x%x", __func__, *out_handle, result);
+        ESP_LOGE(TAG, "%s: config instance=0x%08" PRIx32 ", result=0x%x", __func__, *out_handle, result);
         goto out;
     }
 
     // Initialise sectors used by WL layer for respective flash driver
     result = wl_flash->init();
     if (ESP_OK != result) {
-        ESP_LOGE(TAG, "%s: init instance=0x%08x, result=0x%x", __func__, *out_handle, result);
+        ESP_LOGE(TAG, "%s: init instance=0x%08" PRIx32 ", result=0x%x", __func__, *out_handle, result);
         goto out;
     }
 
@@ -174,12 +174,14 @@ esp_err_t wl_unmount(wl_handle_t handle)
     _lock_acquire(&s_instances_lock);
     result = check_handle(handle, __func__);
     if (result == ESP_OK) {
-        // We have to flush state of the component
-        result = s_instances[handle].instance->flush();
         // We use placement new in wl_mount, so call destructor directly
-        Flash_Access *drv = s_instances[handle].instance->get_drv();
-        drv->~Flash_Access();
-        free(drv);
+        Partition *part = s_instances[handle].instance->get_part();
+        // We have to flush state of the component
+        if (!part->is_readonly()) {
+            result = s_instances[handle].instance->flush();
+        }
+        part->~Partition();
+        free(part);
         s_instances[handle].instance->~WL_Flash();
         free(s_instances[handle].instance);
         s_instances[handle].instance = NULL;
@@ -256,11 +258,11 @@ static esp_err_t check_handle(wl_handle_t handle, const char *func)
         return ESP_ERR_NOT_FOUND;
     }
     if (handle >= MAX_WL_HANDLES) {
-        ESP_LOGE(TAG, "%s: instance[0x%08x] out of range", func, handle);
+        ESP_LOGE(TAG, "%s: instance[0x%08" PRIx32 "] out of range", func, handle);
         return ESP_ERR_INVALID_ARG;
     }
     if (s_instances[handle].instance == NULL) {
-        ESP_LOGE(TAG, "%s: instance[0x%08x] not initialized", func, handle);
+        ESP_LOGE(TAG, "%s: instance[0x%08" PRIx32 "] not initialized", func, handle);
         return ESP_ERR_NOT_FOUND;
     }
     return ESP_OK;

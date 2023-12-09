@@ -52,7 +52,9 @@ HTTPS 请求
 
 ESP HTTP 客户端支持使用 **mbedTLS** 的 SSL 连接，需将 ``url`` 配置为以 ``https`` 开头，或将 ``transport_type`` 设置为 ``HTTP_TRANSPORT_OVER_SSL``。可以通过 :ref:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` 来配置 HTTPS 支持（默认启用）。
 
-.. note:: 在发起 HTTPS 请求时，如需服务器验证，首先需要向 ``esp_http_client_config_t`` 配置中的 ``cert_pem`` 成员提供额外的根证书（PEM 格式）。用户还可以通过 ``esp_http_client_config_t`` 配置中的 ``crt_bundle_attach`` 成员，使用 ``ESP x509 Certificate Bundle`` 进行服务器验证。
+.. note::
+
+    在发起 HTTPS 请求时，如需服务器验证，首先需要向 ``esp_http_client_config_t`` 配置中的 ``cert_pem`` 成员提供额外的根证书（PEM 格式）。用户还可以通过 ``esp_http_client_config_t`` 配置中的 ``crt_bundle_attach`` 成员，使用 ``ESP x509 Certificate Bundle`` 进行服务器验证。
 
 如需了解上文备注中的实现细节，请参考应用示例中的函数 ``https_with_url`` 和 ``https_with_hostname_path``。
 
@@ -135,6 +137,20 @@ ESP HTTP 客户端诊断信息
     - HTTP_EVENT_REDIRECT         :   ``esp_http_client_redirect_event_data_t``
 
 在无法接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
+
+TLS 协议版本
+--------------------
+
+可在 :cpp:type:`esp_http_client_config_t` 中设置用于底层 TLS 连接的 TLS 协议版本。了解更多信息，请参考 :doc:`/api-reference/protocols/esp_tls` 中的 **TLS 协议版本** 章节。
+
+HTTP 客户端的 TLS 协议版本可按如下方式配置：
+
+    .. code-block:: c
+
+        #include "esp_http_client.h"
+        esp_http_client_config_t config = {
+            .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
+        };
 
 API 参考
 ---------

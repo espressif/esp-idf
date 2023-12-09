@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 /* This is mbedtls boilerplate for library configuration */
@@ -46,7 +46,7 @@ static int configure_mbedtls_rng(void)
 
     mbedtls_entropy_init(&entropy);
     ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-        (const unsigned char *)seed, strlen(seed));
+                                (const unsigned char *)seed, strlen(seed));
     if (ret != 0) {
         ESP_LOGI(TAG, " failed  ! mbedtls_ctr_drbg_seed returned %d", ret);
     } else {
@@ -108,7 +108,7 @@ static int atca_ecdsa_test(void)
 
 #ifdef MBEDTLS_ECDSA_SIGN_ALT
     /* Convert to an mbedtls key */
-    ESP_LOGI(TAG,  " Using a hardware private key ..." );
+    ESP_LOGI(TAG,  " Using a hardware private key ...");
     ret = atca_mbedtls_pk_init(&pkey, 0);
     if (ret != 0) {
         ESP_LOGI(TAG, " failed !  atca_mbedtls_pk_init returned %02x", ret);
@@ -116,20 +116,20 @@ static int atca_ecdsa_test(void)
     }
     ESP_LOGI(TAG, " ok");
 #else
-    ESP_LOGI(TAG,  " Generating a software private key ..." );
+    ESP_LOGI(TAG,  " Generating a software private key ...");
     mbedtls_pk_init(&pkey);
     ret = mbedtls_pk_setup(&pkey,
-            mbedtls_pk_info_from_type( MBEDTLS_PK_ECDSA ));
+                           mbedtls_pk_info_from_type(MBEDTLS_PK_ECDSA));
     if (ret != 0) {
-        ESP_LOGI(TAG,  " failed !  mbedtls_pk_setup returned -0x%04x", -ret );
+        ESP_LOGI(TAG,  " failed !  mbedtls_pk_setup returned -0x%04x", -ret);
         goto exit;
     }
 
-    ret = mbedtls_ecp_gen_key( MBEDTLS_ECP_DP_SECP256R1,
-                                   mbedtls_pk_ec( pkey ),
-                                   mbedtls_ctr_drbg_random, &ctr_drbg );
+    ret = mbedtls_ecp_gen_key(MBEDTLS_ECP_DP_SECP256R1,
+                              mbedtls_pk_ec(pkey),
+                              mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
-        ESP_LOGI(TAG,  " failed !  mbedtls_ecp_gen_key returned -0x%04x", -ret );
+        ESP_LOGI(TAG,  " failed !  mbedtls_ecp_gen_key returned -0x%04x", -ret);
         goto exit;
     }
     ESP_LOGI(TAG, " ok");
@@ -137,7 +137,7 @@ static int atca_ecdsa_test(void)
 
     ESP_LOGI(TAG, " Generating ECDSA Signature...");
     ret = mbedtls_pk_sign(&pkey, MBEDTLS_MD_SHA256, hash, 0, buf, MBEDTLS_MPI_MAX_SIZE, &olen,
-        mbedtls_ctr_drbg_random, &ctr_drbg);
+                          mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ESP_LOGI(TAG, " failed ! mbedtls_pk_sign returned -0x%04x", -ret);
         goto exit;
@@ -146,7 +146,7 @@ static int atca_ecdsa_test(void)
 
     ESP_LOGI(TAG, " Verifying ECDSA Signature...");
     ret = mbedtls_pk_verify(&pkey, MBEDTLS_MD_SHA256, hash, 0,
-        buf, olen);
+                            buf, olen);
     if (ret != 0) {
         ESP_LOGI(TAG, " failed ! mbedtls_pk_verify returned -0x%04x", -ret);
         goto exit;

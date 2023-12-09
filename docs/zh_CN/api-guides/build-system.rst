@@ -64,7 +64,7 @@ idf.py
 
 为了方便，:ref:`idf.py` 已经封装了 CMake_ 命令，但是你愿意，也可以直接调用 CMake。
 
-.. code-block:: bash
+.. highlight:: bash
 
 当 ``idf.py`` 在执行某些操作时，它会打印出其运行的每条命令以便参考。例如运行 ``idf.py build`` 命令与在 bash shell（或者 Windows Command Prompt）中运行以下命令是相同的::
 
@@ -147,13 +147,16 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 示例项目
 ========
 
-.. code-block:: none
+.. highlight:: none
 
 示例项目的目录树结构可能如下所示::
 
     - myProject/
                  - CMakeLists.txt
                  - sdkconfig
+                 - bootloader_components/ - boot_component/ - CMakeLists.txt
+                                                            - Kconfig
+                                                            - src1.c
                  - components/ - component1/ - CMakeLists.txt
                                              - Kconfig
                                              - src1.c
@@ -172,6 +175,8 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 - 顶层项目 CMakeLists.txt 文件，这是 CMake 用于学习如何构建项目的主要文件，可以在这个文件中设置项目全局的 CMake 变量。顶层项目 CMakeLists.txt 文件会导入 :idf_file:`/tools/cmake/project.cmake` 文件，由它负责实现构建系统的其余部分。该文件最后会设置项目的名称，并定义该项目。
 
 - "sdkconfig" 项目配置文件，执行 ``idf.py menuconfig`` 时会创建或更新此文件，文件中保存了项目中所有组件（包括 ESP-IDF 本身）的配置信息。 ``sdkconfig`` 文件可能会也可能不会被添加到项目的源码管理系统中。
+
+- 可选的 "bootloader_components" 目录中包含了需要在引导加载项目中进行编译和链接的组件。并不是每个项目都需要这种自定义组件，但此类组件在引导加载程序需要修改以嵌入新功能时可能很有用。
 
 - 可选的 "components" 目录中包含了项目的部分自定义组件，并不是每个项目都需要这种自定义组件，但它有助于构建可复用的代码或者导入第三方（不属于 ESP-IDF）的组件。或者，你也可以在顶层 CMakeLists.txt 中设置 ``EXTRA_COMPONENT_DIRS`` 变量以查找其他指定位置处的组件。
 
@@ -193,7 +198,7 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 最小 CMakeLists 文件示例
 ------------------------
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 最小项目::
 
@@ -227,6 +232,8 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 - ``COMPONENTS``：要构建进项目中的组件名称列表，默认为 ``COMPONENT_DIRS`` 目录下检索到的所有组件。使用此变量可以“精简”项目以缩短构建时间。请注意，如果一个组件通过 ``COMPONENT_REQUIRES`` 指定了它依赖的另一个组件，则会自动将其添加到 ``COMPONENTS`` 中，所以 ``COMPONENTS`` 列表可能会非常短。
 
+- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：引导加载程序编译时应忽略的组件列表，位于 ``bootloader_components/`` 目录中。使用这一变量可以将一个组件有条件地包含在项目中。
+
 以上变量中的路径可以是绝对路径，或者是相对于项目目录的相对路径。
 
 请使用 `cmake 中的 set 命令 <cmake set_>`_ 来设置这些变量，如 ``set(VARIABLE "VALUE")``。请注意，``set()`` 命令需放在 ``include(...)`` 之前，``cmake_minimum(...)`` 之后。
@@ -249,7 +256,7 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 构建系统设置了一些全局的构建规范（编译标志、定义等），这些规范可用于编译来自所有组件的所有源文件。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 例如，其中一个默认的构建规范是编译选项 ``Wextra``。假设一个用户想用 ``Wno-extra`` 来覆盖这个选项，
 应在 ``project()`` 之后进行::
@@ -299,7 +306,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 最小组件 CMakeLists 文件
 --------------------------
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 最小组件 ``CMakeLists.txt`` 文件通过使用 ``idf_component_register`` 将组件添加到构建系统中。
 
@@ -354,6 +361,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
   * 如果设置 :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，将会使用 :ref:`CONFIG_APP_PROJECT_VER` 的值。
   * 或者，如果在项目 CMakeLists.txt 文件中设置了 ``PROJECT_VER`` 变量，则该变量值可以使用。
   * 或者，如果 ``PROJECT_DIR/version.txt`` 文件存在，其内容会用作 ``PROJECT_VER`` 的值。
+  * 或者，如果在 CMakeLists.txt 文件中将 ``VERSION`` 参数传递给 ``project()`` 调用，形式为 ``project(... VERSION x.y.z.w )``，那么 ``VERSION`` 参数将用作为 ``PROJECT_VER`` 的值。``VERSION`` 参数必须符合 `cmake 标准 <https://cmake.org/cmake/help/v3.16/command/project.html>`_。
   * 或者，如果项目位于某个 Git 仓库中，则使用 ``git describe`` 命令的输出作为 ``PROJECT_VER`` 的值。
   * 否则，``PROJECT_VER`` 的值为 1。
 - ``EXTRA_PARTITION_SUBTYPES``：CMake 列表，用于创建额外的分区子类型。子类型的描述由字符串组成，以逗号为分隔，格式为 ``type_name, subtype_name, numeric_value``。组件可通过此列表，添加新的子类型。
@@ -366,7 +374,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 组件编译控制
 ------------------
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 在编译特定组件的源文件时，可以使用 `target_compile_options`_  函数来传递编译器选项::
 
@@ -438,7 +446,9 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 
 如果组件仅支持某些硬件目标（``IDF_TARGET`` 的值），则可以在 ``idf_component_register`` 中指定 ``REQUIRED_IDF_TARGETS`` 来声明这个需求。在这种情况下，如果构建系统导入了不支持当前硬件目标的组件时就会报错。
 
-.. 注解:: 在 CMake 中，``REQUIRES`` 和 ``PRIV_REQUIRES`` 是 CMake 函数 ``target_link_libraries(... PUBLIC ...)`` 和 ``target_link_libraries(... PRIVATE ...)`` 的近似包装。
+.. 注解::
+
+  在 CMake 中，``REQUIRES`` 和 ``PRIV_REQUIRES`` 是 CMake 函数 ``target_link_libraries(... PUBLIC ...)`` 和 ``target_link_libraries(... PRIVATE ...)`` 的近似包装。
 
 
 .. _example component requirements:
@@ -466,7 +476,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 Car 组件
 ^^^^^^^^^
 
-.. code-block:: c
+.. highlight:: c
 
 ``car.h`` 头文件是 ``car`` 组件的公共接口。该头文件直接包含了 ``engine.h``，这是因为它需要使用 ``engine.h`` 中的一些声明::
 
@@ -498,7 +508,7 @@ Car 组件
 Engine 组件
 ^^^^^^^^^^^^^^^^
 
-.. code-block:: c
+.. highlight:: c
 
 ``engine`` 组件也有一个公共头文件 ``include/engine.h``，但这个头文件更为简单::
 
@@ -655,7 +665,7 @@ CMake 通常会在链接器命令行上重复两次组件库名称来自动处�
 添加链接时依赖项
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 ESP-IDF 的 CMake 辅助函数 ``idf_component_add_link_dependency`` 可以在组件之间添加仅作用于链接时的依赖关系。绝大多数情况下，我们都建议你使用 ``idf_component_register`` 中的 ``PRIV_REQUIRES`` 功能来构建依赖关系。然而在某些情况下，还是有必要添加另一个组件对当前组件的链接时依赖，即反转 ``PRIV_REQUIRES`` 中的依赖关系（参考示例：:doc:`/api-reference/peripherals/spi_flash/spi_flash_override_driver`）。
 
@@ -700,8 +710,6 @@ KConfig.projbuild
 
 在此文件中添加配置时要小心，因为这些配置会包含在整个项目配置中。在可能的情况下，请为 :ref:`component-configuration` 创建 KConfig 文件。
 
-``project_include.cmake`` 文件在 ESP-IDF 内部使用，以定义项目范围内的构建功能，比如 ``esptool.py`` 的命令行参数和 ``bootloader`` 这个特殊的应用程序。
-
 
 通过封装对现有函数进行重新定义或扩展
 -------------------------------------
@@ -717,6 +725,40 @@ KConfig.projbuild
 链接器会提供一个名为 ``__real_function_to_redefine`` 的新符号，指向将被重新定义的函数的原有实现。由此，可以从新的实现中调用该函数，从而对原有实现进行扩展。
 
 请参考 :example:`build_system/wrappers` 示例，了解其详细原理。更多细节请参阅 :idf_file:`examples/build_system/wrappers/README.md`。
+
+
+覆盖默认引导加载程序
+--------------------------
+
+由于 ESP-IDF 中存在可选目录 ``bootloader_components``，因此可以覆盖默认的 ESP-IDF 引导加载程序。覆盖前，应定义一个 ``bootloader_components/main`` 组件，使项目目录如下所示：
+
+    - myProject/
+                 - CMakeLists.txt
+                 - sdkconfig
+                 - bootloader_components/ - main/ - CMakeLists.txt
+                                                  - Kconfig
+                                                  - my_bootloader.c
+                 - main/       - CMakeLists.txt
+                               - app_main.c
+
+                 - build/
+
+
+此处的 ``my_bootloader.c`` 文件会成为新引导加载程序的源代码，这意味着它需要执行所有必要的操作来设置并从 flash 中加载 ``main`` 应用程序。
+
+还可以根据特定的条件来替换引导加载程序，例如替换指定目标芯片的引导加载程序。这可以通过 ``BOOTLOADER_IGNORE_EXTRA_COMPONENT`` CMake 变量实现，该列表会让 ESP-IDF 引导加载项目忽略 ``bootloader_components`` 中的指定组件，不对其进行编译。例如，如果希望使用 ESP32 目标芯片的默认引导加载程序，``myProject/CMakeLists.txt`` 应如下所示::
+
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+    if(${IDF_TARGET} STREQUAL "esp32")
+        set(BOOTLOADER_IGNORE_EXTRA_COMPONENT "main")
+    endif()
+
+    project(main)
+
+值得注意的是，这还可以用于除 ``main`` 之外的其他引导加载程序组件。在任何情况下，都不能指定前缀 ``bootloader_component``。
+
+请参考 :example:`custom_bootloader/bootloader_override` 查看覆盖默认引导加载程序的示例。
 
 
 .. _config_only_component:
@@ -757,6 +799,7 @@ CMake 调试
 
 .. _component_cmakelists_example:
 
+
 组件 CMakeLists 示例
 ====================
 
@@ -772,7 +815,7 @@ CMake 调试
 
 配置系统可用于根据项目配置中选择的选项有条件地编译某些文件。
 
-.. code-block:: none
+.. highlight:: none
 
 ``Kconfig``::
 
@@ -815,7 +858,7 @@ CMake 调试
         help
             Select this to output temperature plots
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 ``CMakeLists.txt``::
 
@@ -888,7 +931,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
   idf_component_register(...
                          EMBED_TXTFILES server_root_cert.pem)
 
-.. code-block:: c
+.. highlight:: c
 
 文件的内容会被添加到 flash 的 .rodata 段，用户可以通过符号名来访问，如下所示::
 
@@ -897,7 +940,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
 符号名会根据文件全名生成，如 ``EMBED_FILES`` 中所示，字符 ``/``、``.`` 等都会被下划线替代。符号名称中的 _binary 前缀由 objcopy 命令添加，对文本文件和二进制文件都是如此。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 如果要将文件嵌入到项目中，而非组件中，可以调用 ``target_add_binary_data`` 函数::
 
@@ -907,7 +950,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
 有关使用此技术的示例，请查看 file_serving 示例 :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` 中的 main 组件，两个文件会在编译时加载并链接到固件中。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 也可以嵌入生成的文件::
 
@@ -936,7 +979,7 @@ ESP-IDF 还支持自动生成链接脚本，它允许组件通过链接片段文
 完全覆盖组件的构建过程
 ----------------------
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 当然，在有些情况下，上面提到的方法不一定够用。如果组件封装了另一个第三方组件，而这个第三方组件并不能直接在 ESP-IDF 的构建系统中工作，在这种情况下，就需要放弃 ESP-IDF 的构建系统，改为使用 CMake 的 ExternalProject_ 功能。组件 CMakeLists 示例如下::
 
@@ -1013,7 +1056,7 @@ ExternalProject 的依赖与构建清理
 依赖于硬件目标的 sdkconfig 默认值
 ---------------------------------
 
-除了 ``sdkconfig.defaults`` 之外，构建系统还将从 ``sdkconfig.defaults.TARGET_NAME`` 文件加载默认值，其中 ``IDF_TARGET`` 的值为 ``TARGET_NAME``。例如，对于 ``ESP32`` 这个硬件目标，sdkconfig 的默认值会首先从 ``sdkconfig.defaults`` 获取，然后再从 ``sdkconfig.defaults.esp32`` 获取。
+当且仅当 ``sdkconfig.defaults`` 文件存在时，构建系统还将尝试从 ``sdkconfig.defaults.TARGET_NAME`` 文件中加载默认值，其中 ``IDF_TARGET`` 的值为 ``TARGET_NAME``。例如，对于 ``esp32`` 这个目标芯片，sdkconfig 的默认值会首先从 ``sdkconfig.defaults`` 获取，然后再从 ``sdkconfig.defaults.esp32`` 获取。当没有通用的默认设置时，仍需创建一个空的 ``sdkconfig.defaults`` 文件，以便构建系统可以识别任何其他与目标芯片相关的 ``sdkconfig.defaults.TARGET_NAME`` 文件。
 
 如果使用 ``SDKCONFIG_DEFAULTS`` 覆盖默认文件的名称，则硬件目标的默认文件名也会从 ``SDKCONFIG_DEFAULTS`` 值中派生。如果 ``SDKCONFIG_DEFAULTS`` 中有多个文件，硬件目标文件会在引入该硬件目标文件的文件之后应用， 而 ``SDKCONFIG_DEFAULTS`` 中所有其它后续文件则会在硬件目标文件之后应用 。
 
@@ -1033,7 +1076,7 @@ flash 参数
 - ``flash_app_args`` 只包含烧录应用程序的参数。
 - ``flash_bootloader_args`` 只包含烧录引导程序的参数。
 
-.. code-block:: bash
+.. highlight:: bash
 
 你可以参照如下命令将任意烧录参数文件传递给 ``esptool.py``::
 
@@ -1061,7 +1104,7 @@ ESP-IDF 构建系统用“组件”的概念“封装”了 CMake，并提供了
 
 然而，“组件”概念的背后是一个完整的 CMake 构建系统，因此可以制作纯 CMake 组件。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 下面是使用纯 CMake 语法为 ``json`` 组件编写的最小 CMakeLists 文件的示例::
 
@@ -1081,7 +1124,7 @@ ESP-IDF 构建系统用“组件”的概念“封装”了 CMake，并提供了
 
 CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的应用程序中使用开源代码。CMake 构建系统的一大好处就是可以导入这些第三方的项目，有时候甚至不用做任何改动。这就允许用户使用当前 ESP-IDF 组件尚未提供的功能，或者使用其它库来实现相同的功能。
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 假设 ``main`` 组件需要导入一个假想库 ``foo``，相应的组件 CMakeLists 文件如下所示::
 
@@ -1123,7 +1166,7 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
 组件中使用预建库
 =================
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 还有一种情况是你有一个由其它构建过程生成预建静态库（``.a`` 文件）。
 
@@ -1386,7 +1429,7 @@ ESP-IDF 组件属性
 文件通配 & 增量构建
 =====================
 
-.. code-block:: cmake
+.. highlight:: cmake
 
 在 ESP-IDF 组件中添加源文件的首选方法是在 ``COMPONENT_SRCS`` 中手动列出它们::
 

@@ -5,7 +5,7 @@
 
 本节将介绍如何在 :ref:`Eclipse <jtag-debugging-examples-eclipse>` 和 :ref:`命令行 <jtag-debugging-examples-command-line>` 中使用 GDB 进行调试的示例。
 
-.. code-block:: none
+.. highlight:: none
 
 
 .. _jtag-debugging-examples-eclipse:
@@ -497,7 +497,7 @@
     Target halted. PRO_CPU: PC=0x400DB74B (active)    APP_CPU: PC=0x400D1128
     Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128
     Target halted. PRO_CPU: PC=0x400DC04F (active)    APP_CPU: PC=0x400D1128
-    gpio_set_level (gpio_num=GPIO_NUM_4, level=0) at /home/user-name/esp/esp-idf/components/driver/gpio/gpio.c:183
+    gpio_set_level (gpio_num=GPIO_NUM_4, level=0) at /home/user-name/esp/esp-idf/components/esp_driver_gpio/src/gpio.c:183
     183     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
     (gdb)
 

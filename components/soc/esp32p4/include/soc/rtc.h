@@ -486,6 +486,44 @@ bool rtc_dig_8m_enabled(void);
  */
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
+/**
+ * @brief Enable or disable APLL
+ *
+ * Output frequency is given by the formula:
+ * apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2)
+ *
+ * The dividend in this expression should be in the range of 240 - 600 MHz.
+ *
+ * In rev. 0 of ESP32, sdm0 and sdm1 are unused and always set to 0.
+ *
+ * @param enable  true to enable, false to disable
+ */
+void rtc_clk_apll_enable(bool enable);
+
+/**
+ * @brief Calculate APLL clock coeffifcients
+ *
+ * @param freq  expected APLL frequency
+ * @param o_div  frequency divider, 0..31
+ * @param sdm0  frequency adjustment parameter, 0..255
+ * @param sdm1  frequency adjustment parameter, 0..255
+ * @param sdm2  frequency adjustment parameter, 0..63
+ *
+ * @return
+ *      - 0 Failed
+ *      - else Sucess
+ */
+uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm0, uint32_t *_sdm1, uint32_t *_sdm2);
+
+/**
+ * @brief Set APLL clock coeffifcients
+ *
+ * @param o_div  frequency divider, 0..31
+ * @param sdm0  frequency adjustment parameter, 0..255
+ * @param sdm1  frequency adjustment parameter, 0..255
+ * @param sdm2  frequency adjustment parameter, 0..63
+ */
+void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2);
 
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.

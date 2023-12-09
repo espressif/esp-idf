@@ -1,14 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2017 Amazon.com, Inc. or its affiliates
- * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ * FreeRTOS Kernel V10.5.1
+ * Copyright (C) 2015-2019 Cadence Design Systems, Inc.
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc
+ * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
- */
-/*
- * FreeRTOS Kernel V10.4.3
- * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -18,8 +18,7 @@
  * subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software. If you wish to use our Amazon
- * FreeRTOS name, please do so in a fair use way that does not cause confusion.
+ * copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
@@ -31,30 +30,6 @@
  * https://www.FreeRTOS.org
  * https://github.com/FreeRTOS
  *
- * 1 tab == 4 spaces!
- */
-
-/*
- * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include "sdkconfig.h"
@@ -62,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <xtensa/config/core.h>
-#include <xtensa/xtensa_context.h>
+#include <xtensa_context.h>
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 #include "esp_private/crosscore_int.h"
@@ -76,9 +51,6 @@
 #include "esp_memory_utils.h"
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
-
-_Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
-
 
 /* ---------------------------------------------------- Variables ------------------------------------------------------
  * - Various variables used to maintain the FreeRTOS port's state. Used from both port.c and various .S files
@@ -646,8 +618,12 @@ static void vPortCleanUpCoprocArea(void *pvTCB)
     uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pvTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
     uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
 
-    /* Get xTargetCoreID from the TCB.xCoreID */
-    xTargetCoreID = ( ( StaticTask_t * ) pvTCB )->xDummyCoreID;
+    #if ( configNUMBER_OF_CORES > 1 )
+        /* Get xTargetCoreID from the TCB.xCoreID */
+        xTargetCoreID = ( ( StaticTask_t * ) pvTCB )->xDummyCoreID;
+    #else /* configNUMBER_OF_CORES > 1 */
+        xTargetCoreID = 0;
+    #endif /* configNUMBER_OF_CORES > 1 */
 
     /* If task has live floating point registers somewhere, release them */
     void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xTargetCoreID);

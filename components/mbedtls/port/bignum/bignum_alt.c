@@ -4,19 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_crypto_lock.h"
-#include "esp_private/periph_ctrl.h"
 #include "bignum_impl.h"
 #include "mbedtls/bignum.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 
 #include "hal/mpi_hal.h"
-
+#include "hal/mpi_ll.h"
 
 void esp_mpi_enable_hardware_hw_op( void )
 {
     esp_crypto_mpi_lock_acquire();
 
     /* Enable RSA hardware */
-    periph_module_enable(PERIPH_RSA_MODULE);
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(true);
+        mpi_ll_reset_register();
+    }
 
     mpi_hal_enable_hardware_hw_op();
 }
@@ -27,7 +30,9 @@ void esp_mpi_disable_hardware_hw_op( void )
     mpi_hal_disable_hardware_hw_op();
 
     /* Disable RSA hardware */
-    periph_module_disable(PERIPH_RSA_MODULE);
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(false);
+    }
 
     esp_crypto_mpi_lock_release();
 }

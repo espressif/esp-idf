@@ -87,9 +87,9 @@ GPIO 捆绑包操作
 
 高阶用户可以通过编写汇编代码或调用 CPU 低层 API 来操作 GPIO。常见步骤为：
 
-1. 分配一个 GPIO 捆绑包： :cpp:func:`dedic_gpio_new_bundle`
+1. 分配一个 GPIO 捆绑包：:cpp:func:`dedic_gpio_new_bundle`
 2. 查询该包占用的掩码：:cpp:func:`dedic_gpio_get_out_mask` 和/或 :cpp:func:`dedic_gpio_get_in_mask`
-3. 调用 CPU LL apis (如 `cpu_ll_write_dedic_gpio_mask`) 或使用该掩码编写汇编代码
+3. 调用 CPU LL apis（如 `cpu_ll_write_dedic_gpio_mask`）或使用该掩码编写汇编代码
 4. 切换 IO 的最快捷方式是使用专用的“设置/清除”指令：
 
     .. only:: esp32s2 or esp32s3
@@ -98,7 +98,7 @@ GPIO 捆绑包操作
         - 清除 GPIO 位：``clr_bit_gpio_out imm[7:0]``
         - 注意：立即数宽度取决于专用 GPIO 通道的数量
 
-    .. only:: esp32c2 or esp32c3 or esp32c6
+    .. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
 
         - 设置 GPIO 位：``csrrsi rd, csr, imm[4:0]``
         - 清除 GPIO 位：``csrrci rd, csr, imm[4:0]``
@@ -112,7 +112,7 @@ GPIO 捆绑包操作
 
     有关支持的专用 GPIO 指令的详细信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **处理器指令拓展 (PIE)（稍后发布）** [`PDF <{IDF_TARGET_TRM_CN_URL}#pie>`__].
 
-.. only:: esp32c2 or esp32c3 or esp32c6
+.. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
 
     通过汇编操作专用 GPIO 的示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals/dedicated_gpio` 目录下。示例演示了如何通过汇编操作专用 GPIO 来模拟 UART、I2C 和 SPI 总线。
 

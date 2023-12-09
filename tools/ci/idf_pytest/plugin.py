@@ -49,7 +49,7 @@ class IdfPytestEmbedded:
         # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
         # https://github.com/pytest-dev/pytest/discussions/9689
         if not hasattr(item, 'callspec'):
-            raise ValueError(f'Function {item} does not have params')
+            return default
 
         return item.callspec.params.get(key, default) or default
 
@@ -177,7 +177,11 @@ class IdfPytestEmbedded:
             # finally!
             filtered_items.append(item)
 
-        items[:] = filtered_items[:]
+        # sort the test cases with (app folder, config)
+        items[:] = sorted(
+            filtered_items,
+            key=lambda x: (os.path.dirname(x.path), self.get_param(x, 'config', DEFAULT_SDKCONFIG))
+        )
 
     def pytest_report_collectionfinish(self, items: t.List[Function]) -> None:
         for item in items:

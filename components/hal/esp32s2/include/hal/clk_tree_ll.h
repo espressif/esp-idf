@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,15 @@ extern "C" {
 #define CLK_LL_APLL_CAL_DELAY_1            0x0f
 #define CLK_LL_APLL_CAL_DELAY_2            0x3f
 #define CLK_LL_APLL_CAL_DELAY_3            0x1f
+
+/* APLL multiplier output frequency range */
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define CLK_LL_APLL_MULTIPLIER_MIN_HZ (350000000) // 350 MHz
+#define CLK_LL_APLL_MULTIPLIER_MAX_HZ (500000000) // 500 MHz
+
+/* APLL output frequency range */
+#define CLK_LL_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+#define CLK_LL_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
     .dac = 3, \
@@ -207,7 +216,7 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void
     bool xtal_xpd_sw = (xtal_conf & RTC_CNTL_XTAL32K_XPD_FORCE) >> RTC_CNTL_XTAL32K_XPD_FORCE_S;
     /* If xtal xpd software control is on */
     bool xtal_xpd_st = (xtal_conf & RTC_CNTL_XPD_XTAL_32K) >> RTC_CNTL_XPD_XTAL_32K_S;
-    // disabled = xtal_xpd_sw && !xtal_xpd_st; enabled = !disbaled
+    // disabled = xtal_xpd_sw && !xtal_xpd_st; enabled = !disabled
     bool enabled = !xtal_xpd_sw || xtal_xpd_st;
     return enabled;
 }

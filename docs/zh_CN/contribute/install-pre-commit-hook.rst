@@ -10,12 +10,12 @@
 
 如果你已安装了不兼容的 Python 版本，应在安装 pre-commit 工具前进行更新。
 
-安装 pre-commit 工具
+安装 ``pre-commit`` 工具
 ---------------------------
 
 运行 ``pip install pre-commit`` 。
 
-安装 pre-commit 钩子
+安装 ``pre-commit`` 钩子
 ----------------------------
 
 1. 切换到 IDF 项目路径。
@@ -24,8 +24,8 @@
 
 3. 在运行 ``git commit`` 命令时，pre-commit 钩子会自动运行。
 
-卸载 pre-commit 钩子
-----------------------
+卸载 ``pre-commit`` 钩子
+---------------------------
 
 运行 ``pre-commit uninstall`` 。
 

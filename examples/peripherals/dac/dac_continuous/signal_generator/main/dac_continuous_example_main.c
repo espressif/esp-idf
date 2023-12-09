@@ -38,7 +38,7 @@
 #endif
 #define EXAMPLE_DAC_CHAN0_IO                DAC_CHAN0_GPIO_NUM             // DAC channel 0 io number
 #define EXAMPLE_DAC_CHAN1_IO                DAC_CHAN1_GPIO_NUM             // DAC channel 1 io number
-#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_11
+#define EXAMPLE_ADC_ATTEN                   ADC_ATTEN_DB_12
 
 _Static_assert(EXAMPLE_DAC_AMPLITUDE < 256, "The DAC accuracy is 8 bit-width, doesn't support the amplitude beyond 255");
 
@@ -54,7 +54,7 @@ static void example_generate_wave(void)
     uint32_t pnt_num = EXAMPLE_ARRAY_LEN;
 
     for (int i = 0; i < pnt_num; i ++) {
-        sin_wav[i] = (uint8_t)((sin( i * CONST_PERIOD_2_PI / pnt_num) + 1) * (double)(EXAMPLE_DAC_AMPLITUDE) / 2 + 0.5);
+        sin_wav[i] = (uint8_t)((sin(i * CONST_PERIOD_2_PI / pnt_num) + 1) * (double)(EXAMPLE_DAC_AMPLITUDE) / 2 + 0.5);
         tri_wav[i] = (i > (pnt_num / 2)) ? (2 * EXAMPLE_DAC_AMPLITUDE * (pnt_num - i) / pnt_num) : (2 * EXAMPLE_DAC_AMPLITUDE * i / pnt_num);
         saw_wav[i] = (i == pnt_num) ? 0 : (i * EXAMPLE_DAC_AMPLITUDE / pnt_num);
         squ_wav[i] = (i < (pnt_num / 2)) ? EXAMPLE_DAC_AMPLITUDE : 0;

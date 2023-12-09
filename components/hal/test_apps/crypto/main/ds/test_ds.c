@@ -7,6 +7,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "memory_checks.h"
 #include "unity_fixture.h"
 
@@ -127,22 +128,39 @@ _Static_assert(NUM_RESULTS == NUM_MESSAGES, "expected_results size should be the
 #include "hal/ds_hal.h"
 #include "hal/ds_ll.h"
 #include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
 
 
 static void ds_acquire_enable(void)
 {
-    periph_module_enable(PERIPH_HMAC_MODULE);
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(true);
+        hmac_ll_reset_register();
+    }
+
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(true);
+        ds_ll_reset_register();
+    }
+
     hmac_hal_start();
 }
 
 static void ds_disable_release(void)
 {
     ds_hal_finish();
-    periph_module_disable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(false);
+    }
+
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
+
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(false);
+    }
 }
 
 
@@ -222,10 +240,7 @@ static esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
     esp_err_t result = ESP_OK;
 
     periph_module_enable(PERIPH_AES_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_HMAC_MODULE);
-    periph_module_enable(PERIPH_RSA_MODULE);
 
     ets_ds_data_t *ds_data = (ets_ds_data_t *) data;
     const ets_ds_p_data_t *ds_plain_data = (const ets_ds_p_data_t *) p_data;
@@ -236,10 +251,7 @@ static esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
         result = ESP_ERR_INVALID_ARG;
     }
 
-    periph_module_disable(PERIPH_RSA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_DS_MODULE);
     periph_module_disable(PERIPH_AES_MODULE);
 
     return result;

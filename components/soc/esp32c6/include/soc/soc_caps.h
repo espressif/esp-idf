@@ -16,11 +16,8 @@
  * If this file is changed the script will automatically run the script
  * and generate the kconfig variables as part of the pre-commit hooks.
  *
- * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/esp32c6/include/soc/'`
- *
- * For more information see `tools/gen_soc_caps_kconfig/README.md`
- *
-*/
+ * It can also be run manually. For more information, see `${IDF_PATH}/tools/gen_soc_caps_kconfig/README.md`
+ */
 
 #pragma once
 
@@ -74,8 +71,12 @@
 #define SOC_LP_AON_SUPPORTED            1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
+#define SOC_ULP_LP_UART_SUPPORTED       1
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
+#define SOC_WDT_SUPPORTED               1
+#define SOC_SPI_FLASH_SUPPORTED         1
+#define SOC_RNG_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -146,9 +147,9 @@
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
 #define SOC_INT_PLIC_SUPPORTED          1       //riscv platform-level interrupt controller
 
-#define SOC_CPU_BREAKPOINTS_NUM         4
-#define SOC_CPU_WATCHPOINTS_NUM         4
-#define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
+#define SOC_CPU_BREAKPOINTS_NUM             4
+#define SOC_CPU_WATCHPOINTS_NUM             4
+#define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  0x80000000 // bytes
 
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
@@ -195,6 +196,10 @@
 
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
+
+#define SOC_GPIO_IN_RANGE_MAX           30
+#define SOC_GPIO_OUT_RANGE_MAX          30
+
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
 
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_30)
@@ -204,6 +209,9 @@
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
+
+// The Clock Out singnal is route to the pin by GPIO matrix
+#define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 8
@@ -233,6 +241,10 @@
 #define SOC_I2C_SUPPORT_XTAL        (1)
 #define SOC_I2C_SUPPORT_RTC         (1)
 #define SOC_I2C_SUPPORT_10BIT_ADDR   (1)
+#define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE    (1)
+#define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
+#define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
 
 /*-------------------------- LP_I2C CAPS -------------------------------------*/
 // ESP32-C6 has 1 LP_I2C
@@ -357,7 +369,6 @@
 #define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
 #define SOC_SDM_CLK_SUPPORT_XTAL     1
 
-// TODO: IDF-5334 (Copy from esp32c3, need check)
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
@@ -418,6 +429,9 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_SUPPORT_ETM             (1)
 
+/*--------------------------- WATCHDOG CAPS ---------------------------------------*/
+#define SOC_MWDT_SUPPORT_XTAL              (1)
+
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         2
 #define SOC_TWAI_CLK_SUPPORT_XTAL       1
@@ -442,7 +456,7 @@
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
-#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
+#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
@@ -547,3 +561,6 @@
 #define SOC_BLE_MULTI_CONN_OPTIMIZATION (1)    /*!< Support multiple connections optimization */
 
 #define SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND (1)
+
+/*------------------------------------- PHY CAPS -------------------------------------*/
+#define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/

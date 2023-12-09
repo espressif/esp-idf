@@ -96,7 +96,7 @@ void esp_startup_start_app(void)
         port_start_app_hook();
     }
 
-    ESP_EARLY_LOGI(APP_START_TAG, "Starting scheduler on CPU0");
+    ESP_EARLY_LOGD(APP_START_TAG, "Starting scheduler on CPU0");
     vTaskStartScheduler();
 }
 
@@ -130,7 +130,7 @@ void esp_startup_start_app_other_cores(void)
     // Initialize the cross-core interrupt on CPU1
     esp_crosscore_int_init();
 
-    ESP_EARLY_LOGI(APP_START_TAG, "Starting scheduler on CPU%d", xPortGetCoreID());
+    ESP_EARLY_LOGD(APP_START_TAG, "Starting scheduler on CPU%d", xPortGetCoreID());
     xPortStartScheduler();
     abort(); // Only get to here if FreeRTOS somehow very broken
 }

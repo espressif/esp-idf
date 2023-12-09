@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import print_function, unicode_literals
@@ -11,7 +11,6 @@ import sys
 from io import open
 from typing import Set, Tuple
 
-from check_kconfigs import valid_directory
 from idf_ci_utils import get_submodule_dirs
 
 # FILES_TO_CHECK used as "startswith" pattern to match sdkconfig.defaults variants
@@ -34,7 +33,7 @@ def _parse_path(path: 'os.PathLike[str]', sep: str=None) -> Set:
     return ret
 
 
-def _valid_directory(path: 'os.PathLike[str]') -> 'os.PathLike[str]':
+def valid_directory(path: str) -> str:
     if not os.path.isdir(path):
         raise argparse.ArgumentTypeError('{} is not a valid directory!'.format(path))
     return path

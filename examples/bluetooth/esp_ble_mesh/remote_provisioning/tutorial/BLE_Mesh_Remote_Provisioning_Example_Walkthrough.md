@@ -295,10 +295,10 @@ When receiving a response `ESP_BLE_MESH_MODEL_OP_RPR_SCAN_STATUS` for `ESP_BLE_M
 `ESP_BLE_MESH_MODEL_OP_RPR_SCAN_START` requires three parameters:
 1. `scan_items_limit`: The number of Unprovisioned Devices that can be scanned. This value cannot exceed the maximum scan limit of the Remote Provisioning Server. When set to 0, the Remote Provisioning Client does not limit this value, and the Remote Provisioning Server will set it to its own maximum scan limit.
 2. `timeout`: The maximum scan time for the Remote Provisioning Server in seconds. This value cannot be set to 0.
-3. `uuid_en`: Specifies whether the Unprovisioned Device's UUID is specified. 0 means no, 1 means yes. If specified, the UUID information of the Unprovisioned Device needs to be filled. An example is shown below. In this example, the UUID is not specified.
+3. `uuid_en`: Specifies whether the unprovisioned device's UUID is specified. 0 means no, 1 means yes. If specified, the UUID information of the unprovisioned device needs to be filled. An example is shown below. In this example, the UUID is not specified.
 ```c
 msg.scan_start.uuid_en = 1;
-memcpy(msg.scan_start.uuid, unprovisioning_device_uuid, 16);
+memcpy(msg.scan_start.uuid, unprovisioned_device_uuid, 16);
 ```
 When `ESP_BLE_MESH_MODEL_OP_RPR_SCAN_START` is sent, the Remote Provisioning Server will immediately respond with `ESP_BLE_MESH_MODEL_OP_RPR_SCAN_STATUS`. If `scan_status.status` is `ESP_BLE_MESH_RPR_STATUS_SUCCESS`, it indicates that the Remote Provisioning Server's Scan has been successfully started. When it scans an unprovisioned device, it will respond with `ESP_BLE_MESH_MODEL_OP_RPR_SCAN_REPORT`. The handling of `ESP_BLE_MESH_MODEL_OP_RPR_SCAN_REPORT` in this example is as follows:
 ```c
@@ -391,9 +391,9 @@ static void example_ble_mesh_remote_prov_client_callback(esp_ble_mesh_rpr_client
     // ...
 }
 ```
-If the status of the Provisioning Link of the Remote Provisioning Server is `ESP_BLE_MESH_RPR_LINK_IDLE`, the Remote Provisioning Client sends `ESP_BLE_MESH_MODEL_OP_RPR_LINK_OPEN` to open the Provisioning Link of the Remote Provisioning Server. Once the Remote Provisioning Server receives `ESP_BLE_MESH_MODEL_OP_RPR_LINK_OPEN`, it immediately replies with `ESP_BLE_MESH_MODEL_OP_RPR_LINK_STATUS` to indicate whether it has received the command from the Remote Provisioning Client. The Remote Provisioning Server then reports to the Remote Provisioning Client whether it has successfully established a Provisioning Link with the Unprovisioning Device by replying with `ESP_BLE_MESH_MODEL_OP_RPR_LINK_REPORT`.
+If the status of the Provisioning Link of the Remote Provisioning Server is `ESP_BLE_MESH_RPR_LINK_IDLE`, the Remote Provisioning Client sends `ESP_BLE_MESH_MODEL_OP_RPR_LINK_OPEN` to open the Provisioning Link of the Remote Provisioning Server. Once the Remote Provisioning Server receives `ESP_BLE_MESH_MODEL_OP_RPR_LINK_OPEN`, it immediately replies with `ESP_BLE_MESH_MODEL_OP_RPR_LINK_STATUS` to indicate whether it has received the command from the Remote Provisioning Client. The Remote Provisioning Server then reports to the Remote Provisioning Client whether it has successfully established a Provisioning Link with the unprovisioned device by replying with `ESP_BLE_MESH_MODEL_OP_RPR_LINK_REPORT`.
 
-Only when the `status` in `ESP_BLE_MESH_MODEL_OP_RPR_LINK_REPORT` is `ESP_BLE_MESH_RPR_STATUS_SUCCESS` and `rpr_state` is `ESP_BLE_MESH_RPR_LINK_ACTIVE`, it means that the Remote Provisioning Server has successfully established a Provisioning Link with the Unprovisioning Device and the Link Open is successful. At this point, the Unprovisioning Device triggers the `ESP_BLE_MESH_NODE_PROV_LINK_OPEN_EVT` event.
+Only when the `status` in `ESP_BLE_MESH_MODEL_OP_RPR_LINK_REPORT` is `ESP_BLE_MESH_RPR_STATUS_SUCCESS` and `rpr_state` is `ESP_BLE_MESH_RPR_LINK_ACTIVE`, it means that the Remote Provisioning Server has successfully established a Provisioning Link with the unprovisioned device and the Link Open is successful. At this point, the unprovisioned device triggers the `ESP_BLE_MESH_NODE_PROV_LINK_OPEN_EVT` event.
 
 In this example, the processing of receiving `ESP_BLE_MESH_MODEL_OP_RPR_LINK_REPORT` is as follows:
 ```c
@@ -427,7 +427,7 @@ In this example, the processing of receiving `ESP_BLE_MESH_MODEL_OP_RPR_LINK_REP
             }
             break;
 ```
-Once the Remote Provisioning Server successfully establishes a Provisioning Link with the Unprovisioning Device, the network provisioning process can be initiated by setting the API `esp_ble_mesh_rpr_client_action` to `ESP_BLE_MESH_RPR_CLIENT_ACT_START_RPR` and passing the address of the Remote Provisioning Server.
+Once the Remote Provisioning Server successfully establishes a Provisioning Link with the unprovisioned device, the network provisioning process can be initiated by setting the API `esp_ble_mesh_rpr_client_action` to `ESP_BLE_MESH_RPR_CLIENT_ACT_START_RPR` and passing the address of the Remote Provisioning Server.
 
 After the network provisioning is completed, the Remote Provisioning Client triggers the event `ESP_BLE_MESH_RPR_CLIENT_PROV_COMP_EVT`, which returns data about the network information of the nodes entering the network through Remote Provisioning. This includes node UUID, node address, and number of elements in the node.
 
@@ -501,4 +501,4 @@ static void example_remote_prov_server_callback(esp_ble_mesh_rpr_server_cb_event
 ```
 #### Unprovisioned Device
 ----
-The Remote Provisioning functionality is transparent to Unprovisioning Device. Therefore, regardless of whether Provisioning is done through Remote Provisioning or directly by the Provisioner, it will trigger the same events on the Unprovisioning Device side. Hence, in this example, it is not explained in detail.
+The Remote Provisioning functionality is transparent to unprovisioned device. Therefore, regardless of whether Provisioning is done through Remote Provisioning or directly by the Provisioner, it will trigger the same events on the unprovisioned device side. Hence, in this example, it is not explained in detail.

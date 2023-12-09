@@ -6,6 +6,7 @@ menu "Example Configuration"
         default BLE_MESH_ESP32C3_DEV if IDF_TARGET_ESP32C3
         default BLE_MESH_ESP32S3_DEV if IDF_TARGET_ESP32S3
         default BLE_MESH_ESP32C6_DEV if IDF_TARGET_ESP32C6
+        default BLE_MESH_ESP32H2_DEV if IDF_TARGET_ESP32H2
         help
             Select this option to choose the board for BLE Mesh. The default is ESP32-WROOM-32
 

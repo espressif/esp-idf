@@ -1,0 +1,5 @@
+# This is shellcheck config file
+# Files that are checked: install.sh, export.sh
+
+# Do not complain about variables determined at runtime (IDF_PATH)
+disable=SC1090

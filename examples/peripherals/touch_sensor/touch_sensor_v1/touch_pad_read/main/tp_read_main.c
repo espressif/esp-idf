@@ -47,7 +47,7 @@ static void tp_example_read_task(void *pvParameter)
 
 static void tp_example_touch_pad_init(void)
 {
-    for (int i = 0;i< TOUCH_PAD_MAX;i++) {
+    for (int i = 0; i < TOUCH_PAD_MAX; i++) {
         touch_pad_config(i, TOUCH_THRESH_NO_USE);
     }
 }

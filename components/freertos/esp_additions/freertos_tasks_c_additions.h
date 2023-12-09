@@ -6,9 +6,10 @@
 
 #include "sdkconfig.h"
 #include "esp_assert.h"
+#include "esp_heap_caps.h"
 #include "freertos/idf_additions.h"
 #if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-    #include "freertos/task_snapshot.h"
+    #include "esp_private/freertos_debug.h"
 #endif /* CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT */
 #include "esp_private/freertos_idf_additions_priv.h"
 
@@ -28,9 +29,7 @@
  */
 _Static_assert( offsetof( StaticTask_t, pxDummy6 ) == offsetof( TCB_t, pxStack ) );
 _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfStack ) );
-#if CONFIG_FREERTOS_SMP
-    _Static_assert( tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY" );
-#endif /* CONFIG_FREERTOS_SMP */
+_Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY" );
 
 /* ------------------------------------------------- Kernel Control ------------------------------------------------- */
 
@@ -82,7 +81,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
     {
         /* Minor optimization. This function can never switch cores mid
          * execution */
-        BaseType_t xCoreID = xPortGetCoreID();
+        BaseType_t xCoreID = portGET_CORE_ID();
         BaseType_t xSwitchRequired = pdFALSE;
 
         /* This function should never be called by Core 0. */
@@ -105,7 +104,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
             {
                 /* Check if core 0 calling xTaskIncrementTick() has
                  * unblocked a task that can be run. */
-                if( uxTopReadyPriority > pxCurrentTCB[ xCoreID ]->uxPriority )
+                if( uxTopReadyPriority > pxCurrentTCBs[ xCoreID ]->uxPriority )
                 {
                     xSwitchRequired = pdTRUE;
                 }
@@ -121,7 +120,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
              * writer has not explicitly turned time slicing off. */
             #if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
             {
-                if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCB[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
+                if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCBs[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
                 {
                     xSwitchRequired = pdTRUE;
                 }
@@ -176,6 +175,8 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
     {
         BaseType_t xReturn;
 
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+
         #if CONFIG_FREERTOS_SMP
         {
             /* If using Amazon SMP FreeRTOS. This function is just a wrapper around
@@ -222,10 +223,12 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
                 if( pxNewTCB != NULL )
                 {
+                    memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+
                     /* Allocate space for the stack used by the task being created.
                      * The base of the stack memory stored in the TCB so the task can
                      * be deleted later if required. */
-                    pxNewTCB->pxStack = ( StackType_t * ) pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+                    pxNewTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
 
                     if( pxNewTCB->pxStack == NULL )
                     {
@@ -240,7 +243,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                 StackType_t * pxStack;
 
                 /* Allocate space for the stack used by the task being created. */
-                pxStack = pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
+                pxStack = pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
 
                 if( pxStack != NULL )
                 {
@@ -249,6 +252,8 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
                     if( pxNewTCB != NULL )
                     {
+                        memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+
                         /* Store the stack location in the TCB. */
                         pxNewTCB->pxStack = pxStack;
                     }
@@ -256,7 +261,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                     {
                         /* The stack cannot be used as the TCB was not created.  Free
                          * it again. */
-                        vPortFree( pxStack );
+                        vPortFreeStack( pxStack );
                     }
                 }
                 else
@@ -306,6 +311,10 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
     {
         TaskHandle_t xReturn;
 
+        configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
+        configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+
         #if CONFIG_FREERTOS_SMP
         {
             /* If using Amazon SMP FreeRTOS. This function is just a wrapper around
@@ -314,6 +323,10 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
             {
                 /* Convert xCoreID into an affinity mask */
                 UBaseType_t uxCoreAffinityMask;
+
+                /* Bit shifting << xCoreID is only valid if we have less than
+                 * 32 cores. */
+                ESP_STATIC_ASSERT( configNUM_CORES < 32 );
 
                 if( xCoreID == tskNO_AFFINITY )
                 {
@@ -336,10 +349,6 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
         {
             TCB_t * pxNewTCB;
 
-            configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
-            configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
-            configASSERT( ( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) ) || ( xCoreID == tskNO_AFFINITY ) );
-
             #if ( configASSERT_DEFINED == 1 )
             {
                 /* Sanity check that the size of the structure used to declare a
@@ -356,6 +365,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                 /* The memory used for the task's TCB and stack are passed into this
                  * function - use them. */
                 pxNewTCB = ( TCB_t * ) pxTaskBuffer; /*lint !e740 !e9087 Unusual cast is ok as the structures are designed to have the same alignment, and the size is checked by an assert. */
+                memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
                 pxNewTCB->pxStack = ( StackType_t * ) puxStackBuffer;
 
                 #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
@@ -405,48 +415,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
 /* ------------------------------------------------- Task Utilities ------------------------------------------------- */
 
-#if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
-
-    TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
-    {
-        configASSERT( xCoreID >= 0 && xCoreID < configNUM_CORES );
-        configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
-        return ( TaskHandle_t ) xIdleTaskHandle[ xCoreID ];
-    }
-
-#endif /* INCLUDE_xTaskGetIdleTaskHandle */
-/*----------------------------------------------------------*/
-
-#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
-
-    TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
-    {
-        TaskHandle_t xReturn;
-
-        #if CONFIG_FREERTOS_SMP
-        {
-            xReturn = xTaskGetCurrentTaskHandleCPU( xCoreID );
-        }
-        #else /* CONFIG_FREERTOS_SMP */
-        {
-            if( xCoreID < configNUM_CORES )
-            {
-                xReturn = pxCurrentTCB[ xCoreID ];
-            }
-            else
-            {
-                xReturn = NULL;
-            }
-        }
-        #endif /* CONFIG_FREERTOS_SMP */
-
-        return xReturn;
-    }
-
-#endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
-/*----------------------------------------------------------*/
-
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 {
     BaseType_t xReturn;
 
@@ -472,11 +441,10 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
         #else /* CONFIG_FREERTOS_SMP */
             TCB_t * pxTCB;
 
+            /* Todo: Remove xCoreID for single core builds (IDF-7894) */
             pxTCB = prvGetTCBFromHandle( xTask );
-            /* Simply read the xCoreID member of the TCB */
-            taskENTER_CRITICAL( &xKernelLock );
+
             xReturn = pxTCB->xCoreID;
-            taskEXIT_CRITICAL_ISR( &xKernelLock );
         #endif /* CONFIG_FREERTOS_SMP */
     }
     #else /* configNUM_CORES > 1 */
@@ -489,6 +457,106 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
     return xReturn;
 }
 /*----------------------------------------------------------*/
+
+#if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
+
+    TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID )
+    {
+        /* If xTaskGetIdleTaskHandle() is called before the scheduler has been
+         * started, then xIdleTaskHandle will be NULL. */
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+        configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
+        return xIdleTaskHandle[ xCoreID ];
+    }
+
+#endif /* INCLUDE_xTaskGetIdleTaskHandle */
+/*----------------------------------------------------------*/
+
+#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
+
+    TaskHandle_t xTaskGetCurrentTaskHandleForCore( BaseType_t xCoreID )
+    {
+        TaskHandle_t xReturn;
+
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+
+        #if ( CONFIG_FREERTOS_SMP )
+        {
+            xReturn = xTaskGetCurrentTaskHandleCPU( ( UBaseType_t ) xCoreID );
+        }
+        #else /* CONFIG_FREERTOS_SMP */
+        {
+            /* A critical section is not required as this function does not
+             * guarantee that the TCB will still be valid when this function
+             * returns. */
+            xReturn = pxCurrentTCBs[ xCoreID ];
+        }
+        #endif /* CONFIG_FREERTOS_SMP */
+
+        return xReturn;
+    }
+
+#endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
+/*----------------------------------------------------------*/
+
+#if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+
+    configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimeCounterForCore( BaseType_t xCoreID )
+    {
+        uint32_t ulRunTimeCounter;
+
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+
+        /* For SMP, we need to take the kernel lock here as we are about to
+         * access kernel data structures. */
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        {
+            ulRunTimeCounter = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter;
+        }
+        /* Release the previously taken kernel lock. */
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+
+        return ulRunTimeCounter;
+    }
+
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+/*----------------------------------------------------------*/
+
+#if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+
+    configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimePercentForCore( BaseType_t xCoreID )
+    {
+        configRUN_TIME_COUNTER_TYPE ulTotalTime, ulReturn;
+
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+
+        ulTotalTime = portGET_RUN_TIME_COUNTER_VALUE();
+
+        /* For percentage calculations. */
+        ulTotalTime /= ( configRUN_TIME_COUNTER_TYPE ) 100;
+
+        /* Avoid divide by zero errors. */
+        if( ulTotalTime > ( configRUN_TIME_COUNTER_TYPE ) 0 )
+        {
+            /* For SMP, we need to take the kernel lock here as we are about
+             * to access kernel data structures. */
+            prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+            {
+                ulReturn = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter / ulTotalTime;
+            }
+            /* Release the previously taken kernel lock. */
+            prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        }
+        else
+        {
+            ulReturn = 0;
+        }
+
+        return ulReturn;
+    }
+
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+/*-----------------------------------------------------------*/
 
 uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
 {
@@ -789,7 +857,7 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
     struct _reent * __getreent( void )
     {
         /* No lock needed because if this changes, we won't be running anymore. */
-        TCB_t * pxCurTask = xTaskGetCurrentTaskHandle();
+        TCB_t * pxCurTask = ( TCB_t * ) xTaskGetCurrentTaskHandle();
         struct _reent * ret;
 
         if( pxCurTask == NULL )
@@ -800,7 +868,15 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
         else
         {
             /* We have a task; return its reentrant struct. */
-            ret = &pxCurTask->xNewLib_reent;
+            #if ( CONFIG_FREERTOS_SMP )
+            {
+                ret = &pxCurTask->xNewLib_reent;
+            }
+            #else /* CONFIG_FREERTOS_SMP */
+            {
+                ret = &pxCurTask->xTLSBlock;
+            }
+            #endif /* CONFIG_FREERTOS_SMP */
         }
 
         return ret;
@@ -1033,6 +1109,23 @@ UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
 }
 /*----------------------------------------------------------*/
 
+/* ----------------------------------------------------- Misc ----------------------------------------------------- */
+
+void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
+{
+    void * pvRet;
+
+    configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+
+    #if CONFIG_FREERTOS_SMP
+        /* SMP FreeRTOS defines pxCurrentTCB as a macro function call */
+        pvRet = ( void * ) pxCurrentTCB;
+    #else /* CONFIG_FREERTOS_SMP */
+        pvRet = ( void * ) pxCurrentTCBs[ xCoreID ];
+    #endif /* CONFIG_FREERTOS_SMP */
+    return pvRet;
+}
+
 /* ----------------------------------------------------- OpenOCD ---------------------------------------------------- */
 
 #if CONFIG_FREERTOS_DEBUG_OCDAWARE
@@ -1067,4 +1160,108 @@ UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
     };
 
 #endif /* CONFIG_FREERTOS_DEBUG_OCDAWARE */
+/*----------------------------------------------------------*/
+
+/* ----------------------------------------------------- PSRAM ---------------------------------------------------- */
+
+#if CONFIG_SPIRAM
+
+    #if CONFIG_FREERTOS_SMP
+        BaseType_t prvTaskCreateDynamicAffinitySetWithCaps( TaskFunction_t pxTaskCode,
+                                                            const char * const pcName,
+                                                            const configSTACK_DEPTH_TYPE usStackDepth,
+                                                            void * const pvParameters,
+                                                            UBaseType_t uxPriority,
+                                                            UBaseType_t uxCoreAffinityMask,
+                                                            UBaseType_t uxStackMemoryCaps,
+                                                            TaskHandle_t * const pxCreatedTask )
+    #else /* CONFIG_FREERTOS_SMP */
+        BaseType_t prvTaskCreateDynamicPinnedToCoreWithCaps( TaskFunction_t pxTaskCode,
+                                                             const char * const pcName,
+                                                             const configSTACK_DEPTH_TYPE usStackDepth,
+                                                             void * const pvParameters,
+                                                             UBaseType_t uxPriority,
+                                                             const BaseType_t xCoreID,
+                                                             UBaseType_t uxStackMemoryCaps,
+                                                             TaskHandle_t * const pxCreatedTask )
+    #endif /* CONFIG_FREERTOS_SMP */
+    {
+        TCB_t * pxNewTCB;
+        BaseType_t xReturn;
+
+        StackType_t * pxStack;
+
+        configASSERT( uxStackMemoryCaps & ( MALLOC_CAP_8BIT ) );
+        configASSERT( ( uxStackMemoryCaps & MALLOC_CAP_SPIRAM ) ||
+                      ( uxStackMemoryCaps & MALLOC_CAP_INTERNAL ) );
+        #if ( !CONFIG_FREERTOS_SMP )
+        {
+            configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+        }
+        #endif /* !CONFIG_FREERTOS_SMP */
+
+        /* Allocate space for the stack used by the task being created. */
+        pxStack = heap_caps_malloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ), uxStackMemoryCaps );
+
+        if( pxStack != NULL )
+        {
+            /* Allocate space for the TCB. */
+            pxNewTCB = ( TCB_t * ) pvPortMalloc( sizeof( TCB_t ) );
+
+            if( pxNewTCB != NULL )
+            {
+                memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+
+                /* Store the stack location in the TCB. */
+                pxNewTCB->pxStack = pxStack;
+            }
+            else
+            {
+                /* The stack cannot be used as the TCB has not been created. Free it. */
+                heap_caps_free( pxStack );
+            }
+        }
+        else
+        {
+            pxNewTCB = NULL;
+        }
+
+        if( pxNewTCB != NULL )
+        {
+            #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 )
+            {
+                /* Tasks can be created statically or dynamically, so note this
+                 * task was created dynamically in case it is later deleted. */
+                pxNewTCB->ucStaticallyAllocated = tskDYNAMICALLY_ALLOCATED_STACK_AND_TCB;
+            }
+            #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
+
+            #if CONFIG_FREERTOS_SMP
+            {
+                prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
+                #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+                {
+                    /* Set the task's affinity before scheduling it */
+                    pxNewTCB->uxCoreAffinityMask = uxCoreAffinityMask;
+                }
+                #endif /* ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) ) */
+            }
+            #else /* CONFIG_FREERTOS_SMP */
+            {
+                prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
+            }
+            #endif /* CONFIG_FREERTOS_SMP */
+
+            prvAddNewTaskToReadyList( pxNewTCB );
+            xReturn = pdPASS;
+        }
+        else
+        {
+            xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
+        }
+
+        return xReturn;
+    }
+
+#endif /* CONFIG_SPIRAM */
 /*----------------------------------------------------------*/

@@ -45,13 +45,12 @@ const static char *TAG = "EXAMPLE";
 #endif
 #endif  //#if EXAMPLE_USE_ADC2
 
-#define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_11
+#define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_12
 
 static int adc_raw[2][10];
 static int voltage[2][10];
 static bool example_adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
 static void example_adc_calibration_deinit(adc_cali_handle_t handle);
-
 
 void app_main(void)
 {
@@ -75,7 +74,6 @@ void app_main(void)
     adc_cali_handle_t adc1_cali_chan1_handle = NULL;
     bool do_calibration1_chan0 = example_adc_calibration_init(ADC_UNIT_1, EXAMPLE_ADC1_CHAN0, EXAMPLE_ADC_ATTEN, &adc1_cali_chan0_handle);
     bool do_calibration1_chan1 = example_adc_calibration_init(ADC_UNIT_1, EXAMPLE_ADC1_CHAN1, EXAMPLE_ADC_ATTEN, &adc1_cali_chan1_handle);
-
 
 #if EXAMPLE_USE_ADC2
     //-------------ADC2 Init---------------//
@@ -138,7 +136,6 @@ void app_main(void)
     }
 #endif //#if EXAMPLE_USE_ADC2
 }
-
 
 /*---------------------------------------------------------------
         ADC Calibration

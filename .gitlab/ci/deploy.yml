@@ -1,8 +1,7 @@
 .deploy_job_template:
   stage: deploy
   image: $ESP_ENV_IMAGE
-  tags:
-    - deploy
+  tags: [ deploy ]
 
 # Check this before push_to_github
 check_submodule_sync:
@@ -10,11 +9,11 @@ check_submodule_sync:
     - .deploy_job_template
     - .rules:test:submodule
   stage: test_deploy
-  tags:
-    - github_sync
+  tags: [ brew, github_sync ]
   retry: 2
   variables:
-    GIT_STRATEGY: clone
+    # for brew runners, we always set GIT_STRATEGY to fetch
+    GIT_STRATEGY: fetch
     SUBMODULES_TO_FETCH: "none"
     PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
   dependencies: []
@@ -31,9 +30,16 @@ check_submodule_sync:
 push_to_github:
   extends:
     - .deploy_job_template
-    - .before_script_minimal
-    - .rules:protected-no_label
-  dependencies: []
+    - .before_script:minimal
+    - .rules:push_to_github
+  needs:
+    - check_submodule_sync
+  tags: [ brew, github_sync ]
+  variables:
+    # for brew runners, we always set GIT_STRATEGY to fetch
+    GIT_STRATEGY: fetch
+    # github also need full record of commits
+    GIT_DEPTH: 0
   script:
     - add_github_ssh_keys
     - git remote remove github &>/dev/null || true
@@ -43,48 +49,13 @@ push_to_github:
 deploy_update_SHA_in_esp-dockerfiles:
   extends:
     - .deploy_job_template
+    - .before_script:minimal
     - .rules:protected-no_label-always
+  dependencies: []
+  variables:
+    GIT_DEPTH: 2
+  tags: [ shiny, build ]
   script:
     - 'curl --header "PRIVATE-TOKEN: ${ESPCI_SCRIPTS_TOKEN}" -o create_MR_in_esp_dockerfile.sh $GITLAB_HTTP_SERVER/api/v4/projects/1260/repository/files/create_MR_in_esp_dockerfile%2Fcreate_MR_in_esp_dockerfile.sh/raw\?ref\=master'
     - chmod +x create_MR_in_esp_dockerfile.sh
     - ./create_MR_in_esp_dockerfile.sh
-
-deploy_test_result:
-  extends:
-    - .deploy_job_template
-    - .before_script_minimal
-    - .rules:ref:master-always
-  image: $CI_DOCKER_REGISTRY/bot-env:1
-  dependencies: []
-  tags:
-    - deploy_test
-  artifacts:
-    when: always
-    paths:
-      - ${CI_PROJECT_DIR}/test-management/*.log
-    expire_in: 1 week
-  variables:
-    BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
-    TEST_RESULTS_PATH: "${CI_PROJECT_DIR}/TEST_RESULTS"
-  script:
-    - add_gitlab_ssh_keys
-    - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
-    - export REV_COUNT=$(git rev-list --count ${GIT_SHA} --)
-    - export SUMMARY="IDF CI test result for $GIT_SHA (r${REV_COUNT})"
-    # Download test result
-    - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
-    - python3 ${IDF_PATH}/tools/ci/get_all_test_results.py --path ${TEST_RESULTS_PATH} --include_retried
-    - if [[ -z $(find ${TEST_RESULTS_PATH} -name "*.xml") ]]; then exit 0; fi
-    # Clone test-management repo
-    - retry_failed git clone $TEST_MANAGEMENT_REPO
-    - python3 $CHECKOUT_REF_SCRIPT test-management test-management
-    - cd test-management
-    - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
-    # Make sure all requirements are installed
-    - pip3 install -r requirements.txt
-    # Update test cases
-    - python3 ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT from_xml -d ${TEST_RESULTS_PATH} -r $GIT_SHA -l IDFCI
-    # update test results
-    - python3 ImportTestResult.py -r "$GIT_SHA (r${REV_COUNT})" -j $JIRA_TEST_MANAGEMENT_PROJECT -s "$SUMMARY" -l IDFCI -p ${TEST_RESULTS_PATH} --pipeline_url ${CI_PIPELINE_URL}
-  # May need a long time to upload all test results.
-  timeout: 4 hours

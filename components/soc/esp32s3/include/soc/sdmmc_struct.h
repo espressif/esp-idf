@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,8 +74,8 @@ _Static_assert(sizeof(sdmmc_hw_cmd_t) == 4, "invalid size of sdmmc_cmd_t structu
 #endif
 
 
-typedef volatile struct sdmmc_dev_s {
-    union {
+typedef struct sdmmc_dev_t {
+    volatile union {
         struct {
             uint32_t controller_reset: 1;
             uint32_t fifo_reset: 1;
@@ -99,9 +99,9 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } ctrl;
 
-    uint32_t pwren;             ///< 1: enable power to card, 0: disable power to card
+    volatile uint32_t pwren;             ///< 1: enable power to card, 0: disable power to card
 
-    union {
+    volatile union {
         struct {
             uint32_t div0: 8;   ///< 0: bypass, 1-255: divide clock by (2*div0).
             uint32_t div1: 8;   ///< 0: bypass, 1-255: divide clock by (2*div0).
@@ -111,7 +111,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } clkdiv;
 
-    union {
+    volatile union {
         struct {
             uint32_t card0: 2;            ///< 0-3: select clock divider for card 0 among div0-div3
             uint32_t card1: 2;            ///< 0-3: select clock divider for card 1 among div0-div3
@@ -120,7 +120,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } clksrc;
 
-    union {
+    volatile union {
         struct {
             uint32_t cclk_enable: 16;       ///< 1: enable clock to card, 0: disable clock
             uint32_t cclk_low_power: 16;    ///< 1: enable clock gating when card is idle, 0: disable clock gating
@@ -128,7 +128,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } clkena;
 
-    union {
+    volatile union {
         struct {
             uint32_t response: 8;       ///< response timeout, in card output clock cycles
             uint32_t data: 24;          ///< data read timeout, in card output clock cycles
@@ -136,7 +136,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } tmout;
 
-    union {
+    volatile union {
         struct {
             uint32_t card_width: 16;    ///< one bit for each card: 0: 1-bit mode, 1: 4-bit mode
             uint32_t card_width_8: 16;  ///< one bit for each card: 0: not 8-bit mode (corresponding card_width bit is used), 1: 8-bit mode (card_width bit is ignored)
@@ -144,14 +144,14 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } ctype;
 
-    struct {
+    volatile struct {
         uint32_t blksiz: 16;        ///< block size, default 0x200
         uint32_t reserved: 16;
     };
 
-    uint32_t bytcnt;            ///< number of bytes to be transferred
+    volatile uint32_t bytcnt;            ///< number of bytes to be transferred
 
-    union {
+    volatile union {
         struct {
             uint32_t cd: 1;             ///< Card detect interrupt enable
             uint32_t re: 1;             ///< Response error interrupt enable
@@ -174,13 +174,13 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } intmask;
 
-    uint32_t cmdarg;        ///< Command argument to be passed to card
+    volatile uint32_t cmdarg;        ///< Command argument to be passed to card
 
-    sdmmc_hw_cmd_t cmd;
+    volatile sdmmc_hw_cmd_t cmd;
 
-    uint32_t resp[4];           ///< Response from card
+    volatile uint32_t resp[4];           ///< Response from card
 
-    union {
+    volatile union {
         struct {
             uint32_t cd: 1;             ///< Card detect interrupt masked status
             uint32_t re: 1;             ///< Response error interrupt masked status
@@ -203,7 +203,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } mintsts;
 
-    union {
+    volatile union {
         struct {
             uint32_t cd: 1;             ///< Card detect raw interrupt status
             uint32_t re: 1;             ///< Response error raw interrupt status
@@ -226,7 +226,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } rintsts;                          ///< interrupts can be cleared by writing this register
 
-    union {
+    volatile union {
         struct {
             uint32_t fifo_rx_watermark: 1;  ///< FIFO reached receive watermark level
             uint32_t fifo_tx_watermark: 1;  ///< FIFO reached transmit watermark level
@@ -244,7 +244,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } status;
 
-    union {
+    volatile union {
         struct {
             uint32_t tx_watermark: 12;      ///< FIFO TX watermark level
             uint32_t reserved1: 4;
@@ -255,7 +255,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } fifoth;
 
-    union {
+    volatile union {
         struct {
             uint32_t cards: 2;              ///< bit N reads 0 if card N is present
             uint32_t reserved: 30;
@@ -263,7 +263,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } cdetect;
 
-    union {
+    volatile union {
         struct {
             uint32_t cards: 2;              ///< bit N reads 1 if card N is write protected
             uint32_t reserved: 30;
@@ -271,28 +271,73 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } wrtprt;
 
-    uint32_t gpio;      ///< unused
-    uint32_t tcbcnt;    ///< transferred (to card) byte count
-    uint32_t tbbcnt;    ///< transferred from host to FIFO byte count
+    volatile uint32_t gpio;      ///< unused
+    volatile uint32_t tcbcnt;    ///< transferred (to card) byte count
+    volatile uint32_t tbbcnt;    ///< transferred from host to FIFO byte count
 
-    union {
+    volatile union {
         struct {
             uint32_t debounce_count: 24;    ///< number of host cycles used by debounce filter, typical time should be 5-25ms
             uint32_t reserved: 8;
         };
     } debnce;
 
-    uint32_t usrid;     ///< user ID
-    uint32_t verid;     ///< IP block version
-    uint32_t hcon;      ///< compile-time IP configuration
-    union {
+    volatile uint32_t usrid;     ///< user ID
+    volatile uint32_t verid;     ///< IP block version
+
+    volatile union {
+        struct {
+            /** card_type_reg : RO; bitpos: [0]; default: 1;
+             *  Hardware support SDIO and MMC.
+             */
+            uint32_t card_type_reg:1;
+            /** card_num_reg : RO; bitpos: [5:1]; default: 1;
+             *  Support card number is 2.
+             */
+            uint32_t card_num_reg:5;
+            /** bus_type_reg : RO; bitpos: [6]; default: 1;
+             *  Register config is APB bus.
+             */
+            uint32_t bus_type_reg:1;
+            /** data_width_reg : RO; bitpos: [9:7]; default: 1;
+             *  Regisger data widht is 32.
+             */
+            uint32_t data_width_reg:3;
+            /** addr_width_reg : RO; bitpos: [15:10]; default: 19;
+             *  Register address width is 32.
+             */
+            uint32_t addr_width_reg:6;
+            uint32_t reserved_16:2;
+            /** dma_width_reg : RO; bitpos: [20:18]; default: 1;
+             *  DMA data witdth is 32.
+             */
+            uint32_t dma_width_reg:3;
+            /** ram_indise_reg : RO; bitpos: [21]; default: 0;
+             *  Inside RAM in SDMMC module.
+             */
+            uint32_t ram_indise_reg:1;
+            /** hold_reg : RO; bitpos: [22]; default: 1;
+             *  Have a hold regiser in data path .
+             */
+            uint32_t hold_reg:1;
+            uint32_t reserved_23:1;
+            /** num_clk_div_reg : RO; bitpos: [25:24]; default: 3;
+             *  Have 4 clk divider in design .
+             */
+            uint32_t num_clk_div_reg:2;
+            uint32_t reserved_26:6;
+        };
+        uint32_t val;
+    } hcon;
+
+    volatile union {
         struct {
             uint32_t voltage: 16;           ///< voltage control for slots; no-op on ESP32.
             uint32_t ddr: 16;                ///< bit N enables DDR mode for card N
         };
     } uhs;              ///< UHS related settings
 
-    union {
+    volatile union {
         struct {
             uint32_t cards: 2;          ///< bit N resets card N, active low
             uint32_t reserved: 30;
@@ -301,7 +346,7 @@ typedef volatile struct sdmmc_dev_s {
 
     uint32_t reserved_7c;
 
-    union {
+    volatile union {
         struct {
             uint32_t sw_reset: 1;       ///< set to reset DMA controller
             uint32_t fb: 1;             ///< set if AHB master performs fixed burst transfers
@@ -313,10 +358,10 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } bmod;
 
-    uint32_t pldmnd;                    ///< set any bit to resume IDMAC FSM from suspended state
-    sdmmc_desc_t* dbaddr;        ///< descriptor list base
+    volatile uint32_t pldmnd;                    ///< set any bit to resume IDMAC FSM from suspended state
+    volatile sdmmc_desc_t* dbaddr;        ///< descriptor list base
 
-    union {
+    volatile union {
         struct {
             uint32_t ti: 1;         ///< transmit interrupt status
             uint32_t ri: 1;         ///< receive interrupt status
@@ -334,7 +379,7 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } idsts;
 
-    union {
+    volatile union {
         struct {
             uint32_t ti: 1;         ///< transmit interrupt enable
             uint32_t ri: 1;         ///< receive interrupt enable
@@ -350,13 +395,13 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } idinten;
 
-    uint32_t dscaddr;       ///< current host descriptor address
-    uint32_t dscaddrl;      ///< unused
-    uint32_t dscaddru;      ///< unused
-    uint32_t bufaddrl;      ///< unused
-    uint32_t bufaddru;      ///< unused
-    uint32_t reserved_a8[22];
-    union {
+    volatile uint32_t dscaddr;       ///< current host descriptor address
+    volatile uint32_t dscaddrl;      ///< unused
+    volatile uint32_t dscaddru;      ///< unused
+    volatile uint32_t bufaddrl;      ///< unused
+    volatile uint32_t bufaddru;      ///< unused
+    volatile uint32_t reserved_a8[22];
+    volatile union {
         struct {
             uint32_t read_thr_en : 1;       ///< initiate transfer only if FIFO has more space than the read threshold
             uint32_t busy_clr_int_en : 1;   ///< enable generation of busy clear interrupts
@@ -366,12 +411,12 @@ typedef volatile struct sdmmc_dev_s {
         };
         uint32_t val;
     } cardthrctl;
-    uint32_t back_end_power;
-    uint32_t uhs_reg_ext;
-    uint32_t emmc_ddr_reg;
-    uint32_t enable_shift;
+    volatile uint32_t back_end_power;
+    volatile uint32_t uhs_reg_ext;
+    volatile uint32_t emmc_ddr_reg;
+    volatile uint32_t enable_shift;
     uint32_t reserved_114[443];
-    union {
+    volatile union {
         struct {
             uint32_t phase_dout: 3;         ///< phase of data output clock (0x0: 0, 0x1: 90, 0x4: 180, 0x6: 270)
             uint32_t phase_din: 3;          ///< phase of data input clock

@@ -45,6 +45,12 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
         list(APPEND args --filter ${DEFAULT_CRT_DIR}/cmn_crt_authorities.csv)
     endif()
 
+    # Add deprecated root certs if enabled. This config is not visible if the default cert
+    # bundle is not selected
+    if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_deprecated.pem)
+    endif()
+
     if(CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE)
         get_filename_component(custom_bundle_path
         ${CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH} ABSOLUTE BASE_DIR "${project_dir}")
@@ -110,9 +116,13 @@ list(REMOVE_ITEM src_x509 x509_crt.c)
 set_property(TARGET mbedx509 PROPERTY SOURCES ${src_x509})
 endif()
 
+# Core libraries from the mbedTLS project
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
+# 3rd party libraries from the mbedTLS project
+list(APPEND mbedtls_targets everest p256m)
 
-set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c")
+set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
+                           "${COMPONENT_DIR}/port/esp_platform_time.c")
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 set(mbedtls_target_sources ${mbedtls_target_sources}
@@ -134,8 +144,7 @@ endif()
 
 # net_sockets.c should only be compiled if BSD socket functions are available.
 # Do this by checking if lwip component is included into the build.
-idf_build_get_property(build_components BUILD_COMPONENTS)
-if(lwip IN_LIST build_components)
+if(CONFIG_LWIP_ENABLE)
     list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/net_sockets.c")
     idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
     target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${lwip_lib})
@@ -189,8 +198,10 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
 endif()
 
 
-target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
-                                  "${COMPONENT_DIR}/port/esp_mem.c"
+if(NOT ${IDF_TARGET} STREQUAL "linux")
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c")
+endif()
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c"
                                   "${COMPONENT_DIR}/port/esp_timing.c"
 )
 
@@ -245,6 +256,9 @@ if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
 
     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_restartable")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_write_signature")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_write_signature_restartable")
     endif()
 
     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
@@ -254,6 +268,11 @@ endif()
 
 if(CONFIG_MBEDTLS_ROM_MD5)
     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/md/esp_md.c")
+endif()
+
+if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/mbedtls_rom/mbedtls_rom_osi.c")
+    target_link_libraries(${COMPONENT_LIB} PRIVATE "-u mbedtls_rom_osi_functions_init")
 endif()
 
 foreach(target ${mbedtls_targets})

@@ -459,7 +459,7 @@ LCD
     I2S 驱动
     -----------------------
 
-    旧版 I2S 驱动在支持 ESP32-C3 和 ESP32-S3 新功能时暴露了很多缺点，为解决这些缺点，I2S 驱动已更新（请参考:doc:`I2S Driver <../../../api-reference/peripherals/i2s>`）。用户可以通过引用不同 I2S 模式对应的头文件来使用新版驱动的 API，如 :component_file:`driver/i2s/include/driver/i2s_std.h`， :component_file:`driver/i2s/include/driver/i2s_pdm.h` 以及 :component_file:`driver/i2s/include/driver/i2s_tdm.h`。
+    旧版 I2S 驱动在支持 ESP32-C3 和 ESP32-S3 新功能时暴露了很多缺点，为解决这些缺点，I2S 驱动已更新（请参考:doc:`I2S Driver <../../../api-reference/peripherals/i2s>`）。用户可以通过引用不同 I2S 模式对应的头文件来使用新版驱动的 API，如 :component_file:`esp_driver_i2s/include/driver/i2s_std.h`， :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h` 以及 :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h`。
 
     为保证前向兼容，旧版驱动的 API 仍然在 :component_file:`driver/deprecated/driver/i2s.h` 中可用。但使用旧版 API 会触发编译警告，该警告可通过配置 Kconfig 选项 :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN` 来关闭。
 
@@ -489,9 +489,9 @@ LCD
 
     I2S 通信模式包括以下三种模式，请注意：
 
-    - **标准模式**：标准模式通常包括两个声道，支持 Philips，MSB 和 PCM（短帧同步）格式，详见 :component_file:`driver/i2s/include/driver/i2s_std.h`。
-    - **PDM模式**：PDM 模式仅支持两个声道，16 bit 数据位宽，但是 PDM TX 和 PDM RX 的配置略有不同。对于 PDM TX，采样率可通过 :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate` 进行设置，其时钟频率取决于上采样的配置。对于 PDM RX，采样率可通过 :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate` 进行设置，其时钟频率取决于下采样的配置，详见 :component_file:`driver/i2s/include/driver/i2s_pdm.h`。
-    - **TDM 模式**：TDM 模式可支持高达 16 声道，该模式可工作在 Philips，MSB，PCM（短帧同步）和PCM（长帧同步）格式下，详见 :component_file:`driver/i2s/include/driver/i2s_tdm.h`。
+    - **标准模式**：标准模式通常包括两个声道，支持 Philips，MSB 和 PCM（短帧同步）格式，详见 :component_file:`esp_driver_i2s/include/driver/i2s_std.h`。
+    - **PDM模式**：PDM 模式仅支持两个声道，16 bit 数据位宽，但是 PDM TX 和 PDM RX 的配置略有不同。对于 PDM TX，采样率可通过 :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate` 进行设置，其时钟频率取决于上采样的配置。对于 PDM RX，采样率可通过 :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate` 进行设置，其时钟频率取决于下采样的配置，详见 :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h`。
+    - **TDM 模式**：TDM 模式可支持高达 16 声道，该模式可工作在 Philips，MSB，PCM（短帧同步）和PCM（长帧同步）格式下，详见 :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h`。
 
     在某个模式下分配新通道时，必须通过相应的函数初始化这个通道。我们强烈建议使用辅助宏来生成默认配置，以避免默认值被改动。
 
@@ -537,7 +537,7 @@ LCD
 
 更新前，所有用于访问寄存器的宏都可以作为表达式来使用，所以以下命令是允许的::
 
-    uint32_t val = REG_SET_BITS(reg, mask);
+    uint32_t val = REG_SET_BITS(reg, bits, mask);
 
 在 ESP-IDF v5.0 中，用于写入或读取-修改-写入寄存器的宏不能再作为表达式使用，而只能作为语句使用，这适用于以下宏： ``REG_WRITE``， ``REG_SET_BIT``， ``REG_CLR_BIT``， ``REG_SET_BITS``， ``REG_SET_FIELD``， ``WRITE_PERI_REG``， ``CLEAR_PERI_REG_MASK``， ``SET_PERI_REG_MASK``， ``SET_PERI_REG_BITS``。
 
@@ -548,5 +548,5 @@ LCD
 
 要获得修改后的寄存器的值（该值可能与写入的值不同），要增加一个显示的读取命令::
 
-    REG_SET_BITS(reg, mask);
+    REG_SET_BITS(reg, bits, mask);
     uint32_t new_val = REG_READ(reg);

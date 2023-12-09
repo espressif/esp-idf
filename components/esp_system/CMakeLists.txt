@@ -13,7 +13,11 @@ endif()
 set(srcs "esp_err.c")
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
-    list(APPEND srcs "fpga_overrides.c")
+    list(APPEND srcs "fpga_overrides_clk.c")
+endif()
+
+if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING)
+    list(APPEND srcs "fpga_overrides_rng.c")
 endif()
 
 if(BOOTLOADER_BUILD)
@@ -29,6 +33,7 @@ else()
             "panic.c"
             "esp_system.c"
             "startup.c"
+            "startup_funcs.c"
             "system_time.c"
             "stack_check.c"
             "ubsan.c"
@@ -63,11 +68,9 @@ else()
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    # [refactor-todo] requires "driver" for headers:
-                                    # - spi_common_internal.h
                                     # [refactor-todo] esp_partition required for virtual efuse
                                     # init code. Move to esp_efuse component.
-                                    pthread bootloader_support efuse driver esp_partition
+                                    pthread bootloader_support efuse esp_partition esp_pm
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
@@ -92,13 +95,19 @@ endif()
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
     # Forces the linker to include fpga stubs from this component
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides_clk")
+endif()
+
+if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING)
+    # Forces the linker to include fpga stubs from this component
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides_rng")
 endif()
 
 # Force linking UBSAN hooks. If UBSAN is not enabled, the hooks will ultimately be removed
 # due to -ffunction-sections -Wl,--gc-sections options.
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __ubsan_include")
 
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_system_include_startup_funcs")
 
 # [refactor-todo] requirements due to init code, should be removable
 # once link-time registration of component init functions is used.

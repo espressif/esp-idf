@@ -28,7 +28,7 @@ def test_bootloader_custom_overrides_original(test_app_copy: Path, idf_py: IdfPy
     shutil.copytree(idf_path / 'components' / 'esp_bootloader_format', test_app_copy / 'components' / 'esp_bootloader_format')
     idf_py('bootloader')
     assert file_contains(test_app_copy / 'build' / 'bootloader' / 'compile_commands.json',
-                         str(test_app_copy / 'components' / 'bootloader' / 'subproject' / 'main' / 'bootloader_start.c'))
+                         (test_app_copy / 'components' / 'bootloader' / 'subproject' / 'main' / 'bootloader_start.c'))
 
 
 def test_bootloader_custom_ignores_extra_component(test_app_copy: Path, idf_py: IdfPyFunc, default_idf_env: EnvDict) -> None:

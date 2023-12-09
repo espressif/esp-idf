@@ -13,6 +13,9 @@ extern "C" {
 #include "hal/gpio_types.h"
 #include "hal/rtc_io_ll.h"
 
+#define RTCIO_OUTPUT_NORMAL _Pragma ("GCC warning \"'RTCIO_OUTPUT_NORMAL' macro is deprecated\"") RTCIO_LL_OUTPUT_NORMAL
+#define RTCIO_OUTPUT_OD     _Pragma ("GCC warning \"'RTCIO_OUTPUT_OD' macro is deprecated\"")     RTCIO_LL_OUTPUT_OD
+
 typedef enum {
     LP_IO_NUM_0 = 0,     /*!< GPIO0, input and output */
     LP_IO_NUM_1 = 1,     /*!< GPIO1, input and output */
@@ -31,7 +34,7 @@ typedef enum {
  */
 static inline void ulp_lp_core_gpio_init(lp_io_num_t lp_io_num)
 {
-    rtcio_ll_function_select(lp_io_num, RTCIO_FUNC_RTC);
+    rtcio_ll_function_select(lp_io_num, RTCIO_LL_FUNC_RTC);
 }
 
 /**
@@ -99,7 +102,7 @@ static inline uint32_t ulp_lp_core_gpio_get_level(lp_io_num_t lp_io_num)
  * @brief Set rtcio output mode
  *
  * @param lp_io_num The rtc io pin to set the output mode for
- * @param mode RTCIO_OUTPUT_NORMAL: normal, RTCIO_OUTPUT_OD: open drain
+ * @param mode RTCIO_LL_OUTPUT_NORMAL: normal, RTCIO_LL_OUTPUT_OD: open drain
  */
 static inline void ulp_lp_core_gpio_set_output_mode(lp_io_num_t lp_io_num, rtcio_ll_out_mode_t mode)
 {

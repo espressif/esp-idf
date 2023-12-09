@@ -11,6 +11,7 @@
 #include <string.h>
 #include "l2c_int.h"
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define SET_BIT(t, n)  (t |= 1UL << (n))
 tBTM_BLE_EXTENDED_CB extend_adv_cb;
 
 tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
@@ -35,7 +36,8 @@ typedef struct {
 tBTM_EXT_ADV_RECORD adv_record[MAX_BLE_ADV_INSTANCE] = {0};
 extern void btm_ble_inter_set(bool extble_inter);
 
-static char *btm_ble_hci_status_to_str(tHCI_STATUS status)
+#if !UC_BT_STACK_NO_LOG
+static const char *btm_ble_hci_status_to_str(tHCI_STATUS status)
 {
     switch(status) {
     case HCI_SUCCESS:
@@ -184,6 +186,7 @@ static char *btm_ble_hci_status_to_str(tHCI_STATUS status)
 
     return NULL;
 }
+#endif /* !UC_BT_STACK_NO_LOG */
 
 void btm_ble_extendadvcb_init(void)
 {
@@ -717,14 +720,14 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
     do {
         UINT8 send_data_len = (rem_len > BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) ? BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX : rem_len;
 
-        if (len <= BTM_BLE_EXT_ADV_DATA_LEN_MAX) {
+        if (len <= BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) {
             if (!only_update_did) {
                 operation = BTM_BLE_ADV_DATA_OP_COMPLETE;
             }
         } else {
             if (rem_len == len) {
                 operation = BTM_BLE_ADV_DATA_OP_FIRST_FRAG;
-            } else if (rem_len <= BTM_BLE_EXT_ADV_DATA_LEN_MAX) {
+            } else if (rem_len <= BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) {
                 operation = BTM_BLE_ADV_DATA_OP_LAST_FRAG;
             } else {
 	        operation = BTM_BLE_ADV_DATA_OP_INTERMEDIATE_FRAG;
@@ -786,14 +789,32 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
     }
 
     if ((params->sync_timeout < 0x0a || params->sync_timeout > 0x4000)
-        || (params->filter_policy > 0x01) || (params->addr_type > 0x01) ||
+        || (params->filter_policy > 0x01)
+        #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+        || (params->reports_disabled > 0x01)
+        || (params->filter_duplicates > 0x01)
+        #endif
+        || (params->addr_type > 0x01) ||
         (params->sid > 0xf) || (params->skip > 0x01F3)) {
             status = BTM_ILLEGAL_VALUE;
             BTM_TRACE_ERROR("%s, The sync parameters is invalid.", __func__);
             goto end;
     }
+    uint8_t option = 0x00;
+    if (params->filter_policy) {
+        SET_BIT(option, 0);
+    }
 
-    if (!btsnd_hcic_ble_periodic_adv_create_sync(params->filter_policy, params->sid, params->addr_type,
+    #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+    if (params->reports_disabled) {
+        SET_BIT(option, 1);
+    }
+    if (params->filter_duplicates) {
+        SET_BIT(option, 2);
+    }
+    #endif
+
+    if (!btsnd_hcic_ble_periodic_adv_create_sync(option, params->sid, params->addr_type,
                                             params->addr, params->sync_timeout, 0)) {
         BTM_TRACE_ERROR("LE PA CreateSync cmd failed");
         status = BTM_ILLEGAL_VALUE;

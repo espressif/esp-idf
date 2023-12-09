@@ -337,7 +337,7 @@ The map file itself is broken into parts and each part has a heading. The parts 
     - If you are wondering why some object file in particular was included in the binary, this part may give a clue. This part can be used in conjunction with the ``Cross Reference Table`` at the end of the file.
 
     .. note::
-        
+
         Not every object file shown in this list ends up included in the final binary, some end up in the ``Discarded input sections`` list instead.
 
 - ``Allocating common symbols``
@@ -411,6 +411,7 @@ The following binary size optimizations apply to a particular component or a fun
 
     - Disabling :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` will save some Wi-Fi binary size if WPA3 support is not needed. Note that WPA3 is mandatory for new Wi-Fi device certifications.
     - Disabling :ref:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` will save some Wi-Fi binary size if soft-AP support is not needed.
+    - Disabling :ref:`CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT` will save some Wi-Fi binary size if enterprise support is not needed.
 
 .. only:: esp32
 
@@ -518,6 +519,11 @@ The help text for each option has some more information for reference.
 
    If depending on third party clients or servers, always pay attention to announcements about future changes to supported TLS features. If not, the {IDF_TARGET_NAME} device may become inaccessible if support changes.
 
+.. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+
+   Enabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from mbedTLS library inside the chip ROM.
+   Disabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from the ESP-IDF mbedtls component library. This will increase the binary size (flash footprint).
+
 .. note::
 
    Not every combination of mbedTLS compile-time config is tested in ESP-IDF. If you find a combination that fails to compile or function as expected, please report the details on `GitHub <https://github.com/espressif/esp-idf>`_.
@@ -560,6 +566,3 @@ IRAM Binary Size
 ----------------
 
 If the IRAM section of a binary is too large, this issue can be resolved by reducing IRAM memory usage. See :ref:`optimize-iram-usage`.
-
-
-

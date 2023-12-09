@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(include_dirs include)
 set(priv_include_dirs proto-c src ../protocomm/proto-c)
 set(srcs  "src/esp_local_ctrl.c"

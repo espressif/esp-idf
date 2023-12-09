@@ -106,6 +106,7 @@ void gdma_ahb_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channe
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
         gdma_ll_rx_enable_owner_check(hal->dev, chan_id, en_owner_check);
+        // RX direction always has the descriptor write-back feature enabled
     } else {
         gdma_ll_tx_enable_owner_check(hal->dev, chan_id, en_owner_check);
         gdma_ll_tx_enable_auto_write_back(hal->dev, chan_id, en_desc_write_back);
@@ -130,12 +131,12 @@ void gdma_ahb_hal_clear_intr(gdma_hal_context_t *hal, int chan_id, gdma_channel_
     }
 }
 
-uint32_t gdma_ahb_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+uint32_t gdma_ahb_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool raw)
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
-        return gdma_ll_rx_get_interrupt_status(hal->dev, chan_id);
+        return gdma_ll_rx_get_interrupt_status(hal->dev, chan_id, raw);
     } else {
-        return gdma_ll_tx_get_interrupt_status(hal->dev, chan_id);
+        return gdma_ll_tx_get_interrupt_status(hal->dev, chan_id, raw);
     }
 }
 

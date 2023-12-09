@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "rv_decode.h"
 #include "sdkconfig.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_private/freertos_debug.h"
 
 extern volatile esp_gdbstub_frame_t *temp_regs_frame;
 
@@ -85,8 +86,7 @@ void esp_gdbstub_int(__attribute__((unused)) void *frame)
    /* Pointer to saved frame is in pxCurrentTCB
     * See rtos_int_enter function
     */
-    extern void *pxCurrentTCB;
-    dummy_tcb_t *tcb = pxCurrentTCB;
+    dummy_tcb_t *tcb = (dummy_tcb_t *)pvTaskGetCurrentTCBForCore(esp_cpu_get_core_id());
     gdbstub_handle_uart_int((esp_gdbstub_frame_t *)tcb->top_of_stack);
 }
 
@@ -96,13 +96,13 @@ void esp_gdbstub_init_dports(void)
 
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
-#if (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#if (!CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 static bool stall_started = false;
 #endif
 
 void esp_gdbstub_stall_other_cpus_start(void)
 {
-#if (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#if (!CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     if (stall_started == false) {
         esp_ipc_isr_stall_other_cpu();
         stall_started = true;
@@ -112,7 +112,7 @@ void esp_gdbstub_stall_other_cpus_start(void)
 
 void esp_gdbstub_stall_other_cpus_end(void)
 {
-#if (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#if (!CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     if (stall_started == true) {
         esp_ipc_isr_release_other_cpu();
         stall_started = false;
@@ -142,7 +142,7 @@ void esp_gdbstub_do_step(esp_gdbstub_frame_t *frame)
 
 void esp_gdbstub_trigger_cpu(void)
 {
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     if (0 == esp_cpu_get_core_id()) {
         esp_crosscore_int_send_gdb_call(1);
     } else {

@@ -23,6 +23,10 @@ void btc_dev_arg_deep_free(btc_msg_t *msg)
         }
         break;
     }
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    case BTC_DEV_ACT_CFG_COEX_STATUS:
+        break;
+#endif
     default:
         BTC_TRACE_DEBUG("Unhandled deep free %d\n", msg->act);
         break;
@@ -39,6 +43,13 @@ void btc_dev_call_handler(btc_msg_t *msg)
     case BTC_DEV_ACT_SET_DEVICE_NAME:
         BTA_DmSetDeviceName(arg->set_dev_name.device_name);
         break;
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    case BTC_DEV_ACT_CFG_COEX_STATUS:
+        BTA_DmCfgCoexStatus(arg->cfg_coex_status.op,
+                            arg->cfg_coex_status.type,
+                            arg->cfg_coex_status.status);
+        break;
+#endif
     default:
         break;
     }

@@ -1,0 +1,8 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_hid/test_apps:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]
+      reason: Testing on one chip per architecture is currently enough
+  depends_components:
+    - esp_hid

@@ -63,15 +63,16 @@ typedef struct {
             sar_unicast_retrans_interval_step:4;            /*!< SAR Unicast Retransmissions Interval Step state */
     uint8_t sar_unicast_retrans_interval_increment:4,       /*!< SAR Unicast Retransmissions Interval Increment state */
             sar_multicast_retrans_count:4;                  /*!< SAR Multicast Retransmissions Count state */
-    uint8_t sar_multicast_retrans_interval:4;               /*!< SAR Multicast Retransmissions Interval state */
+    uint8_t sar_multicast_retrans_interval_step:4;          /*!< SAR Multicast Retransmissions Interval state */
 } esp_ble_mesh_sar_transmitter_set_t;
 
 /** Parameters of SAR Receiver Set */
 typedef struct {
     uint8_t sar_segments_threshold:5,                       /*!< SAR Segments Threshold state */
             sar_ack_delay_increment:3;                      /*!< SAR Acknowledgment Delay Increment state */
-    uint8_t sar_ack_retrans_count:2,                        /*!< SAR Acknowledgment Retransmissions Count state */
-            sar_discard_timeout:4;                          /*!< SAR Discard Timeout state */
+    uint8_t sar_discard_timeout:4,                          /*!< SAR Discard Timeout state */
+            sar_receiver_segment_interval_step:4;           /*!< SAR Receiver Segment Interval Step state */
+    uint8_t sar_ack_retrans_count:4;                        /*!< SAR Acknowledgment Retransmissions Count state */
 } esp_ble_mesh_sar_receiver_set_t;
 
 /**
@@ -90,15 +91,16 @@ typedef struct {
             sar_unicast_retrans_interval_step:4;            /*!< SAR Unicast Retransmissions Interval Step state */
     uint8_t sar_unicast_retrans_interval_increment:4,       /*!< SAR Unicast Retransmissions Interval Increment state */
             sar_multicast_retrans_count:4;                  /*!< SAR Multicast Retransmissions Count state */
-    uint8_t sar_multicast_retrans_interval:4;               /*!< SAR Multicast Retransmissions Interval state */
+    uint8_t sar_multicast_retrans_interval_step:4;          /*!< SAR Multicast Retransmissions Interval state */
 } esp_ble_mesh_sar_transmitter_status_t;
 
 /** Parameters of SAR Receiver Status */
 typedef struct {
     uint8_t sar_segments_threshold:5,                       /*!< SAR Segments Threshold state */
             sar_ack_delay_increment:3;                      /*!< SAR Acknowledgment Delay Increment state */
-    uint8_t sar_ack_retrans_count:2,                        /*!< SAR Acknowledgment Retransmissions Count state */
-            sar_discard_timeout:4;                          /*!< SAR Discard Timeout state */
+    uint8_t sar_discard_timeout:4,                          /*!< SAR Discard Timeout state */
+            sar_receiver_segment_interval_step:4;           /*!< SAR Receiver Segment Interval Step state */
+    uint8_t sar_ack_retrans_count:4;                        /*!< SAR Acknowledgment Retransmissions Count state */
 } esp_ble_mesh_sar_receiver_status_t;
 
 /** Result of sending SAR Configuration Client messages */

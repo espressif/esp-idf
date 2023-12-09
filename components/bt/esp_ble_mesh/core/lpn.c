@@ -21,6 +21,7 @@
 #include "foundation.h"
 #include "mesh/main.h"
 #include "mesh/cfg_srv.h"
+#include "heartbeat.h"
 
 #include "mesh_v1.1/utils.h"
 
@@ -236,6 +237,20 @@ static void clear_friendship(bool force, bool disable)
     if (lpn_cb && lpn->frnd != BLE_MESH_ADDR_UNASSIGNED) {
         lpn_cb(lpn->frnd, false);
     }
+
+    /* If the Low Power node supports directed forwarding functionality when
+     * the friendship is established in a subnet, the Low Power node shall
+     * store the current value of the Directed Forwarding state and shall set
+     * the state to 0x00 for that subnet. When that friendship is terminated,
+     * the Low Power node shall set the Directed Forwarding state to the stored
+     * value.
+     */
+#if CONFIG_BLE_MESH_DF_SRV
+    if (lpn->established) {
+        bt_mesh_restore_directed_forwarding_state(bt_mesh.sub[0].net_idx,
+                                                  lpn->old_directed_forwarding);
+    }
+#endif
 
     lpn->frnd = BLE_MESH_ADDR_UNASSIGNED;
     lpn->fsn = 0U;
@@ -1026,9 +1041,9 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
          * the Low Power node shall set the Directed Forwarding state to the stored
          * value.
          */
-        /* TODO:
-         * Store - clear - restore directed forwarding state value of the subnet.
-         */
+#if CONFIG_BLE_MESH_DF_SRV
+        lpn->old_directed_forwarding = bt_mesh_get_and_disable_directed_forwarding_state(sub);
+#endif
     }
 
     friend_response_received(lpn);

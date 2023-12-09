@@ -351,6 +351,9 @@ esp_err_t example_send_config_appkey_add(esp_ble_mesh_model_t *model,
     common.ctx.addr     = info->dst;
     common.ctx.send_ttl = 0;
     common.msg_timeout  = info->timeout;
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+    common.msg_role     = info->role;
+#endif
 
     return esp_ble_mesh_config_client_set_state(&common, &set);
 }
@@ -372,6 +375,9 @@ esp_err_t example_send_generic_onoff_get(esp_ble_mesh_model_t *model,
     common.ctx.addr     = info->dst;
     common.ctx.send_ttl = 0;
     common.msg_timeout  = info->timeout;
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+    common.msg_role     = info->role;
+#endif
 
     return esp_ble_mesh_generic_client_get_state(&common, &get);
 }
@@ -403,6 +409,9 @@ esp_err_t example_send_generic_onoff_set(esp_ble_mesh_model_t *model,
     common.ctx.addr     = info->dst;
     common.ctx.send_ttl = 0;
     common.msg_timeout  = info->timeout;
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+    common.msg_role     = info->role;
+#endif
 
     return esp_ble_mesh_generic_client_set_state(&common, &set);
 }

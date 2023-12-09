@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,7 +75,7 @@ static bool prepare_calib_data_for(adc_unit_t adc_num, adc_atten_t atten, adc_ca
         case ADC_ATTEN_DB_6:
             parsed_data_storage->efuse_data.ver2.adc_calib_high_voltage = 1000;
             break;
-        case ADC_ATTEN_DB_11:
+        case ADC_ATTEN_DB_12:
             parsed_data_storage->efuse_data.ver2.adc_calib_high_voltage = 2000;
             break;
         default:
@@ -105,11 +105,11 @@ static bool prepare_calib_data_for(adc_unit_t adc_num, adc_atten_t atten, adc_ca
  *
  */
 static void characterize_using_two_point(adc_unit_t adc_num,
-        adc_atten_t atten,
-        uint32_t high,
-        uint32_t low,
-        uint32_t *coeff_a,
-        uint32_t *coeff_b)
+                                         adc_atten_t atten,
+                                         uint32_t high,
+                                         uint32_t low,
+                                         uint32_t *coeff_a,
+                                         uint32_t *coeff_b)
 {
     // once we have recovered the reference high(Dhigh) and low(Dlow) readings, we can calculate a and b from
     // the measured high and low readings
@@ -161,10 +161,10 @@ esp_err_t esp_adc_cal_check_efuse(esp_adc_cal_value_t source)
 }
 
 esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
-        adc_atten_t atten,
-        adc_bits_width_t bit_width,
-        uint32_t default_vref,
-        esp_adc_cal_characteristics_t *chars)
+                                             adc_atten_t atten,
+                                             adc_bits_width_t bit_width,
+                                             uint32_t default_vref,
+                                             esp_adc_cal_characteristics_t *chars)
 {
     bool res __attribute__((unused));
     adc_calib_parsed_info efuse_parsed_data = {0};

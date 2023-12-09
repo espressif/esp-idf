@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,31 +17,44 @@ extern "C" {
 /**
  * @brief IPC ISR Callback
  *
- * A callback of this type should be provided as an argument when calling esp_ipc_isr_asm_call() or
- * esp_ipc_isr_asm_call_blocking().
+ * The callback must be written:
+ *    - in assembly for XTENSA chips (such as ESP32, ESP32S3).
+ *    - in C or assembly for RISCV chips (such as ESP32P4).
+ *
+ * A callback of this type should be provided as an argument when calling esp_ipc_isr_call() or
+ * esp_ipc_isr_call_blocking().
  */
 typedef void (*esp_ipc_isr_func_t)(void* arg);
 
 /**
- * @brief Execute an assembly callback on the other CPU
+ * @brief Execute an ISR callback on the other CPU
  *
  * Execute a given callback on the other CPU in the context of a High Priority Interrupt.
  *
  * - This function will busy-wait in a critical section until the other CPU has started execution of the callback
- * - The callback must be written in assembly, is invoked using a CALLX0 instruction, and has a2, a3, a4 as scratch
- *   registers. See docs for more details
+ * - The callback must be written:
+ *    - in assembly for XTENSA chips (such as ESP32, ESP32S3).
+ *      The function is invoked using a CALLX0 instruction and can use only a2, a3, a4 registers.
+ *      See :doc:`IPC in Interrupt Context </api-reference/system/ipc>` doc for more details.
+ *    - in C or assembly for RISCV chips (such as ESP32P4).
  *
  * @note This function is not available in single-core mode.
  *
  * @param[in]   func    Pointer to a function of type void func(void* arg) to be executed
  * @param[in]   arg     Arbitrary argument of type void* to be passed into the function
  */
-void esp_ipc_isr_asm_call(esp_ipc_isr_func_t func, void* arg);
+void esp_ipc_isr_call(esp_ipc_isr_func_t func, void* arg) ;
 
 /**
- * @brief Execute an assembly callback on the other CPU and busy-wait until it completes
+ * @brief Execute an ISR callback on the other CPU
+ * See esp_ipc_isr_call().
+ */
+#define esp_ipc_isr_asm_call(func, arg) esp_ipc_isr_call(func, arg)
+
+/**
+ * @brief Execute an ISR callback on the other CPU and busy-wait until it completes
  *
- * This function is identical to esp_ipc_isr_asm_call() except that this function will busy-wait until the execution of
+ * This function is identical to esp_ipc_isr_call() except that this function will busy-wait until the execution of
  * the callback completes.
  *
  * @note This function is not available in single-core mode.
@@ -49,7 +62,13 @@ void esp_ipc_isr_asm_call(esp_ipc_isr_func_t func, void* arg);
  * @param[in]   func    Pointer to a function of type void func(void* arg) to be executed
  * @param[in]   arg     Arbitrary argument of type void* to be passed into the function
  */
-void esp_ipc_isr_asm_call_blocking(esp_ipc_isr_func_t func, void* arg);
+void esp_ipc_isr_call_blocking(esp_ipc_isr_func_t func, void* arg);
+
+/**
+ * @brief Execute an ISR callback on the other CPU and busy-wait until it completes
+ * See esp_ipc_isr_call_blocking().
+ */
+#define esp_ipc_isr_asm_call_blocking(func, arg) esp_ipc_isr_call_blocking(func, arg)
 
 /**
  * @brief Stall the other CPU

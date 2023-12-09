@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 list(APPEND sources "vfs.c"
                     "vfs_eventfd.c"
                     "vfs_uart.c"
@@ -8,6 +14,7 @@ list(APPEND pr driver
                esp_timer)
 
 idf_component_register(SRCS ${sources}
+                       LDFRAGMENTS "linker.lf"
                        INCLUDE_DIRS include
                        PRIV_INCLUDE_DIRS private_include
                        PRIV_REQUIRES ${pr})

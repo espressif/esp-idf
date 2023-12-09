@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,14 +66,22 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
 
 #ifdef CONFIG_HEAP_TASK_TRACKING
 #include <freertos/task.h>
-#define MULTI_HEAP_BLOCK_OWNER TaskHandle_t task;
-#define MULTI_HEAP_SET_BLOCK_OWNER(HEAD) (HEAD)->task = xTaskGetCurrentTaskHandle()
-#define MULTI_HEAP_GET_BLOCK_OWNER(HEAD) ((HEAD)->task)
+#define MULTI_HEAP_SET_BLOCK_OWNER(HEAD) *((TaskHandle_t*)HEAD) = xTaskGetCurrentTaskHandle()
+#define MULTI_HEAP_GET_BLOCK_OWNER(HEAD) *((TaskHandle_t*)HEAD)
+#define MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(HEAD) ((TaskHandle_t*)(HEAD) + 1)
+#define MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(HEAD) ((TaskHandle_t*)(HEAD) - 1)
+#define MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(SIZE) ((SIZE) + sizeof(TaskHandle_t))
+#define MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(SIZE) ((SIZE) - sizeof(TaskHandle_t))
+#define MULTI_HEAP_BLOCK_OWNER_SIZE() sizeof(TaskHandle_t)
 #else
-#define MULTI_HEAP_BLOCK_OWNER
 #define MULTI_HEAP_SET_BLOCK_OWNER(HEAD)
 #define MULTI_HEAP_GET_BLOCK_OWNER(HEAD) (NULL)
-#endif
+#define MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(HEAD) (HEAD)
+#define MULTI_HEAP_REMOVE_BLOCK_OWNER_OFFSET(HEAD) (HEAD)
+#define MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(SIZE) (SIZE)
+#define MULTI_HEAP_REMOVE_BLOCK_OWNER_SIZE(SIZE) (SIZE)
+#define MULTI_HEAP_BLOCK_OWNER_SIZE() 0
+#endif // CONFIG_HEAP_TASK_TRACKING
 
 #else // MULTI_HEAP_FREERTOS
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,19 +28,14 @@
 
 /* Index of memory in `soc_memory_types[]` */
 enum {
-    SOC_MEMORY_TYPE_STACK_DRAM  = 0,
-    SOC_MEMORY_TYPE_DIRAM       = 1,
+    SOC_MEMORY_TYPE_RAM = 0,
     SOC_MEMORY_TYPE_NUM,
 };
 
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    // Type 0: DRAM used for startup stacks
-    [SOC_MEMORY_TYPE_STACK_DRAM] = { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_EXEC | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, MALLOC_CAP_RETENTION }, false, true},
-    // Type 1: DRAM which has an alias on the I-port
-    [SOC_MEMORY_TYPE_DIRAM] = { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
+    // Type 0: DRAM which has an alias on the I-port
+    [SOC_MEMORY_TYPE_RAM] = { "RAM", { MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_EXEC, 0, 0 }},
 };
-
-#define SOC_MEMORY_TYPE_DEFAULT     SOC_MEMORY_TYPE_DIRAM
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
 
@@ -58,15 +53,13 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
-    { 0x3FCA0000,           0x10000,                                   SOC_MEMORY_TYPE_DEFAULT,    0x40380000},                         //D/IRAM level1
-    { 0x3FCB0000,           0x10000,                                   SOC_MEMORY_TYPE_DEFAULT,    0x40390000},                         //D/IRAM level2
-    { 0x3FCC0000,           (APP_USABLE_DRAM_END-0x3FCC0000),          SOC_MEMORY_TYPE_DEFAULT,    0x403A0000},                         //D/IRAM level3
-    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_STACK_DRAM, MAP_DRAM_TO_IRAM(APP_USABLE_DRAM_END)} //D/IRAM level3 (ROM reserved area)
+    { 0x3FCA0000,           0x10000,                                   SOC_MEMORY_TYPE_RAM,    0x40380000, false},                          //D/IRAM level1
+    { 0x3FCB0000,           0x10000,                                   SOC_MEMORY_TYPE_RAM,    0x40390000, false},                          //D/IRAM level2
+    { 0x3FCC0000,           (APP_USABLE_DRAM_END-0x3FCC0000),          SOC_MEMORY_TYPE_RAM,    0x403A0000, false},                          //D/IRAM level3
+    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_RAM,    MAP_DRAM_TO_IRAM(APP_USABLE_DRAM_END), true} //D/IRAM level3 (ROM reserved area)
 };
 
-
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
-
 
 extern int _data_start, _heap_start, _iram_start, _iram_end;
 

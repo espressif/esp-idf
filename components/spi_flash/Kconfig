@@ -1,3 +1,124 @@
+menu "Main Flash configuration"
+    depends on !APP_BUILD_TYPE_PURE_RAM_APP
+
+    menu "SPI Flash behavior when brownout"
+
+        config SPI_FLASH_BROWNOUT_RESET_XMC
+            bool "Enable sending reset when brownout for XMC flash chips"
+            default y
+            select SPI_FLASH_BROWNOUT_RESET
+            help
+                When this option is selected, the patch will be enabled for XMC.
+                Follow the recommended flow by XMC for better stability.
+
+                DO NOT DISABLE UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+        config SPI_FLASH_BROWNOUT_RESET
+            bool
+            default y
+            select ESP_SYSTEM_BROWNOUT_INTR
+            help
+                When brownout happens during flash erase/write operations,
+                send reset command to stop the flash operations to improve stability.
+
+    endmenu
+
+    menu "Optional and Experimental Features (READ DOCS FIRST)"
+
+        comment "Features here require specific hardware (READ DOCS FIRST!)"
+
+        config SPI_FLASH_UNDER_HIGH_FREQ
+            bool
+            default y if ESPTOOLPY_FLASHFREQ_120M
+            help
+                This is a helper config for HPM. Invisible for users.
+
+        choice SPI_FLASH_HPM
+            prompt "High Performance Mode (READ DOCS FIRST, > 80MHz)"
+            # Currently, only esp32s3 allows high performance mode.
+            depends on IDF_TARGET_ESP32S3 && !ESPTOOLPY_OCT_FLASH
+            default SPI_FLASH_HPM_AUTO
+            help
+                Whether the High Performance Mode of Flash is enabled. As an optional feature, user needs to manually
+                enable this option as a confirmation. To be back-compatible with earlier IDF versionn, this option is
+                automatically enabled with warning when Flash running > 80Mhz.
+
+            config SPI_FLASH_HPM_ENA
+                # Not using name of SPI_FLASH_HPM_ENABLE because it was used as an invisible option and we don't want
+                # to inherit the value of that one
+                bool "Enable"
+            config SPI_FLASH_HPM_AUTO
+                bool "Auto (Not recommended)"
+            config SPI_FLASH_HPM_DIS
+                bool "Disabled"
+        endchoice
+
+        config SPI_FLASH_HPM_ON
+            bool
+            # For ESP32-S3, it's enabled by default. For later chips it should be disabled by default
+            default y if IDF_TARGET_ESP32S3 && ((SPI_FLASH_HPM_ENA || SPI_FLASH_HPM_AUTO)) || \
+                (!IDF_TARGET_ESP32S3 && SPI_FLASH_HPM_ENA)
+            help
+                This option is invisible, and will be selected automatically
+                when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
+
+        choice SPI_FLASH_HPM_DC
+            prompt "Support HPM using DC (READ DOCS FIRST)"
+            depends on SPI_FLASH_HPM_ON
+            default SPI_FLASH_HPM_DC_AUTO
+            help
+                This feature needs your bootloader to be compiled DC-aware (BOOTLOADER_FLASH_DC_AWARE=y). Otherwise the
+                chip will not be able to boot after a reset.
+
+            config SPI_FLASH_HPM_DC_AUTO
+                bool "Auto (Enable when bootloader support enabled (BOOTLOADER_FLASH_DC_AWARE))"
+            config SPI_FLASH_HPM_DC_DISABLE
+                bool "Disable (READ DOCS FIRST)"
+        endchoice
+
+        config SPI_FLASH_HPM_DC_ON
+            bool
+            default y if SPI_FLASH_HPM_DC_AUTO && BOOTLOADER_FLASH_DC_AWARE
+            help
+                This is a helper config for HPM. Whether HPM-DC is enabled is also determined by bootloader.
+                Invisible for users.
+
+        config SPI_FLASH_SUSPEND_QVL_SUPPORTED
+            bool
+            default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
+            default n
+            help
+                This is a helper config. Invisible for users.
+
+        config SPI_FLASH_AUTO_SUSPEND
+            bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
+            default n
+            depends on SPI_FLASH_SUSPEND_QVL_SUPPORTED && !SPI_FLASH_ROM_IMPL
+            help
+                This option is disabled by default because it is supported only
+                for specific flash chips and for specific Espressif chips.
+                To evaluate if you can use this feature refer to
+                `Optional Features for Flash` > `Auto Suspend & Resume` of the `ESP-IDF Programming Guide`.
+
+                CAUTION: If you want to OTA to an app with this feature turned on, please make
+                sure the bootloader has the support for it. (later than IDF v4.3)
+
+                If you are using an official Espressif module, please contact Espressif Business support
+                to check if the module has the flash that support this feature installed.
+                Also refer to `Concurrency Constraints for Flash on SPI1` > `Flash Auto Suspend Feature`
+                before enabling this option.
+
+        config SPI_FLASH_SUSPEND_TSUS_VAL_US
+            int "SPI flash tSUS value (refer to chapter AC CHARACTERISTICS)"
+            default 50
+            range 20 100
+            help
+                This config is used for setting Tsus parameter. Tsus means CS# high to next command after
+                suspend. You can refer to the chapter of AC CHARACTERISTICS of flash datasheet.
+
+    endmenu
+endmenu
+
 menu "SPI Flash driver"
     depends on !APP_BUILD_TYPE_PURE_RAM_APP
 
@@ -147,30 +268,6 @@ menu "SPI Flash driver"
         help
             Defines how many ticks will be before returning to continue a erasing.
 
-    config SPI_FLASH_SUSPEND_QVL_SUPPORTED
-        # Internally usage
-        bool
-        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
-        default n
-
-    config SPI_FLASH_AUTO_SUSPEND
-        bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
-        default n
-        depends on SPI_FLASH_SUSPEND_QVL_SUPPORTED && !SPI_FLASH_ROM_IMPL
-        help
-            This option is disabled by default because it is supported only
-            for specific flash chips and for specific Espressif chips.
-            To evaluate if you can use this feature refer to
-            `Optional Features for Flash` > `Auto Suspend & Resume` of the `ESP-IDF Programming Guide`.
-
-            CAUTION: If you want to OTA to an app with this feature turned on, please make
-            sure the bootloader has the support for it. (later than IDF v4.3)
-
-            If you are using an official Espressif module, please contact Espressif Business support
-            to check if the module has the flash that support this feature installed.
-            Also refer to `Concurrency Constraints for Flash on SPI1` > `Flash Auto Suspend Feature`
-            before enabling this option.
-
     config SPI_FLASH_WRITE_CHUNK_SIZE
         int "Flash write chunk size"
         default 8192
@@ -206,28 +303,6 @@ menu "SPI Flash driver"
             `default_registered_chips` structure must be provided by the user.
 
             See example: custom_chip_driver under examples/storage for more details.
-
-    menu "SPI Flash behavior when brownout"
-
-        config SPI_FLASH_BROWNOUT_RESET_XMC
-            bool "Enable sending reset when brownout for XMC flash chips"
-            default y
-            select SPI_FLASH_BROWNOUT_RESET
-            help
-                When this option is selected, the patch will be enabled for XMC.
-                Follow the recommended flow by XMC for better stability.
-
-                DO NOT DISABLE UNLESS YOU KNOW WHAT YOU ARE DOING.
-
-        config SPI_FLASH_BROWNOUT_RESET
-            bool
-            default y
-            select ESP_SYSTEM_BROWNOUT_INTR
-            help
-                When brownout happens during flash erase/write operations,
-                send reset command to stop the flash operations to improve stability.
-
-    endmenu
 
     menu "Auto-detect flash chips"
         visible if !SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
@@ -314,29 +389,5 @@ menu "SPI Flash driver"
             is kept enabled irrespective of state of flash encryption feature. However, in case
             application is not using flash encryption feature and is in need of some additional
             memory from IRAM region (~1KB) then this config can be disabled.
-
-    config SPI_FLASH_HPM_ENABLE
-        bool
-        default n
-        help
-            This option is invisible, and will be selected automatically
-            when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
-
-    config SPI_FLASH_32BIT_ADDRESS
-        bool
-        default y if ESPTOOLPY_FLASHSIZE_32MB || ESPTOOLPY_FLASHSIZE_64MB || ESPTOOLPY_FLASHSIZE_128MB
-        default n
-        help
-            This is a helper config for 32bits address flash. Invisible for users.
-
-    config SPI_FLASH_32BIT_ADDR_ENABLE
-        bool "Enable 32-bit-address (over 16MB) SPI Flash access"
-        depends on SPI_FLASH_32BIT_ADDRESS && !ESPTOOLPY_OCT_FLASH && IDF_TARGET_ESP32S3 && IDF_EXPERIMENTAL_FEATURES
-        default n
-        help
-            Enabling this option allows the CPU to access 32-bit-address flash beyond 16M range.
-            1. This option only valid for 4-line flash. Octal flash doesn't need this.
-            2. This option is experimental, which means it can't use on all flash chips stable, for more
-            information, please contact Espressif Business support.
 
 endmenu

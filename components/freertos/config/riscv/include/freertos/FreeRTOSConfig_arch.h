@@ -16,7 +16,6 @@
 
 /* ------------------ Scheduler Related -------------------- */
 
-#define configMAX_PRIORITIES                           ( 25 )
 #ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
     #define configUSE_PORT_OPTIMISED_TASK_SELECTION    1
 #else
@@ -28,20 +27,28 @@
 /* ---------------- Amazon SMP FreeRTOS -------------------- */
 
 #if CONFIG_FREERTOS_SMP
-    #define configUSE_CORE_AFFINITY                  1
+    #define configUSE_CORE_AFFINITY              1
 
 /* This is always enabled to call IDF style idle hooks, by can be "--Wl,--wrap"
  * if users enable CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK. */
-    #define configUSE_MINIMAL_IDLE_HOOK             1
+    #define configUSE_MINIMAL_IDLE_HOOK          1
 
-    /* IDF Newlib supports dynamic reentrancy. We provide our own __getreent()
-     * function. */
-    #define configNEWLIB_REENTRANT_IS_DYNAMIC       1
+/* IDF Newlib supports dynamic reentrancy. We provide our own __getreent()
+ * function. */
+    #define configNEWLIB_REENTRANT_IS_DYNAMIC    1
 #endif
 
 /* ----------------------- System -------------------------- */
 
-#define configUSE_NEWLIB_REENTRANT                   1
+#define configUSE_NEWLIB_REENTRANT    1
+
+/* - FreeRTOS provides default for configTLS_BLOCK_TYPE.
+ * - We simply provide our own INIT and DEINIT functions
+ * - We set "SET" to a blank macro since there is no need to set the reentrancy
+ * pointer. All newlib functions calls __getreent. */
+#define configINIT_TLS_BLOCK( xTLSBlock )      esp_reent_init( &( xTLSBlock ) )
+#define configSET_TLS_BLOCK( xTLSBlock )
+#define configDEINIT_TLS_BLOCK( xTLSBlock )    _reclaim_reent( &( xTLSBlock ) )
 
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H    1
 
@@ -61,9 +68,9 @@
 
 /* -------------------- API Includes ----------------------- */
 
-#define INCLUDE_xTaskDelayUntil              1
-#define INCLUDE_xTaskGetCurrentTaskHandle    1
-#define INCLUDE_uxTaskGetStackHighWaterMark2 1
+/* Todo: Reconcile INCLUDE_option differences (IDF-8186) */
+#define INCLUDE_xTaskDelayUntil                 1
+#define INCLUDE_uxTaskGetStackHighWaterMark2    1
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
  *

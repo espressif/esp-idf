@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,17 +185,6 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
  */
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
-    /* cpu_frequency < 240M: dbias = pvt-dig + 2;
-       cpu_frequency = 240M: dbias = pvt-dig + 3;
-     */
-    if (cpu_freq_mhz != 240) {
-        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
-        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
-    } else {
-        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_240m);
-        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_240m);
-    }
-    esp_rom_delay_us(40);
 
     /* There are totally 6 LDO slaves(all on by default). At the moment of swithing LDO slave, LDO voltage will also change instantaneously.
      * LDO slave can reduce the voltage change caused by switching frequency.
@@ -207,21 +196,31 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     int pd_slave = cpu_freq_mhz / 80;
     rtc_cpu_freq_config_t cur_config;
     rtc_clk_cpu_freq_get_config(&cur_config);
+    /* cpu_frequency < 240M: dbias = pvt-dig + 2;
+     * cpu_frequency = 240M: dbias = pvt-dig + 3;
+     */
     if (cpu_freq_mhz > cur_config.freq_mhz) {
+        if (cpu_freq_mhz == 240) {
+            REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_240m);
+            REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_240m);
+            esp_rom_delay_us(40);
+        }
         REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE >> pd_slave);
-        clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
-        clk_ll_cpu_set_divider(1);
-        /* switch clock source */
-        clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
-        rtc_clk_apb_freq_update(80 * MHZ);
-        esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
-    } else {
-        clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
-        clk_ll_cpu_set_divider(1);
-        /* switch clock source */
-        clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
-        rtc_clk_apb_freq_update(80 * MHZ);
-        esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
+    }
+
+    clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
+    clk_ll_cpu_set_divider(1);
+    /* switch clock source */
+    clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
+    rtc_clk_apb_freq_update(80 * MHZ);
+    esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
+
+    if (cpu_freq_mhz < cur_config.freq_mhz) {
+        if (cur_config.freq_mhz == 240) {
+            REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
+            REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
+            esp_rom_delay_us(40);
+        }
         REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE >> pd_slave);
     }
 }
@@ -376,9 +375,9 @@ void rtc_clk_cpu_set_to_default_config(void)
  */
 void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
-    esp_rom_delay_us(40);
+    rtc_cpu_freq_config_t cur_config;
+    rtc_clk_cpu_freq_get_config(&cur_config);
+
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
     /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
     clk_ll_cpu_set_divider(1);
@@ -386,18 +385,25 @@ void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     /* switch clock source */
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
     rtc_clk_apb_freq_update(cpu_freq * MHZ);
+
+    if (cur_config.freq_mhz == 240) {
+        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
+        REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
+        esp_rom_delay_us(40);
+    }
+
     REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE);
 }
 
 static void rtc_clk_cpu_freq_to_8m(void)
 {
+    assert(0 && "LDO dbias need to modified");
     esp_rom_set_cpu_ticks_per_us(20);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
-    esp_rom_delay_us(40);
     clk_ll_cpu_set_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
     rtc_clk_apb_freq_update(SOC_CLK_RC_FAST_FREQ_APPROX);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, g_rtc_dbias_pvt_non_240m);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, g_dig_dbias_pvt_non_240m);
     REG_SET_FIELD(RTC_CNTL_DATE_REG, RTC_CNTL_SLAVE_PD,  DEFAULT_LDO_SLAVE);
 }
 

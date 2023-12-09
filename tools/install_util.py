@@ -72,8 +72,8 @@ def action_print_help(script_extension: str) -> None:
 
 optional arguments:
   targets-to-install  'all', a single target (e.g. 'esp32s2'), or a comma-separated list of targets (e.g. 'esp32,esp32c3,esp32h2')
-  --enable-*          a specific feature to enable (e.g. '--enable-ttfw' will enable feature ttfw)
-  --disable-*         a specific feature to disable (e.g. '--disable-ttfw' will disable feature ttfw)
+  --enable-*          a specific feature to enable (e.g. '--enable-pytest' will enable feature pytest)
+  --disable-*         a specific feature to disable (e.g. '--disable-pytest' will disable feature pytest)
                       supported features: {', '.join(features)}
   {help_opts}      show this help message and exit
 

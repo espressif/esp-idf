@@ -18,7 +18,6 @@
 
 const __attribute__((unused)) static char *TAG = "adc_cali";
 
-
 esp_err_t adc_cali_check_scheme(adc_cali_scheme_ver_t *scheme_mask)
 {
     ESP_RETURN_ON_FALSE(scheme_mask, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");

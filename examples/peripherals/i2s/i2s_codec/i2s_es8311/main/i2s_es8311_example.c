@@ -15,7 +15,6 @@
 #include "es8311.h"
 #include "example_config.h"
 
-
 static const char *TAG = "i2s_es8311";
 static const char err_reason[][30] = {"input param is invalid",
                                       "operation timeout"

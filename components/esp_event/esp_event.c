@@ -778,7 +778,7 @@ esp_err_t esp_event_handler_unregister_with_internal(esp_event_loop_handle_t eve
 
     if (event_base == ESP_EVENT_ANY_BASE && event_id != ESP_EVENT_ANY_ID) {
         ESP_LOGE(TAG, "unregistering to any event base with specific id unsupported");
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     if (event_base == ESP_EVENT_ANY_BASE) {

@@ -70,6 +70,8 @@ TEST_CASE("heap trace leak check", "[heap-trace]")
        so recs[0].address is 0*/
     TEST_ASSERT_EQUAL_PTR(recs[0].address, 0x00);
 
+    free(b);
+
     heap_trace_stop();
 }
 

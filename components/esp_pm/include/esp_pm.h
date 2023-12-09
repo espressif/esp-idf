@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,7 @@ typedef enum {
      * Argument is unused and should be set to 0.
      */
     ESP_PM_NO_LIGHT_SLEEP,
+    ESP_PM_LOCK_MAX,
 } esp_pm_lock_type_t;
 
 /**
@@ -100,10 +101,13 @@ typedef struct esp_pm_lock* esp_pm_lock_handle_t;
  * @param[out] out_handle  handle returned from this function. Use this handle when calling
  *                         esp_pm_lock_delete, esp_pm_lock_acquire, esp_pm_lock_release.
  *                         Must not be NULL.
+ *
+ * @note If the lock_type argument is not valid, it will cause an abort.
+ *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NO_MEM if the lock structure can not be allocated
- *      - ESP_ERR_INVALID_ARG if out_handle is NULL or type argument is not valid
+ *      - ESP_ERR_INVALID_ARG if out_handle is NULL
  *      - ESP_ERR_NOT_SUPPORTED if CONFIG_PM_ENABLE is not enabled in sdkconfig
  */
 esp_err_t esp_pm_lock_create(esp_pm_lock_type_t lock_type, int arg,
@@ -191,6 +195,63 @@ esp_err_t esp_pm_lock_delete(esp_pm_lock_handle_t handle);
  *      - ESP_ERR_NOT_SUPPORTED if CONFIG_PM_ENABLE is not enabled in sdkconfig
  */
 esp_err_t esp_pm_dump_locks(FILE* stream);
+
+#if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
+/**
+ * @brief Function prototype for light sleep callback functions (if CONFIG_FREERTOS_USE_TICKLESS_IDLE)
+ *
+ * @param sleep_time_us supplied by the power management framework.
+ * For entry callback, sleep_time_us indicates the expected sleep time in us
+ * For exit callback, sleep_time_us indicates the actual sleep time in us
+ * @param arg is the user provided argument while registering callbacks
+ *
+ * @return
+ *      - ESP_OK allow entry light sleep mode
+ */
+typedef esp_err_t (*esp_pm_light_sleep_cb_t)(int64_t sleep_time_us, void *arg);
+
+typedef struct {
+    /**
+     * Callback function defined by internal developers.
+     */
+    esp_pm_light_sleep_cb_t enter_cb;
+    esp_pm_light_sleep_cb_t exit_cb;
+    /**
+     * Input parameters of callback function defined by internal developers.
+     */
+    void *enter_cb_user_arg;
+    void *exit_cb_user_arg;
+    /**
+     * Execution priority of callback function defined by internal developers.
+     * The smaller the priority, the earlier it executes when call esp_sleep_execute_event_callbacks.
+     * If functions have the same priority, the function registered first will be executed first.
+     */
+    uint32_t enter_cb_prior;
+    uint32_t exit_cb_prior;
+} esp_pm_sleep_cbs_register_config_t;
+
+/**
+ * @brief Register entry or exit callbacks for light sleep (if CONFIG_FREERTOS_USE_TICKLESS_IDLE)
+ * @param cbs_conf Config struct containing entry or exit callbacks function and corresponding argument
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the input parameter enter_cb and exit_cb in cbs_conf are NULL
+ *      - ESP_ERR_NO_MEM if the remaining memory is insufficient to support malloc
+ *      - ESP_FAIL if register the same function repeatedly
+ *
+ * @note These callback functions are called from IDLE task context hence they cannot call any blocking functions
+ */
+esp_err_t esp_pm_light_sleep_register_cbs(esp_pm_sleep_cbs_register_config_t *cbs_conf);
+
+/**
+ * @brief Unregister entry or exit callbacks for light sleep (if CONFIG_FREERTOS_USE_TICKLESS_IDLE)
+ * @param cbs_conf Config struct containing entry or exit callbacks function and corresponding argument
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the input parameter enter_cb and exit_cb in cbs_conf are NULL
+ */
+esp_err_t esp_pm_light_sleep_unregister_cbs(esp_pm_sleep_cbs_register_config_t *cbs_conf);
+#endif
 
 #ifdef __cplusplus
 }

@@ -361,6 +361,25 @@ def create_host_udp_server(myudp:udp_parameter) -> None:
         sock.close()
 
 
+def host_udp_send_message(udp_target:udp_parameter) -> None:
+    interface_name = get_host_interface_name()
+    try:
+        if udp_target.udp_type == 'INET6':
+            AF_INET = socket.AF_INET6
+        else:
+            AF_INET = socket.AF_INET
+        sock = socket.socket(AF_INET, socket.SOCK_DGRAM)
+        sock.bind(('::', 12350))
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, interface_name.encode())
+        sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 32)
+        print('Host is sending message')
+        sock.sendto(udp_target.udp_bytes, (udp_target.addr, udp_target.port))
+    except socket.error:
+        print('Host cannot send message')
+    finally:
+        sock.close()
+
+
 def wait(dut:IdfDut, wait_time:float) -> None:
     dut.expect(pexpect.TIMEOUT, timeout=wait_time)
 

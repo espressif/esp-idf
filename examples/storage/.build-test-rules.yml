@@ -1,176 +1,177 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/storage/custom_flash_driver:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - spi_flash
+    - driver
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/emmc:
+  depends_components:
+    - fatfs
+    - vfs
+    - sdmmc
+    - esp_driver_sdmmc
+    - esp_driver_sdspi
   enable:
     - if: IDF_TARGET == "esp32s3"
       reason: only support on esp32s3
 
 examples/storage/ext_flash_fatfs:
+  depends_components:
+    - fatfs
+    - vfs
+    - spi_flash
+    - driver
   disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32c6", "esp32h2", "esp32p4"]
-      temporary: true
-      reason: target(s) not supported yet
+    - if: IDF_TARGET == "esp32p4"
+      reason: not supported yet
   disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+    - if: IDF_TARGET not in ["esp32"]
       temporary: true
       reason: lack of runners
 
 examples/storage/fatfsgen:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - fatfs
+    - vfs
   disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
 
 examples/storage/nvs_rw_blob:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - nvs_flash
+    - driver
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/nvs_rw_value:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - nvs_flash
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/nvs_rw_value_cxx:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - nvs_flash
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/nvsgen:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - nvs_flash
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners, should be same for every target
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
 
 examples/storage/partition_api/partition_find:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - esp_partition
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/partition_api/partition_mmap:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - esp_partition
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/partition_api/partition_ops:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - esp_partition
+    - spi_flash
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/parttool:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - partition_table
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
 
 examples/storage/perf_benchmark:
+  depends_components:
+    - fatfs
+    - spi_flash
+    - vfs
+    - sdmmc
+    - spiffs
+    - wear_levelling
+    - esp_partition
+    - esp_driver_sdmmc
   disable:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
       temporary: true
-      reason: target esp32p4 is not supported yet
+      reason: SDMMC and SDSPI not supported on P4 yet # TODO: IDF-6502, IDF-7501
+  disable_test:
+    - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["spiflash"]
+      temporary: true
+      reason: SPIFLASH not supported on P4 yet, only build stage enabled # TODO: IDF-7499
 
 examples/storage/sd_card/sdmmc:
+  depends_components:
+    - vfs
+    - sdmmc
+    - esp_driver_sdmmc
   disable:
     - if: SOC_SDMMC_HOST_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32s3"
+    - if: IDF_TARGET not in ["esp32"]
       temporary: true
       reason: lack of runners
 
 examples/storage/sd_card/sdspi:
+  depends_components:
+    - vfs
+    - sdmmc
+    - esp_driver_sdspi
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32p4"]
-      temporary: true
-      reason: Not supported
+    - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6"]
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: true
       reason: lack of runners
 
 examples/storage/semihost_vfs:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - vfs
   disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET not in ["esp32"]
       temporary: true
       reason: lack of runners
 
 examples/storage/spiffs:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - spiffs
+    - vfs
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
 
 examples/storage/spiffsgen:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - spiffs
+    - vfs
+    - mbedtls
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
 
 examples/storage/wear_levelling:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  depends_components:
+    - vfs
+    - wear_levelling
+    - fatfs
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runners
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed

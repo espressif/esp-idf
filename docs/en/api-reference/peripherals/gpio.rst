@@ -10,16 +10,53 @@ GPIO Summary
     :start-after: gpio-summary
     :end-before: ---
 
+GPIO driver offers a dump function :cpp:func:`gpio_dump_io_configuration` to show the configurations of the IOs at the moment, such as pull-up / pull-down, input / output enable, pin mapping etc. Below is an example dump:
+
+::
+
+    ================IO DUMP Start================
+    IO[4] -
+      Pullup: 1, Pulldown: 0, DriveCap: 2
+      InputEn: 1, OutputEn: 0, OpenDrain: 0
+      FuncSel: 1 (GPIO)
+      GPIO Matrix SigIn ID: (simple GPIO input)
+      SleepSelEn: 1
+
+    IO[18] -
+      Pullup: 0, Pulldown: 0, DriveCap: 2
+      InputEn: 0, OutputEn: 1, OpenDrain: 0
+      FuncSel: 1 (GPIO)
+      GPIO Matrix SigOut ID: 256 (simple GPIO output)
+      SleepSelEn: 1
+
+    IO[26] **RESERVED** -
+      Pullup: 1, Pulldown: 0, DriveCap: 2
+      InputEn: 1, OutputEn: 0, OpenDrain: 0
+      FuncSel: 0 (IOMUX)
+      SleepSelEn: 1
+
+    =================IO DUMP End==================
+
+If an IO pin is routed to a peripheral signal through the GPIO matrix, the signal ID printed in the dump information is defined in the ``soc/gpio_sig_map.h`` file. The word ``**RESERVED**`` indicates the IO is occupied by either FLASH or PSRAM. It is strongly not recommended to reconfigure them for other application purposes.
 
 .. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
-    There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when:
+    .. only:: not SOC_LP_PERIPHERALS_SUPPORTED
+
+        There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when:
+
+    .. only:: SOC_LP_PERIPHERALS_SUPPORTED
+
+        There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power, analog subsystem, and Low-Power(LP) peripherals. These pin functions can be used when:
 
     .. list::
 
         - In Deep-sleep mode
-        :SOC_ULP_SUPPORTED and not esp32c6: - The :doc:`Ultra Low Power co-processor <../../api-reference/system/ulp>` is running
-        - Analog functions such as ADC/DAC/etc are in use.
+        :SOC_ULP_FSM_SUPPORTED: - The :doc:`Ultra Low Power FSM co-processor <../../api-reference/system/ulp>` is running
+        :SOC_RISCV_COPROC_SUPPORTED: - The :doc:`Ultra Low Power RISC-V co-processor <../../api-reference/system/ulp-risc-v>` is running
+        :SOC_LP_CORE_SUPPORTED: - The :doc:`Ultra Low Power LP-Core co-processor <../../api-reference/system/ulp-lp-core>` is running
+        - Analog functions such as ADC/DAC/etc are in use
+        :SOC_LP_PERIPHERALS_SUPPORTED: - LP peripherals, such as LP_UART, LP_I2C, are in use
 
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM
@@ -89,6 +126,7 @@ API Reference - Normal GPIO
     ------------------------
 
     .. include-build-file:: inc/rtc_io.inc
+    .. include-build-file:: inc/lp_io.inc
     .. include-build-file:: inc/rtc_io_types.inc
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM

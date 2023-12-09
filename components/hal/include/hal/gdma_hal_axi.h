@@ -36,7 +36,7 @@ void gdma_axi_hal_enable_intr(gdma_hal_context_t *hal, int chan_id, gdma_channel
 
 void gdma_axi_hal_clear_intr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t intr_event_mask);
 
-uint32_t gdma_axi_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
+uint32_t gdma_axi_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool raw);
 
 uint32_t gdma_axi_hal_get_intr_status_reg(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
 

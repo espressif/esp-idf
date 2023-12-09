@@ -1,17 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "WL_Ext_Safe.h"
 #include <stdlib.h>
+#include <inttypes.h>
 #include "esp_log.h"
 
 static const char *TAG = "wl_ext_safe";
 
 #define WL_EXT_RESULT_CHECK(result) \
     if (result != ESP_OK) { \
-        ESP_LOGE(TAG,"%s(%d): result = 0x%08x", __FUNCTION__, __LINE__, result); \
+        ESP_LOGE(TAG,"%s(%d): result = 0x%08" PRIx32, __FUNCTION__, __LINE__, (uint32_t) result); \
         return (result); \
     }
 
@@ -49,11 +50,11 @@ WL_Ext_Safe::~WL_Ext_Safe()
 {
 }
 
-esp_err_t WL_Ext_Safe::config(WL_Config_s *cfg, Flash_Access *flash_drv)
+esp_err_t WL_Ext_Safe::config(WL_Config_s *cfg, Partition *partition)
 {
     esp_err_t result = ESP_OK;
 
-    result = WL_Ext_Perf::config(cfg, flash_drv);
+    result = WL_Ext_Perf::config(cfg, partition);
     WL_EXT_RESULT_CHECK(result);
     /* two extra sectors will be reserved to store buffer transaction state WL_Ext_Safe_State
      and temporary storage of the actual sector data from the sector which is to be erased*/
@@ -77,7 +78,7 @@ esp_err_t WL_Ext_Safe::init()
 
 size_t WL_Ext_Safe::get_flash_size()
 {
-    ESP_LOGV(TAG, "%s size = %i", __func__, WL_Ext_Perf::get_flash_size() - 2 * this->flash_sector_size);
+    ESP_LOGV(TAG, "%s size = %" PRIu32, __func__, (uint32_t) (WL_Ext_Perf::get_flash_size() - 2 * this->flash_sector_size));
     return WL_Ext_Perf::get_flash_size() - 2 * this->flash_sector_size;
 }
 
@@ -89,7 +90,7 @@ esp_err_t WL_Ext_Safe::recover()
     WL_Ext_Safe_State state;
     result = this->read(this->buff_trans_state_addr, &state, sizeof(WL_Ext_Safe_State));
     WL_EXT_RESULT_CHECK(result);
-    ESP_LOGV(TAG, "%s recover, start_addr = 0x%08x, sector_base_addr = 0x%08x,  sector_base_addr_offset= %i, count=%i", __func__, state.sector_restore_sign, state.sector_base_addr, state.sector_base_addr_offset, state.count);
+    ESP_LOGV(TAG, "%s recover, start_addr = 0x%08" PRIx32 ", sector_base_addr = 0x%08" PRIx32 ",  sector_base_addr_offset= %" PRIu32 ", count=%" PRIu32, __func__, state.sector_restore_sign, state.sector_base_addr, state.sector_base_addr_offset, state.count);
 
     // check if we have any incomplete transaction pending.
     if (state.sector_restore_sign == WL_EXT_SAFE_OK) {
@@ -129,7 +130,7 @@ esp_err_t WL_Ext_Safe::erase_sector_fit(uint32_t first_erase_sector, uint32_t co
     uint32_t pre_check_start = first_erase_sector % this->flash_fat_sector_size_factor;
 
     // Except pre check and post check data area, read and store all other data to sector_buffer
-    ESP_LOGV(TAG, "%s first_erase_sector=0x%08x, count = %i", __func__, first_erase_sector, count);
+    ESP_LOGV(TAG, "%s first_erase_sector=0x%08" PRIx32 ", count = %" PRIu32, __func__, first_erase_sector, count);
     for (int i = 0; i < this->flash_fat_sector_size_factor; i++) {
         if ((i < pre_check_start) || (i >= count + pre_check_start)) {
             result = this->read(flash_sector_base_addr * this->flash_sector_size + i * this->fat_sector_size,

@@ -173,7 +173,7 @@ Error Handling
    this means:
 
    - either you're using a board with a Quad Flash
-   - or you're using a board with an Octal Flash, but the eFuse bit ``FLASH_TYPE`` isn't burnt. Espressif guarantees this bit during module manufacturing, but if the module is manufactured by others, this may happen.
+   - or you're using a board with an Octal Flash, but the eFuse bit ``FLASH_TYPE`` isn't burnt. Espressif guarantees this bit is burnt during module manufacturing, but if the module is manufactured by others, this may happen.
 
 
 Here is a method to burn the eFuse bit:

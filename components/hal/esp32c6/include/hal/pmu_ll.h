@@ -666,7 +666,7 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
     return hw->power.wait_timer0.powerup_timer;
 }
 
-static inline uint32_t pmu_ll_get_sysclk_sleep_select_state(pmu_dev_t *hw)
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_sysclk_sleep_select_state(pmu_dev_t *hw)
 {
     return hw->clk_state0.sysclk_slp_sel;
 }

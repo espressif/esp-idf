@@ -10,16 +10,53 @@ GPIO 汇总
     :start-after: gpio-summary
     :end-before: ---
 
+GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来输出指定管脚的实时配置状态，包括上下拉、输入输出使能、管脚映射等。输出示例如下：
+
+::
+
+    ================IO DUMP Start================
+    IO[4] -
+      Pullup: 1, Pulldown: 0, DriveCap: 2
+      InputEn: 1, OutputEn: 0, OpenDrain: 0
+      FuncSel: 1 (GPIO)
+      GPIO Matrix SigIn ID: (simple GPIO input)
+      SleepSelEn: 1
+
+    IO[18] -
+      Pullup: 0, Pulldown: 0, DriveCap: 2
+      InputEn: 0, OutputEn: 1, OpenDrain: 0
+      FuncSel: 1 (GPIO)
+      GPIO Matrix SigOut ID: 256 (simple GPIO output)
+      SleepSelEn: 1
+
+    IO[26] **RESERVED** -
+      Pullup: 1, Pulldown: 0, DriveCap: 2
+      InputEn: 1, OutputEn: 0, OpenDrain: 0
+      FuncSel: 0 (IOMUX)
+      SleepSelEn: 1
+
+    =================IO DUMP End==================
+
+当 IO 管脚是通过 GPIO 交换矩阵连接到内部外设信号，输出信息打印中的外设信号 ID 定义可以在 ``soc/gpio_sig_map.h`` 文件中查看。``**RESERVED**`` 字样则表示此 IO 被用于连接 FLASH 或 PSRAM，因此该引脚不应该被其他任何应用场景所征用并进行重新配置。
 
 .. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
-    当 GPIO 连接到 RTC 低功耗和模拟子系统时，{IDF_TARGET_NAME} 芯片还单独支持 RTC GPIO。可在以下情况时使用这些管脚功能：
+    .. only:: not SOC_LP_PERIPHERALS_SUPPORTED
+
+        当 GPIO 连接到 RTC 低功耗和模拟子系统时，{IDF_TARGET_NAME} 芯片还单独支持 RTC GPIO。可在以下情况时使用这些管脚功能：
+
+    .. only:: SOC_LP_PERIPHERALS_SUPPORTED
+
+        当 GPIO 连接到 RTC 低功耗、模拟子系统、低功耗外设时，{IDF_TARGET_NAME} 芯片还单独支持 RTC GPIO。可在以下情况时使用这些管脚功能：
 
     .. list::
 
         - 处于 Deep-sleep 模式时
-        :SOC_ULP_SUPPORTED and not esp32c6: - :doc:`超低功耗协处理器 (ULP) <../../api-reference/system/ulp>` 运行时
+        :SOC_ULP_FSM_SUPPORTED: - :doc:`超低功耗协处理器 (ULP-FSM) <../../api-reference/system/ulp>` 运行时
+        :SOC_RISCV_COPROC_SUPPORTED: - :doc:`超低功耗协处理器 (ULP-RISC-V) <../../api-reference/system/ulp-risc-v>` 运行时
+        :SOC_LP_CORE_SUPPORTED: - :doc:`超低功耗协处理器 (ULP-LP-Core) <../../api-reference/system/ulp-lp-core>` 运行时
         - 使用 ADC/DAC 等模拟功能时
+        :SOC_LP_PERIPHERALS_SUPPORTED: - 使用低功耗外设时，例如： LP_UART ， LP_I2C 等
 
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM
@@ -60,16 +97,15 @@ GPIO 汇总
 
     .. only:: SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
 
-        每个引脚可以独立启用迟滞功能。默认情况下，它由 eFuse 控制，且处于关闭状态，但也可以由软件控制启用或禁用。您可以通过配置 :cpp:member:`gpio_config_t::hys_ctrl_mode` 来选择迟滞控制模式。迟滞控制模式会和其余 GPIO 配置一起在 :cpp:func:`gpio_config` 中生效。
-
+        每个引脚可以独立启用迟滞功能。默认情况下，它由 eFuse 控制，且处于关闭状态，但也可以由软件控制启用或禁用。你可以通过配置 :cpp:member:`gpio_config_t::hys_ctrl_mode` 来选择迟滞控制模式。迟滞控制模式会和其余 GPIO 配置一起在 :cpp:func:`gpio_config` 中生效。
 
         .. note::
 
-            当迟滞功能由 eFuse 控制时，仍然可以独立的控制每个引脚的该功能，您需要 `烧断 eFuse <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ ，以在特定 GPIO上 启用迟滞功能。
+            当迟滞功能由 eFuse 控制时，仍然可以独立的控制每个引脚的该功能，你需要 `烧断 eFuse <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_ ，以在特定 GPIO 上启用迟滞功能。
 
     .. only:: not SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
 
-        每个引脚可以独立启用迟滞功能。默认情况下，它处于关闭状态。您可以通过配置 :cpp:member:`gpio_config_t::hys_ctrl_mode` 来选择启用与否。迟滞控制模式会和其余 GPIO 配置一起在 :cpp:func:`gpio_config` 中生效。
+        每个引脚可以独立启用迟滞功能。默认情况下，它处于关闭状态。你可以通过配置 :cpp:member:`gpio_config_t::hys_ctrl_mode` 来选择启用与否。迟滞控制模式会和其余 GPIO 配置一起在 :cpp:func:`gpio_config` 中生效。
 
 
 应用示例
@@ -90,6 +126,7 @@ API 参考 - 普通 GPIO
     ------------------------
 
     .. include-build-file:: inc/rtc_io.inc
+    .. include-build-file:: inc/lp_io.inc
     .. include-build-file:: inc/rtc_io_types.inc
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM

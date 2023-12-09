@@ -33,6 +33,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default y if "$(IDF_CI_BUILD)" = "y" || "$(IDF_CI_BUILD)" = 1
 
+    config IDF_DOC_BUILD
+        bool
+        default y if "$(IDF_DOC_BUILD)" = "y" || "$(IDF_DOC_BUILD)" = 1
+
     config IDF_TOOLCHAIN
         # This option records the IDF target when sdkconfig is generated the first time.
         # It is not updated if environment variable $IDF_TOOLCHAIN changes later, and
@@ -110,6 +114,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
 
+    config IDF_TARGET_ESP32C5
+        bool
+        default "y" if IDF_TARGET="esp32c5"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+        select IDF_ENV_BRINGUP
+
     config IDF_TARGET_ESP32P4
         bool
         default "y" if IDF_TARGET="esp32p4"
@@ -135,6 +146,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x000D if IDF_TARGET_ESP32C6
         default 0x0010 if IDF_TARGET_ESP32H2
         default 0x0012 if IDF_TARGET_ESP32P4
+        default 0x0013 if IDF_TARGET_ESP32C5
         default 0xFFFF
 
 
@@ -525,6 +537,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Enable this option if use GCC 12 or newer, and want to disable warnings which don't appear with
                 GCC 11.
 
+        config COMPILER_DISABLE_GCC13_WARNINGS
+            bool "Disable new warnings introduced in GCC 13"
+            default "n"
+            help
+                Enable this option if use GCC 13 or newer, and want to disable warnings which don't appear with
+                GCC 12.
+
         config COMPILER_DUMP_RTL_FILES
             bool "Dump RTL files during compilation"
             help
@@ -576,7 +595,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
             Current experimental feature list:
 
-            - CONFIG_ESPTOOLPY_FLASHFREQ_120M
-            - CONFIG_SPIRAM_SPEED_120M
-            - CONFIG_SPI_FLASH_32BIT_ADDR_ENABLE
-            - CONFIG_FREERTOS_USE_KERNEL_10_5_1
+            - CONFIG_ESPTOOLPY_FLASHFREQ_120M && CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+            - CONFIG_SPIRAM_SPEED_120M && CONFIG_SPIRAM_MODE_OCT
+            - CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
+            - CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL

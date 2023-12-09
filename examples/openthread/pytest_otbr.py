@@ -219,6 +219,16 @@ def test_multicast_forwarding_A(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, 
         print('ping result:\n', str(out_str))
         role = re.findall(r' (\d+)%', str(out_str))[0]
         assert role != '100'
+        ocf.execute_command(cli, 'udp open')
+        cli.expect('Done', timeout=5)
+        ocf.execute_command(cli, 'udp bind :: 12350')
+        cli.expect('Done', timeout=5)
+        ocf.clean_buffer(cli)
+        target_udp = ocf.udp_parameter('INET6', 'ff04::125', 12350, '', False, 15.0, b'hello')
+        ocf.host_udp_send_message(target_udp)
+        cli.expect('hello', timeout=5)
+        ocf.execute_command(cli, 'udp close')
+        cli.expect('Done', timeout=5)
     finally:
         ocf.execute_command(br, 'factoryreset')
         ocf.execute_command(cli, 'factoryreset')
@@ -550,11 +560,11 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
     'config, count, app_path, target', [
         ('cli_h2|sleepy_c6', 2,
          f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device")}',
+         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
          'esp32h2|esp32c6'),
         ('cli_c6|sleepy_h2', 2,
          f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device")}',
+         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
          'esp32c6|esp32h2'),
     ],
     indirect=True,
@@ -571,14 +581,13 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         leader_para.setextpanid('dead00beef00cafe')
         leader_para.setnetworkkey('aabbccddeeff00112233445566778899')
         leader_para.setpskc('104810e2315100afd6bc9215a6bfac53')
-        ocf.clean_buffer(sleepy_device)
         ocf.joinThreadNetwork(leader, leader_para)
+        ocf.wait(leader, 5)
         ocf.clean_buffer(sleepy_device)
         sleepy_device.serial.hard_reset()
         sleepy_device.expect('detached -> child', timeout=20)
         sleepy_device.expect('PMU_SLEEP_PD_TOP: True', timeout=10)
         sleepy_device.expect('PMU_SLEEP_PD_MODEM: True', timeout=20)
-        ocf.clean_buffer(sleepy_device)
         output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
         assert 'rst:' not in str(output) and 'boot:' not in str(output)
     finally:
@@ -622,4 +631,42 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
         assert ocf.wait_for_join(br, 'leader')
     finally:
         ocf.execute_command(br, 'factoryreset')
+        time.sleep(3)
+
+
+# Case 12: Curl a website via DNS and NAT64
+@pytest.mark.supported_targets
+@pytest.mark.esp32h2
+@pytest.mark.esp32c6
+@pytest.mark.openthread_bbr
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.parametrize(
+    'config, count, app_path, target', [
+        ('rcp|cli_h2|br', 3,
+         f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+         f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+         'esp32c6|esp32h2|esp32s3'),
+    ],
+    indirect=True,
+)
+def test_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> None:
+    br = dut[2]
+    cli  = dut[1]
+    assert Init_interface
+    dut[0].serial.stop_redirect_thread()
+
+    formBasicWiFiThreadNetwork(br, cli)
+    try:
+        ocf.execute_command(br, 'bbr')
+        br.expect('server16', timeout=5)
+        ocf.execute_command(cli, 'dns64server 8.8.8.8')
+        cli.expect('Done', timeout=5)
+        command = 'curl http://www.espressif.com'
+        message = ocf.get_ouput_string(cli, command, 10)
+        assert '<html>' in str(message)
+        assert '301 Moved Permanently' in str(message)
+    finally:
+        ocf.execute_command(br, 'factoryreset')
+        ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)

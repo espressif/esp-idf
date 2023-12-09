@@ -16,11 +16,8 @@
  * If this file is changed the script will automatically run the script
  * and generate the kconfig variables as part of the pre-commit hooks.
  *
- * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/esp32h2/include/soc/'`
- *
- * For more information see `tools/gen_soc_caps_kconfig/README.md`
- *
-*/
+ * It can also be run manually. For more information, see `${IDF_PATH}/tools/gen_soc_caps_kconfig/README.md`
+ */
 
 #pragma once
 
@@ -74,6 +71,9 @@
 #define SOC_PAU_SUPPORTED               1
 #define SOC_CLK_TREE_SUPPORTED          1
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
+#define SOC_WDT_SUPPORTED               1
+#define SOC_SPI_FLASH_SUPPORTED         1
+#define SOC_RNG_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1
@@ -117,7 +117,9 @@
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
 
 /*!< Calibration */
-#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (0) /*!< support HW offset calibration version 1*/
+#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
+#define SOC_ADC_SELF_HW_CALI_SUPPORTED          (1) /*!< support HW offset self calibration */
+#define SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED    (1) /*!< support channel compensation to the HW offset calibration */
 
 /*!< Interrupt */
 #define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)
@@ -142,9 +144,9 @@
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
 #define SOC_INT_PLIC_SUPPORTED          1       //riscv platform-level interrupt controller
 
-#define SOC_CPU_BREAKPOINTS_NUM         4
-#define SOC_CPU_WATCHPOINTS_NUM         4
-#define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
+#define SOC_CPU_BREAKPOINTS_NUM             4
+#define SOC_CPU_WATCHPOINTS_NUM             4
+#define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  0x80000000 // bytes
 
 #define SOC_CPU_HAS_PMA                 1
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
@@ -200,6 +202,9 @@
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U << SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 
+#define SOC_GPIO_IN_RANGE_MAX           27
+#define SOC_GPIO_OUT_RANGE_MAX          27
+
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_0~6. GPIO_NUM_15~27)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000000FFF807FULL
 
@@ -207,6 +212,9 @@
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
+
+// The Clock Out singnal is route to the pin by GPIO matrix
+#define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated LP_IOMUX subsystem on ESP32-H2. LP functions are still supported
@@ -220,7 +228,8 @@
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*------------------------- Analog Comparator CAPS ---------------------------*/
-#define SOC_ANA_CMPR_NUM             (1U)
+#define SOC_ANA_CMPR_NUM                    (1U)
+#define SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO   (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-H2 has 2 I2C
@@ -236,6 +245,10 @@
 #define SOC_I2C_SUPPORT_XTAL        (1)
 #define SOC_I2C_SUPPORT_RTC         (1)
 #define SOC_I2C_SUPPORT_10BIT_ADDR   (1)
+#define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE    (1)
+#define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
+#define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (1U)
@@ -350,7 +363,6 @@
 #define SOC_SDM_CLK_SUPPORT_PLL_F48M 1
 #define SOC_SDM_CLK_SUPPORT_XTAL     1
 
-// TODO: IDF-6245 (Copy from esp32c6, need check)
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
@@ -412,6 +424,9 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_SUPPORT_ETM             (1)
 
+/*--------------------------- WATCHDOG CAPS ---------------------------------------*/
+#define SOC_MWDT_SUPPORT_XTAL              (1)
+
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1UL
 #define SOC_TWAI_CLK_SUPPORT_XTAL       1
@@ -426,6 +441,7 @@
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 #define SOC_EFUSE_DIS_ICACHE 1
 #define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // XTS-AES and ECDSA key purposes not supported for this block
+#define SOC_EFUSE_ECDSA_USE_HARDWARE_K 1 // Force use hardware TRNG supplied K for ECDSA
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
@@ -435,7 +451,7 @@
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
-#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
+#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
@@ -484,7 +500,6 @@
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 #define SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG      (1)
-#define SOC_PM_RETENTION_HAS_CLOCK_BUG      (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)

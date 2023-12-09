@@ -303,50 +303,6 @@ void ledc_hal_set_hpoint(ledc_hal_context_t *hal, ledc_channel_t channel_num, ui
 void ledc_hal_get_duty(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t *duty_val);
 
 /**
- * @brief Set LEDC duty change direction
- *
- * @param hal Context of the HAL layer
- * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
- * @param duty_direction LEDC duty change direction, increase or decrease
- *
- * @return None
- */
-void ledc_hal_set_duty_direction(ledc_hal_context_t *hal, ledc_channel_t channel_num, ledc_duty_direction_t duty_direction);
-
-/**
- * @brief Set the number of increased or decreased times
- *
- * @param hal Context of the HAL layer
- * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
- * @param duty_num The number of increased or decreased times
- *
- * @return None
- */
-void ledc_hal_set_duty_num(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_num);
-
-/**
- * @brief Set the duty cycles of increase or decrease
- *
- * @param hal Context of the HAL layer
- * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
- * @param duty_cycle The duty cycles
- *
- * @return None
- */
-void ledc_hal_set_duty_cycle(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_cycle);
-
-/**
- * @brief Set the step scale of increase or decrease
- *
- * @param hal Context of the HAL layer
- * @param channel_num LEDC channel index (0-7), select from ledc_channel_t
- * @param duty_scale The step scale
- *
- * @return None
- */
-void ledc_hal_set_duty_scale(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t duty_scale);
-
-/**
  * @brief Function to set fade parameters all-in-one
  *
  * @param hal Context of the HAL layer

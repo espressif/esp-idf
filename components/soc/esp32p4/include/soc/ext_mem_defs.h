@@ -19,6 +19,11 @@ extern "C" {
 #define SOC_MMU_PAGE_SIZE 0x10000
 #endif
 
+#define SOC_IRAM0_ADDRESS_LOW                        0x4ff00000
+#define SOC_IRAM0_ADDRESS_HIGH                       0x4ffc0000
+
+#define SOC_DRAM0_ADDRESS_LOW                        SOC_IRAM0_ADDRESS_LOW
+#define SOC_DRAM0_ADDRESS_HIGH                       SOC_IRAM0_ADDRESS_HIGH
 
 #define SOC_IRAM0_CACHE_ADDRESS_LOW                  0x40000000
 #define SOC_IRAM0_CACHE_ADDRESS_HIGH                 0x50000000
@@ -26,11 +31,17 @@ extern "C" {
 #define SOC_DRAM0_CACHE_ADDRESS_LOW                  SOC_IRAM0_CACHE_ADDRESS_LOW                //I/D share the same vaddr range
 #define SOC_DRAM0_CACHE_ADDRESS_HIGH                 SOC_IRAM0_CACHE_ADDRESS_HIGH               //I/D share the same vaddr range
 
-#define SOC_DRAM_FLASH_ADDRESS_LOW                   SOC_DRAM0_CACHE_ADDRESS_LOW
-#define SOC_DRAM_FLASH_ADDRESS_HIGH                  0x44000000
+#define SOC_IRAM_FLASH_ADDRESS_LOW                   SOC_IRAM0_CACHE_ADDRESS_LOW
+#define SOC_IRAM_FLASH_ADDRESS_HIGH                  0x44000000
 
-#define SOC_DRAM_PSRAM_ADDRESS_LOW                   0x48000000
-#define SOC_DRAM_PSRAM_ADDRESS_HIGH                  0x4C000000
+#define SOC_DRAM_FLASH_ADDRESS_LOW                   SOC_IRAM_FLASH_ADDRESS_LOW
+#define SOC_DRAM_FLASH_ADDRESS_HIGH                  SOC_IRAM_FLASH_ADDRESS_HIGH
+
+#define SOC_IRAM_PSRAM_ADDRESS_LOW                   0x48000000
+#define SOC_IRAM_PSRAM_ADDRESS_HIGH                  0x4C000000
+
+#define SOC_DRAM_PSRAM_ADDRESS_LOW                   SOC_IRAM_PSRAM_ADDRESS_LOW
+#define SOC_DRAM_PSRAM_ADDRESS_HIGH                  SOC_IRAM_PSRAM_ADDRESS_HIGH
 
 #define SOC_BUS_SIZE(bus_name)                       (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
 #define SOC_ADDRESS_IN_BUS(bus_name, vaddr)          ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
@@ -52,6 +63,7 @@ extern "C" {
 #define SOC_MMU_FLASH_SENSITIVE             BIT(13)
 #define SOC_MMU_PSRAM_SENSITIVE             BIT(12)
 
+#define SOC_NON_CACHEABLE_OFFSET            0x40000000
 
 /**
  * MMU entry valid bit mask for mapping value.

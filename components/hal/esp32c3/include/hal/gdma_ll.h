@@ -89,9 +89,13 @@ static inline void gdma_ll_force_enable_reg_clock(gdma_dev_t *dev, bool enable)
  * @brief Get DMA RX channel interrupt status word
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel, bool raw)
 {
-    return dev->intr[channel].st.val & GDMA_LL_RX_EVENT_MASK;
+    if (raw) {
+        return dev->intr[channel].raw.val & GDMA_LL_RX_EVENT_MASK;
+    } else {
+        return dev->intr[channel].st.val & GDMA_LL_RX_EVENT_MASK;
+    }
 }
 
 /**
@@ -303,9 +307,13 @@ static inline void gdma_ll_rx_disconnect_from_periph(gdma_dev_t *dev, uint32_t c
  * @brief Get DMA TX channel interrupt status word
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel, bool raw)
 {
-    return dev->intr[channel].st.val & GDMA_LL_TX_EVENT_MASK;
+    if (raw) {
+        return dev->intr[channel].raw.val & GDMA_LL_TX_EVENT_MASK;
+    } else {
+        return dev->intr[channel].st.val & GDMA_LL_TX_EVENT_MASK;
+    }
 }
 
 /**

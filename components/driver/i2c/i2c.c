@@ -110,6 +110,18 @@ static const char *I2C_TAG = "i2c";
 #endif
 #define I2C_MEM_ALLOC_CAPS_DEFAULT      MALLOC_CAP_DEFAULT
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define I2C_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2C_CLOCK_SRC_ATOMIC()
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define I2C_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2C_RCC_ATOMIC()
+#endif
+
 /**
  * I2C bus are defined in the header files, let's check that the values are correct
  */
@@ -240,7 +252,9 @@ static void i2c_hw_disable(i2c_port_t i2c_num)
 {
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     if (i2c_context[i2c_num].hw_enabled != false) {
-        periph_module_disable(i2c_periph_signal[i2c_num].module);
+        I2C_RCC_ATOMIC() {
+            i2c_ll_enable_bus_clock(i2c_num, false);
+        }
         i2c_context[i2c_num].hw_enabled = false;
     }
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -250,7 +264,10 @@ static void i2c_hw_enable(i2c_port_t i2c_num)
 {
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     if (i2c_context[i2c_num].hw_enabled != true) {
-        periph_module_enable(i2c_periph_signal[i2c_num].module);
+        I2C_RCC_ATOMIC() {
+            i2c_ll_enable_bus_clock(i2c_num, true);
+            i2c_ll_reset_register(i2c_num);
+        }
         i2c_context[i2c_num].hw_enabled = true;
     }
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -375,7 +392,9 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         return ESP_FAIL;
     }
     i2c_hw_enable(i2c_num);
-    i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
+    }
     //Disable I2C interrupt.
     i2c_ll_disable_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
@@ -478,7 +497,9 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     }
 #endif
 
-    i2c_hal_deinit(&i2c_context[i2c_num].hal);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_hal_deinit(&i2c_context[i2c_num].hal);
+    }
     free(p_i2c_obj[i2c_num]);
     p_i2c_obj[i2c_num] = NULL;
 
@@ -746,7 +767,9 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
         return ret;
     }
     i2c_hw_enable(i2c_num);
-    i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
+    }
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_ll_disable_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
@@ -754,7 +777,9 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
     if (i2c_conf->mode == I2C_MODE_SLAVE) {  //slave mode
         i2c_hal_slave_init(&(i2c_context[i2c_num].hal));
         i2c_ll_slave_tx_auto_start_en(i2c_context[i2c_num].hal.dev, true);
-        i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
+        I2C_CLOCK_SRC_ATOMIC() {
+            i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
+        }
         i2c_ll_set_slave_addr(i2c_context[i2c_num].hal.dev, i2c_conf->slave.slave_addr, i2c_conf->slave.addr_10bit_en);
         i2c_ll_set_rxfifo_full_thr(i2c_context[i2c_num].hal.dev, I2C_FIFO_FULL_THRESH_VAL);
         i2c_ll_set_txfifo_empty_thr(i2c_context[i2c_num].hal.dev, I2C_FIFO_EMPTY_THRESH_VAL);
@@ -768,7 +793,9 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
         i2c_hal_master_init(&(i2c_context[i2c_num].hal));
         //Default, we enable hardware filter
         i2c_ll_master_set_filter(i2c_context[i2c_num].hal.dev, I2C_FILTER_CYC_NUM_DEF);
-        i2c_hal_set_bus_timing(&(i2c_context[i2c_num].hal), i2c_conf->master.clk_speed, src_clk, s_get_src_clk_freq(src_clk));
+        I2C_CLOCK_SRC_ATOMIC() {
+            i2c_hal_set_bus_timing(&(i2c_context[i2c_num].hal), i2c_conf->master.clk_speed, src_clk, s_get_src_clk_freq(src_clk));
+        }
     }
     i2c_ll_update(i2c_context[i2c_num].hal.dev);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));

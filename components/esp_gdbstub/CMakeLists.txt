@@ -1,4 +1,10 @@
-﻿set(srcs "src/gdbstub.c"
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
+set(srcs "src/gdbstub.c"
          "src/gdbstub_transport.c"
          "src/packet.c")
 

@@ -26,9 +26,12 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_random.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7529
 
 #if SOC_PMU_SUPPORTED
 #include "esp_private/esp_pmu.h"
@@ -227,11 +230,14 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 #elif SOC_UART_SUPPORT_XTAL_CLK
     clk_source = UART_SCLK_XTAL;
 #endif
-    uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
-
+    HP_UART_SRC_CLK_ATOMIC() {
+        uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
+    }
     uint32_t sclk_freq;
     TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
-    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
+    HP_UART_SRC_CLK_ATOMIC() {
+        uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
+    }
 #endif
 
     rtc_cpu_freq_config_t config_xtal, config_default;
@@ -410,7 +416,7 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 high)", "[deepsleep][ig
 {
     // This test needs external pulldown
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_HIGH));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_HIGH));
     esp_deep_sleep_start();
 }
 
@@ -419,9 +425,9 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 low)", "[deepsleep][ign
     // This test needs external pullup
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
 #if CONFIG_IDF_TARGET_ESP32
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ALL_LOW));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ALL_LOW));
 #else
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_LOW));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_LOW));
 #endif
     esp_deep_sleep_start();
 }
@@ -432,7 +438,7 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 high)", "[deepsleep][ign
     ESP_ERROR_CHECK(gpio_pullup_dis(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pulldown_en(GPIO_NUM_13));
     ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_HIGH));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_HIGH));
     esp_deep_sleep_start();
 }
 
@@ -443,9 +449,9 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep][igno
     ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
     ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
 #if CONFIG_IDF_TARGET_ESP32
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ALL_LOW));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ALL_LOW));
 #else
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_LOW));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_LOW));
 #endif
     esp_deep_sleep_start();
 }
@@ -665,3 +671,5 @@ TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
     esp_deep_sleep_start();
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)

@@ -79,7 +79,7 @@ TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
         struct timeval tv_stop;
         gettimeofday(&tv_stop, NULL);
         float time_sec = tv_stop.tv_sec - tv_start.tv_sec + 1e-6f * (tv_stop.tv_usec - tv_start.tv_usec);
-        printf("(0) time taken: %f sec\n", time_sec);
+        printf("(%d) time taken: %f sec\n", i, time_sec);
         TEST_ASSERT_TRUE(fabs(time_sec - 1.0f) < 0.1);
     }
     TEST_ASSERT_TRUE(xSemaphoreTake(done, 5000 / portTICK_PERIOD_MS));

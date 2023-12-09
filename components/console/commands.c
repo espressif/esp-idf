@@ -130,14 +130,17 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
     }
     item->argtable = cmd->argtable;
     item->func = cmd->func;
-    cmd_item_t *last = SLIST_FIRST(&s_cmd_list);
+    cmd_item_t *last = NULL;
+    cmd_item_t *it;
+    SLIST_FOREACH(it, &s_cmd_list, next) {
+        if (strcmp(it->command, item->command) > 0) {
+            break;
+        }
+        last = it;
+    }
     if (last == NULL) {
         SLIST_INSERT_HEAD(&s_cmd_list, item, next);
     } else {
-        cmd_item_t *it;
-        while ((it = SLIST_NEXT(last, next)) != NULL) {
-            last = it;
-        }
         SLIST_INSERT_AFTER(last, item, next);
     }
     return ESP_OK;

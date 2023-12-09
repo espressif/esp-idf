@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/task_snapshot.h"
+#include "esp_private/freertos_debug.h"
 #include "esp_cpu.h"
 #include "esp_rom_sys.h"
 #include "unity.h"

@@ -88,11 +88,11 @@ typedef enum {
     ESP_PWR_LVL_P9  = 11,             /*!< Corresponding to  +9dbm */
     ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to  +12dbm */
     ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15dbm */
-    ESP_PWR_LVL_P16 = 14,             /*!< Corresponding to  +16dbm */
-    ESP_PWR_LVL_P17 = 15,             /*!< Corresponding to  +17dbm */
-    ESP_PWR_LVL_P18 = 16,             /*!< Corresponding to  +18dbm */
-    ESP_PWR_LVL_P19 = 17,             /*!< Corresponding to  +19dbm */
-    ESP_PWR_LVL_P20 = 18,             /*!< Corresponding to  +20dbm */
+    ESP_PWR_LVL_P16 = 14,             /*!< Corresponding to  +18dbm, this enum variable has been deprecated */
+    ESP_PWR_LVL_P17 = 14,             /*!< Corresponding to  +18dbm, this enum variable has been deprecated */
+    ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18dbm */
+    ESP_PWR_LVL_P19 = 15,             /*!< Corresponding to  +20dbm, this enum variable has been deprecated */
+    ESP_PWR_LVL_P20 = 15,             /*!< Corresponding to  +20dbm */
     ESP_PWR_LVL_INVALID = 0xFF,       /*!< Indicates an invalid value */
 } esp_power_level_t;
 
@@ -115,6 +115,14 @@ typedef struct {
     uint8_t type;     /*!< Type of the Bluetooth address (public, random, etc.) */
     uint8_t val[6];   /*!< Array containing the 6-byte Bluetooth address value */
 } esp_ble_addr_t;
+
+/**
+ * @brief Select buffers
+*/
+typedef enum {
+    ESP_BLE_LOG_BUF_HCI         = 0x02,
+    ESP_BLE_LOG_BUF_CONTROLLER  = 0x05,
+} esp_ble_log_buf_t;
 
 /**
  * @brief  Set BLE TX power
@@ -152,7 +160,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20230113
+#define CONFIG_VERSION  0x20231124
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -416,7 +424,7 @@ extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 /**
- * @brief dump all controller log information cached in buffer
+ * @brief dump all log information cached in buffers.
  * @param output : true for log dump, false will take no effect
  */
 void esp_ble_controller_log_dump_all(bool output);

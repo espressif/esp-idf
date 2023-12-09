@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_event/test_apps:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32c3", "linux"]
+      reason: covers all major arch types, xtensa vs riscv, single vs dual-core

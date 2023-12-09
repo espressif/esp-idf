@@ -156,7 +156,12 @@ void esp_timer_impl_advance(int64_t time_diff_us)
 
 esp_err_t esp_timer_impl_early_init(void)
 {
-    periph_module_enable(PERIPH_SYSTIMER_MODULE);
+    PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_SYSTIMER_MODULE, ref_count) {
+        if (ref_count == 0) {
+            systimer_ll_enable_bus_clock(true);
+            systimer_ll_reset_register();
+        }
+    }
     systimer_hal_tick_rate_ops_t ops = {
         .ticks_to_us = systimer_ticks_to_us,
         .us_to_ticks = systimer_us_to_ticks,
@@ -192,16 +197,9 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 #endif
                     | ESP_INTR_FLAG_IRAM;
 
-#if !CONFIG_IDF_TARGET_ESP32P4
-//TODO: IDF-7486
-    esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE, isr_flags,
-                                   &timer_alarm_isr, NULL,
-                                   &s_timer_interrupt_handle[(ISR_HANDLERS == 1) ? 0 : xPortGetCoreID()]);
-#else
     esp_err_t err = esp_intr_alloc(ETS_SYSTIMER_TARGET2_INTR_SOURCE, isr_flags,
                                    &timer_alarm_isr, NULL,
                                    &s_timer_interrupt_handle[(ISR_HANDLERS == 1) ? 0 : xPortGetCoreID()]);
-#endif
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "esp_intr_alloc failed (0x%x)", err);
         return err;

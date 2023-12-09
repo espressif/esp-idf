@@ -16,7 +16,6 @@
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
 #define PSRAM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 
-
 #define AP_HEX_PSRAM_SYNC_READ             0x0000
 #define AP_HEX_PSRAM_SYNC_WRITE            0x8080
 #define AP_HEX_PSRAM_BURST_READ            0x2020
@@ -34,7 +33,6 @@
 #define AP_HEX_PSRAM_CS_HOLD_TIME          4
 #define AP_HEX_PSRAM_CS_ECC_HOLD_TIME      4
 #define AP_HEX_PSRAM_CS_HOLD_DELAY         3
-
 
 typedef struct {
     union {
@@ -95,7 +93,6 @@ typedef struct {
 
 static const char* TAG = "hex_psram";
 static uint32_t s_psram_size;   //this stands for physical psram size in bytes
-
 
 /**
  * Common psram transaction
@@ -192,55 +189,54 @@ static void s_get_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *out_reg)
                                false);
     //Read MR2~3 register
     s_psram_common_transaction(spi_num,
-                              AP_HEX_PSRAM_REG_READ, cmd_len,
-                              0x2, addr_bit_len,
-                              dummy,
-                              NULL, 0,
-                              &out_reg->mr2.val, data_bit_len,
-                              false);
+                               AP_HEX_PSRAM_REG_READ, cmd_len,
+                               0x2, addr_bit_len,
+                               dummy,
+                               NULL, 0,
+                               &out_reg->mr2.val, data_bit_len,
+                               false);
     data_bit_len = 8;
     //Read MR4 register
     s_psram_common_transaction(spi_num,
-                              AP_HEX_PSRAM_REG_READ, cmd_len,
-                              0x4, addr_bit_len,
-                              dummy,
-                              NULL, 0,
-                              &out_reg->mr4.val, data_bit_len,
-                              false);
+                               AP_HEX_PSRAM_REG_READ, cmd_len,
+                               0x4, addr_bit_len,
+                               dummy,
+                               NULL, 0,
+                               &out_reg->mr4.val, data_bit_len,
+                               false);
     //Read MR8 register
     s_psram_common_transaction(spi_num,
-                              AP_HEX_PSRAM_REG_READ, cmd_len,
-                              0x8, addr_bit_len,
-                              dummy,
-                              NULL, 0,
-                              &out_reg->mr8.val, data_bit_len,
-                              false);
+                               AP_HEX_PSRAM_REG_READ, cmd_len,
+                               0x8, addr_bit_len,
+                               dummy,
+                               NULL, 0,
+                               &out_reg->mr8.val, data_bit_len,
+                               false);
 }
 
 static void s_print_psram_info(hex_psram_mode_reg_t *reg_val)
 {
     ESP_EARLY_LOGI(TAG, "vendor id    : 0x%02x (%s)", reg_val->mr1.vendor_id, reg_val->mr1.vendor_id == 0x0d ? "AP" : "UNKNOWN");
     ESP_EARLY_LOGI(TAG, "Latency      : 0x%02x (%s)", reg_val->mr0.lt, reg_val->mr0.lt == 1 ? "Fixed" : "Variable");
-    ESP_EARLY_LOGI(TAG, "DriveStr.    : 0x%02x (%d Ohm)", reg_val->mr0.drive_str, reg_val->mr0.drive_str < 2 ? 25*(reg_val->mr0.drive_str + 1): 100*(reg_val->mr0.drive_str-1));
+    ESP_EARLY_LOGI(TAG, "DriveStr.    : 0x%02x (%d Ohm)", reg_val->mr0.drive_str, reg_val->mr0.drive_str < 2 ? 25 * (reg_val->mr0.drive_str + 1) : 100 * (reg_val->mr0.drive_str - 1));
     ESP_EARLY_LOGI(TAG, "dev id       : 0x%02x (generation %d)", reg_val->mr2.dev_id, reg_val->mr2.dev_id + 1);
     ESP_EARLY_LOGI(TAG, "density      : 0x%02x (%d Mbit)", reg_val->mr2.density, reg_val->mr2.density == 0x1 ? 32 :
-                                                                                 reg_val->mr2.density == 0X3 ? 64 :
-                                                                                 reg_val->mr2.density == 0x5 ? 128 :
-                                                                                 reg_val->mr2.density == 0x7 ? 256 : 0);
+                   reg_val->mr2.density == 0X3 ? 64 :
+                   reg_val->mr2.density == 0x5 ? 128 :
+                   reg_val->mr2.density == 0x7 ? 256 : 0);
     ESP_EARLY_LOGI(TAG, "good-die     : 0x%02x (%s)", reg_val->mr2.kgd, reg_val->mr2.kgd == 6 ? "Pass" : "Fail");
     ESP_EARLY_LOGI(TAG, "SRF          : 0x%02x (%s Refresh)", reg_val->mr3.srf, reg_val->mr3.srf == 0x1 ? "Fast" : "Slow");
     ESP_EARLY_LOGI(TAG, "BurstType    : 0x%02x (%s Wrap)", reg_val->mr8.bt, reg_val->mr8.bt == 1 && reg_val->mr8.bl != 3 ? "Hybrid" : "");
     ESP_EARLY_LOGI(TAG, "BurstLen     : 0x%02x (%d Byte)", reg_val->mr8.bl, reg_val->mr8.bl == 0x00 ? 16 :
-                                                                         reg_val->mr8.bl == 0x01 ? 32 :
-                                                                         reg_val->mr8.bl == 0x10 ? 64 : 2048);
+                   reg_val->mr8.bl == 0x01 ? 32 :
+                   reg_val->mr8.bl == 0x10 ? 64 : 2048);
     ESP_EARLY_LOGI(TAG, "BitMode      : 0x%02x (%s Mode)", reg_val->mr8.x16, reg_val->mr8.x16 == 1 ? "X16" : "X8");
 
-
     ESP_EARLY_LOGI(TAG, "Readlatency  : 0x%02x (%d cycles@%s)", reg_val->mr0.read_latency,  reg_val->mr0.read_latency * 2 + 6,
-                                                                reg_val->mr0.lt == 1 ? "Fixed" : "Variable");
+                   reg_val->mr0.lt == 1 ? "Fixed" : "Variable");
     ESP_EARLY_LOGI(TAG, "DriveStrength: 0x%02x (1/%d)", reg_val->mr0.drive_str, reg_val->mr0.drive_str == 0x00 ? 1 :
-                                                                                reg_val->mr0.drive_str == 0x01 ? 2 :
-                                                                                reg_val->mr0.drive_str == 0x02 ? 4 : 8);
+                   reg_val->mr0.drive_str == 0x01 ? 2 :
+                   reg_val->mr0.drive_str == 0x02 ? 4 : 8);
 }
 
 static void s_config_mspi_for_psram(void)
@@ -325,7 +321,6 @@ static void s_configure_psram_ecc(void)
     s_mspi_ecc_show_info();
 }
 #endif  //#if CONFIG_SPIRAM_ECC_ENABLE
-
 
 esp_err_t esp_psram_impl_enable(void)
 {

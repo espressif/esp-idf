@@ -129,6 +129,9 @@ void example_send_self_prov_node_addr(struct k_work *work)
             .app_idx = fast_prov_srv->app_idx,
             .dst = fast_prov_srv->prim_prov_addr,
             .timeout = 0,
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+            .role = ROLE_FAST_PROV,
+#endif
         };
         err = example_send_fast_prov_self_prov_node_addr(model, &info, node_addr_send.addr);
         if (err != ESP_OK) {
@@ -178,6 +181,9 @@ static void example_get_all_node_addr(struct k_work *work)
         .app_idx = node->app_idx,
         .dst = node->unicast_addr,
         .timeout = 10000,
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+        .role = ROLE_PROVISIONER,
+#endif
     };
     err = example_send_fast_prov_all_node_addr_get(model, &info);
     if (err != ESP_OK) {
@@ -232,10 +238,16 @@ esp_err_t example_fast_prov_client_recv_timeout(uint32_t opcode, esp_ble_mesh_mo
             set.ctx_flags  = BIT(6);
             set.group_addr = fast_prov_srv->group_addr;
         }
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+        info.role = ROLE_FAST_PROV;
+#endif
 #else
         set.ctx_flags = 0x037F;
         memcpy(&set.node_addr_cnt, &node->node_addr_cnt,
                sizeof(example_node_info_t) - offsetof(example_node_info_t, node_addr_cnt));
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+        info.role = ROLE_PROVISIONER;
+#endif
 #endif
         err = example_send_fast_prov_info_set(model, &info, &set);
         if (err != ESP_OK) {
@@ -254,6 +266,9 @@ esp_err_t example_fast_prov_client_recv_timeout(uint32_t opcode, esp_ble_mesh_mo
                 .app_idx = fast_prov_srv->app_idx,
                 .dst = fast_prov_srv->prim_prov_addr,
                 .timeout = 0,
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+                .role = ROLE_FAST_PROV,
+#endif
             };
             err = example_send_fast_prov_self_prov_node_addr(model, &info, node_addr_send.addr);
             if (err != ESP_OK) {
@@ -281,6 +296,9 @@ esp_err_t example_fast_prov_client_recv_timeout(uint32_t opcode, esp_ble_mesh_mo
             .app_idx = node->app_idx,
             .dst = node->unicast_addr,
             .timeout = 10000,
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+            .role = ROLE_PROVISIONER,
+#endif
         };
         err = example_send_fast_prov_all_node_addr_get(model, &info);
         if (err != ESP_OK) {
@@ -378,6 +396,9 @@ esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
             .app_idx = node->app_idx,
             .dst = node->group_addr,
             .timeout = 0,
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+            .role = ROLE_PROVISIONER,
+#endif
         };
         err = example_send_generic_onoff_set(cli_model, &info, LED_ON, 0x00, false);
         if (err != ESP_OK) {

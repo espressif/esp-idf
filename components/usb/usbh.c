@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1078,14 +1078,13 @@ esp_err_t usbh_ep_enqueue_urb(usbh_ep_handle_t ep_hdl, urb_t *urb)
 {
     USBH_CHECK(ep_hdl != NULL && urb != NULL, ESP_ERR_INVALID_ARG);
     USBH_CHECK(urb_check_args(urb), ESP_ERR_INVALID_ARG);
-    bool xfer_is_in = ((usb_setup_packet_t *)urb->transfer.data_buffer)->bmRequestType & USB_BM_REQUEST_TYPE_DIR_IN;
 
     endpoint_t *ep_obj = (endpoint_t *)ep_hdl;
 
     USBH_CHECK( transfer_check_usb_compliance(&(urb->transfer),
                 USB_EP_DESC_GET_XFERTYPE(ep_obj->constant.ep_desc),
                 USB_EP_DESC_GET_MPS(ep_obj->constant.ep_desc),
-                xfer_is_in),
+                USB_EP_DESC_GET_EP_DIR(ep_obj->constant.ep_desc)),
                 ESP_ERR_INVALID_ARG);
     // Check that the EP's underlying pipe is in the active state before submitting the URB
     if (hcd_pipe_get_state(ep_obj->constant.pipe_hdl) != HCD_PIPE_STATE_ACTIVE) {

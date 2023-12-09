@@ -27,7 +27,7 @@ Description of the PCNT functionality is divided into the following sections:
     - :ref:`pcnt-watch-points` - describes how to configure PCNT watch points (i.e., tell PCNT unit to trigger an event when the count reaches a certain value).
     - :ref:`pcnt-register-event-callbacks` - describes how to hook your specific code to the watch point event callback function.
     - :ref:`pcnt-set-glitch-filter` - describes how to enable and set the timing parameters for the internal glitch filter.
-    :SOC_PCNT_SUPPORT_CLEAR_SIGNAL: - :ref:`pcnt-set-clear-signal` - describes how to set the parameters for the zero signal.
+    :SOC_PCNT_SUPPORT_CLEAR_SIGNAL: - :ref:`pcnt-set-clear-signal` - describes how to set the parameters for the external clear signal.
     - :ref:`pcnt-enable-disable-unit` - describes how to enable and disable the PCNT unit.
     - :ref:`pcnt-unit-io-control` - describes IO control functions of PCNT unit, like enable glitch filter, start and stop unit, get and clear count value.
     - :ref:`pcnt-power-management` - describes what functionality will prevent the chip from going into low power mode.
@@ -48,14 +48,14 @@ Install PCNT Unit
 To install a PCNT unit, there is a configuration structure that needs to be given in advance: :cpp:type:`pcnt_unit_config_t`:
 
 -  :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit` specify the range for the internal hardware counter. The counter will reset to zero automatically when it crosses either the high or low limit.
--  :cpp:member:`pcnt_unit_config_t::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
+-  :cpp:member:`pcnt_unit_config_t::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16 bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
 -  :cpp:member:`pcnt_unit_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
 
 .. note::
 
     Since all PCNT units share the same interrupt source, when installing multiple PCNT units make sure that the interrupt priority :cpp:member:`pcnt_unit_config_t::intr_priority` is the same for each unit.
 
-Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e. unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT units is recorded by :c:macro:`SOC_PCNT_UNITS_PER_GROUP` for reference.
+Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e., unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT units is recorded by :c:macro:`SOC_PCNT_UNITS_PER_GROUP` for reference.
 
 If a previously created PCNT unit is no longer needed, it is recommended to recycle the resource by calling :cpp:func:`pcnt_del_unit`. Which in return allows the underlying unit hardware to be used for other purposes. Before deleting a PCNT unit, one should ensure the following prerequisites:
 
@@ -192,7 +192,7 @@ This function should be called when the unit is in the init state. Otherwise, it
 
 .. note::
 
-    The glitch filter is clocked from APB. For the counter not to miss any pulses, the maximum glitch width should be longer than one APB_CLK cycle (usually 12.5 ns if APB equals 80MHz). As the APB frequency would be changed after DFS (Dynamic Frequency Scaling) enabled, which means the filter does not work as expect in that case. So the driver installs a PM lock for PCNT unit during the first time you enable the glitch filter. For more information related to power management strategy used in PCNT driver, please see :ref:`pcnt-power-management`.
+    The glitch filter is clocked from APB. For the counter not to miss any pulses, the maximum glitch width should be longer than one APB_CLK cycle (usually 12.5 ns if APB equals 80 MHz). As the APB frequency would be changed after DFS (Dynamic Frequency Scaling) enabled, which means the filter does not work as expect in that case. So the driver installs a PM lock for PCNT unit during the first time you enable the glitch filter. For more information related to power management strategy used in PCNT driver, please see :ref:`pcnt-power-management`.
 
 .. code:: c
 
@@ -205,16 +205,16 @@ This function should be called when the unit is in the init state. Otherwise, it
 
     .. _pcnt-set-clear-signal:
 
-    Set Clear Signal
-    ^^^^^^^^^^^^^^^^
+    Use External Clear Signal
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The PCNT unit can receive a zero signal from the GPIO. The parameters that can be configured for the zero signal are listed in :cpp:type:`pcnt_clear_signal_config_t`:
+    The PCNT unit can receive a clear signal from the GPIO. The parameters that can be configured for the clear signal are listed in :cpp:type:`pcnt_clear_signal_config_t`:
 
-        -  :cpp:member:`pcnt_clear_signal_config_t::zero_input_gpio_num` specify the GPIO numbers used by **zero** signal. The default active level is high, and the input mode is pull-down enabled.
-        -  :cpp:member:`pcnt_clear_signal_config_t::invert_zero_input` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is invert.
-        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the zreo pulse signals by function :cpp:func:`gpio_set_level` on the same GPIO.
+        -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` specify the GPIO numbers used by **clear** signal. The default active level is high, and the input mode is pull-down enabled.
+        -  :cpp:member:`pcnt_clear_signal_config_t::invert_clear_signal` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is inverted.
+        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the clear signal by function :cpp:func:`gpio_set_level` for the same GPIO.
 
-    This signal acts in the same way as calling :cpp:func:`pcnt_unit_clear_count`, but is not subject to software latency, and is suitable for use in situations with high latency requirements.
+    This signal acts in the same way as calling :cpp:func:`pcnt_unit_clear_count`, but is not subject to software latency, and is suitable for use in situations with low latency requirements. Also please note, the flip frequency of this signal can not be too high.
 
     .. code:: c
 

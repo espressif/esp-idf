@@ -13,6 +13,7 @@
 #else
 #include "soc/extmem_reg.h"
 #endif
+#include "soc/soc_caps.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
 #include "riscv/rvruntime-frames.h"
@@ -166,7 +167,7 @@ static inline void print_assist_debug_details(const void *frame)
 {
     uint32_t core_id = esp_cpu_get_core_id();
     uint32_t sp_min, sp_max;
-    const char *task_name = pcTaskGetName(xTaskGetCurrentTaskHandleForCPU(core_id));
+    const char *task_name = pcTaskGetName(xTaskGetCurrentTaskHandleForCore(core_id));
     esp_hw_stack_guard_get_bounds(&sp_min, &sp_max);
 
     panic_print_str("\r\n");
@@ -259,11 +260,26 @@ static inline void print_memprot_err_details(const void *frame __attribute__((un
 }
 #endif
 
+static void panic_print_register_array(const char* names[], const uint32_t* regs, int size)
+{
+    const int regs_per_line = 4;
+    for (int i = 0; i < size; i++) {
+        if (i % regs_per_line == 0) {
+            panic_print_str("\r\n");
+        }
+        panic_print_str(names[i]);
+        panic_print_str(": 0x");
+        panic_print_hex(regs[i]);
+        panic_print_str("  ");
+    }
+}
+
+
 void panic_print_registers(const void *f, int core)
 {
-    uint32_t *regs = (uint32_t *)f;
-
-    // only print ABI name
+    /**
+     * General Purpose context, only print ABI name
+     */
     const char *desc[] = {
         "MEPC    ", "RA      ", "SP      ", "GP      ", "TP      ", "T0      ", "T1      ", "T2      ",
         "S0/FP   ", "S1      ", "A0      ", "A1      ", "A2      ", "A3      ", "A4      ", "A5      ",
@@ -273,20 +289,9 @@ void panic_print_registers(const void *f, int core)
     };
 
     panic_print_str("Core ");
-    panic_print_dec(((RvExcFrame *)f)->mhartid);
+    panic_print_dec(core);
     panic_print_str(" register dump:");
-
-    for (int x = 0; x < sizeof(desc) / sizeof(desc[0]); x += 4) {
-        panic_print_str("\r\n");
-        for (int y = 0; y < 4 && x + y < sizeof(desc) / sizeof(desc[0]); y++) {
-            if (desc[x + y][0] != 0) {
-                panic_print_str(desc[x + y]);
-                panic_print_str(": 0x");
-                panic_print_hex(regs[x + y]);
-                panic_print_str("  ");
-            }
-        }
-    }
+    panic_print_register_array(desc, f, DIM(desc));
 }
 
 /**
@@ -313,23 +318,21 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->reason = "Cache error";
         info->details = print_cache_err_details;
 
-    } else if (frame->mcause == ETS_INT_WDT_INUM) {
-        /* Watchdog interrupt occured, get the core on which it happened
-         * and update the reason/message accordingly. */
-
-        const int core = esp_cache_err_get_cpuid();
+    } else if (frame->mcause == PANIC_RSN_INTWDT_CPU0) {
+        const int core = 0;
         info->core = core;
         info->exception = PANIC_EXCEPTION_IWDT;
-
-#if SOC_CPU_NUM > 1
-#error "TODO: define PANIC_RSN_INTWDT_CPU1 in panic_reason.h"
-        _Static_assert(PANIC_RSN_INTWDT_CPU0 + 1 == PANIC_RSN_INTWDT_CPU1,
-                       "PANIC_RSN_INTWDT_CPU1 must be equal to PANIC_RSN_INTWDT_CPU0 + 1");
-        info->reason = core == 0 ? "Interrupt wdt timeout on CPU0" : "Interrupt wdt timeout on CPU1";
-#else
         info->reason = "Interrupt wdt timeout on CPU0";
-#endif
     }
+#if SOC_CPU_CORES_NUM > 1
+    else if (frame->mcause == PANIC_RSN_INTWDT_CPU1) {
+        const int core = 1;
+        info->core = core;
+        info->exception = PANIC_EXCEPTION_IWDT;
+        info->reason = "Interrupt wdt timeout on CPU1";
+    }
+#endif
+
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     else if (frame->mcause == ETS_ASSIST_DEBUG_INUM) {
         info->core = esp_cache_err_get_cpuid();

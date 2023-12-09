@@ -11,7 +11,7 @@ The SPI0/1 bus is shared between the instruction & data cache (for firmware exec
 
     On {IDF_TARGET_NAME}, these caches must be disabled while reading/writing/erasing.
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     On {IDF_TARGET_NAME}, the config option :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` (enabled by default) allows the cache to read flash concurrently with SPI1 operations. See :ref:`auto-suspend` for more details.
 
@@ -42,11 +42,11 @@ Under this condition, all CPUs should always execute code and access data from i
 
         When :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and :ref:`CONFIG_SPIRAM_RODATA` are both enabled, these APIs will not disable the caches.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     The way that these APIs disable the caches suspends all the other tasks. Besides, all non-IRAM-safe interrupts will be disabled. The other core will be polling in a busy loop. These will be restored until the Flash operation completes.
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     The way that these APIs disable the caches also disables non-IRAM-safe interrupts. These will be restored until the Flash operation completes.
 
@@ -78,7 +78,7 @@ Non-IRAM-Safe Interrupt Handlers
 If the ``ESP_INTR_FLAG_IRAM`` flag is not set when registering, the interrupt handler will not get executed when the caches are disabled. Once the caches are restored, the non-IRAM-safe interrupts will be re-enabled. After this moment, the interrupt handler will run normally again. This means that as long as caches are disabled, users will not see the corresponding hardware event happening.
 
 
-.. only:: esp32c3 or esp32c2 or esp32s3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
    .. include:: auto_suspend.inc
 

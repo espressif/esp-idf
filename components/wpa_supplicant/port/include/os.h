@@ -14,6 +14,7 @@
 
 #ifndef OS_H
 #define OS_H
+#include <sys/types.h>
 #include "esp_types.h"
 #include <string.h>
 #include <stdio.h>

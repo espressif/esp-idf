@@ -441,7 +441,7 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 
   * 以太网基本示例：:example:`ethernet/basic`
   * 以太网 iperf 示例：:example:`ethernet/iperf`
-  * 以太网到 Wi-Fi AP “路由器”：:example:`network/eth2ap`
+  * 以太网到 Wi-Fi AP“路由器”：:example:`network/eth2ap`
   * Wi-Fi station 到以太网 “网桥”：:example:`network/sta2eth`
   * 大多数协议示例也适用于以太网：:example:`protocols`
 

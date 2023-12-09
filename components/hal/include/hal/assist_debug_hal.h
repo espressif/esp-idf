@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+
+#if SOC_ASSIST_DEBUG_SUPPORTED
 FORCE_INLINE_ATTR void assist_debug_hal_sp_int_enable(uint32_t core_id)
 {
     assist_debug_ll_sp_spill_interrupt_enable(core_id);
@@ -67,6 +69,8 @@ FORCE_INLINE_ATTR uint32_t assist_debug_hal_is_sp_ovf_fired(uint32_t core_id)
 {
     return assist_debug_ll_sp_spill_is_fired(core_id);
 }
+
+#endif // SOC_ASSIST_DEBUG_SUPPORTED
 
 #ifdef __cplusplus
 }

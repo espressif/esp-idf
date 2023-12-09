@@ -102,7 +102,7 @@ typedef struct {
     uint16_t  app_idx;                                  /*!< AppKey Index state */
     uint8_t   transfer_ttl;                             /*!< Transfer TTL state */
     uint8_t   unicast_addr_count;                       /*!< The count of unicast address */
-    uint16_t *unicast_addr;                             /*!< Unlicast address list */
+    uint16_t *unicast_addr;                             /*!< Unicast address list */
 } esp_ble_mesh_retrieve_capabilities_t;                 /*!< Parameters of BLOB retrieve capabilities */
 
 /** Parameters of BLOB transfer */
@@ -111,7 +111,7 @@ typedef struct {
     uint8_t   msg_role;                                 /*!< Role of the device - Node/Provisioner */
 
     uint8_t   unicast_addr_count;                       /*!< The count of unicast address */
-    uint16_t *unicast_addr;                             /*!< Unlicast address list */
+    uint16_t *unicast_addr;                             /*!< Unicast address list */
     uint16_t  multicast_addr;                           /*!< Multicast Address state */
     uint16_t  app_idx;                                  /*!< AppKey Index state */
     uint8_t   transfer_ttl;                             /*!< Transfer TTL state */
@@ -164,7 +164,7 @@ typedef struct {
     uint16_t  app_idx;                                  /*!< AppKey Index state */
     uint8_t   transfer_ttl;                             /*!< Transfer TTL state */
     uint8_t   unicast_addr_count;                       /*!< The count of unicast address */
-    uint16_t *unicast_addr;                             /*!< Unlicast address list */
+    uint16_t *unicast_addr;                             /*!< Unicast address list */
 } esp_ble_mesh_determine_transfer_status_t;             /*!< Parameters of determine Block Status message */
 
 /** Parameters of cancel transfer message */
@@ -176,7 +176,7 @@ typedef struct {
     uint16_t  app_idx;                                  /*!< AppKey Index state */
     uint8_t   transfer_ttl;                             /*!< Transfer TTL state */
     uint8_t   unicast_addr_count;                       /*!< The count of unicast address */
-    uint16_t *unicast_addr;                             /*!< Unlicast address list */
+    uint16_t *unicast_addr;                             /*!< Unicast address list */
 
     uint8_t   blob_id[ESP_BLE_MESH_BLOB_ID_SIZE];       /*!< BLOB identifier list */
 } esp_ble_mesh_cancel_transfer_t;                       /*!< Parameters of cancel transfer message */

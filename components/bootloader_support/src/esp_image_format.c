@@ -21,6 +21,7 @@
 #include "esp_rom_sys.h"
 #include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
+#include "hal/cache_ll.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -41,7 +42,6 @@
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
 #include "esp32p4/rom/secure_boot.h"
-#include "esp32p4/rom/cache.h"
 #endif
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
@@ -236,9 +236,8 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
                 }
             }
         }
-#if CONFIG_IDF_TARGET_ESP32P4
-        //TODO: IDF-7516
-        Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
 #endif
     }
 #endif // BOOTLOADER_BUILD
@@ -675,10 +674,9 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
                                    MIN(SHA_CHUNK, data_len - i));
         }
     }
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7516
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     if (do_load && esp_ptr_in_diram_iram((uint32_t *)load_addr)) {
-        Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
+        cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
     }
 #endif
 
@@ -955,8 +953,8 @@ static esp_err_t verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_i
     if (memcmp(data->image_digest, image_hash, HASH_LEN) != 0) {
         ESP_LOGE(TAG, "Image hash failed - image is corrupt");
         bootloader_debug_buffer(data->image_digest, HASH_LEN, "Expected hash");
-#ifdef CONFIG_IDF_ENV_FPGA
-        ESP_LOGW(TAG, "Ignoring invalid SHA-256 as running on FPGA");
+#if CONFIG_IDF_ENV_FPGA || CONFIG_IDF_ENV_BRINGUP
+        ESP_LOGW(TAG, "Ignoring invalid SHA-256 as running on FPGA / doing bringup");
         return ESP_OK;
 #endif
         return ESP_ERR_IMAGE_INVALID;

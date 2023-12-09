@@ -41,7 +41,7 @@ static int s_insert_point(uint32_t value)
             TEST_ASSERT_GREATER_OR_EQUAL(4096, s_adc_count_size);
             s_adc_offset = 0;   //Fixed to 0 because the array can hold all the data in 12 bits
         } else {
-            s_adc_offset = MAX((int)value - s_adc_count_size/2, 0);
+            s_adc_offset = MAX((int)value - s_adc_count_size / 2, 0);
         }
     }
 
@@ -75,15 +75,15 @@ static uint32_t s_get_average(void)
     uint32_t sum = 0;
     int count = 0;
     for (int i = 0; i < s_adc_count_size; i++) {
-        sum += s_p_adc_count[i] * (s_adc_offset+i);
+        sum += s_p_adc_count[i] * (s_adc_offset + i);
         count += s_p_adc_count[i];
     }
-    return sum/count;
+    return sum / count;
 }
 
 static float s_print_summary(bool figure)
 {
-    const int MAX_WIDTH=20;
+    const int MAX_WIDTH = 20;
     int max_count = 0;
     int start = -1;
     int end = -1;
@@ -100,12 +100,12 @@ static float s_print_summary(bool figure)
             end = i;
         }
         count += s_p_adc_count[i];
-        sum += s_p_adc_count[i] * (s_adc_offset+i);
+        sum += s_p_adc_count[i] * (s_adc_offset + i);
     }
 
     if (figure) {
         for (int i = start; i <= end; i++) {
-            printf("%4d ", i+s_adc_offset);
+            printf("%4d ", i + s_adc_offset);
             int count = s_p_adc_count[i] * MAX_WIDTH / max_count;
             for (int j = 0; j < count; j++) {
                 putchar('|');
@@ -113,7 +113,7 @@ static float s_print_summary(bool figure)
             printf("    %d\n", s_p_adc_count[i]);
         }
     }
-    float average = (float)sum/count;
+    float average = (float)sum / count;
 
     float variation_square = 0;
     for (int i = start; i <= end; i ++) {
@@ -125,10 +125,10 @@ static float s_print_summary(bool figure)
     }
 
     printf("%d points.\n", count);
-    printf("average: %.1f\n", (float)sum/count);
-    printf("std: %.2f\n", sqrt(variation_square/count));
+    printf("average: %.1f\n", (float)sum / count);
+    printf("std: %.2f\n", sqrt(variation_square / count));
 
-    return sqrt(variation_square/count);
+    return sqrt(variation_square / count);
 }
 
 #if SOC_ADC_DMA_SUPPORTED
@@ -147,7 +147,6 @@ static float s_print_summary(bool figure)
 #define ADC_TEST_FREQ_HZ        (50 * 1000)
 #define ADC_TEST_PKG_SIZE       512
 #define ADC_TEST_CNT            4096
-
 
 static bool IRAM_ATTR s_conv_done_cb(adc_continuous_handle_t handle, const adc_continuous_evt_data_t *edata, void *user_data)
 {
@@ -270,29 +269,29 @@ TEST_CASE("ADC1 continuous raw average and std_deviation", "[adc_continuous][man
 
 TEST_CASE("ADC1 continuous std deviation performance, no filter", "[adc_continuous][performance]")
 {
-    float std = test_adc_continuous_std(ADC_ATTEN_DB_11, false, 0, true);
+    float std = test_adc_continuous_std(ADC_ATTEN_DB_12, false, 0, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER, "%.2f", std);
 }
 
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
 TEST_CASE("ADC1 continuous std deviation performance, with filter", "[adc_continuous][performance]")
 {
-    float std = test_adc_continuous_std(ADC_ATTEN_DB_11, false, 0, true);
+    float std = test_adc_continuous_std(ADC_ATTEN_DB_12, false, 0, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_2, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_2, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_2, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_4, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_4, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_4, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_8, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_8, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_8, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_16, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_16, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_16, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_64, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_64, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_64, "%.2f", std);
 }
 #endif  //#if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
@@ -376,7 +375,7 @@ TEST_CASE("ADC1 oneshot raw average and std_deviation", "[adc_oneshot][manual]")
 
 TEST_CASE("ADC1 oneshot std_deviation performance", "[adc_oneshot][performance]")
 {
-    float std = test_adc_oneshot_std(ADC_ATTEN_DB_11, true);
+    float std = test_adc_oneshot_std(ADC_ATTEN_DB_12, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_ONESHOT_STD_ATTEN3, "%.2f", std);
 }
 /*---------------------------------------------------------------
@@ -389,7 +388,6 @@ TEST_CASE("ADC1 oneshot std_deviation performance", "[adc_oneshot][performance]"
 #define RECORD_TIME_END(p_time)         do{__t2 = esp_cpu_get_cycle_count(); *p_time = (__t2-__t1);}while(0)
 #define GET_US_BY_CCOUNT(t)             ((double)t/CPU_FREQ_MHZ)
 
-
 //ADC Channels
 #if CONFIG_IDF_TARGET_ESP32
 #define ADC1_CALI_SPEED_TEST_CHAN0            ADC_CHANNEL_6
@@ -400,7 +398,6 @@ TEST_CASE("ADC1 oneshot std_deviation performance", "[adc_oneshot][performance]"
 #endif
 
 #define TIMES_PER_ATTEN                 10
-
 
 static IRAM_ATTR NOINLINE_ATTR uint32_t get_cali_time_in_ccount(adc_cali_handle_t cali_handle, int adc_raw)
 {

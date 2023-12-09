@@ -17,9 +17,9 @@
 
 * 贡献内容是否完全是自己的成果，或已获得与 Apache License 2.0 兼容的开源许可？如果不是，我们不能接受该内容。了解更多信息，请见 :doc:`copyright-guide`。
 
-* 要提交的代码是否符合 esp-idf :doc:`Style Guide <style-guide>`？
+* 要提交的代码是否符合 ESP-IDF :doc:`style-guide`？
 
-* 是否安装了 esp-idf :doc:`pre-commit hook <install-pre-commit-hook>`？
+* 是否安装了 ESP-IDF :doc:`pre-commit 钩子 <install-pre-commit-hook>`？
 
 * 代码文档是否符合 :doc:`documenting-code` 的要求？
 
@@ -63,4 +63,3 @@ Pull Request 准备好待合并时，首先会合并到我们的内部 git 系�
     contributor-agreement
     copyright-guide
     esp-idf-tests-with-pytest
-

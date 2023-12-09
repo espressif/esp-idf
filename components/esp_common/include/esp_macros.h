@@ -75,6 +75,10 @@ extern "C" {
         9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 #endif
 
+#ifndef ESP_UNUSED
+#define ESP_UNUSED(x) ((void)(x))
+#endif
+
 /* test macros */
 #define foo_args(...) 1
 #define foo_no_args() 2

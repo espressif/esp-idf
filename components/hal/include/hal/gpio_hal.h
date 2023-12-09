@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,8 +32,25 @@ extern "C" {
 
 typedef struct {
     gpio_dev_t *dev;
-    uint32_t version;
 } gpio_hal_context_t;
+
+/**
+ * @brief Get the configuration for an IO
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number
+ * @param pu Pointer to accept the status of pull-up enabled or not
+ * @param pd Pointer to accept the status of pull-down enabled or not
+ * @param ie Pointer to accept the status of input enabled or not
+ * @param oe Pointer to accept the status of output enabled or not
+ * @param od Pointer to accept the status of open-drain enabled or not
+ * @param drv Pointer to accept the value of drive strength
+ * @param fun_sel Pointer to accept the value of IOMUX function selection
+ * @param sig_out Pointer to accept the index of outputting peripheral signal
+ * @param slp_sel Pointer to accept the status of pin sleep mode enabled or not
+ */
+#define gpio_hal_get_io_config(hal, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel) \
+            gpio_ll_get_io_config((hal)->dev, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel)
 
 /**
   * @brief Enable pull-up on GPIO.
@@ -171,11 +188,23 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
 /**
  * @brief  Select a function for the pin in the IOMUX
  *
- * @param  hw Peripheral GPIO hardware instance address.
+ * @param  hal Context of the HAL layer
  * @param  gpio_num GPIO number
  * @param  func Function to assign to the pin
  */
 #define gpio_hal_func_sel(hal, gpio_num, func)  gpio_ll_func_sel((hal)->dev, gpio_num, func)
+
+/**
+ * @brief  Get the GPIO number that is routed to the input peripheral signal through GPIO matrix
+ *
+ * @param  hal Context of the HAL layer
+ * @param  in_sig_idx Peripheral signal index (tagged as input attribute)
+ *
+ * @return
+ *    - -1     Signal bypassed GPIO matrix
+ *    - Others GPIO number
+ */
+#define gpio_hal_get_in_signal_connected_io(hal, in_sig_idx) gpio_ll_get_in_signal_connected_io((hal)->dev, in_sig_idx)
 
 /**
  * @brief  GPIO set output level

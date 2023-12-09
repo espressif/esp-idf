@@ -21,6 +21,7 @@ menu "ESP NETIF Adapter"
         config ESP_NETIF_TCPIP_LWIP
             bool "LwIP"
             select ESP_NETIF_USES_TCPIP_WITH_BSD_API
+            depends on LWIP_ENABLE
             help
                 lwIP is a small independent implementation of the TCP/IP protocol suite.
 

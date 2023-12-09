@@ -28,7 +28,6 @@ typedef struct adc_monitor_platform_t {
 // Global context of adc monitor, other member will be lazy loaded
 static adc_monitor_platform_t s_adc_monitor_platform = {.monitor_spinlock = portMUX_INITIALIZER_UNLOCKED};
 
-
 #if CONFIG_IDF_TARGET_ESP32S2
 // Monitor unit index need equal to ADC unit index on ESP32S2
 static atomic_bool s_adc_monitor_claimed[SOC_ADC_DIGI_MONITOR_NUM] = {};

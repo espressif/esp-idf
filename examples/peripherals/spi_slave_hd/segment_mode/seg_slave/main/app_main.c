@@ -15,32 +15,13 @@
 
 #define TIME_IS_OUT(start, end, timeout)     (timeout) > ((end)-(start)) ? 0 : 1
 
-//Pin setting
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your Hardware spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_MOSI 11
 #define GPIO_MISO 13
 #define GPIO_SCLK 12
 #define GPIO_CS   10
-
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-#define GPIO_MOSI    7
-#define GPIO_MISO    2
-#define GPIO_SCLK    6
-#define GPIO_CS      10
-
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define GPIO_MOSI    19
-#define GPIO_MISO    20
-#define GPIO_SCLK    18
-#define GPIO_CS      9
-
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 5
-#define GPIO_MISO 0
-#define GPIO_SCLK 4
-#define GPIO_CS 1
-#endif
 
 #define SLAVE_HOST SPI2_HOST
 #define DMA_CHAN   SPI_DMA_CH_AUTO
@@ -66,7 +47,6 @@
 //Value in these 4 registers indicates number of the RX buffer that Slave has loaded to the DMA
 #define SLAVE_RX_READY_BUF_NUM_REG      16
 
-
 static const char TAG[] = "SEG_SLAVE";
 
 /* Used for Master-Slave synchronization */
@@ -74,7 +54,6 @@ static uint32_t s_tx_ready_buf_size;  //See ``cb_set_tx_ready_buf_size()``
 static uint32_t s_rx_ready_buf_num;   //See ``cb_set_rx_ready_buf_num()``
 
 static uint32_t s_tx_data_id;
-
 
 //-------------------------------Function used for Master-Slave Synchronization---------------------------//
 /**

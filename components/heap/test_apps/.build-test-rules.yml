@@ -1,0 +1,19 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/heap/test_apps/heap_tests:
+  disable:
+    - if: IDF_TARGET == "linux"
+    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "psram_all_ext" and SOC_SPIRAM_SUPPORTED != 1
+    # These 3 configs are build only for non-nightly, buildig for a single target is sufficient
+    - if: CONFIG_NAME == "no_poisoning" and (IDF_TARGET != "esp32" and NIGHTLY_RUN != "1")
+    - if: CONFIG_NAME == "light_poisoning" and (IDF_TARGET != "esp32" and NIGHTLY_RUN != "1")
+    - if: CONFIG_NAME == "comprehensive_poisoning" and (IDF_TARGET != "esp32" and NIGHTLY_RUN != "1")
+    # Non-target specific functionality, only test on a single target in default pipeline
+    - if: CONFIG_NAME == "in_flash" and (IDF_TARGET != "esp32c6" and NIGHTLY_RUN != "1")
+  depends_components:
+    - heap
+
+components/heap/test_apps/host_test_linux:
+  enable:
+    - if: IDF_TARGET == "linux"

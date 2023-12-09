@@ -184,7 +184,7 @@ ESP-IDF 提供了 :cpp:func:`esp_efuse_mac_get_custom` 函数，从 eFuse 读取
 内部调用函数 :cpp:func:`esp_derive_local_mac`，可从全局 MAC 地址生成本地 MAC 地址。具体流程如下：
 
 1. 在全局 MAC 地址的第一个字节组中设置 U/L 位（位值为 0x2），创建本地 MAC 地址。
-2. 如果该位已存在于全局 MAC 地址中（即现有的 “全局” MAC 地址实际上已经是本地 MAC 地址），则本地 MAC 地址的第一个字节组与 0x4 异或。
+2. 如果该位已存在于全局 MAC 地址中（即现有的“全局”MAC 地址实际上已经是本地 MAC 地址），则本地 MAC 地址的第一个字节组与 0x4 异或。
 
 芯片版本
 ------------

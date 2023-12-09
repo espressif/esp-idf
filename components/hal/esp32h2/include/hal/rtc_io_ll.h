@@ -23,8 +23,8 @@ extern "C" {
 #define RTCIO_LL_GPIO_NUM_OFFSET    7 // rtcio 0-7 correspond to gpio 7-14
 
 typedef enum {
-    RTCIO_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
-    RTCIO_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
+    RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
+    RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
 
 /**
@@ -37,12 +37,12 @@ typedef enum {
  */
 static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
 {
-    if (func == RTCIO_FUNC_RTC) {
+    if (func == RTCIO_LL_FUNC_RTC) {
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
         sel_mask |= BIT(rtcio_num);
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
-    } else if (func == RTCIO_FUNC_DIGITAL) {
+    } else if (func == RTCIO_LL_FUNC_DIGITAL) {
         // Clear the bit to use digital GPIO module
         uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
         sel_mask &= ~BIT(rtcio_num);

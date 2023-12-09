@@ -1,5 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(includes "include" "interface" "${target}/include" "deprecated/include")
 
 set(srcs "adc_cali.c"
@@ -38,5 +42,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       PRIV_REQUIRES driver efuse
+                       PRIV_REQUIRES driver esp_driver_gpio efuse esp_pm esp_ringbuf
                        LDFRAGMENTS linker.lf)

@@ -16,6 +16,7 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/rmt_struct.h"
+#include "soc/system_struct.h"
 #include "hal/rmt_types.h"
 
 #ifdef __cplusplus
@@ -40,6 +41,38 @@ typedef enum {
     RMT_LL_MEM_OWNER_SW = 0,
     RMT_LL_MEM_OWNER_HW = 1,
 } rmt_ll_mem_owner_t;
+
+/**
+ * @brief Enable the bus clock for RMT module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void rmt_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en0.rmt_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define rmt_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the RMT module
+ *
+ * @param group_id Group ID
+ */
+static inline void rmt_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en0.rmt_rst = 1;
+    SYSTEM.perip_rst_en0.rmt_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define rmt_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; rmt_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Enable clock gate for register and memory
@@ -463,6 +496,7 @@ static inline void rmt_ll_rx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
  * @param dev Peripheral instance address
  * @param channel RMT RX channel number
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 {
     dev->chmconf[channel].conf1.mem_wr_rst_chm = 1;
@@ -518,6 +552,7 @@ static inline void rmt_ll_rx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, ui
  * @param channel RMT RX channel number
  * @param thres Time length threshold
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_set_idle_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
     dev->chmconf[channel].conf0.idle_thres_chm = thres;
@@ -543,6 +578,7 @@ static inline void rmt_ll_rx_set_mem_owner(rmt_dev_t *dev, uint32_t channel, rmt
  * @param channel RMT RX chanenl number
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->chmconf[channel].conf1.rx_filter_en_chm = enable;
@@ -555,6 +591,7 @@ static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, boo
  * @param channel RMT RX channel number
  * @param thres Filter threshold
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chmconf[channel].conf1, rx_filter_thres_chm, thres);

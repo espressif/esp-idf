@@ -34,6 +34,7 @@ typedef enum {
     ESP_RST_BROWNOUT,   //!< Brownout reset (software or hardware)
     ESP_RST_SDIO,       //!< Reset over SDIO
     ESP_RST_USB,        //!< Reset by USB peripheral
+    ESP_RST_JTAG,       //!< Reset by JTAG
 } esp_reset_reason_t;
 
 /**

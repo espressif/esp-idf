@@ -28,6 +28,12 @@ repos:
       - id: mixed-line-ending
         args: ['-f=lf']
       - id: double-quote-string-fixer
+      - id: no-commit-to-branch
+        name: Do not use more than one slash in the branch name
+        args: ['--pattern', '^[^/]*/[^/]*/']
+      - id: no-commit-to-branch
+        name: Do not use uppercase letters in the branch name
+        args: ['--pattern', '^[^A-Z]*[A-Z]']
   - repo: https://github.com/PyCQA/flake8
     rev: 5.0.4
     hooks:
@@ -60,6 +66,8 @@ repos:
         name: Validate Kconfig files
         entry: tools/ci/check_kconfigs.py
         language: python
+        additional_dependencies:
+          - esp-idf-kconfig
         files: '^Kconfig$|Kconfig.*$'
       - id: check-deprecated-kconfigs-options
         name: Check if any Kconfig Options Deprecated
@@ -127,6 +135,14 @@ repos:
         additional_dependencies:
           - PyYAML == 5.3.1
         pass_filenames: false
+      - id: check-rules-components-patterns
+        name: check patterns-build_components in rules.yml
+        entry: tools/ci/check_rules_components_patterns.py
+        language: python
+        files: 'components/.+|.gitlab/ci/rules.yml'
+        additional_dependencies:
+          - PyYAML == 5.3.1
+        pass_filenames: false
       - id: check-generated-soc-caps-kconfig
         name: Check soc caps kconfig files are generated (based on components/soc/IDF_TARGET/include/soc/soc_caps.h)
         entry: tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/*/include/soc/' 'components/esp_rom/*/' 'components/spi_flash/*/'
@@ -161,12 +177,6 @@ repos:
         always_run: true
         pass_filenames: false
         require_serial: true
-      - id: submodule-sbom-hash-check
-        name: Check if sbom-hash values for submodules in .gitmodules match submodules checkout hash in git tree
-        entry: python tools/test_sbom/test_submodules.py
-        language: python
-        always_run: true
-        pass_filenames: false
       - id: cleanup-ignore-lists
         name: Remove non-existing patterns from ignore lists
         entry: tools/ci/cleanup_ignore_lists.py
@@ -184,7 +194,28 @@ repos:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
   - repo: https://github.com/espressif/conventional-precommit-linter
-    rev: v1.2.1
+    rev: v1.3.0
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]
+  - repo: https://github.com/espressif/astyle_py.git
+    rev: v1.0.5
+    hooks:
+      - id: astyle_py
+        # If you are modifying astyle version, update tools/format.sh as well
+        args: ['--astyle-version=3.4.7', '--rules=tools/ci/astyle-rules.yml']
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.5
+    hooks:
+    - id: shellcheck
+      name: shellcheck bash
+      args: ['--shell', 'bash', '-x']
+      files: 'install.sh|export.sh'
+    - id: shellcheck
+      name: shellcheck dash (export.sh)
+      args: ['--shell', 'dash', '-x']
+      files: 'export.sh'
+  - repo: https://github.com/espressif/esp-idf-sbom.git
+    rev: v0.11.0
+    hooks:
+      - id: validate-sbom-manifest

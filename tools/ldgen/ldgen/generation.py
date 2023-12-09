@@ -471,7 +471,7 @@ class Generation:
 
                         sections_str = get_section_strs(section)
 
-                        key = (entity, section.name)
+                        key = (entity, sections_str)
 
                         try:
                             existing = entity_mappings[key]

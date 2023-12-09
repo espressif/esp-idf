@@ -137,7 +137,7 @@ gptimer_handle_t s_sv_gptimer;
 #endif
 
 #elif CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
-    #define SYSTICK_INTR_ID (ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE)
+    #define SYSTICK_INTR_ID (ETS_SYSTIMER_TARGET0_INTR_SOURCE)
 #endif // CONFIG_FREERTOS_TICK_SUPPORT_CORETIMER
 
 // SystemView is single core specific: it implies that SEGGER_SYSVIEW_LOCK()

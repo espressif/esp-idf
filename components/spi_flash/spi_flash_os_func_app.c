@@ -20,7 +20,7 @@
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/cache_utils.h"
 
-#include "esp_private/spi_common_internal.h"
+#include "esp_private/spi_share_hw_ctrl.h"
 
 #define SPI_FLASH_CACHE_NO_DISABLE  (CONFIG_SPI_FLASH_AUTO_SUSPEND || (CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA) || CONFIG_APP_BUILD_TYPE_RAM)
 static const char TAG[] = "spi_flash";
@@ -206,14 +206,19 @@ static IRAM_ATTR void release_buffer_malloc(void* arg, void *temp_buf)
 
 static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
 {
+    if (!esp_partition_is_flash_region_writable(start_addr, size)) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
     if (((app_func_arg_t*)arg)->no_protect || esp_partition_main_flash_region_safe(start_addr, size)) {
         //ESP_OK = 0, also means protected==0
         return ESP_OK;
     } else {
         return ESP_ERR_NOT_SUPPORTED;
     }
+#endif // !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+    return ESP_OK;
 }
-
 
 static IRAM_ATTR void main_flash_op_status(uint32_t op_status)
 {
@@ -321,7 +326,7 @@ esp_err_t esp_flash_init_main_bus_lock(void)
      * is set. Thus, we must not call them if the macro is not defined, else the linker
      * would trigger errors. */
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
-    spi_bus_lock_init_main_bus();
+    /* bus_lock is registered by `spi_bus_lock_init_main_bus` constructor in spi_common.c  */
     spi_bus_lock_set_bg_control(g_main_spi_bus_lock, cache_enable, cache_disable, NULL);
 
     esp_err_t err = spi_bus_lock_init_main_dev();

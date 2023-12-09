@@ -8,7 +8,7 @@ SD/SDIO/MMC 驱动程序
 
 SD/SDIO/MMC 驱动是一种基于 SDMMC 和 SD SPI 主机驱动的协议级驱动程序，目前已支持 SD 存储器、SDIO 卡和 eMMC 芯片。
 
-SDMMC 主机驱动和 SD SPI 主机驱动（:component_file:`driver/sdmmc/include/driver/sdmmc_host.h` 和 :component_file:`driver/spi/include/driver/sdspi_host.h`）为以下功能提供 API：
+SDMMC 主机驱动和 SD SPI 主机驱动（:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h` 和 :component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`）为以下功能提供 API：
 
 - 发送命令至从设备
 - 接收和发送数据
@@ -28,6 +28,25 @@ SDMMC 主机驱动和 SD SPI 主机驱动（:component_file:`driver/sdmmc/includ
 
     协议层通过 :cpp:class:`sdmmc_host_t` 结构体和主机协同工作，该结构体包含指向主机各类函数的指针。
 
+管脚配置
+------------------
+
+..only:: SOC_SDMMC_USE_IOMUX and not SOC_SDMMC_USE_GPIO_MATRIX
+
+    SDMMC 管脚为专用管脚，无需配置。
+
+..only:: SOC_SDMMC_USE_GPIO_MATRIX and not SOC_SDMMC_USE_IOMUX
+
+    SDMMC 管脚信号通过 GPIO 交换矩阵配置，请在 :cpp:type:`sdmmc_slot_config_t` 中配置管脚。
+
+..only:: esp32p4
+
+    SDMMC 有两个卡槽：
+
+    .. list::
+
+        - 卡槽 0 管脚为 UHS-I 模式专用，但驱动程序尚不支持此模式。
+        - 卡槽 1 管脚可通过 GPIO 交换矩阵配置，用于 UHS-I 之外的情况。如要使用卡槽 1，请在 :cpp:type:`sdmmc_slot_config_t` 中配置管脚。
 
 应用示例
 -------------------
@@ -68,7 +87,7 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
 
     1. I/O 中止 (0x06) 寄存器：在该寄存器中设置 RES 位可重置卡的 IO 部分；
     2. 总线接口控制 (0x07) 寄存器：如果主机和插槽配置中启用 4 线模式，则驱动程序会尝试在该寄存器中设置总线宽度字段。如果字段设置成功，则从机支持 4 线模式，主机也切换至 4 线模式；
-    3. 高速（0x13）寄存器：如果主机配置中启用高速模式，则该寄存器的 SHS 位会被设置。
+    3. 高速 (0x13) 寄存器：如果主机配置中启用高速模式，则该寄存器的 SHS 位会被设置。
 
     注意，驱动程序不会在 (1) I/O 使能寄存器和 Int 使能寄存器，及 (2) I/O 块大小中，设置任何位。应用程序可通过调用 :cpp:func:`sdmmc_io_write_byte` 来设置相关位。
 

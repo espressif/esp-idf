@@ -35,7 +35,7 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 #if CONFIG_APPTRACE_SV_DEST_UART
 
 #define ESP_APPTRACE_DEST_SYSVIEW ESP_APPTRACE_DEST_UART
-#if CONFIG_APPTRACE_SV_DEST_CPU_0 || CONFIG_FREERTOS_UNICORE
+#if CONFIG_APPTRACE_SV_DEST_CPU_0 || CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #define APPTRACE_SV_DEST_CPU 0
 #else
 #define APPTRACE_SV_DEST_CPU 1
@@ -296,7 +296,7 @@ int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* p
  * linked whenever SystemView is used.
  */
 
-ESP_SYSTEM_INIT_FN(sysview_init, BIT(0), 120)
+ESP_SYSTEM_INIT_FN(sysview_init, SECONDARY, BIT(0), 120)
 {
     SEGGER_SYSVIEW_Conf();
     return ESP_OK;

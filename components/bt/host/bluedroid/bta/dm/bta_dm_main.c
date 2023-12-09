@@ -25,6 +25,9 @@
 #include "bta/bta_api.h"
 #include "bta/bta_sys.h"
 #include "bta_dm_int.h"
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+#include "stack/btm_api.h"
+#endif
 #include "osi/allocator.h"
 #include <string.h>
 
@@ -59,10 +62,14 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_disable,                         /* BTA_DM_API_DISABLE_EVT */
     bta_dm_set_dev_name,                    /* BTA_DM_API_SET_NAME_EVT */
     bta_dm_get_dev_name,                    /* BTA_DM_API_GET_NAME_EVT */
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    bta_dm_cfg_coex_status,                 /* BTA_DM_API_CFG_COEX_ST_EVT */
+#endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_config_eir,                      /* BTA_DM_API_CONFIG_EIR_EVT */
     bta_dm_set_page_timeout,                /* BTA_DM_API_PAGE_TO_SET_EVT */
     bta_dm_get_page_timeout,                /* BTA_DM_API_PAGE_TO_GET_EVT */
+    bta_dm_set_acl_pkt_types,               /* BTA_DM_API_SET_ACL_PKT_TYPES_EVT */
 #endif
     bta_dm_set_afh_channels,                /* BTA_DM_API_SET_AFH_CHANNELS_EVT */
 #if (SDP_INCLUDED == TRUE)
@@ -205,6 +212,8 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_ext_scan,                /* BTA_DM_API_START_EXT_SCAN_EVT */
     bta_dm_ble_gap_set_prefer_ext_conn_params, /* BTA_DM_API_SET_PERF_EXT_CONN_PARAMS_EVT */
     NULL,                                   /* BTA_DM_API_EXT_CONN_EVT */
+    bta_dm_ble_gap_dtm_enhance_tx_start,    /* BTA_DM_API_DTM_ENH_TX_START_EVT */
+    bta_dm_ble_gap_dtm_enhance_rx_start,    /* BTA_DM_API_DTM_ENH_RX_START_EVT */
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
     bta_dm_ble_gap_periodic_adv_recv_enable, /* BTA_DM_API_PERIODIC_ADV_RECV_ENABLE_EVT */
@@ -212,6 +221,12 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_periodic_adv_set_info_trans, /* BTA_DM_API_PERIODIC_ADV_SET_INFO_TRANS_EVT */
     bta_dm_ble_gap_set_periodic_adv_sync_trans_params, /* BTA_DM_API_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS_EVT */
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if BLE_INCLUDED == TRUE
+    bta_dm_ble_gap_dtm_tx_start, /* BTA_DM_API_DTM_TX_START_EVT */
+    bta_dm_ble_gap_dtm_rx_start, /* BTA_DM_API_DTM_RX_START_EVT */
+    bta_dm_ble_gap_dtm_stop, /* BTA_DM_API_DTM_STOP_EVT */
+    bta_dm_ble_gap_clear_adv, /* BTA_DM_API_BLE_CLEAR_ADV_EVT */
+#endif
 };
 
 
@@ -464,12 +479,16 @@ void BTA_DmCoexEventTrigger(uint32_t event)
     case BTA_COEX_EVT_ACL_DISCONNECTED:
         break;
     case BTA_COEX_EVT_STREAMING_STARTED:
-        esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+        BTM_ConfigCoexStatus(BTM_COEX_OP_SET, BTM_COEX_TYPE_BT, BTM_COEX_BT_ST_A2DP_STREAMING);
+        BTM_ConfigCoexStatus(BTM_COEX_OP_CLEAR, BTM_COEX_TYPE_BT, BTM_COEX_BT_ST_A2DP_PAUSED);
+#endif
         break;
     case BTA_COEX_EVT_STREAMING_STOPPED:
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+        BTM_ConfigCoexStatus(BTM_COEX_OP_CLEAR, BTM_COEX_TYPE_BT, BTM_COEX_BT_ST_A2DP_STREAMING);
+        BTM_ConfigCoexStatus(BTM_COEX_OP_CLEAR, BTM_COEX_TYPE_BT, BTM_COEX_BT_ST_A2DP_PAUSED);
+#endif
         break;
     default:
         break;

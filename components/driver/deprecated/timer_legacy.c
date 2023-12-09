@@ -34,7 +34,7 @@ static const char *TIMER_TAG = "timer_group";
 #define TIMER_ENTER_CRITICAL(mux)      portENTER_CRITICAL_SAFE(mux);
 #define TIMER_EXIT_CRITICAL(mux)       portEXIT_CRITICAL_SAFE(mux);
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if SOC_PERIPH_CLK_CTRL_SHARED
 #define GPTIMER_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
 #define GPTIMER_CLOCK_SRC_ATOMIC()

@@ -190,7 +190,7 @@ typedef enum {
     IEEE802154_SCENE_RX_AT,     /*!< IEEE802154 radio coexistence scene RX AT */
 } ieee802154_txrx_scene_t;
 
-#if CONFIG_ESP_COEX_SW_COEXIST_ENABLE && !CONFIG_IEEE802154_TEST
+#if !CONFIG_IEEE802154_TEST && CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 
 /**
  * @brief  Set the IEEE802154 radio coexistence scene during transmitting or receiving.
@@ -206,7 +206,7 @@ void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene);
 
 #define IEEE802154_SET_TXRX_PTI(txrx_scene)
 
-#endif // CONFIG_ESP_COEX_SW_COEXIST_ENABLE && !CONFIG_IEEE802154_TEST
+#endif // !CONFIG_IEEE802154_TEST && CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 
 /**
  * @brief  Convert the frequence to the index of channel.

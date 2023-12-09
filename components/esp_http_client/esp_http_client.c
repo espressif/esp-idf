@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <inttypes.h>
 
 #include "esp_log.h"
+#include "esp_assert.h"
 #include "esp_check.h"
 #include "http_parser.h"
 #include "http_header.h"
@@ -20,6 +21,7 @@
 #include "esp_http_client.h"
 #include "errno.h"
 #include "esp_random.h"
+#include "esp_tls.h"
 
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
 #include "esp_transport_ssl.h"
@@ -28,6 +30,9 @@
 ESP_EVENT_DEFINE_BASE(ESP_HTTP_CLIENT_EVENT);
 
 static const char *TAG = "HTTP_CLIENT";
+
+ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_ANY == (int)ESP_TLS_VER_ANY, "Enum mismatch in esp_http_client and esp-tls");
+ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_MAX <= (int)ESP_TLS_VER_TLS_MAX, "HTTP client supported TLS is not supported in esp-tls");
 
 /**
  * HTTP Buffer
@@ -83,6 +88,13 @@ typedef enum {
     HTTP_STATE_RES_COMPLETE_DATA,
     HTTP_STATE_CLOSE
 } esp_http_state_t;
+
+typedef enum {
+    SESSION_TICKET_UNUSED = 0,
+    SESSION_TICKET_NOT_SAVED,
+    SESSION_TICKET_SAVED,
+} session_ticket_state_t;
+
 /**
  * HTTP client class
  */
@@ -122,6 +134,9 @@ struct esp_http_client {
     esp_transport_keep_alive_t  keep_alive_cfg;
     struct ifreq                *if_name;
     unsigned                    cache_data_in_fetch_hdr: 1;
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    session_ticket_state_t      session_ticket_state;
+#endif
 };
 
 typedef struct esp_http_client esp_http_client_t;
@@ -233,7 +248,6 @@ static int http_on_header_event(esp_http_client_handle_t client)
 static int http_on_header_field(http_parser *parser, const char *at, size_t length)
 {
     esp_http_client_t *client = parser->data;
-    http_on_header_event(client);
     http_utils_append_string(&client->current_header_key, at, length);
 
     return 0;
@@ -254,6 +268,7 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
         http_utils_append_string(&client->auth_header, at, length);
     }
     http_utils_append_string(&client->current_header_value, at, length);
+    http_on_header_event(client);
     return 0;
 }
 
@@ -723,10 +738,29 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
             esp_transport_ssl_set_client_cert_data_der(ssl, config->client_cert_pem, config->client_cert_len);
         }
     }
+    esp_transport_ssl_set_tls_version(ssl, config->tls_version);
 
 #if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
     if (config->use_secure_element) {
         esp_transport_ssl_use_secure_element(ssl);
+    }
+#endif
+
+#if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+    if (config->ds_data != NULL) {
+        esp_transport_ssl_set_ds_data(ssl, config->ds_data);
+    }
+#endif
+
+#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    if (config->save_client_session) {
+        client->session_ticket_state = SESSION_TICKET_NOT_SAVED;
+    }
+#endif
+
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+    if (config->transport) {
+        client->transport = config->transport;
     }
 #endif
 
@@ -737,7 +771,11 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
             esp_transport_ssl_set_client_key_data_der(ssl, config->client_key_pem, config->client_key_len);
         }
     }
-
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+    if (config->use_ecdsa_peripheral) {
+        esp_transport_ssl_set_client_key_ecdsa_peripheral(ssl, config->ecdsa_key_efuse_blk);
+    }
+#endif
     if (config->client_key_password && config->client_key_password_len > 0) {
         esp_transport_ssl_set_client_key_password(ssl, config->client_key_password, config->client_key_password_len);
     }
@@ -1100,7 +1138,12 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
 
     int rlen = esp_transport_read(client->transport, res_buffer->data, client->buffer_size_rx, client->timeout_ms);
     if (rlen >= 0) {
-        http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
+        // When tls error is ESP_TLS_ERR_SSL_WANT_READ (-0x6900), esp_trasnport_read returns ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT (0x0).
+        // We should not execute http_parser_execute() on this condition as it sets the internal state machine in an
+        // invalid state.
+        if (!(client->is_async && rlen == 0)) {
+            http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
+        }
     }
     return rlen;
 }
@@ -1366,8 +1409,21 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
     }
 
     if (client->state < HTTP_STATE_CONNECTED) {
-        ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
-        client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+        // If the custom transport is enabled and defined, we skip the selection of appropriate transport from the list
+        // based on the scheme, since we already have the transport
+        if (!client->transport)
+#endif
+        {
+            ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
+            client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+        }
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        if (client->session_ticket_state == SESSION_TICKET_SAVED) {
+            esp_transport_ssl_session_ticket_operation(client->transport, ESP_TRANSPORT_SESSION_TICKET_USE);
+        }
+#endif
         if (client->transport == NULL) {
             ESP_LOGE(TAG, "No transport found");
 #ifndef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
@@ -1399,6 +1455,13 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
         client->state = HTTP_STATE_CONNECTED;
         http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);
         http_dispatch_event_to_event_loop(HTTP_EVENT_ON_CONNECTED, &client, sizeof(esp_http_client_handle_t));
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        if (client->session_ticket_state != SESSION_TICKET_UNUSED) {
+            esp_transport_ssl_session_ticket_operation(client->transport, ESP_TRANSPORT_SESSION_TICKET_SAVE);
+            client->session_ticket_state = SESSION_TICKET_SAVED;
+        }
+#endif
+
     }
     return ESP_OK;
 }
@@ -1633,6 +1696,15 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
     } else {
         return HTTP_TRANSPORT_UNKNOWN;
     }
+}
+
+esp_err_t esp_http_client_set_auth_data(esp_http_client_handle_t client, const char *auth_data, int len)
+{
+    if (client == NULL || auth_data == NULL || len <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    http_utils_append_string(&client->auth_header, auth_data, len);
+    return ESP_OK;
 }
 
 void esp_http_client_add_auth(esp_http_client_handle_t client)

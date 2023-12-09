@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 if(NOT BOOTLOADER_BUILD)
     set(src "esp_app_desc.c")
 else()
@@ -12,7 +18,7 @@ if(NOT BOOTLOADER_BUILD)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_app_desc")
 
     if(CONFIG_APP_PROJECT_VER_FROM_CONFIG)
-        # Ignore current PROJECT_VER (which was set in __project_get_revision()).
+        # Ignore current PROJECT_VER (which was set in project.cmake)
         # Gets the version from the CONFIG_APP_PROJECT_VER.
         idf_build_set_property(PROJECT_VER "${CONFIG_APP_PROJECT_VER}")
     endif()

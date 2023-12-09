@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,6 +98,11 @@ public:
      * @return the size of the partition in bytes.
      */
     uint32_t get_size() override;
+
+    /**
+     * @return true if the partition is read-only.
+     */
+    bool get_readonly() override;
 
 protected:
     const esp_partition_t* mESPPartition;

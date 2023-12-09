@@ -294,7 +294,6 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 
     establish-serial-connection
     flashing-troubleshooting
-    ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html

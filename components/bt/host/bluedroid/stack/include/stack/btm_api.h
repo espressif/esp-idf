@@ -189,12 +189,36 @@ typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM
 
 typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
 
+typedef void (tBTM_DTM_CMD_CMPL_CBACK) (void *p1);
+
 typedef void (tBTM_SET_RAND_ADDR_CBACK) (UINT8 status);
 
 typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
 
 typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 
+/*******************************
+**  Device Coexist status
+********************************/
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+// coexist status for MESH
+#define BTM_COEX_BLE_ST_MESH_CONFIG        0x08
+#define BTM_COEX_BLE_ST_MESH_TRAFFIC       0x10
+#define BTM_COEX_BLE_ST_MESH_STANDBY       0x20
+// coexist status for A2DP
+#define BTM_COEX_BT_ST_A2DP_STREAMING      0x10
+#define BTM_COEX_BT_ST_A2DP_PAUSED         0x20
+
+// coexist operation
+#define BTM_COEX_OP_CLEAR                  0x00
+#define BTM_COEX_OP_SET                    0x01
+typedef UINT8 tBTM_COEX_OPERATION;
+
+typedef enum {
+    BTM_COEX_TYPE_BLE = 1,
+    BTM_COEX_TYPE_BT,
+} tBTM_COEX_TYPE;
+#endif
 
 /*****************************************************************************
 **  DEVICE DISCOVERY - Inquiry, Remote Name, Discovery, Class of Device
@@ -826,6 +850,15 @@ typedef struct {
     UINT8       hci_status;
     UINT16      page_to;
 } tBTM_GET_PAGE_TIMEOUT_RESULTS;
+
+/* Structure returned with set ACL packet types event (in tBTM_CMPL_CB callback function)
+** in response to BTM_SetAclPktTypes call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    BD_ADDR     rem_bda;
+    UINT16      pkt_types;
+} tBTM_SET_ACL_PKT_TYPES_RESULTS;
 
 /* Structure returned with set BLE channels event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_BleSetChannels call.
@@ -2150,6 +2183,21 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode,
                                       UINT8 *p_param_buf,
                                       tBTM_VSC_CMPL_CB *p_cb);
 
+/*******************************************************************************
+**
+** Function         BTM_ConfigCoexStatus
+**
+** Description      Config coexist status through vendor specific HCI command.
+**
+** Returns
+**      BTM_SUCCESS         Command sent. Does not expect command complete
+**                              event. (command cmpl callback param is NULL)
+**      BTM_NO_RESOURCES    Command not sent. No resources.
+**
+*******************************************************************************/
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+tBTM_STATUS BTM_ConfigCoexStatus(tBTM_COEX_OPERATION op, tBTM_COEX_TYPE type, UINT8 status);
+#endif
 
 /*******************************************************************************
 **
@@ -2235,6 +2283,20 @@ tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout, tBTM_CMPL_CB *p_cb);
 *******************************************************************************/
 //extern
 tBTM_STATUS BTM_ReadPageTimeout(tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_SetAclPktTypes
+**
+** Description      Send HCI Change Connection Packet Type
+**
+** Returns
+**      BTM_SUCCESS         Command sent.
+**      BTM_NO_RESOURCES    If out of resources to send the command.
+**
+*******************************************************************************/
+//extern
+tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **
@@ -4043,6 +4105,22 @@ tBTM_EIR_SEARCH_RESULT BTM_HasInquiryEirService( tBTM_INQ_RESULTS *p_results,
 
 /*******************************************************************************
 **
+** Function         BTM_HasCustomEirService
+**
+** Description      This function is called to know if UUID is already in custom
+**                  UUID list.
+**
+** Parameters       custom_uuid - pointer to custom_uuid array in tBTA_DM_CB
+**                  uuid - UUID struct
+**
+** Returns          TRUE - if found
+**                  FALSE - if not found
+**
+*******************************************************************************/
+BOOLEAN BTM_HasCustomEirService( tBT_UUID *custom_uuid, tBT_UUID uuid );
+
+/*******************************************************************************
+**
 ** Function         BTM_AddEirService
 **
 ** Description      This function is called to add a service in bit map of UUID list.
@@ -4058,6 +4136,20 @@ void BTM_AddEirService( UINT32 *p_eir_uuid, UINT16 uuid16 );
 
 /*******************************************************************************
 **
+** Function         BTM_AddCustomEirService
+**
+** Description      This function is called to add a custom UUID.
+**
+** Parameters       custom_uuid - pointer to custom_uuid array in tBTA_DM_CB
+**                  uuid - UUID struct
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTM_AddCustomEirService(tBT_UUID *custom_uuid, tBT_UUID uuid);
+
+/*******************************************************************************
+**
 ** Function         BTM_RemoveEirService
 **
 ** Description      This function is called to remove a service in bit map of UUID list.
@@ -4070,6 +4162,20 @@ void BTM_AddEirService( UINT32 *p_eir_uuid, UINT16 uuid16 );
 *******************************************************************************/
 //extern
 void BTM_RemoveEirService( UINT32 *p_eir_uuid, UINT16 uuid16 );
+
+/*******************************************************************************
+**
+** Function         BTM_RemoveCustomEirService
+**
+** Description      This function is called to remove a a custom UUID.
+**
+** Parameters       custom_uuid - pointer to custom_uuid array in tBTA_DM_CB
+                    uuid - UUID struct
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTM_RemoveCustomEirService(tBT_UUID *custom_uuid, tBT_UUID uuid);
 
 /*******************************************************************************
 **

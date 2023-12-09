@@ -7,6 +7,6 @@ set(src "test_app_main.c" "test_vfs_access.c"
 
 idf_component_register(SRCS ${src}
                        PRIV_INCLUDE_DIRS .
-                       PRIV_REQUIRES test_utils vfs fatfs spiffs unity lwip wear_levelling cmock
+                       PRIV_REQUIRES test_utils vfs fatfs spiffs unity lwip wear_levelling cmock driver
                        WHOLE_ARCHIVE
                        )

@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs "src/esp_hidd.c"
          "src/esp_hidh.c"
          "src/esp_hid_common.c")

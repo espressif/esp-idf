@@ -1,0 +1,49 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_hw_support/test_apps/dma:
+  disable_test:
+    - if: IDF_TARGET in ["esp32"]
+      temporary: false
+      reason: Neither GDMA nor CPDMA is supported on ESP32
+
+components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
+  disable:
+    - if: SOC_GPSPI_SUPPORTED != 1
+
+components/esp_hw_support/test_apps/etm:
+  disable:
+    - if: SOC_ETM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_gptimer
+    - esp_driver_gpio
+    - esp_driver_mcpwm
+    - esp_timer
+    - esp_driver_ana_cmpr
+
+components/esp_hw_support/test_apps/host_test_linux:
+  enable:
+    - if: IDF_TARGET == "linux"
+
+components/esp_hw_support/test_apps/mspi:
+  disable:
+    - if: IDF_TARGET != "esp32s3"
+
+components/esp_hw_support/test_apps/mspi_psram_with_dfs:
+  disable:
+    - if: IDF_TARGET != "esp32s3"
+
+components/esp_hw_support/test_apps/rtc_8md256:
+  disable:
+    - if: SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 != 1
+
+components/esp_hw_support/test_apps/rtc_clk:
+  disable:
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4"]
+      temporary: true
+      reason: Unsupported on C6 for now. TODO IDF-5645, TODO IDF-7514
+
+components/esp_hw_support/test_apps/rtc_power_modes:
+  enable:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c2", "esp32c3"]
+      temporary: true
+      reason: the other targets are not tested yet

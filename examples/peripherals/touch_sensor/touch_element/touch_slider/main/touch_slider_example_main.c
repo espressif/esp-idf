@@ -99,7 +99,7 @@ void app_main(void)
     ESP_ERROR_CHECK(touch_slider_create(&slider_config, &slider_handle));
     /* Subscribe touch slider events (On Press, On Release, On Calculation) */
     ESP_ERROR_CHECK(touch_slider_subscribe_event(slider_handle,
-                    TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_CALCULATION, NULL));
+                                                 TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_CALCULATION, NULL));
 #ifdef CONFIG_TOUCH_ELEM_EVENT
     /* Set EVENT as the dispatch method */
     ESP_ERROR_CHECK(touch_slider_set_dispatch_method(slider_handle, TOUCH_ELEM_DISP_EVENT));

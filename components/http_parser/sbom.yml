@@ -1,0 +1,5 @@
+name: 'HTTP Parser'
+version: '2.7.0'
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: NGINX, Joyent, Inc. and other Node contributors'
+description: HTTP request/response parser for c.

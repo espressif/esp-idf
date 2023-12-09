@@ -59,114 +59,159 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 This is the console output on successful connection:
 
-```
-I (315) BTDM_INIT: BT controller compile version [05195c9]
-I (315) phy_init: phy_version 912,d001756,Jun  2 2022,16:28:07
-I (355) system_api: Base MAC address is not set
-I (355) system_api: read default base MAC address from EFUSE
-I (355) BTDM_INIT: Bluetooth MAC: 84:f7:03:08:4d:8e
-
-I (355) NimBLE_BLE_PHY_CENT: BLE Host Task Started
-I (465) NimBLE: Connection established
-I (465) NimBLE:
-
-I (465) NimBLE: Prefered LE PHY set to LE_PHY_2M successfully
-I (465) NimBLE: GATT procedure initiated: discover all services
-
-I (565) NimBLE: GATT procedure initiated: discover all characteristics;
-I (565) NimBLE: start_handle=1 end_handle=5
-
-I (765) NimBLE: GATT procedure initiated: discover all characteristics;
-I (765) NimBLE: start_handle=6 end_handle=9
-
-I (965) NimBLE: GATT procedure initiated: discover all characteristics;
-I (965) NimBLE: start_handle=10 end_handle=65535
-
-I (1015) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=2 rx_phy = 2
-
-I (1165) NimBLE: GATT procedure initiated: discover all descriptors;
-I (1165) NimBLE: chr_val_handle=8 end_handle=9
-
-I (1265) NimBLE: GATT procedure initiated: discover all descriptors;
-I (1265) NimBLE: chr_val_handle=12 end_handle=65535
-
-I (1365) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-I (1365) NimBLE: GATT procedure initiated: read;
-I (1365) NimBLE: att_handle=12
-
-I (1375) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
-
-I (1415) NimBLE: disconnect; reason=534
-I (1415) NimBLE:
-
-I (1415) NimBLE: Default LE PHY set successfully; tx_phy = 2, rx_phy = 2
-I (1505) NimBLE: Connection established
-I (1505) NimBLE:
-
-I (1505) NimBLE: GATT procedure initiated: discover all services
-
-I (1615) NimBLE: GATT procedure initiated: discover all characteristics;
-I (1615) NimBLE: start_handle=1 end_handle=5
-
-I (1815) NimBLE: GATT procedure initiated: discover all characteristics;
-I (1815) NimBLE: start_handle=6 end_handle=9
-
-I (2015) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=2 rx_phy = 2
-
-I (2015) NimBLE: GATT procedure initiated: discover all characteristics;
-I (2025) NimBLE: start_handle=10 end_handle=65535
-
-I (2215) NimBLE: GATT procedure initiated: discover all descriptors;
-I (2215) NimBLE: chr_val_handle=8 end_handle=9
-
-I (2315) NimBLE: GATT procedure initiated: discover all descriptors;
-I (2315) NimBLE: chr_val_handle=12 end_handle=65535
-
-I (2415) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-I (2415) NimBLE: GATT procedure initiated: read;
-I (2415) NimBLE: att_handle=12
-
-I (2425) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
-
-I (2465) NimBLE: disconnect; reason=534
-I (2465) NimBLE:
-
-I (2465) NimBLE: Default LE PHY set successfully; tx_phy = 4, rx_phy = 4
-I (2555) NimBLE: Connection established
-I (2555) NimBLE:
-
-I (2555) NimBLE: GATT procedure initiated: discover all services
-
-I (2665) NimBLE: GATT procedure initiated: discover all characteristics;
-I (2665) NimBLE: start_handle=1 end_handle=5
-
-I (2865) NimBLE: GATT procedure initiated: discover all characteristics;
-I (2865) NimBLE: start_handle=6 end_handle=9
-
-I (3065) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=3 rx_phy = 3
-
-I (3065) NimBLE: GATT procedure initiated: discover all characteristics;
-I (3075) NimBLE: start_handle=10 end_handle=65535
-
-I (3265) NimBLE: GATT procedure initiated: discover all descriptors;
-I (3265) NimBLE: chr_val_handle=8 end_handle=9
-
-I (3365) NimBLE: GATT procedure initiated: discover all descriptors;
-I (3365) NimBLE: chr_val_handle=12 end_handle=65535
-
-I (3465) NimBLE: Service discovery complete; status=0 conn_handle=1
-
-I (3465) NimBLE: GATT procedure initiated: read;
-I (3465) NimBLE: att_handle=12
-
-I (3475) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
-
-I (3515) NimBLE: disconnect; reason=534
-I (3515) NimBLE:
 
 ```
+I (456) NimBLE_BLE_PHY_CENT: BLE Host Task Started
+I (456) NimBLE: Default LE PHY set successfully; tx_phy = 7, rx_phy = 7
+I (456) NimBLE: GAP procedure initiated: extended discovery;
+
+I (466) main_task: Returned from app_main()
+I (6316) NimBLE: Attempting to connect to : 60 55 f9 f7 3e 23 with type 0
+
+I (6316) NimBLE: GAP procedure initiated: extended connect;
+
+I (6386) NimBLE: Connection established 1M PhY
+I (6386) NimBLE:
+
+I (6386) NimBLE: GATT procedure initiated: discover all services
+
+I (6446) NimBLE: GATT procedure initiated: discover all characteristics;
+I (6446) NimBLE: start_handle=1 end_handle=5
+
+I (6636) NimBLE: GATT procedure initiated: discover all characteristics;
+I (6636) NimBLE: start_handle=6 end_handle=9
+
+I (6836) NimBLE: GATT procedure initiated: discover all characteristics;
+I (6836) NimBLE: start_handle=10 end_handle=65535
+
+I (7036) NimBLE: GATT procedure initiated: discover all descriptors;
+I (7036) NimBLE: chr_val_handle=8 end_handle=9
+
+I (7136) NimBLE: GATT procedure initiated: discover all descriptors;
+I (7136) NimBLE: chr_val_handle=12 end_handle=65535
+
+I (7236) NimBLE: Service discovery complete; status=0 conn_handle=1
+
+I (7236) NimBLE: GATT procedure initiated: read;
+I (7236) NimBLE: att_handle=12
+
+I (7336) NimBLE: Read complete; status=261 conn_handle=1
+I (7336) NimBLE:
+
+I (7336) NimBLE: GATT procedure initiated: write long;
+I (7346) NimBLE: att_handle=12 len=1000
+
+I (7436) NimBLE: Write complete; status=261 conn_handle=1
+I (7436) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
+
+I (7446) NimBLE:
+
+I (7486) NimBLE: disconnect; reason=534
+I (7486) NimBLE:
+
+I (7486) NimBLE:  Attempting to initiate connection on 2M PHY
+
+I (7496) NimBLE: GAP procedure initiated: extended connect;
+
+I (7596) NimBLE: Connection established on 2M Phy
+I (7596) NimBLE:
+
+I (7596) NimBLE: GATT procedure initiated: discover all services
+
+I (7696) NimBLE: GATT procedure initiated: discover all characteristics;
+I (7706) NimBLE: start_handle=1 end_handle=5
+
+I (7896) NimBLE: GATT procedure initiated: discover all characteristics;
+I (7896) NimBLE: start_handle=6 end_handle=9
+
+I (8096) NimBLE: GATT procedure initiated: discover all characteristics;
+I (8096) NimBLE: start_handle=10 end_handle=65535
+
+I (8296) NimBLE: GATT procedure initiated: discover all descriptors;
+I (8296) NimBLE: chr_val_handle=8 end_handle=9
+
+I (8396) NimBLE: GATT procedure initiated: discover all descriptors;
+I (8396) NimBLE: chr_val_handle=12 end_handle=65535
+
+I (8496) NimBLE: Service discovery complete; status=0 conn_handle=1
+
+I (8496) NimBLE: GATT procedure initiated: read;
+I (8506) NimBLE: att_handle=12
+
+I (8596) NimBLE: Read complete; status=261 conn_handle=1
+I (8596) NimBLE:
+
+I (8606) NimBLE: GATT procedure initiated: write long;
+I (8606) NimBLE: att_handle=12 len=1000
+
+I (8696) NimBLE: Write complete; status=261 conn_handle=1
+I (8696) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
+
+I (8706) NimBLE:
+
+I (8746) NimBLE: disconnect; reason=534
+I (8746) NimBLE:
+
+I (8756) NimBLE:  Attempting to initiate connection on Coded PHY
+
+I (8756) NimBLE: GAP procedure initiated: extended connect;
+
+I (8876) NimBLE: Connection established on Coded Phy
+I (8876) NimBLE:
+
+I (8876) NimBLE: GATT procedure initiated: discover all services
+
+I (8976) NimBLE: GATT procedure initiated: discover all characteristics;
+I (8976) NimBLE: start_handle=1 end_handle=5
+
+I (9176) NimBLE: GATT procedure initiated: discover all characteristics;
+I (9176) NimBLE: start_handle=6 end_handle=9
+
+I (9426) NimBLE: GATT procedure initiated: discover all characteristics;
+I (9426) NimBLE: start_handle=10 end_handle=65535
+
+I (9626) NimBLE: GATT procedure initiated: discover all descriptors;
+I (9626) NimBLE: chr_val_handle=8 end_handle=9
+
+I (9776) NimBLE: GATT procedure initiated: discover all descriptors;
+I (9776) NimBLE: chr_val_handle=12 end_handle=65535
+
+I (9876) NimBLE: Service discovery complete; status=0 conn_handle=1
+
+I (9876) NimBLE: GATT procedure initiated: read;
+I (9876) NimBLE: att_handle=12
+
+I (9976) NimBLE: Read complete; status=261 conn_handle=1
+I (9976) NimBLE:
+
+I (9976) NimBLE: GATT procedure initiated: write long;
+I (9976) NimBLE: att_handle=12 len=1000
+
+I (10076) NimBLE: Write complete; status=261 conn_handle=1
+I (10076) NimBLE: GAP procedure initiated: terminate connection; conn_handle=1 hci_reason=19
+
+I (10076) NimBLE:
+
+I (10126) NimBLE: disconnect; reason=534
+I (10126) NimBLE:
+
+```
+
+## Intiating connection on 2M / Coded Phy
+
+This example also provides a way to initiate connection directly on 2M / Coded PHY. For this, set the peripheral device address in EXAMPLE_PEER_ADDR setting via menuconfig. Also example needs to be modified to use the PHY that user needs to update.
+
+In main.c file, in blecent_on_sync function, set the s_current_phy to the intended phy.
+
+To create direct connection on 2M, set the s_current_phy to BLE_HCI_LE_PHY_2M_PREF_MASK.
+
+To create direct connection on Coded Phy, set the s_current_phy to BLE_HCI_LE_PHY_CODED_PREF_MASK
+
+Recompile application and flash the image.
+
+Note: For this setting to work ,the remote device too should be advertising with either 2M auxillary phy OR Coded phy.
+
+Also, since this mode initiates direct connection, ensure that peripheral is already advertising, before executing this application.
 
 ## Troubleshooting
 

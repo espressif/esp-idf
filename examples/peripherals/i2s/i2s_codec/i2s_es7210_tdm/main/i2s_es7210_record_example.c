@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -70,7 +70,6 @@
 #define EXAMPLE_RECORD_FILE_PATH   "/RECORD.WAV"
 
 static const char *TAG = "example";
-
 
 static i2s_chan_handle_t es7210_i2s_init(void)
 {
@@ -151,8 +150,8 @@ sdmmc_card_t * mount_sdcard(void)
     }
 
     ESP_LOGI(TAG, "Card size: %lluMB, speed: %dMHz",
-            (((uint64_t)sdmmc_card->csd.capacity) * sdmmc_card->csd.sector_size) >> 20,
-            sdmmc_card->max_freq_khz / 1000);
+             (((uint64_t)sdmmc_card->csd.capacity) * sdmmc_card->csd.sector_size) >> 20,
+             sdmmc_card->max_freq_khz / 1000);
 
     return sdmmc_card;
 }
@@ -217,13 +216,13 @@ static esp_err_t record_wav(i2s_chan_handle_t i2s_rx_chan)
     static int16_t i2s_readraw_buff[4096];
     ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_rx_chan), err, TAG, "error while starting i2s rx channel");
     while (wav_written < wav_size) {
-        if(wav_written % byte_rate < sizeof(i2s_readraw_buff)) {
-            ESP_LOGI(TAG, "Recording: %"PRIu32"/%ds", wav_written/byte_rate + 1, EXAMPLE_RECORD_TIME_SEC);
+        if (wav_written % byte_rate < sizeof(i2s_readraw_buff)) {
+            ESP_LOGI(TAG, "Recording: %"PRIu32"/%ds", wav_written / byte_rate + 1, EXAMPLE_RECORD_TIME_SEC);
         }
         size_t bytes_read = 0;
         /* Read RAW samples from ES7210 */
         ESP_GOTO_ON_ERROR(i2s_channel_read(i2s_rx_chan, i2s_readraw_buff, sizeof(i2s_readraw_buff), &bytes_read,
-                          pdMS_TO_TICKS(1000)), err, TAG, "error while reading samples from i2s");
+                                           pdMS_TO_TICKS(1000)), err, TAG, "error while reading samples from i2s");
         /* Write the samples to the WAV file */
         ESP_GOTO_ON_FALSE(fwrite(i2s_readraw_buff, bytes_read, 1, f), ESP_FAIL, err,
                           TAG, "error while writing samples to wav file");
@@ -250,9 +249,9 @@ void app_main(void)
     esp_err_t err = record_wav(i2s_rx_chan);
     /* Unmount SD card */
     esp_vfs_fat_sdcard_unmount(EXAMPLE_SD_MOUNT_POINT, sdmmc_card);
-    if(err == ESP_OK) {
+    if (err == ESP_OK) {
         ESP_LOGI(TAG, "Audio was successfully recorded into "EXAMPLE_RECORD_FILE_PATH
-                      ". You can now remove the SD card safely");
+                 ". You can now remove the SD card safely");
     } else {
         ESP_LOGE(TAG, "Record failed, "EXAMPLE_RECORD_FILE_PATH" on SD card may not be playable.");
     }

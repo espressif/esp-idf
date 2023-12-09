@@ -1,0 +1,3 @@
+dependencies:
+  hci_common_component:
+    path: ${IDF_PATH}/examples/bluetooth/hci/hci_common_component

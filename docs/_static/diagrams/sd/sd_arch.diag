@@ -1,0 +1,13 @@
+blockdiag sd_arch {
+    default_fontsize = 16;
+    node_width = 300;
+    node_height = 100;
+    span_width = 150;
+
+	A [label = "SD Protocol Layer Driver Component:\nsdmmc"]
+	B [label = "Host Driver Component:\nesp_driver_sdmmc"]
+	C [label = "Host Driver Component:\nesp_driver_sdspi"]
+
+	A -> B [dir = back, label = "Implements", style = dashed, hstyle = generalization, fontsize=14]
+	A -> C [dir = back, label = "Implements", style = dashed, hstyle = generalization, fontsize=14]
+}

@@ -31,7 +31,6 @@ static void initialize_nvs(void)
 void app_main(void)
 {
     esp_ieee802154_enable();
-    esp_phy_enable();
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     /* Prompt to be printed before each line.

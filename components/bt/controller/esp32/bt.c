@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,8 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/portmacro.h"
+#include "xtensa_api.h" // Replace with interrupt allocator API (IDF-3891)
 #include "xtensa/core-macros.h"
 #include "esp_types.h"
 #include "esp_mac.h"
@@ -35,7 +35,7 @@
 #include "soc/rtc.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
-#include "esp_coexist_internal.h"
+#include "private/esp_coexist_internal.h"
 #include "esp_timer.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
@@ -221,6 +221,7 @@ extern void btdm_controller_scan_duplicate_list_clear(void);
 /* Shutdown */
 extern void esp_bt_controller_shutdown(void);
 extern void sdk_config_set_bt_pll_track_enable(bool enable);
+extern void sdk_config_set_uart_flow_ctrl_enable(bool enable);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -938,7 +939,7 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles)
 static void btdm_sleep_enter_phase2_wrapper(void)
 {
     if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
 #ifdef CONFIG_PM_ENABLE
         if (s_pm_lock_acquired) {
             esp_pm_lock_release(s_pm_lock);
@@ -946,7 +947,7 @@ static void btdm_sleep_enter_phase2_wrapper(void)
         }
 #endif
     } else if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_EVED) {
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
         // pause bluetooth baseband
         periph_module_disable(PERIPH_BT_BASEBAND_MODULE);
     }
@@ -962,7 +963,7 @@ static void btdm_sleep_exit_phase3_wrapper(void)
 #endif
 
     if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
-        esp_phy_enable();
+        esp_phy_enable(PHY_MODEM_BT);
         btdm_check_and_init_bb();
 #ifdef CONFIG_PM_ENABLE
         esp_timer_stop(s_btdm_slp_tmr);
@@ -970,7 +971,7 @@ static void btdm_sleep_exit_phase3_wrapper(void)
     } else if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_EVED) {
         // resume bluetooth baseband
         periph_module_enable(PERIPH_BT_BASEBAND_MODULE);
-        esp_phy_enable();
+        esp_phy_enable(PHY_MODEM_BT);
     }
 }
 
@@ -1196,23 +1197,12 @@ static int coex_register_wifi_channel_change_callback_wrapper(void *cb)
 static int coex_version_get_wrapper(unsigned int *major, unsigned int *minor, unsigned int *patch)
 {
 #if CONFIG_SW_COEXIST_ENABLE
-    const char *ver_str = esp_coex_version_get();
-    if (ver_str != NULL) {
-        unsigned int _major = 0, _minor = 0, _patch = 0;
-        if (sscanf(ver_str, "%u.%u.%u", &_major, &_minor, &_patch) != 3) {
-            return -1;
-        }
-        if (major != NULL) {
-            *major = _major;
-        }
-        if (minor != NULL) {
-            *minor = _minor;
-        }
-        if (patch != NULL) {
-            *patch = _patch;
-        }
-        return 0;
-    }
+    coex_version_t version;
+    ESP_ERROR_CHECK(coex_version_get_value(&version));
+    *major = (unsigned int)version.major;
+    *minor = (unsigned int)version.minor;
+    *patch = (unsigned int)version.patch;
+    return 0;
 #endif
     return -1;
 }
@@ -1527,6 +1517,12 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
 #endif
 
+#if CONFIG_BTDM_CTRL_HCI_UART_FLOW_CTRL_EN
+    sdk_config_set_uart_flow_ctrl_enable(true);
+#else
+    sdk_config_set_uart_flow_ctrl_enable(false);
+#endif
+
 #ifdef CONFIG_PM_ENABLE
     if (!s_btdm_allow_light_sleep) {
         if ((err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "btLS", &s_light_sleep_pm_lock)) != ESP_OK) {
@@ -1642,7 +1638,7 @@ static void bt_shutdown(void)
 #else
     bt_controller_shutdown(NULL);
 #endif
-    esp_phy_disable();
+    esp_phy_disable(PHY_MODEM_BT);
 
     return;
 }
@@ -1668,7 +1664,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     esp_pm_lock_acquire(s_pm_lock);
 #endif
 
-    esp_phy_enable();
+    esp_phy_enable(PHY_MODEM_BT);
 
 #if CONFIG_SW_COEXIST_ENABLE
     coex_enable();
@@ -1688,7 +1684,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 #if CONFIG_SW_COEXIST_ENABLE
         coex_disable();
 #endif
-        esp_phy_disable();
+        esp_phy_disable(PHY_MODEM_BT);
 #ifdef CONFIG_PM_ENABLE
         if (!s_btdm_allow_light_sleep) {
             esp_pm_lock_release(s_light_sleep_pm_lock);
@@ -1728,7 +1724,7 @@ esp_err_t esp_bt_controller_disable(void)
     coex_disable();
 #endif
 
-    esp_phy_disable();
+    esp_phy_disable(PHY_MODEM_BT);
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     esp_unregister_shutdown_handler(bt_shutdown);
 

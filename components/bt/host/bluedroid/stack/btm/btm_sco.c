@@ -379,7 +379,7 @@ static void btm_pkt_stat_send_nums_update(uint16_t sco_inx, uint8_t pkt_status)
 {
     tSCO_CONN   *p_ccb = &btm_cb.sco_cb.sco_db[sco_inx];
     p_ccb->pkt_stat_nums.tx_total++;
-    if (pkt_status != BTM_SUCCESS) {
+    if (pkt_status != BTM_SUCCESS && pkt_status != BTM_NO_RESOURCES && pkt_status != BTM_SCO_BAD_LENGTH) {
         p_ccb->pkt_stat_nums.tx_discarded++;
     }
 }
@@ -534,7 +534,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         status = BTM_UNKNOWN_ADDR;
     }
 
-    if (status != BTM_SUCCESS && status!= BTM_NO_RESOURCES) {
+    if (status != BTM_SUCCESS && status!= BTM_NO_RESOURCES && status != BTM_SCO_BAD_LENGTH) {
         BTM_TRACE_WARNING ("stat %d", status);
         osi_free(p_buf);
     }
@@ -1033,7 +1033,7 @@ void btm_sco_connected (UINT8 hci_status, BD_ADDR bda, UINT16 hci_handle,
 #endif
 
     btm_cb.sco_cb.sco_disc_reason = hci_status;
-    BTM_TRACE_ERROR("%s, handle %x", __FUNCTION__, hci_handle);
+    BTM_TRACE_API("%s, handle %x", __FUNCTION__, hci_handle);
 #if (BTM_MAX_SCO_LINKS>0)
     for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
         if (((p->state == SCO_ST_CONNECTING) ||

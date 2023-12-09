@@ -70,10 +70,13 @@ typedef enum {
     ETS_TG1_T1_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER1, EDGE*/
     ETS_TG1_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP1, WATCHDOG, EDGE*/
     ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalied Access, LEVEL*/
-    ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE,      /**< interrupt of system timer 0, EDGE*/
-    ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE,      /**< interrupt of system timer 1, EDGE*/
-    ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE,      /**< interrupt of system timer 2, EDGE*/
-    ETS_SPI_MEM_REJECT_CACHE_INTR_SOURCE,       /**< interrupt of SPI0 Cache access and SPI1 access rejected, LEVEL*/
+    ETS_SYSTIMER_TARGET0_INTR_SOURCE,           /**< interrupt of system timer 0 */
+    ETS_SYSTIMER_TARGET1_INTR_SOURCE,           /**< interrupt of system timer 1 */
+    ETS_SYSTIMER_TARGET2_INTR_SOURCE,           /**< interrupt of system timer 2 */
+    ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET0_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET0_INTR_SOURCE */
+    ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET1_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET1_INTR_SOURCE */
+    ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET2_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET2_INTR_SOURCE */
+    ETS_SPI_MEM_REJECT_CACHE_INTR_SOURCE = 60,  /**< interrupt of SPI0 Cache access and SPI1 access rejected, LEVEL*/
     ETS_DCACHE_PRELOAD0_INTR_SOURCE,            /**< interrupt of DCache preload operation, LEVEL*/
     ETS_ICACHE_PRELOAD0_INTR_SOURCE,            /**< interrupt of ICache perload operation, LEVEL*/
     ETS_DCACHE_SYNC0_INTR_SOURCE,               /**< interrupt of data cache sync done, LEVEL*/

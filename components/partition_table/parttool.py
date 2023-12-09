@@ -3,7 +3,7 @@
 # parttool is used to perform partition level operations - reading,
 # writing, erasing and getting info about the partition.
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import division, print_function
 
@@ -16,7 +16,7 @@ import tempfile
 
 import gen_esp32part as gen
 
-__version__ = '2.0'
+__version__ = '2.1'
 
 COMPONENTS_PATH = os.path.expandvars(os.path.join('$IDF_PATH', 'components'))
 ESPTOOL_PY = os.path.join(COMPONENTS_PATH, 'esptool_py', 'esptool', 'esptool.py')
@@ -159,9 +159,12 @@ class ParttoolTarget():
         self._call_esptool(['read_flash', str(partition.offset), str(partition.size), output] + self.esptool_read_args)
 
     def write_partition(self, partition_id, input):
-        self.erase_partition(partition_id)
-
         partition = self.get_partition_info(partition_id)
+
+        if partition.readonly:
+            raise Exception(f'"{partition.name}" partition is read-only')
+
+        self.erase_partition(partition_id)
 
         with open(input, 'rb') as input_file:
             content_len = len(input_file.read())
@@ -209,7 +212,8 @@ def _get_partition_info(target, partition_id, info):
                 'subtype': '{}'.format(p.subtype),
                 'offset': '0x{:x}'.format(p.offset),
                 'size': '0x{:x}'.format(p.size),
-                'encrypted': '{}'.format(p.encrypted)
+                'encrypted': '{}'.format(p.encrypted),
+                'readonly': '{}'.format(p.readonly)
             }
             for i in info:
                 infos += [info_dict[i]]
@@ -269,7 +273,8 @@ def main():
 
     print_partition_info_subparser = subparsers.add_parser('get_partition_info', help='get partition information', parents=[partition_selection_parser])
     print_partition_info_subparser.add_argument('--info', help='type of partition information to get',
-                                                choices=['name', 'type', 'subtype', 'offset', 'size', 'encrypted'], default=['offset', 'size'], nargs='+')
+                                                choices=['name', 'type', 'subtype', 'offset', 'size', 'encrypted', 'readonly'],
+                                                default=['offset', 'size'], nargs='+')
     print_partition_info_subparser.add_argument('--part_list', help='Get a list of partitions suitable for a given type', action='store_true')
 
     args = parser.parse_args()
@@ -329,10 +334,10 @@ def main():
     # Create the operation table and execute the operation
     common_args = {'target':target, 'partition_id':partition_id}
     parttool_ops = {
-        'erase_partition':(_erase_partition, []),
-        'read_partition':(_read_partition, ['output']),
-        'write_partition':(_write_partition, ['input']),
-        'get_partition_info':(_get_partition_info, ['info'])
+        'erase_partition': (_erase_partition, []),
+        'read_partition': (_read_partition, ['output']),
+        'write_partition': (_write_partition, ['input']),
+        'get_partition_info': (_get_partition_info, ['info'])
     }
 
     (op, op_args) = parttool_ops[args.operation]

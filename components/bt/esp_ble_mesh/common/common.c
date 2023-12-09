@@ -85,3 +85,8 @@ int bt_mesh_rand(void *buf, size_t len)
 
     return 0;
 }
+
+uint32_t bt_mesh_get_rand(void)
+{
+    return esp_random();
+}

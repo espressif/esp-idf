@@ -20,6 +20,7 @@
 #include "hal/mcpwm_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +67,45 @@ typedef enum {
 } mcpwm_ll_deadtime_clock_src_t;
 
 ////////////////////////////////////////MCPWM Group Specific////////////////////////////////////////////////////////////
+
+/**
+ * @brief Enable the bus clock for MCPWM module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void mcpwm_ll_enable_bus_clock(int group_id, bool enable)
+{
+    if (group_id == 0) {
+        SYSTEM.perip_clk_en0.pwm0_clk_en = enable;
+    } else {
+        SYSTEM.perip_clk_en0.pwm1_clk_en = enable;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mcpwm_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the MCPWM module
+ *
+ * @param group_id Group ID
+ */
+static inline void mcpwm_ll_reset_register(int group_id)
+{
+    if (group_id == 0) {
+        SYSTEM.perip_rst_en0.pwm0_rst = 1;
+        SYSTEM.perip_rst_en0.pwm0_rst = 0;
+    } else {
+        SYSTEM.perip_rst_en0.pwm1_rst = 1;
+        SYSTEM.perip_rst_en0.pwm1_rst = 0;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mcpwm_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Set the clock source for MCPWM
@@ -207,13 +247,12 @@ static inline void mcpwm_ll_timer_set_clock_prescale(mcpwm_dev_t *mcpwm, int tim
  * @param peak Peak value
  * @param symmetric True to set symmetric peak value, False to set asymmetric peak value
  */
+__attribute__((always_inline))
 static inline void mcpwm_ll_timer_set_peak(mcpwm_dev_t *mcpwm, int timer_id, uint32_t peak, bool symmetric)
 {
     if (!symmetric) { // in asymmetric mode, period = [0,peak-1]
-        HAL_ASSERT(peak > 0 && peak <= MCPWM_LL_MAX_COUNT_VALUE);
         HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak - 1);
     } else { // in symmetric mode, period = [0,peak-1] + [peak,1]
-        HAL_ASSERT(peak < MCPWM_LL_MAX_COUNT_VALUE);
         HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak);
     }
 }
@@ -1596,7 +1635,8 @@ static inline uint32_t mcpwm_ll_group_get_clock_prescale(mcpwm_dev_t *mcpwm)
 
 static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id)
 {
-    mcpwm_timer_cfg0_reg_t cfg0 = mcpwm->timer[timer_id].timer_cfg0;
+    mcpwm_timer_cfg0_reg_t cfg0;
+    cfg0.val = mcpwm->timer[timer_id].timer_cfg0.val;
     return cfg0.timer_prescale + 1;
 }
 

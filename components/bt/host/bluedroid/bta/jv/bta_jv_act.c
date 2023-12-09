@@ -113,6 +113,10 @@ static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB *p_cb);
 static void bta_jv_pm_state_change(tBTA_JV_PM_CB *p_cb, const tBTA_JV_CONN_STATE state);
 tBTA_JV_STATUS bta_jv_set_pm_conn_state(tBTA_JV_PM_CB *p_cb, const tBTA_JV_CONN_STATE new_st);
 
+#if BT_SDP_BQB_INCLUDED
+static BOOLEAN s_sdp_bqb_add_language_attr_flag = FALSE;
+#endif /* BT_SDP_BQB_INCLUDED */
+
 #if BTA_JV_RFCOMM_INCLUDED
 static tBTA_JV_PCB *bta_jv_add_rfc_port(tBTA_JV_RFC_CB *p_cb, tBTA_JV_PCB *p_pcb_open);
 static int find_rfc_pcb(void *user_data, tBTA_JV_RFC_CB **cb, tBTA_JV_PCB **pcb);
@@ -1037,6 +1041,22 @@ void bta_jv_start_discovery(tBTA_JV_MSG *p_data)
     */
 }
 
+/*******************************************************************************
+**
+** Function     sdp_bqb_add_language_attr_ctrl
+**
+** Description  Control adding of the language attribute for SDP BQB test
+**
+** Returns      void
+**
+*******************************************************************************/
+#if BT_SDP_BQB_INCLUDED
+void sdp_bqb_add_language_attr_ctrl(BOOLEAN enable)
+{
+    s_sdp_bqb_add_language_attr_flag = enable;
+}
+#endif /* BT_SDP_BQB_INCLUDED */
+
 /**
  * @brief       Adds a protocol list and service name (if provided) to an SDP record given by
  *              sdp_handle, and marks it as browseable. This is a shortcut for defining a
@@ -1087,6 +1107,19 @@ static bool create_base_record(const uint32_t sdp_handle, const char *name, cons
                    stage, channel, name, with_obex);
         return FALSE;
     }
+
+#if BT_SDP_BQB_INCLUDED
+    // SDP/SR/SA/BV-09-C,SDP/SR/SSA/BV-13-C
+    if (s_sdp_bqb_add_language_attr_flag == TRUE) {
+        stage = "language_base";
+        if (!SDP_AddLanguageBaseAttrIDList(sdp_handle, LANG_ID_CODE_ENGLISH, LANG_ID_CHAR_ENCODE_UTF8, LANGUAGE_BASE_ID)) {
+            APPL_TRACE_ERROR("create_base_record: failed to create base service "
+                    "record, stage: %s, scn: %d, name: %s, with_obex: %d",
+                    stage, channel, name, with_obex);
+            return FALSE;
+        }
+    }
+#endif /* BT_SDP_BQB_INCLUDED */
 
     // Add the name to the SDP record.
     if (name[0] != '\0') {

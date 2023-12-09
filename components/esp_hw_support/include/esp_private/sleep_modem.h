@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
+#include "esp_sleep.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +40,42 @@ void mac_bb_power_down_cb_execute(void);
 void mac_bb_power_up_cb_execute(void);
 
 #endif // CONFIG_MAC_BB_PD
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+/**
+ * @brief Register sleep prepare callback for Bluetooth/IEEE802154 MAC and baseband
+ *
+ * @param pd_cb function to call when power down
+ * @param pu_cb function to call when power up
+ */
+void sleep_modem_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                    mac_bb_power_up_cb_t pu_cb);
+
+/**
+ * @brief Unregister sleep prepare callback for Bluetooth/IEEE802154 MAC and baseband
+ *
+ * @param pd_cb function to call when power down
+ * @param pu_cb function to call when power up
+ */
+void sleep_modem_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                      mac_bb_power_up_cb_t pu_cb);
+
+/**
+ * @brief MAC and baseband power up operation
+ *
+ * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
+ * power down and backup prepare operations.
+ */
+void sleep_modem_mac_bb_power_down_prepare(void);
+
+/**
+ * @brief MAC and baseband power up operation
+ *
+ * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
+ * power up and restore prepare operations.
+ */
+void sleep_modem_mac_bb_power_up_prepare(void);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
@@ -160,6 +197,35 @@ void esp_pm_register_light_sleep_default_params_config_callback(update_light_sle
  * of default parameters of light sleep
  */
 void esp_pm_unregister_light_sleep_default_params_config_callback(void);
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+/**
+ * @brief Init Wi-Fi modem state.
+ *
+ * This function init wifi modem state.
+  * @return
+  *   - ESP_OK on success
+  *   - ESP_ERR_NO_MEM if no memory for link
+ */
+esp_err_t sleep_modem_wifi_modem_state_init(void);
+
+/**
+ * @brief  Deinit Wi-Fi modem state.
+ *
+ * This function deinit wifi modem state.
+ */
+void sleep_modem_wifi_modem_state_deinit(void);
+
+/**
+ * @brief Function to check Wi-Fi modem state to skip light sleep.
+ *
+ * This function is to check if light sleep should skip by Wi-Fi modem state .
+  * @return
+  *   - true skip light sleep
+  *   - false not skip light sleep
+ */
+bool sleep_modem_wifi_modem_state_skip_light_sleep(void);
+#endif
 
 #ifdef __cplusplus
 }

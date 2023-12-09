@@ -22,6 +22,14 @@ body:
       placeholder: ex. v3.2-dev-1148-g96cd3b75c
     validations:
       required: true
+  - type: input
+    id: chip_revision
+    attributes:
+      label: Espressif SoC revision.
+      description: On which Espressif SoC revision does your application run on? Run `esptool chip_id` to find it.
+      placeholder: ex. ESP32-C3 (QFN32) (revision v0.3)
+    validations:
+      required: true
   - type: dropdown
     id: operating_system
     attributes:
@@ -63,7 +71,7 @@ body:
     attributes:
       label: Development Kit.
       description: On which Development Kit does this issue occur on?
-      placeholder: ex. ESP32-Wrover-Kit v2 | Custom Board
+      placeholder: ex. ESP32-Wrover-Kit v2 | Custom Board | QEMU
     validations:
       required: true
   - type: dropdown

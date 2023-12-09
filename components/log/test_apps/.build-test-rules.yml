@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/log/test_apps:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      reason: only test on esp32

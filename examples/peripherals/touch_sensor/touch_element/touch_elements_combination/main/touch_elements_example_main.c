@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -109,8 +109,8 @@ void button_example_init(void)
         ESP_ERROR_CHECK(touch_button_create(&button_config, &button_handle[i]));
         /* Subscribe touch button events (On Press, On Release, On LongPress) */
         ESP_ERROR_CHECK(touch_button_subscribe_event(button_handle[i],
-                        TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
-                        (void *)button_channel_array[i]));
+                                                     TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
+                                                     (void *)button_channel_array[i]));
         /* Set EVENT as the dispatch method */
         ESP_ERROR_CHECK(touch_button_set_dispatch_method(button_handle[i], TOUCH_ELEM_DISP_EVENT));
         /* Set LongPress event trigger threshold time */
@@ -134,7 +134,7 @@ void slider_example_init(void)
     ESP_ERROR_CHECK(touch_slider_create(&slider_config, &slider_handle));
     /* Subscribe touch slider events (On Press, On Release, On Calculation) */
     ESP_ERROR_CHECK(touch_slider_subscribe_event(slider_handle,
-                    TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_CALCULATION, NULL));
+                                                 TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_CALCULATION, NULL));
     /* Set EVENT as the dispatch method */
     ESP_ERROR_CHECK(touch_slider_set_dispatch_method(slider_handle, TOUCH_ELEM_DISP_EVENT));
     ESP_LOGI(TAG, "Touch slider created");

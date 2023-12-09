@@ -1,5 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 if(CONFIG_EFUSE_VIRTUAL)
     message(STATUS "Efuse virtual mode is enabled. If Secure boot or Flash encryption is on"
         " it does not provide any security. FOR TESTING ONLY!")

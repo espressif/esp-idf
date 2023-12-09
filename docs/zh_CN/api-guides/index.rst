@@ -12,8 +12,9 @@ API 指南
    bootloader
    build-system
    :SOC_SUPPORT_COEXISTENCE: coexist
-   core_dump
+   c
    cplusplus
+   core_dump
    current-consumption-measurement-modules
    :SOC_RTC_MEM_SUPPORTED: deep-sleep-stub
    :SOC_USB_OTG_SUPPORTED: dfu
@@ -42,3 +43,4 @@ API 指南
    :SOC_USB_SERIAL_JTAG_SUPPORTED: usb-serial-jtag-console
    :SOC_WIFI_SUPPORTED: wifi
    :SOC_WIFI_SUPPORTED: wifi-security
+   low-power-mode

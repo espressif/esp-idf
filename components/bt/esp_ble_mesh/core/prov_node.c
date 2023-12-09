@@ -944,8 +944,6 @@ static void prov_data(const uint8_t *data)
     /* Ignore any further PDUs on this link */
     prov_link.expect = 0U;
 
-    reset_state();
-
 #if CONFIG_BLE_MESH_RPR_SRV
     /* For NPPI, no need to perform the following actions */
     if (bt_mesh_atomic_test_bit(prov_link.flags, PB_NPPI)) {

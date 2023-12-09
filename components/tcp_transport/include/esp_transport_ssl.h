@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,14 @@ void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*
 void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t);
 
 /**
+ * @brief      Set TLS protocol version for ESP-TLS connection
+ *
+ * @param      t    ssl transport
+ * @param[in]  tls_version      TLS version
+ */
+void esp_transport_ssl_set_tls_version(esp_transport_handle_t t, esp_tls_proto_ver_t tls_version);
+
+/**
  * @brief      Set SSL client certificate data for mutual authentication (as PEM format).
  *             Note that, this function stores the pointer to data, rather than making a copy.
  *             So this data must remain valid until after the connection is cleaned up
@@ -71,6 +79,16 @@ void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t);
  * @param[in]  len   The length
  */
 void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char *data, int len);
+
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+/**
+ * @brief      Set SSL client key data for mutual authentication when using ECDSA peripheral.
+ *
+ * @param      t            ssl transport
+ * @param[in]  efuse_blk    Efuse block where ECDSA private key is stored
+ */
+void esp_transport_ssl_set_client_key_ecdsa_peripheral(esp_transport_handle_t t, uint8_t ecdsa_efuse_blk);
+#endif
 
 /**
  * @brief      Set SSL client certificate data for mutual authentication (as DER format).
@@ -192,6 +210,28 @@ void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_ke
  * @param[in]  if_name  The interface name
  */
 void esp_transport_ssl_set_interface_name(esp_transport_handle_t t, struct ifreq *if_name);
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+/**
+ * @brief   Session ticket operation
+ */
+typedef enum {
+    ESP_TRANSPORT_SESSION_TICKET_INIT,      /*!< Allocate and initialize a TLS session */
+    ESP_TRANSPORT_SESSION_TICKET_SAVE,      /*!< Save TLS session so it can be restored for the next handshake */
+    ESP_TRANSPORT_SESSION_TICKET_USE,       /*!< Use already saved session to reconnect faster */
+    ESP_TRANSPORT_SESSION_TICKET_FREE       /*!< Deallocate and deinit the TLS session */
+} esp_transport_session_ticket_operation_t;
+
+/**
+ * @brief      Perform desired session ticket operation (init, save, use)
+ *
+ * @param[in]  t            The transport handle
+ * @param[in]  operation    Operation to perform with TLS session
+ *
+ * @note This operation is only available if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS=y
+ */
+esp_err_t esp_transport_ssl_session_ticket_operation(esp_transport_handle_t t, esp_transport_session_ticket_operation_t operation);
+#endif // CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
 
 #ifdef __cplusplus
 }

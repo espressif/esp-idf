@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,7 +15,6 @@
 #include "services/gap/ble_svc_gap.h"
 #include "phy_prph.h"
 
-#if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1M[] = {
     0x02, 0x01, 0x06,
     0x03, 0x03, 0xab, 0xcd,
@@ -37,7 +36,6 @@ static uint8_t ext_adv_pattern_coded[] = {
     0x11, 0X09, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', 'c', 'o', 'd', 'e',
     'd',
 };
-#endif
 
 static const char *tag = "NimBLE_BLE_PHY_PRPH";
 static int bleprph_gap_event(struct ble_gap_event *event, void *arg);
@@ -47,7 +45,7 @@ static uint8_t s_current_phy;
 void ble_store_config_init(void);
 
 /* Set default LE PHY before establishing connection */
-void set_default_le_phy_before_conn(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
+void set_default_le_phy(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
 {
     int rc = ble_gap_set_prefered_default_le_phy(tx_phys_mask, rx_phys_mask);
     if (rc == 0) {
@@ -84,7 +82,6 @@ bleprph_print_conn_desc(struct ble_gap_conn_desc *desc)
                 desc->sec_state.bonded);
 }
 
-#if CONFIG_EXAMPLE_EXTENDED_ADV
 static struct os_mbuf *
 ext_get_data(uint8_t ext_adv_pattern[], int size)
 {
@@ -113,10 +110,13 @@ ext_bleprph_advertise(void)
     /* use defaults for non-set params */
     memset (&params, 0, sizeof(params));
 
-    /* enable connectable advertising */
+    if (s_current_phy == BLE_HCI_LE_PHY_1M_PREF_MASK) {
+         params.scannable = 1;
+         params.legacy_pdu = 1;
+    }
+
+    /*enable connectable advertising for all Phy*/
     params.connectable = 1;
-    params.scannable = 1;
-    params.legacy_pdu = 1;
 
     /* advertise using random addr */
     params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
@@ -127,23 +127,23 @@ ext_bleprph_advertise(void)
         params.primary_phy = BLE_HCI_LE_PHY_1M;
         params.secondary_phy = BLE_HCI_LE_PHY_1M;
         data = ext_get_data(ext_adv_pattern_1M, sizeof(ext_adv_pattern_1M));
+        params.sid = 0;
         break;
 
     case BLE_HCI_LE_PHY_2M_PREF_MASK:
         params.primary_phy = BLE_HCI_LE_PHY_1M;
         params.secondary_phy = BLE_HCI_LE_PHY_2M;
         data = ext_get_data(ext_adv_pattern_2M, sizeof(ext_adv_pattern_2M));
+        params.sid = 1;
         break;
 
     case BLE_HCI_LE_PHY_CODED_PREF_MASK:
         params.primary_phy = BLE_HCI_LE_PHY_CODED;
         params.secondary_phy = BLE_HCI_LE_PHY_CODED;
         data = ext_get_data(ext_adv_pattern_coded, sizeof(ext_adv_pattern_coded));
+        params.sid = 2;
         break;
     }
-
-    //params.tx_power = 127;
-    params.sid = 1;
 
     params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
     params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
@@ -160,73 +160,7 @@ ext_bleprph_advertise(void)
     rc = ble_gap_ext_adv_start(instance, 0, 0);
     assert (rc == 0);
 }
-#else
-/**
- * Enables advertising with the following parameters:
- *     o General discoverable mode.
- *     o Undirected connectable mode.
- */
-static void
-bleprph_advertise(void)
-{
-    struct ble_gap_adv_params adv_params;
-    struct ble_hs_adv_fields fields;
-    const char *name;
-    int rc;
 
-    /**
-     *  Set the advertisement data included in our advertisements:
-     *     o Flags (indicates advertisement type and other general info).
-     *     o Advertising tx power.
-     *     o Device name.
-     *     o 16-bit service UUIDs (alert notifications).
-     */
-
-    memset(&fields, 0, sizeof fields);
-
-    /* Advertise two flags:
-     *     o Discoverability in forthcoming advertisement (general)
-     *     o BLE-only (BR/EDR unsupported).
-     */
-    fields.flags = BLE_HS_ADV_F_DISC_GEN |
-                   BLE_HS_ADV_F_BREDR_UNSUP;
-
-    /* Indicate that the TX power level field should be included; have the
-     * stack fill this value automatically.  This is done by assigning the
-     * special value BLE_HS_ADV_TX_PWR_LVL_AUTO.
-     */
-    fields.tx_pwr_lvl_is_present = 1;
-    fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
-
-    name = ble_svc_gap_device_name();
-    fields.name = (uint8_t *)name;
-    fields.name_len = strlen(name);
-    fields.name_is_complete = 1;
-
-    fields.uuids16 = (ble_uuid16_t[]) {
-        BLE_UUID16_INIT(LE_PHY_UUID16)
-    };
-    fields.num_uuids16 = 1;
-    fields.uuids16_is_complete = 1;
-
-    rc = ble_gap_adv_set_fields(&fields);
-    if (rc != 0) {
-        MODLOG_DFLT(ERROR, "error setting advertisement data; rc=%d\n", rc);
-        return;
-    }
-
-    /* Begin advertising. */
-    memset(&adv_params, 0, sizeof adv_params);
-    adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
-    adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
-    rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
-                           &adv_params, bleprph_gap_event, NULL);
-    if (rc != 0) {
-        MODLOG_DFLT(ERROR, "error enabling advertisement; rc=%d\n", rc);
-        return;
-    }
-}
-#endif
 /**
  * The nimble host executes this callback when a GAP event occurs.  The
  * application associates a GAP event callback with each connection that forms.
@@ -263,11 +197,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 
         if (event->connect.status != 0) {
             /* Connection failed; resume advertising. */
-#if CONFIG_EXAMPLE_EXTENDED_ADV
             ext_bleprph_advertise();
-#else
-            bleprph_advertise();
-#endif
         }
         return 0;
 
@@ -278,7 +208,6 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 
         /* Connection terminated; resume advertising. */
 
-#if CONFIG_EXAMPLE_EXTENDED_ADV
         switch (s_current_phy) {
         case BLE_HCI_LE_PHY_1M_PREF_MASK:
             /* Setting current phy to create connection on 2M PHY */
@@ -296,11 +225,8 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         default:
             return 0;
         }
-        set_default_le_phy_before_conn(s_current_phy, s_current_phy);
+
         ext_bleprph_advertise();
-#else
-        bleprph_advertise();
-#endif
         return 0;
 
     case BLE_GAP_EVENT_CONN_UPDATE:
@@ -316,16 +242,6 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_ADV_COMPLETE:
         MODLOG_DFLT(INFO, "advertise complete; reason=%d",
                     event->adv_complete.reason);
-#if !CONFIG_EXAMPLE_EXTENDED_ADV
-        bleprph_advertise();
-#endif
-        return 0;
-
-    case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE:
-        MODLOG_DFLT(INFO, "LE PHY Update completed; status=%d conn_handle=%d tx_phy=%d "
-                    "rx_phy = %d\n", event->phy_updated.status,
-                    event->phy_updated.conn_handle, event->phy_updated.tx_phy,
-                    event->phy_updated.rx_phy);
         return 0;
     }
 
@@ -342,6 +258,7 @@ static void
 bleprph_on_sync(void)
 {
     int rc;
+    uint8_t all_phy;
 
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);
@@ -364,12 +281,12 @@ bleprph_on_sync(void)
 
     s_current_phy = BLE_HCI_LE_PHY_1M_PREF_MASK;
 
+    all_phy = BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK | BLE_HCI_LE_PHY_CODED_PREF_MASK;
+
+    set_default_le_phy(all_phy, all_phy);
+
     /* Begin advertising. */
-#if CONFIG_EXAMPLE_EXTENDED_ADV
     ext_bleprph_advertise();
-#else
-    bleprph_advertise();
-#endif
 }
 
 void bleprph_host_task(void *param)

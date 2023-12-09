@@ -1,4 +1,1 @@
-
-.. code-block:: none
-
-    TO BE UPDATED IDF-7759
+.. include:: ../../../en/api-reference/system/inc/show-efuse-table_ESP32-P4.rst

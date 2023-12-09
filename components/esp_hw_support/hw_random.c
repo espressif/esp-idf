@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,18 @@
 #else
 #define APB_CYCLE_WAIT_NUM (16)
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32P4
+#include "esp_log.h"
+static const char *TAG = "hw_random";
+
+uint32_t IRAM_ATTR esp_random(void)
+{
+    // TODO: IDF-6522
+    ESP_EARLY_LOGW(TAG, "esp_random() has not been implemented yet");
+    return 0xDEADBEEF;
+}
+#else // !CONFIG_IDF_TARGET_ESP32P4
 
 uint32_t IRAM_ATTR esp_random(void)
 {
@@ -77,6 +89,7 @@ uint32_t IRAM_ATTR esp_random(void)
     last_ccount = ccount;
     return result ^ REG_READ(WDEV_RND_REG);
 }
+#endif //!CONFIG_IDF_TARGET_ESP32P4
 
 void esp_fill_random(void *buf, size_t len)
 {

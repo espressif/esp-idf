@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,12 @@ typedef enum {
     UART_NUM_1,                         /*!< UART port 1 */
 #if SOC_UART_HP_NUM > 2
     UART_NUM_2,                         /*!< UART port 2 */
+#endif
+#if SOC_UART_HP_NUM > 3
+    UART_NUM_3,                         /*!< UART port 3 */
+#endif
+#if SOC_UART_HP_NUM > 4
+    UART_NUM_4,                         /*!< UART port 4 */
 #endif
 #if (SOC_UART_LP_NUM >= 1)
     LP_UART_NUM_0,                      /*!< LP UART port 0 */

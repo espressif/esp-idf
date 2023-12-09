@@ -6,27 +6,27 @@ SD/SDIO/MMC Driver
 Overview
 --------
 
-The SD/SDIO/MMC driver currently supports SD memory, SDIO cards, and eMMC chips. This is a protocol level driver built on top of SDMMC and SD SPI host drivers.
+The SD/SDIO/MMC driver currently supports SD memory, SDIO cards, and eMMC chips. This is a protocol layer driver (:component_file:`sdmmc/include/sdmmc_cmd.h`) which can be implemented by:
 
-SDMMC and SD SPI host drivers (:component_file:`driver/sdmmc/include/driver/sdmmc_host.h` and :component_file:`driver/spi/include/driver/sdspi_host.h`) provide API functions for:
+.. list::
+    :SOC_SDMMC_HOST_SUPPORTED: - SDMMC host driver (:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h`), see :doc:`SDMMC Host API <../peripherals/sdmmc_host>` for more details.
+    - SDSPI host driver (:component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`), see :doc:`SD SPI Host API <../peripherals/sdspi_host>` for more details.
+
+Protocol Layer vs Host Layer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The SDMMC protocol layer described in this document handles the specifics of the SD protocol, such as the card initialization flow and variours data transfer command flows. The protocol layer works with the host via the :cpp:class:`sdmmc_host_t` structure. This structure contains pointers to various functions of the host.
+
+Host layer driver(s) implement the protocol layer driver by supporting these functions:
 
 - Sending commands to slave devices
 - Sending and receiving data
 - Handling error conditions within the bus
 
-For functions used to initialize and configure:
-
-.. list::
-
-    :SOC_SDMMC_HOST_SUPPORTED: - SDMMC host, see :doc:`SDMMC Host API <../peripherals/sdmmc_host>`
-    - SD SPI host, see :doc:`SD SPI Host API <../peripherals/sdspi_host>`
-
-
-.. only:: SOC_SDMMC_HOST_SUPPORTED
-
-    The SDMMC protocol layer described in this document handles the specifics of the SD protocol, such as the card initialization and data transfer commands.
-
-    The protocol layer works with the host via the :cpp:class:`sdmmc_host_t` structure. This structure contains pointers to various functions of the host.
+.. blockdiag:: /../_static/diagrams/sd/sd_arch.diag
+    :scale: 100%
+    :caption: SD Host Side Component Architecture
+    :align: center
 
 
 Application Example
@@ -39,7 +39,7 @@ An example which combines the SDMMC driver with the FATFS library is provided in
     Protocol Layer API
     ------------------
 
-    The protocol layer is given the :cpp:class:`sdmmc_host_t` structure. This structure describes the SD/MMC host driver, lists its capabilities, and provides pointers to functions of the driver. The protocol layer stores card-specific information in the :cpp:class:`sdmmc_card_t` structure. When sending commands to the SD/MMC host driver, the protocol layer uses the :cpp:class:`sdmmc_command_t` structure to describe the command, arguments, expected return values, and data to transfer if there is any.
+    The protocol layer is given the :cpp:class:`sdmmc_host_t` structure. This structure describes the SD/MMC host driver, lists its capabilities, and provides pointers to functions for the implementation driver. The protocol layer stores card-specific information in the :cpp:class:`sdmmc_card_t` structure. When sending commands to the SD/MMC host driver, the protocol layer uses the :cpp:class:`sdmmc_command_t` structure to describe the command, arguments, expected return values, and data to transfer if there is any.
 
 
     Using API with SD Memory Cards

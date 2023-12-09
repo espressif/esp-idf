@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/bootloader_support/test_apps/rtc_custom_section:
+  enable:
+    - if: SOC_RTC_MEM_SUPPORTED == 1
+      reason: this feature is supported on chips that have RTC memory

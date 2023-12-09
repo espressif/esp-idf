@@ -25,4 +25,14 @@ menu "NVS"
         default n
         help
             This option switches error checking type between assertions (y) or return codes (n).
+
+    config NVS_LEGACY_DUP_KEYS_COMPATIBILITY
+        bool "Enable legacy nvs_set function behavior when same key is reused with different data types"
+        default n
+        help
+            Enabling this option will switch the nvs_set() family of functions to the legacy mode:
+            when called repeatedly with the same key but different data type, the existing value
+            in the NVS remains active and the new value is just stored, actually not accessible through
+            corresponding nvs_get() call for the key given. Use this option only when your application
+            relies on such NVS API behaviour.
 endmenu

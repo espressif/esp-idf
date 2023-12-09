@@ -6,31 +6,14 @@
 
 #include "unity.h"
 #include "unity_test_runner.h"
-#include "esp_heap_caps.h"
+#include "unity_test_utils_memory.h"
 #include "esp_log.h"
 #ifdef CONFIG_HEAP_TRACING
 #include "memory_checks.h"
 #include "esp_heap_trace.h"
 #endif
 
-#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT 0
-static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
-
-void set_leak_threshold(int threshold)
-{
-    leak_threshold = threshold;
-}
-
-static size_t before_free_8bit;
-static size_t before_free_32bit;
 static const char* TAG = "event_test_app";
-
-static void check_leak(size_t before_free, size_t after_free, const char *type)
-{
-    ssize_t delta = after_free - before_free;
-    printf("MALLOC_CAP_%s: Before %u bytes free, After %u bytes free (delta %d)\n", type, before_free, after_free, delta);
-    TEST_ASSERT_MESSAGE(delta >= leak_threshold, "memory leak");
-}
 
 void setUp(void)
 {
@@ -40,10 +23,8 @@ void setUp(void)
     heap_trace_start(HEAP_TRACE_LEAKS);
 #endif
 
-    leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
-
-    before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-    before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+    unity_utils_set_leak_level(0);
+    unity_utils_record_free_mem();
 }
 
 void tearDown(void)
@@ -53,11 +34,7 @@ void tearDown(void)
     heap_trace_dump();
 #endif
 
-    size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-    size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
-    check_leak(before_free_8bit, after_free_8bit, "8BIT");
-    check_leak(before_free_32bit, after_free_32bit, "32BIT");
-
+    unity_utils_evaluate_leaks();
 }
 
 void app_main(void)

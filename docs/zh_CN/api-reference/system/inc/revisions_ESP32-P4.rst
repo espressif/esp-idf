@@ -1,6 +1,1 @@
-
-+--------+------------------------+
-| ECO    | Revision (Major.Minor) |
-+--------+------------------------+
-| ECO0   | TO BE UPDATED IDF-7759 |
-+--------+------------------------+
+.. include:: ../../../en/api-reference/system/inc/revisions_ESP32-P4.rst

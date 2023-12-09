@@ -7,7 +7,7 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import division, print_function, unicode_literals
@@ -32,7 +32,7 @@ SECURE_NONE = None
 SECURE_V1 = 'v1'
 SECURE_V2 = 'v2'
 
-__version__ = '1.2'
+__version__ = '1.3'
 
 APP_TYPE = 0x00
 DATA_TYPE = 0x01
@@ -341,7 +341,8 @@ class PartitionDefinition(object):
     # dictionary maps flag name (as used in CSV flags list, property name)
     # to bit set in flags words in binary format
     FLAGS = {
-        'encrypted': 0
+        'encrypted': 0,
+        'readonly': 1
     }
 
     # add subtypes for the 16 OTA slot values ("ota_XX, etc.")
@@ -355,6 +356,7 @@ class PartitionDefinition(object):
         self.offset = None
         self.size = None
         self.encrypted = False
+        self.readonly = False
 
     @classmethod
     def from_csv(cls, line, line_no):
@@ -453,6 +455,11 @@ class PartitionDefinition(object):
         if self.name in all_subtype_names and SUBTYPES.get(self.type, {}).get(self.name, '') != self.subtype:
             critical("WARNING: Partition has name '%s' which is a partition subtype, but this partition has "
                      'non-matching type 0x%x and subtype 0x%x. Mistake in partition table?' % (self.name, self.type, self.subtype))
+
+        always_rw_data_subtypes = [SUBTYPES[DATA_TYPE]['ota'], SUBTYPES[DATA_TYPE]['coredump']]
+        if self.type == TYPES['data'] and self.subtype in always_rw_data_subtypes and self.readonly is True:
+            raise ValidationError(self, "'%s' partition of type %s and subtype %s is always read-write and cannot be read-only" %
+                                  (self.name, self.type, self.subtype))
 
     STRUCT_FORMAT = b'<2sBBLL16sL'
 

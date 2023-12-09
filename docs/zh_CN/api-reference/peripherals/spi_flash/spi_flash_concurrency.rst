@@ -11,7 +11,7 @@ SPI1 flash 并发约束
 
     在 {IDF_TARGET_NAME} 上，flash 读取/写入/擦除时，必须禁用 cache。
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     在 {IDF_TARGET_NAME} 上，默认启用的配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`auto-suspend`，查看详细信息。
 
@@ -42,11 +42,11 @@ SPI1 flash 并发约束
 
         同时启用 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 选项后，不会禁用 cache。
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     为避免意外读取 flash cache，一个 CPU 在启动 flash 写入或擦除操作时，另一个 CPU 将阻塞。在 flash 操作完成前，会禁用所有在 CPU 上非 IRAM 安全的中断。
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     为避免意外读取 flash cache，在 flash 操作完成前，所有 CPU 上，会禁用所有在 CPU 上非 IRAM 安全的中断。
 
@@ -78,7 +78,7 @@ IRAM 安全中断处理程序
 如果在注册时没有设置 ``ESP_INTR_FLAG_IRAM`` 标志，当禁用 cache 时，将不会执行中断处理程序。一旦 cache 恢复，非 IRAM 安全的中断将重新启用，中断处理程序随即再次正常运行。这意味着，只要禁用了 cache，就不会发生相应的硬件事件。
 
 
-.. only:: esp32c3 or esp32c2 or esp32s3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
    .. include:: auto_suspend.inc
 

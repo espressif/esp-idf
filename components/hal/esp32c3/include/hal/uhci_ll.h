@@ -45,7 +45,9 @@ static inline void uhci_ll_attach_uart_port(uhci_dev_t *hw, int uart_num)
 static inline void uhci_ll_set_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper_char)
 {
     if (seper_char->sub_chr_en) {
-        typeof(hw->esc_conf0) esc_conf0_reg = hw->esc_conf0;
+        typeof(hw->esc_conf0) esc_conf0_reg;
+        esc_conf0_reg.val = hw->esc_conf0.val;
+
         esc_conf0_reg.seper_char = seper_char->seper_chr;
         esc_conf0_reg.seper_esc_char0 = seper_char->sub_chr1;
         esc_conf0_reg.seper_esc_char1 = seper_char->sub_chr2;
@@ -66,10 +68,15 @@ static inline void uhci_ll_get_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper
 
 static inline void uhci_ll_set_swflow_ctrl_sub_chr(uhci_dev_t *hw, uhci_swflow_ctrl_sub_chr_t *sub_ctr)
 {
-    typeof(hw->escape_conf) escape_conf_reg = hw->escape_conf;
+    typeof(hw->escape_conf) escape_conf_reg;
+    escape_conf_reg.val = hw->escape_conf.val;
+
     if (sub_ctr->flow_en == 1) {
-        typeof(hw->esc_conf2) esc_conf2_reg = hw->esc_conf2;
-        typeof(hw->esc_conf3) esc_conf3_reg = hw->esc_conf3;
+        typeof(hw->esc_conf2) esc_conf2_reg;
+        esc_conf2_reg.val = hw->esc_conf2.val;
+        typeof(hw->esc_conf3) esc_conf3_reg;
+        esc_conf3_reg.val = hw->esc_conf3.val;
+
         esc_conf2_reg.seq1 = sub_ctr->xon_chr;
         esc_conf2_reg.seq1_char0 = sub_ctr->xon_sub1;
         esc_conf2_reg.seq1_char1 = sub_ctr->xon_sub2;

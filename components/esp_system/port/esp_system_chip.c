@@ -51,7 +51,7 @@ void IRAM_ATTR esp_restart_noos_dig(void)
     // esp_restart_noos_dig() will generates a core reset, which does not reset the
     // registers of the RTC domain, so the CPU's stall state remains after the reset,
     // we need to release them here
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // unstall all other cores
     int core_id = esp_cpu_get_core_id();
     for (uint32_t i = 0; i < SOC_CPU_CORES_NUM; i++) {

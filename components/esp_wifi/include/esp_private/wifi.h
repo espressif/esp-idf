@@ -629,15 +629,23 @@ void esp_wifi_set_keep_alive_time(uint32_t keep_alive_time);
 void esp_wifi_beacon_monitor_configure(wifi_beacon_monitor_config_t *config);
 
 /**
- * @brief   Require WiFi to enable or disable Advanced DTIM sleep function
+ * @brief   Set modem state mode to require WiFi to enable or disable Advanced DTIM sleep function
  *
- * @param   light_sleep_enable: true for light sleep mode is enabled, false for light sleep mode is disabled.
- * @param   modem_state_enable: true for require WiFi to enable Advanced DTIM sleep function,
+ * @param   require_modem_state: true for require WiFi to enable Advanced DTIM sleep function,
  *                              false for require WiFi to disable Advanced DTIM sleep function.
  * @return
  *    - ESP_OK: succeed
  */
-void esp_wifi_internal_mac_sleep_configure(bool light_sleep_enable, bool modem_state_enable);
+void esp_wifi_internal_modem_state_configure(bool require_modem_state);
+
+/**
+ * @brief   Set light sleep mode to require WiFi to enable or disable Advanced DTIM sleep function
+ *
+ * @param   light_sleep_enable: true for light sleep mode is enabled, false for light sleep mode is disabled.
+ * @return
+ *    - ESP_OK: succeed
+ */
+void esp_wifi_internal_light_sleep_configure(bool light_sleep_enable);
 
 /**
   * @brief      Start Publishing a service in the NAN cluster

@@ -25,8 +25,14 @@
 #include "btc/btc_util.h"
 #include "esp_hf_client_api.h"
 #include "bta/bta_hf_client_api.h"
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
+#endif
 #include <assert.h>
+
+#if BT_HF_CLIENT_BQB_INCLUDED
+static BOOLEAN s_bta_hf_client_bqb_esco_s4_flag = false;
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
 
 #if (BTC_HF_CLIENT_INCLUDED == TRUE)
 
@@ -54,6 +60,21 @@
 #endif
 
 
+/*******************************************************************************
+**
+** Function     bta_hf_client_bqb_esco_s4_ctrl
+**
+** Description  Control the usage of BTA_HF_CLIENT_FEAT_ESCO_S4 for BQB test
+**
+** Returns      void
+**
+*******************************************************************************/
+#if BT_HF_CLIENT_BQB_INCLUDED
+void bta_hf_client_bqb_esco_s4_ctrl(BOOLEAN enable)
+{
+    s_bta_hf_client_bqb_esco_s4_flag = enable;
+}
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
 
 /************************************************************************************
 **  Static variables
@@ -148,19 +169,20 @@ bt_status_t btc_hf_client_init(void)
 {
     BTC_TRACE_EVENT("%s", __FUNCTION__);
 
-    uint8_t data_path;
     btc_dm_enable_service(BTA_HFP_HS_SERVICE_ID);
 
     clear_state();
 
     hf_client_local_param.btc_hf_client_cb.initialized = true;
 
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #if BTM_SCO_HCI_INCLUDED
-    data_path = ESP_SCO_DATA_PATH_HCI;
+    uint8_t data_path = ESP_SCO_DATA_PATH_HCI;
 #else
-    data_path = ESP_SCO_DATA_PATH_PCM;
+    uint8_t data_path = ESP_SCO_DATA_PATH_PCM;
 #endif
     esp_bredr_sco_datapath_set(data_path);
+#endif
     return BT_STATUS_SUCCESS;
 }
 
@@ -743,6 +765,11 @@ bt_status_t btc_hf_client_execute_service(BOOLEAN b_enable)
         if (btc_hf_client_version >= HFP_HF_VERSION_1_7)
         {
             hf_client_local_param.btc_hf_client_features |= BTA_HF_CLIENT_FEAT_ESCO_S4;
+#if BT_HF_CLIENT_BQB_INCLUDED
+        if (s_bta_hf_client_bqb_esco_s4_flag == true) {
+            hf_client_local_param.btc_hf_client_features = BTA_HF_CLIENT_FEAT_ESCO_S4;
+        }
+#endif /* BT_HF_CLIENT_BQB_INCLUDED */
             BTC_TRACE_EVENT("eSCO S4 Setting Supported");
 
         }

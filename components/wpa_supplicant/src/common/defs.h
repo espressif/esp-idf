@@ -48,9 +48,11 @@ typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 #define WPA_KEY_MGMT_IEEE8021X_SUITE_B BIT(16)
 #define WPA_KEY_MGMT_IEEE8021X_SUITE_B_192 BIT(17)
 #define WPA_KEY_MGMT_OWE BIT(22)
+#define WPA_KEY_MGMT_SAE_EXT_KEY BIT(26)
 
 static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
 {
+#ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
 	return !!(akm & (WPA_KEY_MGMT_IEEE8021X |
 			 WPA_KEY_MGMT_FT_IEEE8021X |
 			 WPA_KEY_MGMT_CCKM |
@@ -58,6 +60,9 @@ static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
 			 WPA_KEY_MGMT_IEEE8021X_SHA256 |
 			 WPA_KEY_MGMT_IEEE8021X_SUITE_B |
 			 WPA_KEY_MGMT_IEEE8021X_SUITE_B_192));
+#else
+        return 0;
+#endif
 }
 
 static inline int wpa_key_mgmt_wpa_psk(int akm)
@@ -66,6 +71,7 @@ static inline int wpa_key_mgmt_wpa_psk(int akm)
 			 WPA_KEY_MGMT_FT_PSK |
 			 WPA_KEY_MGMT_PSK_SHA256 |
 			 WPA_KEY_MGMT_SAE |
+			 WPA_KEY_MGMT_SAE_EXT_KEY |
 			 WPA_KEY_MGMT_FT_SAE));
 }
 
@@ -79,7 +85,13 @@ static inline int wpa_key_mgmt_ft(int akm)
 static inline int wpa_key_mgmt_sae(int akm)
 {
 	return !!(akm & (WPA_KEY_MGMT_SAE |
+			 WPA_KEY_MGMT_SAE_EXT_KEY |
 			 WPA_KEY_MGMT_FT_SAE));
+}
+
+static inline int wpa_key_mgmt_sae_ext_key(int akm)
+{
+	return !!(akm & (WPA_KEY_MGMT_SAE_EXT_KEY));
 }
 
 static inline int wpa_key_mgmt_sha256(int akm)

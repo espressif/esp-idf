@@ -276,6 +276,15 @@ menu "Memory Settings"
         help
                 Dynamic memory size of block 2
 
+    config BT_NIMBLE_MSYS_BUF_FROM_HEAP
+        bool "Get Msys Mbuf from heap"
+        default y
+        depends on BT_LE_MSYS_INIT_IN_CONTROLLER
+        help
+            This option sets the source of the shared msys mbuf memory between
+            the Host and the Controller. Allocate the memory from the heap if
+            this option is sets, from the mempool otherwise.
+
     config BT_NIMBLE_TRANSPORT_ACL_FROM_LL_COUNT
         int "ACL Buffer count"
         depends on BT_NIMBLE_ENABLED
@@ -610,32 +619,6 @@ config BT_NIMBLE_PERIODIC_ADV_ENH
     depends on BT_NIMBLE_ENABLE_PERIODIC_ADV && BT_NIMBLE_50_FEATURE_SUPPORT && SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
     help
         Enable the periodic advertising enhancements
-
-choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
-    prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
-    default BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-    depends on ESP_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED
-    help
-            When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
-            better avoid dramatic performance deterioration of Wi-Fi.
-
-        config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EN
-            bool "Force Enable"
-            help
-                Always enable the limitation on max tx/rx time for Coded-PHY connection
-
-        config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-            bool "Force Disable"
-            help
-                Disable the limitation on max tx/rx time for Coded-PHY connection
-endchoice
-
-config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
-    int
-    default 0 if !(ESP_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED)
-    default 1 if BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EN
-    default 0 if BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-
 
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"

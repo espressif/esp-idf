@@ -10,13 +10,13 @@ Python 3.8.* or above. This is our recommended Python version for ESP-IDF develo
 
 If you still have Python versions not compatible, update your Python versions before installing the pre-commit hook.
 
-Install pre-commit
-------------------
+Install ``pre-commit``
+----------------------
 
 Run ``pip install pre-commit``
 
-Install pre-commit Hook
------------------------
+Install ``pre-commit`` Hook
+---------------------------
 
 1. Go to the ESP-IDF project directory.
 
@@ -24,7 +24,7 @@ Install pre-commit Hook
 
 3. pre-commit hook will run automatically when you are running ``git commit`` command
 
-Uninstall pre-commit Hook
+Uninstall ``pre-commit`` Hook
 -----------------------------
 
 Run ``pre-commit uninstall``

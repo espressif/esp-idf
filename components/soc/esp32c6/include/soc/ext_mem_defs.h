@@ -26,6 +26,12 @@ extern "C" {
 #define SOC_DRAM0_CACHE_ADDRESS_LOW                  SOC_IRAM0_CACHE_ADDRESS_LOW                //I/D share the same vaddr range
 #define SOC_DRAM0_CACHE_ADDRESS_HIGH                 SOC_IRAM0_CACHE_ADDRESS_HIGH               //I/D share the same vaddr range
 
+#define SOC_IRAM_FLASH_ADDRESS_LOW                   SOC_IRAM0_CACHE_ADDRESS_LOW
+#define SOC_IRAM_FLASH_ADDRESS_HIGH                  SOC_IRAM0_CACHE_ADDRESS_HIGH
+
+#define SOC_DRAM_FLASH_ADDRESS_LOW                   SOC_DRAM0_CACHE_ADDRESS_LOW
+#define SOC_DRAM_FLASH_ADDRESS_HIGH                  SOC_DRAM0_CACHE_ADDRESS_HIGH
+
 #define SOC_BUS_SIZE(bus_name)                       (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
 #define SOC_ADDRESS_IN_BUS(bus_name, vaddr)          ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 
@@ -117,7 +123,9 @@ extern "C" {
 /**
  * I/D share the MMU linear address range
  */
+#ifndef __cplusplus
 _Static_assert(SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW == SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW, "IRAM0 and DRAM0 linear address should be same");
+#endif
 
 
 /**

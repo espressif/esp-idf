@@ -337,7 +337,7 @@ pytest 执行步骤
 
 .. note::
 
-    这里的 ``app_path`` 应设置为绝对路径。 Python 中的 ``__file__`` 宏会返回测试脚本自身的绝对路径。
+    这里的 ``app_path`` 应设置为绝对路径。Python 中的 ``__file__`` 宏会返回测试脚本自身的绝对路径。
 
 用不同应用程序和目标芯片进行多目标测试
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -626,6 +626,8 @@ CI 用于执行所有相关测试的命令为： ``pytest <parent_dir> --target 
    如果 ``<sdkconfig>`` 为 ``default``，pytest 会执行所有 sdkconfig 文件包含 ``sdkconfig.defaults`` 的测试用例。
 
    如果是其他情况，pytest 会执行所有 sdkconfig 文件包含 ``sdkconfig.ci.<sdkconfig>`` 的测试用例。
+
+- 使用 ``pytest -k <test-case name>`` 按测试用例名称筛选，可以运行单个测试用例，例如 ``pytest -k test_int_wdt_cache_disabled``。
 
 添加新 marker
 ----------------

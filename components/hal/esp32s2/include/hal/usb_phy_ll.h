@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/system_reg.h"
 #include "soc/usb_wrap_struct.h"
@@ -22,8 +23,6 @@ extern "C" {
  */
 static inline void usb_phy_ll_int_otg_enable(usb_wrap_dev_t *hw)
 {
-    //Enable internal PHY
-    hw->otg_conf.pad_enable = 1;
     hw->otg_conf.phy_sel = 0;
 }
 
@@ -49,13 +48,24 @@ static inline void usb_phy_ll_ext_otg_enable(usb_wrap_dev_t *hw)
  */
 static inline void usb_phy_ll_int_load_conf(usb_wrap_dev_t *hw, bool dp_pu, bool dp_pd, bool dm_pu, bool dm_pd)
 {
-    usb_wrap_otg_conf_reg_t conf = hw->otg_conf;
+    usb_wrap_otg_conf_reg_t conf;
+    conf.val = hw->otg_conf.val;
     conf.pad_pull_override = 1;
     conf.dp_pullup = dp_pu;
     conf.dp_pulldown = dp_pd;
     conf.dm_pullup = dm_pu;
     conf.dm_pulldown = dm_pd;
-    hw->otg_conf = conf;
+    hw->otg_conf.val = conf.val;
+}
+
+/**
+ * @brief Enable the internal PHY control to D+/D- pad
+ * @param hw     Start address of the USB Wrap registers
+ * @param pad_en Enable the PHY control to D+/D- pad
+ */
+static inline void usb_phy_ll_usb_wrap_pad_enable(usb_wrap_dev_t *hw, bool pad_en)
+{
+    hw->otg_conf.pad_enable = pad_en;
 }
 
 /**
@@ -77,6 +87,30 @@ static inline void usb_phy_ll_int_enable_test_mode(usb_wrap_dev_t *hw, bool en)
         hw->test_conf.test_enable = 0;
     }
 }
+
+/**
+ * Enable the bus clock for USB Wrap module
+ * @param clk_en True if enable the clock of USB Wrap module
+ */
+FORCE_INLINE_ATTR void usb_phy_ll_usb_wrap_enable_bus_clock(bool clk_en)
+{
+    REG_SET_FIELD(DPORT_PERIP_CLK_EN0_REG, DPORT_USB_CLK_EN, clk_en);
+}
+
+// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+#define usb_phy_ll_usb_wrap_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_phy_ll_usb_wrap_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the USB Wrap module
+ */
+FORCE_INLINE_ATTR void usb_phy_ll_usb_wrap_reset_register(void)
+{
+    REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 1);
+    REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 0);
+}
+
+// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+#define usb_phy_ll_usb_wrap_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_phy_ll_usb_wrap_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }

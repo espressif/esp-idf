@@ -1,2 +1,5 @@
 INPUT += \
-        $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt.h \
+    $(PROJECT_PATH)/components/bt/include/esp32h2/include/esp_bt.h \
+    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
+    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
+    $(PROJECT_PATH)/components/esp_coex/include/esp_coex_i154.h \

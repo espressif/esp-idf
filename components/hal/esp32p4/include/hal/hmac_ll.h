@@ -13,9 +13,11 @@
 #pragma once
 
 #include <string.h>
+#include <stdbool.h>
 
 #include "soc/system_reg.h"
 #include "soc/hwcrypto_reg.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/hmac_hal.h"
 
 #define SHA256_BLOCK_SZ 64
@@ -29,6 +31,35 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Enable the bus clock for HMAC peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void hmac_ll_enable_bus_clock(bool enable)
+{
+    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_hmac_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define hmac_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; hmac_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the HMAC peripheral module
+ */
+static inline void hmac_ll_reset_register(void)
+{
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_hmac = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_hmac = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define hmac_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; hmac_ll_reset_register(__VA_ARGS__)
 
 /**
  * Makes the peripheral ready for use, after enabling it.

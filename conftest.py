@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import sys
+from copy import deepcopy
 from datetime import datetime
 from typing import Callable, Optional
 
@@ -27,20 +28,19 @@ from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
 from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
 from pytest_embedded_idf.dut import IdfDut
+from pytest_embedded_idf.unity_tester import CaseTester
 
 try:
     from idf_ci_utils import IDF_PATH
     from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS
     from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, IdfPytestEmbedded
     from idf_pytest.utils import format_case_id, get_target_marker_from_expr
-    from idf_unity_tester import CaseTester
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
     from idf_ci_utils import IDF_PATH
     from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS
     from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, IdfPytestEmbedded
     from idf_pytest.utils import format_case_id, get_target_marker_from_expr
-    from idf_unity_tester import CaseTester
 
 try:
     import common_test_methods  # noqa: F401
@@ -69,8 +69,8 @@ def session_tempdir() -> str:
 
 
 @pytest.fixture
-def case_tester(dut: IdfDut, **kwargs):  # type: ignore
-    yield CaseTester(dut, **kwargs)
+def case_tester(unity_tester: CaseTester) -> CaseTester:
+    return unity_tester
 
 
 @pytest.fixture
@@ -87,7 +87,17 @@ def test_func_name(request: FixtureRequest) -> str:
 @pytest.fixture
 def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
     is_qemu = request._pyfuncitem.get_closest_marker('qemu') is not None
-    return format_case_id(target, config, request.node.originalname, is_qemu=is_qemu)  # type: ignore
+    if hasattr(request._pyfuncitem, 'callspec'):
+        params = deepcopy(request._pyfuncitem.callspec.params)  # type: ignore
+    else:
+        params = {}
+
+    filtered_params = {}
+    for k, v in params.items():
+        if k not in request.session._fixturemanager._arg2fixturedefs:  # type: ignore
+            filtered_params[k] = v  # not fixture ones
+
+    return format_case_id(target, config, request.node.originalname, is_qemu=is_qemu, params=filtered_params)  # type: ignore
 
 
 @pytest.fixture
@@ -133,6 +143,11 @@ def junit_properties(test_case_name: str, record_xml_attribute: Callable[[str, o
     This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
     """
     record_xml_attribute('name', test_case_name)
+
+
+@pytest.fixture(autouse=True)
+def set_test_case_name(request: FixtureRequest, test_case_name: str) -> None:
+    request.node.funcargs['test_case_name'] = test_case_name
 
 
 ######################

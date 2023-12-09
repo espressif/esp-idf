@@ -52,115 +52,117 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 This is the console output on successful connection:
 
 ```
-I (322) BTDM_INIT: BT controller compile version [05195c9]
-I (322) phy_init: phy_version 912,d001756,Jun  2 2022,16:28:07
-I (362) system_api: Base MAC address is not set
-I (362) system_api: read default base MAC address from EFUSE
-I (362) BTDM_INIT: Bluetooth MAC: 84:f7:03:05:a5:f6
+I (459) NimBLE_BLE_PHY_PRPH: BLE Host Task Started
+I (459) NimBLE: Device Address:
+I (459) NimBLE: 60:55:f9:f7:3e:23
+I (469) NimBLE:
 
-I (362) NimBLE_BLE_PHY_PRPH: BLE Host Task Started
-I (372) NimBLE: Device Address:
-I (372) NimBLE: 84:f7:03:05:a5:f6
-I (382) NimBLE:
+I (469) NimBLE: Default LE PHY set successfully
+I (479) NimBLE: GAP procedure initiated: extended advertise; instance=1
 
-I (382) uart: queue free spaces: 8
-I (4782) NimBLE: connection established; status=0
-I (4782) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (4782) NimBLE: 84:f7:03:05:a5:f6
-I (4782) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (4792) NimBLE: 84:f7:03:05:a5:f6
-I (4792) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (4802) NimBLE: 84:f7:03:08:4d:8e
-I (4802) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (4812) NimBLE: 84:f7:03:08:4d:8e
-I (4812) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (479) uart: queue free spaces: 8
+I (489) main_task: Returned from app_main()
+I (599) NimBLE: connection established; status=0
+I (599) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
+I (599) NimBLE: 60:55:f9:f7:3e:23
+I (599) NimBLE:  our_id_addr_type=0 our_id_addr=
+I (609) NimBLE: 60:55:f9:f7:3e:23
+I (609) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
+I (619) NimBLE: 60:55:f9:f7:3e:25
+I (619) NimBLE:  peer_id_addr_type=0 peer_id_addr=
+I (619) NimBLE: 60:55:f9:f7:3e:25
+I (629) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
 
-I (4822) NimBLE:
+I (639) NimBLE:
 
-I (4822) NimBLE: advertise complete; reason=0
-I (4832) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=1 rx_phy = 0
+I (639) NimBLE: advertise complete; reason=0
+I (1749) NimBLE: disconnect; reason=531
+I (1749) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
+I (1749) NimBLE: 60:55:f9:f7:3e:23
+I (1749) NimBLE:  our_id_addr_type=0 our_id_addr=
+I (1759) NimBLE: 60:55:f9:f7:3e:23
+I (1759) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
+I (1759) NimBLE: 60:55:f9:f7:3e:25
+I (1769) NimBLE:  peer_id_addr_type=0 peer_id_addr=
+I (1769) NimBLE: 60:55:f9:f7:3e:25
+I (1779) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
 
-I (5322) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=2 rx_phy = 2
+I (1789) NimBLE:
 
-I (5732) NimBLE: disconnect; reason=531
-I (5732) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (5732) NimBLE: 84:f7:03:05:a5:f6
-I (5732) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (5742) NimBLE: 84:f7:03:05:a5:f6
-I (5742) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (5752) NimBLE: 84:f7:03:08:4d:8e
-I (5752) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (5762) NimBLE: 84:f7:03:08:4d:8e
-I (5762) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (1789) NimBLE: GAP procedure initiated: extended advertise; instance=1
 
-I (5772) NimBLE:
+I (1809) NimBLE: connection established; status=0
+I (1809) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
+I (1809) NimBLE: 60:55:f9:f7:3e:23
+I (1819) NimBLE:  our_id_addr_type=0 our_id_addr=
+I (1819) NimBLE: 60:55:f9:f7:3e:23
+I (1819) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
+I (1829) NimBLE: 60:55:f9:f7:3e:25
+I (1829) NimBLE:  peer_id_addr_type=0 peer_id_addr=
+I (1839) NimBLE: 60:55:f9:f7:3e:25
+I (1839) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
 
-I (5772) NimBLE: Default LE PHY set successfully
-I (5822) NimBLE: connection established; status=0
-I (5822) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (5822) NimBLE: 84:f7:03:05:a5:f6
-I (5822) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (5832) NimBLE: 84:f7:03:05:a5:f6
-I (5832) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (5842) NimBLE: 84:f7:03:08:4d:8e
-I (5842) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (5852) NimBLE: 84:f7:03:08:4d:8e
-I (5852) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (1849) NimBLE:
 
-I (5862) NimBLE:
+I (1859) NimBLE: advertise complete; reason=0
+I (3009) NimBLE: disconnect; reason=531
+I (3009) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
+I (3009) NimBLE: 60:55:f9:f7:3e:23
+I (3009) NimBLE:  our_id_addr_type=0 our_id_addr=
+I (3019) NimBLE: 60:55:f9:f7:3e:23
+I (3019) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
+I (3029) NimBLE: 60:55:f9:f7:3e:25
+I (3029) NimBLE:  peer_id_addr_type=0 peer_id_addr=
+I (3039) NimBLE: 60:55:f9:f7:3e:25
+I (3039) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
 
-I (5862) NimBLE: advertise complete; reason=0
-I (5872) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=1 rx_phy = 0
+I (3049) NimBLE:
 
-I (6322) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=2 rx_phy = 2
+I (3059) NimBLE: GAP procedure initiated: extended advertise; instance=1
 
-I (6782) NimBLE: disconnect; reason=531
-I (6782) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (6782) NimBLE: 84:f7:03:05:a5:f6
-I (6782) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (6792) NimBLE: 84:f7:03:05:a5:f6
-I (6792) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (6802) NimBLE: 84:f7:03:08:4d:8e
-I (6802) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (6812) NimBLE: 84:f7:03:08:4d:8e
-I (6812) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (3079) NimBLE: connection established; status=0
+I (3079) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
+I (3079) NimBLE: 60:55:f9:f7:3e:23
+I (3079) NimBLE:  our_id_addr_type=0 our_id_addr=
+I (3089) NimBLE: 60:55:f9:f7:3e:23
+I (3089) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
+I (3099) NimBLE: 60:55:f9:f7:3e:25
+I (3099) NimBLE:  peer_id_addr_type=0 peer_id_addr=
+I (3109) NimBLE: 60:55:f9:f7:3e:25
+I (3109) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
 
-I (6822) NimBLE:
+I (3119) NimBLE:
 
-I (6822) NimBLE: Default LE PHY set successfully
-I (6872) NimBLE: connection established; status=0
-I (6872) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (6872) NimBLE: 84:f7:03:05:a5:f6
-I (6872) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (6882) NimBLE: 84:f7:03:05:a5:f6
-I (6882) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (6892) NimBLE: 84:f7:03:08:4d:8e
-I (6892) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (6902) NimBLE: 84:f7:03:08:4d:8e
-I (6902) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
-
-I (6912) NimBLE:
-
-I (6912) NimBLE: advertise complete; reason=0
-I (6922) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=1 rx_phy = 0
-
-I (7372) NimBLE: LE PHY Update completed; status=0 conn_handle=1 tx_phy=3 rx_phy = 3
-
-I (7832) NimBLE: disconnect; reason=531
-I (7832) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
-I (7832) NimBLE: 84:f7:03:05:a5:f6
-I (7832) NimBLE:  our_id_addr_type=0 our_id_addr=
-I (7842) NimBLE: 84:f7:03:05:a5:f6
-I (7842) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
-I (7852) NimBLE: 84:f7:03:08:4d:8e
-I (7852) NimBLE:  peer_id_addr_type=0 peer_id_addr=
-I (7862) NimBLE: 84:f7:03:08:4d:8e
-I (7862) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
+I (3129) NimBLE: advertise complete; reason=0
+I (4379) NimBLE: disconnect; reason=531
+I (4379) NimBLE: handle=1 our_ota_addr_type=0 our_ota_addr=
+I (4379) NimBLE: 60:55:f9:f7:3e:23
+I (4379) NimBLE:  our_id_addr_type=0 our_id_addr=
+I (4389) NimBLE: 60:55:f9:f7:3e:23
+I (4389) NimBLE:  peer_ota_addr_type=0 peer_ota_addr=
+I (4399) NimBLE: 60:55:f9:f7:3e:25
+I (4399) NimBLE:  peer_id_addr_type=0 peer_id_addr=
+I (4409) NimBLE: 60:55:f9:f7:3e:25
+I (4409) NimBLE:  conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
 
 I (7872) NimBLE:
 
-
 ```
+
+## Accepting connection directly on 2M / Coded Phy
+
+The example can also be configured to advertise directly on 2M auxillary PHY or CODED PHY
+
+In main.c file, in bleprph_on_sync function, set the s_current_phy to the intended phy.
+
+To advertise, using 2M Phy, set the s_current_phy to BLE_HCI_LE_PHY_2M_PREF_MASK.
+
+To advertise, using Coded Phy, set the s_current_phy to BLE_HCI_LE_PHY_CODED_PREF_MASK
+
+Recompile application and flash the image.
+
+Since , in this mode, the central will initiate direct connection, ensure that peripheral is already advertising, before initiating connection from the central device.
+
 
 ## Troubleshooting
 

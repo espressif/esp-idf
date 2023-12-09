@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,11 @@ ESP_EVENT_DECLARE_BASE(ESP_HTTP_CLIENT_EVENT);
 
 typedef struct esp_http_client *esp_http_client_handle_t;
 typedef struct esp_http_client_event *esp_http_client_event_handle_t;
+
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+// Forward declares transport handle item to keep the dependency private (even if ENABLE_CUSTOM_TRANSPORT=y)
+struct esp_transport_item_t;
+#endif
 
 /**
  * @brief   HTTP Client events id
@@ -77,6 +82,16 @@ typedef enum {
     HTTP_TRANSPORT_OVER_TCP,        /*!< Transport over tcp */
     HTTP_TRANSPORT_OVER_SSL,        /*!< Transport over ssl */
 } esp_http_client_transport_t;
+
+/*
+* @brief TLS Protocol version
+*/
+typedef enum {
+   ESP_HTTP_CLIENT_TLS_VER_ANY = 0,         /* No preference */
+   ESP_HTTP_CLIENT_TLS_VER_TLS_1_2 = 0x1,   /* (D)TLS 1.2 */
+   ESP_HTTP_CLIENT_TLS_VER_TLS_1_3 = 0x2,   /* (D)TLS 1.3 */
+   ESP_HTTP_CLIENT_TLS_VER_MAX,             /* to indicate max */
+} esp_http_client_proto_ver_t;
 
 typedef esp_err_t (*http_event_handle_cb)(esp_http_client_event_t *evt);
 
@@ -133,6 +148,11 @@ typedef struct {
     size_t                      client_key_len;      /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
     const char                  *client_key_password;      /*!< Client key decryption password string */
     size_t                      client_key_password_len;   /*!< String length of the password pointed to by client_key_password */
+    esp_http_client_proto_ver_t tls_version;         /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+    bool                        use_ecdsa_peripheral;       /*!< Use ECDSA peripheral to use private key. */
+    uint8_t                     ecdsa_key_efuse_blk;        /*!< The efuse block where ECDSA key is stored. */
+#endif
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */
@@ -159,6 +179,15 @@ typedef struct {
     struct ifreq                *if_name;            /*!< The name of interface for data to go through. Use the default interface without setting */
 #if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
     bool use_secure_element;                /*!< Enable this option to use secure element */
+#endif
+#if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+    void *ds_data;                          /*!< Pointer for digital signature peripheral context, see ESP-TLS Documentation for more details */
+#endif
+#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    bool save_client_session;
+#endif
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+    struct esp_transport_item_t *transport;
 #endif
 } esp_http_client_config_t;
 
@@ -592,6 +621,21 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
  *     - ESP_FAIL
  */
 esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client);
+
+/**
+ * @brief      On receiving a custom authentication header, this API can be invoked to set the
+ *             authentication information from the header. This API can be called from the event
+ *             handler.
+ *
+ * @param[in]  client       The esp_http_client handle
+ * @param[in]  auth_data    The authentication data received in the header
+ * @param[in]  len          length of auth_data.
+ *
+ * @return
+ *      - ESP_ERR_INVALID_ARG
+ *      - ESP_OK
+ */
+esp_err_t esp_http_client_set_auth_data(esp_http_client_handle_t client, const char *auth_data, int len);
 
 /**
  * @brief      On receiving HTTP Status code 401, this API can be invoked to add authorization

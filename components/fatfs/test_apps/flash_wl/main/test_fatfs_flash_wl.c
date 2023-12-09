@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/unistd.h>
+#include <sys/stat.h>
 #include "unity.h"
 #include "esp_partition.h"
 #include "esp_log.h"
@@ -58,6 +59,30 @@ TEST_CASE("(WL) can format when the FAT is mounted already", "[fatfs][wear_level
     test_fatfs_create_file_with_text("/spiflash/hello.txt", fatfs_test_hello_str);
     test_fatfs_pread_file("/spiflash/hello.txt");
     test_teardown();
+}
+
+TEST_CASE("(WL) can format specified FAT when more are mounted", "[fatfs][wear_levelling][timeout=180]")
+{
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5,
+    };
+    wl_handle_t s_test_wl_handle1;
+    wl_handle_t s_test_wl_handle2;
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash1", "storage", &mount_config, &s_test_wl_handle1));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash2", "storage2", &mount_config, &s_test_wl_handle2));
+
+    test_fatfs_create_file_with_text("/spiflash1/hello.txt", fatfs_test_hello_str);
+    test_fatfs_create_file_with_text("/spiflash2/hello.txt", fatfs_test_hello_str);
+
+    TEST_ESP_OK(esp_vfs_fat_spiflash_format_rw_wl("/spiflash2", "storage2"));
+
+    FILE* f = fopen("/spiflash2/hello.txt", "r");
+    TEST_ASSERT_NULL(f); // File is erased on the formatted FAT
+    test_fatfs_pread_file("/spiflash1/hello.txt"); // File is still readable on the other FAT
+
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash1", s_test_wl_handle1));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash2", s_test_wl_handle2));
 }
 
 TEST_CASE("(WL) can create and write file", "[fatfs][wear_levelling]")
@@ -274,3 +299,14 @@ TEST_CASE("FATFS prefers SPI RAM for allocations", "[fatfs]")
     test_teardown();
 }
 #endif // CONFIG_SPIRAM
+
+#if CONFIG_FATFS_IMMEDIATE_FSYNC
+
+TEST_CASE("Size is correct after write when immediate fsync is enabled", "[fatfs]")
+{
+    test_setup();
+    test_fatfs_size("/spiflash/size.txt", "random text\n preferably something relatively long\n");
+    test_teardown();
+}
+
+#endif // CONFIG_FATFS_IMMEDIATE_FSYNC

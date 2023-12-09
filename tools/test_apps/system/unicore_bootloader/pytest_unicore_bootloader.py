@@ -9,6 +9,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['multicore'], indirect=True)
 def test_multicore_app_and_unicore_bootloader(dut: Dut) -> None:
@@ -25,6 +26,7 @@ def test_multicore_app_and_unicore_bootloader(dut: Dut) -> None:
 
 @pytest.mark.esp32
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['unicore'], indirect=True)
 def test_unicore_app_and_multicore_bootloader(dut: Dut) -> None:

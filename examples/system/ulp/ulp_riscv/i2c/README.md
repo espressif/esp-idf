@@ -7,12 +7,27 @@ This example demonstrates how to use the RTC I2C peripheral from the ULP RISC-V 
 
 The ULP program is based on the BMP180 Temperature and Pressure sensor (https://cz.mouser.com/datasheet/2/783/BST-BMP180-DS000-1509579.pdf) which has an I2C interface. The main CPU initializes the RTC I2C peripheral, the BMP180 sensor and loads the ULP program. It then goes into deep sleep.
 
-The ULP program periodically measures the temperature and pressure values from the BMP180 sensor and wakesup the main CPU when the values are above a certain thershold.
+The ULP program periodically measures the temperature and pressure values from the BMP180 sensor and wakes up the main CPU when the values are above a certain threshold.
+
+## How to use example
+
 ### Hardware Required
 
 * A development board with a SOC which has a RISC-V ULP coprocessor (e.g., ESP32-S2 Saola)
 * A BMP180 sensor module
 * A USB cable for power supply and programming
+
+#### Pin Assignment:
+
+**Note:** The following pin assignments are used by default.
+
+|                             | SDA   | SCL   |
+| --------------------------- | ------| ------|
+| ESP32-S2/S3 RTC I2C Master  | GPIO3 | GPIO2 |
+| BMP180 Sensor               | SDA   | SCL   |
+
+**Note:** The SDA line can only be configured to use either GPIO1 or GPIO3 and the SCL line can only be configured to use either GPIO0 or GPIO2.
+**Note:** This example enables the internal pull-up resistors for the SDA/SCL lines by default.
 
 ## Example output
 

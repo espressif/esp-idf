@@ -294,7 +294,6 @@ Related Documents
 
     establish-serial-connection
     flashing-troubleshooting
-    ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html

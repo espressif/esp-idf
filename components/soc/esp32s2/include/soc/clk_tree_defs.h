@@ -415,6 +415,18 @@ typedef enum {
     LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
 } soc_periph_ledc_clk_src_legacy_t;
 
+//////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
+typedef enum {
+    CLKOUT_SIG_PLL      = 1,    /*!< PLL_CLK is the output of crystal oscillator frequency multiplier */
+    CLKOUT_SIG_RC_SLOW  = 4,    /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
+    CLKOUT_SIG_XTAL     = 5,    /*!< Main crystal oscillator clock */
+    CLKOUT_SIG_APLL     = 6,    /*!< Divided by PLL, frequency is configurable */
+    CLKOUT_SIG_REF_TICK = 12,   /*!< Divided by APB clock, usually be 1MHz */
+    CLKOUT_SIG_PLL_F80M = 13,   /*!< From PLL, usually be 80MHz */
+    CLKOUT_SIG_RC_FAST  = 14,   /*!< RC fast clock, about 17.5MHz */
+    CLKOUT_SIG_INVALID  = 0xFF,
+} soc_clkout_sig_id_t;
+
 #ifdef __cplusplus
 }
 #endif

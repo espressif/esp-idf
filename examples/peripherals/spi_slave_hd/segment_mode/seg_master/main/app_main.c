@@ -14,34 +14,15 @@
 #include "driver/spi_master.h"
 #include "esp_serial_slave_link/essl_spi.h"
 
-//Pin setting
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your Hardware spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_MOSI    11
 #define GPIO_MISO    13
 #define GPIO_SCLK    12
 #define GPIO_CS      10
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-#define GPIO_MOSI    7
-#define GPIO_MISO    2
-#define GPIO_SCLK    6
-#define GPIO_CS      10
-
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define GPIO_MOSI    19
-#define GPIO_MISO    20
-#define GPIO_SCLK    18
-#define GPIO_CS      9
-
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 5
-#define GPIO_MISO 0
-#define GPIO_SCLK 4
-#define GPIO_CS 1
-#endif
-
-#define MASTER_HOST SPI2_HOST
+#define MASTER_HOST  SPI2_HOST
 #define DMA_CHAN     SPI_DMA_CH_AUTO
 
 #define TX_SIZE_MIN  40
@@ -68,7 +49,6 @@
 
 static const char TAG[] = "SEG_MASTER";
 
-
 static void get_spi_bus_default_config(spi_bus_config_t *bus_cfg)
 {
     memset(bus_cfg, 0x0, sizeof(spi_bus_config_t));
@@ -85,7 +65,7 @@ static void get_spi_bus_default_config(spi_bus_config_t *bus_cfg)
 static void get_spi_device_default_config(spi_device_interface_config_t *dev_cfg)
 {
     memset(dev_cfg, 0x0, sizeof(spi_device_interface_config_t));
-    dev_cfg->clock_speed_hz = 10*1000*1000;
+    dev_cfg->clock_speed_hz = 10 * 1000 * 1000;
     dev_cfg->mode = 0;
     dev_cfg->spics_io_num = GPIO_CS;
     dev_cfg->cs_ena_pretrans = 0;
@@ -113,7 +93,6 @@ static void init_master_hd(spi_device_handle_t* out_spi)
     get_spi_device_default_config(&dev_cfg);
     ESP_ERROR_CHECK(spi_bus_add_device(MASTER_HOST, &dev_cfg, out_spi));
 }
-
 
 //-------------------------------Function used for Master-Slave Synchronization---------------------------//
 //Wait for Slave to init the shared registers for its configurations, see the Helper Macros above

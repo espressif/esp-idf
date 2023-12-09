@@ -45,10 +45,12 @@ entries:
             multi_heap_poisoning:multi_heap_aligned_free (noflash)
             multi_heap_poisoning:multi_heap_realloc (noflash)
             multi_heap_poisoning:multi_heap_get_block_address (noflash)
-            multi_heap_poisoning:multi_heap_get_block_owner (noflash)
             multi_heap_poisoning:multi_heap_get_allocated_size (noflash)
             multi_heap_poisoning:multi_heap_internal_check_block_poisoning (noflash)
             multi_heap_poisoning:multi_heap_internal_poison_fill_region (noflash)
+            multi_heap_poisoning:multi_heap_aligned_alloc_offs (noflash)
+        else:
+            multi_heap:multi_heap_aligned_alloc_offs (noflash)
 
         if HEAP_POISONING_COMPREHENSIVE = y:
             multi_heap_poisoning:verify_fill_pattern (noflash)

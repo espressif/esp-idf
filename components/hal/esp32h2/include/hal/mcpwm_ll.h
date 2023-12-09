@@ -20,6 +20,7 @@
 #include "hal/mcpwm_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,6 +58,12 @@ extern "C" {
 #define MCPWM_LL_GEN_ACTION_TO_REG_CAL(action) ((uint8_t[]) {0, 1, 2, 3}[(action)])
 #define MCPWM_LL_BRAKE_MODE_TO_REG_VAL(mode)  ((uint8_t[]) {0, 1}[(mode)])
 
+// MCPWM ETM comparator event table
+#define MCPWM_LL_ETM_COMPARATOR_EVENT_TABLE(group, oper_id, cmpr_id, event)                           \
+    (uint32_t [1][MCPWM_CMPR_ETM_EVENT_MAX]){{                                                        \
+                            [MCPWM_CMPR_ETM_EVENT_EQUAL] = MCPWM_EVT_OP0_TEA + oper_id + 3 * cmpr_id, \
+    }}[group][event]
+
 /**
  * @brief The dead time module's clock source
  */
@@ -66,6 +73,30 @@ typedef enum {
 } mcpwm_ll_deadtime_clock_src_t;
 
 ////////////////////////////////////////MCPWM Group Specific////////////////////////////////////////////////////////////
+
+/**
+ * @brief Enable the bus clock for MCPWM module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void mcpwm_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    PCR.pwm_conf.pwm_clk_en = enable;
+}
+
+/**
+ * @brief Reset the MCPWM module
+ *
+ * @param group_id Group ID
+ */
+static inline void mcpwm_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    PCR.pwm_conf.pwm_rst_en = 1;
+    PCR.pwm_conf.pwm_rst_en = 0;
+}
 
 /**
  * @brief Set the clock source for MCPWM
@@ -216,13 +247,12 @@ static inline void mcpwm_ll_timer_set_clock_prescale(mcpwm_dev_t *mcpwm, int tim
  * @param peak Peak value
  * @param symmetric True to set symmetric peak value, False to set asymmetric peak value
  */
+__attribute__((always_inline))
 static inline void mcpwm_ll_timer_set_peak(mcpwm_dev_t *mcpwm, int timer_id, uint32_t peak, bool symmetric)
 {
     if (!symmetric) { // in asymmetric mode, period = [0,peak-1]
-        HAL_ASSERT(peak > 0 && peak <= MCPWM_LL_MAX_COUNT_VALUE);
         HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak - 1);
     } else { // in symmetric mode, period = [0,peak-1] + [peak,1]
-        HAL_ASSERT(peak < MCPWM_LL_MAX_COUNT_VALUE);
         HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak);
     }
 }
@@ -1593,6 +1623,25 @@ static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int channel
     HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->cap_chn_cfg[channel], capn_prescale, prescale - 1);
 }
 
+//////////////////////////////////////////MCPWM ETM Specific////////////////////////////////////////////////////////////
+
+/**
+ * @brief Enable comparator ETM event
+ *
+ * @param mcpwm Peripheral instance address
+ * @param operator_id Operator ID, index from 0 to 2
+ * @param cmpr_id Comparator ID, index from 0 to 2
+ * @param en True: enable ETM module, False: disable ETM module
+ */
+static inline void mcpwm_ll_etm_enable_comparator_event(mcpwm_dev_t *mcpwm, int operator_id, int cmpr_id, bool en)
+{
+    if (en) {
+        mcpwm->evt_en.val |= 1 << (operator_id + 3 * cmpr_id + 9) ;
+    } else {
+        mcpwm->evt_en.val &= ~(1 << (operator_id + 3 * cmpr_id + 9)) ;
+    }
+}
+
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////
 /////////////////////////////The following functions are only used by the legacy driver/////////////////////////////////
 /////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
@@ -1606,7 +1655,8 @@ static inline uint32_t mcpwm_ll_group_get_clock_prescale(mcpwm_dev_t *mcpwm)
 
 static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id)
 {
-    mcpwm_timer_cfg0_reg_t cfg0 = mcpwm->timer[timer_id].timer_cfg0;
+    mcpwm_timer_cfg0_reg_t cfg0;
+    cfg0.val = mcpwm->timer[timer_id].timer_cfg0.val;
     return cfg0.timer_prescale + 1;
 }
 

@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_log.h"
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -39,6 +40,8 @@ static esp_err_t hmac_jtag_disable(void)
 #if !CONFIG_IDF_TARGET_ESP32S2
 
 #include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
+#include "hal/ds_ll.h"
 #include "esp_private/periph_ctrl.h"
 
 #define SHA256_BLOCK_SZ 64
@@ -70,9 +73,17 @@ static esp_err_t hmac_calculate(hmac_key_id_t key_id, const void *message, size_
 {
     const uint8_t *message_bytes = (const uint8_t *)message;
 
-    periph_module_enable(PERIPH_HMAC_MODULE);
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(true);
+        hmac_ll_reset_register();
+    }
+
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(true);
+        ds_ll_reset_register();
+    }
 
     hmac_hal_start();
 
@@ -124,9 +135,15 @@ static esp_err_t hmac_calculate(hmac_key_id_t key_id, const void *message, size_
 
     hmac_hal_read_result_256(hmac);
 
-    periph_module_disable(PERIPH_DS_MODULE);
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(false);
+    }
+
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
+
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(false);
+    }
 
     return ESP_OK;
 }

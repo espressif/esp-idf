@@ -210,6 +210,7 @@ ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32D & ESP32-WROOM-32U 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-WROOM-32E & ESP32-WROOM-32UE 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-DA 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-da_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER-B 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)

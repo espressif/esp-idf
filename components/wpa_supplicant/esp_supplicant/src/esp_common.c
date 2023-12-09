@@ -22,6 +22,7 @@
 #include "esp_wnm.h"
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
+#include "esp_private/wifi.h"
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -46,7 +47,7 @@ static bool s_supplicant_task_init_done;
 #define SUPPLICANT_TASK_STACK_SIZE (6144 + TASK_STACK_SIZE_ADD)
 
 static int handle_action_frm(u8 *frame, size_t len,
-			     u8 *sender, u32 rssi, u8 channel)
+			     u8 *sender, int8_t rssi, u8 channel)
 {
 	struct ieee_mgmt_frame *frm = os_malloc(sizeof(struct ieee_mgmt_frame) + len);
 
@@ -72,7 +73,7 @@ static int handle_action_frm(u8 *frame, size_t len,
 
 #if defined(CONFIG_IEEE80211KV)
 static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
-			     u8 *payload, size_t len, u32 rssi)
+			     u8 *payload, size_t len, int8_t rssi)
 {
 	if (payload[0] == WLAN_RRM_NEIGHBOR_REPORT_RESPONSE) {
 		/* neighbor report parsing */
@@ -88,7 +89,7 @@ static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
 	}
 }
 
-static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, u32 rssi, u8 channel)
+static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 channel)
 {
 	u8 category;
 	u8 bssid[ETH_ALEN];
@@ -214,7 +215,7 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 
 #ifdef CONFIG_IEEE80211R
 static int handle_auth_frame(u8 *frame, size_t len,
-			     u8 *sender, u32 rssi, u8 channel)
+			     u8 *sender, int8_t rssi, u8 channel)
 {
 	if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK) {
 		if (gWpaSm.ft_protocol) {
@@ -229,7 +230,7 @@ static int handle_auth_frame(u8 *frame, size_t len,
 }
 
 static int handle_assoc_frame(u8 *frame, size_t len,
-			      u8 *sender, u32 rssi, u8 channel)
+			      u8 *sender, int8_t rssi, u8 channel)
 {
 	if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_PSK) {
 		if (gWpaSm.ft_protocol) {
@@ -254,17 +255,17 @@ void esp_supplicant_unset_all_appie(void)
 }
 
 static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
-				   u32 rssi, u8 channel, u64 current_tsf)
+				   int8_t rssi, u8 channel, u64 current_tsf)
 {
 	int ret = 0;
 
 	switch (type) {
-#if defined(CONFIG_IEEE80211R) || defined(CONFIG_IEEE80211KV) || defined(CONFIG_SAE_PK)
+#if defined(CONFIG_IEEE80211R) || defined(CONFIG_IEEE80211KV)
 	case WLAN_FC_STYPE_BEACON:
 	case WLAN_FC_STYPE_PROBE_RESP:
 		ret = esp_handle_beacon_probe(type, frame, len, sender, rssi, channel, current_tsf);
 		break;
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 #ifdef CONFIG_IEEE80211R
 	case WLAN_FC_STYPE_AUTH:
 		ret = handle_auth_frame(frame, len, sender, rssi, channel);
@@ -327,7 +328,7 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 	int ret = 0;
 
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 #ifdef CONFIG_SUPPLICANT_TASK
 	if (!s_supplicant_api_lock) {
 		s_supplicant_api_lock = os_recursive_mutex_create();
@@ -360,7 +361,7 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 #endif /* CONFIG_IEEE80211KV */
 	esp_scan_init(wpa_s);
 
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 	wpa_s->type = 0;
 	wpa_s->subtype = 0;
 	wpa_s->type |= (1 << WLAN_FC_STYPE_ASSOC_RESP) | (1 << WLAN_FC_STYPE_REASSOC_RESP) | (1 << WLAN_FC_STYPE_AUTH);
@@ -385,13 +386,13 @@ void esp_supplicant_common_deinit(void)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 	esp_scan_deinit(wpa_s);
 #ifdef CONFIG_IEEE80211KV
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
 #endif /* CONFIG_IEEE80211KV */
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 	if (wpa_s->type) {
 		wpa_s->type = 0;
 		esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
@@ -652,6 +653,8 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 	uint8_t ext_caps_ie[5] = {0};
 	uint8_t ext_caps_ie_len = 3;
 	uint8_t *pos = ext_caps_ie;
+	wifi_ioctl_config_t cfg = {0};
+	esp_err_t err = 0;
 
 	if (!esp_wifi_is_btm_enabled_internal(WIFI_IF_STA)) {
 		return 0;
@@ -659,8 +662,14 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 
 	*pos++ = WLAN_EID_EXT_CAPAB;
 	*pos++ = ext_caps_ie_len;
-	*pos++ = 0;
-	*pos++ = 0;
+
+	err = esp_wifi_internal_ioctl(WIFI_IOCTL_GET_STA_HT2040_COEX, &cfg);
+	if (err == ESP_OK && cfg.data.ht2040_coex.enable) {
+		*pos++ |= BIT(WLAN_EXT_CAPAB_20_40_COEX);
+	} else {
+		*pos++ = 0;
+	}
+	*pos ++ = 0;
 #define CAPAB_BSS_TRANSITION BIT(3)
 	*pos |= CAPAB_BSS_TRANSITION;
 #undef CAPAB_BSS_TRANSITION
@@ -872,9 +881,6 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
 	}
 	pos = ie;
 #ifdef CONFIG_IEEE80211KV
-	ie_len = get_extended_caps_ie(pos, len);
-	pos += ie_len;
-	len -= ie_len;
 	ie_len = get_rm_enabled_ie(pos, len);
 	pos += ie_len;
 	len -= ie_len;

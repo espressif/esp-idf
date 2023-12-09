@@ -46,9 +46,15 @@ static void test_phy_rtc_init(void)
         ret = nvs_flash_init();
     }
     TEST_ESP_OK(ret);
-
-    esp_phy_enable();
-
+#if CONFIG_ESP_WIFI_ENABLED
+    esp_phy_enable(PHY_MODEM_WIFI);
+#endif
+#if CONFIG_BT_ENABLED
+    esp_phy_enable(PHY_MODEM_BT);
+#endif
+#if CONFIG_IEEE802154_ENABLED
+    esp_phy_enable(PHY_MODEM_IEEE802154);
+#endif
     //must run here, not blocking in above code
     TEST_ASSERT(1);
     nvs_flash_deinit();

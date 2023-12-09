@@ -56,18 +56,21 @@ typedef struct {
 } wifi_country_t;
 
 /* Strength of authmodes */
-/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA2_ENTERPRISE < WPA3_PSK = WPA2_WPA3_PSK */
+/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA3_PSK = WPA2_WPA3_PSK < WPA3_EXT_PSK */
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
     WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
     WIFI_AUTH_WPA_PSK,          /**< authenticate mode : WPA_PSK */
     WIFI_AUTH_WPA2_PSK,         /**< authenticate mode : WPA2_PSK */
     WIFI_AUTH_WPA_WPA2_PSK,     /**< authenticate mode : WPA_WPA2_PSK */
-    WIFI_AUTH_WPA2_ENTERPRISE,  /**< authenticate mode : WPA2_ENTERPRISE */
+    WIFI_AUTH_ENTERPRISE,       /**< authenticate mode : WiFi EAP security */
+    WIFI_AUTH_WPA2_ENTERPRISE = WIFI_AUTH_ENTERPRISE,  /**< authenticate mode : WiFi EAP security */
     WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
     WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
     WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
     WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
+    WIFI_AUTH_WPA3_ENT_192,     /**< authenticate mode : WPA3_ENT_SUITE_B_192_BIT */
+    WIFI_AUTH_WPA3_EXT_PSK,     /**< authenticate mode : WPA3_PSK_EXT_KEY */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
@@ -130,6 +133,9 @@ typedef enum {
     WIFI_REASON_ROAMING                            = 207,
     WIFI_REASON_ASSOC_COMEBACK_TIME_TOO_LONG       = 208,
     WIFI_REASON_SA_QUERY_TIMEOUT                   = 209,
+    WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY  = 210,
+    WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD  = 211,
+    WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD      = 212,
 } wifi_err_reason_t;
 
 typedef enum {
@@ -208,7 +214,7 @@ typedef struct {
     uint8_t ssid[33];                     /**< SSID of AP */
     uint8_t primary;                      /**< channel of AP */
     wifi_second_chan_t second;            /**< secondary channel of AP */
-    int8_t  rssi;                         /**< signal strength of AP */
+    int8_t  rssi;                         /**< signal strength of AP. Note that in some rare cases where signal strength is very strong, rssi values can be slightly positive */
     wifi_auth_mode_t authmode;            /**< authmode of AP */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of AP */
     wifi_cipher_type_t group_cipher;      /**< group cipher of AP */
@@ -447,24 +453,26 @@ typedef struct {
     signed rssi:8;                /**< Received Signal Strength Indicator(RSSI) of packet. unit: dBm */
     unsigned rate:5;              /**< PHY rate encoding of the packet. Only valid for non HT(11bg) packet */
     unsigned :1;                  /**< reserved */
-    unsigned sig_mode:2;          /**< 0: non HT(11bg) packet; 1: HT(11n) packet; 3: VHT(11ac) packet */
+    unsigned sig_mode:2;          /**< Protocol of the reveived packet, 0: non HT(11bg) packet; 1: HT(11n) packet; 3: VHT(11ac) packet */
     unsigned :16;                 /**< reserved */
     unsigned mcs:7;               /**< Modulation Coding Scheme. If is HT(11n) packet, shows the modulation, range from 0 to 76(MSC0 ~ MCS76) */
     unsigned cwb:1;               /**< Channel Bandwidth of the packet. 0: 20MHz; 1: 40MHz */
     unsigned :16;                 /**< reserved */
-    unsigned smoothing:1;         /**< reserved */
-    unsigned not_sounding:1;      /**< reserved */
+    unsigned smoothing:1;         /**< Set to 1 indicates that channel estimate smoothing is recommended.
+                                       Set to 0 indicates that only per-carrierindependent (unsmoothed) channel estimate is recommended. */
+    unsigned not_sounding:1;      /**< Set to 0 indicates that PPDU is a sounding PPDU. Set to 1indicates that the PPDU is not a sounding PPDU.
+                                       sounding PPDU is used for channel estimation by the request receiver */
     unsigned :1;                  /**< reserved */
     unsigned aggregation:1;       /**< Aggregation. 0: MPDU packet; 1: AMPDU packet */
     unsigned stbc:2;              /**< Space Time Block Code(STBC). 0: non STBC packet; 1: STBC packet */
-    unsigned fec_coding:1;        /**< Flag is set for 11n packets which are LDPC */
+    unsigned fec_coding:1;        /**< Forward Error Correction(FEC). Flag is set for 11n packets which are LDPC */
     unsigned sgi:1;               /**< Short Guide Interval(SGI). 0: Long GI; 1: Short GI */
 #if CONFIG_IDF_TARGET_ESP32
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
     unsigned :8;                  /**< reserved */
 #endif
-    unsigned ampdu_cnt:8;         /**< ampdu cnt */
+    unsigned ampdu_cnt:8;         /**< the number of subframes aggregated in AMPDU */
     unsigned channel:4;           /**< primary channel on which this packet is received */
     unsigned secondary_channel:4; /**< secondary channel on which this packet is received. 0: none; 1: above; 2: below */
     unsigned :8;                  /**< reserved */
@@ -558,6 +566,7 @@ typedef struct {
     bool channel_filter_en; /**< enable to turn on channel filter to smooth adjacent sub-carrier. Disable it to keep independence of adjacent sub-carrier. Default enabled */
     bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually. Default false */
     uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
+    bool dump_ack_en;       /**< enable to dump 802.11 ACK frame, default disabled */
 } wifi_csi_config_t;
 #endif
 
@@ -569,9 +578,12 @@ typedef struct {
     wifi_pkt_rx_ctrl_t rx_ctrl;/**< received packet radio metadata header of the CSI data */
     uint8_t mac[6];            /**< source MAC address of the CSI data */
     uint8_t dmac[6];           /**< destination MAC address of the CSI data */
-    bool first_word_invalid;   /**< first four bytes of the CSI data is invalid or not */
-    int8_t *buf;               /**< buffer of CSI data */
-    uint16_t len;              /**< length of CSI data */
+    bool first_word_invalid;   /**< first four bytes of the CSI data is invalid or not, true indicates the first four bytes is invalid due to hardware limition */
+    int8_t *buf;               /**< valid buffer of CSI data */
+    uint16_t len;              /**< valid length of CSI data */
+    uint8_t *hdr;              /**< header of the wifi packet */
+    uint8_t *payload;          /**< payload of the wifi packet */
+    uint16_t payload_len;      /**< payload len of the wifi packet */
 } wifi_csi_info_t;
 
 /**

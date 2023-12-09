@@ -16,7 +16,6 @@
 #endif
 
 #if SOC_GDMA_SUPPORTED
-#include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
 #endif
 

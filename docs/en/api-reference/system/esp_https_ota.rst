@@ -1,17 +1,17 @@
 ESP HTTPS OTA
 =============
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
-``esp_https_ota`` provides simplified APIs to perform firmware upgrades over HTTPS. It is an abstraction layer over existing OTA APIs.
+``esp_https_ota`` provides simplified APIs to perform firmware upgrades over HTTPS. It is an abstraction layer over the existing OTA APIs.
 
 Application Example
 -------------------
 
     .. code-block:: c
-
-    ::
 
         esp_err_t do_firmware_upgrade()
         {
@@ -35,25 +35,27 @@ Application Example
 Server Verification
 -------------------
 
-Please refer to :ref:`ESP-TLS: TLS Server Verification <esp_tls_server_verification>` for more information on server verification. The root certificate (in PEM format) needs to be provided to the :cpp:member:`esp_http_client_config_t::cert_pem` member.
+Please refer to :ref:`ESP-TLS: TLS Server Verification <esp_tls_server_verification>` for more information on server verification. The root certificate in PEM format needs to be provided to the :cpp:member:`esp_http_client_config_t::cert_pem` member.
 
 .. note::
 
-    The server-endpoint **root** certificate should be used for verification instead of any intermediate ones from the certificate chain. The reason is that the root certificate has the maximum validity and usually remains the same for a long period of time. Users can also use the ``ESP x509 Certificate Bundle`` feature for verification, which covers most of the trusted root certificates (using the :cpp:member:`esp_http_client_config_t::crt_bundle_attach` member).
+    The server-endpoint **root** certificate should be used for verification instead of any intermediate ones from the certificate chain. The reason is that the root certificate has the maximum validity and usually remains the same for a long period of time. Users can also use the :cpp:member:`esp_http_client_config_t::crt_bundle_attach` member for verification by the ``ESP x509 Certificate Bundle`` feature, which covers most of the trusted root certificates.
 
 Partial Image Download over HTTPS
 ---------------------------------
 
-To use partial image download feature, enable ``partial_http_download`` configuration in ``esp_https_ota_config_t``. When this configuration is enabled, firmware image will be downloaded in multiple HTTP requests of specified size. Maximum content length of each request can be specified by setting ``max_http_request_size`` to required value.
+To use the partial image download feature, enable ``partial_http_download`` configuration in ``esp_https_ota_config_t``. When this configuration is enabled, firmware image will be downloaded in multiple HTTP requests of specified sizes. Maximum content length of each request can be specified by setting ``max_http_request_size`` to the required value.
 
-This option is useful while fetching image from a service like AWS S3, where mbedTLS Rx buffer size (:ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`) can be set to lower value which is not possible without enabling this configuration.
+This option is useful while fetching image from a service like AWS S3, where mbedTLS Rx buffer size (:ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`) can be set to a lower value which is not possible without enabling this configuration.
 
-Default value of mbedTLS Rx buffer size is set to 16K. By using partial_http_download with max_http_request_size of 4K, size of mbedTLS Rx buffer can be reduced to 4K. With this configuration, memory saving of around 12K is expected.
+Default value of mbedTLS Rx buffer size is set to 16 KB. By using ``partial_http_download`` with ``max_http_request_size`` of 4 KB, size of mbedTLS Rx buffer can be reduced to 4 KB. With this configuration, memory saving of around 12 KB is expected.
+
 
 Signature Verification
 ----------------------
 
-For additional security, signature of OTA firmware images can be verified. For that, refer :ref:`secure-ota-updates`
+For additional security, signature of OTA firmware images can be verified. For more information， please refer to :ref:`secure-ota-updates`.
+
 
 Advanced APIs
 -------------
@@ -68,22 +70,22 @@ Example that uses advanced ESP_HTTPS_OTA APIs: :example:`system/ota/advanced_htt
 OTA Upgrades with Pre-Encrypted Firmware
 ----------------------------------------
 
-To perform OTA upgrades with Pre-Encrypted Firmware, please enable :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` in component menuconfig.
+To perform OTA upgrades with pre-encrypted firmware, please enable :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` in component menuconfig.
 
-Example that performs OTA upgrade with Pre-Encrypted Firmware: :example:`system/ota/pre_encrypted_ota`.
+Example that performs OTA upgrade with pre-encrypted firmware: :example:`system/ota/pre_encrypted_ota`.
+
 
 OTA System Events
 -----------------
 
-ESP HTTPS OTA has various events for which a handler can be triggered by :doc:`the Event Loop library <../system/esp_event>` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTPS OTA.
+ESP HTTPS OTA has various events for which a handler can be triggered by the :doc:`../system/esp_event` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps the event handling for ESP HTTPS OTA.
+
 :cpp:enum:`esp_https_ota_event_t` has all the events which can happen when performing OTA upgrade using ESP HTTPS OTA.
 
 Event Handler Example
 ^^^^^^^^^^^^^^^^^^^^^
 
     .. code-block:: c
-
-    ::
 
         /* Event handler for catching system events */
         static void event_handler(void* arg, esp_event_base_t event_base,
@@ -123,6 +125,7 @@ Event Handler Example
         }
 
 Expected data type for different ESP HTTPS OTA events in the system event loop:
+
     - ESP_HTTPS_OTA_START                     : ``NULL``
     - ESP_HTTPS_OTA_CONNECTED                 : ``NULL``
     - ESP_HTTPS_OTA_GET_IMG_DESC              : ``NULL``
@@ -132,6 +135,7 @@ Expected data type for different ESP HTTPS OTA events in the system event loop:
     - ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION     : ``esp_partition_subtype_t``
     - ESP_HTTPS_OTA_FINISH                    : ``NULL``
     - ESP_HTTPS_OTA_ABORT                     : ``NULL``
+
 
 API Reference
 -------------

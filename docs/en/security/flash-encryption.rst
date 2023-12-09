@@ -40,7 +40,7 @@ With flash encryption enabled, the following types of data are encrypted by defa
 - Partition Table
 - :ref:`nvs_encr_key_partition`
 - Otadata
-- All "app" type partitions
+- All ``app`` type partitions
 
 Other types of data can be encrypted conditionally:
 
@@ -180,7 +180,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b0000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG`` eFuse to 0xF. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Flash Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-  3. Fimware bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Firmware bootloader uses RNG (random) module to generate an AES-256 bit key and then writes it into the ``flash_encryption`` eFuse. The key cannot be accessed via software as the write and read protection bits for the ``flash_encryption`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  3. Fimware bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool), then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Firmware bootloader uses RNG (random) module to generate an AES-256 bit key and then writes it into the ``flash_encryption`` eFuse. The key cannot be accessed via software as the write and read protection bits for the ``flash_encryption`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
 
   4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -198,7 +198,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Auto Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-  3.Firmware bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Firmware bootloader uses RNG (random) module to generate an 256 bit or 512 bit key, depending on the value of :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two `BLOCK_KEYN` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two `BLOCK_KEYN` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  3. Firmware bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Firmware bootloader uses RNG (random) module to generate an 256 bit or 512 bit key, depending on the value of :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`, and then writes it into respectively one or two `BLOCK_KEYN` eFuses. The software also updates the ``KEY_PURPOSE_N`` for the blocks where the keys were stored. The key cannot be accessed via software as the write and read protection bits for one or two `BLOCK_KEYN` eFuses are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
 
   4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -242,7 +242,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
-  3. Firmware bootloader uses RNG (random) module to generate an 256 or 128 bit key (depends on :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`) and then writes it into `BLOCK_KEY0` eFuse. The software also updates the ``XTS_KEY_LENGTH_256`` according to the chosen option. The key cannot be accessed via software as the write and read protection bits for `BLOCK_KEY0` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software. If 128-bit flash encryption key is used, then only the lower 128 bits of the eFuse key block are read-protected, the remaining 128 bits are readable, which is required for secure boot. The entire eFuse block is write-protected. If the FE key is 256 bits long, then ``XTS_KEY_LENGTH_256`` is 1, otherwise it is 0. To prevent this eFuse from being accidentally changed in the future (from 0 to 1), we set a write-protect bit for the RELEASE mode. If a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process.
+  3. Firmware bootloader uses RNG (random) module to generate an 256 or 128 bit key (depends on :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`) and then writes it into `BLOCK_KEY0` eFuse. The software also updates the ``XTS_KEY_LENGTH_256`` according to the chosen option. The key cannot be accessed via software as the write and read protection bits for ``BLOCK_KEY0`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software. If 128-bit flash encryption key is used, then only the lower 128 bits of the eFuse key block are read-protected, the remaining 128 bits are readable, which is required for secure boot. The entire eFuse block is write-protected. If the FE key is 256 bits long, then ``XTS_KEY_LENGTH_256`` is 1, otherwise it is 0. To prevent this eFuse from being accidentally changed in the future (from 0 to 1), we set a write-protect bit for the RELEASE mode. If a valid key is already present in the eFuse (e.g., burned using espefuse tool) then the process of key generation is skipped and the same key is used for flash encryption process.
 
   4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -344,7 +344,7 @@ It is possible to pre-generate a flash encryption key on the host computer and b
 .. only:: esp32c2
 
     .. note::
-      
+
        Note that {IDF_TARGET_NAME} only has one eFuse key block for both Secure Boot and Flash Encryption keys. Therefore, writing the host-generated Flash Encryption key must be done with Secure Boot key (if used), otherwise Secure Boot cannot be used.
 
 To use a host generated key, take the following steps:
@@ -929,6 +929,7 @@ On the first boot, the flash encryption process burns by default the following e
     :SOC_EFUSE_DIS_PAD_JTAG and SOC_EFUSE_DIS_USB_JTAG: - ``DIS_PAD_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
     :SOC_EFUSE_HARD_DIS_JTAG and SOC_EFUSE_DIS_USB_JTAG: - ``HARD_DIS_JTAG`` and ``DIS_USB_JTAG`` which disables JTAG.
     - ``DIS_DIRECT_BOOT`` (old name ``DIS_LEGACY_SPI_BOOT``)  which disables direct boot mode
+    :SOC_EFUSE_DIS_DOWNLOAD_MSPI: - ``DIS_DOWNLOAD_MSPI`` which disables the MSPI access in download mode.
 
 However, before the first boot you can choose to keep any of these features enabled by burning only selected eFuses and write-protect the rest of eFuses with unset value 0. For example:
 

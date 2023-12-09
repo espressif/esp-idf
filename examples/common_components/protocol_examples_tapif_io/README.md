@@ -7,9 +7,11 @@ It could be used to route lwip traffic to host side network, typically when work
 
 ### Usage of the API
 
-1) Add the path to this component to the `EXTRA_COMPONENT_DIRS` in your project makefile
-```cmake
-list(APPEND EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/examples/common_components/tapif_io")
+1) Add the path to this component to as a dependency to the `main` component of your project using the following idf_component.yml file:
+```yaml
+dependencies:
+  tapif_io:
+    path: ${IDF_PATH}/examples/common_components/tapif_io
 ```
 2) Include lwip and linux side of the configuration
 ```cpp

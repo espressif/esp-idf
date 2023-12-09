@@ -16,7 +16,7 @@ extern "C" {
 #define ESP_EFUSE_ADC_CALIB_VER2     2
 #define ESP_EFUSE_ADC_CALIB_VER_MIN  ESP_EFUSE_ADC_CALIB_VER1
 #define ESP_EFUSE_ADC_CALIB_VER_MAX  ESP_EFUSE_ADC_CALIB_VER2
-#define VER2IDX(ver)    (ver - 1)    // Version number to index number of the array
+#define VER2IDX(ver)    ((ver) - 1)    // Version number to index number of the array
 /**
  * @brief Get the RTC calibration efuse version
  *

@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 #include "proxy_server.h"
 #include "mesh/main.h"
 #include "mesh/common.h"
+#include "heartbeat.h"
 
 #include "mesh_v1.1/utils.h"
 
@@ -2513,7 +2514,7 @@ static void node_identity_set(struct bt_mesh_model *model,
                  * any subnet is 0x01, then the value of the Private Node
                  * Identity state shall be Disable (0x00).
                  */
-                disable_all_private_node_identity();
+                bt_mesh_proxy_private_identity_disable();
 #endif
                 bt_mesh_proxy_server_identity_start(sub);
             } else {
@@ -3565,41 +3566,6 @@ void bt_mesh_cfg_reset(bool store)
     (void)memset(labels, 0, sizeof(labels));
 }
 
-void bt_mesh_heartbeat(uint16_t src, uint16_t dst, uint8_t hops, uint16_t feat)
-{
-    struct bt_mesh_cfg_srv *cfg = conf;
-
-    if (!cfg) {
-        BT_WARN("No configuration server context available");
-        return;
-    }
-
-    if (src != cfg->hb_sub.src || dst != cfg->hb_sub.dst) {
-        BT_WARN("No subscription for received heartbeat");
-        return;
-    }
-
-    if (k_uptime_get() > cfg->hb_sub.expiry) {
-        BT_WARN("Heartbeat subscription period expired");
-        return;
-    }
-
-    cfg->hb_sub.min_hops = MIN(cfg->hb_sub.min_hops, hops);
-    cfg->hb_sub.max_hops = MAX(cfg->hb_sub.max_hops, hops);
-
-    if (cfg->hb_sub.count < 0xffff) {
-        cfg->hb_sub.count++;
-    }
-
-    BT_DBG("src 0x%04x dst 0x%04x hops %u min %u max %u count %u", src,
-           dst, hops, cfg->hb_sub.min_hops, cfg->hb_sub.max_hops,
-           cfg->hb_sub.count);
-
-    if (cfg->hb_sub.func) {
-        cfg->hb_sub.func(hops, feat);
-    }
-}
-
 uint8_t bt_mesh_net_transmit_get(void)
 {
     if (conf) {
@@ -3607,6 +3573,17 @@ uint8_t bt_mesh_net_transmit_get(void)
     }
 
     return 0;
+}
+
+void bt_mesh_relay_local_set(bool enable)
+{
+    if (conf && conf->relay != BLE_MESH_RELAY_NOT_SUPPORTED) {
+        if (enable) {
+            conf->relay = BLE_MESH_RELAY_ENABLED;
+        } else {
+            conf->relay = BLE_MESH_RELAY_DISABLED;
+        }
+    }
 }
 
 uint8_t bt_mesh_relay_get(void)

@@ -43,7 +43,6 @@ extern void spi_flash_enable_interrupts_caches_and_other_cpu(void);
 __attribute__((unused))
 static void s_test_cache_disable_period_us(test_adc_iram_ctx_t *ctx, uint32_t period_us);
 
-
 #if CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM && CONFIG_GPTIMER_ISR_IRAM_SAFE
 /*---------------------------------------------------------------
         ADC oneshot work with cache safe ISR
@@ -85,7 +84,7 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(oneshot_handle, ADC1_TEST_CHAN0, &config));
 
@@ -143,7 +142,6 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
 }
 #endif  //#if CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM && CONFIG_GPTIMER_ISR_IRAM_SAFE
 
-
 #if CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE || CONFIG_GDMA_ISR_IRAM_SAFE
 #include "esp_adc/adc_continuous.h"
 /*---------------------------------------------------------------
@@ -165,7 +163,7 @@ static bool IRAM_ATTR NOINLINE_ATTR s_conv_done_cb(adc_continuous_handle_t handl
         int raw = 0;
 
         for (int i = 0; i < edata->size; i += SOC_ADC_DIGI_RESULT_BYTES) {
-            adc_digi_output_data_t *p = (void*)&(edata->conv_frame_buffer[i]);
+            adc_digi_output_data_t *p = (void*) & (edata->conv_frame_buffer[i]);
 #if (SOC_ADC_DIGI_RESULT_BYTES == 2)
             raw += p->type1.data;
 #else
@@ -180,7 +178,6 @@ static bool IRAM_ATTR NOINLINE_ATTR s_conv_done_cb(adc_continuous_handle_t handl
             test_ctx->cb_exe_times_low++;
         }
     }
-
 
     return false;
 }

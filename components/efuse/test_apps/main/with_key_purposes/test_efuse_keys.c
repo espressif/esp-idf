@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -290,7 +290,7 @@ TEST_CASE("Test esp_efuse_write_keys", "[efuse]")
 #else
     esp_efuse_purpose_t purpose1[BLOCKS_NEEDED1] = {
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
-        ESP_EFUSE_KEY_PURPOSE_RESERVED
+        ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL
     };
 #endif
     uint8_t keys1[BLOCKS_NEEDED1][32] = {{0xEE}};
@@ -437,19 +437,24 @@ TEST_CASE("Test set_write_protect_of_digest_revoke", "[efuse]")
     TEST_ESP_OK(esp_efuse_set_write_protect_of_digest_revoke(2));
     TEST_ASSERT_TRUE(esp_efuse_get_write_protect_of_digest_revoke(2));
 
+#if CONFIG_EFUSE_VIRTUAL
     TEST_ESP_OK(esp_efuse_set_digest_revoke(0));
     TEST_ESP_OK(esp_efuse_set_digest_revoke(1));
     TEST_ESP_OK(esp_efuse_set_digest_revoke(2));
 
+    TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(0));
+    TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(1));
+    TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(2));
+#endif // CONFIG_EFUSE_VIRTUAL
+
 #if CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL
+    TEST_ESP_ERR(ESP_FAIL, esp_efuse_set_digest_revoke(0));
+    TEST_ESP_ERR(ESP_FAIL, esp_efuse_set_digest_revoke(1));
+    TEST_ESP_ERR(ESP_FAIL, esp_efuse_set_digest_revoke(2));
     // the write protection bits are set and the revocation bits will not be changed.
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(0));
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(1));
     TEST_ASSERT_FALSE(esp_efuse_get_digest_revoke(2));
-#else
-    TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(0));
-    TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(1));
-    TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(2));
 #endif // CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL
 }
 #endif // SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY

@@ -8,7 +8,7 @@
 
 如果外设 X 需要向外设 Y 发起事件通知，一般只能通过 CPU 中断实现。在此过程中，CPU 会代表外设 X，给外设 Y 发送通知。然而，在对时间敏感的应用程序中，CPU 中断引发的延迟不容忽视。
 
-通过引入事件任务矩阵（ETM）模块，部分外设可以直接通过预先设置的连接关系，将事件通知发送给其他外设，无需 CPU 中断介入。由此，外设实现精确、低延迟同步，并减轻 CPU 负担。
+通过引入事件任务矩阵 (ETM) 模块，部分外设可以直接通过预先设置的连接关系，将事件通知发送给其他外设，无需 CPU 中断介入。由此，外设实现精确、低延迟同步，并减轻 CPU 负担。
 
 .. blockdiag:: /../_static/diagrams/etm/etm_channel.diag
     :caption: ETM 通道概述
@@ -69,6 +69,8 @@ GPIO **边沿** 事件是最常见的事件类型，任何 GPIO 管脚均可触�
     :SOC_SYSTIMER_SUPPORT_ETM: - 要了解如何从 esp_timer 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/system/esp_timer`。
     :SOC_TIMER_SUPPORT_ETM: - 要了解如何从 GPTimer 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/gptimer`。
     :SOC_GDMA_SUPPORT_ETM: - 要了解如何从 async memcpy 获取 ETM 事件句柄，请参阅 :doc:`/api-reference/system/async_memcpy`。
+    :SOC_MCPWM_SUPPORT_ETM: - 要了解如何从 MCPWM 中获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/mcpwm`。
+    :SOC_ANA_CMPR_SUPPORT_ETM: - 要了解如何从模拟比较器获取 ETM 事件句柄，请参阅 :doc:`/api-reference/peripherals/ana_cmpr`。
 
 .. _etm-task:
 

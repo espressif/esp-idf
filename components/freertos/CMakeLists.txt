@@ -31,11 +31,7 @@ idf_build_get_property(target IDF_TARGET)
 if(CONFIG_FREERTOS_SMP)
     set(kernel_impl "FreeRTOS-Kernel-SMP")
 else()
-    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-        message(FATAL_ERROR "FreeRTOS v10.5.1 is not buildable yet. Still under development")
-    else()
-        set(kernel_impl "FreeRTOS-Kernel")
-    endif()
+    set(kernel_impl "FreeRTOS-Kernel")
 endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
@@ -71,7 +67,6 @@ list(APPEND srcs
     "${kernel_impl}/queue.c"
     "${kernel_impl}/tasks.c"
     "${kernel_impl}/timers.c"
-    "${kernel_impl}/croutine.c"
     "${kernel_impl}/event_groups.c"
     "${kernel_impl}/stream_buffer.c")
 

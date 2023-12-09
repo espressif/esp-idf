@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,6 +119,17 @@ struct esp_lcd_panel_t {
      *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
      */
     esp_err_t (*disp_on_off)(esp_lcd_panel_t *panel, bool on_off);
+
+    /**
+     * @brief Enter or exit sleep mode
+     *
+     * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
+     * @param[in] sleep True to enter sleep mode, False to wake up
+     * @return
+     *          - ESP_OK on success
+     *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
+     */
+    esp_err_t (*disp_sleep)(esp_lcd_panel_t *panel, bool sleep);
 
     void *user_data;    /*!< User data, used to store externally customized data */
 };

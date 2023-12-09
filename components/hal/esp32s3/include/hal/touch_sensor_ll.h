@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,8 @@ extern "C" {
 #define TOUCH_LL_TIMER_FORCE_DONE   0x3
 #define TOUCH_LL_TIMER_DONE         0x0
 
+#define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
+
 /**
  * Set touch sensor touch sensor times of charge and discharge.
  *
@@ -45,7 +47,7 @@ static inline void touch_ll_set_meas_times(uint16_t meas_time)
     //The times of charge and discharge in each measure process of touch channels.
     HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_meas_num, meas_time);
     //the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD
-    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl2, touch_xpd_wait, SOC_TOUCH_PAD_MEASURE_WAIT_MAX); //wait volt stable
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl2, touch_xpd_wait, TOUCH_LL_PAD_MEASURE_WAIT_MAX); //wait volt stable
 }
 
 /**
@@ -186,9 +188,9 @@ static inline void touch_ll_set_slope(touch_pad_t touch_num, touch_cnt_slope_t s
 static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *slope)
 {
     if (touch_num < TOUCH_PAD_NUM10) {
-        *slope = GET_PERI_REG_BITS2(RTC_CNTL_TOUCH_DAC_REG, RTC_CNTL_TOUCH_PAD0_DAC_V, (RTC_CNTL_TOUCH_PAD0_DAC_S - touch_num * 3));
+        *slope = (touch_cnt_slope_t)(GET_PERI_REG_BITS2(RTC_CNTL_TOUCH_DAC_REG, RTC_CNTL_TOUCH_PAD0_DAC_V, (RTC_CNTL_TOUCH_PAD0_DAC_S - touch_num * 3)));
     } else {
-        *slope = GET_PERI_REG_BITS2(RTC_CNTL_TOUCH_DAC1_REG, RTC_CNTL_TOUCH_PAD10_DAC_V, (RTC_CNTL_TOUCH_PAD10_DAC_S - (touch_num - TOUCH_PAD_NUM10) * 3));
+        *slope = (touch_cnt_slope_t)(GET_PERI_REG_BITS2(RTC_CNTL_TOUCH_DAC1_REG, RTC_CNTL_TOUCH_PAD10_DAC_V, (RTC_CNTL_TOUCH_PAD10_DAC_S - (touch_num - TOUCH_PAD_NUM10) * 3)));
     }
 }
 
@@ -468,7 +470,7 @@ static inline void touch_ll_set_idle_channel_connect(touch_pad_conn_type_t type)
  */
 static inline void touch_ll_get_idle_channel_connect(touch_pad_conn_type_t *type)
 {
-    *type = RTCCNTL.touch_scan_ctrl.touch_inactive_connection;
+    *type = (touch_pad_conn_type_t)(RTCCNTL.touch_scan_ctrl.touch_inactive_connection);
 }
 
 /**
@@ -727,7 +729,7 @@ static inline void touch_ll_filter_set_smooth_mode(touch_smooth_mode_t mode)
  */
 static inline void touch_ll_filter_get_smooth_mode(touch_smooth_mode_t *mode)
 {
-    *mode = RTCCNTL.touch_filter_ctrl.touch_smooth_lvl;
+    *mode = (touch_smooth_mode_t)(RTCCNTL.touch_filter_ctrl.touch_smooth_lvl);
 }
 
 /**
@@ -869,7 +871,7 @@ static inline void touch_ll_denoise_set_cap_level(touch_pad_denoise_cap_t cap_le
  */
 static inline void touch_ll_denoise_get_cap_level(touch_pad_denoise_cap_t *cap_level)
 {
-    *cap_level = RTCCNTL.touch_ctrl2.touch_refc;
+    *cap_level = (touch_pad_denoise_cap_t)(RTCCNTL.touch_ctrl2.touch_refc);
 }
 
 /**
@@ -891,7 +893,7 @@ static inline void touch_ll_denoise_set_grade(touch_pad_denoise_grade_t grade)
  */
 static inline void touch_ll_denoise_get_grade(touch_pad_denoise_grade_t *grade)
 {
-    *grade = RTCCNTL.touch_scan_ctrl.touch_denoise_res;
+    *grade = (touch_pad_denoise_grade_t)(RTCCNTL.touch_scan_ctrl.touch_denoise_res);
 }
 
 /**
@@ -923,7 +925,7 @@ static inline void touch_ll_waterproof_set_guard_pad(touch_pad_t pad_num)
  */
 static inline void touch_ll_waterproof_get_guard_pad(touch_pad_t *pad_num)
 {
-    *pad_num = RTCCNTL.touch_scan_ctrl.touch_out_ring;
+    *pad_num = (touch_pad_t)(RTCCNTL.touch_scan_ctrl.touch_out_ring);
 }
 
 /**
@@ -947,7 +949,7 @@ static inline void touch_ll_waterproof_set_sheild_driver(touch_pad_shield_driver
  */
 static inline void touch_ll_waterproof_get_sheild_driver(touch_pad_shield_driver_t *driver_level)
 {
-    *driver_level = RTCCNTL.touch_scan_ctrl.touch_bufdrv;
+    *driver_level = (touch_pad_shield_driver_t)(RTCCNTL.touch_scan_ctrl.touch_bufdrv);
 }
 
 /**
@@ -994,9 +996,9 @@ static inline void touch_ll_proximity_set_channel_num(const touch_pad_t prox_pad
  */
 static inline void touch_ll_proximity_get_channel_num(touch_pad_t prox_pad[])
 {
-    prox_pad[0] = SENS.sar_touch_conf.touch_approach_pad0;
-    prox_pad[1] = SENS.sar_touch_conf.touch_approach_pad1;
-    prox_pad[2] = SENS.sar_touch_conf.touch_approach_pad2;
+    prox_pad[0] = (touch_pad_t)(SENS.sar_touch_conf.touch_approach_pad0);
+    prox_pad[1] = (touch_pad_t)(SENS.sar_touch_conf.touch_approach_pad1);
+    prox_pad[2] = (touch_pad_t)(SENS.sar_touch_conf.touch_approach_pad2);
 }
 
 /**
@@ -1072,7 +1074,7 @@ static inline void touch_ll_sleep_set_channel_num(touch_pad_t touch_num)
  */
 static inline void touch_ll_sleep_get_channel_num(touch_pad_t *touch_num)
 {
-    *touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
+    *touch_num = (touch_pad_t)(RTCCNTL.touch_slp_thres.touch_slp_pad);
 }
 
 /**

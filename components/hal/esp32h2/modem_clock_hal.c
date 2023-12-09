@@ -19,13 +19,17 @@ typedef enum {
     MODEM_CLOCK_EXT32K_CODE  = 2
 } modem_clock_32k_clk_src_code_t;
 
-void IRAM_ATTR modem_clock_hal_enable_fe_clock(modem_clock_hal_context_t *hal, bool enable)
+void IRAM_ATTR modem_clock_hal_enable_modem_adc_common_fe_clock(modem_clock_hal_context_t *hal, bool enable)
+{
+    modem_syscon_ll_enable_fe_apb_clock(hal->syscon_dev, enable);
+    modem_syscon_ll_enable_fe_32m_clock(hal->syscon_dev, enable);
+}
+
+void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     modem_lpcon_ll_enable_fe_mem_clock(hal->lpcon_dev, enable);
     modem_syscon_ll_enable_fe_sdm_clock(hal->syscon_dev, enable);
     modem_syscon_ll_enable_fe_adc_clock(hal->syscon_dev, enable);
-    modem_syscon_ll_enable_fe_apb_clock(hal->syscon_dev, enable);
-    modem_syscon_ll_enable_fe_32m_clock(hal->syscon_dev, enable);
     modem_syscon_ll_enable_fe_16m_clock(hal->syscon_dev, enable);
 }
 
@@ -75,7 +79,7 @@ void modem_clock_hal_select_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t
         lp_clkrst_ll_select_modem_32k_clock_source(&LP_CLKRST, MODEM_CLOCK_EXT32K_CODE);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
 }
 
@@ -115,6 +119,6 @@ void modem_clock_hal_select_coex_lpclk_source(modem_clock_hal_context_t *hal, mo
         lp_clkrst_ll_select_modem_32k_clock_source(&LP_CLKRST, MODEM_CLOCK_EXT32K_CODE);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
 }

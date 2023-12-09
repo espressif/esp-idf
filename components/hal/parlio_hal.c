@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <stddef.h>
 #include "hal/parlio_hal.h"
 #include "hal/parlio_ll.h"

@@ -1,14 +1,24 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs
     "src/bootloader_common.c"
     "src/bootloader_common_loader.c"
     "src/bootloader_clock_init.c"
     "src/bootloader_mem.c"
     "src/bootloader_random.c"
-    "src/bootloader_random_${IDF_TARGET}.c"
     "src/bootloader_efuse.c"
     "src/flash_encrypt.c"
     "src/secure_boot.c"
     )
+
+if(NOT CONFIG_IDF_ENV_FPGA)
+    # For FPGA ENV, bootloader_random implementation is implemented in `bootloader_random.c`
+    list(APPEND srcs "src/bootloader_random_${IDF_TARGET}.c")
+endif()
 
 if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     list(APPEND srcs

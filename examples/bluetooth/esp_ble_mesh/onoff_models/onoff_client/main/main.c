@@ -48,7 +48,7 @@ static const char * NVS_KEY = "onoff_client";
 static esp_ble_mesh_client_t onoff_client;
 
 static esp_ble_mesh_cfg_srv_t config_server = {
-    .relay = ESP_BLE_MESH_RELAY_DISABLED,
+    .relay = ESP_BLE_MESH_RELAY_ENABLED,
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
 #if defined(CONFIG_BLE_MESH_FRIEND)
     .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
@@ -182,6 +182,9 @@ void example_ble_mesh_send_gen_onoff_set(void)
     common.ctx.addr = 0xFFFF;   /* to all nodes */
     common.ctx.send_ttl = 3;
     common.msg_timeout = 0;     /* 0 indicates that timeout value from menuconfig will be used */
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+    common.msg_role = ROLE_NODE;
+#endif
 
     set.onoff_set.op_en = false;
     set.onoff_set.onoff = store.onoff;

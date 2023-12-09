@@ -1,13 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020 Amazon.com, Inc. or its affiliates
+ * FreeRTOS Kernel V10.5.1 (ESP-IDF SMP modified)
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
- */
-/*
- * FreeRTOS Kernel V10.4.3
- * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -26,10 +25,9 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
+ * https://www.FreeRTOS.org
+ * https://github.com/FreeRTOS
  *
- * 1 tab == 4 spaces!
  */
 
 #ifndef PORTMACRO_H
@@ -39,11 +37,24 @@
 #include "freertos/FreeRTOSConfig.h"
 
 /* Macros used instead ofsetoff() for better performance of interrupt handler */
+#if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
+#define PORT_OFFSET_PX_STACK 0x40
+#else
 #define PORT_OFFSET_PX_STACK 0x30
-#define PORT_OFFSET_PX_END_OF_STACK (PORT_OFFSET_PX_STACK + \
-                                     /* void * pxDummy6 */ 4 + \
-                                     /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ CONFIG_FREERTOS_MAX_TASK_NAME_LEN + \
-                                     /* BaseType_t xDummyCoreID */ 4)
+#endif /* #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
+
+#if CONFIG_FREERTOS_UNICORE
+#define CORE_ID_SIZE        0
+#else
+#define CORE_ID_SIZE        4
+#endif
+
+#define PORT_OFFSET_PX_END_OF_STACK ( \
+    PORT_OFFSET_PX_STACK \
+    + 4                                 /* void * pxDummy6 */ \
+    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ \
+    + CORE_ID_SIZE                      /* BaseType_t xDummyCoreID */ \
+)
 
 #ifndef __ASSEMBLER__
 
@@ -444,6 +455,14 @@ void vPortTCBPreDeleteHook( void *pxTCB );
  * - Maps to forward declared functions
  * ------------------------------------------------------------------------------------------------------------------ */
 
+// ----------------------- System --------------------------
+
+#if ( configNUMBER_OF_CORES > 1 )
+    #define portGET_CORE_ID()       xPortGetCoreID()
+#else /* configNUMBER_OF_CORES > 1 */
+    #define portGET_CORE_ID()       ((BaseType_t) 0);
+#endif /* configNUMBER_OF_CORES > 1 */
+
 // --------------------- Interrupts ------------------------
 
 #define portDISABLE_INTERRUPTS()            portSET_INTERRUPT_MASK_FROM_ISR()
@@ -555,6 +574,10 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 */
 #define portYIELD_WITHIN_API() portYIELD()
 
+#if ( configNUMBER_OF_CORES > 1 )
+    #define portYIELD_CORE( xCoreID )     vPortYieldOtherCore( xCoreID )
+#endif /* configNUMBER_OF_CORES > 1 */
+
 // ------------------- Hook Functions ----------------------
 
 #define portSUPPRESS_TICKS_AND_SLEEP(idleTime) vApplicationSleep(idleTime)
@@ -640,13 +663,18 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
     uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
 #if SOC_INT_CLIC_SUPPORTED
+    /* When CLIC is supported:
+     *  - The lowest interrupt threshold level is 0. Therefore, an interrupt threshold level above 0 would mean that we
+     *    are in a critical section.
+     *  - Since CLIC enables HW interrupt nesting, we do not have the updated interrupt level in the
+     *    INTERRUPT_CURRENT_CORE_INT_THRESH_REG register when nested interrupts occur. To know the current interrupt
+     *    level, we read the machine-mode interrupt level (mil) field from the mintstatus CSR. A non-zero value indicates
+     *    that we are in an interrupt context.
+     */
+    uint32_t intr_level = rv_utils_get_interrupt_level();
     threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
 
-    /* When CLIC is supported, the lowest interrupt threshold level is 0.
-     * Therefore, an interrupt threshold level above 0 would mean that we
-     * are either in a critical section or in an ISR.
-     */
-    return (threshold == 0);
+    return ((intr_level == 0) && (threshold == 0));
 #endif /* SOC_INT_CLIC_SUPPORTED */
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
      * and exit critical code, will recover threshold value (1). so threshold <= 1

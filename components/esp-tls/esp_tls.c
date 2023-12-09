@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,12 +64,10 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_get_client_session         esp_mbedtls_get_client_session
 #define _esp_tls_free_client_session        esp_mbedtls_free_client_session
 #define _esp_tls_get_ssl_context            esp_mbedtls_get_ssl_context
-#ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_mbedtls_server_session_create
 #define _esp_tls_server_session_delete      esp_mbedtls_server_session_delete
 #define _esp_tls_server_session_ticket_ctx_init    esp_mbedtls_server_session_ticket_ctx_init
 #define _esp_tls_server_session_ticket_ctx_free    esp_mbedtls_server_session_ticket_ctx_free
-#endif  /* CONFIG_ESP_TLS_SERVER */
 #define _esp_tls_get_bytes_avail            esp_mbedtls_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_mbedtls_init_global_ca_store
 #define _esp_tls_set_global_ca_store        esp_mbedtls_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
@@ -83,10 +81,8 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_write                      esp_wolfssl_write
 #define _esp_tls_conn_delete                esp_wolfssl_conn_delete
 #define _esp_tls_net_init                   esp_wolfssl_net_init
-#ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_wolfssl_server_session_create
 #define _esp_tls_server_session_delete      esp_wolfssl_server_session_delete
-#endif  /* CONFIG_ESP_TLS_SERVER */
 #define _esp_tls_get_bytes_avail            esp_wolfssl_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_wolfssl_init_global_ca_store
 #define _esp_tls_set_global_ca_store        esp_wolfssl_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
@@ -108,7 +104,7 @@ static const char *TAG = "esp-tls";
 
 static esp_err_t create_ssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
 {
-    return _esp_create_ssl_handle(hostname, hostlen, cfg, tls);
+    return _esp_create_ssl_handle(hostname, hostlen, cfg, tls, NULL);
 }
 
 static esp_err_t esp_tls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
@@ -638,7 +634,6 @@ void esp_tls_free_client_session(esp_tls_client_session_t *client_session)
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 
 
-#ifdef CONFIG_ESP_TLS_SERVER
 esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg)
 {
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
@@ -682,7 +677,6 @@ void esp_tls_server_session_delete(esp_tls_t *tls)
 {
     return _esp_tls_server_session_delete(tls);
 }
-#endif /* CONFIG_ESP_TLS_SERVER */
 
 ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls)
 {

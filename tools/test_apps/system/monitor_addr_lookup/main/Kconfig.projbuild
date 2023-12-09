@@ -1,7 +1,0 @@
-config TEST_ADDR_LOOKUP_IN_APP
-    bool "TEST_ADDR_LOOKUP_IN_APP"
-    default n
-
-config TEST_ADDR_LOOKUP_IN_ROM
-    bool "TEST_ADDR_LOOKUP_IN_ROM"
-    default n

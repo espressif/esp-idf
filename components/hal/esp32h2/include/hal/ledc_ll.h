@@ -13,7 +13,9 @@
 #include "soc/ledc_struct.h"
 #include "soc/ledc_reg.h"
 #include "soc/pcr_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
+#include "esp_rom_sys.h"    //for sync issue workaround
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,13 +29,23 @@ extern "C" {
 #define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_CH0_V)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
+#define LEDC_LL_GLOBAL_CLOCKS      SOC_LEDC_CLKS
 
-#define LEDC_LL_GLOBAL_CLOCKS { \
-                                LEDC_SLOW_CLK_PLL_DIV, \
-                                LEDC_SLOW_CLK_XTAL, \
-                                LEDC_SLOW_CLK_RC_FAST, \
-                              }
+/**
+ * @brief Enable peripheral register clock
+ *
+ * @param enable    Enable/Disable
+ */
+static inline void ledc_ll_enable_bus_clock(bool enable) {
+    PCR.ledc_conf.ledc_clk_en = enable;
+}
 
+/**
+ * @brief Reset whole peripheral register to init value defined by HW design
+ */
+static inline void ledc_ll_enable_reset_reg(bool enable) {
+    PCR.ledc_conf.ledc_rst_en = enable;
+}
 
 /**
  * @brief Enable LEDC function clock
@@ -413,6 +425,35 @@ static inline void ledc_ll_set_duty_range_wr_addr(ledc_dev_t *hw, ledc_mode_t sp
 }
 
 /**
+ * @brief Function to set fade parameters all-in-one for one range
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param range Gamma fade range index, 0 ~ SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
+ * @param dir LEDC duty change direction, increase or decrease
+ * @param cycle The duty cycles
+ * @param scale The step scale
+ * @param step The number of increased or decreased times
+ *
+ * @return None
+ */
+static inline void ledc_ll_set_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
+{
+    // To workaround sync issue
+    // This is to ensure the fade param write to the gamma_wr register would not mess up the last wr_addr
+    ledc_ll_set_duty_range_wr_addr(hw, speed_mode, channel_num, range);
+    esp_rom_delay_us(5);
+
+    ledc_ll_set_fade_param(hw, speed_mode, channel_num, dir, cycle, scale, step);
+    ledc_ll_set_duty_range_wr_addr(hw, speed_mode, channel_num, range);
+
+    // To workaround sync issue
+    // This is to ensure the fade param in gamma_wr register can be written to the correct wr_addr
+    esp_rom_delay_us(5);
+}
+
+/**
  * @brief Set the total number of ranges in one fading
  *
  * @param hw Beginning address of the peripheral registers
@@ -477,6 +518,29 @@ static inline void ledc_ll_get_fade_param(ledc_dev_t *hw, ledc_mode_t speed_mode
     *cycle = (val & LEDC_CH0_GAMMA_DUTY_CYCLE_M) >> LEDC_CH0_GAMMA_DUTY_CYCLE_S;
     *scale = (val & LEDC_CH0_GAMMA_SCALE_M) >> LEDC_CH0_GAMMA_SCALE_S;
     *step = (val & LEDC_CH0_GAMMA_DUTY_NUM_M) >> LEDC_CH0_GAMMA_DUTY_NUM_S;
+}
+
+/**
+ * @brief Get fade configurations for one range
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param speed_mode LEDC speed_mode, low-speed mode only
+ * @param channel_num LEDC channel index (0-5), select from ledc_channel_t
+ * @param range Gamma fade range index to get, 0 ~ SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
+ * @param dir Pointer to accept fade direction value
+ * @param cycle Pointer to accept fade cycle value
+ * @param scale Pointer to accept fade scale value
+ * @param step Pointer to accept fade step value
+ *
+ * @return None
+ */
+static inline void ledc_ll_get_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
+{
+    // On ESP32C6/H2, gamma ram read/write has the APB and LEDC clock domain sync issue
+    // To make sure the parameter read is from the correct gamma ram addr, add a delay in between to ensure syncronization
+    ledc_ll_set_duty_range_rd_addr(hw, speed_mode, channel_num, range);
+    esp_rom_delay_us(5);
+    ledc_ll_get_fade_param(hw, speed_mode, channel_num, dir, cycle, scale, step);
 }
 
 /**

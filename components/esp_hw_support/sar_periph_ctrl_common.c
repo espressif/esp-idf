@@ -13,6 +13,8 @@
 #if SOC_TEMP_SENSOR_SUPPORTED
 #include "hal/temperature_sensor_ll.h"
 #include "soc/temperature_sensor_periph.h"
+#include "soc/periph_defs.h"
+#include "esp_private/periph_ctrl.h"
 
 extern __attribute__((unused)) portMUX_TYPE rtc_spinlock;
 
@@ -35,6 +37,10 @@ void temperature_sensor_power_acquire(void)
     portENTER_CRITICAL(&rtc_spinlock);
     s_temperature_sensor_power_cnt++;
     if (s_temperature_sensor_power_cnt == 1) {
+        periph_module_enable(PERIPH_TEMPSENSOR_MODULE);
+        periph_module_reset(PERIPH_TEMPSENSOR_MODULE);
+        regi2c_saradc_enable();
+        temperature_sensor_ll_clk_enable(true);
         temperature_sensor_ll_enable(true);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
@@ -50,7 +56,10 @@ void temperature_sensor_power_release(void)
         ESP_LOGE(TAG_TSENS, "%s called, but s_temperature_sensor_power_cnt == 0", __func__);
         abort();
     } else if (s_temperature_sensor_power_cnt == 0) {
+        temperature_sensor_ll_clk_enable(false);
         temperature_sensor_ll_enable(false);
+        regi2c_saradc_disable();
+        periph_module_disable(PERIPH_TEMPSENSOR_MODULE);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
 }

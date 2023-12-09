@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,10 @@
 #pragma once
 
 #include <stddef.h> /* For size_t type */
+#include <stdbool.h>
+
 #include "soc/hwcrypto_reg.h"
+#include "soc/system_struct.h"
 #include "hal/hmac_types.h"
 
 #define SHA256_BLOCK_SZ 64
@@ -27,6 +30,33 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Enable the bus clock for HMAC peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void hmac_ll_enable_bus_clock(bool enable)
+{
+    SYSTEM.perip_clk_en1.crypto_hmac_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define hmac_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; hmac_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the HMAC peripheral module
+ */
+static inline void hmac_ll_reset_register(void)
+{
+    SYSTEM.perip_rst_en1.crypto_hmac_rst = 1;
+    SYSTEM.perip_rst_en1.crypto_hmac_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define hmac_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; hmac_ll_reset_register(__VA_ARGS__)
 
 /**
  * Makes the peripheral ready for use, after enabling it.

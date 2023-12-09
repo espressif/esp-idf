@@ -1,6 +1,0 @@
-# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
-
-components/esp_adc/test_apps/adc:
-  disable:
-    - if: SOC_ADC_SUPPORTED != 1
-    - if: CONFIG_NAME == "gdma_iram_safe" and IDF_TARGET in ["esp32", "esp32s2", "esp32c2"]

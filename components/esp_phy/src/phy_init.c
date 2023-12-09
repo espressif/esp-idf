@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,9 +66,6 @@ static DRAM_ATTR struct {
 #endif // !SOC_PMU_SUPPORTED
 #endif // SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 
-/* Reference count of enabling PHY */
-static uint8_t s_phy_access_ref = 0;
-
 #if CONFIG_IDF_TARGET_ESP32
 /* time stamp updated when the PHY/RF is turned on */
 static int64_t s_phy_rf_en_ts = 0;
@@ -85,8 +82,10 @@ static bool s_is_phy_calibrated = false;
 static bool s_is_phy_reg_stored = false;
 /* Memory to store PHY digital registers */
 static uint32_t* s_phy_digital_regs_mem = NULL;
-static uint8_t s_phy_modem_init_ref = 0;
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+static uint8_t s_phy_modem_init_ref = 0;
+#endif
 
 
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
@@ -231,11 +230,10 @@ static inline void phy_digital_regs_load(void)
 }
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
-void esp_phy_enable(void)
+void esp_phy_enable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
-
-    if (s_phy_access_ref == 0) {
+    if (phy_get_modem_flag() == 0) {
 #if CONFIG_IDF_TARGET_ESP32
         // Update time stamp
         s_phy_rf_en_ts = esp_timer_get_time();
@@ -273,18 +271,27 @@ void esp_phy_enable(void)
 #if CONFIG_IDF_TARGET_ESP32
         coex_bt_high_prio();
 #endif
+
+// ESP32 will track pll in the wifi/BT modem interrupt handler.
+#if !CONFIG_IDF_TARGET_ESP32
+        phy_track_pll_init();
+#endif
     }
-    s_phy_access_ref++;
+    phy_set_modem_flag(modem);
 
     _lock_release(&s_phy_access_lock);
 }
 
-void esp_phy_disable(void)
+void esp_phy_disable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
 
-    s_phy_access_ref--;
-    if (s_phy_access_ref == 0) {
+    phy_clr_modem_flag(modem);
+    if (phy_get_modem_flag() == 0) {
+// ESP32 will track pll in the wifi/BT modem interrupt handler.
+#if !CONFIG_IDF_TARGET_ESP32
+        phy_track_pll_deinit();
+#endif
 #if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
         phy_digital_regs_store();
 #endif
@@ -308,7 +315,6 @@ void esp_phy_disable(void)
         // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
         esp_phy_common_clock_disable();
     }
-
     _lock_release(&s_phy_access_lock);
 }
 
@@ -319,14 +325,18 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (s_wifi_bt_pd_controller.count++ == 0) {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
-
-#if !CONFIG_IDF_TARGET_ESP32
+        esp_rom_delay_us(10);
+        wifi_bt_common_module_enable();
+#if CONFIG_IDF_TARGET_ESP32
+        DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
+#else
         // modem reset when power on
         SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
         CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, MODEM_RESET_FIELD_WHEN_PU);
 #endif
-
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        wifi_bt_common_module_disable();
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
 #endif // !SOC_PMU_SUPPORTED
@@ -349,23 +359,29 @@ void esp_wifi_bt_power_domain_off(void)
 
 void esp_phy_modem_init(void)
 {
-#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_acquire(&s_phy_access_lock);
     s_phy_modem_init_ref++;
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     if (s_phy_digital_regs_mem == NULL) {
         s_phy_digital_regs_mem = (uint32_t *)heap_caps_malloc(SOC_PHY_DIG_REGS_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     }
-    _lock_release(&s_phy_access_lock);
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    sleep_modem_wifi_modem_state_init();
+#endif // CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    _lock_release(&s_phy_access_lock);
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 }
 
 void esp_phy_modem_deinit(void)
 {
-#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_acquire(&s_phy_access_lock);
 
     s_phy_modem_init_ref--;
     if (s_phy_modem_init_ref == 0) {
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
         s_is_phy_reg_stored = false;
         free(s_phy_digital_regs_mem);
         s_phy_digital_regs_mem = NULL;
@@ -374,11 +390,14 @@ void esp_phy_modem_deinit(void)
         */
 #if CONFIG_IDF_TARGET_ESP32C3
         phy_init_flag();
-#endif
-    }
-
-    _lock_release(&s_phy_access_lock);
+#endif // CONFIG_IDF_TARGET_ESP32C3
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+        sleep_modem_wifi_modem_state_deinit();
+#endif // CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+    }
+    _lock_release(&s_phy_access_lock);
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA || CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 }
 
 #if CONFIG_MAC_BB_PD
@@ -758,6 +777,17 @@ void esp_phy_load_cal_and_init(void)
 #if CONFIG_IDF_TARGET_ESP32S2
     phy_eco_version_sel(efuse_hal_chip_revision() / 100);
 #endif
+
+    // Set PHY whether in combo module
+    // For comode mode, phy enable will be not in WiFi RX state
+#if SOC_PHY_COMBO_MODULE
+#if (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
+    phy_init_param_set(0);
+#else
+    phy_init_param_set(1);
+#endif
+#endif
+
     esp_phy_calibration_data_t* cal_data =
             (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
     if (cal_data == NULL) {
@@ -1091,3 +1121,8 @@ esp_err_t esp_phy_update_country_info(const char *country)
 
 void esp_wifi_power_domain_on(void) __attribute__((alias("esp_wifi_bt_power_domain_on")));
 void esp_wifi_power_domain_off(void) __attribute__((alias("esp_wifi_bt_power_domain_off")));
+
+_lock_t phy_get_lock(void)
+{
+    return s_phy_access_lock;
+}

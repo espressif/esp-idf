@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs
     "app_trace.c"
     "app_trace_util.c"
@@ -57,8 +63,8 @@ endif()
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                       # Requires "driver" for GPTimer in "SEGGER_SYSVIEW_Config_FreeRTOS.c"
-                       PRIV_REQUIRES soc driver
+                       PRIV_REQUIRES soc esp_driver_gptimer esp_driver_gpio
+                                         driver # TODO: replace with esp_driver_uart (IDF-8384)
                        REQUIRES esp_timer
                        LDFRAGMENTS linker.lf)
 

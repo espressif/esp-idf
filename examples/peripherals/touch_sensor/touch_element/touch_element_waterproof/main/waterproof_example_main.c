@@ -75,8 +75,8 @@ void app_main(void)
         ESP_ERROR_CHECK(touch_button_create(&button_config, &button_handle[i]));
         /* Subscribe touch button event(Press, Release, LongPress) */
         ESP_ERROR_CHECK(touch_button_subscribe_event(button_handle[i],
-                        TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
-                        (void *)channel_array[i]));
+                                                     TOUCH_ELEM_EVENT_ON_PRESS | TOUCH_ELEM_EVENT_ON_RELEASE | TOUCH_ELEM_EVENT_ON_LONGPRESS,
+                                                     (void *)channel_array[i]));
         /* Button set dispatch method */
         ESP_ERROR_CHECK(touch_button_set_dispatch_method(button_handle[i], TOUCH_ELEM_DISP_EVENT));
 #ifdef CONFIG_TOUCH_WATERPROOF_GUARD_ENABLE

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -140,9 +140,9 @@ esp_err_t esp_ble_mesh_node_input_string(const char *string)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_INPUT_STRING;
-    memset(arg.input_string.string, 0, sizeof(arg.input_string.string));
-    strncpy(arg.input_string.string, string,
-            MIN(strlen(string), sizeof(arg.input_string.string)));
+
+    arg.input_string.string[sizeof(arg.input_string.string) - 1] = 0;
+    strncpy(arg.input_string.string, string, sizeof(arg.input_string.string) - 1);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
@@ -163,8 +163,8 @@ esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_SET_DEVICE_NAME;
 
-    memset(arg.set_device_name.name, 0, sizeof(arg.set_device_name.name));
-    strncpy(arg.set_device_name.name, name, ESP_BLE_MESH_DEVICE_NAME_MAX_LEN);
+    arg.set_device_name.name[sizeof(arg.set_device_name.name) - 1] = 0;
+    strncpy(arg.set_device_name.name, name, sizeof(arg.set_device_name.name) - 1);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
@@ -211,9 +211,8 @@ esp_err_t esp_ble_mesh_provisioner_input_string(const char *string, uint8_t link
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROVISIONER_INPUT_STR;
 
-    memset(arg.provisioner_input_str.string, 0, sizeof(arg.provisioner_input_str.string));
-    strncpy(arg.provisioner_input_str.string, string,
-            MIN(strlen(string), sizeof(arg.provisioner_input_str.string)));
+    arg.provisioner_input_str.string[sizeof(arg.provisioner_input_str.string) - 1] = 0;
+    strncpy(arg.provisioner_input_str.string, string, sizeof(arg.provisioner_input_str.string) - 1);
     arg.provisioner_input_str.link_idx = link_idx;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)

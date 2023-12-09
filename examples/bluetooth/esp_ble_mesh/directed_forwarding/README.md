@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # Directed Forwarding
 
@@ -9,7 +9,7 @@ This example is primarily intended to demonstrate the newly added directed forwa
 
 ## How to use example
 
-Please refer to this [tutorial](examples/bluetooth/esp_ble_mesh/directed_forwarding/tutorial/BLE_Mesh_Directed_Forwarding_Example_Walkthrough.md) for detailed instructions on how to run it.
+Please refer to this [tutorial](tutorial/BLE_Mesh_Directed_Forwarding_Example_Walkthrough.md) for detailed instructions on how to run it.
 
 
 ### Hardware Required

@@ -11,10 +11,11 @@ set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/espto
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 set(ESPMONITOR ${python} -m esp_idf_monitor)
+set(ESPMKUF2 ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
 set(ESPTOOLPY_CHIP "${chip_model}")
 
 if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
-    if(CONFIG_SPI_FLASH_HPM_ENABLE)
+    if(CONFIG_BOOTLOADER_FLASH_DC_AWARE)
     # When set flash frequency to 120M, must keep 1st bootloader work under ``DOUT`` mode
     # because on some flash chips, 120M will modify the status register,
     # which will make ROM won't work.
@@ -121,7 +122,6 @@ idf_build_get_property(build_dir BUILD_DIR)
 
 idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
 idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
-idf_build_get_property(elf_dir EXECUTABLE_DIR GENERATOR_EXPRESSION)
 
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT BOOTLOADER_BUILD)
     set(unsigned_project_binary "${elf_name}-unsigned.bin")
@@ -137,10 +137,10 @@ set(PROJECT_BIN "${elf_name}.bin")
 if(CONFIG_APP_BUILD_GENERATE_BINARIES)
     add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
         COMMAND ${ESPTOOLPY} elf2image ${esptool_elf2image_args}
-            -o "${build_dir}/${unsigned_project_binary}" "${elf_dir}/${elf}"
+            -o "${build_dir}/${unsigned_project_binary}" "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
         COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
         COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
-        DEPENDS ${elf}
+        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
         VERBATIM
         WORKING_DIRECTORY ${build_dir}
         COMMENT "Generating binary image from built executable"
@@ -208,11 +208,35 @@ add_custom_target(erase_flash
     VERBATIM
     )
 
+set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
+
+add_custom_target(uf2
+    COMMAND ${CMAKE_COMMAND}
+    -D "IDF_PATH=${idf_path}"
+    -D "SERIAL_TOOL=${ESPMKUF2}"
+    -D "SERIAL_TOOL_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2.bin"
+    -P run_serial_tool.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    USES_TERMINAL
+    VERBATIM
+    )
+
+add_custom_target(uf2-app
+    COMMAND ${CMAKE_COMMAND}
+    -D "IDF_PATH=${idf_path}"
+    -D "SERIAL_TOOL=${ESPMKUF2}"
+    -D "SERIAL_TOOL_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2-app.bin;--bin;app"
+    -P run_serial_tool.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    USES_TERMINAL
+    VERBATIM
+    )
+
 add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
     -D "IDF_PATH=${idf_path}"
     -D "SERIAL_TOOL=${ESPMONITOR}"
-    -D "SERIAL_TOOL_ARGS=--target;${target};${monitor_rev_args};${elf_dir}/${elf}"
+    -D "SERIAL_TOOL_ARGS=--target;${target};${monitor_rev_args};$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
     -D "WORKING_DIRECTORY=${build_dir}"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}

@@ -138,6 +138,20 @@ Expected data types for different HTTP Client events in the event loop are as fo
 
 The :cpp:type:`esp_http_client_handle_t` received along with the event data will be valid until :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` is not received. This handle has been sent primarily to differentiate between different client connections and must not be used for any other purpose, as it may change based on client connection state.
 
+TLS Protocol Version
+--------------------
+
+TLS protocol version to be used for the underlying TLS connection can be set in :cpp:type:`esp_http_client_config_t`. Please refer to the **TLS Protocol Version** section in the :doc:`/api-reference/protocols/esp_tls` for more details.
+
+The TLS protocol version for the HTTP client can be configured as follows:
+
+    .. code-block:: c
+
+        #include "esp_http_client.h"
+        esp_http_client_config_t config = {
+            .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
+        };
+
 API Reference
 -------------
 

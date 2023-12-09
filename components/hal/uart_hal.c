@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,19 +8,9 @@
 #include "hal/uart_hal.h"
 #include "soc/soc_caps.h"
 
-void uart_hal_set_sclk(uart_hal_context_t *hal, soc_module_clk_t sclk)
-{
-    uart_ll_set_sclk(hal->dev, sclk);
-}
-
 void uart_hal_get_sclk(uart_hal_context_t *hal, soc_module_clk_t *sclk)
 {
     uart_ll_get_sclk(hal->dev, sclk);
-}
-
-void uart_hal_set_baudrate(uart_hal_context_t *hal, uint32_t baud_rate, uint32_t sclk_freq)
-{
-    uart_ll_set_baudrate(hal->dev, baud_rate, sclk_freq);
 }
 
 void uart_hal_get_baudrate(uart_hal_context_t *hal, uint32_t *baud_rate, uint32_t sclk_freq)

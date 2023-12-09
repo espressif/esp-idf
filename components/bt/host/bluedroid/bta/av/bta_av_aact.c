@@ -62,6 +62,11 @@
 #define BTA_AV_RECONFIG_RETRY       6
 #endif
 
+/* avdt_handle to send abort command for AVDTP BQB test */
+#if A2D_SRC_BQB_INCLUDED
+static uint8_t s_avdt_bqb_handle;
+#endif /* CONFIG_BT_BQB_ENABLED */
+
 static void bta_av_st_rc_timer(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 
 /* state machine states */
@@ -1415,6 +1420,10 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         }
     }
 
+#if A2D_SRC_BQB_INCLUDED
+    s_avdt_bqb_handle = p_scb->avdt_handle;
+#endif /* A2D_SRC_BQB_INCLUDED */
+
 #if 0 /* TODO: implement the property enable/disable */
     // This code is used to pass PTS TC for AVDTP ABORT
     char value[PROPERTY_VALUE_MAX] = {0};
@@ -1425,6 +1434,22 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     }
 #endif /* #if 0*/
 }
+
+/*******************************************************************************
+**
+** Function         avdt_bqb_abort
+**
+** Description      Send AVDT abort request for BQB test
+**
+** Returns          void
+**
+*******************************************************************************/
+#if A2D_SRC_BQB_INCLUDED
+void avdt_bqb_abort(void)
+{
+    AVDT_AbortReq(s_avdt_bqb_handle);
+}
+#endif /* A2D_SRC_BQB_INCLUDED */
 
 /*******************************************************************************
 **
@@ -2020,7 +2045,7 @@ void bta_av_str_stopped (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     BT_HDR  *p_buf;
     UINT8 policy = HCI_ENABLE_SNIFF_MODE;
 
-    APPL_TRACE_ERROR("bta_av_str_stopped:audio_open_cnt=%d, p_data %p",
+    APPL_TRACE_DEBUG("bta_av_str_stopped:audio_open_cnt=%d, p_data %p",
                      bta_av_cb.audio_open_cnt, p_data);
 
     bta_sys_idle(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
@@ -2071,7 +2096,7 @@ void bta_av_str_stopped (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     } else {
         suspend_rsp.status = BTA_AV_SUCCESS;
         suspend_rsp.initiator = TRUE;
-        APPL_TRACE_EVENT("bta_av_str_stopped status %d", suspend_rsp.status);
+        APPL_TRACE_WARNING("bta_av_str_stopped status %d", suspend_rsp.status);
 
         /* send STOP_EVT event only if not in reconfiguring state */
         if (p_scb->state != BTA_AV_RCFG_SST) {

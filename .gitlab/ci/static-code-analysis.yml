@@ -5,28 +5,23 @@ clang_tidy_check:
     - .rules:patterns:clang_tidy
   artifacts:
     paths:
-      - $OUTPUT_DIR
+      - clang_tidy_reports/
     when: always
     expire_in: 1 day
   variables:
-    CLANG_TIDY_DIRS_TXT: ${CI_PROJECT_DIR}/tools/ci/clang_tidy_dirs.txt
-    RULES_FILE: ${CI_PROJECT_DIR}/tools/ci/static-analysis-rules.yml
-    OUTPUT_DIR: ${CI_PROJECT_DIR}/clang_tidy_reports
     IDF_TOOLCHAIN: clang
   script:
-    - internal_pip_install $CLANG_TIDY_RUNNER_PROJ pyclang
-    - export PATH=$PATH:$(python -c "import sys; print(sys.executable.rsplit('/', 1)[0])")
-    - dirs=$(cat ${CLANG_TIDY_DIRS_TXT} | while read line; do echo ${CI_PROJECT_DIR}/${line}; done | xargs)
-    - run_cmd idf_clang ${dirs}
-      --output-path ${OUTPUT_DIR}
-      --limit-file ${RULES_FILE}
+    - run_cmd idf_clang_tidy $(cat tools/ci/clang_tidy_dirs.txt | xargs)
+      --output-path clang_tidy_reports
+      --limit-file tools/ci/static-analysis-rules.yml
       --xtensa-include-dir
-      --run-clang-tidy-py run-clang-tidy
 
 check_pylint:
   extends:
     - .pre_check_template
     - .rules:patterns:python-files
+  needs:
+    - pipeline_variables
   artifacts:
     when: always
     reports:
@@ -35,9 +30,9 @@ check_pylint:
   script:
     - |
       if [ -n "$CI_MERGE_REQUEST_IID" ]; then
-        export files=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | grep ".py$");
+        export files=$(echo $GIT_DIFF_OUTPUT | grep ".py$" | xargs);
       else
-        export files=$(find . -iname "*.py" -print);
+        export files=$(git ls-files "*.py" | xargs);
       fi
     - if [ -z "$files" ]; then echo "No python files found"; exit 0; fi
     - run_cmd pylint --exit-zero --load-plugins=pylint_gitlab --output-format=gitlab-codeclimate:pylint.json $files
@@ -89,7 +84,7 @@ code_quality_check:
   allow_failure: true  # since now it's using exit code to indicate the code analysis result,
                        # we don't want to block ci when critical issues founded
   script:
-    - export CI_MERGE_REQUEST_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits ${CI_COMMIT_REF_NAME} | tr '\n' ',')
+    - export CI_MERGE_REQUEST_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits --src-branch ${CI_COMMIT_REF_NAME} | tr '\n' ',')
     # test if this branch have merge request, if not, exit 0
     - test -n "$CI_MERGE_REQUEST_IID" || exit 0
     - test -n "$CI_MERGE_REQUEST_COMMITS" || exit 0

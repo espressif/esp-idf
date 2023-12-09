@@ -18,8 +18,8 @@ Application developers can open a terminal-based project configuration menu with
 
 After being updated, this configuration is saved in the ``sdkconfig`` file under the project root directory. Based on ``sdkconfig``, application build targets will generate the ``sdkconfig.h`` file under the build directory, and will make the ``sdkconfig`` options available to the project build system and source files.
 
-Using sdkconfig.defaults
-========================
+Using ``sdkconfig.defaults``
+============================
 
 In some cases, for example, when the ``sdkconfig`` file is under revision control, it may be inconvenient for the build system to change the ``sdkconfig`` file. The build system offers a solution to prevent it from happening, which is to create the ``sdkconfig.defaults`` file. This file is never touched by the build system, and can be created manually or automatically. It contains all the options which matter to the given application and are different from the default ones. The format is the same as that of the ``sdkconfig`` file. ``sdkconfig.defaults`` can be created manually when one remembers all the changed configuration, or it can be generated automatically by running the ``idf.py save-defconfig`` command.
 
@@ -43,7 +43,11 @@ Format rules for Kconfig files are as follows:
 Format Checker
 --------------
 
-``tools/ci/check_kconfigs.py`` is provided for checking Kconfig files against the above format rules. The checker checks all Kconfig and ``Kconfig.projbuild`` files in the ESP-IDF directory, and generates a new file with suffix ``.new`` with some suggestions about how to fix issues (if there are any). Please note that the checker cannot correct all format issues and the responsibility of the developer is to final check and make corrections in order to pass the tests. For example, indentations will be corrected if there is not any misleading formatting, but it cannot come up with a common prefix for options inside a menu.
+``kconfcheck`` tool in esp-idf-kconfig_ package is provided for checking Kconfig files against the above format rules. The checker checks all Kconfig and ``Kconfig.projbuild`` files given as arguments, and generates a new file with suffix ``.new`` with some suggestions about how to fix issues (if there are any). Please note that the checker cannot correct all format issues and the responsibility of the developer is to final check and make corrections in order to pass the tests. For example, indentations will be corrected if there is not any misleading formatting, but it cannot come up with a common prefix for options inside a menu.
+
+The ``esp-idf-kconfig`` package is available in ESP-IDF environments, where the checker tool can be invoked by running command ``python -m kconfcheck <path_to_kconfig_file>``.
+
+For more information, please refer to `esp-idf-kconfig package documentation <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`__.
 
 .. _configuration-options-compatibility:
 

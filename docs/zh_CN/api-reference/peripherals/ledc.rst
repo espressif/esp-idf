@@ -1,7 +1,7 @@
 LED PWM 控制器
 ==============
 
-{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16"}
 
 :link_to_translation:`en:[English]`
 
@@ -65,7 +65,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
 频率和占空比分辨率相互关联。PWM 频率越高，占空比分辨率越低，反之亦然。如果 API 不是用来改变 LED 亮度，而是用于其它目的，这种相互关系可能会很重要。更多信息详见 :ref:`ledc-api-supported-range-frequency-duty-resolution` 一节。
 
-时钟源同样可以限制PWM频率。选择的时钟源频率越高，可以配置的PWM频率上限就越高。
+时钟源同样可以限制 PWM 频率。选择的时钟源频率越高，可以配置的 PWM 频率上限就越高。
 
 .. only:: esp32
 
@@ -88,7 +88,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
        * - RC_FAST_CLK
          - ~ 8 MHz
          - 低速
-         - 支持动态调频 (DFS) 功能，支持Light-sleep模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
 
 .. only:: esp32s2
 
@@ -107,7 +107,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 支持动态调频 (DFS) 功能
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
@@ -145,12 +145,12 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频 (DFS) 功能，支持Light-sleep模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
 
-.. only:: esp32c6
+.. only:: esp32c6 or esp32p4
 
     .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
        :widths: 10 10 30
@@ -164,7 +164,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
@@ -183,7 +183,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 32 MHz
          - 支持动态调频 (DFS) 功能
@@ -196,11 +196,13 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
     .. only:: not SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
 
-        1. 如果 {IDF_TARGET_NAME} 的定时器选用了 ``RC_FAST_CLK`` 作为其时钟源，LEDC的输出 PWM 信号频率可能会与设定值有一定偏差。由于 {IDF_TARGET_NAME} 的硬件限制，驱动无法通过内部校准得知这个时钟源的实际频率。因此驱动默认使用其理论频率进行计算。
+        1. 如果 {IDF_TARGET_NAME} 的定时器选用了 ``RC_FAST_CLK`` 作为其时钟源，LEDC 的输出 PWM 信号频率可能会与设定值有一定偏差。由于 {IDF_TARGET_NAME} 的硬件限制，驱动无法通过内部校准得知这个时钟源的实际频率。因此驱动默认使用其理论频率进行计算。
 
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
         2. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
+
+LEDC 驱动提供了一个辅助函数 :cpp:func:`ledc_find_suitable_duty_resolution`。传入时钟源频率及期望的 PWM 信号频率，这个函数可以直接找到最大可配的占空比分辨率值。
 
 当一个定时器不再被任何通道所需要时，可以通过调用相同的函数 :cpp:func:`ledc_timer_config` 来重置这个定时器。此时，函数入参的配置结构体需要指定：
 
@@ -246,7 +248,13 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
 
 另外一种设置占空比和其他通道参数的方式是调用 :ref:`ledc-api-configure-channel` 一节提到的函数 :cpp:func:`ledc_channel_config`。
 
-传递给函数的占空比数值范围取决于选定的 ``duty_resolution``，应为 ``0`` 至 ``(2 ** duty_resolution) - 1``。例如，如选定的占空比分辨率为 10，则占空比的数值范围为 0 至 1023。此时分辨率为 ~ 0.1%。
+传递给函数的占空比数值范围取决于选定的 ``duty_resolution``，应为 ``0`` 至 ``(2 ** duty_resolution)``。例如，如选定的占空比分辨率为 10，则占空比的数值范围为 0 至 1024。此时分辨率为 ~ 0.1%。
+
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c2 or esp32c6 or esp32h2 or esp32p4
+
+    .. warning::
+
+        在 {IDF_TARGET_NAME} 上，当通道绑定的定时器配置了其最大 PWM 占空比分辨率（ ``MAX_DUTY_RES`` ），通道的占空比不能被设置到 ``(2 ** MAX_DUTY_RES)`` 。否则，硬件内部占空比计数器会溢出，并导致占空比计算错误。
 
 
 使用硬件改变 PWM 占空比

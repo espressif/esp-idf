@@ -68,8 +68,8 @@ static void IRAM_ATTR gpio_isr_handler(void* arg)
 static void gpio_task_example(void* arg)
 {
     uint32_t io_num;
-    for(;;) {
-        if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
+    for (;;) {
+        if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             printf("GPIO[%"PRIu32"] intr, val: %d\n", io_num, gpio_get_level(io_num));
         }
     }
@@ -125,7 +125,7 @@ void app_main(void)
     printf("Minimum free heap size: %"PRIu32" bytes\n", esp_get_minimum_free_heap_size());
 
     int cnt = 0;
-    while(1) {
+    while (1) {
         printf("cnt: %d\n", cnt++);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         gpio_set_level(GPIO_OUTPUT_IO_0, cnt % 2);

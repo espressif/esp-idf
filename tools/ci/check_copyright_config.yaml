@@ -121,7 +121,7 @@ spiffs:
 
 sdmmc:
   include:
-    - 'components/driver/sdmmc/include/driver/'
+    - 'components/esp_driver_sdmmc/include/driver/'
     - 'components/sdmmc/'
   allowed_licenses:
     - Apache-2.0
@@ -195,6 +195,7 @@ ignore:
     - components/http_parser/
     - components/wpa_supplicant/src/
     - '!components/wpa_supplicant/esp_supplicant/'
+    - components/wpa_supplicant/esp_supplicant/src/crypto/fastpbkdf2*
     - components/bt/host/bluedroid/
     - '!components/bt/host/bluedroid/api/'
     - '!components/bt/host/bluedroid/btc/'

@@ -10,6 +10,7 @@
 #include "soc/systimer_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
+#include "soc/hp_sys_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +18,6 @@ extern "C" {
 
 // All these functions get invoked either from ISR or HAL that linked to IRAM.
 // Always inline these functions even no gcc optimization is applied.
-
-//TODO: IDF-7486
 
 /******************* Clock *************************/
 
@@ -30,17 +29,52 @@ __attribute__((always_inline)) static inline void systimer_ll_enable_clock(systi
 // Set clock source: XTAL(default) or RC_FAST
 static inline void systimer_ll_set_clock_source(soc_periph_systimer_clk_src_t clk_src)
 {
+    HP_SYS_CLKRST.peri_clk_ctrl21.reg_systimer_clk_src_sel = (clk_src == SYSTIMER_CLK_SRC_RC_FAST) ? 1 : 0;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define systimer_ll_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; systimer_ll_set_clock_source(__VA_ARGS__)
 
 static inline soc_periph_systimer_clk_src_t systimer_ll_get_clock_source(void)
 {
-    return SYSTIMER_CLK_SRC_XTAL;
+    return (HP_SYS_CLKRST.peri_clk_ctrl21.reg_systimer_clk_src_sel == 1) ? SYSTIMER_CLK_SRC_RC_FAST : SYSTIMER_CLK_SRC_XTAL;
 }
+
+/**
+ * @brief Enable the bus clock for systimer module
+ *
+ * @param enable true to enable, false to disable
+ */
+static inline void systimer_ll_enable_bus_clock(bool enable)
+{
+    HP_SYS_CLKRST.soc_clk_ctrl2.reg_systimer_apb_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define systimer_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; systimer_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the systimer module
+ *
+ * @param group_id Group ID
+ */
+static inline void systimer_ll_reset_register(void)
+{
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_stimer = 1;
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_stimer = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define systimer_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; systimer_ll_reset_register(__VA_ARGS__)
 
 /********************** ETM *****************************/
 
 __attribute__((always_inline)) static inline void systimer_ll_enable_etm(systimer_dev_t *dev, bool en)
 {
+    dev->conf.etm_en = en;
 }
 
 /******************* Counter *************************/

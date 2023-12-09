@@ -53,6 +53,8 @@ void test_assert(void);
 
 void test_assert_cache_disabled(void);
 
+void test_illegal_access(void);
+
 #ifdef __cplusplus
 }
 #endif

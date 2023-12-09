@@ -104,6 +104,14 @@ typedef enum {
 } esp_ble_enhanced_power_type_t;
 
 /**
+ * @brief Select buffers
+*/
+typedef enum {
+    ESP_BLE_LOG_BUF_HCI         = 0x02,
+    ESP_BLE_LOG_BUF_CONTROLLER  = 0x05,
+} esp_ble_log_buf_t;
+
+/**
  * @brief Address type and address value.
  */
 typedef struct {
@@ -147,7 +155,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20230113
+#define CONFIG_VERSION  0x20231124
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -204,7 +212,7 @@ typedef struct {
     uint8_t cca_drop_mode;                           /*!< CCA drop mode */
     int8_t cca_low_tx_pwr;                           /*!< CCA low transmit power */
     uint8_t main_xtal_freq;                          /*!< Main crystal frequency */
-    uint8_t version_num;                             /*!< Controller configuration version number */
+    uint32_t version_num;                            /*!< Controller configuration version number */
     uint8_t cpu_freq_mhz;                            /*!< CPU frequency in megahertz (MHz) */
     uint8_t ignore_wl_for_direct_adv;                /*!< Ignore the whitelist for direct advertising */
     uint8_t enable_pcl;                              /*!< Enable power control */
@@ -412,7 +420,7 @@ extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 /**
- * @brief dump all controller log information cached in buffer
+ * @brief dump all log information cached in buffers.
  * @param output : true for log dump, false will take no effect
  */
 void esp_ble_controller_log_dump_all(bool output);

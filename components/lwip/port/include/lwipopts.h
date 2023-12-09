@@ -162,6 +162,12 @@ extern "C" {
  */
 #define ARP_QUEUEING                    1
 
+#ifdef CONFIG_LWIP_DHCPS_STATIC_ENTRIES
+#define ETHARP_SUPPORT_STATIC_ENTRIES   1
+#else
+#define ETHARP_SUPPORT_STATIC_ENTRIES   0
+#endif
+
 /*
    --------------------------------
    ---------- IP options ----------
@@ -216,6 +222,13 @@ extern "C" {
  */
 #ifdef CONFIG_LWIP_IPV4_NAPT
 #define IP_NAPT                         1
+
+#ifdef CONFIG_LWIP_IPV4_NAPT_PORTMAP
+#define IP_NAPT_PORTMAP                 1
+#else
+#define IP_NAPT_PORTMAP                 0
+#endif
+
 #else
 #define IP_NAPT                         0
 #endif
@@ -533,6 +546,21 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #endif
 
 /**
+ * TCP_OOSEQ_MAX_PBUFS: The maximum number of pbufs
+ * queued on ooseq per pcb
+ */
+#if TCP_QUEUE_OOSEQ
+#define TCP_OOSEQ_MAX_PBUFS             CONFIG_LWIP_TCP_OOSEQ_MAX_PBUFS
+#endif
+
+/**
+ * TCP_OOSEQ_TIMEOUT: Timeout for each pbuf queued in TCP OOSEQ, in RTOs.
+ */
+#if TCP_QUEUE_OOSEQ
+#define TCP_OOSEQ_TIMEOUT               CONFIG_LWIP_TCP_OOSEQ_TIMEOUT
+#endif
+
+/**
  * LWIP_TCP_SACK_OUT==1: TCP will support sending selective acknowledgements (SACKs).
  */
 #ifdef CONFIG_LWIP_TCP_SACK_OUT
@@ -793,7 +821,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * The priority value itself is platform-dependent, but is passed to
  * sys_thread_new() when the thread is created.
  */
-#define TCPIP_THREAD_PRIO               CONFIG_LWIP_TCPIP_TASK_PRIO
+#define TCPIP_THREAD_PRIO               ESP_TASK_TCPIP_PRIO
 
 /**
  * TCPIP_MBOX_SIZE: The mailbox size for the tcpip thread messages
@@ -1139,6 +1167,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_ND6                        1
 #else
 #define LWIP_ND6                        0
+#endif
+
+/**
+ * LWIP_FORCE_ROUTER_FORWARDING==1: the router flag in NA packet will always set to 1,
+ * otherwise, never set router flag for NA packets.
+ */
+#ifdef CONFIG_LWIP_FORCE_ROUTER_FORWARDING
+#define LWIP_FORCE_ROUTER_FORWARDING    1
+#else
+#define LWIP_FORCE_ROUTER_FORWARDING    0
 #endif
 
 /**

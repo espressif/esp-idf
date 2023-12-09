@@ -8,11 +8,12 @@
 #include <stdbool.h>
 #include <string.h>
 #include "sdkconfig.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_log.h"
 #include "ecc_params.h"
 #include "soc/soc_caps.h"
 #include "hal/ecc_hal.h"
-#include "hal/clk_gate_ll.h"
+#include "hal/ecc_ll.h"
 
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -43,7 +44,17 @@ static void ecc_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len
 
 static void ecc_enable_and_reset(void)
 {
-    periph_ll_enable_clk_clear_rst(PERIPH_ECC_MODULE);
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(true);
+        ecc_ll_reset_register();
+    }
+}
+
+static void ecc_disable(void)
+{
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(false);
+    }
 }
 
 
@@ -80,6 +91,7 @@ static void ecc_point_mul(const uint8_t *k_le, const uint8_t *x_le, const uint8_
     }
 
     ecc_hal_read_mul_result(res_x_le, res_y_le, len);
+    ecc_disable();
 }
 
 static void test_ecc_point_mul_inner(bool verify_first)
@@ -161,7 +173,10 @@ static int ecc_point_verify(const uint8_t *x_le, const uint8_t *y_le, uint8_t le
         ;
     }
 
-   return ecc_hal_read_verify_result();
+    int ret = ecc_hal_read_verify_result();
+    ecc_disable();
+
+    return ret;
 }
 
 TEST(ecc, ecc_point_verification_on_SECP192R1_and_SECP256R1)
@@ -222,6 +237,7 @@ static void ecc_point_inv_mul(const uint8_t *num_le, const uint8_t *deno_le, uin
     }
 
     ecc_hal_read_mul_result(zero, res_le, len);
+    ecc_disable();
 }
 
 TEST(ecc, ecc_inverse_multiplication_or_mod_division_using_SECP192R1_and_SECP256R1_order_of_curve)
@@ -254,6 +270,7 @@ static void ecc_jacob_mul(uint8_t *k_le, uint8_t *x_le, uint8_t *y_le, uint8_t l
     }
 
     ecc_hal_read_jacob_mul_result(res_x_le, res_y_le, res_z_le, len);
+    ecc_disable();
 }
 
 static void test_ecc_jacob_mul_inner(bool verify_first)
@@ -314,7 +331,10 @@ static int ecc_jacob_verify(const uint8_t *x_le, const uint8_t *y_le, const uint
         ;
     }
 
-   return ecc_hal_read_verify_result();
+    int ret = ecc_hal_read_verify_result();
+    ecc_disable();
+
+    return ret;
 }
 
 TEST(ecc, ecc_jacobian_point_verification_on_SECP192R1_and_SECP256R1)
@@ -355,6 +375,7 @@ static void ecc_point_addition(uint8_t *px_le, uint8_t *py_le, uint8_t *qx_le, u
     }
 
     ecc_hal_read_point_add_result(x_res_le, y_res_le, z_res_le, len, jacob_output);
+    ecc_disable();
 }
 
 TEST(ecc, ecc_point_addition_on_SECP192R1_and_SECP256R1)
@@ -426,6 +447,7 @@ static void ecc_mod_op(ecc_mode_t mode, const uint8_t *a, const uint8_t *b, uint
     }
 
     ecc_hal_read_mod_op_result(res_le, len);
+    ecc_disable();
 }
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -10,7 +10,7 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
-#include "esp_wpa2.h"
+#include "esp_eap_client.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -89,33 +89,38 @@ static void initialise_wifi(void)
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = EXAMPLE_WIFI_SSID,
+#if defined (CONFIG_EXAMPLE_WPA3_ENTERPRISE)
+            .pmf_cfg = {
+                .required = true
+            },
+#endif
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
-    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)EXAMPLE_EAP_ID, strlen(EXAMPLE_EAP_ID)) );
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_eap_client_set_identity((uint8_t *)EXAMPLE_EAP_ID, strlen(EXAMPLE_EAP_ID)));
 
 #if defined(CONFIG_EXAMPLE_VALIDATE_SERVER_CERT) || \
     defined(CONFIG_EXAMPLE_WPA3_ENTERPRISE)
-    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_ca_cert(ca_pem_start, ca_pem_bytes) );
+    ESP_ERROR_CHECK(esp_eap_client_set_ca_cert(ca_pem_start, ca_pem_bytes) );
 #endif /* CONFIG_EXAMPLE_VALIDATE_SERVER_CERT */ /* EXAMPLE_WPA3_ENTERPRISE */
 
-    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_username((uint8_t *)EXAMPLE_EAP_USERNAME, strlen(EXAMPLE_EAP_USERNAME)) );
-    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EXAMPLE_EAP_PASSWORD, strlen(EXAMPLE_EAP_PASSWORD)) );
-    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_pac_file(pac_file_pac_start, pac_file_bytes - 1) );
+    ESP_ERROR_CHECK(esp_eap_client_set_username((uint8_t *)EXAMPLE_EAP_USERNAME, strlen(EXAMPLE_EAP_USERNAME)));
+    ESP_ERROR_CHECK(esp_eap_client_set_password((uint8_t *)EXAMPLE_EAP_PASSWORD, strlen(EXAMPLE_EAP_PASSWORD)));
+    ESP_ERROR_CHECK(esp_eap_client_set_pac_file(pac_file_pac_start, pac_file_bytes - 1) );
     esp_eap_fast_config eap_fast_config = {
         .fast_provisioning = 2,
         .fast_max_pac_list_len = 0,
         .fast_pac_format_binary = false
     };
-    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_set_fast_phase1_params(eap_fast_config) );
+    ESP_ERROR_CHECK(esp_eap_client_set_fast_params(eap_fast_config));
 
-    ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_enable() );
-    ESP_ERROR_CHECK( esp_wifi_start() );
+    ESP_ERROR_CHECK(esp_wifi_sta_enterprise_enable());
+    ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-static void wpa2_enterprise_example_task(void *pvParameters)
+static void wifi_enterprise_example_task(void *pvParameters)
 {
     esp_netif_ip_info_t ip;
     memset(&ip, 0, sizeof(esp_netif_ip_info_t));
@@ -138,5 +143,5 @@ void app_main(void)
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();
-    xTaskCreate(&wpa2_enterprise_example_task, "wpa2_enterprise_example_task", 4096, NULL, 5, NULL);
+    xTaskCreate(&wifi_enterprise_example_task, "wifi_enterprise_example_task", 4096, NULL, 5, NULL);
 }

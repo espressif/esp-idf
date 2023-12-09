@@ -103,6 +103,11 @@ esp_err_t esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t*
  *
  * @param depth The maximum number of stack frames to print (should be > 0)
  *
+ * @note On RISC-V targets printing backtrace at run-time is only available if
+ *       CONFIG_ESP_SYSTEM_USE_EH_FRAME is selected. Otherwise we simply print
+ *       a register dump. Function assumes it is called in a context where the
+ *       calling task will not migrate to another core, e.g. interrupts disabled/panic handler.
+ *
  * @return
  *      - ESP_OK    Backtrace successfully printed to completion or to depth limit
  *      - ESP_FAIL  Backtrace is corrupted

@@ -33,7 +33,7 @@ ESP32-Ethernet-Kit V1.2 入门指南
 
 ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板。
 
-它由 :ref:`以太网母板（A板）<get-started-esp32-ethernet-kit-a-v1.2-layout>` 和 `PoE 子板（B 板）`_ 两部分组成。其中 :ref:`以太网母板（A板）<get-started-esp32-ethernet-kit-a-v1.2-layout>` 集成蓝牙/Wi-Fi 双模 ESP32-WROVER-E 模组和单端口 10/100 Mbps 快速以太网收发器 (PHY) IP101GRI。`PoE 子板（B 板）`_ 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
+它由 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.2-layout>` 和 `PoE 子板（B 板）`_ 两部分组成。其中 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.2-layout>` 集成蓝牙/Wi-Fi 双模 ESP32-WROVER-E 模组和单端口 10/100 Mbps 快速以太网收发器 (PHY) IP101GRI。`PoE 子板（B 板）`_ 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
 
 .. _get-started-esp32-ethernet-kit-v1.2:
 
@@ -384,7 +384,7 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 针对 ESP32-Ethernet-Kit V1.1 的主要修改
 -----------------------------------------
 
-* 更正拨码开关周围 GPIO 编号丝印。 
+* 更正拨码开关周围 GPIO 编号丝印。
 * C1、C2、C42 和 C43 更新为 20 pF。详细信息见 `ESP32-Ethernet-Kit V1.2 以太网母板（A 板）原理图`_。
 * 模组 ESP32-WROVER-B 替换为 ESP32-WROVER-E。
 

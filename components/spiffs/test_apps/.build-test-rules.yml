@@ -1,0 +1,4 @@
+components/spiffs/test_apps:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+      reason: These chips should be sufficient for test coverage (Xtensa and RISC-V, single and dual core)

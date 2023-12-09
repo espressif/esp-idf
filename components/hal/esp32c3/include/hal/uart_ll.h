@@ -15,6 +15,9 @@
 #include "hal/uart_types.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
+#include "soc/system_struct.h"
+#include "soc/system_reg.h"
+#include "soc/dport_access.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -57,17 +60,71 @@ typedef enum {
 } uart_intr_t;
 
 /**
- * @brief  Configure the UART core reset.
+ * @brief Check if UART is enabled or disabled.
  *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
- * @return None.
+ * @return true: enabled; false: disabled
  */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    hw->clk_conf.rst_core = core_rst_en;
+    uint32_t uart_rst_bit = ((uart_num == 0) ? SYSTEM_UART_RST :
+                            (uart_num == 1) ? SYSTEM_UART1_RST : 0);
+    uint32_t uart_en_bit  = ((uart_num == 0) ? SYSTEM_UART_CLK_EN :
+                            (uart_num == 1) ? SYSTEM_UART1_CLK_EN : 0);
+    return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, uart_rst_bit) == 0 &&
+        DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, uart_en_bit) != 0;
 }
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num) {
+    case 0:
+        SYSTEM.perip_clk_en0.reg_uart_clk_en = enable;
+        break;
+    case 1:
+        SYSTEM.perip_clk_en0.reg_uart1_clk_en = enable;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    // ESP32C3 requires a workaround: enable core reset before enabling uart module clock to prevent uart output garbage value
+    switch (uart_num) {
+    case 0:
+        UART0.clk_conf.rst_core = 1;
+        SYSTEM.perip_rst_en0.reg_uart_rst = 1;
+        SYSTEM.perip_rst_en0.reg_uart_rst = 0;
+        UART0.clk_conf.rst_core = 0;
+        break;
+    case 1:
+        UART1.clk_conf.rst_core = 1;
+        SYSTEM.perip_rst_en0.reg_uart1_rst = 1;
+        SYSTEM.perip_rst_en0.reg_uart1_rst = 0;
+        UART1.clk_conf.rst_core = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Enable the UART clock.
@@ -161,13 +218,15 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
 {
 #define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
-    int sclk_div = DIV_UP(sclk_freq, max_div * baud);
+    uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
+
+    if (sclk_div == 0) abort();
 
     uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
     hw->clk_div.div_int = clk_div >> 4;
-    hw->clk_div.div_frag = clk_div &  0xf;
+    hw->clk_div.div_frag = clk_div & 0xf;
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
 #undef DIV_UP
 }
@@ -197,7 +256,7 @@ static inline uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
  */
 FORCE_INLINE_ATTR void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
-    hw->int_ena.val |= mask;
+    hw->int_ena.val = hw->int_ena.val | mask;
 }
 
 /**
@@ -210,7 +269,7 @@ FORCE_INLINE_ATTR void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
  */
 FORCE_INLINE_ATTR void uart_ll_disable_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
-    hw->int_ena.val &= (~mask);
+    hw->int_ena.val = hw->int_ena.val & (~mask);
 }
 
 /**

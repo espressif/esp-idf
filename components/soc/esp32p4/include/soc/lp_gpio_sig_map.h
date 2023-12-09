@@ -50,4 +50,7 @@
 #define LP_PROBE_TOP_OUT14_IDX                            28
 #define LP_PROBE_TOP_OUT15_IDX                            29
 #define PROBE_CHAIN_CLK_PAD_OUT_IDX                       30
+
+#define SIG_LP_GPIO_OUT_IDX                               32
+
 #define LP_GPIO_MAP_DATE_IDX                              0x230323

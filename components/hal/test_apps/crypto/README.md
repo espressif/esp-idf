@@ -47,6 +47,22 @@ This contains tests for the following features of the crypto peripherals:
     - ECDSA P192 signature verification
     - ECDSA P256 signature verification
 
+- AES peripheral
+    - Block Mode
+        - CBC AES-256
+        - CTR AES-256
+
+- SHA peripheral
+    - Block Mode
+        - SHA-1
+        - SHA-224
+        - SHA-256
+        - SHA-384
+        - SHA-512
+        - SHA-512/224
+        - SHA-512/256
+        - SHA-512/t
+
 > **_NOTE:_** The verification tests for the HMAC and Digital Signature peripherals would get exercised in only in an FPGA environment.
 # Burning the HMAC key
 

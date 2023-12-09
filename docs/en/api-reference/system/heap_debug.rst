@@ -154,7 +154,6 @@ In both cases, the functions involve checking that the first 4 bytes of an alloc
 
 Different values usually indicate buffer underrun or overrun. Overrun indicates that when writing to memory, the data written exceeds the size of the allocated memory, resulting in writing to an unallocated memory area; underrun indicates that when reading memory, the data read exceeds the allocated memory and reads data from an unallocated memory area.
 
-
 Comprehensive
 +++++++++++++
 
@@ -298,7 +297,7 @@ In ``HEAP_TRACE_LEAKS`` mode, for each traced memory allocation that has not alr
 
 .. only:: not CONFIG_IDF_TARGET_ARCH_RISCV
 
-    The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > ``Heap tracing stack depth``. Up to 10 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
+    The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
 Finally, the total number of the 'leaked' bytes (bytes allocated but not freed while the trace is running) is printed together with the total number of allocations it represents.
 

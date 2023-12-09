@@ -238,7 +238,7 @@ static esp_err_t prov_complete(int node_idx, const esp_ble_mesh_octet16_t uuid,
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Provisioning node by common methold");
+    ESP_LOGI(TAG, "Provisioning node by common method");
     ESP_LOGI(TAG, "That node will be act as remote provisioning server to help Provisioner to provisioning another node");
 
     example_ble_mesh_set_msg_common(&common, unicast, config_client.model, ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET);

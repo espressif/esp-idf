@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -24,7 +24,6 @@ typedef enum {
     SOFT_UART_BAUD_END
 } soft_uart_baudrate_t;
 
-
 /**
  * @brief Structure defining the configuration for the software UART port
  */
@@ -34,12 +33,10 @@ typedef struct {
     soft_uart_baudrate_t baudrate;
 } soft_uart_config_t;
 
-
 /**
  * @brief Abstract type representing a software UART port.
  */
 typedef struct soft_uart_port_impl_t* soft_uart_port_t;
-
 
 /**
  * @brief Create and configure the software UART port.
@@ -51,7 +48,6 @@ typedef struct soft_uart_port_impl_t* soft_uart_port_t;
  */
 esp_err_t soft_uart_new(soft_uart_config_t *config, soft_uart_port_t *port);
 
-
 /**
  * @brief Delete a previously initialized software UART port.
  *
@@ -60,7 +56,6 @@ esp_err_t soft_uart_new(soft_uart_config_t *config, soft_uart_port_t *port);
  * @return ESP_OK on success
  */
 esp_err_t soft_uart_del(soft_uart_port_t port);
-
 
 /**
  * @brief Send the given bytes on the software UART port.

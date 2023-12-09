@@ -6,14 +6,14 @@ Partitions API
 Overview
 --------
 
-The ``esp_partition`` component has higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`. These APIs are based on lower level API provided by :doc:`SPI Flash driver </api-reference/peripherals/spi_flash/index>`.
+The ``esp_partition`` component has higher-level API functions which work with partitions defined in the :doc:`/api-guides/partition-tables`. These APIs are based on lower level API provided by :doc:`/api-reference/peripherals/spi_flash/index`.
 
 .. _flash-partition-apis:
 
 Partition Table API
 -------------------
 
-ESP-IDF projects use a partition table to maintain information about various regions of SPI flash memory (bootloader, various application binaries, data, filesystems). More information can be found in :doc:`Partition Tables </api-guides/partition-tables>`.
+ESP-IDF projects use a partition table to maintain information about various regions of SPI flash memory (bootloader, various application binaries, data, filesystems). More information can be found in :doc:`/api-guides/partition-tables`.
 
 This component provides API functions to enumerate partitions found in the partition table and perform operations on them. These functions are declared in ``esp_partition.h``:
 
@@ -28,9 +28,9 @@ This component provides API functions to enumerate partitions found in the parti
 See Also
 --------
 
-- :doc:`Partition Table documentation <../../api-guides/partition-tables>`
-- :doc:`Over The Air Update (OTA) API <../system/ota>` provides high-level API for updating applications stored in flash.
-- :doc:`Non-Volatile Storage (NVS) API <nvs_flash>` provides a structured API for storing small pieces of data in SPI flash.
+- :doc:`../../api-guides/partition-tables`
+- :doc:`../system/ota` provides high-level API for updating applications stored in flash.
+- :doc:`nvs_flash` provides a structured API for storing small pieces of data in SPI flash.
 
 
 .. _api-reference-partition-table:

@@ -1,0 +1,71 @@
+menu "TWAI Configuration"
+    depends on SOC_TWAI_SUPPORTED
+
+    config TWAI_ISR_IN_IRAM
+        bool "Place TWAI ISR function into IRAM"
+        default n
+        help
+            Place the TWAI ISR in to IRAM. This will allow the ISR to avoid
+            cache misses, and also be able to run whilst the cache is disabled
+            (such as when writing to SPI Flash).
+            Note that if this option is enabled:
+            - Users should also set the ESP_INTR_FLAG_IRAM in the driver
+            configuration structure when installing the driver (see docs for
+            specifics).
+            - Alert logging (i.e., setting of the TWAI_ALERT_AND_LOG flag)
+            will have no effect.
+
+    config TWAI_ERRATA_FIX_BUS_OFF_REC
+        bool "Add SW workaround for REC change during bus-off"
+        depends on IDF_TARGET_ESP32
+        default y
+        help
+            When the bus-off condition is reached, the REC should be reset to 0 and frozen (via LOM) by the
+            driver's ISR. However on the ESP32, there is an edge case where the REC will increase before the
+            driver's ISR can respond in time (e.g., due to the rapid occurrence of bus errors), thus causing the
+            REC to be non-zero after bus-off. A non-zero REC can prevent bus-off recovery as the bus-off recovery
+            condition is that both TEC and REC become 0. Enabling this option will add a workaround in the driver
+            to forcibly reset REC to zero on reaching bus-off.
+
+    config TWAI_ERRATA_FIX_TX_INTR_LOST
+        bool "Add SW workaround for TX interrupt lost errata"
+        depends on IDF_TARGET_ESP32
+        default y
+        help
+            On the ESP32, when a transmit interrupt occurs, and interrupt register is read on the same APB clock
+            cycle, the transmit interrupt could be lost. Enabling this option will add a workaround that checks the
+            transmit buffer status bit to recover any lost transmit interrupt.
+
+    config TWAI_ERRATA_FIX_RX_FRAME_INVALID
+        bool "Add SW workaround for invalid RX frame errata"
+        depends on IDF_TARGET_ESP32
+        default y
+        help
+            On the ESP32, when receiving a data or remote frame, if a bus error occurs in the data or CRC field,
+            the data of the next received frame could be invalid. Enabling this option will add a workaround that
+            will reset the peripheral on detection of this errata condition. Note that if a frame is transmitted on
+            the bus whilst the reset is ongoing, the message will not be receive by the peripheral sent on the bus
+            during the reset, the message will be lost.
+
+    config TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
+        bool "Add SW workaround for RX FIFO corruption errata"
+        depends on IDF_TARGET_ESP32
+        default y
+        help
+            On the ESP32, when the RX FIFO overruns and the RX message counter maxes out at 64 messages, the entire
+            RX FIFO is no longer recoverable. Enabling this option will add a workaround that resets the peripheral
+            on detection of this errata condition. Note that if a frame is being sent on the bus during the reset
+            bus during the reset, the message will be lost.
+
+    config TWAI_ERRATA_FIX_LISTEN_ONLY_DOM
+        bool "Add SW workaround for listen only transmits dominant bit errata"
+        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
+        default y
+        help
+            When in the listen only mode, the TWAI controller must not influence the TWAI bus (i.e., must not send
+            any dominant bits). However, while in listen only mode on the ESP32/ESP32-S2/ESP32-S3/ESP32-C3, the
+            TWAI controller will still transmit dominant bits when it detects an error (i.e., as part of an active
+            error frame). Enabling this option will add a workaround that forces the TWAI controller into an error
+            passive state on initialization, thus preventing any dominant bits from being sent.
+
+endmenu # TWAI Configuration

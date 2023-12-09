@@ -19,9 +19,9 @@ def assert_built(paths: Union[List[str], List[Path]]) -> None:
         assert os.path.exists(path)
 
 
-def test_build_alternative_directories(idf_py: IdfPyFunc, session_work_dir: Path, test_app_copy: Path) -> None:
+def test_build_alternative_directories(idf_py: IdfPyFunc, func_work_dir: Path, test_app_copy: Path) -> None:
     logging.info('Moving BUILD_DIR_BASE out of tree')
-    alt_build_dir = session_work_dir / 'alt_build'
+    alt_build_dir = func_work_dir / 'alt_build'
     idf_py('-B', str(alt_build_dir), 'build')
     assert os.listdir(alt_build_dir) != [], 'No files found in new build directory!'
     default_build_dir = test_app_copy / 'build'
@@ -158,14 +158,14 @@ def test_build_dfu(idf_py: IdfPyFunc) -> None:
 def test_build_uf2(idf_py: IdfPyFunc) -> None:
     logging.info('UF2 build works')
     ret = idf_py('uf2')
-    assert 'build/uf2.bin" has been written.' in ret.stdout, 'UF2 build should work for esp32'
+    assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for esp32'
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
     ret = idf_py('uf2-app')
-    assert 'build/uf2-app.bin" has been written.' in ret.stdout, 'UF2 build should work for application binary'
+    assert 'build/uf2-app.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for application binary'
     assert_built(['build/uf2-app.bin'])
     idf_py('set-target', 'esp32s2')
     ret = idf_py('uf2')
-    assert 'build/uf2.bin" has been written.' in ret.stdout, 'UF2 build should work for esp32s2'
+    assert 'build/uf2.bin, ready to be flashed with any ESP USB Bridge' in ret.stdout, 'UF2 build should work for esp32s2'
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN + ['build/uf2.bin'])
 
 
@@ -201,3 +201,10 @@ def test_build_with_crlf_files(idf_py: IdfPyFunc, test_app_copy: Path, idf_copy:
     change_files_to_crlf(idf_copy)
     idf_py('build')
     assert_built(BOOTLOADER_BINS + APP_BINS + PARTITION_BIN)
+
+
+def test_build_cmake_executable_suffix(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('idf.py can build with CMAKE_EXECUTABLE_SUFFIX set')
+    append_to_file((test_app_copy / 'CMakeLists.txt'), 'set(CMAKE_EXECUTABLE_SUFFIX_CXX ".ext")')
+    ret = idf_py('build')
+    assert 'Project build complete' in ret.stdout, 'Build with CMAKE_EXECUTABLE_SUFFIX set failed'

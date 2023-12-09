@@ -89,7 +89,7 @@ bool clock_domain_pd_allowed(void)
 }
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP || CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
-ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, BIT(0), 106)
+ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
 {
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     sleep_clock_system_retention_init();

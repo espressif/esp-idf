@@ -419,12 +419,9 @@ components/esp_hid/private/bt_hidd.h
 components/esp_hid/private/bt_hidh.h
 components/esp_hid/private/esp_hidd_private.h
 components/esp_hid/src/esp_hid_common.c
-components/esp_hid/test/hid_descriptor.h
-components/esp_hid/test/test_esp_hid.c
 components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
-components/esp_netif/include/esp_netif_ppp.h
 components/esp_phy/test/test_phy_rtc.c
 components/esp_pm/include/esp_private/pm_trace.h
 components/esp_rom/esp32/ld/esp32.rom.api.ld
@@ -463,7 +460,6 @@ components/esp_rom/include/esp32/rom/aes.h
 components/esp_rom/include/esp32/rom/bigint.h
 components/esp_rom/include/esp32/rom/crc.h
 components/esp_rom/include/esp32/rom/efuse.h
-components/esp_rom/include/esp32/rom/libc_stubs.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/tbconsole.h
 components/esp_rom/include/esp32/rom/tjpgd.h
@@ -480,7 +476,6 @@ components/esp_rom/include/esp32s2/rom/bigint.h
 components/esp_rom/include/esp32s2/rom/crc.h
 components/esp_rom/include/esp32s2/rom/digital_signature.h
 components/esp_rom/include/esp32s2/rom/hmac.h
-components/esp_rom/include/esp32s2/rom/libc_stubs.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/esp_rom/include/esp32s2/rom/sha.h
@@ -507,7 +502,6 @@ components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/ubsan.c
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
-components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/src/mesh_event.c
 components/fatfs/diskio/diskio.c
 components/fatfs/diskio/diskio_impl.h
@@ -551,8 +545,6 @@ components/freertos/FreeRTOS-Kernel-SMP/timers.c
 components/hal/include/hal/dac_types.h
 components/hal/spi_slave_hal.c
 components/hal/spi_slave_hal_iram.c
-components/hal/test/test_mpu.c
-components/heap/include/heap_memory_layout.h
 components/heap/test_multi_heap_host/main.cpp
 components/heap/test_multi_heap_host/test_multi_heap.cpp
 components/idf_test/include/idf_performance.h
@@ -564,12 +556,10 @@ components/lwip/apps/ping/ping.c
 components/lwip/include/apps/dhcpserver/dhcpserver_options.h
 components/lwip/include/apps/esp_ping.h
 components/lwip/include/apps/ping/ping.h
-components/lwip/weekend_test/net_suite_test.py
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
 components/mbedtls/port/aes/block/esp_aes.c
 components/mbedtls/port/aes/dma/esp_aes.c
 components/mbedtls/port/aes/dma/esp_aes_crypto_dma_impl.c
-components/mbedtls/port/aes/dma/include/esp_aes_dma_priv.h
 components/mbedtls/port/aes/esp_aes_xts.c
 components/mbedtls/port/include/aes/esp_aes.h
 components/mbedtls/port/include/aes/esp_aes_internal.h
@@ -589,24 +579,18 @@ components/mbedtls/port/include/sha512_alt.h
 components/mbedtls/port/sha/dma/include/esp_sha_dma_priv.h
 components/mbedtls/port/sha/dma/sha.c
 components/mbedtls/port/sha/parallel_engine/sha.c
-components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
 components/nvs_flash/include/nvs_handle.hpp
 components/nvs_flash/src/nvs_cxx_api.cpp
 components/nvs_flash/src/nvs_encrypted_partition.hpp
-components/nvs_flash/src/nvs_handle_locked.cpp
-components/nvs_flash/src/nvs_handle_locked.hpp
 components/nvs_flash/src/nvs_item_hash_list.cpp
 components/nvs_flash/src/nvs_pagemanager.hpp
-components/nvs_flash/src/nvs_partition.cpp
 components/nvs_flash/src/nvs_partition_lookup.cpp
 components/nvs_flash/src/nvs_partition_lookup.hpp
 components/nvs_flash/src/nvs_platform.hpp
 components/nvs_flash/src/nvs_test_api.h
 components/nvs_flash/src/nvs_types.cpp
-components/nvs_flash/src/partition.hpp
 components/nvs_flash/test_nvs_host/main.cpp
 components/nvs_flash/test_nvs_host/sdkconfig.h
-components/nvs_flash/test_nvs_host/test_fixtures.hpp
 components/nvs_flash/test_nvs_host/test_intrusive_list.cpp
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
@@ -666,7 +650,6 @@ components/soc/esp32/include/soc/uhci_reg.h
 components/soc/esp32/include/soc/uhci_struct.h
 components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/ledc_periph.c
-components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/spi_periph.c
 components/soc/esp32/uart_periph.c
 components/soc/esp32c3/i2c_periph.c
@@ -679,7 +662,6 @@ components/soc/esp32c3/include/soc/fe_reg.h
 components/soc/esp32c3/include/soc/gpio_reg.h
 components/soc/esp32c3/include/soc/gpio_struct.h
 components/soc/esp32c3/include/soc/i2c_reg.h
-components/soc/esp32c3/include/soc/i2c_struct.h
 components/soc/esp32c3/include/soc/interrupt_core0_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
 components/soc/esp32c3/include/soc/nrx_reg.h
@@ -690,9 +672,6 @@ components/soc/esp32c3/include/soc/sensitive_struct.h
 components/soc/esp32c3/include/soc/soc_pins.h
 components/soc/esp32c3/include/soc/spi_mem_reg.h
 components/soc/esp32c3/include/soc/spi_pins.h
-components/soc/esp32c3/include/soc/spi_reg.h
-components/soc/esp32c3/include/soc/system_reg.h
-components/soc/esp32c3/include/soc/system_struct.h
 components/soc/esp32c3/include/soc/systimer_reg.h
 components/soc/esp32c3/include/soc/systimer_struct.h
 components/soc/esp32c3/include/soc/uart_pins.h
@@ -729,9 +708,7 @@ components/soc/esp32s2/include/soc/rtc_io_reg.h
 components/soc/esp32s2/include/soc/sens_reg.h
 components/soc/esp32s2/include/soc/sensitive_reg.h
 components/soc/esp32s2/include/soc/soc_ulp.h
-components/soc/esp32s2/include/soc/spi_mem_reg.h
 components/soc/esp32s2/include/soc/spi_pins.h
-components/soc/esp32s2/include/soc/spi_reg.h
 components/soc/esp32s2/include/soc/systimer_reg.h
 components/soc/esp32s2/include/soc/systimer_struct.h
 components/soc/esp32s2/include/soc/touch_sensor_channel.h
@@ -809,7 +786,6 @@ components/soc/esp32s3/include/soc/usb_wrap_reg.h
 components/soc/esp32s3/include/soc/usb_wrap_struct.h
 components/soc/esp32s3/include/soc/wdev_reg.h
 components/soc/esp32s3/ledc_periph.c
-components/soc/esp32s3/sdmmc_periph.c
 components/soc/esp32s3/uart_periph.c
 components/soc/esp32s3/usb_periph.c
 components/soc/include/soc/dedic_gpio_periph.h
@@ -819,7 +795,6 @@ components/soc/include/soc/i2c_periph.h
 components/soc/include/soc/ledc_periph.h
 components/soc/lldesc.c
 components/spi_flash/include/spi_flash_chip_boya.h
-components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_gd.h
 components/spi_flash/include/spi_flash_chip_generic.h
 components/spi_flash/include/spi_flash_chip_issi.h
@@ -850,7 +825,6 @@ components/wifi_provisioning/python/wifi_scan_pb2.py
 components/wifi_provisioning/src/scheme_console.c
 components/wifi_provisioning/src/wifi_config.c
 components/wifi_provisioning/src/wifi_scan.c
-components/wpa_supplicant/esp_supplicant/src/esp_scan_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa_err.h
 components/wpa_supplicant/include/utils/wpa_debug.h
 components/wpa_supplicant/include/utils/wpabuf.h
@@ -1160,8 +1134,6 @@ examples/mesh/ip_internal_network/main/mqtt_app.c
 examples/mesh/manual_networking/main/include/mesh_light.h
 examples/mesh/manual_networking/main/mesh_light.c
 examples/mesh/manual_networking/main/mesh_main.c
-examples/network/network_tests/main/stdinout.c
-examples/network/network_tests/main/stdinout.h
 examples/network/simple_sniffer/main/cmd_sniffer.c
 examples/network/simple_sniffer/main/cmd_sniffer.h
 examples/network/simple_sniffer/main/simple_sniffer_example_main.c
@@ -1272,14 +1244,12 @@ examples/system/gcov/main/gcov_example_main.c
 examples/system/gdbstub/main/gdbstub_main.c
 examples/system/heap_task_tracking/main/heap_task_tracking_main.c
 examples/system/himem/main/himem_example_main.c
-examples/system/ipc/ipc_isr/main/main.c
 examples/system/ota/advanced_https_ota/main/advanced_https_ota_example.c
 examples/system/ota/native_ota_example/main/native_ota_example.c
 examples/system/ota/otatool/main/otatool_main.c
 examples/system/ota/otatool/otatool_example.py
 examples/system/ota/simple_ota_example/main/simple_ota_example.c
 examples/system/perfmon/main/perfmon_example_main.c
-examples/system/pthread/main/pthread_example.c
 examples/system/select/main/select_example.c
 examples/system/startup_time/main/hello_world_main.c
 examples/system/sysview_tracing/main/sysview_tracing.c
@@ -1305,7 +1275,6 @@ examples/wifi/roaming/main/roaming_example.c
 examples/wifi/scan/main/scan.c
 examples/wifi/smart_config/main/smartconfig_main.c
 examples/wifi/wifi_easy_connect/dpp-enrollee/main/dpp_enrollee_main.c
-examples/wifi/wifi_enterprise/main/wifi_enterprise_main.c
 examples/wifi/wps/main/wps.c
 tools/ble/lib_ble_client.py
 tools/ble/lib_gap.py
@@ -1337,11 +1306,6 @@ tools/test_apps/system/cxx_no_except/main/main.cpp
 tools/test_apps/system/gdb_loadable_elf/main/hello_world_main.c
 tools/test_apps/system/longjmp_test/main/hello_world_main.c
 tools/test_apps/system/memprot/main/esp32s2/test_memprot_main.c
-tools/test_apps/system/monitor_ide_integration/main/main.c
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_apps/system/no_embedded_paths/main/test_no_embedded_paths_main.c
 tools/test_apps/system/startup/main/test_startup_main.c
-tools/unit-test-app/idf_ext.py
-tools/unit-test-app/main/app_main.c
-tools/unit-test-app/tools/CreateSectionTable.py
-tools/unit-test-app/tools/UnitTestParser.py

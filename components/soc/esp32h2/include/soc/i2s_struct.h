@@ -240,34 +240,6 @@ typedef union {
     uint32_t val;
 } i2s_rx_conf1_reg_t;
 
-/** Type of rx_clkm_conf register
- *  I2S RX clock configure register
- */
-typedef union {
-    struct {
-        /** rx_clkm_div_num : R/W; bitpos: [7:0]; default: 2;
-         *  Integral I2S clock divider value
-         */
-        uint32_t rx_clkm_div_num:8;
-        uint32_t reserved_8:18;
-        /** rx_clk_active : R/W; bitpos: [26]; default: 0;
-         *  I2S Rx module clock enable signal.
-         */
-        uint32_t rx_clk_active:1;
-        /** rx_clk_sel : R/W; bitpos: [28:27]; default: 0;
-         *  Select I2S Rx module source clock. 0: no clock. 1: APLL. 2: CLK160. 3: I2S_MCLK_in.
-         */
-        uint32_t rx_clk_sel:2;
-        /** mclk_sel : R/W; bitpos: [29]; default: 0;
-         *  0: UseI2S Tx module clock as I2S_MCLK_OUT.  1: UseI2S Rx module clock as
-         *  I2S_MCLK_OUT.
-         */
-        uint32_t mclk_sel:1;
-        uint32_t reserved_30:2;
-    };
-    uint32_t val;
-} i2s_rx_clkm_conf_reg_t;
-
 /** Type of tx_pcm2pdm_conf register
  *  I2S TX PCM2PDM configuration register
  */
@@ -607,37 +579,6 @@ typedef union {
     uint32_t val;
 } i2s_tx_conf1_reg_t;
 
-/** Type of tx_clkm_conf register
- *  I2S TX clock configure register
- */
-typedef union {
-    struct {
-        /** tx_clkm_div_num : R/W; bitpos: [7:0]; default: 2;
-         *  Integral I2S TX clock divider value. f_I2S_CLK = f_I2S_CLK_S/(N+b/a). There will be
-         *  (a-b) * n-div and b * (n+1)-div.  So the average combination will be:  for b <=
-         *  a/2, z * [x * n-div + (n+1)-div] + y * n-div. For b > a/2, z * [n-div + x *
-         *  (n+1)-div] + y * (n+1)-div.
-         */
-        uint32_t tx_clkm_div_num:8;
-        uint32_t reserved_8:18;
-        /** tx_clk_active : R/W; bitpos: [26]; default: 0;
-         *  I2S Tx module clock enable signal.
-         */
-        uint32_t tx_clk_active:1;
-        /** tx_clk_sel : R/W; bitpos: [28:27]; default: 0;
-         *  Select I2S Tx module source clock. 0: XTAL clock. 1: APLL. 2: CLK160. 3:
-         *  I2S_MCLK_in.
-         */
-        uint32_t tx_clk_sel:2;
-        /** clk_en : R/W; bitpos: [29]; default: 0;
-         *  Set this bit to enable clk gate
-         */
-        uint32_t clk_en:1;
-        uint32_t reserved_30:2;
-    };
-    uint32_t val;
-} i2s_tx_clkm_conf_reg_t;
-
 /** Type of tx_tdm_ctrl register
  *  I2S TX TDM mode control register
  */
@@ -740,36 +681,6 @@ typedef union {
 
 
 /** Group: RX clock and timing registers */
-/** Type of rx_clkm_div_conf register
- *  I2S RX module clock divider configure register
- */
-typedef union {
-    struct {
-        /** rx_clkm_div_z : R/W; bitpos: [8:0]; default: 0;
-         *  For b <= a/2, the value of I2S_RX_CLKM_DIV_Z is b. For b > a/2, the value of
-         *  I2S_RX_CLKM_DIV_Z is (a-b).
-         */
-        uint32_t rx_clkm_div_z:9;
-        /** rx_clkm_div_y : R/W; bitpos: [17:9]; default: 1;
-         *  For b <= a/2, the value of I2S_RX_CLKM_DIV_Y is (a%b) . For b > a/2, the value of
-         *  I2S_RX_CLKM_DIV_Y is (a%(a-b)).
-         */
-        uint32_t rx_clkm_div_y:9;
-        /** rx_clkm_div_x : R/W; bitpos: [26:18]; default: 0;
-         *  For b <= a/2, the value of I2S_RX_CLKM_DIV_X is (a/b) - 1. For b > a/2, the value
-         *  of I2S_RX_CLKM_DIV_X is (a/(a-b)) - 1.
-         */
-        uint32_t rx_clkm_div_x:9;
-        /** rx_clkm_div_yn1 : R/W; bitpos: [27]; default: 0;
-         *  For b <= a/2, the value of I2S_RX_CLKM_DIV_YN1 is 0 . For b > a/2, the value of
-         *  I2S_RX_CLKM_DIV_YN1 is 1.
-         */
-        uint32_t rx_clkm_div_yn1:1;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} i2s_rx_clkm_div_conf_reg_t;
-
 /** Type of rx_timing register
  *  I2S RX timing control register
  */
@@ -811,36 +722,6 @@ typedef union {
 
 
 /** Group: TX clock and timing registers */
-/** Type of tx_clkm_div_conf register
- *  I2S TX module clock divider configure register
- */
-typedef union {
-    struct {
-        /** tx_clkm_div_z : R/W; bitpos: [8:0]; default: 0;
-         *  For b <= a/2, the value of I2S_TX_CLKM_DIV_Z is b. For b > a/2, the value of
-         *  I2S_TX_CLKM_DIV_Z is (a-b).
-         */
-        uint32_t tx_clkm_div_z:9;
-        /** tx_clkm_div_y : R/W; bitpos: [17:9]; default: 1;
-         *  For b <= a/2, the value of I2S_TX_CLKM_DIV_Y is (a%b) . For b > a/2, the value of
-         *  I2S_TX_CLKM_DIV_Y is (a%(a-b)).
-         */
-        uint32_t tx_clkm_div_y:9;
-        /** tx_clkm_div_x : R/W; bitpos: [26:18]; default: 0;
-         *  For b <= a/2, the value of I2S_TX_CLKM_DIV_X is (a/b) - 1. For b > a/2, the value
-         *  of I2S_TX_CLKM_DIV_X is (a/(a-b)) - 1.
-         */
-        uint32_t tx_clkm_div_x:9;
-        /** tx_clkm_div_yn1 : R/W; bitpos: [27]; default: 0;
-         *  For b <= a/2, the value of I2S_TX_CLKM_DIV_YN1 is 0 . For b > a/2, the value of
-         *  I2S_TX_CLKM_DIV_YN1 is 1.
-         */
-        uint32_t tx_clkm_div_yn1:1;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} i2s_tx_clkm_div_conf_reg_t;
-
 /** Type of tx_timing register
  *  I2S TX timing control register
  */
@@ -991,10 +872,7 @@ typedef struct {
     volatile i2s_tx_conf_reg_t tx_conf;
     volatile i2s_rx_conf1_reg_t rx_conf1;
     volatile i2s_tx_conf1_reg_t tx_conf1;
-    volatile i2s_rx_clkm_conf_reg_t rx_clkm_conf;
-    volatile i2s_tx_clkm_conf_reg_t tx_clkm_conf;
-    volatile i2s_rx_clkm_div_conf_reg_t rx_clkm_div_conf;
-    volatile i2s_tx_clkm_div_conf_reg_t tx_clkm_div_conf;
+    uint32_t reserved_030[4];
     volatile i2s_tx_pcm2pdm_conf_reg_t tx_pcm2pdm_conf;
     volatile i2s_tx_pcm2pdm_conf1_reg_t tx_pcm2pdm_conf1;
     uint32_t reserved_048[2];

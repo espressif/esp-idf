@@ -424,7 +424,7 @@ portmacro.h. Therefore, we need to keep these headers around for now to allow th
 #include "portbenchmark.h"
 #include <limits.h>
 #include <xtensa/config/system.h>
-#include <xtensa/xtensa_api.h>
+#include <xtensa_api.h>
 
 /* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
 #if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER

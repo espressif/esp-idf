@@ -140,8 +140,6 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 命令 ``idf.py`` 支持 bash、zsh 和 fish shell 的 `shell 自动补全 <https://click.palletsprojects.com/shell-completion/>`_。
 
-为实现 `shell 自动补全 <https://click.palletsprojects.com/shell-completion/>`_，请确保 Python 版本为 3.5 及以上，`click <https://click.palletsprojects.com/>`_ 版本为 7.1 及以上（请参阅 :ref:`软件 <get-started-get-prerequisites>`）。
-
 调用命令 ``export`` 为 ``idf.py`` 启用自动补全（:ref:`第四步：设置环境变量 <get-started-set-up-env>`），按 TAB 键启动自动补全。输入 ``idf.py -`` 并按 TAB 键以自动补全选项。
 
 预计未来版本将支持 PowerShell 自动补全。

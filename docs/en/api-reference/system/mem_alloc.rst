@@ -51,12 +51,12 @@ To find the amount of statically allocated memory, use the :ref:`idf.py size <id
 
 .. only:: esp32
 
-    .. note:: 
-        
+    .. note::
+
         See the :ref:`dram` section for more details about the DRAM usage limitations.
 
-.. note:: 
-    
+.. note::
+
     At runtime, the available heap DRAM may be less than calculated at compile time, because, at startup, some memory is allocated from the heap before the FreeRTOS scheduler is started (including memory for the stacks of initial FreeRTOS tasks).
 
 IRAM
@@ -126,7 +126,7 @@ Memory allocated with ``MALLOC_CAP_32BIT`` can **only** be accessed via 32-bit r
 
     .. only:: esp32
 
-        To use the region above the 4 MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
+        To use the region above the 4 MiB limit, you can use the :doc:`himem API </api-reference/system/himem>`.
 
 Thread Safety
 -------------

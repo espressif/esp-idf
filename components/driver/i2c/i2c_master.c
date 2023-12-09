@@ -35,7 +35,6 @@
 #include "freertos/idf_additions.h"
 
 static const char *TAG = "i2c.master";
-static _lock_t s_i2c_bus_acquire;
 
 #define DIM(array)                (sizeof(array)/sizeof(*array))
 #define I2C_ADDRESS_TRANS_WRITE(device_address)    (((device_address) << 1) | 0)
@@ -487,7 +486,10 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->rx_cnt = 0;
     i2c_master->read_len_static = 0;
 
-    i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
+        i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
+    }
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_update(hal->dev);
 
@@ -785,39 +787,13 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     ESP_RETURN_ON_FALSE(bus_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE((bus_config->i2c_port < SOC_I2C_NUM || bus_config->i2c_port == -1), ESP_ERR_INVALID_ARG, TAG, "invalid i2c port number");
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(bus_config->sda_io_num) && GPIO_IS_VALID_GPIO(bus_config->scl_io_num), ESP_ERR_INVALID_ARG, TAG, "invalid SDA/SCL pin number");
-    bool bus_occupied = false;
-    bool bus_found = false;
 
     i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t) + 20 * sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
 
     ESP_RETURN_ON_FALSE(i2c_master, ESP_ERR_NO_MEM, TAG, "no memory for i2c master bus");
 
-    _lock_acquire(&s_i2c_bus_acquire);
-    if (i2c_port_num == -1) {
-        for (int i = 0; i < SOC_I2C_NUM; i++) {
-            bus_occupied = i2c_bus_occupied(i);
-            if (bus_occupied == false) {
-                ret = i2c_acquire_bus_handle(i, &i2c_master->base, I2C_BUS_MODE_MASTER);
-                if (ret != ESP_OK) {
-                    ESP_LOGE(TAG, "acquire bus failed");
-                    _lock_release(&s_i2c_bus_acquire);
-                    goto err;
-                }
-                bus_found = true;
-                i2c_port_num = i;
-                break;
-            }
-        }
-        ESP_GOTO_ON_FALSE((bus_found == true), ESP_ERR_NOT_FOUND, err, TAG, "acquire bus failed, no free bus");
-    } else {
-        ret = i2c_acquire_bus_handle(i2c_port_num, &i2c_master->base, I2C_BUS_MODE_MASTER);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "acquire bus failed");
-            _lock_release(&s_i2c_bus_acquire);
-            goto err;
-        }
-    }
-    _lock_release(&s_i2c_bus_acquire);
+    ESP_GOTO_ON_ERROR(i2c_acquire_bus_handle(i2c_port_num, &i2c_master->base, I2C_BUS_MODE_MASTER), err, TAG, "I2C bus acquire failed");
+    i2c_port_num = i2c_master->base->port_num;
 
     i2c_hal_context_t *hal = &i2c_master->base->hal;
     i2c_master->base->scl_num = bus_config->scl_io_num;
@@ -898,6 +874,8 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t bus_handle, const i2
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((bus_handle != NULL), ESP_ERR_INVALID_ARG, TAG, "this bus is not initialized, please call `i2c_new_master_bus`");
+    ESP_RETURN_ON_FALSE(dev_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(dev_config->scl_speed_hz > 0, ESP_ERR_INVALID_ARG, TAG, "invalid scl frequency");
     if(bus_handle->base->bus_mode != I2C_BUS_MODE_MASTER) {
         ESP_LOGE(TAG, "This is not master bus!");
         return ESP_ERR_INVALID_ARG;
@@ -957,13 +935,13 @@ esp_err_t i2c_del_master_bus(i2c_master_bus_handle_t bus_handle)
     return ESP_OK;
 }
 
-esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t handle)
+esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t bus_handle)
 {
-    ESP_RETURN_ON_FALSE((handle != NULL), ESP_ERR_INVALID_ARG, TAG, "This bus is not initialized");
+    ESP_RETURN_ON_FALSE((bus_handle != NULL), ESP_ERR_INVALID_ARG, TAG, "This bus is not initialized");
     // Reset I2C master bus
-    ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(handle), TAG, "I2C master bus reset failed");
+    ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(bus_handle), TAG, "I2C master bus reset failed");
     // Reset I2C status state
-    atomic_store(&handle->status, I2C_STATUS_IDLE);
+    atomic_store(&bus_handle->status, I2C_STATUS_IDLE);
     return ESP_OK;
 }
 
@@ -1046,24 +1024,24 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
     return ESP_OK;
 }
 
-esp_err_t i2c_master_probe(i2c_master_bus_handle_t i2c_master, uint16_t address, int xfer_timeout_ms)
+esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address, int xfer_timeout_ms)
 {
-    ESP_RETURN_ON_FALSE(i2c_master != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
+    ESP_RETURN_ON_FALSE(bus_handle != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
     TickType_t ticks_to_wait = (xfer_timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(xfer_timeout_ms);
-    if (xSemaphoreTake(i2c_master->bus_lock_mux, ticks_to_wait) != pdTRUE) {
+    if (xSemaphoreTake(bus_handle->bus_lock_mux, ticks_to_wait) != pdTRUE) {
         return ESP_ERR_TIMEOUT;
     }
 
-    i2c_master->cmd_idx = 0;
-    i2c_master->trans_idx = 0;
-    i2c_master->trans_done = false;
-    i2c_hal_context_t *hal = &i2c_master->base->hal;
+    bus_handle->cmd_idx = 0;
+    bus_handle->trans_idx = 0;
+    bus_handle->trans_done = false;
+    i2c_hal_context_t *hal = &bus_handle->base->hal;
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
     };
 
-    i2c_master->i2c_trans = (i2c_transaction_t) {
+    bus_handle->i2c_trans = (i2c_transaction_t) {
         .device_address = address,
         .ops = i2c_ops,
         .cmd_count = DIM(i2c_ops),
@@ -1071,18 +1049,21 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t i2c_master, uint16_t address,
 
     // I2C probe does not have i2c device module. So set the clock parameter independently
     // This will not influence device transaction.
-    i2c_hal_set_bus_timing(hal, 100000, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_set_source_clk(hal->dev, bus_handle->base->clk_src);
+        i2c_hal_set_bus_timing(hal, 100000, bus_handle->base->clk_src, bus_handle->base->clk_src_freq_hz);
+    }
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_update(hal->dev);
 
-    s_i2c_send_commands(i2c_master, ticks_to_wait);
-    if (i2c_master->status == I2C_STATUS_ACK_ERROR) {
+    s_i2c_send_commands(bus_handle, ticks_to_wait);
+    if (bus_handle->status == I2C_STATUS_ACK_ERROR) {
         // Reset the status to done, in order not influence next time transaction.
-        i2c_master->status = I2C_STATUS_DONE;
-        xSemaphoreGive(i2c_master->bus_lock_mux);
+        bus_handle->status = I2C_STATUS_DONE;
+        xSemaphoreGive(bus_handle->bus_lock_mux);
         return ESP_ERR_NOT_FOUND;
     }
-    xSemaphoreGive(i2c_master->bus_lock_mux);
+    xSemaphoreGive(bus_handle->bus_lock_mux);
     return ESP_OK;
 }
 
@@ -1109,19 +1090,19 @@ esp_err_t i2c_master_register_event_callbacks(i2c_master_dev_handle_t i2c_dev, c
     return ESP_OK;
 }
 
-esp_err_t i2c_master_wait_all_done(i2c_master_bus_handle_t i2c_master, int timeout_ms)
+esp_err_t i2c_master_bus_wait_all_done(i2c_master_bus_handle_t bus_handle, int timeout_ms)
 {
-    ESP_RETURN_ON_FALSE(i2c_master, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     TickType_t wait_ticks = timeout_ms < 0 ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
     i2c_transaction_t t;
 
-    size_t cnt = i2c_master->num_trans_inflight;
+    size_t cnt = bus_handle->num_trans_inflight;
     for (size_t i = 0; i < cnt; i++) {
-        ESP_RETURN_ON_FALSE(xQueueReceive(i2c_master->trans_queues[I2C_TRANS_QUEUE_COMPLETE], &t, wait_ticks) == pdTRUE,
+        ESP_RETURN_ON_FALSE(xQueueReceive(bus_handle->trans_queues[I2C_TRANS_QUEUE_COMPLETE], &t, wait_ticks) == pdTRUE,
                             ESP_ERR_TIMEOUT, TAG, "flush timeout");
-        ESP_RETURN_ON_FALSE(xQueueSend(i2c_master->trans_queues[I2C_TRANS_QUEUE_READY], &t, 0) == pdTRUE,
+        ESP_RETURN_ON_FALSE(xQueueSend(bus_handle->trans_queues[I2C_TRANS_QUEUE_READY], &t, 0) == pdTRUE,
                             ESP_ERR_INVALID_STATE, TAG, "ready queue full");
-        i2c_master->num_trans_inflight--;
+        bus_handle->num_trans_inflight--;
     }
     return ESP_OK;
 

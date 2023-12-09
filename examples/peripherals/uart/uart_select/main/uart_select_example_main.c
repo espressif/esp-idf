@@ -22,7 +22,7 @@ static const char* TAG = "uart_select_example";
 
 static void uart_select_task(void *arg)
 {
-    if (uart_driver_install(UART_NUM_0, 2*1024, 0, 0, NULL, 0) != ESP_OK) {
+    if (uart_driver_install(UART_NUM_0, 2 * 1024, 0, 0, NULL, 0) != ESP_OK) {
         ESP_LOGE(TAG, "Driver installation failed");
         vTaskDelete(NULL);
     }
@@ -95,5 +95,5 @@ static void uart_select_task(void *arg)
 
 void app_main(void)
 {
-    xTaskCreate(uart_select_task, "uart_select_task", 4*1024, NULL, 5, NULL);
+    xTaskCreate(uart_select_task, "uart_select_task", 4 * 1024, NULL, 5, NULL);
 }

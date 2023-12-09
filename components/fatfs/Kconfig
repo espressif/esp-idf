@@ -230,4 +230,27 @@ menu "FAT Filesystem support"
             accessing target media for given file descriptor!
             See 'Improving I/O performance' section of 'Maximizing Execution Speed' documentation page
             for more details.
+
+    config FATFS_IMMEDIATE_FSYNC
+        bool "Enable automatic f_sync"
+        default n
+        help
+            Enables automatic calling of f_sync() to flush recent file changes after each call of vfs_fat_write(),
+            vfs_fat_pwrite(), vfs_fat_link(), vfs_fat_truncate() and vfs_fat_ftruncate() functions.
+            This feature improves file-consistency and size reporting accuracy for the FatFS,
+            at a price on decreased performance due to frequent disk operations
+
+    config FATFS_USE_LABEL
+        bool "Use FATFS volume label"
+        default n
+        help
+            Allows FATFS volume label to be specified using f_setlabel
+
+    config FATFS_LINK_LOCK
+        bool "Perform the whole link operation under lock"
+        default y
+        help
+            If enabled, the whole link operation (including file copying) is performed under lock.
+            This ensures that the link operation is atomic, but may cause perfomance for large files.
+            It may create less fragmented file copy.
 endmenu

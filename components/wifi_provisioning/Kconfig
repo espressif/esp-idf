@@ -39,11 +39,13 @@ menu "Wi-Fi Provisioning Manager"
     config WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
         bool "Keep BT on after provisioning is done"
         depends on BT_ENABLED
+        select ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
 
     config WIFI_PROV_DISCONNECT_AFTER_PROV
         bool "Terminate connection after provisioning is done"
         depends on WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
         default y
+        select ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
 
     choice WIFI_PROV_STA_SCAN_METHOD
         bool "Wifi Provisioning Scan Method"

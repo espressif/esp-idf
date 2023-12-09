@@ -9,11 +9,11 @@ ESP-IDF 编程指南
 
         快速预览中不包括 API 函数文档。如需生成完整的文档，请在 MR 中添加 docs_full 标签。
 
-这里是乐鑫 IoT 开发框架 (`esp-idf <https://github.com/espressif/esp-idf>`_) 的文档中心。ESP-IDF 是 `ESP32、ESP32-S ESP32-C 和 ESP32-H <https://www.espressif.com/en/products/socs>`_ 系列芯片的官方开发框架。
+这里是乐鑫 IoT 开发框架 (`esp-idf <https://github.com/espressif/esp-idf>`_) 的文档中心。ESP-IDF 是 `ESP32、ESP32-S ESP32-C、ESP32-H 和 ESP32-P <https://www.espressif.com/en/products/socs>`_ 系列芯片的官方开发框架。
 
 .. only:: html
 
-    本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。如需了解其他芯片，请在页面左上方的下拉菜单中选择您的目标芯片。
+    本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。如需了解其他芯片，请在页面左上方的下拉菜单中选择你的目标芯片。
 
 .. only:: latex
 

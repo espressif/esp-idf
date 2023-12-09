@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "hal/assert.h"
 #include "hal/ecc_types.h"
 #include "soc/ecc_mult_reg.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,25 @@ typedef enum {
     ECC_PARAM_PY,
     ECC_PARAM_K,
 } ecc_ll_param_t;
+
+/**
+ * @brief Enable the bus clock for ECC peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void ecc_ll_enable_bus_clock(bool enable)
+{
+    PCR.ecc_conf.ecc_clk_en = enable;
+}
+
+/**
+ * @brief Reset the ECC peripheral module
+ */
+static inline void ecc_ll_reset_register(void)
+{
+    PCR.ecc_conf.ecc_rst_en = 1;
+    PCR.ecc_conf.ecc_rst_en = 0;
+}
 
 static inline void ecc_ll_enable_interrupt(void)
 {
@@ -106,7 +126,7 @@ static inline int ecc_ll_is_calc_finished(void)
 
 static inline ecc_mode_t ecc_ll_get_mode(void)
 {
-    return REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE);
+    return (ecc_mode_t)(REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE));
 }
 
 static inline int ecc_ll_get_verification_result(void)
@@ -116,7 +136,7 @@ static inline int ecc_ll_get_verification_result(void)
 
 static inline ecc_curve_t ecc_ll_get_curve(void)
 {
-    return REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_KEY_LENGTH);
+    return (ecc_curve_t)(REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_KEY_LENGTH));
 }
 
 static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_t len)

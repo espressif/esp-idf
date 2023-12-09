@@ -217,7 +217,7 @@ TEST_CASE("ULP-RISC-V can be reloaded with a good fimware after a crash", "[ulp]
 
     /* Verify that main CPU wakes up by a COCPU trap signal trigger */
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    TEST_ASSERT(cause != ESP_SLEEP_WAKEUP_COCPU);
+    TEST_ASSERT(cause == ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG);
 
     printf("Resetting the ULP\n");
     ulp_riscv_reset();

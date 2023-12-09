@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "esp_private/system_internal.h"
 #include "esp_private/rtc_ctrl.h"
 #include "esp_private/spi_flash_os.h"
-#include "esp_rom_sys.h"
+#include "esp_log.h"
 #include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/rtc_periph.h"
@@ -27,6 +27,8 @@
 #else
 #define BROWNOUT_DET_LVL 0
 #endif
+
+static __attribute__((unused)) DRAM_ATTR const char *TAG = "BOD";
 
 #if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
 IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
@@ -51,7 +53,7 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
     } else
 #endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
     {
-        esp_rom_printf("\r\nBrownout detector was triggered\r\n\r\n");
+        ESP_DRAM_LOGI(TAG, "Brownout detector was triggered\r\n\r\n");
     }
 
     esp_restart_noos();

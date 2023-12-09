@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include "hal/uart_ll.h"
 
 #define ESP_ROM_CDC_ACM_WORK_BUF_MIN 128
 
@@ -33,8 +34,10 @@ void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
  * @param uart_no UART port number
  * @param clock_hz Source clock (in Hz)
  * @param baud_rate Baud rate to set
+ *
+ * @note Only for HP UART
  */
-void esp_rom_uart_set_clock_baudrate(uint8_t uart_no, uint32_t clock_hz, uint32_t baud_rate);
+#define esp_rom_uart_set_clock_baudrate(uart_no, clock_hz, baud_rate) uart_ll_set_baudrate(UART_LL_GET_HW(uart_no), baud_rate, clock_hz)
 
 /**
  * @brief Wait until UART TX FIFO is empty (i.e. flush TX FIFO)

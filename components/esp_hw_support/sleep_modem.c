@@ -28,6 +28,7 @@
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 #include "soc/pmu_reg.h"
 #include "esp_private/esp_pau.h"
+#include "esp_private/esp_pmu.h"
 #endif
 
 static __attribute__((unused)) const char *TAG = "sleep_modem";
@@ -36,9 +37,15 @@ static __attribute__((unused)) const char *TAG = "sleep_modem";
 static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_freq_mhz);
 #endif
 
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+static bool s_modem_sleep = false;
+static uint8_t s_modem_prepare_ref = 0;
+static _lock_t s_modem_prepare_lock;
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+
 #if CONFIG_MAC_BB_PD
-#define MAC_BB_POWER_DOWN_CB_NO     (2)
-#define MAC_BB_POWER_UP_CB_NO       (2)
+#define MAC_BB_POWER_DOWN_CB_NO     (3)
+#define MAC_BB_POWER_UP_CB_NO       (3)
 
 static DRAM_ATTR mac_bb_power_down_cb_t s_mac_bb_power_down_cb[MAC_BB_POWER_DOWN_CB_NO];
 static DRAM_ATTR mac_bb_power_up_cb_t   s_mac_bb_power_up_cb[MAC_BB_POWER_UP_CB_NO];
@@ -167,7 +174,7 @@ typedef struct sleep_modem_config {
 
 static sleep_modem_config_t s_sleep_modem = { .wifi.phy_link = NULL, .wifi.flags = 0 };
 
-static __attribute__((unused)) esp_err_t sleep_modem_wifi_modem_state_init(void)
+esp_err_t sleep_modem_wifi_modem_state_init(void)
 {
     esp_err_t err = ESP_OK;
     phy_i2c_master_command_attribute_t cmd;
@@ -244,7 +251,7 @@ static __attribute__((unused)) esp_err_t sleep_modem_wifi_modem_state_init(void)
     return err;
 }
 
-static __attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
+__attribute__((unused)) void sleep_modem_wifi_modem_state_deinit(void)
 {
     if (s_sleep_modem.wifi.phy_link) {
         regdma_link_destroy(s_sleep_modem.wifi.phy_link, 0);
@@ -302,7 +309,7 @@ uint32_t IRAM_ATTR sleep_modem_reject_triggers(void)
     return reject_triggers;
 }
 
-static __attribute__((unused)) bool IRAM_ATTR sleep_modem_wifi_modem_state_skip_light_sleep(void)
+bool IRAM_ATTR sleep_modem_wifi_modem_state_skip_light_sleep(void)
 {
     bool skip = false;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
@@ -317,17 +324,8 @@ static __attribute__((unused)) bool IRAM_ATTR sleep_modem_wifi_modem_state_skip_
 esp_err_t sleep_modem_configure(int max_freq_mhz, int min_freq_mhz, bool light_sleep_enable)
 {
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
-    extern int esp_wifi_internal_mac_sleep_configure(bool, bool);
-    if (light_sleep_enable) {
-        if (sleep_modem_wifi_modem_state_init() == ESP_OK) {
-            esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
-            esp_wifi_internal_mac_sleep_configure(light_sleep_enable, true); /* require WiFi to enable automatically receives the beacon */
-        }
-    } else {
-        esp_wifi_internal_mac_sleep_configure(light_sleep_enable, false); /* require WiFi to disable automatically receives the beacon */
-        esp_pm_unregister_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
-        sleep_modem_wifi_modem_state_deinit();
-    }
+    extern int esp_wifi_internal_light_sleep_configure(bool);
+    esp_wifi_internal_light_sleep_configure(light_sleep_enable);
 #endif
 #if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
     if (light_sleep_enable) {
@@ -399,3 +397,78 @@ static void esp_pm_light_sleep_default_params_config(int min_freq_mhz, int max_f
     }
 }
 #endif
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+void sleep_modem_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                         mac_bb_power_up_cb_t pu_cb)
+{
+    _lock_acquire(&s_modem_prepare_lock);
+    if (s_modem_prepare_ref++ == 0) {
+        esp_register_mac_bb_pd_callback(pd_cb);
+        esp_register_mac_bb_pu_callback(pu_cb);
+    }
+    _lock_release(&s_modem_prepare_lock);
+}
+
+void sleep_modem_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                           mac_bb_power_up_cb_t pu_cb)
+{
+    _lock_acquire(&s_modem_prepare_lock);
+    assert(s_modem_prepare_ref);
+    if (--s_modem_prepare_ref == 0) {
+        esp_unregister_mac_bb_pd_callback(pd_cb);
+        esp_unregister_mac_bb_pu_callback(pu_cb);
+    }
+    _lock_release(&s_modem_prepare_lock);
+
+}
+
+/**
+ * @brief Switch root clock source to PLL do retention and switch back
+ *
+ * This function is used when Bluetooth/IEEE802154 module requires register backup/restore, this function
+ * is called ONLY when SOC_PM_RETENTION_HAS_CLOCK_BUG is set.
+ * @param backup true for backup, false for restore
+ * @param cpu_freq_mhz cpu frequency to do retention
+ * @param do_retention function for retention
+ */
+static void rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(bool backup, int cpu_freq_mhz, void (*do_retention)(bool))
+{
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+    if (pmu_sleep_pll_already_enabled()) {
+        return;
+    }
+#endif
+    rtc_cpu_freq_config_t config, pll_config;
+    rtc_clk_cpu_freq_get_config(&config);
+
+    rtc_clk_cpu_freq_mhz_to_config(cpu_freq_mhz, &pll_config);
+    rtc_clk_cpu_freq_set_config(&pll_config);
+
+    if (do_retention) {
+        (*do_retention)(backup);
+    }
+
+    rtc_clk_cpu_freq_set_config(&config);
+}
+
+void IRAM_ATTR sleep_modem_mac_bb_power_down_prepare(void)
+{
+    if (s_modem_sleep == false) {
+        rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(true,
+                                                     CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+                                                     sleep_retention_do_extra_retention);
+        s_modem_sleep = true;
+    }
+}
+
+void IRAM_ATTR sleep_modem_mac_bb_power_up_prepare(void)
+{
+    if (s_modem_sleep) {
+        rtc_clk_cpu_freq_to_pll_mhz_and_do_retention(false,
+                                                     CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+                                                     sleep_retention_do_extra_retention);
+        s_modem_sleep = false;
+    }
+}
+#endif /* SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD */

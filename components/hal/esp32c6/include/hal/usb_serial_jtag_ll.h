@@ -7,6 +7,9 @@
 // The LL layer of the USB-serial-jtag controller
 
 #pragma once
+#include <stdbool.h>
+#include "esp_attr.h"
+#include "soc/pcr_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
 
@@ -158,8 +161,14 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
  * @brief  Flushes the TX buffer, that is, make it available for the
  *         host to pick up.
  *
- * @note  When fifo is full (with 64 byte), HW will flush the buffer automatically.
- *        It won't be executed if there is nothing in the fifo.
+ * @note  When fifo is full (with 64 byte), HW will flush the buffer automatically,
+ *        if this function is called directly after, this effectively turns into a
+ *        no-op. Because a 64-byte packet will be interpreted as a not-complete USB
+ *        transaction, you need to transfer either more data or a zero-length packet
+ *        for the data to actually end up at the program listening to the CDC-ACM
+ *        serial port. To send a zero-length packet, call
+ *        usb_serial_jtag_ll_txfifo_flush() again when
+ *        usb_serial_jtag_ll_txfifo_writable() returns true.
  *
  * @return na
  */
@@ -168,6 +177,59 @@ static inline void usb_serial_jtag_ll_txfifo_flush(void)
     USB_SERIAL_JTAG.ep1_conf.wr_done=1;
 }
 
+
+/**
+ * @brief Disable usb serial jtag pad during light sleep to avoid current leakage
+ *
+ * @return Initial configuration of usb serial jtag pad enable before light sleep
+ */
+FORCE_INLINE_ATTR bool usb_serial_jtag_ll_pad_backup_and_disable(void)
+{
+    bool pad_enabled = USB_SERIAL_JTAG.conf0.usb_pad_enable;
+
+    // Disable USB pad function
+    USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
+
+    return pad_enabled;
+}
+
+/**
+ * @brief Enable the internal USJ PHY control to D+/D- pad
+ *
+ * @param enable_pad Enable the USJ PHY control to D+/D- pad
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_pad(bool enable_pad)
+{
+    USB_SERIAL_JTAG.conf0.usb_pad_enable = enable_pad;
+}
+
+/**
+ * @brief Enable the bus clock for  USB Serial_JTAG module
+ * @param clk_en True if enable the clock of USB Serial_JTAG module
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
+{
+    PCR.usb_device_conf.usb_device_clk_en = clk_en;
+}
+
+/**
+ * @brief Reset the usb serial jtag module
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
+{
+    PCR.usb_device_conf.usb_device_rst_en = 1;
+    PCR.usb_device_conf.usb_device_rst_en = 0;
+}
+
+/**
+ * Get the enable status USB Serial_JTAG module
+ *
+ * @return Return true if USB Serial_JTAG module is enabled
+ */
+FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
+{
+    return (PCR.usb_device_conf.usb_device_clk_en && !PCR.usb_device_conf.usb_device_rst_en);
+}
 
 #ifdef __cplusplus
 }

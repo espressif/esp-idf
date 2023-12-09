@@ -17,11 +17,39 @@
 
 #include "soc/hwcrypto_reg.h"
 #include "soc/soc_caps.h"
+#include "soc/system_struct.h"
 #include "hal/ds_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Enable the bus clock for Digital Signature peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void ds_ll_enable_bus_clock(bool enable)
+{
+    SYSTEM.perip_clk_en1.reg_crypto_ds_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ds_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ds_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the Digital Signature peripheral module
+ */
+static inline void ds_ll_reset_register(void)
+{
+    SYSTEM.perip_rst_en1.reg_crypto_ds_rst = 1;
+    SYSTEM.perip_rst_en1.reg_crypto_ds_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ds_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; ds_ll_reset_register(__VA_ARGS__)
 
 static inline void ds_ll_start(void)
 {

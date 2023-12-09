@@ -5,7 +5,7 @@ ESP SDIO 主从机通信
 
 本文档介绍了 ESP 数字输入输出 (Secure Digital Input and Output，SDIO) 从机设备的初始化过程，并提供 ESP SDIO 从机协议的详细信息。该协议为非标准协议，允许 SDIO 主机与 ESP SDIO 从机进行通信。
 
-创建 ESP SDIO 从机协议是为了实现 SDIO 主机和从机之间的通信。 这是因为 SDIO 规范只说明了如何访问卡的自定义区（向功能 1-7 发送 CMD52 和 CMD53），却没有说明底层的硬件实现过程。
+创建 ESP SDIO 从机协议是为了实现 SDIO 主机和从机之间的通信。这是因为 SDIO 规范只说明了如何访问卡的自定义区（向功能 1-7 发送 CMD52 和 CMD53），却没有说明底层的硬件实现过程。
 
 .. _esp_sdio_slave_caps:
 
@@ -41,11 +41,11 @@ ESP SDIO 主从机通信
 初始化 ESP SDIO 从机
 -------------------------
 
-主机需按照标准的 SDIO 初始化流程，对 {IDF_TARGET_NAME} SDIO 从机进行初始化（参考 `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_ 3.1.2 章节）。下文将 SDIO 从机简称为 (SD)IO 卡。以下是 ESP SDIO 从机初始化流程的一个简单示例：
+主机需按照标准的 SDIO 初始化流程，对 {IDF_TARGET_NAME} SDIO 从机进行初始化（参考 `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_ 3.1.2 章节）。下文将 SDIO 从机简称为 SD/SDIO 卡。以下是 ESP SDIO 从机初始化流程的一个简单示例：
 
 1. SDIO 复位
 
-    CMD52（写入 0x6=0x8）
+    CMD52（写入 0x6 = 0x8）
 
 2. SD 复位
 
@@ -63,9 +63,9 @@ ESP SDIO 主从机通信
 
     **示例：**
 
-        首次 CMD5 (arg=0x00000000) 后  R4 的 arg 为 0xXXFFFF00。
+        首次 CMD5 (arg = 0x00000000) 后  R4 的 arg 为 0xXXFFFF00。
 
-        不断发送 CMD5 arg=0x00FFFF00，直到 R4 显示卡已就绪 (arg 31=1) 为止。
+        不断发送 CMD5 arg = 0x00FFFF00，直到 R4 显示卡已就绪 (arg 31 = 1) 为止。
 
 5. 设置地址
 
@@ -83,35 +83,35 @@ ESP SDIO 主从机通信
 
 7. 选择 4-bit 模式（可选）
 
-    CMD52（写入 0x07=0x02）
+    CMD52（写入 0x07 = 0x02）
 
 8. 启用 Func1
 
-    CMD52（写入 0x02=0x02）
+    CMD52（写入 0x02 = 0x02）
 
 9.  启用 SDIO 中断（使用中断线 (DAT1) 时必要）
 
-    CMD52（写入 0x04=0x03）
+    CMD52（写入 0x04 = 0x03）
 
 10. 设置 Func0 块大小（可选，默认为 512 (0x200) 字节）
 
-     CMD52/53（读取 0x10~0x11）
+     CMD52/53（读取 0x10 ~ 0x11）
 
-     CMD52/53（写入 0x10=0x00）
+     CMD52/53（写入 0x10 = 0x00）
 
-     CMD52/53（写入 0x11=0x02）
+     CMD52/53（写入 0x11 = 0x02）
 
-     CMD52/53（再次读取 0x10~0x11, 检查最终写入的值）
+     CMD52/53（再次读取 0x10 ~ 0x11, 检查最终写入的值）
 
 11. 设置 Func1 块大小（可选，默认为 512 (0x200) 字节）
 
-     CMD52/53（读取 0x110~0x111）
+     CMD52/53（读取 0x110 ~ 0x111）
 
-     CMD52/53（写入 0x110=0x00）
+     CMD52/53（写入 0x110 = 0x00）
 
-     CMD52/53（写入 0x111=0x02）
+     CMD52/53（写入 0x111 = 0x02）
 
-     CMD52/53（再次读取 0x110~0x111, 检查最终写入的值）
+     CMD52/53（再次读取 0x110 ~ 0x111, 检查最终写入的值）
 
 
 .. _esp_slave_protocol_layer:
@@ -177,8 +177,8 @@ CMD53 的地址与单次传输中从从机读取或写入从机的要求长度 (
 
         为了提高以任意长度访问 FIFO 时的效率，可以将 CMD53 的块模式和字节模式结合使用。例如，如果块大小默认设置为 512 字节，则可以通过以下操作从 FIFO 中写入或获取 1031 字节的数据：
 
-    1. 在块模式下发送 CMD53，block count = 2（1024 字节）到 0x1F3F9=0x1F800-**1031**。
-    2. 然后在字节模式下发送 CMD53，byte count = 8（如果控制器支持也可为 7）到 0x1F7F9=0x1F800-**7**。
+    1. 在块模式下发送 CMD53，block count = 2（1024 字节）到 0x1F3F9 = 0x1F800 - **1031**。
+    2. 然后在字节模式下发送 CMD53，byte count = 8（如果控制器支持也可为 7）到 0x1F7F9 = 0x1F800 - **7**。
 
 .. _esp_sdio_slave_interrupts:
 

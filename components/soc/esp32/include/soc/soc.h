@@ -31,7 +31,7 @@
 
 #define IS_DPORT_REG(_r) (((_r) >= DR_REG_DPORT_BASE) && (_r) <= DR_REG_DPORT_END)
 
-#if !defined( BOOTLOADER_BUILD ) && !defined( CONFIG_FREERTOS_UNICORE ) && SOC_DPORT_WORKAROUND
+#if !defined( BOOTLOADER_BUILD ) && !defined( CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE ) && SOC_DPORT_WORKAROUND
 #define ASSERT_IF_DPORT_REG(_r, OP)  TRY_STATIC_ASSERT(!IS_DPORT_REG(_r), (Cannot use OP for DPORT registers use DPORT_##OP));
 #else
 #define ASSERT_IF_DPORT_REG(_r, OP)
@@ -178,7 +178,7 @@
 #define SOC_IROM_LOW            0x400D0000
 #define SOC_IROM_HIGH           0x40400000
 #define SOC_IROM_MASK_LOW       0x40000000
-#define SOC_IROM_MASK_HIGH      0x40064F00
+#define SOC_IROM_MASK_HIGH      0x40070000
 #define SOC_CACHE_PRO_LOW       0x40070000
 #define SOC_CACHE_PRO_HIGH      0x40078000
 #define SOC_CACHE_APP_LOW       0x40078000

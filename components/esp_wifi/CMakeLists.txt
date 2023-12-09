@@ -1,5 +1,10 @@
+idf_build_get_property(idf_target IDF_TARGET)
+
+if(${idf_target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 if(CONFIG_ESP_WIFI_ENABLED)
-    idf_build_get_property(idf_target IDF_TARGET)
 
     if(CONFIG_APP_NO_BLOBS)
         set(link_binary_libs 0)
@@ -64,6 +69,10 @@ if(CONFIG_ESP_WIFI_ENABLED)
             set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${blob_reqs})
             target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
         endforeach()
+    endif()
+
+    if(CONFIG_SPIRAM)
+        idf_component_optional_requires(PRIVATE esp_psram)
     endif()
 
 endif()

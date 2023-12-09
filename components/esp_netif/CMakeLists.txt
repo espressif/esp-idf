@@ -24,7 +24,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 if(CONFIG_PPP_SUPPORT)
-    list(APPEND srcs_lwip lwip/esp_netif_lwip_ppp.c)
+    list(APPEND srcs_lwip lwip/esp_netif_lwip_ppp.c lwip/netif/ppp.c)
 endif()
 
 

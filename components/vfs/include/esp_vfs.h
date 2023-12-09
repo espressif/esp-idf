@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,11 @@ extern "C" {
  */
 #define ESP_VFS_FLAG_CONTEXT_PTR    1
 
+/**
+ * Flag which indicates that FS is located on read-only partition.
+ */
+#define ESP_VFS_FLAG_READONLY_FS  2
+
 /*
  * @brief VFS identificator used for esp_vfs_register_with_id()
  */
@@ -91,7 +96,7 @@ typedef struct
  */
 typedef struct
 {
-    int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT */
+    int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR and/or ESP_VFS_FLAG_READONLY_FS or ESP_VFS_FLAG_DEFAULT */
     union {
         ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);                         /*!< Write with context pointer */
         ssize_t (*write)(int fd, const void * data, size_t size);                                    /*!< Write without context pointer */

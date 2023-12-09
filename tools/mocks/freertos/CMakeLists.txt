@@ -14,7 +14,8 @@ set(include_dirs
     "${original_freertos_dir}/esp_additions/include"
     # Required because CMock tries to include "idf_additions.h" instead of "freertos/idf_additions.h"
     "${original_freertos_dir}/esp_additions/include/freertos"
-    "${kernel_dir}/portable/linux/include" # For "freertos/portmacro.h"
+    "${kernel_dir}/portable/linux/include" # For "spinlock.h"
+    "${kernel_dir}/portable/linux/include/freertos" # For "portmacro.h"
     "${kernel_dir}/include/freertos" # this is due to the way includes are generated in CMock (without freertos prefix)
 )
 

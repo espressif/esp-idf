@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
 #include "hal/assert.h"
+
 
 void systimer_hal_init(systimer_hal_context_t *hal)
 {
@@ -28,12 +29,6 @@ void systimer_hal_deinit(systimer_hal_context_t *hal)
 #endif
     systimer_ll_enable_clock(hal->dev, false);
     hal->dev = NULL;
-}
-
-void systimer_hal_set_clock_source(systimer_hal_context_t *hal, systimer_clock_source_t clk_src)
-{
-    (void)hal;
-    systimer_ll_set_clock_source(clk_src);
 }
 
 systimer_clock_source_t systimer_hal_get_clock_source(systimer_hal_context_t *hal)

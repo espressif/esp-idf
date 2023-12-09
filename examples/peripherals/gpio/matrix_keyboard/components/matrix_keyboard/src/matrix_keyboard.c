@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,7 +86,7 @@ static void matrix_kbd_debounce_timer_callback(TimerHandle_t xTimer)
     // col lines set to low level
     dedic_gpio_bundle_write(mkbd->col_bundle, (1 << mkbd->nr_col_gpios) - 1, 0);
     dedic_gpio_bundle_set_interrupt_and_callback(mkbd->row_bundle, (1 << mkbd->nr_row_gpios) - 1,
-            DEDIC_GPIO_INTR_BOTH_EDGE, matrix_kbd_row_isr_callback, mkbd);
+                                                 DEDIC_GPIO_INTR_BOTH_EDGE, matrix_kbd_row_isr_callback, mkbd);
 }
 
 esp_err_t matrix_kbd_install(const matrix_kbd_config_t *config, matrix_kbd_handle_t *mkbd_handle)
@@ -145,9 +145,9 @@ esp_err_t matrix_kbd_install(const matrix_kbd_config_t *config, matrix_kbd_handl
 
     // Disable interrupt
     dedic_gpio_bundle_set_interrupt_and_callback(mkbd->row_bundle, (1 << config->nr_row_gpios) - 1,
-            DEDIC_GPIO_INTR_NONE, NULL, NULL);
+                                                 DEDIC_GPIO_INTR_NONE, NULL, NULL);
     dedic_gpio_bundle_set_interrupt_and_callback(mkbd->col_bundle, (1 << config->nr_col_gpios) - 1,
-            DEDIC_GPIO_INTR_NONE, NULL, NULL);
+                                                 DEDIC_GPIO_INTR_NONE, NULL, NULL);
 
     // Create a ont-shot os timer, used for key debounce
     mkbd->debounce_timer = xTimerCreate("kb_debounce", pdMS_TO_TICKS(config->debounce_ms), pdFALSE, mkbd, matrix_kbd_debounce_timer_callback);
@@ -200,7 +200,7 @@ esp_err_t matrix_kbd_start(matrix_kbd_handle_t mkbd_handle)
 
     // only enable row line interrupt
     dedic_gpio_bundle_set_interrupt_and_callback(mkbd_handle->row_bundle, (1 << mkbd_handle->nr_row_gpios) - 1,
-            DEDIC_GPIO_INTR_BOTH_EDGE, matrix_kbd_row_isr_callback, mkbd_handle);
+                                                 DEDIC_GPIO_INTR_BOTH_EDGE, matrix_kbd_row_isr_callback, mkbd_handle);
 
     return ESP_OK;
 err:
@@ -216,9 +216,9 @@ esp_err_t matrix_kbd_stop(matrix_kbd_handle_t mkbd_handle)
 
     // Disable interrupt
     dedic_gpio_bundle_set_interrupt_and_callback(mkbd_handle->row_bundle, (1 << mkbd_handle->nr_row_gpios) - 1,
-            DEDIC_GPIO_INTR_NONE, NULL, NULL);
+                                                 DEDIC_GPIO_INTR_NONE, NULL, NULL);
     dedic_gpio_bundle_set_interrupt_and_callback(mkbd_handle->col_bundle, (1 << mkbd_handle->nr_col_gpios) - 1,
-            DEDIC_GPIO_INTR_NONE, NULL, NULL);
+                                                 DEDIC_GPIO_INTR_NONE, NULL, NULL);
 
     return ESP_OK;
 err:

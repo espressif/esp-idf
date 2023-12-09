@@ -53,7 +53,7 @@ static void alloc_task(void *p)
     xTaskCreatePinnedToCore(free_task, task_name, 2500, queue, 5, NULL, portNUM_PROCESSORS-1);
 
     // here GDB will stop at brekpoint and execute OpenOCD command to start tracing
-    for(int i = 1; i < 100; i++) {
+    for(int i = 1; i < 10; i++) {
         uint32_t sz = 2*i*(task_args->idx + 1);
         void *p = malloc(sz/2);
         // WARNING: the previous allocated memory is intentionally not deallocated in order to cause memory leak!

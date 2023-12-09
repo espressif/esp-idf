@@ -29,7 +29,7 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .data_out_sigs[1] = I2SO_SD1_OUT_IDX,
         .data_in_sig  = I2SI_SD_IN_IDX,
 
-        .irq          = -1,
+        .irq          = ETS_I2S1_INTR_SOURCE,
         .module       = PERIPH_I2S1_MODULE,
     }
 };

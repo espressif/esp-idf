@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <inttypes.h>
 #include <unistd.h>
 #include "sdmmc_common.h"
 
@@ -25,11 +26,12 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
 {
     int card_type;
     esp_err_t err = ESP_OK;
-
-    uint8_t* ext_csd = heap_caps_malloc(EXT_CSD_MMC_SIZE, MALLOC_CAP_DMA);
-    if (!ext_csd) {
+    uint8_t* ext_csd = NULL;
+    size_t actual_size = 0;
+    err = esp_dma_malloc(EXT_CSD_MMC_SIZE, 0, (void *)&ext_csd, &actual_size);
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: could not allocate ext_csd", __func__);
-        return ESP_ERR_NO_MEM;
+        return err;
     }
 
     uint32_t sectors = 0;
@@ -41,7 +43,7 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     }
 
     /* read EXT_CSD */
-    err = sdmmc_mmc_send_ext_csd_data(card, ext_csd, EXT_CSD_MMC_SIZE);
+    err = sdmmc_mmc_send_ext_csd_data(card, ext_csd, EXT_CSD_MMC_SIZE, actual_size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: send_ext_csd_data error 0x%x", __func__, err);
         goto out;
@@ -204,12 +206,13 @@ esp_err_t sdmmc_mmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd)
     return ESP_OK;
 }
 
-esp_err_t sdmmc_mmc_send_ext_csd_data(sdmmc_card_t* card, void *out_data, size_t datalen)
+esp_err_t sdmmc_mmc_send_ext_csd_data(sdmmc_card_t* card, void *out_data, size_t datalen, size_t buffer_len)
 {
     assert(esp_ptr_dma_capable(out_data));
     sdmmc_command_t cmd = {
         .data = out_data,
         .datalen = datalen,
+        .buflen = buffer_len,
         .blklen = datalen,
         .opcode = MMC_SEND_EXT_CSD,
         .arg = 0,
@@ -250,15 +253,17 @@ esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card)
     }
 
     /* ensure EXT_CSD buffer is available before starting any SD-card operation */
-    uint8_t* ext_csd = heap_caps_malloc(EXT_CSD_MMC_SIZE, MALLOC_CAP_DMA);
-    if (!ext_csd) {
+    uint8_t* ext_csd = NULL;
+    size_t actual_size = 0;
+    esp_err_t err = esp_dma_malloc(EXT_CSD_MMC_SIZE, 0, (void *)&ext_csd, &actual_size);
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: could not allocate ext_csd", __func__);
-        return ESP_ERR_NO_MEM;
+        return err;
     }
 
     /* ensure card is in transfer state before read ext_csd */
     uint32_t status;
-    esp_err_t err = sdmmc_send_cmd_send_status(card, &status);
+    err = sdmmc_send_cmd_send_status(card, &status);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: send_status returned 0x%x", __func__, err);
         goto out;
@@ -271,7 +276,7 @@ esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card)
     }
 
     /* read EXT_CSD to ensure device works fine in HS mode */
-    err = sdmmc_mmc_send_ext_csd_data(card, ext_csd, EXT_CSD_MMC_SIZE);
+    err = sdmmc_mmc_send_ext_csd_data(card, ext_csd, EXT_CSD_MMC_SIZE, actual_size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: send_ext_csd_data error 0x%x", __func__, err);
         goto out;
@@ -294,7 +299,7 @@ uint32_t sdmmc_mmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_
     /* TODO: calculate erase timeout based on ext_csd (trim_timeout) */
     uint32_t timeout_ms = SDMMC_SD_DISCARD_TIMEOUT * erase_size_kb / card->csd.sector_size;
     timeout_ms = MAX(1000, timeout_ms);
-    ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, %ums per sector)",
-             __func__, timeout_ms / 1000, erase_size_kb, SDMMC_SD_DISCARD_TIMEOUT);
+    ESP_LOGD(TAG, "%s: erase timeout %" PRIu32 " s (erasing %" PRIu32 " kB, %" PRIu32 " ms per sector)",
+             __func__, (uint32_t) (timeout_ms / 1000), (uint32_t) erase_size_kb, (uint32_t) SDMMC_SD_DISCARD_TIMEOUT);
     return timeout_ms;
 }

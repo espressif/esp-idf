@@ -64,12 +64,12 @@ def get_pytest_cases(
                     cmd.extend(['-k', filter_expr])
                 res = pytest.main(cmd, plugins=[collector])
 
-        if res.value != ExitCode.OK:
-            if res.value == ExitCode.NO_TESTS_COLLECTED:
-                print(f'WARNING: no pytest app found for target {target} under paths {", ".join(paths)}')
-            else:
-                print(buf.getvalue())
-                raise RuntimeError(f'pytest collection failed at {", ".join(paths)} with command \"{" ".join(cmd)}\"')
+            if res.value != ExitCode.OK:
+                if res.value == ExitCode.NO_TESTS_COLLECTED:
+                    print(f'WARNING: no pytest app found for target {target} under paths {", ".join(paths)}')
+                else:
+                    print(buf.getvalue())
+                    raise RuntimeError(f'pytest collection failed at {", ".join(paths)} with command \"{" ".join(cmd)}\"')
 
         cases.extend(collector.cases)
 

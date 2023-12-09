@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,17 @@ void esp_newlib_time_init(void);
  * application code.
  */
 void esp_reent_init(struct _reent* r);
+
+/**
+ * Postponed _GLOBAL_REENT stdio FPs initialization.
+ *
+ * Can not be a part of esp_reent_init() because stdio device may not initialized yet.
+ *
+ * Called from startup code and FreeRTOS, not intended to be called from
+ * application code.
+ *
+ */
+void esp_newlib_init_global_stdio(const char* stdio_dev);
 
 /**
  * Clean up some of lazily allocated buffers in REENT structures.

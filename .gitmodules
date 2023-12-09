@@ -30,12 +30,12 @@
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
 	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
 	url = ../../kmackay/micro-ecc.git
-	sbom-version = 1.0
+	sbom-version = 1.1
 	sbom-cpe = cpe:2.3:a:micro-ecc_project:micro-ecc:{}:*:*:*:*:*:*:*
 	sbom-supplier = Person: Ken MacKay
 	sbom-url = https://github.com/kmackay/micro-ecc
 	sbom-description = A small and fast ECDH and ECDSA implementation for 8-bit, 32-bit, and 64-bit processors
-	sbom-hash = d037ec89546fad14b5c4d5456c2e23a71e554966
+	sbom-hash = 24c60e243580c7868f4334a1ba3123481fe1aa48
 
 [submodule "components/spiffs/spiffs"]
 	path = components/spiffs/spiffs
@@ -81,11 +81,11 @@
 [submodule "components/unity/unity"]
 	path = components/unity/unity
 	url = ../../ThrowTheSwitch/Unity.git
-	sbom-version = v2.4.3-51-g7d2bf62b7e6a
+	sbom-version = v2.6.0-RC1
 	sbom-supplier = Organization: ThrowTheSwitch community <http://www.throwtheswitch.org>
 	sbom-url = https://github.com/ThrowTheSwitch/Unity
 	sbom-description = Simple Unit Testing for C
-	sbom-hash = 7d2bf62b7e6afaf38153041a9d53c21aeeca9a25
+	sbom-hash = bf560290f6020737eafaa8b5cbd2177c3956c03f
 
 [submodule "components/bt/host/nimble/nimble"]
 	path = components/bt/host/nimble/nimble
@@ -143,3 +143,7 @@
 [submodule "components/esp_coex/lib"]
 	path = components/esp_coex/lib
 	url = ../../espressif/esp-coex-lib.git
+
+[submodule "components/bt/esp_ble_mesh/lib/lib"]
+	path = components/bt/esp_ble_mesh/lib/lib
+	url = ../../espressif/esp-ble-mesh-lib.git

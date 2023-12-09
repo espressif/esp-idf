@@ -17,7 +17,9 @@
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
+#include "soc/system_struct.h"
 #include "hal/i2s_types.h"
+#include "hal/hal_utils.h"
 
 
 #ifdef __cplusplus
@@ -30,41 +32,66 @@ extern "C" {
 #define I2S_LL_TDM_CH_MASK (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
 
-#define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
-#define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
+#define I2S_LL_CLK_FRAC_DIV_N_MAX  256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
+#define I2S_LL_CLK_FRAC_DIV_AB_MAX 512 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 9 bit-width
 
 #define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
-#define I2S_LL_DEFAULT_PLL_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+#define I2S_LL_DEFAULT_CLK_FREQ     I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
+
 
 /**
- * @brief I2S clock configuration structure
- * @note Fmclk = Fsclk /(integ+numer/denom)
+ * @brief Enable the bus clock for I2S module
+ *
+ * @param i2s_id The port id of I2S
+ * @param enable Set true to enable the buf clock
  */
-typedef struct {
-    uint16_t integ;     // Integer part of I2S module clock divider
-    uint16_t denom;     // Denominator part of I2S module clock divider
-    uint16_t numer;     // Numerator part of I2S module clock divider
-} i2s_ll_mclk_div_t;
+static inline void i2s_ll_enable_bus_clock(int i2s_id, bool enable)
+{
+    if (i2s_id == 0) {
+        SYSTEM.perip_clk_en0.i2s0_clk_en = enable;
+    } else if (i2s_id == 1) {
+        SYSTEM.perip_clk_en0.i2s1_clk_en = enable;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the I2S module
+ *
+ * @param i2s_id The port id of I2S
+ */
+static inline void i2s_ll_reset_register(int i2s_id)
+{
+    if (i2s_id == 0) {
+        SYSTEM.perip_rst_en0.i2s0_rst = 1;
+        SYSTEM.perip_rst_en0.i2s0_rst = 0;
+    } else if (i2s_id == 1) {
+        SYSTEM.perip_rst_en0.i2s1_rst = 1;
+        SYSTEM.perip_rst_en0.i2s1_rst = 0;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief I2S module general init, enable I2S clock.
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param enable set true to enable the core clock
  */
-static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
+static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
 {
-    hw->tx_clkm_conf.clk_en = 1;
+    hw->tx_clkm_conf.clk_en = enable;
 }
 
-/**
- * @brief I2S module disable I2S clock.
- *
- * @param hw Peripheral I2S hardware instance address.
- */
-static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
-{
-    hw->tx_clkm_conf.clk_en = 0;
-}
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_enable_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; i2s_ll_enable_core_clock(__VA_ARGS__)
 
 /**
  * @brief Enable I2S tx module clock
@@ -304,7 +331,7 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
  */
-static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const i2s_ll_mclk_div_t *mclk_div)
+static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
     /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
      * Set to particular coefficients first then update to the target coefficients,
@@ -317,13 +344,13 @@ static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const i2s_ll_mclk_div_t *mc
     uint32_t div_z = 0;
     uint32_t div_yn1 = 0;
     /* If any of denominator and numerator is 0, set all the coefficients to 0 */
-    if (mclk_div->denom && mclk_div->numer) {
-        div_yn1 = mclk_div->numer * 2 > mclk_div->denom;
-        div_z = div_yn1 ? mclk_div->denom - mclk_div->numer : mclk_div->numer;
-        div_x = mclk_div->denom / div_z - 1;
-        div_y = mclk_div->denom % div_z;
+    if (mclk_div->denominator && mclk_div->numerator) {
+        div_yn1 = mclk_div->numerator * 2 > mclk_div->denominator;
+        div_z = div_yn1 ? mclk_div->denominator - mclk_div->numerator : mclk_div->numerator;
+        div_x = mclk_div->denominator / div_z - 1;
+        div_y = mclk_div->denominator % div_z;
     }
-    i2s_ll_tx_set_raw_clk_div(hw, mclk_div->integ, div_x, div_y, div_z, div_yn1);
+    i2s_ll_tx_set_raw_clk_div(hw, mclk_div->integer, div_x, div_y, div_z, div_yn1);
 }
 
 /**
@@ -344,7 +371,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
  */
-static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const i2s_ll_mclk_div_t *mclk_div)
+static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
     /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
      * Set to particular coefficients first then update to the target coefficients,
@@ -357,13 +384,13 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const i2s_ll_mclk_div_t *mc
     uint32_t div_z = 0;
     uint32_t div_yn1 = 0;
     /* If any of denominator and numerator is 0, set all the coefficients to 0 */
-    if (mclk_div->denom && mclk_div->numer) {
-        div_yn1 = mclk_div->numer * 2 > mclk_div->denom;
-        div_z = div_yn1 ? mclk_div->denom - mclk_div->numer : mclk_div->numer;
-        div_x = mclk_div->denom / div_z - 1;
-        div_y = mclk_div->denom % div_z;
+    if (mclk_div->denominator && mclk_div->numerator) {
+        div_yn1 = mclk_div->numerator * 2 > mclk_div->denominator;
+        div_z = div_yn1 ? mclk_div->denominator - mclk_div->numerator : mclk_div->numerator;
+        div_x = mclk_div->denominator / div_z - 1;
+        div_y = mclk_div->denominator % div_z;
     }
-    i2s_ll_rx_set_raw_clk_div(hw, mclk_div->integ, div_x, div_y, div_z, div_yn1);
+    i2s_ll_rx_set_raw_clk_div(hw, mclk_div->integer, div_x, div_y, div_z, div_yn1);
 }
 
 

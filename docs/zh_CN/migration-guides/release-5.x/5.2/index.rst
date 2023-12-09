@@ -6,5 +6,9 @@
 .. toctree::
     :maxdepth: 1
 
+    gcc
     peripherals
     protocols
+    storage
+    system
+    wifi

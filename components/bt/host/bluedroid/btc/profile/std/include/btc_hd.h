@@ -39,7 +39,15 @@ typedef enum {
     BTC_HD_UNPLUG_EVT,
 } BTC_HD_EVT;
 
-typedef enum { BTC_HD_DISABLED = 0, BTC_HD_ENABLED, BTC_HD_CONNECTED, BTC_HD_DISABLING } BTC_HD_STATUS;
+typedef enum {
+    BTC_HD_DISABLED = 0,
+    BTC_HD_ENABLED,
+    BTC_HD_DISABLING,
+    BTC_HD_CONNECTING,
+    BTC_HD_CONNECTED,
+    BTC_HD_DISCONNECTING,
+    BTC_HD_DISCONNECTED,
+} BTC_HD_STATUS;
 
 /* BTIF-HD control block */
 typedef struct {
@@ -55,7 +63,7 @@ typedef struct {
 /* btc_hidd_args_t */
 typedef union {
     // BTC_HD_CONNECT_EVT
-    struct connect_arg {
+    struct hd_connect_arg {
         BD_ADDR bd_addr;
     } connect;
 

@@ -310,7 +310,7 @@ esp_err_t esp_usb_console_init(void)
  * too early, before esp_timer is fully initialized.
  * This gets called a bit later in the process when we can already register a timer.
  */
-ESP_SYSTEM_INIT_FN(esp_usb_console_init_restart_timer, BIT(0), 220)
+ESP_SYSTEM_INIT_FN(esp_usb_console_init_restart_timer, SECONDARY, BIT(0), 220)
 {
     esp_timer_create_args_t timer_create_args = {
         .callback = &esp_usb_console_on_restart_timeout,

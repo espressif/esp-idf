@@ -7,12 +7,17 @@
 // The LL layer for UART register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
 
-
 #pragma once
+
+#include <stdlib.h>
 #include "hal/uart_types.h"
+#include "hal/misc.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
-#include "hal/clk_tree_ll.h"
+#include "soc/clk_tree_defs.h"
+#include "soc/system_struct.h"
+#include "soc/system_reg.h"
+#include "soc/dport_access.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -55,17 +60,66 @@ typedef enum {
 } uart_intr_t;
 
 /**
- * @brief  Configure the UART core reset.
+ * @brief Check if UART is enabled or disabled.
  *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
- * @return None.
+ * @return true: enabled; false: disabled
  */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    hw->clk_conf.rst_core = core_rst_en;
+    uint32_t uart_rst_bit = ((uart_num == 0) ? SYSTEM_UART_RST :
+                            (uart_num == 1) ? SYSTEM_UART1_RST : 0);
+    uint32_t uart_en_bit  = ((uart_num == 0) ? SYSTEM_UART_CLK_EN :
+                            (uart_num == 1) ? SYSTEM_UART1_CLK_EN : 0);
+    return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, uart_rst_bit) == 0 &&
+        DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, uart_en_bit) != 0;
 }
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num) {
+    case 0:
+        SYSTEM.perip_clk_en0.uart_clk_en = enable;
+        break;
+    case 1:
+        SYSTEM.perip_clk_en0.uart1_clk_en = enable;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        SYSTEM.perip_rst_en0.uart_rst = 1;
+        SYSTEM.perip_rst_en0.uart_rst = 0;
+        break;
+    case 1:
+        SYSTEM.perip_rst_en0.uart1_rst = 1;
+        SYSTEM.perip_rst_en0.uart1_rst = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Enable the UART clock.
@@ -94,6 +148,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
     hw->clk_conf.rx_sclk_en = 0;
     hw->clk_conf.tx_sclk_en = 0;
 }
+
 
 /**
  * @brief  Set the UART source clock.
@@ -159,14 +214,16 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
 {
 #define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
-    int sclk_div = DIV_UP(sclk_freq, max_div * baud);
+    uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
+
+    if (sclk_div == 0) abort();
 
     uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
     hw->clk_div.div_int = clk_div >> 4;
-    hw->clk_div.div_frag = clk_div &  0xf;
-    hw->clk_conf.sclk_div_num = sclk_div - 1;
+    hw->clk_div.div_frag = clk_div & 0xf;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
 #undef DIV_UP
 }
 
@@ -182,7 +239,8 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
 {
     typeof(hw->clk_div) div_reg;
     div_reg.val = hw->clk_div.val;
-    return ((sclk_freq << 4)) / (((div_reg.div_int << 4) | div_reg.div_frag) * (hw->clk_conf.sclk_div_num + 1));
+    return ((sclk_freq << 4)) /
+        (((div_reg.div_int << 4) | div_reg.div_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));
 }
 
 /**
@@ -195,7 +253,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
  */
 FORCE_INLINE_ATTR void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
-    hw->int_ena.val |= mask;
+    hw->int_ena.val = hw->int_ena.val | mask;
 }
 
 /**
@@ -208,7 +266,7 @@ FORCE_INLINE_ATTR void uart_ll_ena_intr_mask(uart_dev_t *hw, uint32_t mask)
  */
 FORCE_INLINE_ATTR void uart_ll_disable_intr_mask(uart_dev_t *hw, uint32_t mask)
 {
-    hw->int_ena.val &= (~mask);
+    hw->int_ena.val = hw->int_ena.val & (~mask);
 }
 
 /**
@@ -467,7 +525,7 @@ FORCE_INLINE_ATTR void uart_ll_set_tx_idle_num(uart_dev_t *hw, uint32_t idle_num
 FORCE_INLINE_ATTR void uart_ll_tx_break(uart_dev_t *hw, uint32_t break_num)
 {
     if (break_num > 0) {
-        hw->txbrk_conf.tx_brk_num = break_num;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->txbrk_conf, tx_brk_num, break_num);
         hw->conf0.txd_brk = 1;
     } else {
         hw->conf0.txd_brk = 0;
@@ -534,8 +592,8 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
         hw->flow_conf.sw_flow_con_en = 1;
         hw->swfc_conf1.xon_threshold = flow_ctrl->xon_thrd;
         hw->swfc_conf0.xoff_threshold = flow_ctrl->xoff_thrd;
-        hw->swfc_conf1.xon_char = flow_ctrl->xon_char;
-        hw->swfc_conf0.xoff_char = flow_ctrl->xoff_char;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xon_char, flow_ctrl->xon_char);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0, xoff_char, flow_ctrl->xoff_char);
     } else {
         hw->flow_conf.sw_flow_con_en = 0;
         hw->flow_conf.xonoff_del = 0;
@@ -557,11 +615,11 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
  */
 FORCE_INLINE_ATTR void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_char)
 {
-    hw->at_cmd_char.data = cmd_char->cmd_char;
-    hw->at_cmd_char.char_num = cmd_char->char_num;
-    hw->at_cmd_postcnt.post_idle_num = cmd_char->post_idle;
-    hw->at_cmd_precnt.pre_idle_num = cmd_char->pre_idle;
-    hw->at_cmd_gaptout.rx_gap_tout = cmd_char->gap_tout;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char, data, cmd_char->cmd_char);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char, char_num, cmd_char->char_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_postcnt, post_idle_num, cmd_char->post_idle);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_precnt, pre_idle_num, cmd_char->pre_idle);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_gaptout, rx_gap_tout, cmd_char->gap_tout);
 }
 
 /**
@@ -750,8 +808,8 @@ FORCE_INLINE_ATTR void uart_ll_set_mode(uart_dev_t *hw, uart_mode_t mode)
  */
 FORCE_INLINE_ATTR void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, uint8_t *char_num)
 {
-    *cmd_char = hw->at_cmd_char.data;
-    *char_num = hw->at_cmd_char.char_num;
+    *cmd_char = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char, data);
+    *char_num = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char, char_num);
 }
 
 /**

@@ -177,7 +177,13 @@ static inline uint32_t memprot_ll_get_iram0_split_line_main_I_1_regval(void)
 static inline void memprot_ll_prepare_iram0_split_line_regval(const uint32_t addr, uint32_t* regval)
 {
     //set category bits for given split line
-    uint32_t cat[7] = {[0 ... 6]=MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA};
+    uint32_t cat[7] = { MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA };
     for (size_t x=0; x<7; x++) {
         if (addr <= SRAM_RG3_LEVEL_HLIMITS(x)) {
             cat[x] = MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA;
@@ -1251,7 +1257,14 @@ static inline uint32_t memprot_ll_get_dram0_split_line_main_D_1_regval(void)
 static inline void memprot_ll_prepare_dram0_split_line_regval(const uint32_t addr, uint32_t* regval)
 {
     //set category bits for given split line
-    uint32_t cat[7] = {[0 ... 6]=MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA};
+    uint32_t cat[7] = { MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA,
+                        MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_ABOVE_SA };
+
     for (size_t x=0; x<7; x++) {
         if (addr <= MAP_IRAM_TO_DRAM(SRAM_RG3_LEVEL_HLIMITS(x))) {
             cat[x] = MEMP_HAL_CORE_X_IRAM0_DRAM0_DMA_SRAM_CATEGORY_BITS_EQUAL_SA;

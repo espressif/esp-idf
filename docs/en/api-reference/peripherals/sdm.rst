@@ -127,7 +127,7 @@ Kconfig Options
 
 .. _convert_to_analog_signal:
 
-Convert to an analog signal (Optional)
+Convert to an Analog Signal (Optional)
 --------------------------------------
 
 Typically, if a Sigma-Delta signal is connected to an LED to adjust the brightness, you do not have to add any filter between them, because our eyes have their own low-pass filters for changes in light intensity. However, if you want to check the real voltage or watch the analog waveform, you need to design an analog low-pass filter. Also, it is recommended to use an active filter instead of a passive filter to gain better isolation and not lose too much voltage.

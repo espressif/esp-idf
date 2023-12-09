@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,6 +18,8 @@
 static const char *tag = "NimBLE_BLE_PHY_CENT";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t peer_addr[6];
+static ble_addr_t conn_addr;
+
 static void blecent_scan(void);
 
 static uint8_t s_current_phy;
@@ -44,6 +46,9 @@ blecent_on_write(uint16_t conn_handle,
     if (error->status == 0) {
         MODLOG_DFLT(INFO, " attr_handle=%d", attr->handle);
     }
+
+    /* Terminate the connection once GATT procedure is completed */
+    ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 
     MODLOG_DFLT(INFO, "\n");
     return 0;
@@ -162,29 +167,10 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
      */
     blecent_read(peer);
 
-    /* Terminate the connection once GATT procedure is completed */
-    ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-}
-
-/* Set preferred LE PHY after connection is established */
-void set_prefered_le_phy_after_conn(uint16_t conn_handle)
-{
-    uint8_t tx_phys_mask = 0, rx_phys_mask = 0;
-
-    tx_phys_mask = BLE_HCI_LE_PHY_2M_PREF_MASK;
-
-    rx_phys_mask = BLE_HCI_LE_PHY_2M_PREF_MASK;
-
-    int rc = ble_gap_set_prefered_le_phy(conn_handle, tx_phys_mask, rx_phys_mask, 0);
-    if (rc == 0) {
-        MODLOG_DFLT(INFO, "Prefered LE PHY set to LE_PHY_2M successfully");
-    } else {
-        MODLOG_DFLT(ERROR, "Failed to set prefered LE_PHY_2M");
-    }
 }
 
 /* Set default LE PHY before establishing connection */
-void set_default_le_phy_before_conn(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
+void set_default_le_phy(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
 {
     int rc = ble_gap_set_prefered_default_le_phy(tx_phys_mask, rx_phys_mask);
     if (rc == 0) {
@@ -242,7 +228,6 @@ blecent_scan(void)
  * advertisement.  The function returns a positive result if the device
  * advertises connectability and support for the LE PHY service.
  */
-#if CONFIG_EXAMPLE_EXTENDED_ADV
 static int
 ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
@@ -253,7 +238,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
         return 0;
     }
-    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
+    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
@@ -285,47 +270,6 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     } while ( offset < disc->length_data );
     return 0;
 }
-#else
-static int
-blecent_should_connect(const struct ble_gap_disc_desc *disc)
-{
-    struct ble_hs_adv_fields fields;
-    int rc;
-    int i;
-
-    /* The device has to be advertising connectability. */
-    if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
-            disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
-        return 0;
-    }
-
-    rc = ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data);
-    if (rc != 0) {
-        return 0;
-    }
-
-    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
-        ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
-        /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-               &peer_addr[5], &peer_addr[4], &peer_addr[3],
-               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
-            return 0;
-        }
-    }
-
-    /* The device has to advertise support for LE PHY UUID (0xABF2)
-     */
-    for (i = 0; i < fields.num_uuids16; i++) {
-        if (ble_uuid_u16(&fields.uuids16[i].u) == LE_PHY_UUID16) {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-#endif
 
 /**
  * Connects to the sender of the specified advertisement of it looks
@@ -340,15 +284,9 @@ blecent_connect_if_interesting(void *disc)
     ble_addr_t *addr;
 
     /* Don't do anything if we don't care about this advertiser. */
-#if CONFIG_EXAMPLE_EXTENDED_ADV
     if (!ext_blecent_should_connect((struct ble_gap_ext_disc_desc *)disc)) {
         return;
     }
-#else
-    if (!blecent_should_connect((struct ble_gap_disc_desc *)disc)) {
-        return;
-    }
-#endif
 
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
@@ -364,21 +302,24 @@ blecent_connect_if_interesting(void *disc)
         return;
     }
 
+    addr = &((struct ble_gap_ext_disc_desc *)disc)->addr;
+
+    /* Copy addr information for next connection */
+    memcpy(&conn_addr, addr, sizeof(conn_addr));
+
+    MODLOG_DFLT(INFO, "Attempting to connect to : %x %x %x %x %x %x with type %d \n",
+		    conn_addr.val[5],conn_addr.val[4], conn_addr.val[3], conn_addr.val[2], conn_addr.val[1], conn_addr.val[0],
+		    conn_addr.type);
     /* Try to connect the the advertiser.  Allow 30 seconds (30000 ms) for
      * timeout.
      */
-#if CONFIG_EXAMPLE_EXTENDED_ADV
-    addr = &((struct ble_gap_ext_disc_desc *)disc)->addr;
-#else
-    addr = &((struct ble_gap_disc_desc *)disc)->addr;
-#endif
 
-    rc = ble_gap_connect(own_addr_type, addr, 30000, NULL,
+    rc = ble_gap_connect(own_addr_type, &conn_addr, 30000, NULL,
                          blecent_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s; rc=%d\n",
-                    addr->type, addr_str(addr->val), rc);
+                    conn_addr.type, addr_str(conn_addr.val), rc);
         return;
     }
 }
@@ -401,29 +342,28 @@ static int
 blecent_gap_event(struct ble_gap_event *event, void *arg)
 {
     struct ble_gap_conn_desc desc;
-    struct ble_hs_adv_fields fields;
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_DISC:
-        rc = ble_hs_adv_parse_fields(&fields, event->disc.data,
-                                     event->disc.length_data);
-        if (rc != 0) {
-            return 0;
-        }
-
-        /* An advertisment report was received during GAP discovery. */
-        print_adv_fields(&fields);
-
-        /* Try to connect to the advertiser if it looks interesting. */
-        blecent_connect_if_interesting(&event->disc);
-        return 0;
-
     case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
         if (event->connect.status == 0) {
             /* Connection successfully established. */
-            MODLOG_DFLT(INFO, "Connection established ");
+
+	    switch (s_current_phy) {
+            case BLE_HCI_LE_PHY_1M_PREF_MASK:
+                MODLOG_DFLT(INFO,"Connection established on 1M Phy");
+                break;
+
+            case BLE_HCI_LE_PHY_2M_PREF_MASK:
+            case BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK:
+	        MODLOG_DFLT(INFO,"Connection established on 2M Phy");
+                break;
+
+            case BLE_HCI_LE_PHY_CODED_PREF_MASK:
+	        MODLOG_DFLT(INFO,"Connection established on Coded Phy");
+                break;
+            }
 
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
@@ -437,10 +377,6 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 return 0;
             }
 
-            if (s_current_phy == BLE_HCI_LE_PHY_1M_PREF_MASK) {
-                /* Update LE PHY from 1M to 2M */
-                set_prefered_le_phy_after_conn(event->connect.conn_handle);
-            }
             /* Perform service discovery. */
             rc = peer_disc_all(event->connect.conn_handle,
                                blecent_on_disc_complete, NULL);
@@ -480,8 +416,20 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         case BLE_HCI_LE_PHY_CODED_PREF_MASK:
             return 0;
         }
-        set_default_le_phy_before_conn(s_current_phy, s_current_phy);
-        blecent_scan();
+
+	vTaskDelay(200);
+
+        /* Attempt direct connection on 2M or Coded phy now */
+        if (s_current_phy == BLE_HCI_LE_PHY_CODED_PREF_MASK) {
+            MODLOG_DFLT(INFO, " Attempting to initiate connection on Coded PHY \n");
+            ble_gap_ext_connect(0, &conn_addr, 30000, BLE_HCI_LE_PHY_CODED_PREF_MASK,
+			        NULL, NULL, NULL, blecent_gap_event, NULL);
+        }
+        else if (s_current_phy == BLE_HCI_LE_PHY_2M_PREF_MASK) {
+            MODLOG_DFLT(INFO, " Attempting to initiate connection on 2M PHY \n");
+            ble_gap_ext_connect(0, &conn_addr, 30000, (BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK),
+	                        NULL, NULL, NULL, blecent_gap_event, NULL);
+        }
         return 0;
 
     case BLE_GAP_EVENT_DISC_COMPLETE:
@@ -489,20 +437,11 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                     event->disc_complete.reason);
         return 0;
 
-#if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
         /* An advertisment report was received during GAP discovery. */
         ext_print_adv_report(&event->disc);
 
         blecent_connect_if_interesting(&event->disc);
-        return 0;
-#endif
-
-    case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE:
-        MODLOG_DFLT(INFO, "LE PHY Update completed; status=%d conn_handle=%d tx_phy=%d "
-                    "rx_phy = %d\n", event->phy_updated.status,
-                    event->phy_updated.conn_handle, event->phy_updated.tx_phy,
-                    event->phy_updated.rx_phy);
         return 0;
 
     default:
@@ -519,15 +458,46 @@ blecent_on_reset(int reason)
 static void
 blecent_on_sync(void)
 {
-    int rc;
+    int ii, rc;
+    uint8_t all_phy;
 
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
 
     s_current_phy = BLE_HCI_LE_PHY_1M_PREF_MASK;
-    /* Begin scanning for a peripheral to connect to. */
-    blecent_scan();
+
+    all_phy = BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK | BLE_HCI_LE_PHY_CODED_PREF_MASK;
+
+    set_default_le_phy(all_phy, all_phy);
+
+    if (s_current_phy != BLE_HCI_LE_PHY_1M_PREF_MASK) {
+	/* Check if peer address is set in EXAMPLE_PEER_ADDR */
+        if (strlen(CONFIG_EXAMPLE_PEER_ADDR) &&
+	    (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
+            /* User wants to connect on 2M or coded phy directly */
+            sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+                   &peer_addr[5], &peer_addr[4], &peer_addr[3],
+                   &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+
+            for(ii = 0 ;ii < 6; ii++)
+                conn_addr.val[ii] = peer_addr[ii];
+
+            conn_addr.type = 0;
+
+            vTaskDelay(300);
+
+	    if (s_current_phy == BLE_HCI_LE_PHY_2M_PREF_MASK)
+	        s_current_phy = BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK ;
+
+            ble_gap_ext_connect(0, &conn_addr, 30000, s_current_phy,
+			        NULL, NULL, NULL, blecent_gap_event, NULL);
+        }
+    }
+    else {
+/* Begin scanning for a peripheral to connect to. */
+        blecent_scan();
+    }
 }
 
 void blecent_host_task(void *param)

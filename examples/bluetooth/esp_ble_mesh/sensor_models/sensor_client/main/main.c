@@ -53,6 +53,7 @@ static struct esp_ble_mesh_key {
 } prov_key;
 
 static esp_ble_mesh_cfg_srv_t config_server = {
+    .relay = ESP_BLE_MESH_RELAY_DISABLED,
     .beacon = ESP_BLE_MESH_BEACON_DISABLED,
 #if defined(CONFIG_BLE_MESH_FRIEND)
     .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
@@ -101,6 +102,9 @@ static void example_ble_mesh_set_msg_common(esp_ble_mesh_client_common_param_t *
     common->ctx.addr = node->unicast_addr;
     common->ctx.send_ttl = MSG_SEND_TTL;
     common->msg_timeout = MSG_TIMEOUT;
+#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 2, 0)
+    common->msg_role = MSG_ROLE;
+#endif
 }
 
 static esp_err_t prov_complete(uint16_t node_index, const esp_ble_mesh_octet16_t uuid,

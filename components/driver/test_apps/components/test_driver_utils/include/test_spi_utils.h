@@ -22,6 +22,7 @@
 #include "sdkconfig.h"
 #include "soc/spi_periph.h"
 #include "driver/spi_master.h"
+#include "test_dualboard_utils.h"
 
 // All the tests using the header should use this definition as much as possible,
 // so that the working host can be changed easily in the future.
@@ -76,7 +77,7 @@
 #define ESP_SPI_SLAVE_TV        (12.5*3.5)
 #define WIRE_DELAY              12.5
 
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4
 #define SLAVE_IOMUX_PIN_MISO    -1
 #define SLAVE_IOMUX_PIN_MOSI    -1
 #define SLAVE_IOMUX_PIN_SCLK    -1
@@ -291,16 +292,5 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 //Note this cs_num is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,
 //then the cs_num of the 1st and 2nd devices are 0 and 1 respectively.
 void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_num);
-
-/**
- * This function is used to get tx_buffer used in dual-board test
- * `master_send_buf` and `slave_send_buf` will be fulfilled with same random numbers with the seed of `seed`.
- *
- * @param seed            Random number seed
- * @param master_send_buf Master TX buffer
- * @param slave_send_buf  Slave TX buffer
- * @param send_buf_size   Buffer size
- */
-void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_buf, int send_buf_size);
 
 #endif  //_TEST_COMMON_SPI_H_

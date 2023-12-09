@@ -60,7 +60,6 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page);
 #endif  //#if CONFIG_SPIRAM_RODATA
 
-
 /*----------------------------------------------------------------------------
                     Part 2 APIs (See @Backgrounds on top of this file)
 -------------------------------------------------------------------------------*/
@@ -131,7 +130,6 @@ uint32_t rodata_flash_end_page_get(void);
  */
 int rodata_flash2spiram_offset(void);
 #endif  // #if CONFIG_SPIRAM_RODATA
-
 
 #ifdef __cplusplus
 }

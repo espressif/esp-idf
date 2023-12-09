@@ -1,0 +1,9 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_system/test_apps/esp_system_unity_tests:
+  disable:
+    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+
+components/esp_system/test_apps/linux_apis:
+  enable:
+    - if: IDF_TARGET == "linux"

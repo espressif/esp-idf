@@ -54,7 +54,7 @@ void periph_rtc_apll_release(void);
  * @brief Calculate and set APLL coefficients by given frequency
  * @note  Have to call 'periph_rtc_apll_acquire' to enable APLL power before setting frequency
  * @note  This calculation is based on the inequality:
- *        xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) >= SOC_APLL_MULTIPLIER_OUT_MIN_HZ(350 MHz)
+ *        xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) >= CLK_LL_APLL_MULTIPLIER_MIN_HZ(350 MHz)
  *        It will always calculate the minimum coefficients that can satisfy the inequality above, instead of loop them one by one.
  *        which means more appropriate coefficients are likely to exist.
  *        But this algorithm can meet almost all the cases and the accuracy can be guaranteed as well.

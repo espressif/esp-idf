@@ -64,14 +64,17 @@ static void bootloader_check_wdt_reset(void)
 {
     int wdt_rst = 0;
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 || rst_reason == RESET_REASON_CORE_MWDT1 ||
-        rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_MWDT1 || rst_reason == RESET_REASON_CPU0_RTC_WDT) {
-        ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
+    if (rst_reason == RESET_REASON_SYS_HP_WDT || rst_reason == RESET_REASON_SYS_LP_WDT || rst_reason == RESET_REASON_CORE_HP_WDT ||
+        rst_reason == RESET_REASON_CORE_LP_WDT || rst_reason == RESET_REASON_CHIP_LP_WDT) {
+        ESP_LOGW(TAG, "CPU has been reset by WDT.");
         wdt_rst = 1;
     }
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        wdt_reset_info_dump(1);
+#endif
     }
     wdt_reset_cpu0_info_enable();
 }
@@ -133,7 +136,7 @@ esp_err_t bootloader_init(void)
     /* print 2nd bootloader banner */
     bootloader_print_banner();
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#if !CONFIG_APP_BUILD_TYPE_RAM
     //init cache hal
     cache_hal_init();
     //reset mmu
@@ -145,7 +148,6 @@ esp_err_t bootloader_init(void)
         ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
         return ret;
     }
-#if !CONFIG_APP_BUILD_TYPE_RAM
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         return ret;
@@ -154,12 +156,11 @@ esp_err_t bootloader_init(void)
     if ((ret = bootloader_check_bootloader_validity()) != ESP_OK) {
         return ret;
     }
-#endif // !CONFIG_APP_BUILD_TYPE_RAM
     // initialize spi flash
     if ((ret = bootloader_init_spi_flash()) != ESP_OK) {
         return ret;
     }
-#endif // #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#endif // !CONFIG_APP_BUILD_TYPE_RAM
 
     // check whether a WDT reset happend
     bootloader_check_wdt_reset();

@@ -1,9 +1,9 @@
 ESP-BLE-MESH Terminology
 ========================
 
-.. _ble-mesh-terminology-role:
-
 :link_to_translation:`en:[English]`
+
+.. _ble-mesh-terminology-role:
 
 .. list-table:: 表 1 ESP-BLE-MESH 术语 - 身份
   :widths: 10 40 60
@@ -121,6 +121,7 @@ ESP-BLE-MESH Terminology
     - Certificate-based Out-of-Band
     - 基于证书的配网功能利用公钥基础设施来验证未配网设备的公钥和UUID信息。
 
+
 .. _ble-mesh-terminology-address:
 
 .. list-table:: 表 5 ESP-BLE-MESH 术语 - 地址
@@ -227,10 +228,10 @@ ESP-BLE-MESH Terminology
   * - Mesh Private Beacon Client model
     - "The model is used to support the functionality of a node that can configure the Mesh Private beacons functionality of another node."
     - 该模型用于支持一个节点配置另一个节点的 Mesh 私有信标功能的功能。
-  * - On-Demend Private Proxy Server model
+  * - On-Demand Private Proxy Server model
     - "The model is used to support the configuration of the advertising with Private Network Identity type functionality of a node."
     - 该模型用于支持节点的私有网络身份类型广告配置功能。
-  * - On-Demend Private Proxy Client model
+  * - On-Demand Private Proxy Client model
     - "The model is used to support the functionality of a node that can configure the advertising with Private Network Identity type functionality of another node."
     - 该模型用于支持一个节点配置另一个节点的私有网络身份类型广告功能的功能。
   * - SAR Configuration Server model
@@ -277,6 +278,3 @@ ESP-BLE-MESH Terminology
 
 官方定义摘自 `ESP-BLE-MESH Glossary of Terms <https://www.bluetooth.com/learn-about-bluetooth/recent-enhancements/mesh/mesh-glossary/>`_.
 查看更多术语，也请参照上述网址。
-
-
-

@@ -212,6 +212,15 @@ menu "Memory Settings"
         help
             Dynamic memory size of block 2
 
+    config BT_LE_MSYS_BUF_FROM_HEAP
+        bool "Get Msys Mbuf from heap"
+        default y
+        depends on BT_LE_MSYS_INIT_IN_CONTROLLER
+        help
+            This option sets the source of the shared msys mbuf memory between
+            the Host and the Controller. Allocate the memory from the heap if
+            this option is sets, from the mempool otherwise.
+
     config BT_LE_ACL_BUF_COUNT
         int "ACL Buffer count"
         default 10
@@ -264,7 +273,21 @@ config BT_LE_CONTROLLER_LOG_ENABLED
     bool "Controller log enable"
     default n
     help
+        Enable controller log
+
+config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+    bool "enable controller log module"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
         Enable controller log module
+
+config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+    bool "enable HCI log module"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
+        Enable hci log module
 
 config BT_LE_CONTROLLER_LOG_DUMP_ONLY
     bool "Controller log dump mode only"
@@ -365,7 +388,7 @@ config BT_LE_MAX_CONNECTIONS
 choice BT_LE_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
     default BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-    depends on !BT_NIMBLE_ENABLED
+    depends on ESP_COEX_SW_COEXIST_ENABLE
     help
         When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
         better avoid dramatic performance deterioration of Wi-Fi.
@@ -383,7 +406,7 @@ endchoice
 
 config BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int
-    depends on !BT_NIMBLE_ENABLED
+    default 0 if !ESP_COEX_SW_COEXIST_ENABLE
     default 1 if BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EN
     default 0 if BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
@@ -525,5 +548,5 @@ config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
         again.
 
 config BT_LE_MSYS_INIT_IN_CONTROLLER
-    bool
+    bool "Msys Mbuf Init in Controller"
     default y

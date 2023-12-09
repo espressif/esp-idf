@@ -6,7 +6,6 @@
 #include "bt_hidd.h"
 
 #if CONFIG_BT_HID_DEVICE_ENABLED
-#include "esp_bt.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_hidd.h"

@@ -8,13 +8,14 @@ This example shows how ESP32 connects to AP with Wi-Fi enterprise encryption usi
 1. Install CA certificate which is optional.
 2. Set user name and password and identity.
 3. Set the PAC file which may be empty.
-4. Enable wpa2 enterprise.
+4. Enable WiFi enterprise mode.
 5. Connect to AP.
 
-*Note:* 1. EAP-FAST is not supported with `CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` and so is disabled by default.
-        2. Setting the config `fast_provisioning` to methods 0 and 1 do not support saving the PAC credentials in case of a restart or loss of power.
-        3. The certificates present in the `examples/wifi/wifi_eap_fast/main` folder contain server certificates which have the corresponding CA as well. These can be used for server validation which is opptional.
-        4. The expiration date of these certificates is 2027/06/05.
+*Note:*
+1. EAP-FAST is not supported with `CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` and so is disabled by default.
+2. Setting the config `fast_provisioning` to methods 0 and 1 do not support saving the PAC credentials in case of a restart or loss of power.
+3. The certificates present in the `examples/wifi/wifi_eap_fast/main` folder contain server certificates which have the corresponding CA as well. These can be used for server validation which is opptional.
+4. The expiration date of these certificates is 2027/06/05.
 
 ### Configuration
 

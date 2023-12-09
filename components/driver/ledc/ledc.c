@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <sys/param.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "soc/gpio_periph.h"
@@ -42,6 +44,18 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 #define LEDC_CLK_SRC_FREQ_PRECISION     ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX
 #endif
 
+#if !SOC_RCC_IS_INDEPENDENT
+#define LEDC_BUS_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define LEDC_BUS_CLOCK_ATOMIC()
+#endif
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define LEDC_FUNC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define LEDC_FUNC_CLOCK_ATOMIC()
+#endif
+
 typedef enum {
     LEDC_FSM_IDLE,
     LEDC_FSM_HW_FADE,
@@ -58,9 +72,6 @@ typedef struct {
     ledc_fade_mode_t mode;
     SemaphoreHandle_t ledc_fade_sem;
     SemaphoreHandle_t ledc_fade_mux;
-#if CONFIG_SPIRAM_USE_MALLOC
-    StaticQueue_t ledc_fade_sem_storage;
-#endif
     ledc_cb_t ledc_fade_callback;
     void *cb_user_arg;
     volatile ledc_fade_fsm_t fsm;
@@ -298,8 +309,10 @@ static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
             memset(ledc_new_mode_obj->timer_specific_clk, LEDC_TIMER_SPECIFIC_CLK_UNINIT, sizeof(ledc_clk_src_t) * LEDC_TIMER_MAX);
 #endif
             p_ledc_obj[speed_mode] = ledc_new_mode_obj;
-            // Enable APB access to LEDC registers
-            periph_module_enable(PERIPH_LEDC_MODULE);
+            LEDC_BUS_CLOCK_ATOMIC() {
+                ledc_ll_enable_bus_clock(true);
+                ledc_ll_enable_reset_reg(false);
+            }
         }
     }
     _lock_release(&s_ledc_mutex[speed_mode]);
@@ -332,9 +345,9 @@ static inline uint32_t ledc_calculate_divisor(uint32_t src_clk_freq, int freq_hz
      * high.
      *
      * NOTE: We are also going to round up the value when necessary, thanks to:
-     * (freq_hz * precision) / 2
+     * (freq_hz * precision / 2)
      */
-    return ( ( (uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS ) + ((freq_hz * precision) / 2 ) )
+    return ( ( (uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS ) + freq_hz * precision / 2 )
            / (freq_hz * precision);
 }
 
@@ -440,7 +453,6 @@ static uint32_t ledc_auto_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint3
     return ret;
 }
 
-extern void esp_sleep_periph_use_8m(bool use_or_not);
 
 /**
  * @brief Function setting the LEDC timer divisor with the given source clock,
@@ -550,14 +562,20 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         if (p_ledc_obj[speed_mode]->glb_clk != glb_clk) {
             // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
             p_ledc_obj[speed_mode]->glb_clk = glb_clk;
-            ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
+            LEDC_FUNC_CLOCK_ATOMIC() {
+                ledc_ll_enable_clock(p_ledc_obj[speed_mode]->ledc_hal.dev, true);
+                ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
+            }
         }
         portEXIT_CRITICAL(&ledc_spinlock);
 
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
+#if !CONFIG_IDF_TARGET_ESP32P4 //depend on sleep support IDF-7528 and IDF-7529
         /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
+        extern void esp_sleep_periph_use_8m(bool use_or_not);
         esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RC_FAST);
+#endif
     }
 
     /* The divisor is correct, we can write in the hardware. */
@@ -565,7 +583,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     return ESP_OK;
 
 error:
-    ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try reducing freq_hz or duty_resolution. div_param=%"PRIu32, div_param);
+    ESP_LOGE(LEDC_TAG, "requested frequency %d and duty resolution %d can not be achieved, try reducing freq_hz or duty_resolution. div_param=%"PRIu32, freq_hz, duty_resolution, div_param);
     return ESP_FAIL;
 }
 
@@ -656,7 +674,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     if (!new_speed_mode_ctx_created && !p_ledc_obj[speed_mode]) {
         return ESP_ERR_NO_MEM;
     }
-#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32H2)
+#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4)
     // On such targets, the default ledc core(global) clock does not connect to any clock source
     // Set channel configurations and update bits before core clock is on could lead to error
     // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
@@ -672,8 +690,13 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 #endif
 
     /*set channel parameters*/
-    /*   channel parameters decide how the waveform looks like in one period*/
-    /*   set channel duty and hpoint value, duty range is (0 ~ ((2 ** duty_resolution) - 1)), max hpoint value is 0xfffff*/
+    /*   channel parameters decide how the waveform looks like in one period */
+    /*   set channel duty and hpoint value, duty range is [0, (2**duty_res)], hpoint range is [0, (2**duty_res)-1] */
+    /*   Note: On ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32C6, ESP32H2, ESP32P4, due to a hardware bug,
+     *         100% duty cycle (i.e. 2**duty_res) is not reachable when the binded timer selects the maximum duty
+     *         resolution. For example, the max duty resolution on ESP32C3 is 14-bit width, then set duty to (2**14)
+     *         will mess up the duty calculation in hardware.
+    */
     ledc_set_duty_with_hpoint(speed_mode, ledc_channel, duty, hpoint);
     /*update duty settings*/
     ledc_update_duty(speed_mode, ledc_channel);
@@ -849,7 +872,35 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
         ESP_LOGW(LEDC_TAG, "LEDC timer not configured, call ledc_timer_config to set timer frequency");
         return 0;
     }
-    return (((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) + (uint64_t) precision * clock_divider / 2) / precision / clock_divider;
+    return (((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) + precision * clock_divider / 2) / (precision * clock_divider);
+}
+
+static inline uint32_t ilog2(uint32_t i)
+{
+    assert(i > 0);
+    uint32_t log = 0;
+    while (i >>= 1) {
+        ++log;
+    }
+    return log;
+}
+
+// https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#ledpwm
+uint32_t ledc_find_suitable_duty_resolution(uint32_t src_clk_freq, uint32_t timer_freq)
+{
+    // Highest resolution is calculated when LEDC_CLK_DIV = 1 (i.e. div_param = 1 << LEDC_LL_FRACTIONAL_BITS)
+    uint32_t div = (src_clk_freq + timer_freq / 2) / timer_freq; // rounded
+    uint32_t duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+    uint32_t div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
+    if (LEDC_IS_DIV_INVALID(div_param)) {
+        div = src_clk_freq / timer_freq; // truncated
+        duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+        div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
+        if (LEDC_IS_DIV_INVALID(div_param)) {
+            duty_resolution = 0;
+        }
+    }
+    return duty_resolution;
 }
 
 static inline void IRAM_ATTR ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_t *channel)
@@ -859,7 +910,7 @@ static inline void IRAM_ATTR ledc_calc_fade_end_channel(uint32_t *fade_end_statu
     *channel = i;
 }
 
-void IRAM_ATTR ledc_fade_isr(void *arg)
+static void IRAM_ATTR ledc_fade_isr(void *arg)
 {
     bool cb_yield = false;
     BaseType_t HPTaskAwoken = pdFALSE;
@@ -987,7 +1038,7 @@ static esp_err_t ledc_fade_channel_deinit(ledc_mode_t speed_mode, ledc_channel_t
             s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux = NULL;
         }
         if (s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem) {
-            vSemaphoreDelete(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
+            vSemaphoreDeleteWithCaps(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
             s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = NULL;
         }
         free(s_ledc_fade_rec[speed_mode][channel]);
@@ -1003,23 +1054,13 @@ static esp_err_t ledc_fade_channel_init_check(ledc_mode_t speed_mode, ledc_chann
         return ESP_FAIL;
     }
     if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-#if CONFIG_SPIRAM_USE_MALLOC
+        // Always malloc internally since LEDC ISR is always placed in IRAM
         s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *) heap_caps_calloc(1, sizeof(ledc_fade_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
             ledc_fade_channel_deinit(speed_mode, channel);
             return ESP_ERR_NO_MEM;
         }
-
-        memset(&s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem_storage, 0, sizeof(StaticQueue_t));
-        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinaryStatic(&s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem_storage);
-#else
-        s_ledc_fade_rec[speed_mode][channel] = (ledc_fade_t *) calloc(1, sizeof(ledc_fade_t));
-        if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
-            ledc_fade_channel_deinit(speed_mode, channel);
-            return ESP_ERR_NO_MEM;
-        }
-        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinary();
-#endif
+        s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem = xSemaphoreCreateBinaryWithCaps(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux = xSemaphoreCreateMutex();
         xSemaphoreGive(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
         s_ledc_fade_rec[speed_mode][channel]->fsm = LEDC_FSM_IDLE;
@@ -1070,8 +1111,9 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
         ESP_LOGD(LEDC_TAG, "cur duty: %"PRIu32"; target: %"PRIu32", step: %d, cycle: %d; scale: %d; dir: %d",
                  duty_cur, target_duty, step_num, cycle_num, scale, dir);
     } else {
+        // Directly set duty to the target, does not care on the dir
         portENTER_CRITICAL(&ledc_spinlock);
-        ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty, dir, 1, 1, 0);
+        ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty, 1, 1, 1, 0);
         portEXIT_CRITICAL(&ledc_spinlock);
         ESP_LOGD(LEDC_TAG, "Set to target duty: %"PRIu32, target_duty);
     }
@@ -1231,6 +1273,7 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
 
 esp_err_t ledc_fade_func_install(int intr_alloc_flags)
 {
+    LEDC_CHECK(s_ledc_fade_isr_handle == NULL, "fade function already installed", ESP_ERR_INVALID_STATE);
     //OR intr_alloc_flags with ESP_INTR_FLAG_IRAM because the fade isr is in IRAM
     return ledc_isr_register(ledc_fade_isr, NULL, intr_alloc_flags | ESP_INTR_FLAG_IRAM, &s_ledc_fade_isr_handle);
 }

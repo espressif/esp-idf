@@ -14,6 +14,12 @@
     #define MEMPROT_ISR _interrupt_handler
 #endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 
+#if CONFIG_ESP_IPC_ISR_ENABLE
+    #define IPC_ISR_HANDLER esp_ipc_isr_handler
+#else
+    #define IPC_ISR_HANDLER _interrupt_handler
+#endif // CONFIG_ESP_IPC_ISR_ENABLE
+
 /* The system interrupts are not used for now, so trigger a panic every time one occurs. */
 #define _system_int_handler _panic_handler
 
@@ -104,7 +110,7 @@ _mtvt_table:
     .word _panic_handler            /* 41: ETS_CACHEERR_INUM (+16) panic-interrupt (soc-level panic) */
     .word MEMPROT_ISR               /* 42: ETS_MEMPROT_ERR_INUM (+16) handler (soc-level panic) */
     .word _interrupt_handler        /* 43: Free interrupt number */
-    .word _interrupt_handler        /* 44: Free interrupt number */
+    .word IPC_ISR_HANDLER           /* 44: ETS_IPC_ISR_INUM (+16) handler*/
     .word _interrupt_handler        /* 45: Free interrupt number */
     .word _interrupt_handler        /* 46: Free interrupt number */
     .word _interrupt_handler        /* 47: Free interrupt number */

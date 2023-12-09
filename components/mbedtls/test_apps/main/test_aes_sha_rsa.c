@@ -14,7 +14,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_timer.h"
 #include "unity.h"
 #include "test_utils.h"
 #include "esp32/rom/sha.h"

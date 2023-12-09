@@ -43,7 +43,11 @@ Kconfig 文件的格式规定如下：
 格式检查器
 --------------
 
-``tools/ci/check_kconfigs.py`` 可以检查 Kconfig 文件是否符合上述格式规定。检查器会检查 ESP-IDF 目录下的所有 Kconfig 和 ``Kconfig.projbuild`` 文件，如有格式错误，会生成后缀为 ``.new`` 的新文件以提供修改建议。请注意，检查器不能解决所有格式问题，开发人员仍需终审和修改文件使其通过测试。例如，在没有其他误导性格式的情况下，检查器能够更正缩进，但无法提供菜单内选项的常用前缀。
+esp-idf-kconfig_ 软件包中的 ``kconfcheck`` 工具可以检查 Kconfig 文件是否符合上述格式规定。检查器会检查作为参数给出的所有 Kconfig 和 ``Kconfig.projbuild`` 文件，并生成一个后缀为 ``.new`` 的新文件，如有格式错误，便会在此文件中提供修改建议。注意，检查器不能解决所有格式问题，开发人员仍需终审并修改文件，使其通过测试。例如，在没有其他误导性格式的情况下，检查器能够更正缩进，但无法为菜单内选项提供常用的前缀。
+
+``esp-idf-kconfig`` 软件包可以在 ESP-IDF 环境中使用。运行命令 ``python -m kconfcheck <path_to_kconfig_file>`` 即可调用检查工具。
+
+如需了解更多内容，请参考 `esp-idf-kconfig 相关文档 <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`__。
 
 .. _configuration-options-compatibility:
 

@@ -39,13 +39,15 @@ static inline void usb_ll_ext_phy_enable(void)
 
 static inline void usb_ll_int_phy_pullup_conf(bool dp_pu, bool dp_pd, bool dm_pu, bool dm_pd)
 {
-    usb_wrap_otg_conf_reg_t conf = USB_WRAP.otg_conf;
+    usb_wrap_otg_conf_reg_t conf;
+    conf.val = USB_WRAP.otg_conf.val;
+
     conf.pad_pull_override = 1;
     conf.dp_pullup = dp_pu;
     conf.dp_pulldown = dp_pd;
     conf.dm_pullup = dm_pu;
     conf.dm_pulldown = dm_pd;
-    USB_WRAP.otg_conf = conf;
+    USB_WRAP.otg_conf.val = conf.val;
 }
 
 #ifdef __cplusplus

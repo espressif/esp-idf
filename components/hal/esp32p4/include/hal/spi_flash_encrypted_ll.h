@@ -17,13 +17,12 @@
 #include "soc/hp_system_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//TODO: IDF-7545
 
 /// Choose type of chip you want to encrypt manully
 typedef enum
@@ -37,10 +36,9 @@ typedef enum
  */
 static inline void spi_flash_encrypt_ll_enable(void)
 {
-    // REG_SET_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
-    //             HP_SYSTEM_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
-    //             HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
-    abort();
+    REG_SET_BIT(HP_SYSTEM_CRYPTO_CTRL_REG,
+                HP_SYSTEM_REG_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
+                HP_SYSTEM_REG_ENABLE_SPI_MANUAL_ENCRYPT);
 }
 
 /*
@@ -48,9 +46,8 @@ static inline void spi_flash_encrypt_ll_enable(void)
  */
 static inline void spi_flash_encrypt_ll_disable(void)
 {
-    // REG_CLR_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
-    //             HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
-    abort();
+    REG_CLR_BIT(HP_SYSTEM_CRYPTO_CTRL_REG,
+                HP_SYSTEM_REG_ENABLE_SPI_MANUAL_ENCRYPT);
 }
 
 /**
@@ -88,7 +85,8 @@ static inline void spi_flash_encrypt_ll_buffer_length(uint32_t size)
  */
 static inline void spi_flash_encrypt_ll_plaintext_save(uint32_t address, const uint32_t* buffer, uint32_t size)
 {
-    uint32_t plaintext_offs = (address % 64);
+    uint32_t plaintext_offs = (address % SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX);
+    HAL_ASSERT(plaintext_offs + size <= SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX);
     memcpy((void *)(SPI_MEM_XTS_PLAIN_BASE_REG(0) + plaintext_offs), buffer, size);
 }
 

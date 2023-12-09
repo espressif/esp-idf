@@ -652,6 +652,7 @@ PROVIDE ( lc_cmd_cmp_bd_addr_send = 0x4002cec4 );
 PROVIDE ( ld_acl_tx_packet_type_select = 0x4002fb40 );
 PROVIDE ( ld_acl_sched = 0x40033268 );
 PROVIDE ( ld_acl_sniff_sched = 0x4003340c );
+PROVIDE ( ld_acl_sniff_exit = 0x400312b4 );
 PROVIDE ( ld_acl_rx = 0x4003274c );
 PROVIDE ( ld_acl_tx = 0x4002ffdc );
 PROVIDE ( ld_acl_rx_sync = 0x4002fbec );

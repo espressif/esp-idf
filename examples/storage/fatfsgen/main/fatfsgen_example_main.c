@@ -9,7 +9,6 @@
 #include <string.h>
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
-#include "esp_system.h"
 #include "sdkconfig.h"
 
 #if CONFIG_EXAMPLE_FATFS_MODE_READ_ONLY

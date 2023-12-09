@@ -18,6 +18,15 @@ extern "C" {
  */
 esp_err_t bootloader_init_spi_flash(void);
 
+#if CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+/**
+ * @brief Config all flash related stuff according to the header. The consistency of all flash configs is ensured.
+ *
+ * @return None
+ */
+void bootloader_flash_hardware_init(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

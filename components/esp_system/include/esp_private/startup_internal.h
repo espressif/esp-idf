@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,13 +43,18 @@ void startup_resume_other_cores(void);
  */
 typedef struct {
     esp_err_t (*fn)(void);   /*!< Pointer to the startup function */
-    uint32_t cores;     /*!< Bit map of cores where the function has to be called */
+    uint16_t cores;          /*!< Bit mask of cores where the function has to be called */
+    uint16_t stage;          /*!< Init stage number (0 or 1) */
 } esp_system_init_fn_t;
+
+#define ESP_SYSTEM_INIT_STAGE_CORE          0
+#define ESP_SYSTEM_INIT_STAGE_SECONDARY     1
 
 /**
  * @brief Define a system initialization function which will be executed on the specified cores
  *
  * @param f  function name (identifier)
+ * @param stage_  init stage name (CORE or SECONDARY)
  * @param c  bit mask of cores to execute the function on (ex. if BIT0 is set, the function
  *           will be executed on CPU 0, if BIT1 is set - on CPU 1, and so on)
  * @param priority  integer, priority of the initialization function. Higher values mean that
@@ -65,10 +70,14 @@ typedef struct {
  * It is, on the other hand, a good practice to make sure the initialization function does get
  * discarded if the related feature is not used.
  */
-#define ESP_SYSTEM_INIT_FN(f, c, priority, ...) \
+#define ESP_SYSTEM_INIT_FN(f, stage_, c, priority, ...) \
     static esp_err_t __VA_ARGS__ __esp_system_init_fn_##f(void); \
     static __attribute__((used)) _SECTION_ATTR_IMPL(".esp_system_init_fn", priority) \
-        esp_system_init_fn_t esp_system_init_fn_##f = { .fn = ( __esp_system_init_fn_##f), .cores = (c) }; \
+        esp_system_init_fn_t esp_system_init_fn_##f = { \
+            .fn = ( __esp_system_init_fn_##f), \
+            .cores = (c), \
+            .stage = ESP_SYSTEM_INIT_STAGE_##stage_ \
+        }; \
     static esp_err_t __esp_system_init_fn_##f(void)
 
 #ifdef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE

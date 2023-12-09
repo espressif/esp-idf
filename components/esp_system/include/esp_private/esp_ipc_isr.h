@@ -26,7 +26,7 @@ extern "C" {
  * - This function will register a High Priority Interrupt for a CPU where it is called. The priority of the interrupts is dependent on
  *   the CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL option.
  * - Callbacks written in assembly can then run in context of the registered High Priority Interrupts
- * - Callbacks can be executed by calling esp_ipc_isr_asm_call() or esp_ipc_isr_asm_call_blocking()
+ * - Callbacks can be executed by calling esp_ipc_isr_call() or esp_ipc_isr_call_blocking()
  */
 void esp_ipc_isr_init(void);
 

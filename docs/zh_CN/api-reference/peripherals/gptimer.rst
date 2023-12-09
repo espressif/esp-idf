@@ -284,9 +284,9 @@
 电源管理
 ^^^^^^^^
 
-有些电源管理的策略会在某些时刻关闭时钟源，或者改变时钟源的频率，以求降低功耗。比如在启用 DFS 后， APB 时钟源会降低频率。如果浅睡眠（light sleep） 模式也被开启， PLL 和 XTAL 时钟都会被默认关闭，从而导致 GPTimer 的计时不准确。
+有些电源管理的策略会在某些时刻关闭时钟源，或者改变时钟源的频率，以求降低功耗。比如在启用 DFS 后，APB 时钟源会降低频率。如果浅睡眠 (Light-sleep) 模式也被开启，PLL 和 XTAL 时钟都会被默认关闭，从而导致 GPTimer 的计时不准确。
 
-驱动程序会根据具体的时钟源选择，通过创建不同的电源锁来避免上述情况的发生。驱动会在 :cpp:func:`gptimer_enable` 函数中增加电源锁的引用计数，并在 :cpp:func:`gptimer_disable` 函数中减少电源锁的引用计数，从而保证了在 :cpp:func:`gptimer_enable` 和 :cpp:func:`gptimer_disable` 之间， GPTimer 的时钟源始处于稳定工作的状态。
+驱动程序会根据具体的时钟源选择，通过创建不同的电源锁来避免上述情况的发生。驱动会在 :cpp:func:`gptimer_enable` 函数中增加电源锁的引用计数，并在 :cpp:func:`gptimer_disable` 函数中减少电源锁的引用计数，从而保证了在 :cpp:func:`gptimer_enable` 和 :cpp:func:`gptimer_disable` 之间，GPTimer 的时钟源始处于稳定工作的状态。
 
 .. _gptimer-iram-safe:
 

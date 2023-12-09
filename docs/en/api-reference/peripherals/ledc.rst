@@ -1,7 +1,7 @@
 LED Control (LEDC)
 ==================
 
-{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16"}
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -150,7 +150,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 40 MHz
          - Dynamic Frequency Scaling compatible
 
-.. only:: esp32c6
+.. only:: esp32c6 or esp32p4
 
     .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
        :widths: 15 15 30
@@ -202,6 +202,8 @@ The source clock can also limit the PWM frequency. The higher the source clock f
 
         2. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
 
+The LEDC driver offers a helper function :cpp:func:`ledc_find_suitable_duty_resolution` to find the maximum possible resolution for the timer, given the source clock frequency and the desired PWM signal frequency.
+
 When a timer is no longer needed by any channel, it can be deconfigured by calling the same function :cpp:func:`ledc_timer_config`. The configuration structure :cpp:type:`ledc_timer_config_t` passes in should be:
 
 -  :cpp:member:`ledc_timer_config_t::speed_mode` The speed mode of the timer which wants to be deconfigured belongs to (:cpp:type:`ledc_mode_t`)
@@ -246,7 +248,13 @@ To set the duty cycle, use the dedicated function :cpp:func:`ledc_set_duty`. Aft
 
 Another way to set the duty cycle, as well as some other channel parameters, is by calling :cpp:func:`ledc_channel_config` covered in Section :ref:`ledc-api-configure-channel`.
 
-The range of the duty cycle values passed to functions depends on selected ``duty_resolution`` and should be from ``0`` to ``(2 ** duty_resolution) - 1``. For example, if the selected duty resolution is 10, then the duty cycle values can range from 0 to 1023. This provides the resolution of ~ 0.1%.
+The range of the duty cycle values passed to functions depends on selected ``duty_resolution`` and should be from ``0`` to ``(2 ** duty_resolution)``. For example, if the selected duty resolution is 10, then the duty cycle values can range from 0 to 1024. This provides the resolution of ~ 0.1%.
+
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c2 or esp32c6 or esp32h2 or esp32p4
+
+    .. warning::
+
+        On {IDF_TARGET_NAME}, when channel's binded timer selects its maximum duty resolution, the duty cycle value cannot be set to ``(2 ** duty_resolution)``. Otherwise, the internal duty counter in the hardware will overflow and be messed up.
 
 
 Change PWM Duty Cycle Using Hardware

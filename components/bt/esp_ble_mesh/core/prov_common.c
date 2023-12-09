@@ -404,7 +404,8 @@ static void prov_retransmit(struct k_work *work)
     struct bt_mesh_prov_link *link = work->user_data;
     int64_t timeout = TRANSACTION_TIMEOUT;
 
-    if (!bt_mesh_atomic_test_bit(link->flags, LINK_ACTIVE)) {
+    if (!bt_mesh_atomic_test_bit(link->flags, LINK_ACTIVE) &&
+        !bt_mesh_atomic_test_bit(link->flags, LINK_CLOSING)) {
         BT_WARN("Link not active");
         return;
     }

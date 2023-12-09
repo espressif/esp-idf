@@ -1,10 +1,4 @@
 #
-# libsodium
-#
-CONFIG_LIBSODIUM_USE_MBEDTLS_SHA=y
-# end of libsodium
-
-#
 # Partition Table
 #
 CONFIG_PARTITION_TABLE_CUSTOM=y

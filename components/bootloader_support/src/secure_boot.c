@@ -144,9 +144,9 @@ static esp_err_t secure_boot_v2_check(bool *need_fix)
 #endif
 #endif // CONFIG_SECURE_BOOT
 
-#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+#if (CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME) && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
-static void rsa_check_signature_on_update_check(void)
+static void check_signature_on_update_check(void)
 {
     // We rely on the keys used to sign this app to verify the next app on OTA, so make sure there is at
     // least one to avoid a stuck firmware
@@ -164,7 +164,7 @@ static void rsa_check_signature_on_update_check(void)
     }
 #endif
 }
-#endif // CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+#endif // (CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME) && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
 void esp_secure_boot_init_checks(void)
 {
@@ -184,9 +184,9 @@ void esp_secure_boot_init_checks(void)
 #endif // CONFIG_SECURE_BOOT
 
 
-#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
-    rsa_check_signature_on_update_check();
-#endif // CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+#if (CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME) && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+    check_signature_on_update_check();
+#endif // (CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME) && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
 }
 

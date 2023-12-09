@@ -52,19 +52,12 @@ typedef struct {
     uint8_t d7;
 } sdmmc_slot_io_info_t;
 
-/* Note: it is in theory possible to have both IOMUX and GPIO Matrix supported
- * in the same SoC. However this is not used on any SoC at this point, and would
- * complicate the driver. Hence only one of these options is supported at a time.
- */
-#if SOC_SDMMC_USE_IOMUX
 /** GPIO pin numbers of SD bus signals, one structure per slot */
 extern const sdmmc_slot_io_info_t sdmmc_slot_gpio_num[SOC_SDMMC_NUM_SLOTS];
 
-#elif SOC_SDMMC_USE_GPIO_MATRIX
 /** GPIO matrix signal numbers of SD bus signals, one structure per slot */
 extern const sdmmc_slot_io_info_t sdmmc_slot_gpio_sig[SOC_SDMMC_NUM_SLOTS];
 
-#endif // SOC_SDMMC_USE_{IOMUX,GPIO_MATRIX}
 #endif // SOC_SDMMC_HOST_SUPPORTED
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include <string.h>
 #include "esp_check.h"
 #include "esp_log.h"
-#include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "vfs_fat_internal.h"
 #include "diskio_impl.h"
@@ -28,6 +27,8 @@ typedef struct vfs_fat_spiflash_ctx_t {
 } vfs_fat_spiflash_ctx_t;
 
 static vfs_fat_spiflash_ctx_t *s_ctx[FF_VOLUMES] = {};
+
+extern esp_err_t esp_vfs_set_readonly_flag(const char* base_path); // from vfs/vfs.c to set readonly flag in esp_vfs_t struct externally
 
 static bool s_get_context_id_by_label(const char *label, uint32_t *out_id)
 {
@@ -160,6 +161,10 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     assert(ctx_id != FF_VOLUMES);
     s_ctx[ctx_id] = ctx;
 
+    if (data_partition->readonly) {
+        esp_vfs_set_readonly_flag(base_path);
+    }
+
     return ESP_OK;
 
 fail:
@@ -203,7 +208,6 @@ esp_err_t esp_vfs_fat_spiflash_format_rw_wl(const char* base_path, const char* p
 
     wl_handle_t temp_handle = WL_INVALID_HANDLE;
     uint32_t id = FF_VOLUMES;
-    char drv[3] = {0, ':', 0};
 
     bool found = s_get_context_id_by_label(partition_label, &id);
     if (!found) {
@@ -219,8 +223,10 @@ esp_err_t esp_vfs_fat_spiflash_format_rw_wl(const char* base_path, const char* p
     }
 
     //unmount
-    drv[1] = (char)('0' + s_ctx[id]->pdrv);
-    f_mount(0, drv, 0);
+    char drv[3] = {(char)('0' + s_ctx[id]->pdrv), ':', 0};
+    FRESULT fresult = f_mount(0, drv, 0);
+    ESP_RETURN_ON_FALSE(fresult != FR_INVALID_DRIVE, ESP_FAIL, TAG, "f_mount unmount failed (%d) - the logical drive number is invalid", fresult);
+    ESP_GOTO_ON_FALSE(fresult == FR_OK, ESP_FAIL, recycle, TAG, "f_mount unmount failed (%d), go to recycle", fresult);
 
     const size_t workbuf_size = 4096;
     void *workbuf = ff_memalloc(workbuf_size);
@@ -231,7 +237,7 @@ esp_err_t esp_vfs_fat_spiflash_format_rw_wl(const char* base_path, const char* p
     size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, s_ctx[id]->mount_config.allocation_unit_size);
     ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
     const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 0, alloc_unit_size};
-    FRESULT fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
+    fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
     free(workbuf);
     workbuf = NULL;
     ESP_GOTO_ON_FALSE(fresult == FR_OK, ESP_FAIL, mount_back, TAG, "f_mkfs failed (%d)", fresult);
@@ -296,6 +302,11 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
         ret = ESP_FAIL;
         goto fail;
     }
+
+    if (data_partition->readonly) {
+        esp_vfs_set_readonly_flag(base_path);
+    }
+
     return ESP_OK;
 
 fail:

@@ -43,23 +43,22 @@ bool example_is_our_netif(const char *prefix, esp_netif_t *netif)
     return strncmp(prefix, esp_netif_get_desc(netif), strlen(prefix) - 1) == 0;
 }
 
-esp_netif_t *get_example_netif_from_desc(const char *desc)
+static bool netif_desc_matches_with(esp_netif_t *netif, void *ctx)
 {
-    esp_netif_t *netif = NULL;
-    while ((netif = esp_netif_next(netif)) != NULL) {
-        if (strcmp(esp_netif_get_desc(netif), desc) == 0) {
-            return netif;
-        }
-    }
-    return netif;
+    return strcmp(ctx, esp_netif_get_desc(netif)) == 0;
 }
 
-void example_print_all_netif_ips(const char *prefix)
+esp_netif_t *get_example_netif_from_desc(const char *desc)
 {
+    return esp_netif_find_if(netif_desc_matches_with, (void*)desc);
+}
+
+static esp_err_t print_all_ips_tcpip(void* ctx)
+{
+    const char *prefix = ctx;
     // iterate over active interfaces, and print out IPs of "our" netifs
     esp_netif_t *netif = NULL;
-    for (int i = 0; i < esp_netif_get_nr_of_ifs(); ++i) {
-        netif = esp_netif_next(netif);
+    while ((netif = esp_netif_next_unsafe(netif)) != NULL) {
         if (example_is_our_netif(prefix, netif)) {
             ESP_LOGI(TAG, "Connected to %s", esp_netif_get_desc(netif));
 #if CONFIG_LWIP_IPV4
@@ -78,6 +77,13 @@ void example_print_all_netif_ips(const char *prefix)
 #endif
         }
     }
+    return ESP_OK;
+}
+
+void example_print_all_netif_ips(const char *prefix)
+{
+    // Print all IPs in TCPIP context to avoid potential races of removing/adding netifs when iterating over the list
+    esp_netif_tcpip_exec(print_all_ips_tcpip, (void*) prefix);
 }
 
 
@@ -95,6 +101,12 @@ esp_err_t example_connect(void)
     }
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&example_wifi_shutdown));
 #endif
+#if CONFIG_EXAMPLE_CONNECT_PPP
+    if (example_ppp_connect() != ESP_OK) {
+        return ESP_FAIL;
+    }
+    ESP_ERROR_CHECK(esp_register_shutdown_handler(&example_ppp_shutdown));
+#endif
 
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
     example_print_all_netif_ips(EXAMPLE_NETIF_DESC_ETH);
@@ -102,6 +114,10 @@ esp_err_t example_connect(void)
 
 #if CONFIG_EXAMPLE_CONNECT_WIFI
     example_print_all_netif_ips(EXAMPLE_NETIF_DESC_STA);
+#endif
+
+#if CONFIG_EXAMPLE_CONNECT_PPP
+    example_print_all_netif_ips(EXAMPLE_NETIF_DESC_PPP);
 #endif
 
     return ESP_OK;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,10 @@
 #include "aes_wrap.h"
 #include "crypto.h"
 #include "mbedtls/esp_config.h"
+
+#ifdef CONFIG_FAST_PBKDF2
+#include "fastpbkdf2.h"
+#endif
 
 static int digest_vector(mbedtls_md_type_t md_type, size_t num_elem,
 			 const u8 *addr[], const size_t *len, u8 *mac)
@@ -502,16 +506,19 @@ static int crypto_init_cipher_ctx(mbedtls_cipher_context_t *ctx,
 		return -1;
 	}
 
-	if (mbedtls_cipher_setkey(ctx, key, key_len * 8, operation) != 0) {
-		wpa_printf(MSG_ERROR, "mbedtls_cipher_setkey returned error");
+	ret = mbedtls_cipher_setkey(ctx, key, key_len * 8, operation);
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "mbedtls_cipher_setkey returned error=%d", ret);
 		return -1;
 	}
-	if (mbedtls_cipher_set_iv(ctx, iv, cipher_info->MBEDTLS_PRIVATE(iv_size)) != 0) {
-		wpa_printf(MSG_ERROR, "mbedtls_cipher_set_iv returned error");
+	ret = mbedtls_cipher_set_iv(ctx, iv, cipher_info->MBEDTLS_PRIVATE(iv_size) << MBEDTLS_IV_SIZE_SHIFT);
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "mbedtls_cipher_set_iv returned error=%d", ret);
 		return -1;
 	}
-	if (mbedtls_cipher_reset(ctx) != 0) {
-		wpa_printf(MSG_ERROR, "mbedtls_cipher_reset() returned error");
+	ret = mbedtls_cipher_reset(ctx);
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "mbedtls_cipher_reset() returned error=%d", ret);
 		return -1;
 	}
 
@@ -745,9 +752,14 @@ cleanup:
 int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 		int iterations, u8 *buf, size_t buflen)
 {
+#ifdef CONFIG_FAST_PBKDF2
+	fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
+			     ssid, ssid_len, iterations, buf, buflen);
+	return 0;
+#else
 	int ret = mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1, (const u8 *) passphrase,
 					os_strlen(passphrase) , ssid,
-					ssid_len, iterations, 32, buf);
+					ssid_len, iterations, buflen, buf);
 	if (ret != 0) {
 		ret = -1;
 		goto cleanup;
@@ -755,6 +767,7 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 
 cleanup:
 	return ret;
+#endif
 }
 
 #ifdef MBEDTLS_DES_C

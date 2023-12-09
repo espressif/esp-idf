@@ -20,6 +20,7 @@
 typedef enum
 {
     KSZ80XX_MODEL_NUMBER_11 = 0x11,     // KSZ8041
+    KSZ80XX_MODEL_NUMBER_13 = 0x13,     // KSZ8041RLNI
     KSZ80XX_MODEL_NUMBER_15 = 0x15,     // KSZ8021/31
     KSZ80XX_MODEL_NUMBER_16 = 0x16,     // KSZ8051/81/91
     KSZ80XX_MODEL_NUMBER_17 = 0x17,     // KSZ8061
@@ -37,6 +38,7 @@ typedef struct
 static const uint8_t supported_model_numbers[] =
 {
     KSZ80XX_MODEL_NUMBER_11,
+    KSZ80XX_MODEL_NUMBER_13,
     KSZ80XX_MODEL_NUMBER_15,
     KSZ80XX_MODEL_NUMBER_16,
     KSZ80XX_MODEL_NUMBER_17,
@@ -45,6 +47,7 @@ static const uint8_t supported_model_numbers[] =
 
 static const char *model_names[] = {
     "41",           // models with model number 0x11
+    "41RLNI",       // models with model number 0x13
     "21/31",        // models with model number 0x15
     "51/81/91",     // models with model number 0x16
     "61",           // models with model number 0x17
@@ -128,6 +131,7 @@ static bool ksz80xx_init_model(phy_ksz80xx_t *ksz80xx)
     switch (ksz80xx->model_number) {
     case KSZ80XX_MODEL_NUMBER_21:   // models KSZ8001
     case KSZ80XX_MODEL_NUMBER_11:   // models KSZ8041
+    case KSZ80XX_MODEL_NUMBER_13:   // models KSZ8041RLNI
         ksz80xx->op_mode_reg = KSZ80XX_PC2R_REG_ADDR;
         ksz80xx->op_mode_offset = 2; // bits 4:2
         break;
@@ -182,7 +186,9 @@ static esp_err_t ksz80xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
     /* Check if loopback is enabled, and if so, can it work with proposed speed or not */
     bmcr_reg_t bmcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
-    ESP_GOTO_ON_FALSE(bmcr.en_loopback & (speed == ETH_SPEED_100M), ESP_ERR_INVALID_STATE, err, TAG, "Speed must be 100M for loopback operation");
+    if (bmcr.en_loopback) {
+        ESP_GOTO_ON_FALSE(speed == ETH_SPEED_100M, ESP_ERR_INVALID_STATE, err, TAG, "Speed must be 100M for loopback operation");
+    }
 
     return esp_eth_phy_802_3_set_speed(phy_802_3, speed);
 err:

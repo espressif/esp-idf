@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,19 +12,6 @@
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
 
-//This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
-#if SOC_AHB_GDMA_VERSION == 1
-#include "soc/gdma_struct.h"
-#include "hal/gdma_ll.h"
-
-#define spi_dma_ll_rx_enable_burst_data(dev, chan, enable)         gdma_ll_rx_enable_data_burst(&GDMA, chan, enable);
-#define spi_dma_ll_tx_enable_burst_data(dev, chan, enable)         gdma_ll_tx_enable_data_burst(&GDMA, chan, enable);
-#define spi_dma_ll_rx_enable_burst_desc(dev, chan, enable)         gdma_ll_rx_enable_descriptor_burst(&GDMA, chan, enable);
-#define spi_dma_ll_tx_enable_burst_desc(dev, chan, enable)         gdma_ll_tx_enable_descriptor_burst(&GDMA, chan, enable);
-#define spi_dma_ll_enable_out_auto_wrback(dev, chan, enable)          gdma_ll_tx_enable_auto_write_back(&GDMA, chan, enable);
-#define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          gdma_ll_tx_set_eof_mode(&GDMA, chan, enable);
-#endif
-
 /* The tag may be unused if log level is set to NONE  */
 static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
 
@@ -33,14 +20,6 @@ static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
         HAL_LOGE(SPI_HAL_TAG,"%s(%d): "str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
         return (ret_val); \
     }
-
-static void s_spi_hal_dma_init_config(const spi_hal_context_t *hal)
-{
-    spi_dma_ll_rx_enable_burst_data(hal->dma_in, hal->rx_dma_chan, 1);
-    spi_dma_ll_tx_enable_burst_data(hal->dma_out, hal->tx_dma_chan, 1);
-    spi_dma_ll_rx_enable_burst_desc(hal->dma_in, hal->rx_dma_chan, 1);
-    spi_dma_ll_tx_enable_burst_desc(hal->dma_out, hal->tx_dma_chan, 1);
-}
 
 void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config_t *config)
 {
@@ -61,7 +40,6 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config
     spi_ll_set_mosi_free_level(hw, 0);
 #endif
     spi_ll_master_init(hw);
-    s_spi_hal_dma_init_config(hal);
 
     //Force a transaction done interrupt. This interrupt won't fire yet because
     //we initialized the SPI interrupt as disabled. This way, we can just

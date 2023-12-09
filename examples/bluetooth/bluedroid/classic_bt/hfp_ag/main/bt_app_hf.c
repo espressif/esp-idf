@@ -85,9 +85,9 @@ const char *c_volume_control_target_str[] = {
 
 // esp_hf_subscriber_service_type_t
 char *c_operator_name_str[] = {
-    "中国移动",
-    "中国联通",
-    "中国电信",
+    "China Mobile",
+    "China Unicom",
+    "China Telecom",
 };
 
 // esp_hf_subscriber_service_type_t
@@ -360,7 +360,12 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             esp_hf_call_setup_status_t call_setup_state = 2;
             esp_hf_network_state_t ntk_state = 1;
             int signal = 2;
-            esp_hf_ag_devices_status_indchange(param->ind_upd.remote_addr,call_state,call_setup_state,ntk_state,signal);
+            int battery = 3;
+            esp_hf_ag_ciev_report(param->ind_upd.remote_addr, ESP_HF_IND_TYPE_CALL, call_state);
+            esp_hf_ag_ciev_report(param->ind_upd.remote_addr, ESP_HF_IND_TYPE_CALLSETUP, call_setup_state);
+            esp_hf_ag_ciev_report(param->ind_upd.remote_addr, ESP_HF_IND_TYPE_SERVICE, ntk_state);
+            esp_hf_ag_ciev_report(param->ind_upd.remote_addr, ESP_HF_IND_TYPE_SIGNAL, signal);
+            esp_hf_ag_ciev_report(param->ind_upd.remote_addr, ESP_HF_IND_TYPE_BATTCHG, battery);
             break;
         }
 
@@ -399,15 +404,25 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
 
             ESP_LOGI(BT_HF_TAG, "--Calling Line Identification.");
             esp_hf_ag_clcc_response(param->clcc_rep.remote_addr, index, dir, current_call_status, mode, mpty, number, type);
+
+            //AG shall always send ok response to HF
+            //index = 0 means response ok
+            index = 0;
+            esp_hf_ag_clcc_response(param->clcc_rep.remote_addr, index, dir, current_call_status, mode, mpty, number, type);
             break;
         }
 
         case ESP_HF_CNUM_RESPONSE_EVT:
         {
             char *number = {"123456"};
-            esp_hf_subscriber_service_type_t type = 1;
-            ESP_LOGI(BT_HF_TAG, "--Current Number is %s ,Type is %s.", number, c_subscriber_service_type_str[type]);
-            esp_hf_ag_cnum_response(param->cnum_rep.remote_addr, number,type);
+            int number_type = 129;
+            esp_hf_subscriber_service_type_t service_type = ESP_HF_SUBSCRIBER_SERVICE_TYPE_VOICE;
+            if (service_type == ESP_HF_SUBSCRIBER_SERVICE_TYPE_VOICE || service_type == ESP_HF_SUBSCRIBER_SERVICE_TYPE_FAX) {
+                ESP_LOGI(BT_HF_TAG, "--Current Number is %s, Number Type is %d, Service Type is %s.", number, number_type, c_subscriber_service_type_str[service_type - 3]);
+            } else {
+                ESP_LOGI(BT_HF_TAG, "--Current Number is %s, Number Type is %d, Service Type is %s.", number, number_type, c_subscriber_service_type_str[0]);
+            }
+            esp_hf_ag_cnum_response(hf_peer_addr, number, number_type, service_type);
             break;
         }
 

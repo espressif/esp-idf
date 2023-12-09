@@ -44,6 +44,39 @@ extern "C" {
 // #define GPIO_LL_INTR3_ENA  (BIT(3))
 
 /**
+ * @brief Get the configuration for an IO
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number
+ * @param pu Pull-up enabled or not
+ * @param pd Pull-down enabled or not
+ * @param ie Input enabled or not
+ * @param oe Output enabled or not
+ * @param od Open-drain enabled or not
+ * @param drv Drive strength value
+ * @param fun_sel IOMUX function selection value
+ * @param sig_out Outputting peripheral signal index
+ * @param slp_sel Pin sleep mode enabled or not
+ */
+static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
+                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
+                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+{
+    uint32_t bit_shift = (gpio_num < 32) ? gpio_num : (gpio_num - 32);
+    uint32_t bit_mask = 1 << bit_shift;
+    uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
+    *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
+    *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
+    *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
+    *oe = (((gpio_num < 32) ? hw->enable.val : hw->enable1.val) & bit_mask) >> bit_shift;
+    *od = hw->pin[gpio_num].pad_driver;
+    *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
+    *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
+    *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
+    *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
+}
+
+/**
   * @brief Enable pull-up on GPIO.
   *
   * @param hw Peripheral GPIO hardware instance address.
@@ -247,18 +280,17 @@ static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO0-15
         LP_IOMUX.lp_pad_hys.reg_lp_gpio_hys |= bit_mask;
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low |= (bit_mask >> 16);
+            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low |= (bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
             // GPIO 48-56
-            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high |= (bit_mask >> (32 + 16));
+            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high |= (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
 }
@@ -271,18 +303,17 @@ static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t 
   */
 static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO0-15
         LP_IOMUX.lp_pad_hys.reg_lp_gpio_hys &= ~bit_mask;
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low &= ~(bit_mask >> 16);
+            HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low &= ~(bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
             // GPIO 48-56
-            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high &= ~(bit_mask >> (32 + 16));
+            HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high &= ~(bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
 }
@@ -380,6 +411,7 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t
  *     - 0 the GPIO input level is 0
  *     - 1 the GPIO input level is 1
  */
+__attribute__((always_inline))
 static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
 {
     if (gpio_num < 32) {
@@ -443,18 +475,19 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO 0-15
-        LP_IOMUX.lp_pad_hold.reg_lp_gpio_hold |= bit_mask;
+        uint32_t hold_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold);
+        hold_mask |= bit_mask;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold, hold_mask);
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low |= (bit_mask >> 16);
+            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low |= (bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
             // GPIO 48-56
-            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high |= (bit_mask >> (32 + 16));
+            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high |= (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
 }
@@ -467,18 +500,19 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO 0-15
-        LP_IOMUX.lp_pad_hold.reg_lp_gpio_hold &= ~bit_mask;
+        uint32_t hold_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold);
+        hold_mask &= ~bit_mask;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hold, reg_lp_gpio_hold, hold_mask);
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low &= ~(bit_mask >> 16);
+            HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low &= ~(bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
             // GPIO 48-56
-            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high &= ~(bit_mask >> (32 + 16));
+            HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high &= ~(bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
 }
@@ -498,18 +532,17 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: IDF-7480 Fix magic number 16 with proper macro
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO 0-15
         abort();
     } else {
-        if (gpio_num < 32 + 16) {
+        if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
-            return !!(HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low & (bit_mask >> 16));
+            return !!(HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low & (bit_mask >> SOC_RTCIO_PIN_COUNT));
         } else {
             // GPIO 48-56
-            return !!(HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high & (bit_mask >> (32 + 16)));
+            return !!(HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high & (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT)));
         }
     }
 }
@@ -547,6 +580,17 @@ static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
     PIN_FUNC_SELECT(pin_name, func);
 }
 
+/**
+ * @brief  Control the pin in the IOMUX
+ *
+ * @param  bmap   write mask of control value
+ * @param  val    Control value
+ * @param  shift  write mask shift of control value
+ */
+static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
+{
+    // TODO: IDF-8226
+}
 /**
  * @brief  Select a function for the pin in the IOMUX
  *
@@ -602,6 +646,27 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
         // Unsupported IO_MUX clock source
         HAL_ASSERT(false);
     }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define gpio_ll_iomux_set_clk_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; gpio_ll_iomux_set_clk_src(__VA_ARGS__)
+
+/**
+ * @brief Get the GPIO number that is routed to the input peripheral signal through GPIO matrix.
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param in_sig_idx Peripheral signal index (tagged as input attribute).
+ *
+ * @return
+ *    - -1     Signal bypassed GPIO matrix
+ *    - Others GPIO number
+ */
+static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in_sig_idx)
+{
+    gpio_func_in_sel_cfg_reg_t reg;
+    reg.val = hw->func_in_sel_cfg[in_sig_idx].val;
+    return (reg.sig_in_sel ? reg.in_sel : -1);
 }
 
 /**

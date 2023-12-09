@@ -76,7 +76,7 @@ The application can access the ESP-WIFI-MESH stack directly without having to go
 
 .. _mesh-writing-mesh-application:
 
-Writing an ESP-WIFI-MESH Application 
+Writing an ESP-WIFI-MESH Application
 -------------------------------------------
 
 The prerequisites for starting ESP-WIFI-MESH is to initialize LwIP and Wi-Fi, The following code snippet demonstrates the necessary prerequisite steps before ESP-WIFI-MESH itself can be initialized.
@@ -126,22 +126,22 @@ Configuring an ESP-WIFI-MESH Network
 ESP-WIFI-MESH is configured via :cpp:func:`esp_mesh_set_config` which receives its arguments using the :cpp:type:`mesh_cfg_t` structure. The structure contains the following parameters used to configure ESP-WIFI-MESH:
 
 
-.. list-table::         
-   :header-rows: 1          
-   :widths: 15 25           
-            
-   * - Parameter  
+.. list-table::
+   :header-rows: 1
+   :widths: 15 25
+
+   * - Parameter
      - Description
-          
+
    * - Channel
      - Range from 1 to 14
-          
+
    * - Mesh ID
-     - ID of ESP-WIFI-MESH Network, see :cpp:type:`mesh_addr_t` 
-          
-   * - Router 
-     - Router Configuration, see :cpp:type:`mesh_router_t` 
-          
+     - ID of ESP-WIFI-MESH Network, see :cpp:type:`mesh_addr_t`
+
+   * - Router
+     - Router Configuration, see :cpp:type:`mesh_router_t`
+
    * - Mesh AP
      - Mesh AP Configuration, see :cpp:type:`mesh_ap_cfg_t`
 
@@ -236,7 +236,7 @@ ESP-WIFI-MESH will attempt to maintain the node's current Wi-Fi state when enabl
 |               |              | - Nodes previously scanning for a parent nodes will stop scanning. Call :cpp:func:`esp_mesh_connect` to restart. |
 |               +--------------+------------------------------------------------------------------------------------------------------------------+
 |               | Y            | - A root node already connected to router will stay connected.                                                   |
-|               |              | - A root node disconnected from router will need to call :cpp:func:`esp_mesh_connect` to reconnect.              |                                   
+|               |              | - A root node disconnected from router will need to call :cpp:func:`esp_mesh_connect` to reconnect.              |
 +---------------+--------------+------------------------------------------------------------------------------------------------------------------+
 | Y             | N            | - Nodes without a parent node will automatically select a preferred parent and connect.                          |
 |               |              | - Nodes already connected to a parent node will disconnect, reselect a preferred parent node, and connect.       |
@@ -273,7 +273,7 @@ Therefore, application calls to Wi-Fi APIs should be placed in between calls of 
 
     //Stop any scans already in progress
     esp_wifi_scan_stop();
-    //Manually start scan. Will automatically stop when run to completion 
+    //Manually start scan. Will automatically stop when run to completion
     esp_wifi_scan_start();
 
     //Process scan results
@@ -304,9 +304,9 @@ Application Examples
 
 ESP-IDF contains these ESP-WIFI-MESH example projects:
 
-:example:`The Internal Communication Example<mesh/internal_communication>` demonstrates how to set up a ESP-WIFI-MESH network and have the root node send a data packet to every node within the network.
+:example:`The Internal Communication Example <mesh/internal_communication>` demonstrates how to set up a ESP-WIFI-MESH network and have the root node send a data packet to every node within the network.
 
-:example:`The Manual Networking Example<mesh/manual_networking>` demonstrates how to use ESP-WIFI-MESH without the self-organizing features. This example shows how to program a node to manually scan for a list of potential parent nodes and select a parent node based on custom criteria.
+:example:`The Manual Networking Example <mesh/manual_networking>` demonstrates how to use ESP-WIFI-MESH without the self-organizing features. This example shows how to program a node to manually scan for a list of potential parent nodes and select a parent node based on custom criteria.
 
 
 .. ------------------------- ESP-WIFI-MESH API Reference ---------------------------
