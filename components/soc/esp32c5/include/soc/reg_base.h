@@ -13,7 +13,7 @@
 #define DR_REG_SPIMEM0_BASE                       0x60002000
 #define DR_REG_SPIMEM1_BASE                       0x60003000
 #define DR_REG_I2C0_BASE                          0x60004000
-#define DR_REG_UHCI0_BASE                         0x60005000
+#define DR_REG_UHCI_BASE                          0x60005000
 #define DR_REG_RMT_BASE                           0x60006000
 #define DR_REG_LEDC_BASE                          0x60007000
 #define DR_REG_TIMERG0_BASE                       0x60008000
@@ -24,7 +24,8 @@
 #define DR_REG_TWAI1_BASE                         0x6000D000
 #define DR_REG_APB_SARADC_BASE                    0x6000E000
 #define DR_REG_USB_SERIAL_JTAG_BASE               0x6000F000
-#define DR_REG_INTMTX_BASE                        0x60010000
+#define DR_REG_INTERRUPT_MATRIX_BASE              0x60010000
+#define DR_REG_INTERRUPT_CORE0_BASE               DR_REG_INTERRUPT_MATRIX_BASE
 #define DR_REG_I2C1_BASE                          0x60011000
 #define DR_REG_PCNT_BASE                          0x60012000
 #define DR_REG_SOC_ETM_BASE                       0x60013000

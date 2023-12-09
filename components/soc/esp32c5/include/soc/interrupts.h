@@ -12,6 +12,8 @@ extern "C"
 {
 #endif
 
+// TODO: [ESP32C5] IDF-8654, IDF-8655 (inherit from C6)
+
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
 typedef enum {
@@ -83,7 +85,6 @@ typedef enum {
     ETS_PCNT_INTR_SOURCE,
     ETS_PARL_IO_INTR_SOURCE,
     ETS_SLC0_INTR_SOURCE,
-    ETS_SLC_INTR_SOURCE,
     ETS_DMA_IN_CH0_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 0, LEVEL*/
     ETS_DMA_IN_CH1_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 1, LEVEL*/
     ETS_DMA_IN_CH2_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 2, LEVEL*/

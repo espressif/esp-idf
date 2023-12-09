@@ -431,11 +431,12 @@ typedef union {
  */
 typedef union {
     struct {
+        // TODO: [ESP32C5] IDF-8674 (inherit from C6) seems an error in csv, need to check
         uint32_t reserved_0:24;
         /** reserved_0 : RO; bitpos: [31:24]; default: 0;
          *  Reserved.
          */
-        uint32_t reserved_0:8;
+        uint32_t reserved_24:8;
     };
     uint32_t val;
 } efuse_rd_repeat_data4_reg_t;

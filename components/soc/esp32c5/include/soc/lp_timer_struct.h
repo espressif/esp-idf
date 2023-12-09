@@ -311,6 +311,7 @@ typedef struct lp_timer_dev_t {
     volatile lp_timer_target_reg_t target[2];
     volatile lp_timer_update_reg_t update;
     volatile lp_timer_counter_reg_t counter[2];
+    volatile lp_timer_main_overflow_reg_t main_overflow;
     volatile lp_timer_int_raw_reg_t int_raw;
     volatile lp_timer_int_st_reg_t int_st;
     volatile lp_timer_int_ena_reg_t int_ena;
