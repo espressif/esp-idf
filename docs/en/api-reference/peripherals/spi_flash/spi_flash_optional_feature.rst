@@ -7,11 +7,11 @@ Some features are not supported on all ESP chips and Flash chips. You can check 
 
 -  `Flash unique ID <#flash-unique-id>`__
 
--  `High performance mode <#high-performance-mode>`__
+-  `High Performance Mode of QSPI Flash Chips <#high-performance-mode>`__
 
--  `OPI flash support <#opi-flash-support>`__
+-  `32-bit Address Support of QSPI Flash Chips <#32-bit-address-flash-chips>`__
 
--  `32-bit Address Flash Chips <#32-bit-address-flash-chips>`__
+-  `OPI Flash Support <#opi-flash-support>`__
 
 .. note::
 
@@ -67,18 +67,18 @@ List of Flash chips that support this feature:
 
 .. _hpm-doc:
 
-High Performance Mode
----------------------
+High Performance Mode of QSPI Flash Chips
+-----------------------------------------
 
 This featuer is only supported on ESP32-S3 for now.
 
 The support for ESP32-S2, ESP32-C3, ESP32-C6, ESP32-H2, ESP32-P4 may be added in the future.
 
+.. note::
+
+    This section is provided for QSPI flash chips. Octal flash used on ESP-chips support High performance mode by default so far, please refer to the :ref:`oct-flash-doc` for the list of supported octal flash chips.
+
 .. only:: esp32s3
-
-    .. note::
-
-        This section is provided for Dual mode (DOUT/DIO) and Quad mode (QIO/QOUT) flash chips. Octal flash used on ESP-chips support High performance mode by default so far, you can refer to the octal flash support list below.
 
     High performance mode (HPM) means that the SPI1 and flash chip works under high frequency. Usually, when the operating frequency of the flash is greater than 80 MHz, it is considered that the flash works under HPM.
 
@@ -135,9 +135,47 @@ The support for ESP32-S2, ESP32-C3, ESP32-C6, ESP32-H2, ESP32-P4 may be added in
     3. XM25QH64C (ID: 0x204017)
     4. XM25QH128C (ID: 0x204018)
 
+
+.. _32-bit-flash-doc:
+
+32-bit Address Support of QSPI Flash Chips
+------------------------------------------
+
+This feature is supported on all Espressif chips (see restrictions to application below).
+
+.. note::
+
+    This section is provided for QSPI flash chips. The 32-bit address support of Octal Flash chips are considered as part of the Octal flash support. Please refer to the :ref:`oct-flash-doc` for the list of supported octal flash chips.
+
+Most NOR flash chips used by Espressif chips use 24-bits address, which can cover 16 MBytes memory. However, for larger memory (usually equal to or larger than 32 MBytes), flash uses a 32-bits address to address memory region higher than 16 MBytes. Unfortunately, 32-bits address chips have vendor-specific commands, so we need to support the chips one by one.
+
+List of Flash chips that support this feature:
+
+1. W25Q256
+2. GD25Q256
+
+Restrictions
+^^^^^^^^^^^^
+
+.. only:: not esp32s3
+
+    .. important::
+
+        Over 16 MBytes space on flash mentioned above can be only used for ``data saving``, like file system.
+
+        Mapping data/instructions to 32-bit physical address space (so as to be accessed by the CPU) needs the support of MMU. However {IDF_TARGET_NAME} doesn't support this feature. Only ESP32-S3 supports this up to now.
+
+.. only:: esp32s3
+
+    By default, space over 16 MBytes on flash mentioned above can be used for ``data saving``, like file system.
+
+    Furhtermore, to map data/instructions to 32-bit physical address space (so as to be accessed by the CPU), please enable the config ``IDF_EXPERIMENTAL_FEATURES`` and ``BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH``.
+
+    Please note that, this option is experimental, which means it can not be used on all flash chips stably. For more information, please contact Espressif Business Support.
+
 .. _oct-flash-doc:
 
-OPI flash Support
+OPI Flash Support
 -----------------
 
 This feature is only supporetd on ESP32-S3 for now.
@@ -154,26 +192,3 @@ OPI flash means that the flash chip supports octal peripheral interface, which h
 
     1. MX25UM25645G
     2. MX25UM12345G
-
-
-.. _32-bit-flash-doc:
-
-32-bit Address Flash Chips
---------------------------
-
-This feature is supported on all Espressif chips (with various restrictions to application).
-
-Most NOR flash chips used by Espressif chips use 24-bits address, which can cover 16 MBytes memory. However, for larger memory (usually equal to or larger than 16 MBytes), flash uses a 32-bits address to address larger memory. Regretfully, 32-bits address chips have vendor-specific commands, so we need to support the chips one by one.
-
-List of Flash chips that support this feature:
-
-1. W25Q256
-2. GD25Q256
-
-.. important::
-
-    Over 16 MBytes space on flash mentioned above can be only used for ``data saving``, like file system. If your data/instructions over 16 MBytes spaces need to be mapped to MMU (so as to be accessed by the CPU), please enable the config ``IDF_EXPERIMENTAL_FEATURES`` and ``BOOTLOADER_CACHE_32BIT_ADDR_FLASH`` and read the limitations following:
-
-    1. This feature is valid only for 4-line flash. Octal flash supports 32-bit-addr by default
-    2. This feature needs the MMU on ESP chip to be able to map to >= 16 MB physical address on the Flash. (Only ESP32S3 supports this up to now)
-    3. This option is experimental, which means it can not use on all flash chips stable, for more information, please contact Espressif Business support.
