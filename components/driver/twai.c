@@ -26,6 +26,7 @@
 
 /* ---------------------------- Definitions --------------------------------- */
 //Internal Macros
+#define TWAI_TAG "TWAI"
 #define TWAI_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
                 return (ret_val);                                           \
@@ -39,11 +40,11 @@
 })
 #define TWAI_SET_FLAG(var, mask)    ((var) |= (mask))
 #define TWAI_RESET_FLAG(var, mask)  ((var) &= ~(mask))
+
 #ifdef CONFIG_TWAI_ISR_IN_IRAM
 #define TWAI_ISR_ATTR       IRAM_ATTR
 #define TWAI_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define TWAI_TAG "TWAI"
 #define TWAI_ISR_ATTR
 #define TWAI_MALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif  //CONFIG_TWAI_ISR_IN_IRAM
@@ -439,7 +440,6 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
     //Allocate GPIO
     ret = twai_configure_gpio(g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
     if (ESP_OK != ret) {
-        ESP_LOGE(TWAI_TAG, "init gpio for twai failed");
         goto err;
     }
 
