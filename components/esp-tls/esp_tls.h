@@ -238,6 +238,10 @@ typedef struct esp_tls_server_session_ticket_ctx {
  *         or a specific MBEDTLS_ERR_XXX code, which will cause the handhsake to abort
  */
 typedef mbedtls_ssl_hs_cb_t esp_tls_handshake_callback;
+#else
+// When CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK is not defined,
+// the following typedef is only kept for compatibility reasons, not to be used.
+typedef void* esp_tls_handshake_callback;
 #endif
 
 /**
