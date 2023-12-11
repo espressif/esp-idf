@@ -48,6 +48,17 @@ typedef struct {
 esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_serial_jtag_config);
 
 /**
+ * @brief Unblocks usb_serial_jtag_read_bytes() if it is currently waiting to receive bytes.
+ *
+ *  This will cause usb_serial_jtag_read_bytes() to return -1 with errno set to EWOULDBLOCK.
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_INVALID_STATE If the Usb Serial JTAG driver has not been installed
+ */
+esp_err_t usb_serial_jtag_unblock_reads();
+
+/**
  * @brief USB_SERIAL_JTAG read bytes from USB_SERIAL_JTAG buffer
  *
  * @param buf     pointer to the buffer.
