@@ -9,7 +9,7 @@
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4// TODO: IDF-5645
+#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-5645
 #include "soc/rtc_cntl_reg.h"
 #else
 #include "soc/lp_wdt_reg.h"
@@ -18,7 +18,7 @@
 #include "soc/pmu_reg.h"
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C5
 #include "hal/clk_tree_ll.h"
 #endif
 #include "esp_rom_sys.h"
@@ -57,8 +57,17 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         // RTC_SLOW clock source will be switched according to Kconfig selection at application startup
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
         if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {
+#if CONFIG_IDF_TARGET_ESP32C5
+            clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
+#else
             clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+#endif
         }
+
+#if CONFIG_IDF_TARGET_ESP32C5
+        // RC150K can't do calibrate on esp32c5MPW so not use it
+        clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32C6
         // TODO: IDF-5781 Some of esp32c6 SOC_RTC_FAST_CLK_SRC_XTAL_D2 rtc_fast clock has timing issue
@@ -75,6 +84,12 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         rtc_clk_init(clk_cfg);
     }
 
+#if CONFIG_IDF_TARGET_ESP32C5
+    /* Configure clk mspi fast to 80m*/
+    clk_ll_mspi_fast_set_divider(6);
+    clk_ll_mspi_fast_sel_clk(MSPI_CLK_SRC_SPLL);
+#endif
+
     /* As a slight optimization, if 32k XTAL was enabled in sdkconfig, we enable
      * it here. Usually it needs some time to start up, so we amortize at least
      * part of the start up time by enabling 32k XTAL early.
@@ -87,7 +102,13 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 #endif // CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 
 // TODO: IDF-8938 Need refactor! Does not belong to clock configuration.
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5
+#define LP_ANALOG_PERI_LP_ANA_LP_INT_ENA_REG            LP_ANA_LP_INT_ENA_REG
+#define LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA      LP_ANA_BOD_MODE0_LP_INT_ENA
+#define LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG            LP_ANA_LP_INT_CLR_REG
+#define LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_CLR      LP_ANA_BOD_MODE0_LP_INT_CLR
+#endif
     // CLR ENA
     CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_SUPER_WDT_INT_ENA);                                      /* SWD */
     CLEAR_PERI_REG_MASK(LP_TIMER_LP_INT_ENA_REG, LP_TIMER_MAIN_TIMER_LP_INT_ENA);                           /* MAIN_TIMER */

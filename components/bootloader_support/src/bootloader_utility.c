@@ -33,6 +33,13 @@
 #include "esp32c6/rom/crc.h"
 #include "esp32c6/rom/rtc.h"
 #include "esp32c6/rom/uart.h"
+#include "esp32c6/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/efuse.h"
+#include "esp32c5/rom/crc.h"
+#include "esp32c5/rom/rtc.h"
+#include "esp32c5/rom/uart.h"
+#include "esp32c5/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/efuse.h"
 #include "esp32h2/rom/crc.h"

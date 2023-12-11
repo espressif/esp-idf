@@ -21,7 +21,6 @@
 #include "esp_rom_uart.h"
 #include "esp_private/esp_pmu.h"
 #include "hal/clk_tree_ll.h"
-// #include "hal/pmu_ll.h"
 #include "hal/modem_syscon_ll.h"
 #include "hal/modem_lpcon_ll.h"
 #include "soc/pmu_reg.h"

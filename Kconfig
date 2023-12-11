@@ -145,7 +145,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x000D if IDF_TARGET_ESP32C6
         default 0x0010 if IDF_TARGET_ESP32H2
         default 0x0012 if IDF_TARGET_ESP32P4
-        default 0x0013 if IDF_TARGET_ESP32C5
+        default 0x0011 if IDF_TARGET_ESP32C5
         default 0xFFFF
 
 

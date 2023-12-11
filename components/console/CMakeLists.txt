@@ -5,6 +5,10 @@ if(${target} STREQUAL "linux")
              # future (TODO: IDF-8103)
 endif()
 
+if(${target} STREQUAL "esp32c5")
+    return() # Not support yet
+endif()
+
 set(argtable_srcs argtable3/arg_cmd.c
                   argtable3/arg_date.c
                   argtable3/arg_dbl.c

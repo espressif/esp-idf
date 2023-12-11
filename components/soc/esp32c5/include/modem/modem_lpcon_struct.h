@@ -10,7 +10,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 typedef volatile struct {
     union {
         struct {

@@ -147,7 +147,7 @@ ESP_SYSTEM_INIT_FN(init_psram_heap, CORE, BIT(0), 103)
     return ESP_OK;
 }
 
-#if CONFIG_ESP_BROWNOUT_DET
+#if CONFIG_ESP_BROWNOUT_DET && SOC_BOD_SUPPORTED
 ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 {
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->

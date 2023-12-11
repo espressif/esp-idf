@@ -39,6 +39,10 @@ config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
 
+config SOC_SPI_FLASH_SUPPORTED
+    bool
+    default y
+
 config SOC_INT_HW_NESTED_SUPPORTED
     bool
     default y
@@ -138,6 +142,18 @@ config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
 config SOC_LEDC_SUPPORT_XTAL_CLOCK
     bool
     default y
+
+config SOC_MMU_PERIPH_NUM
+    int
+    default 1
+
+config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    bool
+    default y
+
+config SOC_RTCIO_PIN_COUNT
+    bool
+    default n
 
 config SOC_MMU_PERIPH_NUM
     int

@@ -26,6 +26,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/ets_sys.h"
 #include "esp32c6/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/ets_sys.h"
+#include "esp32c5/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/cache.h"
@@ -43,7 +46,7 @@ typedef struct {
 } spi_noos_arg_t;
 
 static DRAM_ATTR spi_noos_arg_t spi_arg = { 0 };
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5
 typedef struct {
     uint32_t icache_autoload;
 } spi_noos_arg_t;

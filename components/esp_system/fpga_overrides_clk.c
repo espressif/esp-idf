@@ -27,6 +27,10 @@
 #include "esp32h2/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/rtc.h"
+#include "hal/clk_tree_ll.h"
+#include "soc/clk_tree_defs.h"
 #endif
 #include "esp_log.h"
 #include "esp_rom_sys.h"
@@ -55,6 +59,12 @@ void bootloader_clock_configure(void)
     REG_WRITE(RTC_APB_FREQ_REG, (apb_freq_hz >> 12) | ((apb_freq_hz >> 12) << 16));
 #endif
     REG_WRITE(RTC_XTAL_FREQ_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
+
+#if CONFIG_IDF_TARGET_ESP32C5
+    // The default slow clock source RC_SLOW is unusable on c5, switch to SOC_RTC_SLOW_CLK_SRC_RC32K instead
+    clk_ll_rtc_slow_set_src(SOC_RTC_SLOW_CLK_SRC_RC32K);
+    esp_rom_delay_us(SOC_DELAY_RTC_SLOW_CLK_SWITCH);
+#endif
 }
 
 void esp_clk_init(void)
