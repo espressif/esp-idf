@@ -106,6 +106,15 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 
     设置完上述配置结构体后，请调用 :cpp:func:`adc_cali_create_scheme_curve_fitting` 创建曲线拟合方案句柄。 由于 :c:macro:`ESP_ERR_INVALID_ARG` 或 :c:macro:`ESP_ERR_NO_MEM` 等原因，该函数调用可能失败。函数返回 :c:macro:`ESP_ERR_NOT_SUPPORTED` 时，说明你的开发板没有烧录校准方案所需的 eFuse 位。
 
+    与 eFuse 相关的 ADC 校准故障
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    函数 :cpp:func:`adc_cali_create_scheme_curve_fitting` 返回 :c:macro:`ESP_ERR_NOT_SUPPORTED` 时，代表开发板上校准方案所需的 eFuse 位不正确。
+
+    ESP-IDF 提供的 ADC 校准方案基于芯片上某些与 ADC 校准相关的 eFuse 位的值。乐鑫模组已在出厂时完成烧录，无需用户额外烧录。
+
+    如果遇到此类错误，请前往 `技术咨询 <https://www.espressif.com/en/contact-us/technical-inquiries>`__ 进行反馈。
+
     创建曲线拟合方案句柄
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
