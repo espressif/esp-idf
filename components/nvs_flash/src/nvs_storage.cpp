@@ -512,6 +512,11 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
             }
             return err;
         }
+        if (item.varLength.dataSize > dataSize - offset) {
+            /* The size of the entry in the index is inconsistent with the sum of the sizes of chunks */
+            err = ESP_ERR_NVS_INVALID_LENGTH;
+            break;
+        }
         err = findPage->readItem(nsIndex, ItemType::BLOB_DATA, key, static_cast<uint8_t*>(data) + offset, item.varLength.dataSize, static_cast<uint8_t> (chunkStart) + chunkNum);
         if (err != ESP_OK) {
             return err;
@@ -520,11 +525,14 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
 
         offset += item.varLength.dataSize;
     }
+
+    if (err == ESP_ERR_NVS_NOT_FOUND || err == ESP_ERR_NVS_INVALID_LENGTH) {
+        // cleanup if a chunk is not found or the size is inconsistent
+        eraseMultiPageBlob(nsIndex, key);
+    }
+
     NVS_ASSERT_OR_RETURN(offset == dataSize, ESP_FAIL);
 
-    if (err == ESP_ERR_NVS_NOT_FOUND) {
-        eraseMultiPageBlob(nsIndex, key); // cleanup if a chunk is not found
-    }
     return err;
 }
 
