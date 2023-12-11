@@ -178,8 +178,6 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-    modem_clock_domain_pmu_state_icg_map_init();
-
     /* During system initialization, the low-power clock source of the modem
      * (WiFi, BLE or Coexist) follows the configuration of the slow clock source
      * of the system. If the WiFi, BLE or Coexist module needs a higher
