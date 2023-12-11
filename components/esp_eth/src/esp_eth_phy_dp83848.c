@@ -10,9 +10,32 @@
 #include "esp_check.h"
 #include "esp_eth_phy_802_3.h"
 
-static const char *TAG = "dp83848";
+static const char *TAG = "dp838xx";
 
 /***************Vendor Specific Register***************/
+
+#ifndef ARRAY_LENGTH
+#define ARRAY_LENGTH(array) ( sizeof( array ) / sizeof( *( array ) ) )
+#endif
+
+struct model_support_s {
+	const char *name;
+	uint32_t oui;
+	uint8_t model;
+};
+
+const struct model_support_s models_supported[] = {
+	{
+		.name = "DP83848",
+		.oui = 0x80017,
+		.model = 0x09,
+	},
+	{
+		.name = "DP83825i",
+		.oui = 0x80028,
+		.model = 0x14,
+	},
+};
 
 /**
  * @brief PHYSTS(PHY Status Register)
@@ -163,8 +186,15 @@ static esp_err_t dp83848_init(esp_eth_phy_t *phy)
     uint8_t model;
     ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_read_oui(phy_802_3, &oui), err, TAG, "read OUI failed");
     ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_read_manufac_info(phy_802_3, &model, NULL), err, TAG, "read manufacturer's info failed");
-    ESP_GOTO_ON_FALSE(oui == 0x80017 && model == 0x09, ESP_FAIL, err, TAG, "wrong chip ID");
-
+    bool found = false;
+    for (int i = 0; i < ARRAY_LENGTH(models_supported); i++) {
+        if ((models_supported[i].oui == oui) && (models_supported[i].model == model)) {
+            ESP_LOGI(TAG, "detected phy %s", models_supported[i].name);
+            found = true;
+            break;
+        }
+    }
+    ESP_GOTO_ON_FALSE(found, ESP_FAIL, err, TAG, "unsupported oui/model: %x:%x", oui, model);
     return ESP_OK;
 err:
     return ret;
