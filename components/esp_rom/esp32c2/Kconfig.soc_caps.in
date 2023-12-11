@@ -39,10 +39,6 @@ config ESP_ROM_HAS_HEAP_TLSF
     bool
     default y
 
-config ESP_ROM_TLSF_CHECK_PATCH
-    bool
-    default y
-
 config ESP_ROM_HAS_LAYOUT_TABLE
     bool
     default y
