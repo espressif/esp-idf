@@ -113,7 +113,6 @@ r_lld_con_evt_time_update_eco = 0x40001d0c;
 r_lld_con_start_eco = 0x40001d10;
 r_lld_con_frm_isr_eco = 0x40001d14;
 r_lld_con_tx_eco = 0x40001d18;
-r_lld_con_evt_start_cbk_eco = 0x40001d1c;
 r_lld_scan_evt_start_cbk_eco = 0x40001d20;
 r_lld_scan_start_eco = 0x40001d24;
 r_lld_ext_scan_dynamic_pti_process_eco = 0x40001d28;
@@ -202,7 +201,6 @@ r_sch_arb_event_start_isr = 0x400014f8;
 r_sch_plan_set = 0x40001534;
 r_sch_prog_end_isr = 0x40001538;
 r_lld_adv_ext_chain_scannable_construct = 0x40001b58;
-r_lld_con_tx_prog_new_packet = 0x40001b74;
 
 r_lld_scan_process_pkt_rx = 0x40001280;
 r_llm_le_features_get = 0x400013b0;
@@ -217,6 +215,8 @@ r_lld_adv_frm_isr_eco = 0x40001d00;
 r_lld_res_list_clear = 0x40004638;
 r_lld_res_list_rem = 0x40004680;
 r_lld_adv_start_hook = 0x40001c80;
+r_lld_con_evt_start_cbk_eco = 0x40001d1c;
+r_lld_con_tx_prog_new_packet = 0x40001b74;
 */
 
 
