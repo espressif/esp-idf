@@ -3742,7 +3742,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 }
 
-TEST_CASE("nvs multiple write with same key but different types", "[nvs][xxx]")
+TEST_CASE("nvs multiple write with same key but different types", "[nvs]")
 {
     PartitionEmulationFixture f(0, 10);
 

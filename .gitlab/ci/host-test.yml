@@ -34,22 +34,16 @@ check_public_headers:
     - IDF_TARGET=esp32p4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32c61 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
 
-test_nvs_on_host:
-  extends: .host_test_template
-  script:
-    - cd components/nvs_flash/test_nvs_host
-    - make test
-
 test_nvs_coverage:
   extends:
     - .host_test_template
     - .rules:labels:nvs_coverage
   artifacts:
     paths:
-      - components/nvs_flash/test_nvs_host/coverage_report
+      - components/nvs_flash/host_test/nvs_host_test/coverage_report
   script:
-    - cd components/nvs_flash/test_nvs_host
-    - make coverage_report
+    - cd components/nvs_flash/host_test/nvs_host_test
+    - idf.py build coverage
   # the 'long' host tests take approx 11 hours on our current runners. Adding some margin here for possible CPU contention
   timeout: 18 hours
 
