@@ -185,6 +185,11 @@ Use menuconfig to set the serial port for flashing. For more information, see :i
 Running Unit Tests
 ------------------
 
+.. note::
+
+    We also provide the pytest-based framework `pytest-embedded <https://github.com/espressif/pytest-embedded>`_ to help make running unit-tests more convenient and efficient. If you need to run tests in CI or run multiple tests in a row we recommend checking out this project. For more information see `Pytest-embedded Docs <https://docs.espressif.com/projects/pytest-embedded/en/latest/>`_ and :doc:`/contribute/esp-idf-tests-with-pytest`.
+
+
 After flashing reset the {IDF_TARGET_NAME} and it will boot the unit test app.
 
 When unit test app is idle, press "Enter" will make it print test menu with all available tests::

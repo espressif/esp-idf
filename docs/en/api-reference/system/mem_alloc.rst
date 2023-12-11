@@ -31,7 +31,10 @@ For more details on these internal memory types, see :ref:`memory-layout`.
 
 All DRAM memory is single-byte accessible, thus all DRAM heaps possess the ``MALLOC_CAP_8BIT`` capability. Users can call ``heap_caps_get_free_size(MALLOC_CAP_8BIT)`` to get the free size of all DRAM heaps.
 
-If ran out of ``MALLOC_CAP_8BIT``, the users can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)``.
+.. only:: esp32
+
+    If ran out of ``MALLOC_CAP_8BIT``, the users can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)``.
+
 
 When calling ``malloc()``, the ESP-IDF ``malloc()`` internally calls ``heap_caps_malloc_default(size)``. This will allocate memory with the capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
 
@@ -122,11 +125,11 @@ Memory allocated with ``MALLOC_CAP_32BIT`` can **only** be accessed via 32-bit r
     External SPI Memory
     ^^^^^^^^^^^^^^^^^^^
 
-    When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM under 4 MiB in size can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on the configuration. See :ref:`external_ram_config` for more details.
+    When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on the configuration. See :ref:`external_ram_config` for more details.
 
     .. only:: esp32
 
-        To use the region above the 4 MiB limit, you can use the :doc:`himem API </api-reference/system/himem>`.
+        On ESP32 only external SPI RAM under 4 MiB in size can be allocated this way. To use the region above the 4 MiB limit, you can use the :doc:`himem API </api-reference/system/himem>`.
 
 Thread Safety
 -------------

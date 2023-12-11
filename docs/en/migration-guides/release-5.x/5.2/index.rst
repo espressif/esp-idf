@@ -11,4 +11,4 @@ Migration from 5.1 to 5.2
     protocols
     storage
     system
-    wifi
+    :SOC_WIFI_SUPPORTED: wifi

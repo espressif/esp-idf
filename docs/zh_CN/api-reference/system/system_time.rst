@@ -3,12 +3,12 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_RTC_CLK_FRE:default="未更新", esp32="150 kHz", esp32s2="90 kHz", esp32s3="136 kHz", esp32c3="136 kHz", esp32c2="136 kHz", esp32c6="150 kHz", esp32h2="150 kHz"}
-{IDF_TARGET_INT_OSC_FRE:default="未更新", esp32="8.5 MHz", esp32s2="8.5 MHz", esp32s3="17.5 MHz", esp32c3="17.5 MHz", esp32c2="17.5 MHz", esp32c6="20 MHz"}
+{IDF_TARGET_RTC_CLK_FRE:default="未更新", esp32="150 kHz", esp32s2="90 kHz", esp32s3="136 kHz", esp32c3="136 kHz", esp32c2="136 kHz", esp32c6="150 kHz", esp32h2="150 kHz", esp32p4="150 kHz"}
+{IDF_TARGET_INT_OSC_FRE:default="未更新", esp32="8.5 MHz", esp32s2="8.5 MHz", esp32s3="17.5 MHz", esp32c3="17.5 MHz", esp32c2="17.5 MHz"}
 {IDF_TARGET_INT_OSC_FRE_DIVIDED:default="未更新", esp32="约 33 kHz", esp32s2="约 33 kHz", esp32s3="约 68 kHz", esp32c3="约 68 kHz", esp32c2="约 68 kHz"}
-{IDF_TARGET_EXT_CRYSTAL_PIN:default="未更新", esp32="32K_XP 和 32K_XN", esp32s2="XTAL_32K_P 和 XTAL_32K_N", esp32s3="XTAL_32K_P 和 XTAL_32K_N", esp32c3="XTAL_32K_P 和 XTAL_32K_N", esp32c6="XTAL_32K_P 和 XTAL_32K_N", esp32h2="XTAL_32K_P 和 XTAL_32K_N"}
-{IDF_TARGET_EXT_OSC_PIN:default="未更新", esp32="32K_XN", esp32s2="XTAL_32K_P", esp32s3="XTAL_32K_P", esp32c3="XTAL_32K_P", esp32c2="GPIO0", esp32c6="XTAL_32K_P"}
-{IDF_TARGET_HARDWARE_DESIGN_URL:default="未更新", esp32="`ESP32 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_cn.pdf#page=10>`_", esp32s2="`ESP32-S2 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_cn.pdf#page=10>`_", esp32s3="`ESP32-S3 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_hardware_design_guidelines_cn.pdf#page=12>`_", esp32c3="`ESP32-C3 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_hardware_design_guidelines_cn.pdf#page=9>`_", esp32c2="`ESP8684 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp8684_hardware_design_guidelines_cn.pdf#page=10>`_", esp32c6="`ESP32-C6 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-c6_hardware_design_guidelines_cn.pdf#page=12>`_", esp32h2="`ESP32-H2 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-h2_hardware_design_guidelines_cn.pdf#page=11>`_"}
+{IDF_TARGET_EXT_CRYSTAL_PIN:default="未更新", esp32="32K_XP 和 32K_XN", esp32s2="XTAL_32K_P 和 XTAL_32K_N", esp32s3="XTAL_32K_P 和 XTAL_32K_N", esp32c3="XTAL_32K_P 和 XTAL_32K_N", esp32c6="XTAL_32K_P 和 XTAL_32K_N", esp32h2="XTAL_32K_P 和 XTAL_32K_N", esp32p4="XTAL_32K_P 和 XTAL_32K_N"}
+{IDF_TARGET_EXT_OSC_PIN:default="未更新", esp32="32K_XN", esp32s2="XTAL_32K_P", esp32s3="XTAL_32K_P", esp32c3="XTAL_32K_P", esp32c2="GPIO0", esp32c6="XTAL_32K_P", esp32h2="XTAL_32K_P", esp32p4="XTAL_32K_P"}
+{IDF_TARGET_HARDWARE_DESIGN_URL:default="未更新", esp32="`ESP32 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_cn.pdf#page=10>`_", esp32s2="`ESP32-S2 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_cn.pdf#page=10>`_", esp32s3="`ESP32-S3 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_hardware_design_guidelines_cn.pdf#page=12>`_", esp32c3="`ESP32-C3 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_hardware_design_guidelines_cn.pdf#page=9>`_", esp32c2="`ESP8684 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp8684_hardware_design_guidelines_cn.pdf#page=10>`_", esp32c6="`ESP32-C6 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-c6_hardware_design_guidelines_cn.pdf#page=12>`_", esp32h2="`ESP32-H2 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-h2_hardware_design_guidelines_cn.pdf#page=11>`_", esp32p4="`ESP32-P4 硬件设计指南 <https://www.espressif.com/sites/default/files/documentation/esp32-p4_hardware_design_guidelines_cn.pdf#page=11>`_"}
 
 
 概述
@@ -45,9 +45,9 @@ RTC 定时器有以下时钟源：
 
     - ``管脚 {IDF_TARGET_EXT_OSC_PIN} 外置 32 kHz 振荡器``：允许使用由外部电路产生的 32 kHz 时钟。外部时钟信号必须连接到管脚 {IDF_TARGET_EXT_OSC_PIN}。正弦波信号的振幅应小于 1.2 V，方波信号的振幅应小于 1 V。正常模式下，电压范围应为 0.1 < Vcm < 0.5 xVamp，其中 Vamp 代表信号振幅。使用此时钟源时，管脚 {IDF_TARGET_EXT_OSC_PIN} 无法用作 GPIO 管脚。
 
-    :not esp32c6 and not esp32h2: - ``内置 {IDF_TARGET_INT_OSC_FRE} 振荡器的 256 分频时钟 ({IDF_TARGET_INT_OSC_FRE_DIVIDED})``：频率稳定性优于 ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器``，同样无需外部元件，但 Deep-sleep 模式下电流消耗更高（比默认模式高 5 μA）。
+    :not esp32c6 and not esp32h2 and not esp32p4: - ``内置 {IDF_TARGET_INT_OSC_FRE} 振荡器的 256 分频时钟 ({IDF_TARGET_INT_OSC_FRE_DIVIDED})``：频率稳定性优于 ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器``，同样无需外部元件，但 Deep-sleep 模式下电流消耗更高（比默认模式高 5 μA）。
 
-    :esp32c6 or esp32h2: - ``内置 32 kHz RC 振荡器``
+    :esp32c6 or esp32h2 or esp32p4: - ``内置 32 kHz RC 振荡器``
 
 时钟源的选择取决于系统时间精度要求和睡眠模式下的功耗要求。要修改 RTC 时钟源，请在项目配置中设置 :ref:`CONFIG_RTC_CLK_SRC`。
 
