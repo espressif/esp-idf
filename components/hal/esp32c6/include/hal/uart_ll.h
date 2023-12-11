@@ -176,14 +176,14 @@ FORCE_INLINE_ATTR void lp_uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, ui
  * @param hw_id LP UART instance ID
  * @param enable True to enable, False to disable
  */
-static inline void lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
+static inline void _lp_uart_ll_enable_bus_clock(int hw_id, bool enable)
 {
     (void)hw_id;
     LPPERI.clk_en.lp_uart_ck_en = enable;
 }
 
 /// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
-#define lp_uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_uart_ll_enable_bus_clock(__VA_ARGS__)
+#define lp_uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _lp_uart_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset LP UART module
