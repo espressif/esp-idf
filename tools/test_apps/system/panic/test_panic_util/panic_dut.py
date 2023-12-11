@@ -51,6 +51,10 @@ class PanicTestDut(IdfDut):
     def is_xtensa(self) -> bool:
         return self.target in self.XTENSA_TARGETS
 
+    @property
+    def is_multi_core(self) -> bool:
+        return self.target in ['esp32', 'esp32s3']
+
     def run_test_func(self, test_func_name: str) -> None:
         self.expect_exact('Enter test name:')
         self.write(test_func_name)

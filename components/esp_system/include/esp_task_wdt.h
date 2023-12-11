@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,6 +178,31 @@ esp_err_t esp_task_wdt_status(TaskHandle_t task_handle);
  * @note It has the same limitations as the interrupt function. Do not use ESP_LOGx functions inside.
  */
 void __attribute__((weak)) esp_task_wdt_isr_user_handler(void);
+
+typedef void (*task_wdt_msg_handler)(void *opaque, const char *msg);
+
+/**
+ * @brief Prints or retrieves information about tasks/users that triggered the Task Watchdog Timeout.
+ *
+ * This function provides various operations to handle tasks/users that did not reset the Task Watchdog in time.
+ * It can print detailed information about these tasks/users, such as their names, associated CPUs, and whether they have been reset.
+ * Additionally, it can retrieve the total length of the printed information or the CPU affinity of the failing tasks.
+ *
+ * @param[in]  msg_handler Optional message handler function that will be called for each printed line.
+ * @param[in]  opaque      Optional pointer to opaque data that will be passed to the message handler function.
+ * @param[out] cpus_fail   Optional pointer to an integer where the CPU affinity of the failing tasks will be stored.
+ *
+ * @return
+ *     - ESP_OK: The function executed successfully.
+ *     - ESP_FAIL: No triggered tasks were found, and thus no information was printed or retrieved.
+ *
+ * @note
+ *     - If `msg_handler` is not provided, the information will be printed to console using ESP_EARLY_LOGE.
+ *     - If `msg_handler` is provided, the function will send the printed information to the provided message handler function.
+ *     - If `cpus_fail` is provided, the function will store the CPU affinity of the failing tasks in the provided integer.
+ *     - During the execution of this function, logging is allowed in critical sections, as TWDT timeouts are considered fatal errors.
+ */
+esp_err_t esp_task_wdt_print_triggered_tasks(task_wdt_msg_handler msg_handler, void *opaque, int *cpus_fail);
 
 #ifdef __cplusplus
 }
