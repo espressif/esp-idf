@@ -56,6 +56,17 @@ void ieee802154_enable(void);
 void ieee802154_disable(void);
 
 /**
+ * @brief  Enable the RF.
+ *
+ */
+void ieee802154_rf_enable(void);
+
+/**
+ * @brief  Disable the RF.
+ *
+ */
+void ieee802154_rf_disable(void);
+/**
  * @brief  Initialize the IEEE 802.15.4 MAC.
  *
  * @return
