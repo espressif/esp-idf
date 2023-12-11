@@ -290,65 +290,33 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
 }
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
-#define MODEM_ADC_COMMON_FE_ICG_DEPS    (BIT(MODEM_CLOCK_DOMAIN_MODEM_FE) | BIT(MODEM_CLOCK_DOMAIN_LP_APB))
-#define I2C_ANA_MST_ICG_DEPS            (BIT(MODEM_CLOCK_DOMAIN_I2C_MASTER))
-#define PHY_ICG_DEPS                    (MODEM_ADC_COMMON_FE_ICG_DEPS | I2C_ANA_MST_ICG_DEPS)
-#define COEX_ICG_DEPS                   (BIT(MODEM_CLOCK_DOMAIN_COEX))
-#define MODEM_ETM_ICG_DEPS              (BIT(MODEM_CLOCK_DOMAIN_MODEM_PERIPH))
-#define WIFI_ICG_DEPS                   (COEX_ICG_DEPS | BIT(MODEM_CLOCK_DOMAIN_MODEM_APB) | BIT(MODEM_CLOCK_DOMAIN_WIFI) | BIT(MODEM_CLOCK_DOMAIN_WIFIPWR))
-#define BLE_ICG_DEPS                    (COEX_ICG_DEPS | BIT(MODEM_CLOCK_DOMAIN_MODEM_APB) | BIT(MODEM_CLOCK_DOMAIN_BT) | BIT(MODEM_CLOCK_DOMAIN_MODEM_PERIPH))
-#define IEEE802154_ICG_DEPS             (COEX_ICG_DEPS | BIT(MODEM_CLOCK_DOMAIN_MODEM_APB) | BIT(MODEM_CLOCK_DOMAIN_BT) | BIT(MODEM_CLOCK_DOMAIN_IEEE802154))
-
 /* the ICG code's bit 0, 1 and 2 indicates the ICG state
  * of pmu SLEEP, MODEM and ACTIVE mode respectively */
 #define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
 #define ICG_NOGATING_MODEM  (BIT(PMU_HP_ICG_MODEM_CODE_MODEM))
 #define ICG_NOGATING_ACTIVE (BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE))
 
-static struct {
-    modem_clock_hal_context_t hal;
-    const uint32_t gating_mode[MODEM_CLOCK_DOMAIN_MAX];
-} icg_cfg = {
-    .hal = { .syscon_dev = &MODEM_SYSCON, .lpcon_dev = &MODEM_LPCON },
-    .gating_mode = {
-        [MODEM_CLOCK_DOMAIN_MODEM_APB]      = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ICG_NOGATING_ACTIVE,
-        [MODEM_CLOCK_DOMAIN_WIFI]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_BT]             = ICG_NOGATING_ACTIVE,
-        [MODEM_CLOCK_DOMAIN_MODEM_FE]       = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_IEEE802154]     = ICG_NOGATING_ACTIVE,
-        [MODEM_CLOCK_DOMAIN_LP_APB]         = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_I2C_MASTER]     = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_COEX]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_WIFIPWR]        = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-    }
+static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
+    [MODEM_CLOCK_DOMAIN_MODEM_APB]      = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ICG_NOGATING_ACTIVE,
+    [MODEM_CLOCK_DOMAIN_WIFI]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_BT]             = ICG_NOGATING_ACTIVE,
+    [MODEM_CLOCK_DOMAIN_MODEM_FE]       = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_IEEE802154]     = ICG_NOGATING_ACTIVE,
+    [MODEM_CLOCK_DOMAIN_LP_APB]         = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_I2C_MASTER]     = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_COEX]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_WIFIPWR]        = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
 };
 
-static IRAM_ATTR uint32_t modem_clock_get_module_clock_domain_icg_deps(periph_module_t module)
+static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 {
-    uint32_t deps = 0;
-    switch (module) {
-        case PERIPH_MODEM_ADC_COMMON_FE_MODULE: deps = MODEM_ADC_COMMON_FE_ICG_DEPS;    break;
-        case PERIPH_ANA_I2C_MASTER_MODULE:      deps = I2C_ANA_MST_ICG_DEPS;            break;
-        case PERIPH_PHY_MODULE:                 deps = PHY_ICG_DEPS;                    break;
-        case PERIPH_WIFI_MODULE:                deps = WIFI_ICG_DEPS;                   break;
-        case PERIPH_BT_MODULE:                  deps = BLE_ICG_DEPS;                    break;
-        case PERIPH_IEEE802154_MODULE:          deps = IEEE802154_ICG_DEPS;             break;
-        case PERIPH_COEX_MODULE:                deps = COEX_ICG_DEPS;                   break;
-        case PERIPH_MODEM_ETM_MODULE:           deps = MODEM_ETM_ICG_DEPS;              break;
-        default:
-            assert(0);
+    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    for (int domain = 0; domain < MODEM_CLOCK_DOMAIN_MAX; domain++) {
+        uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
+        modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, initial_gating_mode[domain] | code);
     }
-    return deps;
-}
-
-static IRAM_ATTR void modem_clock_module_icg_map_init(uint32_t domain_map)
-{
-    for (int domain = 0; domain_map; domain_map >>= 1, domain++) {
-        if (domain_map & BIT(0)) {
-            modem_clock_hal_set_clock_domain_icg_bitmap(&(icg_cfg.hal), domain, icg_cfg.gating_mode[domain]);
-        }
-    }
+    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 }
 #endif // SOC_PM_SUPPORT_PMU_MODEM_STATE
 
@@ -356,8 +324,7 @@ void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
-    uint32_t icg_deps = modem_clock_get_module_clock_domain_icg_deps(module);
-    modem_clock_module_icg_map_init(icg_deps);
+    modem_clock_module_icg_map_init_all();
 #endif
     uint32_t deps = modem_clock_get_module_deps(module);
     modem_clock_device_enable(MODEM_CLOCK_instance(), deps);
