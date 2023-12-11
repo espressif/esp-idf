@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
+#include "esp_sleep.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +40,42 @@ void mac_bb_power_down_cb_execute(void);
 void mac_bb_power_up_cb_execute(void);
 
 #endif // CONFIG_MAC_BB_PD
+
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+/**
+ * @brief Register sleep prepare callback for Bluetooth/IEEE802154 MAC and baseband
+ *
+ * @param pd_cb function to call when power down
+ * @param pu_cb function to call when power up
+ */
+void sleep_modem_register_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                    mac_bb_power_up_cb_t pu_cb);
+
+/**
+ * @brief Unregister sleep prepare callback for Bluetooth/IEEE802154 MAC and baseband
+ *
+ * @param pd_cb function to call when power down
+ * @param pu_cb function to call when power up
+ */
+void sleep_modem_unregister_mac_bb_module_prepare_callback(mac_bb_power_down_cb_t pd_cb,
+                                                      mac_bb_power_up_cb_t pu_cb);
+
+/**
+ * @brief MAC and baseband power up operation
+ *
+ * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
+ * power down and backup prepare operations.
+ */
+void sleep_modem_mac_bb_power_down_prepare(void);
+
+/**
+ * @brief MAC and baseband power up operation
+ *
+ * In light sleep mode, execute IEEE802154/Bluetooth module MAC and baseband
+ * power up and restore prepare operations.
+ */
+void sleep_modem_mac_bb_power_up_prepare(void);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 
