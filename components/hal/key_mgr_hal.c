@@ -59,7 +59,7 @@ void key_mgr_hal_write_assist_info(const uint8_t *assist_info_buf, const size_t 
     key_mgr_ll_write_assist_info(assist_info_buf, data_len);
 }
 
-void key_mgr_hal_assist_assist_info(uint8_t *assist_info_buf)
+void key_mgr_hal_read_assist_info(uint8_t *assist_info_buf)
 {
     key_mgr_ll_read_assist_info(assist_info_buf);
 }

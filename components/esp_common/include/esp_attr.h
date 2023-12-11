@@ -58,7 +58,7 @@ extern "C" {
 #define DMA_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
 
 // Forces the data to be tightly packed with minimum required padding and no extra bytes are added for alignment
-#define PACKED_ATTR __attribute__((packed));
+#define PACKED_ATTR __attribute__((packed))
 
 // Forces a function to be inlined
 #define FORCE_INLINE_ATTR static inline __attribute__((always_inline))

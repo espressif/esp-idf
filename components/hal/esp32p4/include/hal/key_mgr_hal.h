@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
+
 #if SOC_KEY_MANAGER_SUPPORTED
 #include "hal/key_mgr_types.h"
 
