@@ -9,7 +9,6 @@ import subprocess
 import sys
 import threading
 import time
-from base64 import b64decode
 from textwrap import indent
 from threading import Thread
 from typing import Any, Dict, List, Optional, Union
@@ -172,12 +171,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if extra_gdbinit_file:
             espcoredump_kwargs['extra_gdbinit_file'] = extra_gdbinit_file
 
-        core_format = None
-
         if core:
             espcoredump_kwargs['core'] = core
+            espcoredump_kwargs['core_format'] = 'auto'
             espcoredump_kwargs['chip'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET')
-            core_format = get_core_file_format(core)
         elif coredump_to_flash:
             #  If the core dump is read from flash, we don't need to specify the --core-format argument at all.
             #  The format will be determined automatically
@@ -190,9 +187,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         espcoredump_kwargs['port'] = args.port
         espcoredump_kwargs['parttable_off'] = get_sdkconfig_value(project_desc['config_file'],
                                                                   'CONFIG_PARTITION_TABLE_OFFSET')
-
-        if core_format:
-            espcoredump_kwargs['core_format'] = core_format
 
         if save_core:
             espcoredump_kwargs['save_core'] = save_core
@@ -211,34 +205,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             else:
                 raise
         return coredump
-
-    def get_core_file_format(core_file: str) -> str:
-        bin_v1 = 1
-        bin_v2 = 2
-        elf_crc32 = 256
-        elf_sha256 = 257
-
-        with open(core_file, 'rb') as f:
-            coredump_bytes = f.read(16)
-
-            if coredump_bytes.startswith(b'\x7fELF'):
-                return 'elf'
-
-            core_version = int.from_bytes(coredump_bytes[4:7], 'little')
-            if core_version in [bin_v1, bin_v2, elf_crc32, elf_sha256]:
-                #  esp-coredump will determine automatically the core format (ELF or BIN)
-                return 'raw'
-        with open(core_file) as c:
-            coredump_str = c.read()
-            try:
-                b64decode(coredump_str)
-            except Exception:
-                print('The format of the provided core-file is not recognized. '
-                      'Please ensure that the core-format matches one of the following: ELF (“elf”), '
-                      'raw (raw) or base64-encoded (b64) binary')
-                sys.exit(1)
-            else:
-                return 'b64'
 
     def is_gdb_with_python(gdb: str) -> bool:
         # execute simple python command to check is it supported
