@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
+@pytest.mark.esp32c3
 @pytest.mark.sdcard_sdmode
 @pytest.mark.parametrize(
     'config',
@@ -23,7 +24,6 @@ def test_fatfs_sdcard_generic_sdmmc(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32s2
 @pytest.mark.esp32c3
 @pytest.mark.sdcard_spimode
 @pytest.mark.parametrize(
