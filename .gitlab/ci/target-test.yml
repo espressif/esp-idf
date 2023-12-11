@@ -1,11 +1,10 @@
 .target_test_template:
   image: $TARGET_TEST_ENV_IMAGE
+  extends:
+    - .before_script:fetch:target_test
   stage: target_test
   timeout: 1 hour
   dependencies: []
-  variables:
-    GIT_DEPTH: 1
-    SUBMODULES_TO_FETCH: "none"
   cache:
     # Usually do not need submodule-cache in target_test
     - key: pip-cache
