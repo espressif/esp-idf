@@ -127,7 +127,7 @@ inline static bool IRAM_ATTR esp_ptr_in_iram(const void *p) {
 }
 
 inline static bool IRAM_ATTR esp_ptr_in_drom(const void *p) {
-    uint32_t drom_start_addr = SOC_DROM_LOW;
+    int32_t drom_start_addr = SOC_DROM_LOW;
 #if CONFIG_ESP32S3_DATA_CACHE_16KB
     /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
      * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
