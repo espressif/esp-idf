@@ -587,6 +587,14 @@ menu "ESP System Settings"
             which may increase about the boot-up time by about 200 us. Disable this when your bootloader is built with
             ESP-IDF version v5.2 and above.
 
+    config ESP_SYSTEM_HW_PC_RECORD
+        bool "Hardware PC recording"
+        depends on SOC_ASSIST_DEBUG_SUPPORTED
+        default y
+        help
+            This option will enable the PC recording function of assist_debug module. The PC value of the CPU will be
+            recorded to PC record register in assist_debug module in real time. When an exception occurs and the CPU
+            is reset, this register will be kept, then we can use the recorded PC to debug the causes of the reset.
 endmenu  # ESP System Settings
 
 menu "IPC (Inter-Processor Call)"
