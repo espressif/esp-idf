@@ -46,6 +46,7 @@
 #include "riscv/rv_utils.h"
 #include "riscv/interrupt.h"
 #include "esp_private/crosscore_int.h"
+#include "hal/crosscore_int_ll.h"
 #include "esp_attr.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
@@ -623,13 +624,6 @@ void vPortExitCritical(void)
 void vPortYield(void)
 {
     BaseType_t coreID = xPortGetCoreID();
-    int system_cpu_int_reg;
-
-#if !CONFIG_IDF_TARGET_ESP32P4
-    system_cpu_int_reg = SYSTEM_CPU_INTR_FROM_CPU_0_REG;
-#else
-    system_cpu_int_reg = HP_SYSTEM_CPU_INT_FROM_CPU_0_REG;
-#endif /* !CONFIG_IDF_TARGET_ESP32P4 */
 
     if (port_uxInterruptNesting[coreID]) {
         vPortYieldFromISR();
@@ -645,7 +639,7 @@ void vPortYield(void)
            for an instant yield, and if that happens then the WFI would be
            waiting for the next interrupt to occur...)
         */
-        while (port_xSchedulerRunning[coreID] && port_uxCriticalNesting[coreID] == 0 && REG_READ(system_cpu_int_reg + 4 * coreID) != 0) {}
+        while (port_xSchedulerRunning[coreID] && port_uxCriticalNesting[coreID] == 0 && crosscore_int_ll_get_state(coreID) != 0) {}
     }
 }
 
