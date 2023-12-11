@@ -20,6 +20,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
+#include "soc/lpperi_reg.h"
 #include "soc/pcr_reg.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_ll.h"
@@ -259,5 +260,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         REG_CLR_BIT(PCR_MEM_MONITOR_CONF_REG, PCR_MEM_MONITOR_CLK_EN);
         REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
         REG_CLR_BIT(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
+    }
+
+    if (rst_reason == RESET_REASON_CHIP_POWER_ON || rst_reason == RESET_REASON_CHIP_BROWN_OUT \
+            || rst_reason == RESET_REASON_SYS_RTC_WDT || rst_reason == RESET_REASON_SYS_SUPER_WDT) {
+        CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_OTP_DBG_CK_EN);
+        CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_RNG_CK_EN);
+        CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_ANA_I2C_CK_EN);
+        CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_IO_CK_EN);
     }
 }
