@@ -41,6 +41,7 @@
 #include "hal/cache_hal.h"
 #include "hal/lpwdt_ll.h"
 #include "soc/lp_wdt_reg.h"
+#include "soc/pmu_reg.h"
 #include "hal/efuse_hal.h"
 #include "modem/modem_lpcon_reg.h"
 
@@ -85,6 +86,9 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
+    /* Disable RF pll by default */
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFPLL);
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_FORCE_RFPLL);
     /* Enable analog i2c master clock */
     SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
 }
