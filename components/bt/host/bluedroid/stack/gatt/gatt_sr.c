@@ -1448,8 +1448,9 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
     }
 
     if ((prepare_record->error_code_app == GATT_SUCCESS)
-            && ((status == GATT_INVALID_OFFSET) || (status == GATT_INVALID_ATTR_LEN))){
-            prepare_record->error_code_app = status;
+        // update prepare write status for excute write request
+        && (status == GATT_INVALID_OFFSET || status == GATT_INVALID_ATTR_LEN || status == GATT_REQ_NOT_SUPPORTED)) {
+        prepare_record->error_code_app = status;
     }
 
 }
