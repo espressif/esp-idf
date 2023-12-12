@@ -24,6 +24,7 @@
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_AXI_GDMA_SUPPORTED          1
+#define SOC_DW_GDMA_SUPPORTED           1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 // #define SOC_LCDCAM_SUPPORTED            1 // TODO: IDF-7465
