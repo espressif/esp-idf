@@ -14,22 +14,27 @@
  *  http://csrc.nist.gov/encryption/aes/rijndael/Rijndael.pdf
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
-#include "soc/soc_caps.h"
-
+#include <string.h>
 
 #include "aes/esp_aes.h"
 #include "aes/esp_aes_gcm.h"
 #include "aes/esp_aes_internal.h"
 #include "hal/aes_hal.h"
 
-#include "esp_log.h"
 #include "mbedtls/aes.h"
+#include "mbedtls/error.h"
 #include "mbedtls/gcm.h"
+
 #include "esp_heap_caps.h"
+#include "esp_log.h"
+#include "soc/soc_caps.h"
 #include "soc/soc_memory_layout.h"
 
-#include "mbedtls/error.h"
-#include <string.h>
+#include "sdkconfig.h"
+
+#if SOC_AES_SUPPORT_DMA
+#include "esp_aes_dma_priv.h"
+#endif
 
 #define ESP_PUT_BE64(a, val)                                    \
     do {                                                        \
@@ -313,6 +318,10 @@ void esp_aes_gcm_init( esp_gcm_context *ctx)
     }
 
     bzero(ctx, sizeof(esp_gcm_context));
+
+#if SOC_AES_SUPPORT_DMA && CONFIG_MBEDTLS_AES_USE_INTERRUPT
+    esp_aes_intr_alloc();
+#endif
 
     ctx->gcm_state = ESP_AES_GCM_STATE_INIT;
 }
