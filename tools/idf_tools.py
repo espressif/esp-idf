@@ -1709,7 +1709,6 @@ def handle_recommended_version_to_use(
 ):  # type: (IDFTool, str, str, str) -> Tuple[list, dict]
     tool_export_paths = tool.get_export_paths(version_to_use)
     tool_export_vars = tool.get_export_vars(version_to_use)
-    info('Using a recommended version of tool {}: {}.'.format(tool_name, version_to_use), f=sys.stderr)
     if tool.version_in_path and tool.version_in_path not in tool.versions:
         info('Not using an unsupported version of tool {} found in PATH: {}.'.format(
             tool.name, tool.version_in_path) + prefer_system_hint, f=sys.stderr)
