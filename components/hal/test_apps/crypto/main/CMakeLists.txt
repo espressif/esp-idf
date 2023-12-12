@@ -33,5 +33,7 @@ if(CONFIG_SOC_SHA_SUPPORTED)
 endif()
 
 idf_component_register(SRCS ${srcs}
+                       PRIV_REQUIRES efuse
                        REQUIRES test_utils unity
-                       WHOLE_ARCHIVE)
+                       WHOLE_ARCHIVE
+                       PRIV_INCLUDE_DIRS ".")
