@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,7 +103,7 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
  * @param size    Size of data buffer in bytes.
  *
  * @return
- *    - ESP_OK: Data was written to flash successfully.
+ *    - ESP_OK: Data was written to flash successfully, or size = 0
  *    - ESP_ERR_INVALID_ARG: handle is invalid.
  *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
