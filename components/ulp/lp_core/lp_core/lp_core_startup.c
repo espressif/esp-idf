@@ -14,6 +14,8 @@ extern void main();
 /* Initialize lp core related system functions before calling user's main*/
 void lp_core_startup()
 {
+    ulp_lp_core_update_wakeup_cause();
+
     main();
 
     ulp_lp_core_memory_shared_cfg_t* shared_mem = ulp_lp_core_memory_shared_cfg_get();

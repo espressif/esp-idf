@@ -12,6 +12,7 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/lp_timer_struct.h"
+#include "soc/lp_timer_reg.h"
 #include "soc/lp_aon_reg.h"
 #include "hal/lp_timer_types.h"
 #include "esp_attr.h"
@@ -59,6 +60,16 @@ FORCE_INLINE_ATTR void lp_timer_ll_clear_overflow_intr_status(lp_timer_dev_t *de
 FORCE_INLINE_ATTR void lp_timer_ll_clear_lp_alarm_intr_status(lp_timer_dev_t *dev)
 {
     dev->lp_int_clr.alarm = 1;
+}
+
+FORCE_INLINE_ATTR uint32_t lp_timer_ll_get_lp_intr_raw(lp_timer_dev_t *dev)
+{
+    return dev->lp_int_raw.val;
+}
+
+FORCE_INLINE_ATTR void lp_timer_ll_clear_lp_intsts_mask(lp_timer_dev_t *dev, uint32_t mask)
+{
+    dev->lp_int_clr.val = mask;
 }
 
 FORCE_INLINE_ATTR uint64_t lp_timer_ll_time_to_count(uint64_t time_in_us)
