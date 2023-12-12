@@ -111,6 +111,13 @@ static inline void lp_core_ll_set_wakeup_source(uint32_t flags)
     PMU.lp_cpu_pwr2.lp_cpu_wakeup_en = flags;
 }
 
+/**
+ * @brief Get wake-up sources for the LP-core
+ */
+static inline uint32_t lp_core_ll_get_wakeup_source(void)
+{
+    return PMU.lp_cpu_pwr2.lp_cpu_wakeup_en;
+}
 
 /**
  * @brief Set boot address for lp core
