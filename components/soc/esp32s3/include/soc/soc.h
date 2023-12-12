@@ -253,7 +253,7 @@
 
 /* Overall memory map */
 #define SOC_DROM_LOW    0x3C000000
-#define SOC_DROM_HIGH   0x3D000000
+#define SOC_DROM_HIGH   0x3E000000
 #define SOC_IROM_LOW    0x42000000
 #define SOC_IROM_HIGH   0x44000000
 #define SOC_IRAM_LOW    0x40370000
