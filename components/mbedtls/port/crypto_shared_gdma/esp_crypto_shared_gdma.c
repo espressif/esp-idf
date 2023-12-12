@@ -143,33 +143,14 @@ esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *ou
 esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, gdma_trigger_peripheral_t peripheral)
 {
     int rx_ch_id = 0;
-    esp_err_t ret = ESP_OK;
-
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    // TODO: replace with `esp_cache_msync`
-    const crypto_dma_desc_t *it = input;
-    while(it != NULL) {
-        esp_cache_msync(it->buffer, it->dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-        esp_cache_msync((void *)it, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-        it = (const crypto_dma_desc_t*) it->next;
-    }
-
-    it = output;
-    while(it != NULL) {
-        esp_cache_msync(it->buffer, it->dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-        esp_cache_msync((void *)it, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-        it = (const crypto_dma_desc_t*) it->next;
-    };
-#endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
 
     if (tx_channel == NULL) {
         /* Allocate a pair of RX and TX for crypto, should only happen the first time we use the GMDA
            or if user called esp_crypto_shared_gdma_release */
-        ret = crypto_shared_gdma_init();
-    }
-
-    if (ret != ESP_OK) {
-        return ret;
+        esp_err_t ret = crypto_shared_gdma_init();
+        if (ret != ESP_OK) {
+            return ret;
+        }
     }
 
     /* Tx channel is shared between AES and SHA, need to connect to peripheral every time */
@@ -197,6 +178,20 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
 
     return ESP_OK;
 }
+
+#if SOC_AXI_GDMA_SUPPORTED
+bool esp_crypto_shared_gdma_done(void)
+{
+    int rx_ch_id = 0;
+    gdma_get_channel_id(rx_channel, &rx_ch_id);
+    while(1) {
+        if ((axi_dma_ll_rx_get_interrupt_status(&AXI_DMA, rx_ch_id, true) & 1)) {
+            break;
+        }
+    }
+    return true;
+}
+#endif /* SOC_AXI_GDMA_SUPPORTED */
 
 void esp_crypto_shared_gdma_free()
 {

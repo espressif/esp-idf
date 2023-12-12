@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,15 @@ esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *ou
  * @return esp_err_t ESP_FAIL if no GDMA channel available
  */
 esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, gdma_trigger_peripheral_t peripheral);
+
+#if SOC_AXI_GDMA_SUPPORTED
+/**
+ * @brief Busy wait until GDMA RX data transfer is complete
+ *
+ * @return true, when GDMA RX data transfer is complete
+ */
+bool esp_crypto_shared_gdma_done(void);
+#endif /* SOC_AXI_GDMA_SUPPORTED */
 
 /**
  * @brief Frees any shared crypto DMA channel, if esp_crypto_shared_gdma_start is called after

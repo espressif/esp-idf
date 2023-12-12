@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,20 @@ extern "C" {
 #endif
 
 bool valid_key_length(const esp_aes_context *ctx);
+
+#if SOC_AES_SUPPORT_DMA
+/**
+ * @brief           Run a AES operation using DMA
+ *
+ * @param ctx           Aes context
+ * @param input         Pointer to input data
+ * @param output        Pointer to output data
+ * @param len           Length of the input data
+ * @param stream_out    The saved stream-block for resuming next operation.
+ * @return int          -1 on error
+ */
+int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, uint8_t *stream_out);
+#endif
 
 #if SOC_AES_SUPPORT_GCM
 /**

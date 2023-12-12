@@ -684,10 +684,13 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
         return esp_aes_gcm_crypt_and_tag_partial_hw(ctx, mode, length, iv, iv_len, aad, aad_len, input, output, tag_len, tag);
     }
 
-    /* Limit aad len to a single DMA descriptor to simplify DMA handling
-       In practice, e.g. with mbedtls the length of aad will always be short
+    /*  Limit aad len to a single DMA descriptor to simplify DMA handling
+        In practice, e.g. with mbedtls the length of aad will always be short
+        the size field has 12 bits, but 0 not for 4096.
+        to avoid possible problem when the size is not word-aligned, we only use 4096-4 per desc.
+        Maximum size of data in the buffer that a DMA descriptor can hold.
     */
-    if (aad_len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC) {
+    if (aad_len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
         return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
     /* IV and AD are limited to 2^32 bits, so 2^29 bytes */

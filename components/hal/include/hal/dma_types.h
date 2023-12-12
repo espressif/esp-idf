@@ -59,11 +59,6 @@ ESP_STATIC_ASSERT(sizeof(dma_descriptor_align8_t) == 16, "dma_descriptor_align8_
 #define DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED  (4095-3)  /*!< Maximum size of the buffer that can be attached to descriptor, and aligned to 4B */
 #define DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED  (4095-15)  /*!< Maximum size of the buffer that can be attached to descriptor, and aligned to 16B */
 
-// the size field has 12 bits, but 0 not for 4096.
-// to avoid possible problem when the size is not word-aligned, we only use 4096-4 per desc.
-/** Maximum size of data in the buffer that a DMA descriptor can hold. */
-#define DMA_DESCRIPTOR_BUFFER_MAX_SIZE_PER_DESC (4096-4)
-
 /**
  * Get the number of DMA descriptors required for a given buffer size.
  *
