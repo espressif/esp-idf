@@ -444,7 +444,7 @@ static void s_i2c_send_command_async(i2c_master_bus_handle_t i2c_master, BaseTyp
         i2c_master->sent_all = true;
         return;
     }
-    while(i2c_ll_is_bus_busy(hal->dev)){}
+    while (i2c_ll_is_bus_busy(hal->dev)) {}
 
     while (i2c_master->i2c_trans.cmd_count && !needs_start) {
         i2c_master->in_progress = true;
@@ -514,13 +514,12 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     return ret;
 }
 
-
 ///////////////////////////////I2C DRIVERS//////////////////////////////////////////////////////////////
 
 IRAM_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
 {
     i2c_hal_context_t *hal = &i2c_master->base->hal;
-    while(i2c_ll_is_bus_busy(hal->dev)){}
+    while (i2c_ll_is_bus_busy(hal->dev)) {}
     if (i2c_master->status == I2C_STATUS_READ) {
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->trans_idx];
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
@@ -656,7 +655,7 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
 {
     ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "no memory for i2c master bus");
     i2c_master_bus_handle_t i2c_master = bus_handle;
-    if(i2c_release_bus_handle(i2c_master->base) == ESP_OK) {
+    if (i2c_release_bus_handle(i2c_master->base) == ESP_OK) {
         if (i2c_master) {
             if (i2c_master->bus_lock_mux) {
                 vSemaphoreDeleteWithCaps(i2c_master->bus_lock_mux);
@@ -717,7 +716,7 @@ static esp_err_t s_i2c_asynchronous_transaction(i2c_master_dev_handle_t i2c_dev,
         i2c_dev->master_bus->queue_trans = false;
         ESP_RETURN_ON_ERROR(s_i2c_transaction_start(i2c_dev, timeout_ms), TAG, "I2C transaction failed");
     } else {
-        i2c_dev->master_bus->i2c_anyc_ops[i2c_dev->master_bus->index]=(i2c_operation_t(*))heap_caps_calloc(1, sizeof(i2c_operation_t) * 6, I2C_MEM_ALLOC_CAPS);
+        i2c_dev->master_bus->i2c_anyc_ops[i2c_dev->master_bus->index] = (i2c_operation_t(*))heap_caps_calloc(1, sizeof(i2c_operation_t) * 6, I2C_MEM_ALLOC_CAPS);
         memcpy(i2c_dev->master_bus->i2c_anyc_ops[i2c_dev->master_bus->index], i2c_ops, sizeof(i2c_operation_t) * ops_dim);
         i2c_transaction_t i2c_queue_pre;
         if (i2c_dev->master_bus->num_trans_inflight < i2c_dev->master_bus->queue_size) {
@@ -876,7 +875,7 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t bus_handle, const i2
     ESP_RETURN_ON_FALSE((bus_handle != NULL), ESP_ERR_INVALID_ARG, TAG, "this bus is not initialized, please call `i2c_new_master_bus`");
     ESP_RETURN_ON_FALSE(dev_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(dev_config->scl_speed_hz > 0, ESP_ERR_INVALID_ARG, TAG, "invalid scl frequency");
-    if(bus_handle->base->bus_mode != I2C_BUS_MODE_MASTER) {
+    if (bus_handle->base->bus_mode != I2C_BUS_MODE_MASTER) {
         ESP_LOGE(TAG, "This is not master bus!");
         return ESP_ERR_INVALID_ARG;
     }
@@ -945,7 +944,6 @@ esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t bus_handle)
     return ESP_OK;
 }
 
-
 esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *write_buffer, size_t write_size, int xfer_timeout_ms)
 {
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
@@ -959,7 +957,7 @@ esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *wr
         };
         ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
     } else {
-        i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index] = (uint8_t*)heap_caps_calloc(1, sizeof(uint8_t)*write_size, I2C_MEM_ALLOC_CAPS);
+        i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index] = (uint8_t*)heap_caps_calloc(1, sizeof(uint8_t) * write_size, I2C_MEM_ALLOC_CAPS);
         memcpy(i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index], write_buffer, write_size);
         i2c_operation_t i2c_ops[] = {
             {.hw_cmd = I2C_TRANS_START_COMMAND},
@@ -988,7 +986,7 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
         };
         ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
     } else {
-        i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index] = (uint8_t*)heap_caps_calloc(1, sizeof(uint8_t)*write_size, I2C_MEM_ALLOC_CAPS);
+        i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index] = (uint8_t*)heap_caps_calloc(1, sizeof(uint8_t) * write_size, I2C_MEM_ALLOC_CAPS);
         memcpy(i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index], write_buffer, write_size);
 
         i2c_operation_t i2c_ops[] = {

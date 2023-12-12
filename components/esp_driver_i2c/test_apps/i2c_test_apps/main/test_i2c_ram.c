@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -98,7 +97,6 @@ static void i2c_slave_read_from_ram_test(void)
     i2c_slave_dev_handle_t slave_handle;
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
 
-
     unity_send_signal("i2c slave init finish");
 
     unity_wait_for_signal("master write");
@@ -114,7 +112,6 @@ static void i2c_slave_read_from_ram_test(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test - slave directly read from ram", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_to_ram_test, i2c_slave_read_from_ram_test);
-
 
 static void master_read_slave_from_ram_test(void)
 {
@@ -151,7 +148,7 @@ static void master_read_slave_from_ram_test(void)
     vTaskDelay(100 / portTICK_PERIOD_MS);
     for (int i = 0; i < DATA_LENGTH_RAM; i++) {
         printf("%d\n", data_rd[i]);
-        TEST_ASSERT(data_rd[i]==i);
+        TEST_ASSERT(data_rd[i] == i);
     }
     unity_send_signal("ready to delete ram test");
 
@@ -190,7 +187,6 @@ static void slave_write_buffer_to_ram_test(void)
     unity_wait_for_signal("ready to delete ram test");
     TEST_ESP_OK(i2c_del_slave_device(slave_handle));
 }
-
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master read slave ram test", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_from_ram_test, slave_write_buffer_to_ram_test);
 

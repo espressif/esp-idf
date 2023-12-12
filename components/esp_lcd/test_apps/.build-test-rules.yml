@@ -5,8 +5,7 @@ components/esp_lcd/test_apps/i2c_lcd:
     - if: SOC_I2C_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/i2c/**/*
+    - esp_driver_i2c
   disable_test:
     - if: IDF_TARGET not in ["esp32c3"]
       temporary: true

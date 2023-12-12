@@ -47,15 +47,7 @@ endif()
 
 # I2C related source files
 if(CONFIG_SOC_I2C_SUPPORTED)
-    list(APPEND srcs "i2c/i2c.c"
-                     "i2c/i2c_master.c"
-                     "i2c/i2c_common.c"
-        )
-    if(CONFIG_SOC_I2C_SUPPORT_SLAVE)
-        list(APPEND srcs "i2c/i2c_slave.c")
-    endif()
-
-    list(APPEND ldfragments "i2c/linker.lf")
+    list(APPEND srcs "i2c/i2c.c")
 endif()
 
 # I2S related source files
@@ -142,7 +134,7 @@ else()
                            # have a public dependency on other "esp_driver_foo" components
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
                                     esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
-                                    esp_driver_dac esp_driver_rmt esp_driver_tsens esp_driver_sdm
+                                    esp_driver_dac esp_driver_rmt esp_driver_tsens esp_driver_sdm esp_driver_i2c
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

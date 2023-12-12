@@ -6,10 +6,6 @@ components/driver/test_apps/dac_test_apps/legacy_dac_driver:
   depends_components:
     - esp_adc
 
-components/driver/test_apps/i2c_test_apps:
-  disable:
-    - if: SOC_I2C_SUPPORTED != 1 # TODO: IDF-8070
-
 components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
   disable:
     - if: SOC_I2S_SUPPORTS_ADC_DAC != 1
@@ -31,10 +27,12 @@ components/driver/test_apps/legacy_adc_driver:
     - if: SOC_ADC_SUPPORTED != 1
 
 components/driver/test_apps/legacy_i2c_driver:
-  disable:
+  disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported yet  # TODO: IDF-8070
+      reason: lack of runner
+  depends_filepatterns:
+    - components/driver/i2c/**
 
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:

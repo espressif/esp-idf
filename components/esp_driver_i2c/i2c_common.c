@@ -218,7 +218,6 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t cl
     }
 #endif // CONFIG_PM_ENABLE
 
-
     ESP_LOGD(TAG, "bus clock source frequency: %"PRIu32"hz", periph_src_clk_hz);
     return ret;
 }
@@ -242,7 +241,6 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[handle->sda_num], PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
-
 
     // SCL pin configurations
     gpio_config_t scl_conf = {

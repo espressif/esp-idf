@@ -38,6 +38,12 @@ examples/peripherals/gpio/matrix_keyboard:
   enable:
     - if: IDF_TARGET == "esp32s2"
 
+examples/peripherals/i2c/i2c_eeprom:
+  disable:
+    - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2c
+
 examples/peripherals/i2c/i2c_self_test:
   disable:
     - if: SOC_I2C_SUPPORT_SLAVE != 1
