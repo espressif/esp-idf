@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +10,14 @@
  */
 #include <stdlib.h>
 #include "unity.h"
+#include "test_utils.h"
 
 #if __XTENSA__
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "xtensa_api.h" // Replace with interrupt allocator API (IDF-3891)
+#include "esp_debug_helpers.h"
 #include "esp_intr_alloc.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
@@ -26,6 +28,8 @@
 #define RECUR_DEPTH             3
 #define ACTION_ABORT            -1
 #define ACTION_INT_WDT          -2
+#define TASK_PRIORITY           5
+
 
 // Set to (-1) for abort(), (-2) for interrupt watchdog
 static int backtrace_trigger_source;
@@ -117,5 +121,33 @@ static void do_rom_crash(void)
 TEST_CASE_MULTIPLE_STAGES("Test backtrace with a ROM function", "[reset_reason][reset=StoreProhibited,SW_CPU_RESET]",
                            do_rom_crash,
                            check_reset_reason_panic)
+
+
+#define NUM_TEST_FUNCS      2
+
+static void backtrace_suspend_func(void *arg)
+{
+    // Simply suspend and wait to be deleted
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("Test esp_backtrace_print_all_tasks()", "[esp_system]")
+{
+    TaskHandle_t task_handles[NUM_TEST_FUNCS];
+
+    for (int i = 0; i < NUM_TEST_FUNCS; i++) {
+        // Create multiple unpinned tasks at higher priorities
+        xTaskCreate(backtrace_suspend_func, "trace_func", 2048, NULL, UNITY_FREERTOS_PRIORITY + i + 1, &task_handles[i]);
+    }
+    // Short delay to allow tasks to suspend
+    vTaskDelay(10);
+    // Print backtraces of all tasks
+    esp_backtrace_print_all_tasks(3);
+
+    // Clean up tasks
+    for (int i = 0; i < NUM_TEST_FUNCS; i++) {
+        vTaskDelete(task_handles[i]);
+    }
+}
 
 #endif
