@@ -236,6 +236,8 @@ extensions += ['sphinx_copybutton',
 # Use wavedrompy as backend, insted of wavedrom-cli
 render_using_wavedrompy = True
 
+smartquotes = False
+
 # link roles config
 github_repo = 'espressif/esp-idf'
 
