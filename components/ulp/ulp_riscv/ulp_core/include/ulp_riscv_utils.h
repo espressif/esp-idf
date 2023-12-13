@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@ extern "C" {
 #include "sdkconfig.h"
 #include <stdint.h>
 #include "ulp_riscv_register_ops.h"
+#include "ulp_riscv_interrupt.h"
 
 /**
  * @brief Wakeup main CPU from sleep or deep sleep.
@@ -111,6 +112,26 @@ void static inline ulp_riscv_delay_cycles(uint32_t cycles)
  *
  */
 void ulp_riscv_gpio_wakeup_clear(void);
+
+/**
+ * @brief Enable ULP RISC-V SW Interrupt
+ *
+ * @param handler       Interrupt handler
+ * @param arg           Interrupt handler argument
+ */
+void ulp_riscv_enable_sw_intr(intr_handler_t handler, void *arg);
+
+/**
+ * @brief Disable ULP RISC-V SW Interrupt
+ */
+void ulp_riscv_disable_sw_intr(void);
+
+/**
+ * @brief Trigger ULP RISC-V SW Interrupt
+ *
+ * @note The SW interrupt will only trigger if it has been enabled previously using ulp_riscv_enable_sw_intr().
+ */
+void ulp_riscv_trigger_sw_intr(void);
 
 #ifdef __cplusplus
 }

@@ -16,6 +16,7 @@ extern "C"
 
 /* ULP RISC-V Interrupt sources */
 typedef enum {
+    ULP_RISCV_SW_INTR_SOURCE = 0,           /**< Interrupt triggered by SW */
     ULP_RISCV_MAX_INTR_SOURCE,              /**< Total number of ULP RISC-V interrupt sources */
 } ulp_riscv_interrupt_source_t;
 

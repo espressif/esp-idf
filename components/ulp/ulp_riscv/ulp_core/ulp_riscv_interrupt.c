@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "ulp_riscv_register_ops.h"
 #include "ulp_riscv_interrupt.h"
+#include "soc/sens_reg.h"
 
 #define ULP_RISCV_TIMER_INT                         (1 << 0U)   /* Internal Timer Interrupt */
 #define ULP_RISCV_EBREAK_ECALL_ILLEGAL_INSN_INT     (1 << 1U)   /* EBREAK, ECALL or Illegal instruction */
@@ -57,6 +58,25 @@ esp_err_t ulp_riscv_intr_free(ulp_riscv_interrupt_source_t source)
     return ESP_OK;
 }
 
+/* This function -
+ * - Checks RTC peripheral interrupt status bit
+ * - Calls interrupt handler if it is registered
+ * - Clears interrupt bit
+ */
+static inline void ulp_riscv_handle_rtc_periph_intr(uint32_t status)
+{
+    /* SW interrupt */
+    if (status & SENS_COCPU_SW_INT_ST) {
+        const ulp_riscv_intr_handler_t* entry = &s_intr_handlers[ULP_RISCV_SW_INTR_SOURCE];
+
+        if (entry->handler) {
+            entry->handler(entry->arg);
+        }
+
+        SET_PERI_REG_MASK(SENS_SAR_COCPU_INT_CLR_REG, SENS_COCPU_SW_INT_CLR);
+    }
+}
+
 /* This is the global interrupt handler for ULP RISC-V.
  * It is called from ulp_riscv_vectors.S
  */
@@ -71,7 +91,11 @@ void __attribute__((weak)) _ulp_riscv_interrupt_handler(uint32_t q1)
 
     /* External/Peripheral interrupts */
     if (q1 & ULP_RISCV_PERIPHERAL_INTERRUPT) {
-        /* TODO: RTC Peripheral interrupts */
+        /* RTC Peripheral interrupts */
+        uint32_t cocpu_int_st = READ_PERI_REG(SENS_SAR_COCPU_INT_ST_REG);
+        if (cocpu_int_st) {
+            ulp_riscv_handle_rtc_periph_intr(cocpu_int_st);
+        }
 
         /* TODO: RTC IO interrupts */
 
