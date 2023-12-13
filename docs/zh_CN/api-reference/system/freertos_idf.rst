@@ -18,7 +18,7 @@ ESP-IDF FreeRTOS 以 Vanilla FreeRTOS v10.5.1 为基础，为支持 SMP，在 AP
 
 .. note::
 
-  启用 :ref:`CONFIG_FREERTOS_UNICORE` 配置选项可以为单核芯片构建 ESP-IDF FreeRTOS，单核 ESP 芯片会默认启用 :ref:`CONFIG_FREERTOS_UNICORE` 配置选项。但请注意，启用 :ref:`CONFIG_FREERTOS_UNICORE` 并不等同于构建 Vanilla FreeRTOS，ESP-IDF FreeRTOS 的某些内核行为和 API 仍有所不同。更多详细信息，请参阅 :ref:`freertos-smp-single-core`。
+  启用 :ref:`CONFIG_FREERTOS_UNICORE` 配置选项可以为单核芯片构建 ESP-IDF FreeRTOS，单核 ESP 芯片会默认启用 :ref:`CONFIG_FREERTOS_UNICORE` 配置选项。但请注意，启用 :ref:`CONFIG_FREERTOS_UNICORE` 并不等同于构建 Vanilla FreeRTOS，ESP-IDF FreeRTOS 的某些内核行为和 API 仍有所不同。更多详细信息，请参阅 :ref:`freertos-idf-single-core`。
 
 本文档包含以下小节。
 
@@ -462,7 +462,7 @@ ESP-IDF FreeRTOS 中，特定核进入和退出临界区的过程如下：
 
 .. -------------------------------------------------- Single Core  -----------------------------------------------------
 
-.. _freertos-smp-single-core:
+.. _freertos-idf-single-core:
 
 单核 ESP-IDF FreeRTOS
 ^^^^^^^^^^^^^^^^^^^^^
