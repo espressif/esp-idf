@@ -216,6 +216,6 @@ repos:
       args: ['--shell', 'dash', '-x']
       files: 'export.sh'
   - repo: https://github.com/espressif/esp-idf-sbom.git
-    rev: v0.11.0
+    rev: v0.13.0
     hooks:
       - id: validate-sbom-manifest
