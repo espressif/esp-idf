@@ -1,8 +1,20 @@
 menu "ESP-Driver:USB Serial/JTAG Configuration"
     depends on SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    config USJ_ENABLE_USB_SERIAL_JTAG
+        bool "Enable USB-Serial-JTAG Module"
+        default y
+        help
+            The USB-Serial-JTAG module on ESP chips is turned on by default after power-on.
+            If your application does not need it and not rely on it to be used as system
+            console or use the built-in JTAG for debugging, you can disable this option,
+            then the clock of this module will be disabled at startup, which will save
+            some power consumption.
+
     config USJ_NO_AUTO_LS_ON_CONNECTION
         bool "Don't enter the automatic light sleep when USB Serial/JTAG port is connected"
-        depends on PM_ENABLE && ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
+        depends on PM_ENABLE && ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP \
+            && USJ_ENABLE_USB_SERIAL_JTAG
         default n
         help
             If enabled, the chip will constantly monitor the connection status of the USB Serial/JTAG port. As long

@@ -29,6 +29,19 @@ static inline void usb_fsls_phy_ll_int_jtag_enable(usb_serial_jtag_dev_t *hw)
     hw->conf0.usb_pad_enable = 1;
 }
 
+/**
+ * @brief Disable the internal PHY for USB_Serial_JTAG
+ *
+ * @param hw Start address of the USB Serial_JTAG registers
+ */
+static inline void usb_fsls_phy_ll_int_jtag_disable(usb_serial_jtag_dev_t *hw)
+{
+    // Disable USB D+ pullup
+    hw->conf0.dp_pullup = 0;
+    // Disable USB pad function
+    hw->conf0.usb_pad_enable = 0;
+}
+
 #ifdef __cplusplus
 }
 #endif
