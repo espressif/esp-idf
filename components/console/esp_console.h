@@ -157,6 +157,15 @@ esp_err_t esp_console_deinit(void);
 typedef int (*esp_console_cmd_func_t)(int argc, char **argv);
 
 /**
+ * @brief Console command main function, with context
+ * @param context a user context given at invocation
+ * @param argc number of arguments
+ * @param argv array with argc entries, each pointing to a zero-terminated string argument
+ * @return console command return code, 0 indicates "success"
+ */
+typedef int (*esp_console_cmd_func_with_context_t)(void *context, int argc, char **argv);
+
+/**
  * @brief Console command description
  */
 typedef struct {
@@ -179,6 +188,7 @@ typedef struct {
     const char *hint;
     /**
      * Pointer to a function which implements the command.
+     * @note: Setting both \c func and \c func_w_context is not allowed.
      */
     esp_console_cmd_func_t func;
     /**
@@ -188,17 +198,43 @@ typedef struct {
      * Only used for the duration of esp_console_cmd_register call.
      */
     void *argtable;
+    /**
+     * Pointer to a context aware function which implements the command.
+     * @note: Setting both \c func and \c func_w_context is not allowed.
+     */
+    esp_console_cmd_func_with_context_t func_w_context;
 } esp_console_cmd_t;
 
 /**
  * @brief Register console command
  * @param cmd pointer to the command description; can point to a temporary value
+ *
+ * @note If the member func_w_context of cmd is set instead of func, then there
+ *       MUST be a subsequent call to \c esp_console_cmd_set_context to initialize the
+ *       function context before it is used!
+ *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NO_MEM if out of memory
  *      - ESP_ERR_INVALID_ARG if command description includes invalid arguments
+ *      - ESP_ERR_INVALID_ARG if both func and func_w_context members of cmd are non-NULL
+ *      - ESP_ERR_INVALID_ARG if both func and func_w_context members of cmd are NULL
  */
 esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd);
+
+/**
+ * @brief Register context for a command registered with \c func_w_context before
+ *
+ *        \c context is only used if \c func_w_context has been set in the structure
+ *        passed to esp_console_cmd_register()
+ * @param cmd pointer to the command name
+ * @param context pointer to user-defined per-command context data
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if command was not found
+ *      - ESP_ERR_INVALID_ARG if invalid arguments
+ */
+esp_err_t esp_console_cmd_set_context(const char *cmd, void *context);
 
 /**
  * @brief Run command line

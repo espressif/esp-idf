@@ -147,7 +147,12 @@ For each command, application provides the following information (in the form of
 - Command name (string without spaces)
 - Help text explaining what the command does
 - Optional hint text listing the arguments of the command. If application uses Argtable3 for argument parsing, hint text can be generated automatically by providing a pointer to argtable argument definitions structure instead.
-- The command handler function.
+- Command handler function (without context), or
+- Command handler function (with context). If this function is given, an additional call to :cpp:func:`esp_console_cmd_set_context` must follow *before* the command may be called to initialize the context.
+
+.. note::
+
+  You can either use a command handler function which takes a context or a command handler function which does not take a context, not both. If you use the command handler function which takes a context, you MUST call :cpp:func:`esp_console_cmd_set_context` to initialize its context, otherwise the function may access the uninitialized context.
 
 A few other functions are provided by the command registration module:
 
