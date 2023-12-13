@@ -128,8 +128,8 @@ cache:
   export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/esp_app_trace:$IDF_PATH/components/partition_table:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
 
 .setup_tools_and_idf_python_venv: &setup_tools_and_idf_python_venv |
-  # must use after setup_tools_except_target_test
-  # otherwise the export.sh won't work properly
+  # Since the version 3.21 CMake passes source files and include dirs to ninja using absolute paths.
+  $IDF_PATH/tools/idf_tools.py --non-interactive install cmake
 
   # download constraint file for dev
   if [[ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]]; then
