@@ -1,3 +1,5 @@
+set(linker_fragments linker.lf)
+
 set(srcs "port/os_xtensa.c"
     "port/eloop.c"
     "src/ap/ap_config.c"
@@ -211,6 +213,7 @@ idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}
                             "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
+                    LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings -Werror)
