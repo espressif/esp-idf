@@ -106,7 +106,7 @@ Allow .bss Segment to Be Placed in External Memory
 
 Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`.
 
-If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
+If enabled, the region of the data virtual address space where the PSRAM is mapped to will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, wpa_supplicant and bluedroid ESP-IDF libraries.
 
 Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
