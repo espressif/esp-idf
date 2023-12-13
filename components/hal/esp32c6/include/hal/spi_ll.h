@@ -307,7 +307,7 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU TX FIFO
  *
- * On ESP32C6, this function is not seperated
+ * On ESP32C6, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -320,7 +320,7 @@ static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU RX FIFO
  *
- * On ESP32C6, this function is not seperated
+ * On ESP32C6, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -705,7 +705,7 @@ static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_cl
  * Get the frequency of given dividers. Don't use in app.
  *
  * @param fapb APB clock of the system.
- * @param pre  Pre devider.
+ * @param pre  Pre divider.
  * @param n    Main divider.
  *
  * @return     Frequency of given dividers.
@@ -716,10 +716,10 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
 }
 
 /**
- * Calculate the nearest frequency avaliable for master.
+ * Calculate the nearest frequency available for master.
  *
  * @param fapb       APB clock of the system.
- * @param hz         Frequncy desired.
+ * @param hz         Frequency desired.
  * @param duty_cycle Duty cycle desired.
  * @param out_reg    Output address to store the calculated clock configurations for the return frequency.
  *
@@ -799,7 +799,7 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
  *
  * @param hw         Beginning address of the peripheral registers.
  * @param fapb       APB clock of the system.
- * @param hz         Frequncy desired.
+ * @param hz         Frequency desired.
  * @param duty_cycle Duty cycle desired.
  *
  * @return           Actual frequency that is used.

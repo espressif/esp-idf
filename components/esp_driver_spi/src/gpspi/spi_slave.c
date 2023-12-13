@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -181,14 +181,6 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         hal->dmadesc_tx = spihost[host]->dma_ctx->dmadesc_tx;
         hal->dmadesc_rx = spihost[host]->dma_ctx->dmadesc_rx;
         hal->dmadesc_n = spihost[host]->dma_ctx->dma_desc_num;
-#if SOC_GDMA_SUPPORTED
-        //temporary used for gdma_ll alias in hal layer
-        gdma_get_channel_id(spihost[host]->dma_ctx->tx_dma_chan, (int *)&hal->tx_dma_chan);
-        gdma_get_channel_id(spihost[host]->dma_ctx->rx_dma_chan, (int *)&hal->rx_dma_chan);
-#else
-        hal->tx_dma_chan = spihost[host]->dma_ctx->tx_dma_chan.chan_id;
-        hal->rx_dma_chan = spihost[host]->dma_ctx->rx_dma_chan.chan_id;
-#endif
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         size_t alignment;
@@ -266,8 +258,6 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     //assign the SPI, RX DMA and TX DMA peripheral registers beginning address
     spi_slave_hal_config_t hal_config = {
         .host_id = host,
-        .dma_in = SPI_LL_GET_HW(host),
-        .dma_out = SPI_LL_GET_HW(host)
     };
     spi_slave_hal_init(hal, &hal_config);
 
@@ -279,31 +269,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     return ESP_OK;
 
 cleanup:
-    if (spihost[host]) {
-        if (spihost[host]->trans_queue) {
-            vQueueDelete(spihost[host]->trans_queue);
-        }
-        if (spihost[host]->ret_queue) {
-            vQueueDelete(spihost[host]->ret_queue);
-        }
-#ifdef CONFIG_PM_ENABLE
-        if (spihost[host]->pm_lock) {
-            esp_pm_lock_release(spihost[host]->pm_lock);
-            esp_pm_lock_delete(spihost[host]->pm_lock);
-        }
-#endif
-    }
-    spi_slave_hal_deinit(&spihost[host]->hal);
-    if (spihost[host]->dma_enabled) {
-        free(spihost[host]->dma_ctx->dmadesc_tx);
-        free(spihost[host]->dma_ctx->dmadesc_rx);
-        spicommon_dma_chan_free(spihost[host]->dma_ctx);
-    }
-
-    free(spihost[host]);
-    spihost[host] = NULL;
-    spicommon_periph_free(host);
-
+    spi_slave_free(host);
     return ret;
 }
 
@@ -325,8 +291,10 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     spicommon_bus_free_io_cfg(&spihost[host]->bus_config);
     esp_intr_free(spihost[host]->intr);
 #ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_release(spihost[host]->pm_lock);
-    esp_pm_lock_delete(spihost[host]->pm_lock);
+    if (spihost[host]->pm_lock) {
+        esp_pm_lock_release(spihost[host]->pm_lock);
+        esp_pm_lock_delete(spihost[host]->pm_lock);
+    }
 #endif //CONFIG_PM_ENABLE
     free(spihost[host]);
     spihost[host] = NULL;
@@ -553,6 +521,49 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_tr
     return ESP_OK;
 }
 
+#if SOC_GDMA_SUPPORTED  // AHB_DMA_V1 and AXI_DMA
+// dma is provided by gdma driver on these targets
+#define spi_dma_reset               gdma_reset
+#define spi_dma_start(chan, addr)   gdma_start(chan, (intptr_t)(addr))
+#endif
+
+static void SPI_SLAVE_ISR_ATTR s_spi_slave_dma_prepare_data(spi_dma_ctx_t *dma_ctx, spi_slave_hal_context_t *hal)
+{
+    if (hal->rx_buffer) {
+        spicommon_dma_desc_setup_link(dma_ctx->dmadesc_rx, hal->rx_buffer, ((hal->bitlen + 7) / 8), true);
+
+        spi_dma_reset(dma_ctx->rx_dma_chan);
+        spi_slave_hal_hw_prepare_rx(hal->hw);
+        spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
+    }
+    if (hal->tx_buffer) {
+        spicommon_dma_desc_setup_link(dma_ctx->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
+
+        spi_dma_reset(dma_ctx->tx_dma_chan);
+        spi_slave_hal_hw_prepare_tx(hal->hw);
+        spi_dma_start(dma_ctx->tx_dma_chan, dma_ctx->dmadesc_tx);
+    }
+}
+
+static void SPI_SLAVE_ISR_ATTR s_spi_slave_prepare_data(spi_slave_t *host)
+{
+    spi_slave_hal_context_t *hal = &host->hal;
+
+    if (host->dma_enabled) {
+        s_spi_slave_dma_prepare_data(host->dma_ctx, &host->hal);
+    } else {
+        //No DMA. Copy data to transmit buffers.
+        spi_slave_hal_push_tx_buffer(hal);
+        spi_slave_hal_hw_fifo_reset(hal, true, false);
+    }
+    spi_slave_hal_set_trans_bitlen(hal);
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+    //SPI Slave mode on ESP32 requires MOSI/MISO enable
+    spi_slave_hal_enable_data_line(hal);
+#endif
+}
+
 #if CONFIG_IDF_TARGET_ESP32
 static void SPI_SLAVE_ISR_ATTR spi_slave_restart_after_dmareset(void *arg)
 {
@@ -654,7 +665,8 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
         }
 #endif  //#if CONFIG_IDF_TARGET_ESP32
 
-        spi_slave_hal_prepare_data(hal);
+        spi_slave_hal_hw_reset(hal);
+        s_spi_slave_prepare_data(host);
 
         //The slave rx dma get disturbed by unexpected transaction. Only connect the CS when slave is ready.
         if (use_dma) {

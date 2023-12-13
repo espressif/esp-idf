@@ -315,7 +315,7 @@ esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *
 #define ADDR_CPU_2_DMA(addr)   (addr)
 #endif
 
-void SPI_MASTER_ISR_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
+void IRAM_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
 {
     dmadesc = ADDR_DMA_2_CPU(dmadesc);
     int n = 0;

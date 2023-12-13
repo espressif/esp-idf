@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,18 +23,6 @@
 #ifdef __cplusplus
 extern "C"
 {
-#endif
-
-#ifdef CONFIG_SPI_MASTER_ISR_IN_IRAM
-#define SPI_MASTER_ISR_ATTR IRAM_ATTR
-#else
-#define SPI_MASTER_ISR_ATTR
-#endif
-
-#ifdef CONFIG_SPI_MASTER_IN_IRAM
-#define SPI_MASTER_ATTR IRAM_ATTR
-#else
-#define SPI_MASTER_ATTR
 #endif
 
 //NOTE!! If both A and B are not defined, '#if (A==B)' is true, because GCC use 0 stand for undefined symbol

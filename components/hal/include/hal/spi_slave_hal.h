@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,8 +52,6 @@ typedef dma_descriptor_align8_t spi_dma_desc_t;
 typedef struct {
     /* configured by driver at initialization, don't touch */
     spi_dev_t     *hw;              ///< Beginning address of the peripheral registers.
-    spi_dma_dev_t *dma_in;          ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
-    spi_dma_dev_t *dma_out;         ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
     /* should be configured by driver at initialization */
     spi_dma_desc_t *dmadesc_rx;     /**< Array of DMA descriptor used by the TX DMA.
                                      *   The amount should be larger than dmadesc_n. The driver should ensure that
@@ -64,8 +62,6 @@ typedef struct {
                                      *   the data to be sent is shorter than the descriptors can hold.
                                      */
     int           dmadesc_n;        ///< The amount of descriptors of both ``dmadesc_tx`` and ``dmadesc_rx`` that the HAL can use.
-    uint32_t      tx_dma_chan;      ///< TX DMA channel
-    uint32_t      rx_dma_chan;      ///< RX DMA channel
 
     /*
      * configurations to be filled after ``spi_slave_hal_init``. Updated to
@@ -92,8 +88,6 @@ typedef struct {
 
 typedef struct {
     uint32_t host_id;               ///< SPI controller ID
-    spi_dma_dev_t *dma_in;          ///< Input  DMA(DMA -> RAM) peripheral register address
-    spi_dma_dev_t *dma_out;         ///< Output DMA(RAM -> DMA) peripheral register address
 } spi_slave_hal_config_t;
 
 /**
@@ -119,11 +113,53 @@ void spi_slave_hal_deinit(spi_slave_hal_context_t *hal);
 void spi_slave_hal_setup_device(const spi_slave_hal_context_t *hal);
 
 /**
- * Prepare the data for the current transaction.
+ * Prepare rx hardware for a new DMA trans
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+void spi_slave_hal_hw_prepare_rx(spi_dev_t *hw);
+
+/**
+ * Prepare tx hardware for a new DMA trans
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+void spi_slave_hal_hw_prepare_tx(spi_dev_t *hw);
+
+/**
+ * Rest peripheral registers to default value
  *
  * @param hal Context of the HAL layer.
  */
-void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal);
+void spi_slave_hal_hw_reset(spi_slave_hal_context_t *hal);
+
+/**
+ * Rest hw fifo in peripheral, for a CPU controlled trans
+ *
+ * @param hal Context of the HAL layer.
+ */
+void spi_slave_hal_hw_fifo_reset(spi_slave_hal_context_t *hal, bool tx_rst, bool rx_rst);
+
+/**
+ * Push data needed to be transmit into hw fifo
+ *
+ * @param hal Context of the HAL layer.
+ */
+void spi_slave_hal_push_tx_buffer(spi_slave_hal_context_t *hal);
+
+/**
+ * Config transaction bit length for slave
+ *
+ * @param hal Context of the HAL layer.
+ */
+void spi_slave_hal_set_trans_bitlen(spi_slave_hal_context_t *hal);
+
+/**
+ * Enable/Disable miso/mosi signals in peripheral
+ *
+ * @param hal Context of the HAL layer.
+ */
+void spi_slave_hal_enable_data_line(spi_slave_hal_context_t *hal);
 
 /**
  * Trigger start a user-defined transaction.
@@ -140,7 +176,7 @@ void spi_slave_hal_user_start(const spi_slave_hal_context_t *hal);
 bool spi_slave_hal_usr_is_done(spi_slave_hal_context_t* hal);
 
 /**
- * Post transaction operations, fetch data from the buffer and recored the length.
+ * Post transaction operations, fetch data from the buffer and recorded the length.
  *
  * @param hal Context of the HAL layer.
  */

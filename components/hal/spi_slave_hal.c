@@ -4,10 +4,7 @@
 
 void spi_slave_hal_init(spi_slave_hal_context_t *hal, const spi_slave_hal_config_t *hal_config)
 {
-    spi_dev_t *hw = SPI_LL_GET_HW(hal_config->host_id);
-    hal->hw = hw;
-    hal->dma_in = hal_config->dma_in;
-    hal->dma_out = hal_config->dma_out;
+    hal->hw = SPI_LL_GET_HW(hal_config->host_id);
 
     spi_ll_slave_init(hal->hw);
 
