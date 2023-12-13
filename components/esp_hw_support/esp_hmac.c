@@ -197,7 +197,9 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 esp_err_t esp_hmac_jtag_disable()
 {
     esp_crypto_hmac_lock_acquire();
+    ets_hmac_enable();
     REG_WRITE(HMAC_SET_INVALIDATE_JTAG_REG, 1);
+    ets_hmac_disable();
     esp_crypto_hmac_lock_release();
 
     ESP_LOGD(TAG, "Invalidate JTAG result register. JTAG disabled.");
@@ -279,7 +281,9 @@ esp_err_t esp_hmac_jtag_disable()
 {
     esp_crypto_dma_lock_acquire();
 
+    ets_hmac_enable();
     REG_WRITE(HMAC_SET_INVALIDATE_JTAG_REG, 1);
+    ets_hmac_disable();
 
     esp_crypto_dma_lock_release();
 
