@@ -64,33 +64,33 @@ static void pinned_task(void *arg)
 
 TEST_CASE("FPU: Usage in task", "[freertos]")
 {
-    SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(configNUM_CORES * TEST_PINNED_NUM_TASKS, 0);
+    SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(CONFIG_FREERTOS_NUMBER_OF_CORES * TEST_PINNED_NUM_TASKS, 0);
     TEST_ASSERT_NOT_EQUAL(NULL, done_sem);
 
     for (int iter = 0; iter < TEST_PINNED_NUM_ITERS; iter++) {
-        TaskHandle_t task_handles[configNUM_CORES][TEST_PINNED_NUM_TASKS];
+        TaskHandle_t task_handles[CONFIG_FREERTOS_NUMBER_OF_CORES][TEST_PINNED_NUM_TASKS];
 
         // Create test tasks for each core
-        for (int i = 0; i < configNUM_CORES; i++) {
+        for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
             for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
                 TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(pinned_task, "task", 4096, (void *)done_sem, UNITY_FREERTOS_PRIORITY + 1, &task_handles[i][j], i));
             }
         }
 
         // Start the created tasks simultaneously
-        for (int i = 0; i < configNUM_CORES; i++) {
+        for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
             for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
                 xTaskNotifyGive(task_handles[i][j]);
             }
         }
 
         // Wait for the tasks to complete
-        for (int i = 0; i < configNUM_CORES * TEST_PINNED_NUM_TASKS; i++) {
+        for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES * TEST_PINNED_NUM_TASKS; i++) {
             xSemaphoreTake(done_sem, portMAX_DELAY);
         }
 
         // Delete the tasks
-        for (int i = 0; i < configNUM_CORES; i++) {
+        for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
             for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
                 vTaskDelete(task_handles[i][j]);
             }
@@ -123,7 +123,7 @@ Expected:
     - Each task cleans up its FPU context on deletion
 */
 
-#if configNUM_CORES > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 
 #define TEST_UNPINNED_NUM_ITERS     5
 
@@ -248,5 +248,5 @@ TEST_CASE("FPU: Unsolicited context switch between tasks using FPU", "[freertos]
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
-#endif // configNUM_CORES > 1
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 #endif // SOC_CPU_HAS_FPU

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
+#include "sdkconfig.h"
 #include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_app_trace_membufs_proto.h"
@@ -56,7 +57,7 @@ static bool esp_apptrace_riscv_host_data_pending(void);
 
 const static char *TAG = "esp_apptrace";
 
-static esp_apptrace_riscv_ctrl_block_t s_tracing_ctrl[portNUM_PROCESSORS];
+static esp_apptrace_riscv_ctrl_block_t s_tracing_ctrl[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
 {

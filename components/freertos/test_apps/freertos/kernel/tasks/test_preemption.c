@@ -85,7 +85,7 @@ TEST_CASE("Yield from lower priority task, same CPU", "[freertos]")
     }
 }
 
-#if (portNUM_PROCESSORS == 2) && !CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
+#if (CONFIG_FREERTOS_NUMBER_OF_CORES == 2) && !CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
 TEST_CASE("Yield from lower priority task, other CPU", "[freertos]")
 {
     uint32_t trigger_ccount, yield_ccount, now_ccount, delta;

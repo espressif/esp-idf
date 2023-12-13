@@ -11,7 +11,7 @@
 #include <esp_types.h>
 #include <stdio.h>
 #include <inttypes.h>
-
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -78,7 +78,7 @@ TEST_CASE("portMUX recursive locks (no contention)", "[freertos]")
     BENCHMARK_END("no contention recursive");
 }
 
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
 
 static volatile int shared_value;
 static portMUX_TYPE *shared_mux;
@@ -164,6 +164,6 @@ TEST_CASE("portMUX high contention, PSRAM", "[freertos]")
 }
 #endif// CONFIG_SPIRAM_USE_MALLOC || CONFIG_SPIRAM_USE_CAPS_ALLOC
 
-#endif // portNUM_PROCESSORS == 2
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES == 2
 
 #endif // !CONFIG_FREERTOS_SMP

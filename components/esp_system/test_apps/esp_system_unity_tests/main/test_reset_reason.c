@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include "sdkconfig.h"
 #include <inttypes.h>
 #include "unity.h"
 #include "esp_system.h"
@@ -211,7 +212,7 @@ static void do_restart(void)
     esp_restart();
 }
 
-#if portNUM_PROCESSORS > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 static void do_restart_from_app_cpu(void)
 {
     setup_values();
@@ -239,7 +240,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart", "[reset_reaso
                           do_restart,
                           check_reset_reason_sw);
 
-#if portNUM_PROCESSORS > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", "[reset_reason][reset="RESET"]",
                           do_restart_from_app_cpu,
                           check_reset_reason_sw);

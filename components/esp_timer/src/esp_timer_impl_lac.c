@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "sys/param.h"
 #include "esp_timer_impl.h"
 #include "esp_timer.h"
@@ -88,7 +89,7 @@ static const char* TAG = "esp_timer_impl";
 
 /* Interrupt handle returned by the interrupt allocator */
 #ifdef CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
-#define ISR_HANDLERS (portNUM_PROCESSORS)
+#define ISR_HANDLERS (CONFIG_FREERTOS_NUMBER_OF_CORES)
 #else
 #define ISR_HANDLERS (1)
 #endif

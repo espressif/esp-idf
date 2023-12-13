@@ -383,7 +383,7 @@ TEST_CASE("GPIO_interrupt_on_other_CPUs_test", "[gpio]")
     TaskHandle_t gpio_task_handle;
     test_gpio_config_mode_input_output(TEST_GPIO_INPUT_OUTPUT_IO1);
 
-    for (int cpu_num = 1; cpu_num < portNUM_PROCESSORS; ++cpu_num) {
+    for (int cpu_num = 1; cpu_num < CONFIG_FREERTOS_NUMBER_OF_CORES; ++cpu_num) {
         // We assume unit-test task is running on core 0, so we install gpio interrupt on other cores
         edge_intr_times = 0;
         TEST_ESP_OK(gpio_set_level(TEST_GPIO_INPUT_OUTPUT_IO1, 0));

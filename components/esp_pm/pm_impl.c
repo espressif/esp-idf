@@ -127,16 +127,16 @@ static skip_light_sleep_cb_t s_periph_skip_light_sleep_cb[PERIPH_SKIP_LIGHT_SLEE
  * This in turn gets used in IDLE hook to decide if `waiti` needs
  * to be invoked or not.
  */
-static bool s_skipped_light_sleep[portNUM_PROCESSORS];
+static bool s_skipped_light_sleep[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
 /* When light sleep is finished on one CPU, it is possible that the other CPU
  * will enter light sleep again very soon, before interrupts on the first CPU
  * get a chance to run. To avoid such situation, set a flag for the other CPU to
  * skip light sleep attempt.
  */
-static bool s_skip_light_sleep[portNUM_PROCESSORS];
-#endif // portNUM_PROCESSORS == 2
+static bool s_skip_light_sleep[CONFIG_FREERTOS_NUMBER_OF_CORES];
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES == 2
 
 static _lock_t s_skip_light_sleep_lock;
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -144,12 +144,12 @@ static _lock_t s_skip_light_sleep_lock;
 /* A flag indicating that Idle hook has run on a given CPU;
  * Next interrupt on the same CPU will take s_rtos_lock_handle.
  */
-static bool s_core_idle[portNUM_PROCESSORS];
+static bool s_core_idle[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 /* When no RTOS tasks are active, these locks are released to allow going into
  * a lower power mode. Used by ISR hook and idle hook.
  */
-static esp_pm_lock_handle_t s_rtos_lock_handle[portNUM_PROCESSORS];
+static esp_pm_lock_handle_t s_rtos_lock_handle[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 /* Lookup table of CPU frequency configs to be used in each mode.
  * Initialized by esp_pm_impl_init and modified by esp_pm_configure.
@@ -185,7 +185,7 @@ static uint32_t s_light_sleep_counts, s_light_sleep_reject_counts;
 /* Indicates to the ISR hook that CCOMPARE needs to be updated on the given CPU.
  * Used in conjunction with cross-core interrupt to update CCOMPARE on the other CPU.
  */
-static volatile bool s_need_update_ccompare[portNUM_PROCESSORS];
+static volatile bool s_need_update_ccompare[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 /* Divider and multiplier used to adjust (ccompare - ccount) duration.
  * Only set to non-zero values when switch is in progress.
@@ -573,7 +573,7 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
         /* Update CCOMPARE value on this CPU */
         update_ccompare();
 
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
         /* Send interrupt to the other CPU to update CCOMPARE value */
         int other_core_id = (core_id == 0) ? 1 : 0;
 
@@ -586,7 +586,7 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
                 assert(false && "failed to update CCOMPARE, possible deadlock");
             }
         }
-#endif // portNUM_PROCESSORS == 2
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES == 2
 
         s_ccount_mul = 0;
         s_ccount_div = 0;
@@ -759,13 +759,13 @@ static inline bool IRAM_ATTR periph_should_skip_light_sleep(void)
 
 static inline bool IRAM_ATTR should_skip_light_sleep(int core_id)
 {
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     if (s_skip_light_sleep[core_id]) {
         s_skip_light_sleep[core_id] = false;
         s_skipped_light_sleep[core_id] = true;
         return true;
     }
-#endif // portNUM_PROCESSORS == 2
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES == 2
 
     if (s_mode != PM_MODE_LIGHT_SLEEP || s_is_switching || periph_should_skip_light_sleep()) {
         s_skipped_light_sleep[core_id] = true;
@@ -777,7 +777,7 @@ static inline bool IRAM_ATTR should_skip_light_sleep(int core_id)
 
 static inline void IRAM_ATTR other_core_should_skip_light_sleep(int core_id)
 {
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     s_skip_light_sleep[!core_id] = true;
 #endif
 }
@@ -933,11 +933,11 @@ void esp_pm_impl_init(void)
             &s_rtos_lock_handle[0]));
     ESP_ERROR_CHECK(esp_pm_lock_acquire(s_rtos_lock_handle[0]));
 
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     ESP_ERROR_CHECK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "rtos1",
             &s_rtos_lock_handle[1]));
     ESP_ERROR_CHECK(esp_pm_lock_acquire(s_rtos_lock_handle[1]));
-#endif // portNUM_PROCESSORS == 2
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES == 2
 
     /* Configure all modes to use the default CPU frequency.
      * This will be modified later by a call to esp_pm_configure.
@@ -997,7 +997,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
 #else
     uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
 #endif
-#if defined(CONFIG_FREERTOS_SYSTICK_USES_CCOUNT) && (portNUM_PROCESSORS == 2)
+#if defined(CONFIG_FREERTOS_SYSTICK_USES_CCOUNT) && (CONFIG_FREERTOS_NUMBER_OF_CORES == 2)
     if (s_need_update_ccompare[core_id]) {
         update_ccompare();
         s_need_update_ccompare[core_id] = false;
@@ -1006,7 +1006,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     }
 #else
     leave_idle();
-#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT && portNUM_PROCESSORS == 2
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT && CONFIG_FREERTOS_NUMBER_OF_CORES == 2
 #if CONFIG_FREERTOS_SMP
     portRESTORE_INTERRUPTS(state);
 #else

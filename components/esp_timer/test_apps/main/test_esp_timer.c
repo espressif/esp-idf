@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -106,14 +107,14 @@ static void set_alarm_task(void* arg)
 
 TEST_CASE("esp_timer_impl_set_alarm stress test", "[esp_timer]")
 {
-    SemaphoreHandle_t done = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(CONFIG_FREERTOS_NUMBER_OF_CORES, 0);
     xTaskCreatePinnedToCore(&set_alarm_task, "set_alarm_0", 4096, done, UNITY_FREERTOS_PRIORITY, NULL, 0);
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xTaskCreatePinnedToCore(&set_alarm_task, "set_alarm_1", 4096, done, UNITY_FREERTOS_PRIORITY, NULL, 1);
 #endif
 
     TEST_ASSERT(xSemaphoreTake(done, test_time_sec * 2 * 1000 / portTICK_PERIOD_MS));
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     TEST_ASSERT(xSemaphoreTake(done, test_time_sec * 2 * 1000 / portTICK_PERIOD_MS));
 #endif
     vSemaphoreDelete(done);
@@ -458,14 +459,14 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
 {
     ref_clock_init();
 
-    test_monotonic_values_state_t states[portNUM_PROCESSORS] = {0};
-    SemaphoreHandle_t done = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
-    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+    test_monotonic_values_state_t states[CONFIG_FREERTOS_NUMBER_OF_CORES] = {0};
+    SemaphoreHandle_t done = xSemaphoreCreateCounting(CONFIG_FREERTOS_NUMBER_OF_CORES, 0);
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; ++i) {
         states[i].done = done;
         xTaskCreatePinnedToCore(&timer_test_monotonic_values_task, "test", 4096, &states[i], 6, NULL, i);
     }
 
-    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; ++i) {
         TEST_ASSERT_TRUE(xSemaphoreTake(done, portMAX_DELAY));
         printf("CPU%d: %s test_cnt=%d error_cnt=%d avg_diff=%d |max_error|=%d\n",
                i, states[i].pass ? "PASS" : "FAIL",
@@ -476,7 +477,7 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
     vSemaphoreDelete(done);
     ref_clock_deinit();
 
-    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; ++i) {
         TEST_ASSERT(states[i].pass);
     }
 }

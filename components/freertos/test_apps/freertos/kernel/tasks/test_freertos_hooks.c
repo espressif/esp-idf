@@ -58,7 +58,7 @@ TEST_CASE("FreeRTOS tick hook", "[freertos]")
     const unsigned SLEEP_FOR = 20;
     tick_count = before;
     vTaskDelay(SLEEP_FOR);
-    TEST_ASSERT_UINT32_WITHIN_MESSAGE(3 * portNUM_PROCESSORS, before + SLEEP_FOR * portNUM_PROCESSORS, tick_count,
+    TEST_ASSERT_UINT32_WITHIN_MESSAGE(3 * CONFIG_FREERTOS_NUMBER_OF_CORES, before + SLEEP_FOR * CONFIG_FREERTOS_NUMBER_OF_CORES, tick_count,
                                       "The FreeRTOS tick hook should have been called approx 1 time per tick per CPU");
 }
 
@@ -81,7 +81,7 @@ void vTaskPreDeletionHook(void *pxTCB)
 
 TEST_CASE("static task cleanup hook is called based on config", "[freertos]")
 {
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
         printf("Creating task CPU %d\n", i);
         TaskHandle_t new_task = NULL;
         deleted_tcb = NULL;

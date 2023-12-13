@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "freertos_test_utils.h"
 
-#if ( configNUM_CORES > 1 )
+#if ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
 
 typedef struct {
     const TestFunction_t pxTestCode;
@@ -28,8 +29,8 @@ static void test_func_task(void * pvParameters)
 
 void vTestOnAllCores(TestFunction_t pxTestCode, void * pvTestCodeArg, uint32_t ulStackDepth, UBaseType_t uxPriority)
 {
-    SemaphoreHandle_t xTaskDoneSem = xSemaphoreCreateCounting(configNUM_CORES, 0);
-    TaskHandle_t xTaskHandles[ configNUM_CORES ];
+    SemaphoreHandle_t xTaskDoneSem = xSemaphoreCreateCounting(CONFIG_FREERTOS_NUMBER_OF_CORES, 0);
+    TaskHandle_t xTaskHandles[ CONFIG_FREERTOS_NUMBER_OF_CORES ];
     TestArgs_t xTestArgs = {
         .pxTestCode = pxTestCode,
         .pvTestCodeArg = pvTestCodeArg,
@@ -37,7 +38,7 @@ void vTestOnAllCores(TestFunction_t pxTestCode, void * pvTestCodeArg, uint32_t u
     };
 
     /* Create a separate task on each core to run the test function */
-    for (BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++) {
+    for (BaseType_t xCoreID = 0; xCoreID < CONFIG_FREERTOS_NUMBER_OF_CORES; xCoreID++) {
 #if ( CONFIG_FREERTOS_SMP == 1 )
         xTaskCreateAffinitySet(test_func_task,
                                "task",
@@ -58,15 +59,15 @@ void vTestOnAllCores(TestFunction_t pxTestCode, void * pvTestCodeArg, uint32_t u
     }
 
     /* Wait for each tasks to complete test */
-    for (BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++) {
+    for (BaseType_t xCoreID = 0; xCoreID < CONFIG_FREERTOS_NUMBER_OF_CORES; xCoreID++) {
         xSemaphoreTake(xTaskDoneSem, portMAX_DELAY);
     }
 
     /* Cleanup */
-    for (BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++) {
+    for (BaseType_t xCoreID = 0; xCoreID < CONFIG_FREERTOS_NUMBER_OF_CORES; xCoreID++) {
         vTaskDelete(xTaskHandles[ xCoreID ]);
     }
     vSemaphoreDelete(xTaskDoneSem);
 }
 
-#endif /* ( configNUM_CORES > 1 ) */
+#endif /* ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) */

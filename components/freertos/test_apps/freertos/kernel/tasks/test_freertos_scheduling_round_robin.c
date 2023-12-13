@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -51,7 +52,7 @@ Test flow as follows:
 
 static QueueHandle_t core0_run_order_queue;
 static QueueHandle_t core1_run_order_queue;
-static uint32_t total_iter_count[configNUM_CORES] = {0};
+static uint32_t total_iter_count[CONFIG_FREERTOS_NUMBER_OF_CORES] = {0};
 
 static void spin_task(void *arg)
 {

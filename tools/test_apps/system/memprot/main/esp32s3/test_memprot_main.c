@@ -626,7 +626,7 @@ esp_memp_config_t memp_cfg = {
     .lock_feature = false,
     .split_addr = NULL,
     .mem_type_mask = MEMPROT_TYPE_ALL,
-#if portNUM_PROCESSORS > 1
+#if configNUM_CORES > 1
     .target_cpu_count = 2,
     .target_cpu = {PRO_CPU_NUM, APP_CPU_NUM}
 #else
@@ -689,7 +689,7 @@ void app_main(void)
     xSemaphoreTake(ctx.sem, portMAX_DELAY);
 
     //multicore setup
-    if (portNUM_PROCESSORS > 1) {
+    if (configNUM_CORES > 1) {
         ctx.core = APP_CPU_NUM;
         xTaskCreatePinnedToCore(task_on_CPU, "task_APP_CPU", 4096, &ctx, 3, NULL, APP_CPU_NUM);
         xSemaphoreTake(ctx.sem, portMAX_DELAY);

@@ -17,7 +17,7 @@
  * deletion callbacks will still be carried out by the Idle Task.
  */
 #include <stdio.h>
-
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -57,7 +57,7 @@ TEST_CASE("FreeRTOS Delete Tasks", "[freertos]")
     /* -------------- Test vTaskDelete() on currently running tasks ----------------*/
     uint32_t before_count = uxTaskGetNumberOfTasks();
     uint32_t before_heap = heap_caps_get_free_size(HEAP_CAPS);
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
         for (int j = 0; j < NO_OF_TSKS; j++) {
             TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(tsk_self_del, "tsk_self", 1024, NULL, configMAX_PRIORITIES - 1, NULL, i));
         }
@@ -116,8 +116,8 @@ static void tsk_blocks_frequently(void *param)
 
 TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
 {
-    TaskHandle_t blocking_tasks[portNUM_PROCESSORS + 1]; // one per CPU, plus one unpinned task
-    tsk_blocks_param_t params[portNUM_PROCESSORS + 1] = { 0 };
+    TaskHandle_t blocking_tasks[CONFIG_FREERTOS_NUMBER_OF_CORES + 1]; // one per CPU, plus one unpinned task
+    tsk_blocks_param_t params[CONFIG_FREERTOS_NUMBER_OF_CORES + 1] = { 0 };
 
     unsigned before = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     printf("Free memory at start %u\n", before);
@@ -131,19 +131,19 @@ TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
     for (unsigned iter = 0; iter < 1000; iter++) {
         // Create everything
         SemaphoreHandle_t sem = xSemaphoreCreateMutex();
-        for (unsigned i = 0; i < portNUM_PROCESSORS + 1; i++) {
+        for (unsigned i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES + 1; i++) {
             params[i].deleted = false;
             params[i].sem = sem;
 
             TEST_ASSERT_EQUAL(pdTRUE,
                               xTaskCreatePinnedToCore(tsk_blocks_frequently, "tsk_block", 4096, &params[i],
                                                       UNITY_FREERTOS_PRIORITY - 1, &blocking_tasks[i],
-                                                      i < portNUM_PROCESSORS ? i : tskNO_AFFINITY));
+                                                      i < CONFIG_FREERTOS_NUMBER_OF_CORES ? i : tskNO_AFFINITY));
         }
 
         vTaskDelay(5); // Let the tasks juggle the mutex for a bit
 
-        for (unsigned i = 0; i < portNUM_PROCESSORS + 1; i++) {
+        for (unsigned i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES + 1; i++) {
             vTaskDelete(blocking_tasks[i]);
             params[i].deleted = true;
         }

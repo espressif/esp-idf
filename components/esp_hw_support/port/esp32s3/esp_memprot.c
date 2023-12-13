@@ -900,7 +900,7 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
     if (memp_config->mem_type_mask == MEMPROT_TYPE_NONE) {
         return ESP_ERR_NO_MEM;
     }
-    if (memp_config->target_cpu_count < 1 || memp_config->target_cpu_count > portNUM_PROCESSORS) {
+    if (memp_config->target_cpu_count < 1 || memp_config->target_cpu_count > CONFIG_FREERTOS_NUMBER_OF_CORES) {
         return ESP_ERR_MEMPROT_CPUID_INVALID;
     }
 

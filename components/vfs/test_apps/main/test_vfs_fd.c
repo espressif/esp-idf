@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -176,7 +177,7 @@ TEST_CASE("VFS can handle concurrent open/close requests", "[vfs]")
     TEST_ASSERT_NOT_NULL(param8.done);
 
     const int cpuid0 = 0;
-    const int cpuid1 = portNUM_PROCESSORS - 1;
+    const int cpuid1 = CONFIG_FREERTOS_NUMBER_OF_CORES - 1;
 
     srand(time(NULL));
 

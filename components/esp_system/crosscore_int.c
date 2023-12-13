@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
 #include <stdint.h>
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -26,7 +27,7 @@
 #define REASON_TWDT_ABORT       BIT(4)
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
-static volatile uint32_t reason[portNUM_PROCESSORS];
+static volatile uint32_t reason[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 /*
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but
@@ -91,7 +92,7 @@ void esp_crosscore_int_init(void)
     reason[esp_cpu_get_core_id()] = 0;
     portEXIT_CRITICAL(&reason_spinlock);
     esp_err_t err __attribute__((unused)) = ESP_OK;
-#if portNUM_PROCESSORS > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
     if (esp_cpu_get_core_id() == 0) {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
     } else {
@@ -105,7 +106,7 @@ void esp_crosscore_int_init(void)
 
 static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask)
 {
-    assert(core_id < portNUM_PROCESSORS);
+    assert(core_id < CONFIG_FREERTOS_NUMBER_OF_CORES);
     //Mark the reason we interrupt the other CPU
     portENTER_CRITICAL_ISR(&reason_spinlock);
     reason[core_id] |= reason_mask;
