@@ -47,6 +47,8 @@ TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
 	TEST_ASSERT(memcmp(PMK, expected_pmk, PMK_LEN) == 0);
 	ESP_LOG_BUFFER_HEXDUMP("PMK", PMK, PMK_LEN, ESP_LOG_INFO);
 	ESP_LOG_BUFFER_HEXDUMP("expected_pmk", expected_pmk, PMK_LEN, ESP_LOG_INFO);
+	mbedtls_md_free(&sha1_ctx);
+
 	/* Calculate PMK using random ssid and passphrase and compare */
 	os_memset(ssid, 0, MAX_SSID_LEN);
 	os_memset(passphrase, 0, MAX_PASSPHRASE_LEN);
@@ -71,4 +73,5 @@ TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
 	ESP_LOG_BUFFER_HEXDUMP("PMK", PMK, PMK_LEN, ESP_LOG_INFO);
 	ESP_LOG_BUFFER_HEXDUMP("expected_pmk", expected_pmk1, PMK_LEN, ESP_LOG_INFO);
 	TEST_ASSERT(memcmp(PMK, expected_pmk1, PMK_LEN) == 0);
+	mbedtls_md_free(&sha1_ctx_1);
 }
