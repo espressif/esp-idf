@@ -458,6 +458,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_ESPNOW_IF
     ERR_TBL_IT(ESP_ERR_ESPNOW_IF),                              /* 12396 0x306c Interface error */
 #   endif
+#   ifdef      ESP_ERR_ESPNOW_CHAN
+    ERR_TBL_IT(ESP_ERR_ESPNOW_CHAN),                            /* 12397 0x306d Channel error */
+#   endif
     // components/wpa_supplicant/esp_supplicant/include/esp_dpp.h
 #   ifdef      ESP_ERR_DPP_FAILURE
     ERR_TBL_IT(ESP_ERR_DPP_FAILURE),                            /* 12439 0x3097 Generic failure during DPP Operation */
