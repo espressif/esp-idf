@@ -106,7 +106,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
 通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项。
 
-启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
+启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储来自 lwip、net80211、libpp, wpa_supplicant 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
 
 通过将宏 ``EXT_RAM_BSS_ATTR`` 应用于任何静态声明（未初始化为非零值），可以将附加数据从内部 BSS 段移到片外 RAM。
 
