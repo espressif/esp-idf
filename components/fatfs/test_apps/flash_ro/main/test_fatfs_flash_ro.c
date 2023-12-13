@@ -263,7 +263,7 @@ TEST_CASE("(raw) multiple tasks can use same volume", "[fatfs]")
     read_test_arg_t args4 = READ_TEST_ARG_INIT(names[3], 0x34343434);
 
     const int cpuid_0 = 0;
-    const int cpuid_1 = portNUM_PROCESSORS - 1;
+    const int cpuid_1 = configNUM_CORES - 1;
     const int stack_size = 4096;
 
     printf("reading files 1.txt 2.txt 3.txt 4.txt \n");

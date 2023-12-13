@@ -62,8 +62,8 @@ static void tsk_blocks_frequently(void *param)
 
 TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos][ignore]") // TODO: esp_rom_delay_us is interrupted by signal
 {
-    TaskHandle_t blocking_tasks[portNUM_PROCESSORS + 1]; // one per CPU, plus one unpinned task
-    tsk_blocks_param_t params[portNUM_PROCESSORS + 1] = { 0 };
+    TaskHandle_t blocking_tasks[configNUM_CORES + 1]; // one per CPU, plus one unpinned task
+    tsk_blocks_param_t params[configNUM_CORES + 1] = { 0 };
 
     esp_rom_delay_us(100);
 
@@ -79,19 +79,19 @@ TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos][ignore]") // TODO: esp_ro
     for(unsigned iter = 0; iter < 1000; iter++) {
         // Create everything
         SemaphoreHandle_t sem = xSemaphoreCreateMutex();
-        for(unsigned i = 0; i < portNUM_PROCESSORS + 1; i++) {
+        for(unsigned i = 0; i < configNUM_CORES + 1; i++) {
             params[i].deleted = false;
             params[i].sem = sem;
 
             TEST_ASSERT_EQUAL(pdTRUE,
                               xTaskCreatePinnedToCore(tsk_blocks_frequently, "tsk_block", 4096, &params[i],
                                                       CONFIG_UNITY_FREERTOS_PRIORITY - 1, &blocking_tasks[i],
-                                                      i < portNUM_PROCESSORS ? i : tskNO_AFFINITY));
+                                                      i < configNUM_CORES ? i : tskNO_AFFINITY));
         }
 
         vTaskDelay(5); // Let the tasks juggle the mutex for a bit
 
-        for(unsigned i = 0; i < portNUM_PROCESSORS + 1; i++) {
+        for(unsigned i = 0; i < configNUM_CORES + 1; i++) {
             vTaskDelete(blocking_tasks[i]);
             params[i].deleted = true;
         }

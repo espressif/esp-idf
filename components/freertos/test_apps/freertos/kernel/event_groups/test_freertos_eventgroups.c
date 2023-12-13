@@ -61,7 +61,7 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
        signal it, or they get out of sync.
      */
     for (int c = 0; c < NUM_TASKS; c++) {
-        xTaskCreatePinnedToCore(task_event_group_call_response, "tsk_call_resp", 4096, (void *)c, configMAX_PRIORITIES - 1, &task_handles[c], c % portNUM_PROCESSORS);
+        xTaskCreatePinnedToCore(task_event_group_call_response, "tsk_call_resp", 4096, (void *)c, configMAX_PRIORITIES - 1, &task_handles[c], c % configNUM_CORES);
     }
 
     /* Tasks all start instantly, but this task will resume running at the same time as the higher priority tasks on the
@@ -115,7 +115,7 @@ TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
     done_sem = xSemaphoreCreateCounting(NUM_TASKS, 0);
 
     for (int c = 0; c < NUM_TASKS; c++) {
-        xTaskCreatePinnedToCore(task_test_sync, "task_test_sync", 4096, (void *)c, configMAX_PRIORITIES - 1, NULL, c % portNUM_PROCESSORS);
+        xTaskCreatePinnedToCore(task_test_sync, "task_test_sync", 4096, (void *)c, configMAX_PRIORITIES - 1, NULL, c % configNUM_CORES);
     }
 
     for (int c = 0; c < NUM_TASKS; c++) {

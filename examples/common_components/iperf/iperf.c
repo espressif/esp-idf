@@ -108,7 +108,7 @@ static esp_err_t iperf_start_report(void)
 {
     int ret;
 
-    ret = xTaskCreatePinnedToCore(iperf_report_task, IPERF_REPORT_TASK_NAME, IPERF_REPORT_TASK_STACK, NULL, IPERF_REPORT_TASK_PRIORITY, NULL, portNUM_PROCESSORS - 1);
+    ret = xTaskCreatePinnedToCore(iperf_report_task, IPERF_REPORT_TASK_NAME, IPERF_REPORT_TASK_STACK, NULL, IPERF_REPORT_TASK_PRIORITY, NULL, configNUM_CORES - 1);
 
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "create task %s failed", IPERF_REPORT_TASK_NAME);
@@ -584,7 +584,7 @@ esp_err_t iperf_start(iperf_cfg_t *cfg)
         return ESP_FAIL;
     }
     memset(s_iperf_ctrl.buffer, 0, s_iperf_ctrl.buffer_len);
-    ret = xTaskCreatePinnedToCore(iperf_task_traffic, IPERF_TRAFFIC_TASK_NAME, IPERF_TRAFFIC_TASK_STACK, NULL, IPERF_TRAFFIC_TASK_PRIORITY, NULL, portNUM_PROCESSORS - 1);
+    ret = xTaskCreatePinnedToCore(iperf_task_traffic, IPERF_TRAFFIC_TASK_NAME, IPERF_TRAFFIC_TASK_STACK, NULL, IPERF_TRAFFIC_TASK_PRIORITY, NULL, configNUM_CORES - 1);
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "create task %s failed", IPERF_TRAFFIC_TASK_NAME);
         free(s_iperf_ctrl.buffer);

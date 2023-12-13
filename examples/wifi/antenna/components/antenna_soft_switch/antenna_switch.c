@@ -282,7 +282,7 @@ esp_err_t  esp_wifi_set_ant_soft_switch(const wifi_antenna_auto_switch_config_t 
     /**< Select the optimal antenna*/
     antenna_switch_function(config);
 
-    ret = xTaskCreatePinnedToCore(antenna_soft_switching_task, SOFT_SWITCHING_NAME, SOFT_SWITCHING_STACK, (void *)config, SOFT_SWITCHING_PRIORITY, &antenna_task_handle, portNUM_PROCESSORS - 1);
+    ret = xTaskCreatePinnedToCore(antenna_soft_switching_task, SOFT_SWITCHING_NAME, SOFT_SWITCHING_STACK, (void *)config, SOFT_SWITCHING_PRIORITY, &antenna_task_handle, configNUM_CORES - 1);
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "create task %s failed", SOFT_SWITCHING_NAME);
         return ESP_FAIL;

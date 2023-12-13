@@ -298,4 +298,8 @@
  * - Any other macros required by the rest of ESP-IDF
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#define portNUM_PROCESSORS    configNUM_CORES
+#ifdef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    #define portNUM_PROCESSORS                          1
+#else
+    #define portNUM_PROCESSORS                          2
+#endif /* CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE */

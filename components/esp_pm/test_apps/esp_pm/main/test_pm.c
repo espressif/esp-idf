@@ -281,7 +281,7 @@ TEST_CASE("vTaskDelay duration is correct with light sleep enabled", "[pm]")
         printf("CPU0: %d %d\n", args.delay_us, args.result);
         TEST_ASSERT_INT32_WITHIN(1000 * portTICK_PERIOD_MS * 2, args.delay_us, args.result);
 
-#if portNUM_PROCESSORS == 2
+#if configNUM_CORES == 2
         xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *) &args, 3, NULL, 1);
         TEST_ASSERT( xSemaphoreTake(done_sem, delay_ms * 10 / portTICK_PERIOD_MS) );
         printf("CPU1: %d %d\n", args.delay_us, args.result);

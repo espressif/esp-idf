@@ -24,8 +24,8 @@
 #define MAX_HOOKS 8
 
 static portMUX_TYPE hooks_spinlock = portMUX_INITIALIZER_UNLOCKED;
-static esp_freertos_idle_cb_t idle_cb[portNUM_PROCESSORS][MAX_HOOKS] = {0};
-static esp_freertos_tick_cb_t tick_cb[portNUM_PROCESSORS][MAX_HOOKS] = {0};
+static esp_freertos_idle_cb_t idle_cb[configNUM_CORES][MAX_HOOKS] = {0};
+static esp_freertos_tick_cb_t tick_cb[configNUM_CORES][MAX_HOOKS] = {0};
 
 void IRAM_ATTR esp_vApplicationTickHook(void)
 {
@@ -62,7 +62,7 @@ void esp_vApplicationIdleHook(void)
 
 esp_err_t esp_register_freertos_idle_hook_for_cpu(esp_freertos_idle_cb_t new_idle_cb, UBaseType_t cpuid)
 {
-    if (cpuid >= portNUM_PROCESSORS) {
+    if (cpuid >= configNUM_CORES) {
         return ESP_ERR_INVALID_ARG;
     }
     portENTER_CRITICAL(&hooks_spinlock);
@@ -84,7 +84,7 @@ esp_err_t esp_register_freertos_idle_hook(esp_freertos_idle_cb_t new_idle_cb)
 
 esp_err_t esp_register_freertos_tick_hook_for_cpu(esp_freertos_tick_cb_t new_tick_cb, UBaseType_t cpuid)
 {
-    if (cpuid >= portNUM_PROCESSORS) {
+    if (cpuid >= configNUM_CORES) {
         return ESP_ERR_INVALID_ARG;
     }
     portENTER_CRITICAL(&hooks_spinlock);
@@ -106,7 +106,7 @@ esp_err_t esp_register_freertos_tick_hook(esp_freertos_tick_cb_t new_tick_cb)
 
 void esp_deregister_freertos_idle_hook_for_cpu(esp_freertos_idle_cb_t old_idle_cb, UBaseType_t cpuid)
 {
-    if (cpuid >= portNUM_PROCESSORS) {
+    if (cpuid >= configNUM_CORES) {
         return;
     }
     portENTER_CRITICAL(&hooks_spinlock);
@@ -121,7 +121,7 @@ void esp_deregister_freertos_idle_hook_for_cpu(esp_freertos_idle_cb_t old_idle_c
 void esp_deregister_freertos_idle_hook(esp_freertos_idle_cb_t old_idle_cb)
 {
     portENTER_CRITICAL(&hooks_spinlock);
-    for (int m = 0; m < portNUM_PROCESSORS; m++) {
+    for (int m = 0; m < configNUM_CORES; m++) {
         esp_deregister_freertos_idle_hook_for_cpu(old_idle_cb, m);
     }
     portEXIT_CRITICAL(&hooks_spinlock);
@@ -129,7 +129,7 @@ void esp_deregister_freertos_idle_hook(esp_freertos_idle_cb_t old_idle_cb)
 
 void esp_deregister_freertos_tick_hook_for_cpu(esp_freertos_tick_cb_t old_tick_cb, UBaseType_t cpuid)
 {
-    if (cpuid >= portNUM_PROCESSORS) {
+    if (cpuid >= configNUM_CORES) {
         return;
     }
     portENTER_CRITICAL(&hooks_spinlock);
@@ -144,7 +144,7 @@ void esp_deregister_freertos_tick_hook_for_cpu(esp_freertos_tick_cb_t old_tick_c
 void esp_deregister_freertos_tick_hook(esp_freertos_tick_cb_t old_tick_cb)
 {
     portENTER_CRITICAL(&hooks_spinlock);
-    for (int m = 0; m < portNUM_PROCESSORS; m++) {
+    for (int m = 0; m < configNUM_CORES; m++) {
         esp_deregister_freertos_tick_hook_for_cpu(old_tick_cb, m);
     }
     portEXIT_CRITICAL(&hooks_spinlock);

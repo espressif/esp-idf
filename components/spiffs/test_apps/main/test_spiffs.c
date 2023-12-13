@@ -519,7 +519,7 @@ static void test_spiffs_concurrent(const char* filename_prefix)
 
     printf("writing f1 and f2\n");
     const int cpuid_0 = 0;
-    const int cpuid_1 = portNUM_PROCESSORS - 1;
+    const int cpuid_1 = configNUM_CORES - 1;
     xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, cpuid_0);
     xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, cpuid_1);
 

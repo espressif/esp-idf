@@ -197,7 +197,7 @@ TEST_CASE("context switch saves FP registers", "[fp]")
     const int prio = UNITY_FREERTOS_PRIORITY + 1;
     TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk1", 2048, &state, prio, NULL, 0));
     TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk2", 2048, &state, prio, NULL, 0));
-    TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk3", 2048, &state, prio, NULL, portNUM_PROCESSORS - 1));
+    TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk3", 2048, &state, prio, NULL, configNUM_CORES - 1));
     TEST_ASSERT(xTaskCreatePinnedToCore(tskTestFP, "tsk4", 2048, &state, prio, NULL, 0));
     for (int i = 0; i < 4; ++i) {
         TEST_ASSERT(xSemaphoreTake(state.done, pdMS_TO_TICKS(5000)));

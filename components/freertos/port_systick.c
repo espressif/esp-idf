@@ -94,7 +94,7 @@ void vSystimerSetup(void)
             systimer_hal_select_alarm_mode(&systimer_hal, alarm_id, SYSTIMER_ALARM_MODE_ONESHOT);
         }
 
-        for (cpuid = 0; cpuid < portNUM_PROCESSORS; ++cpuid) {
+        for (cpuid = 0; cpuid < configNUM_CORES; ++cpuid) {
             uint32_t alarm_id = SYSTIMER_ALARM_OS_TICK_CORE0 + cpuid;
 
             /* configure the timer */

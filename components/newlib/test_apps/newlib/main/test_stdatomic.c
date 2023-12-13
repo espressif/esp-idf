@@ -179,7 +179,7 @@ TEST_CASE("stdatomic - test_8bit_atomics", "[newlib_stdatomic]")
     pthread_t thread1;                                                       \
     pthread_t thread2;                                                       \
     esp_pthread_cfg_t cfg = esp_pthread_get_default_config();                \
-    cfg.pin_to_core = (xPortGetCoreID() + 1) % portNUM_PROCESSORS;           \
+    cfg.pin_to_core = (xPortGetCoreID() + 1) % configNUM_CORES;           \
     esp_pthread_set_cfg(&cfg);                                               \
     pthread_create(&thread1, NULL, exclusion_task_ ## n, (void*) 1);         \
     cfg.pin_to_core = xPortGetCoreID();                                      \
@@ -237,7 +237,7 @@ TEST_CASE("stdatomic - test_" #NAME, "[newlib_stdatomic]")                      
   pthread_t thread_id2;                                                           \
   var_##NAME = (INIT);                                                            \
   esp_pthread_cfg_t cfg = esp_pthread_get_default_config();                       \
-  cfg.pin_to_core = (xPortGetCoreID() + 1) % portNUM_PROCESSORS;                  \
+  cfg.pin_to_core = (xPortGetCoreID() + 1) % configNUM_CORES;                  \
   esp_pthread_set_cfg(&cfg);                                                      \
   pthread_create (&thread_id1, NULL, test_thread_##NAME, NULL);                   \
   cfg.pin_to_core = xPortGetCoreID();                                             \
@@ -271,7 +271,7 @@ TEST_CASE("stdatomic - test_" #NAME, "[newlib_stdatomic]")                     \
   var_##NAME = (INIT);                                                         \
   const LHSTYPE EXPECTED = (FINAL);                                            \
   esp_pthread_cfg_t cfg = esp_pthread_get_default_config();                    \
-  cfg.pin_to_core = (xPortGetCoreID() + 1) % portNUM_PROCESSORS;               \
+  cfg.pin_to_core = (xPortGetCoreID() + 1) % configNUM_CORES;               \
   esp_pthread_set_cfg(&cfg);                                                   \
   pthread_create (&thread_id1, NULL, test_thread_##NAME, NULL);                \
   cfg.pin_to_core = xPortGetCoreID();                                          \

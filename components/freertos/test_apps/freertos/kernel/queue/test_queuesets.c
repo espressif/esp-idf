@@ -139,16 +139,16 @@ static void send_func(void *arg)
 TEST_CASE("Test queue sets multi-core", "[freertos]")
 {
     // Create done semaphore
-    done_sem = xSemaphoreCreateCounting(portNUM_PROCESSORS - 1, 0);
+    done_sem = xSemaphoreCreateCounting(configNUM_CORES - 1, 0);
     TEST_ASSERT_NOT_EQUAL(NULL, done_sem);
 
     // Create queues and queue set
-    QueueHandle_t queues[portNUM_PROCESSORS];
+    QueueHandle_t queues[configNUM_CORES];
     QueueSetHandle_t queue_set;
-    allocate_resources(portNUM_PROCESSORS, QUEUE_LEN, queues, &queue_set);
+    allocate_resources(configNUM_CORES, QUEUE_LEN, queues, &queue_set);
 
     // Create tasks of the same priority for all cores except for core 0
-    for (int i = 1; i < portNUM_PROCESSORS; i++) {
+    for (int i = 1; i < configNUM_CORES; i++) {
         TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(send_func, "send", 2048, (void *)queues[i], UNITY_FREERTOS_PRIORITY, NULL, i));
     }
 
@@ -156,30 +156,30 @@ TEST_CASE("Test queue sets multi-core", "[freertos]")
     send_func((void *)queues[0]);
 
     // Wait for all other cores to be done
-    for (int i = 1; i < portNUM_PROCESSORS; i++) {
+    for (int i = 1; i < configNUM_CORES; i++) {
         xSemaphoreTake(done_sem, portMAX_DELAY);
     }
 
     // Read queues from the queue set, then read an item from the queue
-    uint32_t queues_check_count[portNUM_PROCESSORS] = {0};
+    uint32_t queues_check_count[configNUM_CORES] = {0};
     QueueSetMemberHandle_t member = xQueueSelectFromSet(queue_set, 0);
     while (member != NULL) {
         // Read the core ID from the queue, check that core ID is sane
         BaseType_t core_id;
         TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(member, &core_id, 0));
-        TEST_ASSERT_LESS_THAN(portNUM_PROCESSORS, core_id);
+        TEST_ASSERT_LESS_THAN(configNUM_CORES, core_id);
         queues_check_count[core_id]++;
 
         // Get next member
         member = xQueueSelectFromSet(queue_set, 0);
     }
     // Check that all items from all queues have been read
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < configNUM_CORES; i++) {
         TEST_ASSERT_EQUAL(QUEUE_LEN, queues_check_count[i]);
     }
 
     // Cleanup queues and queue set
-    free_resources(portNUM_PROCESSORS, queues, queue_set);
+    free_resources(configNUM_CORES, queues, queue_set);
     // Cleanup done sem
     vSemaphoreDelete(done_sem);
     done_sem = NULL;

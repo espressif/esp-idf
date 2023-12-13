@@ -29,20 +29,20 @@ static void counter_task(void *param)
 TEST_CASE("Get/Set Priorities", "[freertos]")
 {
     /* Two tasks per processor */
-    TaskHandle_t tasks[portNUM_PROCESSORS][2] = { 0 };
-    unsigned volatile counters[portNUM_PROCESSORS][2] = { 0 };
+    TaskHandle_t tasks[configNUM_CORES][2] = { 0 };
+    unsigned volatile counters[configNUM_CORES][2] = { 0 };
 
     TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY, uxTaskPriorityGet(NULL));
 
     /* create a matrix of counter tasks on each core */
-    for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
+    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
         for (int task = 0; task < 2; task++) {
             xTaskCreatePinnedToCore(counter_task, "count", 2048, (void *)&(counters[cpu][task]), CONFIG_UNITY_FREERTOS_PRIORITY - task, &(tasks[cpu][task]), cpu);
         }
     }
 
     /* check they were created with the expected priorities */
-    for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
+    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
         for (int task = 0; task < 2; task++) {
             TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY - task, uxTaskPriorityGet(tasks[cpu][task]));
         }
@@ -51,25 +51,25 @@ TEST_CASE("Get/Set Priorities", "[freertos]")
     vTaskDelay(10);
 
     /* at this point, only the higher priority tasks (first index) should be counting */
-    for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
+    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
         TEST_ASSERT_NOT_EQUAL(0, counters[cpu][0]);
         TEST_ASSERT_EQUAL(0, counters[cpu][1]);
     }
 
     /* swap priorities! */
-    for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
+    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
         vTaskPrioritySet(tasks[cpu][0], CONFIG_UNITY_FREERTOS_PRIORITY - 1);
         vTaskPrioritySet(tasks[cpu][1], CONFIG_UNITY_FREERTOS_PRIORITY);
     }
 
     /* check priorities have swapped... */
-    for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
+    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
         TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY -1, uxTaskPriorityGet(tasks[cpu][0]));
         TEST_ASSERT_EQUAL(CONFIG_UNITY_FREERTOS_PRIORITY, uxTaskPriorityGet(tasks[cpu][1]));
     }
 
     /* check the tasks which are counting have also swapped now... */
-    for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
+    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
         unsigned old_counters[2];
         old_counters[0] = counters[cpu][0];
         old_counters[1] = counters[cpu][1];
@@ -79,7 +79,7 @@ TEST_CASE("Get/Set Priorities", "[freertos]")
     }
 
     /* clean up */
-    for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
+    for (int cpu = 0; cpu < configNUM_CORES; cpu++) {
         for (int task = 0; task < 2; task++) {
             vTaskDelete(tasks[cpu][task]);
         }

@@ -362,7 +362,7 @@ esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callba
 #endif // CONFIG_BT_BLUEDROID_ENABLED
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
 {
-    return (uint32_t)xTaskCreatePinnedToCore(task_func, name, stack_depth, param, prio, task_handle, (core_id < portNUM_PROCESSORS ? core_id : tskNO_AFFINITY));
+    return (uint32_t)xTaskCreatePinnedToCore(task_func, name, stack_depth, param, prio, task_handle, (core_id < configNUM_CORES ? core_id : tskNO_AFFINITY));
 }
 
 static void task_delete_wrapper(void *task_handle)

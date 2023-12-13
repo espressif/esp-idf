@@ -132,11 +132,11 @@ TEST_CASE("light sleep stress test", "[deepsleep]")
     SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
     esp_sleep_enable_timer_wakeup(1000);
     xTaskCreatePinnedToCore(&test_light_sleep, "ls0", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
-#if portNUM_PROCESSORS == 2
+#if configNUM_CORES == 2
     xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
 #endif
     xSemaphoreTake(done, portMAX_DELAY);
-#if portNUM_PROCESSORS == 2
+#if configNUM_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
     vSemaphoreDelete(done);
@@ -158,11 +158,11 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
     TEST_ESP_OK(esp_timer_create(&config, &timer));
     esp_timer_start_periodic(timer, 500);
     xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
-#if portNUM_PROCESSORS == 2
+#if configNUM_CORES == 2
     xTaskCreatePinnedToCore(&test_light_sleep, "ls1", 4096, done, UNITY_FREERTOS_PRIORITY + 1, NULL, 1);
 #endif
     xSemaphoreTake(done, portMAX_DELAY);
-#if portNUM_PROCESSORS == 2
+#if configNUM_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
     vSemaphoreDelete(done);

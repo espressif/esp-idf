@@ -50,7 +50,7 @@ static void alloc_task(void *p)
         return;
     }
     snprintf(task_name, sizeof(task_name), "free%d", task_args->idx);
-    xTaskCreatePinnedToCore(free_task, task_name, 2500, queue, 5, NULL, portNUM_PROCESSORS-1);
+    xTaskCreatePinnedToCore(free_task, task_name, 2500, queue, 5, NULL, configNUM_CORES-1);
 
     // here GDB will stop at brekpoint and execute OpenOCD command to start tracing
     for(int i = 1; i < 10; i++) {

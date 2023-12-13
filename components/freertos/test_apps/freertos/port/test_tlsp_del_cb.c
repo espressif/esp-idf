@@ -60,17 +60,17 @@ static void tlsp_task(void *arg)
 
 TEST_CASE("Test TLSP deletion callbacks", "[freertos]")
 {
-    TaskHandle_t tasks[portNUM_PROCESSORS];
-    int tlsps[portNUM_PROCESSORS][NUM_TLSP];
+    TaskHandle_t tasks[configNUM_CORES];
+    int tlsps[configNUM_CORES][NUM_TLSP];
 
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < configNUM_CORES; i++) {
         TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(tlsp_task, "tlsp_tsk", configMINIMAL_STACK_SIZE * 2, (void *)&tlsps[i], UNITY_FREERTOS_PRIORITY - 1, &tasks[i], i));
     }
     // Significant delay to let tasks run and delete themselves
     vTaskDelay(pdMS_TO_TICKS(100));
 
     // Check the values of the TLSPs to see if the del cb have ran
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < configNUM_CORES; i++) {
         for (int index = 0; index < NUM_TLSP; index++) {
             // Del cb should have set the TLSP to a negative value
             TEST_ASSERT_EQUAL(-index, tlsps[i][index]);

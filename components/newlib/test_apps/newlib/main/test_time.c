@@ -49,7 +49,7 @@
 #include "hal/cache_ll.h"
 #endif
 
-#if (portNUM_PROCESSORS == 2) && CONFIG_IDF_TARGET_ARCH_XTENSA
+#if (configNUM_CORES == 2) && CONFIG_IDF_TARGET_ARCH_XTENSA
 // https://github.com/espressif/arduino-esp32/issues/120
 /* Test for hardware bug, not needed for newer chips */
 
@@ -92,7 +92,7 @@ TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
     TEST_ASSERT_TRUE(xSemaphoreTake(done, 5000 / portTICK_PERIOD_MS));
 }
 
-#endif // (portNUM_PROCESSORS == 2) && CONFIG_IDF_TARGET_ARCH_XTENSA
+#endif // (configNUM_CORES == 2) && CONFIG_IDF_TARGET_ARCH_XTENSA
 
 TEST_CASE("test adjtime function", "[newlib]")
 {

@@ -83,7 +83,7 @@ enum {
 
 static BaseType_t get_other_core(void)
 {
-    return (xPortGetCoreID() + 1) % portNUM_PROCESSORS;
+    return (xPortGetCoreID() + 1) % configNUM_CORES;
 }
 
 static esp_event_loop_args_t test_event_get_default_loop_args(void)
@@ -267,7 +267,7 @@ TEST_CASE("can register/unregister handlers simultaneously", "[event]")
         registration_arg[i].done = xSemaphoreCreateBinary();
         registration_arg[i].data = &registration_data[i];
 
-        xTaskCreatePinnedToCore(test_event_simple_handler_registration_task, "register", 2048, &registration_arg[i], uxTaskPriorityGet(NULL), NULL, i % portNUM_PROCESSORS);
+        xTaskCreatePinnedToCore(test_event_simple_handler_registration_task, "register", 2048, &registration_arg[i], uxTaskPriorityGet(NULL), NULL, i % configNUM_CORES);
     }
 
     // Give the semaphores to the spawned registration task
@@ -311,7 +311,7 @@ TEST_CASE("can register/unregister handlers simultaneously", "[event]")
         unregistration_arg[i].start = xSemaphoreCreateBinary();
         unregistration_arg[i].done = xSemaphoreCreateBinary();
 
-        xTaskCreatePinnedToCore(test_event_simple_handler_registration_task, "unregister", 2048, &unregistration_arg[i], uxTaskPriorityGet(NULL), NULL, i % portNUM_PROCESSORS);
+        xTaskCreatePinnedToCore(test_event_simple_handler_registration_task, "unregister", 2048, &unregistration_arg[i], uxTaskPriorityGet(NULL), NULL, i % configNUM_CORES);
     }
 
     // Give the semaphores to the spawned unregistration task
@@ -390,7 +390,7 @@ TEST_CASE("can post and run events simultaneously", "[event]")
         post_event_arg[i].start = xSemaphoreCreateBinary();
         post_event_arg[i].done = xSemaphoreCreateBinary();
 
-        xTaskCreatePinnedToCore(test_event_post_task, "post", 2048, &post_event_arg[i], uxTaskPriorityGet(NULL), NULL, i % portNUM_PROCESSORS);
+        xTaskCreatePinnedToCore(test_event_post_task, "post", 2048, &post_event_arg[i], uxTaskPriorityGet(NULL), NULL, i % configNUM_CORES);
     }
 
     for (int i = 0; i < TEST_CONFIG_TASKS_TO_SPAWN; i++) {
@@ -467,7 +467,7 @@ TEST_CASE("can post and run events simultaneously with instances", "[event]")
         post_event_arg[i].start = xSemaphoreCreateBinary();
         post_event_arg[i].done = xSemaphoreCreateBinary();
 
-        xTaskCreatePinnedToCore(test_event_post_task, "post", 2048, &post_event_arg[i], uxTaskPriorityGet(NULL), NULL, i % portNUM_PROCESSORS);
+        xTaskCreatePinnedToCore(test_event_post_task, "post", 2048, &post_event_arg[i], uxTaskPriorityGet(NULL), NULL, i % configNUM_CORES);
     }
 
     for (int i = 0; i < TEST_CONFIG_TASKS_TO_SPAWN; i++) {

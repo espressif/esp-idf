@@ -37,7 +37,7 @@
  * Thread/Task reference
  **********************************************************/
 #ifdef CONFIG_BLUEDROID_PINNED_TO_CORE
-#define BLUETOOTH_TASK_PINNED_TO_CORE              (CONFIG_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+#define BLUETOOTH_TASK_PINNED_TO_CORE              (CONFIG_BLUEDROID_PINNED_TO_CORE < configNUM_CORES ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
 #else
 #define BLUETOOTH_TASK_PINNED_TO_CORE              (0)
 #endif

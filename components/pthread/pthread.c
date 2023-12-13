@@ -325,7 +325,7 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
             task_name = pthread_cfg->thread_name;
         }
 
-        if (pthread_cfg->pin_to_core >= 0 && pthread_cfg->pin_to_core < portNUM_PROCESSORS) {
+        if (pthread_cfg->pin_to_core >= 0 && pthread_cfg->pin_to_core < configNUM_CORES) {
             core_id = pthread_cfg->pin_to_core;
         }
 

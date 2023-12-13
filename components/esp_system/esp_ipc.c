@@ -25,14 +25,14 @@
 #define IPC_STACK_SIZE (CONFIG_ESP_IPC_TASK_STACK_SIZE)
 #endif //CONFIG_COMPILER_OPTIMIZATION_NONE
 
-static DRAM_ATTR StaticSemaphore_t s_ipc_mutex_buffer[portNUM_PROCESSORS];
-static DRAM_ATTR StaticSemaphore_t s_ipc_ack_buffer[portNUM_PROCESSORS];
+static DRAM_ATTR StaticSemaphore_t s_ipc_mutex_buffer[configNUM_CORES];
+static DRAM_ATTR StaticSemaphore_t s_ipc_ack_buffer[configNUM_CORES];
 
-static TaskHandle_t s_ipc_task_handle[portNUM_PROCESSORS];
-static SemaphoreHandle_t s_ipc_mutex[portNUM_PROCESSORS];    // This mutex is used as a global lock for esp_ipc_* APIs
-static SemaphoreHandle_t s_ipc_ack[portNUM_PROCESSORS];      // Semaphore used to acknowledge that task was woken up,
-static volatile esp_ipc_func_t s_func[portNUM_PROCESSORS] = { 0 };   // Function which should be called by high priority task
-static void * volatile s_func_arg[portNUM_PROCESSORS];       // Argument to pass into s_func
+static TaskHandle_t s_ipc_task_handle[configNUM_CORES];
+static SemaphoreHandle_t s_ipc_mutex[configNUM_CORES];    // This mutex is used as a global lock for esp_ipc_* APIs
+static SemaphoreHandle_t s_ipc_ack[configNUM_CORES];      // Semaphore used to acknowledge that task was woken up,
+static volatile esp_ipc_func_t s_func[configNUM_CORES] = { 0 };   // Function which should be called by high priority task
+static void * volatile s_func_arg[configNUM_CORES];       // Argument to pass into s_func
 typedef enum {
     IPC_WAIT_NO = 0,
     IPC_WAIT_FOR_START,
@@ -114,7 +114,7 @@ static void esp_ipc_init(void)
 {
     char task_name[] = "ipcX"; // up to 10 ipc tasks/cores (0-9)
 
-    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
+    for (int i = 0; i < configNUM_CORES; ++i) {
         task_name[3] = i + (char)'0';
         s_ipc_mutex[i] = xSemaphoreCreateMutexStatic(&s_ipc_mutex_buffer[i]);
         s_ipc_ack[i] = xSemaphoreCreateBinaryStatic(&s_ipc_ack_buffer[i]);
@@ -127,7 +127,7 @@ static void esp_ipc_init(void)
 
 static esp_err_t esp_ipc_call_and_wait(uint32_t cpu_id, esp_ipc_func_t func, void* arg, esp_ipc_wait_t wait_for)
 {
-    if (cpu_id >= portNUM_PROCESSORS) {
+    if (cpu_id >= configNUM_CORES) {
         return ESP_ERR_INVALID_ARG;
     }
     if (s_ipc_task_handle[cpu_id] == NULL) {

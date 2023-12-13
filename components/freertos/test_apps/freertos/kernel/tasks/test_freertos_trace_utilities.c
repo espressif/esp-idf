@@ -26,7 +26,7 @@
 #ifdef CONFIG_FREERTOS_USE_TRACE_FACILITY
 #define TSK_PRIORITY    (UNITY_FREERTOS_PRIORITY + 1)
 
-#define NO_OF_CORES portNUM_PROCESSORS
+#define NO_OF_CORES configNUM_CORES
 #define BIN_SEM_QUEUE_TYPE queueQUEUE_TYPE_BINARY_SEMAPHORE     //Expected Queue Type
 
 static QueueHandle_t test_queues[NO_OF_CORES];

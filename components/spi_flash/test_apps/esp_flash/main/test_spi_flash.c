@@ -124,7 +124,7 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
 //  TODO: This test is disabled on S3 with legacy impl - IDF-3505
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32P4)
 
-#if portNUM_PROCESSORS > 1
+#if configNUM_CORES > 1
 TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash][esp_flash]")
 {
     typedef struct {
@@ -180,7 +180,7 @@ TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash
     /* Check that current task priority is still correct */
     TEST_ASSERT_EQUAL_INT(uxTaskPriorityGet(NULL), UNITY_FREERTOS_PRIORITY);
 }
-#endif // portNUM_PROCESSORS > 1
+#endif // configNUM_CORES > 1
 
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)
 
