@@ -60,7 +60,7 @@ QEMU_TARGETS: Dict[str, QemuTarget] = {
     'esp32c3': QemuTarget(
         'esp32c3',
         'qemu-system-riscv32',
-        'qemu-riscv',
+        'qemu-riscv32',
         '-M esp32c3',
         # Chip revision 0.3
         binascii.unhexlify(
@@ -157,7 +157,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             project_desc = json.load(f)
         return project_desc
 
-    def qemu(action: str, ctx: Context, args: PropertyDict, qemu_extra_args: str, gdb: bool) -> None:
+    def qemu(action: str, ctx: Context, args: PropertyDict, qemu_extra_args: str, gdb: bool, graphics: bool) -> None:
         project_desc = _get_project_desc(args, ctx)
 
         # Determine the target and check if we have the necessary QEMU binary
@@ -186,7 +186,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             f.write(qemu_target_info.default_efuse)
 
         # Prepare QEMU launch arguments
-        qemu_args = [qemu_target_info.qemu_prog, '-nographic']
+        qemu_args = [qemu_target_info.qemu_prog]
         qemu_args += qemu_target_info.qemu_args.split(' ')
         qemu_args += [
             '-drive', f'file={bin_path},if=mtd,format=raw',
@@ -202,8 +202,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if qemu_extra_args:
             qemu_args += qemu_extra_args.split(' ')
 
+        if graphics:
+            qemu_args += ['-display', 'sdl']
+        else:
+            qemu_args += ['-nographic']
+
         # Launch QEMU!
         if not options.bg_mode:
+            qemu_args += ['-serial', 'mon:stdio']
             yellow_print('Running qemu (fg): ' + ' '.join(qemu_args))
             subprocess.run(qemu_args)
         else:
@@ -247,10 +253,16 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'default': '',
                     },
                     {
-                        'names': ['--gdb'],
+                        'names': ['-d', '--gdb'],
                         'help': ('Wait for gdb to connect. '
                                  'Use this option to run "idf.py qemu --gdb monitor" in one terminal window '
                                  'and "idf.py gdb" in another. The program will start running when gdb connects.'),
+                        'is_flag': True,
+                        'default': False,
+                    },
+                    {
+                        'names': ['-g', '--graphics'],
+                        'help': 'Enable graphical window',
                         'is_flag': True,
                         'default': False,
                     }
