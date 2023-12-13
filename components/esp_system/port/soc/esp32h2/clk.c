@@ -256,6 +256,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         periph_ll_disable_clk_set_rst(PERIPH_ECDSA_MODULE);
 
         // TODO: Replace with hal implementation
+        REG_CLR_BIT(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
         REG_CLR_BIT(PCR_TRACE_CONF_REG, PCR_TRACE_CLK_EN);
         REG_CLR_BIT(PCR_MEM_MONITOR_CONF_REG, PCR_MEM_MONITOR_CLK_EN);
         REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
