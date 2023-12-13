@@ -204,7 +204,7 @@ static void http_dispatch_event_to_event_loop(int32_t event_id, const void* even
 {
     esp_err_t err = esp_event_post(ESP_HTTP_CLIENT_EVENT, event_id, event_data, event_data_size, portMAX_DELAY);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event: %"PRId32", error: %s", event_id, esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to post http_client event: %"PRId32", error: %s", event_id, esp_err_to_name(err));
     }
 }
 
