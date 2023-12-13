@@ -31,19 +31,6 @@
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
 
-/** @brief Verify the secure boot signature block for Secure Boot V2.
- *
- *  Performs RSA-PSS or ECDSA verification of the SHA-256 image based on the public key
- *  in the signature block, compared against the public key digest stored in efuse.
- *
- * Similar to esp_secure_boot_verify_signature(), but can be used when the digest is precalculated.
- * @param sig_block Pointer to signature block data
- * @param image_digest Pointer to 32 byte buffer holding SHA-256 hash.
- * @param verified_digest Pointer to 32 byte buffer that will receive verified digest if verification completes. (Used during bootloader implementation only, result is invalid otherwise.)
- *
- */
-esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
-
 /** @brief Legacy function to verify RSA secure boot signature block for Secure Boot V2.
  *
  * @note This is kept for backward compatibility. It internally calls esp_secure_boot_verify_sbv2_signature_block.
