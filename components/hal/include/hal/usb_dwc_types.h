@@ -51,19 +51,6 @@ typedef enum {
     USB_HAL_FRAME_LIST_LEN_64 = 64,
 } usb_hal_frame_list_len_t;
 
-/**
- * @brief Support intervals in number of USB frames (i.e., 1ms)
- */
-typedef enum {
-    USB_HAL_INTERVAL_1 = 1,
-    USB_HAL_INTERVAL_2 = 2,
-    USB_HAL_INTERVAL_4 = 4,
-    USB_HAL_INTERVAL_8 = 8,
-    USB_HAL_INTERVAL_16 = 16,
-    USB_HAL_INTERVAL_32 = 32,
-    USB_HAL_INTERVAL_64 = 64,
-} usb_hal_interval_t;
-
 #ifdef __cplusplus
 }
 #endif
