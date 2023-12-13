@@ -1199,10 +1199,15 @@ void bta_jv_delete_record(tBTA_JV_MSG *p_data)
 *******************************************************************************/
 static void bta_jv_l2cap_client_cback(UINT16 gap_handle, UINT16 event)
 {
+    if (gap_handle >= BTA_JV_MAX_L2C_CONN) {
+        APPL_TRACE_WARNING("Invalid gap_handle: %u", gap_handle);
+        return;
+    }
+
     tBTA_JV_L2C_CB  *p_cb = &bta_jv_cb.l2c_cb[gap_handle];
     tBTA_JV evt_data = {0};
 
-    if (gap_handle >= BTA_JV_MAX_L2C_CONN && !p_cb->p_cback) {
+    if (!p_cb->p_cback) {
         return;
     }
 
@@ -1354,12 +1359,17 @@ void bta_jv_l2cap_close(tBTA_JV_MSG *p_data)
 *******************************************************************************/
 static void bta_jv_l2cap_server_cback(UINT16 gap_handle, UINT16 event)
 {
+    if (gap_handle >= BTA_JV_MAX_L2C_CONN) {
+        APPL_TRACE_WARNING("Invalid gap_handle: %u", gap_handle);
+        return;
+    }
+
     tBTA_JV_L2C_CB  *p_cb = &bta_jv_cb.l2c_cb[gap_handle];
     tBTA_JV evt_data = {0};
     tBTA_JV_L2CAP_CBACK *p_cback;
     void *user_data;
 
-    if (gap_handle >= BTA_JV_MAX_L2C_CONN && !p_cb->p_cback) {
+    if (!p_cb->p_cback) {
         return;
     }
 
