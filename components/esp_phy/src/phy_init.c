@@ -45,7 +45,7 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
+#elif SOC_PM_SUPPORT_PMU_MODEM_STATE
 #include "esp_private/sleep_modem.h"
 #endif
 #include "hal/efuse_hal.h"
@@ -383,7 +383,7 @@ void esp_phy_modem_init(void)
         s_phy_digital_regs_mem = (uint32_t *)heap_caps_malloc(SOC_PHY_DIG_REGS_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     }
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
-#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     sleep_modem_wifi_modem_state_init();
 #endif // CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     _lock_release(&s_phy_access_lock);
@@ -408,7 +408,7 @@ void esp_phy_modem_deinit(void)
         phy_init_flag();
 #endif // CONFIG_IDF_TARGET_ESP32C3
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
-#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
         sleep_modem_wifi_modem_state_deinit();
 #endif // CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     }
@@ -431,7 +431,12 @@ static esp_err_t sleep_retention_wifi_bb_init(void *arg)
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, 14,  0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
         [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, 136, 0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
         [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, 53,  0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
-        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, 58,  0, 0), .owner = BIT(0) | BIT(1) }  /* FE COEX */
+        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, 58,  0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
+#ifndef SOC_PM_RETENTION_HAS_CLOCK_BUG
+        [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b06, 0x600a8000, 0x000a8000, 39,  0, 0), .owner = BIT(0) | BIT(1) }, /* BRX */
+        [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b07, 0x600a0400, 0x600a0400, 41,  0, 0), .owner = BIT(0) | BIT(1) }, /* FE DATA */
+        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b08, 0x600a0800, 0x600a0800, 87,  0, 0), .owner = BIT(0) | BIT(1) }  /* FE CTRL */
+#endif
     };
     esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (%s) retention", "WiFi BB");
