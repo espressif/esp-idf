@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
+#include "include/ulp_riscv_interrupt.h"
 #include "ulp_riscv_register_ops.h"
 #include "ulp_riscv_interrupt.h"
+#include "ulp_riscv_gpio.h"
 #include "soc/sens_reg.h"
 
 #define ULP_RISCV_TIMER_INT                         (1 << 0U)   /* Internal Timer Interrupt */
@@ -77,6 +79,28 @@ static inline void ulp_riscv_handle_rtc_periph_intr(uint32_t status)
     }
 }
 
+/* This function -
+ * - Checks if one or more RTC IO interrupt status bits are set
+ * - Calls the interrupt handler for the RTC IO if it is registered
+ * - Clears all interrupt bits
+ */
+static inline void ulp_riscv_handle_rtc_io_intr(uint32_t status)
+{
+    uint32_t handler_idx = 0;
+    for (int i = 0; i < GPIO_NUM_MAX; i++) {
+        if (status & (1U << i)) {
+            handler_idx = ULP_RISCV_RTCIO0_INTR_SOURCE + i;
+            ulp_riscv_intr_handler_t* entry = &s_intr_handlers[handler_idx];
+
+            if (entry->handler) {
+                entry->handler(entry->arg);
+            }
+        }
+    }
+
+    REG_SET_FIELD(RTC_GPIO_STATUS_W1TC_REG, RTC_GPIO_STATUS_INT_W1TC, status);
+}
+
 /* This is the global interrupt handler for ULP RISC-V.
  * It is called from ulp_riscv_vectors.S
  */
@@ -97,7 +121,11 @@ void __attribute__((weak)) _ulp_riscv_interrupt_handler(uint32_t q1)
             ulp_riscv_handle_rtc_periph_intr(cocpu_int_st);
         }
 
-        /* TODO: RTC IO interrupts */
+        /* RTC IO interrupts */
+        uint32_t rtcio_int_st = REG_GET_FIELD(RTC_GPIO_STATUS_REG, RTC_GPIO_STATUS_INT);
+        if (rtcio_int_st) {
+            ulp_riscv_handle_rtc_io_intr(rtcio_int_st);
+        }
 
         /* TODO: RTC I2C interrupt */
     }
