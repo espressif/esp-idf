@@ -77,8 +77,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_CSI_BRG;
     case PERIPH_ISP_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_ISP;
-    case PERIPH_JPEG_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_JPEG;
     case PERIPH_DMA2D_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_DMA2D;
     case PERIPH_PPA_MODULE:
@@ -169,7 +167,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_MSPI_FLASH_MODULE:
     case PERIPH_MSPI_PSRAM_MODULE:
     case PERIPH_ISP_MODULE:
-    case PERIPH_JPEG_MODULE:
     case PERIPH_DMA2D_MODULE:
         return HP_SYS_CLKRST_HP_RST_EN0_REG;
     case PERIPH_PPA_MODULE:
