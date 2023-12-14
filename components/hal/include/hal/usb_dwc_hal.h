@@ -6,24 +6,22 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
+/*
+This header is shared across all targets. Resolve to an empty header for targets
+that don't support USB OTG.
+*/
+#if SOC_USB_OTG_SUPPORTED
+#include <stdint.h>
+#include <stdbool.h>
+#include "hal/usb_dwc_ll.h"
+#include "hal/usb_dwc_types.h"
+#include "hal/assert.h"
+#endif // SOC_USB_OTG_SUPPORTED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*
-NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
-      functions must be called from critical sections unless specified otherwise
-*/
-
-#include <stdlib.h>
-#include <stddef.h>
-#include "soc/soc_caps.h"
-#if SOC_USB_OTG_SUPPORTED
-#include "soc/usb_dwc_struct.h"
-#include "hal/usb_dwc_ll.h"
-#endif
-#include "hal/usb_dwc_types.h"
-#include "hal/assert.h"
 
 #if SOC_USB_OTG_SUPPORTED
 
