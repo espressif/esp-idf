@@ -210,6 +210,7 @@
 
 // The Clock Out singnal is route to the pin by GPIO matrix
 #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
+#define SOC_CLOCKOUT_HAS_SOURCE_GATE         (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 #define SOC_RTCIO_PIN_COUNT                 8

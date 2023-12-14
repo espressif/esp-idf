@@ -19,6 +19,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
 #include "soc/lpperi_reg.h"
+#include "soc/lp_clkrst_reg.h"
 #include "esp_cpu.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_ll.h"
@@ -271,6 +272,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         REG_CLR_BIT(PCR_MEM_MONITOR_CONF_REG, PCR_MEM_MONITOR_CLK_EN);
         REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
         REG_CLR_BIT(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
+        WRITE_PERI_REG(PCR_CTRL_CLK_OUT_EN_REG, 0);
     }
 
     if (rst_reason == RESET_REASON_CHIP_POWER_ON || rst_reason == RESET_REASON_CHIP_BROWN_OUT \
@@ -283,5 +285,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_RNG_CK_EN);
         CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_ANA_I2C_CK_EN);
         CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_IO_CK_EN);
+        WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
     }
 }
