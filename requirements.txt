@@ -46,7 +46,9 @@ ecdsa>=0.16.0
 
 # espcoredump requirements
 # This is the last version supports both 2.7 and 3.4
-construct==2.10.54
+construct==2.10.54; python_version < "3.12"
+# construct up until 2.10.56 (included) cannot be built with Python 3.12
+construct==2.10.69; python_version > "3.11"
 
 # windows-curses are required in Windows command line but cannot be installed in MSYS2. A requirement like
 # "windows-curses; sys_platform == 'win32'" would want to install the package on both of them. There is no environment
