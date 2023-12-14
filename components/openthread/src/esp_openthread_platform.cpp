@@ -20,7 +20,7 @@
 #include "esp_partition.h"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "core/common/instance.hpp"
+#include "core/instance/instance.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "openthread/cli.h"
