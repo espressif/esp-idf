@@ -34,7 +34,7 @@ esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg);
  *
  * @return esp_err_t    ESP_OK for successful.
 */
-esp_err_t ulp_adc_deinit();
+esp_err_t ulp_adc_deinit(void);
 
 #ifdef __cplusplus
 }

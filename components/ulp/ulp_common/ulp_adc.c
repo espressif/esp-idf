@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,9 @@ esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg)
     }
 
     ret = adc_oneshot_new_unit(&init_config1, &s_adc1_handle);
-    if (ret != ESP_OK) return ret;
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     //-------------ADC1 Config---------------//
     adc_oneshot_chan_cfg_t config = {
@@ -45,7 +47,9 @@ esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg)
         .atten = cfg->atten,
     };
     ret = adc_oneshot_config_channel(s_adc1_handle, cfg->channel, &config);
-    if (ret != ESP_OK) return ret;
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     //Calibrate the ADC
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -55,7 +59,7 @@ esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg)
     return ret;
 }
 
-esp_err_t ulp_adc_deinit()
+esp_err_t ulp_adc_deinit(void)
 {
     // No need to check for null-pointer and stuff, oneshot driver already does that
     return adc_oneshot_del_unit(s_adc1_handle);
