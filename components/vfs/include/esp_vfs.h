@@ -336,7 +336,8 @@ esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id);
 
 /**
  * Special function for registering another file descriptor for a VFS registered
- * by esp_vfs_register_with_id.
+ * by esp_vfs_register_with_id. This function should only be used to register
+ * permanent file descriptors (socket fd) that are not removed after being closed.
  *
  * @param vfs_id VFS identificator returned by esp_vfs_register_with_id.
  * @param fd The registered file descriptor will be written to this address.
