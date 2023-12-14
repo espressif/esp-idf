@@ -116,6 +116,16 @@ static inline void brownout_ll_intr_clear(void)
     RTCCNTL.int_clr.rtc_brown_out = 1;
 }
 
+/**
+ * @brief Clear BOD internal count.
+ */
+static inline void brownout_ll_clear_count(void)
+{
+    RTCCNTL.brown_out.cnt_clr = 1;
+    RTCCNTL.brown_out.cnt_clr = 0;
+}
+
+
 #ifdef __cplusplus
 }
 #endif
