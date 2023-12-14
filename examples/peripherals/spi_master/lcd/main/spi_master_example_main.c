@@ -333,13 +333,13 @@ static void send_lines(spi_device_handle_t spi, int ypos, uint16_t *linedata)
     trans[0].tx_data[0] = 0x2A;         //Column Address Set
     trans[1].tx_data[0] = 0;            //Start Col High
     trans[1].tx_data[1] = 0;            //Start Col Low
-    trans[1].tx_data[2] = (320) >> 8;   //End Col High
-    trans[1].tx_data[3] = (320) & 0xff; //End Col Low
+    trans[1].tx_data[2] = (320 - 1) >> 8;   //End Col High
+    trans[1].tx_data[3] = (320 - 1) & 0xff; //End Col Low
     trans[2].tx_data[0] = 0x2B;         //Page address set
     trans[3].tx_data[0] = ypos >> 8;    //Start page high
     trans[3].tx_data[1] = ypos & 0xff;  //start page low
-    trans[3].tx_data[2] = (ypos + PARALLEL_LINES) >> 8; //end page high
-    trans[3].tx_data[3] = (ypos + PARALLEL_LINES) & 0xff; //end page low
+    trans[3].tx_data[2] = (ypos + PARALLEL_LINES - 1) >> 8; //end page high
+    trans[3].tx_data[3] = (ypos + PARALLEL_LINES - 1) & 0xff; //end page low
     trans[4].tx_data[0] = 0x2C;         //memory write
     trans[5].tx_buffer = linedata;      //finally send the line data
     trans[5].length = 320 * 2 * 8 * PARALLEL_LINES;  //Data length, in bits
