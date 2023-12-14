@@ -9,9 +9,9 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "soc/chip_revision.h"
-#include "hal/efuse_hal.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
+#include "hal/efuse_hal.h"
 #include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
