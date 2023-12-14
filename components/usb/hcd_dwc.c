@@ -668,20 +668,20 @@ static bool _internal_pipe_event_notify(pipe_t *pipe, bool from_isr)
 static usb_speed_t get_usb_port_speed(usb_dwc_speed_t priv)
 {
     switch (priv) {
-        case USB_DWC_SPEED_LOW: return USB_SPEED_LOW;
-        case USB_DWC_SPEED_FULL: return USB_SPEED_FULL;
-        case USB_DWC_SPEED_HIGH: return USB_SPEED_HIGH;
-        default: abort();
+    case USB_DWC_SPEED_LOW: return USB_SPEED_LOW;
+    case USB_DWC_SPEED_FULL: return USB_SPEED_FULL;
+    case USB_DWC_SPEED_HIGH: return USB_SPEED_HIGH;
+    default: abort();
     }
 }
 
 static usb_hal_fifo_bias_t get_hal_fifo_bias(hcd_port_fifo_bias_t public)
 {
     switch (public) {
-        case HCD_PORT_FIFO_BIAS_BALANCED: return USB_HAL_FIFO_BIAS_DEFAULT;
-        case HCD_PORT_FIFO_BIAS_RX: return USB_HAL_FIFO_BIAS_RX;
-        case HCD_PORT_FIFO_BIAS_PTX: return USB_HAL_FIFO_BIAS_PTX;
-        default: abort();
+    case HCD_PORT_FIFO_BIAS_BALANCED: return USB_HAL_FIFO_BIAS_DEFAULT;
+    case HCD_PORT_FIFO_BIAS_RX: return USB_HAL_FIFO_BIAS_RX;
+    case HCD_PORT_FIFO_BIAS_PTX: return USB_HAL_FIFO_BIAS_PTX;
+    default: abort();
     }
 }
 
@@ -2130,7 +2130,7 @@ static void _buffer_fill(pipe_t *pipe)
                 start_idx = (next_interval_idx_no_offset + pipe->ep_char.periodic.phase_offset_frames) & (XFER_LIST_LEN_ISOC - 1);
             } else {
                 // Not enough time until the next schedule, add another interval to it.
-                start_idx =  (next_interval_idx_no_offset + pipe->ep_char.periodic.interval + pipe->ep_char.periodic.phase_offset_frames) & (XFER_LIST_LEN_ISOC - 1);
+                start_idx = (next_interval_idx_no_offset + pipe->ep_char.periodic.interval + pipe->ep_char.periodic.phase_offset_frames) & (XFER_LIST_LEN_ISOC - 1);
             }
         } else {
             // Start index is based on previously filled buffer
