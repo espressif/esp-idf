@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "soc/rtc_periph.h"
 #include "ulp_riscv.h"
 #include "ulp_riscv_lock.h"
+#include "ulp_adc.h"
 #include "ulp_test_app.h"
 #include "ulp_test_app2.h"
 #include "ulp_test_shared.h"
@@ -21,6 +22,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_adc/adc_oneshot.h"
 
 #define ULP_WAKEUP_PERIOD 1000000 // 1 second
 
@@ -433,4 +435,43 @@ TEST_CASE("ULP-RISC-V interrupt signals can be handled via ISRs on the main core
     ulp_riscv_reset();
     firmware_loaded = false;
     load_and_start_ulp_firmware(ulp_main_bin_start, ulp_main_bin_length);
+}
+
+#define ATTEN 3
+#define WIDTH 0
+#define CHANNEL 6
+#define ADC_UNIT ADC_UNIT_1
+
+TEST_CASE("ULP ADC can init-deinit-init", "[ulp]")
+{
+
+
+    ulp_adc_cfg_t riscv_adc_cfg = {
+        .adc_n    = ADC_UNIT,
+        .channel  = CHANNEL,
+        .width    = WIDTH,
+        .atten    = ATTEN,
+        .ulp_mode = ADC_ULP_MODE_FSM,
+    };
+
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_adc_init(&riscv_adc_cfg));
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_adc_deinit());
+
+    /* Check that we can init one-shot ADC */
+    adc_oneshot_unit_handle_t adc1_handle;
+    adc_oneshot_unit_init_cfg_t init_config1 = {
+        .unit_id = ADC_UNIT,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, adc_oneshot_new_unit(&init_config1, &adc1_handle));
+
+    adc_oneshot_chan_cfg_t config = {
+        .bitwidth = WIDTH,
+        .atten = ATTEN,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, adc_oneshot_config_channel(adc1_handle, CHANNEL, &config));
+    TEST_ASSERT_EQUAL(ESP_OK, adc_oneshot_del_unit(adc1_handle));
+
+    /* Re-init ADC for ULP */
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_adc_init(&riscv_adc_cfg));
+    TEST_ASSERT_EQUAL(ESP_OK, ulp_adc_deinit());
 }
