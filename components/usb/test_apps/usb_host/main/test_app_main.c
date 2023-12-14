@@ -33,6 +33,8 @@ void tearDown(void)
     vTaskDelay(10);
     // Clean up USB Host
     ESP_ERROR_CHECK(usb_host_uninstall());
+    // Short delay to allow task to be cleaned up after client uninstall
+    vTaskDelay(10);
     test_usb_deinit_phy();  // Deinitialize the internal USB PHY after testing
     unity_utils_evaluate_leaks();
 }
