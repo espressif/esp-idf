@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -137,21 +137,21 @@ void mock_msc_scsi_init_reference_descriptors(void)
     // String descriptors
     const char *str = MOCK_MSC_SCSI_STRING_1;
     uint8_t chr_count = strlen(str);
-    mock_msc_scsi_str_desc_manu[0] = (USB_B_DESCRIPTOR_TYPE_STRING << 8 ) | (2 * chr_count + 2); // first byte is length (including header), second byte is string type
+    mock_msc_scsi_str_desc_manu[0] = (USB_B_DESCRIPTOR_TYPE_STRING << 8) | (2 * chr_count + 2);  // first byte is length (including header), second byte is string type
     for (uint8_t i = 0; i < chr_count; i++) {
         mock_msc_scsi_str_desc_manu[1 + i] = str[i];
     }
 
     str = MOCK_MSC_SCSI_STRING_2;
     chr_count = strlen(str);
-    mock_msc_scsi_str_desc_prod[0] = (USB_B_DESCRIPTOR_TYPE_STRING << 8 ) | (2 * chr_count + 2); // first byte is length (including header), second byte is string type
+    mock_msc_scsi_str_desc_prod[0] = (USB_B_DESCRIPTOR_TYPE_STRING << 8) | (2 * chr_count + 2);  // first byte is length (including header), second byte is string type
     for (uint8_t i = 0; i < chr_count; i++) {
         mock_msc_scsi_str_desc_prod[1 + i] = str[i];
     }
 
     str = MOCK_MSC_SCSI_STRING_3;
     chr_count = strlen(str);
-    mock_msc_scsi_str_desc_ser_num[0] = (USB_B_DESCRIPTOR_TYPE_STRING << 8 ) | (2 * chr_count + 2); // first byte is length (including header), second byte is string type
+    mock_msc_scsi_str_desc_ser_num[0] = (USB_B_DESCRIPTOR_TYPE_STRING << 8) | (2 * chr_count + 2);  // first byte is length (including header), second byte is string type
     for (uint8_t i = 0; i < chr_count; i++) {
         mock_msc_scsi_str_desc_ser_num[1 + i] = str[i];
     }
