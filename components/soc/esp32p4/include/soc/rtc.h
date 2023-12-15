@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/hal_utils.h" // TODO: IDF-8941 Move rtc.h to esp_hw_support, so that dependency is correct
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,10 +45,6 @@ extern "C" {
 
 #define MHZ (1000000)
 
-#define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
-#define RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(cycles)   (cycles << 12)
-#define RTC_FAST_CLK_20M_CAL_TIMEOUT_THRES(cycles)   (TIMG_RTC_CALI_TIMEOUT_THRES_V) // Just use the max timeout thres value
-
 #define OTHER_BLOCKS_POWERUP        1
 #define OTHER_BLOCKS_WAIT           1
 
@@ -74,6 +71,8 @@ extern "C" {
 #define SOC_DELAY_RC_FAST_ENABLE            50
 #define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
 #define SOC_DELAY_RC32K_ENABLE              300
+#define SOC_DELAY_LP_PLL_SWITCH             3
+#define SOC_DELAY_LP_PLL_ENABLE             50
 
 /* Core voltage: // TODO: IDF-7528, TODO: IDF-7529
  * Currently, ESP32C6 never adjust its wake voltage in runtime
@@ -141,7 +140,7 @@ typedef enum {
 typedef struct rtc_cpu_freq_config_s {
     soc_cpu_clk_src_t source;       //!< The clock from which CPU clock is derived
     uint32_t source_freq_mhz;       //!< Source clock frequency
-    uint32_t div;                   //!< Divider, freq_mhz = SOC_ROOT_CLK freq_mhz / div
+    hal_utils_clk_div_t div;        //!< Divider, freq_mhz = SOC_ROOT_CLK freq_mhz / div
     uint32_t freq_mhz;              //!< CPU clock frequency
 } rtc_cpu_freq_config_t;
 
@@ -153,17 +152,23 @@ typedef struct rtc_cpu_freq_config_s {
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
  *
- * @note On previous targets, the enum values somehow reflects the register field values of TIMG_RTC_CALI_CLK_SEL
- *       However, this is not true on ESP32C6. The conversion to register field values is explicitly done in
- *       rtc_clk_cal_internal
+ * @note On ESP32P4, the enum values somehow reflects the register field values of HP_SYS_CLKRST_REG_TIMERGRP0_TGRT_CLK_SRC_SEL.
  */
 typedef enum {
-    RTC_CAL_RTC_MUX = -1,                                  //!< Currently selected RTC_SLOW_CLK
-    RTC_CAL_RC_SLOW = SOC_RTC_SLOW_CLK_SRC_RC_SLOW,        //!< Internal 150kHz RC oscillator
-    RTC_CAL_RC32K = SOC_RTC_SLOW_CLK_SRC_RC32K,            //!< Internal 32kHz RC oscillator, as one type of 32k clock
-    RTC_CAL_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,       //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External slow clock signal input by lp_pad_gpio0, as one type of 32k clock
-    RTC_CAL_RC_FAST                                        //!< Internal 20MHz RC oscillator
+    RTC_CAL_RTC_MUX = -1,       //!< Currently selected RTC_SLOW_CLK
+    RTC_CAL_MPLL = 0,           //!< 500MHz MSPI_PLL_CLK
+    RTC_CAL_SPLL = 1,           //!< 480MHz SYS_PLL_CLK
+    RTC_CAL_CPLL = 2,           //!< 400MHz CPU_PLL_CLK
+    RTC_CAL_APLL = 3,           //!< AUDIO_PLL_CLK
+    RTC_CAL_SDIO_PLL0 = 4,      //!< SDIO_PLL0_CLK
+    RTC_CAL_SDIO_PLL1 = 5,      //!< SDIO_PLL1_CLK
+    RTC_CAL_SDIO_PLL2 = 6,      //!< SDIO_PLL2_CLK
+    RTC_CAL_RC_FAST = 7,        //!< Internal 20MHz RC oscillator
+    RTC_CAL_RC_SLOW = 8,        //!< Internal 150kHz RC oscillator
+    RTC_CAL_RC32K = 9,          //!< Internal 32kHz RC oscillator, as one type of 32k clock
+    RTC_CAL_32K_XTAL = 10,      //!< External 32kHz XTAL, as one type of 32k clock
+    RTC_CAL_LP_PLL = 11,        //!< 8MHz LP_PLL_CLK
+    RTC_CAL_INVALID_CLK,        //!< Clock not available to calibrate
 } rtc_cal_sel_t;
 
 /**
@@ -186,7 +191,7 @@ typedef struct {
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
     .xtal_freq = CONFIG_XTAL_FREQ, \
-    .cpu_freq_mhz = 80, \
+    .cpu_freq_mhz = 90, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_rtc_clk_div = 0, \
@@ -228,11 +233,6 @@ void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq);
  * @param en  true to enable, false to disable
  */
 void rtc_clk_32k_enable(bool en);
-
-/**
- * @brief Configure 32 kHz XTAL oscillator to accept external clock signal
- */
-void rtc_clk_32k_enable_external(void);
 
 /**
  * @brief Get the state of 32k XTAL oscillator
@@ -289,7 +289,6 @@ soc_rtc_slow_clk_src_t rtc_clk_slow_src_get(void);
  * - if SOC_RTC_SLOW_CLK_SRC_RC_SLOW is selected, returns 136000
  * - if SOC_RTC_SLOW_CLK_SRC_XTAL32K is selected, returns 32768
  * - if SOC_RTC_SLOW_CLK_SRC_RC32K is selected, returns 32768
- * - if SOC_RTC_SLOW_CLK_SRC_OSC_SLOW is selected, returns 32768
  *
  * rtc_clk_cal function can be used to get more precise value by comparing
  * RTC_SLOW_CLK frequency to the frequency of main XTAL.
@@ -524,43 +523,6 @@ uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm
  * @param sdm2  frequency adjustment parameter, 0..63
  */
 void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2);
-
-// -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
-// **WARNING**: The following are only for backwards compatibility.
-// Please use the declarations in soc/clk_tree_defs.h instead.
-/**
- * @brief CPU clock source
- */
-typedef soc_cpu_clk_src_t rtc_cpu_freq_src_t;
-#define RTC_CPU_FREQ_SRC_XTAL SOC_CPU_CLK_SRC_XTAL  //!< XTAL
-#define RTC_CPU_FREQ_SRC_PLL SOC_CPU_CLK_SRC_PLL    //!< PLL (480M)
-#define RTC_CPU_FREQ_SRC_8M SOC_CPU_CLK_SRC_RC_FAST //!< Internal 17.5M RTC oscillator
-
-/**
- * @brief RTC SLOW_CLK frequency values
- */
-typedef soc_rtc_slow_clk_src_t rtc_slow_freq_t;
-#define RTC_SLOW_FREQ_RTC SOC_RTC_SLOW_CLK_SRC_RC_SLOW         //!< Internal 150 kHz RC oscillator
-#define RTC_SLOW_FREQ_32K_XTAL SOC_RTC_SLOW_CLK_SRC_XTAL32K    //!< External 32 kHz XTAL
-
-/**
- * @brief RTC FAST_CLK frequency values
- */
-typedef soc_rtc_fast_clk_src_t rtc_fast_freq_t;
-#define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_DIV  //!< Main XTAL, divided by 2
-#define RTC_FAST_FREQ_8M SOC_RTC_FAST_CLK_SRC_RC_FAST       //!< Internal 17.5 MHz RC oscillator
-
-/* Alias of frequency related macros */
-#define RTC_FAST_CLK_FREQ_APPROX    SOC_CLK_RC_FAST_FREQ_APPROX
-#define RTC_FAST_CLK_FREQ_8M        SOC_CLK_RC_FAST_FREQ_APPROX
-#define RTC_SLOW_CLK_FREQ_150K      SOC_CLK_RC_SLOW_FREQ_APPROX
-#define RTC_SLOW_CLK_FREQ_32K       SOC_CLK_XTAL32K_FREQ_APPROX
-
-/* Alias of deprecated function names */
-#define rtc_clk_slow_freq_set(slow_freq) rtc_clk_slow_src_set(slow_freq)
-#define rtc_clk_slow_freq_get() rtc_clk_slow_src_get()
-#define rtc_clk_fast_freq_set(fast_freq) rtc_clk_fast_src_set(fast_freq)
-#define rtc_clk_fast_freq_get() rtc_clk_fast_src_get()
 
 #ifdef __cplusplus
 }

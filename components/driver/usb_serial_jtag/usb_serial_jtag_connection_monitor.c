@@ -53,7 +53,9 @@ static void IRAM_ATTR usb_serial_jtag_sof_tick_hook(void)
 #if CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION
                 esp_pm_lock_release(s_usb_serial_jtag_pm_lock);
 #endif
+#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-7496 SOC_USB_SERIAL_JTAG_PHY_ON_BBPLL
                 rtc_clk_bbpll_remove_consumer();
+#endif
                 s_usb_serial_jtag_conn_status = false;
             }
         } else {
@@ -61,7 +63,9 @@ static void IRAM_ATTR usb_serial_jtag_sof_tick_hook(void)
 #if CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION
             esp_pm_lock_acquire(s_usb_serial_jtag_pm_lock);
 #endif
+#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-7496 SOC_USB_SERIAL_JTAG_PHY_ON_BBPLL
             rtc_clk_bbpll_add_consumer();
+#endif
             s_usb_serial_jtag_conn_status = true;
             remaining_allowed_no_sof_ticks = ALLOWED_NO_SOF_TICKS;
         }
@@ -76,7 +80,10 @@ ESP_SYSTEM_INIT_FN(usb_serial_jtag_conn_status_init, SECONDARY, BIT(0), 230)
     // We always assume it is connected at first, so acquires the lock to avoid auto light sleep
     esp_pm_lock_acquire(s_usb_serial_jtag_pm_lock);
 #endif
+#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-7496 SOC_USB_SERIAL_JTAG_PHY_ON_BBPLL
+// TODO: esp32p4 USJ rely on SPLL, if it will also be disabled during sleep, we need to call spll_add_consumer?
     rtc_clk_bbpll_add_consumer();
+#endif
     s_usb_serial_jtag_conn_status = true;
     remaining_allowed_no_sof_ticks = ALLOWED_NO_SOF_TICKS;
 

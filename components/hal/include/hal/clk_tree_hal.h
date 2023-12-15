@@ -31,13 +31,6 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src);
 uint32_t clk_hal_cpu_get_freq_hz(void);
 
 /**
- * @brief Get AHB_CLK frequency
- *
- * @return AHB clock frequency, in Hz. Returns 0 if internal clock configuration is invalid.
- */
-uint32_t clk_hal_ahb_get_freq_hz(void);
-
-/**
  * @brief Get APB_CLK frequency
  *
  * @return APB clock frequency, in Hz. Returns 0 if internal clock configuration is invalid.

@@ -8,7 +8,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp_clk_tree.h"
+#include "hal/clk_tree_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/rtc_clk.h"
 #include "esp_private/esp_ldo_psram.h"
@@ -356,11 +356,8 @@ esp_err_t esp_psram_impl_enable(void)
 {
     esp_ldo_vdd_psram_early_init();
 #if SOC_CLK_MPLL_SUPPORTED
-    uint32_t xtal_freq = 0;
-    ESP_ERROR_CHECK(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &xtal_freq));
-    assert(xtal_freq == 40000000);
     rtc_clk_mpll_enable();
-    rtc_clk_mpll_configure(xtal_freq / 1000000, AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ);
+    rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ);
 #endif
 
     PSRAM_RCC_ATOMIC() {

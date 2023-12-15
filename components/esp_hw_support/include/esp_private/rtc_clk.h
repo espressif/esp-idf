@@ -17,9 +17,9 @@ extern "C" {
 /**
  * @brief Switch CPU clock source to XTAL, and let cpu frequency equal to main XTAL frequency.
  *
- * This function does not disable BBPLL. If BBPLL requires to be disabled to save power, please call
- * `rtc_clk_cpu_freq_set_xtal` instead. It does one extra check to see whether can disable the BBPLL after switching the
- * CPU clock source to XTAL.
+ * This function does not disable CPU's source PLL. If the PLL requires to be disabled to save power, please call
+ * `rtc_clk_cpu_freq_set_xtal` instead. It does one extra check (if necessary) to see whether can disable the
+ * corresponding PLL after switching the CPU clock source to XTAL.
  *
  * Currently, this function should only be called in `esp_restart_noos` and `esp_restart_noos_dig` to switch the CPU
  * clock source back to XTAL (by default) before reset.

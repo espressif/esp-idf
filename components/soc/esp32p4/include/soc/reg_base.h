@@ -124,7 +124,7 @@
 #define DR_REG_LP_SYS_BASE            (DR_REG_LPAON_BASE + 0x0)
 #define DR_REG_LP_CLKRST_BASE         (DR_REG_LPAON_BASE + 0x1000)
 #define DR_REG_LP_TIMER_BASE          (DR_REG_LPAON_BASE + 0x2000)
-#define DR_REG_LP_ANAPERI_BASE        (DR_REG_LPAON_BASE + 0x3000)
+#define DR_REG_LP_ANALOG_PERI_BASE    (DR_REG_LPAON_BASE + 0x3000)
 #define DR_REG_LP_HUK_BASE            (DR_REG_LPAON_BASE + 0x4000)
 #define DR_REG_HUK_BASE               (DR_REG_LP_HUK_BASE)
 #define DR_REG_PMU_BASE               (DR_REG_LPAON_BASE + 0x5000)
@@ -202,9 +202,6 @@
 
 //TODO: IDF-7531
 // #define DR_REG_PAU_BASE                         0x60093000
-// #define DR_REG_LP_ANALOG_PERI_BASE              0x600B2C00
-// #define DR_REG_LP_I2C_ANA_MST_BASE              0x600B2400
-// #define DR_REG_LP_AON_BASE                      0x600B1000
 
 //TODO: IDF-7688
 // #define DR_REG_TRACE_BASE                       0x600C0000
