@@ -92,6 +92,9 @@ struct gdma_hal_context_t {
     void (*set_crc_poly)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, const gdma_hal_crc_config_t *config); /// Set the CRC polynomial
     uint32_t (*get_crc_result)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir); /// Get the CRC result
 #endif // SOC_GDMA_SUPPORT_CRC
+#if SOC_GDMA_SUPPORT_ETM
+    void (*enable_etm_task)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis); /// Enable the ETM task
+#endif // SOC_GDMA_SUPPORT_ETM
 };
 
 void gdma_hal_deinit(gdma_hal_context_t *hal);
@@ -140,6 +143,10 @@ void gdma_hal_set_crc_poly(gdma_hal_context_t *hal, int chan_id, gdma_channel_di
 
 uint32_t gdma_hal_get_crc_result(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
 #endif // SOC_GDMA_SUPPORT_CRC
+
+#if SOC_GDMA_SUPPORT_ETM
+void gdma_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis);
+#endif
 
 #ifdef __cplusplus
 }
