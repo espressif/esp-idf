@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdio.h>
 #include <string.h>
@@ -79,14 +79,23 @@ static esp_err_t esp_mpi_isr_initialise(void)
     esp_mpi_interrupt_clear();
     esp_mpi_interrupt_enable(true);
     if (op_complete_sem == NULL) {
-        op_complete_sem = xSemaphoreCreateBinary();
-
+        static StaticSemaphore_t op_sem_buf;
+        op_complete_sem = xSemaphoreCreateBinaryStatic(&op_sem_buf);
         if (op_complete_sem == NULL) {
             ESP_LOGE(TAG, "Failed to create intr semaphore");
             return ESP_FAIL;
         }
 
-        esp_intr_alloc(ETS_RSA_INTR_SOURCE, 0, esp_mpi_complete_isr, NULL, NULL);
+        esp_err_t ret;
+        ret = esp_intr_alloc(ETS_RSA_INTR_SOURCE, 0, esp_mpi_complete_isr, NULL, NULL);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to allocate RSA interrupt %d", ret);
+
+            // This should be treated as fatal error as this API would mostly
+            // be invoked within mbedTLS interface. There is no way for the system
+            // to proceed if the MPI interrupt allocation fails here.
+            abort();
+        }
     }
 
     /* MPI is clocked proportionally to CPU clock, take power management lock */
@@ -398,7 +407,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     esp_mpi_enable_hardware_hw_op();
 
 #if defined (CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
-    if (esp_mpi_isr_initialise() == ESP_FAIL) {
+    if (esp_mpi_isr_initialise() != ESP_OK) {
         ret = -1;
         esp_mpi_disable_hardware_hw_op();
         goto cleanup;
