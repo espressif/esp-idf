@@ -72,6 +72,15 @@ void esp_crosscore_int_send_print_backtrace(int core_id);
  */
 void esp_crosscore_int_send_twdt_abort(int core_id);
 
+/**
+ * Send an interrupt to a CPU indicating it should call ipc_handle()
+ *
+ * This is used internally by the ipc_task when FREERTOS is not running on second core
+ *
+ * @param core_id Core that should call ipc_handle()
+ */
+void esp_crosscore_int_send_ipc_handle(int core_id);
+
 #endif // CONFIG_ESP_TASK_WDT_EN
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 

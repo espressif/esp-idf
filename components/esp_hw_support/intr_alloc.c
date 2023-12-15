@@ -25,10 +25,7 @@
 #include "soc/interrupts.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
-
-#if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
-#endif
 
 /* For targets that uses a CLIC as their interrupt controller, CPU_INT_LINES_COUNT represents the external interrupts count */
 #define CPU_INT_LINES_COUNT 32
@@ -685,12 +682,12 @@ esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
     return ESP_OK;
 }
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 static void esp_intr_free_cb(void *arg)
 {
     (void)esp_intr_free((intr_handle_t)arg);
 }
-#endif /* !CONFIG_FREERTOS_UNICORE */
+#endif /* !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE */
 
 esp_err_t esp_intr_free(intr_handle_t handle)
 {
@@ -699,13 +696,13 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         return ESP_ERR_INVALID_ARG;
     }
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     //Assign this routine to the core where this interrupt is allocated on.
     if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
         esp_err_t ret = esp_ipc_call_blocking(handle->vector_desc->cpu, &esp_intr_free_cb, (void *)handle);
         return ret == ESP_OK ? ESP_OK : ESP_FAIL;
     }
-#endif /* !CONFIG_FREERTOS_UNICORE */
+#endif /* !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE */
 
     portENTER_CRITICAL(&spinlock);
     esp_intr_disable(handle);

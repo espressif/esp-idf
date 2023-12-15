@@ -270,7 +270,7 @@ static void start_other_core(void)
     // no separate soc_caps.h for the single core variant.
     if (!(chip_info.cores > 1)) {
         ESP_EARLY_LOGE(TAG, "Running on single core variant of a chip, but app is built with multi-core support.");
-        ESP_EARLY_LOGE(TAG, "Check that CONFIG_FREERTOS_UNICORE is enabled in menuconfig");
+        ESP_EARLY_LOGE(TAG, "Check that CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE is enabled in menuconfig");
         abort();
     }
 

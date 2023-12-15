@@ -11,13 +11,16 @@
 #include "esp_err.h"
 #include "esp_ipc.h"
 #include "esp_private/esp_ipc_isr.h"
+#include "esp_ipc_isr.h"
 #include "esp_attr.h"
+#include "esp_private/esp_ipc.h"
+#include "esp_private/crosscore_int.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#if !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
+#if !defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
 
 #if CONFIG_COMPILER_OPTIMIZATION_NONE
 #define IPC_STACK_SIZE (CONFIG_ESP_IPC_TASK_STACK_SIZE + 0x100)
@@ -25,24 +28,64 @@
 #define IPC_STACK_SIZE (CONFIG_ESP_IPC_TASK_STACK_SIZE)
 #endif //CONFIG_COMPILER_OPTIMIZATION_NONE
 
-static DRAM_ATTR StaticSemaphore_t s_ipc_mutex_buffer[configNUM_CORES];
-static DRAM_ATTR StaticSemaphore_t s_ipc_ack_buffer[configNUM_CORES];
+static DRAM_ATTR StaticSemaphore_t s_ipc_mutex_buffer[portNUM_PROCESSORS];
+static DRAM_ATTR StaticSemaphore_t s_ipc_ack_buffer[portNUM_PROCESSORS];
 
-static TaskHandle_t s_ipc_task_handle[configNUM_CORES];
-static SemaphoreHandle_t s_ipc_mutex[configNUM_CORES];    // This mutex is used as a global lock for esp_ipc_* APIs
-static SemaphoreHandle_t s_ipc_ack[configNUM_CORES];      // Semaphore used to acknowledge that task was woken up,
-static volatile esp_ipc_func_t s_func[configNUM_CORES] = { 0 };   // Function which should be called by high priority task
-static void * volatile s_func_arg[configNUM_CORES];       // Argument to pass into s_func
 typedef enum {
     IPC_WAIT_NO = 0,
     IPC_WAIT_FOR_START,
     IPC_WAIT_FOR_END,
 } esp_ipc_wait_t;
 
+static TaskHandle_t s_ipc_task_handle[configNUM_CORES];
+static SemaphoreHandle_t s_ipc_mutex[portNUM_PROCESSORS];    // This mutex is used as a global lock for esp_ipc_* APIs
+static SemaphoreHandle_t s_ipc_ack[portNUM_PROCESSORS];      // Semaphore used to acknowledge that task was woken up,
+static volatile esp_ipc_func_t s_func[portNUM_PROCESSORS] = { 0 };   // Function which should be called by high priority task
+static void * volatile s_func_arg[portNUM_PROCESSORS];       // Argument to pass into s_func
+static volatile esp_ipc_wait_t s_func_wait_for[portNUM_PROCESSORS];      // Wait for function to finish
+
 #if CONFIG_APPTRACE_GCOV_ENABLE
 static volatile esp_ipc_func_t s_gcov_func = NULL;           // Gcov dump starter function which should be called by high priority task
 static void * volatile s_gcov_func_arg;                      // Argument to pass into s_gcov_func
+static esp_ipc_wait_t s_gcov_func_wait_for;                  // Wait for function to finish
 #endif
+
+void IRAM_ATTR ipc_handle(const int cpuid) 
+{
+#if CONFIG_APPTRACE_GCOV_ENABLE
+    if (s_gcov_func) {
+        (*s_gcov_func)(s_gcov_func_arg);
+        s_gcov_func = NULL;
+        /* we can not interfer with IPC calls so no need for further processing */
+        // esp_ipc API and gcov_from_isr APIs can be processed together if they came at the same time
+        if (s_gcov_func_wait_for == IPC_WAIT_NO) {
+            return;
+        }
+    }
+#endif // CONFIG_APPTRACE_GCOV_ENABLE
+
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    if (s_func[cpuid]) {
+        // we need to cache s_func, s_func_arg and ipc_ack variables locally
+        // because they can be changed by a subsequent IPC call (after xTaskNotify(caller_task_handle)).
+        esp_ipc_func_t func = s_func[cpuid];
+        s_func[cpuid] = NULL;
+        void* func_arg = s_func_arg[cpuid];
+        esp_ipc_wait_t func_wait_for = s_func_wait_for[cpuid];
+        SemaphoreHandle_t ipc_ack = s_ipc_ack[cpuid];
+
+        if (func_wait_for == IPC_WAIT_FOR_START) {
+            xSemaphoreGive(ipc_ack);
+            (*func)(func_arg);
+        } else if (func_wait_for == IPC_WAIT_FOR_END) {
+            (*func)(func_arg);
+            xSemaphoreGive(ipc_ack);
+        } else {
+            abort();
+        }
+    }
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+}
 
 static void IRAM_ATTR ipc_task(void* arg)
 {
@@ -54,41 +97,10 @@ static void IRAM_ATTR ipc_task(void* arg)
 #endif
 
     while (true) {
-        uint32_t ipc_wait;
-        xTaskNotifyWait(0, ULONG_MAX, &ipc_wait, portMAX_DELAY);
+        uint32_t notificationValue;
+        xTaskNotifyWait(0, ULONG_MAX, &notificationValue, portMAX_DELAY);
 
-#if CONFIG_APPTRACE_GCOV_ENABLE
-        if (s_gcov_func) {
-            (*s_gcov_func)(s_gcov_func_arg);
-            s_gcov_func = NULL;
-            /* we can not interfer with IPC calls so no need for further processing */
-            // esp_ipc API and gcov_from_isr APIs can be processed together if they came at the same time
-            if (ipc_wait == IPC_WAIT_NO) {
-                continue;
-            }
-        }
-#endif // CONFIG_APPTRACE_GCOV_ENABLE
-
-#ifndef CONFIG_FREERTOS_UNICORE
-        if (s_func[cpuid]) {
-            // we need to cache s_func, s_func_arg and ipc_ack variables locally
-            // because they can be changed by a subsequent IPC call (after xTaskNotify(caller_task_handle)).
-            esp_ipc_func_t func = s_func[cpuid];
-            s_func[cpuid] = NULL;
-            void* func_arg = s_func_arg[cpuid];
-            SemaphoreHandle_t ipc_ack = s_ipc_ack[cpuid];
-
-            if (ipc_wait == IPC_WAIT_FOR_START) {
-                xSemaphoreGive(ipc_ack);
-                (*func)(func_arg);
-            } else if (ipc_wait == IPC_WAIT_FOR_END) {
-                (*func)(func_arg);
-                xSemaphoreGive(ipc_ack);
-            } else {
-                abort();
-            }
-        }
-#endif // !CONFIG_FREERTOS_UNICORE
+        ipc_handle(cpuid);
     }
     // TODO: currently this is unreachable code. Introduce esp_ipc_uninit
     // function which will signal to both tasks that they can shut down.
@@ -114,21 +126,37 @@ static void esp_ipc_init(void)
 {
     char task_name[] = "ipcX"; // up to 10 ipc tasks/cores (0-9)
 
-    for (int i = 0; i < configNUM_CORES; ++i) {
-        task_name[3] = i + (char)'0';
+    for (int i = 0; i < portNUM_PROCESSORS; ++i) {
         s_ipc_mutex[i] = xSemaphoreCreateMutexStatic(&s_ipc_mutex_buffer[i]);
         s_ipc_ack[i] = xSemaphoreCreateBinaryStatic(&s_ipc_ack_buffer[i]);
-        BaseType_t res = xTaskCreatePinnedToCore(ipc_task, task_name, IPC_STACK_SIZE, (void*) i,
-                                                 configMAX_PRIORITIES - 1, &s_ipc_task_handle[i], i);
-        assert(res == pdTRUE);
-        (void)res;
+        if(i < configNUM_CORES) {
+            task_name[3] = i + (char)'0';
+            BaseType_t res = xTaskCreatePinnedToCore(ipc_task, task_name, IPC_STACK_SIZE, (void*) i,
+                                                     configMAX_PRIORITIES - 1, &s_ipc_task_handle[i], i);
+            assert(res == pdTRUE);
+            (void)res;
+        }
     }
 }
 
 static esp_err_t esp_ipc_call_and_wait(uint32_t cpu_id, esp_ipc_func_t func, void* arg, esp_ipc_wait_t wait_for)
 {
     if (cpu_id >= configNUM_CORES) {
-        return ESP_ERR_INVALID_ARG;
+        if (cpu_id >= portNUM_PROCESSORS) {
+            return ESP_ERR_INVALID_ARG;
+        }
+        if( cpu_id == xPortGetCoreID()) {
+            (*func)(arg);
+        } else {
+            xSemaphoreTake(s_ipc_mutex[cpu_id], portMAX_DELAY);
+            s_func[cpu_id] = func;
+            s_func_arg[cpu_id] = arg;
+            s_func_wait_for[cpu_id] = wait_for;
+            esp_crosscore_int_send_ipc_handle(cpu_id);
+            xSemaphoreTake(s_ipc_ack[cpu_id], portMAX_DELAY);
+            xSemaphoreGive(s_ipc_mutex[cpu_id]);
+        }
+        return ESP_OK;
     }
     if (s_ipc_task_handle[cpu_id] == NULL) {
         return ESP_ERR_INVALID_STATE;
@@ -145,22 +173,15 @@ static esp_err_t esp_ipc_call_and_wait(uint32_t cpu_id, esp_ipc_func_t func, voi
         vTaskPrioritySet(s_ipc_task_handle[cpu_id], priority_of_current_task);
     }
 
-    xSemaphoreTake(s_ipc_mutex[cpu_id], portMAX_DELAY);
     vTaskPrioritySet(s_ipc_task_handle[cpu_id], priority_of_current_task);
-#else
-    xSemaphoreTake(s_ipc_mutex[0], portMAX_DELAY);
 #endif
-
+    xSemaphoreTake(s_ipc_mutex[cpu_id], portMAX_DELAY);
     s_func[cpu_id] = func;
     s_func_arg[cpu_id] = arg;
-    xTaskNotify(s_ipc_task_handle[cpu_id], wait_for, eSetValueWithOverwrite);
+    s_func_wait_for[cpu_id] = wait_for;
+    xTaskNotify(s_ipc_task_handle[cpu_id], 0, eSetValueWithOverwrite);
     xSemaphoreTake(s_ipc_ack[cpu_id], portMAX_DELAY);
-
-#ifdef CONFIG_ESP_IPC_USES_CALLERS_PRIORITY
     xSemaphoreGive(s_ipc_mutex[cpu_id]);
-#else
-    xSemaphoreGive(s_ipc_mutex[0]);
-#endif
     return ESP_OK;
 }
 
@@ -187,9 +208,10 @@ esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void
     if (s_gcov_func == NULL) {
         s_gcov_func_arg = arg;
         s_gcov_func = func;
+        s_gcov_func_wait_for = IPC_WAIT_NO;
 
         // If the target task already has a notification pending then its notification value is not updated (WithoutOverwrite).
-        xTaskNotifyFromISR(s_ipc_task_handle[cpu_id], IPC_WAIT_NO, eSetValueWithoutOverwrite, NULL);
+        xTaskNotifyFromISR(s_ipc_task_handle[cpu_id], 0, eSetValueWithoutOverwrite, NULL);
         return ESP_OK;
     }
 
@@ -198,4 +220,4 @@ esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void
 }
 #endif // CONFIG_APPTRACE_GCOV_ENABLE
 
-#endif // !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
+#endif // !defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)

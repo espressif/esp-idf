@@ -201,7 +201,7 @@ static inline bool is_valid_host(spi_host_device_t host)
 #endif
 }
 
-#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 typedef struct {
     spi_host_t *spi_host;
     esp_err_t *err;
@@ -243,7 +243,7 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
 
     // interrupts are not allowed on SPI1 bus
     if (host_id != SPI1_HOST) {
-#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         if (bus_attr->bus_cfg.isr_cpu_id > ESP_INTR_CPU_AFFINITY_AUTO) {
             SPI_CHECK(bus_attr->bus_cfg.isr_cpu_id <= ESP_INTR_CPU_AFFINITY_1, "invalid core id", ESP_ERR_INVALID_ARG);
             spi_ipc_param_t ipc_arg = {

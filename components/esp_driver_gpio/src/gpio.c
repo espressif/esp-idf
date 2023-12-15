@@ -11,10 +11,7 @@
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "soc/interrupts.h"
-#if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
-#endif
-
 #include "soc/soc_caps.h"
 #include "soc/gpio_periph.h"
 #include "esp_log.h"
@@ -605,12 +602,12 @@ esp_err_t gpio_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
     }
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     esp_err_t ret;
-#if CONFIG_FREERTOS_UNICORE
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     gpio_isr_register_on_core_static(&p);
     ret = ESP_OK;
-#else /* CONFIG_FREERTOS_UNICORE */
+#else /* CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE */
     ret = esp_ipc_call_blocking(gpio_context.isr_core_id, gpio_isr_register_on_core_static, (void *)&p);
-#endif /* !CONFIG_FREERTOS_UNICORE */
+#endif /* !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE */
     if (ret != ESP_OK) {
         ESP_LOGE(GPIO_TAG, "esp_ipc_call_blocking failed (0x%x)", ret);
         return ESP_ERR_NOT_FOUND;

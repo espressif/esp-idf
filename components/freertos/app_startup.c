@@ -18,6 +18,7 @@
 #include "esp_freertos_hooks.h"
 #include "esp_heap_caps_init.h"
 #include "esp_chip_info.h"
+#include "esp_private/esp_ipc_isr.h"
 #if CONFIG_SPIRAM
 /* Required by esp_psram_extram_reserve_dma_pool() */
 #include "esp_psram.h"
@@ -43,16 +44,6 @@
  *          - esp_startup_start_app_other_cores(), registers some daemon services for CPUx, waits for CPU0 to start
  *            FreeRTOS, then yields (via xPortStartScheduler()) to schedule a task.
  * ------------------------------------------------------------------------------------------------------------------ */
-
-// ----------------------- Checks --------------------------
-
-/*
-For now, AMP is not supported (i.e., running FreeRTOS on one core and a bare metal/other OS on the other). Therefore,
-CONFIG_FREERTOS_UNICORE and CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE should be identical. We add a check for this here.
-*/
-#if CONFIG_FREERTOS_UNICORE != CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-#error "AMP not supported. FreeRTOS number of cores and system number of cores must be identical"
-#endif
 
 // -------------------- Declarations -----------------------
 
@@ -102,7 +93,16 @@ void esp_startup_start_app(void)
 
 // --------------- CPU[1:N-1] App Startup ------------------
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+#if CONFIG_FREERTOS_UNICORE
+static void  app_main1_default(void)
+{
+    while (1) {
+        esp_rom_delay_us(UINT32_MAX);
+    }
+}
+void app_main1(void) __attribute__((weak, alias("app_main1_default"))) __attribute__((noreturn));
+#endif
 void esp_startup_start_app_other_cores(void)
 {
     // For now, we only support up to two core: 0 and 1.
@@ -130,11 +130,20 @@ void esp_startup_start_app_other_cores(void)
     // Initialize the cross-core interrupt on CPU1
     esp_crosscore_int_init();
 
+#if !CONFIG_FREERTOS_UNICORE
     ESP_EARLY_LOGD(APP_START_TAG, "Starting scheduler on CPU%d", xPortGetCoreID());
     xPortStartScheduler();
     abort(); // Only get to here if FreeRTOS somehow very broken
-}
+#else 
+//No scheduler on this core so IPC Task is never run so initialize the IPC_ISR if enabled here
+#ifdef CONFIG_ESP_IPC_ISR_ENABLE
+    esp_ipc_isr_init();
+#endif
+    ESP_EARLY_LOGI(APP_START_TAG, "Calling app_main1()");
+    app_main1();
 #endif // !CONFIG_FREERTOS_UNICORE
+}
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
 /* ---------------------------------------------------- Main Task ------------------------------------------------------
  * - main_task is a daemon task created by CPU0 before it starts FreeRTOS

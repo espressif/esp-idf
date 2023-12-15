@@ -23,7 +23,6 @@ menu "FreeRTOS"
             # Todo: Replace with CONFIG_NUM_CORES (IDF-4986)
             bool "Run FreeRTOS only on first core"
             default "y" if IDF_TARGET_ESP32S2 || IDF_TARGET_LINUX
-            select ESP_SYSTEM_SINGLE_CORE_MODE
             help
                 This version of FreeRTOS normally takes control of all cores of the CPU. Select this if you only want
                 to start it on the first core. This is needed when e.g. another process needs complete control over the

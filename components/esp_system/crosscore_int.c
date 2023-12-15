@@ -11,6 +11,7 @@
 #include "esp_debug_helpers.h"
 #include "soc/periph_defs.h"
 #include "hal/crosscore_int_ll.h"
+#include "esp_private/esp_ipc.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
@@ -24,6 +25,7 @@
 #define REASON_PRINT_BACKTRACE  BIT(2)
 #define REASON_GDB_CALL         BIT(3)
 #define REASON_TWDT_ABORT       BIT(4)
+#define REASON_IPC_HANDLE       BIT(5)
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[portNUM_PROCESSORS];
@@ -70,6 +72,10 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg)
 
     if (my_reason_val & REASON_PRINT_BACKTRACE) {
         esp_backtrace_print(100);
+    }
+
+    if(my_reason_val & REASON_IPC_HANDLE) {
+        ipc_handle(esp_cpu_get_core_id());
     }
 
 #if CONFIG_ESP_TASK_WDT_EN
@@ -132,6 +138,11 @@ void IRAM_ATTR esp_crosscore_int_send_gdb_call(int core_id)
 void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
+}
+
+void IRAM_ATTR esp_crosscore_int_send_ipc_handle(int core_id)
+{
+    esp_crosscore_int_send(core_id, REASON_IPC_HANDLE);
 }
 
 #if CONFIG_ESP_TASK_WDT_EN

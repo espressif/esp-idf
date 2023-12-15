@@ -116,7 +116,7 @@ static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
     }
 }
 
-#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 typedef struct {
     spi_slave_t *host;
     esp_err_t *err;
@@ -244,7 +244,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         }
     }
 
-#if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     if (bus_config->isr_cpu_id > ESP_INTR_CPU_AFFINITY_AUTO) {
         spihost[host]->intr_flags = bus_config->intr_flags;
         SPI_CHECK(bus_config->isr_cpu_id <= ESP_INTR_CPU_AFFINITY_1, "invalid core id", ESP_ERR_INVALID_ARG);

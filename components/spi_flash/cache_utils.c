@@ -47,9 +47,7 @@
 #include "hal/cache_ll.h"
 #include <soc/soc.h>
 #include "sdkconfig.h"
-#ifndef CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
-#endif
 #include "esp_attr.h"
 #include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
@@ -74,7 +72,7 @@ void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 static uint32_t s_flash_op_cache_state[2];
 
 
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 static SemaphoreHandle_t s_flash_op_mutex;
 static volatile bool s_flash_op_can_start = false;
 static volatile bool s_flash_op_complete = false;
@@ -282,7 +280,7 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os(void)
     esp_intr_noniram_enable();
 }
 
-#else // CONFIG_FREERTOS_UNICORE
+#else // CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
 void spi_flash_init_lock(void)
 {
@@ -343,7 +341,7 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os(void)
     esp_intr_noniram_enable();
 }
 
-#endif // CONFIG_FREERTOS_UNICORE
+#endif // CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
 
 void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
