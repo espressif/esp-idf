@@ -50,7 +50,7 @@ static void * volatile s_gcov_func_arg;                      // Argument to pass
 static esp_ipc_wait_t s_gcov_func_wait_for;                  // Wait for function to finish
 #endif
 
-void IRAM_ATTR ipc_handle(const int cpuid) 
+void IRAM_ATTR ipc_handle(const int cpuid)
 {
 #if CONFIG_APPTRACE_GCOV_ENABLE
     if (s_gcov_func) {

@@ -134,7 +134,7 @@ void esp_startup_start_app_other_cores(void)
     ESP_EARLY_LOGD(APP_START_TAG, "Starting scheduler on CPU%d", xPortGetCoreID());
     xPortStartScheduler();
     abort(); // Only get to here if FreeRTOS somehow very broken
-#else 
+#else
 //No scheduler on this core so IPC Task is never run so initialize the IPC_ISR if enabled here
 #ifdef CONFIG_ESP_IPC_ISR_ENABLE
     esp_ipc_isr_init();

@@ -14,7 +14,7 @@ extern "C" {
  * @brief Handles any pending IPC functions
  *
  * @param cpuid Core that should handle the IPC functions
- * 
+ *
  * @note This function is called from esp_crosscore_isr() or ipc_task() depending on availability of RTOS on specified core.
  */
 void ipc_handle(const int cpuid);
