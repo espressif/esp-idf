@@ -901,6 +901,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         btc_gatts_cb_to_app(ESP_GATTS_STOP_EVT, gatts_if, &param);
         break;
     case BTA_GATTS_CONNECT_EVT: {
+#if (SMP_INCLUDED == TRUE)
         bt_bdaddr_t bt_addr;
         memcpy(bt_addr.address, p_data->conn.remote_bda, sizeof(bt_addr.address));
         if (btc_storage_update_active_device(&bt_addr)) {
@@ -909,7 +910,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
                             bt_addr.address[2], bt_addr.address[3],
                             bt_addr.address[4], bt_addr.address[5]);
         }
-
+#endif  ///SMP_INCLUDED == TRUE
         gatts_if = p_data->conn.server_if;
         param.connect.conn_id = BTC_GATT_GET_CONN_ID(p_data->conn.conn_id);
         param.connect.link_role = p_data->conn.link_role;
