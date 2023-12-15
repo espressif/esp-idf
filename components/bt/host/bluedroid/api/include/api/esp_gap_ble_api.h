@@ -1414,6 +1414,15 @@ typedef void (* esp_gap_ble_cb_t)(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
  */
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback);
 
+/**
+ * @brief           This function is called to get the current gap callback
+ *
+ * @return
+ *                  - esp_gap_ble_cb_t : callback function
+ *
+ */
+esp_gap_ble_cb_t esp_ble_gap_get_callback(void);
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
  * @brief           This function is called to override the BTA default ADV parameters.
