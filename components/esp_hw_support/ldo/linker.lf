@@ -1,0 +1,4 @@
+[mapping:ldo_driver]
+archive: libesp_hw_support.a
+entries:
+	esp_ldo: esp_ldo_init_unit_early (noflash)

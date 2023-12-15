@@ -2921,437 +2921,85 @@ typedef union {
     uint32_t val;
 } pmu_pwr_state_reg_t;
 
-/** Type of ext_ldo_p0_pmu_0p1a register
+/** Type of pmu_ext_ldo register
  *  need_des
  */
 typedef union {
     struct {
         uint32_t reserved_0:7;
-        /** pmu_0p1a_force_tieh_sel_0 : R/W; bitpos: [7]; default: 0;
+        /** force_tieh_sel : R/W; bitpos: [7]; default: 0;
          *  need_des
          */
-        uint32_t pmu_0p1a_force_tieh_sel_0:1;
-        /** pmu_0p1a_xpd_0 : R/W; bitpos: [8]; default: 1;
+        uint32_t force_tieh_sel:1;
+        /** xpd : R/W; bitpos: [8]; default: 1;
          *  need_des
          */
-        uint32_t pmu_0p1a_xpd_0:1;
-        /** pmu_0p1a_tieh_sel_0 : R/W; bitpos: [11:9]; default: 0;
+        uint32_t xpd:1;
+        /** tieh_sel : R/W; bitpos: [11:9]; default: 0;
          *  need_des
          */
-        uint32_t pmu_0p1a_tieh_sel_0:3;
-        /** pmu_0p1a_tieh_pos_en_0 : R/W; bitpos: [12]; default: 0;
+        uint32_t tieh_sel:3;
+        /** tieh_pos_en : R/W; bitpos: [12]; default: 0;
          *  need_des
          */
-        uint32_t pmu_0p1a_tieh_pos_en_0:1;
-        /** pmu_0p1a_tieh_neg_en_0 : R/W; bitpos: [13]; default: 0;
+        uint32_t tieh_pos_en:1;
+        /** tieh_neg_en : R/W; bitpos: [13]; default: 0;
          *  need_des
          */
-        uint32_t pmu_0p1a_tieh_neg_en_0:1;
-        /** pmu_0p1a_tieh_0 : R/W; bitpos: [14]; default: 0;
+        uint32_t tieh_neg_en:1;
+        /** tieh : R/W; bitpos: [14]; default: 0;
          *  need_des
          */
-        uint32_t pmu_0p1a_tieh_0:1;
-        /** pmu_0p1a_target1_0 : R/W; bitpos: [22:15]; default: 64;
+        uint32_t tieh:1;
+        /** target1 : R/W; bitpos: [22:15]; default: 64;
          *  need_des
          */
-        uint32_t pmu_0p1a_target1_0:8;
-        /** pmu_0p1a_target0_0 : R/W; bitpos: [30:23]; default: 128;
+        uint32_t target1:8;
+        /** target0 : R/W; bitpos: [30:23]; default: 128;
          *  need_des
          */
-        uint32_t pmu_0p1a_target0_0:8;
-        /** pmu_0p1a_ldo_cnt_prescaler_sel_0 : R/W; bitpos: [31]; default: 0;
+        uint32_t target0:8;
+        /** ldo_cnt_prescaler_sel : R/W; bitpos: [31]; default: 0;
          *  need_des
          */
-        uint32_t pmu_0p1a_ldo_cnt_prescaler_sel_0:1;
+        uint32_t ldo_cnt_prescaler_sel:1;
     };
     uint32_t val;
-} pmu_ext_ldo_p0_pmu_0p1a_reg_t;
+} pmu_ext_ldo_reg_t;
 
-/** Type of ext_ldo_p0_pmu_0p1a_ana register
+/** Type of pmu_ext_ldo_ana register
  *  need_des
  */
 typedef union {
     struct {
         uint32_t reserved_0:23;
-        /** ana_pmu_0p1a_mul_0 : R/W; bitpos: [25:23]; default: 2;
+        /** mul : R/W; bitpos: [25:23]; default: 2;
          *  need_des
          */
-        uint32_t ana_pmu_0p1a_mul_0:3;
-        /** ana_pmu_0p1a_en_vdet_0 : R/W; bitpos: [26]; default: 0;
+        uint32_t mul:3;
+        /** en_vdet : R/W; bitpos: [26]; default: 0;
          *  need_des
          */
-        uint32_t ana_pmu_0p1a_en_vdet_0:1;
-        /** ana_pmu_0p1a_en_cur_lim_0 : R/W; bitpos: [27]; default: 0;
+        uint32_t en_vdet:1;
+        /** en_cur_lim : R/W; bitpos: [27]; default: 0;
          *  need_des
          */
-        uint32_t ana_pmu_0p1a_en_cur_lim_0:1;
-        /** ana_pmu_0p1a_dref_0 : R/W; bitpos: [31:28]; default: 11;
+        uint32_t en_cur_lim:1;
+        /** dref : R/W; bitpos: [31:28]; default: 11;
          *  need_des
          */
-        uint32_t ana_pmu_0p1a_dref_0:4;
+        uint32_t dref:4;
     };
     uint32_t val;
-} pmu_ext_ldo_p0_pmu_0p1a_ana_reg_t;
+} pmu_ext_ldo_ana_reg_t;
 
-/** Type of ext_ldo_p0_pmu_0p2a register
+/** Type of ahb_dma_in_chn_reg_t register
  *  need_des
  */
-typedef union {
-    struct {
-        uint32_t reserved_0:7;
-        /** pmu_0p2a_force_tieh_sel_0 : R/W; bitpos: [7]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_force_tieh_sel_0:1;
-        /** pmu_0p2a_xpd_0 : R/W; bitpos: [8]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_xpd_0:1;
-        /** pmu_0p2a_tieh_sel_0 : R/W; bitpos: [11:9]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_tieh_sel_0:3;
-        /** pmu_0p2a_tieh_pos_en_0 : R/W; bitpos: [12]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_tieh_pos_en_0:1;
-        /** pmu_0p2a_tieh_neg_en_0 : R/W; bitpos: [13]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_tieh_neg_en_0:1;
-        /** pmu_0p2a_tieh_0 : R/W; bitpos: [14]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_tieh_0:1;
-        /** pmu_0p2a_target1_0 : R/W; bitpos: [22:15]; default: 64;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_target1_0:8;
-        /** pmu_0p2a_target0_0 : R/W; bitpos: [30:23]; default: 128;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_target0_0:8;
-        /** pmu_0p2a_ldo_cnt_prescaler_sel_0 : R/W; bitpos: [31]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_ldo_cnt_prescaler_sel_0:1;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p0_pmu_0p2a_reg_t;
-
-/** Type of ext_ldo_p0_pmu_0p2a_ana register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:23;
-        /** ana_pmu_0p2a_mul_0 : R/W; bitpos: [25:23]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p2a_mul_0:3;
-        /** ana_pmu_0p2a_en_vdet_0 : R/W; bitpos: [26]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p2a_en_vdet_0:1;
-        /** ana_pmu_0p2a_en_cur_lim_0 : R/W; bitpos: [27]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p2a_en_cur_lim_0:1;
-        /** ana_pmu_0p2a_dref_0 : R/W; bitpos: [31:28]; default: 10;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p2a_dref_0:4;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p0_pmu_0p2a_ana_reg_t;
-
-/** Type of ext_ldo_p0_pmu_0p3a register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:7;
-        /** pmu_0p3a_force_tieh_sel_0 : R/W; bitpos: [7]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_force_tieh_sel_0:1;
-        /** pmu_0p3a_xpd_0 : R/W; bitpos: [8]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_xpd_0:1;
-        /** pmu_0p3a_tieh_sel_0 : R/W; bitpos: [11:9]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_tieh_sel_0:3;
-        /** pmu_0p3a_tieh_pos_en_0 : R/W; bitpos: [12]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_tieh_pos_en_0:1;
-        /** pmu_0p3a_tieh_neg_en_0 : R/W; bitpos: [13]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_tieh_neg_en_0:1;
-        /** pmu_0p3a_tieh_0 : R/W; bitpos: [14]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_tieh_0:1;
-        /** pmu_0p3a_target1_0 : R/W; bitpos: [22:15]; default: 64;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_target1_0:8;
-        /** pmu_0p3a_target0_0 : R/W; bitpos: [30:23]; default: 128;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_target0_0:8;
-        /** pmu_0p3a_ldo_cnt_prescaler_sel_0 : R/W; bitpos: [31]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_ldo_cnt_prescaler_sel_0:1;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p0_pmu_0p3a_reg_t;
-
-/** Type of ext_ldo_p0_pmu_0p3a_ana register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:23;
-        /** ana_pmu_0p3a_mul_0 : R/W; bitpos: [25:23]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p3a_mul_0:3;
-        /** ana_pmu_0p3a_en_vdet_0 : R/W; bitpos: [26]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p3a_en_vdet_0:1;
-        /** ana_pmu_0p3a_en_cur_lim_0 : R/W; bitpos: [27]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p3a_en_cur_lim_0:1;
-        /** ana_pmu_0p3a_dref_0 : R/W; bitpos: [31:28]; default: 10;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p3a_dref_0:4;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p0_pmu_0p3a_ana_reg_t;
-
-/** Type of ext_ldo_p1_pmu_0p1a register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:7;
-        /** pmu_0p1a_force_tieh_sel_1 : R/W; bitpos: [7]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_force_tieh_sel_1:1;
-        /** pmu_0p1a_xpd_1 : R/W; bitpos: [8]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_xpd_1:1;
-        /** pmu_0p1a_tieh_sel_1 : R/W; bitpos: [11:9]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_tieh_sel_1:3;
-        /** pmu_0p1a_tieh_pos_en_1 : R/W; bitpos: [12]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_tieh_pos_en_1:1;
-        /** pmu_0p1a_tieh_neg_en_1 : R/W; bitpos: [13]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_tieh_neg_en_1:1;
-        /** pmu_0p1a_tieh_1 : R/W; bitpos: [14]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_tieh_1:1;
-        /** pmu_0p1a_target1_1 : R/W; bitpos: [22:15]; default: 64;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_target1_1:8;
-        /** pmu_0p1a_target0_1 : R/W; bitpos: [30:23]; default: 128;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_target0_1:8;
-        /** pmu_0p1a_ldo_cnt_prescaler_sel_1 : R/W; bitpos: [31]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p1a_ldo_cnt_prescaler_sel_1:1;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p1_pmu_0p1a_reg_t;
-
-/** Type of ext_ldo_p1_pmu_0p1a_ana register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:23;
-        /** ana_pmu_0p1a_mul_1 : R/W; bitpos: [25:23]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p1a_mul_1:3;
-        /** ana_pmu_0p1a_en_vdet_1 : R/W; bitpos: [26]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p1a_en_vdet_1:1;
-        /** ana_pmu_0p1a_en_cur_lim_1 : R/W; bitpos: [27]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p1a_en_cur_lim_1:1;
-        /** ana_pmu_0p1a_dref_1 : R/W; bitpos: [31:28]; default: 10;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p1a_dref_1:4;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p1_pmu_0p1a_ana_reg_t;
-
-/** Type of ext_ldo_p1_pmu_0p2a register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:7;
-        /** pmu_0p2a_force_tieh_sel_1 : R/W; bitpos: [7]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_force_tieh_sel_1:1;
-        /** pmu_0p2a_xpd_1 : R/W; bitpos: [8]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_xpd_1:1;
-        /** pmu_0p2a_tieh_sel_1 : R/W; bitpos: [11:9]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_tieh_sel_1:3;
-        /** pmu_0p2a_tieh_pos_en_1 : R/W; bitpos: [12]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_tieh_pos_en_1:1;
-        /** pmu_0p2a_tieh_neg_en_1 : R/W; bitpos: [13]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_tieh_neg_en_1:1;
-        /** pmu_0p2a_tieh_1 : R/W; bitpos: [14]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_tieh_1:1;
-        /** pmu_0p2a_target1_1 : R/W; bitpos: [22:15]; default: 64;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_target1_1:8;
-        /** pmu_0p2a_target0_1 : R/W; bitpos: [30:23]; default: 128;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_target0_1:8;
-        /** pmu_0p2a_ldo_cnt_prescaler_sel_1 : R/W; bitpos: [31]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p2a_ldo_cnt_prescaler_sel_1:1;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p1_pmu_0p2a_reg_t;
-
-/** Type of ext_ldo_p1_pmu_0p2a_ana register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:23;
-        /** ana_pmu_0p2a_mul_1 : R/W; bitpos: [25:23]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p2a_mul_1:3;
-        /** ana_pmu_0p2a_en_vdet_1 : R/W; bitpos: [26]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p2a_en_vdet_1:1;
-        /** ana_pmu_0p2a_en_cur_lim_1 : R/W; bitpos: [27]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p2a_en_cur_lim_1:1;
-        /** ana_pmu_0p2a_dref_1 : R/W; bitpos: [31:28]; default: 10;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p2a_dref_1:4;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p1_pmu_0p2a_ana_reg_t;
-
-/** Type of ext_ldo_p1_pmu_0p3a register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:7;
-        /** pmu_0p3a_force_tieh_sel_1 : R/W; bitpos: [7]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_force_tieh_sel_1:1;
-        /** pmu_0p3a_xpd_1 : R/W; bitpos: [8]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_xpd_1:1;
-        /** pmu_0p3a_tieh_sel_1 : R/W; bitpos: [11:9]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_tieh_sel_1:3;
-        /** pmu_0p3a_tieh_pos_en_1 : R/W; bitpos: [12]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_tieh_pos_en_1:1;
-        /** pmu_0p3a_tieh_neg_en_1 : R/W; bitpos: [13]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_tieh_neg_en_1:1;
-        /** pmu_0p3a_tieh_1 : R/W; bitpos: [14]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_tieh_1:1;
-        /** pmu_0p3a_target1_1 : R/W; bitpos: [22:15]; default: 64;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_target1_1:8;
-        /** pmu_0p3a_target0_1 : R/W; bitpos: [30:23]; default: 128;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_target0_1:8;
-        /** pmu_0p3a_ldo_cnt_prescaler_sel_1 : R/W; bitpos: [31]; default: 0;
-         *  need_des
-         */
-        uint32_t pmu_0p3a_ldo_cnt_prescaler_sel_1:1;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p1_pmu_0p3a_reg_t;
-
-/** Type of ext_ldo_p1_pmu_0p3a_ana register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:23;
-        /** ana_pmu_0p3a_mul_1 : R/W; bitpos: [25:23]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p3a_mul_1:3;
-        /** ana_pmu_0p3a_en_vdet_1 : R/W; bitpos: [26]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p3a_en_vdet_1:1;
-        /** ana_pmu_0p3a_en_cur_lim_1 : R/W; bitpos: [27]; default: 0;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p3a_en_cur_lim_1:1;
-        /** ana_pmu_0p3a_dref_1 : R/W; bitpos: [31:28]; default: 10;
-         *  need_des
-         */
-        uint32_t ana_pmu_0p3a_dref_1:4;
-    };
-    uint32_t val;
-} pmu_ext_ldo_p1_pmu_0p3a_ana_reg_t;
+typedef volatile struct pmu_ext_ldo_info_s {
+    volatile pmu_ext_ldo_reg_t pmu_ext_ldo;
+    volatile pmu_ext_ldo_ana_reg_t pmu_ext_ldo_ana;
+} pmu_ext_ldo_info_t;
 
 /** Type of ext_wakeup_lv register
  *  need_des
@@ -3844,18 +3492,7 @@ typedef struct pmu_dev_t {
     volatile pmu_clk_state0_reg_t clk_state0;
     volatile pmu_clk_state1_reg_t clk_state1;
     volatile pmu_clk_state2_reg_t clk_state2;
-    volatile pmu_ext_ldo_p0_pmu_0p1a_reg_t ext_ldo_p0_pmu_0p1a;
-    volatile pmu_ext_ldo_p0_pmu_0p1a_ana_reg_t ext_ldo_p0_pmu_0p1a_ana;
-    volatile pmu_ext_ldo_p0_pmu_0p2a_reg_t ext_ldo_p0_pmu_0p2a;
-    volatile pmu_ext_ldo_p0_pmu_0p2a_ana_reg_t ext_ldo_p0_pmu_0p2a_ana;
-    volatile pmu_ext_ldo_p0_pmu_0p3a_reg_t ext_ldo_p0_pmu_0p3a;
-    volatile pmu_ext_ldo_p0_pmu_0p3a_ana_reg_t ext_ldo_p0_pmu_0p3a_ana;
-    volatile pmu_ext_ldo_p1_pmu_0p1a_reg_t ext_ldo_p1_pmu_0p1a;
-    volatile pmu_ext_ldo_p1_pmu_0p1a_ana_reg_t ext_ldo_p1_pmu_0p1a_ana;
-    volatile pmu_ext_ldo_p1_pmu_0p2a_reg_t ext_ldo_p1_pmu_0p2a;
-    volatile pmu_ext_ldo_p1_pmu_0p2a_ana_reg_t ext_ldo_p1_pmu_0p2a_ana;
-    volatile pmu_ext_ldo_p1_pmu_0p3a_reg_t ext_ldo_p1_pmu_0p3a;
-    volatile pmu_ext_ldo_p1_pmu_0p3a_ana_reg_t ext_ldo_p1_pmu_0p3a_ana;
+    volatile pmu_ext_ldo_info_t ext_ldo[6];
     volatile pmu_ext_wakeup_lv_reg_t ext_wakeup_lv;
     volatile pmu_ext_wakeup_sel_reg_t ext_wakeup_sel;
     volatile pmu_ext_wakeup_st_reg_t ext_wakeup_st;

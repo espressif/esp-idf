@@ -8,6 +8,10 @@ set(srcs "test_app_main.c"
           "test_random.c"
            )
 
+if(CONFIG_SOC_MULTI_USAGE_LDO_SUPPORTED)
+    list(APPEND srcs "test_ldo.c")
+endif()
+
 if(CONFIG_SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX OR CONFIG_SOC_GPIO_CLOCKOUT_BY_IO_MUX)
     list(APPEND srcs "test_esp_clock_output.c")
 endif()
