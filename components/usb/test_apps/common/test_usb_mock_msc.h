@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,7 +112,8 @@ extern const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc;
     (setup_pkt_ptr)->wLength = 0;    \
 })
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
     uint8_t opcode; //0x28 = read(10), 0x2A=write(10)
     uint8_t flags;
     uint8_t lba_3;
@@ -125,7 +126,8 @@ typedef struct __attribute__((packed)) {
     uint8_t control;
 } mock_scsi_cmd10_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
     uint32_t dCBWSignature;
     uint32_t dCBWTag;
     uint32_t dCBWDataTransferLength;
@@ -137,7 +139,8 @@ typedef struct __attribute__((packed)) {
 } mock_msc_bulk_cbw_t;
 
 // USB Bulk Transfer Command Status Wrapper data
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
     uint32_t dCSWSignature;
     uint32_t dCSWTag;
     uint32_t dCSWDataResidue;
@@ -180,7 +183,6 @@ ISOC, transferring to a non-existent endpoint should work. The non-existent endp
 #define MOCK_ISOC_EP_NUM        2
 #define MOCK_ISOC_EP_MPS        512
 
-
 static const usb_ep_desc_t mock_isoc_out_ep_desc = {
     .bLength = sizeof(usb_ep_desc_t),
     .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
@@ -189,7 +191,6 @@ static const usb_ep_desc_t mock_isoc_out_ep_desc = {
     .wMaxPacketSize = MOCK_ISOC_EP_MPS,     //MPS of 512 bytes
     .bInterval = 1,     //Isoc interval is (2 ^ (bInterval - 1)) which means an interval of 1ms
 };
-
 
 #ifdef __cplusplus
 }
