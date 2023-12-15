@@ -309,6 +309,7 @@ test_pytest_qemu:
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files known_failure_cases/known_failure_cases.txt
       --app-info-filepattern \"list_job_*.txt\"
+      --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
 
 test_pytest_linux:
   extends:
