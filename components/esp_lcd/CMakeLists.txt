@@ -28,5 +28,5 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_REQUIRES ${priv_requires}
-                       REQUIRES driver esp_driver_gpio esp_driver_spi
+                       REQUIRES driver esp_driver_gpio esp_driver_spi esp_driver_i2c
                        LDFRAGMENTS linker.lf)

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -32,7 +31,7 @@ void disp_buf(uint8_t *buf, int len)
     int i;
     for (i = 0; i < len; i++) {
         printf("%02x ", buf[i]);
-        if (( i + 1 ) % 16 == 0) {
+        if ((i + 1) % 16 == 0) {
             printf("\n");
         }
     }
@@ -132,7 +131,6 @@ static void i2c_slave_read_test(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test, i2c_slave_read_test);
 
-
 static void master_read_slave_test(void)
 {
     uint8_t data_rd[DATA_LENGTH] = {0};
@@ -166,7 +164,7 @@ static void master_read_slave_test(void)
     vTaskDelay(100 / portTICK_PERIOD_MS);
     for (int i = 0; i < DATA_LENGTH; i++) {
         printf("%d\n", data_rd[i]);
-        TEST_ASSERT(data_rd[i]==i);
+        TEST_ASSERT(data_rd[i] == i);
     }
     unity_send_signal("ready to delete master read test");
 
@@ -204,7 +202,6 @@ static void slave_write_buffer_test(void)
     unity_wait_for_signal("ready to delete master read test");
     TEST_ESP_OK(i2c_del_slave_device(slave_handle));
 }
-
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_test, slave_write_buffer_test);
 
@@ -312,7 +309,6 @@ static void i2c_slave_read_write_test(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2C read and write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
-
 
 static void i2c_master_repeat_write(void)
 {

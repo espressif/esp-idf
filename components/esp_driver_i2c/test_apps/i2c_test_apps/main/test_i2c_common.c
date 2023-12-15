@@ -101,21 +101,21 @@ TEST_CASE("I2C device add & remove check", "[i2c]")
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config_1, &bus_handle));
 
     i2c_device_config_t dev_cfg_1 = {
-        .scl_speed_hz = 100*1000,
+        .scl_speed_hz = 100 * 1000,
         .device_address = 0x10,
     };
     i2c_master_dev_handle_t dev_1;
     i2c_master_bus_add_device(bus_handle, &dev_cfg_1, &dev_1);
 
     i2c_device_config_t dev_cfg_2 = {
-        .scl_speed_hz = 100*1000,
+        .scl_speed_hz = 100 * 1000,
         .device_address = 0x20,
     };
     i2c_master_dev_handle_t dev_2;
     i2c_master_bus_add_device(bus_handle, &dev_cfg_2, &dev_2);
 
     i2c_device_config_t dev_cfg_3 = {
-        .scl_speed_hz = 100*1000,
+        .scl_speed_hz = 100 * 1000,
         .device_address = 0x30,
     };
     i2c_master_dev_handle_t dev_3;

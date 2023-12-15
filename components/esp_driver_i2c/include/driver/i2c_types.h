@@ -34,7 +34,6 @@ typedef enum {
     I2C_STATUS_TIMEOUT,   /*!< I2C bus status error, and operation timeout */
 } i2c_master_status_t;
 
-
 typedef enum {
     I2C_EVENT_ALIVE,      /*!< i2c bus in alive status.*/
     I2C_EVENT_DONE,       /*!< i2c bus transaction done */

@@ -75,3 +75,9 @@ void i2c_hal_set_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *
     i2c_ll_set_sda_timing(hal->dev, timing_config->sda_sample, timing_config->sda_hold);
     i2c_ll_set_tout(hal->dev, timing_config->timeout);
 }
+
+void i2c_hal_master_trans_start(i2c_hal_context_t *hal)
+{
+    i2c_ll_update(hal->dev);
+    i2c_ll_master_trans_start(hal->dev);
+}

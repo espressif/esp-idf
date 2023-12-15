@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -37,7 +36,7 @@ static IRAM_ATTR bool example_i2c_rx_done_callback(i2c_slave_dev_handle_t channe
     return high_task_wakeup == pdTRUE;
 }
 
-static void i2c_master_write_test_broadcast(void)
+static void i2c_master_write_test_10bit(void)
 {
     uint8_t data_wr[DATA_LENGTH] = { 0 };
     int i;
@@ -54,8 +53,8 @@ static void i2c_master_write_test_broadcast(void)
     TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
     i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = 0x00,
+        .dev_addr_length = I2C_ADDR_BIT_LEN_10,
+        .device_address = 0x134,
         .scl_speed_hz = 100000,
     };
 
@@ -77,19 +76,18 @@ static void i2c_master_write_test_broadcast(void)
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 }
 
-static void i2c_slave_read_test_broadcast(void)
+static void i2c_slave_read_test_10bit(void)
 {
     uint8_t data_rd[DATA_LENGTH] = {0};
 
     i2c_slave_config_t i2c_slv_config = {
-        .addr_bit_len = I2C_ADDR_BIT_LEN_7,
+        .addr_bit_len = I2C_ADDR_BIT_LEN_10,
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = TEST_I2C_PORT,
         .send_buf_depth = 256,
         .scl_io_num = I2C_SLAVE_SCL_IO,
         .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = 0x53,
-        .flags.broadcast_en = true,
+        .slave_addr = 0x134,
     };
 
     i2c_slave_dev_handle_t slave_handle;
@@ -107,8 +105,8 @@ static void i2c_slave_read_test_broadcast(void)
     unity_send_signal("i2c slave init finish");
 
     unity_wait_for_signal("master write");
-
     xQueueReceive(s_receive_queue, &rx_data, pdMS_TO_TICKS(1000));
+
     disp_buf(data_rd, DATA_LENGTH);
     for (int i = 0; i < DATA_LENGTH; i++) {
         TEST_ASSERT(data_rd[i] == i);
@@ -118,4 +116,78 @@ static void i2c_slave_read_test_broadcast(void)
     TEST_ESP_OK(i2c_del_slave_device(slave_handle));
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test broadcast", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_broadcast, i2c_slave_read_test_broadcast);
+TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test 10 bit", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_10bit, i2c_slave_read_test_10bit);
+
+static void master_read_slave_test_10bit(void)
+{
+    uint8_t data_rd[DATA_LENGTH] = {0};
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle;
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_10,
+        .device_address = 0x134,
+        .scl_speed_hz = 100000,
+    };
+
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
+
+    unity_wait_for_signal("i2c slave init finish");
+
+    printf("Slave please write data to buffer\n");
+
+    unity_send_signal("slave write");
+    unity_wait_for_signal("master read");
+
+    TEST_ESP_OK(i2c_master_receive(dev_handle, data_rd, DATA_LENGTH, -1));
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    for (int i = 0; i < DATA_LENGTH; i++) {
+        printf("%d\n", data_rd[i]);
+        TEST_ASSERT(data_rd[i] == i);
+    }
+    unity_send_signal("ready to delete 10bit");
+
+    TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
+
+static void slave_write_buffer_test_10bit(void)
+{
+    uint8_t data_wr[DATA_LENGTH] = {0};
+
+    i2c_slave_config_t i2c_slv_config = {
+        .addr_bit_len = I2C_ADDR_BIT_LEN_10,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .send_buf_depth = 256,
+        .scl_io_num = I2C_SLAVE_SCL_IO,
+        .sda_io_num = I2C_SLAVE_SDA_IO,
+        .slave_addr = 0x134,
+    };
+
+    i2c_slave_dev_handle_t slave_handle;
+    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
+
+    unity_send_signal("i2c slave init finish");
+
+    unity_wait_for_signal("slave write");
+    for (int i = 0; i < DATA_LENGTH; i++) {
+        data_wr[i] = i;
+    }
+
+    TEST_ESP_OK(i2c_slave_transmit(slave_handle, data_wr, DATA_LENGTH, -1));
+    disp_buf(data_wr, DATA_LENGTH);
+    unity_send_signal("master read");
+    unity_wait_for_signal("ready to delete 10bit");
+    TEST_ESP_OK(i2c_del_slave_device(slave_handle));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test 10 bit", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_test_10bit, slave_write_buffer_test_10bit);

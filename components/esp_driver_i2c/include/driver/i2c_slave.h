@@ -29,16 +29,16 @@ typedef struct {
     int intr_priority;                       /*!< I2C interrupt priority, if set to 0, driver will select the default priority (1,2,3). */
     struct {
 #if SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
-        uint32_t stretch_en:1;               /*!< Enable slave stretch */
+        uint32_t stretch_en: 1;              /*!< Enable slave stretch */
 #endif
 #if SOC_I2C_SLAVE_SUPPORT_BROADCAST
-        uint32_t broadcast_en:1;             /*!< I2C slave enable broadcast */
+        uint32_t broadcast_en: 1;            /*!< I2C slave enable broadcast */
 #endif
 #if SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
-        uint32_t access_ram_en:1;            /*!< Can get access to I2C RAM directly */
+        uint32_t access_ram_en: 1;           /*!< Can get access to I2C RAM directly */
 #endif
 #if SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
-        uint32_t slave_unmatch_en:1;         /*!< Can trigger unmatch interrupt when slave address does not match what master sends*/
+        uint32_t slave_unmatch_en: 1;        /*!< Can trigger unmatch interrupt when slave address does not match what master sends*/
 #endif
     } flags;                                 /*!< I2C slave config flags */
 } i2c_slave_config_t;
