@@ -271,6 +271,30 @@ void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb)
         bta_sys_sendmsg(p_msg);
     }
 }
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetAclPktTypes
+**
+** Description      This function sets the packet types used for ACL traffic.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetAclPktTypes(BD_ADDR remote_addr, UINT16 pkt_types, tBTM_CMPL_CB *p_cb)
+{
+    tBTA_DM_API_SET_ACL_PKT_TYPES *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SET_ACL_PKT_TYPES *) osi_malloc(sizeof(tBTA_DM_API_SET_ACL_PKT_TYPES))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_ACL_PKT_TYPES_EVT;
+        bdcpy(p_msg->rmt_addr, remote_addr);
+        p_msg->pkt_types = pkt_types;
+        p_msg->set_acl_pkt_types_cb = p_cb;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
 #endif /// CLASSIC_BT_INCLUDED == TRUE
 
 #if (SDP_INCLUDED == TRUE)
