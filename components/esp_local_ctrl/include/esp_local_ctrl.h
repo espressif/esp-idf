@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -195,7 +195,7 @@ const esp_local_ctrl_transport_t *esp_local_ctrl_get_transport_httpd(void);
  * @brief   Configuration for transport mode BLE
  *
  * This is a forward declaration for `protocomm_ble_config_t`.
- * To use this, application must set CONFIG_BT_BLUEDROID_ENABLED
+ * To use this, application must set CONFIG_BT_ENABLED
  * and include `protocomm_ble.h`.
  */
 typedef struct protocomm_ble_config esp_local_ctrl_transport_config_ble_t;
