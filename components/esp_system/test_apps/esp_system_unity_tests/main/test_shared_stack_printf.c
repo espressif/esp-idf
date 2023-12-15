@@ -13,6 +13,10 @@
 #include "test_utils.h"
 #include "esp_expression_with_stack.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-8832: RISC-V FPU does not work on shared stack,
+                                             // esp_execute_shared_stack_function might be deprecated because of
+                                             // the FPU issue and all the other issues with it.
+
 #define SHARED_STACK_SIZE 8192
 
 static StackType_t *shared_stack_sp = NULL;
@@ -40,7 +44,7 @@ void another_external_stack_function(void)
     shared_stack_sp = (StackType_t *)esp_cpu_get_sp();
 }
 
-TEST_CASE("test printf using shared buffer stack", "[newlib]")
+TEST_CASE("test printf using shared buffer stack", "[shared_stack]")
 {
     StackType_t *shared_stack = malloc(SHARED_STACK_SIZE);
 
@@ -72,3 +76,4 @@ TEST_CASE("test printf using shared buffer stack", "[newlib]")
     vSemaphoreDelete(printf_lock);
     free(shared_stack);
 }
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)
