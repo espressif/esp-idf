@@ -626,7 +626,7 @@ def ensure_build_directory(args: 'PropertyDict', prog_name: str, always_run_cmak
 
     try:
         python = cache['PYTHON']
-        if python != sys.executable:
+        if os.path.normcase(python) != os.path.normcase(sys.executable):
             raise FatalError(
                 "'{}' is currently active in the environment while the project was configured with '{}'. "
                 "Run '{} fullclean' to start again.".format(sys.executable, python, prog_name))
