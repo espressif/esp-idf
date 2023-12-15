@@ -77,13 +77,15 @@ static esp_err_t dp83848_update_link_duplex_speed(phy_dp83848_t *dp83848)
     uint32_t peer_pause_ability = false;
     anlpar_reg_t anlpar;
     physts_reg_t physts;
-    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)), err, TAG, "read ANLPAR failed");
-    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_STS_REG_ADDR, &(physts.val)), err, TAG, "read PHYSTS failed");
-    eth_link_t link = physts.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
+    bmsr_reg_t bmsr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+    eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
     /* check if link status changed */
     if (dp83848->phy_802_3.link_status != link) {
         /* when link up, read negotiation result */
         if (link == ETH_LINK_UP) {
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)), err, TAG, "read ANLPAR failed");
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_STS_REG_ADDR, &(physts.val)), err, TAG, "read PHYSTS failed");
             if (physts.speed_status) {
                 speed = ETH_SPEED_10M;
             } else {
