@@ -93,6 +93,7 @@ check_docs_lang_sync:
   tags:
     - build_docs
   script:
+    - if [ -n "${BREATHE_ALT_INSTALL_URL}" ]; then pip uninstall -y breathe && pip install -U ${BREATHE_ALT_INSTALL_URL}; fi
     - cd docs
     - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
   parallel:
