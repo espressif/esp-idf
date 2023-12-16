@@ -70,6 +70,8 @@ void app_main(void)
     esp_eth_handle_t *eth_handles;
     ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
 
+    esp_eth_netif_glue_handle_t ethernet_glue_handles[eth_port_cnt];
+
     // Initialize TCP/IP network interface aka the esp-netif (should be called only once in application)
     ESP_ERROR_CHECK(esp_netif_init());
     // Create default event loop that running in background
@@ -81,8 +83,10 @@ void app_main(void)
         // default esp-netif configuration parameters.
         esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
         esp_netif_t *eth_netif = esp_netif_new(&cfg);
+
         // Attach Ethernet driver to TCP/IP stack
-        ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handles[0])));
+        ethernet_glue_handles[0] = esp_eth_new_netif_glue(eth_handles[0]);
+        ESP_ERROR_CHECK(esp_netif_attach(eth_netif, ethernet_glue_handles[0]));
     } else {
         // Use ESP_NETIF_INHERENT_DEFAULT_ETH when multiple Ethernet interfaces are used and so you need to modify
         // esp-netif configuration parameters for each interface (name, priority, etc.).
@@ -104,6 +108,7 @@ void app_main(void)
             esp_netif_t *eth_netif = esp_netif_new(&cfg_spi);
 
             // Attach Ethernet driver to TCP/IP stack
+            ethernet_glue_handles[i] = esp_eth_new_netif_glue(eth_handles[i]);
             ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handles[i])));
         }
     }
@@ -115,5 +120,27 @@ void app_main(void)
     // Start Ethernet driver state machine
     for (int i = 0; i < eth_port_cnt; i++) {
         ESP_ERROR_CHECK(esp_eth_start(eth_handles[i]));
+    }
+
+    // Do some stuff
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    // Stop Ethernet driver
+    for (int i = 0; i < eth_port_cnt; i++) {
+        ESP_ERROR_CHECK(esp_eth_stop(eth_handles[i]));
+    }
+
+    // Unregister user defined event handers
+    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler));
+    ESP_ERROR_CHECK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler));
+
+    // Detach Ethernet driver from TCP/IP stack
+    for (int i = 0; i < eth_port_cnt; i++) {
+        ESP_ERROR_CHECK(esp_eth_del_netif_glue(ethernet_glue_handles[i]));
+    }
+
+    // Uninstall Ethernet driver
+    for (int i = 0; i < eth_port_cnt; i++) {
+        ESP_ERROR_CHECK(esp_eth_driver_uninstall(eth_handles[i]));
     }
 }
