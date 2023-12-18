@@ -55,7 +55,7 @@ def traverse_folder_tree(directory_bytes_: bytes,
         try:
             obj_: dict = Entry.ENTRY_FORMAT_SHORT_NAME.parse(
                 directory_bytes_[obj_address_: obj_address_ + FATDefaults.ENTRY_SIZE])
-        except (construct.core.ConstError, UnicodeDecodeError) as e:
+        except (construct.core.ConstError, UnicodeDecodeError, construct.core.StringError) as e:
             if not args.long_name_support:
                 raise e
             continue
