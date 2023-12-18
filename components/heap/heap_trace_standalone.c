@@ -134,12 +134,18 @@ static HEAP_IRAM_ATTR heap_trace_record_t* map_find_and_remove(void *p)
 {
     size_t idx = hash_idx(p);
     heap_trace_record_t *r_cur = NULL;
+    heap_trace_record_t *r_prev = NULL;
     SLIST_FOREACH(r_cur, &hash_map[idx], slist_hashmap) {
         if (r_cur->address == p) {
             total_hashmap_hits++;
-            SLIST_REMOVE(&hash_map[idx], r_cur, heap_trace_record_t, slist_hashmap);
+            if (r_prev) {
+                SLIST_REMOVE_AFTER(r_prev, slist_hashmap);
+            } else {
+                SLIST_REMOVE_HEAD(&hash_map[idx], slist_hashmap);
+            }
             return r_cur;
         }
+        r_prev = r_cur;
     }
     total_hashmap_miss++;
     return NULL;
