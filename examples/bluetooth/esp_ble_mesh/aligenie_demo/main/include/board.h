@@ -14,7 +14,7 @@ extern "C" {
 #endif /**< __cplusplus */
 
 #include "driver/gpio.h"
-#include "light_driver.h"
+#include "lightbulb.h"
 
 #define LED_ON    1
 #define LED_OFF   0
