@@ -586,6 +586,24 @@ esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uin
  */
 esp_err_t esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info, uint8_t* enhack_frame);
 
+/**
+ * The configurable definitions via Kconfig
+ */
+#if CONFIG_IEEE802154_TXRX_STATISTIC
+
+/**
+ * @brief  Clear the current IEEE802.15.4 statistic.
+ *
+ */
+void esp_ieee802154_txrx_statistic_clear(void);
+
+/**
+ * @brief  Print the current IEEE802.15.4 statistic.
+ *
+ */
+void esp_ieee802154_txrx_statistic_print(void);
+#endif // CONFIG_IEEE802154_TXRX_STATISTIC
+
 #ifdef __cplusplus
 }
 #endif

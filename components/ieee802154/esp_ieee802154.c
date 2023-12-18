@@ -393,3 +393,15 @@ __attribute__((weak)) void esp_ieee802154_timer1_done(void)
 {
 
 }
+
+#if CONFIG_IEEE802154_TXRX_STATISTIC
+void esp_ieee802154_txrx_statistic_clear(void)
+{
+    ieee802154_txrx_statistic_clear();
+}
+
+void esp_ieee802154_txrx_statistic_print(void)
+{
+    ieee802154_txrx_statistic_print();
+}
+#endif // CONFIG_IEEE802154_TXRX_STATISTIC
