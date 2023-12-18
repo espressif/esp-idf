@@ -1,18 +1,24 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+import fnmatch
 import io
+import logging
+import os.path
 import typing as t
 from contextlib import redirect_stdout
 from pathlib import Path
 
 import pytest
 from _pytest.config import ExitCode
+from idf_build_apps import App, find_apps
+from idf_build_apps.constants import SUPPORTED_TARGETS, BuildStatus
+from idf_ci.app import IdfCMakeApp
+from idf_ci_utils import IDF_PATH, get_all_manifest_files, to_list
 from idf_py_actions.constants import PREVIEW_TARGETS as TOOLS_PREVIEW_TARGETS
 from idf_py_actions.constants import SUPPORTED_TARGETS as TOOLS_SUPPORTED_TARGETS
-from pytest_embedded.utils import to_list
 
-from .constants import CollectMode, PytestCase
+from .constants import DEFAULT_BUILD_LOG_FILENAME, DEFAULT_CONFIG_RULES_STR, CollectMode, PytestCase
 from .plugin import IdfPytestEmbedded
 
 
@@ -36,8 +42,10 @@ def get_pytest_files(paths: t.List[str]) -> t.List[str]:
 def get_pytest_cases(
     paths: t.Union[str, t.List[str]],
     target: str = CollectMode.ALL,
+    *,
     marker_expr: t.Optional[str] = None,
     filter_expr: t.Optional[str] = None,
+    apps: t.Optional[t.List[App]] = None,
 ) -> t.List[PytestCase]:
     """
     For single-dut test cases, `target` could be
@@ -49,9 +57,10 @@ def get_pytest_cases(
     - or `multi_all`, to get all multi-dut test cases
 
     :param paths: paths to search for pytest scripts
-    :param target: target to get test cases for, detailed above
+    :param target: target or keywords to get test cases for, detailed above
     :param marker_expr: pytest marker expression, `-m`
     :param filter_expr: pytest filter expression, `-k`
+    :param apps: built app list, skip the tests required by apps not in the list
     :return: list of test cases
     """
     paths = to_list(paths)
@@ -63,7 +72,7 @@ def get_pytest_cases(
         return cases
 
     def _get_pytest_cases(_target: str, _single_target_duplicate_mode: bool = False) -> t.List[PytestCase]:
-        collector = IdfPytestEmbedded(_target, single_target_duplicate_mode=_single_target_duplicate_mode)
+        collector = IdfPytestEmbedded(_target, single_target_duplicate_mode=_single_target_duplicate_mode, apps=apps)
 
         with io.StringIO() as buf:
             with redirect_stdout(buf):
@@ -97,3 +106,108 @@ def get_pytest_cases(
             cases.extend(_get_pytest_cases(_target))
 
     return sorted(cases, key=lambda x: (x.path, x.name, str(x.targets)))
+
+
+def get_all_apps(
+    paths: t.List[str],
+    target: str = CollectMode.ALL,
+    *,
+    marker_expr: t.Optional[str] = None,
+    filter_expr: t.Optional[str] = None,
+    config_rules_str: t.Optional[t.List[str]] = None,
+    preserve_all: bool = False,
+    extra_default_build_targets: t.Optional[t.List[str]] = None,
+    modified_components: t.Optional[t.List[str]] = None,
+    modified_files: t.Optional[t.List[str]] = None,
+    ignore_app_dependencies_filepatterns: t.Optional[t.List[str]] = None,
+) -> t.Tuple[t.Set[App], t.Set[App]]:
+    """
+    Return the tuple of test-required apps and non-test-related apps
+
+    :param paths: paths to search for pytest scripts
+    :param target: target or keywords to get test cases for, explained in `get_pytest_cases`
+    :param marker_expr: pytest marker expression, `-m`
+    :param filter_expr: pytest filter expression, `-k`
+    :param config_rules_str: config rules string
+    :param preserve_all: preserve all apps
+    :param extra_default_build_targets: extra default build targets
+    :param modified_components: modified components
+    :param modified_files: modified files
+    :param ignore_app_dependencies_filepatterns: ignore app dependencies filepatterns
+    :return: tuple of test-required apps and non-test-related apps
+    """
+    all_apps = find_apps(
+        paths,
+        target,
+        build_system=IdfCMakeApp,
+        recursive=True,
+        build_dir='build_@t_@w',
+        config_rules_str=config_rules_str or DEFAULT_CONFIG_RULES_STR,
+        build_log_filename=DEFAULT_BUILD_LOG_FILENAME,
+        size_json_filename='size.json',
+        check_warnings=True,
+        manifest_rootpath=IDF_PATH,
+        manifest_files=get_all_manifest_files(),
+        default_build_targets=SUPPORTED_TARGETS + (extra_default_build_targets or []),
+        modified_components=modified_components,
+        modified_files=modified_files,
+        ignore_app_dependencies_filepatterns=ignore_app_dependencies_filepatterns,
+        include_skipped_apps=True,
+    )
+
+    pytest_cases = get_pytest_cases(
+        paths,
+        target,
+        marker_expr=marker_expr,
+        filter_expr=filter_expr,
+    )
+
+    modified_pytest_cases = []
+    if modified_files:
+        modified_pytest_scripts = [
+            os.path.dirname(f) for f in modified_files if fnmatch.fnmatch(os.path.basename(f), 'pytest_*.py')
+        ]
+        if modified_pytest_scripts:
+            modified_pytest_cases = get_pytest_cases(
+                modified_pytest_scripts,
+                target,
+                marker_expr=marker_expr,
+                filter_expr=filter_expr,
+            )
+
+    # app_path, target, config
+    pytest_app_path_tuple_dict: t.Dict[t.Tuple[Path, str, str], PytestCase] = {}
+    for case in pytest_cases:
+        for app in case.apps:
+            pytest_app_path_tuple_dict[(Path(app.path), app.target, app.config)] = case
+
+    modified_pytest_app_path_tuple_dict: t.Dict[t.Tuple[Path, str, str], PytestCase] = {}
+    for case in modified_pytest_cases:
+        for app in case.apps:
+            modified_pytest_app_path_tuple_dict[(Path(app.path), app.target, app.config)] = case
+
+    test_related_apps: t.Set[App] = set()
+    non_test_related_apps: t.Set[App] = set()
+    for app in all_apps:
+        # override build_status if test script got modified
+        if case := modified_pytest_app_path_tuple_dict.get((Path(app.app_dir), app.target, app.config_name)):
+            test_related_apps.add(app)
+            app.build_status = BuildStatus.SHOULD_BE_BUILT
+            app.preserve = True
+            logging.debug('Found app: %s - required by modified test case %s', app, case.path)
+        elif app.build_status != BuildStatus.SKIPPED:
+            if case := pytest_app_path_tuple_dict.get((Path(app.app_dir), app.target, app.config_name)):
+                test_related_apps.add(app)
+                # should be built if
+                app.build_status = BuildStatus.SHOULD_BE_BUILT
+                app.preserve = True
+                logging.debug('Found test-related app: %s - required by %s', app, case.path)
+            else:
+                non_test_related_apps.add(app)
+                app.preserve = preserve_all
+                logging.debug('Found non-test-related app: %s', app)
+
+    print(f'Found {len(test_related_apps)} test-related apps')
+    print(f'Found {len(non_test_related_apps)} non-test-related apps')
+
+    return test_related_apps, non_test_related_apps

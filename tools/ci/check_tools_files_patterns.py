@@ -39,7 +39,7 @@ def check(pattern_yml: str, exclude_list: str) -> Tuple[Set, Set]:
     git_files = get_git_files(os.path.join(IDF_PATH, 'tools'), full_path=True)
     for f in git_files:
         f = Path(f)
-        if f in rules_files_set or f in exclude_files_set:
+        if f in rules_files_set or f in exclude_files_set or str(f).startswith(os.path.join(IDF_PATH, 'tools', 'test_apps')):
             continue
         missing_files.add(os.path.relpath(f, IDF_PATH))
 

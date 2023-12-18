@@ -145,9 +145,22 @@ pipeline_variables:
   tags:
     - build
   script:
-    - MODIFIED_FILES=$(echo $GIT_DIFF_OUTPUT | xargs)
+    # MODIFIED_FILES is a list of files that changed, could be used everywhere
+    - MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | xargs)
     - echo "MODIFIED_FILES=$MODIFIED_FILES" >> pipeline.env
-    - echo "MODIFIED_COMPONENTS=$(run_cmd python tools/ci/ci_get_mr_info.py components --modified-files $MODIFIED_FILES | xargs)" >> pipeline.env
+    # MR_MODIFIED_FILES and MR_MODIFIED_COMPONENTS are semicolon separated lists that is used in MR only
+    # for non MR pipeline, these are empty lists
+    - |
+      if [ $IS_MR_PIPELINE == "0" ]; then
+        echo "MR_MODIFIED_FILES=" >> pipeline.env
+        echo "MR_MODIFIED_COMPONENTS=" >> pipeline.env
+      else
+        MR_MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | tr '\n' ';')
+        echo "MR_MODIFIED_FILES=\"$MR_MODIFIED_FILES\"" >> pipeline.env
+
+        MR_MODIFIED_COMPONENTS=$(run_cmd python tools/ci/ci_get_mr_info.py components --modified-files $MODIFIED_FILES | tr '\n' ';')
+        echo "MR_MODIFIED_COMPONENTS=\"$MR_MODIFIED_COMPONENTS\"" >> pipeline.env
+      fi
     - |
       if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
         echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env

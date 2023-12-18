@@ -1,52 +1,53 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 # pylint: disable=W0621  # redefined-outer-name
 
-# This file is a pytest root configuration file and provide the following functionalities:
-# 1. Defines a few fixtures that could be used under the whole project.
-# 2. Defines a few hook functions.
-#
 # IDF is using [pytest](https://github.com/pytest-dev/pytest) and
-# [pytest-embedded plugin](https://github.com/espressif/pytest-embedded) as its example test framework.
-#
-# This is an experimental feature, and if you found any bug or have any question, please report to
-# https://github.com/espressif/pytest-embedded/issues
+# [pytest-embedded plugin](https://github.com/espressif/pytest-embedded) as its test framework.
+
+# if you found any bug or have any question,
+# please report to https://github.com/espressif/pytest-embedded/issues
+# or discuss at https://github.com/espressif/pytest-embedded/discussions
+
+import os
+import sys
+
+import gitlab
+
+if os.path.join(os.path.dirname(__file__), 'tools', 'ci') not in sys.path:
+    sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
+
+if os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages') not in sys.path:
+    sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
 
 import glob
-import json
+import io
 import logging
 import os
 import re
-import sys
 import typing as t
+import zipfile
 from copy import deepcopy
 from datetime import datetime
 
+import common_test_methods  # noqa: F401
+import gitlab_api
 import pytest
+import requests
+import yaml
 from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
+from artifacts_handler import ArtifactType
+from dynamic_pipelines.constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
+from idf_ci.app import import_apps_from_txt
+from idf_ci.uploader import AppUploader
+from idf_ci_utils import IDF_PATH
+from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS, PytestCase
+from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, ITEM_PYTEST_CASE_KEY, IdfPytestEmbedded
+from idf_pytest.utils import format_case_id
 from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.unity_tester import CaseTester
-
-try:
-    from idf_ci_utils import IDF_PATH
-    from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS
-    from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, IdfPytestEmbedded
-    from idf_pytest.utils import format_case_id
-except ImportError:
-    sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
-    from idf_ci_utils import IDF_PATH
-    from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS
-    from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, IdfPytestEmbedded
-    from idf_pytest.utils import format_case_id
-
-try:
-    import common_test_methods  # noqa: F401
-except ImportError:
-    sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
-    import common_test_methods  # noqa: F401
 
 
 ############
@@ -100,9 +101,91 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
     return format_case_id(target, config, request.node.originalname, is_qemu=is_qemu, params=filtered_params)  # type: ignore
 
 
+@pytest.fixture(scope='session')
+def pipeline_id(request: FixtureRequest) -> t.Optional[str]:
+    return request.config.getoption('pipeline_id', None) or os.getenv('PARENT_PIPELINE_ID', None)  # type: ignore
+
+
+class BuildReportDownloader:
+    def __init__(self, presigned_url_yaml: str) -> None:
+        self.app_presigned_urls_dict: t.Dict[str, t.Dict[str, str]] = yaml.safe_load(presigned_url_yaml)
+
+    def download_app(
+        self, app_build_path: str, artifact_type: ArtifactType = ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES
+    ) -> None:
+        url = self.app_presigned_urls_dict[app_build_path][artifact_type.value]
+
+        logging.debug('Downloading app from %s', url)
+        with io.BytesIO() as f:
+            for chunk in requests.get(url).iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+
+            f.seek(0)
+
+            with zipfile.ZipFile(f) as zip_ref:
+                zip_ref.extractall()
+
+
+@pytest.fixture(scope='session')
+def app_downloader(pipeline_id: t.Optional[str]) -> t.Union[AppUploader, BuildReportDownloader, None]:
+    if not pipeline_id:
+        return None
+
+    if (
+        'IDF_S3_BUCKET' in os.environ
+        and 'IDF_S3_ACCESS_KEY' in os.environ
+        and 'IDF_S3_SECRET_KEY' in os.environ
+        and 'IDF_S3_SERVER' in os.environ
+        and 'IDF_S3_BUCKET' in os.environ
+    ):
+        return AppUploader(pipeline_id)
+
+    logging.info('Downloading build report from the build pipeline %s', pipeline_id)
+    test_app_presigned_urls_file = None
+    try:
+        gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
+    except gitlab.exceptions.GitlabAuthenticationError:
+        msg = """To download artifacts from gitlab, please create ~/.python-gitlab.cfg with the following content:
+
+[global]
+default = internal
+ssl_verify = true
+timeout = 5
+
+[internal]
+url = <OUR INTERNAL HTTPS SERVER URL>
+private_token = <YOUR PERSONAL ACCESS TOKEN>
+api_version = 4
+"""
+        raise SystemExit(msg)
+
+    for child_pipeline in gl.project.pipelines.get(pipeline_id, lazy=True).bridges.list(iterator=True):
+        if child_pipeline.name == 'build_child_pipeline':
+            for job in gl.project.pipelines.get(child_pipeline.downstream_pipeline['id'], lazy=True).jobs.list(
+                iterator=True
+            ):
+                if job.name == 'generate_pytest_build_report':
+                    test_app_presigned_urls_file = gl.download_artifact(
+                        job.id, [TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME]
+                    )[0]
+                    break
+
+    if test_app_presigned_urls_file:
+        return BuildReportDownloader(test_app_presigned_urls_file)
+
+    return None
+
+
 @pytest.fixture
 @multi_dut_fixture
-def build_dir(app_path: str, target: t.Optional[str], config: t.Optional[str]) -> str:
+def build_dir(
+    request: FixtureRequest,
+    app_path: str,
+    target: t.Optional[str],
+    config: t.Optional[str],
+    app_downloader: t.Optional[AppUploader],
+) -> str:
     """
     Check local build dir with the following priority:
 
@@ -114,14 +197,25 @@ def build_dir(app_path: str, target: t.Optional[str], config: t.Optional[str]) -
     Returns:
         valid build directory
     """
-    check_dirs = []
-    if target is not None and config is not None:
-        check_dirs.append(f'build_{target}_{config}')
-    if target is not None:
-        check_dirs.append(f'build_{target}')
-    if config is not None:
-        check_dirs.append(f'build_{config}')
-    check_dirs.append('build')
+    # download from minio on CI
+    case: PytestCase = request._pyfuncitem.stash[ITEM_PYTEST_CASE_KEY]
+    if app_downloader:
+        # somehow hardcoded...
+        app_build_path = os.path.join(os.path.relpath(app_path, IDF_PATH), f'build_{target}_{config}')
+        if case.requires_elf_or_map:
+            app_downloader.download_app(app_build_path)
+        else:
+            app_downloader.download_app(app_build_path, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES)
+        check_dirs = [f'build_{target}_{config}']
+    else:
+        check_dirs = []
+        if target is not None and config is not None:
+            check_dirs.append(f'build_{target}_{config}')
+        if target is not None:
+            check_dirs.append(f'build_{target}')
+        if config is not None:
+            check_dirs.append(f'build_{config}')
+        check_dirs.append('build')
 
     for check_dir in check_dirs:
         binary_path = os.path.join(app_path, check_dir)
@@ -143,6 +237,13 @@ def junit_properties(test_case_name: str, record_xml_attribute: t.Callable[[str,
     This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
     """
     record_xml_attribute('name', test_case_name)
+
+
+@pytest.fixture(autouse=True)
+@multi_dut_fixture
+def ci_job_url(record_xml_attribute: t.Callable[[str, object], None]) -> None:
+    if ci_job_url := os.getenv('CI_JOB_URL'):
+        record_xml_attribute('ci_job_url', ci_job_url)
 
 
 @pytest.fixture(autouse=True)
@@ -247,12 +348,12 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str) -> t.Callable[..., None
     return real_func
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def dev_password(request: FixtureRequest) -> str:
     return request.config.getoption('dev_passwd') or ''
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def dev_user(request: FixtureRequest) -> str:
     return request.config.getoption('dev_user') or ''
 
@@ -275,16 +376,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help='password associated with some specific device/service used during the test execution',
     )
     idf_group.addoption(
-        '--app-info-basedir',
-        default=IDF_PATH,
-        help='app info base directory. specify this value when you\'re building under a '
-        'different IDF_PATH. (Default: $IDF_PATH)',
-    )
-    idf_group.addoption(
         '--app-info-filepattern',
         help='glob pattern to specify the files that include built app info generated by '
         '`idf-build-apps --collect-app-info ...`. will not raise ValueError when binary '
         'paths not exist in local file system if not listed recorded in the app info.',
+    )
+    idf_group.addoption(
+        '--pipeline-id',
+        help='main pipeline id, not the child pipeline id. Specify this option to download the artifacts '
+        'from the minio server for debugging purpose.',
     )
 
 
@@ -325,32 +425,16 @@ def pytest_configure(config: Config) -> None:
 """
         )
 
-    apps_list = None
-    app_info_basedir = config.getoption('app_info_basedir')
+    apps = None
     app_info_filepattern = config.getoption('app_info_filepattern')
     if app_info_filepattern:
-        apps_list = []
-        for file in glob.glob(os.path.join(IDF_PATH, app_info_filepattern)):
-            with open(file) as fr:
-                for line in fr.readlines():
-                    if not line.strip():
-                        continue
-
-                    # each line is a valid json
-                    app_info = json.loads(line.strip())
-                    if app_info_basedir and app_info['app_dir'].startswith(app_info_basedir):
-                        relative_app_dir = os.path.relpath(app_info['app_dir'], app_info_basedir)
-                        apps_list.append(os.path.join(IDF_PATH, os.path.join(relative_app_dir, app_info['build_dir'])))
-                        print('Detected app: ', apps_list[-1])
-                    else:
-                        print(
-                            f'WARNING: app_info base dir {app_info_basedir} not recognizable in {app_info["app_dir"]}, skipping...'
-                        )
-                        continue
+        apps = []
+        for f in glob.glob(os.path.join(IDF_PATH, app_info_filepattern)):
+            apps.extend(import_apps_from_txt(f))
 
     config.stash[IDF_PYTEST_EMBEDDED_KEY] = IdfPytestEmbedded(
         target=target,
-        apps_list=apps_list,
+        apps=apps,
     )
     config.pluginmanager.register(config.stash[IDF_PYTEST_EMBEDDED_KEY])
 

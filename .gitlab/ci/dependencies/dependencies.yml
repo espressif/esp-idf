@@ -66,43 +66,6 @@
   included_in:
     - build:check
 
-# ---------------
-# Build Test Jobs
-# ---------------
-"build:{0}-{1}":
-  matrix:
-    - *target_test
-    - *all_targets
-  labels:
-    - build
-  patterns:
-    - build_components
-    - build_system
-    - build_target_test
-    - downloadable-tools
-  included_in:
-    - "build:{0}"
-    - build:target_test
-
-####################
-# Target Test Jobs #
-####################
-"test:{0}-{1}":
-  matrix:
-    - *target_test
-    - *all_targets
-  labels: # For each rule, use labels <test_type> and <test_type>-<target>
-    - "{0}"
-    - "{0}_{1}"
-    - target_test
-  patterns: # For each rule, use patterns <test_type> and build-<test_type>
-    - "{0}"
-    - "build-{0}"
-  included_in: # Parent rules
-    - "build:{0}"
-    - "build:{0}-{1}"
-    - build:target_test
-
 "test:host_test":
   labels:
     - host_test

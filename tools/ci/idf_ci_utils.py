@@ -10,6 +10,7 @@ import subprocess
 import sys
 import typing as t
 from functools import cached_property
+from pathlib import Path
 
 IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -99,10 +100,6 @@ def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> t.List[str]:
     return [os.path.join(path, f) for f in files] if full_path else files
 
 
-def is_in_directory(file_path: str, folder: str) -> bool:
-    return os.path.realpath(file_path).startswith(os.path.realpath(folder) + os.sep)
-
-
 def to_list(s: t.Any) -> t.List[t.Any]:
     if not s:
         return []
@@ -178,3 +175,19 @@ class GitlabYmlConfig:
     @staticmethod
     def _is_rule_key(key: str) -> bool:
         return key.startswith('.rules:') or key.endswith('template')
+
+
+def get_all_manifest_files() -> t.List[str]:
+    """
+
+    :rtype: object
+    """
+    paths: t.List[str] = []
+
+    for p in Path(IDF_PATH).glob('**/.build-test-rules.yml'):
+        if 'managed_components' in p.parts:
+            continue
+
+        paths.append(str(p))
+
+    return paths

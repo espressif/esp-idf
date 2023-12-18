@@ -1,7 +1,7 @@
 .build_template:
   stage: build
   extends:
-    - .after_script:build:ccache
+    - .after_script:build:ccache:upload-when-fail
   image: $ESP_ENV_IMAGE
   tags:
     - build
@@ -43,8 +43,8 @@
         examples/bluetooth/esp_ble_mesh/ble_mesh_console
         examples/bluetooth/hci/controller_hci_uart_esp32
         examples/wifi/iperf
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
     # for detailed documents, please refer to .gitlab/ci/README.md#uploaddownload-artifacts-to-internal-minio-server
     - python tools/ci/artifacts_handler.py upload
 
@@ -62,307 +62,14 @@
       --copy-sdkconfig
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
     - python tools/ci/artifacts_handler.py upload
 
-.build_pytest_template:
-  extends:
-    - .build_cmake_template
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      -m \"not host_test\"
-      --pytest-apps
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
-    - python tools/ci/artifacts_handler.py upload
-
-.build_pytest_no_jtag_template:
-  extends:
-    - .build_cmake_template
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      -m \"not host_test and not jtag\"
-      --pytest-apps
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
-    - python tools/ci/artifacts_handler.py upload
-
-.build_pytest_jtag_template:
-  extends:
-    - .build_cmake_template
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      -m \"not host_test and jtag\"
-      --pytest-apps
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
-    - python tools/ci/artifacts_handler.py upload
-
-build_pytest_examples_esp32:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32
-  parallel: 6
-  variables:
-    IDF_TARGET: esp32
-    TEST_DIR: examples
-
-build_pytest_examples_esp32s2:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32s2
-  parallel: 3
-  variables:
-    IDF_TARGET: esp32s2
-    TEST_DIR: examples
-
-build_pytest_examples_esp32s3:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32s3
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32s3
-    TEST_DIR: examples
-
-build_pytest_examples_esp32c3:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32c3
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32c3
-    TEST_DIR: examples
-
-build_pytest_examples_esp32c2:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32c2
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32c2
-    TEST_DIR: examples
-
-build_pytest_examples_esp32c6:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32c6
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32c6
-    TEST_DIR: examples
-
-build_pytest_examples_esp32h2:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32h2
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32h2
-    TEST_DIR: examples
-
-build_pytest_examples_esp32p4:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32p4
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32p4
-    TEST_DIR: examples
-
-build_pytest_examples_jtag:  # for all targets
-  extends:
-    - .build_pytest_jtag_template
-    - .rules:build:example_test
-  variables:
-    IDF_TARGET: all
-    TEST_DIR: examples
-
-build_pytest_components_esp32:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32
-  parallel: 5
-  variables:
-    IDF_TARGET: esp32
-    TEST_DIR: components
-
-build_pytest_components_esp32s2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32s2
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32s2
-    TEST_DIR: components
-
-build_pytest_components_esp32s3:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32s3
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32s3
-    TEST_DIR: components
-
-build_pytest_components_esp32c3:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32c3
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32c3
-    TEST_DIR: components
-
-build_pytest_components_esp32c2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32c2
-  parallel: 3
-  variables:
-    IDF_TARGET: esp32c2
-    TEST_DIR: components
-
-build_pytest_components_esp32c6:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32c6
-  parallel: 3
-  variables:
-    IDF_TARGET: esp32c6
-    TEST_DIR: components
-
-build_pytest_components_esp32h2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32h2
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32h2
-    TEST_DIR: components
-
-build_pytest_components_esp32p4:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32p4
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32p4
-    TEST_DIR: components
-
-build_only_components_apps:
-  extends:
-    - .build_cmake_template
-    - .rules:build:component_ut
-  parallel: 5
-  script:
-    - set_component_ut_vars
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $COMPONENT_UT_DIRS -v
-      -t all
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
-    - python tools/ci/artifacts_handler.py upload
-
-build_pytest_test_apps_esp32:
-  extends:
-    - .build_pytest_template
-    - .rules:build:custom_test-esp32
-  variables:
-    IDF_TARGET: esp32
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32s2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:custom_test-esp32s2
-  variables:
-    IDF_TARGET: esp32s2
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32s3:
-  extends:
-    - .build_pytest_template
-    - .rules:build:custom_test-esp32s3
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32s3
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32c3:
-  extends:
-    - .build_pytest_template
-    - .rules:build:custom_test-esp32c3
-  variables:
-    IDF_TARGET: esp32c3
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32c2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:custom_test-esp32c2
-  variables:
-    IDF_TARGET: esp32c2
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32c6:
-  extends:
-    - .build_pytest_template
-    - .rules:build:custom_test-esp32c6
-  variables:
-    IDF_TARGET: esp32c6
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32h2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:custom_test-esp32h2
-  variables:
-    IDF_TARGET: esp32h2
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32p4:
-  extends:
-    - .build_pytest_template
-    - .rules:build:custom_test-esp32p4
-  variables:
-    IDF_TARGET: esp32p4
-    TEST_DIR: tools/test_apps
-
-build_only_tools_test_apps:
-  extends:
-    - .build_cmake_template
-    - .rules:build:custom_test
-  parallel: 9
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py tools/test_apps -v
-      -t all
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
-    - python tools/ci/artifacts_handler.py upload
-
+######################
+# build_template_app #
+######################
 .build_template_app_template:
   extends:
     - .build_template
@@ -400,96 +107,27 @@ fast_template_app:
     BUILD_COMMAND_ARGS: "-p"
 #------------------------------------------------------------------------------
 
-build_examples_cmake_esp32:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32
-  parallel: 8
-  variables:
-    IDF_TARGET: esp32
-    TEST_DIR: examples
-
-build_examples_cmake_esp32s2:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32s2
-  parallel: 7
-  variables:
-    IDF_TARGET: esp32s2
-    TEST_DIR: examples
-
-build_examples_cmake_esp32s3:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32s3
-  parallel: 11
-  variables:
-    IDF_TARGET: esp32s3
-    TEST_DIR: examples
-
-build_examples_cmake_esp32c2:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32c2
-  parallel: 7
-  variables:
-    IDF_TARGET: esp32c2
-    TEST_DIR: examples
-
-build_examples_cmake_esp32c3:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32c3
-  parallel: 9
-  variables:
-    IDF_TARGET: esp32c3
-    TEST_DIR: examples
-
-build_examples_cmake_esp32c6:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32c6
-  parallel: 11
-  variables:
-    IDF_TARGET: esp32c6
-    TEST_DIR: examples
-
-build_examples_cmake_esp32h2:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32h2
-  parallel: 9
-  variables:
-    IDF_TARGET: esp32h2
-    TEST_DIR: examples
-
-build_examples_cmake_esp32p4:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32p4
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32p4
-    TEST_DIR: examples
-
+########################################
+# Clang Build Apps Without Tests Cases #
+########################################
 build_clang_test_apps_esp32:
   extends:
     - .build_cmake_clang_template
-    - .rules:build:custom_test-esp32
+    - .rules:build
   variables:
     IDF_TARGET: esp32
 
 build_clang_test_apps_esp32s2:
   extends:
     - .build_cmake_clang_template
-    - .rules:build:custom_test-esp32s2
+    - .rules:build
   variables:
     IDF_TARGET: esp32s2
 
 build_clang_test_apps_esp32s3:
   extends:
     - .build_cmake_clang_template
-    - .rules:build:custom_test-esp32s3
+    - .rules:build
   variables:
     IDF_TARGET: esp32s3
 
@@ -506,26 +144,29 @@ build_clang_test_apps_esp32s3:
 build_clang_test_apps_esp32c3:
   extends:
     - .build_clang_test_apps_riscv
-    - .rules:build:custom_test-esp32c3
+    - .rules:build
   variables:
     IDF_TARGET: esp32c3
 
 build_clang_test_apps_esp32c2:
   extends:
     - .build_clang_test_apps_riscv
-    - .rules:build:custom_test-esp32c2
+    - .rules:build
   variables:
     IDF_TARGET: esp32c2
 
 build_clang_test_apps_esp32c6:
   extends:
     - .build_clang_test_apps_riscv
-    - .rules:build:custom_test-esp32c6
+    - .rules:build
   # TODO: c6 builds fail in master due to missing headers
   allow_failure: true
   variables:
     IDF_TARGET: esp32c6
 
+######################
+# Build System Tests #
+######################
 .test_build_system_template:
   stage: host_test
   extends:
@@ -634,3 +275,44 @@ build_template_app:
   needs:
     - job: fast_template_app
       artifacts: false
+
+####################
+# Dynamic Pipeline #
+####################
+generate_build_child_pipeline:
+  extends:
+    - .build_template
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - pipeline_variables
+  artifacts:
+    paths:
+      - build_child_pipeline.yml
+      - test_related_apps.txt
+      - non_test_related_apps.txt
+  script:
+    - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
+
+build_child_pipeline:
+  stage: build
+  needs:
+    - job: fast_template_app
+      artifacts: false
+    - pipeline_variables
+    - generate_build_child_pipeline
+  variables:
+    IS_MR_PIPELINE: $IS_MR_PIPELINE
+    MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
+    MR_MODIFIED_FILES: $MR_MODIFIED_FILES
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+    BUILD_AND_TEST_ALL_APPS: $BUILD_AND_TEST_ALL_APPS
+  # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
+  inherit:
+    variables: false
+  trigger:
+    include:
+      - artifact: build_child_pipeline.yml
+        job: generate_build_child_pipeline
+    strategy: depend

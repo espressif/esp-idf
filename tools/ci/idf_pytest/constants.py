@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 """
@@ -6,12 +6,13 @@ Pytest Related Constants. Don't import third-party packages here.
 """
 import os
 import typing as t
-from collections import Counter
 from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
+from pathlib import Path
 
 from _pytest.python import Function
+from idf_ci_utils import IDF_PATH
 from pytest_embedded.utils import to_list
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4']
@@ -113,8 +114,33 @@ ENV_MARKERS = {
     'sdio_master_slave': 'Test sdio multi board, esp32+esp32',
     'sdio_multidev_32_c6': 'Test sdio multi board, esp32+esp32c6',
     'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
-    'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter'
+    'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter',
 }
+
+DEFAULT_CONFIG_RULES_STR = ['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default']
+DEFAULT_IGNORE_WARNING_FILEPATH = os.path.join(IDF_PATH, 'tools', 'ci', 'ignore_build_warnings.txt')
+DEFAULT_BUILD_TEST_RULES_FILEPATH = os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml')
+DEFAULT_FULL_BUILD_TEST_FILEPATTERNS = [
+    # tools
+    'tools/cmake/**/*',
+    'tools/tools.json',
+    # components
+    'components/cxx/**/*',
+    'components/esp_common/**/*',
+    'components/esp_hw_support/**/*',
+    'components/esp_rom/**/*',
+    'components/esp_system/**/*',
+    'components/esp_timer/**/*',
+    'components/freertos/**/*',
+    'components/hal/**/*',
+    'components/heap/**/*',
+    'components/log/**/*',
+    'components/newlib/**/*',
+    'components/riscv/**/*',
+    'components/soc/**/*',
+    'components/xtensa/**/*',
+]
+DEFAULT_BUILD_LOG_FILENAME = 'build_log.txt'
 
 
 class CollectMode(str, Enum):
@@ -163,6 +189,10 @@ class PytestCase:
     def is_single_dut_test_case(self) -> bool:
         return True if len(self.apps) == 1 else False
 
+    @cached_property
+    def is_host_test(self) -> bool:
+        return 'host_test' in self.all_markers or 'linux' in self.targets
+
     # the following markers could be changed dynamically, don't use cached_property
     @property
     def all_markers(self) -> t.Set[str]:
@@ -202,24 +232,35 @@ class PytestCase:
         return {marker for marker in self.all_markers if marker in ENV_MARKERS}
 
     @property
-    def target_with_amount_markers(self) -> t.Set[str]:
-        c: Counter = Counter()
-        for app in self.apps:
-            c[app.target] += 1
+    def target_selector(self) -> str:
+        return ','.join(app.target for app in self.apps)
 
-        res = set()
-        for target, amount in c.items():
-            if amount > 1:
-                res.add(f'{target}_{amount}')
-            else:
-                res.add(target)
+    @property
+    def requires_elf_or_map(self) -> bool:
+        """
+        This property determines whether the test case requires elf or map file. By default, one app in the test case
+        only requires .bin files.
 
-        return res
+        :return: True if the test case requires elf or map file, False otherwise
+        """
+        if 'jtag' in self.env_markers or 'usb_serial_jtag' in self.env_markers:
+            return True
 
-    def all_built_in_app_lists(self, app_lists: t.Optional[t.List[str]] = None) -> bool:
+        if any('panic' in Path(app.path).parts for app in self.apps):
+            return True
+
+        return False
+
+    def all_built_in_app_lists(self, app_lists: t.Optional[t.List[str]] = None) -> t.Optional[str]:
+        """
+        Check if all binaries of the test case are built in the app lists.
+
+        :param app_lists: app lists to check
+        :return: debug string if not all binaries are built in the app lists, None otherwise
+        """
         if app_lists is None:
             # ignore this feature
-            return True
+            return None
 
         bin_found = [0] * len(self.apps)
         for i, app in enumerate(self.apps):
@@ -232,10 +273,10 @@ class PytestCase:
                 msg += f'\n - {app.build_dir}'
 
             print(msg)
-            return False
+            return msg
 
         if sum(bin_found) == len(self.apps):
-            return True
+            return None
 
         # some found, some not, looks suspicious
         msg = f'Found some binaries of test case {self.name} are not listed in the app lists.'
@@ -244,4 +285,5 @@ class PytestCase:
                 msg += f'\n - {app.build_dir}'
 
         msg += '\nMight be a issue of .build-test-rules.yml files'
-        return False
+        print(msg)
+        return msg

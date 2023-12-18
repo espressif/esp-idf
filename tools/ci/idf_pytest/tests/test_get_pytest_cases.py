@@ -1,18 +1,10 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-import sys
 from pathlib import Path
 
 from idf_pytest.constants import CollectMode
-
-try:
-    from idf_pytest.script import get_pytest_cases
-except ImportError:
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-
-    from idf_pytest.script import get_pytest_cases
+from idf_pytest.script import get_pytest_cases
 
 TEMPLATE_SCRIPT = '''
 import pytest

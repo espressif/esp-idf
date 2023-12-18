@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import os
 import typing as t
+from collections import defaultdict
 from functools import cached_property
 from xml.etree import ElementTree as ET
 
@@ -11,6 +12,8 @@ from _pytest.config import ExitCode
 from _pytest.main import Session
 from _pytest.python import Function
 from _pytest.runner import CallInfo
+from idf_build_apps import App
+from idf_build_apps.constants import BuildStatus
 from pytest_embedded import Dut
 from pytest_embedded.plugin import parse_multi_dut_args
 from pytest_embedded.utils import find_by_suffix, to_list
@@ -37,7 +40,7 @@ class IdfPytestEmbedded:
         target: t.Union[t.List[str], str],
         *,
         single_target_duplicate_mode: bool = False,
-        apps_list: t.Optional[t.List[str]] = None,
+        apps: t.Optional[t.List[App]] = None,
     ):
         if isinstance(target, str):
             self.target = sorted(comma_sep_str_to_list(target))
@@ -60,9 +63,17 @@ class IdfPytestEmbedded:
         # otherwise, it should be collected when running `pytest --target esp32,esp32`
         self._single_target_duplicate_mode = single_target_duplicate_mode
 
-        self.apps_list = apps_list
+        self.apps_list = (
+            [os.path.join(app.app_dir, app.build_dir) for app in apps if app.build_status == BuildStatus.SUCCESS]
+            if apps
+            else None
+        )
 
         self.cases: t.List[PytestCase] = []
+
+        # record the additional info
+        # test case id: {key: value}
+        self.additional_info: t.Dict[str, t.Dict[str, t.Any]] = defaultdict(dict)
 
     @cached_property
     def collect_mode(self) -> CollectMode:
@@ -90,13 +101,19 @@ class IdfPytestEmbedded:
         count = self.get_param(item, 'count', 1)
 
         # default app_path is where the test script locates
-        app_paths = to_list(
-            parse_multi_dut_args(count, os.path.relpath(self.get_param(item, 'app_path', os.path.dirname(item.path))))
-        )
+        app_paths = to_list(parse_multi_dut_args(count, self.get_param(item, 'app_path', os.path.dirname(item.path))))
         configs = to_list(parse_multi_dut_args(count, self.get_param(item, 'config', DEFAULT_SDKCONFIG)))
         targets = to_list(parse_multi_dut_args(count, self.get_param(item, 'target', self.target[0])))
 
-        return PytestCase([PytestApp(app_paths[i], targets[i], configs[i]) for i in range(count)], item)
+        def abspath_or_relpath(s: str) -> str:
+            if os.path.abspath(s) and s.startswith(os.getcwd()):
+                return os.path.relpath(s)
+
+            return s
+
+        return PytestCase(
+            [PytestApp(abspath_or_relpath(app_paths[i]), targets[i], configs[i]) for i in range(count)], item
+        )
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, items: t.List[Function]) -> None:
@@ -189,11 +206,17 @@ class IdfPytestEmbedded:
 
         # 4. filter by `self.apps_list`, skip the test case if not listed
         #   should only be used in CI
-        items[:] = [_item for _item in items if item_to_case_dict[_item].all_built_in_app_lists(self.apps_list)]
+        _items = []
+        for item in items:
+            case = item_to_case_dict[item]
+            if msg := case.all_built_in_app_lists(self.apps_list):
+                self.additional_info[case.name]['skip_reason'] = msg
+            else:
+                _items.append(item)
 
         # OKAY!!! All left ones will be executed, sort it and add more markers
         items[:] = sorted(
-            items, key=lambda x: (os.path.dirname(x.path), self.get_param(x, 'config', DEFAULT_SDKCONFIG))
+            _items, key=lambda x: (os.path.dirname(x.path), self.get_param(x, 'config', DEFAULT_SDKCONFIG))
         )
         for item in items:
             case = item_to_case_dict[item]
@@ -207,8 +230,7 @@ class IdfPytestEmbedded:
                 item.add_marker('xtal_40mhz')
 
     def pytest_report_collectionfinish(self, items: t.List[Function]) -> None:
-        for item in items:
-            self.cases.append(self.item_to_pytest_case(item))
+        self.cases = [item.stash[ITEM_PYTEST_CASE_KEY] for item in items]
 
     def pytest_custom_test_case_name(self, item: Function) -> str:
         return item.funcargs.get('test_case_name', item.nodeid)  # type: ignore
@@ -274,6 +296,9 @@ class IdfPytestEmbedded:
                 case.attrib['name'] = new_case_name
                 if 'file' in case.attrib:
                     case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
+
+                if ci_job_url := os.getenv('CI_JOB_URL'):
+                    case.attrib['ci_job_url'] = ci_job_url
 
             xml.write(junit)
 
