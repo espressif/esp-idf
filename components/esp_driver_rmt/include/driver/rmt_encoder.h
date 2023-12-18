@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,6 +97,21 @@ typedef struct {
  *      - ESP_FAIL: Create RMT bytes encoder failed because of other error
  */
 esp_err_t rmt_new_bytes_encoder(const rmt_bytes_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
+
+/**
+ * @brief Update the configuration of the bytes encoder
+ *
+ * @note The configurations of the bytes encoder is also set up by `rmt_new_bytes_encoder()`.
+ *       This function is used to update the configuration of the bytes encoder at runtime.
+ *
+ * @param[in] bytes_encoder Bytes encoder handle, created by e.g `rmt_new_bytes_encoder()`
+ * @param[in] config Bytes encoder configuration
+ * @return
+ *      - ESP_OK: Update RMT bytes encoder successfully
+ *      - ESP_ERR_INVALID_ARG: Update RMT bytes encoder failed because of invalid argument
+ *      - ESP_FAIL: Update RMT bytes encoder failed because of other error
+ */
+esp_err_t rmt_bytes_encoder_update_config(rmt_encoder_handle_t bytes_encoder, const rmt_bytes_encoder_config_t *config);
 
 /**
  * @brief Create RMT copy encoder, which copies the given RMT symbols into RMT memory
