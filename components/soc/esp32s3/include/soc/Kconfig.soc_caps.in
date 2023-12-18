@@ -403,6 +403,10 @@ config SOC_GDMA_NUM_GROUPS_MAX
     int
     default 1
 
+config SOC_GDMA_PAIRS_PER_GROUP
+    int
+    default 5
+
 config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
     default 5
