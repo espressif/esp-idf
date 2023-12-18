@@ -140,6 +140,9 @@ static int cmd_intr_alloc(int argc, char **argv)
         printf("Failed to allocate interrupt (source: %d, flags: 0x%x): %s\n", source_num, flags, esp_err_to_name(ret));
         return 1;
     }
+
+    printf("Allocated %s %s\n", source_str, flags_str);
+
     return 0;
 }
 

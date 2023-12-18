@@ -15,6 +15,7 @@ def test_esp_intr_dump_nonshared(dut: Dut) -> None:
     dut.expect_exact(PROMPT, timeout=10)
 
     dut.write('intr_alloc GPIO LEVEL3\n')
+    dut.expect_exact('Allocated GPIO LEVEL3')
     dut.expect_exact(PROMPT)
 
     dut.write('intr_dump\n')
@@ -27,6 +28,7 @@ def test_esp_intr_dump_shared(dut: Dut) -> None:
     dut.expect_exact(PROMPT, timeout=10)
 
     dut.write('intr_alloc GPIO SHARED\n')
+    dut.expect_exact('Allocated GPIO SHARED')
     dut.expect_exact(PROMPT)
 
     dut.write('intr_dump\n')
@@ -34,6 +36,7 @@ def test_esp_intr_dump_shared(dut: Dut) -> None:
     dut.expect_exact(PROMPT)
 
     dut.write('intr_alloc UART1 SHARED\n')
+    dut.expect_exact('Allocated UART1 SHARED')
     dut.expect_exact(PROMPT)
 
     dut.write('intr_dump\n')
