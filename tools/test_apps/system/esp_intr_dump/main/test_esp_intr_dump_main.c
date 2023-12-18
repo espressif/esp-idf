@@ -27,6 +27,10 @@ static void start_console(void)
 {
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+
+    /* Pin repl task to ensure all interrupts are allocated on the same core */
+    repl_config.task_core_id = 0;
+
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
