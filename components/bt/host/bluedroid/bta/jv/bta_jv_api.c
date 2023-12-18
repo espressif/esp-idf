@@ -939,7 +939,7 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask,
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data)
+tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, void *user_data)
 {
     tBTA_JV_STATUS status = BTA_JV_FAILURE;
     tBTA_JV_API_RFCOMM_CLOSE *p_msg;
@@ -954,7 +954,6 @@ tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, tBTA_JV_RFCOMM_CBACK *p_cback, v
         p_msg->handle = handle;
         p_msg->p_cb = &bta_jv_cb.rfc_cb[hi];
         p_msg->p_pcb = &bta_jv_cb.port_cb[p_msg->p_cb->rfc_hdl[si] - 1];
-        p_msg->p_cback = p_cback;
         p_msg->user_data = user_data;
         bta_sys_sendmsg(p_msg);
         status = BTA_JV_SUCCESS;
