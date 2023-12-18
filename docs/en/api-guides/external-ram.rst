@@ -24,7 +24,16 @@ Hardware
 
 .. note::
 
-    Some PSRAM chips are 1.8 V devices and some are 3.3 V. The working voltage of the PSRAM chip must match the working voltage of the flash component. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages. For a 1.8 V PSRAM chip, make sure to either set the MTDI pin to a high signal level on bootup, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
+    .. only:: esp32 or esp32s2 or esp32s3
+
+        Some PSRAM chips are 1.8 V devices and some are 3.3 V. The working voltage of the PSRAM chip must match the working voltage of the flash component. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages. For a 1.8 V PSRAM chip, make sure to either set the MTDI pin to a high signal level on bootup, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
+
+    .. only:: esp32p4
+
+        Some PSRAM chips are 1.8 V devices and some are 3.3 V. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages.
+
+        By default PSRAM is powered up by the on-chip LDO2, you can use :ref:`CONFIG_SPIRAM_LDO_ID` to switch the LDO ID according. Setting this value to -1 for using external power supply.
+        By default PSRAM connected LDO is set to correct voltage according to the used Espressif module. You can still use :ref:`CONFIG_SPIRAM_LDO_VOLTAGE_MV` to select LDO output voltage if you do not use an Espressif module. When using external power supply, this option does not exist.
 
 .. note::
 
