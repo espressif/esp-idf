@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32C3 | ESP32S3 | ESP32H2 | ESP32C6 |
+| ----------------- | ----- | ------- | ------- | ------- | ------- |
 
 ESP BLE Mesh AliGenie Example
 =============================

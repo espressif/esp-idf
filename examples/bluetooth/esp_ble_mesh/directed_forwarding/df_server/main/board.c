@@ -14,7 +14,7 @@
 #include "esp_log.h"
 #include "board.h"
 #include "esp_timer.h"
-#include "led_strip_encoder.h"
+#include "lightbulb.h"
 #include "iot_button.h"
 
 #include "mesh/adapter.h"
@@ -26,7 +26,7 @@ esp_timer_handle_t led_timer_hdl;
 
 void board_led_operation(uint8_t r, uint8_t g, uint8_t b)
 {
-    rmt_led_set(r,g,b);
+    ws2812_set_rgb_channel(r, g, b);
 }
 
 static void led_timer_callback(void* arg)
@@ -54,7 +54,24 @@ void board_led_operation_auto_close(uint8_t r, uint8_t g, uint8_t b, uint32_t ms
 
 static void board_led_init(void)
 {
-    rmt_encoder_init();
+    lightbulb_config_t config = {
+        .type = DRIVER_WS2812,
+        .driver_conf.ws2812.led_num = 3,
+        .driver_conf.ws2812.ctrl_io = 8,
+        .capability.enable_fades = true,
+        .capability.fades_ms = 800,
+        .capability.enable_status_storage = false,
+        .capability.mode_mask = COLOR_MODE,
+        .capability.storage_cb = NULL,
+        .external_limit = NULL,
+        .gamma_conf = NULL,
+        .init_status.mode = WORK_COLOR,
+        .init_status.on = false,
+        .init_status.hue = 0,
+        .init_status.saturation = 100,
+        .init_status.value = 100,
+    };
+    lightbulb_init(&config);
     esp_led_timer_init();
 }
 
