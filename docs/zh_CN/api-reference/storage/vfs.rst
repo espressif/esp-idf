@@ -103,7 +103,7 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 .. note::
     在少数情况下，在调用 :cpp:func:`end_select` 之前可能并没有调用过 :cpp:func:`start_select`。因此 :cpp:func:`end_select` 的实现必须在该情况下返回错误而不能崩溃。
 
-如需获取更多信息，请参考 :component_file:`vfs/vfs_uart.c` 中 UART 外设的 VFS 驱动，尤其是函数 :cpp:func:`esp_vfs_dev_uart_register`、:cpp:func:`uart_start_select` 和 :cpp:func:`uart_end_select`。
+如需获取更多信息，请参考 :component_file:`esp_driver_uart/src/uart_vfs.c` 中 UART 外设的 VFS 驱动，尤其是函数 :cpp:func:`uart_vfs_dev_register`、:cpp:func:`uart_start_select` 和 :cpp:func:`uart_end_select`。
 
 请参考以下示例，查看如何使用 VFS 文件描述符调用 :cpp:func:`select`：
 
@@ -189,9 +189,9 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 
 默认情况下，VFS 使用简单的函数对 UART 进行读写操作。在所有数据放进 UART FIFO 之前，写操作将处于 busy-wait 状态，读操处于非阻塞状态，仅返回 FIFO 中已有数据。由于读操作为非阻塞，高层级 C 库函数调用（如 ``fscanf("%d\n", &var);``）可能获取不到所需结果。
 
-如果应用程序使用 UART 驱动，则可以调用 ``esp_vfs_dev_uart_use_driver`` 函数来指导 VFS 使用驱动中断、读写阻塞功能等，也可以调用 ``esp_vfs_dev_uart_use_nonblocking`` 来恢复非阻塞函数。
+如果应用程序使用 UART 驱动，则可以调用 :cpp:func:`uart_vfs_dev_use_driver` 函数来指导 VFS 使用驱动中断、读写阻塞功能等，也可以调用 :cpp:func:`uart_vfs_dev_use_nonblocking` 来恢复非阻塞函数。
 
-VFS 还为输入和输出提供换行符转换功能（可选）。多数应用程序在程序内部发送或接收以 LF (''\n'') 结尾的行，但不同的终端程序可能需要不同的换行符，比如 CR 或 CRLF。应用程序可以通过 menuconfig 或者调用 ``esp_vfs_dev_uart_port_set_rx_line_endings`` 和 ``esp_vfs_dev_uart_port_set_tx_line_endings`` 为输入输出配置换行符。
+VFS 还为输入和输出提供换行符转换功能（可选）。多数应用程序在程序内部发送或接收以 LF (''\n'') 结尾的行，但不同的终端程序可能需要不同的换行符，比如 CR 或 CRLF。应用程序可以通过 menuconfig 或者调用 :cpp:func:`uart_vfs_dev_port_set_rx_line_endings` 和 :cpp:func:`uart_vfs_dev_port_set_tx_line_endings` 为输入输出配置换行符。
 
 
 标准流和 FreeRTOS 任务
@@ -234,5 +234,7 @@ API 参考
 .. include-build-file:: inc/esp_vfs.inc
 
 .. include-build-file:: inc/esp_vfs_dev.inc
+
+.. include-build-file:: inc/uart_vfs.inc
 
 .. include-build-file:: inc/esp_vfs_eventfd.inc

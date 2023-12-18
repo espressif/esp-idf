@@ -14,10 +14,7 @@ extern "C" {
 #include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/task.h"
 #include "freertos/queue.h"
-#include "freertos/ringbuf.h"
 #include "hal/uart_types.h"
 
 /* @brief When calling `uart_set_pin`, instead of GPIO number, `UART_PIN_NO_CHANGE`
@@ -86,7 +83,7 @@ typedef struct {
     uart_event_type_t type; /*!< UART event type */
     size_t size;            /*!< UART data size for UART_DATA event*/
     bool timeout_flag;      /*!< UART data read timeout flag for UART_DATA event (no new data received during configured RX TOUT)*/
-                            /*!< If the event is caused by FIFO-full interrupt, then there will be no event with the timeout flag before the next byte coming.*/
+    /*!< If the event is caused by FIFO-full interrupt, then there will be no event with the timeout flag before the next byte coming.*/
 } uart_event_t;
 
 typedef intr_handle_t uart_isr_handle_t;
@@ -285,7 +282,7 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
- esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_thresh_xon,  uint8_t rx_thresh_xoff);
+esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_thresh_xon,  uint8_t rx_thresh_xoff);
 
 /**
  * @brief Get the UART hardware flow control configuration.

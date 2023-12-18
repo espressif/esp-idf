@@ -111,20 +111,18 @@ static const uint8_t crc_low[] = {
     0x40
 };
 
-
 // Calculate buffer checksum using tables
 // The checksum CRC16 algorithm is specific
 // for Modbus standard and uses polynomial value = 0xA001
-static uint16_t get_buffer_crc16( uint8_t * frame_ptr, uint16_t length )
+static uint16_t get_buffer_crc16(uint8_t * frame_ptr, uint16_t length)
 {
-    TEST_ASSERT( frame_ptr != NULL);
+    TEST_ASSERT(frame_ptr != NULL);
 
     uint8_t crc_hi_byte = 0xFF;
     uint8_t crc_low_byte = 0xFF;
     int index;
 
-    while ( length-- )
-    {
+    while (length--) {
         index = crc_low_byte ^ *(frame_ptr++);
         crc_low_byte = crc_hi_byte ^ crc_hi[index];
         crc_hi_byte = crc_low[index];
@@ -135,7 +133,7 @@ static uint16_t get_buffer_crc16( uint8_t * frame_ptr, uint16_t length )
 // Fill the buffer with random numbers and apply CRC16 at the end
 static uint16_t buffer_fill_random(uint8_t *buffer, size_t length)
 {
-    TEST_ASSERT( buffer != NULL);
+    TEST_ASSERT(buffer != NULL);
     // Packet is too short
     if (length < 4) {
         return 0;
@@ -177,8 +175,8 @@ static void rs485_init(void)
 
 static esp_err_t print_packet_data(const char *str, uint8_t *buffer, uint16_t buffer_size)
 {
-    TEST_ASSERT( buffer != NULL);
-    TEST_ASSERT( str != NULL);
+    TEST_ASSERT(buffer != NULL);
+    TEST_ASSERT(str != NULL);
 
     // Calculate the checksum of the buffer
     uint16_t crc16_calc = get_buffer_crc16(buffer, (buffer_size - 2));
@@ -187,7 +185,7 @@ static esp_err_t print_packet_data(const char *str, uint8_t *buffer, uint16_t bu
     // Print an array of data
     printf("%s%s RS485 packet = [ ", str, state_str);
     for (int i = 0; i < buffer_size; i++) {
-            printf("0x%.2X ", (uint8_t)buffer[i]);
+        printf("0x%.2X ", (uint8_t)buffer[i]);
     }
     printf(" ]\r\n");
     printf("crc_in = 0x%.4X\r\n", (uint16_t)crc16_in);
@@ -205,7 +203,7 @@ static void rs485_slave(void)
     unity_send_signal("Slave_ready");
     unity_wait_for_signal("Master_started");
     ESP_LOGI(TAG, "Start recieve loop.");
-    for(int pack_count = 0; pack_count < PACKETS_NUMBER; pack_count++) {
+    for (int pack_count = 0; pack_count < PACKETS_NUMBER; pack_count++) {
         //Read slave_data from UART
         int len = uart_read_bytes(UART_NUM1, slave_data, BUF_SIZE, PACKET_READ_TICS);
         //Write slave_data back to UART
@@ -247,7 +245,7 @@ static void rs485_master(void)
     unity_wait_for_signal("Slave_ready");
     unity_send_signal("Master_started");
     ESP_LOGI(TAG, "Start recieve loop.");
-    for(int i = 0; i < PACKETS_NUMBER; i++) {
+    for (int i = 0; i < PACKETS_NUMBER; i++) {
         // Form random buffer with CRC16
         buffer_fill_random(master_buffer, BUF_SIZE);
         // Print created packet for debugging
@@ -268,8 +266,7 @@ static void rs485_master(void)
                 err_count++;
                 printf("Errors: %d\r\n", err_count);
             }
-        }
-        else {
+        } else {
             printf("Incorrect answer from slave, length = %d.\r\n", len);
             err_count++;
         }

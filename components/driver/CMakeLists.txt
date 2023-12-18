@@ -14,7 +14,6 @@ set(includes "deprecated"
              "parlio/include"
              "touch_sensor/include"
              "twai/include"
-             "uart/include"
              "usb_serial_jtag/include")
 
 # Always included linker fragments
@@ -101,13 +100,6 @@ if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND ldfragments "twai/linker.lf")
 endif()
 
-# UART related source files
-if(CONFIG_SOC_UART_SUPPORTED)
-    list(APPEND srcs "uart/uart.c")
-
-    list(APPEND ldfragments "uart/linker.lf")
-endif()
-
 # USB Serial JTAG related source files
 if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
     list(APPEND srcs "usb_serial_jtag/usb_serial_jtag.c"
@@ -135,6 +127,7 @@ else()
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
                                     esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
                                     esp_driver_dac esp_driver_rmt esp_driver_tsens esp_driver_sdm esp_driver_i2c
+                                    esp_driver_uart
                            LDFRAGMENTS ${ldfragments}
                           )
 endif()

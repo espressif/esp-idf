@@ -63,8 +63,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                       PRIV_REQUIRES soc esp_driver_gptimer esp_driver_gpio
-                                         driver # TODO: replace with esp_driver_uart (IDF-8384)
+                       PRIV_REQUIRES esp_driver_gptimer esp_driver_gpio esp_driver_uart
                        REQUIRES esp_timer
                        LDFRAGMENTS linker.lf)
 

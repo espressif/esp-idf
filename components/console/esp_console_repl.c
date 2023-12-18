@@ -18,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
+#include "driver/uart_vfs.h"
 #include "driver/usb_serial_jtag.h"
 #include "linenoise/linenoise.h"
 
@@ -224,9 +225,9 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     fsync(fileno(stdout));
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_uart_port_set_rx_line_endings(dev_config->channel, ESP_LINE_ENDINGS_CR);
+    uart_vfs_dev_port_set_rx_line_endings(dev_config->channel, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_uart_port_set_tx_line_endings(dev_config->channel, ESP_LINE_ENDINGS_CRLF);
+    uart_vfs_dev_port_set_tx_line_endings(dev_config->channel, ESP_LINE_ENDINGS_CRLF);
 
     /* Configure UART. Note that REF_TICK/XTAL is used so that the baud rate remains
      * correct while APB frequency is changing in light sleep mode.
@@ -261,7 +262,7 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     }
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(dev_config->channel);
+    uart_vfs_dev_use_driver(dev_config->channel);
 
     // initialize console, common part
     ret = esp_console_common_init(repl_config->max_cmdline_length, &uart_repl->repl_com);
@@ -423,7 +424,7 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
     }
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
     esp_console_deinit();
-    esp_vfs_dev_uart_use_nonblocking(uart_repl->uart_channel);
+    uart_vfs_dev_use_nonblocking(uart_repl->uart_channel);
     uart_driver_delete(uart_repl->uart_channel);
     free(uart_repl);
 _exit:

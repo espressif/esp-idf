@@ -13,15 +13,15 @@
 #include <sys/param.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
-#include "esp_vfs.h"
-#include "esp_vfs_dev.h"
-#include "esp_vfs_private.h"
-#include "esp_rom_uart.h"
+#include "driver/uart_vfs.h"
 #include "driver/uart.h"
 #include "driver/uart_select.h"
+#include "esp_rom_uart.h"
 #include "hal/uart_ll.h"
 #include "soc/soc_caps.h"
-#include "soc/uart_periph.h"
+#include "esp_private/esp_vfs_console.h"
+#include "esp_vfs_dev.h" // Old headers for the aliasing functions
+#include "esp_private/startup_internal.h"
 
 #define UART_NUM SOC_UART_HP_NUM
 
@@ -42,6 +42,12 @@
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_LF
+#endif
+
+#if CONFIG_VFS_SELECT_IN_RAM
+#define UART_VFS_MALLOC_FLAGS (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define UART_VFS_MALLOC_FLAGS MALLOC_CAP_DEFAULT
 #endif
 
 // UART write bytes function type
@@ -77,9 +83,9 @@ typedef struct {
     tx_func_t tx_func;
     // Functions used to read bytes from UART. Default to "basic" functions.
     rx_func_t rx_func;
-} vfs_uart_context_t;
+} uart_vfs_context_t;
 
-#define VFS_CTX_DEFAULT_VAL(uart_dev) (vfs_uart_context_t) {\
+#define VFS_CTX_DEFAULT_VAL(uart_dev) (uart_vfs_context_t) {\
     .uart = (uart_dev),\
     .peek_char = NONE,\
     .tx_mode = DEFAULT_TX_MODE,\
@@ -90,7 +96,7 @@ typedef struct {
 
 //If the context should be dynamically initialized, remove this structure
 //and point s_ctx to allocated data.
-static vfs_uart_context_t s_context[UART_NUM] = {
+static uart_vfs_context_t s_context[UART_NUM] = {
     VFS_CTX_DEFAULT_VAL(&UART0),
     VFS_CTX_DEFAULT_VAL(&UART1),
 #if UART_NUM > 2
@@ -98,7 +104,7 @@ static vfs_uart_context_t s_context[UART_NUM] = {
 #endif
 };
 
-static vfs_uart_context_t* s_ctx[UART_NUM] = {
+static uart_vfs_context_t* s_ctx[UART_NUM] = {
     &s_context[0],
     &s_context[1],
 #if UART_NUM > 2
@@ -200,7 +206,7 @@ static int uart_rx_char_via_driver(int fd)
 
 static ssize_t uart_write(int fd, const void * data, size_t size)
 {
-    assert(fd >=0 && fd < 3);
+    assert(fd >= 0 && fd < 3);
     const char *data_c = (const char *)data;
     /*  Even though newlib does stream locking on each individual stream, we need
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
@@ -245,7 +251,7 @@ static void uart_return_char(int fd, int c)
 
 static ssize_t uart_read(int fd, void* data, size_t size)
 {
-    assert(fd >=0 && fd < 3);
+    assert(fd >= 0 && fd < 3);
     char *data_c = (char *) data;
     size_t received = 0;
     _lock_acquire_recursive(&s_ctx[fd]->read_lock);
@@ -291,7 +297,7 @@ static ssize_t uart_read(int fd, void* data, size_t size)
 
 static int uart_fstat(int fd, struct stat * st)
 {
-    assert(fd >=0 && fd < 3);
+    assert(fd >= 0 && fd < 3);
     memset(st, 0, sizeof(*st));
     st->st_mode = S_IFCHR;
     return 0;
@@ -299,13 +305,13 @@ static int uart_fstat(int fd, struct stat * st)
 
 static int uart_close(int fd)
 {
-    assert(fd >=0 && fd < 3);
+    assert(fd >= 0 && fd < 3);
     return 0;
 }
 
 static int uart_fcntl(int fd, int cmd, int arg)
 {
-    assert(fd >=0 && fd < 3);
+    assert(fd >= 0 && fd < 3);
     int result = 0;
     if (cmd == F_GETFL) {
         result |= O_RDWR;
@@ -366,7 +372,7 @@ static esp_err_t register_select(uart_select_args_t *args)
         portENTER_CRITICAL(&s_registered_select_lock);
         const int new_size = s_registered_select_num + 1;
         uart_select_args_t **new_selects;
-        if ((new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), VFS_MALLOC_FLAGS)) == NULL) {
+        if ((new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), UART_VFS_MALLOC_FLAGS)) == NULL) {
             ret = ESP_ERR_NO_MEM;
         } else {
             s_registered_selects = new_selects;
@@ -392,7 +398,7 @@ static esp_err_t unregister_select(uart_select_args_t *args)
                 // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
                 // last item.
                 s_registered_selects[i] = s_registered_selects[new_size];
-                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), VFS_MALLOC_FLAGS);
+                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), UART_VFS_MALLOC_FLAGS);
                 // Shrinking a buffer with realloc is guaranteed to succeed.
                 s_registered_select_num = new_size;
                 ret = ESP_OK;
@@ -411,24 +417,24 @@ static void select_notif_callback_isr(uart_port_t uart_num, uart_select_notif_t 
         uart_select_args_t *args = s_registered_selects[i];
         if (args) {
             switch (uart_select_notif) {
-                case UART_SELECT_READ_NOTIF:
-                    if (FD_ISSET(uart_num, &args->readfds_orig)) {
-                        FD_SET(uart_num, args->readfds);
-                        esp_vfs_select_triggered_isr(args->select_sem, task_woken);
-                    }
-                    break;
-                case UART_SELECT_WRITE_NOTIF:
-                    if (FD_ISSET(uart_num, &args->writefds_orig)) {
-                        FD_SET(uart_num, args->writefds);
-                        esp_vfs_select_triggered_isr(args->select_sem, task_woken);
-                    }
-                    break;
-                case UART_SELECT_ERROR_NOTIF:
-                    if (FD_ISSET(uart_num, &args->errorfds_orig)) {
-                        FD_SET(uart_num, args->errorfds);
-                        esp_vfs_select_triggered_isr(args->select_sem, task_woken);
-                    }
-                    break;
+            case UART_SELECT_READ_NOTIF:
+                if (FD_ISSET(uart_num, &args->readfds_orig)) {
+                    FD_SET(uart_num, args->readfds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
+            case UART_SELECT_WRITE_NOTIF:
+                if (FD_ISSET(uart_num, &args->writefds_orig)) {
+                    FD_SET(uart_num, args->writefds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
+            case UART_SELECT_ERROR_NOTIF:
+                if (FD_ISSET(uart_num, &args->errorfds_orig)) {
+                    FD_SET(uart_num, args->errorfds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
             }
         }
     }
@@ -436,7 +442,7 @@ static void select_notif_callback_isr(uart_port_t uart_num, uart_select_notif_t 
 }
 
 static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-        esp_vfs_select_sem_t select_sem, void **end_select_args)
+                                   esp_vfs_select_sem_t select_sem, void **end_select_args)
 {
     const int max_fds = MIN(nfds, UART_NUM);
     *end_select_args = NULL;
@@ -449,7 +455,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
         }
     }
 
-    uart_select_args_t *args = heap_caps_malloc(sizeof(uart_select_args_t), VFS_MALLOC_FLAGS);
+    uart_select_args_t *args = heap_caps_malloc(sizeof(uart_select_args_t), UART_VFS_MALLOC_FLAGS);
 
     if (args == NULL) {
         return ESP_ERR_NO_MEM;
@@ -542,26 +548,26 @@ static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
     }
 
     switch (optional_actions) {
-        case TCSANOW:
-            // nothing to do
-            break;
-        case TCSADRAIN:
-            if (uart_wait_tx_done(fd, portMAX_DELAY) != ESP_OK) {
-                errno = EINVAL;
-                return -1;
-            }
-
-            /* FALLTHRU */
-
-        case TCSAFLUSH:
-            if (uart_flush_input(fd) != ESP_OK) {
-                errno = EINVAL;
-                return -1;
-            }
-            break;
-        default:
+    case TCSANOW:
+        // nothing to do
+        break;
+    case TCSADRAIN:
+        if (uart_wait_tx_done(fd, portMAX_DELAY) != ESP_OK) {
             errno = EINVAL;
             return -1;
+        }
+
+    /* FALLTHRU */
+
+    case TCSAFLUSH:
+        if (uart_flush_input(fd) != ESP_OK) {
+            errno = EINVAL;
+            return -1;
+        }
+        break;
+    default:
+        errno = EINVAL;
+        return -1;
     }
 
     if (p->c_iflag & IGNCR) {
@@ -579,21 +585,21 @@ static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
         const tcflag_t csize_bits = p->c_cflag & CSIZE;
 
         switch (csize_bits) {
-            case CS5:
-                data_bits = UART_DATA_5_BITS;
-                break;
-            case CS6:
-                data_bits = UART_DATA_6_BITS;
-                break;
-            case CS7:
-                data_bits = UART_DATA_7_BITS;
-                break;
-            case CS8:
-                data_bits = UART_DATA_8_BITS;
-                break;
-            default:
-                errno = EINVAL;
-                return -1;
+        case CS5:
+            data_bits = UART_DATA_5_BITS;
+            break;
+        case CS6:
+            data_bits = UART_DATA_6_BITS;
+            break;
+        case CS7:
+            data_bits = UART_DATA_7_BITS;
+            break;
+        case CS8:
+            data_bits = UART_DATA_8_BITS;
+            break;
+        default:
+            errno = EINVAL;
+            return -1;
         }
 
         if (uart_set_word_length(fd, data_bits) != ESP_OK) {
@@ -608,9 +614,9 @@ static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
     }
 
     if (uart_set_parity(fd, (p->c_cflag & PARENB) ?
-                ((p->c_cflag & PARODD) ? UART_PARITY_ODD : UART_PARITY_EVEN)
-                :
-                UART_PARITY_DISABLE) != ESP_OK) {
+                        ((p->c_cflag & PARODD) ? UART_PARITY_ODD : UART_PARITY_EVEN)
+                        :
+                        UART_PARITY_DISABLE) != ESP_OK) {
         errno = EINVAL;
         return -1;
     }
@@ -625,102 +631,102 @@ static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
                 b = p->c_ispeed;
             } else {
                 switch (p->c_ispeed) {
-                    case B0:
-                        b = 0;
-                        break;
-                    case B50:
-                        b = 50;
-                        break;
-                    case B75:
-                        b = 75;
-                        break;
-                    case B110:
-                        b = 110;
-                        break;
-                    case B134:
-                        b = 134;
-                        break;
-                    case B150:
-                        b = 150;
-                        break;
-                    case B200:
-                        b = 200;
-                        break;
-                    case B300:
-                        b = 300;
-                        break;
-                    case B600:
-                        b = 600;
-                        break;
-                    case B1200:
-                        b = 1200;
-                        break;
-                    case B1800:
-                        b = 1800;
-                        break;
-                    case B2400:
-                        b = 2400;
-                        break;
-                    case B4800:
-                        b = 4800;
-                        break;
-                    case B9600:
-                        b = 9600;
-                        break;
-                    case B19200:
-                        b = 19200;
-                        break;
-                    case B38400:
-                        b = 38400;
-                        break;
-                    case B57600:
-                        b = 57600;
-                        break;
-                    case B115200:
-                        b = 115200;
-                        break;
-                    case B230400:
-                        b = 230400;
-                        break;
-                    case B460800:
-                        b = 460800;
-                        break;
-                    case B500000:
-                        b = 500000;
-                        break;
-                    case B576000:
-                        b = 576000;
-                        break;
-                    case B921600:
-                        b = 921600;
-                        break;
-                    case B1000000:
-                        b = 1000000;
-                        break;
-                    case B1152000:
-                        b = 1152000;
-                        break;
-                    case B1500000:
-                        b = 1500000;
-                        break;
-                    case B2000000:
-                        b = 2000000;
-                        break;
-                    case B2500000:
-                        b = 2500000;
-                        break;
-                    case B3000000:
-                        b = 3000000;
-                        break;
-                    case B3500000:
-                        b = 3500000;
-                        break;
-                    case B4000000:
-                        b = 4000000;
-                        break;
-                    default:
-                        errno = EINVAL;
-                        return -1;
+                case B0:
+                    b = 0;
+                    break;
+                case B50:
+                    b = 50;
+                    break;
+                case B75:
+                    b = 75;
+                    break;
+                case B110:
+                    b = 110;
+                    break;
+                case B134:
+                    b = 134;
+                    break;
+                case B150:
+                    b = 150;
+                    break;
+                case B200:
+                    b = 200;
+                    break;
+                case B300:
+                    b = 300;
+                    break;
+                case B600:
+                    b = 600;
+                    break;
+                case B1200:
+                    b = 1200;
+                    break;
+                case B1800:
+                    b = 1800;
+                    break;
+                case B2400:
+                    b = 2400;
+                    break;
+                case B4800:
+                    b = 4800;
+                    break;
+                case B9600:
+                    b = 9600;
+                    break;
+                case B19200:
+                    b = 19200;
+                    break;
+                case B38400:
+                    b = 38400;
+                    break;
+                case B57600:
+                    b = 57600;
+                    break;
+                case B115200:
+                    b = 115200;
+                    break;
+                case B230400:
+                    b = 230400;
+                    break;
+                case B460800:
+                    b = 460800;
+                    break;
+                case B500000:
+                    b = 500000;
+                    break;
+                case B576000:
+                    b = 576000;
+                    break;
+                case B921600:
+                    b = 921600;
+                    break;
+                case B1000000:
+                    b = 1000000;
+                    break;
+                case B1152000:
+                    b = 1152000;
+                    break;
+                case B1500000:
+                    b = 1500000;
+                    break;
+                case B2000000:
+                    b = 2000000;
+                    break;
+                case B2500000:
+                    b = 2500000;
+                    break;
+                case B3000000:
+                    b = 3000000;
+                    break;
+                case B3500000:
+                    b = 3500000;
+                    break;
+                case B4000000:
+                    b = 4000000;
+                    break;
+                default:
+                    errno = EINVAL;
+                    return -1;
                 }
             }
 
@@ -765,21 +771,21 @@ static int uart_tcgetattr(int fd, struct termios *p)
         p->c_cflag &= (~CSIZE);
 
         switch (data_bits) {
-            case UART_DATA_5_BITS:
-                p->c_cflag |= CS5;
-                break;
-            case UART_DATA_6_BITS:
-                p->c_cflag |= CS6;
-                break;
-            case UART_DATA_7_BITS:
-                p->c_cflag |= CS7;
-                break;
-            case UART_DATA_8_BITS:
-                p->c_cflag |= CS8;
-                break;
-            default:
-                errno = ENOSYS;
-                return -1;
+        case UART_DATA_5_BITS:
+            p->c_cflag |= CS5;
+            break;
+        case UART_DATA_6_BITS:
+            p->c_cflag |= CS6;
+            break;
+        case UART_DATA_7_BITS:
+            p->c_cflag |= CS7;
+            break;
+        case UART_DATA_8_BITS:
+            p->c_cflag |= CS8;
+            break;
+        default:
+            errno = ENOSYS;
+            return -1;
         }
     }
 
@@ -791,16 +797,16 @@ static int uart_tcgetattr(int fd, struct termios *p)
         }
 
         switch (stop_bits) {
-            case UART_STOP_BITS_1:
-                // nothing to do
-                break;
-            case UART_STOP_BITS_2:
-                p->c_cflag |= CSTOPB;
-                break;
-            default:
-                // UART_STOP_BITS_1_5 is unsupported by termios
-                errno = ENOSYS;
-                return -1;
+        case UART_STOP_BITS_1:
+            // nothing to do
+            break;
+        case UART_STOP_BITS_2:
+            p->c_cflag |= CSTOPB;
+            break;
+        default:
+            // UART_STOP_BITS_1_5 is unsupported by termios
+            errno = ENOSYS;
+            return -1;
         }
     }
 
@@ -812,18 +818,18 @@ static int uart_tcgetattr(int fd, struct termios *p)
         }
 
         switch (parity_mode) {
-            case UART_PARITY_EVEN:
-                p->c_cflag |= PARENB;
-                break;
-            case UART_PARITY_ODD:
-                p->c_cflag |= (PARENB | PARODD);
-                break;
-            case UART_PARITY_DISABLE:
-                // nothing to do
-                break;
-            default:
-                errno = ENOSYS;
-                return -1;
+        case UART_PARITY_EVEN:
+            p->c_cflag |= PARENB;
+            break;
+        case UART_PARITY_ODD:
+            p->c_cflag |= (PARENB | PARODD);
+            break;
+        case UART_PARITY_DISABLE:
+            // nothing to do
+            break;
+        default:
+            errno = ENOSYS;
+            return -1;
         }
     }
 
@@ -838,103 +844,103 @@ static int uart_tcgetattr(int fd, struct termios *p)
 
         speed_t sp;
         switch (baudrate) {
-            case 0:
-                sp = B0;
-                break;
-            case 50:
-                sp = B50;
-                break;
-            case 75:
-                sp = B75;
-                break;
-            case 110:
-                sp = B110;
-                break;
-            case 134:
-                sp = B134;
-                break;
-            case 150:
-                sp = B150;
-                break;
-            case 200:
-                sp = B200;
-                break;
-            case 300:
-                sp = B300;
-                break;
-            case 600:
-                sp = B600;
-                break;
-            case 1200:
-                sp = B1200;
-                break;
-            case 1800:
-                sp = B1800;
-                break;
-            case 2400:
-                sp = B2400;
-                break;
-            case 4800:
-                sp = B4800;
-                break;
-            case 9600:
-                sp = B9600;
-                break;
-            case 19200:
-                sp = B19200;
-                break;
-            case 38400:
-                sp = B38400;
-                break;
-            case 57600:
-                sp = B57600;
-                break;
-            case 115200:
-                sp = B115200;
-                break;
-            case 230400:
-                sp = B230400;
-                break;
-            case 460800:
-                sp = B460800;
-                break;
-            case 500000:
-                sp = B500000;
-                break;
-            case 576000:
-                sp = B576000;
-                break;
-            case 921600:
-                sp = B921600;
-                break;
-            case 1000000:
-                sp = B1000000;
-                break;
-            case 1152000:
-                sp = B1152000;
-                break;
-            case 1500000:
-                sp = B1500000;
-                break;
-            case 2000000:
-                sp = B2000000;
-                break;
-            case 2500000:
-                sp = B2500000;
-                break;
-            case 3000000:
-                sp = B3000000;
-                break;
-            case 3500000:
-                sp = B3500000;
-                break;
-            case 4000000:
-                sp = B4000000;
-                break;
-            default:
-                p->c_cflag |= BOTHER;
-                sp = baudrate;
-                break;
+        case 0:
+            sp = B0;
+            break;
+        case 50:
+            sp = B50;
+            break;
+        case 75:
+            sp = B75;
+            break;
+        case 110:
+            sp = B110;
+            break;
+        case 134:
+            sp = B134;
+            break;
+        case 150:
+            sp = B150;
+            break;
+        case 200:
+            sp = B200;
+            break;
+        case 300:
+            sp = B300;
+            break;
+        case 600:
+            sp = B600;
+            break;
+        case 1200:
+            sp = B1200;
+            break;
+        case 1800:
+            sp = B1800;
+            break;
+        case 2400:
+            sp = B2400;
+            break;
+        case 4800:
+            sp = B4800;
+            break;
+        case 9600:
+            sp = B9600;
+            break;
+        case 19200:
+            sp = B19200;
+            break;
+        case 38400:
+            sp = B38400;
+            break;
+        case 57600:
+            sp = B57600;
+            break;
+        case 115200:
+            sp = B115200;
+            break;
+        case 230400:
+            sp = B230400;
+            break;
+        case 460800:
+            sp = B460800;
+            break;
+        case 500000:
+            sp = B500000;
+            break;
+        case 576000:
+            sp = B576000;
+            break;
+        case 921600:
+            sp = B921600;
+            break;
+        case 1000000:
+            sp = B1000000;
+            break;
+        case 1152000:
+            sp = B1152000;
+            break;
+        case 1500000:
+            sp = B1500000;
+            break;
+        case 2000000:
+            sp = B2000000;
+            break;
+        case 2500000:
+            sp = B2500000;
+            break;
+        case 3000000:
+            sp = B3000000;
+            break;
+        case 3500000:
+            sp = B3500000;
+            break;
+        case 4000000:
+            sp = B4000000;
+            break;
+        default:
+            p->c_cflag |= BOTHER;
+            sp = baudrate;
+            break;
         }
 
         p->c_ispeed = p->c_ospeed = sp;
@@ -980,7 +986,7 @@ static int uart_tcflush(int fd, int select)
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-static const esp_vfs_t vfs = {
+static const esp_vfs_t uart_vfs = {
     .flags = ESP_VFS_FLAG_DEFAULT,
     .write = &uart_write,
     .open = &uart_open,
@@ -1004,17 +1010,12 @@ static const esp_vfs_t vfs = {
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 };
 
-const esp_vfs_t* esp_vfs_uart_get_vfs(void)
+void uart_vfs_dev_register(void)
 {
-    return &vfs;
+    ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &uart_vfs, NULL));
 }
 
-void esp_vfs_dev_uart_register(void)
-{
-    ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &vfs, NULL));
-}
-
-int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode)
+int uart_vfs_dev_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode)
 {
     if (uart_num < 0 || uart_num >= UART_NUM) {
         errno = EBADF;
@@ -1024,7 +1025,7 @@ int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t m
     return 0;
 }
 
-int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode)
+int uart_vfs_dev_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode)
 {
     if (uart_num < 0 || uart_num >= UART_NUM) {
         errno = EBADF;
@@ -1034,21 +1035,23 @@ int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t m
     return 0;
 }
 
-void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode)
+// Deprecated
+void uart_vfs_dev_set_rx_line_endings(esp_line_endings_t mode)
 {
     for (int i = 0; i < UART_NUM; ++i) {
         s_ctx[i]->rx_mode = mode;
     }
 }
 
-void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode)
+// Deprecated
+void uart_vfs_dev_set_tx_line_endings(esp_line_endings_t mode)
 {
     for (int i = 0; i < UART_NUM; ++i) {
         s_ctx[i]->tx_mode = mode;
     }
 }
 
-void esp_vfs_dev_uart_use_nonblocking(int uart_num)
+void uart_vfs_dev_use_nonblocking(int uart_num)
 {
     _lock_acquire_recursive(&s_ctx[uart_num]->read_lock);
     _lock_acquire_recursive(&s_ctx[uart_num]->write_lock);
@@ -1058,7 +1061,7 @@ void esp_vfs_dev_uart_use_nonblocking(int uart_num)
     _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
 
-void esp_vfs_dev_uart_use_driver(int uart_num)
+void uart_vfs_dev_use_driver(int uart_num)
 {
     _lock_acquire_recursive(&s_ctx[uart_num]->read_lock);
     _lock_acquire_recursive(&s_ctx[uart_num]->write_lock);
@@ -1067,3 +1070,32 @@ void esp_vfs_dev_uart_use_driver(int uart_num)
     _lock_release_recursive(&s_ctx[uart_num]->write_lock);
     _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
+
+#if CONFIG_VFS_SUPPORT_IO && CONFIG_ESP_CONSOLE_UART
+ESP_SYSTEM_INIT_FN(init_vfs_uart, CORE, BIT(0), 110)
+{
+    esp_vfs_set_primary_dev_vfs_def_struct(&uart_vfs);
+    return ESP_OK;
+}
+#endif
+
+void uart_vfs_include_dev_init(void)
+{
+    // Linker hook function, exists to make the linker examine this file
+}
+
+// -------------------------- esp_vfs_dev_uart_xxx ALIAS (deprecated) ----------------------------
+
+void esp_vfs_dev_uart_register(void) __attribute__((alias("uart_vfs_dev_register")));
+
+void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_rx_line_endings")));
+
+void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_tx_line_endings")));
+
+int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_rx_line_endings")));
+
+int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_tx_line_endings")));
+
+void esp_vfs_dev_uart_use_nonblocking(int uart_num) __attribute__((alias("uart_vfs_dev_use_nonblocking")));
+
+void esp_vfs_dev_uart_use_driver(int uart_num) __attribute__((alias("uart_vfs_dev_use_driver")));

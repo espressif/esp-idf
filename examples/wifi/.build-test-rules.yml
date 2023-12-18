@@ -65,8 +65,8 @@ examples/wifi/power_save:
   <<: *wifi_depends_default
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/uart/**/*
+  depends_components:
+    - esp_driver_uart
 
 examples/wifi/wifi_aware:
   disable:

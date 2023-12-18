@@ -11,7 +11,6 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_check.h"
-#include "malloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
@@ -20,7 +19,6 @@
 #include "esp_private/critical_section.h"
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
-#include "hal/clk_tree_ll.h"
 #include "soc/uart_periph.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
@@ -28,7 +26,6 @@
 #include "driver/uart_select.h"
 #include "driver/lp_io.h"
 #include "esp_private/uart_share_hw_ctrl.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_clk_tree.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
@@ -527,7 +524,7 @@ esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length)
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_ERR_INVALID_STATE, UART_TAG, "uart driver error");
 
-    int *pdata = (int *) malloc(queue_length * sizeof(int));
+    int *pdata = (int *)heap_caps_malloc(queue_length * sizeof(int), UART_MALLOC_CAPS);
     if (pdata == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -620,7 +617,7 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
     }
 
     /* Assign the correct funct to the GPIO. */
-    assert (upin->iomux_func != -1);
+    assert(upin->iomux_func != -1);
     if (uart_num < SOC_UART_HP_NUM) {
         gpio_iomux_out(io_num, upin->iomux_func, false);
 
@@ -1073,7 +1070,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                                                  p_uart->rx_buffered_len + pat_idx);
                         }
                         UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
-                        sent = xQueueSendFromISR(p_uart->event_queue, (void * )&uart_event, &HPTaskAwoken);
+                        sent = xQueueSendFromISR(p_uart->event_queue, (void *)&uart_event, &HPTaskAwoken);
                         need_yield |= (HPTaskAwoken == pdTRUE);
                         if ((p_uart->event_queue != NULL) && (sent == pdFALSE)) {
 #ifndef CONFIG_UART_ISR_IN_IRAM     //Only log if ISR is not in IRAM
@@ -1198,19 +1195,19 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 need_yield |= (HPTaskAwoken == pdTRUE);
             }
         }
-    #if SOC_UART_SUPPORT_WAKEUP_INT
+#if SOC_UART_SUPPORT_WAKEUP_INT
         else if (uart_intr_status & UART_INTR_WAKEUP) {
             uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_WAKEUP);
             uart_event.type = UART_WAKEUP;
         }
-    #endif
+#endif
         else {
             uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), uart_intr_status); /*simply clear all other intr status*/
             uart_event.type = UART_EVENT_MAX;
         }
 
         if (uart_event.type != UART_EVENT_MAX && p_uart->event_queue) {
-            sent = xQueueSendFromISR(p_uart->event_queue, (void * )&uart_event, &HPTaskAwoken);
+            sent = xQueueSendFromISR(p_uart->event_queue, (void *)&uart_event, &HPTaskAwoken);
             need_yield |= (HPTaskAwoken == pdTRUE);
             if (sent == pdFALSE) {
 #ifndef CONFIG_UART_ISR_IN_IRAM     //Only log if ISR is not in IRAM
@@ -1323,7 +1320,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *) &evt, sizeof(uart_tx_data_t), portMAX_DELAY);
         while (size > 0) {
             size_t send_size = size > max_size / 2 ? max_size / 2 : size;
-            xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *) (src + offset), send_size, portMAX_DELAY);
+            xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
             size -= send_size;
             offset += send_size;
             uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
@@ -1644,8 +1641,8 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
 
     ret = esp_intr_alloc(uart_periph_signal[uart_num].irq, intr_alloc_flags,
-                       uart_rx_intr_handler_default, p_uart_obj[uart_num],
-                       &p_uart_obj[uart_num]->intr_handle);
+                         uart_rx_intr_handler_default, p_uart_obj[uart_num],
+                         &p_uart_obj[uart_num]->intr_handle);
     ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not allocate an interrupt for UART");
 
     ret = uart_intr_config(uart_num, &uart_intr);

@@ -17,7 +17,7 @@
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_types.h"
 #include "esp_openthread_uart.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "core/common/code_utils.hpp"
 #include "core/common/logging.hpp"
 #include "driver/uart.h"
@@ -265,8 +265,8 @@ esp_err_t UartSpinelInterface::InitUart(const esp_openthread_uart_config_t &radi
     ESP_RETURN_ON_ERROR(esp_openthread_uart_init_port(&radio_uart_config), OT_PLAT_LOG_TAG,
                         "esp_openthread_uart_init_port failed");
     // We have a driver now installed so set up the read/write functions to use driver also.
-    esp_vfs_dev_uart_port_set_tx_line_endings(m_uart_config.port, ESP_LINE_ENDINGS_LF);
-    esp_vfs_dev_uart_port_set_rx_line_endings(m_uart_config.port, ESP_LINE_ENDINGS_LF);
+    uart_vfs_dev_port_set_tx_line_endings(m_uart_config.port, ESP_LINE_ENDINGS_LF);
+    uart_vfs_dev_port_set_rx_line_endings(m_uart_config.port, ESP_LINE_ENDINGS_LF);
 
     snprintf(uart_path, sizeof(uart_path), "/dev/uart/%d", radio_uart_config.port);
     m_uart_fd = open(uart_path, O_RDWR | O_NONBLOCK);

@@ -46,6 +46,7 @@
 #include "esp_vfs_eventfd.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_usb_serial_jtag.h"
+#include "driver/uart_vfs.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
@@ -77,7 +78,7 @@ esp_err_t esp_zb_gateway_console_init(void)
     usb_serial_jtag_driver_config_t usb_serial_jtag_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
     ret = usb_serial_jtag_driver_install(&usb_serial_jtag_config);
     esp_vfs_usb_serial_jtag_use_driver();
-    esp_vfs_dev_uart_register();
+    uart_vfs_dev_register();
     return ret;
 }
 #endif

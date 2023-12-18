@@ -64,8 +64,6 @@ menu "Driver Configurations"
 
     orsource "./twai/Kconfig.twai"
 
-    orsource "./uart/Kconfig.uart"
-
     menu "USB Serial/JTAG Configuration"
         depends on SOC_USB_SERIAL_JTAG_SUPPORTED
         config USJ_NO_AUTO_LS_ON_CONNECTION

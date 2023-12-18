@@ -43,9 +43,9 @@ examples/bluetooth/bluedroid/classic_bt:
     - vfs
     - esp_driver_gpio
     - esp_driver_i2s
+    - esp_driver_uart
   depends_filepatterns:
     - components/driver/dac/**/*
-    - components/driver/uart/**/*
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
   <<: *bt_default_depends
@@ -134,15 +134,15 @@ examples/bluetooth/hci/controller_hci_uart_esp32:
   <<: *bt_default_depends
   enable:
     - if: IDF_TARGET == "esp32"
-  depends_filepatterns:
-    - components/driver/uart/**/*
+  depends_components:
+    - esp_driver_uart
 
 examples/bluetooth/hci/controller_hci_uart_esp32c3_and_esp32s3:
   <<: *bt_default_depends
   enable:
     - if: IDF_TARGET in ["esp32c3", "esp32s3"]
-  depends_filepatterns:
-    - components/driver/uart/**/*
+  depends_components:
+    - esp_driver_uart
 
 
 # config BT_NIMBLE_ENABLED does not depends on any soc cap
@@ -256,7 +256,7 @@ examples/bluetooth/nimble/throughput_app:
     - if: SOC_BLE_SUPPORTED != 1
   depends_components:
     - esp_driver_gpio
+    - esp_driver_uart
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
     - examples/bluetooth/nimble/throughput_app/blecent_throughput/components/**/*
-    - components/driver/uart/**/*

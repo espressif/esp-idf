@@ -98,7 +98,7 @@ static void test_task3(void *pvParameters)
 TEST_CASE("test uart_wait_tx_done is not blocked when ticks_to_wait=0", "[uart]")
 {
     xTaskCreate(test_task3, "tsk3", 4096, NULL, 5, NULL);
-    while(!case_end);
+    while (!case_end);
     vTaskDelay(2);  // wait for test_task3 to exit
 }
 
@@ -231,13 +231,13 @@ static void uart_write_task(void *param)
 {
     int uart_num = (int)param;
     uint8_t *tx_buf = (uint8_t *)malloc(1024);
-    if(tx_buf == NULL) {
+    if (tx_buf == NULL) {
         TEST_FAIL_MESSAGE("tx buffer malloc fail");
     }
-    for(int i = 1; i < 1023; i++) {
+    for (int i = 1; i < 1023; i++) {
         tx_buf[i] = (i & 0xff);
     }
-    for(int i = 0; i < 1024; i++) {
+    for (int i = 0; i < 1024; i++) {
         //d[0] and d[1023] are header
         tx_buf[0] = (i & 0xff);
         tx_buf[1023] = ((~i) & 0xff);
@@ -261,7 +261,7 @@ TEST_CASE("uart read write test", "[uart]")
 {
     const int uart_num = UART_NUM1;
     uint8_t *rd_data = (uint8_t *)malloc(1024);
-    if(rd_data == NULL) {
+    if (rd_data == NULL) {
         TEST_FAIL_MESSAGE("rx buffer malloc fail");
     }
     uart_config_t uart_config = {
@@ -330,7 +330,7 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
     const int uart_num = UART_NUM1;
     uint8_t *rd_data = (uint8_t *)malloc(1024);
     uint8_t *wr_data = (uint8_t *)malloc(1024);
-    if(rd_data == NULL || wr_data == NULL) {
+    if (rd_data == NULL || wr_data == NULL) {
         TEST_FAIL_MESSAGE("buffer malloc fail");
     }
     uart_config_t uart_config = {
@@ -344,7 +344,7 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
     };
     uart_wait_tx_idle_polling(uart_num);
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
-    TEST_ESP_OK(uart_driver_install(uart_num, 1024 * 2, 1024 *2, 20, NULL, 0));
+    TEST_ESP_OK(uart_driver_install(uart_num, 1024 * 2, 1024 * 2, 20, NULL, 0));
     TEST_ESP_OK(uart_set_loop_back(uart_num, true));
     TEST_ESP_OK(uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART1_CTS_PIN));
     //Connect the RTS out_signal to the CTS pin (which is mapped to CTS in_signal)
