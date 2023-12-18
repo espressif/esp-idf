@@ -26,9 +26,7 @@ extern "C" {
  */
 static inline  uint32_t lp_aon_ll_ext1_get_wakeup_status(void)
 {
-    // TODO: [ESP32C5] IDF-8638, IDF-8640
-    // return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_status);
-    return (uint32_t)0;
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_status);
 }
 
 /**
@@ -36,8 +34,7 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_status(void)
  */
 static inline void lp_aon_ll_ext1_clear_wakeup_status(void)
 {
-    // TODO: [ESP32C5] IDF-8638, IDF-8640
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_status_clr, 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_status_clr, 1);
 }
 
 /**
@@ -50,18 +47,23 @@ static inline void lp_aon_ll_ext1_clear_wakeup_status(void)
  */
 static inline void lp_aon_ll_ext1_set_wakeup_pins(uint32_t io_mask, uint32_t level_mask)
 {
-    // TODO: [ESP32C5] IDF-8638, IDF-8640
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, io_mask);
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv, level_mask);
+    uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
+    wakeup_sel_mask |= io_mask;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, wakeup_sel_mask);
+
+    uint32_t wakeup_level_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv);
+    wakeup_level_mask |= io_mask & level_mask;
+    wakeup_level_mask &= ~(io_mask & ~level_mask);
+
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_lv, wakeup_level_mask);
 }
 
 /**
  * @brief Clear all ext1 wakup-source setting
  */
-static inline void lp_aon_ll_ext1_clear_wakeup_pins(void)
+static inline  void lp_aon_ll_ext1_clear_wakeup_pins(void)
 {
-    // TODO: [ESP32C5] IDF-8638, IDF-8640
-    // HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, 0);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel, 0);
 }
 
 /**
@@ -71,9 +73,7 @@ static inline void lp_aon_ll_ext1_clear_wakeup_pins(void)
  */
 static inline  uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
 {
-    // TODO: [ESP32C5] IDF-8638, IDF-8640
-    // return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
-    return (uint32_t)0;
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
 }
 
 
@@ -84,12 +84,12 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
  */
 static inline  void lp_aon_ll_inform_wakeup_type(bool dslp)
 {
-    // TODO: [ESP32C5] IDF-8638, IDF-8640
-    // if (dslp) {
-    //     REG_SET_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
-    //     // } else {
-    //     REG_CLR_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
-    // }
+    if (dslp) {
+        REG_SET_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
+
+    } else {
+        REG_CLR_BIT(SLEEP_MODE_REG, BIT(0));    /* Tell rom to run light sleep wake stub */
+    }
 }
 
 #ifdef __cplusplus

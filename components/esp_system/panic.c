@@ -79,7 +79,7 @@ static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
-#if CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART && SOC_UART_SUPPORTED
 static uart_hal_context_t s_panic_uart = { .dev = CONFIG_ESP_CONSOLE_UART_NUM == 0 ? &UART0 :&UART1 };
 
 static void panic_print_char_uart(const char c)
@@ -122,7 +122,7 @@ static void panic_print_char_usb_serial_jtag(const char c)
 
 void panic_print_char(const char c)
 {
-#if CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART && SOC_UART_SUPPORTED
     panic_print_char_uart(c);
 #endif
 #if CONFIG_ESP_CONSOLE_USB_CDC
