@@ -639,7 +639,8 @@ menu "LWIP"
             int "The maximum number of pbufs queued on OOSEQ per pcb"
             depends on LWIP_TCP_QUEUE_OOSEQ
             range 0 12
-            default 4
+            default 4 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 0 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
             help
                 If LWIP_TCP_OOSEQ_MAX_PBUFS = 0, TCP will not control the number of OOSEQ pbufs.
 
