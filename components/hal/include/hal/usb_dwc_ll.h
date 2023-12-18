@@ -6,19 +6,25 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
+/*
+This header is shared across all targets. Resolve to an empty header for targets
+that don't support USB OTG.
+*/
+#if SOC_USB_OTG_SUPPORTED
+#include <stdint.h>
+#include <stdbool.h>
+#include "soc/usb_dwc_struct.h"
+#include "soc/usb_dwc_cfg.h"
+#include "hal/usb_dwc_types.h"
+#include "hal/misc.h"
+#endif // SOC_USB_OTG_SUPPORTED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "soc/soc_caps.h"
 #if SOC_USB_OTG_SUPPORTED
-#include "soc/usb_dwc_struct.h"
-#endif
-#include "hal/usb_dwc_types.h"
-#include "hal/misc.h"
-
 
 /* -----------------------------------------------------------------------------
 --------------------------------- DWC Constants --------------------------------
@@ -187,7 +193,6 @@ Todo: Check sizes again and express this macro in terms of DWC config options (I
 #define USB_DWC_LL_INTR_CHAN_CHHLTD         (1 << 1)
 #define USB_DWC_LL_INTR_CHAN_XFERCOMPL      (1 << 0)
 
-#if SOC_USB_OTG_SUPPORTED
 /*
  * QTD (Queue Transfer Descriptor) structure used in Scatter/Gather DMA mode.
  * Each QTD describes one transfer. Scatter gather mode will automatically split
@@ -857,28 +862,48 @@ static inline uint32_t usb_dwc_ll_hctsiz_get_pid(volatile usb_dwc_host_chan_regs
 
 static inline void usb_dwc_ll_hctsiz_set_qtd_list_len(volatile usb_dwc_host_chan_regs_t *chan, int qtd_list_len)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(chan->hctsiz_reg, ntd, qtd_list_len - 1);    //Set the length of the descriptor list
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    //Set the length of the descriptor list. NTD occupies xfersize[15:8]
+    hctsiz.xfersize &= ~(0xFF << 8);
+    hctsiz.xfersize |= ((qtd_list_len - 1) & 0xFF) << 8;
+    chan->hctsiz_reg.val = hctsiz.val;
 }
 
 static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
 {
-    chan->hctsiz_reg.dopng = 0;         //Don't do ping
-    HAL_FORCE_MODIFY_U32_REG_FIELD(chan->hctsiz_reg, sched_info, 0xFF); //Schedinfo is always 0xFF for fullspeed. Not used in Bulk/Ctrl channels
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    hctsiz.dopng = 0;         //Don't do ping
+    /*
+    Set SCHED_INFO which occupies xfersize[7:0]
+    It is always set to 0xFF for full speed and not used in Bulk/Ctrl channels
+    */
+    hctsiz.xfersize |= 0xFF;
+    chan->hctsiz_reg.val = hctsiz.val;
 }
 
 // ---------------------------- HCDMAi Register --------------------------------
 
 static inline void usb_dwc_ll_hcdma_set_qtd_list_addr(volatile usb_dwc_host_chan_regs_t *chan, void *dmaaddr, uint32_t qtd_idx)
 {
-    //Set HCDMAi
-    chan->hcdma_reg.val = 0;
-    chan->hcdma_reg.non_iso.dmaaddr = (((uint32_t)dmaaddr) >> 9) & 0x7FFFFF;  //MSB of 512 byte aligned address
-    chan->hcdma_reg.non_iso.ctd = qtd_idx;
+    usb_dwc_hcdma_reg_t hcdma;
+    /*
+    Set the base address portion of the field which is dmaaddr[31:9]. This is
+    the based address of the QTD list and must be 512 bytes aligned
+    */
+    hcdma.dmaaddr = ((uint32_t)dmaaddr) & 0xFFFFFE00;
+    //Set the current QTD index in the QTD list which is dmaaddr[8:3]
+    hcdma.dmaaddr |= (qtd_idx & 0x3F) << 3;
+    //dmaaddr[2:0] is reserved thus doesn't not need to be set
+
+    chan->hcdma_reg.val = hcdma.val;
 }
 
 static inline int usb_dwc_ll_hcdam_get_cur_qtd_idx(usb_dwc_host_chan_regs_t *chan)
 {
-    return chan->hcdma_reg.non_iso.ctd;
+    //The current QTD index is dmaaddr[8:3]
+    return (chan->hcdma_reg.dmaaddr >> 3) & 0x3F;
 }
 
 // ---------------------------- HCDMABi Register -------------------------------
@@ -998,7 +1023,7 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     qtd->buffer_status_val = 0;
 }
 
-#endif
+#endif // SOC_USB_OTG_SUPPORTED
 
 #ifdef __cplusplus
 }
