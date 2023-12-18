@@ -80,8 +80,16 @@ if(link_binary_libs)
     endif()
 
     if(CONFIG_ESP_PHY_ENABLE_CERT_TEST)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libbttestmode.a
-        librfate.a librftest.a $<TARGET_FILE:${esp_phy_lib}>)
+        if(CONFIG_IDF_TARGET_ESP32)
+            target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libbttestmode.a
+            librftest.a $<TARGET_FILE:${esp_phy_lib}>)
+        elseif(CONFIG_IDF_TARGET_ESP32S2)
+            target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> librftest.a
+            librfate.a $<TARGET_FILE:${esp_phy_lib}>)
+        else()
+            target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libbttestmode.a
+            librfate.a librftest.a $<TARGET_FILE:${esp_phy_lib}>)
+        endif()
     endif()
 endif()
 
