@@ -40,4 +40,5 @@ tools/templates/sample_component/include/main.h
 tools/templates/sample_component/main.c
 tools/ci/cleanup_ignore_lists.py
 tools/ci/artifacts_handler.py
+tools/ci/get_known_failure_cases_file.py
 tools/unit-test-app/**/*

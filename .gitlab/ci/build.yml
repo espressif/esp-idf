@@ -516,10 +516,10 @@ build_clang_test_apps_esp32c6:
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - cd ${IDF_PATH}/tools/test_build_system
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - python ${IDF_PATH}/tools/ci/get_known_failure_cases_file.py
     - pytest --parallel-count ${CI_NODE_TOTAL:-1} --parallel-index ${CI_NODE_INDEX:-1}
       --work-dir ${CI_PROJECT_DIR}/test_build_system --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
-      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 pytest_build_system:
   extends: .test_build_system_template
