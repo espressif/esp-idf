@@ -56,6 +56,17 @@ void ieee802154_enable(void);
 void ieee802154_disable(void);
 
 /**
+ * @brief  Enable the RF.
+ *
+ */
+void ieee802154_rf_enable(void);
+
+/**
+ * @brief  Disable the RF.
+ *
+ */
+void ieee802154_rf_disable(void);
+/**
  * @brief  Initialize the IEEE 802.15.4 MAC.
  *
  * @return
@@ -64,6 +75,16 @@ void ieee802154_disable(void);
  *
  */
 esp_err_t ieee802154_mac_init(void);
+
+/**
+ * @brief  Deinitialize the IEEE 802.15.4 MAC.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ *
+ */
+esp_err_t ieee802154_mac_deinit(void);
 
 /**
  * @brief  Transmit the given frame.
