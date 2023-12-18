@@ -42,6 +42,7 @@ void temperature_sensor_power_acquire(void)
         SENS.sar_tctrl.tsens_power_up_force = true;
         SENS.sar_tctrl2.tsens_xpd_force = true;
         SENS.sar_tctrl.tsens_power_up = true;
+        CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
         SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
         CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
         SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
