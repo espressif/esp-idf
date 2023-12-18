@@ -18,13 +18,11 @@
   extends:
     - .target_test_template
   artifacts:
-    when: always
     paths:
       - XUNIT_RESULT.xml
       - pytest_embedded_log/
     reports:
       junit: XUNIT_RESULT.xml
-    expire_in: 1 week
   script:
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     # get runner env config file

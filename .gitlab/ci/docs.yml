@@ -121,7 +121,6 @@ build_docs_html_full:
       artifacts: false
       optional: true
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
@@ -135,7 +134,6 @@ build_docs_html_full_prod:
     - .doc-rules:build:docs-full-prod
   dependencies: [] # Stop build_docs jobs from downloading all previous job's artifacts
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
@@ -152,7 +150,6 @@ build_docs_html_partial:
       artifacts: false
       optional: true
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
@@ -175,7 +172,6 @@ build_docs_pdf:
       artifacts: false
       optional: true
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/latex/*
     expire_in: 4 days
@@ -188,7 +184,6 @@ build_docs_pdf_prod:
     - .doc-rules:build:docs-full-prod
   dependencies: [] # Stop build_docs jobs from downloading all previous job's artifacts
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/latex/*
     expire_in: 4 days
@@ -266,11 +261,9 @@ check_doc_links:
       artifacts: false
   tags: ["build", "amd64", "internet"]
   artifacts:
-    when: always
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/linkcheck/*.txt
-    expire_in: 1 week
   allow_failure: true
   script:
     - cd docs

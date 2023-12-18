@@ -32,8 +32,6 @@
       # keep the size info to help track the binary size
       - size_info.txt
       - "**/build*/size.json"
-    when: always
-    expire_in: 4 days
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -376,12 +374,10 @@ build_only_tools_test_apps:
     BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
     BUILD_COMMAND_ARGS: ""
   artifacts:
-    when: always
     paths:
       - log_template_app/*
       - size_info.txt
       - build_template_app/**/size.json
-    expire_in: 1 week
   script:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
@@ -554,7 +550,6 @@ pytest_build_system:
     paths:
       - XUNIT_RESULT.xml
       - test_build_system
-    when: always
     expire_in: 2 days
     reports:
       junit: XUNIT_RESULT.xml
@@ -571,7 +566,6 @@ pytest_build_system_macos:
     paths:
       - XUNIT_RESULT.xml
       - test_build_system
-    when: always
     expire_in: 2 days
     reports:
       junit: XUNIT_RESULT.xml
@@ -603,7 +597,6 @@ pytest_build_system_win:
     paths:
       - XUNIT_RESULT.xml
       - test_build_system
-    when: always
     expire_in: 2 days
     reports:
       junit: XUNIT_RESULT.xml

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -11,8 +11,7 @@ from collections import defaultdict
 from itertools import product
 
 import yaml
-from check_rules_yml import get_needed_rules
-from idf_ci_utils import IDF_PATH
+from idf_ci_utils import IDF_PATH, GitlabYmlConfig
 
 try:
     import pygraphviz as pgv
@@ -100,6 +99,7 @@ class RulesWriter:
         self.cfg = self.expand_matrices()
         self.rules = self.expand_rules()
 
+        self.yml_config = GitlabYmlConfig()
         self.graph = None
 
     def expand_matrices(self):  # type: () -> dict
@@ -201,7 +201,7 @@ class RulesWriter:
     def new_rules_str(self):  # type: () -> str
         res = []
         for k, v in sorted(self.rules.items()):
-            if '.rules:' + k not in get_needed_rules():
+            if '.rules:' + k not in self.yml_config.used_rules:
                 print(f'WARNING: unused rule: {k}, skipping...')
                 continue
             res.append(self.RULES_TEMPLATE.format(k, self._format_rule(k, v)))

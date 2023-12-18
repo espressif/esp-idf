@@ -8,12 +8,13 @@ import logging
 import os
 import subprocess
 import sys
-from typing import Any, List
+import typing as t
+from functools import cached_property
 
 IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
-def get_submodule_dirs(full_path: bool = False) -> List[str]:
+def get_submodule_dirs(full_path: bool = False) -> t.List[str]:
     """
     To avoid issue could be introduced by multi-os or additional dependency,
     we use python and git to get this output
@@ -71,7 +72,7 @@ def is_executable(full_path: str) -> bool:
     return os.access(full_path, os.X_OK)
 
 
-def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> List[str]:
+def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> t.List[str]:
     """
     Get the result of git ls-files
     :param path: path to run git ls-files
@@ -102,7 +103,10 @@ def is_in_directory(file_path: str, folder: str) -> bool:
     return os.path.realpath(file_path).startswith(os.path.realpath(folder) + os.sep)
 
 
-def to_list(s: Any) -> List[Any]:
+def to_list(s: t.Any) -> t.List[t.Any]:
+    if not s:
+        return []
+
     if isinstance(s, (set, tuple)):
         return list(s)
 
@@ -110,3 +114,67 @@ def to_list(s: Any) -> List[Any]:
         return s
 
     return [s]
+
+
+class GitlabYmlConfig:
+    def __init__(self, root_yml_filepath: str = os.path.join(IDF_PATH, '.gitlab-ci.yml')) -> None:
+        self._config: t.Dict[str, t.Any] = {}
+        self._defaults: t.Dict[str, t.Any] = {}
+
+        self._load(root_yml_filepath)
+
+    def _load(self, root_yml_filepath: str) -> None:
+        # avoid unused import in other pre-commit hooks
+        import yaml
+
+        all_config = dict()
+        root_yml = yaml.load(open(root_yml_filepath), Loader=yaml.FullLoader)
+        for item in root_yml['include']:
+            all_config.update(yaml.load(open(os.path.join(IDF_PATH, item)), Loader=yaml.FullLoader))
+
+        if 'default' in all_config:
+            self._defaults = all_config.pop('default')
+
+        self._config = all_config
+
+    @property
+    def default(self) -> t.Dict[str, t.Any]:
+        return self._defaults
+
+    @property
+    def config(self) -> t.Dict[str, t.Any]:
+        return self._config
+
+    @cached_property
+    def global_keys(self) -> t.List[str]:
+        return ['default', 'include', 'workflow', 'variables', 'stages']
+
+    @cached_property
+    def anchors(self) -> t.Dict[str, t.Any]:
+        return {k: v for k, v in self.config.items() if k.startswith('.')}
+
+    @cached_property
+    def jobs(self) -> t.Dict[str, t.Any]:
+        return {k: v for k, v in self.config.items() if not k.startswith('.') and k not in self.global_keys}
+
+    @cached_property
+    def rules(self) -> t.Set[str]:
+        return {k for k, _ in self.anchors.items() if self._is_rule_key(k)}
+
+    @cached_property
+    def used_rules(self) -> t.Set[str]:
+        res = set()
+
+        for v in self.config.values():
+            if not isinstance(v, dict):
+                continue
+
+            for item in to_list(v.get('extends')):
+                if self._is_rule_key(item):
+                    res.add(item)
+
+        return res
+
+    @staticmethod
+    def _is_rule_key(key: str) -> bool:
+        return key.startswith('.rules:') or key.endswith('template')
