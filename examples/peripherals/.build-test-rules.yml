@@ -117,6 +117,14 @@ examples/peripherals/jpeg/jpeg_decode:
     - if: SOC_JPEG_CODEC_SUPPORTED != 1
   depends_components:
     - esp_driver_jpeg
+    
+examples/peripherals/isp/auto_focus:
+  disable:
+    - if: INCLUDE_DEFAULT == 1
+      temporary: true
+      reason: disable build temporarily # TODO: IDF-8895
+  depends_components:
+    - esp_driver_isp
 
 examples/peripherals/lcd/i2c_oled:
   disable:
