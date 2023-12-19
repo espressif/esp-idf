@@ -235,6 +235,23 @@ To list all available root level options, run ``idf.py --help``. To list options
 - ``--cmake-warn-uninitialized`` (or ``-w``)  causes CMake to print uninitialized variable warnings found in the project directory only. This only controls CMake variable warnings inside CMake itself, not other types of build warnings. This option can also be set permanently by setting the ``IDF_CMAKE_WARN_UNINITIALIZED`` environment variable to a non-zero value.
 - ``--no-hints`` flag disables hints on resolving errors and disable capturing output.
 
+Passing arguments via a ``@file``
+---------------------------------
+
+It is possible to pass multiple arguments to ``idf.py`` via a file. The file or path to the file must be annotated with ``@`` at the beginning. Arguments in the file can be separated by newlines or spaces and are expanded exactly as if they had appeared in that order on the idf.py command line.
+
+For example, let's have a file `custom_flash.txt`:
+
+.. code-block:: bash
+
+  flash --baud 115200
+
+Then the command can be executed as: ``idf.py @custom_flash.txt monitor``
+
+Arguments from a file can be combined with additional command line arguments, and multiple files annotated with ``@`` can be used simultaneously. For instance, if there is a second file ``another_config.txt``, both can be utilized by specifying ``idf.py @custom_flash.txt @another_config.txt monitor``.
+
+A further example of how this argument file can be used, e.g., creating configuration profile files via @filename, is in the :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`.
+
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
 .. _esptool.py: https://github.com/espressif/esptool/#readme
