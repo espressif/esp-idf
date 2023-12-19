@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/regi2c_defs.h"
+#include "soc/hp_sys_clkrst_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +44,32 @@ static inline __attribute__((always_inline)) void regi2c_ctrl_ll_bbpll_calibrati
 static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_bbpll_calibration_is_done(void)
 {
     return REG_GET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_CAL_DONE);
+}
+
+/**
+ * @brief Start MPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void regi2c_ctrl_ll_mpll_calibration_start(void)
+{
+    CLEAR_PERI_REG_MASK(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_MSPI_CAL_STOP);
+}
+
+/**
+ * @brief Stop MPLL self-calibration
+ */
+static inline __attribute__((always_inline)) void regi2c_ctrl_ll_mpll_calibration_stop(void)
+{
+    SET_PERI_REG_MASK(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_MSPI_CAL_STOP);
+}
+
+/**
+ * @brief Check whether MPLL calibration is done
+ *
+ * @return True if calibration is done; otherwise false
+ */
+static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_mpll_calibration_is_done(void)
+{
+    return REG_GET_BIT(HP_SYS_CLKRST_ANA_PLL_CTRL0_REG, HP_SYS_CLKRST_REG_MSPI_CAL_END);
 }
 
 /**

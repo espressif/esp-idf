@@ -7,6 +7,8 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +45,27 @@ void rtc_clk_bbpll_add_consumer(void);
  * @brief Notify that the BBPLL has lost a consumer
  */
 void rtc_clk_bbpll_remove_consumer(void);
+
+#if SOC_CLK_MPLL_SUPPORTED
+//------------------------------------MPLL-------------------------------------//
+/**
+ * @brief Enable MPLL
+ */
+void rtc_clk_mpll_enable(void);
+
+/**
+ * @brief Disable MPLL
+ */
+void rtc_clk_mpll_disable(void);
+
+/**
+ * @brief Configure MPLL
+ *
+ * @param[in] xtal_freq  XTAL frequency
+ * @param[in] mpll_freq  MPLL frequency
+ */
+void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq);
+#endif  //#if SOC_CLK_MPLL_SUPPORTED
 
 #ifdef __cplusplus
 }
