@@ -1,10 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 
-
-if(${target} STREQUAL "esp32c5")
-    return() # not support yet
-endif()
-
 set(srcs "diskio/diskio.c"
         "diskio/diskio_rawflash.c"
         "diskio/diskio_wl.c"

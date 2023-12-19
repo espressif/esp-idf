@@ -75,7 +75,6 @@ static void IRAM_ATTR modem_clock_wifi_bb_configure(modem_clock_context_t *ctx, 
 #if SOC_BT_SUPPORTED
 static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_syscon_ll_enable_bt_mac_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_modem_sec_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ble_timer_clock(ctx->hal->syscon_dev, enable);
 }

@@ -53,20 +53,16 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
 
+#if CONFIG_IDF_TARGET_ESP32C5
+        // RC150K can't do calibrate on esp32c5MPW so not use it
+        clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
+#else
         // Use RTC_SLOW clock source sel register field's default value, RC_SLOW, for 2nd stage bootloader
         // RTC_SLOW clock source will be switched according to Kconfig selection at application startup
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
         if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {
-#if CONFIG_IDF_TARGET_ESP32C5
-            clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
-#else
             clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
-#endif
         }
-
-#if CONFIG_IDF_TARGET_ESP32C5
-        // RC150K can't do calibrate on esp32c5MPW so not use it
-        clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32C6
@@ -85,9 +81,10 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     }
 
 #if CONFIG_IDF_TARGET_ESP32C5
-    /* Configure clk mspi fast to 80m*/
-    clk_ll_mspi_fast_set_divider(6);
-    clk_ll_mspi_fast_sel_clk(MSPI_CLK_SRC_SPLL);
+    /* TODO: [ESP32C5] IDF-8649 temporary use xtal clock source,
+       need to change back SPLL(480M) and set divider to 6 to use the 80M MSPI */
+    clk_ll_mspi_fast_set_divider(1);
+    clk_ll_mspi_fast_sel_clk(MSPI_CLK_SRC_XTAL);
 #endif
 
     /* As a slight optimization, if 32k XTAL was enabled in sdkconfig, we enable

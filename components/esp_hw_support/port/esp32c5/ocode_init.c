@@ -13,8 +13,7 @@
 #include "esp_hw_log.h"
 
 
-// TODO: [ESP32C5] IDF-8702
-// static const char *TAG = "ocode_init";
+static const char *TAG = "ocode_init";
 
 static void set_ocode_by_efuse(int ocode_scheme_ver)
 {
@@ -28,6 +27,8 @@ static void calibrate_ocode(void)
 
 void esp_ocode_calib_init(void)
 {
+    // TODO: [ESP32C5] IDF-8702
+    ESP_HW_LOGW(TAG, "esp_ocode_calib_init() has not implemented yet");
     if (efuse_hal_blk_version() >= 1) {
         set_ocode_by_efuse(1);
     } else {

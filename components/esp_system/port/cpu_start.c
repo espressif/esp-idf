@@ -70,6 +70,7 @@
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/interrupt_core0_reg.h"
 #include "soc/interrupt_core1_reg.h"
+#include "soc/keymng_reg.h"
 #endif
 
 #include "esp_private/rtc_clk.h"
@@ -155,18 +156,16 @@ static volatile bool s_resume_cores;
 
 static void core_intr_matrix_clear(void)
 {
+    uint32_t core_id = esp_cpu_get_core_id();
+
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
 #if CONFIG_IDF_TARGET_ESP32P4
-        uint32_t core_id = esp_cpu_get_core_id();
         if (core_id == 0) {
             REG_WRITE(INTERRUPT_CORE0_LP_RTC_INT_MAP_REG + 4 * i, ETS_INVALID_INUM);
         } else {
             REG_WRITE(INTERRUPT_CORE1_LP_RTC_INT_MAP_REG + 4 * i, ETS_INVALID_INUM);
         }
-// #elif CONFIG_IDF_TARGET_ESP32C5
-//         REG_WRITE(INTMTX_CORE0_WIFI_MAC_INT_MAP_REG + 4 * i, 0);
 #else
-        uint32_t core_id = esp_cpu_get_core_id();
         esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
 #endif  // CONFIG_IDF_TARGET_ESP32P4
     }
@@ -307,6 +306,11 @@ static void start_other_core(void)
     if(REG_GET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL)){
         REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
     }
+    // The following operation makes the Key Manager to use eFuse key for ECDSA and XTS-AES operation by default
+    // This is to keep the default behavior same as the other chips
+    // If the Key Manager configuration is already locked then following operation does not have any effect
+    // TODO-IDF 7925 (Move this under SOC_KEY_MANAGER_SUPPORTED)
+    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 3);
 #endif
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 
@@ -700,7 +704,7 @@ void IRAM_ATTR call_start_cpu0(void)
     if (rst_reas[0] == RESET_REASON_CORE_DEEP_SLEEP) {
         esp_deep_sleep_wakeup_io_reset();
     }
-#endif  //#if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5
+#endif  //#if !CONFIG_IDF_TARGET_ESP32P4 & !CONFIG_IDF_TARGET_ESP32C5
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     esp_cache_err_int_init();

@@ -4,10 +4,6 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-if(${target} STREQUAL "esp32c5")
-    return() # not support yet
-endif()
-
 set(include_dirs include)
 set(priv_include_dirs proto-c src ../protocomm/proto-c)
 set(srcs  "src/esp_local_ctrl.c"

@@ -83,10 +83,6 @@ config SOC_CPU_HAS_FLEXIBLE_INTC
     bool
     default y
 
-config SOC_INT_PLIC_SUPPORTED
-    bool
-    default n
-
 config SOC_INT_CLIC_SUPPORTED
     bool
     default y

@@ -1,10 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 
-
-if(${target} STREQUAL "esp32c5")
-    return() # not support yet
-endif()
-
 set(original_srcs "spiffs/src/spiffs_cache.c"
                   "spiffs/src/spiffs_check.c"
                   "spiffs/src/spiffs_gc.c"
