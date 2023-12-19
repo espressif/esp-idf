@@ -349,6 +349,9 @@
 .if-schedule: &if-schedule
   if: '$CI_PIPELINE_SOURCE == "schedule"'
 
+.if-schedule-nightly: &if-schedule-nightly
+  if: '$CI_PIPELINE_SOURCE == "schedule" && $INCLUDE_NIGHTLY_RUN == "1"'
+
 .if-schedule-test-build-system-windows: &if-schedule-test-build-system-windows
   if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_BUILD_SYSTEM_TEST_WIN == "true"'
 
@@ -405,7 +408,8 @@
 ### Patterns ###
 .rules:patterns:python-cache:
   rules:
-    - *if-schedule
+    - <<: *if-tag-release
+    - <<: *if-schedule-nightly
     - <<: *if-label-upload_cache
       when: manual
     - <<: *if-dev-push
@@ -413,6 +417,8 @@
 
 .rules:patterns:submodule:
   rules:
+    - <<: *if-tag-release
+    - <<: *if-schedule-nightly
     - <<: *if-label-upload_cache
       when: manual
     - <<: *if-dev-push

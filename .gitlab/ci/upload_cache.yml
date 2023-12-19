@@ -15,7 +15,7 @@ upload-pip-cache:
     - $GEO
     - cache
   cache:
-    key: pip-cache
+    key: pip-cache-${LATEST_GIT_TAG}
     paths:
       - .cache/pip
     policy: push
@@ -35,7 +35,7 @@ upload-submodules-cache:
     - $GEO
     - cache
   cache:
-    key: submodule-cache
+    key: submodule-cache-${LATEST_GIT_TAG}
     paths:
       - .cache/submodule_archives
     policy: push
