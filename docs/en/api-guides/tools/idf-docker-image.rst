@@ -60,6 +60,10 @@ The above command explained:
 - ``espressif/idf``: uses Docker image ``espressif/idf`` with tag ``latest`` (implicitly added by Docker when no tag is specified)
 - ``idf.py build``: runs this command inside the container
 
+.. note::
+
+   When the mounted directory, ``/project``, contains a git repository owned by a different user (``UID``) than the one running the Docker container, git commands executed within ``/project`` might fail, displaying an error message ``fatal: detected dubious ownership in repository at '/project'``. To resolve this issue, you can designate the ``/project`` directory as safe by setting the IDF_GIT_SAFE_DIR environment variable during the Docker container startup. For instance, you can achieve this by including ``-e IDF_GIT_SAFE_DIR='/project'`` as a parameter. Additionally, multiple directories can be specified by using a ``:`` separator. To entirely disable this git security check, ``*`` can be used.
+
 To build with a specific docker image tag, specify it as ``espressif/idf:TAG``, for example::
 
     docker run --rm -v $PWD:/project -w /project espressif/idf:release-v4.4 idf.py build
