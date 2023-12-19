@@ -1073,6 +1073,14 @@ config BT_SMP_ENABLE
     depends on BT_BLUEDROID_ENABLED
     default BT_CLASSIC_ENABLED || BT_BLE_SMP_ENABLE
 
+config BT_SMP_MAX_BONDS
+    int "BT/BLE maximum bond device count"
+    depends on BT_SMP_ENABLE
+    range 1 32
+    default 15
+    help
+        The number of security records for peer devices.
+
 config BT_BLE_ACT_SCAN_REP_ADV_SCAN
     bool "Report adv data and scan response individually when BLE active scan"
     depends on BT_BLUEDROID_ENABLED && BT_BLE_ENABLED
