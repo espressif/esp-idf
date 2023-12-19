@@ -12,12 +12,14 @@ A given function can be executed with a user-allocated stack space which is inde
 
   :cpp:func:`esp_execute_shared_stack_function` does only minimal preparation of the provided shared stack memory. The function passed to it for execution on the shared stack space or any of that function's callees should not do any of the following:
 
-  - Use Thread-local storage
-  - Use the Floating-point unit on ESP32-P4
-  - Use the AI co-processor on ESP32-P4
-  - Call vTaskDelete(NULL), to delete the currently running task
+  .. list::
+    
+     - Use thread-local storage
+     :esp32p4: - Use the floating-point unit
+     :esp32p4: - Use the AI co-processor
+     - Call vTaskDelete(NULL) to delete the currently running task
 
-  Furthermore, backtraces will be wrong when called from the function running on the shared stack or any of its callees. The limitations are quite sever, so that we might deprecate :cpp:func:`esp_execute_shared_stack_function` in the future. If you have any use case which can only be implemented using :cpp:func:`esp_execute_shared_stack_function`, please open an issue on github.
+  Furthermore, backtraces will be wrong when called from the function running on the shared stack or any of its callees. The limitations are quite severe, so that we might deprecate :cpp:func:`esp_execute_shared_stack_function` in the future. If you have any use case which can only be implemented using :cpp:func:`esp_execute_shared_stack_function`, please open a `GitHub Issue <https://github.com/espressif/esp-idf/issues>`_.
 
 
 Usage
