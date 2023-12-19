@@ -1,10 +1,12 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 
 
+import copy
 import os.path
 import re
+import secrets
 import subprocess
 import threading
 import time
@@ -94,9 +96,9 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
     ocf.init_thread(br)
     for cli in cli_list:
         ocf.init_thread(cli)
-    br_ot_para = default_br_ot_para
+    br_ot_para = copy.copy(default_br_ot_para)
     ocf.joinThreadNetwork(br, br_ot_para)
-    cli_ot_para = default_cli_ot_para
+    cli_ot_para = copy.copy(default_cli_ot_para)
     cli_ot_para.dataset = ocf.getDataset(br)
     try:
         order = 0
@@ -127,12 +129,14 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
 def formBasicWiFiThreadNetwork(br:IdfDut, cli:IdfDut) -> None:
     ocf.init_thread(br)
     ocf.init_thread(cli)
-    ocf.joinWiFiNetwork(br, default_br_wifi_para)
-    ocf.joinThreadNetwork(br, default_br_ot_para)
-    ot_para = default_cli_ot_para
-    ot_para.dataset = ocf.getDataset(br)
-    ot_para.exaddr = '7766554433221101'
-    ocf.joinThreadNetwork(cli, ot_para)
+    otbr_wifi_para = copy.copy(default_br_wifi_para)
+    ocf.joinWiFiNetwork(br, otbr_wifi_para)
+    otbr_thread_para = copy.copy(default_br_ot_para)
+    ocf.joinThreadNetwork(br, otbr_thread_para)
+    otcli_thread_para = copy.copy(default_cli_ot_para)
+    otcli_thread_para.dataset = ocf.getDataset(br)
+    otcli_thread_para.exaddr = '7766554433221101'
+    ocf.joinThreadNetwork(cli, otcli_thread_para)
     ocf.wait(cli,10)
 
 
@@ -669,4 +673,61 @@ def test_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
     finally:
         ocf.execute_command(br, 'factoryreset')
         ocf.execute_command(cli, 'factoryreset')
+        time.sleep(3)
+
+
+# Case 13: Meshcop discovery of Border Router
+@pytest.mark.supported_targets
+@pytest.mark.esp32c6
+@pytest.mark.openthread_br
+@pytest.mark.flaky(reruns=0, reruns_delay=1)
+@pytest.mark.parametrize(
+    'config, count, app_path, target', [
+        ('rcp|br', 2,
+         f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+         f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+         'esp32c6|esp32s3'),
+    ],
+    indirect=True,
+)
+def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, IdfDut]) -> None:
+    br = dut[1]
+    assert Init_interface
+    assert Init_avahi
+    dut[0].serial.stop_redirect_thread()
+
+    result = None
+    output_bytes = b''
+    try:
+        ocf.init_thread(br)
+        br_wifi_para = copy.copy(default_br_wifi_para)
+        ipv4_address = ocf.joinWiFiNetwork(br, br_wifi_para)[0]
+        br_thread_para = copy.copy(default_br_ot_para)
+        networkname = 'OTCI-' + str(secrets.token_hex(1))
+        br_thread_para.setnetworkname(networkname)
+        ocf.joinThreadNetwork(br, br_thread_para)
+        ocf.wait(br, 10)
+        assert ocf.is_joined_wifi_network(br)
+        command = 'timeout 3 avahi-browse -r _meshcop._udp'
+        try:
+            result = subprocess.run(command, capture_output=True, check=True, shell=True)
+            if result:
+                output_bytes = result.stdout
+        except subprocess.CalledProcessError as e:
+            output_bytes = e.stdout
+        finally:
+            print('out_bytes: ', output_bytes)
+            output_str = str(output_bytes)
+            print('out_str: ', output_str)
+
+            assert 'hostname = [esp-ot-br.local]' in str(output_str)
+            assert ('address = [' + ipv4_address + ']') in str(output_str)
+            assert 'dn=DefaultDomain' in str(output_str)
+            assert 'tv=1.3.0' in str(output_str)
+            assert ('nn=' + networkname) in str(output_str)
+            assert 'mn=BorderRouter' in str(output_str)
+            assert 'vn=OpenThread' in str(output_str)
+            assert 'rv=1' in str(output_str)
+    finally:
+        ocf.execute_command(br, 'factoryreset')
         time.sleep(3)
