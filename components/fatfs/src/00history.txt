@@ -327,3 +327,31 @@ R0.13c (October 14, 2018)
   Fixed reading a directory gets infinite loop when the last directory entry is not empty. (appeared at R0.12)
   Fixed creating a sub-directory in the fragmented sub-directory on the exFAT volume collapses FAT chain of the parent directory. (appeared at R0.12)
   Fixed f_getcwd() cause output buffer overrun when the buffer has a valid drive number. (appeared at R0.13b)
+
+
+
+R0.14 (October 14, 2019)
+  Added support for 64-bit LBA and GUID partition table (FF_LBA64 = 1)
+  Changed some API functions, f_mkfs() and f_fdisk().
+  Fixed f_open() function cannot find the file with file name in length of FF_MAX_LFN characters.
+  Fixed f_readdir() function cannot retrieve long file names in length of FF_MAX_LFN - 1 characters.
+  Fixed f_readdir() function returns file names with wrong case conversion. (appeared at R0.12)
+  Fixed f_mkfs() function can fail to create exFAT volume in the second partition. (appeared at R0.12)
+
+
+R0.14a (December 5, 2020)
+  Limited number of recursive calls in f_findnext().
+  Fixed old floppy disks formatted with MS-DOS 2.x and 3.x cannot be mounted.
+  Fixed some compiler warnings.
+
+
+
+R0.14b (April 17, 2021)
+  Made FatFs uses standard library <string.h> for copy, compare and search instead of built-in string functions.
+  Added support for long long integer and floating point to f_printf(). (FF_STRF_LLI and FF_STRF_FP)
+  Made path name parser ignore the terminating separator to allow "dir/".
+  Improved the compatibility in Unix style path name feature.
+  Fixed the file gets dead-locked when f_open() failed with some conditions. (appeared at R0.12a)
+  Fixed f_mkfs() can create wrong exFAT volume due to a timing dependent error. (appeared at R0.12)
+  Fixed code page 855 cannot be set by f_setcp().
+  Fixed some compiler warnings.
