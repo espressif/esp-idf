@@ -584,13 +584,13 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
             multi_heap_info_t hinfo;
             multi_heap_get_info(heap->heap, &hinfo);
 
-            info->total_free_bytes += hinfo.total_free_bytes - MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0);
+            info->total_free_bytes += hinfo.total_free_bytes - MULTI_HEAP_BLOCK_OWNER_SIZE();
             info->total_allocated_bytes += (hinfo.total_allocated_bytes -
-                                           hinfo.allocated_blocks * MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0));
+                                           hinfo.allocated_blocks * MULTI_HEAP_BLOCK_OWNER_SIZE());
             info->largest_free_block = MAX(info->largest_free_block,
                                            hinfo.largest_free_block);
-            info->largest_free_block -= info->largest_free_block ? MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0) : 0;
-            info->minimum_free_bytes += hinfo.minimum_free_bytes - MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0);
+            info->largest_free_block -= info->largest_free_block ? MULTI_HEAP_BLOCK_OWNER_SIZE() : 0;
+            info->minimum_free_bytes += hinfo.minimum_free_bytes - MULTI_HEAP_BLOCK_OWNER_SIZE();
             info->allocated_blocks += hinfo.allocated_blocks;
             info->free_blocks += hinfo.free_blocks;
             info->total_blocks += hinfo.total_blocks;
