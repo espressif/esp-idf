@@ -256,13 +256,7 @@ otError otPlatUdpBind(otUdpSocket *udp_socket)
 static void udp_bind_netif_task(void *ctx)
 {
     udp_bind_netif_task_t *task = (udp_bind_netif_task_t *)ctx;
-    struct netif* target = netif_get_by_index(task->netif_index);
-    if (target == NULL) {
-        task->err = ESP_FAIL;
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to bind udp on index%d netif", task->netif_index);
-    } else {
-        udp_bind_netif(task->pcb, target);
-    }
+    udp_bind_netif(task->pcb, netif_get_by_index(task->netif_index));
     xTaskNotifyGive(task->source_task);
 }
 
