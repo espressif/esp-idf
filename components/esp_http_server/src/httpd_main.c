@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,6 +101,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
             ESP_LOGE(TAG, LOG_FMT("error in setsockopt SO_KEEPALIVE (%d)"), errno);
             goto exit;
         }
+#ifndef __APPLE__
         if (setsockopt(new_fd, IPPROTO_TCP, TCP_KEEPIDLE, &keep_alive_idle, sizeof(keep_alive_idle)) < 0) {
             ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPIDLE (%d)"), errno);
             goto exit;
@@ -113,6 +114,12 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
             ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPCNT (%d)"), errno);
             goto exit;
         }
+#else // __APPLE__
+        if (setsockopt(new_fd, IPPROTO_TCP, TCP_KEEPALIVE, &keep_alive_idle, sizeof(keep_alive_idle)) < 0) {
+            ESP_LOGE(TAG, LOG_FMT("error in setsockopt TCP_KEEPALIVE (%d)"), errno);
+            goto exit;
+        }
+#endif // __APPLE__
     }
     if (ESP_OK != httpd_sess_new(hd, new_fd)) {
         ESP_LOGE(TAG, LOG_FMT("session creation failed"));
