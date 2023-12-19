@@ -133,6 +133,9 @@ npl_freertos_eventq_init(struct ble_npl_eventq *evq)
         memset(eventq, 0, sizeof(*eventq));
         eventq->q = xQueueCreate(ble_freertos_total_event_cnt, sizeof(struct ble_npl_eventq *));
         BLE_LL_ASSERT(eventq->q);
+    } else {
+        eventq = (struct ble_npl_eventq_freertos*)evq->eventq;
+        xQueueReset(eventq->q);
     }
 #else
     if(!evq->eventq) {
@@ -142,6 +145,9 @@ npl_freertos_eventq_init(struct ble_npl_eventq *evq)
         memset(eventq, 0, sizeof(*eventq));
         eventq->q = xQueueCreate(ble_freertos_total_event_cnt, sizeof(struct ble_npl_eventq *));
         BLE_LL_ASSERT(eventq->q);
+    } else {
+        eventq = (struct ble_npl_eventq_freertos*)evq->eventq;
+        xQueueReset(eventq->q);
     }
 #endif
 }
