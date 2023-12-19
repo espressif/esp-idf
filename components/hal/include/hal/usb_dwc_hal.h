@@ -191,7 +191,7 @@ typedef struct {
     struct {
         int num_allocd;                             /**< Number of channels currently allocated */
         uint32_t chan_pend_intrs_msk;               /**< Bit mask of channels with pending interrupts */
-        usb_dwc_hal_chan_t *hdls[USB_DWC_NUM_HOST_CHAN];    /**< Handles of each channel. Set to NULL if channel has not been allocated */
+        usb_dwc_hal_chan_t *hdls[OTG_NUM_HOST_CHAN];    /**< Handles of each channel. Set to NULL if channel has not been allocated */
     } channels;
 } usb_dwc_hal_context_t;
 
