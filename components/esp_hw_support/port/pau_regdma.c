@@ -62,7 +62,7 @@ void pau_regdma_trigger_modem_link_restore(void)
 }
 #endif
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 void IRAM_ATTR pau_regdma_set_system_link_addr(void *link_addr)
 {
     /* ESP32H2 use software to trigger REGDMA to restore instead of PMU,
