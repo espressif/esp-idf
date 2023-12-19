@@ -155,6 +155,12 @@
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
 #define MBEDTLS_GCM_ALT
+#ifdef CONFIG_MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
+    /* Prefer hardware and fallback to software */
+    #define MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK
+#else
+    #undef MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK
+#endif
 #endif
 
 /* MBEDTLS_SHAxx_ALT to enable hardware SHA support
