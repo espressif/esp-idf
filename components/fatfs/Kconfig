@@ -253,4 +253,15 @@ menu "FAT Filesystem support"
             If enabled, the whole link operation (including file copying) is performed under lock.
             This ensures that the link operation is atomic, but may cause performance for large files.
             It may create less fragmented file copy.
+    config FATFS_USE_DYN_BUFFERS
+        bool "Use dynamic buffers"
+        depend on CONFIG_WL_SECTOR_SIZE_4096
+        default y
+        help
+            If enabled, the buffers used by FATFS will be allocated separately from the rest of the structure.
+            This option is useful when using multiple FATFS instances with different
+            sector sizes, as the buffers will be allocated according to the sector size.
+            If disabled, the greatest sector size will be used for all FATFS instances.
+            (In most cases, this would be the sector size of Wear Levelling library)
+            This might cause more memory to be used than necessary.
 endmenu
