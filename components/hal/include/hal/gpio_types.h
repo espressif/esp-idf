@@ -74,8 +74,6 @@ typedef enum {
 #define GPIO_PIN_REG_52          IO_MUX_GPIO52_REG
 #define GPIO_PIN_REG_53          IO_MUX_GPIO53_REG
 #define GPIO_PIN_REG_54          IO_MUX_GPIO54_REG
-#define GPIO_PIN_REG_55          IO_MUX_GPIO55_REG
-#define GPIO_PIN_REG_56          IO_MUX_GPIO56_REG
 
 typedef enum {
     GPIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */

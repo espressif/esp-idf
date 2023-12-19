@@ -70,8 +70,6 @@ typedef enum {
     GPIO_NUM_52 = 52,   /*!< GPIO52, input and output */
     GPIO_NUM_53 = 53,   /*!< GPIO53, input and output */
     GPIO_NUM_54 = 54,   /*!< GPIO54, input and output */
-    GPIO_NUM_55 = 55,   /*!< GPIO55, input and output */
-    GPIO_NUM_56 = 56,   /*!< GPIO56, input and output */
     GPIO_NUM_MAX,
 } gpio_num_t;
 
