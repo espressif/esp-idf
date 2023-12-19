@@ -410,7 +410,6 @@ components/esp_hid/include/esp_hidh_bluedroid.h
 components/esp_hid/include/esp_hidh_gattc.h
 components/esp_hid/private/bt_hidd.h
 components/esp_hid/private/bt_hidh.h
-components/esp_hid/private/esp_hidd_private.h
 components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c

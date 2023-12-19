@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sys/queue.h"
-#include "esp_hidh_private.h"
+#include "esp_private/esp_hidh_private.h"
 #include "bt_hidh.h"
 #include "ble_hidh.h"
 #include <string.h>

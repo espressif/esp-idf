@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,8 +46,6 @@ typedef struct esp_hidh_dev_report_s {
  * @brief HIDH device data
  */
 struct esp_hidh_dev_s {
-    struct esp_hidh_dev_s   *next;
-
     esp_hid_device_config_t config;
     esp_hid_usage_t         usage;
     esp_hid_transport_t     transport;      //BT, BLE or USB
