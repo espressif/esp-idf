@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 
 minimum_pre_commit_version: 3.3.0
-default_install_hook_types: [pre-commit, commit-msg]
+default_install_hook_types: [pre-commit, post-commit, commit-msg]
 default_stages: [pre-commit]
 
 repos:
@@ -223,3 +223,4 @@ repos:
     rev: v0.13.0
     hooks:
       - id: validate-sbom-manifest
+        stages: [post-commit]
