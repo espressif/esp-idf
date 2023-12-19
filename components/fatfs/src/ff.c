@@ -1118,7 +1118,7 @@ static FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
 	if (res == FR_OK) {
 		if (fs->fs_type == FS_FAT32 && fs->fsi_flag == 1) {	/* FAT32: Update FSInfo sector if needed */
 			/* Create FSInfo structure */
-			memset(fs->win, 0, sizeof fs->win);
+			memset(fs->win, 0, SS(fs));
 			st_word(fs->win + BS_55AA, 0xAA55);					/* Boot signature */
 			st_dword(fs->win + FSI_LeadSig, 0x41615252);		/* Leading signature */
 			st_dword(fs->win + FSI_StrucSig, 0x61417272);		/* Structure signature */
@@ -1670,7 +1670,7 @@ static FRESULT dir_clear (	/* Returns FR_OK or FR_DISK_ERR */
 	if (sync_window(fs) != FR_OK) return FR_DISK_ERR;	/* Flush disk access window */
 	sect = clst2sect(fs, clst);		/* Top of the cluster */
 	fs->winsect = sect;				/* Set window to top of the cluster */
-	memset(fs->win, 0, sizeof fs->win);	/* Clear window buffer */
+	memset(fs->win, 0, SS(fs));	/* Clear window buffer */
 #if FF_USE_LFN == 3		/* Quick table clear by using multi-secter write */
 	/* Allocate a temporary buffer */
 	for (szb = ((DWORD)fs->csize * SS(fs) >= MAX_MALLOC) ? MAX_MALLOC : fs->csize * SS(fs), ibuf = 0; szb > SS(fs) && (ibuf = ff_memalloc(szb)) == 0; szb /= 2) ;
@@ -3438,6 +3438,10 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	if (disk_ioctl(fs->pdrv, GET_SECTOR_SIZE, &SS(fs)) != RES_OK) return FR_DISK_ERR;
 	if (SS(fs) > FF_MAX_SS || SS(fs) < FF_MIN_SS || (SS(fs) & (SS(fs) - 1))) return FR_DISK_ERR;
 #endif
+#if FF_USE_DYN_BUFFER
+	fs->win = ff_memalloc(SS(fs));		/* Allocate memory for sector buffer */
+	if (!fs->win) return FR_NOT_ENOUGH_CORE;
+#endif
 
 	/* Find an FAT volume on the hosting drive */
 	fmt = find_volume(fs, LD2PT(vol));
@@ -3681,6 +3685,10 @@ FRESULT f_mount (
 #if FF_FS_REENTRANT				/* Discard mutex of the current volume */
 		ff_mutex_delete(vol);
 #endif
+#if FF_USE_DYN_BUFFER
+		if (cfs->fs_type)           /* Check if the buffer was ever allocated */
+			ff_memfree(cfs->win);   /* Deallocate buffer allocated for the filesystem object */
+#endif
 		cfs->fs_type = 0;		/* Invalidate the filesystem object to be unregistered */
 	}
 
@@ -3868,7 +3876,19 @@ FRESULT f_open (
 			fp->fptr = 0;		/* Set file pointer top of the file */
 #if !FF_FS_READONLY
 #if !FF_FS_TINY
-			memset(fp->buf, 0, sizeof fp->buf);	/* Clear sector buffer */
+#if FF_USE_DYN_BUFFER
+			fp->buf = NULL;
+			if (res == FR_OK) {
+				fp->buf = ff_memalloc(SS(fs));
+				if (!fp->buf) {
+					res = FR_NOT_ENOUGH_CORE;	/* Not enough memory */
+					goto fail;
+				}
+				memset(fp->buf, 0, SS(fs));	/* Clear sector buffer */
+			}
+#else
+			memset(fp->buf, 0, SS(fs));    /* Clear sector buffer */
+#endif
 #endif
 			if ((mode & FA_SEEKEND) && fp->obj.objsize > 0) {	/* Seek to end of file if FA_OPEN_APPEND is specified */
 				fp->fptr = fp->obj.objsize;			/* Offset to seek */
@@ -3901,7 +3921,19 @@ FRESULT f_open (
 		FREE_NAMBUF();
 	}
 
-	if (res != FR_OK) fp->obj.fs = 0;	/* Invalidate file object on error */
+	if (res != FR_OK) {
+		fp->obj.fs = 0;	/* Invalidate file object on error */
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+		if (fp->buf) {
+			ff_memfree(fp->buf);
+			fp->buf = NULL;
+		}
+#endif
+	}
+
+#if FF_USE_DYN_BUFFER
+fail:
+#endif
 
 	LEAVE_FF(fs, res);
 }
@@ -4234,6 +4266,10 @@ FRESULT f_close (
 			if (res == FR_OK) fp->obj.fs = 0;	/* Invalidate file object */
 #else
 			fp->obj.fs = 0;	/* Invalidate file object */
+#endif
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+			ff_memfree(fp->buf);
+			fp->buf = NULL;
 #endif
 #if FF_FS_REENTRANT
 			unlock_volume(fs, FR_OK);		/* Unlock volume */
