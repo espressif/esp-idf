@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -157,8 +157,8 @@
 #define SOC_DROM_LOW    SOC_IROM_LOW
 #define SOC_DROM_HIGH   SOC_IROM_HIGH
 #define SOC_IROM_MASK_LOW  0x40000000
-#define SOC_IROM_MASK_HIGH 0x4001C400
-#define SOC_DROM_MASK_LOW  0x4001C400
+#define SOC_IROM_MASK_HIGH 0x40020000
+#define SOC_DROM_MASK_LOW  0x40000000
 #define SOC_DROM_MASK_HIGH 0x40020000
 #define SOC_IRAM_LOW    0x40800000
 #define SOC_IRAM_HIGH   0x40850000
