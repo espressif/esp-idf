@@ -50,3 +50,7 @@ config ESP_ROM_WDT_INIT_PATCH
 config ESP_ROM_HAS_LP_ROM
     bool
     default y
+
+config ESP_ROM_WITHOUT_REGI2C
+    bool
+    default y
