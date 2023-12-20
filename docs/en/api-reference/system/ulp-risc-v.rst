@@ -191,6 +191,37 @@ In case your RTC I2C based ULP RISC-V program is not working as expected, the fo
 
 * Other methods of debugging problems would be to ensure that the RTC I2C controller is operational **only** on the main CPU **without** any ULP RISC-V code interfering and **without** any sleep mode being activated. This is the basic configuration under which the RTC I2C peripheral must work. This way you can rule out any potential issues due to the ULP or sleep modes.
 
+ULP RISC-V Interrupt Handling
+------------------------------
+
+The ULP RISC-V core supports interrupt handling from certain internal and external events. By design, the ULP RISC-V core can handle interrupts from the following sources:
+
+.. list-table:: ULP RISC-V interrupt sources
+    :widths: 10 5 5
+    :header-rows: 1
+
+    * - Interrupt Source
+      - Type
+      - IRQ
+    * - Internal Timer Interrupt
+      - Internal
+      - 0
+    * - EBREAK or ECALL or Illegal Instruction
+      - Internal
+      - 1
+    * - Unalligned Memory Access
+      - Internal
+      - 2
+    * - RTC Peripheral Sources
+      - External
+      - 31
+
+Interrupt handling is enabled via special 32-bit registers q0-q3 and custom R-type instructions. For more information, see *{IDF_TARGET_NAME} Technical Reference Manual* > *ULP Coprocessor* > *ULP-RISC-V* > *ULP-RISC-V Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}>`__].
+
+All interrupts are enabled globally during start up. When an interrupt occurs, the processor jumps to the IRQ vector. The IRQ vector performs the task of saving the register context and then calling the global interrupt dispatcher. The ULP RISC-V driver implements a *weak* interrupt dispatcher :cpp:func:`_ulp_riscv_interrupt_handler` which serves as the central point for handling all interrupts. This global dispatcher calls respective interrupt handlers which have been allocated via the :cpp:func:`ulp_riscv_intr_alloc`.
+
+Interrupt handling on the ULP RISC-V is not full featured yet. At present, interrupt handling for internal interrupt source is not supported. Support is provided for 2 RTC peripheral sources, viz., software triggered interrupt and RTC IO triggered interrupts. ULP RISC-V does not support nested interrupts. If users need custom interrupt handling then they may override the default global interrupt dispatcher by defining their own :cpp:func:`_ulp_riscv_interrupt_handler`.
+
 Debugging Your ULP RISC-V Program
 ----------------------------------
 
@@ -211,6 +242,7 @@ Application Examples
 * ULP RISC-V Coprocessor uses bit-banged UART driver to print: :example:`system/ulp/ulp_riscv/uart_print`.
 * ULP RISC-V Coprocessor reads external temperature sensor while main CPU is in deep sleep: :example:`system/ulp/ulp_riscv/ds18b20_onewire`.
 * ULP RISC-V Coprocessor reads external I2C temperature and humidity sensor (BMP180) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met: :example:`system/ulp/ulp_riscv/i2c`.
+* ULP RISC-V Coprocessor handles software interrupt and RTC IO interrupt: :example:`system/ulp/ulp_riscv/interrupts`.
 
 API Reference
 -------------
