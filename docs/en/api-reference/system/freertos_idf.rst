@@ -55,7 +55,7 @@ ESP targets such as ESP32, ESP32-S3, and ESP32-P4 are dual-core SMP SoCs. These 
   - If multiple cores access the same memory address simultaneously, their access will be serialized by the memory bus.
   - True atomic access to the same memory address is achieved via an atomic compare-and-swap instruction provided by the ISA.
 
-- Cross-core interrupts that allow one core to trigger an interrupt on another core. This allows cores to signal events to each other (such as requesting a context switch on another core).
+- Cross-core interrupts that allow one core to trigger an interrupt on the other core. This allows cores to signal events to each other (such as requesting a context switch on the other core).
 
 .. note::
 
@@ -204,7 +204,7 @@ The following example demonstrates the Best Effort Round Robin time slicing in a
                               [0]
         Head [ B0 , C1 , D0 , AX ] Tail
 
-3. Core 1 has a tick interrupt and searches for a task to run. Task B cannot be run due to incompatible affinity, so core 1 skips to Task C. Task C is selected and moved to the back of the list.
+3. Core 1 has a tick interrupt and searches for a task to run. Task B cannot be run due to incompatible affinity, so Core 1 skips to Task C. Task C is selected and moved to the back of the list.
 
     .. code-block:: none
 
@@ -226,7 +226,7 @@ The following example demonstrates the Best Effort Round Robin time slicing in a
                          [1]  [0]
         Head [ D0 , AX , C1 , B0 ] Tail
 
-5. Core 1 has another tick and searches for a task to run. Task D cannot be run due to incompatible affinity, so core 1 skips to Task A. Task A is selected and moved to the back of the list.
+5. Core 1 has another tick and searches for a task to run. Task D cannot be run due to incompatible affinity, so Core 1 skips to Task A. Task A is selected and moved to the back of the list.
 
     .. code-block:: none
 
@@ -309,7 +309,7 @@ Critical Sections
 Disabling Interrupts
 ^^^^^^^^^^^^^^^^^^^^
 
-Vanilla FreeRTOS allows interrupts to be disabled and enabled by calling :c:macro:`taskDISABLE_INTERRUPTS` and :c:macro:`taskENABLE_INTERRUPTS` respectively. IDF FreeRTOS provides the same API, however, interrupts are only disabled or enabled on the current core.
+Vanilla FreeRTOS allows interrupts to be disabled and enabled by calling :c:macro:`taskDISABLE_INTERRUPTS` and :c:macro:`taskENABLE_INTERRUPTS` respectively. IDF FreeRTOS provides the same API. However, interrupts are only disabled or enabled on the current core.
 
 Disabling interrupts is a valid method of achieving mutual exclusion in Vanilla FreeRTOS (and single-core systems in general). **However, in an SMP system, disabling interrupts is not a valid method of ensuring mutual exclusion**. Critical sections that utilize a spinlock should be used instead.
 
@@ -441,9 +441,9 @@ Single-Core Mode
 
 Although IDF FreeRTOS is modified for dual-core SMP, IDF FreeRTOS can also be built for single-core by enabling the :ref:`CONFIG_FREERTOS_UNICORE` option.
 
-For single-core targets (such as the ESP32-S2 and ESP32-C3), the :ref:`CONFIG_FREERTOS_UNICORE` option is always enabled. For multi-core targets (such as ESP32 and ESP32-S3), :ref:`CONFIG_FREERTOS_UNICORE` can also be set, but will result in the application only running core 0.
+For single-core targets (such as ESP32-S2 and ESP32-C3), the :ref:`CONFIG_FREERTOS_UNICORE` option is always enabled. For multi-core targets (such as ESP32 and ESP32-S3), :ref:`CONFIG_FREERTOS_UNICORE` can also be set, but will result in the application only running Core 0.
 
-When building for single-core mode, IDF FreeRTOS is designed to be identical to Vanilla FreeRTOS, thus all aforementioned SMP changes to kernel behavior are removed. As a result, building IDF FreeRTOS in single-core mode has the following characteristics:
+When building in single-core mode, IDF FreeRTOS is designed to be identical to Vanilla FreeRTOS, thus all aforementioned SMP changes to kernel behavior are removed. As a result, building IDF FreeRTOS in single-core mode has the following characteristics:
 
 - All operations performed by the kernel inside critical sections are now deterministic (i.e., no walking of linked lists inside critical sections).
 - Vanilla FreeRTOS scheduling algorithm is restored (including perfect Round Robin time slicing).
