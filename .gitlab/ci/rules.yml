@@ -197,9 +197,6 @@
   - "components/bt/esp_ble_mesh/lib/lib"
   - ".gitmodules"
 
-.patterns-danger-npm: &patterns-danger-npm
-  - ".gitlab/dangerjs/package-lock.json"
-
 # for jobs: flash_encryption_wifi_high_traffic
 .patterns-example_test-ota-nightly_run: &patterns-example_test-ota-nightly_run
   - "examples/system/ota/**/*"
@@ -337,6 +334,10 @@
 .if-protected-no_label: &if-protected-no_label
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
 
+.if-protected-ref-push: &if-protected-ref-push
+  # rules:changes always evaluates to true for new branch pipelines or when there is no Git push event
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/) && $CI_PIPELINE_SOURCE == "push"'
+
 .if-qa-test-tag: &if-qa-test-tag
   if: '$CI_COMMIT_TAG =~ /^qa-test/'
 
@@ -348,6 +349,9 @@
 
 .if-schedule: &if-schedule
   if: '$CI_PIPELINE_SOURCE == "schedule"'
+
+.if-schedule-nightly: &if-schedule-nightly
+  if: '$CI_PIPELINE_SOURCE == "schedule" && $INCLUDE_NIGHTLY_RUN == "1"'
 
 .if-schedule-test-build-system-windows: &if-schedule-test-build-system-windows
   if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_BUILD_SYSTEM_TEST_WIN == "true"'
@@ -402,29 +406,26 @@
   rules:
     - <<: *if-tag-release
 
-### Patterns ###
-.rules:patterns:python-cache:
+# Do not upload caches on dev branches by default
+.rules:upload-python-cache:
   rules:
-    - *if-schedule
-    - <<: *if-label-upload_cache
-      when: manual
-    - <<: *if-dev-push
+    - <<: *if-tag-release
+    - <<: *if-schedule-nightly
+    - <<: *if-protected-ref-push
       changes: *patterns-python-cache
-
-.rules:patterns:submodule:
-  rules:
     - <<: *if-label-upload_cache
       when: manual
-    - <<: *if-dev-push
+
+.rules:upload-submodule-cache:
+  rules:
+    # Needn't upload submodule cache in schedule pipeline
+    - <<: *if-tag-release
+    - <<: *if-protected-ref-push
       changes: *patterns-submodule
-
-.rules:patterns:dangerjs:
-  rules:
     - <<: *if-label-upload_cache
       when: manual
-    - <<: *if-dev-push
-      changes: *patterns-danger-npm
 
+### Patterns ###
 .rules:patterns:clang_tidy:
   rules:
     - <<: *if-protected

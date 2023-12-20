@@ -329,11 +329,15 @@ default:
   cache:
     # pull only for most of the use cases since it's cache dir.
     # Only set "push" policy for "upload_cache" stage jobs
-    - key: pip-cache
+    - key: pip-cache-${LATEST_GIT_TAG}
+      fallback_keys:
+        - pip-cache
       paths:
         - .cache/pip
       policy: pull
-    - key: submodule-cache
+    - key: submodule-cache-${LATEST_GIT_TAG}
+      fallback_keys:
+        - submodule-cache
       paths:
         - .cache/submodule_archives
       policy: pull
