@@ -56,7 +56,8 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_SINGLE_CORE_MODE
         bool "Only initialize first core."
-        default "y" if FREERTOS_UNICORE
+        default "y"
+        depends on FREERTOS_UNICORE
         help
             Only initialize and use the main core. (EXPERIMENTAL, Leave this as default if you don't know what this changes)
 
