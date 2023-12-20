@@ -13,6 +13,7 @@ from pytest_embedded import Dut
         'default',
         'release',
         'fastseek',
+        'no_dyn_buffers',
     ]
 )
 def test_fatfs_flash_wl_generic(dut: Dut) -> None:
