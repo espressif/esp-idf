@@ -22,7 +22,7 @@
 #include "esp_ota_ops.h"
 #include "esp_image_format.h"
 
-TEST_CASE("Verify bootloader image in flash", "[bootloader_support][qemu-ignore-c3]")
+TEST_CASE("Verify bootloader image in flash", "[bootloader_support]")
 {
     const esp_partition_pos_t fake_bootloader_partition = {
         .offset = ESP_BOOTLOADER_OFFSET,
@@ -37,7 +37,7 @@ TEST_CASE("Verify bootloader image in flash", "[bootloader_support][qemu-ignore-
     TEST_ASSERT_EQUAL(data.image_len, bootloader_length);
 }
 
-TEST_CASE("Verify unit test app image", "[bootloader_support][qemu-ignore-c3]")
+TEST_CASE("Verify unit test app image", "[bootloader_support]")
 {
     esp_image_metadata_t data = { 0 };
     const esp_partition_t *running = esp_ota_get_running_partition();

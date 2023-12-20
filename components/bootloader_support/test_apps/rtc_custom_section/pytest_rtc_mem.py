@@ -12,5 +12,6 @@ from pytest_embedded import Dut
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 def test_rtc_reserved_memory(dut: Dut) -> None:
     dut.expect_exact('SUCCESS: data were saved across reboot', timeout=10)
