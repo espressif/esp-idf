@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -147,12 +147,6 @@ TEST_CASE("esp32 ethernet speed/duplex/autonegotiation", "[ethernet][test_env=UT
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-
-    // Set PHY to loopback mode so we do not have to take care about link configuration of the other node.
-    // The reason behind is improbable, however, if the other node was configured to e.g. 100 Mbps and we
-    // tried to change the speed at ESP node to 10 Mbps, we could get into trouble to establish a link.
-    bool loopback_en = true;
-    esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
 
     // this test only test layer2, so don't need to register input callback (i.e. esp_eth_update_input_path)
     TEST_ESP_OK(esp_eth_start(eth_handle));
