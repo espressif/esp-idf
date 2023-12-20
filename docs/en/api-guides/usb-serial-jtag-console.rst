@@ -91,7 +91,7 @@ For data transmitted from the PC Terminal to {IDF_TARGET_NAME} (e.g., console co
 
 .. note::
 
-    In rare cases it's possible that data sent from the {IDF_TARGET_NAME} to the host gets 'stuck' in host memory. Sending more data will get it 'unstuck', but if the application does not send more data, depending on the driver, this data needs to be flushed to the host manually. The non-blocking (default) driver and the VFS implementation will flush automatically after a newline. The blocking (interrupt-based) driver will automatically flush when its transmit buffer becomes empty.
+    In rare cases, it is possible that data sent from {IDF_TARGET_NAME} to the host gets 'stuck' in host memory. Sending more data will get it 'unstuck', but if the application does not send more data, depending on the driver, this data needs to be flushed to the host manually. The non-blocking (default) driver and the VFS implementation will flush automatically after a newline. The blocking (interrupt-based) driver will automatically flush when its transmit buffer becomes empty.
 
 Sleep Mode Considerations
 -------------------------
