@@ -185,7 +185,7 @@
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-P4 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
-#define SOC_GPIO_PIN_COUNT                 57
+#define SOC_GPIO_PIN_COUNT                 55
 // #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1  //TODO: IDF-7481
 // #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8  //TODO: IDF-7481
 #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER    1
@@ -201,16 +201,16 @@
 // GPIO0~15 on ESP32P4 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 
-#define SOC_GPIO_VALID_GPIO_MASK        (0x01FFFFFFFFFFFFFF)
+#define SOC_GPIO_VALID_GPIO_MASK        (0x007FFFFFFFFFFFFF)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 
-#define SOC_GPIO_IN_RANGE_MAX           56
-#define SOC_GPIO_OUT_RANGE_MAX          56
+#define SOC_GPIO_IN_RANGE_MAX           54
+#define SOC_GPIO_OUT_RANGE_MAX          54
 
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | 0xFFFF)
 
-// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_16~GPIO_NUM_56)
-#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x01FFFFFFFFFF0000ULL
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_16~GPIO_NUM_54)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x007FFFFFFFFF0000ULL
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
