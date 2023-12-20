@@ -34,6 +34,15 @@ typedef dma_descriptor_align8_t spi_dma_desc_t;
 typedef dma_descriptor_align4_t spi_dma_desc_t;
 #endif
 
+#if SOC_NON_CACHEABLE_OFFSET
+#include "hal/cache_ll.h"
+#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
+#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))CACHE_LL_L2MEM_CACHE_ADDR(addr))
+#else
+#define ADDR_DMA_2_CPU(addr)   (addr)
+#define ADDR_CPU_2_DMA(addr)   (addr)
+#endif
+
 /// Attributes of an SPI bus
 typedef struct {
     spi_bus_config_t bus_cfg;           ///< Config used to initialize the bus

@@ -14,7 +14,6 @@
 #include "esp_rom_gpio.h"
 #include "esp_heap_caps.h"
 #include "soc/spi_periph.h"
-#include "soc/ext_mem_defs.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
@@ -26,9 +25,6 @@
 #include "hal/gpio_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#endif
-#if SOC_GDMA_SUPPORTED
-#include "esp_private/gdma.h"
 #endif
 
 static const char *SPI_TAG = "spi";
@@ -306,14 +302,6 @@ esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *
     *actual_max_sz = dma_desc_ct * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     return ESP_OK;
 }
-
-#if SOC_NON_CACHEABLE_OFFSET
-#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))((uint32_t)(addr) + SOC_NON_CACHEABLE_OFFSET))
-#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))((uint32_t)(addr) - SOC_NON_CACHEABLE_OFFSET))
-#else
-#define ADDR_DMA_2_CPU(addr)   (addr)
-#define ADDR_CPU_2_DMA(addr)   (addr)
-#endif
 
 void IRAM_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
 {
