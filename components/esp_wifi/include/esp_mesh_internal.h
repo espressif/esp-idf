@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,9 @@ extern "C" {
 /*******************************************************
  *                Structures
  *******************************************************/
+/**
+ * @brief Mesh attempts
+ */
 typedef struct {
     int scan;          /**< minimum scan times before being a root, default:10 */
     int vote;          /**< max vote times in self-healing, default:1000 */
@@ -33,20 +36,28 @@ typedef struct {
     int monitor_ie;    /**< acceptable times of parent networking IE change before update its own networking IE. default:3 */
 } mesh_attempts_t;
 
+/**
+ * @brief Mesh switch parent
+ */
 typedef struct {
-    int duration_ms;   /* parent weak RSSI monitor duration, if the RSSI continues to be weak during this duration_ms,
+    int duration_ms;   /**< parent weak RSSI monitor duration, if the RSSI continues to be weak during this duration_ms,
                           device will search for a new parent. */
-    int cnx_rssi;      /* RSSI threshold for keeping a good connection with parent.
+    int cnx_rssi;      /**< RSSI threshold for keeping a good connection with parent.
                           If set a value greater than -120 dBm, a timer will be armed to monitor parent RSSI at a period time of duration_ms. */
-    int select_rssi;   /* RSSI threshold for parent selection. It should be a value greater than switch_rssi. */
-    int switch_rssi;   /* Disassociate with current parent and switch to a new parent when the RSSI is greater than this set threshold. */
-    int backoff_rssi;  /* RSSI threshold for connecting to the root */
+    int select_rssi;   /**< RSSI threshold for parent selection. It should be a value greater than switch_rssi. */
+    int switch_rssi;   /**< Disassociate with current parent and switch to a new parent when the RSSI is greater than this set threshold. */
+    int backoff_rssi;  /**< RSSI threshold for connecting to the root */
 } mesh_switch_parent_t;
 
+/**
+ * @brief Mesh RSSI threshold
+ */
 typedef struct {
-    int high;
-    int medium;
-    int low;
+    int high;   /**<  high RSSI threshold, used to determine whether the new parent and the current parent are in the same RSSI range */
+    int medium; /**<  medium RSSI threshold, used to determine whether the new parent and the current parent are in the same RSSI range */
+    int low;    /**<  low RSSI threshold. If the parent's RSSI is lower than low for a period time of duration_ms,
+                      then the mesh node will post MESH_WEAK_RSSI event.
+                      Also used to determine whether the new parent and the current parent are in the same RSSI range */
 } mesh_rssi_threshold_t;
 
 /**
@@ -54,65 +65,71 @@ typedef struct {
  */
 typedef struct {
     /**< mesh networking IE head */
-    uint8_t eid;             /**< element ID */
-    uint8_t len;             /**< element length */
-    uint8_t oui[3];          /**< organization identifier */
-    /**< mesh networking IE content */
-    uint8_t type;            /** ESP defined IE type */
+    uint8_t eid;             /**< element ID, vendor specific, 221 */
+    uint8_t len;             /**< element length, the length after this member */
+    uint8_t oui[3];          /**< organization identifier, 0x18fe34 */
+    uint8_t type;            /**< ESP defined IE type, include Assoc IE, SSID IE, Ext Assoc IE, Roots IE, etc. */
     uint8_t encrypted : 1;   /**< whether mesh networking IE is encrypted */
-    uint8_t version : 7;     /**< mesh networking IE version */
+    uint8_t version : 7;     /**< mesh networking IE version, equal to 2 if mesh PS is enabled, equal to 1 otherwise */
     /**< content */
-    uint8_t mesh_type;       /**< mesh device type */
-    uint8_t mesh_id[6];      /**< mesh ID */
-    uint8_t layer_cap;       /**< max layer */
-    uint8_t layer;           /**< current layer */
-    uint8_t assoc_cap;       /**< max connections of mesh AP */
-    uint8_t assoc;           /**< current connections */
-    uint8_t leaf_cap;        /**< leaf capacity */
-    uint8_t leaf_assoc;      /**< the number of current connected leaf */
-    uint16_t root_cap;       /**< root capacity */
-    uint16_t self_cap;       /**< self capacity */
-    uint16_t layer2_cap;     /**< layer2 capacity */
-    uint16_t scan_ap_num;    /**< the number of scanning APs */
-    int8_t rssi;             /**< RSSI of the parent */
-    int8_t router_rssi;      /**< RSSI of the router */
-    uint8_t flag;            /**< flag of networking */
-    uint8_t rc_addr[6];      /**< root address */
-    int8_t rc_rssi;          /**< root RSSI */
-    uint8_t vote_addr[6];    /**< voter address */
-    int8_t vote_rssi;        /**< vote RSSI of the router */
-    uint8_t vote_ttl;        /**< vote ttl */
-    uint16_t votes;          /**< votes */
-    uint16_t my_votes;       /**< my votes */
-    uint8_t reason;          /**< reason */
-    uint8_t child[6];        /**< child address */
-    uint8_t toDS;            /**< toDS state */
+    uint8_t mesh_type;       /**< mesh device type, include idle, root, node, etc, refer to mesh_type_t */
+    uint8_t mesh_id[6];      /**< mesh ID, only the same mesh id can form a unified mesh network */
+    uint8_t layer_cap;       /**< layer_cap = max_layer - layer, indicates the number of remaining available layers of the mesh network */
+    uint8_t layer;           /**< the current layer of this node */
+    uint8_t assoc_cap;       /**< the maximum connections of this mesh AP */
+    uint8_t assoc;           /**< current connections of this mesh AP */
+    uint8_t leaf_cap;        /**< the maximum number of leaves in the mesh network */
+    uint8_t leaf_assoc;      /**< the number of current connected leaves */
+    uint16_t root_cap;       /**< the capacity of the root, equal to the total child numbers plus 1, root node updates root_cap and self_cap */
+    uint16_t self_cap;       /**< the capacity of myself, total child numbers plus 1, all nodes update this member */
+    uint16_t layer2_cap;     /**< the capacity of layer2 node, total child numbers plus 1, layer2 node updates layer2_cap and self_cap, root sets this to 0 */
+    uint16_t scan_ap_num;    /**< the number of mesh APs around */
+    int8_t rssi;             /**< RSSI of the connected parent, default value is -120, root node will not update this */
+    int8_t router_rssi;      /**< RSSI of the router, default value is -120 */
+    uint8_t flag;            /**< flag of networking, indicates the status of the network, refer to MESH_ASSOC_FLAG_XXX */
+    /**< vote related */
+    uint8_t rc_addr[6];      /**< the address of the root candidate, i.e. the voted addesss before connection, root node will update this with self address */
+    int8_t rc_rssi;          /**< the router RSSI of the root candidate */
+    uint8_t vote_addr[6];    /**< the voted address after connection */
+    int8_t vote_rssi;        /**< the router RSSI of the voted address */
+    uint8_t vote_ttl;        /**< vote ttl, indicate the voting is from myself or from other nodes */
+    uint16_t votes;          /**< the number of all voting nodes */
+    uint16_t my_votes;       /**< the number of nodes that voted for me */
+    uint8_t reason;          /**< the reason why the voting happens, root initiated or child initiated, refer to mesh_vote_reason_t */
+    uint8_t child[6];        /**< child address, not used currently */
+    uint8_t toDS;            /**< state represents whether the root is able to access external IP network */
 } __attribute__((packed)) mesh_assoc_t;
 
+/**
+ * @brief Mesh chain layer
+ */
 typedef struct {
-    uint16_t layer_cap;
-    uint16_t layer;
+    uint16_t layer_cap;     /**< max layer of the network */
+    uint16_t layer;         /**< current layer of this node */
 } mesh_chain_layer_t;
 
+/**
+ * @brief Mesh chain assoc
+ */
 typedef struct {
-    mesh_assoc_t tree;
-    mesh_chain_layer_t chain;
+    mesh_assoc_t tree;          /**< tree top, mesh_assoc IE */
+    mesh_chain_layer_t chain;   /**< chain top, mesh_assoc IE */
 } __attribute__((packed)) mesh_chain_assoc_t;
 
 /* mesh max connections */
 #define MESH_MAX_CONNECTIONS (10)
 
 /**
- * @brief Mesh PS duties
+ * @brief Mesh power save duties
  */
 typedef struct {
-    uint8_t device;
-    uint8_t parent;
+    uint8_t device;     /**< device power save duty*/
+    uint8_t parent;     /**< parent power save duty*/
     struct {
-        bool used;
-        uint8_t duty;
-        uint8_t mac[6];
-    } child[MESH_MAX_CONNECTIONS];
+        bool used;      /**< whether the child is joined */
+        uint8_t duty;   /**< power save duty of the child */
+        uint8_t mac[6]; /**< mac address of the child */
+    } child[MESH_MAX_CONNECTIONS]; /**< child */
 } esp_mesh_ps_duties_t;
 
 /*******************************************************
@@ -121,7 +138,7 @@ typedef struct {
 /**
  * @brief      Set mesh softAP beacon interval
  *
- * @param[in]  interval  beacon interval (msecs) (100 msecs ~ 60000 msecs)
+ * @param[in]  interval_ms  beacon interval (msecs) (100 msecs ~ 60000 msecs)
  *
  * @return
  *    - ESP_OK
@@ -133,7 +150,7 @@ esp_err_t esp_mesh_set_beacon_interval(int interval_ms);
 /**
  * @brief      Get mesh softAP beacon interval
  *
- * @param[out] interval  beacon interval (msecs)
+ * @param[out] interval_ms  beacon interval (msecs)
  *
  * @return
  *    - ESP_OK
@@ -185,7 +202,7 @@ esp_err_t esp_mesh_set_switch_parent_paras(mesh_switch_parent_t *paras);
 esp_err_t esp_mesh_get_switch_parent_paras(mesh_switch_parent_t *paras);
 
 /**
- * @brief      Set RSSI threshold
+ * @brief      Set RSSI threshold of current parent
  *             - The default high RSSI threshold value is -78 dBm.
  *             - The default medium RSSI threshold value is -82 dBm.
  *             - The default low RSSI threshold value is -85 dBm.
@@ -199,7 +216,7 @@ esp_err_t esp_mesh_get_switch_parent_paras(mesh_switch_parent_t *paras);
 esp_err_t esp_mesh_set_rssi_threshold(const mesh_rssi_threshold_t *threshold);
 
 /**
- * @brief      Get RSSI threshold
+ * @brief      Get RSSI threshold of current parent
  *
  * @param[out] threshold  RSSI threshold
  *
@@ -242,7 +259,7 @@ esp_err_t esp_mesh_print_rxQ_waiting(void);
 /**
  * @brief      Set passive scan time
  *
- * @param[in]  interval_ms  passive scan time (msecs)
+ * @param[in]  time_ms  passive scan time (msecs)
  *
  * @return
  *    - ESP_OK
@@ -283,7 +300,9 @@ esp_err_t esp_mesh_set_announce_interval(int short_ms, int long_ms);
 esp_err_t esp_mesh_get_announce_interval(int *short_ms, int *long_ms);
 
 /**
-  * @brief      Get the running duties of device, parent and children
+ * @brief      Get the running duties of device, parent and children
+ *
+ * @param[out] ps_duties ps duties
  *
  * @return
  *    - ESP_OK

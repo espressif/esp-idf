@@ -24,7 +24,7 @@
 #endif // ESP_PLATFORM
 
 #if CONFIG_SW_COEXIST_ENABLE
-#include "esp_coexist_internal.h"
+#include "private/esp_coexist_internal.h"
 #endif // CONFIG_SW_COEXIST_ENABLE
 
 #include "nimble/nimble_npl_os.h"

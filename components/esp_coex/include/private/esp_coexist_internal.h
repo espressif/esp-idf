@@ -9,7 +9,7 @@
 
 #include <stdbool.h>
 #include "esp_coexist.h"
-#include "esp_coexist_adapter.h"
+#include "private/esp_coexist_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -173,7 +173,6 @@ int coex_register_bt_cb(coex_func_cb_t callback);
  * @brief To acquire the spin-lock used in resetting Bluetooth baseband.
  *        This function is only used to workaround ESP32 hardware issue.
  *
- *  @param callback: callback function registered to coexistence module
  *  @return : value of the spinlock to be restored
  */
 uint32_t coex_bb_reset_lock(void);
@@ -268,7 +267,7 @@ void * coex_schm_curr_phase_get(void);
 /**
  * @brief Set current coexistence scheme phase index.
  *
- *  @param interval : Coexistence scheme phase index
+ *  @param idx : Coexistence scheme phase index
  *  @return : 0 - success, other - failed
  */
 int coex_schm_curr_phase_idx_set(int idx);

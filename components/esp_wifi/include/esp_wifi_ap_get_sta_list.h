@@ -29,7 +29,7 @@ typedef struct {
  * @warning This API works only for the default Wi-Fi AP interface, i.e. esp-netif with key="WIFI_AP_DEF"
  *
  * @param[in]   wifi_sta_list Wi-Fi station info list, returned from esp_wifi_ap_get_sta_list()
- * @param[out]  netif_sta_list IP layer station info list, corresponding to MAC addresses provided in wifi_sta_list
+ * @param[out]  wifi_sta_ip_mac_list IP layer station info list, corresponding to MAC addresses provided in wifi_sta_list
  *
  * @return
  *         - ESP_OK
@@ -37,10 +37,6 @@ typedef struct {
  *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
  */
 esp_err_t esp_wifi_ap_get_sta_list_with_ip(const wifi_sta_list_t *wifi_sta_list, wifi_sta_mac_ip_list_t *wifi_sta_ip_mac_list);
-
-/**
- * @}
- */
 
 #ifdef __cplusplus
 }

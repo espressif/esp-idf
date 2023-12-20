@@ -39,7 +39,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/usb_serial_jtag.h"
-#include "esp_coexist_internal.h"
+#include "esp_coexist.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_spiffs.h"
@@ -173,8 +173,7 @@ void app_main(void)
     ESP_ERROR_CHECK(example_connect());
 #if CONFIG_ESP_COEX_SW_COEXIST_ENABLE
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
-    coex_enable();
-    coex_schm_status_bit_set(1, 1);
+    esp_coex_wifi_i154_enable();
 #else
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
 #endif
