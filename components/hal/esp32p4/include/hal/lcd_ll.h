@@ -42,9 +42,10 @@ typedef enum {
 } lcd_ll_swizzle_mode_t;
 
 /**
- * @brief Enable or disable the bus clock for the LCD module
+ * @brief Enable the bus clock for LCD module
  *
- * @param set_bit True to set bit, false to clear bit
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
  */
 static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 {
@@ -58,6 +59,8 @@ static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
 
 /**
  * @brief Reset the LCD module
+ *
+ * @param group_id Group ID
  */
 static inline void lcd_ll_reset_register(int group_id)
 {

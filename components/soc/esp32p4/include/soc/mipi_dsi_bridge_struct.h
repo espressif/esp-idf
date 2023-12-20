@@ -764,7 +764,7 @@ typedef union {
 } dsi_brg_int_st_reg_t;
 
 
-typedef struct {
+typedef struct dsi_brg_dev_t {
     volatile dsi_brg_clk_en_reg_t clk_en;
     volatile dsi_brg_en_reg_t en;
     volatile dsi_brg_dma_req_cfg_reg_t dma_req_cfg;
@@ -810,6 +810,8 @@ typedef struct {
 #ifndef __cplusplus
 _Static_assert(sizeof(dsi_brg_dev_t) == 0xa0, "Invalid size of dsi_brg_dev_t structure");
 #endif
+
+extern dsi_brg_dev_t MIPI_DSI_BRIDGE;
 
 #ifdef __cplusplus
 }

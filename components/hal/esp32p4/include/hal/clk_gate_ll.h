@@ -23,11 +23,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
     switch (periph) {
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_HP_PAD_EMAC_TXRX_CLK_EN | LP_CLKRST_HP_PAD_EMAC_RX_CLK_EN | LP_CLKRST_HP_PAD_EMAC_TX_CLK_EN;
-    case PERIPH_MIPI_DSI_MODULE:
-        return HP_SYS_CLKRST_REG_MIPI_DSI_DPICLK_EN;
-    // IDF-6500
-    case PERIPH_MIPI_CSI_MODULE:
-        return 0;
     case PERIPH_I3C_MODULE:
         return HP_SYS_CLKRST_REG_I3C_MST_CLK_EN;
     case PERIPH_SARADC_MODULE:
@@ -63,10 +58,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     switch (periph) {
     case PERIPH_PVT_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_PVT_TOP;
-    case PERIPH_MIPI_DSI_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_DSI_BRG;
-    case PERIPH_MIPI_CSI_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CSI_BRG;
     case PERIPH_ISP_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_ISP;
     case PERIPH_DMA2D_MODULE:
@@ -124,8 +115,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {
     switch (periph) {
-    case PERIPH_MIPI_DSI_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL03_REG;
     case PERIPH_I3C_MODULE:
     case PERIPH_SARADC_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL22_REG;
