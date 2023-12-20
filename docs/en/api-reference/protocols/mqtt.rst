@@ -151,7 +151,7 @@ It is possible to set authentication parameters through the :cpp:class:`authenti
 Session
 ^^^^^^^^^^^
 
-For MQTT session related configurations, :cpp:class:`session <esp_mqtt_client_config_t::session_t>` fields should be used.
+For MQTT session-related configurations, :cpp:class:`session <esp_mqtt_client_config_t::session_t>` fields should be used.
 
 =======================
 Last Will and Testament

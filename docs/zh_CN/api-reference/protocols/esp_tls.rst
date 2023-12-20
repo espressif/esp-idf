@@ -143,11 +143,11 @@ MbedTLS 与 WolfSSL 对比
     ESP-TLS 中的 ATECC608A（安全元件）
     --------------------------------------------------
 
-    ESP-TLS 支持在 ESP32-WROOM-32SE 上使用 ATECC608A 加密芯片，但必须将 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈。未经手动更改，ESP-TLS 默认以 MbedTLS 为其底层 TLS/SSL 协议栈。
+    ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须将 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈。未经手动更改，ESP-TLS 默认以 MbedTLS 为其底层 TLS/SSL 协议栈。
 
     .. note::
 
-        在 ESP32-WROOM-32SE 上的 ATECC608A 芯片必须预先配置，详情请参阅 `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_。
+        在 ESP32 上的 ATECC608A 芯片必须预先配置，详情请参阅 `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_。
 
     要启用安全元件支持，并将其应用于工程 TLS 连接，请遵循以下步骤：
 
