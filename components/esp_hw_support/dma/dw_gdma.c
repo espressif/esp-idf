@@ -465,7 +465,7 @@ esp_err_t dw_gdma_channel_config_transfer(dw_gdma_channel_handle_t chan, const d
     // [Ctrl0] register
     // set master port for the source and destination target
     dw_gdma_ll_channel_set_src_master_port(hal->dev, chan_id, config->src.addr);
-    dw_gdma_ll_channel_set_dst_master_port(hal->dev, chan_id, config->src.addr);
+    dw_gdma_ll_channel_set_dst_master_port(hal->dev, chan_id, config->dst.addr);
     // transfer width
     dw_gdma_ll_channel_set_src_trans_width(hal->dev, chan_id, config->src.width);
     dw_gdma_ll_channel_set_dst_trans_width(hal->dev, chan_id, config->dst.width);
