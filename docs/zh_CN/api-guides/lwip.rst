@@ -471,9 +471,7 @@ IP 层特性
 最大吞吐量
 ^^^^^^^^^^^^^^^^^^
 
-在 :example:`wifi/iperf` 示例中，乐鑫测试了在射频密封的封闭环境下 ESP-IDF 的 TCP/IP 吞吐量。
-
-iperf 示例下的 :example_file:`wifi/iperf/sdkconfig.defaults` 文件包含已知可最大化 TCP/IP 吞吐量的设置，但该设置会占用更多 RAM。要牺牲其他性能，在应用程序中最大化 TCP/IP 吞吐量，建议将该示例文件中的设置应用到项目的 sdkconfig 文件中。
+乐鑫使用 iperf 测试应用程序 https://iperf.fr/ 测试了 ESP-IDF 的 TCP/IP 吞吐量。关于实际测试和优化配置的更多信息，请参考 :ref:`improve-network-speed`。
 
 .. important::
 

@@ -238,15 +238,17 @@ To obtain the best performance for a particular interrupt handler:
     - If you are sure the entire interrupt handler can run from IRAM (see :ref:`iram-safe-interrupt-handlers`) then set the ``ESP_INTR_FLAG_IRAM`` flag when calling :cpp:func:`esp_intr_alloc` to assign the interrupt. This prevents it being temporarily disabled if the application firmware writes to the internal SPI flash.
     - Even if the interrupt handler is not IRAM-safe, if it is going to be executed frequently then consider moving the handler function to IRAM anyhow. This minimizes the chance of a flash cache miss when the interrupt code is executed (see :ref:`speed-targeted-optimizations`). It is possible to do this without adding the ``ESP_INTR_FLAG_IRAM`` flag to mark the interrupt as IRAM-safe, if only part of the handler is guaranteed to be in IRAM.
 
+.. _improve-network-speed:
+
 Improving Network Speed
 -----------------------
 
 .. list::
 
     :SOC_WIFI_SUPPORTED: * For Wi-Fi, see :ref:`How-to-improve-Wi-Fi-performance` and :ref:`wifi-buffer-usage`
-    * For lwIP TCP/IP (Wi-Fi and Ethernet), see :ref:`lwip-performance`
-    :SOC_WIFI_SUPPORTED: * The :example:`wifi/iperf` example contains a configuration that is heavily optimized for Wi-Fi TCP/IP throughput. Append the contents of the files :example_file:`wifi/iperf/sdkconfig.defaults`, :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` and :example_file:`wifi/iperf/sdkconfig.ci.99` to the ``sdkconfig`` file in your project in order to add all of these options. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use related information to determine exactly which options are best suited for your app.
-    :SOC_EMAC_SUPPORTED: * The :example:`ethernet/iperf` example contains a configuration that is heavily optimized for Ethernet TCP/IP throughput. Examine :example_file:`ethernet/iperf/sdkconfig.defaults` for more details. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use related information to determine exactly which options are best suited for your app.
+    * For lwIP TCP/IP, see :ref:`lwip-performance`
+    :SOC_WIFI_SUPPORTED: * The :example:`wifi/iperf` example contains a configuration that is heavily optimized for Wi-Fi TCP/IP throughput, usually at the expense of higher RAM usage. Append the contents of the files :example_file:`wifi/iperf/sdkconfig.defaults`, :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` and :example_file:`wifi/iperf/sdkconfig.ci.99` to the ``sdkconfig`` file in your project in order to add all of these options. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use related information to determine exactly which options are best suited for your app.
+    :SOC_EMAC_SUPPORTED: * The :example:`ethernet/iperf` example contains a configuration that is heavily optimized for Ethernet TCP/IP throughput, usually at the expense of higher RAM usage. Examine :example_file:`ethernet/iperf/sdkconfig.defaults` for more details. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use related information to determine exactly which options are best suited for your app.
 
 Improving I/O Performance
 -------------------------

@@ -238,15 +238,17 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
     - 如果确定整个中断处理程序可以在 IRAM 中运行（参见 :ref:`iram-safe-interrupt-handlers` ），那么在调用 :cpp:func:`esp_intr_alloc` 分配中断时，请设置 ``ESP_INTR_FLAG_IRAM`` 标志，这样可以防止在应用程序固件写入内置 SPI flash 时临时禁用中断。
     - 即使是非 IRAM 安全的中断处理程序，如果需要频繁执行，可以考虑将处理程序的函数移到 IRAM 中，从而尽可能规避执行中断代码时发生 flash 缓存缺失的可能性（参见 :ref:`speed-targeted-optimizations` ）。如果可以确保只有部分处理程序位于 IRAM 中，则无需添加 ``ESP_INTR_FLAG_IRAM`` 标志将程序标记为 IRAM 安全。
 
+.. _improve-network-speed:
+
 提高网络速度
 -----------------------------
 
 .. list::
 
     :SOC_WIFI_SUPPORTED: * 关于提高 Wi-Fi 网速，参见 :ref:`How-to-improve-Wi-Fi-performance` 和 :ref:`wifi-buffer-usage` 。
-    * 关于提高 lwIP TCP/IP（Wi-Fi 和以太网）网速，参见 :ref:`lwip-performance` 。
-    :SOC_WIFI_SUPPORTED: * 示例 :example:`wifi/iperf` 中的配置针对 Wi-Fi TCP/IP 吞吐量进行了大量优化。将文件 :example_file:`wifi/iperf/sdkconfig.defaults` 、 :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` 和 :example_file:`wifi/iperf/sdkconfig.ci.99` 的内容追加到项目的 ``sdkconfig`` 文件中，即可添加所有相关选项。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
-    :SOC_EMAC_SUPPORTED: * 示例 :example:`ethernet/iperf` 中的配置针对以太网 TCP/IP 吞吐量进行了大量优化。如需了解详情，请查看 :example_file:`ethernet/iperf/sdkconfig.defaults`。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
+    * 关于提高 lwIP TCP/IP 网速，参见 :ref:`lwip-performance` 。
+    :SOC_WIFI_SUPPORTED: * 示例 :example:`wifi/iperf` 中的配置针对 Wi-Fi TCP/IP 吞吐量进行了大量优化，但该配置会占用更多 RAM。将文件 :example_file:`wifi/iperf/sdkconfig.defaults` 、 :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` 和 :example_file:`wifi/iperf/sdkconfig.ci.99` 的内容追加到项目的 ``sdkconfig`` 文件中，即可添加所有相关选项。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
+    :SOC_EMAC_SUPPORTED: * 示例 :example:`ethernet/iperf` 中的配置针对以太网 TCP/IP 吞吐量进行了大量优化，但该配置会占用更多 RAM。如需了解详情，请查看 :example_file:`ethernet/iperf/sdkconfig.defaults`。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
 
 提高 I/O 性能
 ----------------------------------
