@@ -60,6 +60,26 @@ classDiagram
         -on_color_trans_done(void* user_data) bool
     }
 
+    esp_lcd_panel_io_dbi_t --|> esp_lcd_panel_io_t : Inheritance
+    class esp_lcd_panel_io_dbi_t {
+        -esp_lcd_dsi_bus_t* bus
+        -int virtual_channel
+    }
+
+    esp_lcd_dpi_panel_t --|> esp_lcd_panel_t : Inheritance
+    class esp_lcd_dpi_panel_t {
+        -esp_lcd_dsi_bus_t* bus
+        -int virtual_channel
+        -void *frame_buffer
+        -dw_gdma_channel_handle_t dma_chan
+    }
+
+    esp_lcd_dsi_bus_t "1" --> "1..*" esp_lcd_panel_io_dbi_t : Has
+    esp_lcd_dsi_bus_t "1" --> "1..*" esp_lcd_dpi_panel_t : Has
+    class esp_lcd_dsi_bus_t {
+        -int bus_id
+    }
+
     esp_lcd_panel_io_i80_t --|> esp_lcd_panel_io_t : Inheritance
     class esp_lcd_panel_io_i80_t {
         -esp_lcd_i80_bus_t* bus
