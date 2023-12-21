@@ -82,6 +82,8 @@ extern "C" {
 #define ESP_ERR_WIFI_NOT_ASSOC   (ESP_ERR_WIFI_BASE + 21)  /*!< The WiFi connection is not associated */
 #define ESP_ERR_WIFI_TX_DISALLOW (ESP_ERR_WIFI_BASE + 22)  /*!< The WiFi TX is disallowed */
 #define ESP_ERR_WIFI_DISCARD     (ESP_ERR_WIFI_BASE + 23)  /*!< Discard frame */
+#define ESP_ERR_WIFI_ROC_IN_PROGRESS   (ESP_ERR_WIFI_BASE + 28)  /*!< ROC op is in progress */
+
 
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
