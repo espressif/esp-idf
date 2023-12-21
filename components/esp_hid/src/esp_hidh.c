@@ -340,21 +340,13 @@ esp_err_t esp_hidh_dev_set_protocol(esp_hidh_dev_t *dev, uint8_t protocol_mode)
 const uint8_t *esp_hidh_dev_bda_get(esp_hidh_dev_t *dev)
 {
     uint8_t *ret = NULL;
-#if CONFIG_BLUEDROID_ENABLED
+#if CONFIG_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED
     if (esp_hidh_dev_exists(dev)) {
         esp_hidh_dev_lock(dev);
-        ret = dev->bda;
+        ret = dev->addr.bda;
         esp_hidh_dev_unlock(dev);
     }
-#endif /* CONFIG_BLUEDROID_ENABLED */
-
-#if CONFIG_BT_NIMBLE_ENABLED
-    if (esp_hidh_dev_exists(dev)) {
-        esp_hidh_dev_lock(dev);
-        ret = dev->bda;
-        esp_hidh_dev_unlock(dev);
-    }
-#endif /* CONFIG_BT_NIMBLE_ENABLED */
+#endif /* CONFIG_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED*/
     return ret;
 }
 
@@ -754,7 +746,7 @@ esp_hidh_dev_t *esp_hidh_dev_get_by_bda(esp_bd_addr_t bda)
     esp_hidh_dev_t * d = NULL;
     lock_devices();
     TAILQ_FOREACH(d, &s_esp_hidh_devices, devices) {
-        if (memcmp(bda, d->bda, sizeof(esp_bd_addr_t)) == 0) {
+        if (memcmp(bda, d->addr.bda, sizeof(esp_bd_addr_t)) == 0) {
             unlock_devices();
             return d;
         }
@@ -856,7 +848,7 @@ esp_hidh_dev_t *esp_hidh_dev_get_by_bda(uint8_t *bda)
     esp_hidh_dev_t * d = NULL;
     lock_devices();
     TAILQ_FOREACH(d, &s_esp_hidh_devices, devices) {
-        if (memcmp(bda, d->bda, sizeof(uint8_t) * 6) == 0) {
+        if (memcmp(bda, d->addr.bda, sizeof(uint8_t) * 6) == 0) {
             unlock_devices();
             return d;
         }

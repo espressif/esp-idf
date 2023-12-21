@@ -401,7 +401,6 @@ components/console/linenoise/linenoise.h
 components/esp_eth/src/ksz8851.h
 components/esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp
 components/esp_event/host_test/fixtures.hpp
-components/esp_hid/include/esp_hid_common.h
 components/esp_hid/include/esp_hidd.h
 components/esp_hid/include/esp_hidd_gatts.h
 components/esp_hid/include/esp_hidd_transport.h
