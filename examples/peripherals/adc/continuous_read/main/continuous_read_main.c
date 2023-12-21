@@ -126,7 +126,7 @@ void app_main(void)
         while (1) {
             ret = adc_continuous_read(handle, result, EXAMPLE_READ_LEN, &ret_num, 0);
             if (ret == ESP_OK) {
-                ESP_LOGI("TASK", "ret is %x, ret_num is %"PRIu32, ret, ret_num);
+                ESP_LOGI("TASK", "ret is %x, ret_num is %"PRIu32" bytes", ret, ret_num);
                 for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
                     adc_digi_output_data_t *p = (void*)&result[i];
                     if (check_valid_data(p)) {
