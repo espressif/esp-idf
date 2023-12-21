@@ -4,12 +4,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "freertos/queue.h"
 #include "unity.h"
 #include "soc/cpu.h"
 #include "test_utils.h"
 
-#include "driver/timer.h"
 #include "sdkconfig.h"
 
 #include "esp_rom_sys.h"
@@ -21,21 +19,6 @@
 #endif
 
 static SemaphoreHandle_t isr_semaphore;
-static volatile unsigned isr_count;
-
-/* Timer ISR increments an ISR counter, and signals a
-   mutex semaphore to wake up another counter task */
-static void timer_group0_isr(void *vp_arg)
-{
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
-    portBASE_TYPE higher_awoken = pdFALSE;
-    isr_count++;
-    xSemaphoreGiveFromISR(isr_semaphore, &higher_awoken);
-    if (higher_awoken == pdTRUE) {
-        portYIELD_FROM_ISR();
-    }
-}
 
 typedef struct {
     SemaphoreHandle_t trigger_sem;
@@ -52,17 +35,14 @@ static void counter_task_fn(void *vp_config)
     }
 }
 
-
 /* This test verifies that an interrupt can wake up a task while the scheduler is disabled.
 
    In the FreeRTOS implementation, this exercises the xPendingReadyList for that core.
  */
 TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[freertos]")
 {
-    isr_count = 0;
     isr_semaphore = xSemaphoreCreateBinary();
     TaskHandle_t counter_task;
-    intr_handle_t isr_handle = NULL;
 
     counter_config_t count_config = {
         .trigger_sem = isr_semaphore,
@@ -72,59 +52,51 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
                             &count_config, UNITY_FREERTOS_PRIORITY + 1,
                             &counter_task, UNITY_FREERTOS_CPU);
 
-    /* Configure timer ISR */
-    const timer_config_t timer_config = {
-        .alarm_en = 1,
-        .auto_reload = 1,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = 2,       //Range is 2 to 65536
-        .intr_type = TIMER_INTR_LEVEL,
-        .counter_en = TIMER_PAUSE,
-    };
-    /* Configure timer */
-    timer_init(TIMER_GROUP_0, TIMER_0, &timer_config);
-    timer_pause(TIMER_GROUP_0, TIMER_0);
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000);
-    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, NULL, 0, &isr_handle);
-    timer_start(TIMER_GROUP_0, TIMER_0);
-
+    // Allow the counter task to spin up
     vTaskDelay(5);
 
-    // Check some counts have been triggered via the ISR
-    TEST_ASSERT(count_config.counter > 10);
-    TEST_ASSERT(isr_count > 10);
+    // Unblock the counter task and verify that it runs normally when the scheduler is running
+    xSemaphoreGive(isr_semaphore);
+    vTaskDelay(5);
 
-    for (int i = 0; i < 20; i++) {
-        vTaskSuspendAll();
-        esp_intr_noniram_disable();
+    TEST_ASSERT(count_config.counter == 1);
 
-        unsigned no_sched_task = count_config.counter;
+    // Suspend the scheduler on this core
+    vTaskSuspendAll();
+    TEST_ASSERT_EQUAL(taskSCHEDULER_SUSPENDED, xTaskGetSchedulerState());
 
-        // scheduler off on this CPU...
-        esp_rom_delay_us(20 * 1000);
+    unsigned no_sched_task = count_config.counter;
 
-        //TEST_ASSERT_NOT_EQUAL(no_sched_isr, isr_count);
-        TEST_ASSERT_EQUAL(count_config.counter, no_sched_task);
-
-        // disable timer interrupts
-        timer_disable_intr(TIMER_GROUP_0, TIMER_0);
-
-        // When we resume scheduler, we expect the counter task
-        // will preempt and count at least one more item
-        esp_intr_noniram_enable();
-        timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-        xTaskResumeAll();
-
-        TEST_ASSERT_NOT_EQUAL(count_config.counter, no_sched_task);
+    // We simulate unblocking of the counter task from an ISR by
+    // giving the isr_semaphore via the FromISR() API while the
+    // scheduler is suspended. This prompts the kernel to put the
+    // unblocked task on the xPendingReadyList.
+    portBASE_TYPE yield = pdFALSE;
+    xSemaphoreGiveFromISR(isr_semaphore, &yield);
+    if (yield == pdTRUE) {
+        portYIELD_FROM_ISR();
     }
 
-    esp_intr_free(isr_handle);
-    timer_disable_intr(TIMER_GROUP_0, TIMER_0);
+    // scheduler off on this CPU...
+    esp_rom_delay_us(20 * 1000);
 
+    // Verify that the counter task is not scheduled when the scheduler is supended
+    TEST_ASSERT_EQUAL(count_config.counter, no_sched_task);
+
+    // When we resume scheduler, we expect the counter task
+    // will preempt and count at least one more item
+    xTaskResumeAll();
+    TEST_ASSERT_EQUAL(taskSCHEDULER_RUNNING, xTaskGetSchedulerState());
+
+    // Verify that the counter task has run after the scheduler is resumed
+    TEST_ASSERT_NOT_EQUAL(count_config.counter, no_sched_task);
+
+    // Clean up
     vTaskDelete(counter_task);
     vSemaphoreDelete(isr_semaphore);
+
+    // Give the idle task a chance to cleanup any remaining deleted tasks
+    vTaskDelay(10);
 }
 
 /* Multiple tasks on different cores can be added to the pending ready list
