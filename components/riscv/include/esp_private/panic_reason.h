@@ -18,3 +18,5 @@
 #endif
 
 #define PANIC_RSN_CACHEERR    3
+
+#define MCAUSE_ILLEGAL_INSTRUCTION  2

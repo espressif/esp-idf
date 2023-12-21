@@ -277,9 +277,12 @@ def test_int_wdt_cache_disabled(
 @pytest.mark.generic
 def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    if dut.target in ['esp32c3', 'esp32c2', 'esp32c6', 'esp32h2']:
-        # Cache error interrupt is not raised, IDF-6398
-        dut.expect_gme('Illegal instruction')
+    if dut.target in ['esp32c3', 'esp32c2']:
+        dut.expect_gme('Cache error')
+        dut.expect_exact('Cached memory region accessed while ibus or cache is disabled')
+    elif dut.target in ['esp32c6', 'esp32h2']:
+        dut.expect_gme('Cache error')
+        dut.expect_exact('Cache access error')
     elif dut.target in ['esp32s2']:
         # Cache error interrupt is not enabled, IDF-1558
         dut.expect_gme('IllegalInstruction')

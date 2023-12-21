@@ -21,6 +21,18 @@
 static const char *TAG = "CACHE_ERR";
 
 //TODO: IDF-7515
+const char *esp_cache_err_panic_string(void)
+{
+    return NULL;
+}
+
+//TODO: IDF-7515
+bool esp_cache_err_has_active_err(void)
+{
+    return false;
+}
+
+//TODO: IDF-7515
 void esp_cache_err_int_init(void)
 {
     const uint32_t core_id = 0;
