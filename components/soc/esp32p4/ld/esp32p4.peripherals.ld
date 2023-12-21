@@ -104,3 +104,5 @@ PROVIDE ( DMA2D              = 0x50088000 );
 PROVIDE ( JPEG               = 0x50086000 );
 
 PROVIDE ( USB_WRAP           = 0x50080000 );
+PROVIDE ( USB_DWC_HS         = 0x50000000 );
+PROVIDE ( USB_DWC_FS         = 0x50040000 );
