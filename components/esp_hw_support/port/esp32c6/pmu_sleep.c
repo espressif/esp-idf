@@ -289,5 +289,6 @@ void pmu_sleep_enable_hp_sleep_sysclk(bool enable)
 
 uint32_t pmu_sleep_get_wakup_retention_cost(void)
 {
-    return PMU_REGDMA_S2A_WORK_TIME_US;
+    const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
+    return mc->hp.regdma_s2a_work_time_us;
 }

@@ -15,11 +15,7 @@
 
 void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_addr_t *link_addr)
 {
-    /* ESP32H2 does not have PMU HP_AON power domain. because the registers
-     * of PAU REGDMA is included to PMU TOP power domain, cause the contents
-     * of PAU REGDMA registers will be lost when the TOP domain is powered down
-     * during light sleep, so we does not need to enable REGDMA backup here.
-     * We will use the software to trigger REGDMA to backup or restore. */
+    pau_ll_set_regdma_link0_addr(hal->dev, (*link_addr)[0]);
 }
 
 void IRAM_ATTR pau_hal_start_regdma_system_link(pau_hal_context_t *hal, bool backup_or_restore)
