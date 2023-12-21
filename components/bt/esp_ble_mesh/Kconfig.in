@@ -19,8 +19,8 @@ if BLE_MESH
         bool "Support Duplicate Scan in BLE Mesh"
         select BTDM_BLE_SCAN_DUPL if IDF_TARGET_ESP32
         select BTDM_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32
-        select BT_CTRL_BLE_SCAN_DUPL if IDF_TARGET_ESP32C3
-        select BT_CTRL_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32C3
+        select BT_CTRL_BLE_SCAN_DUPL if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        select BT_CTRL_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         select BT_NIMBLE_VS_SUPPORT if BT_NIMBLE_ENABLED
         default y
         help
