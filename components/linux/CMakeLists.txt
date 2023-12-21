@@ -4,7 +4,7 @@ if(NOT "${target}" STREQUAL "linux")
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-    list(APPEND srcs getrandom.c)
+    list(APPEND srcs getrandom.c assert_func.c)
 endif()
 
 idf_component_register(INCLUDE_DIRS include
