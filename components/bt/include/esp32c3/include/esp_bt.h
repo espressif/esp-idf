@@ -144,8 +144,21 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 
 #ifdef CONFIG_BT_CTRL_AGC_RECORRECT_EN
 #define BT_CTRL_AGC_RECORRECT_EN  CONFIG_BT_CTRL_AGC_RECORRECT_EN
+// ESP32-S3
+#if CONFIG_IDF_TARGET_ESP32S3
+#define BT_CTRL_AGC_RECORRECT_NEW       1
+#else
+//Check if chip target is ESP32-C3 101
+#if CONFIG_ESP32C3_REV_MIN_101
+#define BT_CTRL_AGC_RECORRECT_NEW       1
+#else
+#define BT_CTRL_AGC_RECORRECT_NEW       0
+#endif // CONFIG_ESP32C3_REV_MIN_101
+#endif // CONFIG_IDF_TARGET_ESP32S3
+
 #else
 #define BT_CTRL_AGC_RECORRECT_EN        0
+#define BT_CTRL_AGC_RECORRECT_NEW       0
 #endif
 
 #ifdef CONFIG_BT_CTRL_CODED_AGC_RECORRECT_EN
@@ -175,7 +188,7 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_BLE_CCA_MODE (0)
 #endif
 
-#define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1))
+#define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1) | (BT_CTRL_AGC_RECORRECT_NEW << 2))
 
 #define CFG_MASK_BIT_SCAN_DUPLICATE_OPTION    (1<<0)
 
