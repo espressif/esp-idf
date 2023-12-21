@@ -207,15 +207,16 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    // Special on P4, set mst_clk_sel to 1 means attach the mclk signal to TX module
     switch (I2S_LL_GET_ID(hw)) {
         case 0:
-            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_mst_clk_sel = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_mst_clk_sel = 1;
             return;
         case 1:
-            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_mst_clk_sel = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_mst_clk_sel = 1;
             return;
         case 2:
-            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_mst_clk_sel = 0;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_mst_clk_sel = 1;
             return;
     }
 }
@@ -228,15 +229,16 @@ static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
+    // Special on P4, set mst_clk_sel to 0 means attach the mclk signal to RX module
     switch (I2S_LL_GET_ID(hw)) {
         case 0:
-            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_mst_clk_sel = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl14.reg_i2s0_mst_clk_sel = 0;
             return;
         case 1:
-            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_mst_clk_sel = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl17.reg_i2s1_mst_clk_sel = 0;
             return;
         case 2:
-            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_mst_clk_sel = 1;
+            HP_SYS_CLKRST.peri_clk_ctrl19.reg_i2s2_mst_clk_sel = 0;
             return;
     }
 }

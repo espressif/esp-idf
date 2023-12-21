@@ -47,8 +47,10 @@ extern "C" {
 
 #if !SOC_RCC_IS_INDEPENDENT
 #define I2S_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#define I2S_RCC_ATOMIC_ENV  (void)__DECLARE_RCC_ATOMIC_ENV
 #else
 #define I2S_RCC_ATOMIC()
+#define I2S_RCC_ATOMIC_ENV
 #endif
 
 #define I2S_NULL_POINTER_CHECK(tag, p)          ESP_RETURN_ON_FALSE((p), ESP_ERR_INVALID_ARG, tag, "input parameter '"#p"' is NULL")
