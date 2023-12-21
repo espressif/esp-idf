@@ -14,6 +14,7 @@ if BLE_MESH
         select BT_CTRL_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32C3
         select BT_LE_SCAN_DUPL if IDF_TARGET_ESP32C6
         select BT_LE_SCAN_DUPL if IDF_TARGET_ESP32H2
+        select BT_NIMBLE_VS_SUPPORT if BT_NIMBLE_ENABLED
         default y
         help
             Enable this option to allow using specific duplicate scan filter
