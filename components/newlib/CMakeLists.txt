@@ -26,7 +26,9 @@ set(srcs
     "stdatomic.c"
     "time.c"
     "sysconf.c"
-    "realpath.c")
+    "realpath.c"
+    "scandir.c"
+)
 set(include_dirs platform_include)
 
 if(CONFIG_SPIRAM_CACHE_WORKAROUND)
