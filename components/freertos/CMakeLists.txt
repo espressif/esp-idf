@@ -184,6 +184,14 @@ if(arch STREQUAL "linux")
     if(BYPASS_EINTR_ISSUE)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=select")
     endif()
+
+    # Disable strict prototype warnings in upstream code
+    # (struct event * event_create() is missing 'void')
+    set_source_files_properties(
+        "${kernel_impl}/portable/${arch}/utils/wait_for_event.c"
+        PROPERTIES COMPILE_OPTIONS
+        "-Wno-strict-prototypes"
+        )
 else()
     idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 
