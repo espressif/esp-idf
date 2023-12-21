@@ -103,7 +103,7 @@
 #include "esp_private/sleep_clock.h"
 #endif
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 #include "esp_private/sleep_retention.h"
 #endif
 
@@ -627,7 +627,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         should_skip_sleep = light_sleep_uart_prepare(pd_flags, sleep_duration);
     }
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
     if (!deep_sleep && (pd_flags & PMU_SLEEP_PD_TOP)) {
         sleep_retention_do_system_retention(true);
     }
@@ -837,7 +837,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
         if (pd_flags & PMU_SLEEP_PD_TOP) {
             sleep_retention_do_system_retention(false);
         }
