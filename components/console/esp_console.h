@@ -13,6 +13,7 @@ extern "C" {
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
 #include "esp_err.h"
+#include "freertos/FreeRTOS.h"
 
 // Forward declaration. Definition in linenoise/linenoise.h.
 typedef struct linenoiseCompletions linenoiseCompletions;
@@ -50,6 +51,7 @@ typedef struct {
     const char *history_save_path; //!< file path used to save history commands, set to NULL won't save to file system
     uint32_t task_stack_size;      //!< repl task stack size
     uint32_t task_priority;        //!< repl task priority
+    BaseType_t task_core_id;       //!< repl task affinity, i.e. which core the task is pinned to
     const char *prompt;            //!< prompt (NULL represents default: "esp> ")
     size_t max_cmdline_length;     //!< maximum length of a command line. If 0, default value will be used
 } esp_console_repl_config_t;
@@ -64,6 +66,7 @@ typedef struct {
         .history_save_path = NULL,        \
         .task_stack_size = 4096,          \
         .task_priority = 2,               \
+        .task_core_id = tskNO_AFFINITY,   \
         .prompt = NULL,                   \
         .max_cmdline_length = 0,          \
 }

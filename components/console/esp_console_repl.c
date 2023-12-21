@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,8 +107,8 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
     cdc_repl->repl_com.repl_core.del = esp_console_repl_usb_cdc_delete;
 
     /* spawn a single thread to run REPL */
-    if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    cdc_repl, repl_config->task_priority, &cdc_repl->repl_com.task_hdl) != pdTRUE) {
+    if (xTaskCreatePinnedToCore(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
+                    cdc_repl, repl_config->task_priority, &cdc_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
@@ -184,8 +184,8 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
     usb_serial_jtag_repl->repl_com.repl_core.del = esp_console_repl_usb_serial_jtag_delete;
 
     /* spawn a single thread to run REPL */
-    if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    usb_serial_jtag_repl, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl) != pdTRUE) {
+    if (xTaskCreatePinnedToCore(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
+                    usb_serial_jtag_repl, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
@@ -286,8 +286,8 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
 
     /* Spawn a single thread to run REPL, we need to pass `uart_repl` to it as
      * it also requires the uart channel. */
-    if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    uart_repl, repl_config->task_priority, &uart_repl->repl_com.task_hdl) != pdTRUE) {
+    if (xTaskCreatePinnedToCore(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
+                    uart_repl, repl_config->task_priority, &uart_repl->repl_com.task_hdl, repl_config->task_core_id) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
