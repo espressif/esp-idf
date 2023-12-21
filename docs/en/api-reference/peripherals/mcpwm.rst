@@ -856,6 +856,10 @@ When a sync signal is taken by the MCPWM timer, the timer will be forced into a 
 - :cpp:member:`mcpwm_timer_sync_phase_config_t::count_value` sets the count value to load when the sync signal is taken.
 - :cpp:member:`mcpwm_timer_sync_phase_config_t::direction` sets the count direction when the sync signal is taken.
 
+.. note::
+
+    When the MCPWM timer is working in :cpp:enumerator:`MCPWM_TIMER_COUNT_MODE_UP_DOWN` mode, special attention needs to be taken. In this mode, counter range ``[0 -> peak-1]`` belongs to the **increment** phase, and counter range ``[peak -> 1]`` belongs to the **decrement** phase. Thus if you set the :cpp:member:`mcpwm_timer_sync_phase_config_t::count_value` to zero, you may also want to set the :cpp:member:`mcpwm_timer_sync_phase_config_t::direction` to :cpp:enumerator:`MCPWM_TIMER_DIRECTION_UP`. Otherwise, the timer will be continue with the decrement phase, and the count value underflows to ``peak``.
+
 Likewise, the `MCPWM Capture Timer <#mcpwm-capture-timer-and-channels>`__ can be synced as well. You can set the sync phase for the capture timer by calling :cpp:func:`mcpwm_capture_timer_set_phase_on_sync`. The sync phase configuration is defined in :cpp:type:`mcpwm_capture_timer_sync_phase_config_t` structure:
 
 - :cpp:member:`mcpwm_capture_timer_sync_phase_config_t::sync_src` sets the sync signal source. See `MCPWM Sync Sources <#mcpwm-sync-sources>`__ for how to create a sync source object. Specifically, if this is set to ``NULL``, the driver will disable the sync feature for the MCPWM capture timer.

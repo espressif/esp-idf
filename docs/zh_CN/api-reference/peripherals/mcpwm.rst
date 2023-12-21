@@ -856,6 +856,10 @@ MCPWM 定时器接收到同步信号后，定时器将强制进入一个预定�
 - :cpp:member:`mcpwm_timer_sync_phase_config_t::count_value` 设置接收同步信号后加载至计数器的值。
 - :cpp:member:`mcpwm_timer_sync_phase_config_t::direction` 设置接收同步信号后的计数方向。
 
+.. note::
+
+    当 MCPWM 定时器在 :cpp:enumerator:`MCPWM_TIMER_COUNT_MODE_UP_DOWN` 模式下工作时，需要特别注意。在该模式下，计数器范围 ``[0 -> peak-1]`` 属于 **递增** 阶段， ``[peak -> 1]`` 属于 **递减** 阶段。因此，如果你将 :cpp:member:`mcpwm_timer_sync_phase_config_t::count_value` 设置为零，则可能还需要将 :cpp:member:`mcpwm_timer_sync_phase_config_t::direction` 设置为 :cpp:enumerator:`MCPWM_TIMER_DIRECTION_UP`。否则，计时器将继续维持递减阶段，计数值会下溢至峰值。
+
 同理， `MCPWM 捕获定时器和通道`_ 也支持同步。调用 :cpp:func:`mcpwm_capture_timer_set_phase_on_sync`，设置捕获定时器的同步相位。同步相位配置定义在 :cpp:type:`mcpwm_capture_timer_sync_phase_config_t` 结构体中：
 
 - :cpp:member:`mcpwm_capture_timer_sync_phase_config_t::sync_src` 设置同步信号源。关于如何创建一个同步源对象，请参见 `MCPWM 同步源`_。具体来说，当此参数设置为 ``NULL`` 时，驱动器将禁用 MCPWM 捕获定时器的同步功能。
