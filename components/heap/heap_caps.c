@@ -574,6 +574,65 @@ size_t heap_caps_get_largest_free_block( uint32_t caps )
     return info.largest_free_block;
 }
 
+static struct {
+    size_t *values; // Array of minimum_free_bytes used to keep the different values when starting monitoring
+    size_t counter; // Keep count of registered heap when monitoring to prevent any added heap to create an out of bound access on values
+    multi_heap_lock_t mux; // protect access to min_free_bytes_monitoring fields in start/stop monitoring functions
+} min_free_bytes_monitoring = {NULL, 0, MULTI_HEAP_LOCK_STATIC_INITIALIZER};
+
+esp_err_t heap_caps_monitor_local_minimum_free_size_start(void)
+{
+    // update minimum_free_bytes on all affected heap, and store the "old value"
+    // as a snapshot of the heaps minimum_free_bytes state.
+    heap_t *heap = NULL;
+    MULTI_HEAP_LOCK(&min_free_bytes_monitoring.mux);
+    if (min_free_bytes_monitoring.values == NULL) {
+        SLIST_FOREACH(heap, &registered_heaps, next) {
+            min_free_bytes_monitoring.counter++;
+        }
+        min_free_bytes_monitoring.values = heap_caps_malloc(sizeof(size_t) * min_free_bytes_monitoring.counter, MALLOC_CAP_DEFAULT);
+        assert(min_free_bytes_monitoring.values != NULL && "not enough memory to store min_free_bytes value");
+        memset(min_free_bytes_monitoring.values, 0xFF, sizeof(size_t) * min_free_bytes_monitoring.counter);
+    }
+
+    heap = SLIST_FIRST(&registered_heaps);
+    for (size_t counter = 0; counter < min_free_bytes_monitoring.counter; counter++) {
+        size_t old_minimum = multi_heap_reset_minimum_free_bytes(heap->heap);
+
+        if (min_free_bytes_monitoring.values[counter] > old_minimum) {
+            min_free_bytes_monitoring.values[counter] = old_minimum;
+        }
+
+        heap = SLIST_NEXT(heap, next);
+    }
+    MULTI_HEAP_UNLOCK(&min_free_bytes_monitoring.mux);
+
+    return ESP_OK;
+}
+
+esp_err_t heap_caps_monitor_local_minimum_free_size_stop(void)
+{
+    if (min_free_bytes_monitoring.values == NULL) {
+        return ESP_FAIL;
+    }
+
+    MULTI_HEAP_LOCK(&min_free_bytes_monitoring.mux);
+    heap_t *heap = SLIST_FIRST(&registered_heaps);
+    for (size_t counter = 0; counter < min_free_bytes_monitoring.counter; counter++) {
+        multi_heap_restore_minimum_free_bytes(heap->heap, min_free_bytes_monitoring.values[counter]);
+
+        heap = SLIST_NEXT(heap, next);
+    }
+
+    heap_caps_free(min_free_bytes_monitoring.values);
+    min_free_bytes_monitoring.values = NULL;
+    min_free_bytes_monitoring.counter = 0;
+    MULTI_HEAP_UNLOCK(&min_free_bytes_monitoring.mux);
+
+    return ESP_OK;
+}
+
+
 void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
 {
     memset(info, 0, sizeof(multi_heap_info_t));
@@ -584,13 +643,13 @@ void heap_caps_get_info( multi_heap_info_t *info, uint32_t caps )
             multi_heap_info_t hinfo;
             multi_heap_get_info(heap->heap, &hinfo);
 
-            info->total_free_bytes += hinfo.total_free_bytes - MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0);
+            info->total_free_bytes += hinfo.total_free_bytes - MULTI_HEAP_BLOCK_OWNER_SIZE();
             info->total_allocated_bytes += (hinfo.total_allocated_bytes -
-                                           hinfo.allocated_blocks * MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0));
+                                           hinfo.allocated_blocks * MULTI_HEAP_BLOCK_OWNER_SIZE());
             info->largest_free_block = MAX(info->largest_free_block,
                                            hinfo.largest_free_block);
-            info->largest_free_block -= info->largest_free_block ? MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0) : 0;
-            info->minimum_free_bytes += hinfo.minimum_free_bytes - MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(0);
+            info->largest_free_block -= info->largest_free_block ? MULTI_HEAP_BLOCK_OWNER_SIZE() : 0;
+            info->minimum_free_bytes += hinfo.minimum_free_bytes - MULTI_HEAP_BLOCK_OWNER_SIZE();
             info->allocated_blocks += hinfo.allocated_blocks;
             info->free_blocks += hinfo.free_blocks;
             info->total_blocks += hinfo.total_blocks;

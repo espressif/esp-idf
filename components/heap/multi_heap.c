@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/cdefs.h>
+#include <sys/param.h>
 #include "multi_heap.h"
 #include "multi_heap_internal.h"
 
@@ -429,4 +430,22 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
     info->largest_free_block = tlsf_fit_size(heap->heap_data, info->largest_free_block);
     multi_heap_internal_unlock(heap);
 }
-#endif
+
+#endif // CONFIG_HEAP_TLSF_USE_ROM_IMPL
+
+size_t multi_heap_reset_minimum_free_bytes(multi_heap_handle_t heap)
+{
+    multi_heap_internal_lock(heap);
+    const size_t old_minimum = heap->minimum_free_bytes;
+    heap->minimum_free_bytes = heap->free_bytes;
+    multi_heap_internal_unlock(heap);
+    return old_minimum;
+}
+
+void multi_heap_restore_minimum_free_bytes(multi_heap_handle_t heap, const size_t new_minimum_free_bytes_value)
+{
+    multi_heap_internal_lock(heap);
+    // keep the value of minimum_free_bytes if it is lower than the value passed as parameter
+    heap->minimum_free_bytes = MIN(heap->minimum_free_bytes, new_minimum_free_bytes_value);
+    multi_heap_internal_unlock(heap);
+}
