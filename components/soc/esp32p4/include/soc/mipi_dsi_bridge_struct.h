@@ -495,10 +495,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** protocal : R/W; bitpos: [0]; default: 0;
-         *  this bit configures yuv protoocl, 0: bt.601, 1: bt.709
+        /** protocol : R/W; bitpos: [0]; default: 0;
+         *  this bit configures yuv protocol, 0: bt.601, 1: bt.709
          */
-        uint32_t protocal:1;
+        uint32_t protocol:1;
         /** yuv_pix_endian : R/W; bitpos: [1]; default: 0;
          *  this bit configures yuv pixel endian, 0: y0u0y1v1y2u2y3v3, 1: y3u3y2v2y1u1y0v0
          */

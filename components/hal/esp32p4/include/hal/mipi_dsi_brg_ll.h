@@ -255,10 +255,10 @@ static inline void mipi_dsi_brg_ll_set_yuv_convert_std(dsi_brg_dev_t* dev, lcd_y
 {
     switch (std) {
     case LCD_YUV_CONV_STD_BT601:
-        dev->yuv_cfg.protocal = 0;
+        dev->yuv_cfg.protocol = 0;
         break;
     case LCD_YUV_CONV_STD_BT709:
-        dev->yuv_cfg.protocal = 1;
+        dev->yuv_cfg.protocol = 1;
         break;
     default:
         abort();
