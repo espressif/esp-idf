@@ -24,20 +24,22 @@
 
 void pmu_sleep_enable_regdma_backup(void)
 {
-    /* ESP32H2 does not have PMU HP_AON power domain. because the registers
-     * of PAU REGDMA is included to PMU TOP power domain, cause the contents
-     * of PAU REGDMA registers will be lost when the TOP domain is powered down
-     * during light sleep, so we does not need to enable REGDMA backup here.
-     * We will use the software to trigger REGDMA to backup or restore. */
+    assert(PMU_instance()->hal);
+    /* entry 0, 1, 2 is used by pmu HP_SLEEP and HP_ACTIVE, HP_SLEEP
+        * and HP_MODEM or HP_MODEM and HP_ACTIVE states switching,
+        * respectively. entry 3 is reserved, not used yet! */
+    pmu_hal_hp_set_sleep_active_backup_enable(PMU_instance()->hal);
 }
 
 void pmu_sleep_disable_regdma_backup(void)
 {
+    assert(PMU_instance()->hal);
+    pmu_hal_hp_set_sleep_active_backup_disable(PMU_instance()->hal);
 }
 
 uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
 {
-    const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
+    pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
 
     /* LP core hardware wait time, microsecond */
     const int lp_clk_switch_time_us         = rtc_time_slowclk_to_us(mc->lp.clk_switch_cycle, slowclk_period);
@@ -49,6 +51,11 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
 
     /* HP core hardware wait time, microsecond */
     const int hp_digital_power_up_wait_time_us = mc->hp.power_supply_wait_time_us + mc->hp.power_up_wait_time_us;
+    if (pd_flags & PMU_SLEEP_PD_TOP) {
+        mc->hp.regdma_s2a_work_time_us = PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US;
+    } else {
+        mc->hp.regdma_s2a_work_time_us = PMU_REGDMA_S2A_WORK_TIME_PU_TOP_US;
+    }
     const int hp_regdma_wait_time_us = mc->hp.regdma_s2a_work_time_us;
     const int hp_clock_wait_time_us = mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us;
 
@@ -231,5 +238,6 @@ bool pmu_sleep_finish(void)
 
 uint32_t pmu_sleep_get_wakup_retention_cost(void)
 {
-    return PMU_REGDMA_S2A_WORK_TIME_US;
+    const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
+    return mc->hp.regdma_s2a_work_time_us;
 }
