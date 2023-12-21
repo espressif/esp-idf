@@ -360,6 +360,8 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx)
 
 esp_err_t adc_digi_start(void)
 {
+    //reset ADC digital part to reset ADC sampling EOF counter
+    periph_module_reset(PERIPH_SARADC_MODULE);
     if (s_adc_digi_ctx) {
         if (s_adc_digi_ctx->driver_start_flag != 0) {
             ESP_LOGE(ADC_TAG, "The driver is already started");
