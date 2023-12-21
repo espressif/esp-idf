@@ -404,7 +404,6 @@ components/esp_event/host_test/fixtures.hpp
 components/esp_hid/include/esp_hidd.h
 components/esp_hid/include/esp_hidd_gatts.h
 components/esp_hid/include/esp_hidd_transport.h
-components/esp_hid/include/esp_hidh.h
 components/esp_hid/include/esp_hidh_bluedroid.h
 components/esp_hid/include/esp_hidh_gattc.h
 components/esp_hid/private/bt_hidd.h
