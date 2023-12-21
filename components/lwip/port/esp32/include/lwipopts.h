@@ -531,6 +531,21 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #endif
 
 /**
+ * TCP_OOSEQ_MAX_PBUFS: The maximum number of pbufs
+ * queued on ooseq per pcb
+ */
+#if TCP_QUEUE_OOSEQ
+#define TCP_OOSEQ_MAX_PBUFS             CONFIG_LWIP_TCP_OOSEQ_MAX_PBUFS
+#endif
+
+/**
+ * TCP_OOSEQ_TIMEOUT: Timeout for each pbuf queued in TCP OOSEQ, in RTOs.
+ */
+#if TCP_QUEUE_OOSEQ
+#define TCP_OOSEQ_TIMEOUT               CONFIG_LWIP_TCP_OOSEQ_TIMEOUT
+#endif
+
+/**
  * LWIP_TCP_SACK_OUT==1: TCP will support sending selective acknowledgements (SACKs).
  */
 #ifdef CONFIG_LWIP_TCP_SACK_OUT
@@ -1128,6 +1143,25 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_IPV6                       1
 #else
 #define LWIP_IPV6                       0
+#endif
+
+/**
+ * LWIP_ND6==1: Enable ND6 protocol in IPv6
+ */
+#ifdef CONFIG_LWIP_ND6
+#define LWIP_ND6                        1
+#else
+#define LWIP_ND6                        0
+#endif
+
+/**
+ * LWIP_FORCE_ROUTER_FORWARDING==1: the router flag in NA packet will always set to 1,
+ * otherwise, never set router flag for NA packets.
+ */
+#ifdef CONFIG_LWIP_FORCE_ROUTER_FORWARDING
+#define LWIP_FORCE_ROUTER_FORWARDING    1
+#else
+#define LWIP_FORCE_ROUTER_FORWARDING    0
 #endif
 
 /**
