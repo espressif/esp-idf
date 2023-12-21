@@ -499,7 +499,7 @@ uint32_t IRAM_ATTR sleep_retention_get_modules(void)
 }
 
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
-void sleep_retention_do_extra_retention(bool backup_or_restore)
+void IRAM_ATTR sleep_retention_do_extra_retention(bool backup_or_restore)
 {
     if (s_retention.highpri < SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY ||
         s_retention.highpri > SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
