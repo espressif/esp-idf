@@ -151,8 +151,7 @@ static esp_err_t i2s_pdm_tx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_tx_
         i2s_gpio_check_and_set(gpio_cfg->clk, i2s_periph_signal[id].m_tx_ws_sig, false, gpio_cfg->invert_flags.clk_inv);
     }
 #if SOC_I2S_HW_VERSION_2
-    I2S_RCC_ATOMIC() {
-        I2S_RCC_ATOMIC_ENV;
+    I2S_CLOCK_SRC_ATOMIC() {
         i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
     }
 #endif
@@ -441,8 +440,7 @@ static esp_err_t i2s_pdm_rx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_rx_
         }
     }
 #if SOC_I2S_HW_VERSION_2
-    I2S_RCC_ATOMIC() {
-        I2S_RCC_ATOMIC_ENV;
+    I2S_CLOCK_SRC_ATOMIC() {
         i2s_ll_mclk_bind_to_rx_clk(handle->controller->hal.dev);
     }
 #endif

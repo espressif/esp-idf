@@ -112,7 +112,7 @@ static inline void i2s_ll_enable_core_clock(i2s_dev_t *hw, bool enable)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
+static inline void _i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     switch (I2S_LL_GET_ID(hw)) {
@@ -128,12 +128,16 @@ static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
     }
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_tx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_tx_enable_clock(__VA_ARGS__)
+
 /**
  * @brief Enable I2S rx module clock
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
+static inline void _i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     switch (I2S_LL_GET_ID(hw)) {
@@ -148,6 +152,10 @@ static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
             return;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_rx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_rx_enable_clock(__VA_ARGS__)
 
 /**
  * @brief Disable I2S tx module clock
@@ -204,7 +212,7 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
+static inline void _i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     // Special on P4, set mst_clk_sel to 1 means attach the mclk signal to TX module
@@ -221,12 +229,16 @@ static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
     }
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_mclk_bind_to_tx_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_mclk_bind_to_tx_clk(__VA_ARGS__)
+
 /**
  * @brief I2S mclk use rx module clock
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
+static inline void _i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     // Special on P4, set mst_clk_sel to 0 means attach the mclk signal to RX module
@@ -242,6 +254,10 @@ static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
             return;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_mclk_bind_to_rx_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_mclk_bind_to_rx_clk(__VA_ARGS__)
 
 /**
  * @brief Enable I2S TX slave mode
@@ -331,7 +347,7 @@ static inline uint32_t i2s_ll_get_clk_src(i2s_clock_src_t src)
  * @param hw Peripheral I2S hardware instance address.
  * @param src I2S source clock.
  */
-static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
+static inline void _i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     uint32_t clk_src = i2s_ll_get_clk_src(src);
@@ -348,13 +364,17 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
     }
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_tx_clk_set_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_tx_clk_set_src(__VA_ARGS__)
+
 /**
  * @brief Set RX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param src I2S source clock
  */
-static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
+static inline void _i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
     // Note: this function involves HP_SYS_CLKRST register which is shared with other peripherals, need lock in upper layer
     uint32_t clk_src = i2s_ll_get_clk_src(src);
@@ -370,6 +390,10 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
             return;
     }
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_rx_clk_set_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_rx_clk_set_src(__VA_ARGS__)
 
 /**
  * @brief Set I2S tx bck div num
@@ -464,7 +488,7 @@ static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t div_int, ui
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
  */
-static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
+static inline void _i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
     /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
      * Set to particular coefficients first then update to the target coefficients,
@@ -486,6 +510,10 @@ static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
     i2s_ll_tx_set_raw_clk_div(hw, mclk_div->integer, div_x, div_y, div_z, div_yn1);
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_tx_set_mclk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_tx_set_mclk(__VA_ARGS__)
+
 /**
  * @brief Set I2S rx bck div num
  *
@@ -504,7 +532,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
  */
-static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
+static inline void _i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *mclk_div)
 {
     /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
      * Set to particular coefficients first then update to the target coefficients,
@@ -525,6 +553,10 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
     }
     i2s_ll_rx_set_raw_clk_div(hw, mclk_div->integer, div_x, div_y, div_z, div_yn1);
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2s_ll_rx_set_mclk(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_ll_rx_set_mclk(__VA_ARGS__)
 
 /**
  * @brief Start I2S TX
