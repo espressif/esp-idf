@@ -102,19 +102,6 @@ Todo: Check sizes again and express this macro in terms of DWC config options (I
 #define USB_DWC_FIFO_NPTX_LINES_BIASTX   16
 #define USB_DWC_FIFO_PTX_LINES_BIASTX    150
 
-
-/*
- * List of relevant DWC configurations. See DWC OTG databook Chapter 3 for more
- * details.
- */
-#define USB_DWC_FSPHY_INTERFACE             1
-#define USB_DWC_NUM_EPS                     6
-#define USB_DWC_NUM_IN_EPS                  5       // Todo: Add check for when number of IN channels exceeds limit (IDF-8556)
-#define USB_DWC_NUM_HOST_CHAN               8
-#define USB_DWC_DFIFO_DEPTH                 256
-#define USB_DWC_RX_DFIFO_DEPTH              256
-#define USB_DWC_TX_DFIFO_DEPTH              256     // Same value applies to HNPERIO, NPERIO, HPERIO, and DINEP
-
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
 ----------------------------------------------------------------------------- */

@@ -188,7 +188,7 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal)
     hal->flags.val = 0;
     hal->channels.num_allocd = 0;
     hal->channels.chan_pend_intrs_msk = 0;
-    memset(hal->channels.hdls, 0, sizeof(usb_dwc_hal_chan_t *) * USB_DWC_NUM_HOST_CHAN);
+    memset(hal->channels.hdls, 0, sizeof(usb_dwc_hal_chan_t *) * OTG_NUM_HOST_CHAN);
 }
 
 void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias)
@@ -210,7 +210,7 @@ void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bi
 
     HAL_ASSERT((fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines + fifo_config->ptx_fifo_lines) <= USB_DWC_FIFO_TOTAL_USABLE_LINES);
     //Check that none of the channels are active
-    for (int i = 0; i < USB_DWC_NUM_HOST_CHAN; i++) {
+    for (int i = 0; i < OTG_NUM_HOST_CHAN; i++) {
         if (hal->channels.hdls[i] != NULL) {
             HAL_ASSERT(!hal->channels.hdls[i]->flags.active);
         }
@@ -264,11 +264,11 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
 {
     HAL_ASSERT(hal->flags.fifo_sizes_set);  //FIFO sizes should be set befor attempting to allocate a channel
     //Attempt to allocate channel
-    if (hal->channels.num_allocd == USB_DWC_NUM_HOST_CHAN) {
+    if (hal->channels.num_allocd == OTG_NUM_HOST_CHAN) {
         return false;    //Out of free channels
     }
     int chan_idx = -1;
-    for (int i = 0; i < USB_DWC_NUM_HOST_CHAN; i++) {
+    for (int i = 0; i < OTG_NUM_HOST_CHAN; i++) {
         if (hal->channels.hdls[i] == NULL) {
             hal->channels.hdls[i] = chan_obj;
             chan_idx = i;
