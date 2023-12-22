@@ -720,6 +720,7 @@ static void btc_dm_acl_link_stat(tBTA_DM_ACL_LINK_STAT *p_acl_link_stat)
     }
     }
 
+#if (SMP_INCLUDED == TRUE)
     if (p_acl_link_stat->event == BTA_ACL_LINK_STAT_CONN_CMPL &&
         p_acl_link_stat->link_act.conn_cmpl.status == HCI_SUCCESS) {
         memcpy(bt_addr.address, p_acl_link_stat->link_act.conn_cmpl.bd_addr, sizeof(bt_addr.address));
@@ -730,7 +731,7 @@ static void btc_dm_acl_link_stat(tBTA_DM_ACL_LINK_STAT *p_acl_link_stat)
                             bt_addr.address[4], bt_addr.address[5]);
         }
     }
-
+#endif  ///SMP_INCLUDED == TRUE
     esp_bt_gap_cb_t cb = (esp_bt_gap_cb_t)btc_profile_cb_get(BTC_PID_GAP_BT);
     if (cb) {
         cb(event, &param);

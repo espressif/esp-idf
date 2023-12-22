@@ -204,6 +204,32 @@ bt_status_t btc_storage_load_bonded_devices(void)
     BTC_TRACE_DEBUG("Storage load rslt %d\n", status);
     return status;
 }
+
+/*******************************************************************************
+**
+** Function         btc_storage_update_active_device
+**
+** Description      BTC storage API - Once an ACL link is established and remote
+**                  bd_addr is already stored in NVRAM, update the config and update
+**                  the remote device to be the newest active device, The updates will
+**                  not be stored into NVRAM immediately.
+**
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    bool ret = false;
+    BTC_TRACE_DEBUG("Update active device: Remote device:%s\n", bdstr);
+
+    btc_config_lock();
+    ret = btc_config_update_newest_section(bdstr);
+    btc_config_unlock();
+
+    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
 #endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
@@ -314,32 +340,6 @@ bt_status_t btc_storage_get_bonded_bt_devices_list(bt_bdaddr_t *bond_dev, int *d
     btc_config_unlock();
 
     return BT_STATUS_SUCCESS;
-}
-
-/*******************************************************************************
-**
-** Function         btc_storage_update_active_device
-**
-** Description      BTC storage API - Once an ACL link is established and remote
-**                  bd_addr is already stored in NVRAM, update the config and update
-**                  the remote device to be the newest active device, The updates will
-**                  not be stored into NVRAM immediately.
-**
-** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
-**
-*******************************************************************************/
-bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr)
-{
-    bdstr_t bdstr;
-    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
-    bool ret = false;
-    BTC_TRACE_DEBUG("Update active device: Remote device:%s\n", bdstr);
-
-    btc_config_lock();
-    ret = btc_config_update_newest_section(bdstr);
-    btc_config_unlock();
-
-    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 #if (defined BTC_HH_INCLUDED && BTC_HH_INCLUDED == TRUE)
