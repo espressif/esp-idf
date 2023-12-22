@@ -20,7 +20,13 @@ NVS Encryption: Flash Encryption-Based Scheme
 
 In this scheme, the keys required for NVS encryption are stored in yet another partition, which is protected using :doc:`Flash Encryption <../../security/flash-encryption>`. Therefore, enabling :doc:`Flash Encryption <../../security/flash-encryption>` becomes a prerequisite for NVS encryption here.
 
-NVS encryption is enabled by default when :doc:`../../security/flash-encryption` is enabled. This is done because Wi-Fi driver stores credentials (like SSID and passphrase) in the default NVS partition. It is important to encrypt them as default choice if platform level encryption is already enabled.
+.. only:: SOC_HMAC_SUPPORTED
+
+    NVS encryption should be enabled when :doc:`../../security/flash-encryption` is enabled because the Wi-Fi driver stores credentials (like SSID and passphrase) in the default NVS partition. It is important to encrypt them if platform-level encryption is already enabled.
+
+.. only:: not SOC_HMAC_SUPPORTED
+
+    NVS encryption is enabled by default when :doc:`../../security/flash-encryption` is enabled. This is done because Wi-Fi driver stores credentials (like SSID and passphrase) in the default NVS partition. It is important to encrypt them as default choice if platform-level encryption is already enabled.
 
 For using NVS encryption using this scheme, the partition table must contain the :ref:`nvs_encr_key_partition`. Two partition tables containing the :ref:`nvs_encr_key_partition` are provided for NVS encryption under the partition table option (``menuconfig`` > ``Partition Table``). They can be selected with the project configuration menu (``idf.py menuconfig``). Please refer to the example :example:`security/flash_encryption` for how to configure and use the NVS encryption feature.
 
