@@ -564,3 +564,23 @@ config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
 config BT_LE_MSYS_INIT_IN_CONTROLLER
     bool
     default y
+
+config BT_LE_TX_CCA_ENABLED
+    bool "BLE enable TX CCA feature"
+    default n
+    help
+        Enable the BLE (Bluetooth Low Energy) LBT (Listen Before Talk) function. Before transmitting a packet,
+        monitor the in-band CCA (Clear Channel Assessment). If the airborne carrier energy is too high, abandon
+        the packet transmission. Enabling this feature may potentially decrease BLE performance. In certain
+        countries and regions, when the maximum transmission power exceeds a certain limit, support for LBT
+        interference avoidance mechanisms is required. If the maximum transmission power does not reach the limit,
+        it may not be necessary to enable this function.
+        Please refer to the relevant certification regulations for details.
+
+config BT_LE_CCA_RSSI_THRESH
+    int "Power threshold to refrain packet transmission in unit of -1 dBm"
+    depends on BT_LE_TX_CCA_ENABLED
+    range 1 100
+    default 75
+    help
+        If a carrier signal above the threshold is detected in the air, refrain from packet transmission.

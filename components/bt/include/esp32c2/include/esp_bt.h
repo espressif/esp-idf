@@ -224,8 +224,9 @@ typedef struct {
     int8_t cca_low_tx_pwr;                       /*!< Low TX power setting for CCA */
     uint8_t main_xtal_freq;                      /*!< Main crystal frequency */
     uint8_t version_num;                        /*!< Version number */
-    uint8_t ignore_wl_for_direct_adv;            /*!< Ignore the white list for directed advertising */
-    uint32_t config_magic;                       /*!< Configuration magic value */
+    uint8_t ignore_wl_for_direct_adv;           /*!< Ignore the white list for directed advertising */
+    uint8_t csa2_select;                        /*!< Select CSA#2 */
+    uint32_t config_magic;                      /*!< Configuration magic value */
 } esp_bt_controller_config_t;
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                                           \
@@ -277,6 +278,7 @@ typedef struct {
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
     .version_num                = esp_ble_get_chip_rev_version(),                       \
     .ignore_wl_for_direct_adv   = 0,                                                    \
+    .csa2_select                = DEFAULT_BT_LE_50_FEATURE_SUPPORT,                     \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
