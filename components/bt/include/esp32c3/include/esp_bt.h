@@ -289,7 +289,7 @@ typedef struct {
     uint8_t sleep_clock;                    /*!< controller sleep clock */
     uint8_t ble_st_acl_tx_buf_nb;           /*!< controller static ACL TX BUFFER number */
     uint8_t ble_hw_cca_check;               /*!< controller hardware triggered CCA check */
-    uint16_t ble_adv_dup_filt_max;          /*!< maxinum number of duplicate scan filter */
+    uint16_t ble_adv_dup_filt_max;          /*!< maximum number of duplicate scan filter */
     bool coex_param_en;                     /*!< deprecated */
     uint8_t ce_len_type;                    /*!< connection event length computation method */
     bool coex_use_hooks;                    /*!< deprecated */
@@ -599,6 +599,15 @@ void esp_wifi_bt_power_domain_on(void);
  * @brief bt Wi-Fi power domain power off
  */
 void esp_wifi_bt_power_domain_off(void);
+
+/**
+ * @brief Get the Bluetooth module sleep clock source.
+ *
+ * Note that this function shall not be invoked before esp_bt_controller_init()
+ *
+ * @return  clock source used in Bluetooth low power mode
+ */
+esp_bt_sleep_clock_t esp_bt_get_lpclk_src(void);
 
 #ifdef __cplusplus
 }
