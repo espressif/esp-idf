@@ -23,7 +23,7 @@ endfunction()
 #        also added to the internal list of build properties if it isn't there already.
 #
 # @param[in] property the property to set the value of
-# @param[out] value value of the property
+# @param[in] value value of the property
 #
 # @param[in, optional] APPEND (option) append the value to the current value of the
 #                     property instead of replacing it
