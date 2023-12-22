@@ -1,0 +1,24 @@
+config ESP_VDD_PSRAM_LDO_ID
+    int "PSRAM VDD connected LDO ID, set -1 for using external power supply and disable internal LDO"
+    default 2
+    range -1 4
+    help
+        PSRAM VDD pin connected LDO ID.
+        PSRAM VDD needs to be connected to an voltage output. This option selects the on-chip
+        LDO which is connected to the PSRAM VDD.
+        Set to -1 for connecting to external voltage output.
+
+choice ESP_VDD_PSRAM_LDO_VOLTAGE_MV
+    prompt "PSRAM VDD connected LDO voltage"
+    depends on ESP_VDD_PSRAM_LDO_ID != -1
+    default ESP_VDD_PSRAM_LDO_VOLTAGE_MV_1800
+    help
+        Select the LDO (ESP_VDD_PSRAM_LDO_ID) voltage output
+
+    config ESP_VDD_PSRAM_LDO_VOLTAGE_MV_1800
+        bool "1.8V"
+endchoice
+
+config ESP_VDD_PSRAM_LDO_VOLTAGE_MV
+    int
+    default 1800 if ESP_VDD_PSRAM_LDO_VOLTAGE_MV_1800

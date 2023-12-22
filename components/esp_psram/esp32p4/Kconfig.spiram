@@ -46,31 +46,6 @@ menu "PSRAM config"
 
             If enabled, 1/8 of the PSRAM total size will be reserved for error-correcting code.
 
-    config SPIRAM_LDO_ID
-        int "PSRAM connected LDO ID, set -1 for using external power supply"
-        default 2
-        range -1 4
-        help
-            PSRAM VDD needs to be connected to an voltage output. This option selects the on-chip
-            LDO which is connected to the PSRAM VDD.
-            Set to -1 for connecting to external voltage output.
-
-    choice SPIRAM_LDO_VOLTAGE_MV
-        prompt "PSRAM connected LDO voltage"
-        depends on SPIRAM_LDO_ID != -1
-        default SPIRAM_LDO_VOLTAGE_MV_1800
-        help
-            Select the speed for the PSRAM chip.
-
-        config SPIRAM_LDO_VOLTAGE_MV_1800
-            bool "1.8V"
-    endchoice
-
-    config SPIRAM_LDO_VOLTAGE_MV
-        int
-        default 1800 if SPIRAM_LDO_VOLTAGE_MV_1800
-
-
     config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
         bool "Allow external memory as an argument to xTaskCreateStatic"
         default y

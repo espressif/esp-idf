@@ -69,6 +69,8 @@
 #include "soc/keymng_reg.h"
 #endif
 
+#include "esp_private/rtc_clk.h"
+#include "esp_private/esp_ldo_psram.h"
 #include "esp_private/esp_mmu_map_private.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
@@ -518,6 +520,14 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
     }
 #endif
+
+#if SOC_CLK_MPLL_SUPPORTED
+#if SOC_PSRAM_VDD_POWER_MPLL
+    esp_ldo_vdd_psram_early_init();
+#endif
+    rtc_clk_mpll_enable();
+#endif
+
     esp_mspi_pin_init();
     // For Octal flash, it's hard to implement a read_id function in OPI mode for all vendors.
     // So we have to read it here in SPI mode, before entering the OPI mode.

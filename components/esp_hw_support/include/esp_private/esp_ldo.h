@@ -44,7 +44,7 @@ typedef struct {
 } esp_ldo_unit_init_cfg_t;
 
 /**
- * @Brief Init a LDO during early stage
+ * @brief Init a LDO during early stage
  *
  * @note This API is only for early stage usage
  *
