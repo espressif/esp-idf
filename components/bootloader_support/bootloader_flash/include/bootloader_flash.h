@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,13 @@ esp_err_t  __attribute__((weak)) bootloader_flash_unlock(void);
  */
 esp_err_t bootloader_flash_reset_chip(void);
 
+
+/**
+ * @brief Get the spi flash working mode.
+ *
+ * @return The mode of flash working mode, see `esp_rom_spiflash_read_mode_t`
+ */
+esp_rom_spiflash_read_mode_t bootloader_flash_get_spi_mode(void);
 #ifdef __cplusplus
 }
 #endif
