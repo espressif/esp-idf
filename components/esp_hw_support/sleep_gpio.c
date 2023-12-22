@@ -22,11 +22,7 @@
 #include "hal/rtc_io_hal.h"
 #include "soc/rtc_io_periph.h"
 
-#if SOC_LP_AON_SUPPORTED
-#include "hal/lp_aon_hal.h"
-#else
 #include "hal/rtc_hal.h"
-#endif
 
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"

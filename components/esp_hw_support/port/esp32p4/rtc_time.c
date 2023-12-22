@@ -143,6 +143,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         }
     }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
+    CLEAR_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL21_REG, HP_SYS_CLKRST_REG_TIMERGRP0_TGRT_CLK_DIV_NUM_M);
 
     /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {

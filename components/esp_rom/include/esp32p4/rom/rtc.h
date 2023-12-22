@@ -64,6 +64,16 @@ extern "C" {
 
 #define RTC_DISABLE_ROM_LOG ((1 << 0) | (1 << 16)) //!< Disable logging from the ROM code.
 
+/*
+ * Use LP_SYS_LP_STORE8_REG to store light sleep wake stub addr and sleep mode
+ *
+ * bit[31: 2] Wake restore func addr
+ * bit[0]:
+ *     0 -- light sleep
+ *     1 -- deep  sleep
+ */
+#define SLEEP_MODE_REG LP_SYSTEM_REG_LP_STORE8_REG
+
 typedef enum {
     AWAKE = 0,             //<CPU ON
     LIGHT_SLEEP = BIT0,    //CPU waiti, PLL ON.  We don't need explicitly set this mode.

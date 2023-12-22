@@ -234,17 +234,16 @@ static void rtc_clk_cpu_freq_to_cpll_mhz(int cpu_freq_mhz, hal_utils_clk_div_t *
         abort();
     }
     // Update bit does not control CPU clock sel mux. Therefore, there may be a middle state during the switch (CPU rises)
-    // We will switch cpu clock source first, and then set the desired dividers.
-    // It is likely that the hardware will automatically adjust dividers to meet mem_clk, apb_clk freq constraints when
-    // cpu clock source is set.
-    // However, the desired dividers will be written into registers anyways afterwards.
-    // This ensures the final confguration is the desired one.
-    clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
+    // Since this is upscaling, we need to configure the frequency division coefficient before switching the clock source.
+    // Otherwise, an intermediate state will occur, in the intermediate state, the frequency of APB/MEM does not meet the
+    // timing requirements. If there are periperals/CPU access that depend on these two clocks at this moment, some exception
+    // might occur.
     clk_ll_cpu_set_divider(div->integer, div->numerator, div->denominator);
     clk_ll_mem_set_divider(mem_divider);
     clk_ll_sys_set_divider(sys_divider);
     clk_ll_apb_set_divider(apb_divider);
     clk_ll_bus_update();
+    clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
     esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
 }
 

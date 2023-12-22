@@ -241,7 +241,16 @@ void pmu_sleep_increase_ldo_volt(void) {
 void pmu_sleep_shutdown_dcdc(void) {
     SET_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
     REG_SET_BIT(PMU_DCM_CTRL_REG, PMU_DCDC_OFF_REQ);
-    REG_SET_FIELD(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, 28); // decrease hp_ldo voltage
+    // Decrease the DCDC voltage to reduce the voltage difference between the DCDC and the LDO to avoid overshooting the DCDC voltage during wake-up.
+    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, 24);
+    // Decrease hp_ldo voltage.
+    REG_SET_FIELD(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, 24);
+}
+
+void pmu_sleep_enable_dcdc(void) {
+    CLEAR_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
+    SET_PERI_REG_MASK(PMU_DCM_CTRL_REG, PMU_DCDC_ON_REQ);
+    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, 27);
 }
 
 void pmu_sleep_shutdown_ldo(void) {
@@ -274,6 +283,15 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
 
 TCM_IRAM_ATTR bool pmu_sleep_finish(void)
 {
+    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, 27);
+    if (pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev)) {
+        // If sleep is rejected, the hardware wake-up process that turns on DCDC
+        // is skipped, and software is used to enable DCDC here.
+        pmu_sleep_enable_dcdc();
+        esp_rom_delay_us(950);
+    }
+    pmu_sleep_shutdown_ldo();
+
     REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
     REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
