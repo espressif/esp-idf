@@ -527,14 +527,14 @@ menu "mbedTLS"
         default n
         help
             This option enables hardware acceleration for ECDSA sign function, only
-            when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+            when using ATECC608A cryptoauth chip.
 
     config MBEDTLS_ATCA_HW_ECDSA_VERIFY
         bool "Enable hardware ECDSA verify acceleration when using ATECC608A"
         default n
         help
             This option enables hardware acceleration for ECDSA sign function, only
-            when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+            when using ATECC608A cryptoauth chip.
 
     config MBEDTLS_HAVE_TIME
         bool "Enable mbedtls time support"

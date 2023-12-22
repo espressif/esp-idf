@@ -143,11 +143,11 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
     ATECC608A (Secure Element) with ESP-TLS
     --------------------------------------------------
 
-    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32-WROOM-32SE. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
+    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32 series of SoCs. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
 
     .. note::
 
-        ATECC608A chip on ESP32-WROOM-32SE must be already configured, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
+        ATECC608A chip interfaced to ESP32 must be already configured. For details, please refer to `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
 
     To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
 

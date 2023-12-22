@@ -3,6 +3,9 @@ Peripherals
 
 :link_to_translation:`zh_CN:[中文]`
 
+Drivers
+-------
+
 In order to control the dependence of other components on drivers at a smaller granularity, the original peripheral drivers under the `driver`` component were split into separate components:
 
 - `esp_driver_gptimer` - Driver for general purpose timers
@@ -41,3 +44,11 @@ Should be changed to:
     archive: libesp_driver_gpio.a
     entries:
         gpio (noflash)
+
+
+Secure Element
+--------------
+
+The ATECC608A secure element interfacing example has been moved to `ESP Cryptoauthlib Repository <https://github.com/espressif/esp-cryptoauthlib/tree/master/examples/atecc608_ecdsa>`_ on GitHub.
+
+This example is also part of the `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_ in the component manager registry.

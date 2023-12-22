@@ -3,6 +3,9 @@
 
 :link_to_translation:`en:[English]`
 
+驱动程序
+---------------
+
 为了细粒度地控制其他组件对外设驱动的依赖，原先位于 `driver` 组件下的驱动程序被拆分到了各自独立的组件中。这些组件包括：
 
 - `esp_driver_gptimer` - 通用定时器驱动
@@ -41,3 +44,11 @@
     archive: libesp_driver_gpio.a
     entries:
         gpio (noflash)
+
+
+安全元素
+--------------
+
+ATECC608A 安全元素接口示例现已移至 GitHub 上的 `esp-cryptoauthlib 仓库 <https://github.com/espressif/esp-cryptoauthlib/tree/master/examples/atecc608_ecdsa>`_ 中。
+
+该示例也是组件管理器注册表中 `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_ 的一部分。

@@ -287,12 +287,6 @@ examples/peripherals/sdio/slave:
   depends_components:
     - esp_driver_sdio
 
-examples/peripherals/secure_element/atecc608_ecdsa:
-  enable:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-      reason: the other targets are not tested yet
-
 examples/peripherals/sigma_delta:
   disable:
     - if: SOC_SDM_SUPPORTED != 1
