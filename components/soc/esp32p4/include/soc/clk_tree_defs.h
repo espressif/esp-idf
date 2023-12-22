@@ -636,6 +636,21 @@ typedef enum {
     SDMMC_CLK_SRC_PLL200M = SOC_MOD_CLK_PLL_F200M,  /*!< Select PLL_200M as the source clock */
 } soc_periph_sdmmc_clk_src_t;
 
+//////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Temperature Sensor
+ */
+#define SOC_TEMP_SENSOR_CLKS {SOC_MOD_CLK_LP_PLL}
+
+/**
+ * @brief Type of Temp Sensor clock source
+ */
+typedef enum {
+    TEMPERATURE_SENSOR_CLK_SRC_LP_PLL = SOC_MOD_CLK_LP_PLL,     /*!< Select LP_PLL as the source clock */
+    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PLL,    /*!< Select LP_PLL as the default choice */
+} soc_periph_temperature_sensor_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

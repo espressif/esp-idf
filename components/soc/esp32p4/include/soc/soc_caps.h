@@ -36,7 +36,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // disable usb serial jtag for esp32p4, current image does not support
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1  //TODO: IDF-7496
-// #define SOC_TEMP_SENSOR_SUPPORTED       1  //TODO: IDF-7482
+#define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_ULP_SUPPORTED               1
 #define SOC_LP_CORE_SUPPORTED           1
@@ -571,8 +571,8 @@
 #define SOC_PERIPH_CLK_CTRL_SHARED                (1)     /*!< Peripheral clock control (e.g. set clock source) is shared between various peripherals */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
-#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
-#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_LP_PLL                (1)
+#define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                  (1)
 
 /*-------------------------- Memory CAPS --------------------------*/
 #define SOC_MEM_TCM_SUPPORTED    (1)

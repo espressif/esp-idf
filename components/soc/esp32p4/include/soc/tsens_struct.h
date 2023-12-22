@@ -222,6 +222,7 @@ typedef struct {
     volatile tsens_sample_rate_reg_t sample_rate;
 } tsens_dev_t;
 
+extern tsens_dev_t LP_TSENS;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(tsens_dev_t) == 0x2c, "Invalid size of tsens_dev_t structure");

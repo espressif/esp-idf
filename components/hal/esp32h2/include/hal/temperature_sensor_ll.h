@@ -23,6 +23,7 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "soc/pcr_struct.h"
+#include "soc/interrupts.h"
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
@@ -57,9 +58,18 @@ static inline void temperature_sensor_ll_enable(bool enable)
 /**
  * @brief Enable the clock
  */
-static inline void temperature_sensor_ll_clk_enable(bool enable)
+static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 {
-    // clock enable duplicated with periph enable, no need to enable it again.
+    PCR.tsens_clk_conf.tsens_clk_en = enable;
+}
+
+/**
+ * @brief Reset the Temperature sensor module
+ */
+static inline void temperature_sensor_ll_reset_module(void)
+{
+    PCR.tsens_clk_conf.tsens_rst_en = 1;
+    PCR.tsens_clk_conf.tsens_rst_en = 0;
 }
 
 /**
@@ -150,7 +160,7 @@ static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
  *
  * @param mode 0: Absolute value mode. 1: Difference mode.
  */
-static inline void temperature_sensor_ll_wakeup_mode(uint8_t mode)
+static inline void temperature_sensor_ll_wakeup_mode(temperature_sensor_ll_wakeup_mode_t mode)
 {
     APB_SARADC.tsens_wake.saradc_wakeup_mode = mode;
 }

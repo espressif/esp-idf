@@ -304,7 +304,7 @@ esp_err_t temperature_sensor_register_callbacks(temperature_sensor_handle_t tsen
 
     // lazy install interrupt service.
     if (!tsens->temp_sensor_isr_handle) {
-        ret = esp_intr_alloc_intrstatus(ETS_APB_ADC_INTR_SOURCE, isr_flags,
+        ret = esp_intr_alloc_intrstatus(ETS_TEMPERATURE_SENSOR_INTR_SOURCE, isr_flags,
                                         (uint32_t)temperature_sensor_ll_get_intr_status(),
                                         TEMPERATURE_SENSOR_LL_INTR_MASK, temperature_sensor_isr, tsens, &tsens->temp_sensor_isr_handle);
     }
