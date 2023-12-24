@@ -393,6 +393,7 @@ static int elf_process_note_segment(core_dump_elf_t *self, int notes_size)
 static int elf_process_tasks_regs(core_dump_elf_t *self)
 {
     core_dump_task_header_t task_hdr = { 0 };
+    TaskIterator_t task_iter;
     void *task = NULL;
     int len = 0;
     int ret = 0;
@@ -413,11 +414,11 @@ static int elf_process_tasks_regs(core_dump_elf_t *self)
     // processes PR_STATUS and register dump for each task
     // each call to the processing function appends PR_STATUS note into note segment
     // and writes data or updates the segment note header accordingly (if phdr is set)
-    task = NULL;
-    while ((task = esp_core_dump_get_next_task(task))) {
-        if (task == esp_core_dump_get_current_task_handle()) {
-            continue; // skip current task (already processed)
-        }
+    esp_core_dump_task_iterator_init(&task_iter);
+    while (esp_core_dump_task_iterator_next(&task_iter) != -1) {
+        task = task_iter.pxTaskHandle;
+        if (!task || task == esp_core_dump_get_current_task_handle())  // skip current task (already processed)
+            continue;
         if (esp_core_dump_get_task_snapshot(task, &task_hdr, NULL)) {
             ret = elf_add_regs(self,  &task_hdr);
             if (self->elf_stage == ELF_STAGE_PLACE_HEADERS) {
@@ -453,9 +454,9 @@ static int elf_save_task(core_dump_elf_t *self, core_dump_task_header_t *task)
 static int elf_write_tasks_data(core_dump_elf_t *self)
 {
     int elf_len = 0;
-    void *task = NULL;
     core_dump_task_header_t task_hdr = { 0 };
     core_dump_mem_seg_header_t interrupted_stack = { 0 };
+    TaskIterator_t task_iter;
     int ret = ELF_PROC_ERR_OTHER;
     uint16_t tasks_num = 0;
     uint16_t bad_tasks_num = 0;
@@ -468,17 +469,17 @@ static int elf_write_tasks_data(core_dump_elf_t *self)
     ESP_COREDUMP_LOG_PROCESS("================   Processing task data   ================");
     // processes all task's stack data and writes segment data into partition
     // if flash configuration is set
-    task = NULL;
     esp_core_dump_reset_tasks_snapshots_iter();
-    while ((task = esp_core_dump_get_next_task(task))) {
+    esp_core_dump_task_iterator_init(&task_iter);
+    while (esp_core_dump_task_iterator_next(&task_iter) != -1) {
         tasks_num++;
-        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, &interrupted_stack)) {
+        if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, &interrupted_stack)) {
             bad_tasks_num++;
             continue;
         }
         ret = elf_save_task(self, &task_hdr);
         ELF_CHECK_ERR((ret > 0), ret,
-                        "Task %x, TCB write failed, return (%d).", task, ret);
+                        "Task %x, TCB write failed, return (%d).", task_iter.pxTaskHandle, ret);
         elf_len += ret;
         if (interrupted_stack.size > 0) {
             ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
