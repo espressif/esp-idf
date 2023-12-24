@@ -44,10 +44,10 @@ typedef union {
          *  0:normal mode,1:debug mode for direct output from input
          */
         uint32_t debug_direct_out_en:1;
-        /** gray_sel : R/W; bitpos: [8]; default: 1;
+        /** qnr_fifo_en : R/W; bitpos: [8]; default: 1;
          *  0:use non-fifo way to access qnr ram,1:use fifo way to access qnr ram
          */
-        uint32_t gray_sel:1;
+        uint32_t qnr_fifo_en:1;
         /** lqnr_tbl_sel : R/W; bitpos: [10:9]; default: 0;
          *  choose  luminance quntization table id(TBD)
          */
@@ -1449,6 +1449,7 @@ typedef struct {
     volatile jpeg_version_reg_t version;
 } jpeg_dev_t;
 
+extern jpeg_dev_t JPEG;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(jpeg_dev_t) == 0x100, "Invalid size of jpeg_dev_t structure");

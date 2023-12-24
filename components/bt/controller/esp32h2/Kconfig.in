@@ -260,7 +260,7 @@ config BT_LE_CONTROLLER_TASK_STACK_SIZE
     help
         This configures stack size of NimBLE controller task
 
-config BT_LE_CONTROLLER_LOG_ENABLED
+menuconfig BT_LE_CONTROLLER_LOG_ENABLED
     bool "Controller log enable"
     default n
     help
@@ -271,21 +271,42 @@ config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
     depends on BT_LE_CONTROLLER_LOG_ENABLED
     default y
     help
-        Enable controller log module
+            Enable controller log module
 
 config BT_LE_CONTROLLER_LOG_HCI_ENABLED
     bool "enable HCI log module"
     depends on BT_LE_CONTROLLER_LOG_ENABLED
     default y
     help
-        Enable hci log module
+            Enable hci log module
 
 config BT_LE_CONTROLLER_LOG_DUMP_ONLY
     bool "Controller log dump mode only"
     depends on BT_LE_CONTROLLER_LOG_ENABLED
     default y
     help
-        Only operate in dump mode
+            Only operate in dump mode
+
+config BT_LE_LOG_CTRL_BUF1_SIZE
+    int "size of the first BLE controller LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 4096
+    help
+            Configure the size of the first BLE controller LOG buffer.
+
+config BT_LE_LOG_CTRL_BUF2_SIZE
+    int "size of the second BLE controller LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 1024
+    help
+            Configure the size of the second BLE controller LOG buffer.
+
+config BT_LE_LOG_HCI_BUF_SIZE
+    int "size of the BLE HCI LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 4096
+    help
+            Configure the size of the BLE HCI LOG buffer.
 
 config BT_LE_LL_RESOLV_LIST_SIZE
     int "BLE LL Resolving list size"
@@ -543,3 +564,23 @@ config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
 config BT_LE_MSYS_INIT_IN_CONTROLLER
     bool
     default y
+
+config BT_LE_TX_CCA_ENABLED
+    bool "BLE enable TX CCA feature"
+    default n
+    help
+        Enable the BLE (Bluetooth Low Energy) LBT (Listen Before Talk) function. Before transmitting a packet,
+        monitor the in-band CCA (Clear Channel Assessment). If the airborne carrier energy is too high, abandon
+        the packet transmission. Enabling this feature may potentially decrease BLE performance. In certain
+        countries and regions, when the maximum transmission power exceeds a certain limit, support for LBT
+        interference avoidance mechanisms is required. If the maximum transmission power does not reach the limit,
+        it may not be necessary to enable this function.
+        Please refer to the relevant certification regulations for details.
+
+config BT_LE_CCA_RSSI_THRESH
+    int "Power threshold to refrain packet transmission in unit of -1 dBm"
+    depends on BT_LE_TX_CCA_ENABLED
+    range 1 100
+    default 75
+    help
+        If a carrier signal above the threshold is detected in the air, refrain from packet transmission.

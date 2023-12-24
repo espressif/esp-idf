@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -283,15 +283,11 @@ void wifi_prov_mgr_deinit(void);
 esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
 
 /**
- * @brief   Checks if prov mgr is stopped
+ * @brief   Checks whether the provisioning state machine is idle
  *
- * This checks if prov_ctx->prov_state == WIFI_PROV_STATE_IDLE
- * 
- * @return
- *  - ture        : prov mgr state is idle
- *  - false       : prov mgr is not idle
+ * @return  True if state machine is idle, else false
  */
-bool wifi_prov_mgr_is_stopped();
+bool wifi_prov_mgr_is_sm_idle(void);
 
 /**
  * @brief   Start provisioning service

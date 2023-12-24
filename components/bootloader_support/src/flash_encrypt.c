@@ -137,16 +137,14 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
             }
 #else
             if (esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT)
-#if CONFIG_IDF_TARGET_ESP32P4
-                //TODO: IDF-7545
+#if SOC_EFUSE_DIS_DOWNLOAD_MSPI
                 && esp_efuse_read_field_bit(ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS)
-#else
+#endif
 #if SOC_EFUSE_DIS_DOWNLOAD_ICACHE
                 && esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE)
 #endif
 #if SOC_EFUSE_DIS_DOWNLOAD_DCACHE
                 && esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE)
-#endif
 #endif
                 ) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
@@ -192,16 +190,14 @@ void esp_flash_encryption_set_release_mode(void)
     esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
 #else
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7545
+#if SOC_EFUSE_DIS_DOWNLOAD_MSPI
     esp_efuse_write_field_bit(ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS);
-#else
+#endif
 #if SOC_EFUSE_DIS_DOWNLOAD_ICACHE
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
 #endif
 #if SOC_EFUSE_DIS_DOWNLOAD_DCACHE
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
-#endif
 #endif
 #ifdef CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
     // For AES128_DERIVED, FE key is 16 bytes and XTS_KEY_LENGTH_256 is 0.
@@ -345,21 +341,19 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     }
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32P4
-    //TODO: IDF-7545
+#if SOC_EFUSE_DIS_DOWNLOAD_MSPI
     secure = esp_efuse_read_field_bit(ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS);
     result &= secure;
     if (!secure) {
         ESP_LOGW(TAG, "Not disabled UART bootloader download mspi (set DIS_DOWNLOAD_MSPI->1)");
     }
-#else
+#endif
 #if SOC_EFUSE_DIS_DOWNLOAD_ICACHE
     secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
     result &= secure;
     if (!secure) {
         ESP_LOGW(TAG, "Not disabled UART bootloader cache (set DIS_DOWNLOAD_ICACHE->1)");
     }
-#endif
 #endif
 
 #if SOC_EFUSE_DIS_PAD_JTAG

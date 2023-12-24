@@ -41,6 +41,8 @@ extern "C" {
 #define PMU_HP_DBIAS_LIGHTSLEEP_0V6 1
 #define PMU_LP_DBIAS_LIGHTSLEEP_0V7 6
 
+#define PMU_REGDMA_S2A_WORK_TIME_US     0
+
 // FOR DEEPSLEEP
 #define PMU_HP_XPD_DEEPSLEEP    0
 #define PMU_LP_DRVB_DEEPSLEEP   7
@@ -438,7 +440,7 @@ typedef struct pmu_sleep_machine_constant {
         .analog_wait_time_us            = 154,  \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
-        .regdma_s2a_work_time_us        = 0,    \
+        .regdma_s2a_work_time_us        = PMU_REGDMA_S2A_WORK_TIME_US, \
         .regdma_a2s_work_time_us        = 0,    \
         .xtal_wait_stable_time_us       = 250,  \
         .pll_wait_stable_time_us        = 1     \

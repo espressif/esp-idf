@@ -163,6 +163,7 @@ menu "OpenThread"
 
         config OPENTHREAD_RCP_SPI
             bool "SPI RCP"
+            select GPIO_CTRL_FUNC_IN_IRAM
             help
                 Select this to enable SPI connection to host.
     endchoice

@@ -144,7 +144,7 @@
 #define DR_REG_LP_UART_BASE           (DR_REG_LPPERIPH_BASE + 0x1000)
 #define DR_REG_LP_I2C_BASE            (DR_REG_LPPERIPH_BASE + 0x2000)
 #define DR_REG_LP_SPI_BASE            (DR_REG_LPPERIPH_BASE + 0x3000)
-#define DR_REG_LP_I2C_MST_BASE        (DR_REG_LPPERIPH_BASE + 0x4000)
+#define DR_REG_I2C_ANA_MST_BASE       (DR_REG_LPPERIPH_BASE + 0x4000)
 #define DR_REG_LP_I2S_BASE            (DR_REG_LPPERIPH_BASE + 0x5000)
 #define DR_REG_LP_ADC_BASE            (DR_REG_LPPERIPH_BASE + 0x7000)
 #define DR_REG_LP_TOUCH_BASE          (DR_REG_LPPERIPH_BASE + 0x8000)
@@ -155,6 +155,12 @@
 #define DR_REG_LP_PERI_PMS_BASE       (DR_REG_LPPERIPH_BASE + 0xE000)
 #define DR_REG_HP2LP_PERI_PMS_BASE    (DR_REG_LPPERIPH_BASE + 0xE800)
 #define DR_REG_LP_TSENSOR_BASE        (DR_REG_LPPERIPH_BASE + 0xF000)
+
+/**
+ * @brief: Special memory address
+ */
+#define MIPI_CSI_MEM_BASE             0x50104000
+#define MIPI_DSI_MEM_BASE             0x50105000
 
 /**
  * This are module helper MACROs for quick module reference

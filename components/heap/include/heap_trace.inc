@@ -22,7 +22,7 @@
 inline static uint32_t get_ccount(void)
 {
     uint32_t ccount = esp_cpu_get_cycle_count() & ~3;
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     ccount |= xPortGetCoreID();
 #endif
     return ccount;

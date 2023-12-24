@@ -124,6 +124,14 @@ menu "LWIP"
             This option is used to disable the Network Discovery Protocol (NDP) if it is not required.
             Please use this option with caution, as the NDP is essential for IPv6 functionality within a local network.
 
+    config LWIP_FORCE_ROUTER_FORWARDING
+        bool "LWIP Force Router Forwarding Enable/Disable"
+        default n
+        depends on LWIP_ND6
+        help
+            This option is used to set the the router flag for the NA packets.
+            When enabled, the router flag in NA packet will always set to 1, otherwise, never set router flag for NA packets.
+
     config LWIP_MAX_SOCKETS
         int "Max number of open sockets"
         range 1 16
@@ -678,7 +686,8 @@ menu "LWIP"
             int "The maximum number of pbufs queued on OOSEQ per pcb"
             depends on LWIP_TCP_QUEUE_OOSEQ
             range 0 12
-            default 4
+            default 4 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 0 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
             help
                 If LWIP_TCP_OOSEQ_MAX_PBUFS = 0, TCP will not control the number of OOSEQ pbufs.
 

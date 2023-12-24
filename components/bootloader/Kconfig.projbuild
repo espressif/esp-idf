@@ -105,7 +105,6 @@ menu "Bootloader config"
         config BOOTLOADER_FLASH_XMC_SUPPORT
             bool "Enable the support for flash chips of XMC (READ DOCS FIRST)"
             default y
-            depends on !IDF_ENV_BRINGUP
             help
                 Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
                 XMC chips will be forbidden to be used, when this option is disabled.
@@ -833,7 +832,6 @@ menu "Security features"
         bool "Enable flash encryption on boot (READ DOCS FIRST)"
         default N
         select SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE
-        select NVS_ENCRYPTION
         help
             If this option is set, flash contents will be encrypted by the bootloader on first boot.
 
@@ -1071,6 +1069,22 @@ menu "Security features"
                 DIS_FORCE_DOWNLOAD, DIS_USB_OTG, DIS_TWAI, DIS_APP_CPU, DIS_PAD_JTAG,
                 DIS_DOWNLOAD_MANUAL_ENCRYPT, DIS_USB_JTAG, DIS_USB_SERIAL_JTAG, STRAP_JTAG_SEL, USB_PHY_SEL.
     endmenu  # Potentially Insecure
+
+    config SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
+        bool "Encrypt only the app image that is present in the partition of type app"
+        depends on SECURE_FLASH_ENC_ENABLED && !SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+        default y
+        help
+            If set (default), optimise encryption time for the partition of type APP,
+            by only encrypting the app image that is present in the partition,
+            instead of the whole partition.
+            The image length used for encryption is derived from the image metadata, which
+            includes the size of the app image, checksum, hash and also the signature sector
+            when secure boot is enabled.
+
+            If not set, the whole partition of type APP would be encrypted,
+            which increases the encryption time but might be useful if there
+            is any custom data appended to the firmware image.
 
     config SECURE_FLASH_CHECK_ENC_EN_IN_APP
         bool "Check Flash Encryption enabled on app startup"

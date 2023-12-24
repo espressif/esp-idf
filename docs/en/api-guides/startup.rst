@@ -3,13 +3,11 @@ Application Startup Flow
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
-
 This note explains various steps which happen before ``app_main`` function of an ESP-IDF application is called.
 
 The high level view of startup process is as follows:
 
-1. :ref:`first-stage-bootloader` in ROM loads second-stage bootloader image to RAM (IRAM & DRAM) from flash offset {IDF_TARGET_BOOTLOADER_OFFSET}.
+1. :ref:`first-stage-bootloader` in ROM loads second-stage bootloader image to RAM (IRAM & DRAM) from flash offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}.
 
 2. :ref:`second-stage-bootloader` loads partition table and main app image from flash. Main app incorporates both RAM segments and read-only segments mapped via flash cache.
 
@@ -22,11 +20,11 @@ This process is explained in detail in the following sections.
 First Stage Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     After SoC reset, PRO CPU will start running immediately, executing reset vector code, while APP CPU will be held in reset. During startup process, PRO CPU does all the initialization. APP CPU reset is de-asserted in the ``call_start_cpu0`` function of application startup code. Reset vector code is located in the mask ROM of the {IDF_TARGET_NAME} chip and cannot be modified.
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     After SoC reset, the CPU will start running immediately to perform initialization. The reset vector code is located in the mask ROM of the {IDF_TARGET_NAME} chip and cannot be modified.
 
@@ -46,15 +44,19 @@ Startup code called from the reset vector determines the boot mode by checking `
 
 .. only:: esp32
 
-    Second stage bootloader binary image is loaded from flash starting at address 0x1000. If :doc:`/security/secure-boot-v1` is in use then the first 4 kB sector of flash is used to store secure boot IV and digest of the bootloader image. Otherwise, this sector is unused.
+    Second stage bootloader binary image is loaded from flash starting at address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}. If :doc:`/security/secure-boot-v1` is in use then the first 4 kB sector of flash is used to store secure boot IV and digest of the bootloader image. Otherwise, this sector is unused.
 
 .. only:: esp32s2
 
-    Second stage bootloader binary image is loaded from flash starting at address 0x1000. The 4 kB sector of flash before this address is unused.
+    Second stage bootloader binary image is loaded from flash starting at address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}. The 4 kB sector of flash before this address is unused.
 
-.. only:: not (esp32 or esp32s2)
+.. only:: esp32p4
 
-    Second stage bootloader binary image is loaded from the start of flash at offset 0x0.
+    Second stage bootloader binary image is loaded from flash starting at address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}. The 8 kB sector of flash before this address is reserved for the key manager for use with flash encryption (AES-XTS).
+
+.. only:: not (esp32 or esp32s2 or esp32p4)
+
+    Second stage bootloader binary image is loaded from the start of flash at offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}.
 
 .. TODO: describe application binary image format, describe optional flash configuration commands.
 
@@ -63,11 +65,11 @@ Startup code called from the reset vector determines the boot mode by checking `
 Second Stage Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-In ESP-IDF, the binary image which resides at offset {IDF_TARGET_BOOTLOADER_OFFSET} in flash is the second stage bootloader. Second stage bootloader source code is available in :idf:`components/bootloader` directory of ESP-IDF. Second stage bootloader is used in ESP-IDF to add flexibility to flash layout (using partition tables), and allow for various flows associated with flash encryption, secure boot, and over-the-air updates (OTA) to take place.
+In ESP-IDF, the binary image which resides at offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} in flash is the second stage bootloader. Second stage bootloader source code is available in :idf:`components/bootloader` directory of ESP-IDF. Second stage bootloader is used in ESP-IDF to add flexibility to flash layout (using partition tables), and allow for various flows associated with flash encryption, secure boot, and over-the-air updates (OTA) to take place.
 
 When the first stage bootloader is finished checking and loading the second stage bootloader, it jumps to the second stage bootloader entry point found in the binary image header.
 
-Second stage bootloader reads the partition table found by default at offset 0x8000 (:ref:`configurable value <CONFIG_PARTITION_TABLE_OFFSET>`). See :doc:`partition tables <partition-tables>` documentation for more information. The bootloader finds factory and OTA app partitions. If OTA app partitions are found in the partition table, the bootloader consults the ``otadata`` partition to determine which one should be booted. See :doc:`/api-reference/system/ota` for more information.
+Second stage bootloader reads the partition table found by default at offset {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} (:ref:`configurable value <CONFIG_PARTITION_TABLE_OFFSET>`). See :doc:`partition tables <partition-tables>` documentation for more information. The bootloader finds factory and OTA app partitions. If OTA app partitions are found in the partition table, the bootloader consults the ``otadata`` partition to determine which one should be booted. See :doc:`/api-reference/system/ota` for more information.
 
 For a full description of the configuration options available for the ESP-IDF bootloader, see :doc:`bootloader`.
 
@@ -76,7 +78,7 @@ For the selected partition, second stage bootloader reads the binary image from 
 - For segments with load addresses in internal :ref:`iram` or :ref:`dram`, the contents are copied from flash to the load address.
 - For segments which have load addresses in :ref:`drom` or :ref:`irom` regions, the flash MMU is configured to provide the correct mapping from the flash to the load address.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: esp32
 
     Note that the second stage bootloader configures flash MMU for both PRO and APP CPUs, but it only enables flash MMU for PRO CPU. Reason for this is that second stage bootloader code is loaded into the memory region used by APP CPU cache. The duty of enabling cache for APP CPU is passed on to the application.
 
@@ -112,15 +114,15 @@ This port-layer initialization function initializes the basic C Runtime Environm
    - Finish configuring the MMU cache.
    :SOC_SPIRAM_SUPPORTED: - Enable PSRAM if configured.
    - Set the CPU clocks to the frequencies configured for the project.
-   :CONFIG_ESP_SYSTEM_MEMPROT_FEATURE: - Initialize memory protection if configured.
+   :SOC_MEMPROT_SUPPORTED: - Initialize memory protection if configured.
    :esp32: - Reconfigure the main SPI flash based on the app header settings (necessary for compatibility with bootloader versions before ESP-IDF V4.0, see :ref:`bootloader-compatibility`).
-   :not CONFIG_FREERTOS_UNICORE: - If the app is configured to run on multiple cores, start the other core and wait for it to initialize as well (inside the similar "port layer" initialization function ``call_start_cpu1``).
+   :SOC_HP_CPU_HAS_MULTIPLE_CORES: - If the app is configured to run on multiple cores, start the other core and wait for it to initialize as well (inside the similar "port layer" initialization function ``call_start_cpu1``).
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     Once ``call_start_cpu0`` completes running, it calls the "system layer" initialization function ``start_cpu0`` found in :idf_file:`components/esp_system/startup.c`. Other cores will also complete port-layer initialization and call ``start_other_cores`` found in the same file.
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     Once ``call_start_cpu0`` completes running, it calls the "system layer" initialization function ``start_cpu0`` found in :idf_file:`components/esp_system/startup.c`.
 
@@ -156,13 +158,13 @@ After doing some more initialization tasks (that require the scheduler to have s
 
 The main task that runs ``app_main`` has a fixed RTOS priority (one higher than the minimum) and a :ref:`configurable stack size <CONFIG_ESP_MAIN_TASK_STACK_SIZE>`.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
    The main task core affinity is also configurable: :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`.
 
 Unlike normal FreeRTOS tasks (or embedded C ``main`` functions), the ``app_main`` task is allowed to return. If this happens, The task is cleaned up and the system will continue running with other RTOS tasks scheduled normally. Therefore, it is possible to implement ``app_main`` as either a function that creates other application tasks and then returns, or as a main application task itself.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     Second Core Startup
     -------------------

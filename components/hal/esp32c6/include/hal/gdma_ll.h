@@ -125,9 +125,13 @@ static inline void gdma_ll_force_enable_reg_clock(gdma_dev_t *dev, bool enable)
  * @brief Get DMA RX channel interrupt status word
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel, bool raw)
 {
-    return dev->in_intr[channel].st.val;
+    if (raw) {
+        return dev->in_intr[channel].raw.val;
+    } else {
+        return dev->in_intr[channel].st.val;
+    }
 }
 
 /**
@@ -349,9 +353,13 @@ static inline void gdma_ll_rx_enable_etm_task(gdma_dev_t *dev, uint32_t channel,
  * @brief Get DMA TX channel interrupt status word
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel, bool raw)
 {
-    return dev->out_intr[channel].st.val;
+    if (raw) {
+        return dev->out_intr[channel].raw.val;
+    } else {
+        return dev->out_intr[channel].st.val;
+    }
 }
 
 /**

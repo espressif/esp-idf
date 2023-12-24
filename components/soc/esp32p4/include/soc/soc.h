@@ -22,10 +22,10 @@
 #define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE + (i) * 0x1000)         // only one I2S on C6
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_FLASH_SPI0_BASE + (i) * 0x1000)  // SPIMEM0 and SPIMEM1
-#define REG_SPI_BASE(i)                         (DR_REG_SPI2_BASE + (i) * 0x1000)        // GPSPI2 and GPSPI3
+#define REG_SPI_BASE(i)                         (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
 #define REG_I2C_BASE(i)                         (DR_REG_I2C0_BASE + (i) * 0x1000)
 #define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE + (i) * 0x1000)
-#define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x1000)        // TWAI0 and TWAI1
+#define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x1000)       // TWAI0 and TWAI1
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
@@ -225,7 +225,7 @@
 #define SOC_DEBUG_HIGH 0x28000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
-#define SOC_ROM_STACK_START         0x4ff5abd0
+#define SOC_ROM_STACK_START         0x4ff3cfc0
 #define SOC_ROM_STACK_SIZE          0x2000
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.

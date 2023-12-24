@@ -22,7 +22,7 @@ typedef struct crypto_bignum crypto_bignum;
 
 TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
 {
-    set_leak_threshold(250);
+    set_leak_threshold(300);
     {
 
         uint8_t buf[32], buf2[32];

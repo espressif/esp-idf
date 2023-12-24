@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "nvs_handle_locked.hpp"
 
 namespace nvs {
@@ -45,6 +37,12 @@ esp_err_t NVSHandleLocked::get_blob(const char *key, void* out_blob, size_t len)
 esp_err_t NVSHandleLocked::get_item_size(ItemType datatype, const char *key, size_t &size) {
     Lock lock;
     return handle->get_item_size(datatype, key, size);
+}
+
+esp_err_t NVSHandleLocked::find_key(const char* key, nvs_type_t &nvstype)
+{
+    Lock lock;
+    return handle->find_key(key, nvstype);
 }
 
 esp_err_t NVSHandleLocked::erase_item(const char* key) {

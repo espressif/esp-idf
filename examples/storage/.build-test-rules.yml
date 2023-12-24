@@ -10,10 +10,11 @@ examples/storage/custom_flash_driver:
 
 examples/storage/emmc:
   depends_components:
-    - sdmmc
-    - driver
     - fatfs
     - vfs
+    - sdmmc
+    - esp_driver_sdmmc
+    - esp_driver_sdspi
   enable:
     - if: IDF_TARGET == "esp32s3"
       reason: only support on esp32s3
@@ -107,7 +108,7 @@ examples/storage/perf_benchmark:
     - spiffs
     - wear_levelling
     - esp_partition
-    - driver
+    - esp_driver_sdmmc
   disable:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
       temporary: true
@@ -121,7 +122,7 @@ examples/storage/sd_card/sdmmc:
   depends_components:
     - vfs
     - sdmmc
-    - driver
+    - esp_driver_sdmmc
   disable:
     - if: SOC_SDMMC_HOST_SUPPORTED != 1
   disable_test:
@@ -133,7 +134,7 @@ examples/storage/sd_card/sdspi:
   depends_components:
     - vfs
     - sdmmc
-    - driver
+    - esp_driver_sdspi
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:

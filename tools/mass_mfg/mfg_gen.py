@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -8,16 +8,9 @@ import argparse
 import csv
 import distutils.dir_util
 import os
-import sys
 from itertools import zip_longest
 
-try:
-    idf_path = os.environ['IDF_PATH']
-    sys.path.insert(0, idf_path + '/components/nvs_flash/nvs_partition_generator/')
-    import nvs_partition_gen
-except Exception as e:
-    print(e)
-    sys.exit('Please check IDF_PATH')
+import esp_idf_nvs_partition_gen.nvs_partition_gen as nvs_partition_gen
 
 
 def create_temp_files(args):

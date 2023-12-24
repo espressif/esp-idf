@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,45 @@ extern "C" {
 #define LCD_LL_CLK_FRAC_DIV_N_MAX  256 // LCD_CLK = LCD_CLK_S / (N + b/a), the N register is 8 bit-width
 #define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
 #define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
+
+/**
+ * @brief LCD data byte swizzle mode
+ */
+typedef enum {
+    LCD_LL_SWIZZLE_AB2BA, /*!< AB -> BA */
+} lcd_ll_swizzle_mode_t;
+
+/**
+ * @brief Enable the bus clock for LCD module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en1.lcd_cam_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define lcd_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the LCD module
+ *
+ * @param group_id Group ID
+ */
+static inline void lcd_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en1.lcd_cam_rst = 0x01;
+    SYSTEM.perip_rst_en1.lcd_cam_rst = 0x00;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define lcd_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Enable clock gating
@@ -326,15 +365,35 @@ static inline void lcd_ll_set_blank_cycles(lcd_cam_dev_t *dev, uint32_t fk_cycle
 }
 
 /**
- * @brief Set data line width
+ * @brief Set data read stride, i.e., number of bytes the LCD reads from the DMA in each step
  *
  * @param dev LCD register base address
- * @param width data line width (8 or 16)
+ * @param stride data stride size
  */
-static inline void lcd_ll_set_data_width(lcd_cam_dev_t *dev, uint32_t width)
+static inline void lcd_ll_set_dma_read_stride(lcd_cam_dev_t *dev, uint32_t stride)
 {
-    HAL_ASSERT(width == 8 || width == 16);
-    dev->lcd_user.lcd_2byte_en = (width == 16);
+    switch (stride) {
+    case 8:
+        dev->lcd_user.lcd_2byte_en = 0;
+        break;
+    case 16:
+        dev->lcd_user.lcd_2byte_en = 1;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+
+/**
+ * @brief Set the wire width of LCD output
+ *
+ * @param dev LCD register base address
+ * @param width LCD output wire width
+ */
+static inline void lcd_ll_set_data_wire_width(lcd_cam_dev_t *dev, uint32_t width)
+{
+    // data line width is same as data stride that set in `lcd_ll_set_dma_read_stride`
 }
 
 /**
@@ -386,36 +445,69 @@ static inline void lcd_ll_reset(lcd_cam_dev_t *dev)
 /**
  * @brief Whether to reverse the data bit order
  *
+ * @note It acts before the YUV-RGB converter
+ *
  * @param dev LCD register base address
  * @param en True to reverse, False to not reverse
  */
 __attribute__((always_inline))
-static inline void lcd_ll_reverse_bit_order(lcd_cam_dev_t *dev, bool en)
+static inline void lcd_ll_reverse_dma_data_bit_order(lcd_cam_dev_t *dev, bool en)
 {
-    // whether to change LCD_DATA_out[N:0] to LCD_DATA_out[0:N]
     dev->lcd_user.lcd_bit_order = en;
+}
+
+/**
+ * @brief Whether to reverse the output data bit order
+ *
+ * @note ESP32S3 doesn't support to reverse the data bit after the YUV-RGB converter
+ *
+ * @param dev LCD register base address
+ * @param en True to reverse, False to not reverse
+ */
+static inline void lcd_ll_reverse_wire_bit_order(lcd_cam_dev_t *dev, bool en)
+{
+    (void)dev;
+    (void)en;
 }
 
 /**
  * @brief Whether to swap adjacent two bytes
  *
+ * @note This acts before the YUV-RGB converter, mainly to change the data endian.
+ *       {B1,B0},{B3,B2} => {B0,B1}{B2,B3}
+ *
  * @param dev LCD register base address
- * @param width Bus width
  * @param en True to swap the byte order, False to not swap
  */
 __attribute__((always_inline))
-static inline void lcd_ll_swap_byte_order(lcd_cam_dev_t *dev, uint32_t width, bool en)
+static inline void lcd_ll_swap_dma_data_byte_order(lcd_cam_dev_t *dev, bool en)
 {
-    HAL_ASSERT(width == 8 || width == 16);
-    if (width == 8) {
-        // {B0}{B1}{B2}{B3} => {B1}{B0}{B3}{B2}
-        dev->lcd_user.lcd_8bits_order = en;
-        dev->lcd_user.lcd_byte_order = 0;
-    } else if (width == 16) {
-        // {B1,B0},{B3,B2} => {B0,B1}{B2,B3}
-        dev->lcd_user.lcd_byte_order = en;
-        dev->lcd_user.lcd_8bits_order = 0;
-    }
+    dev->lcd_user.lcd_byte_order = en;
+}
+
+/**
+ * @brief Enable the byte swizzle
+ *
+ * @note The swizzle module acts after the YUV-RGB converter, used to reorder the data bytes before the data wire
+ *
+ * @param dev LCD register base address
+ * @param en True to enable, False to disable
+ */
+__attribute__((always_inline))
+static inline void lcd_ll_enable_swizzle(lcd_cam_dev_t *dev, bool en)
+{
+    dev->lcd_user.lcd_8bits_order = en;
+}
+
+/**
+ * @brief Set data byte swizzle mode
+ *
+ * @param dev LCD register base address
+ * @param mode Swizzle mode
+ */
+static inline void lcd_ll_set_swizzle_mode(lcd_cam_dev_t *dev, lcd_ll_swizzle_mode_t mode)
+{
+    HAL_ASSERT(mode == LCD_LL_SWIZZLE_AB2BA);
 }
 
 /**
@@ -651,35 +743,6 @@ static inline volatile void *lcd_ll_get_interrupt_status_reg(lcd_cam_dev_t *dev)
 {
     return &dev->lc_dma_int_st;
 }
-
-/**
- * @brief Enable or disable the bus clock for the LCD module
- *
- * @param set_bit True to set bit, false to clear bit
- */
-static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
-{
-    (void)group_id;
-    SYSTEM.perip_clk_en1.lcd_cam_clk_en = enable;
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define lcd_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_enable_bus_clock(__VA_ARGS__)
-
-/**
- * @brief Reset the LCD module
- */
-static inline void lcd_ll_reset_register(int group_id)
-{
-    (void)group_id;
-    SYSTEM.perip_rst_en1.lcd_cam_rst = 0x01;
-    SYSTEM.perip_rst_en1.lcd_cam_rst = 0x00;
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define lcd_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }

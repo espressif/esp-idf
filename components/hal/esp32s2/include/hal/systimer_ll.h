@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "soc/systimer_struct.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/system_reg.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
@@ -34,6 +35,38 @@ static inline soc_periph_systimer_clk_src_t systimer_ll_get_clock_source(void)
 {
     return SYSTIMER_CLK_SRC_XTAL;
 }
+
+/**
+ * @brief Enable the bus clock for systimer module
+ *
+ * @param enable true to enable, false to disable
+ */
+static inline void systimer_ll_enable_bus_clock(bool enable)
+{
+    uint32_t reg_val = READ_PERI_REG(DPORT_PERIP_CLK_EN0_REG);
+    reg_val &= ~DPORT_SYSTIMER_CLK_EN_M;
+    reg_val |= enable << DPORT_SYSTIMER_CLK_EN_S;
+    WRITE_PERI_REG(DPORT_PERIP_CLK_EN0_REG, reg_val);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define systimer_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; systimer_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the systimer module
+ *
+ * @param group_id Group ID
+ */
+static inline void systimer_ll_reset_register(void)
+{
+    WRITE_PERI_REG(DPORT_PERIP_RST_EN0_REG, DPORT_SYSTIMER_RST_M);
+    WRITE_PERI_REG(DPORT_PERIP_RST_EN0_REG, 0);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define systimer_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; systimer_ll_reset_register(__VA_ARGS__)
 
 /******************* Counter *************************/
 

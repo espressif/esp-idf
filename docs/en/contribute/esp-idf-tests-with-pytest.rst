@@ -627,6 +627,8 @@ Filter the Test Cases
 
    In other cases, pytest would run all the test cases with sdkconfig file ``sdkconfig.ci.<sdkconfig>``.
 
+-  Filter by test-case name with ``pytest -k <test-case name>`` to run a single test-case, e.g. ``pytest -k test_int_wdt_cache_disabled``.
+
 Add New Markers
 ---------------
 

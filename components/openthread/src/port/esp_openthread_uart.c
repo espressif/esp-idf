@@ -20,6 +20,7 @@
 #include "esp_vfs_dev.h"
 #include "common/logging.hpp"
 #include "driver/uart.h"
+#include "driver/uart_vfs.h"
 #include "utils/uart.h"
 #include "esp_vfs_usb_serial_jtag.h"
 #include "driver/usb_serial_jtag.h"
@@ -68,7 +69,7 @@ esp_err_t esp_openthread_uart_init_port(const esp_openthread_uart_config_t *conf
         OT_PLAT_LOG_TAG, "uart_set_pin failed");
     ESP_RETURN_ON_ERROR(uart_driver_install(config->port, ESP_OPENTHREAD_UART_BUFFER_SIZE, 0, 0, NULL, 0),
                         OT_PLAT_LOG_TAG, "uart_driver_install failed");
-    esp_vfs_dev_uart_use_driver(config->port);
+    uart_vfs_dev_use_driver(config->port);
     return ESP_OK;
 }
 
@@ -90,7 +91,7 @@ esp_err_t esp_openthread_host_cli_usb_init(const esp_openthread_platform_config_
 
     ret = usb_serial_jtag_driver_install((usb_serial_jtag_driver_config_t *)&config->host_config.host_usb_config);
     esp_vfs_usb_serial_jtag_use_driver();
-    esp_vfs_dev_uart_register();
+    uart_vfs_dev_register();
     return ret;
 }
 #endif
@@ -113,8 +114,8 @@ esp_err_t esp_openthread_host_rcp_uart_init(const esp_openthread_platform_config
     ESP_RETURN_ON_ERROR(esp_openthread_uart_init_port(&config->host_config.host_uart_config), OT_PLAT_LOG_TAG,
                         "esp_openthread_uart_init_port failed");
 
-    esp_vfs_dev_uart_port_set_rx_line_endings(s_uart_port, ESP_LINE_ENDINGS_LF);
-    esp_vfs_dev_uart_port_set_tx_line_endings(s_uart_port, ESP_LINE_ENDINGS_LF);
+    uart_vfs_dev_port_set_rx_line_endings(s_uart_port, ESP_LINE_ENDINGS_LF);
+    uart_vfs_dev_port_set_tx_line_endings(s_uart_port, ESP_LINE_ENDINGS_LF);
     snprintf(uart_path, sizeof(uart_path), "/dev/uart/%d", s_uart_port);
     s_uart_fd = open(uart_path, O_RDWR | O_NONBLOCK);
     ESP_RETURN_ON_FALSE(s_uart_fd >= 0, ESP_FAIL, OT_PLAT_LOG_TAG, "open uart_path failed");

@@ -1,0 +1,6 @@
+components/esp_driver_sdmmc/test_apps/sdmmc:
+  disable:
+    - if: SOC_SDMMC_HOST_SUPPORTED != 1
+  depends_components:
+    - sdmmc
+    - esp_driver_sdmmc

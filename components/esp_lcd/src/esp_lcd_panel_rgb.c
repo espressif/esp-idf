@@ -35,6 +35,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_psram.h"
 #include "esp_lcd_common.h"
+#include "esp_memory_utils.h"
 #include "soc/lcd_periph.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
@@ -176,7 +177,9 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(const esp_lcd_rgb_panel_confi
 
 static esp_err_t lcd_rgb_panel_destory(esp_rgb_panel_t *rgb_panel)
 {
-    lcd_ll_enable_clock(rgb_panel->hal.dev, false);
+    LCD_CLOCK_SRC_ATOMIC() {
+        lcd_ll_enable_clock(rgb_panel->hal.dev, false);
+    }
     if (rgb_panel->panel_id >= 0) {
         PERIPH_RCC_RELEASE_ATOMIC(lcd_periph_signals.panels[rgb_panel->panel_id].module, ref_count) {
             if (ref_count == 0) {
@@ -218,19 +221,20 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 #endif
     esp_err_t ret = ESP_OK;
     esp_rgb_panel_t *rgb_panel = NULL;
-    ESP_GOTO_ON_FALSE(rgb_panel_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid parameter");
-    ESP_GOTO_ON_FALSE(rgb_panel_config->data_width == 16 || rgb_panel_config->data_width == 8,
-                      ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported data width %d", rgb_panel_config->data_width);
-    ESP_GOTO_ON_FALSE(!(rgb_panel_config->flags.double_fb && rgb_panel_config->flags.no_fb),
-                      ESP_ERR_INVALID_ARG, err, TAG, "double_fb conflicts with no_fb");
-    ESP_GOTO_ON_FALSE(!(rgb_panel_config->num_fbs > 0 && rgb_panel_config->num_fbs != 2 && rgb_panel_config->flags.double_fb),
-                      ESP_ERR_INVALID_ARG, err, TAG, "num_fbs conflicts with double_fb");
-    ESP_GOTO_ON_FALSE(!(rgb_panel_config->num_fbs > 0 && rgb_panel_config->flags.no_fb),
-                      ESP_ERR_INVALID_ARG, err, TAG, "num_fbs conflicts with no_fb");
-    ESP_GOTO_ON_FALSE(!(rgb_panel_config->flags.no_fb && rgb_panel_config->bounce_buffer_size_px == 0),
-                      ESP_ERR_INVALID_ARG, err, TAG, "must set bounce buffer if there's no frame buffer");
-    ESP_GOTO_ON_FALSE(!(rgb_panel_config->flags.refresh_on_demand && rgb_panel_config->bounce_buffer_size_px),
-                      ESP_ERR_INVALID_ARG, err, TAG, "refresh on demand is not supported under bounce buffer mode");
+    ESP_RETURN_ON_FALSE(rgb_panel_config && ret_panel, ESP_ERR_INVALID_ARG, TAG, "invalid parameter");
+    size_t data_width = rgb_panel_config->data_width;
+    ESP_RETURN_ON_FALSE((data_width >= 8) && (data_width <= SOC_LCD_RGB_DATA_WIDTH) && ((data_width & (data_width - 1)) == 0), ESP_ERR_INVALID_ARG,
+                        TAG, "unsupported data width %d", data_width);
+    ESP_RETURN_ON_FALSE(!(rgb_panel_config->flags.double_fb && rgb_panel_config->flags.no_fb),
+                        ESP_ERR_INVALID_ARG, TAG, "double_fb conflicts with no_fb");
+    ESP_RETURN_ON_FALSE(!(rgb_panel_config->num_fbs > 0 && rgb_panel_config->num_fbs != 2 && rgb_panel_config->flags.double_fb),
+                        ESP_ERR_INVALID_ARG, TAG, "num_fbs conflicts with double_fb");
+    ESP_RETURN_ON_FALSE(!(rgb_panel_config->num_fbs > 0 && rgb_panel_config->flags.no_fb),
+                        ESP_ERR_INVALID_ARG, TAG, "num_fbs conflicts with no_fb");
+    ESP_RETURN_ON_FALSE(!(rgb_panel_config->flags.no_fb && rgb_panel_config->bounce_buffer_size_px == 0),
+                        ESP_ERR_INVALID_ARG, TAG, "must set bounce buffer if there's no frame buffer");
+    ESP_RETURN_ON_FALSE(!(rgb_panel_config->flags.refresh_on_demand && rgb_panel_config->bounce_buffer_size_px),
+                        ESP_ERR_INVALID_ARG, TAG, "refresh on demand is not supported under bounce buffer mode");
 
     // determine number of framebuffers
     size_t num_fbs = 1;
@@ -241,11 +245,11 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     } else if (rgb_panel_config->num_fbs > 0) {
         num_fbs = rgb_panel_config->num_fbs;
     }
-    ESP_GOTO_ON_FALSE(num_fbs <= RGB_LCD_PANEL_MAX_FB_NUM, ESP_ERR_INVALID_ARG, err, TAG, "too many frame buffers");
+    ESP_RETURN_ON_FALSE(num_fbs <= RGB_LCD_PANEL_MAX_FB_NUM, ESP_ERR_INVALID_ARG, TAG, "too many frame buffers");
 
     // bpp defaults to the number of data lines, but for serial RGB interface, they're not equal
     // e.g. for serial RGB 8-bit interface, data lines are 8, whereas the bpp is 24 (RGB888)
-    size_t fb_bits_per_pixel = rgb_panel_config->data_width;
+    size_t fb_bits_per_pixel = data_width;
     if (rgb_panel_config->bits_per_pixel) { // override bpp if it's set
         fb_bits_per_pixel = rgb_panel_config->bits_per_pixel;
     }
@@ -255,8 +259,8 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     size_t expect_bb_eof_count = 0;
     if (bb_size) {
         // we want the bounce can always end in the second buffer
-        ESP_GOTO_ON_FALSE(fb_size % (2 * bb_size) == 0, ESP_ERR_INVALID_ARG, err, TAG,
-                          "fb size must be even multiple of bounce buffer size");
+        ESP_RETURN_ON_FALSE(fb_size % (2 * bb_size) == 0, ESP_ERR_INVALID_ARG, TAG,
+                            "fb size must be even multiple of bounce buffer size");
         expect_bb_eof_count = fb_size / bb_size;
     }
 
@@ -299,11 +303,16 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&rgb_panel->hal, panel_id);
-    // enable clock gating
-    lcd_ll_enable_clock(rgb_panel->hal.dev, true);
+    // enable clock
+    LCD_CLOCK_SRC_ATOMIC() {
+        lcd_ll_enable_clock(rgb_panel->hal.dev, true);
+    }
     // set clock source
     ret = lcd_rgb_panel_select_clock_src(rgb_panel, rgb_panel_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "set source clock failed");
+    // reset peripheral and FIFO after we select a correct clock source
+    lcd_ll_fifo_reset(rgb_panel->hal.dev);
+    lcd_ll_reset(rgb_panel->hal.dev);
     // set minimal PCLK divider
     // A limitation in the hardware, if the LCD_PCLK == LCD_CLK, then the PCLK polarity can't be adjustable
     if (!(rgb_panel_config->timings.flags.pclk_active_neg || rgb_panel_config->timings.flags.pclk_idle_high)) {
@@ -512,13 +521,17 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     esp_err_t ret = ESP_OK;
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     // set pixel clock frequency
-    rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, rgb_panel->lcd_clk_flags);
+    hal_utils_clk_div_t lcd_clk_div = {};
+    rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, rgb_panel->lcd_clk_flags, &lcd_clk_div);
+    LCD_CLOCK_SRC_ATOMIC() {
+        lcd_ll_set_group_clock_coeff(rgb_panel->hal.dev, lcd_clk_div.integer, lcd_clk_div.denominator, lcd_clk_div.numerator);
+    }
     // pixel clock phase and polarity
     lcd_ll_set_clock_idle_level(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_idle_high);
     lcd_ll_set_pixel_clock_edge(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_active_neg);
     // enable RGB mode and set data width
     lcd_ll_enable_rgb_mode(rgb_panel->hal.dev, true);
-    lcd_ll_set_data_width(rgb_panel->hal.dev, rgb_panel->data_width);
+    lcd_ll_set_dma_read_stride(rgb_panel->hal.dev, rgb_panel->data_width);
     lcd_ll_set_phase_cycles(rgb_panel->hal.dev, 0, 0, 1); // enable data phase only
     // number of data cycles is controlled by DMA buffer size
     lcd_ll_enable_output_always_on(rgb_panel->hal.dev, true);
@@ -829,6 +842,8 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
     if (!valid_gpio) {
         return ESP_ERR_INVALID_ARG;
     }
+    // Set the number of output data lines
+    lcd_ll_set_data_wire_width(panel->hal.dev, panel_config->data_width);
     // connect peripheral signals via GPIO matrix
     for (size_t i = 0; i < panel_config->data_width; i++) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
@@ -878,7 +893,9 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
     panel->src_clk_hz = src_clk_hz;
-    lcd_ll_select_clk_src(panel->hal.dev, clk_src);
+    LCD_CLOCK_SRC_ATOMIC() {
+        lcd_ll_select_clk_src(panel->hal.dev, clk_src);
+    }
 
     // create pm lock based on different clock source
     // clock sources like PLL and XTAL will be turned off in light sleep
@@ -1099,10 +1116,14 @@ static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
 
 IRAM_ATTR static void lcd_rgb_panel_try_update_pclk(esp_rgb_panel_t *rgb_panel)
 {
+    hal_utils_clk_div_t lcd_clk_div = {};
     portENTER_CRITICAL_ISR(&rgb_panel->spinlock);
     if (unlikely(rgb_panel->flags.need_update_pclk)) {
         rgb_panel->flags.need_update_pclk = false;
-        rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, rgb_panel->lcd_clk_flags);
+        rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, rgb_panel->lcd_clk_flags, &lcd_clk_div);
+        LCD_CLOCK_SRC_ATOMIC() {
+            lcd_ll_set_group_clock_coeff(rgb_panel->hal.dev, lcd_clk_div.integer, lcd_clk_div.denominator, lcd_clk_div.numerator);
+        }
     }
     portEXIT_CRITICAL_ISR(&rgb_panel->spinlock);
 }

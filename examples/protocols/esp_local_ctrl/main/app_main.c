@@ -38,12 +38,17 @@ void app_main(void)
       ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    if (example_connect() == ESP_OK) {
-        start_esp_local_ctrl_service();
-    } else {
+    if (example_connect() != ESP_OK) {
         ESP_LOGI(TAG, "Connection failed, not starting esp_local_ctrl service");
+        vTaskDelay(portMAX_DELAY);
     }
+#endif /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP */
+
+    start_esp_local_ctrl_service();
+    ESP_LOGI(TAG, "esp_local_ctrl service started");
 }

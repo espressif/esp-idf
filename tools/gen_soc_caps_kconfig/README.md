@@ -4,9 +4,9 @@
 
 The script will automatically run as part of the pre-commit hook if any of the `soc_caps` related files have been modified.
 
-To run it manually from IDF_PATH run:
+To run it manually, navigate to `${IDF_PATH}` and execute:
 
-    `python tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/*/include/soc/'`
+    `python tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/*/include/soc/'`
 
 The results are `kconfig.soc_caps.in`-files containing the bool/int/hex/string values defined in the `soc_caps.h` file.
 

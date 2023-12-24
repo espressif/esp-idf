@@ -72,7 +72,12 @@ void vSystimerSetup(void)
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL));
 
     if (cpuid == 0) {
-        periph_module_enable(PERIPH_SYSTIMER_MODULE);
+        PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_SYSTIMER_MODULE, ref_count) {
+            if (ref_count == 0) {
+                systimer_ll_enable_bus_clock(true);
+                systimer_ll_reset_register();
+            }
+        }
         systimer_hal_init(&systimer_hal);
         systimer_hal_tick_rate_ops_t ops = {
             .ticks_to_us = systimer_ticks_to_us,

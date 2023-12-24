@@ -64,9 +64,13 @@ static inline void axi_dma_ll_reset_fsm(axi_dma_dev_t *dev)
  * @brief Get DMA RX channel interrupt status word
  */
 __attribute__((always_inline))
-static inline uint32_t axi_dma_ll_rx_get_interrupt_status(axi_dma_dev_t *dev, uint32_t channel)
+static inline uint32_t axi_dma_ll_rx_get_interrupt_status(axi_dma_dev_t *dev, uint32_t channel, bool raw)
 {
-    return dev->in[channel].intr.st.val;
+    if (raw) {
+        return dev->in[channel].intr.raw.val;
+    } else {
+        return dev->in[channel].intr.st.val;
+    }
 }
 
 /**
@@ -260,9 +264,13 @@ static inline void axi_dma_ll_rx_enable_etm_task(axi_dma_dev_t *dev, uint32_t ch
  * @brief Get DMA TX channel interrupt status word
  */
 __attribute__((always_inline))
-static inline uint32_t axi_dma_ll_tx_get_interrupt_status(axi_dma_dev_t *dev, uint32_t channel)
+static inline uint32_t axi_dma_ll_tx_get_interrupt_status(axi_dma_dev_t *dev, uint32_t channel, bool raw)
 {
-    return dev->out[channel].intr.st.val;
+    if (raw) {
+        return dev->out[channel].intr.raw.val;
+    } else {
+        return dev->out[channel].intr.st.val;
+    }
 }
 
 /**
@@ -498,7 +506,7 @@ static inline void axi_dma_ll_tx_crc_latch_config(axi_dma_dev_t *dev, uint32_t c
  * @brief Set the lfsr and data mask that used by the Parallel CRC calculation formula for a given CRC bit, TX channel
  */
 static inline void axi_dma_ll_tx_crc_set_lfsr_data_mask(axi_dma_dev_t *dev, uint32_t channel, uint32_t crc_bit,
-        uint32_t lfsr_mask, uint32_t data_mask, bool reverse_data_mask)
+                                                        uint32_t lfsr_mask, uint32_t data_mask, bool reverse_data_mask)
 {
     dev->out[channel].crc.tx_crc_en_addr.tx_crc_en_addr_chn = crc_bit;
     dev->out[channel].crc.tx_crc_en_wr_data.tx_crc_en_wr_data_chn = lfsr_mask;
@@ -559,7 +567,7 @@ static inline void axi_dma_ll_rx_crc_latch_config(axi_dma_dev_t *dev, uint32_t c
  * @brief Set the lfsr and data mask that used by the Parallel CRC calculation formula for a given CRC bit, RX channel
  */
 static inline void axi_dma_ll_rx_crc_set_lfsr_data_mask(axi_dma_dev_t *dev, uint32_t channel, uint32_t crc_bit,
-        uint32_t lfsr_mask, uint32_t data_mask, bool reverse_data_mask)
+                                                        uint32_t lfsr_mask, uint32_t data_mask, bool reverse_data_mask)
 {
     dev->in[channel].crc.rx_crc_en_addr.rx_crc_en_addr_chn = crc_bit;
     dev->in[channel].crc.rx_crc_en_wr_data.rx_crc_en_wr_data_chn = lfsr_mask;

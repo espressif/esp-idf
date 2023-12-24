@@ -20,6 +20,7 @@
 #include "hal/gpio_hal.h"
 #include "hal/uart_ll.h"
 #include "hal/i2c_types.h"
+#include "soc/uart_periph.h"
 #include "test_utils.h"
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
@@ -682,8 +683,8 @@ static void uart_aut_baud_det_init(int rxd_io_num)
 {
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rxd_io_num], PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
-    esp_rom_gpio_connect_out_signal(rxd_io_num, I2CEXT0_SCL_OUT_IDX, 0, 0);
-    esp_rom_gpio_connect_in_signal(rxd_io_num, U1RXD_IN_IDX, 0);
+    esp_rom_gpio_connect_out_signal(rxd_io_num, i2c_periph_signal[0].scl_out_sig, 0, 0);
+    esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), 0);
     periph_module_enable(PERIPH_UART1_MODULE);
     /* Reset all the bits */
     uart_ll_disable_intr_mask(&UART1, ~0);

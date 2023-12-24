@@ -66,6 +66,10 @@ IDF Docker 镜像 (``espressif/idf``) 为使用特定版本的 ESP-IDF 自动化
 - ``espressif/idf``：使用标签为 ``latest`` 的 Docker 镜像 ``espressif/idf``。未指定标签时，Docker 会隐式添加 ``latest`` 标签。
 - ``idf.py build``：在容器内运行此命令。
 
+.. note::
+
+   如果挂载目录 ``/project`` 包含的 git 仓库的用户 (``UID``) 不同于运行 Docker 容器的用户，在 ``/project`` 中执行 git 命令可能会失败，并显示错误信息 ``fatal: detected dubious ownership in repository at '/project'``。如需解决此问题，可以在启动 Docker 容器时设置 IDF_GIT_SAFE_DIR 环境变量，将 ``/project`` 目录指定为安全目录。例如，可以将 ``-e IDF_GIT_SAFE_DIR='/project'`` 作为参数包含，还可以使用分隔符 ``:`` 指定多个目录，或使用 ``*`` 完全禁用此项 git 安全检查。
+
 要以特定 Docker 镜像标签进行构建，请将其指定为 ``espressif/idf:TAG``，示例如下：
 
 .. code-block:: bash
@@ -139,7 +143,8 @@ ESP-IDF 库中的 Docker 文件提供了以下构建参数，可用于构建自�
 - ``IDF_CLONE_URL``：克隆 ESP-IDF 存储库的 URL。在使用 ESP-IDF 分支时，可以将该参数设置为自定义 URL，默认值为 ``https://github.com/espressif/esp-idf.git``。
 - ``IDF_CLONE_BRANCH_OR_TAG``：克隆 ESP-IDF 时使用的 git 分支或标签的名称。该参数将作为 ``git clone`` 命令的 ``--branch`` 参数传递，默认值为 ``master``。
 - ``IDF_CHECKOUT_REF``：如果将此参数设置为非空值，在克隆之后会执行 ``git checkout $IDF_CHECKOUT_REF`` 命令。可以将此参数设置为特定 commit 的 SHA 值，以便切换到所需的版本分支或 commit。例如，在希望使用特定版本分支上的某个 commit 时，就可以将此参数设置为该 commit 的 SHA 值。
-- ``IDF_CLONE_SHALLOW``：如果将此参数设置为非空值，则会在执行 ``git clone`` 时使用 ``--depth=1 --shallow-submodules`` 参数。这可以极大减少下载的数据量及生成的 Docker 镜像大小。然而，如果需要切换到此类“浅层”存储库中的其他分支，必须先执行额外的 ``git fetch origin <branch>`` 命令。
+- ``IDF_CLONE_SHALLOW``：如果将此参数设置为非空值，则会在执行 ``git clone`` 时使用 ``--depth=1 --shallow-submodules`` 参数。浅克隆的深度可以使用 ``IDF_CLONE_SHALLOW_DEPTH`` 设置。浅克隆可以极大减少下载的数据量及生成的 Docker 镜像大小。然而，如果需要切换到此类“浅层”存储库中的其他分支，必须先执行额外的 ``git fetch origin <branch>`` 命令。
+- ``IDF_CLONE_SHALLOW_DEPTH``：此参数指定进行浅克隆时要使用的深度值。如未设置，将使用 ``--depth=1``。此参数仅在使用 ``IDF_CLONE_SHALLOW`` 时有效。如果要为分支构建 Docker 镜像，并且该镜像必须包含该分支上的最新标签，则需使用此参数。要确定所需的深度，请在特定的分支运行 ``git describe`` 命令，并注意偏移值。将偏移值加 1 后即可将其用作 ``IDF_CLONE_SHALLOW_DEPTH`` 参数的值。此过程将确保生成的镜像包含分支上的最新标签，且 Docker 镜像内部的 ``git describe`` 命令也会按预期工作。
 - ``IDF_INSTALL_TARGETS``：以逗号分隔的 ESP-IDF 目标列表，用于安装工具链，或者使用 ``all`` 安装所有目标的工具链。选择特定目标可以减少下载的数据量和生成的 Docker 镜像的大小。该参数默认值为 ``all``。
 
 要使用以上参数，请通过 ``--build-arg`` 命令行选项传递。例如，以下命令使用 ESP-IDF v4.4.1 的浅克隆以及仅适用于 ESP32-C3 的工具链构建了 Docker 镜像：

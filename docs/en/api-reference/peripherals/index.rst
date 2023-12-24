@@ -12,6 +12,7 @@ Peripherals API
     :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
     clk_tree
     :SOC_DAC_SUPPORTED: dac
+    :SOC_ECDSA_SUPPORTED: ecdsa
     :SOC_ETM_SUPPORTED: etm
     gpio
     gptimer
@@ -34,7 +35,6 @@ Peripherals API
     spi_flash/index
     spi_master
     spi_slave
-    :esp32: secure_element
     :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad

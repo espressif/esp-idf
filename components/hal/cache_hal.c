@@ -67,7 +67,7 @@ void cache_hal_init(void)
 
     cache_ll_l1_enable_bus(0, CACHE_LL_DEFAULT_DBUS_MASK);
     cache_ll_l1_enable_bus(0, CACHE_LL_DEFAULT_IBUS_MASK);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_DBUS_MASK);
     cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_IBUS_MASK);
 #endif

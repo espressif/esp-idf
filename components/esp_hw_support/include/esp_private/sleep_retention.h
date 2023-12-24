@@ -108,8 +108,6 @@ void sleep_retention_entries_get(sleep_retention_entries_t *entries);
  *                          or false for restore to register from memory
  */
 void sleep_retention_do_extra_retention(bool backup_or_restore);
-
-void sleep_retention_module_deinit(void);
 #endif
 
 /**
@@ -124,7 +122,7 @@ void sleep_retention_module_deinit(void);
  */
 uint32_t sleep_retention_get_modules(void);
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 /**
  * @brief Software trigger REGDMA to do system linked list retention
  *

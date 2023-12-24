@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -241,6 +241,27 @@ size_t heap_caps_get_minimum_free_size( uint32_t caps );
  */
 size_t heap_caps_get_largest_free_block( uint32_t caps );
 
+/**
+ * @brief Start monitoring the value of minimum_free_bytes from the moment this
+ * function is called instead of from startup.
+ *
+ * @note This allows to detect local lows of the minimum_free_bytes value
+ * that wouldn't be detected otherwise.
+ *
+ * @return esp_err_t ESP_OK if the function executed properly
+ *                   ESP_FAIL if called when monitoring already active
+ */
+esp_err_t heap_caps_monitor_local_minimum_free_size_start(void);
+
+/**
+ * @brief Stop monitoring the value of minimum_free_bytes. After this call
+ * the minimum_free_bytes value calculated from startup will be returned in
+ * heap_caps_get_info and heap_caps_get_minimum_free_size.
+ *
+ * @return esp_err_t ESP_OK if the function executed properly
+ *                   ESP_FAIL if called when monitoring not active
+ */
+esp_err_t heap_caps_monitor_local_minimum_free_size_stop(void);
 
 /**
  * @brief Get heap info for all regions with the given capabilities.

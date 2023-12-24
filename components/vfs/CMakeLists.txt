@@ -6,12 +6,15 @@ endif()
 
 list(APPEND sources "vfs.c"
                     "vfs_eventfd.c"
-                    "vfs_uart.c"
                     "vfs_semihost.c"
-                    "vfs_console.c")
+                    "vfs_console.c"
+                    )
 
 list(APPEND pr driver
-               esp_timer)
+               esp_timer
+               # for backwards compatibility (TODO: IDF-8799)
+               esp_driver_uart
+               )
 
 idf_component_register(SRCS ${sources}
                        LDFRAGMENTS "linker.lf"
@@ -30,3 +33,8 @@ endif()
 # Some newlib syscalls are implemented in vfs.c, make sure these are always
 # seen by the linker
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u vfs_include_syscalls_impl")
+
+if(CONFIG_VFS_SUPPORT_IO)
+    # Make sure esp_vfs_console_register gets called at startup stage
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_vfs_include_console_register")
+endif()

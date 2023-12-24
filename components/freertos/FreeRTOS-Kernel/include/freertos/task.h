@@ -176,7 +176,9 @@ typedef struct xTASK_STATUS
         StackType_t * pxEndOfStack;               /**< Points to the end address of the task's stack area. */
     #endif
     configSTACK_DEPTH_TYPE usStackHighWaterMark;  /**< The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
-    BaseType_t xCoreID;                           /**< Core this task is pinned to (0, 1, or tskNO_AFFINITY). If configNUMBER_OF_CORES == 1, this will always be 0. */
+    #if ( configTASKLIST_INCLUDE_COREID == 1 )
+        BaseType_t xCoreID;                       /**< Core this task is pinned to (0, 1, or tskNO_AFFINITY). If configNUMBER_OF_CORES == 1, this will always be 0. */
+    #endif
 } TaskStatus_t;
 
 /** Possible return values for eTaskConfirmSleepModeStatus(). */
@@ -203,6 +205,15 @@ typedef enum
  */
 #define tskNO_AFFINITY      ( ( BaseType_t ) 0x7FFFFFFF )
 /* Todo: Update tskNO_AFFINITY value to -1 (IDF-7908) */
+
+/**
+ * Macro to check if an xCoreID value is valid
+ *
+ * @return pdTRUE if valid, pdFALSE otherwise.
+ *
+ * \ingroup Tasks
+ */
+#define taskVALID_CORE_ID( xCoreID )       ( ( ( ( BaseType_t ) xCoreID ) >= 0 && ( ( BaseType_t ) xCoreID ) < configNUMBER_OF_CORES ) ? pdTRUE : pdFALSE )
 
 /**
  *

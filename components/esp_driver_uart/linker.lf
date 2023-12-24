@@ -1,0 +1,11 @@
+[mapping:uart_vfs]
+archive: libesp_driver_uart.a
+entries:
+    if VFS_SELECT_IN_RAM = y:
+        uart_vfs: select_notif_callback_isr (noflash)
+
+[mapping:uart_hal]
+archive: libhal.a
+entries:
+    if UART_ISR_IN_IRAM = y:
+        uart_hal_iram (noflash)

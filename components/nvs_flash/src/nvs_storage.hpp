@@ -71,6 +71,8 @@ public:
 
     esp_err_t readItem(uint8_t nsIndex, ItemType datatype, const char* key, void* data, size_t dataSize);
 
+    esp_err_t findKey(const uint8_t nsIndex, const char* key, ItemType* datatype);
+
     esp_err_t getItemDataSize(uint8_t nsIndex, ItemType datatype, const char* key, size_t& dataSize);
 
     esp_err_t eraseItem(uint8_t nsIndex, ItemType datatype, const char* key);

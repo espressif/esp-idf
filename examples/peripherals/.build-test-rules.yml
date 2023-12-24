@@ -22,6 +22,9 @@ examples/peripherals/analog_comparator:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: not supported yet
+  depends_components:
+    - esp_driver_gpio
+    - esp_driver_ana_cmpr
 
 examples/peripherals/dac:
   disable:
@@ -34,6 +37,12 @@ examples/peripherals/gpio:
 examples/peripherals/gpio/matrix_keyboard:
   enable:
     - if: IDF_TARGET == "esp32s2"
+
+examples/peripherals/i2c/i2c_eeprom:
+  disable:
+    - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2c
 
 examples/peripherals/i2c/i2c_self_test:
   disable:
@@ -63,6 +72,8 @@ examples/peripherals/i2s/i2s_basic/i2s_pdm:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
 
 examples/peripherals/i2s/i2s_basic/i2s_std:
   disable:
@@ -71,6 +82,8 @@ examples/peripherals/i2s/i2s_basic/i2s_std:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
 
 examples/peripherals/i2s/i2s_basic/i2s_tdm:
   disable:
@@ -79,6 +92,8 @@ examples/peripherals/i2s/i2s_basic/i2s_tdm:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
 
 examples/peripherals/i2s/i2s_codec/i2s_es7210_tdm:
   disable:
@@ -88,6 +103,11 @@ examples/peripherals/i2s/i2s_codec/i2s_es7210_tdm:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
+    - esp_driver_spi
+  depends_filepatterns:
+    - components/driver/i2c/**/*
 
 examples/peripherals/i2s/i2s_codec/i2s_es8311:
   disable:
@@ -97,12 +117,19 @@ examples/peripherals/i2s/i2s_codec/i2s_es8311:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_i2s
+  depends_filepatterns:
+    - components/driver/i2c/**/*
 
 examples/peripherals/i2s/i2s_recorder:
   disable:
     - if: SOC_SDMMC_HOST_SUPPORTED != 1 or IDF_TARGET == "esp32p4"
   enable:
     - if: SOC_I2S_SUPPORTS_PDM_RX > 0
+  depends_components:
+    - esp_driver_spi
+    - esp_driver_i2s
 
 examples/peripherals/lcd/i2c_oled:
   disable:
@@ -117,8 +144,7 @@ examples/peripherals/lcd/i80_controller:
     - if: SOC_LCD_I80_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/i2s/**/* # i80 IO driver relies on I2S on esp32 and esp32s2
+    - esp_driver_i2s
 
 examples/peripherals/lcd/rgb_panel:
   disable:
@@ -131,16 +157,14 @@ examples/peripherals/lcd/spi_lcd_touch:
     - if: SOC_GPSPI_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/spi/**/*
+    - esp_driver_spi
 
 examples/peripherals/lcd/tjpgd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/spi/**/*
+    - esp_driver_spi
 
 examples/peripherals/ledc:
   disable:
@@ -153,10 +177,14 @@ examples/peripherals/ledc/ledc_gamma_curve_fade:
 examples/peripherals/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm
 
 examples/peripherals/mcpwm/mcpwm_bdc_speed_control:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm
   disable_test:
     - if: IDF_TARGET != "esp32s3"
       temporary: true
@@ -165,6 +193,8 @@ examples/peripherals/mcpwm/mcpwm_bdc_speed_control:
 examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm
   disable_test:
     - if: IDF_TARGET != "esp32s3"
       temporary: true
@@ -173,6 +203,8 @@ examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
 examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_mcpwm
   disable_test:
     - if: IDF_TARGET != "esp32s3"
       temporary: true
@@ -203,6 +235,8 @@ examples/peripherals/pcnt:
 examples/peripherals/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
+  depends_components:
+    - esp_driver_rmt
 
 examples/peripherals/rmt/ir_nec_transceiver:
   disable:
@@ -211,14 +245,20 @@ examples/peripherals/rmt/ir_nec_transceiver:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_rmt
 
 examples/peripherals/rmt/musical_buzzer:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT != 1
+  depends_components:
+    - esp_driver_rmt
 
 examples/peripherals/rmt/stepper_motor:
   disable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP != 1
+  depends_components:
+    - esp_driver_rmt
 
 examples/peripherals/sdio/host:
   disable:
@@ -234,6 +274,8 @@ examples/peripherals/sdio/host:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_driver_sdio
 
 examples/peripherals/sdio/slave:
   disable:
@@ -242,16 +284,14 @@ examples/peripherals/sdio/slave:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
-
-examples/peripherals/secure_element/atecc608_ecdsa:
-  enable:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-      reason: the other targets are not tested yet
+  depends_components:
+    - esp_driver_sdio
 
 examples/peripherals/sigma_delta:
   disable:
     - if: SOC_SDM_SUPPORTED != 1
+  depends_components:
+    - esp_driver_sdm
 
 examples/peripherals/spi_master/hd_eeprom:
   disable:
@@ -284,10 +324,14 @@ examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
 examples/peripherals/temperature_sensor/temp_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+  depends_components:
+    - esp_driver_tsens
 
 examples/peripherals/temperature_sensor/temp_sensor_monitor:
   disable:
     - if: SOC_TEMPERATURE_SENSOR_INTR_SUPPORT != 1
+  depends_components:
+    - esp_driver_tsens
 
 examples/peripherals/timer_group/gptimer:
   disable:
@@ -318,11 +362,11 @@ examples/peripherals/touch_sensor/touch_element:
 
 examples/peripherals/touch_sensor/touch_sensor_v1:
   disable:
-    - if: SOC_TOUCH_VERSION_1 != 1
+    - if: SOC_TOUCH_SENSOR_VERSION != 1
 
 examples/peripherals/touch_sensor/touch_sensor_v2:
   disable:
-    - if: SOC_TOUCH_VERSION_2 != 1
+    - if: SOC_TOUCH_SENSOR_VERSION != 2
 
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:
@@ -354,4 +398,12 @@ examples/peripherals/uart/uart_echo_rs485:
 
 examples/peripherals/usb:
   disable:
-    - if: SOC_USB_PERIPH_NUM != 1
+    - if: SOC_USB_OTG_SUPPORTED != 1
+
+examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
+  disable:
+    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32c6"]
+      temporary: true
+      reason: lack of runners. Hardware is similar, test on one target is enough currently.

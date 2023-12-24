@@ -291,6 +291,11 @@ void pmu_init(void);
  */
 void pmu_sleep_enable_hp_sleep_sysclk(bool enable);
 
+/**
+ * Get the time overhead used by regdma to work on the retention link during the hardware wake-up process
+ * @return  regdma time cost during hardware wake-up stage in microseconds
+ */
+uint32_t pmu_sleep_get_wakup_retention_cost(void);
 
 #endif //#if SOC_PMU_SUPPORTED
 

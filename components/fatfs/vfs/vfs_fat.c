@@ -396,10 +396,12 @@ static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     FIL* file = &fat_ctx->files[fd];
     FRESULT res;
+    _lock_acquire(&fat_ctx->lock);
     if (fat_ctx->o_append[fd]) {
         if ((res = f_lseek(file, f_size(file))) != FR_OK) {
             ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
             errno = fresult_to_errno(res);
+            _lock_release(&fat_ctx->lock);
             return -1;
         }
     }
@@ -407,18 +409,19 @@ static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
     res = f_write(file, data, size, &written);
     if (((written == 0) && (size != 0)) && (res == 0)) {
         errno = ENOSPC;
+        _lock_release(&fat_ctx->lock);
         return -1;
     }
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
         if (written == 0) {
+            _lock_release(&fat_ctx->lock);
             return -1;
         }
     }
 
 #if CONFIG_FATFS_IMMEDIATE_FSYNC
-    _lock_acquire(&fat_ctx->lock);
     if (written > 0) {
         res = f_sync(file);
         if (res != FR_OK) {
@@ -428,9 +431,8 @@ static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
             return -1;
         }
      }
-    _lock_release(&fat_ctx->lock);
 #endif
-
+    _lock_release(&fat_ctx->lock);
     return written;
 }
 
@@ -549,10 +551,8 @@ pwrite_release:
 static int vfs_fat_fsync(void* ctx, int fd)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
-    _lock_acquire(&fat_ctx->lock);
     FIL* file = &fat_ctx->files[fd];
     FRESULT res = f_sync(file);
-    _lock_release(&fat_ctx->lock);
     int rc = 0;
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
@@ -707,74 +707,85 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &n1, &n2);
-    const size_t copy_buf_size = fat_ctx->fs.csize;
-    FRESULT res;
+
+    FRESULT res = FR_OK;
+    int ret = 0;
+
     FIL* pf1 = (FIL*) ff_memalloc(sizeof(FIL));
     FIL* pf2 = (FIL*) ff_memalloc(sizeof(FIL));
+
+    const size_t copy_buf_size = fat_ctx->fs.csize;
     void* buf = ff_memalloc(copy_buf_size);
     if (buf == NULL || pf1 == NULL || pf2 == NULL) {
-        _lock_release(&fat_ctx->lock);
         ESP_LOGD(TAG, "alloc failed, pf1=%p, pf2=%p, buf=%p", pf1, pf2, buf);
-        free(pf1);
-        free(pf2);
-        free(buf);
+        _lock_release(&fat_ctx->lock);
         errno = ENOMEM;
-        return -1;
+        ret = -1;
+        goto cleanup;
     }
+
     memset(pf1, 0, sizeof(*pf1));
     memset(pf2, 0, sizeof(*pf2));
+
     res = f_open(pf1, n1, FA_READ | FA_OPEN_EXISTING);
     if (res != FR_OK) {
         _lock_release(&fat_ctx->lock);
-        goto fail1;
+        goto cleanup;
     }
+
     res = f_open(pf2, n2, FA_WRITE | FA_CREATE_NEW);
+
+#if !CONFIG_FATFS_LINK_LOCK
     _lock_release(&fat_ctx->lock);
+#endif
+
     if (res != FR_OK) {
-        goto fail2;
+        goto close_old;
     }
+
     size_t size_left = f_size(pf1);
     while (size_left > 0) {
         size_t will_copy = (size_left < copy_buf_size) ? size_left : copy_buf_size;
         size_t read;
         res = f_read(pf1, buf, will_copy, &read);
         if (res != FR_OK) {
-            goto fail3;
+            goto close_both;
         } else if (read != will_copy) {
             res = FR_DISK_ERR;
-            goto fail3;
+            goto close_both;
         }
         size_t written;
         res = f_write(pf2, buf, will_copy, &written);
         if (res != FR_OK) {
-            goto fail3;
+            goto close_both;
         } else if (written != will_copy) {
             res = FR_DISK_ERR;
-            goto fail3;
+            goto close_both;
         }
         size_left -= will_copy;
     }
 
-#if CONFIG_FATFS_IMMEDIATE_FSYNC
-    _lock_acquire(&fat_ctx->lock);
-    res = f_sync(pf2);
+close_both:
+    f_close(pf2);
+
+close_old:
+    f_close(pf1);
+
+#if CONFIG_FATFS_LINK_LOCK
     _lock_release(&fat_ctx->lock);
 #endif
 
-fail3:
-    f_close(pf2);
-fail2:
-    f_close(pf1);
-fail1:
+cleanup:
     free(buf);
     free(pf2);
     free(pf1);
-    if (res != FR_OK) {
+    if (ret == 0 && res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
         return -1;
     }
-    return 0;
+
+    return ret;
 }
 
 static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
@@ -881,8 +892,10 @@ static long vfs_fat_telldir(void* ctx, DIR* pdir)
 static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
 {
     assert(pdir);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     vfs_fat_dir_t* fat_dir = (vfs_fat_dir_t*) pdir;
     FRESULT res;
+    _lock_acquire(&fat_ctx->lock);
     if (offset < fat_dir->offset) {
         res = f_rewinddir(&fat_dir->ffdir);
         if (res != FR_OK) {
@@ -901,6 +914,7 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
         }
         fat_dir->offset++;
     }
+    _lock_release(&fat_ctx->lock);
 }
 
 static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode)

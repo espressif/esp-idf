@@ -204,10 +204,11 @@ MCPWM 组有一个专用定时器，用于捕获特定事件发生时的时间�
 - :cpp:member:`mcpwm_capture_channel_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
 - :cpp:member:`mcpwm_capture_channel_config_t::gpio_num` 设置捕获通道使用的 GPIO 编号。
 - :cpp:member:`mcpwm_capture_channel_config_t::prescale` 设置输入信号的预分频器。
-- :cpp:member:`mcpwm_capture_channel_config_t::pos_edge` 和 :cpp:member:`mcpwm_capture_channel_config_t::neg_edge` 设置是否在输入信号的上升沿和/或下降沿捕获时间戳。
-- :cpp:member:`mcpwm_capture_channel_config_t::pull_up` 和 :cpp:member:`mcpwm_capture_channel_config_t::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
-- :cpp:member:`mcpwm_capture_channel_config_t::invert_cap_signal` 设置是否取反捕获信号。
-- :cpp:member:`mcpwm_capture_channel_config_t::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pos_edge` 和 :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::neg_edge` 设置是否在输入信号的上升沿和/或下降沿捕获时间戳。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pull_up` 和 :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::pull_down` 设置是否在内部拉高和/或拉低 GPIO。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::invert_cap_signal` 设置是否取反捕获信号。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::io_loop_back` 设置是否启用回环模式。该模式仅用于调试，使用 GPIO 交换矩阵外设同时启用 GPIO 输入和输出。
+- :cpp:member:`mcpwm_capture_channel_config_t::extra_flags::keep_io_conf_at_exit` 设置是否在删除通道时保留 GPIO 的相关配置。
 
 分配成功后，:cpp:func:`mcpwm_new_capture_channel` 将返回一个指向已分配捕获通道的指针。否则，函数将返回错误代码。具体来说，当捕获定时器中没有空闲捕获通道时，将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。
 
@@ -855,6 +856,10 @@ MCPWM 定时器接收到同步信号后，定时器将强制进入一个预定�
 - :cpp:member:`mcpwm_timer_sync_phase_config_t::count_value` 设置接收同步信号后加载至计数器的值。
 - :cpp:member:`mcpwm_timer_sync_phase_config_t::direction` 设置接收同步信号后的计数方向。
 
+.. note::
+
+    当 MCPWM 定时器在 :cpp:enumerator:`MCPWM_TIMER_COUNT_MODE_UP_DOWN` 模式下工作时，需要特别注意。在该模式下，计数器范围 ``[0 -> peak-1]`` 属于 **递增** 阶段， ``[peak -> 1]`` 属于 **递减** 阶段。因此，如果你将 :cpp:member:`mcpwm_timer_sync_phase_config_t::count_value` 设置为零，则可能还需要将 :cpp:member:`mcpwm_timer_sync_phase_config_t::direction` 设置为 :cpp:enumerator:`MCPWM_TIMER_DIRECTION_UP`。否则，计时器将继续维持递减阶段，计数值会下溢至峰值。
+
 同理， `MCPWM 捕获定时器和通道`_ 也支持同步。调用 :cpp:func:`mcpwm_capture_timer_set_phase_on_sync`，设置捕获定时器的同步相位。同步相位配置定义在 :cpp:type:`mcpwm_capture_timer_sync_phase_config_t` 结构体中：
 
 - :cpp:member:`mcpwm_capture_timer_sync_phase_config_t::sync_src` 设置同步信号源。关于如何创建一个同步源对象，请参见 `MCPWM 同步源`_。具体来说，当此参数设置为 ``NULL`` 时，驱动器将禁用 MCPWM 捕获定时器的同步功能。
@@ -1044,7 +1049,7 @@ API Reference
 .. include-build-file:: inc/mcpwm_sync.inc
 .. include-build-file:: inc/mcpwm_cap.inc
 .. include-build-file:: inc/mcpwm_etm.inc
-.. include-build-file:: inc/components/driver/mcpwm/include/driver/mcpwm_types.inc
+.. include-build-file:: inc/components/esp_driver_mcpwm/include/driver/mcpwm_types.inc
 .. include-build-file:: inc/components/hal/include/hal/mcpwm_types.inc
 
 

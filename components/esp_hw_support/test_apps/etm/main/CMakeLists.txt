@@ -30,5 +30,5 @@ endif()
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES unity esp_timer esp_driver_gptimer esp_driver_gpio
-                                     driver # TODO: replace with esp_driver_mcpwm (IDF-8379), esp_driver_ana_cmpr
+                                     esp_driver_mcpwm esp_driver_ana_cmpr
                        WHOLE_ARCHIVE)

@@ -121,6 +121,24 @@ static inline void etm_ll_channel_set_task(soc_etm_dev_t *hw, uint32_t chan, uin
     hw->channel[chan].task_id.task_id = task;
 }
 
+/**
+ * @brief Get the flag that marks whether LP CPU is awakened by ETM
+ *
+ * @return Return true if lpcore is woken up by soc etm flag
+ */
+static inline bool etm_ll_is_lpcore_wakeup_triggered(void)
+{
+    return SOC_ETM.task_st5.ulp_task_wakeup_cpu_st;
+}
+
+/**
+ * @brief Clear the flag that marks whether LP CPU is awakened by ETM
+ */
+static inline void etm_ll_clear_lpcore_wakeup_status(void)
+{
+    SOC_ETM.task_st5_clr.ulp_task_wakeup_cpu_st_clr = 1;
+}
+
 #ifdef __cplusplus
 }
 #endif

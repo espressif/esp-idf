@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,7 +68,7 @@ TEST_CASE("Test HCD control pipe URBs", "[ctrl][low_speed][full_speed]")
         TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
         TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
         usb_config_desc_t *config_desc = (usb_config_desc_t *)(urb->transfer.data_buffer + sizeof(usb_setup_packet_t));
-        TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION , config_desc->bDescriptorType);
+        TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION, config_desc->bDescriptorType);
         printf("Config Desc wTotalLength %d\n", config_desc->wTotalLength);
     }
 
@@ -201,7 +201,7 @@ TEST_CASE("Test HCD control pipe STALL", "[ctrl][full_speed]")
         TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
         TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
         usb_config_desc_t *config_desc = (usb_config_desc_t *)(urb->transfer.data_buffer + sizeof(usb_setup_packet_t));
-        TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION , config_desc->bDescriptorType);
+        TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION, config_desc->bDescriptorType);
         printf("Config Desc wTotalLength %d\n", config_desc->wTotalLength);
     }
 
@@ -270,11 +270,11 @@ TEST_CASE("Test HCD control pipe runtime halt and clear", "[ctrl][low_speed][ful
         TEST_ASSERT_EQUAL_PTR(urb_list[i], urb);
         TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_CANCELED);
         if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
-             //We must have transmitted at least the setup packet, but device may return less than bytes requested
+            //We must have transmitted at least the setup packet, but device may return less than bytes requested
             TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
             TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
             usb_config_desc_t *config_desc = (usb_config_desc_t *)(urb->transfer.data_buffer + sizeof(usb_setup_packet_t));
-            TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION , config_desc->bDescriptorType);
+            TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION, config_desc->bDescriptorType);
             printf("Config Desc wTotalLength %d\n", config_desc->wTotalLength);
         } else {
             //A failed transfer should 0 actual number of bytes transmitted

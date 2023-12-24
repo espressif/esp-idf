@@ -1,5 +1,3 @@
-idf_build_get_property(target IDF_TARGET)
-
 set(srcs_lwip
         "lwip/esp_netif_lwip.c"
         "lwip/esp_netif_sntp.c"
@@ -16,12 +14,6 @@ set(srcs
 
 set(include_dirs "include")
 set(priv_include_dirs "private_include")
-
-idf_build_get_property(target IDF_TARGET)
-if(${target} STREQUAL "linux")
-    list(APPEND include_dirs
-            "linux/stubs/include")
-endif()
 
 if(CONFIG_PPP_SUPPORT)
     list(APPEND srcs_lwip lwip/esp_netif_lwip_ppp.c lwip/netif/ppp.c)

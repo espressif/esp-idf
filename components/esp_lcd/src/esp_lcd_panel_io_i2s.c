@@ -128,7 +128,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     esp_err_t ret = ESP_OK;
     esp_lcd_i80_bus_t *bus = NULL;
     ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    // although I2S bus supports up to 24 parallel data lines, we restrict users to only use 8 or 16 bit width, due to limited GPIO numbers
+    // although I2S bus supports up to 24 parallel data lines, we restrict users to only use 8 or 16 bit width
     ESP_GOTO_ON_FALSE(bus_config->bus_width == 8 || bus_config->bus_width == 16, ESP_ERR_INVALID_ARG, err,
                       TAG, "invalid bus width:%d", bus_config->bus_width);
     size_t max_transfer_bytes = (bus_config->max_transfer_bytes + 3) & ~0x03; // align up to 4 bytes

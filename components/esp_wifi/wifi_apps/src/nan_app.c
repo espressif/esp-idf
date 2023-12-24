@@ -40,6 +40,10 @@ static const char *TAG = "nan_app";
 static EventGroupHandle_t nan_event_group;
 static bool s_app_default_handlers_set = false;
 static uint8_t null_mac[MACADDR_LEN] = {0};
+static void *s_nan_data_lock = NULL;
+
+#define NAN_DATA_LOCK() os_mutex_lock(s_nan_data_lock)
+#define NAN_DATA_UNLOCK() os_mutex_unlock(s_nan_data_lock)
 
 struct peer_svc_info {
     SLIST_ENTRY(peer_svc_info) next;
@@ -182,16 +186,6 @@ static struct peer_svc_info *nan_find_peer_svc(uint8_t own_svc_id, uint8_t peer_
     return p_peer_svc;
 }
 
-static bool nan_update_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[])
-{
-    struct peer_svc_info *peer_info = nan_find_peer_svc(own_svc_id, 0, peer_nmi);
-    if (peer_info) {
-        peer_info->svc_id = peer_svc_id;
-        return true;
-    }
-    return false;
-}
-
 static bool nan_record_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[])
 {
     struct own_svc_info *p_own_svc;
@@ -216,10 +210,23 @@ static bool nan_record_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t
         SLIST_INSERT_HEAD(&(p_own_svc->peer_list), p_peer_svc, next);
         p_own_svc->num_peer_records++;
     } else {
-        struct peer_svc_info *temp;
-        temp = SLIST_FIRST(&(p_own_svc->peer_list));
-        SLIST_REMOVE_HEAD(&(p_own_svc->peer_list), next);
-        os_free(temp);
+        /* Remove the oldest peer service entry */
+        struct peer_svc_info *prev_ele = NULL, *cur_ele = NULL;
+
+        SLIST_FOREACH(cur_ele, &(p_own_svc->peer_list), next) {
+            if (SLIST_NEXT(cur_ele, next) == NULL) {
+                if (SLIST_FIRST(&(p_own_svc->peer_list)) == cur_ele) {
+                    SLIST_REMOVE_HEAD(&(p_own_svc->peer_list), next);
+                } else {
+                    SLIST_REMOVE_AFTER(prev_ele, next);
+                }
+                break;
+            }
+            prev_ele = cur_ele;
+        }
+        /* Insert new peer service entry */
+        SLIST_INSERT_HEAD(&(p_own_svc->peer_list), p_peer_svc, next);
+        os_free(cur_ele);
     }
 
     return true;
@@ -362,6 +369,19 @@ static bool nan_is_datapath_active(void)
     return false;
 }
 
+static void nan_update_peer_svc(uint8_t own_svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[])
+{
+    struct peer_svc_info *peer_info = nan_find_peer_svc(own_svc_id, 0, peer_nmi);
+    if (peer_info) {
+        peer_info->svc_id = peer_svc_id;
+    }
+
+    struct ndl_info *ndl = nan_find_ndl(0, peer_nmi);
+    if (ndl) {
+        ndl->publisher_id = peer_svc_id;
+    }
+}
+
 static void nan_fill_params_from_event(void *evt_data, uint8_t event)
 {
     switch (event) {
@@ -401,10 +421,9 @@ static void nan_fill_params_from_event(void *evt_data, uint8_t event)
         wifi_event_nan_svc_match_t *evt = (wifi_event_nan_svc_match_t *)evt_data;
 
         if (evt->update_pub_id) {
-            if (nan_update_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac)) {
-                break;
-            }
+            nan_update_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac);
         }
+
         if (!nan_find_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac)) {
             nan_record_peer_svc(evt->subscribe_id, evt->publish_id, evt->pub_if_mac);
         }
@@ -424,7 +443,10 @@ static void nan_app_action_service_match(void *arg, esp_event_base_t event_base,
 
     ESP_LOGI(TAG, "Service matched with "MACSTR" [Peer Publish id - %d]",
              MAC2STR(evt->pub_if_mac), evt->publish_id);
+
+    NAN_DATA_LOCK();
     nan_fill_params_from_event(evt, WIFI_EVENT_NAN_SVC_MATCH);
+    NAN_DATA_UNLOCK();
 }
 
 static void nan_app_action_replied(void *arg, esp_event_base_t event_base, int32_t event_id, void *data)
@@ -436,7 +458,10 @@ static void nan_app_action_replied(void *arg, esp_event_base_t event_base, int32
 
     ESP_LOGD(TAG, "Sent Publish to Peer "MACSTR" [Peer Subscribe id - %d]",
              MAC2STR(evt->sub_if_mac), evt->subscribe_id);
+
+    NAN_DATA_LOCK();
     nan_fill_params_from_event(evt, WIFI_EVENT_NAN_REPLIED);
+    NAN_DATA_UNLOCK();
 }
 
 static void nan_app_action_receive(void *arg, esp_event_base_t event_base, int32_t event_id, void *data)
@@ -448,7 +473,10 @@ static void nan_app_action_receive(void *arg, esp_event_base_t event_base, int32
 
     ESP_LOGI(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
              evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+
+    NAN_DATA_LOCK();
     nan_fill_params_from_event(evt, WIFI_EVENT_NAN_RECEIVE);
+    NAN_DATA_UNLOCK();
 }
 
 static void nan_app_action_ndp_indication(void *arg, esp_event_base_t event_base, int32_t event_id, void *data)
@@ -457,15 +485,17 @@ static void nan_app_action_ndp_indication(void *arg, esp_event_base_t event_base
         return;
     }
     wifi_event_ndp_indication_t *evt = (wifi_event_ndp_indication_t *)data;
+
+    NAN_DATA_LOCK();
     struct own_svc_info *p_own_svc = nan_find_own_svc(evt->publish_id);
 
     if (!p_own_svc) {
         ESP_LOGE(TAG, "No Publish found with id %d", evt->publish_id);
-        return;
+        goto done;
     }
     if (ndl_limit_reached()) {
         ESP_LOGE(TAG, "NDP limit reached");
-        return;
+        goto done;
     }
 
     nan_fill_params_from_event(evt, WIFI_EVENT_NDP_INDICATION);
@@ -481,6 +511,9 @@ static void nan_app_action_ndp_indication(void *arg, esp_event_base_t event_base
 
         esp_nan_internal_datapath_resp(&ndp_resp);
     }
+
+done:
+    NAN_DATA_UNLOCK();
 }
 
 static void nan_app_action_ndp_confirm(void *arg, esp_event_base_t event_base, int32_t event_id, void *data)
@@ -489,29 +522,31 @@ static void nan_app_action_ndp_confirm(void *arg, esp_event_base_t event_base, i
         return;
     }
     wifi_event_ndp_confirm_t *evt = (wifi_event_ndp_confirm_t *)data;
+
+    NAN_DATA_LOCK();
     wifi_netif_driver_t driver = esp_netif_get_io_driver(s_nan_ctx.nan_netif);
     ip_addr_t target_addr = {0};
 
     if (!s_nan_ctx.nan_netif) {
         ESP_LOGE(TAG, "%s: NAN netif is NULL", __func__);
-        return;
+        goto done;
     }
 
     if (nan_find_ndl(evt->ndp_id, NULL) == NULL) {
         /* As ndl isn't found, timeout has occured for NDP response and datapath request is rejected */
-        return;
+        goto done;
     }
     if (evt->status == NDP_STATUS_REJECTED) {
         ESP_LOGE(TAG, "NDP request to Peer "MACSTR" rejected [NDP ID - %d]", MAC2STR(evt->peer_nmi), evt->ndp_id);
         nan_reset_ndl(evt->ndp_id, false);
         os_event_group_set_bits(nan_event_group, NDP_REJECTED);
-        return;
+        goto done;
     }
 
     /* If interface not ready when started, rxcb to be registered on connection */
     if (esp_wifi_register_if_rxcb(driver,  esp_netif_receive, s_nan_ctx.nan_netif) != ESP_OK) {
         ESP_LOGE(TAG, "%s: esp_wifi_register_if_rxcb failed", __func__);
-        return;
+        goto done;
     }
 
     nan_fill_params_from_event(evt, WIFI_EVENT_NDP_CONFIRM);
@@ -519,11 +554,17 @@ static void nan_app_action_ndp_confirm(void *arg, esp_event_base_t event_base, i
     esp_netif_action_connected(s_nan_ctx.nan_netif, event_base, event_id, data);
 
     esp_netif_create_ip6_linklocal(s_nan_ctx.nan_netif);
+    NAN_DATA_UNLOCK();
     esp_wifi_nan_get_ipv6_linklocal_from_mac(&target_addr.u_addr.ip6, evt->peer_ndi);
     target_addr.type = IPADDR_TYPE_V6;
     ESP_LOGI(TAG, "NDP confirmed with Peer "MACSTR" [NDP ID - %d, Peer IPv6 - %s]",
              MAC2STR(evt->peer_nmi), evt->ndp_id, inet6_ntoa(*ip_2_ip6(&target_addr)));
     os_event_group_set_bits(nan_event_group, NDP_ACCEPTED);
+    return;
+
+done:
+    NAN_DATA_UNLOCK();
+    return;
 }
 
 static void nan_app_action_ndp_terminated(void *arg, esp_event_base_t event_base, int32_t event_id, void *data)
@@ -533,6 +574,7 @@ static void nan_app_action_ndp_terminated(void *arg, esp_event_base_t event_base
     }
     wifi_event_ndp_terminated_t *evt = (wifi_event_ndp_terminated_t *)data;
 
+    NAN_DATA_LOCK();
     if (s_nan_ctx.nan_netif && !nan_is_datapath_active()) {
         esp_netif_action_disconnected(s_nan_ctx.nan_netif, event_base, event_id, data);
     }
@@ -540,6 +582,7 @@ static void nan_app_action_ndp_terminated(void *arg, esp_event_base_t event_base
     nan_reset_ndl(evt->ndp_id, false);
 
     s_nan_ctx.event &= ~(NDP_INDICATION);
+    NAN_DATA_UNLOCK();
     os_event_group_set_bits(nan_event_group, NDP_TERMINATED);
 }
 
@@ -560,11 +603,13 @@ static void nan_app_action_got_ipv6(void *arg, esp_event_base_t event_base, int3
     }
     ip_event_got_ip6_t *event = (ip_event_got_ip6_t *)data;
 
+    NAN_DATA_LOCK();
     if (event->esp_netif == s_nan_ctx.nan_netif) {
         esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&event->ip6_info.ip);
         ESP_LOGD(TAG, "NAN Data Interface ready [IPv6 - "IPV6STR", type - %s]",
                  IPV62STR(event->ip6_info.ip), s_ipv6_addr_types[ipv6_type]);
     }
+    NAN_DATA_UNLOCK();
 }
 
 static esp_err_t nan_clear_app_default_handlers(void)
@@ -618,6 +663,19 @@ fail:
     return ESP_FAIL;
 }
 
+void esp_nan_app_deinit(void)
+{
+    if (nan_event_group) {
+        os_event_group_delete(nan_event_group);
+        nan_event_group = NULL;
+    }
+
+    if (s_nan_data_lock) {
+        os_semphr_delete(s_nan_data_lock);
+        s_nan_data_lock = NULL;
+    }
+}
+
 void esp_nan_app_init(void)
 {
     if (nan_event_group) {
@@ -625,13 +683,11 @@ void esp_nan_app_init(void)
         nan_event_group = NULL;
     }
     nan_event_group = os_event_group_create();
-}
 
-void esp_nan_app_deinit(void)
-{
-    if (nan_event_group) {
-        os_event_group_delete(nan_event_group);
-        nan_event_group = NULL;
+    s_nan_data_lock = os_recursive_mutex_create();
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "Failed to create NAN data lock");
+        esp_nan_app_deinit();
     }
 }
 
@@ -642,9 +698,11 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
         return;
     }
 
+    NAN_DATA_LOCK();
     s_nan_ctx.nan_netif = nan_netif;
-
     s_nan_ctx.state = NAN_STARTED_BIT;
+    NAN_DATA_UNLOCK();
+
     ESP_LOGI(TAG, "NAN Discovery started.");
     os_event_group_set_bits(nan_event_group, NAN_STARTED_BIT);
 }
@@ -653,6 +711,7 @@ void esp_nan_action_stop(void)
 {
     nan_clear_app_default_handlers();
 
+    NAN_DATA_LOCK();
     if (nan_is_datapath_active()) {
         nan_reset_ndl(0, true);
         esp_wifi_internal_reg_rxcb(WIFI_IF_NAN, NULL);
@@ -661,6 +720,8 @@ void esp_nan_action_stop(void)
     nan_reset_service(0, true);
     s_nan_ctx.state &= ~NAN_STARTED_BIT;
     s_nan_ctx.state |= NAN_STOPPED_BIT;
+    NAN_DATA_UNLOCK();
+
     os_event_group_set_bits(nan_event_group, NAN_STOPPED_BIT);
 }
 
@@ -678,10 +739,19 @@ esp_err_t esp_wifi_nan_start(const wifi_nan_config_t *nan_cfg)
         ESP_LOGE(TAG, "Unable to get mode");
         return ret;
     }
+
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "NAN Data lock doesn't exist");
+        return ESP_FAIL;
+    }
+
+    NAN_DATA_LOCK();
     if (s_nan_ctx.state & NAN_STARTED_BIT) {
         ESP_LOGI(TAG, "NAN already started");
+        NAN_DATA_UNLOCK();
         return ESP_OK;
     }
+    NAN_DATA_UNLOCK();
 
     ESP_RETURN_ON_ERROR(esp_wifi_set_mode(WIFI_MODE_NAN), TAG, "Set mode NAN failed");
 
@@ -690,13 +760,17 @@ esp_err_t esp_wifi_nan_start(const wifi_nan_config_t *nan_cfg)
 
     if (esp_wifi_start() != ESP_OK) {
         ESP_LOGE(TAG, "Starting wifi failed");
+        NAN_DATA_LOCK();
         s_nan_ctx.nan_netif = NULL;
+        NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
 
     EventBits_t bits = os_event_group_wait_bits(nan_event_group, NAN_STARTED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
     if (!(bits & NAN_STARTED_BIT)) {
+        NAN_DATA_LOCK();
         s_nan_ctx.nan_netif = NULL;
+        NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -704,8 +778,10 @@ esp_err_t esp_wifi_nan_start(const wifi_nan_config_t *nan_cfg)
 
 esp_err_t esp_wifi_nan_stop(void)
 {
+    NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
         ESP_LOGE(TAG, "NAN isn't started");
+        NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
 
@@ -721,11 +797,14 @@ esp_err_t esp_wifi_nan_stop(void)
         }
         nan_reset_ndl(0, true);
 
+        NAN_DATA_UNLOCK();
         os_event_group_clear_bits(nan_event_group, NDP_TERMINATED);
         os_event_group_wait_bits(nan_event_group, NDP_TERMINATED, pdFALSE, pdFALSE, portMAX_DELAY);
         os_event_group_clear_bits(nan_event_group, NDP_TERMINATED);
         /* Wait for 1 NAN DW interval (512 TU's ~= 524 mSec) for successful termination */
         g_wifi_osi_funcs._task_delay(NAN_DW_INTVL_MS/portTICK_PERIOD_MS);
+    } else {
+        NAN_DATA_UNLOCK();
     }
 
     ESP_RETURN_ON_ERROR(esp_wifi_stop(), TAG, "Stopping NAN failed");
@@ -735,7 +814,9 @@ esp_err_t esp_wifi_nan_stop(void)
         return ESP_FAIL;
     }
 
+    NAN_DATA_LOCK();
     memset(&s_nan_ctx, 0, sizeof(nan_ctx_t));
+    NAN_DATA_UNLOCK();
     return ESP_OK;
 }
 
@@ -743,78 +824,94 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg, 
 {
     uint8_t pub_id;
 
+    NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
         ESP_LOGE(TAG, "NAN not started!");
-        return 0;
+        goto fail;
     }
     if (nan_services_limit_reached()) {
         ESP_LOGE(TAG, "Maximum services limit reached");
-        return 0;
+        goto fail;
     }
 
     if (nan_find_own_svc_by_name(publish_cfg->service_name)) {
-        ESP_LOGE(TAG, "Service name already used!");
-        return 0;
+        ESP_LOGE(TAG, "Service name %s already used!", publish_cfg->service_name);
+        goto fail;
     }
 
     if (esp_nan_internal_publish_service(publish_cfg, &pub_id, false) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to publish service '%s'", publish_cfg->service_name);
-        return 0;
+        goto fail;
     }
 
     ESP_LOGI(TAG, "Started Publishing %s [Service ID - %u]", publish_cfg->service_name, pub_id);
     nan_record_own_svc(pub_id, ESP_NAN_PUBLISH, publish_cfg->service_name, ndp_resp_needed);
+    NAN_DATA_UNLOCK();
 
     return pub_id;
+fail:
+    NAN_DATA_UNLOCK();
+    return 0;
 }
 
 uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe_cfg)
 {
     uint8_t sub_id;
 
+    NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
         ESP_LOGE(TAG, "NAN not started!");
-        return 0;
+        goto fail;
     }
     if (nan_services_limit_reached()) {
         ESP_LOGE(TAG, "Maximum services limit reached");
-        return 0;
+        goto fail;
     }
 
     if (nan_find_own_svc_by_name(subscribe_cfg->service_name)) {
         ESP_LOGE(TAG, "Service name already used!");
-        return 0;
+        goto fail;
     }
 
     if (esp_nan_internal_subscribe_service(subscribe_cfg, &sub_id, false) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to subscribe to service '%s'", subscribe_cfg->service_name);
-        return 0;
+        goto fail;
     }
 
     ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", subscribe_cfg->service_name, sub_id);
     nan_record_own_svc(sub_id, ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name, false);
+    NAN_DATA_UNLOCK();
 
     return sub_id;
+fail:
+    NAN_DATA_UNLOCK();
+    return 0;
 }
 
 esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
 {
     struct peer_svc_info *p_peer_svc;
 
+    NAN_DATA_LOCK();
     p_peer_svc = nan_find_peer_svc(fup_params->inst_id, fup_params->peer_inst_id,
                                         fup_params->peer_mac);
     if (!p_peer_svc) {
         ESP_LOGE(TAG, "Cannot send Follow-up, peer not found!");
+        NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
 
     if (!fup_params->inst_id) {
         fup_params->inst_id = p_peer_svc->own_svc_id;
     }
+    if (!fup_params->peer_inst_id) {
+        fup_params->peer_inst_id = p_peer_svc->svc_id;
+    }
     if (!MACADDR_EQUAL(fup_params->peer_mac, null_mac)) {
         MACADDR_COPY(fup_params->peer_mac, p_peer_svc->peer_nmi);
     }
 
+    NAN_DATA_UNLOCK();
     if (esp_nan_internal_send_followup(fup_params) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to send Follow-up message!");
         return ESP_FAIL;
@@ -826,18 +923,19 @@ esp_err_t esp_wifi_nan_send_message(wifi_nan_followup_params_t *fup_params)
 
 esp_err_t esp_wifi_nan_cancel_service(uint8_t service_id)
 {
+    NAN_DATA_LOCK();
     struct own_svc_info *p_own_svc = nan_find_own_svc(service_id);
 
     if (!p_own_svc) {
         ESP_LOGE(TAG, "Cannot find own service with id %d!", service_id);
-        return ESP_FAIL;
+        goto fail;
     }
 
     if (p_own_svc->type == ESP_NAN_PUBLISH) {
         if (esp_nan_internal_publish_service(NULL, &service_id, true) == ESP_OK) {
             nan_reset_service(service_id, false);
             ESP_LOGI(TAG, "Cancelled Publish with Service ID %d", service_id);
-            return ESP_OK;
+            goto done;
         }
     }
 
@@ -845,32 +943,40 @@ esp_err_t esp_wifi_nan_cancel_service(uint8_t service_id)
         if (esp_nan_internal_subscribe_service(NULL, &service_id, true) == ESP_OK) {
             nan_reset_service(service_id, false);
             ESP_LOGI(TAG, "Cancelled Subscribe with Service ID %d", service_id);
-            return ESP_OK;
+            goto done;
         }
     }
 
+fail:
+    NAN_DATA_UNLOCK();
     return ESP_FAIL;
+
+done:
+    NAN_DATA_UNLOCK();
+    return ESP_OK;
 }
 
 uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
 {
     uint8_t ndp_id = 0;
+
+    NAN_DATA_LOCK();
     struct peer_svc_info *p_peer_svc = nan_find_peer_svc(0, req->pub_id, req->peer_mac);
 
     if (!p_peer_svc) {
         ESP_LOGE(TAG, "Cannot send NDP Req, peer not found!");
-        return 0;
+        goto fail;
     }
     if (req->pub_id == 0)
         req->pub_id = p_peer_svc->svc_id;
 
     if (p_peer_svc->type != ESP_NAN_PUBLISH) {
         ESP_LOGE(TAG, "Only subscriber can send an NDP Req to a Publisher");
-        return 0;
+        goto fail;
     }
     if (ndl_limit_reached()) {
         ESP_LOGE(TAG, "Cannot establish new datapath, limit reached!");
-        return 0;
+        goto fail;
     }
 
     if (!MACADDR_EQUAL(req->peer_mac, null_mac)) {
@@ -879,9 +985,12 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
 
     if (esp_nan_internal_datapath_req(req, &ndp_id) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initiate NDP req");
-        return 0;
+        goto fail;
     }
+
     nan_record_new_ndl(ndp_id, req->pub_id, req->peer_mac, ESP_WIFI_NDP_ROLE_INITIATOR);
+    NAN_DATA_UNLOCK();
+
     ESP_LOGD(TAG, "Requested NDP with "MACSTR" [NDP ID - %d]", MAC2STR(req->peer_mac), ndp_id);
 
     EventBits_t bits = os_event_group_wait_bits(nan_event_group, NDP_ACCEPTED | NDP_REJECTED, pdFALSE, pdFALSE, pdMS_TO_TICKS(NAN_NDP_RESP_TIMEOUT));
@@ -892,22 +1001,28 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
         os_event_group_clear_bits(nan_event_group, NDP_REJECTED);
         return 0;
     } else {
+        NAN_DATA_LOCK();
         nan_reset_ndl(ndp_id, false);
+        NAN_DATA_UNLOCK();
         return 0;
     }
+fail:
+    NAN_DATA_UNLOCK();
+    return 0;
 }
 
 esp_err_t esp_wifi_nan_datapath_resp(wifi_nan_datapath_resp_t *resp)
 {
+    NAN_DATA_LOCK();
     struct ndl_info *ndl = nan_find_ndl(resp->ndp_id, NULL);
 
     if (!ndl) {
         ESP_LOGE(TAG, "No NDL with ndp id %d", resp->ndp_id);
-        return ESP_FAIL;
+        goto fail;
     }
     if (!(s_nan_ctx.event & NDP_INDICATION)) { //INDICATION of specific peer
         ESP_LOGE(TAG, "Need NDP Indication before NDP Response can be sent");
-        return ESP_FAIL;
+        goto fail;
     }
 
     if (!MACADDR_EQUAL(resp->peer_mac, null_mac)) {
@@ -916,9 +1031,12 @@ esp_err_t esp_wifi_nan_datapath_resp(wifi_nan_datapath_resp_t *resp)
 
     if (esp_nan_internal_datapath_resp(resp) == ESP_OK) {
         s_nan_ctx.event &= ~NDP_INDICATION;
+        NAN_DATA_UNLOCK();
         return ESP_OK;
     }
 
+fail:
+    NAN_DATA_UNLOCK();
     return ESP_FAIL;
 }
 
@@ -926,20 +1044,25 @@ esp_err_t esp_wifi_nan_datapath_end(wifi_nan_datapath_end_req_t *req)
 {
     struct ndl_info *ndl = NULL;
 
+    NAN_DATA_LOCK();
     if (!nan_is_datapath_active()) {
         ESP_LOGE(TAG, "No Datapath active");
+        NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
 
     ndl = nan_find_ndl(req->ndp_id, NULL);
     if (!ndl) {
         ESP_LOGE(TAG, "No NDL with ndp id %d", req->ndp_id);
+        NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
+
     if (!MACADDR_EQUAL(req->peer_mac, null_mac)) {
         MACADDR_COPY(req->peer_mac, ndl->peer_nmi);
     }
 
+    NAN_DATA_UNLOCK();
     if (esp_nan_internal_datapath_end(req) == ESP_OK) {
         return ESP_OK;
     }
@@ -956,25 +1079,30 @@ esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int
         return ESP_FAIL;
     }
 
+    NAN_DATA_LOCK();
     if (*own_svc_id == 0) {
         own_svc = nan_find_own_svc_by_name(svc_name);
         if (!own_svc) {
             ESP_LOGE(TAG, "No record found for given service name %s", svc_name);
-            return ESP_FAIL;
+            goto fail;
         }
         *own_svc_id = own_svc->svc_id;
     } else {
         own_svc = nan_find_own_svc(*own_svc_id);
         if (!own_svc) {
             ESP_LOGE(TAG, "No record found for given service ID %d", *own_svc_id);
-            return ESP_FAIL;
+            goto fail;
         }
         strlcpy(svc_name, own_svc->svc_name, ESP_WIFI_MAX_SVC_NAME_LEN);
     }
 
     *num_peer_records = own_svc->num_peer_records;
-
+    NAN_DATA_UNLOCK();
     return ESP_OK;
+
+fail:
+    NAN_DATA_UNLOCK();
+    return ESP_FAIL;
 }
 
 esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_id, struct nan_peer_record *peer_record)
@@ -996,6 +1124,7 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
         return ESP_FAIL;
     }
 
+    NAN_DATA_LOCK();
     own_record = nan_find_own_svc(own_svc_id);
     if (own_record) {
         SLIST_FOREACH(temp, &(own_record->peer_list), next) {
@@ -1031,10 +1160,13 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
         if (*num_peer_records > peer_num) {
             *num_peer_records = peer_num;
         }
+
+        NAN_DATA_UNLOCK();
         return ESP_OK;
     } else {
         *num_peer_records = 0;
         ESP_LOGD(TAG, "No record found for own service id %d", own_svc_id);
+        NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
 }
@@ -1049,10 +1181,12 @@ esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct n
         return ESP_FAIL;
     }
 
+    NAN_DATA_LOCK();
     if (svc_name) {
         struct own_svc_info *own_svc = nan_find_own_svc_by_name(svc_name);
         if (!own_svc) {
             ESP_LOGE(TAG, "No record found for given service name %s", svc_name);
+            NAN_DATA_UNLOCK();
             return ESP_FAIL;
         }
         own_svc_id = own_svc->svc_id;
@@ -1073,9 +1207,11 @@ esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct n
             peer_info->ndp_id = 0;
             MACADDR_COPY(peer_info->peer_ndi, null_mac);
         }
+        NAN_DATA_UNLOCK();
         return ESP_OK;
     } else {
         ESP_LOGD(TAG, "No record found for Peer "MACSTR, MAC2STR(peer_mac));
+        NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
 }

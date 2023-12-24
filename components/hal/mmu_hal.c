@@ -31,7 +31,7 @@ void mmu_hal_unmap_all(void)
     mmu_ll_unmap_all(MMU_LL_PSRAM_MMU_ID);
 #else
     mmu_ll_unmap_all(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     mmu_ll_unmap_all(1);
 #endif
 #endif

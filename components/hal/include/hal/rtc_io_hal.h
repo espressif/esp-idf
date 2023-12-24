@@ -259,7 +259,7 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
 #define rtcio_hal_wakeup_disable(rtcio_num) rtcio_ll_wakeup_disable(rtcio_num)
 
 /**
- * Set specific logic level on an RTC IO pin as a wakeup trigger.
+ * Set specific logic level on an RTC IO pin as a ext0 wakeup trigger.
  *
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  * @param level Logic level (0)

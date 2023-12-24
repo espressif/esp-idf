@@ -77,9 +77,10 @@ ENV_MARKERS = {
     'xtal_26mhz': 'runner with 26MHz xtal on board',
     'xtal_40mhz': 'runner with 40MHz xtal on board',
     'external_flash': 'external flash memory connected via VSPI (FSPI)',
-    'sdcard_sdmode': 'sdcard running in SD mode',
+    'sdcard_sdmode': 'sdcard running in SD mode, to be removed after test migration',
     'sdcard_spimode': 'sdcard running in SPI mode',
     'emmc': 'eMMC card',
+    'sdcard': 'sdcard runner',
     'MSPI_F8R8': 'runner with Octal Flash and Octal PSRAM',
     'MSPI_F4R8': 'runner with Quad Flash and Octal PSRAM',
     'MSPI_F4R4': 'runner with Quad Flash and Quad PSRAM',
@@ -105,7 +106,9 @@ ENV_MARKERS = {
     'wifi_two_dut': 'tests should be run on runners which has two wifi duts connected.',
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',
-    'sdio_master_slave': 'Test sdio multi board.',
+    'sdio_master_slave': 'Test sdio multi board, esp32+esp32',
+    'sdio_multidev_32_c6': 'Test sdio multi board, esp32+esp32c6',
+    'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)'
 }
 
 

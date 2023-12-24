@@ -146,8 +146,6 @@
 #define IO_MUX_GPIO52_REG                   PERIPHS_IO_MUX_U_PAD_GPIO52
 #define IO_MUX_GPIO53_REG                   PERIPHS_IO_MUX_U_PAD_GPIO53
 #define IO_MUX_GPIO54_REG                   PERIPHS_IO_MUX_U_PAD_GPIO54
-#define IO_MUX_GPIO55_REG                   PERIPHS_IO_MUX_U_PAD_GPIO55
-#define IO_MUX_GPIO56_REG                   PERIPHS_IO_MUX_U_PAD_GPIO56
 
 #define PIN_FUNC_GPIO								1
 
@@ -225,7 +223,7 @@
 // #define EXT_OSC_SLOW_GPIO_NUM     1 // TODO: IDF-7526
 
 #define MAX_RTC_GPIO_NUM             16
-#define MAX_PAD_GPIO_NUM             56
+#define MAX_PAD_GPIO_NUM             54
 #define MAX_GPIO_NUM                 56
 #define HIGH_IO_HOLD_BIT_SHIFT       32
 

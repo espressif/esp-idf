@@ -1,6 +1,10 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 
+minimum_pre_commit_version: 3.3.0
+default_install_hook_types: [pre-commit, post-commit, commit-msg]
+default_stages: [pre-commit]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
@@ -177,12 +181,6 @@ repos:
         always_run: true
         pass_filenames: false
         require_serial: true
-      - id: submodule-sbom-hash-check
-        name: Check if sbom-hash values for submodules in .gitmodules match submodules checkout hash in git tree
-        entry: python tools/test_sbom/test_submodules.py
-        language: python
-        always_run: true
-        pass_filenames: false
       - id: cleanup-ignore-lists
         name: Remove non-existing patterns from ignore lists
         entry: tools/ci/cleanup_ignore_lists.py
@@ -200,12 +198,12 @@ repos:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
   - repo: https://github.com/espressif/conventional-precommit-linter
-    rev: v1.2.1
+    rev: v1.4.1
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]
   - repo: https://github.com/espressif/astyle_py.git
-    rev: v1.0.2
+    rev: v1.0.5
     hooks:
       - id: astyle_py
         # If you are modifying astyle version, update tools/format.sh as well
@@ -221,3 +219,8 @@ repos:
       name: shellcheck dash (export.sh)
       args: ['--shell', 'dash', '-x']
       files: 'export.sh'
+  - repo: https://github.com/espressif/esp-idf-sbom.git
+    rev: v0.13.0
+    hooks:
+      - id: validate-sbom-manifest
+        stages: [post-commit]

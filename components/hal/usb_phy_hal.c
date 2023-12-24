@@ -20,6 +20,7 @@ void usb_phy_hal_otg_conf(usb_phy_hal_context_t *hal, usb_phy_target_t phy_targe
     if (phy_target == USB_PHY_TARGET_EXT) {
         usb_phy_ll_ext_otg_enable(hal->wrap_dev);
     } else if (phy_target == USB_PHY_TARGET_INT) {
+        usb_phy_ll_usb_wrap_pad_enable(hal->wrap_dev, true);
         usb_phy_ll_int_otg_enable(hal->wrap_dev);
     }
 }
@@ -41,10 +42,10 @@ void usb_phy_hal_int_load_conf_host(usb_phy_hal_context_t *hal)
     usb_phy_ll_int_load_conf(hal->wrap_dev, false, true, false, true);
 }
 
-void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_priv_speed_t speed)
+void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_phy_speed_t speed)
 {
     // DEVICE - downstream
-    if (speed == USB_PRIV_SPEED_LOW) {
+    if (speed == USB_PHY_SPEED_LOW) {
         // LS: dm_pu = 1
         usb_phy_ll_int_load_conf(hal->wrap_dev, false, false, true, false);
     } else {

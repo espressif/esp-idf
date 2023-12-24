@@ -20,6 +20,24 @@
 
 static const char *TAG = "CACHE_ERR";
 
+
+const char cache_error_msg[] = "Cache access error";
+
+const char *esp_cache_err_panic_string(void)
+{
+    const uint32_t access_err_status = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+
+    /* Return the error string if a cache error is active */
+    const char* err_str = access_err_status ? cache_error_msg : NULL;
+
+    return err_str;
+}
+
+bool esp_cache_err_has_active_err(void)
+{
+    return cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+}
+
 void esp_cache_err_int_init(void)
 {
     const uint32_t core_id = 0;

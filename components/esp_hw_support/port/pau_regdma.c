@@ -62,7 +62,7 @@ void pau_regdma_trigger_modem_link_restore(void)
 }
 #endif
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 void IRAM_ATTR pau_regdma_set_system_link_addr(void *link_addr)
 {
     /* ESP32H2 use software to trigger REGDMA to restore instead of PMU,
@@ -88,18 +88,18 @@ void IRAM_ATTR pau_regdma_trigger_system_link_restore(void)
 }
 #endif
 
-void pau_regdma_set_extra_link_addr(void *link_addr)
+void IRAM_ATTR pau_regdma_set_extra_link_addr(void *link_addr)
 {
     pau_hal_set_regdma_extra_link_addr(PAU_instance()->hal, link_addr);
 }
 
-void pau_regdma_trigger_extra_link_backup(void)
+void IRAM_ATTR pau_regdma_trigger_extra_link_backup(void)
 {
     pau_hal_start_regdma_extra_link(PAU_instance()->hal, true);
     pau_hal_stop_regdma_extra_link(PAU_instance()->hal);
 }
 
-void pau_regdma_trigger_extra_link_restore(void)
+void IRAM_ATTR pau_regdma_trigger_extra_link_restore(void)
 {
     pau_hal_start_regdma_extra_link(PAU_instance()->hal, false);
     pau_hal_stop_regdma_extra_link(PAU_instance()->hal);

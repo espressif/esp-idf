@@ -1911,7 +1911,7 @@ typedef union {
 } dsi_host_int_force1_reg_t;
 
 
-typedef struct {
+typedef struct dsi_host_dev_t {
     volatile dsi_host_version_reg_t version;
     volatile dsi_host_pwr_up_reg_t pwr_up;
     volatile dsi_host_clkmgr_cfg_reg_t clkmgr_cfg;
@@ -2000,6 +2000,8 @@ typedef struct {
 #ifndef __cplusplus
 _Static_assert(sizeof(dsi_host_dev_t) == 0x194, "Invalid size of dsi_host_dev_t structure");
 #endif
+
+extern dsi_host_dev_t MIPI_DSI_HOST;
 
 #ifdef __cplusplus
 }

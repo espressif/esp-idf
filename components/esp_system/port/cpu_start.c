@@ -66,6 +66,7 @@
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/interrupt_core0_reg.h"
 #include "soc/interrupt_core1_reg.h"
+#include "soc/keymng_reg.h"
 #endif
 
 #include "esp_private/esp_mmu_map_private.h"
@@ -299,6 +300,11 @@ static void start_other_core(void)
     if(REG_GET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL)){
         REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
     }
+    // The following operation makes the Key Manager to use eFuse key for ECDSA and XTS-AES operation by default
+    // This is to keep the default behavior same as the other chips
+    // If the Key Manager configuration is already locked then following operation does not have any effect
+    // TODO-IDF 7925 (Move this under SOC_KEY_MANAGER_SUPPORTED)
+    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 3);
 #endif
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 

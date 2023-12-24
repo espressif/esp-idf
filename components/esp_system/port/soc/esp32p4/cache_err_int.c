@@ -21,6 +21,18 @@
 static const char *TAG = "CACHE_ERR";
 
 //TODO: IDF-7515
+const char *esp_cache_err_panic_string(void)
+{
+    return NULL;
+}
+
+//TODO: IDF-7515
+bool esp_cache_err_has_active_err(void)
+{
+    return false;
+}
+
+//TODO: IDF-7515
 void esp_cache_err_int_init(void)
 {
     const uint32_t core_id = 0;
@@ -53,7 +65,7 @@ void esp_cache_err_int_init(void)
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
 }
 
-int IRAM_ATTR esp_cache_err_get_cpuid(void)
+int esp_cache_err_get_cpuid(void)
 {
     //TODO: IDF-7515
     //Should return hart ID according to the cache error

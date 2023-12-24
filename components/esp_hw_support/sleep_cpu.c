@@ -92,7 +92,7 @@ static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
 
 #if SOC_PM_SUPPORT_TAGMEM_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
 
-#if CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#if CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
 static uint32_t cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t code_seg_size, uint32_t data_seg_vaddr, uint32_t data_seg_size)
 {
     uint32_t sets;   /* i/d-cache total set counts */
@@ -153,11 +153,11 @@ static uint32_t cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t c
      * i/d-cache tagmem blocks (128 bits * 3 = 96 bits * 4) */
     return (((icache_tagmem_blk_gs + dcache_tagmem_blk_gs) << 2) * 3);
 }
-#endif // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#endif // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
 
 static esp_err_t esp_sleep_tagmem_pd_low_init(void)
 {
-#if CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#if CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
         if (s_cpu_retention.retent.tagmem.link_addr == NULL) {
             extern char _stext[], _etext[];
             uint32_t code_start = (uint32_t)_stext;
@@ -186,11 +186,11 @@ static esp_err_t esp_sleep_tagmem_pd_low_init(void)
                 return ESP_ERR_NO_MEM;
             }
         }
-#else // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#else // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
         s_cpu_retention.retent.tagmem.icache.enable = 0;
         s_cpu_retention.retent.tagmem.dcache.enable = 0;
         s_cpu_retention.retent.tagmem.link_addr = NULL;
-#endif // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#endif // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
     return ESP_OK;
 }
 

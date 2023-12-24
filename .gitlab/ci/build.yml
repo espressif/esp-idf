@@ -21,8 +21,7 @@
   needs:
     - job: fast_template_app
       artifacts: false
-    - job: mr_variables
-      optional: true  # only MR pipelines would have this
+    - pipeline_variables
   artifacts:
     paths:
       # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
@@ -46,8 +45,8 @@
         examples/bluetooth/esp_ble_mesh/ble_mesh_console
         examples/bluetooth/hci/controller_hci_uart_esp32
         examples/wifi/iperf
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     # for detailed documents, please refer to .gitlab/ci/README.md#uploaddownload-artifacts-to-internal-minio-server
     - python tools/ci/artifacts_handler.py upload
 
@@ -65,8 +64,8 @@
       --copy-sdkconfig
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
     - python tools/ci/artifacts_handler.py upload
 
@@ -82,8 +81,8 @@
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - python tools/ci/artifacts_handler.py upload
 
 .build_pytest_no_jtag_template:
@@ -98,8 +97,8 @@
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - python tools/ci/artifacts_handler.py upload
 
 .build_pytest_jtag_template:
@@ -114,8 +113,8 @@
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - python tools/ci/artifacts_handler.py upload
 
 build_pytest_examples_esp32:
@@ -264,8 +263,8 @@ build_only_components_apps:
       -t all
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - python tools/ci/artifacts_handler.py upload
 
 build_pytest_test_apps_esp32:
@@ -336,8 +335,8 @@ build_only_tools_test_apps:
       -t all
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - python tools/ci/artifacts_handler.py upload
 
 .build_template_app_template:
@@ -542,6 +541,38 @@ pytest_build_system_macos:
   tags:
     - macos_shell
   parallel: 3
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    when: always
+    expire_in: 2 days
+    reports:
+      junit: XUNIT_RESULT.xml
+
+.test_build_system_template_win:
+  stage: host_test
+  variables:
+  # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
+    IDF_CCACHE_ENABLE: "1"
+    PYTHONPATH: "$PYTHONPATH;$IDF_PATH\\tools;$IDF_PATH\\tools\\esp_app_trace;$IDF_PATH\\components\\partition_table;$IDF_PATH\\tools\\ci\\python_packages"
+  before_script: []
+  after_script: []
+  timeout: 4 hours
+  script:
+    - .\install.ps1 --enable-ci --enable-pytest
+    - . .\export.ps1
+    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - cd ${IDF_PATH}\tools\test_build_system
+    - pytest --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+
+pytest_build_system_win:
+  extends:
+    - .test_build_system_template_win
+    - .rules:labels:windows_pytest_build_system
+  needs: []
+  tags:
+    - windows-target
   artifacts:
     paths:
       - XUNIT_RESULT.xml

@@ -124,11 +124,11 @@ ip4_route_src_hook(const ip4_addr_t *src,const ip4_addr_t *dest)
 #if LWIP_DHCP_ENABLE_VENDOR_SPEC_IDS
 #define DHCP_OPTION_VSI             43
 #define DHCP_OPTION_VCI             60
-#define DHCP_OPTION_VSI_MAX         16
+#define DHCP_OPTION_VSI_MAX         64
 
 static u8_t vendor_class_len = 0;
 static char *vendor_class_buf = NULL;
-static u32_t dhcp_option_vsi[DHCP_OPTION_VSI_MAX] = {0};
+static u8_t dhcp_option_vsi[DHCP_OPTION_VSI_MAX];
 
 void dhcp_free_vendor_class_identifier(void)
 {
@@ -209,16 +209,10 @@ void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uin
     if ((option == DHCP_OPTION_VSI) &&
              (state == DHCP_STATE_REBOOTING || state == DHCP_STATE_REBINDING ||
               state == DHCP_STATE_RENEWING  || state == DHCP_STATE_REQUESTING || state == DHCP_STATE_SELECTING)) {
-      u8_t n;
-      u32_t value;
       u16_t copy_len;
-      for (n = 0; n < DHCP_OPTION_VSI_MAX && len > 0; n++) {
-        copy_len = LWIP_MIN(len, 4);
-        LWIP_ERROR("dhcp_parse_extra_opts(): extracting VSI option failed",
-           pbuf_copy_partial(p, &value, copy_len, offset) == copy_len, return;);
-        dhcp_option_vsi[n] = lwip_htonl(value);
-        len -= copy_len;
-      }
+      copy_len = LWIP_MIN(len, sizeof(dhcp_option_vsi));
+      LWIP_ERROR("dhcp_parse_extra_opts(): extracting VSI option failed",
+         pbuf_copy_partial(p, &dhcp_option_vsi, copy_len, offset) == copy_len, return;);
     } /* DHCP_OPTION_VSI */
 #endif /* LWIP_DHCP_ENABLE_VENDOR_SPEC_IDS */
 }

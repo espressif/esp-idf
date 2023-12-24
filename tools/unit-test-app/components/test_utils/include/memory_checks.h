@@ -36,7 +36,7 @@ typedef enum {
  * @brief Adjust the memory leak thresholds for unit tests.
  *
  * Usually, unit tests will check if memory is leaked. Some functionality used by unit tests may unavoidably
- * leak memory. This is why there is a default threshold for memory leaks (currently 1024 bytes).
+ * leak memory. This is why there is a default threshold for memory leaks (currently 1200 bytes).
  * Within this range, the number of bytes leaked will be visually reported on the terminal, but no test failure will
  * be triggered. Any memory leak above the default threshold will trigger a unit test failure.
  * This function allows to adjust that memory leak threshold.

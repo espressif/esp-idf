@@ -43,7 +43,8 @@
  * task. The task's pinned core is specified by the xCoreID argument. If xCoreID
  * is set to tskNO_AFFINITY, then the task is unpinned and can run on any core.
  *
- * @note If ( configNUM_CORES == 1 ), xCoreID is ignored.
+ * @note If ( configNUMBER_OF_CORES == 1 ), setting xCoreID to tskNO_AFFINITY will be
+ * be treated as 0.
  *
  * @param pxTaskCode Pointer to the task entry function.
  * @param pcName A descriptive name for the task.
@@ -55,7 +56,7 @@
  * @param pxCreatedTask Used to pass back a handle by which the created task can
  * be referenced.
  * @param xCoreID The core to which the task is pinned to, or tskNO_AFFINITY if
- * the task has no core affinity
+ * the task has no core affinity.
  * @return pdPASS if the task was successfully created and added to a ready
  * list, otherwise an error code defined in the file projdefs.h
  */
@@ -79,7 +80,8 @@
  * xCoreID is set to tskNO_AFFINITY, then the task is unpinned and can run on any
  * core.
  *
- * @note If ( configNUM_CORES == 1 ), xCoreID is ignored.
+ * @note If ( configNUMBER_OF_CORES == 1 ), setting xCoreID to tskNO_AFFINITY will be
+ * be treated as 0.
  *
  * @param pxTaskCode Pointer to the task entry function.
  * @param pcName A descriptive name for the task.
@@ -93,7 +95,7 @@
  * @param pxTaskBuffer Must point to a variable of type StaticTask_t, which will
  * then be used to hold the task's data structures,
  * @param xCoreID The core to which the task is pinned to, or tskNO_AFFINITY if
- * the task has no core affinity
+ * the task has no core affinity.
  * @return The task handle if the task was created, NULL otherwise.
  */
     TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
@@ -129,15 +131,6 @@
  */
 BaseType_t xTaskGetCoreID( TaskHandle_t xTask );
 
-/** @cond */
-/* Todo: Deprecate this API in favor of xTaskGetIdleTaskHandleForCore (IDF-8163) */
-static inline __attribute__( ( always_inline ) )
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
-{
-    return xTaskGetCoreID( xTask );
-}
-/** @endcond */
-
 /**
  * @brief Get the handle of idle task for the given core.
  *
@@ -149,15 +142,6 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
  * @return Handle of the idle task for the queried core
  */
 TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID );
-
-/** @cond */
-/* Todo: Deprecate this API in favor of xTaskGetIdleTaskHandleForCore (IDF-8163) */
-static inline __attribute__( ( always_inline ) )
-TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
-{
-    return xTaskGetIdleTaskHandleForCore( xCoreID );
-}
-/** @endcond */
 
 /**
  * @brief Get the handle of the task currently running on a certain core
@@ -175,14 +159,6 @@ TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
  */
 TaskHandle_t xTaskGetCurrentTaskHandleForCore( BaseType_t xCoreID );
 
-/** @cond */
-/* Todo: Deprecate this API in favor of xTaskGetCurrentTaskHandleForCore (IDF-8163) */
-static inline __attribute__( ( always_inline ) )
-TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
-{
-    return xTaskGetCurrentTaskHandleForCore( xCoreID );
-}
-/** @endcond */
 
 #if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
@@ -643,6 +619,32 @@ void vStreamBufferGenericDeleteWithCaps( StreamBufferHandle_t xStreamBuffer,
     void vEventGroupDeleteWithCaps( EventGroupHandle_t xEventGroup );
 
 #endif /* configSUPPORT_STATIC_ALLOCATION == 1 */
+
+
+/* --------------------------------------------------- Deprecated ------------------------------------------------------
+ * Deprecated IDF FreeRTOS API additions.
+ * Todo: Remove in v6.0 (IDF-8499)
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+/** @cond */
+static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetCoreID() instead." ) ) )
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+{
+    return xTaskGetCoreID( xTask );
+}
+
+static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetIdleTaskHandleForCore() instead." ) ) )
+TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
+{
+    return xTaskGetIdleTaskHandleForCore( xCoreID );
+}
+
+static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetCurrentTaskHandleForCore() instead." ) ) )
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
+{
+    return xTaskGetCurrentTaskHandleForCore( xCoreID );
+}
+/** @endcond */
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

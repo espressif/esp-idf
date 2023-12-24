@@ -42,11 +42,11 @@ SPI1 flash 并发约束
 
         同时启用 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 选项后，不会禁用 cache。
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     为避免意外读取 flash cache，一个 CPU 在启动 flash 写入或擦除操作时，另一个 CPU 将阻塞。在 flash 操作完成前，会禁用所有在 CPU 上非 IRAM 安全的中断。
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     为避免意外读取 flash cache，在 flash 操作完成前，所有 CPU 上，会禁用所有在 CPU 上非 IRAM 安全的中断。
 

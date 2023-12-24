@@ -7,3 +7,6 @@
     :maxdepth: 1
 
     peripherals
+    security
+    storage
+    system

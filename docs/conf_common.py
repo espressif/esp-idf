@@ -66,7 +66,10 @@ WIFI_DOCS = ['api-guides/wifi.rst',
              'api-reference/network/esp_now.rst',
              'api-reference/network/esp_smartconfig.rst',
              'api-reference/network/esp_wifi.rst',
-             'api-reference/network/esp_dpp.rst']
+             'api-reference/network/esp_dpp.rst',
+             'api-reference/provisioning/provisioning.rst',
+             'api-reference/provisioning/wifi_provisioning.rst',
+             'migration-guides/release-5.x/5.2/wifi.rst']
 
 NAN_DOCS = ['api-reference/network/esp_nan.rst']
 
@@ -145,15 +148,16 @@ ANA_CMPR_DOCS = ['api-reference/peripherals/ana_cmpr.rst']
 
 SPI_SLAVE_HD_DOCS = ['api-reference/peripherals/spi_slave_hd.rst']
 
+QEMU_DOCS = ['api-guides/tools/qemu.rst']
+
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
-              'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst',
               'hw-reference/esp32/**',
-              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
+              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS + QEMU_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/usb-console.rst',
@@ -171,7 +175,7 @@ ESP32S3_DOCS = ['hw-reference/esp32s3/**',
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
-                'api-guides/RF_calibration.rst']
+                'api-guides/RF_calibration.rst'] + QEMU_DOCS
 
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
 
@@ -210,6 +214,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
                             'SOC_LP_CORE_SUPPORTED':LP_CORE_DOCS,
                             'SOC_DIG_SIGN_SUPPORTED':['api-reference/peripherals/ds.rst'],
+                            'SOC_ECDSA_SUPPORTED':['api-reference/peripherals/ecdsa.rst'],
                             'SOC_HMAC_SUPPORTED':['api-reference/peripherals/hmac.rst'],
                             'SOC_ASYNC_MEMCPY_SUPPORTED':['api-reference/system/async_memcpy.rst'],
                             'CONFIG_IDF_TARGET_ARCH_XTENSA':XTENSA_DOCS,
@@ -250,6 +255,8 @@ extensions += ['sphinx_copybutton',
 
 # Use wavedrompy as backend, insted of wavedrom-cli
 render_using_wavedrompy = True
+
+smartquotes = False
 
 # link roles config
 github_repo = 'espressif/esp-idf'

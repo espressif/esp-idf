@@ -27,6 +27,7 @@ if(NOT BOOTLOADER_BUILD)
                      "revision.c"
                      "rtc_module.c"
                      "sleep_modes.c"
+                     "sleep_console.c"
                      "sleep_gpio.c"
                      "sleep_event.c"
                      "sleep_modem.c"
@@ -36,7 +37,9 @@ if(NOT BOOTLOADER_BUILD)
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
                      "port/esp_clk_tree_common.c"
-                     "dma/esp_dma_utils.c")
+                     "dma/esp_dma_utils.c"
+                     "spi_share_hw_ctrl.c"
+                     "spi_bus_lock.c")
 
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")
@@ -51,8 +54,7 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     # [refactor-todo]
-    list(APPEND priv_requires driver            # for UART (by sleep_modes)
-                              esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
+    list(APPEND priv_requires esp_driver_gpio   # for GPIO and RTC (by sleep_gpio and sleep_modes)
                               esp_timer
                               esp_pm)
 
@@ -64,6 +66,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
         list(APPEND srcs "dma/gdma.c")
+    endif()
+
+    if(CONFIG_SOC_MULTI_USAGE_LDO_SUPPORTED)
+        list(APPEND srcs "ldo/esp_ldo.c")
     endif()
 
     if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
@@ -78,6 +84,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GDMA_SUPPORT_ETM)
         list(APPEND srcs "dma/gdma_etm.c")
+    endif()
+
+    if(CONFIG_SOC_DW_GDMA_SUPPORTED)
+        list(APPEND srcs "dma/dw_gdma.c")
     endif()
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED)

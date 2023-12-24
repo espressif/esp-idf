@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -146,7 +146,7 @@ static void print_debug_exception_details(const void *f)
             }
 #endif
 
-            const char *name = pcTaskGetName(xTaskGetCurrentTaskHandleForCPU(core));
+            const char *name = pcTaskGetName(xTaskGetCurrentTaskHandleForCore(core));
             panic_print_str("Stack canary watchpoint triggered (");
             panic_print_str(name);
             panic_print_str(") ");
@@ -390,6 +390,17 @@ void panic_arch_fill_info(void *f, panic_info_t *info)
     }
 
     info->addr = ((void *) ((XtExcFrame *) frame)->pc);
+}
+
+/**
+ * This function will be called before the SoC-level panic is handled,
+ * allowing us to check and override the exception cause for certain
+ * pseudo-causes that do not have their own trigger
+ */
+bool panic_soc_check_pseudo_cause(void *f, panic_info_t *info)
+{
+    // Currently only needed on riscv targets
+    return false;
 }
 
 void panic_soc_fill_info(void *f, panic_info_t *info)

@@ -185,10 +185,12 @@ rtos_save_fpu_coproc:
     csrr  a1, fcsr
     sw    a1, RV_FPU_FCSR(a0)
 rtos_save_fpu_coproc_nosave:
+#if ( configNUM_CORES > 1 )
     /* Pin current task to current core */
     mv    a0, s1
     csrr  a1, mhartid
     call  vPortTaskPinToCore
+#endif /* configNUM_CORES > 1 */
     /* Check if we have to restore a previous FPU context from the current TCB */
     mv    a0, s1
     call  pxPortGetCoprocArea

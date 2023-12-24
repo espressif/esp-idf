@@ -1,14 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /**
  * @brief initialize cache invalid access interrupt
@@ -31,6 +34,22 @@ void esp_cache_err_int_init(void);
  *  - (-1) otherwise
  */
 int esp_cache_err_get_cpuid(void);
+
+
+/**
+ * @brief Returns a pointer to the cache error message
+ *
+ * @return const char* Pointer to the error message
+ */
+const char *esp_cache_err_panic_string(void);
+
+/**
+ * @brief Checks if any cache errors are active
+ *
+ * @return true
+ * @return false
+ */
+bool esp_cache_err_has_active_err(void);
 
 #ifdef __cplusplus
 }

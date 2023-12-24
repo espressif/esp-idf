@@ -22,15 +22,17 @@
 esp_err_t esp_ieee802154_enable(void)
 {
     ieee802154_enable();
-    esp_phy_enable(PHY_MODEM_IEEE802154);
+    ieee802154_rf_enable();
     esp_btbb_enable();
     return ieee802154_mac_init();
 }
 
 esp_err_t esp_ieee802154_disable(void)
 {
+    esp_btbb_disable();
+    ieee802154_rf_disable();
     ieee802154_disable();
-    return ESP_OK;
+    return ieee802154_mac_deinit();
 }
 
 uint8_t esp_ieee802154_get_channel(void)
@@ -393,3 +395,15 @@ __attribute__((weak)) void esp_ieee802154_timer1_done(void)
 {
 
 }
+
+#if CONFIG_IEEE802154_TXRX_STATISTIC
+void esp_ieee802154_txrx_statistic_clear(void)
+{
+    ieee802154_txrx_statistic_clear();
+}
+
+void esp_ieee802154_txrx_statistic_print(void)
+{
+    ieee802154_txrx_statistic_print();
+}
+#endif // CONFIG_IEEE802154_TXRX_STATISTIC

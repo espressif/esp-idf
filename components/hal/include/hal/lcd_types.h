@@ -19,7 +19,9 @@ extern "C" {
  * @brief LCD clock source
  */
 typedef soc_periph_lcd_clk_src_t lcd_clock_source_t;
-#endif
+#else
+typedef int lcd_clock_source_t;
+#endif // SOC_LCD_I80_SUPPORTED || SOC_LCD_RGB_SUPPORTED
 
 /**
  * @brief RGB data endian
@@ -36,6 +38,15 @@ typedef enum {
     LCD_COLOR_SPACE_RGB = COLOR_SPACE_RGB, /*!< Color space: RGB */
     LCD_COLOR_SPACE_YUV = COLOR_SPACE_YUV, /*!< Color space: YUV */
 } lcd_color_space_t;
+
+/**
+ * @brief LCD color pixel format in RGB color space
+ */
+typedef enum {
+    LCD_COLOR_PIXEL_FORMAT_RGB565 = COLOR_PIXEL_RGB565, /*!< 16 bits, 5 bits per R/B value, 6 bits for G value */
+    LCD_COLOR_PIXEL_FORMAT_RGB666 = COLOR_PIXEL_RGB666, /*!< 18 bits, 6 bits per R/G/B value */
+    LCD_COLOR_PIXEL_FORMAT_RGB888 = COLOR_PIXEL_RGB888, /*!< 24 bits, 8 bits per R/G/B value */
+} lcd_color_rgb_pixel_format_t;
 
 /**
  * @brief LCD color range

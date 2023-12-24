@@ -1,0 +1,8 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_tsens/test_apps/temperature_sensor:
+  disable:
+    - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+  depends_components:
+    - esp_driver_tsens
+    - esp_phy

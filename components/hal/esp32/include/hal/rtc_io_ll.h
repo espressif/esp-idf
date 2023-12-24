@@ -360,7 +360,7 @@ static inline void rtcio_ll_disable_sleep_setting(int rtcio_num)
 }
 
 /**
- * Set specific logic level on an RTC IO pin as a wakeup trigger.
+ * Set specific logic level on an RTC IO pin as a ext0 wakeup trigger.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param level Logic level (0)

@@ -33,10 +33,10 @@ typedef struct async_memcpy_context_t async_memcpy_context_t;
 struct async_memcpy_context_t {
     /// @brief Start a new async memcpy transaction
     esp_err_t (*memcpy)(async_memcpy_context_t *ctx, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args);
-#if SOC_GDMA_SUPPORT_ETM
+#if SOC_ETM_SUPPORTED
     /// @brief Create ETM event handle of specific event type
     esp_err_t (*new_etm_event)(async_memcpy_context_t *ctx, async_memcpy_etm_event_t event_type, esp_etm_event_handle_t *out_event);
-#endif // SOC_GDMA_SUPPORT_ETM
+#endif // SOC_ETM_SUPPORTED
     /// @brief Delete async memcpy driver context
     esp_err_t (*del)(async_memcpy_context_t *ctx);
 };

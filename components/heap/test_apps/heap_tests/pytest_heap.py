@@ -13,7 +13,7 @@ from pytest_embedded import Dut
     [
         'no_poisoning',
         'light_poisoning',
-        'comprehensive_poisoning'
+        'comprehensive_poisoning',
     ]
 )
 def test_heap_poisoning(dut: Dut) -> None:

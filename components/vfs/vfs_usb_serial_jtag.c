@@ -270,6 +270,10 @@ static int usb_serial_jtag_fsync(int fd)
     while ((esp_timer_get_time() - s_ctx.last_tx_ts) < TX_FLUSH_TIMEOUT_US) {
         if (usb_serial_jtag_ll_txfifo_writable()) {
             s_ctx.last_tx_ts = esp_timer_get_time();
+            //The last transfer may have been a 64-byte one. Flush again in order to
+            //send a 0-byte packet to indicate the end of the USB transfer, otherwise
+            //those 64 bytes will get stuck in the hosts buffer.
+            usb_serial_jtag_ll_txfifo_flush();
             break;
         }
     }

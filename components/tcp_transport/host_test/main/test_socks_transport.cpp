@@ -16,7 +16,8 @@
 #include <netdb.h>
 #include "fmt/core.h"
 #include "fmt/ranges.h"
-#include "catch/catch.hpp"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_all.hpp>
 #include "esp_transport.h"
 #include "esp_transport_socks_proxy.h"
 

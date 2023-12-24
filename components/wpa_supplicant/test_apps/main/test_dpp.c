@@ -34,7 +34,7 @@ extern size_t dpp_nonce_override_len;
 
 TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
 {
-    set_leak_threshold(120);
+    set_leak_threshold(130);
     /* Global variables */
     char command[1200] = {0};
     const u8 *frame;

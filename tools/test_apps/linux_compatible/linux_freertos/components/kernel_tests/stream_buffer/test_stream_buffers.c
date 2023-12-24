@@ -60,8 +60,16 @@ TEST_CASE("Stream Buffer: Send-receive tasks", "[freertos]")
     test_args.done_sem = xSemaphoreCreateCounting(2, 0);
     TEST_ASSERT_NOT_NULL(test_args.stream_buffer);
     TEST_ASSERT_NOT_NULL(test_args.done_sem);
-    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(sender_task, "sender", 4096, &test_args, CONFIG_UNITY_FREERTOS_PRIORITY + 2, NULL, 0));
-    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(receiver_task, "receiver", 4096, &test_args, CONFIG_UNITY_FREERTOS_PRIORITY + 1, NULL, 1));
+    BaseType_t sender_core_id;
+    BaseType_t receiver_core_id;
+    sender_core_id = 0;
+    #if CONFIG_FREERTOS_UNICORE
+        receiver_core_id = 0;
+    #else
+        receiver_core_id = 1;
+    #endif
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(sender_task, "sender", 4096, &test_args, CONFIG_UNITY_FREERTOS_PRIORITY + 2, NULL, sender_core_id));
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(receiver_task, "receiver", 4096, &test_args, CONFIG_UNITY_FREERTOS_PRIORITY + 1, NULL, receiver_core_id));
 
     // Wait for both tasks to complete
     for (int i = 0; i < 2; i++) {

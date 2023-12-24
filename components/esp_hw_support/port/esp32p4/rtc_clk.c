@@ -405,3 +405,26 @@ bool rtc_dig_8m_enabled(void)
  * TODO: update the library to use rtc_clk_xtal_freq_get
  */
 rtc_xtal_freq_t rtc_get_xtal(void) __attribute__((alias("rtc_clk_xtal_freq_get")));
+
+//------------------------------------MPLL-------------------------------------//
+void rtc_clk_mpll_disable(void)
+{
+    clk_ll_mpll_disable();
+}
+
+void rtc_clk_mpll_enable(void)
+{
+    clk_ll_mpll_enable();
+}
+
+void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq)
+{
+    /* Analog part */
+    /* MPLL calibration start */
+    regi2c_ctrl_ll_mpll_calibration_start();
+    clk_ll_mpll_set_config(mpll_freq, xtal_freq);
+    /* wait calibration done */
+    while(!regi2c_ctrl_ll_mpll_calibration_is_done());
+    /* MPLL calibration stop */
+    regi2c_ctrl_ll_mpll_calibration_stop();
+}

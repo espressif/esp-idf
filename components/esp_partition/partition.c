@@ -234,7 +234,7 @@ static esp_err_t load_partitions(void)
     return err;
 }
 
-void unload_partitions(void)
+void esp_partition_unload_all(void)
 {
     _lock_acquire(&s_partition_list_lock);
     partition_list_item_t *it;

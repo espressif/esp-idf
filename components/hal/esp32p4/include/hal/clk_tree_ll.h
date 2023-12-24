@@ -10,8 +10,9 @@
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/rtc.h"
+#include "soc/pmu_reg.h"
 #include "hal/regi2c_ctrl.h"
-#include "soc/regi2c_bbpll.h"
+#include "soc/regi2c_mpll.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32p4/rom/rtc.h"
@@ -80,6 +81,22 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_enable(void)
 static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
 {
 
+}
+
+/**
+ * @brief Power up MPLL circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_enable(void)
+{
+    REG_SET_BIT(PMU_RF_PWC_REG, PMU_MSPI_PHY_XPD);
+}
+
+/**
+ * @brief Power down MPLL circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_disable(void)
+{
+    REG_CLR_BIT(PMU_RF_PWC_REG, PMU_MSPI_PHY_XPD);
 }
 
 /**
@@ -270,6 +287,25 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32_t pll_freq_mhz, uint32_t xtal_freq_mhz)
 {
 
+}
+
+/**
+ * @brief Set MPLL frequency from XTAL source (Analog part - through regi2c)
+ *
+ * @param mpll_freq_mhz MPLL frequency, in MHz
+ * @param xtal_freq_mhz XTAL frequency, in MHz
+ */
+static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_t mpll_freq_mhz, uint32_t xtal_freq_mhz)
+{
+    HAL_ASSERT(xtal_freq_mhz == RTC_XTAL_FREQ_40M);
+
+    // MPLL_Freq = XTAL_Freq * (div + 1) / (ref_div + 1)
+    uint8_t ref_div = 1;
+    uint8_t div = mpll_freq_mhz / 20 - 1;
+
+    uint32_t val = REGI2C_READ(I2C_MPLL, I2C_MPLL_DIV_REG_ADDR);
+    val |= ((div << 3) | ref_div);
+    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_DIV_REG_ADDR, val);
 }
 
 /**

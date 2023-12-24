@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include "esp_err.h"
-#include "driver/sdmmc_types.h"
+#include "sd_protocol_types.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,7 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs
-    "unity/src/unity.c")
+    "unity/src/unity.c"
+    "unity_compat.c"
+)
 
 set(includes
     "include"

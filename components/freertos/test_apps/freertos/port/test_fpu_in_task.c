@@ -141,7 +141,7 @@ static void unpinned_task(void *arg)
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
 #else
-    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
+    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
 
@@ -162,7 +162,7 @@ static void unpinned_task(void *arg)
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(1 << cur_core_num, vTaskCoreAffinityGet(NULL));
 #else
-    TEST_ASSERT_EQUAL(cur_core_num, xTaskGetAffinity(NULL));
+    TEST_ASSERT_EQUAL(cur_core_num, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
     // Reenable scheduling/preemption

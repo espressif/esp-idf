@@ -244,13 +244,12 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
         ecdsa_hal_config_t conf = {
             .mode = ECDSA_MODE_SIGN_GEN,
             .curve = curve,
-            .k_mode = ECDSA_K_USE_TRNG,
             .sha_mode = ECDSA_Z_USER_PROVIDED,
             .efuse_key_blk = d->MBEDTLS_PRIVATE(n),
             .use_km_key = 0, //TODO: IDF-7992
         };
 
-        ecdsa_hal_gen_signature(&conf, NULL, sha_le, r_le, s_le, len);
+        ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
     } while (!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
 
     esp_ecdsa_release_hardware();
@@ -470,7 +469,6 @@ static int esp_ecdsa_verify(mbedtls_ecp_group *grp,
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_VERIFY,
         .curve = curve,
-        .k_mode = ECDSA_K_USE_TRNG,
         .sha_mode = ECDSA_Z_USER_PROVIDED,
     };
 

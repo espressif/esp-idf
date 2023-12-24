@@ -16,7 +16,7 @@ For design, operation, and control registers of a touch sensor, see **{IDF_TARGE
 
 In-depth design details of touch sensors and firmware development guidelines for {IDF_TARGET_NAME} are available in `Touch Sensor Application Note <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md>`_.
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     For more information about testing touch sensors in various configurations, please check the `Guide for ESP32-Sense-Kit <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32/esp32-sense-kit/user_guide.html>`_.
 
@@ -118,14 +118,14 @@ Configuration
         * - T13
           - GPIO13
         * - T14
-          - GPIO14    
+          - GPIO14
 
 Use the function :cpp:func:`touch_pad_set_fsm_mode` to select if touch pad measurement (operated by FSM) should be started automatically by a hardware timer, or by software. If software mode is selected, use :cpp:func:`touch_pad_sw_start` to start the FSM.
 
 Touch State Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     The following two functions come in handy to read raw or filtered measurements from the sensor:
 
@@ -138,7 +138,7 @@ Touch State Measurements
 
         Before using :cpp:func:`touch_pad_read_filtered`, you need to initialize and configure the filter by calling specific filter functions described in Section `Filtering of Measurements`_.
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     The following function come in handy to read raw measurements from the sensor:
 
@@ -151,7 +151,7 @@ For the demonstration of how to read the touch pad data, check the application e
 Method of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     The touch sensor counts the number of charge/discharge cycles over a fixed period of time (specified by :cpp:func:`touch_pad_set_measurement_clock_cycles`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor sleeps until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
 
@@ -159,7 +159,7 @@ Method of Measurements
 
         If the specified clock cycles for measurement is too samll, the result may be inaccurate, but increasing clock cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the inverval and measurement is too long.
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     The touch sensor records the period of time (i.e., the number of clock cycles) over a fixed charge/discharge cycles (specified by :cpp:func:`touch_pad_set_charge_discharge_times`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor sleeps until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
 
@@ -172,11 +172,11 @@ Optimization of Measurements
 
 A touch sensor has several configurable parameters to match the characteristics of a particular touch pad design. For instance, to sense smaller capacity changes, it is possible to narrow down the reference voltage range within which the touch pads are charged/discharged. The high and low reference voltages are set using the function :cpp:func:`touch_pad_set_voltage`.
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     Besides the ability to discern smaller capacity changes, a positive side effect is reduction of power consumption for low power applications. A likely negative effect is an increase in measurement noise. If the dynamic range of obtained readings is still satisfactory, then further reduction of power consumption might be done by reducing the measurement time with :cpp:func:`touch_pad_set_measurement_clock_cycles`.
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     Besides the ability to discern smaller capacity changes, a positive side effect is reduction of power consumption for low power applications. A likely negative effect is an increase in measurement noise. If the dynamic range of obtained readings is still satisfactory, then further reduction of power consumption might be done by reducing the measurement time with :cpp:func:`touch_pad_set_charge_discharge_times`.
 
@@ -187,17 +187,17 @@ The following list summarizes available measurement parameters and corresponding
     * voltage range: :cpp:func:`touch_pad_set_voltage`
     * speed (slope): :cpp:func:`touch_pad_set_cnt_mode`
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     * Clock cycles of one measurement: :cpp:func:`touch_pad_set_measurement_clock_cycles`
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     * Charge and discharge times of one measurement: :cpp:func:`touch_pad_set_charge_discharge_times`
 
 Relationship between the voltage range (high/low reference voltages), speed (slope), and measurement time is shown in the figure below.
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     .. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
         :align: center
@@ -208,7 +208,7 @@ Relationship between the voltage range (high/low reference voltages), speed (slo
 
     The last chart **Output** represents the touch sensor reading, i.e., the count of pulses collected within the measurement time.
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     .. figure:: ../../../_static/touch_pad-measurement-parameters-version2.png
         :align: center
@@ -225,7 +225,7 @@ All functions are provided in pairs to **set** a specific parameter and to **get
 
 Filtering of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     If measurements are noisy, you can filter them with provided API functions. Before using the filter, please start it by calling :cpp:func:`touch_pad_filter_start`.
 
@@ -233,7 +233,7 @@ Filtering of Measurements
 
     You can stop the filter with :cpp:func:`touch_pad_filter_stop`. If not required anymore, the filter can be deleted by invoking :cpp:func:`touch_pad_filter_delete`.
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     If measurements are noisy, you can filter them with provided API functions. The {IDF_TARGET_NAME}'s touch functionality provide two sets of APIs for doing this.
 
@@ -259,7 +259,7 @@ Before enabling an interrupt on a touch detection, you should establish a touch 
 
 Once a detection threshold is established, it can be set during initialization with :cpp:func:`touch_pad_config` or at the runtime with :cpp:func:`touch_pad_set_thresh`.
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     In the next step, configure how interrupts are triggered. They can be triggered below or above the threshold, which is set with the function :cpp:func:`touch_pad_set_trigger_mode`.
 
@@ -270,13 +270,13 @@ Finally, configure and manage interrupt calls using the following functions:
 
 When interrupts are operational, you can obtain the information from which particular pad an interrupt came by invoking :cpp:func:`touch_pad_get_status` and clear the pad status with :cpp:func:`touch_pad_clear_status`.
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     .. note::
 
         Interrupts on touch detection operate on raw/unfiltered measurements checked against user established threshold and are implemented in hardware. Enabling the software filtering API (see :ref:`touch_pad-api-filtering-of-measurements`) does not affect this process.
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     Wakeup from Sleep Mode
     ^^^^^^^^^^^^^^^^^^^^^^

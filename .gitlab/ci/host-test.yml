@@ -13,8 +13,7 @@
     - job: upload-submodules-cache
       optional: true
       artifacts: false
-    - job: mr_variables
-      optional: true  # only MR pipelines would have this
+    - pipeline_variables
 
 test_nvs_on_host:
   extends: .host_test_template
@@ -100,18 +99,9 @@ test_gdbstub_on_host:
     - cd components/esp_gdbstub/test_gdbstub_host
     - make test
 
-test_idf_py:
-  extends: .host_test_template
-  variables:
-    LC_ALL: C.UTF-8
-  script:
-    - cd ${IDF_PATH}/tools/test_idf_py
-    - ./test_idf_py.py
-    - ./test_hints.py
-
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
-test_idf_tools:
+test_cli_installer:
   extends:
     - .host_test_template
     - .before_script:minimal
@@ -200,45 +190,39 @@ test_sysviewtrace_proc:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
     - ./test.sh
 
-test_mkdfu:
-  extends: .host_test_template
-  variables:
-    LC_ALL: C.UTF-8
-  script:
-    - cd ${IDF_PATH}/tools/test_mkdfu
-    - ./test_mkdfu.py
-
-test_sbom:
-  extends:
-    - .host_test_template
-    - .rules:patterns:sbom
-  script:
-    - cd ${IDF_PATH}/tools/test_sbom
-    - pytest
-
-test_autocomplete:
+test_tools:
   extends:
     - .host_test_template
   artifacts:
-    when: on_failure
+    when: always
     paths:
       - ${IDF_PATH}/*.out
+      - ${IDF_PATH}/XUNIT_*.xml
+    reports:
+      junit: ${IDF_PATH}/XUNIT_*.xml
     expire_in: 1 week
+  variables:
+    LC_ALL: C.UTF-8
+    INSTALL_QEMU: 1  # for test_idf_qemu.py
   script:
-    - ${IDF_PATH}/tools/ci/test_autocomplete.py
-
-test_detect_python:
-  extends:
-    - .host_test_template
-  script:
+    - stat=0
+    - cd ${IDF_PATH}/tools/ci/test_autocomplete
+    - pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml                  || stat=1
+    - cd ${IDF_PATH}/tools/test_idf_py
+    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml                    || stat=1
+    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml                     || stat=1
+    - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
+    - cd ${IDF_PATH}/tools/test_mkdfu
+    - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
     - cd ${IDF_PATH}
-    - shellcheck -s sh tools/detect_python.sh
-    - shellcheck -s bash tools/detect_python.sh
-    - shellcheck -s dash tools/detect_python.sh
+    - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
+    - shellcheck -s bash tools/detect_python.sh                                                           || stat=1
+    - shellcheck -s dash tools/detect_python.sh                                                           || stat=1
     - "bash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "fish -c 'source tools/detect_python.fish && echo Our Python: $ESP_PYTHON'"
+    - exit "$stat"
 
 test_split_path_by_spaces:
   extends: .host_test_template
@@ -295,7 +279,6 @@ test_pytest_qemu:
   extends:
     - .host_test_template
     - .before_script:build
-  image: $QEMU_IMAGE
   artifacts:
     when: always
     paths:
@@ -308,14 +291,16 @@ test_pytest_qemu:
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
+  variables:
+    INSTALL_QEMU: 1
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -vv
       --target $IDF_TARGET
       --pytest-apps
       -m qemu
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - run_cmd pytest
       --target $IDF_TARGET
@@ -324,6 +309,7 @@ test_pytest_qemu:
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files known_failure_cases/known_failure_cases.txt
       --app-info-filepattern \"list_job_*.txt\"
+      --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
 
 test_pytest_linux:
   extends:
@@ -344,8 +330,8 @@ test_pytest_linux:
       --pytest-apps
       -m host_test
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components ${MODIFIED_COMPONENTS}
+      --modified-files ${MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - run_cmd pytest
       --target linux

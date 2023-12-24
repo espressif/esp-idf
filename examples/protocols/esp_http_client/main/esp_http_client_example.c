@@ -375,7 +375,7 @@ static void http_auth_basic_redirect(void)
 #endif
 
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
-static void http_auth_digest(void)
+static void http_auth_digest_md5(void)
 {
     esp_http_client_config_t config = {
         .url = "http://user:passwd@"CONFIG_EXAMPLE_HTTP_ENDPOINT"/digest-auth/auth/user/passwd/MD5/never",
@@ -385,11 +385,31 @@ static void http_auth_digest(void)
     esp_err_t err = esp_http_client_perform(client);
 
     if (err == ESP_OK) {
-        ESP_LOGI(TAG, "HTTP Digest Auth Status = %d, content_length = %"PRId64,
+        ESP_LOGI(TAG, "HTTP MD5 Digest Auth Status = %d, content_length = %"PRId64,
                 esp_http_client_get_status_code(client),
                 esp_http_client_get_content_length(client));
     } else {
-        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
+}
+
+static void http_auth_digest_sha256(void)
+{
+    esp_http_client_config_t config = {
+        .url = "http://user:passwd@"CONFIG_EXAMPLE_HTTP_ENDPOINT"/digest-auth/auth/user/passwd/SHA-256/never",
+        .event_handler = _http_event_handler,
+        .buffer_size_tx = 1024, // Increase buffer size as header size will increase as it contains SHA-256.
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP SHA256 Digest Auth Status = %d, content_length = %"PRId64,
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error performing http request %s", esp_err_to_name(err));
     }
     esp_http_client_cleanup(client);
 }
@@ -779,7 +799,8 @@ static void http_test_task(void *pvParameters)
     http_auth_basic_redirect();
 #endif
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
-    http_auth_digest();
+    http_auth_digest_md5();
+    http_auth_digest_sha256();
 #endif
     http_encoded_query();
     http_relative_redirect();

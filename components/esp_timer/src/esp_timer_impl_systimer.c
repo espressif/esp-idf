@@ -156,7 +156,12 @@ void esp_timer_impl_advance(int64_t time_diff_us)
 
 esp_err_t esp_timer_impl_early_init(void)
 {
-    periph_module_enable(PERIPH_SYSTIMER_MODULE);
+    PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_SYSTIMER_MODULE, ref_count) {
+        if (ref_count == 0) {
+            systimer_ll_enable_bus_clock(true);
+            systimer_ll_reset_register();
+        }
+    }
     systimer_hal_tick_rate_ops_t ops = {
         .ticks_to_us = systimer_ticks_to_us,
         .us_to_ticks = systimer_us_to_ticks,

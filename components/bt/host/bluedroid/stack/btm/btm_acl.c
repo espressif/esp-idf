@@ -2117,6 +2117,70 @@ tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_C
     return (BTM_UNKNOWN_ADDR);
 }
 
+tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_CB *p_cb)
+{
+#if CLASSIC_BT_INCLUDED == TRUE
+    tBTM_STATUS ret = BTM_UNKNOWN_ADDR;
+    tACL_CONN *p;
+    tBTM_SET_ACL_PKT_TYPES_RESULTS result;
+
+    /* If someone already waiting on the version, do not allow another */
+    if (btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb) {
+        result.status = HCI_ERR_REPEATED_ATTEMPTS;
+        (*p_cb)(&result);
+        return (BTM_BUSY);;
+    }
+
+    p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
+
+    if (p != (tACL_CONN *)NULL) {
+        btu_start_timer (&btm_cb.devcb.set_acl_pkt_types_timer, BTU_TTYPE_BTM_ACL,
+                         BTM_DEV_REPLY_TIMEOUT);
+
+        btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb = p_cb;
+        if (btm_set_packet_types(p, pkt_types) != BTM_CMD_STARTED) {
+            btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb = NULL;
+            btu_stop_timer (&btm_cb.devcb.set_acl_pkt_types_timer);
+            result.status = HCI_ERR_MEMORY_FULL;
+            (*p_cb)(&result);
+            ret = BTM_NO_RESOURCES;
+        } else {
+            ret = BTM_CMD_STARTED;
+        }
+    }
+    /* If here, no BD Addr found */
+    return ret;
+#else
+    return BTM_NO_RESOURCES;
+#endif
+}
+
+void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
+{
+#if CLASSIC_BT_INCLUDED == TRUE
+    BTM_TRACE_DEBUG ("btm_acl_pkt_types_changed\n");
+    tACL_CONN *conn = NULL;
+    tBTM_SET_ACL_PKT_TYPES_RESULTS results;
+    btu_stop_timer (&btm_cb.devcb.set_acl_pkt_types_timer);
+
+    /* If there is a callback registered for packet types changed, call it */
+    if (btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb) {
+        if (status == HCI_SUCCESS) {
+            results.status = BTM_SUCCESS;
+        } else {
+            results.status = BTM_BAD_VALUE_RET;
+        }
+        results.pkt_types = pkt_types;
+        /* Search through the list of active channels for the correct BD Addr */
+        if ((conn = btm_handle_to_acl(handle)) != NULL) {
+            memcpy(results.rem_bda, conn->remote_addr, BD_ADDR_LEN);
+            (*btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb)(&results);
+        }
+        btm_cb.devcb.p_set_acl_pkt_types_cmpl_cb = NULL;
+    }
+#endif
+}
+
 #if (BLE_INCLUDED == TRUE)
 tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
 {

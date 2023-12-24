@@ -170,7 +170,7 @@ typedef struct esp_tls_cfg {
                                                  blocking mode after tls session is established */
 
     bool use_secure_element;                /*!< Enable this option to use secure element or
-                                                 atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
+                                                 atecc608a chip */
 
     int timeout_ms;                         /*!< Network timeout in milliseconds.
                                                  Note: If this value is not set, by default the timeout is
@@ -238,6 +238,10 @@ typedef struct esp_tls_server_session_ticket_ctx {
  *         or a specific MBEDTLS_ERR_XXX code, which will cause the handhsake to abort
  */
 typedef mbedtls_ssl_hs_cb_t esp_tls_handshake_callback;
+#else
+// When CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK is not defined,
+// the following typedef is only kept for compatibility reasons, not to be used.
+typedef void* esp_tls_handshake_callback;
 #endif
 
 /**
@@ -299,7 +303,7 @@ typedef struct esp_tls_cfg_server {
     uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored */
 
     bool use_secure_element;                    /*!< Enable this option to use secure element or
-                                                 atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
+                                                 atecc608a chip */
 
 
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)

@@ -39,9 +39,9 @@ extern "C" {
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
 #define GPIO_LL_INTR0_ENA      (BIT(0))
-// #define GPIO_LL_INTR1_ENA  (BIT(1)) // TODO: IDF-7995
-// #define GPIO_LL_INTR2_ENA  (BIT(2))
-// #define GPIO_LL_INTR3_ENA  (BIT(3))
+#define GPIO_LL_INTR1_ENA      (BIT(1))
+#define GPIO_LL_INTR2_ENA      (BIT(3))
+#define GPIO_LL_INTR3_ENA      (BIT(4))
 
 /**
  * @brief Get the configuration for an IO
@@ -289,7 +289,7 @@ static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t 
             // GPIO 16-47
             HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low |= (bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
-            // GPIO 48-56
+            // GPIO 48-54
             HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high |= (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
@@ -312,7 +312,7 @@ static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t
             // GPIO 16-47
             HP_SYSTEM.gpio_o_hys_ctrl0.reg_gpio_0_hys_low &= ~(bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
-            // GPIO 48-56
+            // GPIO 48-54
             HP_SYSTEM.gpio_o_hys_ctrl1.reg_gpio_0_hys_high &= ~(bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
@@ -486,7 +486,7 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
             // GPIO 16-47
             HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low |= (bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
-            // GPIO 48-56
+            // GPIO 48-54
             HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high |= (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
@@ -511,7 +511,7 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
             // GPIO 16-47
             HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low &= ~(bit_mask >> SOC_RTCIO_PIN_COUNT);
         } else {
-            // GPIO 48-56
+            // GPIO 48-54
             HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high &= ~(bit_mask >> (32 + SOC_RTCIO_PIN_COUNT));
         }
     }
@@ -541,7 +541,7 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
             // GPIO 16-47
             return !!(HP_SYSTEM.gpio_o_hold_ctrl0.reg_gpio_0_hold_low & (bit_mask >> SOC_RTCIO_PIN_COUNT));
         } else {
-            // GPIO 48-56
+            // GPIO 48-54
             return !!(HP_SYSTEM.gpio_o_hold_ctrl1.reg_gpio_0_hold_high & (bit_mask >> (32 + SOC_RTCIO_PIN_COUNT)));
         }
     }

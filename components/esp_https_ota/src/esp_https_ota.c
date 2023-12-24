@@ -665,7 +665,7 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
     }
 
     if ((err == ESP_OK) && (handle->state == ESP_HTTPS_OTA_SUCCESS)) {
-        esp_err_t err = esp_ota_set_boot_partition(handle->update_partition);
+        err = esp_ota_set_boot_partition(handle->update_partition);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
         } else {

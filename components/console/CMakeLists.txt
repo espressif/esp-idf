@@ -28,4 +28,6 @@ idf_component_register(SRCS "commands.c"
                             ${argtable_srcs}
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
                     REQUIRES vfs
-                    PRIV_REQUIRES driver)
+                    PRIV_REQUIRES esp_driver_uart
+                                  driver # to be replaced by esp_driver_usj
+                    )

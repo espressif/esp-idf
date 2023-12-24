@@ -298,7 +298,7 @@ static inline void esp_apptrace_trax_memory_enable(void)
 #if CONFIG_IDF_TARGET_ESP32
         /* Enable trace memory on PRO CPU */
         DPORT_WRITE_PERI_REG(DPORT_PRO_TRACEMEM_ENA_REG, DPORT_PRO_TRACEMEM_ENA_M);
-#if CONFIG_FREERTOS_UNICORE == 0
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE == 0
         /* Enable trace memory on APP CPU */
         DPORT_WRITE_PERI_REG(DPORT_APP_TRACEMEM_ENA_REG, DPORT_APP_TRACEMEM_ENA_M);
 #endif

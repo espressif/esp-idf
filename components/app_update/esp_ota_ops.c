@@ -31,24 +31,6 @@
 #include "esp_bootloader_desc.h"
 #include "esp_flash.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/secure_boot.h"
-#endif
-
 #define SUB_TYPE_ID(i) (i & 0x0F)
 
 /* Partial_data is word aligned so no reallocation is necessary for encrypted flash write */
@@ -199,13 +181,18 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (size == 0) {
+        ESP_LOGD(TAG, "write data size is 0");
+        return ESP_OK;
+    }
+
     // find ota handle in linked list
     for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         if (it->handle == handle) {
             if (it->need_erase) {
                 // must erase the partition before writing to it
-                uint32_t first_sector = it->wrote_size / SPI_FLASH_SEC_SIZE;
-                uint32_t last_sector = (it->wrote_size + size) / SPI_FLASH_SEC_SIZE;
+                uint32_t first_sector = it->wrote_size / SPI_FLASH_SEC_SIZE; // first affected sector
+                uint32_t last_sector = (it->wrote_size + size - 1) / SPI_FLASH_SEC_SIZE; // last affected sector
 
                 ret = ESP_OK;
                 if ((it->wrote_size % SPI_FLASH_SEC_SIZE) == 0) {
@@ -960,6 +947,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
     }
 
     const esp_partition_t *running_app_part = esp_ota_get_running_partition();
+    esp_err_t ret = ESP_FAIL;
 #ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
     esp_ota_img_states_t running_app_state;
     ret = esp_ota_get_state_partition(running_app_part, &running_app_state);
@@ -974,7 +962,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
 #endif
 
     esp_secure_boot_key_digests_t trusted_keys;
-    esp_err_t ret = esp_secure_boot_read_key_digests(&trusted_keys);
+    ret = esp_secure_boot_read_key_digests(&trusted_keys);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not read the secure boot key digests from efuse. Aborting..");
         return ESP_FAIL;

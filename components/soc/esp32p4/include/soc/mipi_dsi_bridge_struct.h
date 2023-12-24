@@ -495,10 +495,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** protocal : R/W; bitpos: [0]; default: 0;
-         *  this bit configures yuv protoocl, 0: bt.601, 1: bt.709
+        /** protocol : R/W; bitpos: [0]; default: 0;
+         *  this bit configures yuv protocol, 0: bt.601, 1: bt.709
          */
-        uint32_t protocal:1;
+        uint32_t protocol:1;
         /** yuv_pix_endian : R/W; bitpos: [1]; default: 0;
          *  this bit configures yuv pixel endian, 0: y0u0y1v1y2u2y3v3, 1: y3u3y2v2y1u1y0v0
          */
@@ -764,7 +764,7 @@ typedef union {
 } dsi_brg_int_st_reg_t;
 
 
-typedef struct {
+typedef struct dsi_brg_dev_t {
     volatile dsi_brg_clk_en_reg_t clk_en;
     volatile dsi_brg_en_reg_t en;
     volatile dsi_brg_dma_req_cfg_reg_t dma_req_cfg;
@@ -810,6 +810,8 @@ typedef struct {
 #ifndef __cplusplus
 _Static_assert(sizeof(dsi_brg_dev_t) == 0xa0, "Invalid size of dsi_brg_dev_t structure");
 #endif
+
+extern dsi_brg_dev_t MIPI_DSI_BRIDGE;
 
 #ifdef __cplusplus
 }

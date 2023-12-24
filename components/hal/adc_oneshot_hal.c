@@ -81,7 +81,7 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
 #endif //#if SOC_ADC_ARBITER_SUPPORTED
 }
 
-static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz)
+static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz, uint32_t *read_delay_us)
 {
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     (void)unit;
@@ -112,10 +112,8 @@ static void adc_hal_onetime_start(adc_unit_t unit, uint32_t clk_src_freq_hz)
      * A rough estimate for this step should be at least ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL ADC sar clock cycle.
      */
     uint32_t sar_clk = adc_ctrl_clk / ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT;
-    uint32_t read_delay_us = ((1000 * 1000) / sar_clk + 1) * ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL;
+    *read_delay_us = ((1000 * 1000) / sar_clk + 1) * ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL;
     HAL_EARLY_LOGD("adc_hal", "clk_src_freq_hz: %"PRIu32", sar_clk: %"PRIu32", read_delay_us: %"PRIu32"", clk_src_freq_hz, sar_clk, read_delay_us);
-    esp_rom_delay_us(read_delay_us);
-
 #endif //ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL
 
 #else
@@ -127,6 +125,7 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
 {
     bool valid = true;
     uint32_t event = 0;
+    uint32_t read_delay_us = 0;
     if (hal->unit == ADC_UNIT_1) {
         event = ADC_LL_EVENT_ADC1_ONESHOT_DONE;
     } else {
@@ -137,10 +136,11 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
     adc_oneshot_ll_disable_all_unit();
     adc_oneshot_ll_enable(hal->unit);
 
-    adc_hal_onetime_start(hal->unit, hal->clk_src_freq_hz);
+    adc_hal_onetime_start(hal->unit, hal->clk_src_freq_hz, &read_delay_us);
     while (!adc_oneshot_ll_get_event(event)) {
         ;
     }
+    esp_rom_delay_us(read_delay_us);
     *out_raw = adc_oneshot_ll_get_raw_result(hal->unit);
 #if (SOC_ADC_PERIPH_NUM == 2)
     if (hal->unit == ADC_UNIT_2) {

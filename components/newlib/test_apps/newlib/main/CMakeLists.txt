@@ -6,7 +6,6 @@ idf_component_register(SRCS
                        "test_misc.c"
                        "test_newlib.c"
                        "test_setjmp.c"
-                       "test_shared_stack_printf.c"
                        "test_stdatomic.c"
                        "test_time.c"
                        PRIV_REQUIRES unity vfs cmock driver esp_timer spi_flash test_utils pthread esp_psram

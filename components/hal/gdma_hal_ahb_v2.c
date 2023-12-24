@@ -120,12 +120,12 @@ void gdma_ahb_hal_clear_intr(gdma_hal_context_t *hal, int chan_id, gdma_channel_
     }
 }
 
-uint32_t gdma_ahb_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+uint32_t gdma_ahb_hal_read_intr_status(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool raw)
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
-        return ahb_dma_ll_rx_get_interrupt_status(hal->ahb_dma_dev, chan_id);
+        return ahb_dma_ll_rx_get_interrupt_status(hal->ahb_dma_dev, chan_id, raw);
     } else {
-        return ahb_dma_ll_tx_get_interrupt_status(hal->ahb_dma_dev, chan_id);
+        return ahb_dma_ll_tx_get_interrupt_status(hal->ahb_dma_dev, chan_id, raw);
     }
 }
 
@@ -207,6 +207,17 @@ uint32_t gdma_ahb_hal_get_crc_result(gdma_hal_context_t *hal, int chan_id, gdma_
 }
 #endif // SOC_GDMA_SUPPORT_CRC
 
+#if SOC_GDMA_SUPPORT_ETM
+void gdma_ahb_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis)
+{
+    if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+        ahb_dma_ll_rx_enable_etm_task(hal->ahb_dma_dev, chan_id, en_or_dis);
+    } else {
+        ahb_dma_ll_tx_enable_etm_task(hal->ahb_dma_dev, chan_id, en_or_dis);
+    }
+}
+#endif // SOC_GDMA_SUPPORT_ETM
+
 void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 {
     hal->ahb_dma_dev = AHB_DMA_LL_GET_HW(config->group_id - GDMA_LL_AHB_GROUP_START_ID);
@@ -230,4 +241,7 @@ void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
     hal->set_crc_poly = gdma_ahb_hal_set_crc_poly;
     hal->get_crc_result = gdma_ahb_hal_get_crc_result;
 #endif // SOC_GDMA_SUPPORT_CRC
+#if SOC_GDMA_SUPPORT_ETM
+    hal->enable_etm_task = gdma_ahb_hal_enable_etm_task;
+#endif // SOC_GDMA_SUPPORT_ETM
 }

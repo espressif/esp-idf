@@ -49,8 +49,8 @@ else()
                 endif()
 
             elseif(NOT "${status}" STREQUAL " ")
-                message(WARNING "Git submodule ${submodule_path} is out of date. "
-                    "Run 'git submodule update --init --recursive' to fix.")
+                message(WARNING "Git submodule ${submodule_path} is out of date. Run the following command to fix: "
+                    "git submodule update --init --recursive")
             endif()
 
             # Force a re-run of cmake if the submodule's .git file changes or is changed (ie accidental deinit)

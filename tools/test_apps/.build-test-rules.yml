@@ -87,6 +87,20 @@ tools/test_apps/storage/partition_table_readonly:
     - fatfs
     - spiffs
 
+tools/test_apps/storage/sdmmc_console:
+  disable:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: Console component not supported on H2 yet
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32s2", "esp32c3"]
+      temporary: true
+      reason: No runners for other targets yet
+  depends_components:
+    - sdmmc
+    - esp_driver_sdmmc
+    - esp_driver_sdspi
+
 tools/test_apps/system/bootloader_sections:
   disable:
     - if: IDF_TARGET == "esp32c2"
@@ -101,9 +115,7 @@ tools/test_apps/system/build_test:
     - if: CONFIG_NAME == "no_rvfplib" and ESP_ROM_HAS_RVFPLIB != 1
     - if: CONFIG_NAME == "usb_serial_jtag" AND SOC_USB_SERIAL_JTAG_SUPPORTED != 1
     - if: CONFIG_NAME == "usb_console_ets_printf" AND SOC_USB_OTG_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) not supported yet #TODO: IDF-8119
+    - if: CONFIG_NAME == "phy_multiple_init_data" AND IDF_TARGET == "esp32p4" # Update with caps here when IDF-7460 is resolved
 
 tools/test_apps/system/cxx_no_except:
   enable:
@@ -125,7 +137,7 @@ tools/test_apps/system/eh_frame:
 
 tools/test_apps/system/g0_components:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c5"] # preview targets
 
 tools/test_apps/system/g1_components:
 

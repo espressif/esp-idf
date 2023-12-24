@@ -12,7 +12,7 @@
 
 void touch_hal_config(touch_pad_t touch_num)
 {
-    touch_ll_set_threshold(touch_num, SOC_TOUCH_PAD_THRESHOLD_MAX);
+    touch_ll_set_threshold(touch_num, TOUCH_PAD_THRESHOLD_MAX);
     touch_ll_set_slope(touch_num, TOUCH_PAD_SLOPE_DEFAULT);
     touch_ll_set_tie_option(touch_num, TOUCH_PAD_TIE_OPT_DEFAULT);
 }

@@ -42,6 +42,7 @@ typedef enum {
  */
 typedef enum {
     COLOR_PIXEL_RGB888,      ///< 24 bits, 8 bits per R/G/B value
+    COLOR_PIXEL_RGB666,      ///< 18 bits, 6 bits per R/G/B value
     COLOR_PIXEL_RGB565,      ///< 16 bits, 5 bits per R/B value, 6 bits for G value
 } color_pixel_rgb_format_t;
 
@@ -92,7 +93,7 @@ typedef union {
                       Color Conversion
 ---------------------------------------------------------------*/
 /**
- * @brief LCD color range
+ * @brief Color range
  * @note The difference between a full range color and a limited range color is
  *       the amount of shades of black and white that they can display.
  */

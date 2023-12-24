@@ -15,20 +15,21 @@
 #include "esp_pm.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
+#include "esp_clk_tree.h"
+#include "soc/soc_caps.h"
 
 #include "esp_private/crosscore_int.h"
-#include "esp_private/uart_private.h"
+#include "esp_private/periph_ctrl.h"
 
 #include "soc/rtc.h"
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
-#include "driver/uart.h"
 #include "driver/gpio.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
-#include "freertos/xtensa_timer.h"
+#include "xtensa_timer.h"
 #include "xtensa/core-macros.h"
 #endif
 
@@ -43,11 +44,17 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/sleep_modem.h"
+#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_sleep.h"
 #include "esp_memory_utils.h"
 
 #include "sdkconfig.h"
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define HP_UART_SRC_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
+#else
+#define HP_UART_SRC_CLK_ATOMIC()
+#endif
 
 #define MHZ (1000000)
 
@@ -439,8 +446,11 @@ esp_err_t esp_pm_configure(const void* vconfig)
                   min_freq_mhz,
                   config->light_sleep_enable ? "ENABLED" : "DISABLED");
 
-    portENTER_CRITICAL(&s_switch_lock);
+    // CPU & Modem power down initialization, which must be initialized before s_light_sleep_en set true,
+    // to avoid entering idle and sleep in this function.
+    esp_pm_sleep_configure(config);
 
+    portENTER_CRITICAL(&s_switch_lock);
     bool res __attribute__((unused));
     res = rtc_clk_cpu_freq_mhz_to_config(max_freq_mhz, &s_cpu_freq_by_mode[PM_MODE_CPU_MAX]);
     assert(res);
@@ -452,8 +462,6 @@ esp_err_t esp_pm_configure(const void* vconfig)
     s_light_sleep_en = config->light_sleep_enable;
     s_config_changed = true;
     portEXIT_CRITICAL(&s_switch_lock);
-
-    esp_pm_sleep_configure(config);
 
     return ESP_OK;
 }
@@ -903,7 +911,7 @@ void esp_pm_impl_init(void)
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
-    esp_err_t err = uart_get_sclk_freq(clk_source, &sclk_freq);
+    esp_err_t err = esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_source, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
     assert(err == ESP_OK);
     HP_UART_SRC_CLK_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);

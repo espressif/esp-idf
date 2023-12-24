@@ -55,8 +55,8 @@
             hint_variables: ['esp_spiram_get_chip_size and esp_spiram_get_size', 'esp_psram_get_size()']
 
 -
-    re: "error: implicit declaration of function 'esp_secure_boot_verify_sbv2_signature_block|esp_secure_boot_verify_rsa_signature_block'"
-    hint: "'esp_secure_boot_verify_sbv2_signature_block()' and 'esp_secure_boot_verify_rsa_signature_block()' and have been made private and are no longer available."
+    re: "error: implicit declaration of function 'esp_secure_boot_verify_rsa_signature_block'"
+    hint: "'esp_secure_boot_verify_rsa_signature_block()' has been made private and is no longer available."
 
 -
     re: "error: implicit declaration of function '{}'"

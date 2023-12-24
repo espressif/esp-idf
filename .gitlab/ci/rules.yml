@@ -67,9 +67,6 @@
   - "tools/ci/ci_build_apps.py"
   - "tools/test_build_system/**/*"
 
-.patterns-sbom: &patterns-sbom
-  - "tools/test_sbom/*"
-
 .patterns-custom_test: &patterns-custom_test
   - "tools/ci/idf_pytest/**/*"
   - "tools/ci/python_packages/gitlab_api.py"
@@ -129,7 +126,7 @@
 
   - "components/**/*"
 
-  - "tools/ci/test_autocomplete.py"
+  - "tools/ci/test_autocomplete/*"
 
   - "tools/mass_mfg/**/*"
 
@@ -197,10 +194,8 @@
   - "components/unity/unity"
   - "components/heap/tlsf"
   - "components/bt/controller/lib_esp32c6/esp32c6-bt-lib"
+  - "components/bt/esp_ble_mesh/lib/lib"
   - ".gitmodules"
-
-.patterns-danger-npm: &patterns-danger-npm
-  - ".gitlab/dangerjs/package-lock.json"
 
 # for jobs: flash_encryption_wifi_high_traffic
 .patterns-example_test-ota-nightly_run: &patterns-example_test-ota-nightly_run
@@ -242,31 +237,31 @@
 .patterns-custom_test-wifi: &patterns-custom_test-wifi
   - "tools/test_apps/phy/**/*"
 
-# for jobs: example_test_pytest_sdio related
+# for jobs: SDIO related example_test
 .patterns-example_test-sdio: &patterns-example_test-sdio
   - "components/hal/sdio*.c"
   - "components/hal/include/hal/sdio*.h"
-  - "components/driver/sdspi*.c"
-  - "components/driver/sdio*.c"
-  - "components/driver/sdmmc*.c"
-  - "components/driver/include/driver/sdspi*.h"
-  - "components/driver/include/driver/sdio*.h"
-  - "components/driver/include/driver/sdmmc*.h"
+  - "components/esp_driver_sdspi/src/sdspi*.c"
+  - "components/esp_driver_sdio/src/sdio*.c"
+  - "components/esp_driver_sdmmc/src/sdmmc*.c"
+  - "components/esp_driver_sdspi/include/driver/sdspi*.h"
+  - "components/esp_driver_sdio/include/driver/sdio*.h"
+  - "components/esp_driver_sdmmc/include/driver/sdmmc*.h"
   - "components/sdmmc/??[!s][!t]*/**/*"
   - "components/sdmmc/???/**/*"
   - "components/sdmmc/*"
   - "examples/peripherals/sdio/**/*"
 
-# for jobs: component_ut_pytest_sdio related
+# for jobs: SDIO related component_test
 .patterns-component_ut-sdio: &patterns-component_ut-sdio
   - "components/hal/sdio*.c"
   - "components/hal/include/hal/sdio*.h"
-  - "components/driver/sdspi*.c"
-  - "components/driver/sdio*.c"
-  - "components/driver/sdmmc*.c"
-  - "components/driver/include/driver/sdspi*.h"
-  - "components/driver/include/driver/sdio*.h"
-  - "components/driver/include/driver/sdmmc*.h"
+  - "components/esp_driver_sdspi/src/sdspi*.c"
+  - "components/esp_driver_sdio/src/sdio*.c"
+  - "components/esp_driver_sdmmc/src/sdmmc*.c"
+  - "components/esp_driver_sdspi/include/driver/sdspi*.h"
+  - "components/esp_driver_sdio/include/driver/sdio*.h"
+  - "components/esp_driver_sdmmc/include/driver/sdmmc*.h"
   - "components/sdmmc/**/*"
 
 # for jobs: component_ut_pytest_flash_multi
@@ -339,6 +334,10 @@
 .if-protected-no_label: &if-protected-no_label
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
 
+.if-protected-ref-push: &if-protected-ref-push
+  # rules:changes always evaluates to true for new branch pipelines or when there is no Git push event
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/) && $CI_PIPELINE_SOURCE == "push"'
+
 .if-qa-test-tag: &if-qa-test-tag
   if: '$CI_COMMIT_TAG =~ /^qa-test/'
 
@@ -350,6 +349,12 @@
 
 .if-schedule: &if-schedule
   if: '$CI_PIPELINE_SOURCE == "schedule"'
+
+.if-schedule-nightly: &if-schedule-nightly
+  if: '$CI_PIPELINE_SOURCE == "schedule" && $INCLUDE_NIGHTLY_RUN == "1"'
+
+.if-schedule-test-build-system-windows: &if-schedule-test-build-system-windows
+  if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_BUILD_SYSTEM_TEST_WIN == "true"'
 
 .if-trigger: &if-trigger
   if: '$CI_PIPELINE_SOURCE == "trigger"'
@@ -401,29 +406,26 @@
   rules:
     - <<: *if-tag-release
 
-### Patterns ###
-.rules:patterns:python-cache:
+# Do not upload caches on dev branches by default
+.rules:upload-python-cache:
   rules:
-    - *if-schedule
-    - <<: *if-label-upload_cache
-      when: manual
-    - <<: *if-dev-push
+    - <<: *if-tag-release
+    - <<: *if-schedule-nightly
+    - <<: *if-protected-ref-push
       changes: *patterns-python-cache
-
-.rules:patterns:submodule:
-  rules:
     - <<: *if-label-upload_cache
       when: manual
-    - <<: *if-dev-push
+
+.rules:upload-submodule-cache:
+  rules:
+    # Needn't upload submodule cache in schedule pipeline
+    - <<: *if-tag-release
+    - <<: *if-protected-ref-push
       changes: *patterns-submodule
-
-.rules:patterns:dangerjs:
-  rules:
     - <<: *if-label-upload_cache
       when: manual
-    - <<: *if-dev-push
-      changes: *patterns-danger-npm
 
+### Patterns ###
 .rules:patterns:clang_tidy:
   rules:
     - <<: *if-protected
@@ -444,14 +446,6 @@
       changes: *patterns-python-files
     - <<: *if-dev-push
       changes: *patterns-sonarqube-files
-
-.rules:patterns:sbom:
-  rules:
-    - <<: *if-protected
-    - <<: *if-dev-push
-      changes: *patterns-sbom
-    - <<: *if-dev-push
-      changes: *patterns-submodule
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # DO NOT place comments or maintain any code from this line
@@ -569,6 +563,9 @@
 
 .if-label-target_test: &if-label-target_test
   if: '$BOT_LABEL_TARGET_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*target_test(?:,[^,\n\r]+)*$/i'
+
+.if-label-windows: &if-label-windows
+  if: '$BOT_LABEL_WINDOWS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*windows(?:,[^,\n\r]+)*$/i'
 
 .rules:build:
   rules:
@@ -1618,6 +1615,13 @@
     - <<: *if-revert-branch
       when: never
     - <<: *if-label-nvs_coverage
+
+.rules:labels:windows_pytest_build_system:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-schedule-test-build-system-windows
+    - <<: *if-label-windows
 
 .rules:test:component_ut-esp32:
   rules:
