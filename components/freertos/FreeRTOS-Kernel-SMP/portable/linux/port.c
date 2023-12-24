@@ -600,6 +600,10 @@ unsigned long ulPortGetRunTime( void )
     return ( unsigned long ) xTimes.tms_utime;
 }
 /*-----------------------------------------------------------*/
+bool portVALID_LIST_MEM(const void *ptr)
+{
+    return true;
+}
 
 bool portVALID_TCB_MEM(const void *ptr)
 {

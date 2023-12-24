@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,19 +91,20 @@ esp_err_t esp_core_dump_write_binary(core_dump_write_config_t *write_cfg)
     core_dump_header_t hdr = { 0 };
     core_dump_task_header_t task_hdr = { 0 };
     core_dump_mem_seg_header_t mem_seg = { 0 };
-    void *task = NULL;
+    TaskIterator_t task_iter;
     void *cur_task = NULL;
 
     // Verifies all tasks in the snapshot
     esp_core_dump_reset_tasks_snapshots_iter();
-    while ((task = esp_core_dump_get_next_task(task))) {
-        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, &mem_seg)) {
+    esp_core_dump_task_iterator_init(&task_iter);
+    while (esp_core_dump_task_iterator_next(&task_iter) != -1) {
+        if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, &mem_seg)) {
             bad_tasks_num++;
             continue;
         }
         hdr.tasks_num++;
-        if (task == esp_core_dump_get_current_task_handle()) {
-            cur_task = task;
+        if (task_iter.pxTaskHandle == esp_core_dump_get_current_task_handle()) {
+            cur_task = task_iter.pxTaskHandle;
             ESP_COREDUMP_LOG_PROCESS("Task %x %x is first crashed task.", cur_task, task_hdr.tcb_addr);
         }
         ESP_COREDUMP_LOG_PROCESS("Stack len = %lu (%x %x)", task_hdr.stack_end-task_hdr.stack_start,
@@ -128,11 +129,17 @@ esp_err_t esp_core_dump_write_binary(core_dump_write_config_t *write_cfg)
     // Check if current task TCB is broken
     if (cur_task == NULL) {
         ESP_COREDUMP_LOG_PROCESS("The current crashed task is broken.");
-        cur_task = esp_core_dump_get_next_task(NULL);
-        if (cur_task == NULL) {
-            ESP_COREDUMP_LOGE("No valid tasks in the system!");
-            return ESP_FAIL;
-        }
+        esp_core_dump_task_iterator_init(&task_iter);
+		while (esp_core_dump_task_iterator_next(&task_iter) != -1) {
+			if (task_iter.pxTaskHandle != NULL) {
+				cur_task = task_iter.pxTaskHandle;
+				break;
+			}
+		}
+		if (cur_task == NULL) {
+			ESP_COREDUMP_LOGE("No valid tasks in the system!");
+			return ESP_FAIL;
+		}
     }
 
     // Add user memory regions data size
@@ -196,15 +203,16 @@ esp_err_t esp_core_dump_write_binary(core_dump_write_config_t *write_cfg)
         }
     }
     // Write all other tasks in the snapshot
-    task = NULL;
-    while ((task = esp_core_dump_get_next_task(task))) {
-        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, NULL))
+    esp_core_dump_task_iterator_init(&task_iter);
+    while (esp_core_dump_task_iterator_next(&task_iter) != -1) {
+        if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, NULL))
             continue;
         // Skip first crashed task
-        if (task == cur_task) {
+        if (task_iter.pxTaskHandle == cur_task) {
             continue;
         }
-        ESP_COREDUMP_LOGD("Save task %x (TCB:%x, stack:%x..%x)", task, task_hdr.tcb_addr, task_hdr.stack_start, task_hdr.stack_end);
+        ESP_COREDUMP_LOGD("Save task %x (TCB:%x, stack:%x..%x)",
+			task_iter.pxTaskHandle, task_hdr.tcb_addr, task_hdr.stack_start, task_hdr.stack_end);
         err = esp_core_dump_save_task(write_cfg, &task_hdr);
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to save core dump task %x, error=%d!",
@@ -215,10 +223,10 @@ esp_err_t esp_core_dump_write_binary(core_dump_write_config_t *write_cfg)
 
     // Save interrupted stacks of the tasks
     // Actually there can be tasks interrupted at the same time, one on every core including the crashed one.
-    task = NULL;
     esp_core_dump_reset_tasks_snapshots_iter();
-    while ((task = esp_core_dump_get_next_task(task))) {
-        if (!esp_core_dump_get_task_snapshot(task, &task_hdr, &mem_seg))
+    esp_core_dump_task_iterator_init(&task_iter);
+	while (esp_core_dump_task_iterator_next(&task_iter) != -1) {
+        if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, &mem_seg))
             continue;
         if (mem_seg.size > 0) {
             ESP_COREDUMP_LOG_PROCESS("Save interrupted task stack %lu bytes @ %x",
