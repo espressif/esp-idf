@@ -264,13 +264,13 @@ bool config_update_newest_section(config_t *config, const char *section)
         return false;
     }
     section_t *first_sec = list_node(first_node);
-    if (!strcmp(first_sec->name, section)) {
+    if (strcmp(first_sec->name, section) == 0) {
         return true;
     }
 
     for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {
         section_t *sec = list_node(node);
-        if (!strcmp(sec->name, section)) {
+        if (strcmp(sec->name, section) == 0) {
             list_delete(config->sections, sec);
             list_prepend(config->sections, sec);
             return true;
