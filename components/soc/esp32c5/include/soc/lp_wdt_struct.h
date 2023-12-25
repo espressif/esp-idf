@@ -16,7 +16,14 @@ extern "C" {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:9;
+        /** wdt_chip_reset_width : R/W; bitpos: [7:0]; default: 20;
+         *  need_des
+         */
+        uint32_t wdt_chip_reset_width:8;
+        /** wdt_chip_reset_en : R/W; bitpos: [8]; default: 0;
+         *  need_des
+         */
+        uint32_t wdt_chip_reset_en:1;
         /** wdt_pause_in_slp : R/W; bitpos: [9]; default: 1;
          *  need_des
          */

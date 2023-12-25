@@ -174,4 +174,5 @@
 #define CLK_OUT_OUT1_IDX                        125
 #define CLK_OUT_OUT2_IDX                        126
 #define CLK_OUT_OUT3_IDX                        127
+#define SIG_GPIO_OUT_IDX                        128
 #define GPIO_MAP_DATE_IDX                       0x2301100

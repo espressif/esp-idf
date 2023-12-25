@@ -67,8 +67,9 @@ ESP_STATIC_ASSERT(WDT_RESET_SIG_LENGTH_3_2us == TIMG_WDT_RESET_LENGTH_3200_NS, "
  */
 FORCE_INLINE_ATTR void mwdt_ll_enable(timg_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->wdtconfig0.wdt_en = 1;
+    abort();
 }
 
 /**
@@ -81,8 +82,9 @@ FORCE_INLINE_ATTR void mwdt_ll_enable(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_disable(timg_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->wdtconfig0.wdt_en = 0;
+    abort();
 }
 
 /**
@@ -93,8 +95,9 @@ FORCE_INLINE_ATTR void mwdt_ll_disable(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR bool mwdt_ll_check_if_enabled(timg_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // return (hw->wdtconfig0.wdt_en) ? true : false;
+    abort();
     return (bool)0;
 }
 
@@ -108,7 +111,7 @@ FORCE_INLINE_ATTR bool mwdt_ll_check_if_enabled(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_config_stage(timg_dev_t *hw, wdt_stage_t stage, uint32_t timeout, wdt_stage_action_t behavior)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // switch (stage) {
     // case WDT_STAGE0:
     //     hw->wdtconfig0.wdt_stg0 = behavior;
@@ -132,6 +135,7 @@ FORCE_INLINE_ATTR void mwdt_ll_config_stage(timg_dev_t *hw, wdt_stage_t stage, u
     // }
     // //Config registers are updated asynchronously
     // hw->wdtconfig0.wdt_conf_update_en = 1;
+    abort();
 }
 
 /**
@@ -142,7 +146,7 @@ FORCE_INLINE_ATTR void mwdt_ll_config_stage(timg_dev_t *hw, wdt_stage_t stage, u
  */
 FORCE_INLINE_ATTR void mwdt_ll_disable_stage(timg_dev_t *hw, uint32_t stage)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // switch (stage) {
     // case WDT_STAGE0:
     //     hw->wdtconfig0.wdt_stg0 = WDT_STAGE_ACTION_OFF;
@@ -162,6 +166,7 @@ FORCE_INLINE_ATTR void mwdt_ll_disable_stage(timg_dev_t *hw, uint32_t stage)
     // }
     // //Config registers are updated asynchronously
     // hw->wdtconfig0.wdt_conf_update_en = 1;
+    abort();
 }
 
 /**
@@ -172,10 +177,11 @@ FORCE_INLINE_ATTR void mwdt_ll_disable_stage(timg_dev_t *hw, uint32_t stage)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_cpu_reset_length(timg_dev_t *hw, wdt_reset_sig_length_t length)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->wdtconfig0.wdt_cpu_reset_length = length;
     // //Config registers are updated asynchronously
     // hw->wdtconfig0.wdt_conf_update_en = 1;
+    abort();
 }
 
 /**
@@ -186,10 +192,11 @@ FORCE_INLINE_ATTR void mwdt_ll_set_cpu_reset_length(timg_dev_t *hw, wdt_reset_si
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_sys_reset_length(timg_dev_t *hw, wdt_reset_sig_length_t length)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->wdtconfig0.wdt_sys_reset_length = length;
     // //Config registers are updated asynchronously
     // hw->wdtconfig0.wdt_conf_update_en = 1;
+    abort();
 }
 
 /**
@@ -204,10 +211,11 @@ FORCE_INLINE_ATTR void mwdt_ll_set_sys_reset_length(timg_dev_t *hw, wdt_reset_si
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_flashboot_en(timg_dev_t *hw, bool enable)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->wdtconfig0.wdt_flashboot_mod_en = (enable) ? 1 : 0;
     // //Config registers are updated asynchronously
     // hw->wdtconfig0.wdt_conf_update_en = 1;
+    abort();
 }
 
 /**
@@ -218,12 +226,13 @@ FORCE_INLINE_ATTR void mwdt_ll_set_flashboot_en(timg_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_prescaler(timg_dev_t *hw, uint32_t prescaler)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // // In case the compiler optimise a 32bit instruction (e.g. s32i) into 8/16bit instruction (e.g. s8i, which is not allowed to access a register)
     // // We take care of the "read-modify-write" procedure by ourselves.
     // HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wdtconfig1, wdt_clk_prescale, prescaler);
     // //Config registers are updated asynchronously
     // hw->wdtconfig0.wdt_conf_update_en = 1;
+    abort();
 }
 
 /**
@@ -235,8 +244,9 @@ FORCE_INLINE_ATTR void mwdt_ll_set_prescaler(timg_dev_t *hw, uint32_t prescaler)
  */
 FORCE_INLINE_ATTR void mwdt_ll_feed(timg_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->wdtfeed.wdt_feed = 1;
+    abort();
 }
 
 /**
@@ -248,8 +258,9 @@ FORCE_INLINE_ATTR void mwdt_ll_feed(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_write_protect_enable(timg_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->wdtwprotect.wdt_wkey = 0;
+    abort();
 }
 
 /**
@@ -259,8 +270,9 @@ FORCE_INLINE_ATTR void mwdt_ll_write_protect_enable(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_write_protect_disable(timg_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->wdtwprotect.wdt_wkey = TIMG_WDT_WKEY_VALUE;
+    abort();
 }
 
 /**
@@ -270,8 +282,9 @@ FORCE_INLINE_ATTR void mwdt_ll_write_protect_disable(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t *hw)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->int_clr_timers.wdt_int_clr = 1;
+    abort();
 }
 
 /**
@@ -282,8 +295,9 @@ FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t *hw)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // hw->int_ena_timers.wdt_int_ena = (enable) ? 1 : 0;
+    abort();
 }
 
 /**
@@ -294,7 +308,7 @@ FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_source_t clk_src)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // uint8_t clk_id = 0;
     // switch (clk_src) {
     // case MWDT_CLK_SRC_XTAL:
@@ -315,6 +329,7 @@ FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_sourc
     // } else {
     //     PCR.timergroup1_wdt_clk_conf.tg1_wdt_clk_sel = clk_id;
     // }
+    abort();
 }
 
 /**
@@ -326,12 +341,13 @@ FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_sourc
 __attribute__((always_inline))
 static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
 {
-    // TODO: [ESP32C5] IDF-8650 (inherit from C6)
+    // TODO: [ESP32C5] IDF-8650
     // if (hw == &TIMERG0) {
     //     PCR.timergroup0_wdt_clk_conf.tg0_wdt_clk_en = en;
     // } else {
     //     PCR.timergroup1_wdt_clk_conf.tg1_wdt_clk_en = en;
     // }
+    abort();
 }
 
 

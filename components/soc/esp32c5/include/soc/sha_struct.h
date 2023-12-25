@@ -59,10 +59,10 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved_0:1;
-        /** continue : RO; bitpos: [31:1]; default: 0;
+        /** conti : RO; bitpos: [31:1]; default: 0;
          *  Reserved.
          */
-        uint32_t continue:31;
+        uint32_t conti:31;
     };
     uint32_t val;
 } sha_continue_reg_t;
@@ -165,7 +165,7 @@ typedef struct sha_dev_t {
     uint32_t reserved_004[2];
     volatile sha_dma_block_num_reg_t dma_block_num;
     volatile sha_start_reg_t start;
-    volatile sha_continue_reg_t continue;
+    volatile sha_continue_reg_t conti;
     volatile sha_busy_reg_t busy;
     volatile sha_dma_start_reg_t dma_start;
     volatile sha_dma_continue_reg_t dma_continue;

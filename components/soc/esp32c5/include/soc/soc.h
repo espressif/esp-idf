@@ -26,7 +26,7 @@
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERG0_BASE + (i) * 0x1000)     // TIMERG0 and TIMERG1
 #define REG_TWAI_BASE(i)                        ((i) == 0 ? DR_REG_TWAI0_BASE : DR_REG_TWAI1_BASE)       // TWAI0 and TWAI1
 #define REG_UART_BASE(i)                        (DR_REG_UART0_BASE + (i) * 0x1000)        // UART0 and UART1
-
+#define REG_SPI_MEM_BASE(i)                     (DR_REG_SPIMEM0_BASE + (i) * 0x1000)
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
 #define ETS_CACHED_ADDR(addr) (addr)
@@ -153,7 +153,7 @@
  * should be defined statically!
  */
 
-#define SOC_IROM_LOW    0x42000000
+#define SOC_IROM_LOW    0x41000000
 #define SOC_IROM_HIGH   (SOC_IROM_LOW + (SOC_MMU_PAGE_SIZE<<8))
 #define SOC_DROM_LOW    SOC_IROM_LOW
 #define SOC_DROM_HIGH   SOC_IROM_HIGH
