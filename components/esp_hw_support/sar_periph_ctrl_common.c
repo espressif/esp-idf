@@ -44,6 +44,10 @@ void temperature_sensor_power_acquire(void)
         temperature_sensor_ll_enable(true);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
+    // After enabling/reseting the temperature sensor,
+    // the output value gradually approaches the true temperature
+    // value as the measurement time increases. 300us is recommended.
+    esp_rom_delay_us(300);
 }
 
 void temperature_sensor_power_release(void)
