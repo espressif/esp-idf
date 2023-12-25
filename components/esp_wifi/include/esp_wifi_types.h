@@ -566,6 +566,7 @@ typedef struct {
     bool channel_filter_en; /**< enable to turn on channel filter to smooth adjacent sub-carrier. Disable it to keep independence of adjacent sub-carrier. Default enabled */
     bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually. Default false */
     uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
+    bool dump_ack_en;       /**< enable to dump 802.11 ACK frame, default disabled */
 } wifi_csi_config_t;
 #endif
 
@@ -902,6 +903,7 @@ typedef enum {
     WIFI_EVENT_NDP_INDICATION,           /**< Received NDP Request from a NAN Peer */
     WIFI_EVENT_NDP_CONFIRM,              /**< NDP Confirm Indication */
     WIFI_EVENT_NDP_TERMINATED,           /**< NAN Datapath terminated indication */
+    WIFI_EVENT_HOME_CHANNEL_CHANGE,      /**< WiFi home channel change，doesn't occur when scanning */
 
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
@@ -993,6 +995,14 @@ typedef struct {
 typedef struct {
     int32_t rssi;                 /**< RSSI value of bss */
 } wifi_event_bss_rssi_low_t;
+
+/** Argument structure for WIFI_EVENT_HOME_CHANNEL_CHANGE event */
+typedef struct {
+    uint8_t            old_chan;   /**< old home channel of the device */
+    wifi_second_chan_t old_snd;    /**< old second channel of the device */
+    uint8_t            new_chan;   /**< new home channel of the device */
+    wifi_second_chan_t new_snd;    /**< new second channel of the device */
+} wifi_event_home_channel_change_t;
 
 /**
   * @brief FTM operation status types
