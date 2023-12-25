@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#define IEEE802154_RF_ENABLE() ieee802154_rf_enable()
+#define IEEE802154_RF_DISABLE() ieee802154_rf_disable()
+#else
+#define IEEE802154_RF_ENABLE()
+#define IEEE802154_RF_DISABLE()
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #define IEEE802154_PROBE(a) do { \
             IEEE802154_RECORD_EVENT(a); \
             ieee802154_record_abort(a); \
