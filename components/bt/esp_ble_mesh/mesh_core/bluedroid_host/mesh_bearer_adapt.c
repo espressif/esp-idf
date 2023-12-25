@@ -316,6 +316,7 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     tBLE_ADDR_TYPE addr_type_own = 0U;
     tBLE_BD_ADDR p_dir_bda = {0};
     tBTM_BLE_AFP adv_fil_pol = 0U;
+    uint16_t interval = 0U;
     uint8_t adv_type = 0U;
     int err = 0;
 
@@ -365,9 +366,24 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     adv_fil_pol = BLE_MESH_AP_SCAN_CONN_ALL;
     p_start_adv_cb = start_adv_completed_cb;
 
+    interval = param->interval_min;
+
+#if CONFIG_BLE_MESH_RANDOM_ADV_INTERVAL
+    /* If non-connectable mesh packets are transmitted with an adv interval
+     * not smaller than 10ms, then we will use a random adv interval between
+     * [interval / 2, interval] for them.
+     */
+    if (adv_type == BLE_MESH_ADV_NONCONN_IND && interval >= 16) {
+        interval >>= 1;
+        interval += (bt_mesh_get_rand() % (interval + 1));
+
+        BT_INFO("%u->%u", param->interval_min, interval);
+    }
+#endif
+
     /* Check if we can start adv using BTM_BleSetAdvParamsStartAdvCheck */
     BLE_MESH_BTM_CHECK_STATUS(
-        BTM_BleSetAdvParamsAll(param->interval_min, param->interval_max, adv_type,
+        BTM_BleSetAdvParamsAll(interval, interval, adv_type,
                                addr_type_own, &p_dir_bda,
                                channel_map, adv_fil_pol, p_start_adv_cb));
     BLE_MESH_BTM_CHECK_STATUS(BTM_BleStartAdv());
