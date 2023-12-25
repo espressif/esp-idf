@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,22 +104,11 @@ esp_err_t esp_netif_add_to_list(esp_netif_t* netif);
 esp_err_t esp_netif_remove_from_list(esp_netif_t* netif);
 
 /**
- * @brief Iterates over list of interfaces without list locking. Returns first netif if NULL given as parameter
- *
- * Used for bulk search loops to avoid locking and unlocking every iteration. esp_netif_list_lock and esp_netif_list_unlock
- * must be used to guard the search loop
- *
- * @param[in]  esp_netif Handle to esp-netif instance
- *
- * @return First netif from the list if supplied parameter is NULL, next one otherwise
- */
-esp_netif_t* esp_netif_next_unsafe(esp_netif_t* netif);
-
-/**
  * @brief Locking network interface list. Use only in connection with esp_netif_next_unsafe
  *
  * @return ESP_OK on success, specific mutex error if failed to lock
  */
+
 esp_err_t esp_netif_list_lock(void);
 
 /**
@@ -164,5 +153,18 @@ esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const ip_event_add_i
  *         - ESP_ERR_NO_MEM
  */
 esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
+
+/**
+ * @brief Initialize netif objects for handling lists of interfaces one esp_netif level
+ *
+ * @return esp_err_t ESP_OK on success
+ */
+esp_err_t esp_netif_objects_init(void);
+
+/**
+ * @brief Deinitialize netif objects
+ *
+ */
+void esp_netif_objects_deinit(void);
 
 #endif //_ESP_NETIF_PRIVATE_H_
