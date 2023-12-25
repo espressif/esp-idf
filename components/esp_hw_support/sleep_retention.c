@@ -515,7 +515,7 @@ void IRAM_ATTR sleep_retention_do_extra_retention(bool backup_or_restore)
 }
 #endif
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 void IRAM_ATTR sleep_retention_do_system_retention(bool backup_or_restore)
 {
     #define SYSTEM_LINK_NUM (0)
