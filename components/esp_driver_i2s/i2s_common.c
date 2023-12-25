@@ -881,10 +881,12 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
         /* Must switch back to D2CLK on ESP32-S2,
          * because the clock of some registers are bound to APLL,
          * otherwise, once APLL is disabled, the registers can't be updated anymore */
-        if (handle->dir == I2S_DIR_TX) {
-            i2s_ll_tx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
-        } else {
-            i2s_ll_rx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
+        I2S_CLOCK_SRC_ATOMIC() {
+            if (handle->dir == I2S_DIR_TX) {
+                i2s_ll_tx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
+            } else {
+                i2s_ll_rx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
+            }
         }
         periph_rtc_apll_release();
     }

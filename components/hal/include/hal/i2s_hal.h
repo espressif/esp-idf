@@ -139,6 +139,7 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id);
  */
 void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_clk_div_t *mclk_div);
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
 /**
  * @brief Set tx channel clock
  *
@@ -147,14 +148,19 @@ void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_
  * @param clk_src clock source
  */
 void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define i2s_hal_set_tx_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_hal_set_tx_clock(__VA_ARGS__)
 #else
-#define i2s_hal_set_tx_clock(...)   _i2s_hal_set_tx_clock(__VA_ARGS__)
-#endif
+/**
+ * @brief Set tx channel clock
+ *
+ * @param hal Context of the HAL layer
+ * @param clk_info clock information, if it is NULL, only set the clock source
+ * @param clk_src clock source
+ */
+void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
+#endif  // SOC_PERIPH_CLK_CTRL_SHARED
 
 /**
  * @brief Set rx channel clock

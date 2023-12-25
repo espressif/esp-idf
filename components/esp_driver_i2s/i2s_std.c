@@ -164,7 +164,9 @@ static esp_err_t i2s_std_set_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_c
         /* For "tx + slave" mode, select TX signal index for ws and bck */
         if (handle->dir == I2S_DIR_TX && !handle->controller->full_duplex) {
 #if SOC_I2S_HW_VERSION_2
-            i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
+            I2S_CLOCK_SRC_ATOMIC() {
+                i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
+            }
 #endif
             i2s_gpio_check_and_set(gpio_cfg->ws, i2s_periph_signal[id].s_tx_ws_sig, true, gpio_cfg->invert_flags.ws_inv);
             i2s_gpio_check_and_set(gpio_cfg->bclk, i2s_periph_signal[id].s_tx_bck_sig, true, gpio_cfg->invert_flags.bclk_inv);
@@ -177,7 +179,9 @@ static esp_err_t i2s_std_set_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_c
         /* For "rx + master" mode, select RX signal index for ws and bck */
         if (handle->dir == I2S_DIR_RX && !handle->controller->full_duplex) {
 #if SOC_I2S_HW_VERSION_2
-            i2s_ll_mclk_bind_to_rx_clk(handle->controller->hal.dev);
+            I2S_CLOCK_SRC_ATOMIC() {
+                i2s_ll_mclk_bind_to_rx_clk(handle->controller->hal.dev);
+            }
 #endif
             i2s_gpio_check_and_set(gpio_cfg->ws, i2s_periph_signal[id].m_rx_ws_sig, false, gpio_cfg->invert_flags.ws_inv);
             i2s_gpio_check_and_set(gpio_cfg->bclk, i2s_periph_signal[id].m_rx_bck_sig, false, gpio_cfg->invert_flags.bclk_inv);
