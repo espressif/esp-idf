@@ -32,8 +32,8 @@ Hardware
 
         Some PSRAM chips are 1.8 V devices and some are 3.3 V. Consult the datasheet for your PSRAM chip and {IDF_TARGET_NAME} device to find out the working voltages.
 
-        By default PSRAM is powered up by the on-chip LDO2, you can use :ref:`CONFIG_SPIRAM_LDO_ID` to switch the LDO ID according. Setting this value to -1 for using external power supply.
-        By default PSRAM connected LDO is set to correct voltage according to the used Espressif module. You can still use :ref:`CONFIG_SPIRAM_LDO_VOLTAGE_MV` to select LDO output voltage if you do not use an Espressif module. When using external power supply, this option does not exist.
+        By default PSRAM is powered up by the on-chip LDO2, you can use :ref:`CONFIG_ESP_VDD_PSRAM_LDO_ID` to switch the LDO ID according. Setting this value to -1 for using external power supply, this means the on-chip LDO will not be used.
+        By default PSRAM connected LDO is set to correct voltage according to the used Espressif module. You can still use :ref:`CONFIG_ESP_VDD_PSRAM_LDO_VOLTAGE_MV` to select LDO output voltage if you do not use an Espressif module. When using external power supply, this option does not exist.
 
 .. note::
 
