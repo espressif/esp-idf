@@ -558,6 +558,9 @@
 
 #define SOC_PM_PAU_LINK_NUM             (4)
 
+/*-------------------------- PSRAM CAPS ----------------------------*/
+#define SOC_PSRAM_VDD_POWER_MPLL    (1)
+
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (0)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (0)

@@ -302,9 +302,7 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_
     // MPLL_Freq = XTAL_Freq * (div + 1) / (ref_div + 1)
     uint8_t ref_div = 1;
     uint8_t div = mpll_freq_mhz / 20 - 1;
-
-    uint32_t val = REGI2C_READ(I2C_MPLL, I2C_MPLL_DIV_REG_ADDR);
-    val |= ((div << 3) | ref_div);
+    uint8_t val = ((div << 3) | ref_div);
     REGI2C_WRITE(I2C_MPLL, I2C_MPLL_DIV_REG_ADDR, val);
 }
 

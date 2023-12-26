@@ -8,8 +8,10 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_ldo.h"
+#include "esp_private/rtc_clk.h"
+#include "esp_private/esp_ldo_psram.h"
 #include "../esp_psram_impl.h"
 #include "rom/opi_flash.h"
 #include "hal/psram_ctrlr_ll.h"
@@ -35,6 +37,8 @@
 #define AP_HEX_PSRAM_CS_HOLD_TIME          4
 #define AP_HEX_PSRAM_CS_ECC_HOLD_TIME      4
 #define AP_HEX_PSRAM_CS_HOLD_DELAY         3
+
+#define AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ 400
 
 typedef struct {
     union {
@@ -350,18 +354,13 @@ static void s_configure_psram_ecc(void)
 
 esp_err_t esp_psram_impl_enable(void)
 {
-#if CONFIG_SPIRAM_LDO_ID
-    if (CONFIG_SPIRAM_LDO_ID != -1) {
-        esp_ldo_unit_init_cfg_t unit_cfg = {
-            .unit_id = LDO_ID2UNIT(CONFIG_SPIRAM_LDO_ID),
-            .cfg = {
-                .voltage_mv = CONFIG_SPIRAM_LDO_VOLTAGE_MV,
-            },
-            .flags.enable_unit = true,
-        };
-        esp_ldo_unit_handle_t early_unit = esp_ldo_init_unit_early(&unit_cfg);
-        assert(early_unit);
-    }
+    esp_ldo_vdd_psram_early_init();
+#if SOC_CLK_MPLL_SUPPORTED
+    uint32_t xtal_freq = 0;
+    ESP_ERROR_CHECK(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &xtal_freq));
+    assert(xtal_freq == 40000000);
+    rtc_clk_mpll_enable();
+    rtc_clk_mpll_configure(xtal_freq / 1000000, AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ);
 #endif
 
     PSRAM_RCC_ATOMIC() {
