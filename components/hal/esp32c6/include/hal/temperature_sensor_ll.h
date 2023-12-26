@@ -103,7 +103,7 @@ static inline void temperature_sensor_ll_set_range(uint32_t range)
 __attribute__((always_inline))
 static inline uint32_t temperature_sensor_ll_get_raw_value(void)
 {
-    return APB_SARADC.saradc_apb_tsens_ctrl.saradc_tsens_out;
+    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_out);
 }
 
 /**
@@ -127,7 +127,7 @@ static inline uint32_t temperature_sensor_ll_get_offset(void)
  */
 static inline uint32_t temperature_sensor_ll_get_clk_div(void)
 {
-    return APB_SARADC.saradc_apb_tsens_ctrl.saradc_tsens_clk_div;
+    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_clk_div);
 }
 
 /**
@@ -140,7 +140,7 @@ static inline uint32_t temperature_sensor_ll_get_clk_div(void)
  */
 static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 {
-    APB_SARADC.saradc_apb_tsens_ctrl.saradc_tsens_clk_div = clk_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_clk_div, clk_div);
 }
 
 /**
@@ -172,7 +172,7 @@ static inline void temperature_sensor_ll_wakeup_enable(bool en)
  */
 static inline void temperature_sensor_ll_set_th_low_val(uint8_t th_low)
 {
-    APB_SARADC.tsens_wake.saradc_wakeup_th_low = th_low;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_wake, saradc_wakeup_th_low, th_low);
 }
 
 /**
@@ -182,7 +182,7 @@ static inline void temperature_sensor_ll_set_th_low_val(uint8_t th_low)
  */
 static inline void temperature_sensor_ll_set_th_high_val(uint8_t th_high)
 {
-    APB_SARADC.tsens_wake.saradc_wakeup_th_high = th_high;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_wake, saradc_wakeup_th_high, th_high);
 }
 
 /**
