@@ -571,7 +571,7 @@
 #define SOC_PERIPH_CLK_CTRL_SHARED                (1)     /*!< Peripheral clock control (e.g. set clock source) is shared between various peripherals */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
-#define SOC_TEMPERATURE_SENSOR_SUPPORT_LP_PLL                (1)
+#define SOC_TEMPERATURE_SENSOR_LP_PLL_SUPPORT                (1)
 #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                  (1)
 
 /*-------------------------- Memory CAPS --------------------------*/
