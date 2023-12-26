@@ -26,51 +26,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "d056f2435ef05cccadac5d8fcefa3efd8f8c456c3d853f5eba1edb501acfe4f7",
-            "size": 32006939,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-x86_64-linux-gnu.tar.gz"
+            "sha256": "d0743ec43cd92c35452a9097f7863281de4e72f04120d63cfbcf9d591a373529",
+            "size": 36942094,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-x86_64-linux-gnu.tar.gz"
           },
           "linux-arm64": {
-            "sha256": "7fc9674cc4f4c5e7bc94ca05bc5deaaa4c4bbcc972a9caee6fcd6a872c804c02",
-            "size": 32227425,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-aarch64-linux-gnu.tar.gz"
+            "sha256": "bc1fac0366c6a08e26c45896ca21c8c90efc2cdd431b8ba084e8772e15502d0e",
+            "size": 37134601,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-aarch64-linux-gnu.tar.gz"
           },
           "linux-armel": {
-            "sha256": "68118ff36e9dd2284d92a7a529d0e2a8d20f6426036a0736fa1147935614ece2",
-            "size": 29960020,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-arm-linux-gnueabi.tar.gz"
+            "sha256": "25efc51d52b71f097ccec763c5c885c8f5026b432fec4b5badd6a5f36fe34d04",
+            "size": 34579556,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-arm-linux-gnueabi.tar.gz"
           },
           "linux-armhf": {
-            "sha256": "72d75d9bb9a09d0696aa86628b2dd1851755216b1b315743189ea37228e5c72f",
-            "size": 27932265,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-arm-linux-gnueabihf.tar.gz"
+            "sha256": "0f9ff39fdec4d8c9c1ef33149a3fcdd2cf1bae121529c507817c994d5ac38ca4",
+            "size": 32257457,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-arm-linux-gnueabihf.tar.gz"
           },
           "linux-i686": {
-            "sha256": "cf6cac8ed70726d390d30713d537754544872715e1b70a8a4a28b5dc616193b9",
-            "size": 30877187,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-i586-linux-gnu.tar.gz"
+            "sha256": "e0af0b3b4a6b29a843cd5f47e331a966d9258f7d825b4656c6251490f71b05b2",
+            "size": 35676578,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-i586-linux-gnu.tar.gz"
           },
           "macos": {
-            "sha256": "417fcf8d1b596b9481603d6987def1d6cfcebdb9739f53940887334a7de855fa",
-            "size": 45941853,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-x86_64-apple-darwin14.tar.gz"
+            "sha256": "bd146fd99a52b2d71c7ce0f62b9e18f3423d6cae7b2b2c954046b0dd7a23142f",
+            "size": 52863941,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-x86_64-apple-darwin14.tar.gz"
           },
           "macos-arm64": {
-            "sha256": "95d6ed2311d6a72bf349e152d096aeeb151f9c5989bfa3120facb1c99e879196",
-            "size": 27596410,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-aarch64-apple-darwin21.1.tar.gz"
+            "sha256": "5edc76565bf9d2fadf24e443ddf3df7567354f336a65d4af5b2ee805cdfcec24",
+            "size": 33504923,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-aarch64-apple-darwin21.1.tar.gz"
           },
-          "name": "12.1_20221002",
+          "name": "12.1_20231023",
           "status": "recommended",
           "win32": {
-            "sha256": "642b6a135c38ff1d5e54ad2c29469b769f8e1b101dab363d06101b02284bb979",
-            "size": 27387730,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-i686-w64-mingw32.zip"
+            "sha256": "ea4f3ee6b95ad1ad2e07108a21a50037a3e64a420cdeb34b2ba95d612faed898",
+            "size": 31068749,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-i686-w64-mingw32.zip"
           },
           "win64": {
-            "sha256": "2d958570ff6aa69ed32cbb076cbaf303349a26b3301a7c4628be8d7ad39cf9f1",
-            "size": 29561472,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/xtensa-esp-elf-gdb-12.1_20221002-x86_64-w64-mingw32.zip"
+            "sha256": "13bb97f39173948d1cfb6e651d9b335ea9d52f1fdd0dda1eda3a2d23d8c63644",
+            "size": 33514906,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/xtensa-esp-elf-gdb-12.1_20231023-x86_64-w64-mingw32.zip"
           }
         }
       ]
@@ -103,51 +103,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "f0cf0821eaac7e8cf2c63b14f2b69d612f4f8c266b29d02d5547b7d7cbbd0e11",
-            "size": 32035173,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-x86_64-linux-gnu.tar.gz"
+            "sha256": "2c78b806be176b1e449e07ff83429d38dfc39a13f89a127ac1ffa6c1230537a0",
+            "size": 36630145,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-x86_64-linux-gnu.tar.gz"
           },
           "linux-arm64": {
-            "sha256": "6812344dfb5c50a81d2fd8354463516f0aa5f582e8ab406cbaeca8722b45fa94",
-            "size": 32362642,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-aarch64-linux-gnu.tar.gz"
+            "sha256": "33f80117c8777aaff9179e27953e41764c5c46b3c576dc96a37ecc7a368807ec",
+            "size": 36980143,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-aarch64-linux-gnu.tar.gz"
           },
           "linux-armel": {
-            "sha256": "b73042b8e1df5a3fc8008ec3cd000ef579f155d72a66c6ade1d48906d843e738",
-            "size": 30580290,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-arm-linux-gnueabi.tar.gz"
+            "sha256": "292e6ec0a9381c1480bbadf5caae25e86428b68fb5d030c9be7deda5e7f070e0",
+            "size": 34950318,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-arm-linux-gnueabi.tar.gz"
           },
           "linux-armhf": {
-            "sha256": "9dc5334042a169606d32ee454d35d93d216a24df027e4b0830ab268a8999db2d",
-            "size": 28493055,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-arm-linux-gnueabihf.tar.gz"
+            "sha256": "3b803ab1ae619d62a885afd31c2798de77368d59b888c27ec6e525709e782ef5",
+            "size": 32560850,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-arm-linux-gnueabihf.tar.gz"
           },
           "linux-i686": {
-            "sha256": "3f07a1b8dc87127a1a6bec6fbace4f8daca44755356f0692e9a5d4c8c4bfd81d",
-            "size": 31309798,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-i586-linux-gnu.tar.gz"
+            "sha256": "68a25fbcfc6371ec4dbe503ec92211977eb2006f0c29e67dbce6b93c70c6b7ec",
+            "size": 35801607,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-i586-linux-gnu.tar.gz"
           },
           "macos": {
-            "sha256": "bb139229f9a4998cab9cfb617d3ecb05b77cbfa9a3a59c54969035f1b4007487",
-            "size": 46120661,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-x86_64-apple-darwin14.tar.gz"
+            "sha256": "322c722e6c12225ed8cd97f95a0375105756dc5113d369958ce0858ad1a90257",
+            "size": 52618688,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-x86_64-apple-darwin14.tar.gz"
           },
           "macos-arm64": {
-            "sha256": "f6513b57f28245497f9c39a201f3f6444d4180e16b39765c629e01036286c0e6",
-            "size": 27662484,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-aarch64-apple-darwin21.1.tar.gz"
+            "sha256": "c2224b3a8d02451c530cf004c29653292d963a1b4021b4b472b862b6dbe97e0b",
+            "size": 33149392,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-aarch64-apple-darwin21.1.tar.gz"
           },
-          "name": "12.1_20221002",
+          "name": "12.1_20231023",
           "status": "recommended",
           "win32": {
-            "sha256": "8287fa2891e8d032e8283210048d653705791cda31504369418288d3e4753dd6",
-            "size": 27839143,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-i686-w64-mingw32.zip"
+            "sha256": "4b42149a99dd87ee7e6dde25c99bad966c7f964253fa8f771593d7cef69f5602",
+            "size": 31635103,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-i686-w64-mingw32.zip"
           },
           "win64": {
-            "sha256": "9debae1135df8f5868a9d945468f0480cdaab25f77ead6a55cc85142c4487abd",
-            "size": 29404989,
-            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20221002/riscv32-esp-elf-gdb-12.1_20221002-x86_64-w64-mingw32.zip"
+            "sha256": "728231546ad5006d34463f972658b2a89e52f660a42abab08a29bedd4a8046ad",
+            "size": 33400816,
+            "url": "https://github.com/espressif/binutils-gdb/releases/download/esp-gdb-v12.1_20231023/riscv32-esp-elf-gdb-12.1_20231023-x86_64-w64-mingw32.zip"
           }
         }
       ]

@@ -188,10 +188,9 @@ class PanicTestDut(IdfDut):
         """
         gdb_args = ['--nx', '--quiet', '--interpreter=mi2']
         if self.is_xtensa:
-            gdb_path = 'xtensa-esp-elf-gdb-no-python'  # TODO: GCC-311
-            gdb_args = [f'--mcpu={self.target}'] + gdb_args
+            gdb_path = f'xtensa-{self.target}-elf-gdb'
         else:
-            gdb_path = 'riscv32-esp-elf-gdb-no-python'  # TODO: GCC-311
+            gdb_path = 'riscv32-esp-elf-gdb'
         try:
             from pygdbmi.constants import GdbTimeoutError
             gdb_command = [gdb_path] + gdb_args
