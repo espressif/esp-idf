@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,9 @@
 #include "esp_event.h"
 #include "sys/queue.h"
 #include "esp_timer.h"
+#if CONFIG_BT_NIMBLE_ENABLED
+#include "nimble/ble.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +55,11 @@ struct esp_hidh_dev_s {
     esp_timer_handle_t      trans_timer;    //transactiion timer
     uint8_t                 report_type;    //Get_Report tansaction report_type
     uint8_t                 report_id;      //Get_Report tansaction report_id
+#if CONFIG_BT_NIMBLE_ENABLED
+    uint8_t                 *protocol_mode;  // protocol mode is unique for each hid service instance
+#else
     uint8_t                 protocol_mode;  //device protocol mode
+#endif
     bool                    connected;      //we have all required data to communicate
     bool                    opened;         //we opened the device manually, else the device connected to us
     bool                    added;          //If lower layer has added the device
@@ -82,6 +89,9 @@ struct esp_hidh_dev_s {
 #if CONFIG_BLUEDROID_ENABLED
     esp_bd_addr_t bda;
 #endif /* CONFIG_BLUEDROID_ENABLED */
+#if CONFIG_BT_NIMBLE_ENABLED
+    uint8_t bda[6];
+#endif
 
     union {
 #if CONFIG_BT_HID_HOST_ENABLED
@@ -102,6 +112,15 @@ struct esp_hidh_dev_s {
             uint16_t battery_ccc_handle;
         } ble;
 #endif /* CONFIG_GATTC_ENABLE */
+#if CONFIG_BT_NIMBLE_ENABLED
+        struct {
+            uint8_t address_type;
+            int conn_id;
+            uint16_t appearance;
+            uint16_t battery_handle;
+            uint16_t battery_ccc_handle;
+        } ble;
+#endif
     };
     TAILQ_ENTRY(esp_hidh_dev_s) devices;
 };
@@ -115,6 +134,10 @@ esp_hidh_dev_t *esp_hidh_dev_get_by_bda(esp_bd_addr_t bda); //BT/BLE
 esp_hidh_dev_t *esp_hidh_dev_get_by_handle(uint8_t handle); //Classic Bluetooth Only
 esp_hidh_dev_t *esp_hidh_dev_get_by_conn_id(uint16_t conn_id); //BLE Only
 #endif /* CONFIG_BLUEDROID_ENABLED */
+#if CONFIG_BT_NIMBLE_ENABLED
+esp_hidh_dev_t *esp_hidh_dev_get_by_bda(uint8_t* bda); // BLE Only
+esp_hidh_dev_t *esp_hidh_dev_get_by_conn_id(uint16_t conn_id); //BLE Only
+#endif
 
 esp_hidh_dev_report_t *esp_hidh_dev_get_report_by_id_type_proto(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t protocol_mode);
 esp_hidh_dev_report_t *esp_hidh_dev_get_report_by_id_and_type(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type);
