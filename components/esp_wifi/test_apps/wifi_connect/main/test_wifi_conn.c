@@ -72,6 +72,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
             ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+            wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
+            ESP_LOGI(TAG, "disconnect reason: %u", event->reason);
             if (! (EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT & wifi_event_handler_flag) ) {
                 TEST_ESP_OK(esp_wifi_connect());
             }
@@ -279,6 +281,7 @@ static void esp_wifi_connect_first_time(void)
     memset(&w_config, 0, sizeof(w_config));
     memcpy(w_config.sta.ssid, TEST_DEFAULT_SSID, strlen(TEST_DEFAULT_SSID));
     memcpy(w_config.sta.password, TEST_DEFAULT_PWD, strlen(TEST_DEFAULT_PWD));
+    w_config.sta.channel = 1;
 
     wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
 
@@ -307,7 +310,7 @@ static void test_wifi_connect_before_connected_phase(void)
     esp_wifi_connect_first_time();
 
     // connect before connected
-    vTaskDelay(800/portTICK_PERIOD_MS);
+    vTaskDelay(730/portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "connect when first connect after scan before connected");
     TEST_ESP_ERR(ESP_ERR_WIFI_CONN, esp_wifi_connect());
     wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
