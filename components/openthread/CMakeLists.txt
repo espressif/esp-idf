@@ -10,6 +10,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "openthread/include/openthread"
         "openthread/src"
         "openthread/src/core"
+        "openthread/src/lib"
         "openthread/src/lib/hdlc"
         "openthread/src/lib/spinel"
         "openthread/src/ncp"
@@ -23,6 +24,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "openthread/src/core/common"
         "openthread/src/core/crypto"
         "openthread/src/core/diags"
+        "openthread/src/core/instance"
         "openthread/src/core/mac"
         "openthread/src/core/radio"
         "openthread/src/core/thread"
@@ -33,7 +35,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
     set(exclude_srcs
         "openthread/examples/platforms/utils/logging_rtt.c"
         "openthread/examples/platforms/utils/soft_source_match_table.c"
-        "openthread/src/core/common/extension_example.cpp")
+        "openthread/src/core/instance/extension_example.cpp")
 
     if(CONFIG_OPENTHREAD_FTD OR CONFIG_OPENTHREAD_MTD)
         list(APPEND src_dirs

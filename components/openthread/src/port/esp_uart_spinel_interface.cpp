@@ -27,13 +27,10 @@
 namespace esp {
 namespace openthread {
 
-UartSpinelInterface::UartSpinelInterface(ot::Spinel::SpinelInterface::ReceiveFrameCallback callback,
-                                         void *callback_context,
-                                         ot::Spinel::SpinelInterface::RxFrameBuffer &frame_buffer)
-    : m_receiver_frame_callback(callback)
-    , m_receiver_frame_context(callback_context)
-    , m_receive_frame_buffer(frame_buffer)
-    , m_hdlc_decoder(frame_buffer, HandleHdlcFrame, this)
+UartSpinelInterface::UartSpinelInterface(void)
+    : m_receiver_frame_callback(nullptr)
+    , m_receiver_frame_context(nullptr)
+    , m_receive_frame_buffer(nullptr)
     , m_uart_fd(-1)
     , mRcpFailureHandler(nullptr)
 {
@@ -41,9 +38,29 @@ UartSpinelInterface::UartSpinelInterface(ot::Spinel::SpinelInterface::ReceiveFra
 
 UartSpinelInterface::~UartSpinelInterface(void)
 {
+    Deinit();
 }
 
-esp_err_t UartSpinelInterface::Init(const esp_openthread_uart_config_t &radio_uart_config)
+otError UartSpinelInterface::Init(ReceiveFrameCallback aCallback, void *aCallbackContext, RxFrameBuffer &aFrameBuffer)
+{
+    otError error = OT_ERROR_NONE;
+
+    m_receiver_frame_callback = aCallback;
+    m_receiver_frame_context = aCallbackContext;
+    m_receive_frame_buffer = &aFrameBuffer;
+    m_hdlc_decoder.Init(aFrameBuffer, HandleHdlcFrame, this);
+
+    return error;
+}
+
+void UartSpinelInterface::Deinit(void)
+{
+    m_receiver_frame_callback = nullptr;
+    m_receiver_frame_context = nullptr;
+    m_receive_frame_buffer = nullptr;
+}
+
+esp_err_t UartSpinelInterface::Enable(const esp_openthread_uart_config_t &radio_uart_config)
 {
     esp_err_t error = ESP_OK;
     m_uart_rx_buffer = static_cast<uint8_t *>(heap_caps_malloc(kMaxFrameSize, MALLOC_CAP_8BIT));
@@ -56,7 +73,7 @@ esp_err_t UartSpinelInterface::Init(const esp_openthread_uart_config_t &radio_ua
     return error;
 }
 
-esp_err_t UartSpinelInterface::Deinit(void)
+esp_err_t UartSpinelInterface::Disable(void)
 {
     if (m_uart_rx_buffer) {
         heap_caps_free(m_uart_rx_buffer);
@@ -88,21 +105,11 @@ exit:
     return error;
 }
 
-void UartSpinelInterface::Process(const void *mainloop)
+void UartSpinelInterface::Process(const void *aMainloopContext)
 {
-    if (FD_ISSET(m_uart_fd, &((esp_openthread_mainloop_context_t *)mainloop)->read_fds)) {
+    if (FD_ISSET(m_uart_fd, &((esp_openthread_mainloop_context_t *)aMainloopContext)->read_fds)) {
         ESP_LOGD(OT_PLAT_LOG_TAG, "radio uart read event");
         TryReadAndDecode();
-    }
-}
-
-void UartSpinelInterface::Update(void *mainloop)
-{
-    // Register only READ events for radio UART and always wait
-    // for a radio WRITE to complete.
-    FD_SET(m_uart_fd, &((esp_openthread_mainloop_context_t *)mainloop)->read_fds);
-    if (m_uart_fd > ((esp_openthread_mainloop_context_t *)mainloop)->max_fd) {
-        ((esp_openthread_mainloop_context_t *)mainloop)->max_fd = m_uart_fd;
     }
 }
 
@@ -246,7 +253,7 @@ void UartSpinelInterface::HandleHdlcFrame(otError error)
         m_receiver_frame_callback(m_receiver_frame_context);
     } else {
         ESP_LOGE(OT_PLAT_LOG_TAG, "dropping radio frame: %s", otThreadErrorToString(error));
-        m_receive_frame_buffer.DiscardFrame();
+        m_receive_frame_buffer->DiscardFrame();
     }
 }
 
@@ -292,6 +299,21 @@ otError UartSpinelInterface::HardwareReset(void)
         TryRecoverUart();
     }
     return OT_ERROR_NONE;
+}
+
+void UartSpinelInterface::UpdateFdSet(void *aMainloopContext)
+{
+    // Register only READ events for radio UART and always wait
+    // for a radio WRITE to complete.
+    FD_SET(m_uart_fd, &((esp_openthread_mainloop_context_t *)aMainloopContext)->read_fds);
+    if (m_uart_fd > ((esp_openthread_mainloop_context_t *)aMainloopContext)->max_fd) {
+        ((esp_openthread_mainloop_context_t *)aMainloopContext)->max_fd = m_uart_fd;
+    }
+}
+
+uint32_t UartSpinelInterface::GetBusSpeed(void) const
+{
+    return m_uart_config.uart_config.baud_rate;
 }
 
 } // namespace openthread
