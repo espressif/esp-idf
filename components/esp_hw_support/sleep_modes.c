@@ -29,6 +29,11 @@
 #include "hal/systimer_ll.h"
 #endif
 
+#if SOC_SLEEP_TGWDT_STOP_WORKAROUND
+#include "hal/mwdt_ll.h"
+#include "hal/timer_ll.h"
+#endif
+
 #include "driver/uart.h"
 
 #include "soc/rtc.h"
@@ -303,6 +308,52 @@ void esp_deep_sleep(uint64_t time_in_us)
 {
     esp_sleep_enable_timer_wakeup(time_in_us);
     esp_deep_sleep_start();
+}
+
+#if SOC_SLEEP_TGWDT_STOP_WORKAROUND
+static uint32_t s_stopped_tgwdt_bmap = 0;
+#endif
+
+// Must be called from critical sections.
+static void IRAM_ATTR suspend_timers(uint32_t pd_flags) {
+    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+#if SOC_SLEEP_TGWDT_STOP_WORKAROUND
+        /* If timegroup implemented task watchdog or interrupt watchdog is running, we have to stop it. */
+        for (uint32_t tg_num = 0; tg_num < SOC_TIMER_GROUPS; ++tg_num) {
+            if (mwdt_ll_check_if_enabled(TIMER_LL_GET_HW(tg_num))) {
+                mwdt_ll_write_protect_disable(TIMER_LL_GET_HW(tg_num));
+                mwdt_ll_disable(TIMER_LL_GET_HW(tg_num));
+                mwdt_ll_write_protect_enable(TIMER_LL_GET_HW(tg_num));
+                s_stopped_tgwdt_bmap |= BIT(tg_num);
+            }
+        }
+#endif
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+        for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
+            systimer_ll_enable_counter(&SYSTIMER, counter_id, false);
+        }
+#endif
+    }
+}
+
+// Must be called from critical sections.
+static void IRAM_ATTR resume_timers(uint32_t pd_flags) {
+    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+        for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
+            systimer_ll_enable_counter(&SYSTIMER, counter_id, true);
+        }
+#endif
+#if SOC_SLEEP_TGWDT_STOP_WORKAROUND
+        for (uint32_t tg_num = 0; tg_num < SOC_TIMER_GROUPS; ++tg_num) {
+            if (s_stopped_tgwdt_bmap & BIT(tg_num)) {
+                mwdt_ll_write_protect_disable(TIMER_LL_GET_HW(tg_num));
+                mwdt_ll_enable(TIMER_LL_GET_HW(tg_num));
+                mwdt_ll_write_protect_enable(TIMER_LL_GET_HW(tg_num));
+            }
+        }
+#endif
+    }
 }
 
 // [refactor-todo] provide target logic for body of uart functions below
@@ -581,25 +632,13 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     } else {
-#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
-        if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-            for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
-                systimer_ll_enable_counter(&SYSTIMER, counter_id, false);
-            }
-        }
-#endif
+        suspend_timers(pd_flags);
         /* Wait cache idle in cache suspend to avoid cache load wrong data after spi io isolation */
         cache_hal_suspend(CACHE_TYPE_ALL);
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
         /* Resume cache for continue running */
         cache_hal_resume(CACHE_TYPE_ALL);
-#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
-        if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-            for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
-                systimer_ll_enable_counter(&SYSTIMER, counter_id, true);
-            }
-        }
-#endif
+        resume_timers(pd_flags);
     }
 
     // Restore CPU frequency
