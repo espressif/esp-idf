@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#if SOC_ESP_NIMBLE_CONTROLLER
+#if SOC_ESP_NIMBLE_CONTROLLER && CONFIG_BT_CONTROLLER_ENABLED
 
 struct os_mempool;
 struct os_mbuf_pool;

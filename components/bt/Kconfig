@@ -21,7 +21,6 @@ menu "Bluetooth"
 
         config BT_NIMBLE_ENABLED
             bool "NimBLE - BLE only"
-            depends on BT_CONTROLLER_ENABLED
             help
                 This option is recommended for BLE only usecases to save on memory
 
