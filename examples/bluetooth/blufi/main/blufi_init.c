@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,7 +10,9 @@
 #include "esp_log.h"
 #include "esp_blufi.h"
 #include "blufi_example.h"
+#if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
 #include "esp_bt.h"
+#endif
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
@@ -110,6 +112,7 @@ esp_err_t esp_blufi_host_and_cb_init(esp_blufi_callbacks_t *example_callbacks)
 
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
+#if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
 esp_err_t esp_blufi_controller_init() {
     esp_err_t ret = ESP_OK;
 #if CONFIG_IDF_TARGET_ESP32
@@ -130,7 +133,9 @@ esp_err_t esp_blufi_controller_init() {
     }
     return ret;
 }
+#endif
 
+#if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
 esp_err_t esp_blufi_controller_deinit() {
     esp_err_t ret = ESP_OK;
     ret = esp_bt_controller_disable();
@@ -147,6 +152,7 @@ esp_err_t esp_blufi_controller_deinit() {
 
     return ret;
 }
+#endif
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
 void ble_store_config_init(void);
