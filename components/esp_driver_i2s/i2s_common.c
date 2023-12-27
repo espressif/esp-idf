@@ -1073,7 +1073,7 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
         /* Load the data from the last loaded position */
         memcpy((uint8_t *)(tx_handle->dma.curr_ptr + tx_handle->dma.rw_pos), data_ptr, bytes_can_load);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_cache_msync(tx_handle->dma.curr_ptr + tx_handle->dma.rw_pos, bytes_can_load, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync(tx_handle->dma.curr_ptr, tx_handle->dma.buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 #endif
         data_ptr += bytes_can_load;             // Move forward the data pointer
         total_loaded_bytes += bytes_can_load;   // Add to the total loaded bytes
@@ -1132,7 +1132,7 @@ esp_err_t i2s_channel_write(i2s_chan_handle_t handle, const void *src, size_t si
         }
         memcpy(data_ptr, src_byte, bytes_can_write);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_cache_msync(data_ptr, bytes_can_write, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync(handle->dma.curr_ptr, handle->dma.buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 #endif
         size -= bytes_can_write;
         src_byte += bytes_can_write;
