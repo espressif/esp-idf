@@ -122,7 +122,7 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
 #if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
 
 static uint32_t rtc_retain_mem_size(void) {
-#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+#if CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC && !CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_IN_CRC
     /* A custom memory has been reserved by the user, do not consider this memory into CRC calculation as it may change without
      * the have the user updating the CRC. Return the offset of the custom field, which is equivalent to size of the structure
      * minus the size of everything after (including) `custom` */
