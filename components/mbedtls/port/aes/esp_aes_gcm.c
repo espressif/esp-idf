@@ -391,7 +391,7 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
     /* H and the lookup table are only generated once per ctx */
     if (ctx->gcm_state == ESP_AES_GCM_STATE_INIT) {
         /* Lock the AES engine to calculate ghash key H in hardware */
-#if SOC_AES_SUPPORT_GCM
+#if CONFIG_MBEDTLS_HARDWARE_GCM
         esp_aes_acquire_hardware();
         ctx->aes_ctx.key_in_hardware = aes_hal_setkey(ctx->aes_ctx.key, ctx->aes_ctx.key_bytes, mode);
         aes_hal_mode_init(ESP_AES_BLOCK_MODE_GCM);
@@ -508,7 +508,7 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
     return esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, stream, ctx->ghash, tag);
 }
 
-#if SOC_AES_SUPPORT_GCM
+#if CONFIG_MBEDTLS_HARDWARE_GCM
 /* Due to restrictions in the hardware (e.g. need to do the whole conversion in one go),
    some combinations of inputs are not supported */
 static bool esp_aes_gcm_input_support_hw_accel(size_t length, const unsigned char *aad, size_t aad_len,
@@ -581,7 +581,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
                                size_t tag_len,
                                unsigned char *tag )
 {
-#if SOC_AES_SUPPORT_GCM
+#if CONFIG_MBEDTLS_HARDWARE_GCM
     int ret;
     lldesc_t aad_desc[2] = {};
     lldesc_t *aad_head_desc = NULL;
