@@ -1714,7 +1714,7 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
  *                  - other  : failed
  *
  */
-esp_err_t esp_ble_gap_set_device_name(const char *name);
+esp_err_t esp_ble_gap_set_device_name(const char *name) __attribute__((deprecated("Please use esp_bt_dev_set_device_name")));
 
 /**
  * @brief           Get device name of the local device
@@ -1724,7 +1724,7 @@ esp_err_t esp_ble_gap_set_device_name(const char *name);
  *                  - other  : failed
  *
  */
-esp_err_t esp_ble_gap_get_device_name(void);
+esp_err_t esp_ble_gap_get_device_name(void) __attribute__((deprecated("Please use esp_bt_dev_get_device_name")));
 
 /**
  * @brief          This function is called to get local used address and address type.

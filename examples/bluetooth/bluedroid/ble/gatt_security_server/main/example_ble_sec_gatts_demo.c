@@ -17,6 +17,7 @@
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_bt_device.h"
 #include "example_ble_sec_gatts_demo.h"
 
 #define GATTS_TABLE_TAG "SEC_GATTS_DEMO"
@@ -407,7 +408,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     ESP_LOGV(GATTS_TABLE_TAG, "event = %x",event);
     switch (event) {
         case ESP_GATTS_REG_EVT:
-            esp_ble_gap_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
             //generate a resolvable random address
             esp_ble_gap_config_local_privacy(true);
             esp_ble_gatts_create_attr_tab(heart_rate_gatt_db, gatts_if,

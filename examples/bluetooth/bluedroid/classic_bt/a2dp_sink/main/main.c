@@ -37,6 +37,8 @@ enum {
  * STATIC FUNCTION DECLARATIONS
  *******************************/
 
+/* Device callback function */
+static void bt_app_dev_cb(esp_bt_dev_cb_event_t event, esp_bt_dev_cb_param_t *param);
 /* GAP callback function */
 static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
 /* handler for bluetooth stack enabled events */
@@ -45,6 +47,24 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param);
 /*******************************
  * STATIC FUNCTION DEFINITIONS
  ******************************/
+
+static void bt_app_dev_cb(esp_bt_dev_cb_event_t event, esp_bt_dev_cb_param_t *param)
+{
+    switch (event) {
+    case ESP_BT_DEV_NAME_RES_EVT: {
+        if (param->name_res.status == ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGI(BT_AV_TAG, "Get local device name success: %s", param->name_res.name);
+        } else {
+            ESP_LOGE(BT_AV_TAG, "Get local device name failed, status: %d", param->name_res.status);
+        }
+        break;
+    }
+    default: {
+        ESP_LOGI(BT_AV_TAG, "event: %d", event);
+        break;
+    }
+    }
+}
 
 static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
@@ -110,6 +130,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     /* when do the stack up, this event comes */
     case BT_APP_EVT_STACK_UP: {
         esp_bt_dev_set_device_name(LOCAL_DEVICE_NAME);
+        esp_bt_dev_register_callback(bt_app_dev_cb);
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
         assert(esp_avrc_ct_init() == ESP_OK);
@@ -127,6 +148,8 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
         /* Get the default value of the delay value */
         esp_a2d_sink_get_delay_value();
+        /* Get local device name */
+        esp_bt_dev_get_device_name();
 
         /* set discoverable and connectable mode, wait to be connected */
         esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);

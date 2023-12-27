@@ -13,6 +13,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
+#include "esp_bt_device.h"
 #include "esp_hid_gap.h"
 
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -699,7 +700,7 @@ esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
         return ret;
     }
 
-    if ((ret = esp_ble_gap_set_device_name(device_name)) != ESP_OK) {
+    if ((ret = esp_bt_dev_set_device_name(device_name)) != ESP_OK) {
         ESP_LOGE(TAG, "GAP set_device_name failed: %d", ret);
         return ret;
     }
