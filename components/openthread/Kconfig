@@ -168,6 +168,13 @@ menu "OpenThread"
                 Select this to enable SPI connection to host.
     endchoice
 
+    config OPENTHREAD_NCP_VENDOR_HOOK
+        bool "Enable vendor command for RCP"
+        depends on OPENTHREAD_RADIO
+        default n
+        help
+            Select this to enable OpenThread NCP vendor commands.
+
     config OPENTHREAD_CLI
         bool "Enable Openthread Command-Line Interface"
         depends on OPENTHREAD_ENABLED
@@ -361,5 +368,11 @@ menu "OpenThread"
         help
             Select this option to enable the radio statistics feature, you can use radio command to print some radio
             Statistics informations.
+
+    config OPENTHREAD_SPINEL_ONLY
+        bool "Enable OpenThread External Radio Spinel feature"
+        default n
+        help
+            Select this option to enable the OpenThread Radio Spinel for external protocol stack, such as Zigbee.
 
 endmenu

@@ -4,13 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- *   This file includes compile-time configuration constants for OpenThread.
- */
-
-#ifndef OPENTHREAD_SPINEL_CONFIG_H_
-#define OPENTHREAD_SPINEL_CONFIG_H_
+#pragma once
 
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE
@@ -30,6 +24,7 @@
  *
  */
 #ifndef OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT
+// TZ-567: Set OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT to 3 after adding rcp failure notification mechanism
 #define OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT 0
 #endif
 
@@ -42,5 +37,3 @@
 #ifndef OPENTHREAD_SPINEL_CONFIG_RCP_CUSTOM_RESTORATION
 #define OPENTHREAD_SPINEL_CONFIG_RCP_CUSTOM_RESTORATION 0
 #endif
-
-#endif // OPENTHREAD_SPINEL_CONFIG_H_
