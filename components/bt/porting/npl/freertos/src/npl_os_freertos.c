@@ -37,11 +37,19 @@ static const char *TAG = "Timer";
 #error "not defined SOC_ESP_NIMBLE_CONTROLLER or SOC_ESP_NIMBLE_CONTROLLER is zero"
 #endif
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #define BLE_HOST_CO_COUNT    (8)
 #define BLE_HOST_EV_COUNT    (11 + BLE_HOST_CO_COUNT)
 #define BLE_HOST_EVQ_COUNT   (3)
 #define BLE_HOST_SEM_COUNT   (10)
 #define BLE_HOST_MUTEX_COUNT (4)
+#else
+#define BLE_HOST_CO_COUNT    (0)
+#define BLE_HOST_EV_COUNT    (0)
+#define BLE_HOST_EVQ_COUNT   (0)
+#define BLE_HOST_SEM_COUNT   (0)
+#define BLE_HOST_MUTEX_COUNT (0)
+#endif
 
 struct os_mempool ble_freertos_ev_pool;
 static os_membuf_t *ble_freertos_ev_buf = NULL;
