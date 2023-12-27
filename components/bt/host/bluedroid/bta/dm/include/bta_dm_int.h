@@ -56,6 +56,7 @@ enum {
     BTA_DM_API_GET_NAME_EVT,
 #if (CLASSIC_BT_INCLUDED == TRUE)
     BTA_DM_API_CONFIG_EIR_EVT,
+    BTA_DM_API_SET_ACL_PKT_TYPES_EVT,
 #endif
     BTA_DM_API_SET_AFH_CHANNELS_EVT,
 #if (SDP_INCLUDED == TRUE)
@@ -266,6 +267,14 @@ typedef struct {
     AFH_CHANNELS        channels;
     tBTA_CMPL_CB        *set_afh_cb;
 }tBTA_DM_API_SET_AFH_CHANNELS;
+
+/* data type for BTA_DM_API_SET_ACL_PKT_TYPES_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    BD_ADDR             rmt_addr;
+    UINT16              pkt_types;
+    tBTM_CMPL_CB        *set_acl_pkt_types_cb;
+} tBTA_DM_API_SET_ACL_PKT_TYPES;
 
 /* data type for BTA_DM_API_GET_REMOTE_NAME_EVT */
 typedef struct {
@@ -1086,6 +1095,7 @@ typedef union {
     tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
+    tBTA_DM_API_SET_ACL_PKT_TYPES set_acl_pkt_types;
 #if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_GET_REMOTE_NAME  get_rmt_name;
 #endif
@@ -1587,6 +1597,7 @@ extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
 extern void bta_dm_get_dev_name (tBTA_DM_MSG *p_data);
 #if (CLASSIC_BT_INCLUDED == TRUE)
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
+extern void bta_dm_set_acl_pkt_types (tBTA_DM_MSG *p_data);
 #endif
 extern void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data);
 extern void bta_dm_read_rmt_name(tBTA_DM_MSG *p_data);
