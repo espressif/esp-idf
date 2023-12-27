@@ -112,8 +112,8 @@ typedef UINT8 tBTA_HF_CLIENT_AT_RESULT_TYPE;
 #define BTA_HF_CLIENT_BSIR_EVT              19 /* in-band ring tone setting changed event */
 #define BTA_HF_CLIENT_BINP_EVT              20 /* binp number event */
 #define BTA_HF_CLIENT_RING_INDICATION       21 /* HF Client ring indication */
-#define BTA_HF_CLIENT_DISABLE_EVT           30 /* HF Client disabled */
-#define BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT 31 /* HF Client packet status nums */
+#define BTA_HF_CLIENT_DISABLE_EVT           22 /* HF Client disabled */
+#define BTA_HF_CLIENT_PKT_STAT_NUMS_GET_EVT 23 /* HF Client packet status nums */
 
 typedef UINT8 tBTA_HF_CLIENT_EVT;
 
