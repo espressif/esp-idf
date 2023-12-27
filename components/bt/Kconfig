@@ -1,9 +1,8 @@
 menu "Bluetooth"
-    visible if SOC_BT_SUPPORTED
 
     config BT_ENABLED
         bool "Bluetooth"
-        depends on SOC_BT_SUPPORTED && !APP_NO_BLOBS
+        depends on !APP_NO_BLOBS
         help
             Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
@@ -15,6 +14,7 @@ menu "Bluetooth"
             This helps to choose Bluetooth host stack
 
         config BT_BLUEDROID_ENABLED
+            depends on BT_CONTROLLER_ENABLED
             bool "Bluedroid - Dual-mode"
             help
                 This option is recommended for classic Bluetooth or for dual-mode
@@ -26,6 +26,7 @@ menu "Bluetooth"
                 This option is recommended for BLE only usecases to save on memory
 
         config BT_CONTROLLER_ONLY
+            depends on SOC_BT_SUPPORTED
             bool "Disabled"
             help
                 This option is recommended when you want to communicate directly with the
@@ -42,6 +43,7 @@ menu "Bluetooth"
             This helps to choose Bluetooth controller stack
 
         config BT_CONTROLLER_ENABLED
+            depends on SOC_BT_SUPPORTED
             bool "Enabled"
             help
                 This option is recommended for Bluetooth controller usecases

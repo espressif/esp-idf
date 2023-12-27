@@ -767,3 +767,26 @@ config BT_NIMBLE_HOST_QUEUE_CONG_CHECK
         When scanning and scan duplicate is not enabled, if there are a lot of adv packets around
         or application layer handling adv packets is slow, it will cause the controller memory
         to run out. if enabled, adv packets will be lost when host queue is congested.
+
+menu "Host-controller Transport"
+    config BT_NIMBLE_TRANSPORT_UART
+        bool "Enable Uart Transport"
+        default y
+        depends on BT_CONTROLLER_DISABLED
+        help
+            Use UART transport
+
+    config BT_NIMBLE_UART_RX_PIN
+        int "Rx pin for Nimble Uart"
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
+        default 5
+        help
+            Rx pin for Nimble Transport
+
+    config BT_NIMBLE_UART_TX_PIN
+        int "Tx pin for Nimble Uart"
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
+        default 4
+        help
+            Tx pin for Nimble Transport
+endmenu
