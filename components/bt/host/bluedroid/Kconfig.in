@@ -29,7 +29,7 @@ config BT_BLUEDROID_PINNED_TO_CORE
 config BT_BTU_TASK_STACK_SIZE
     int "Bluetooth Bluedroid Host Stack task stack size"
     depends on BT_BLUEDROID_ENABLED
-    default 4096
+    default 4352
     help
         This select btu task stack size
 
