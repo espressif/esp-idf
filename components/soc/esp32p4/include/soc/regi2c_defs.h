@@ -15,7 +15,8 @@
 #define I2C_MST_BBPLL_CAL_DONE         (BIT(24))
 
 
-#define ANA_CONFIG_REG  0x600AF81C
+
+#define ANA_CONFIG_REG  0x5012401C
 #define ANA_CONFIG_S    (8)
 #define ANA_CONFIG_M    (0x3FF)
 
@@ -23,7 +24,7 @@
 #define ANA_I2C_BBPLL_M      BIT(17) /* Clear to enable BBPLL */
 
 
-#define ANA_CONFIG2_REG  0x600AF820
+#define ANA_CONFIG2_REG  0x50124020
 #define ANA_CONFIG2_M    BIT(18)
 
 #define ANA_I2C_SAR_FORCE_PU BIT(16)

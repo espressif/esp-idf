@@ -55,6 +55,10 @@ config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
+config SOC_TEMP_SENSOR_SUPPORTED
+    bool
+    default y
+
 config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
@@ -1331,11 +1335,11 @@ config SOC_PERIPH_CLK_CTRL_SHARED
     bool
     default y
 
-config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
+config SOC_TEMPERATURE_SENSOR_LP_PLL_SUPPORT
     bool
     default y
 
-config SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL
+config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     bool
     default y
 

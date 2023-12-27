@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,12 +18,11 @@
 #include <stdlib.h>
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
-#include "soc/apb_saradc_struct.h"
-#include "soc/apb_saradc_reg.h"
-#include "soc/pcr_struct.h"
+#include "soc/tsens_struct.h"
+#include "soc/lpperi_struct.h"
+#include "soc/tsens_reg.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
-#include "soc/pcr_struct.h"
 #include "soc/interrupts.h"
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
@@ -39,7 +38,7 @@ extern "C" {
 #define TEMPERATURE_SENSOR_LL_MEASURE_MAX    (125)
 #define TEMPERATURE_SENSOR_LL_MEASURE_MIN    (-40)
 
-#define TEMPERATURE_SENSOR_LL_INTR_MASK      APB_SARADC_APB_SARADC_TSENS_INT_ST
+#define TEMPERATURE_SENSOR_LL_INTR_MASK      TSENS_COCPU_TSENS_WAKE_INT_ST
 
 typedef enum {
     TEMPERATURE_SENSOR_LL_WAKE_ABSOLUTE = 0,
@@ -53,7 +52,7 @@ typedef enum {
  */
 static inline void temperature_sensor_ll_enable(bool enable)
 {
-    APB_SARADC.saradc_apb_tsens_ctrl.saradc_tsens_pu = enable;
+    LP_TSENS.ctrl.power_up = enable;
 }
 
 /**
@@ -61,39 +60,34 @@ static inline void temperature_sensor_ll_enable(bool enable)
  */
 static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 {
-    PCR.tsens_clk_conf.tsens_clk_en = enable;
+    LPPERI.clk_en.ck_en_lp_tsens = enable;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define temperature_sensor_ll_bus_clk_enable(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_bus_clk_enable(__VA_ARGS__);} while(0)
 
 /**
  * @brief Reset the Temperature sensor module
  */
 static inline void temperature_sensor_ll_reset_module(void)
 {
-    PCR.tsens_clk_conf.tsens_rst_en = 1;
-    PCR.tsens_clk_conf.tsens_rst_en = 0;
+    LPPERI.reset_en.rst_en_lp_tsens = 1;
+    LPPERI.reset_en.rst_en_lp_tsens = 0;
 }
 
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
+
 /**
- * @brief Select the clock source for temperature sensor. On ESP32-C6, temperautre sensor
- *        can use XTAL or FOSC. To make it convenience, suggest using XTAL all the time.
+ * @brief Select the clock source for temperature sensor.
  *
  * @param clk_src refer to ``temperature_sensor_clk_src_t``
  */
 static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t clk_src)
 {
-    uint8_t clk_sel = 0;
-    switch (clk_src) {
-        case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
-            clk_sel = 1;
-            break;
-        case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
-            clk_sel = 0;
-            break;
-        default:
-            HAL_ASSERT(false);
-            break;
-    }
-    PCR.tsens_clk_conf.tsens_clk_sel = clk_sel;
+    // Only LP_PLL can be used as clock source on P4.
 }
 
 /**
@@ -114,7 +108,7 @@ static inline void temperature_sensor_ll_set_range(uint32_t range)
 __attribute__((always_inline))
 static inline uint32_t temperature_sensor_ll_get_raw_value(void)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_out);
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_TSENS.ctrl, out);
 }
 
 /**
@@ -138,7 +132,7 @@ static inline uint32_t temperature_sensor_ll_get_offset(void)
  */
 static inline uint32_t temperature_sensor_ll_get_clk_div(void)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_clk_div);
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_TSENS.ctrl, clk_div);
 }
 
 /**
@@ -151,19 +145,17 @@ static inline uint32_t temperature_sensor_ll_get_clk_div(void)
  */
 static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_apb_tsens_ctrl, saradc_tsens_clk_div, clk_div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_TSENS.ctrl, clk_div, clk_div);
 }
 
 /**
  * @brief Choose the wake-up mode for temperature sensor
  *
- * @note ESP32-C6 does not support difference mode.
- *
  * @param mode 0: Absolute value mode. 1: Difference mode.
  */
 static inline void temperature_sensor_ll_wakeup_mode(temperature_sensor_ll_wakeup_mode_t mode)
 {
-    APB_SARADC.tsens_wake.saradc_wakeup_mode = mode;
+    LP_TSENS.wakeup_ctrl.wakeup_mode = mode;
 }
 
 /**
@@ -174,7 +166,7 @@ static inline void temperature_sensor_ll_wakeup_mode(temperature_sensor_ll_wakeu
 __attribute__((always_inline))
 static inline uint8_t temperature_sensor_ll_get_wakeup_reason(void)
 {
-    return APB_SARADC.tsens_wake.saradc_wakeup_over_upper_th;
+    return LP_TSENS.wakeup_ctrl.wakeup_over_upper_th;
 }
 
 /**
@@ -184,7 +176,7 @@ static inline uint8_t temperature_sensor_ll_get_wakeup_reason(void)
  */
 static inline void temperature_sensor_ll_wakeup_enable(bool en)
 {
-    APB_SARADC.tsens_wake.saradc_wakeup_en = en;
+    LP_TSENS.wakeup_ctrl.wakeup_en = en;
 }
 
 /**
@@ -194,7 +186,7 @@ static inline void temperature_sensor_ll_wakeup_enable(bool en)
  */
 static inline void temperature_sensor_ll_set_th_low_val(uint8_t th_low)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_wake, saradc_wakeup_th_low, th_low);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_TSENS.wakeup_ctrl, wakeup_th_low, th_low);
 }
 
 /**
@@ -204,7 +196,7 @@ static inline void temperature_sensor_ll_set_th_low_val(uint8_t th_low)
  */
 static inline void temperature_sensor_ll_set_th_high_val(uint8_t th_high)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_wake, saradc_wakeup_th_high, th_high);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_TSENS.wakeup_ctrl, wakeup_th_high, th_high);
 }
 
 /**
@@ -214,7 +206,7 @@ static inline void temperature_sensor_ll_set_th_high_val(uint8_t th_high)
  */
 static inline void temperature_sensor_ll_enable_intr(bool enable)
 {
-    APB_SARADC.saradc_int_ena.saradc_apb_saradc_tsens_int_ena = enable;
+    LP_TSENS.int_ena.cocpu_tsens_wake_int_ena = enable;
 }
 
 /**
@@ -223,7 +215,7 @@ static inline void temperature_sensor_ll_enable_intr(bool enable)
 __attribute__((always_inline))
 static inline void temperature_sensor_ll_clear_intr(void)
 {
-    APB_SARADC.saradc_int_clr.saradc_apb_saradc_tsens_int_clr = 1;
+    LP_TSENS.int_clr.cocpu_tsens_wake_int_clr = 1;
 }
 
 /**
@@ -231,7 +223,7 @@ static inline void temperature_sensor_ll_clear_intr(void)
  */
 static inline volatile void *temperature_sensor_ll_get_intr_status(void)
 {
-    return &APB_SARADC.saradc_int_st;
+    return &LP_TSENS.int_st;
 }
 
 /**
@@ -241,7 +233,7 @@ static inline volatile void *temperature_sensor_ll_get_intr_status(void)
  */
 static inline void temperature_sensor_ll_sample_enable(bool en)
 {
-    APB_SARADC.tsens_sample.saradc_tsens_sample_en = en;
+    LP_TSENS.ctrl.sample_en = en;
 }
 
 /**
@@ -251,7 +243,7 @@ static inline void temperature_sensor_ll_sample_enable(bool en)
  */
 static inline void temperature_sensor_ll_set_sample_rate(uint16_t rate)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.tsens_sample, saradc_tsens_sample_rate, rate);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_TSENS.sample_rate, sample_rate, rate);
 }
 
 #ifdef __cplusplus
