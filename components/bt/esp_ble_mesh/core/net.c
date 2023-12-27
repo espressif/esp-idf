@@ -1542,7 +1542,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 #endif
 
     if (!buf) {
-        BT_ERR("Out of relay buffers");
+        BT_INFO("Out of relay buffers");
         return;
     }
 
@@ -1855,7 +1855,11 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
      * was neither a local element nor an LPN we're Friends for.
      */
     if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
-        (!rx.local_match && !rx.friend_match)) {
+        (!rx.local_match && !rx.friend_match
+#if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
+        && !rx.replay_msg
+#endif
+        )) {
         net_buf_simple_restore(&buf, &state);
         bt_mesh_net_relay(&buf, &rx);
     }
