@@ -228,3 +228,8 @@ bool pmu_sleep_finish(void)
 {
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
 }
+
+uint32_t pmu_sleep_get_wakup_retention_cost(void)
+{
+    return PMU_REGDMA_S2A_WORK_TIME_US;
+}

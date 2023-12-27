@@ -114,8 +114,8 @@
 // If light sleep time is less than that, don't power down flash
 #define FLASH_PD_MIN_SLEEP_TIME_US  2000
 
-// Time from VDD_SDIO power up to first flash read in ROM code
-#define VDD_SDIO_POWERUP_TO_FLASH_READ_US 700
+// Default waiting time for the software to wait for Flash ready after waking up from sleep
+#define ESP_SLEEP_WAIT_FLASH_READY_DEFAULT_DELAY_US 700
 
 // Cycles for RTC Timer clock source (internal oscillator) calibrate
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
@@ -162,12 +162,6 @@
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 #else
 #define DEEP_SLEEP_TIME_OVERHEAD_US         (250 + 100 * 240 / CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
-#endif
-
-#if CONFIG_ESP_SLEEP_DEEP_SLEEP_WAKEUP_DELAY
-#define DEEP_SLEEP_WAKEUP_DELAY     CONFIG_ESP_SLEEP_DEEP_SLEEP_WAKEUP_DELAY
-#else
-#define DEEP_SLEEP_WAKEUP_DELAY     0
 #endif
 
 // Minimal amount of time we can sleep for
@@ -353,13 +347,16 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void)
                      _DPORT_REG_READ(DPORT_PRO_CACHE_CTRL1_REG) | DPORT_PRO_CACHE_MMU_IA_CLR);
     _DPORT_REG_WRITE(DPORT_PRO_CACHE_CTRL1_REG,
                      _DPORT_REG_READ(DPORT_PRO_CACHE_CTRL1_REG) & (~DPORT_PRO_CACHE_MMU_IA_CLR));
-#if DEEP_SLEEP_WAKEUP_DELAY > 0
+#if CONFIG_ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY > 0
     // ROM code has not started yet, so we need to set delay factor
     // used by esp_rom_delay_us first.
     ets_update_cpu_frequency_rom(ets_get_detected_xtal_freq() / 1000000);
-    // This delay is configured in menuconfig, it can be used to give
-    // the flash chip some time to become ready.
-    esp_rom_delay_us(DEEP_SLEEP_WAKEUP_DELAY);
+    // Time from VDD_SDIO power up to first flash read in ROM code is 700 us,
+    // for some flash chips is not sufficient, this delay is configured in menuconfig,
+    // it can be used to give the flash chip some extra time to become ready.
+    // For later chips, we have EFUSE_FLASH_TPUW field to configure it and do
+    // this delay in the ROM.
+    esp_rom_delay_us(CONFIG_ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY);
 #endif
 #elif CONFIG_IDF_TARGET_ESP32S2
     REG_SET_BIT(EXTMEM_CACHE_DBG_INT_ENA_REG, EXTMEM_CACHE_DBG_EN);
@@ -996,6 +993,18 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
 
     // If SPI flash was powered down, wait for it to become ready
     if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+#if SOC_PM_SUPPORT_TOP_PD
+        if (pd_flags & PMU_SLEEP_PD_TOP) {
+            uint32_t flash_ready_hw_waited_time_us = pmu_sleep_get_wakup_retention_cost();
+            uint32_t flash_ready_sw_waited_time_us = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / MHZ);
+            uint32_t flash_ready_waited_time_us = flash_ready_hw_waited_time_us + flash_ready_sw_waited_time_us;
+            if (flash_enable_time_us > flash_ready_waited_time_us){
+                flash_enable_time_us -= flash_ready_waited_time_us;
+            } else {
+                flash_enable_time_us = 0;
+            }
+        }
+#endif
         // Wait for the flash chip to start up
         esp_rom_delay_us(flash_enable_time_us);
     }
@@ -1092,12 +1101,9 @@ esp_err_t esp_light_sleep_start(void)
                                      + rtc_time_slowclk_to_us(rtc_cntl_xtl_buf_wait_slp_cycles + RTC_CNTL_CK8M_WAIT_SLP_CYCLES + RTC_CNTL_WAKEUP_DELAY_CYCLES, s_config.rtc_clk_cal_period);
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-6930
-    const uint32_t flash_enable_time_us = 0;
-#else
     // Decide if VDD_SDIO needs to be powered down;
     // If it needs to be powered down, adjust sleep time.
-    const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US + DEEP_SLEEP_WAKEUP_DELAY;
+    const uint32_t flash_enable_time_us = ESP_SLEEP_WAIT_FLASH_READY_DEFAULT_DELAY_US + CONFIG_ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY;
 
     /**
      * If VDD_SDIO power domain is requested to be turned off, bit `RTC_SLEEP_PD_VDDSDIO`
@@ -1136,7 +1142,6 @@ esp_err_t esp_light_sleep_start(void)
             }
         }
     }
-#endif
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
 
