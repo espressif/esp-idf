@@ -154,7 +154,7 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a = a << b; return a; }
 /* Use IDF_DEPRECATED attribute to mark anything deprecated from use in
    ESP-IDF's own source code, but not deprecated for external users.
 */
-#ifdef IDF_CI_BUILD
+#ifdef CONFIG_IDF_CI_BUILD
 #define IDF_DEPRECATED(REASON) __attribute__((deprecated(REASON)))
 #else
 #define IDF_DEPRECATED(REASON)

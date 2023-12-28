@@ -16,7 +16,7 @@ DEBUG_SHELL=${DEBUG_SHELL:-"0"}
 # Compiler flags to thoroughly check the IDF code in some CI jobs
 # (Depends on default options '-Wno-error=XXX' used in the IDF build system)
 
-PEDANTIC_FLAGS="-DIDF_CI_BUILD -Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
+PEDANTIC_FLAGS="-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
 export PEDANTIC_CFLAGS="${PEDANTIC_FLAGS} -Wstrict-prototypes"
 export PEDANTIC_CXXFLAGS="${PEDANTIC_FLAGS}"
 
