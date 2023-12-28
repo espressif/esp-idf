@@ -26,8 +26,8 @@ extern "C" {
 #define NDP_STATUS_REJECTED     2
 
 #define NAN_MAX_PEERS_RECORD    15
-#define ESP_NAN_PUBLISH         1
-#define ESP_NAN_SUBSCRIBE       2
+#define ESP_NAN_PUBLISH         2
+#define ESP_NAN_SUBSCRIBE       1
 
 /** Parameters of a peer service record */
 struct nan_peer_record {
