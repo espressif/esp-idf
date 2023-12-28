@@ -23,6 +23,11 @@ extern "C" {
 #include <stdbool.h>
 #include <stdio.h>
 
+/* HID BT Task Size Def */
+#ifndef BT_HID_DEVICE_TASK_SIZE
+#define BT_HID_DEVICE_TASK_SIZE 2048
+#endif
+
 /* HID Report Map Values */
 #define HID_RM_INPUT                        0x80
 #define HID_RM_OUTPUT                       0x90
