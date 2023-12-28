@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/usb_phy_ll.h"
-#include "hal/usb_phy_hal.h"
+#include "hal/usb_fsls_phy_ll.h"
+#include "hal/usb_fsls_phy_hal.h"
 
 void usb_phy_hal_init(usb_phy_hal_context_t *hal)
 {
