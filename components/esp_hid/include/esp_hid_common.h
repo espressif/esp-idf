@@ -25,7 +25,7 @@ extern "C" {
 
 /* HID BT Task Size Def */
 #ifndef BT_HID_DEVICE_TASK_SIZE
-#define BT_HID_DEVICE_TASK_SIZE 2048
+#define BT_HID_DEVICE_TASK_SIZE 4096
 #endif
 
 /* HID Report Map Values */
