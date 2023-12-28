@@ -1218,3 +1218,7 @@ config SOC_BLE_POWER_CONTROL_SUPPORTED
 config SOC_BLE_MULTI_CONN_OPTIMIZATION
     bool
     default y
+
+config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+    bool
+    default y
