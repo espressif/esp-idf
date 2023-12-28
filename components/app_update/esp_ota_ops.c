@@ -965,6 +965,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
     }
 
     const esp_partition_t *running_app_part = esp_ota_get_running_partition();
+    esp_err_t ret = ESP_FAIL;
 #ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
     esp_ota_img_states_t running_app_state;
     ret = esp_ota_get_state_partition(running_app_part, &running_app_state);
@@ -979,7 +980,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
 #endif
 
     esp_secure_boot_key_digests_t trusted_keys;
-    esp_err_t ret = esp_secure_boot_read_key_digests(&trusted_keys);
+    ret = esp_secure_boot_read_key_digests(&trusted_keys);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not read the secure boot key digests from efuse. Aborting..");
         return ESP_FAIL;
