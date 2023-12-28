@@ -175,6 +175,16 @@ void bta_hd_register_act(tBTA_HD_DATA *p_data)
                      p_app_data->subclass, p_app_data->d_len, p_app_data->d_data);
     bta_sys_add_uuid(UUID_SERVCLASS_HUMAN_INTERFACE);
 
+    // Set DID Profile SDP Record
+    tBTA_DI_RECORD bqb_device_info;
+    bqb_device_info.vendor = p_app_data->vendor_id;
+    bqb_device_info.vendor_id_source = p_app_data->vendor_id_source; // BTA_HH_VENDOR_ID_INVALID
+    bqb_device_info.product = p_app_data->product_id;
+    bqb_device_info.version = p_app_data->version;
+    bqb_device_info.primary_record = TRUE;
+
+    BTA_DmSetLocalDiRecord(&bqb_device_info, &bta_hd_cb.sdp_handle);
+
     HID_DevSetIncomingQos(p_app_data->in_qos.service_type, p_app_data->in_qos.token_rate,
                           p_app_data->in_qos.token_bucket_size, p_app_data->in_qos.peak_bandwidth,
                           p_app_data->in_qos.access_latency, p_app_data->in_qos.delay_variation);
