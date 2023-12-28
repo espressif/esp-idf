@@ -1,5 +1,5 @@
 [mapping:ledc_driver]
-archive: libdriver.a
+archive: libesp_driver_ledc.a
 entries:
     if LEDC_CTRL_FUNC_IN_IRAM = y:
         ledc: ledc_stop (noflash)

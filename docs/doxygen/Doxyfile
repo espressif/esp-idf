@@ -73,7 +73,6 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/ledc/include/driver/ledc.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
     $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
     $(PROJECT_PATH)/components/driver/touch_sensor/include/driver/touch_sensor_common.h \
@@ -108,6 +107,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer.h \
     $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer_etm.h \
     $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer_types.h \
+    $(PROJECT_PATH)/components/esp_driver_ledc/include/driver/ledc.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_cap.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_cmpr.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_etm.h \

@@ -7,6 +7,6 @@ set(COMPONENT_SRCS
 set(COMPONENT_ADD_INCLUDEDIRS ". include")
 
 # requirements can't depend on config
-set(COMPONENT_REQUIRES example_nvs driver esp_driver_gpio)
+set(COMPONENT_REQUIRES example_nvs driver esp_driver_gpio esp_driver_ledc)
 
 register_component()
