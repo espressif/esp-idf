@@ -48,7 +48,7 @@
 #include <soc/soc.h>
 #include "sdkconfig.h"
 #ifndef CONFIG_FREERTOS_UNICORE
-#include "esp_ipc.h"
+#include "esp_private/esp_ipc.h"
 #endif
 #include "esp_attr.h"
 #include "esp_memory_utils.h"
@@ -88,9 +88,9 @@ static inline bool esp_task_stack_is_sane_cache_disabled(void)
 
     return esp_ptr_in_dram(sp)
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-        || esp_ptr_in_rtc_dram_fast(sp)
+           || esp_ptr_in_rtc_dram_fast(sp)
 #endif
-    ;
+           ;
 }
 
 void spi_flash_init_lock(void)
@@ -157,8 +157,8 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 
     spi_flash_op_lock();
 
-    const int cpuid = xPortGetCoreID();
-    const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
+    int cpuid = xPortGetCoreID();
+    uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
 #ifndef NDEBUG
     // For sanity check later: record the CPU which has started doing flash operation
     assert(s_flash_op_cpu == -1);
@@ -173,33 +173,41 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
         // esp_intr_noniram_disable.
         assert(other_cpuid == 1);
     } else {
-        // Temporarily raise current task priority to prevent a deadlock while
-        // waiting for IPC task to start on the other CPU
-        prvTaskSavedPriority_t SavedPriority;
-        prvTaskPriorityRaise(&SavedPriority, configMAX_PRIORITIES - 1);
-
-        // Signal to the spi_flash_op_block_task on the other CPU that we need it to
-        // disable cache there and block other tasks from executing.
-        s_flash_op_can_start = false;
-        ESP_ERROR_CHECK(esp_ipc_call(other_cpuid, &spi_flash_op_block_func, (void *) other_cpuid));
+        bool ipc_call_was_send_to_other_cpu;
+        do {
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
+            //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+            vTaskPreemptionDisable(NULL);
+#else
+            // Disable scheduler on the current CPU
+            vTaskSuspendAll();
+#endif
+            cpuid = xPortGetCoreID();
+            other_cpuid = (cpuid == 0) ? 1 : 0;
+#ifndef NDEBUG
+            s_flash_op_cpu = cpuid;
+#endif
+            s_flash_op_can_start = false;
+            ipc_call_was_send_to_other_cpu = esp_ipc_call_nonblocking(other_cpuid, &spi_flash_op_block_func, (void *) other_cpuid) == ESP_OK;
+            if (!ipc_call_was_send_to_other_cpu) {
+                // IPC call was not send to other cpu because another nonblocking API is running now.
+                // Enable the Scheduler again will not help the IPC to speed it up
+                // but there is a benefit to schedule to a higher priority task before the nonblocking running IPC call is done.
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
+                //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+                vTaskPreemptionEnable(NULL);
+#else
+                xTaskResumeAll();
+#endif
+            }
+        } while (!ipc_call_was_send_to_other_cpu);
 
         while (!s_flash_op_can_start) {
             // Busy loop and wait for spi_flash_op_block_func to disable cache
             // on the other CPU
         }
-#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
-        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
-        vTaskPreemptionDisable(NULL);
-#else
-        // Disable scheduler on the current CPU
-        vTaskSuspendAll();
-#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
-        // Can now set the priority back to the normal one
-        prvTaskPriorityRestore(&SavedPriority);
-        // This is guaranteed to run on CPU <cpuid> because the other CPU is now
-        // occupied by highest priority task
-        assert(xPortGetCoreID() == cpuid);
     }
+
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
     // This CPU executes this routine, with non-IRAM interrupts and the scheduler
