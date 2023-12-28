@@ -9,7 +9,7 @@
 #include <stdatomic.h>
 #include "esp_log.h"
 #include "hal/usb_serial_jtag_ll.h"
-#include "hal/usb_phy_ll.h"
+#include "hal/usb_fsls_phy_ll.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"

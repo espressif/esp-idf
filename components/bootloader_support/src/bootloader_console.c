@@ -19,7 +19,7 @@
 #include "esp32s2/rom/usb/usb_common.h"
 #endif
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
-#include "hal/usb_phy_ll.h"
+#include "hal/usb_fsls_phy_ll.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
