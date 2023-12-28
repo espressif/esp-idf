@@ -1160,9 +1160,21 @@ Following reason codes are renamed to their shorter form to wrap the table in pa
      - 210
      - Espressif-specific Wi-Fi reason code: NO_AP_FOUND_W_COMPATIBLE_SECURITY will be reported if an AP that fits identifying criteria (e.g. ssid) is found but the connection is rejected due to incompatible security configuration. These situations could be:
 
-       - bss offering WEP, but our password is not WEP compliant
-       - Encrypted AP bss but we have but no password config set
-       - AP is Enterprise but we haven't setup enterprise config, and vice versa
+       - The Access Point is offering WEP security, but our station's password is not WEP-compliant.
+       - The station is configured in Open mode; however, the Access Point is broadcasting in secure mode.
+       - The Access Point uses Enterprise security, but we haven't set up the corresponding enterprise configuration, and vice versa.
+       - SAE-PK is configured in the station configuration, but the Access Point does not support SAE-PK.
+       - SAE-H2E is configured in the station configuration; however, the AP only supports WPA3-PSK or WPA3-WPA2-PSK.
+       - The station is configured in secure mode (Password or Enterprise mode); however, an Open AP is found during the scan.
+       - SAE HnP is configured in the station configuration; however, the AP supports H2E only.
+       - H2E is disabled in the station configuration; however, the AP is WPA3-EXT-PSK, which requires H2E support.
+       - The Access Point requires PMF, but the station is not configured for PMF capable/required.
+       - The station configuration requires PMF, but the AP is not configured for PMF capable/required.
+       - The Access Point is using unsupported group management/pairwise ciphers.
+       - OWE is not enabled in the station configuration, but the discovered AP is using OWE only mode.
+       - The Access Point is broadcasting an invalid RSNXE in its beacons.
+       - The Access Point is in Independent BSS mode.
+
    * - NO_AP_FOUND_AUTHMODE
      - 211
      - Espressif-specific Wi-Fi reason code: NO_AP_FOUND_IN_AUTHMODE_THRESHOLD will be reported if an AP that fit identifying criteria (e.g. ssid) is found but the authmode threhsold set in the wifi_config_t is not met.
