@@ -178,7 +178,7 @@ void bta_hd_register_act(tBTA_HD_DATA *p_data)
     // Set DID Profile SDP Record
     tBTA_DI_RECORD bqb_device_info;
     bqb_device_info.vendor = p_app_data->vendor_id;
-    bqb_device_info.vendor_id_source = p_app_data->vendor_id_source; // BTA_HH_VENDOR_ID_INVALID
+    bqb_device_info.vendor_id_source = p_app_data->vendor_id_source;
     bqb_device_info.product = p_app_data->product_id;
     bqb_device_info.version = p_app_data->version;
     bqb_device_info.primary_record = TRUE;
