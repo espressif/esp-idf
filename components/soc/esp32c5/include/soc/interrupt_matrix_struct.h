@@ -1374,7 +1374,7 @@ typedef struct intmtx_core0_dev_t {
     volatile interrupt_core0_interrupt_date_reg_t interrupt_date;
 } interrupt_core0_dev_t;
 
-extern intmtx_core0_dev_t INTMTX;
+extern interrupt_core0_dev_t INTMTX;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(interrupt_core0_dev_t) == 0x800, "Invalid size of interrupt_core0_dev_t structure");

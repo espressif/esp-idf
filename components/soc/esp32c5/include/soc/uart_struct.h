@@ -462,10 +462,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** clkdiv : R/W; bitpos: [11:0]; default: 694;
+        /** clkdiv_int : R/W; bitpos: [11:0]; default: 694;
          *  The integral part of the frequency divider factor.
          */
-        uint32_t clkdiv:12;
+        uint32_t clkdiv_int:12;
         uint32_t reserved_12:8;
         /** clkdiv_frag : R/W; bitpos: [23:20]; default: 0;
          *  The decimal part of the frequency divider factor.
@@ -881,7 +881,30 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:24;
+        /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
+         *  The  denominator of the frequency divider factor.
+         */
+        uint32_t sclk_div_b:6;
+        /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
+         *  The numerator of the frequency divider factor.
+         */
+        uint32_t sclk_div_a:6;
+        /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
+         *  The integral part of the frequency divider factor.
+         */
+        uint32_t sclk_div_num:8;
+        /** sclk_sel : R/W; bitpos: [21:20]; default: 3;
+         *  UART clock source select. 1: 80Mhz.  2: 8Mhz.  3: XTAL.
+         */
+        uint32_t sclk_sel:2;
+        /** sclk_en : R/W; bitpos: [22]; default: 1;
+         *  Set this bit to enable UART Tx/Rx clock.
+         */
+        uint32_t sclk_en:1;
+        /** rst_core : R/W; bitpos: [23]; default: 0;
+         *  Write 1 then write 0 to this bit to reset UART Tx/Rx.
+         */
+        uint32_t rst_core:1;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
          *  Set this bit to enable UART Tx clock.
          */
@@ -1261,6 +1284,7 @@ typedef struct uart_dev_t {
 
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;
+extern uart_dev_t LP_UART;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(uart_dev_t) == 0xa0, "Invalid size of uart_dev_t structure");

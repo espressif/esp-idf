@@ -10,7 +10,7 @@
 
 #include <stdbool.h>
 // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-// #include "soc/extmem_reg.h"
+#include "soc/cache_reg.h"
 // #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
@@ -318,11 +318,9 @@ static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32
 static inline uint32_t cache_ll_l1_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // return GET_PERI_REG_MASK(EXTMEM_L1_CACHE_ACS_FAIL_INT_ST_REG, mask);
-    return (uint32_t)0;
+    return GET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_ST_REG, mask);
 }
 
 #ifdef __cplusplus
-    return (uint32_t)0;
 }
 #endif

@@ -58,6 +58,8 @@ PROVIDE ( MISC                = 0x6009F000 );
 
 PROVIDE ( MODEM               = 0x600A4000 );
 PROVIDE ( MODEM_PWR           = 0x600AD000 );
+PROVIDE ( MODEM_SYSCON        = 0x600A9800 );
+PROVIDE ( MODEM_LPCON         = 0x600AF000 );
 
 PROVIDE ( PMU                 = 0x600B0000 );
 PROVIDE ( LP_CLKRST           = 0x600B0400 );

@@ -1985,8 +1985,8 @@ typedef union {
     uint32_t val;
 } soc_etm_ch_ena_ad1_clr_reg_t;
 
-/** Type of evt_id register
- *  Channel event id register
+/** Type of chn_evt_id register
+ *  channeln event id register
  */
 typedef union {
     struct {
@@ -1997,10 +1997,10 @@ typedef union {
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} soc_etm_ch_evt_id_reg_t;
+} soc_etm_chn_evt_id_reg_t;
 
-/** Type of task_id register
- *  Channel task id register
+/** Type of chn_task_id register
+ *  channeln task id register
  */
 typedef union {
     struct {
@@ -2011,7 +2011,7 @@ typedef union {
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} soc_etm_ch_task_id_reg_t;
+} soc_etm_chn_task_id_reg_t;
 
 
 /** Type of evt_st0_clr register

@@ -1839,6 +1839,20 @@ extern "C" {
  *  CPU_WAITI configuration register
  */
 #define PCR_CPU_WAITI_CONF_REG (DR_REG_PCR_BASE + 0x110)
+/** PCR_CPUPERIOD_SEL : HRO; bitpos: [1:0]; default: 1;
+ *  Reserved. This filed has been replaced by PCR_CPU_DIV_NUM
+ */
+#define PCR_CPUPERIOD_SEL    0x00000003U
+#define PCR_CPUPERIOD_SEL_M  (PCR_CPUPERIOD_SEL_V << PCR_CPUPERIOD_SEL_S)
+#define PCR_CPUPERIOD_SEL_V  0x00000003U
+#define PCR_CPUPERIOD_SEL_S  0
+/** PCR_PLL_FREQ_SEL : HRO; bitpos: [2]; default: 1;
+ *  Reserved. This filed has been replaced by PCR_CPU_DIV_NUM
+ */
+#define PCR_PLL_FREQ_SEL    (BIT(2))
+#define PCR_PLL_FREQ_SEL_M  (PCR_PLL_FREQ_SEL_V << PCR_PLL_FREQ_SEL_S)
+#define PCR_PLL_FREQ_SEL_V  0x00000001U
+#define PCR_PLL_FREQ_SEL_S  2
 /** PCR_CPU_WAIT_MODE_FORCE_ON : R/W; bitpos: [3]; default: 1;
  *  Set 1 to force cpu_waiti_clk enable.
  */
@@ -2207,6 +2221,32 @@ extern "C" {
 #define PCR_SEC_RST_EN_V  0x00000001U
 #define PCR_SEC_RST_EN_S  2
 
+/** PCR_ADC_DAC_INV_PHASE_CONF_REG register
+ *  xxxx
+ */
+#define PCR_ADC_DAC_INV_PHASE_CONF_REG (DR_REG_PCR_BASE + 0x140)
+/** PCR_CLK_RX_ADC_INV_PHASE_ENA : R/W; bitpos: [0]; default: 0;
+ *  xxxx
+ */
+#define PCR_CLK_RX_ADC_INV_PHASE_ENA    (BIT(0))
+#define PCR_CLK_RX_ADC_INV_PHASE_ENA_M  (PCR_CLK_RX_ADC_INV_PHASE_ENA_V << PCR_CLK_RX_ADC_INV_PHASE_ENA_S)
+#define PCR_CLK_RX_ADC_INV_PHASE_ENA_V  0x00000001U
+#define PCR_CLK_RX_ADC_INV_PHASE_ENA_S  0
+/** PCR_CLK_TX_DAC_INV_PHASE_ENA : R/W; bitpos: [1]; default: 0;
+ *  xxxx
+ */
+#define PCR_CLK_TX_DAC_INV_PHASE_ENA    (BIT(1))
+#define PCR_CLK_TX_DAC_INV_PHASE_ENA_M  (PCR_CLK_TX_DAC_INV_PHASE_ENA_V << PCR_CLK_TX_DAC_INV_PHASE_ENA_S)
+#define PCR_CLK_TX_DAC_INV_PHASE_ENA_V  0x00000001U
+#define PCR_CLK_TX_DAC_INV_PHASE_ENA_S  1
+/** PCR_CLK_PWDET_ADC_INV_PHASE_ENA : R/W; bitpos: [2]; default: 0;
+ *  xxxx
+ */
+#define PCR_CLK_PWDET_ADC_INV_PHASE_ENA    (BIT(2))
+#define PCR_CLK_PWDET_ADC_INV_PHASE_ENA_M  (PCR_CLK_PWDET_ADC_INV_PHASE_ENA_V << PCR_CLK_PWDET_ADC_INV_PHASE_ENA_S)
+#define PCR_CLK_PWDET_ADC_INV_PHASE_ENA_V  0x00000001U
+#define PCR_CLK_PWDET_ADC_INV_PHASE_ENA_S  2
+
 /** PCR_BUS_CLK_UPDATE_REG register
  *  xxxx
  */
@@ -2444,6 +2484,55 @@ extern "C" {
 #define PCR_KM_READY_M  (PCR_KM_READY_V << PCR_KM_READY_S)
 #define PCR_KM_READY_V  0x00000001U
 #define PCR_KM_READY_S  2
+
+/** PCR_RESET_EVENT_BYPASS_REG register
+ *  reset event bypass backdoor configuration register
+ */
+#define PCR_RESET_EVENT_BYPASS_REG (DR_REG_PCR_BASE + 0xff0)
+/** PCR_RESET_EVENT_BYPASS_APM : R/W; bitpos: [0]; default: 0;
+ *  This field is used to control reset event relationship for
+ *  tee_reg/apm_reg/hp_system_reg. 1: tee_reg/apm_reg/hp_system_reg will only be reset
+ *  by power-reset. some reset event will be bypass. 0: tee_reg/apm_reg/hp_system_reg
+ *  will not only be reset by power-reset, but also some reset event.
+ */
+#define PCR_RESET_EVENT_BYPASS_APM    (BIT(0))
+#define PCR_RESET_EVENT_BYPASS_APM_M  (PCR_RESET_EVENT_BYPASS_APM_V << PCR_RESET_EVENT_BYPASS_APM_S)
+#define PCR_RESET_EVENT_BYPASS_APM_V  0x00000001U
+#define PCR_RESET_EVENT_BYPASS_APM_S  0
+/** PCR_RESET_EVENT_BYPASS : R/W; bitpos: [1]; default: 1;
+ *  This field is used to control reset event relationship for system-bus. 1: system
+ *  bus (including arbiter/router) will only be reset by power-reset. some reset event
+ *  will be bypass. 0: system bus (including arbiter/router) will not only be reset by
+ *  power-reset, but also some reset event.
+ */
+#define PCR_RESET_EVENT_BYPASS    (BIT(1))
+#define PCR_RESET_EVENT_BYPASS_M  (PCR_RESET_EVENT_BYPASS_V << PCR_RESET_EVENT_BYPASS_S)
+#define PCR_RESET_EVENT_BYPASS_V  0x00000001U
+#define PCR_RESET_EVENT_BYPASS_S  1
+
+/** PCR_FPGA_DEBUG_REG register
+ *  fpga debug register
+ */
+#define PCR_FPGA_DEBUG_REG (DR_REG_PCR_BASE + 0xff4)
+/** PCR_FPGA_DEBUG : R/W; bitpos: [31:0]; default: 4294967295;
+ *  Only used in fpga debug.
+ */
+#define PCR_FPGA_DEBUG    0xFFFFFFFFU
+#define PCR_FPGA_DEBUG_M  (PCR_FPGA_DEBUG_V << PCR_FPGA_DEBUG_S)
+#define PCR_FPGA_DEBUG_V  0xFFFFFFFFU
+#define PCR_FPGA_DEBUG_S  0
+
+/** PCR_CLOCK_GATE_REG register
+ *  PCR clock gating configure register
+ */
+#define PCR_CLOCK_GATE_REG (DR_REG_PCR_BASE + 0xff8)
+/** PCR_CLK_EN : R/W; bitpos: [0]; default: 0;
+ *  Set this bit as 1 to force on clock gating.
+ */
+#define PCR_CLK_EN    (BIT(0))
+#define PCR_CLK_EN_M  (PCR_CLK_EN_V << PCR_CLK_EN_S)
+#define PCR_CLK_EN_V  0x00000001U
+#define PCR_CLK_EN_S  0
 
 /** PCR_DATE_REG register
  *  Date register.

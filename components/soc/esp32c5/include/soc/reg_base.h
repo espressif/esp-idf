@@ -86,7 +86,7 @@
 #define DR_REG_LP_IO_BASE                         0x600B2000
 #define DR_REG_LP_I2C_ANA_MST_BASE                0x600B2400
 #define DR_REG_LPPERI_BASE                        0x600B2800
-#define DR_REG_LP_ANA_PERI_BASE                   0x600B2C00
+#define DR_REG_LP_ANA_BASE                        0x600B2C00
 #define DR_REG_HUK_BASE                           0x600B3000
 #define DR_REG_LP_TEE_BASE                        0x600B3400
 #define DR_REG_LP_APM_BASE                        0x600B3800
@@ -99,4 +99,4 @@
 #define DR_REG_TRACE_BASE                         0x600C0000
 #define DR_REG_ASSIST_DEBUG_BASE                  0x600C2000
 #define DR_REG_INTPRI_BASE                        0x600C5000
-#define DR_REG_CACHE_BASE                         0x600C8000
+#define DR_REG_CACHE_BASE                         0x600C8000  // CACHE_CONFIG/EXTMEM
