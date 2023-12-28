@@ -6,7 +6,9 @@
 
 #include <stdint.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_ieee802154.h"
+#include "esp_err.h"
 #include "esp_phy_init.h"
 #include "esp_ieee802154_ack.h"
 #include "esp_ieee802154_dev.h"
@@ -335,6 +337,13 @@ uint8_t esp_ieee802154_get_recent_lqi(void)
 {
     return ieee802154_get_recent_lqi();
 }
+
+#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
+esp_err_t esp_ieee802154_receive_handle_done(uint8_t *frame)
+{
+    return ieee802154_receive_handle_done(frame);
+}
+#endif
 
 __attribute__((weak)) void esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
