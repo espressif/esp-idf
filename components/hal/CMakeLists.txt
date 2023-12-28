@@ -238,7 +238,7 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
                     "usb_hal.c"
                     "usb_dwc_hal.c"
-                    "usb_phy_hal.c")
+                    "usb_fsls_phy_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32")
