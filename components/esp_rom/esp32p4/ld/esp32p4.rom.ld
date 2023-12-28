@@ -328,7 +328,6 @@ esprv_intc_int_set_priority = 0x4fc005b8;
 esprv_intc_int_set_threshold = 0x4fc005bc;
 esprv_intc_int_enable = 0x4fc005c0;
 esprv_intc_int_disable = 0x4fc005c4;
-esprv_intc_int_set_type = 0x4fc005c8;
 PROVIDE( intr_handler_set = 0x4fc005cc );
 intr_matrix_set = 0x4fc005d0;
 ets_intr_lock = 0x4fc005d4;
