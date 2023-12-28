@@ -26,6 +26,7 @@ menu "ESP-Driver:SPI Configurations"
         select PERIPH_CTRL_FUNC_IN_IRAM
         select HAL_SPI_MASTER_FUNC_IN_IRAM
         select ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
         help
             Place the SPI master ISR in to IRAM to avoid possible cache miss.
 

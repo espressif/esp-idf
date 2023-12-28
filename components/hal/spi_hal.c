@@ -21,19 +21,11 @@ static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
         return (ret_val); \
     }
 
-void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config_t *config)
+void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
 {
     memset(hal, 0, sizeof(spi_hal_context_t));
     spi_dev_t *hw = SPI_LL_GET_HW(host_id);
     hal->hw = hw;
-    hal->dma_in = config->dma_in;
-    hal->dma_out = config->dma_out;
-    hal->dma_enabled = config->dma_enabled;
-    hal->dmadesc_tx = config->dmadesc_tx;
-    hal->dmadesc_rx = config->dmadesc_rx;
-    hal->tx_dma_chan = config->tx_dma_chan;
-    hal->rx_dma_chan = config->rx_dma_chan;
-    hal->dmadesc_n = config->dmadesc_n;
 
 #if SPI_LL_MOSI_FREE_LEVEL
     // Change default data line level to low which same as esp32
