@@ -531,6 +531,16 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_reject_cause(pmu_dev_t *hw)
     return hw->wakeup.status1;
 }
 
+FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_interrupt_raw(pmu_dev_t *hw)
+{
+    return hw->lp_ext.int_raw.val;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_clear_intsts_mask(pmu_dev_t *hw, uint32_t mask)
+{
+    hw->lp_ext.int_clr.val = mask;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_lp_set_min_sleep_cycle(pmu_dev_t *hw, uint32_t slow_clk_cycle)
 {
     hw->wakeup.cntl3.lp_min_slp_val = slow_clk_cycle;
