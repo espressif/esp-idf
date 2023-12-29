@@ -15,12 +15,6 @@
 #include "esp_attr.h"
 #include "test_board.h"
 
-#if CONFIG_PARLIO_ISR_IRAM_SAFE
-#define TEST_PARLIO_CALLBACK_ATTR IRAM_ATTR
-#else
-#define TEST_PARLIO_CALLBACK_ATTR
-#endif
-
 TEST_CASE("parallel_tx_unit_install_uninstall", "[parlio_tx]")
 {
     printf("install tx units exhaustively\r\n");

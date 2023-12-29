@@ -36,7 +36,9 @@ endif()
 
 # Parallel IO related source files
 if(CONFIG_SOC_PARLIO_SUPPORTED)
-    list(APPEND srcs "parlio/parlio_common.c" "parlio/parlio_tx.c")
+    list(APPEND srcs "parlio/parlio_common.c"
+                     "parlio/parlio_tx.c"
+                     "parlio/parlio_rx.c")
 endif()
 
 # GPTimer legacy driver

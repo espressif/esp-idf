@@ -89,3 +89,62 @@ void parlio_release_group_handle(parlio_group_t *group)
         ESP_LOGD(TAG, "del group(%d)", group_id);
     }
 }
+
+esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit)
+{
+    parlio_group_t *group = NULL;
+    int unit_id = -1;
+    for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
+        group = parlio_acquire_group_handle(i);
+        parlio_unit_base_handle_t *group_unit = NULL;
+        ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no memory for group (%d)", i);
+        portENTER_CRITICAL(&group->spinlock);
+        if (unit->dir == PARLIO_DIR_TX) {
+            for (int j = 0; j < SOC_PARLIO_TX_UNITS_PER_GROUP; j++) {
+                group_unit = &group->tx_units[j];
+                if (*group_unit == NULL) {
+                    *group_unit = unit;
+                    unit_id = j;
+                    break;
+                }
+            }
+        } else {
+            for (int j = 0; j < SOC_PARLIO_RX_UNITS_PER_GROUP; j++) {
+                group_unit = &group->rx_units[j];
+                if (*group_unit == NULL) {
+                    *group_unit = unit;
+                    unit_id = j;
+                    break;
+                }
+            }
+        }
+        portEXIT_CRITICAL(&group->spinlock);
+        if (unit_id < 0) {
+            /* didn't find a free unit slot in the group */
+            parlio_release_group_handle(group);
+            group = NULL;
+        } else {
+            unit->unit_id = unit_id;
+            unit->group = group;
+            break;
+        }
+    }
+    ESP_RETURN_ON_FALSE(unit_id >= 0, ESP_ERR_NOT_FOUND, TAG,
+                        "no free %s unit", unit->dir == PARLIO_DIR_TX ? "tx" : "rx");
+    return ESP_OK;
+}
+
+void parlio_unregister_unit_from_group(parlio_unit_base_handle_t unit)
+{
+    assert(unit);
+    parlio_group_t *group = unit->group;
+    portENTER_CRITICAL(&group->spinlock);
+    if (unit->dir == PARLIO_DIR_TX) {
+        group->tx_units[unit->unit_id] = NULL;
+    } else {
+        group->rx_units[unit->unit_id] = NULL;
+    }
+    portEXIT_CRITICAL(&group->spinlock);
+    /* the parlio unit has a reference of the group, release it now */
+    parlio_release_group_handle(group);
+}

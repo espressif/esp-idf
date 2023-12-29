@@ -85,6 +85,11 @@ enum {
 };
 
 typedef enum {
+    PARLIO_DIR_TX,
+    PARLIO_DIR_RX,
+} parlio_dir_t;
+
+typedef enum {
     PARLIO_TX_FSM_INIT_WAIT,
     PARLIO_TX_FSM_INIT,
     PARLIO_TX_FSM_ENABLE_WAIT,
@@ -93,16 +98,43 @@ typedef enum {
     PARLIO_TX_FSM_RUN,
 } parlio_tx_fsm_t;
 
+typedef struct parlio_unit_t *parlio_unit_base_handle_t;
+
 typedef struct parlio_group_t {
-    int group_id;             // group ID, index from 0
-    portMUX_TYPE spinlock;    // to protect per-group register level concurrent access
-    parlio_hal_context_t hal; // hal layer for each group
-    parlio_tx_unit_handle_t tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP]; // tx unit handles
+    int                     group_id;             // group ID, index from 0
+    portMUX_TYPE            spinlock;    // to protect per-group register level concurrent access
+    parlio_hal_context_t    hal; // hal layer for each group
+    parlio_unit_base_handle_t    tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP]; // tx unit handles
+    parlio_unit_base_handle_t    rx_units[SOC_PARLIO_RX_UNITS_PER_GROUP]; // rx unit handles
 } parlio_group_t;
 
-parlio_group_t *parlio_acquire_group_handle(int group_id);
+/**
+ * @brief The common field of rx and tx unit structure
+ *
+ */
+struct parlio_unit_t {
+    int                     unit_id;           // unit id
+    parlio_dir_t            dir;
+    parlio_group_t          *group; // group handle
+};
 
-void parlio_release_group_handle(parlio_group_t *group);
+/**
+ * @brief Register the rx or tx unit to the parlio group
+ *
+ * @param[in]  unit         The TX/RX unit base handle
+ * @return
+ *      - ESP_ERR_NO_MEM    No memory for the unit
+ *      - ESP_ERR_NOT_FOUND No available unit found on this group
+ *      - ESP_OK            Success to register the unit on the group
+ */
+esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit);
+
+/**
+ * @brief Unregister the rx or tx unit from the parlio group
+ *
+ * @param[in]  unit        The TX/RX unit base handle
+ */
+void parlio_unregister_unit_from_group(parlio_unit_base_handle_t unit);
 
 #ifdef __cplusplus
 }

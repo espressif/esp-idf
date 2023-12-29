@@ -218,7 +218,13 @@ examples/peripherals/parlio:
       temporary: true
       reason: lack of runner
 
-examples/peripherals/parlio/simple_rgb_led_matrix:
+examples/peripherals/parlio/parlio_rx:
+  disable:
+    - if: SOC_PARLIO_SUPPORTED != 1 or IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: not support esp32p4 yet (IDF-7471)
+
+examples/peripherals/parlio/parlio_tx/simple_rgb_led_matrix:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1 or SOC_DEDICATED_GPIO_SUPPORTED != 1
   disable_test:
