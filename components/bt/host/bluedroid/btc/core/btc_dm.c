@@ -413,6 +413,7 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     msg->pid = BTC_PID_GAP_BT;
     msg->act = BTC_GAP_BT_AUTH_CMPL_EVT;
     param.auth_cmpl.stat = status;
+    param.auth_cmpl.lk_type = p_auth_cmpl->key_type;
     memcpy(param.auth_cmpl.bda, p_auth_cmpl->bd_addr, ESP_BD_ADDR_LEN);
     memcpy(param.auth_cmpl.device_name, p_auth_cmpl->bd_name, ESP_BT_GAP_MAX_BDNAME_LEN + 1);
     memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
