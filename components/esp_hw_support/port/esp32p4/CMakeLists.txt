@@ -16,12 +16,7 @@ if(NOT BOOTLOADER_BUILD)
 
 endif()
 
-list(REMOVE_ITEM srcs
-        "pmu_param.c" # TODO: IDF-7531
-        "pmu_sleep.c" # TODO: IDF-7531
-        "pmu_init.c"  # TODO: IDF-7531
-    )
-
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
+target_include_directories(${COMPONENT_LIB} PUBLIC . private_include)

@@ -151,7 +151,6 @@ if(NOT BOOTLOADER_BUILD)
                 "sleep_modes.c"       # TODO: IDF-7528, IDF-7529
                 "sleep_wake_stub.c"   # TODO: IDF-7529
                 "sleep_gpio.c"        # TODO: IDF-7528, IDF-7529
-                "port/esp_clk_tree_common.c"    # TODO: IDF-7526
             )
     endif()
 else()

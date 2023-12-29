@@ -17,8 +17,8 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
     switch (cpu_clk_src) {
     case SOC_CPU_CLK_SRC_XTAL:
         return clk_hal_xtal_get_freq_mhz();
-    case SOC_CPU_CLK_SRC_PLL:
-        return clk_ll_bbpll_get_freq_mhz();
+    case SOC_CPU_CLK_SRC_CPLL:
+        return clk_ll_cpll_get_freq_mhz(clk_hal_xtal_get_freq_mhz());
     case SOC_CPU_CLK_SRC_RC_FAST:
         return SOC_CLK_RC_FAST_FREQ_APPROX / MHZ;
     default:
@@ -31,37 +31,28 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 uint32_t clk_hal_cpu_get_freq_hz(void)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
-    switch (source) {
-    case SOC_CPU_CLK_SRC_PLL: {
-        // PLL 320MHz, CPU 240MHz is an undetermined state
-        uint32_t pll_freq_mhz = clk_ll_bbpll_get_freq_mhz();
-        uint32_t cpu_freq_mhz = clk_ll_cpu_get_freq_mhz_from_pll();
-        if (pll_freq_mhz == CLK_LL_PLL_320M_FREQ_MHZ && cpu_freq_mhz == CLK_LL_PLL_240M_FREQ_MHZ) {
-            HAL_LOGE(CLK_HAL_TAG, "Invalid cpu config");
-            return 0;
-        }
-        return cpu_freq_mhz * MHZ;
+    uint32_t integer, numerator, denominator;
+    clk_ll_cpu_get_divider(&integer, &numerator, &denominator);
+    if (denominator == 0) {
+        denominator = 1;
+        numerator = 0;
     }
-    default: // SOC_CPU_CLK_SRC_XTAL, SOC_CPU_CLK_SRC_RC_FAST...
-        return clk_hal_soc_root_get_freq_mhz(source) * MHZ / clk_ll_cpu_get_divider();
-    }
+   return clk_hal_soc_root_get_freq_mhz(source) * MHZ * denominator / (integer * denominator + numerator);
 }
 
-static uint32_t clk_hal_ahb_get_freq_hz(void)
+static uint32_t clk_hal_mem_get_freq_hz(void)
 {
-    // AHB_CLK path is highly dependent on CPU_CLK path
-    switch (clk_ll_cpu_get_src()) {
-    case SOC_CPU_CLK_SRC_PLL:
-        // AHB_CLK is a fixed value when CPU_CLK is clocked from PLL
-        return CLK_LL_AHB_MAX_FREQ_MHZ * MHZ;
-    default: // SOC_CPU_CLK_SRC_XTAL, SOC_CPU_CLK_SRC_RC_FAST...
-        return clk_hal_cpu_get_freq_hz();
-    }
+    return clk_hal_cpu_get_freq_hz() / clk_ll_mem_get_divider();
+}
+
+static uint32_t clk_hal_sys_get_freq_hz(void)
+{
+    return clk_hal_mem_get_freq_hz() / clk_ll_sys_get_divider();
 }
 
 uint32_t clk_hal_apb_get_freq_hz(void)
 {
-    return clk_hal_ahb_get_freq_hz();
+    return clk_hal_sys_get_freq_hz() / clk_ll_apb_get_divider();
 }
 
 uint32_t clk_hal_lp_slow_get_freq_hz(void)
@@ -71,8 +62,8 @@ uint32_t clk_hal_lp_slow_get_freq_hz(void)
         return SOC_CLK_RC_SLOW_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
         return SOC_CLK_XTAL32K_FREQ_APPROX;
-    case SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256:
-        return SOC_CLK_RC_FAST_D256_FREQ_APPROX;
+    case SOC_RTC_SLOW_CLK_SRC_RC32K:
+        return SOC_CLK_RC32K_FREQ_APPROX;
     default:
         // Unknown RTC_SLOW_CLK mux input
         HAL_ASSERT(false);

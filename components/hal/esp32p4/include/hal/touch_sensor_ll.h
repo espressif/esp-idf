@@ -126,7 +126,7 @@ static inline void touch_ll_get_charge_times(uint8_t sampler_id, uint16_t *charg
 static inline void touch_ll_set_measure_interval_ticks(uint16_t interval_ticks)
 {
     // touch sensor sleep cycle Time = interval_ticks / RTC_SLOW_CLK
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.touch_pwr_cntl, touch_sleep_cycles, interval_ticks);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.touch_pwr_cntl, sleep_cycles, interval_ticks);
 }
 
 /**
@@ -136,7 +136,7 @@ static inline void touch_ll_set_measure_interval_ticks(uint16_t interval_ticks)
  */
 static inline void touch_ll_get_measure_interval_ticks(uint16_t *interval_ticks)
 {
-    *interval_ticks = HAL_FORCE_READ_U32_REG_FIELD(PMU.touch_pwr_cntl, touch_sleep_cycles);
+    *interval_ticks = HAL_FORCE_READ_U32_REG_FIELD(PMU.touch_pwr_cntl, sleep_cycles);
 }
 
 /**
@@ -211,7 +211,7 @@ static inline void touch_ll_start_fsm_repeated_timer(bool is_sleep)
      */
     touch_ll_force_done_curr_measurement();
     if (is_sleep) {
-        PMU.touch_pwr_cntl.touch_sleep_timer_en = 1;
+        PMU.touch_pwr_cntl.sleep_timer_en = 1;
     } else {
         LP_ANA_PERI.touch_mux0.touch_start_en = 1;
     }
@@ -225,7 +225,7 @@ static inline void touch_ll_start_fsm_repeated_timer(bool is_sleep)
 static inline void touch_ll_stop_fsm_repeated_timer(bool is_sleep)
 {
     if (is_sleep) {
-        PMU.touch_pwr_cntl.touch_sleep_timer_en = 0;
+        PMU.touch_pwr_cntl.sleep_timer_en = 0;
     } else {
         LP_ANA_PERI.touch_mux0.touch_start_en = 0;
     }

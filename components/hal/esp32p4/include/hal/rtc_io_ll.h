@@ -305,7 +305,7 @@ static inline void rtcio_ll_force_hold_disable(int rtcio_num)
  */
 static inline void rtcio_ll_force_hold_all(void)
 {
-    PMU.imm_pad_hold_all.tie_high_lp_pad_hold_all = 1;
+    PMU.imm.pad_hold_all.tie_high_lp_pad_hold_all = 1;
 }
 
 /**
@@ -315,7 +315,7 @@ static inline void rtcio_ll_force_hold_all(void)
  */
 static inline void rtcio_ll_force_unhold_all(void)
 {
-    PMU.imm_pad_hold_all.tie_low_lp_pad_hold_all = 1;
+    PMU.imm.pad_hold_all.tie_low_lp_pad_hold_all = 1;
 }
 
 /**

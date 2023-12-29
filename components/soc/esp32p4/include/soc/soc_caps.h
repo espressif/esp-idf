@@ -64,7 +64,7 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 // #define SOC_BOD_SUPPORTED               1  //TODO: IDF-7519
 // #define SOC_APM_SUPPORTED               1  //TODO: IDF-7542
-// #define SOC_PMU_SUPPORTED               1  //TODO: IDF-7531
+#define SOC_PMU_SUPPORTED               1  //TODO: IDF-7531
 // #define SOC_PAU_SUPPORTED               1  //TODO: IDF-7531
 #define SOC_LP_TIMER_SUPPORTED          1
 // #define SOC_ULP_LP_UART_SUPPORTED       1  //TODO: IDF-7533
@@ -74,7 +74,7 @@
 #define SOC_PSRAM_DMA_CAPABLE           1
 // #define SOC_ULP_SUPPORTED               1  //TODO: IDF-7534
 #define SOC_SDMMC_HOST_SUPPORTED        1
-// #define SOC_CLK_TREE_SUPPORTED          1  //TODO: IDF-7526
+#define SOC_CLK_TREE_SUPPORTED          1
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1  //TODO: IDF-7565
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
@@ -258,7 +258,7 @@
 #define SOC_I2S_NUM                 (3U)
 #define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_XTAL       (1)
-#define SOC_I2S_SUPPORTS_APLL       (1)
+// #define SOC_I2S_SUPPORTS_APLL       (1) // TODO: IDF-8884
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
@@ -562,14 +562,15 @@
 #define SOC_PSRAM_VDD_POWER_MPLL    (1)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (0)
+#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (0)
 
-#define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */
+// #define SOC_CLK_APLL_SUPPORTED                    (1)     /*!< Support Audio PLL */ TODO: IDF-8884
 #define SOC_CLK_MPLL_SUPPORTED                    (1)     /*!< Support MSPI PLL */
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
-#define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
 #define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
+
+#define SOC_CLK_LP_FAST_SUPPORT_LP_PLL            (1)      /*!< Support LP_PLL clock as the LP_FAST clock source */
 
 #define SOC_PERIPH_CLK_CTRL_SHARED                (1)     /*!< Peripheral clock control (e.g. set clock source) is shared between various peripherals */
 

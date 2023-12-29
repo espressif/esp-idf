@@ -106,9 +106,9 @@ void IRAM_ATTR esp_restart_noos(void)
 
     esp_system_reset_modules_on_exit();
 
-    // Set CPU back to XTAL source, no PLL, same as hard reset
+    // Set CPU back to XTAL source (and MEM_CLK, APB_CLK back to power-on reset frequencies), same as hard reset, keep CPLL on.
 #if !CONFIG_IDF_ENV_FPGA
-    rtc_clk_cpu_freq_set_xtal();
+    rtc_clk_cpu_set_to_default_config();
 #endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE

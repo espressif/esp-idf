@@ -35,7 +35,7 @@ uint32_t clk_hal_cpu_get_freq_hz(void)
     return clk_hal_soc_root_get_freq_mhz(source) * MHZ / divider;
 }
 
-uint32_t clk_hal_ahb_get_freq_hz(void)
+static uint32_t clk_hal_ahb_get_freq_hz(void)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
     uint32_t divider = (source == SOC_CPU_CLK_SRC_PLL) ? clk_ll_ahb_get_hs_divider() : clk_ll_ahb_get_ls_divider();

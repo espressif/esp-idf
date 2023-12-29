@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include "esp32h2/rom/ets_sys.h"
 #include "soc/rtc.h"
-#include "soc/lp_timer_reg.h"
+#include "hal/lp_timer_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/timer_ll.h"
 #include "soc/timer_group_reg.h"
@@ -249,10 +249,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
-    SET_PERI_REG_MASK(LP_TIMER_UPDATE_REG, LP_TIMER_MAIN_TIMER_UPDATE);
-    uint64_t t = READ_PERI_REG(LP_TIMER_MAIN_BUF0_LOW_REG);
-    t |= ((uint64_t) READ_PERI_REG(LP_TIMER_MAIN_BUF0_HIGH_REG)) << 32;
-    return t;
+    return lp_timer_hal_get_cycle_count();
 }
 
 void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more

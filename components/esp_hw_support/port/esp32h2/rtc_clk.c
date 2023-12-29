@@ -19,7 +19,6 @@
 #include "hal/regi2c_ctrl_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/lp_aon_reg.h"
-#include "soc/lp_clkrst_reg.h"
 #include "esp_private/sleep_event.h"
 
 #ifdef BOOTLOADER_BUILD
