@@ -101,6 +101,4 @@ menu "Driver Configurations"
 
     endmenu # Parallel IO Configuration
 
-    orsource "./ledc/Kconfig.ledc"
-
 endmenu  # Driver configurations

@@ -1,4 +1,4 @@
-menu "LEDC Configuration"
+menu "ESP-Driver:LEDC Configurations"
 
     config LEDC_CTRL_FUNC_IN_IRAM
         bool "Place LEDC control functions into IRAM"
@@ -8,4 +8,4 @@ menu "LEDC Configuration"
             so that these functions can be IRAM-safe and able to be called in an IRAM context.
             Enabling this option can improve driver performance as well.
 
-endmenu # LEDC Configuration
+endmenu

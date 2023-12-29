@@ -221,7 +221,7 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
 }
 
 static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel_t channel, int hpoint_val,
-int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
+                                            int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
 {
     if (hpoint_val >= 0) {
         ledc_hal_set_hpoint(&(p_ledc_obj[speed_mode]->ledc_hal), channel, hpoint_val);
@@ -347,7 +347,7 @@ static inline uint32_t ledc_calculate_divisor(uint32_t src_clk_freq, int freq_hz
      * NOTE: We are also going to round up the value when necessary, thanks to:
      * (freq_hz * precision / 2)
      */
-    return ( ( (uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS ) + freq_hz * precision / 2 )
+    return (((uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS) + freq_hz * precision / 2)
            / (freq_hz * precision);
 }
 
@@ -453,7 +453,6 @@ static uint32_t ledc_auto_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint3
     return ret;
 }
 
-
 /**
  * @brief Function setting the LEDC timer divisor with the given source clock,
  * frequency and resolution. If the clock configuration passed is
@@ -462,7 +461,7 @@ static uint32_t ledc_auto_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint3
 static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_num, ledc_clk_cfg_t clk_cfg, int freq_hz, int duty_resolution)
 {
     uint32_t div_param = 0;
-    const uint32_t precision = ( 0x1 << duty_resolution );
+    const uint32_t precision = (0x1 << duty_resolution);
     /* The clock sources are not initialized on purpose. To produce compiler warning if used but the selector functions
      * don't set them properly. */
     /* Timer-specific mux. Set to timer-specific clock or LEDC_SCLK if a global clock is used. */
@@ -480,7 +479,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
 
         /* Before calculating the divisor, we need to have the RC_FAST frequency.
          * If it hasn't been measured yet, try calibrating it now. */
-        if(s_ledc_slow_clk_rc_fast_freq == 0 && ledc_slow_clk_calibrate() == false) {
+        if (s_ledc_slow_clk_rc_fast_freq == 0 && ledc_slow_clk_calibrate() == false) {
             goto error;
         }
 
@@ -554,7 +553,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
                 if (i != timer_num && p_ledc_obj[speed_mode]->glb_clk_is_acquired[i]) {
                     portEXIT_CRITICAL(&ledc_spinlock);
                     ESP_RETURN_ON_FALSE(false, ESP_FAIL, LEDC_TAG,
-                    "timer clock conflict, already is %d but attempt to %d", p_ledc_obj[speed_mode]->glb_clk, glb_clk);
+                                        "timer clock conflict, already is %d but attempt to %d", p_ledc_obj[speed_mode]->glb_clk, glb_clk);
                 }
             }
         }
@@ -593,11 +592,12 @@ static esp_err_t ledc_timer_del(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     bool is_configured = true;
     bool is_deleted = false;
     portENTER_CRITICAL(&ledc_spinlock);
-    if (p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] == false
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
-        && p_ledc_obj[speed_mode]->timer_specific_clk[timer_sel] == LEDC_TIMER_SPECIFIC_CLK_UNINIT
+    if (p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] == false && p_ledc_obj[speed_mode]->timer_specific_clk[timer_sel] == LEDC_TIMER_SPECIFIC_CLK_UNINIT)
+#else
+    if (p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] == false)
 #endif
-    ) {
+    {
         is_configured = false;
     } else if (p_ledc_obj[speed_mode]->timer_is_stopped[timer_sel] == true) {
         is_deleted = true;
@@ -974,7 +974,7 @@ static void IRAM_ATTR ledc_fade_isr(void *arg)
             } else {
                 // Calculate new duty config parameters
                 delta = (s_ledc_fade_rec[speed_mode][channel]->direction == LEDC_DUTY_DIR_DECREASE) ?
-                            (duty_cur - duty_tar) : (duty_tar - duty_cur);
+                        (duty_cur - duty_tar) : (duty_tar - duty_cur);
                 if (delta > scale) {
                     next_duty = duty_cur;
                     step = (delta / scale > LEDC_DUTY_NUM_MAX) ? LEDC_DUTY_NUM_MAX : (delta / scale);
@@ -1227,7 +1227,7 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     ledc_fade_t *fade = s_ledc_fade_rec[speed_mode][channel];
     ledc_fade_fsm_t state = fade->fsm;
     bool wait_for_idle = false;
@@ -1250,7 +1250,7 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
                      1,                    //uint32_t duty_num,
                      1,                    //uint32_t duty_cycle,
                      0                     //uint32_t duty_scale
-                     );
+                    );
     _ledc_update_duty(speed_mode, channel);
     state = fade->fsm;
     assert(state != LEDC_FSM_IDLE && state != LEDC_FSM_KILLED_PENDING);
@@ -1490,7 +1490,7 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
         uint32_t cycle, scale, step;
         gamma_corrected_phase_tail = gamma_correction_operator(phase_tail);
         uint32_t duty_delta = (dir == LEDC_DUTY_DIR_INCREASE) ? (gamma_corrected_phase_tail - gamma_corrected_phase_head) :
-                                                                (gamma_corrected_phase_head - gamma_corrected_phase_tail);
+                              (gamma_corrected_phase_head - gamma_corrected_phase_tail);
         uint32_t cycles_per_phase = avg_cycles_per_phase + surplus_cycles_last_phase;
         if (duty_delta == 0) {
             scale = 0;
@@ -1549,7 +1549,7 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
     }
 
     uint32_t remaining_duty_delta = (dir == LEDC_DUTY_DIR_INCREASE) ? (gamma_corrected_phase_tail - gamma_corrected_phase_head) :
-                                                                      (gamma_corrected_phase_head - gamma_corrected_phase_tail);
+                                    (gamma_corrected_phase_head - gamma_corrected_phase_tail);
     if (remaining_duty_delta) {
         total_fade_range += 1;
     }

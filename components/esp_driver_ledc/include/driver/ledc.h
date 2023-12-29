@@ -634,10 +634,10 @@ esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_
  * @note Be aware of the maximum value available on each element
  */
 typedef struct {
-        uint32_t dir       : 1;    /*!< Duty change direction. Set 1 as increase, 0 as decrease */
-        uint32_t cycle_num : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Number of PWM cycles of each step [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
-        uint32_t scale     : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Duty change of each step [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
-        uint32_t step_num  : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Total number of steps in one hardware fade [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
+    uint32_t dir       : 1;    /*!< Duty change direction. Set 1 as increase, 0 as decrease */
+    uint32_t cycle_num : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Number of PWM cycles of each step [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
+    uint32_t scale     : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Duty change of each step [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
+    uint32_t step_num  : SOC_LEDC_FADE_PARAMS_BIT_WIDTH;   /*!< Total number of steps in one hardware fade [0, 2**SOC_LEDC_FADE_PARAMS_BIT_WIDTH-1] */
 } ledc_fade_param_config_t;
 
 /**

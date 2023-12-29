@@ -18,10 +18,6 @@ components/driver/test_apps/i2s_test_apps/legacy_i2s_driver:
       temporary: true
       reason: lack of runners
 
-components/driver/test_apps/ledc:
-  disable:
-    - if: SOC_LEDC_SUPPORTED != 1
-
 components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1

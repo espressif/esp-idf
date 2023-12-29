@@ -589,7 +589,7 @@ TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60]")
 
 #if SOC_CLK_TREE_SUPPORTED
 static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg_t clk_src, uint32_t duty_res,
-        uint32_t freq_hz)
+                                            uint32_t freq_hz)
 {
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = speed_mode,
