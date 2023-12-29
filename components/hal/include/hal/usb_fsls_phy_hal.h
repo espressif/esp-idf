@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@ typedef struct {
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
     usb_serial_jtag_dev_t *jtag_dev;            /**< Pointer to base address of USB Serial JTAG registers */
 #endif
-} usb_phy_hal_context_t;
+} usb_fsls_phy_hal_context_t;
 
 
 /**
@@ -39,7 +39,7 @@ typedef struct {
  *
  * @param hal Context of the HAL layer
  */
-void usb_phy_hal_init(usb_phy_hal_context_t *hal);
+void usb_fsls_phy_hal_init(usb_fsls_phy_hal_context_t *hal);
 
 /**
  * @brief Configure internal/external PHY for USB_OTG
@@ -47,7 +47,7 @@ void usb_phy_hal_init(usb_phy_hal_context_t *hal);
  * @param hal Context of the HAL layer
  * @param phy_target USB PHY target
  */
-void usb_phy_hal_otg_conf(usb_phy_hal_context_t *hal, usb_phy_target_t phy_target);
+void usb_fsls_phy_hal_otg_conf(usb_fsls_phy_hal_context_t *hal, usb_phy_target_t phy_target);
 
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
 /**
@@ -56,7 +56,7 @@ void usb_phy_hal_otg_conf(usb_phy_hal_context_t *hal, usb_phy_target_t phy_targe
  * @param hal Context of the HAL layer
  * @param phy_target USB PHY target
  */
-void usb_phy_hal_jtag_conf(usb_phy_hal_context_t *hal, usb_phy_target_t phy_target);
+void usb_fsls_phy_hal_jtag_conf(usb_fsls_phy_hal_context_t *hal, usb_phy_target_t phy_target);
 #endif
 
 /**
@@ -64,7 +64,7 @@ void usb_phy_hal_jtag_conf(usb_phy_hal_context_t *hal, usb_phy_target_t phy_targ
  *
  * @param hal Context of the HAL layer
  */
-void usb_phy_hal_int_load_conf_host(usb_phy_hal_context_t *hal);
+void usb_fsls_phy_hal_int_load_conf_host(usb_fsls_phy_hal_context_t *hal);
 
 /**
  * @brief Configure pullup/pulldown loads for the D+/D- as a device
@@ -72,7 +72,7 @@ void usb_phy_hal_int_load_conf_host(usb_phy_hal_context_t *hal);
  * @param hal Context of the HAL layer
  * @param speed USB speed
  */
-void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_phy_speed_t speed);
+void usb_fsls_phy_hal_int_load_conf_dev(usb_fsls_phy_hal_context_t *hal, usb_phy_speed_t speed);
 
 /**
  * @brief Enable/Disable test mode for internal PHY to mimick host-device disconnection
@@ -80,7 +80,7 @@ void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_phy_speed_t s
  * @param hal Context of the HAL layer
  * @param disconn Whether to disconnect
  */
-void usb_phy_hal_int_mimick_disconn(usb_phy_hal_context_t *hal, bool disconn);
+void usb_fsls_phy_hal_int_mimick_disconn(usb_fsls_phy_hal_context_t *hal, bool disconn);
 
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@ extern "C" {
  *
  * @param hw Start address of the USB Serial_JTAG registers
  */
-static inline void usb_phy_ll_int_jtag_enable(usb_serial_jtag_dev_t *hw)
+static inline void usb_fsls_phy_ll_int_jtag_enable(usb_serial_jtag_dev_t *hw)
 {
     // USB_Serial_JTAG use internal PHY
     hw->conf0.phy_sel = 0;

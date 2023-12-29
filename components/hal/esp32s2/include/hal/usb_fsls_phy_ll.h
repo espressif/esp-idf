@@ -21,7 +21,7 @@ extern "C" {
  *
  * @param hw Start address of the USB Wrap registers
  */
-static inline void usb_phy_ll_int_otg_enable(usb_wrap_dev_t *hw)
+static inline void usb_fsls_phy_ll_int_otg_enable(usb_wrap_dev_t *hw)
 {
     hw->otg_conf.phy_sel = 0;
 }
@@ -31,7 +31,7 @@ static inline void usb_phy_ll_int_otg_enable(usb_wrap_dev_t *hw)
  *
  * @param hw Start address of the USB Wrap registers
  */
-static inline void usb_phy_ll_ext_otg_enable(usb_wrap_dev_t *hw)
+static inline void usb_fsls_phy_ll_ext_otg_enable(usb_wrap_dev_t *hw)
 {
     //Enable external PHY
     hw->otg_conf.phy_sel = 1;
@@ -46,7 +46,7 @@ static inline void usb_phy_ll_ext_otg_enable(usb_wrap_dev_t *hw)
  * @param dm_pu D- pullup load
  * @param dm_pd D- pulldown load
  */
-static inline void usb_phy_ll_int_load_conf(usb_wrap_dev_t *hw, bool dp_pu, bool dp_pd, bool dm_pu, bool dm_pd)
+static inline void usb_fsls_phy_ll_int_load_conf(usb_wrap_dev_t *hw, bool dp_pu, bool dp_pd, bool dm_pu, bool dm_pd)
 {
     usb_wrap_otg_conf_reg_t conf;
     conf.val = hw->otg_conf.val;
@@ -63,7 +63,7 @@ static inline void usb_phy_ll_int_load_conf(usb_wrap_dev_t *hw, bool dp_pu, bool
  * @param hw     Start address of the USB Wrap registers
  * @param pad_en Enable the PHY control to D+/D- pad
  */
-static inline void usb_phy_ll_usb_wrap_pad_enable(usb_wrap_dev_t *hw, bool pad_en)
+static inline void usb_fsls_phy_ll_usb_wrap_pad_enable(usb_wrap_dev_t *hw, bool pad_en)
 {
     hw->otg_conf.pad_enable = pad_en;
 }
@@ -74,7 +74,7 @@ static inline void usb_phy_ll_usb_wrap_pad_enable(usb_wrap_dev_t *hw, bool pad_e
  * @param hw Start address of the USB Wrap registers
  * @param en Whether to enable the internal PHY's test mode
  */
-static inline void usb_phy_ll_int_enable_test_mode(usb_wrap_dev_t *hw, bool en)
+static inline void usb_fsls_phy_ll_int_enable_test_mode(usb_wrap_dev_t *hw, bool en)
 {
     if (en) {
         // Clear USB_WRAP_TEST_CONF_REG
@@ -92,25 +92,25 @@ static inline void usb_phy_ll_int_enable_test_mode(usb_wrap_dev_t *hw, bool en)
  * Enable the bus clock for USB Wrap module
  * @param clk_en True if enable the clock of USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_phy_ll_usb_wrap_enable_bus_clock(bool clk_en)
+FORCE_INLINE_ATTR void usb_fsls_phy_ll_usb_wrap_enable_bus_clock(bool clk_en)
 {
     REG_SET_FIELD(DPORT_PERIP_CLK_EN0_REG, DPORT_USB_CLK_EN, clk_en);
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_phy_ll_usb_wrap_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_phy_ll_usb_wrap_enable_bus_clock(__VA_ARGS__)
+#define usb_fsls_phy_ll_usb_wrap_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_fsls_phy_ll_usb_wrap_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_phy_ll_usb_wrap_reset_register(void)
+FORCE_INLINE_ATTR void usb_fsls_phy_ll_usb_wrap_reset_register(void)
 {
     REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 1);
     REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 0);
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_phy_ll_usb_wrap_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_phy_ll_usb_wrap_reset_register(__VA_ARGS__)
+#define usb_fsls_phy_ll_usb_wrap_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_fsls_phy_ll_usb_wrap_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }
