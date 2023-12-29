@@ -4092,6 +4092,13 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
                     p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
                 p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
             }
+            if (p_dev_rec->enc_mode != encr_enable) {
+                p_dev_rec->enc_mode = encr_enable;
+                /* Report the encryption change state of BR/EDR to upper layer */
+                if (btm_cb.api.p_enc_change_callback) {
+                    (*btm_cb.api.p_enc_change_callback) (p_dev_rec->bd_addr, encr_enable);
+                }
+            }
         } else {
             p_dev_rec->sec_flags |= BTM_SEC_LE_ENCRYPTED;
         }
@@ -4102,6 +4109,13 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
     if ((status == HCI_SUCCESS) && !encr_enable) {
         if (p_dev_rec->hci_handle == handle) {
             p_dev_rec->sec_flags &= ~BTM_SEC_ENCRYPTED;
+            if (p_dev_rec->enc_mode != encr_enable) {
+                p_dev_rec->enc_mode = encr_enable;
+                /* Report the encryption change state of BR/EDR to upper layer */
+                if (btm_cb.api.p_enc_change_callback) {
+                    (*btm_cb.api.p_enc_change_callback) (p_dev_rec->bd_addr, encr_enable);
+                }
+            }
         } else {
             p_dev_rec->sec_flags &= ~BTM_SEC_LE_ENCRYPTED;
         }

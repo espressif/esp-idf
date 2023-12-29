@@ -429,6 +429,34 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     (void) status;
 }
 
+static void btc_dm_enc_chg_evt (tBTA_DM_ENC_CHG *p_enc_chg)
+{
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+    esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t *msg;
+
+    msg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + sizeof(esp_bt_gap_cb_param_t));
+    if (msg == NULL) {
+        BTC_TRACE_ERROR("%s malloc fail", __func__);
+        return;
+    }
+    msg->sig = BTC_SIG_API_CB;
+    msg->pid = BTC_PID_GAP_BT;
+    msg->act = BTC_GAP_BT_ENC_CHG_EVT;
+    param.enc_chg.enc_mode = p_enc_chg->enc_mode;
+    memcpy(param.enc_chg.bda, p_enc_chg->bd_addr, ESP_BD_ADDR_LEN);
+    memcpy(msg->arg, &param, sizeof(esp_bt_gap_cb_param_t));
+
+    ret = btc_inter_profile_call(msg);
+    osi_free(msg);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_inter_profile_call failed\n", __func__);
+    }
+#endif /// BTC_GAP_BT_INCLUDED == TRUE
+}
+
 static void btc_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
 {
 #if (BTC_GAP_BT_INCLUDED == TRUE)
@@ -782,6 +810,9 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         break;
     case BTA_DM_AUTH_CMPL_EVT:
         btc_dm_auth_cmpl_evt(&p_data->auth_cmpl);
+        break;
+    case BTA_DM_ENC_CHG_EVT:
+        btc_dm_enc_chg_evt(&p_data->enc_chg);
         break;
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
         BTC_TRACE_DEBUG("BTA_DM_BOND_CANCEL_CMPL_EVT");

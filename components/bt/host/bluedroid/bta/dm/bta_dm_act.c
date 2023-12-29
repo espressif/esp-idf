@@ -77,9 +77,10 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 static void bta_dm_acl_link_stat_cback(tBTM_ACL_LINK_STAT_EVENT_DATA *p_data);
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
-/* Extended Inquiry Response */
 #if (CLASSIC_BT_INCLUDED == TRUE)
+static void bta_dm_encryption_change_cback(BD_ADDR bd_addr, UINT8 enc_mode);
 static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data);
+/* Extended Inquiry Response */
 static void bta_dm_set_eir (char *local_name);
 #endif
 #if (SDP_INCLUDED == TRUE)
@@ -231,8 +232,10 @@ const tBTM_APPL_INFO bta_security = {
     &bta_dm_authentication_complete_cback,
     &bta_dm_bond_cancel_complete_cback,
 #if (CLASSIC_BT_INCLUDED == TRUE)
+    &bta_dm_encryption_change_cback,
     &bta_dm_sp_cback,
 #else
+    NULL,
     NULL,
 #endif
 #if BLE_INCLUDED == TRUE
@@ -3092,6 +3095,27 @@ static UINT8 bta_dm_pin_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_
 
     bta_dm_cb.p_sec_cback(BTA_DM_PIN_REQ_EVT, &sec_event);
     return BTM_CMD_STARTED;
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_new_link_key_cback
+**
+** Description      Callback from BTM to notify new link key
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_dm_encryption_change_cback(BD_ADDR bd_addr, UINT8 enc_mode)
+{
+    if (bta_dm_cb.p_sec_cback) {
+        tBTA_DM_SEC sec_event;
+        memset (&sec_event, 0, sizeof(tBTA_DM_SEC));
+        bdcpy(sec_event.enc_chg.bd_addr, bd_addr);
+        sec_event.enc_chg.enc_mode = enc_mode;
+
+        bta_dm_cb.p_sec_cback(BTA_DM_ENC_CHG_EVT, &sec_event);
+    }
 }
 #endif ///CLASSIC_BT_INCLUDED == TRUE
 

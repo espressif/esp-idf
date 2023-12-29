@@ -82,6 +82,7 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name,
                 memcpy (p_dev_rec->bd_addr, bd_addr, BD_ADDR_LEN);
                 p_dev_rec->hci_handle = BTM_GetHCIConnHandle (bd_addr, BT_TRANSPORT_BR_EDR);
                 p_dev_rec->ble_hci_handle = BTM_GetHCIConnHandle (bd_addr, BT_TRANSPORT_LE);
+                p_dev_rec->enc_mode = BTM_ENC_MODE_UNKNOWN;
 
 #if BLE_INCLUDED == TRUE
                 /* use default value for background connection params */

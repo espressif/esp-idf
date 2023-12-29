@@ -1492,6 +1492,12 @@ typedef void (tBTM_RMT_NAME_CALLBACK) (BD_ADDR bd_addr, DEV_CLASS dc,
 typedef UINT8 (tBTM_AUTH_COMPLETE_CALLBACK) (BD_ADDR bd_addr, DEV_CLASS dev_class,
         tBTM_BD_NAME bd_name, int result);
 
+/* Encryption changed for the connection.  Parameters are
+**              BD Address of remote
+**              Encryption mode
+*/
+typedef void (tBTM_ENC_CHANGE_CALLBACK) (BD_ADDR bd_addr, UINT8 enc_mode);
+
 enum {
     BTM_SP_IO_REQ_EVT,      /* received IO_CAPABILITY_REQUEST event */
     BTM_SP_IO_RSP_EVT,      /* received IO_CAPABILITY_RESPONSE event */
@@ -1869,6 +1875,7 @@ typedef struct {
     tBTM_LINK_KEY_CALLBACK      *p_link_key_callback;
     tBTM_AUTH_COMPLETE_CALLBACK *p_auth_complete_callback;
     tBTM_BOND_CANCEL_CMPL_CALLBACK *p_bond_cancel_cmpl_callback;
+    tBTM_ENC_CHANGE_CALLBACK    *p_enc_change_callback;
     tBTM_SP_CALLBACK            *p_sp_callback;
 #if BLE_INCLUDED == TRUE
 #if SMP_INCLUDED == TRUE
