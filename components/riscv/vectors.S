@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -316,9 +316,9 @@ _interrupt_handler:
     li      t2, VECTORS_MCAUSE_REASON_MASK
     and     t1, s1, t2       /* t1 = mcause & mask */
     slli    t1, t1, 2        /* t1 = mcause * 4 */
-    li      t2, INTC_INT_PRIO_REG(0)
-    add     t1, t2, t1       /* t1 = INTC_INT_PRIO_REG + 4 * mcause */
-    lw      t2, 0(t1)        /* t2 = INTC_INT_PRIO_REG[mcause] */
+    li      t2, INTERRUPT_PRIO_REG(0)
+    add     t1, t2, t1       /* t1 = INTERRUPT_PRIO_REG + 4 * mcause */
+    lw      t2, 0(t1)        /* t2 = INTERRUPT_PRIO_REG[mcause] */
     addi    t2, t2, 1        /* t2 = t2 +1 */
     sw      t2, 0(t0)        /* INTERRUPT_CURRENT_CORE_INT_THRESH_REG = t2 */
     fence

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -261,7 +261,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_type(int intr_num, esp_cpu_intr_type_t i
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
     enum intr_type type = (intr_type == ESP_CPU_INTR_TYPE_LEVEL) ? INTR_TYPE_LEVEL : INTR_TYPE_EDGE;
-    esprv_intc_int_set_type(intr_num, type);
+    esprv_int_set_type(intr_num, type);
 }
 
 /**
@@ -276,7 +276,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_type(int intr_num, esp_cpu_intr_type_t i
 FORCE_INLINE_ATTR esp_cpu_intr_type_t esp_cpu_intr_get_type(int intr_num)
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
-    enum intr_type type = esprv_intc_int_get_type(intr_num);
+    enum intr_type type = esprv_int_get_type(intr_num);
     return (type == INTR_TYPE_LEVEL) ? ESP_CPU_INTR_TYPE_LEVEL : ESP_CPU_INTR_TYPE_EDGE;
 }
 
@@ -291,7 +291,7 @@ FORCE_INLINE_ATTR esp_cpu_intr_type_t esp_cpu_intr_get_type(int intr_num)
 FORCE_INLINE_ATTR void esp_cpu_intr_set_priority(int intr_num, int intr_priority)
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
-    esprv_intc_int_set_priority(intr_num, intr_priority);
+    esprv_int_set_priority(intr_num, intr_priority);
 }
 
 /**
@@ -306,7 +306,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_priority(int intr_num, int intr_priority
 FORCE_INLINE_ATTR int esp_cpu_intr_get_priority(int intr_num)
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
-    return esprv_intc_int_get_priority(intr_num);
+    return esprv_int_get_priority(intr_num);
 }
 #endif // SOC_CPU_HAS_FLEXIBLE_INTC
 
