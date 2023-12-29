@@ -382,7 +382,7 @@ config BT_LE_WHITELIST_SIZE
 
 config BT_LE_LL_DUP_SCAN_LIST_COUNT
     int "BLE duplicate scan list count"
-    range 1 100
+    range 5 100
     default 20
     help
         config the max count of duplicate scan list
@@ -543,15 +543,6 @@ config BT_LE_SCAN_DUPL_TYPE
     default 2 if BT_LE_SCAN_DUPL_TYPE_DATA_DEVICE
     default 0
 
-config BT_LE_SCAN_DUPL_CACHE_SIZE
-    int "Maximum number of devices in scan duplicate filter"
-    depends on BT_LE_SCAN_DUPL
-    range 10 1000
-    default 100
-    help
-        Maximum number of devices which can be recorded in scan duplicate filter.
-        When the maximum amount of device in the filter is reached, the cache will be refreshed.
-
 config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
     int "Duplicate scan list refresh period (seconds)"
     depends on BT_LE_SCAN_DUPL
@@ -571,23 +562,3 @@ config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
 config BT_LE_MSYS_INIT_IN_CONTROLLER
     bool "Msys Mbuf Init in Controller"
     default y
-
-config BT_LE_TX_CCA_ENABLED
-    bool "BLE enable TX CCA feature"
-    default n
-    help
-        Enable the BLE (Bluetooth Low Energy) LBT (Listen Before Talk) function. Before transmitting a packet,
-        monitor the in-band CCA (Clear Channel Assessment). If the airborne carrier energy is too high, abandon
-        the packet transmission. Enabling this feature may potentially decrease BLE performance. In certain
-        countries and regions, when the maximum transmission power exceeds a certain limit, support for LBT
-        interference avoidance mechanisms is required. If the maximum transmission power does not reach the limit,
-        it may not be necessary to enable this function.
-        Please refer to the relevant certification regulations for details.
-
-config BT_LE_CCA_RSSI_THRESH
-    int "Power threshold to refrain packet transmission in unit of -1 dBm"
-    depends on BT_LE_TX_CCA_ENABLED
-    range 1 100
-    default 75
-    help
-        If a carrier signal above the threshold is detected in the air, refrain from packet transmission.
