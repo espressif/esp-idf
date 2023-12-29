@@ -6,7 +6,7 @@
 esf_buf_alloc = 0x400015bc;
 esf_buf_alloc_dynamic = 0x400015c0;
 esf_buf_recycle = 0x400015c4;
-hal_mac_tx_set_ppdu = 0x400015d4;
+/*hal_mac_tx_set_ppdu = 0x400015d4;*/
 ic_mac_deinit = 0x400015dc;
 lmacDiscardMSDU = 0x400015f4;
 lmacSetTxFrame = 0x40001628;
