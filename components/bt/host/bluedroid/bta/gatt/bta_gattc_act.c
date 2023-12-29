@@ -161,7 +161,6 @@ void bta_gattc_disable(tBTA_GATTC_CB *p_cb)
     for (i = 0; i < BTA_GATTC_CL_MAX; i ++) {
         if (p_cb->cl_rcb[i].in_use) {
             p_cb->state = BTA_GATTC_STATE_DISABLING;
-            p_cb->cl_rcb[i].in_use = false;
             /* don't deregister HH GATT IF */
             /* HH GATT IF will be deregistered by bta_hh_le_deregister when disable HH */
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
