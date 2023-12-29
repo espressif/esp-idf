@@ -76,6 +76,7 @@ Overview
     - :c:macro:`SDMMC_HOST_SLOT_1` is routed via GPIO Matrix. This means that any GPIO may be used for each of the SD card signals. It is for non UHS-I usage.
     - :c:macro:`SDMMC_HOST_SLOT_0` is dedicated to UHS-I mode, which is not yet supported in the driver.
 
+    Currently SDMMC host driver is using the on-chip LDO 4 as the default power supply. SDMMC power control driver is not supported yet. If you buy the ESP32P4 chip itself and plan to use SDMMC peripheral, make sure the VDDPST_5 pin is connected to the on-chip LDO 4 or correct external power supply.
 
 Supported Speed Modes
 ---------------------
