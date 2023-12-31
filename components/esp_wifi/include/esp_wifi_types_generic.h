@@ -773,9 +773,42 @@ typedef struct {
     uint8_t dest_mac[6];        /**< Destination MAC address */
     bool no_ack;                /**< Indicates no ack required */
     wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive any response */
+    uint8_t op_id;              /**< Unique Identifier for operation provided by wifi driver */
     uint32_t data_len;          /**< Length of the appended Data */
     uint8_t data[0];            /**< Appended Data payload */
 } wifi_action_tx_req_t;
+
+/** Status codes for WIFI_EVENT_ROC_DONE evt */
+typedef enum {
+    WIFI_ROC_DONE = 0,         /**< ROC operation was completed successfully */
+    WIFI_ROC_FAIL,             /**< ROC operation was cancelled */
+} wifi_roc_done_status_t;
+
+/**
+  * @brief     The callback function executed when ROC operation has ended
+  *
+  * @param     context rxcb registered for the corresponding ROC operation
+  * @param     op_id  ID of the corresponding ROC operation
+  * @param     status status code of the ROC operation denoted
+  *
+  */
+typedef void (* wifi_action_roc_done_cb_t)(uint32_t context, uint8_t op_id,
+                                          wifi_roc_done_status_t status);
+
+/**
+ * @brief Remain on Channel request
+ *
+ *
+ */
+typedef struct {
+    wifi_interface_t ifx;              /**< WiFi interface to send request to */
+    uint8_t type;                      /**< ROC operation type */
+    uint8_t channel;                   /**< Channel on which to perform ROC Operation */
+    uint32_t wait_time_ms;             /**< Duration to wait for on target channel */
+    wifi_action_rx_cb_t rx_cb;         /**< Rx Callback to receive any response */
+    uint8_t op_id;                     /**< ID of this specific ROC operation provided by wifi driver */
+    wifi_action_roc_done_cb_t done_cb; /**< Callback to function that will be called upon ROC done. If assigned, WIFI_EVENT_ROC_DONE event will not be posted */
+} wifi_roc_req_t;
 
 /**
   * @brief FTM Initiator configuration
@@ -1198,21 +1231,30 @@ typedef struct {
 #define WIFI_STATIS_PS        (1<<4)    /**< Power save status */
 #define WIFI_STATIS_ALL       (-1)      /**< All status */
 
-/**
-  * @brief Argument structure for WIFI_EVENT_ACTION_TX_STATUS event
-  */
+/** Status codes for WIFI_EVENT_ACTION_TX_STATUS evt */
+typedef enum {
+    WIFI_ACTION_TX_DONE = 0,           /**< ACTION_TX operation was completed successfully */
+    WIFI_ACTION_TX_FAILED,             /**< ACTION_TX operation failed during tx */
+    WIFI_ACTION_TX_DURATION_COMPLETED, /**< ACTION_TX operation completed it's wait duration */
+    WIFI_ACTION_TX_OP_CANCELLED,       /**< ACTION_TX operation was cancelled by application or higher priority operation */
+} wifi_action_tx_status_type_t;
+
+/** Argument structure for WIFI_EVENT_ACTION_TX_STATUS event */
 typedef struct {
-    wifi_interface_t ifx;     /**< Wi-Fi interface to send request to */
-    uint32_t context;         /**< Context to identify the request */
-    uint8_t da[6];            /**< Destination MAC address */
-    uint8_t status;           /**< Status of the operation */
+    wifi_interface_t ifx;                   /**< WiFi interface to send request to */
+    uint32_t context;                       /**< Context to identify the request */
+    wifi_action_tx_status_type_t status;    /**< Status of the operation */
+    uint8_t op_id;                          /**< ID of the corresponding operation that was provided during action tx request */
+    uint8_t channel;                        /**< Channel provided in tx request */
 } wifi_event_action_tx_status_t;
 
 /**
   * @brief Argument structure for WIFI_EVENT_ROC_DONE event
   */
 typedef struct {
-    uint32_t context;         /**< Context to identify the request */
+    uint32_t context;               /**< Context to identify the initiator of the request */
+    wifi_roc_done_status_t status;  /**< API request Identifier provided in ROC req */
+    uint8_t op_id;                  /**< ID of the corresponding ROC operation */
 } wifi_event_roc_done_t;
 
 /**
