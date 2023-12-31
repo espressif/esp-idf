@@ -20,7 +20,7 @@ API Reference
 
 .. include-build-file:: inc/parlio_tx.inc
 .. include-build-file:: inc/parlio_rx.inc
-.. include-build-file:: inc/components/driver/parlio/include/driver/parlio_types.inc
+.. include-build-file:: inc/components/esp_driver_parlio/include/driver/parlio_types.inc
 .. include-build-file:: inc/components/hal/include/hal/parlio_types.inc
 
 .. [1]

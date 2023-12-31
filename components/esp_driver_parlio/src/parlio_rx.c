@@ -151,11 +151,9 @@ static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_
         size_t rest_size = trans->size - offset;
         if (rest_size >= 2 * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
             mount_size = trans->size / desc_num;
-        }
-        else if (rest_size <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+        } else if (rest_size <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
             mount_size = (desc_num == 2) && (i == 0) ? rest_size / 2 : rest_size;
-        }
-        else {
+        } else {
             mount_size = rest_size / 2;
         }
         p_desc[i].buffer = (void *)((uint8_t *)trans->payload + offset);
@@ -186,23 +184,23 @@ static IRAM_ATTR void s_parlio_set_delimiter_config(parlio_rx_unit_handle_t rx_u
 
     /* Set receive mode according to the delimiter */
     switch (deli->mode) {
-        case PARLIO_RX_LEVEL_MODE:
-            /* Select the level receive mode */
-            parlio_ll_rx_set_level_recv_mode(hal->regs, deli->flags.active_low_en);
-            parlio_ll_rx_treat_data_line_as_en(hal->regs, deli->valid_sig_line_id);
-            break;
-        case PARLIO_RX_PULSE_MODE:
-            /* Select the pulse receive mode */
-            parlio_ll_rx_set_pulse_recv_mode(hal->regs, deli->flags.start_bit_included,
-                                            deli->flags.end_bit_included,
-                                            !deli->flags.has_end_pulse,
-                                            deli->flags.pulse_invert);
-            parlio_ll_rx_treat_data_line_as_en(hal->regs, deli->valid_sig_line_id);
-            break;
-        default:
-            /* Select the soft receive mode */
-            parlio_ll_rx_set_soft_recv_mode(hal->regs);
-            break;
+    case PARLIO_RX_LEVEL_MODE:
+        /* Select the level receive mode */
+        parlio_ll_rx_set_level_recv_mode(hal->regs, deli->flags.active_low_en);
+        parlio_ll_rx_treat_data_line_as_en(hal->regs, deli->valid_sig_line_id);
+        break;
+    case PARLIO_RX_PULSE_MODE:
+        /* Select the pulse receive mode */
+        parlio_ll_rx_set_pulse_recv_mode(hal->regs, deli->flags.start_bit_included,
+                                         deli->flags.end_bit_included,
+                                         !deli->flags.has_end_pulse,
+                                         deli->flags.pulse_invert);
+        parlio_ll_rx_treat_data_line_as_en(hal->regs, deli->valid_sig_line_id);
+        break;
+    default:
+        /* Select the soft receive mode */
+        parlio_ll_rx_set_soft_recv_mode(hal->regs);
+        break;
     }
 
     /* Set EOF configuration */
@@ -265,7 +263,7 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
         gpio_conf.pin_bit_mask = BIT64(config->clk_out_gpio_num);
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk out GPIO failed");
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
-                                       parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_out_sig, false, false);
+                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_out_sig, false, false);
 #else
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "this target not support to output the clock");
 #endif // SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
@@ -291,7 +289,7 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
                 gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->data_gpio_nums[i]], PIN_FUNC_GPIO);
             }
             esp_rom_gpio_connect_in_signal(config->data_gpio_nums[i],
-                                            parlio_periph_signals.groups[group_id].rx_units[unit_id].data_sigs[i], false);
+                                           parlio_periph_signals.groups[group_id].rx_units[unit_id].data_sigs[i], false);
         } else {
             ESP_LOGW(TAG, "data line %d not assigned", i);
         }
@@ -302,7 +300,7 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
 
 static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
-    parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t )user_data;
+    parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t)user_data;
     BaseType_t high_task_woken = pdFALSE;
     bool need_yield = false;
 
@@ -362,7 +360,7 @@ static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma
 
 static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
-    parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t )user_data;
+    parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t)user_data;
     bool need_yield = false;
     /* No need to process the data if error EOF (i.e. timeout) happened */
     if (event_data->flags.abnormal_eof) {
@@ -495,8 +493,8 @@ static esp_err_t s_parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, c
     rx_unit->clk_src = clk_src;
     /* warning if precision lost due to division */
     if ((clk_src != PARLIO_CLK_SRC_EXTERNAL) &&
-        (config->exp_clk_freq_hz != rx_unit->cfg.exp_clk_freq_hz )) {
-        ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32, rx_unit->cfg.exp_clk_freq_hz );
+            (config->exp_clk_freq_hz != rx_unit->cfg.exp_clk_freq_hz)) {
+        ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32, rx_unit->cfg.exp_clk_freq_hz);
     }
 
     return ESP_OK;
@@ -535,7 +533,7 @@ static esp_err_t s_parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
     }
     /* Unregister the RX unit from the PARLIO group */
     if (rx_unit->base.group) {
-        parlio_unregister_unit_from_group((parlio_unit_base_handle_t)rx_unit);
+        parlio_unregister_unit_from_group(&rx_unit->base);
     }
     /* Free the RX unit */
     free(rx_unit);
@@ -579,7 +577,7 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
 
     ESP_GOTO_ON_ERROR(s_parlio_rx_create_dma_descriptors(unit, config->max_recv_size), err, TAG, "create dma descriptor failed");
     /* Register and attach the rx unit to the group */
-    ESP_GOTO_ON_ERROR(parlio_register_unit_to_group((parlio_unit_base_handle_t)unit), err, TAG, "failed to register the rx unit to the group");
+    ESP_GOTO_ON_ERROR(parlio_register_unit_to_group(&unit->base), err, TAG, "failed to register the rx unit to the group");
     memcpy(&unit->cfg, config, sizeof(parlio_rx_unit_config_t));
     /* If not using external clock source, the internal clock is always a free running clock */
     if (config->clk_src != PARLIO_CLK_SRC_EXTERNAL) {
@@ -885,7 +883,7 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
         /* Check if the valid_sig_line_id is equal or greater than data width, otherwise valid_sig_line_id is conflict with data signal.
          * Specifically, level or pulse delimiter requires one data line as valid signal, so these two delimiters can't support PARLIO_RX_UNIT_MAX_DATA_WIDTH */
         ESP_RETURN_ON_FALSE(recv_cfg->delimiter->valid_sig_line_id >= rx_unit->cfg.data_width,
-            ESP_ERR_INVALID_ARG, TAG, "the valid_sig_line_id of this delimiter is conflict with rx unit data width");
+                            ESP_ERR_INVALID_ARG, TAG, "the valid_sig_line_id of this delimiter is conflict with rx unit data width");
         /* Assign the signal here to ensure iram safe */
         recv_cfg->delimiter->valid_sig = parlio_periph_signals.groups[rx_unit->base.group->group_id].
                                          rx_units[rx_unit->base.unit_id].

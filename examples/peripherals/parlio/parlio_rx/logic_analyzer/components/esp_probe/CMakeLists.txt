@@ -8,5 +8,5 @@ endif()
 idf_component_register(SRCS             ${src}
                        INCLUDE_DIRS     "./include"
                        PRIV_INCLUDE_DIRS "."
-                       PRIV_REQUIRES    driver hal fatfs esp_partition esp_netif
-                                        lwip)
+                       PRIV_REQUIRES    fatfs esp_partition esp_netif
+                                        lwip esp_driver_parlio)

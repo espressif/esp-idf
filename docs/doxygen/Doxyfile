@@ -73,9 +73,6 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
-    $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_rx.h \
-    $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
     $(PROJECT_PATH)/components/driver/touch_sensor/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/twai/include/driver/twai.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
@@ -118,6 +115,9 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_sync.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_timer.h \
     $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_types.h \
+    $(PROJECT_PATH)/components/esp_driver_parlio/include/driver/parlio_rx.h \
+    $(PROJECT_PATH)/components/esp_driver_parlio/include/driver/parlio_tx.h \
+    $(PROJECT_PATH)/components/esp_driver_parlio/include/driver/parlio_types.h \
     $(PROJECT_PATH)/components/esp_driver_i2c/include/driver/i2c_master.h \
     $(PROJECT_PATH)/components/esp_driver_i2c/include/driver/i2c_slave.h \
     $(PROJECT_PATH)/components/esp_driver_i2c/include/driver/i2c_types.h \

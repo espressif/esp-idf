@@ -78,14 +78,6 @@ components/driver/test_apps/legacy_timer_driver:
   depends_filepatterns:
     - components/driver/deprecated/**/*timer*
 
-components/driver/test_apps/parlio:
-  disable:
-    - if: SOC_PARLIO_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runner
-
 components/driver/test_apps/touch_sensor_v1:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 1
