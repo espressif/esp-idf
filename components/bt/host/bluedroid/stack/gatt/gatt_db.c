@@ -1241,15 +1241,18 @@ tGATT_STATUS gatts_write_attr_perm_check (tGATT_SVC_DB *p_db, UINT8 op_code,
 // btla-specific ++
                     else if ( (p_attr->uuid_type == GATT_ATTR_UUID_TYPE_16) &&
                               (p_attr->uuid == GATT_UUID_CHAR_CLIENT_CONFIG ||
-                               p_attr->uuid == GATT_UUID_CHAR_SRVR_CONFIG) )
+                               p_attr->uuid == GATT_UUID_CHAR_SRVR_CONFIG   ||
+                               p_attr->uuid == GATT_UUID_CLIENT_SUP_FEAT    ||
+                               p_attr->uuid == GATT_UUID_GAP_ICON
+                               ) )
 // btla-specific --
                     {
-                        if (op_code == GATT_REQ_PREPARE_WRITE && offset != 0) { /* does not allow write blob */
-                            status = GATT_NOT_LONG;
-                            GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_NOT_LONG,handle:0x%04x",handle);
+                        if (op_code == GATT_REQ_PREPARE_WRITE) { /* does not allow write blob */
+                            status = GATT_REQ_NOT_SUPPORTED;
+                            GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_REQ_NOT_SUPPORTED,handle:0x%04x",handle);
                         } else if (len != max_size) { /* data does not match the required format */
                             status = GATT_INVALID_ATTR_LEN;
-                            GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INVALID_PDU,handle:0x%04x",handle);
+                            GATT_TRACE_ERROR( "gatts_write_attr_perm_check - GATT_INVALID_ATTR_LEN,handle:0x%04x",handle);
                         } else {
                             status = GATT_SUCCESS;
                         }
