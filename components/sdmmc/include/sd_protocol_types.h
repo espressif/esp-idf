@@ -175,7 +175,12 @@ typedef struct {
 #define SDMMC_HOST_FLAG_8BIT    BIT(2)      /*!< host supports 8-line MMC protocol */
 #define SDMMC_HOST_FLAG_SPI     BIT(3)      /*!< host supports SPI protocol */
 #define SDMMC_HOST_FLAG_DDR     BIT(4)      /*!< host supports DDR mode for SD/MMC */
-#define SDMMC_HOST_FLAG_DEINIT_ARG BIT(5)      /*!< host `deinit` function called with the slot argument */
+#define SDMMC_HOST_FLAG_DEINIT_ARG BIT(5)   /*!< host `deinit` function called with the slot argument */
+#define SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF \
+                                BIT(6)      /*!< Allocate internal buffer of 512 bytes that meets DMA's requirements.
+                                                 Currently this is only used by the SDIO driver. Set this flag when
+                                                 using SDIO CMD53 byte mode, with user buffer that is behind the cache
+                                                 or not aligned to 4 byte boundary. */
     int slot;                   /*!< slot number, to be passed to host functions */
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
@@ -201,6 +206,7 @@ typedef struct {
     esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
     sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/
     esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
+    void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
 } sdmmc_host_t;
 
 /**

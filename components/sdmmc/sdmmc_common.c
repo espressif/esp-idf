@@ -325,6 +325,21 @@ esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card)
+{
+    if (card->host.flags & SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF) {
+        void* buf = NULL;
+        size_t actual_size = 0;
+        esp_err_t ret = esp_dma_malloc(SDMMC_IO_BLOCK_SIZE, 0, &buf, &actual_size);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        assert(actual_size == SDMMC_IO_BLOCK_SIZE);
+        card->host.dma_aligned_buffer = buf;
+    }
+    return ESP_OK;
+}
+
 uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb)
 {
     if (card->is_mmc) {

@@ -29,12 +29,6 @@
  */
 #define SDMMC_DMA_DESC_CNT  4
 
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-#define SDMMC_ALIGN_ATTR         __attribute__((aligned(CONFIG_CACHE_L1_CACHE_LINE_SIZE)))
-#else
-#define SDMMC_ALIGN_ATTR
-#endif
-
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 static const char* TAG = "sdmmc_req";
@@ -67,7 +61,7 @@ const uint32_t SDMMC_CMD_ERR_MASK =
     SDMMC_INTMASK_RCRC |
     SDMMC_INTMASK_RESP_ERR;
 
-SDMMC_ALIGN_ATTR static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
+DRAM_DMA_ALIGNED_ATTR static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
 static sdmmc_transfer_state_t s_cur_transfer = { 0 };
 static QueueHandle_t s_request_mutex;
 static bool s_is_app_cmd;   // This flag is set if the next command is an APP command
