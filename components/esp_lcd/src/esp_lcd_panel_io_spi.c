@@ -54,6 +54,7 @@ typedef struct {
         unsigned int dc_data_level: 1;   // Indicates the level of DC line when tranfering data
         unsigned int octal_mode: 1;      // Indicates whether the transmitting is enabled with octal mode (8 data lines)
         unsigned int quad_mode: 1;       // Indicates whether the transmitting is enabled with quad mode (4 data lines)
+        unsigned int dc_param_level: 1;  // Indicates the level of DC line when transferring parameters
     } flags;
     lcd_spi_trans_descriptor_t trans_pool[]; // Transaction pool
 } esp_lcd_panel_io_spi_t;
@@ -94,6 +95,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     }
 
     spi_panel_io->flags.dc_data_level = !io_config->flags.dc_low_on_data;
+    spi_panel_io->flags.dc_param_level = io_config->flags.dc_cmd_on_param ? !spi_panel_io->flags.dc_data_level : spi_panel_io->flags.dc_data_level;
     spi_panel_io->flags.octal_mode = io_config->flags.octal_mode;
     spi_panel_io->flags.quad_mode = io_config->flags.quad_mode;
     spi_panel_io->on_color_trans_done = io_config->on_color_trans_done;
@@ -234,7 +236,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
 
     if (param && param_size) {
         spi_lcd_prepare_param_buffer(spi_panel_io, param, param_size);
-        lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_data_level; // set D/C line to data mode
+        lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_param_level; // set D/C line based on config
         lcd_trans->base.length = param_size * 8; // transaction length is in bits
         lcd_trans->base.tx_buffer = param;
         lcd_trans->base.flags &= ~SPI_TRANS_CS_KEEP_ACTIVE;
