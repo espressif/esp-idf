@@ -31,6 +31,10 @@ set(srcs
 )
 set(include_dirs platform_include)
 
+if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
+    list(APPEND srcs "port/xtensa/stdatomic_s32c1i.c")
+endif()
+
 if(CONFIG_SPIRAM_CACHE_WORKAROUND)
     set(ldfragments "esp32-spiram-rom-functions-c.lf")
 endif()
@@ -38,7 +42,7 @@ endif()
 list(APPEND ldfragments "newlib.lf" "system_libs.lf")
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "${include_dirs}"
+                    INCLUDE_DIRS platform_include
                     PRIV_INCLUDE_DIRS priv_include
                     PRIV_REQUIRES soc spi_flash
                     LDFRAGMENTS "${ldfragments}")
@@ -48,6 +52,11 @@ idf_component_get_property(newlib newlib COMPONENT_LIB)
 target_link_libraries(${COMPONENT_LIB} INTERFACE c m ${CONFIG_COMPILER_RT_LIB_NAME} "$<TARGET_FILE:${newlib}>")
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
+
+if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
+    set_source_files_properties("port/xtensa/stdatomic_s32c1i.c"
+                                PROPERTIES COMPILE_FLAGS "-mno-disable-hardware-atomics")
+endif()
 
 # Forces the linker to include heap, syscall, pthread, assert, and retargetable locks from this component,
 # instead of the implementations provided by newlib.
