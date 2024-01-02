@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ esp_err_t sleep_clock_system_retention_init(void)
 {
 #if CONFIG_IDF_TARGET_ESP32C6
     #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
     #define N_REGS_PCR()    (((PCR_PWDET_SAR_CLK_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
 #endif
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
@@ -53,7 +53,11 @@ void sleep_clock_system_retention_deinit(void)
 
 esp_err_t sleep_clock_modem_retention_init(void)
 {
+#if CONFIG_IDF_TARGET_ESP32C5
+    #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
+#else
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
+#endif
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
     #define N_REGS_LPCON() (((MODEM_LPCON_MEM_CONF_REG - MODEM_LPCON_TEST_CONF_REG) / 4) + 1)
 #endif

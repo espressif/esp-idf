@@ -8,7 +8,7 @@
 
 #include "spi_flash_mmap.h"
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5
 #include "soc/cache_reg.h"
 #else
 #include "soc/extmem_reg.h"

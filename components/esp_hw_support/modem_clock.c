@@ -245,8 +245,8 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
         case PERIPH_IEEE802154_MODULE:
             modem_syscon_ll_reset_zbmac(ctx->hal->syscon_dev);
             break;
-        default:
 #endif
+        default:
             assert(0);
     }
     portEXIT_CRITICAL_SAFE(&ctx->lock);
