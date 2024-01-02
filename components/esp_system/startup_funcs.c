@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -248,7 +248,12 @@ ESP_SYSTEM_INIT_FN(init_secure, CORE, BIT(0), 150)
 #ifdef ROM_LOG_MODE
 ESP_SYSTEM_INIT_FN(init_rom_log, CORE, BIT(0), 160)
 {
+    if(ets_efuse_get_uart_print_control() == ROM_LOG_MODE) {
+        return ESP_OK;
+    }
+
     esp_err_t err = esp_efuse_set_rom_log_scheme(ROM_LOG_MODE);
+
     if (err == ESP_ERR_NOT_SUPPORTED) {
         err = ESP_OK;
     }
