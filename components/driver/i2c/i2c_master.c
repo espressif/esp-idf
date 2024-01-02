@@ -149,7 +149,7 @@ static bool s_i2c_write_command(i2c_master_bus_handle_t i2c_master, i2c_operatio
         i2c_master->trans_idx++;
     }
     portENTER_CRITICAL_SAFE(&handle->spinlock);
-    if (i2c_master->asnyc_trans == false) {
+    if (i2c_master->async_trans == false) {
         i2c_hal_master_trans_start(hal);
     } else {
         i2c_master->async_break = true;
@@ -163,7 +163,7 @@ static bool s_i2c_write_command(i2c_master_bus_handle_t i2c_master, i2c_operatio
         i2c_ll_master_write_cmd_reg(hal->dev, hw_end_cmd, i2c_master->cmd_idx + 1);
         portEXIT_CRITICAL_SAFE(&handle->spinlock);
         i2c_master->cmd_idx = 0;
-        if (i2c_master->asnyc_trans == false) {
+        if (i2c_master->async_trans == false) {
             i2c_hal_master_trans_start(hal);
         } else {
             i2c_master->async_break = true;
@@ -172,7 +172,7 @@ static bool s_i2c_write_command(i2c_master_bus_handle_t i2c_master, i2c_operatio
         i2c_master->cmd_idx++;
         i2c_master->trans_idx++;
         i2c_master->i2c_trans.cmd_count--;
-        if (i2c_master->asnyc_trans == false) {
+        if (i2c_master->async_trans == false) {
             if (xPortInIsrContext()) {
                 xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
             } else {
@@ -230,7 +230,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
         }
         i2c_master->trans_idx++;
         i2c_master->i2c_trans.cmd_count--;
-        if (i2c_master->asnyc_trans == false) {
+        if (i2c_master->async_trans == false) {
             if (xPortInIsrContext()) {
                 xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
             } else {
@@ -242,7 +242,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
         portENTER_CRITICAL_SAFE(&handle->spinlock);
         i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
         i2c_ll_master_write_cmd_reg(hal->dev, hw_end_cmd, i2c_master->cmd_idx + 1);
-        if (i2c_master->asnyc_trans == false) {
+        if (i2c_master->async_trans == false) {
             i2c_hal_master_trans_start(hal);
         } else {
             i2c_master->async_break = true;
@@ -265,7 +265,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     portEXIT_CRITICAL_SAFE(&handle->spinlock);
     i2c_master->status = I2C_STATUS_READ;
     portENTER_CRITICAL_SAFE(&handle->spinlock);
-    if (i2c_master->asnyc_trans == false) {
+    if (i2c_master->async_trans == false) {
         i2c_hal_master_trans_start(hal);
     } else {
         i2c_master->async_break = true;
@@ -370,7 +370,7 @@ static void s_i2c_start_end_command(i2c_master_bus_handle_t i2c_master, i2c_oper
             *address_fill += sizeof(addr_write);
             portEXIT_CRITICAL_SAFE(&i2c_master->base->spinlock);
         }
-        if (i2c_master->asnyc_trans == false) {
+        if (i2c_master->async_trans == false) {
             if (xPortInIsrContext()) {
                 xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
             } else {
@@ -457,7 +457,10 @@ static void s_i2c_send_command_async(i2c_master_bus_handle_t i2c_master, BaseTyp
         i2c_master->trans_finish = true;
         i2c_master->in_progress = false;
         if (i2c_master->queue_trans) {
+            xSemaphoreTakeFromISR(i2c_master->bus_lock_mux, do_yield);
             i2c_master->new_queue = true;
+            i2c_master->ops_cur_size--;
+            xSemaphoreGiveFromISR(i2c_master->bus_lock_mux, do_yield);
             xQueueSendFromISR(i2c_master->trans_queues[I2C_TRANS_QUEUE_COMPLETE], &i2c_master->i2c_trans, do_yield);
         }
         i2c_master->sent_all = true;
@@ -513,7 +516,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_ll_rxfifo_rst(hal->dev);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     portEXIT_CRITICAL(&i2c_master->base->spinlock);
-    if (i2c_master->asnyc_trans == true) {
+    if (i2c_master->async_trans == true) {
         s_i2c_send_command_async(i2c_master, NULL);
     } else {
         s_i2c_send_commands(i2c_master, ticks_to_wait);
@@ -600,7 +603,7 @@ static void IRAM_ATTR i2c_master_isr_handler_default(void *arg)
         i2c_isr_receive_handler(i2c_master);
     }
 
-    if (i2c_master->asnyc_trans) {
+    if (i2c_master->async_trans) {
         i2c_master_dev_handle_t i2c_dev = NULL;
 
         i2c_master_device_list_t *device_item;
@@ -692,22 +695,7 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
             if (i2c_master->queues_storage) {
                 free(i2c_master->queues_storage);
             }
-            if (i2c_master->i2c_anyc_ops) {
-                for (int i = 0; i < i2c_master->index; i++) {
-                    if (i2c_master->i2c_anyc_ops[i]) {
-                        free(i2c_master->i2c_anyc_ops[i]);
-                    }
-                }
-                free(i2c_master->i2c_anyc_ops);
-            }
-            if (i2c_master->anyc_write_buffer) {
-                for (int i = 0; i < i2c_master->index; i++) {
-                    if (i2c_master->anyc_write_buffer[i]) {
-                        free(i2c_master->anyc_write_buffer[i]);
-                    }
-                }
-                free(i2c_master->anyc_write_buffer);
-            }
+            free(i2c_master->i2c_async_ops);
             for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
                 if (i2c_master->trans_queues[i]) {
                     vQueueDelete(i2c_master->trans_queues[i]);
@@ -726,50 +714,70 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
 
 static esp_err_t s_i2c_asynchronous_transaction(i2c_master_dev_handle_t i2c_dev, i2c_operation_t *i2c_ops, size_t ops_dim, int timeout_ms)
 {
-    if (i2c_dev->master_bus->sent_all == true && i2c_dev->master_bus->num_trans_inqueue == 0) {
-        memcpy(i2c_dev->master_bus->i2c_ops, i2c_ops, sizeof(i2c_operation_t) * ops_dim);
-        i2c_dev->master_bus->addr_10bits_bus = i2c_dev->addr_10bits;
-        i2c_dev->master_bus->i2c_trans = (i2c_transaction_t) {
+    i2c_master_bus_t *i2c_master = i2c_dev->master_bus;
+    if (i2c_master->sent_all == true && i2c_master->num_trans_inqueue == 0) {
+        memcpy(i2c_master->i2c_ops, i2c_ops, sizeof(i2c_operation_t) * ops_dim);
+        i2c_master->addr_10bits_bus = i2c_dev->addr_10bits;
+        i2c_master->i2c_trans = (i2c_transaction_t) {
             .device_address = i2c_dev->device_address,
-            .ops = i2c_dev->master_bus->i2c_ops,
+            .ops = i2c_master->i2c_ops,
             .cmd_count = ops_dim,
         };
 
-        i2c_dev->master_bus->sent_all = false;
-        i2c_dev->master_bus->trans_finish = false;
-        i2c_dev->master_bus->queue_trans = false;
+        i2c_master->sent_all = false;
+        i2c_master->trans_finish = false;
+        i2c_master->queue_trans = false;
         ESP_RETURN_ON_ERROR(s_i2c_transaction_start(i2c_dev, timeout_ms), TAG, "I2C transaction failed");
     } else {
-        i2c_dev->master_bus->i2c_anyc_ops[i2c_dev->master_bus->index]=(i2c_operation_t(*))heap_caps_calloc(1, sizeof(i2c_operation_t) * 6, I2C_MEM_ALLOC_CAPS);
-        memcpy(i2c_dev->master_bus->i2c_anyc_ops[i2c_dev->master_bus->index], i2c_ops, sizeof(i2c_operation_t) * ops_dim);
+        xSemaphoreTake(i2c_master->bus_lock_mux, portMAX_DELAY);
+        // Check whether operation pool has extra space.
+        bool ops_pool = (i2c_master->ops_cur_size != i2c_master->queue_size);
+        i2c_operation_t *ops_current;
+
+        if (ops_pool) {
+            i2c_master->ops_cur_size++;
+            memcpy(&i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx], i2c_ops, sizeof(i2c_operation_t) * ops_dim);
+            // Clear unused memory
+            uint8_t unused_dim = I2C_STATIC_OPERATION_ARRAY_MAX - ops_dim;
+            if (unused_dim != 0) {
+                memset(&i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx] + sizeof(i2c_operation_t) * ops_dim, 0, sizeof(i2c_operation_t) * unused_dim);
+            }
+            // Record current operation and feed to transaction queue.
+            ops_current = &i2c_master->i2c_async_ops[i2c_master->ops_prepare_idx][0];
+            i2c_master->ops_prepare_idx = (i2c_master->ops_prepare_idx + 1) % i2c_master->queue_size;
+        }
+
+        xSemaphoreGive(i2c_master->bus_lock_mux);
+        ESP_RETURN_ON_FALSE(ops_pool == true, ESP_ERR_INVALID_STATE, TAG, "ops list is full, please increase your trans_queue_depth");
+
         i2c_transaction_t i2c_queue_pre;
-        if (i2c_dev->master_bus->num_trans_inflight < i2c_dev->master_bus->queue_size) {
-            ESP_RETURN_ON_FALSE(xQueueReceive(i2c_dev->master_bus->trans_queues[I2C_TRANS_QUEUE_READY], &i2c_queue_pre, portMAX_DELAY) == pdTRUE, ESP_FAIL, TAG, "no transaction in the ready queue");
+        if (i2c_master->num_trans_inflight < i2c_master->queue_size) {
+            ESP_RETURN_ON_FALSE(xQueueReceive(i2c_master->trans_queues[I2C_TRANS_QUEUE_READY], &i2c_queue_pre, portMAX_DELAY) == pdTRUE, ESP_FAIL, TAG, "no transaction in the ready queue");
         } else {
-            ESP_RETURN_ON_FALSE(xQueueReceive(i2c_dev->master_bus->trans_queues[I2C_TRANS_QUEUE_COMPLETE], &i2c_queue_pre, portMAX_DELAY) == pdTRUE, ESP_FAIL, TAG, "recycle transaction from done queue failed");
-            i2c_dev->master_bus->num_trans_inflight--;
+            ESP_RETURN_ON_FALSE(xQueueReceive(i2c_master->trans_queues[I2C_TRANS_QUEUE_COMPLETE], &i2c_queue_pre, portMAX_DELAY) == pdTRUE, ESP_FAIL, TAG, "recycle transaction from done queue failed");
+            i2c_master->num_trans_inflight--;
         }
         i2c_queue_pre = (i2c_transaction_t) {
             .device_address = i2c_dev->device_address,
-            .ops = i2c_dev->master_bus->i2c_anyc_ops[i2c_dev->master_bus->index],
+            .ops = ops_current,
             .cmd_count = ops_dim,
         };
-        i2c_dev->master_bus->index++;
-        if (xQueueSend(i2c_dev->master_bus->trans_queues[I2C_TRANS_QUEUE_PROGRESS], &i2c_queue_pre, portMAX_DELAY) == pdTRUE) {
-            i2c_dev->master_bus->num_trans_inflight++;
-            i2c_dev->master_bus->num_trans_inqueue++;
-            if (i2c_dev->master_bus->sent_all == true) {
+        if (xQueueSend(i2c_master->trans_queues[I2C_TRANS_QUEUE_PROGRESS], &i2c_queue_pre, portMAX_DELAY) == pdTRUE) {
+            i2c_master->num_trans_inflight++;
+            i2c_master->num_trans_inqueue++;
+            if (i2c_master->sent_all == true) {
                 // Oh no, you cannot get the queue from ISR, so you get queue here.
-                ESP_RETURN_ON_FALSE(xQueueReceive(i2c_dev->master_bus->trans_queues[I2C_TRANS_QUEUE_PROGRESS], &i2c_queue_pre, portMAX_DELAY) == pdTRUE, ESP_FAIL, TAG, "get trans from progress queue failed");
-                i2c_dev->master_bus->num_trans_inflight--;
-                i2c_dev->master_bus->num_trans_inqueue--;
-                i2c_dev->master_bus->sent_all = false;
-                i2c_dev->master_bus->trans_finish = false;
-                i2c_dev->master_bus->queue_trans = false;
+                ESP_RETURN_ON_FALSE(xQueueReceive(i2c_master->trans_queues[I2C_TRANS_QUEUE_PROGRESS], &i2c_queue_pre, portMAX_DELAY) == pdTRUE, ESP_FAIL, TAG, "get trans from progress queue failed");
+                i2c_master->ops_cur_size--;
+                i2c_master->num_trans_inflight--;
+                i2c_master->num_trans_inqueue--;
+                i2c_master->sent_all = false;
+                i2c_master->trans_finish = false;
+                i2c_master->queue_trans = false;
                 ESP_RETURN_ON_ERROR(s_i2c_transaction_start(i2c_dev, timeout_ms), TAG, "I2C transaction failed");
             }
         } else {
-            ESP_RETURN_ON_FALSE(xQueueSend(i2c_dev->master_bus->trans_queues[I2C_TRANS_QUEUE_READY], &i2c_queue_pre, 0) == pdTRUE, ESP_ERR_INVALID_STATE, TAG, "ready queue full");
+            ESP_RETURN_ON_FALSE(xQueueSend(i2c_master->trans_queues[I2C_TRANS_QUEUE_READY], &i2c_queue_pre, 0) == pdTRUE, ESP_ERR_INVALID_STATE, TAG, "ready queue full");
         }
     }
 
@@ -848,10 +856,9 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     xSemaphoreTake(i2c_master->bus_lock_mux, portMAX_DELAY);
     SLIST_INIT(&i2c_master->device_list);
     xSemaphoreGive(i2c_master->bus_lock_mux);
-
     // Initialize the queue
     if (bus_config->trans_queue_depth) {
-        i2c_master->asnyc_trans = true;
+        i2c_master->async_trans = true;
         i2c_master->sent_all = true;
         i2c_master->trans_finish = true;
         i2c_master->new_queue = true;
@@ -873,8 +880,10 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
                                 ESP_ERR_INVALID_STATE, TAG, "ready queue full");
         }
 
-        i2c_master->i2c_anyc_ops = (i2c_operation_t(**))heap_caps_calloc(bus_config->trans_queue_depth, sizeof(i2c_operation_t*), I2C_MEM_ALLOC_CAPS);
-        i2c_master->anyc_write_buffer = (uint8_t**)heap_caps_calloc(bus_config->trans_queue_depth, sizeof(uint8_t*), I2C_MEM_ALLOC_CAPS);
+        i2c_master->i2c_async_ops = (i2c_operation_t(*)[I2C_STATIC_OPERATION_ARRAY_MAX])heap_caps_calloc(bus_config->trans_queue_depth, sizeof(*i2c_master->i2c_async_ops), I2C_MEM_ALLOC_CAPS);
+        ESP_RETURN_ON_FALSE(i2c_master->i2c_async_ops, ESP_ERR_NO_MEM, TAG, "no mem for operations");
+        i2c_master->ops_prepare_idx = 0;
+
     }
     int isr_flags = I2C_INTR_ALLOC_FLAG;
     if (bus_config->intr_priority) {
@@ -980,21 +989,15 @@ esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *wr
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
     ESP_RETURN_ON_FALSE((write_buffer != NULL) && (write_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c transmit buffer or size invalid");
 
-    if (i2c_dev->master_bus->asnyc_trans == false) {
-        i2c_operation_t i2c_ops[] = {
-            {.hw_cmd = I2C_TRANS_START_COMMAND},
-            {.hw_cmd = I2C_TRANS_WRITE_COMMAND(false), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
-            {.hw_cmd = I2C_TRANS_STOP_COMMAND},
-        };
+    i2c_operation_t i2c_ops[] = {
+        {.hw_cmd = I2C_TRANS_START_COMMAND},
+        {.hw_cmd = I2C_TRANS_WRITE_COMMAND(false), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
+        {.hw_cmd = I2C_TRANS_STOP_COMMAND},
+    };
+
+    if (i2c_dev->master_bus->async_trans == false) {
         ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
     } else {
-        i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index] = (uint8_t*)heap_caps_calloc(1, sizeof(uint8_t)*write_size, I2C_MEM_ALLOC_CAPS);
-        memcpy(i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index], write_buffer, write_size);
-        i2c_operation_t i2c_ops[] = {
-            {.hw_cmd = I2C_TRANS_START_COMMAND},
-            {.hw_cmd = I2C_TRANS_WRITE_COMMAND(false), .data = (uint8_t *)i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index], .total_bytes = write_size},
-            {.hw_cmd = I2C_TRANS_STOP_COMMAND},
-        };
         ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
     }
     return ESP_OK;
@@ -1006,28 +1009,18 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
     ESP_RETURN_ON_FALSE((write_buffer != NULL) && (write_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c transmit buffer or size invalid");
     ESP_RETURN_ON_FALSE((read_buffer != NULL) && (read_size > 0), ESP_ERR_INVALID_ARG, TAG, "i2c receive buffer or size invalid");
 
-    if (i2c_dev->master_bus->asnyc_trans == false) {
-        i2c_operation_t i2c_ops[] = {
-            {.hw_cmd = I2C_TRANS_START_COMMAND},
-            {.hw_cmd = I2C_TRANS_WRITE_COMMAND(false), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
-            {.hw_cmd = I2C_TRANS_START_COMMAND},
-            {.hw_cmd = I2C_TRANS_READ_COMMAND(ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
-            {.hw_cmd = I2C_TRANS_READ_COMMAND(NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
-            {.hw_cmd = I2C_TRANS_STOP_COMMAND},
-        };
+    i2c_operation_t i2c_ops[] = {
+        {.hw_cmd = I2C_TRANS_START_COMMAND},
+        {.hw_cmd = I2C_TRANS_WRITE_COMMAND(false), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
+        {.hw_cmd = I2C_TRANS_START_COMMAND},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
+        {.hw_cmd = I2C_TRANS_STOP_COMMAND},
+    };
+
+    if (i2c_dev->master_bus->async_trans == false) {
         ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
     } else {
-        i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index] = (uint8_t*)heap_caps_calloc(1, sizeof(uint8_t)*write_size, I2C_MEM_ALLOC_CAPS);
-        memcpy(i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index], write_buffer, write_size);
-
-        i2c_operation_t i2c_ops[] = {
-            {.hw_cmd = I2C_TRANS_START_COMMAND},
-            {.hw_cmd = I2C_TRANS_WRITE_COMMAND(false), .data = (uint8_t *)i2c_dev->master_bus->anyc_write_buffer[i2c_dev->master_bus->index], .total_bytes = write_size},
-            {.hw_cmd = I2C_TRANS_START_COMMAND},
-            {.hw_cmd = I2C_TRANS_READ_COMMAND(ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
-            {.hw_cmd = I2C_TRANS_READ_COMMAND(NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
-            {.hw_cmd = I2C_TRANS_STOP_COMMAND},
-        };
         ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
     }
     return ESP_OK;
@@ -1045,7 +1038,7 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
     };
 
-    if (i2c_dev->master_bus->asnyc_trans == false) {
+    if (i2c_dev->master_bus->async_trans == false) {
         ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
     } else {
         ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, DIM(i2c_ops), xfer_timeout_ms), TAG, "I2C transaction failed");
@@ -1097,7 +1090,7 @@ esp_err_t i2c_master_register_event_callbacks(i2c_master_dev_handle_t i2c_dev, c
 {
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
 
-    if (i2c_dev->master_bus->asnyc_trans == false) {
+    if (i2c_dev->master_bus->async_trans == false) {
         ESP_LOGE(TAG, "I2C transaction queue is not initialized, so you can't use callback here, please resister the bus again with trans_queue_depth != 0");
         return ESP_ERR_INVALID_STATE;
     }
