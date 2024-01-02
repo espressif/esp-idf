@@ -8,6 +8,7 @@
 #define _ESP_WIFI_DEFAULT_H
 
 #include "esp_netif.h"
+#include "esp_wifi_types.h"
 
 #ifdef __cplusplus
 extern "C" {
