@@ -49,7 +49,7 @@ Vanilla FreeRTOS requires that ports and applications configure the kernel by ad
 
 For the full list of user configurable kernel options, see :doc:`/api-reference/kconfig`. The list below highlights some commonly used kernel configuration options:
 
-- :ref:`CONFIG_FREERTOS_UNICORE` runs FreeRTOS only on CPU0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Furthermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running FreeRTOS on a single core, refer to :ref:`freertos-smp-single-core` (if using ESP-IDF FreeRTOS) or the official Amazon SMP FreeRTOS documentation. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
+- :ref:`CONFIG_FREERTOS_UNICORE` runs FreeRTOS only on Core 0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Furthermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running FreeRTOS on a single core, refer to :ref:`freertos-idf-single-core` (if using ESP-IDF FreeRTOS) or the official Amazon SMP FreeRTOS documentation. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
 .. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
@@ -95,7 +95,7 @@ During startup, ESP-IDF and the FreeRTOS kernel automatically create multiple ta
       - Affinity
       - Priority
     * - Idle Tasks (``IDLEx``)
-      - An idle task (``IDLEx``) is created for (and pinned to) each CPU core, where ``x`` is the CPU core's number. The ``x`` is dropped when single-core configuration is enabled.
+      - An idle task (``IDLEx``) is created for (and pinned to) each core, where ``x`` is the core's number. ``x`` is dropped when single-core configuration is enabled.
       - :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`
       - Core x
       - ``0``
@@ -110,7 +110,7 @@ During startup, ESP-IDF and the FreeRTOS kernel automatically create multiple ta
       - :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`
       - ``1``
     * - IPC Tasks (``ipcx``)
-      - When :ref:`CONFIG_FREERTOS_UNICORE` is false, an IPC task (``ipcx``) is created for (and pinned to) each CPU core. IPC tasks are used to implement the Inter-processor Call (IPC) feature.
+      - When :ref:`CONFIG_FREERTOS_UNICORE` is false, an IPC task (``ipcx``) is created for (and pinned to) each core. IPC tasks are used to implement the Inter-processor Call (IPC) feature.
       - :ref:`CONFIG_ESP_IPC_TASK_STACK_SIZE`
       - Core x
       - ``24``
