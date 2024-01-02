@@ -8,6 +8,7 @@ import pytest
 from pytest_embedded import Dut
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_light_sleep(dut: Dut) -> None:

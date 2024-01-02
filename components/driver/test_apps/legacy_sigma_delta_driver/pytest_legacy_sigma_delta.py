@@ -11,6 +11,7 @@ from pytest_embedded_idf import IdfDut
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
+@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

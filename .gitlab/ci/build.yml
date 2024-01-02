@@ -180,6 +180,15 @@ build_pytest_examples_esp32h2:
     IDF_TARGET: esp32h2
     TEST_DIR: examples
 
+build_pytest_examples_esp32p4:
+  extends:
+    - .build_pytest_no_jtag_template
+    - .rules:build:example_test-esp32p4
+  parallel: 2
+  variables:
+    IDF_TARGET: esp32p4
+    TEST_DIR: examples
+
 build_pytest_examples_jtag:  # for all targets
   extends:
     - .build_pytest_jtag_template
@@ -249,6 +258,15 @@ build_pytest_components_esp32h2:
   parallel: 4
   variables:
     IDF_TARGET: esp32h2
+    TEST_DIR: components
+
+build_pytest_components_esp32p4:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32p4
+  parallel: 4
+  variables:
+    IDF_TARGET: esp32p4
     TEST_DIR: components
 
 build_only_components_apps:
@@ -322,6 +340,14 @@ build_pytest_test_apps_esp32h2:
     - .rules:build:custom_test-esp32h2
   variables:
     IDF_TARGET: esp32h2
+    TEST_DIR: tools/test_apps
+
+build_pytest_test_apps_esp32p4:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32p4
+  variables:
+    IDF_TARGET: esp32p4
     TEST_DIR: tools/test_apps
 
 build_only_tools_test_apps:
