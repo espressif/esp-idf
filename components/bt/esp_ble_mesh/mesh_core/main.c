@@ -102,6 +102,11 @@ void bt_mesh_node_reset(void)
         return;
     }
 
+    if (bt_prov_active()) {
+        BT_WARN("%s, link is still active", __func__);
+        return;
+    }
+
     bt_mesh.iv_index = 0U;
     bt_mesh.seq = 0U;
 
