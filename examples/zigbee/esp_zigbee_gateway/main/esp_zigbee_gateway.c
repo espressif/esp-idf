@@ -45,7 +45,7 @@
 #include "esp_spiffs.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_vfs_dev.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
 #include "driver/uart_vfs.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
@@ -67,9 +67,9 @@ esp_err_t esp_zb_gateway_console_init(void)
     setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
 
     /* Enable non-blocking mode on stdin and stdout */
     fcntl(fileno(stdout), F_SETFL, O_NONBLOCK);
@@ -77,7 +77,7 @@ esp_err_t esp_zb_gateway_console_init(void)
 
     usb_serial_jtag_driver_config_t usb_serial_jtag_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
     ret = usb_serial_jtag_driver_install(&usb_serial_jtag_config);
-    esp_vfs_usb_serial_jtag_use_driver();
+    usb_serial_jtag_vfs_use_driver();
     uart_vfs_dev_register();
     return ret;
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,6 @@ static esp_pm_lock_handle_t s_usb_serial_jtag_pm_lock;
 static uint32_t remaining_allowed_no_sof_ticks;
 
 static __attribute__((unused)) const char *USB_SERIAL_JTAG_CONN_MONITOR_TAG = "usb_serial_jtag";
-
 
 bool usb_serial_jtag_is_connected(void)
 {
@@ -76,7 +75,7 @@ ESP_SYSTEM_INIT_FN(usb_serial_jtag_conn_status_init, SECONDARY, BIT(0), 230)
 {
 #if CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION
     ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "usb_serial_jtag", &s_usb_serial_jtag_pm_lock),
-                            USB_SERIAL_JTAG_CONN_MONITOR_TAG, "create NO_LIGHT_SLEEP lock failed");
+                        USB_SERIAL_JTAG_CONN_MONITOR_TAG, "create NO_LIGHT_SLEEP lock failed");
     // We always assume it is connected at first, so acquires the lock to avoid auto light sleep
     esp_pm_lock_acquire(s_usb_serial_jtag_pm_lock);
 #endif

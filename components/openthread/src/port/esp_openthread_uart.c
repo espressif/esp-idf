@@ -22,7 +22,7 @@
 #include "driver/uart.h"
 #include "driver/uart_vfs.h"
 #include "utils/uart.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
 #include "driver/usb_serial_jtag.h"
 
 static int s_uart_port;
@@ -81,16 +81,16 @@ esp_err_t esp_openthread_host_cli_usb_init(const esp_openthread_platform_config_
     setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
 
     /* Enable non-blocking mode on stdin and stdout */
     fcntl(fileno(stdout), F_SETFL, O_NONBLOCK);
     fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
 
     ret = usb_serial_jtag_driver_install((usb_serial_jtag_driver_config_t *)&config->host_config.host_usb_config);
-    esp_vfs_usb_serial_jtag_use_driver();
+    usb_serial_jtag_vfs_use_driver();
     uart_vfs_dev_register();
     return ret;
 }

@@ -12,9 +12,8 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_console.h"
-#include "esp_vfs_dev.h"
 #include "esp_vfs_cdcacm.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
@@ -144,9 +143,9 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
     }
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
 
     /* Enable blocking mode on stdin and stdout */
     fcntl(fileno(stdout), F_SETFL, 0);
@@ -167,7 +166,7 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
     }
 
     /* Tell vfs to use usb-serial-jtag driver */
-    esp_vfs_usb_serial_jtag_use_driver();
+    usb_serial_jtag_vfs_use_driver();
 
     // setup history
     ret = esp_console_setup_history(repl_config->history_save_path, repl_config->max_history_len, &usb_serial_jtag_repl->repl_com);
@@ -466,7 +465,7 @@ static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *rep
     }
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
     esp_console_deinit();
-    esp_vfs_usb_serial_jtag_use_nonblocking();
+    usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();
     free(usb_serial_jtag_repl);
 _exit:

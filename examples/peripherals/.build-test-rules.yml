@@ -453,3 +453,5 @@ examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
     - if: IDF_TARGET not in ["esp32c6"]
       temporary: true
       reason: lack of runners. Hardware is similar, test on one target is enough currently.
+  depends_components:
+    - esp_driver_usb_serial_jtag

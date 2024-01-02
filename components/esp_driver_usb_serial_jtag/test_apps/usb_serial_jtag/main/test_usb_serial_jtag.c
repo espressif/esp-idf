@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "driver/usb_serial_jtag.h"
 #include "esp_log.h"
 #include "esp_vfs_dev.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
 #include "driver/usb_serial_jtag.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -41,7 +41,6 @@ static void test_task_driver2(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-
 TEST_CASE("test print via usb_serial_jtag driver multiple times in different tasks", "[usb_serial_jtag]")
 {
     usb_serial_jtag_driver_config_t cfg = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
@@ -50,7 +49,7 @@ TEST_CASE("test print via usb_serial_jtag driver multiple times in different tas
     TEST_ESP_OK(usb_serial_jtag_driver_install(&cfg));
 
     // Tell vfs to use usb-serial-jtag driver
-    esp_vfs_usb_serial_jtag_use_driver();
+    usb_serial_jtag_vfs_use_driver();
 
     xTaskCreate(test_task_driver2, "usj_print_1", 4096, sem, 10, NULL);
     xTaskCreate(test_task_driver1, "usj_print_2", 4096, sem, 10, NULL);
@@ -61,6 +60,6 @@ TEST_CASE("test print via usb_serial_jtag driver multiple times in different tas
     vSemaphoreDelete(sem);
     vTaskDelay(5);
 
-    esp_vfs_usb_serial_jtag_use_nonblocking();
+    usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();
 }
