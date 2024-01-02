@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,8 +32,6 @@
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
 #include "esp_private/regi2c_ctrl.h"
-// #include "soc/regi2c_lp_bias.h"
-// #include "soc/regi2c_bias.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_soc.h"
@@ -95,8 +93,10 @@ static inline void bootloader_hardware_init(void)
 
 static inline void bootloader_ana_reset_config(void)
 {
+    // TODO: [ESP32C5] IDF-8650
     //Enable super WDT reset.
     // bootloader_ana_super_wdt_reset_config(true);
+    // TODO: [ESP32C5] IDF-8647
     //Enable BOD reset
     // bootloader_ana_bod_reset_config(true);
 }

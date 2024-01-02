@@ -56,6 +56,7 @@ static DRAM_ATTR spi_noos_arg_t spi_arg = { 0 };
 
 static IRAM_ATTR esp_err_t start(void *arg)
 {
+    // TODO: [ESP32C5] IDF-8646
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Read_Disable(1);
@@ -75,6 +76,7 @@ static IRAM_ATTR esp_err_t start(void *arg)
 
 static IRAM_ATTR esp_err_t end(void *arg)
 {
+    // TODO: [ESP32C5] IDF-8646
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
     Cache_Read_Enable(1);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,7 @@
 #define SRAM_DRAM_START     0x40800000
 
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x4086E610 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_DRAM_END       0x4086EBC0 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
 
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START)
 #define SRAM_DRAM_ORG       (SRAM_DRAM_START)
@@ -31,10 +31,10 @@
 #define I_D_SRAM_SIZE       SRAM_DRAM_END - SRAM_DRAM_ORG
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-/*
- * IDRAM0_2_SEG_SIZE_DEFAULT is used when page size is 64KB
+/**
+ * TODO: IDF-7890
  */
-#define IDRAM0_2_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 8)
+#define IDROM_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 8)
 #endif
 
 #define DRAM0_0_SEG_LEN I_D_SRAM_SIZE
@@ -52,7 +52,7 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped instruction data */
-  irom_seg (RX) :                    org = 0x41000020, len = IDRAM0_2_SEG_SIZE - 0x20
+  irom_seg (RX) :                    org = 0x41000020, len = IDROM_SEG_SIZE - 0x20
 
   /**
    * (0x20 offset above is a convenience for the app binary image generation.
@@ -71,7 +71,7 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped constant data */
-  drom_seg (R) :                     org = 0x41000020, len = IDRAM0_2_SEG_SIZE - 0x20
+  drom_seg (R) :                     org = 0x41000020, len = IDROM_SEG_SIZE - 0x20
 
   /* (See irom_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS

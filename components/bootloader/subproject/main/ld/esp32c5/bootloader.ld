@@ -1,26 +1,27 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
  *
- *  ESP32-5 ROM static data usage is as follows:
- *  - 0x4086ad08 - 0x4087c610: Shared buffers, used in UART/USB/SPI download mode only
- *  - 0x4087c610 - 0x4087e610: PRO CPU stack, can be reclaimed as heap after RTOS startup
- *  - 0x4087e610 - 0x40880000: ROM .bss and .data (not easily reclaimable)
+ *  TODO: [ESP32C5] IDF-8653 Check this file whether need update
+ *  ESP32-C5 ROM static data usage is as follows:
+ *  - 0x4086b2b8 - 0x4087cbc0: Shared buffers, used in UART/USB/SPI download mode only
+ *  - 0x4087cbc0 - 0x4087ebc0: PRO CPU stack, can be reclaimed as heap after RTOS startup
+ *  - 0x4087ebc0 - 0x40880000: ROM .bss and .data (not easily reclaimable)
  *
  *  The 2nd stage bootloader can take space up to the end of ROM shared
- *  buffers area (0x4087c610).
+ *  buffers area (0x4087cbc0).
  */
 
-/* We consider 0x4087c610 to be the last usable address for 2nd stage bootloader stack overhead, dram_seg,
+/* We consider 0x4087cbc0 to be the last usable address for 2nd stage bootloader stack overhead, dram_seg,
  * and work out iram_seg and iram_loader_seg addresses from there, backwards.
  */
 
 /* These lengths can be adjusted, if necessary: */
-bootloader_usable_dram_end = 0x4087c610;
+bootloader_usable_dram_end = 0x4087cbc0;
 bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
 bootloader_dram_seg_len = 0x5000;
 bootloader_iram_loader_seg_len = 0x7000;
@@ -45,7 +46,7 @@ MEMORY
  * 2. Update the value in this assert.
  * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32c5/memory.ld.in to the same value.
  */
-ASSERT(bootloader_iram_loader_seg_start == 0x4086E610, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
+ASSERT(bootloader_iram_loader_seg_start == 0x4086EBC0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);
@@ -222,32 +223,32 @@ SECTIONS
 /**
  *  Appendix: Memory Usage of ROM bootloader
  *
- * 0x4086ad08 ------------------> _dram0_0_start
+ * 0x4086b2b8 ------------------> _dram0_0_start
  *            |               |
  *            |               |
  *            |               |   1. Large buffers that are only used in certain boot modes, see shared_buffers.h
  *            |               |
  *            |               |
- * 0x4087c610 ------------------> __stack_sentry
+ * 0x4087cbc0 ------------------> __stack_sentry
  *            |               |
  *            |               |   2. Startup pro cpu stack (freed when IDF app is running)
  *            |               |
- * 0x4087e610 ------------------> __stack (pro cpu)
+ * 0x4087ebc0 ------------------> __stack (pro cpu)
  *            |               |
  *            |               |
  *            |               |   3. Shared memory only used in startup code or nonos/early boot*
  *            |               |      (can be freed when IDF runs)
  *            |               |
  *            |               |
- * 0x4087f564 ------------------> _dram0_rtos_reserved_start
+ * 0x4087fb14 ------------------> _dram0_rtos_reserved_start
  *            |               |
  *            |               |
  *            |               |   4. Shared memory used in startup code and when IDF runs
  *            |               |
  *            |               |
- * 0x4087fab0 ------------------> _dram0_rtos_reserved_end
+ * 0x4087fefc ------------------> _dram0_rtos_reserved_end
  *            |               |
- * 0x4087fce8 ------------------> _data_start_interface
+ * 0x4087ffb8 ------------------> _data_start_interface
  *            |               |
  *            |               |   5. End of DRAM is the 'interface' data with constant addresses (ECO compatible)
  *            |               |

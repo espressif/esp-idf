@@ -124,7 +124,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         depends on IDF_TARGET_ESP32C5
         default IDF_TARGET_ESP32C5_BETA3_VERSION
         help
-            ESP32-C5 will support two versions in a period.
+            ESP32-C5 will support two versions for a period.
             This option is for internal use only.
             Select the one that matches your chip model.
 

@@ -4,10 +4,6 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-if(${target} STREQUAL "esp32c5")
-    return() # not support yet
-endif()
-
 set(srcs "src/wifi_config.c"
         "src/wifi_scan.c"
         "src/wifi_ctrl.c"

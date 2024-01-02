@@ -54,7 +54,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
 
 #if CONFIG_IDF_TARGET_ESP32C5
-        // RC150K can't do calibrate on esp32c5MPW so not use it
+        // TODO: [ESP32C5] IDF-9009 Check whether SOC_RTC_SLOW_CLK_SRC_RC_SLOW can be used on C5 MP
+        // RC150K can't do calibrate on ESP32C5MPW so not use it
         clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
 #else
         // Use RTC_SLOW clock source sel register field's default value, RC_SLOW, for 2nd stage bootloader
@@ -82,7 +83,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 
 #if CONFIG_IDF_TARGET_ESP32C5
     /* TODO: [ESP32C5] IDF-8649 temporary use xtal clock source,
-       need to change back SPLL(480M) and set divider to 6 to use the 80M MSPI */
+       need to change back SPLL(480M) and set divider to 6 to use the 80M MSPI，
+       and we need to check flash freq before restart as well */
     clk_ll_mspi_fast_set_divider(1);
     clk_ll_mspi_fast_sel_clk(MSPI_CLK_SRC_XTAL);
 #endif
