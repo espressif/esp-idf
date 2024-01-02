@@ -1,4 +1,3 @@
-api-guides/core_dump_internals.rst
 api-guides/performance/speed.rst
 api-guides/performance/size.rst
 api-guides/performance/ram-usage.rst
@@ -38,7 +37,6 @@ api-guides/usb-otg-console.rst
 api-guides/wireshark-user-guide.rst
 api-guides/esp-wifi-mesh.rst
 api-guides/SYSVIEW_FreeRTOS.txt
-api-guides/core_dump.rst
 api-guides/dfu.rst
 api-guides/current-consumption-measurement-modules.rst
 api-guides/wifi-security.rst
