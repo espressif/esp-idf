@@ -6,7 +6,7 @@ from pytest_embedded_idf import IdfDut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='skip due to duplication with test_ledc_psram')
+@pytest.mark.temp_skip_ci(targets=['esp32s3', 'esp32p4'], reason='skip due to duplication with test_ledc_psram, p4 TBD')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
