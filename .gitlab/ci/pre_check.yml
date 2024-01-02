@@ -15,6 +15,7 @@ check_pre_commit:
   script:
     - fetch_submodules
     - pre-commit run --files $MODIFIED_FILES
+    - pre-commit run --hook-stage post-commit validate-sbom-manifest
 
 check_MR_style_dangerjs:
   extends:
