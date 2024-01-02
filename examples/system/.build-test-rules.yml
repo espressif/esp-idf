@@ -188,6 +188,9 @@ examples/system/ota/simple_ota_example:
     - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - app_update
+    - esp_https_ota
 
 examples/system/perfmon:
   enable:

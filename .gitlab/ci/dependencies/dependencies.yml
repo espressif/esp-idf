@@ -129,19 +129,6 @@
     - "build:{0}"
     - build:target_test
 
-# For example_test*flash_encryption_wifi_high_traffic jobs
-# set `INCLUDE_NIGHTLY_RUN` variable when triggered on development branches
-"test:example_test-{0}-include_nightly_run-rule":
-  matrix:
-    - - esp32
-      - esp32c3
-  specific_rules:
-    - "if-example_test-ota-include_nightly_run-rule"
-  included_in:
-    - "build:example_test-{0}"
-    - "build:example_test"
-    - build:target_test
-
 "test:host_test":
   labels:
     - host_test

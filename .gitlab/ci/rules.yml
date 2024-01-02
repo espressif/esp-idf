@@ -181,14 +181,6 @@
   - "components/bt/esp_ble_mesh/lib/lib"
   - ".gitmodules"
 
-# for jobs: flash_encryption_wifi_high_traffic
-.patterns-example_test-ota-nightly_run: &patterns-example_test-ota-nightly_run
-  - "examples/system/ota/**/*"
-  - "examples/common_components/protocol_examples_common/**/*"
-  - "components/app_update/include/*"
-  - "components/app_update/*"
-  - "components/esp_https_ota/**/*"
-
 # for jobs: example_test*ethernet*
 .patterns-example_test-ethernet: &patterns-example_test-ethernet
   - "tools/ci/python_packages/common_test_methods.py"
@@ -263,15 +255,6 @@
 
 .if-revert-branch: &if-revert-branch
   if: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^revert-/'
-
-#####################
-# Specific if rules #
-#####################
-.if-example_test-ota-include_nightly_run-rule: &if-example_test-ota-include_nightly_run-rule
-  <<: *if-dev-push
-  changes: *patterns-example_test-ota-nightly_run
-  variables:
-    INCLUDE_NIGHTLY_RUN: "1"
 
 #########
 # Rules #
@@ -1471,7 +1454,6 @@
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
-    - <<: *if-example_test-ota-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
@@ -1885,15 +1867,6 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-ethernet
 
-.rules:test:example_test-esp32-include_nightly_run-rule:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-example_test-ota-include_nightly_run-rule
-
 .rules:test:example_test-esp32-wifi:
   rules:
     - <<: *if-revert-branch
@@ -1953,15 +1926,6 @@
       changes: *patterns-build-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test
-
-.rules:test:example_test-esp32c3-include_nightly_run-rule:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-example_test-ota-include_nightly_run-rule
 
 .rules:test:example_test-esp32c3-wifi:
   rules:

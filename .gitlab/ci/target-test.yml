@@ -264,24 +264,6 @@ pytest_examples_esp32_wifi_high_traffic:
       artifacts: false
   tags: [ esp32, wifi_high_traffic ]
 
-pytest_examples_esp32_flash_encryption_wifi_high_traffic:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32-include_nightly_run-rule
-  needs:
-    - job: build_pytest_examples_esp32
-      artifacts: false
-  tags: [ esp32, flash_encryption_wifi_high_traffic ]
-
-pytest_examples_esp32c3_flash_encryption_wifi_high_traffic:
-  extends:
-    - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32c3-include_nightly_run-rule
-  needs:
-    - job: build_pytest_examples_esp32c3
-      artifacts: false
-  tags: [ esp32c3, flash_encryption_wifi_high_traffic ]
-
 pytest_examples_esp32_ethernet:
   extends:
     - .pytest_examples_dir_template
