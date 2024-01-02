@@ -479,6 +479,7 @@ menu "Wi-Fi"
     if ESP_WIFI_MBEDTLS_CRYPTO
         config ESP_WIFI_MBEDTLS_TLS_CLIENT
             bool "Use MbedTLS TLS client for WiFi Enterprise connection"
+            depends on ESP_WIFI_ENTERPRISE_SUPPORT
             default y
             select MBEDTLS_TLS_ENABLED
             help
@@ -622,5 +623,14 @@ menu "Wi-Fi"
 
             disabling this will reduce binary size.
             disabling this will disable the use of any esp_wifi_sta_wpa2_ent_* (as APIs will be meaningless)
+
+    config ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
+        bool "Free dynamic buffers during WiFi enterprise connection"
+        depends on ESP_WIFI_ENTERPRISE_SUPPORT
+        default y if IDF_TARGET_ESP32C2
+        default n if !IDF_TARGET_ESP32C2
+        help
+            Select this configuration to free dynamic buffers during WiFi enterprise connection.
+            This will enable chip to reduce heap consumption during WiFi enterprise connection.
 
 endmenu # Wi-Fi
