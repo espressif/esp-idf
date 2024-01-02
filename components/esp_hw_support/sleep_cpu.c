@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,14 @@
 #include "soc/plic_reg.h"
 #include "soc/clint_reg.h"
 #include "esp32c6/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/rtc.h"
+#include "riscv/rvsleep-frames.h"
+#include "soc/intpri_reg.h"
+#include "soc/cache_reg.h"
+#include "soc/clic_reg.h"
+#include "soc/clint_reg.h"
+#include "esp32c5/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "riscv/rvsleep-frames.h"
@@ -329,7 +337,7 @@ static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 #if CONFIG_IDF_TARGET_ESP32C6
         { .start = EXTMEM_L1_CACHE_CTRL_REG, .end = EXTMEM_L1_CACHE_CTRL_REG + 4 },
         { .start = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
         { .start = CACHE_L1_CACHE_CTRL_REG, .end = CACHE_L1_CACHE_CTRL_REG + 4 },
         { .start = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
 #endif

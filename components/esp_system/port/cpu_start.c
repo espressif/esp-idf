@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,10 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rtc.h"
 #include "esp32c6/rom/cache.h"
+#include "esp_memprot.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rtc.h"
+#include "esp32c5/rom/cache.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
@@ -688,12 +692,12 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32P4 //TODO: IDF-7529
+#if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 //TODO: IDF-7529, IDF-8638
     // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
     if (rst_reas[0] == RESET_REASON_CORE_DEEP_SLEEP) {
         esp_deep_sleep_wakeup_io_reset();
     }
-#endif  //#if !CONFIG_IDF_TARGET_ESP32P4
+#endif  //#if !CONFIG_IDF_TARGET_ESP32P4 & !CONFIG_IDF_TARGET_ESP32C5
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     esp_cache_err_int_init();

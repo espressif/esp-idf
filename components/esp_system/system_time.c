@@ -29,6 +29,8 @@
 #include "esp32h2/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rtc.h"
 #endif
 
 #include "esp_private/startup_internal.h"
