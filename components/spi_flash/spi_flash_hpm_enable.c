@@ -10,7 +10,9 @@
 #include "esp_log.h"
 #include "spi_flash_defs.h"
 #include "esp_rom_sys.h"
+#if CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
+#endif
 #include "spi_flash_override.h"
 
 // TODO: These dependencies will be removed after remove bootloader_flash to G0.IDF-4609
