@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,6 +120,10 @@ typedef uint8_t esp_bt_eir_type_t;
 #define ESP_BT_ACL_3_DH5_ONLY   (~ESP_BT_ACL_PKT_TYPES_MASK_NO_3_DH5 & 0x330e)   /* 0x130e */
 
 typedef uint16_t esp_bt_acl_pkt_type_t;
+
+/* Range of encryption key size */
+#define ESP_BT_ENC_KEY_SIZE_CTRL_MAX            (16)
+#define ESP_BT_ENC_KEY_SIZE_CTRL_MIN            (7)
 
 /* ESP_BT_EIR_FLAG bit definition */
 #define ESP_BT_EIR_FLAG_LIMIT_DISC         (0x01 << 0)
@@ -266,6 +270,7 @@ typedef enum {
     ESP_BT_GAP_GET_PAGE_TO_EVT,                     /*!< Get page timeout event */
     ESP_BT_GAP_ACL_PKT_TYPE_CHANGED_EVT,            /*!< Set ACL packet types event */
     ESP_BT_GAP_ENC_CHG_EVT,                         /*!< Encryption change event */
+    ESP_BT_GAP_SET_MIN_ENC_KEY_SIZE_EVT,            /*!< Set minimum encryption key size */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -457,6 +462,13 @@ typedef union {
         esp_bd_addr_t bda;                      /*!< remote bluetooth device address */
         uint16_t pkt_types;                     /*!< packet types successfully set */
     } set_acl_pkt_types;                        /*!< set ACL packet types parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_SET_MIN_ENC_KEY_SIZE_EVT
+     */
+    struct set_min_enc_key_size_param {
+        esp_bt_status_t status;                 /*!< set minimum encryption key size status */
+    } set_min_enc_key_size;                     /*!< set minimum encryption key size parameter struct */
 
     /**
      * @brief ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT
@@ -908,6 +920,15 @@ esp_err_t esp_bt_gap_get_page_timeout(void);
  *                  - other: failed
  */
 esp_err_t esp_bt_gap_set_acl_pkt_types(esp_bd_addr_t remote_bda, esp_bt_acl_pkt_type_t pkt_types);
+
+/**
+ * @brief           Set the mininal size of encryption key
+ *
+ * @return          - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - other: failed
+ */
+esp_err_t esp_bt_gap_set_min_enc_key_size(uint8_t key_size);
 
 #ifdef __cplusplus
 }

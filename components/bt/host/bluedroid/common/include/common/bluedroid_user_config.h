@@ -95,6 +95,15 @@
 #define UC_BT_CLASSIC_BQB_ENABLED           FALSE
 #endif
 
+//Set Encryption Key Size(BT)
+#ifdef CONFIG_BT_ENC_KEY_SIZE_CTRL_STD
+#define UC_BT_ENC_KEY_SIZE_CTRL_MODE   1
+#elif CONFIG_BT_ENC_KEY_SIZE_CTRL_VSC
+#define UC_BT_ENC_KEY_SIZE_CTRL_MODE   2
+#else
+#define UC_BT_ENC_KEY_SIZE_CTRL_MODE   0
+#endif
+
 //BLE
 #ifdef CONFIG_BT_BLE_ENABLED
 #define UC_BT_BLE_ENABLED                   CONFIG_BT_BLE_ENABLED

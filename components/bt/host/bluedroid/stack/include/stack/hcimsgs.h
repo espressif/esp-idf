@@ -583,6 +583,10 @@ BOOLEAN btsnd_hcic_set_afh_channels (AFH_CHANNELS channels);
 BOOLEAN btsnd_hcic_ble_set_channels (BLE_CHANNELS channels);
 #define HCIC_PARAM_SIZE_BLE_SET_CHANNELS    5
 
+/* set minimum encryption key size */
+BOOLEAN btsnd_hcic_set_min_enc_key_size (UINT8 size);
+#define HCIC_PARAM_SIZE_SET_MIN_ENC_KEY_SIZE    1
+
 BOOLEAN btsnd_hcic_write_pin_type(UINT8 type);                   /* Write PIN Type */
 BOOLEAN btsnd_hcic_write_auto_accept(UINT8 flag);                /* Write Auto Accept */
 BOOLEAN btsnd_hcic_read_name (void);                             /* Read Local Name */
