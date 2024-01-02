@@ -181,19 +181,6 @@
   - "components/bt/esp_ble_mesh/lib/lib"
   - ".gitmodules"
 
-# for jobs: example_test*ethernet*
-.patterns-example_test-ethernet: &patterns-example_test-ethernet
-  - "tools/ci/python_packages/common_test_methods.py"
-  - "examples/common_components/**/*"
-  - "examples/protocols/**/*"
-  - "examples/system/ota/**/*"
-  - "examples/ethernet/iperf/**/*"
-  - "examples/network/vlan_support/**/*"
-  - "components/esp_eth/??[!s][!t]*/**/*"
-  - "components/esp_eth/???/**/*"
-  - "components/esp_eth/*"
-  - "components/esp_netif/esp_netif_handlers.c"
-
 # for jobs: example_test*wifi*
 .patterns-example_test-wifi: &patterns-example_test-wifi
   - "tools/ci/python_packages/common_test_methods.py"
@@ -1507,8 +1494,6 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-ethernet
-    - <<: *if-dev-push
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-target_test-wifi
@@ -1853,19 +1838,6 @@
       changes: *patterns-build-example_test
     - <<: *if-dev-push
       changes: *patterns-example_test
-
-.rules:test:example_test-esp32-ethernet:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test-ethernet
 
 .rules:test:example_test-esp32-wifi:
   rules:

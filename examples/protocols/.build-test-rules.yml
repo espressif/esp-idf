@@ -1,5 +1,11 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+.ethernet_dependencies: &ethernet_dependencies
+  # TODO: IDFCI-1821
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - components/esp_netif/esp_netif_handlers.c
+
 examples/protocols/esp_http_client:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
@@ -11,6 +17,7 @@ examples/protocols/esp_http_client:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: not supported on p4
+  <<: *ethernet_dependencies
 
 examples/protocols/esp_local_ctrl:
   disable:
@@ -32,6 +39,7 @@ examples/protocols/http_request:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
+  <<: *ethernet_dependencies
 
 examples/protocols/http_server:
   disable:
@@ -78,6 +86,7 @@ examples/protocols/https_mbedtls:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/https_request:
   disable:
@@ -88,6 +97,7 @@ examples/protocols/https_request:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/https_server/simple:
   disable:
@@ -118,6 +128,7 @@ examples/protocols/https_x509_bundle:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/icmp_echo:
   disable:
@@ -158,6 +169,7 @@ examples/protocols/mqtt/ssl:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/mqtt/ssl_ds:
   disable:
@@ -186,6 +198,7 @@ examples/protocols/mqtt/tcp:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/mqtt/ws:
   disable:
@@ -196,6 +209,7 @@ examples/protocols/mqtt/ws:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/mqtt/wss:
   disable:
@@ -206,6 +220,7 @@ examples/protocols/mqtt/wss:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/mqtt5:
   disable:
@@ -216,6 +231,7 @@ examples/protocols/mqtt5:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/smtp_client:
   disable:

@@ -52,6 +52,16 @@ tools/test_apps/protocols/mqtt/publish_connect_test:
     - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_eth
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - examples/common_components/**/*
+    - examples/protocols/**/*
+    - examples/system/ota/**/*
+    - examples/ethernet/iperf/**/*
+    - examples/network/vlan_support/**/*
+    - components/esp_netif/esp_netif_handlers.c
 
 tools/test_apps/protocols/netif_components:
   enable:
