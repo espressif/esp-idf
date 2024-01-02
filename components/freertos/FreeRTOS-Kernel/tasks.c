@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -3284,15 +3284,52 @@ BaseType_t xTaskIncrementTick( void )
                              * For SMP, since this function is only run on core
                              * 0, we only need to context switch if the unblocked
                              * task can run on core 0 and has a higher priority
-                             * than the current task. */
-                            if( ( taskIS_AFFINITY_COMPATIBLE( 0, pxTCB ) == pdTRUE ) && ( pxTCB->uxPriority > pxCurrentTCBs[ 0 ]->uxPriority ) )
+                             * than the current task.
+                             *
+                             * If the unblocked task has affinity to the other
+                             * core or no affinity then we need to set xYieldPending
+                             * for the other core if the unblocked task has a priority
+                             * higher than the priority of the currently running task
+                             * on the other core. */
+                            if( taskIS_AFFINITY_COMPATIBLE( 0, pxTCB ) == pdTRUE )
                             {
-                                xSwitchRequired = pdTRUE;
+                                if( pxTCB->uxPriority > pxCurrentTCBs[ 0 ]->uxPriority )
+                                {
+                                    xSwitchRequired = pdTRUE;
+                                }
+
+                                #if ( configNUMBER_OF_CORES > 1 )
+                                    else if( pxTCB->xCoreID == tskNO_AFFINITY )
+                                    {
+                                        if( pxTCB->uxPriority > pxCurrentTCBs[ 1 ]->uxPriority )
+                                        {
+                                            xYieldPending[ 1 ] = pdTRUE;
+                                        }
+                                        else
+                                        {
+                                            mtCOVERAGE_TEST_MARKER();
+                                        }
+                                    }
+                                #endif /* if ( configNUMBER_OF_CORES > 1 ) */
+                                else
+                                {
+                                    mtCOVERAGE_TEST_MARKER();
+                                }
                             }
-                            else
-                            {
-                                mtCOVERAGE_TEST_MARKER();
-                            }
+
+                            #if ( configNUMBER_OF_CORES > 1 )
+                                else
+                                {
+                                    if( pxTCB->uxPriority > pxCurrentTCBs[ 1 ]->uxPriority )
+                                    {
+                                        xYieldPending[ 1 ] = pdTRUE;
+                                    }
+                                    else
+                                    {
+                                        mtCOVERAGE_TEST_MARKER();
+                                    }
+                                }
+                            #endif /* if ( configNUMBER_OF_CORES > 1 ) */
                         }
                         #endif /* configUSE_PREEMPTION */
                     }
@@ -5440,7 +5477,7 @@ static void prvResetNextTaskUnblockTime( void )
                 /* Write the rest of the string. */
                 #if ( configTASKLIST_INCLUDE_COREID == 1 )
                 {
-                    const BaseType_t xCoreID = ( pxTaskStatusArray[ x ].xCoreID == tskNO_AFFINITY ) ? -1 : pxTaskStatusArray[ x ].xCoreID ;
+                    const BaseType_t xCoreID = ( pxTaskStatusArray[ x ].xCoreID == tskNO_AFFINITY ) ? -1 : pxTaskStatusArray[ x ].xCoreID;
                     sprintf( pcWriteBuffer, "\t%c\t%u\t%d\t%u\t%u\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( int ) xCoreID, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
                 }
                 #else /* configTASKLIST_INCLUDE_COREID == 1 */

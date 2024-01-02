@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,9 +87,8 @@ _Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "C
         /* This function should never be called by Core 0. */
         configASSERT( xCoreID != 0 );
 
-        /* Called by the portable layer each time a tick interrupt occurs.
-         * Increments the tick then checks to see if the new tick value will
-         * cause any tasks to be unblocked. */
+        /* Called by the portable layer each time a tick interrupt occurs
+         * on a core other than core 0. */
         traceTASK_INCREMENT_TICK( xTickCount );
 
         if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) 0U )
@@ -97,23 +96,6 @@ _Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "C
             /* We need take the kernel lock here as we are about to access
              * kernel data structures. */
             taskENTER_CRITICAL_ISR( &xKernelLock );
-
-            /* A task being unblocked cannot cause an immediate context switch
-             * if preemption is turned off. */
-            #if ( configUSE_PREEMPTION == 1 )
-            {
-                /* Check if core 0 calling xTaskIncrementTick() has
-                 * unblocked a task that can be run. */
-                if( uxTopReadyPriority > pxCurrentTCBs[ xCoreID ]->uxPriority )
-                {
-                    xSwitchRequired = pdTRUE;
-                }
-                else
-                {
-                    mtCOVERAGE_TEST_MARKER();
-                }
-            }
-            #endif /* if ( configUSE_PREEMPTION == 1 ) */
 
             /* Tasks of equal priority to the currently running task will share
              * processing time (time slice) if preemption is on, and the application
@@ -891,7 +873,8 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
  *
  * @note There are currently differing number of task list between SMP FreeRTOS and ESP-IDF FreeRTOS
  */
-static List_t * non_ready_task_lists[] = {
+static List_t * non_ready_task_lists[] =
+{
     #ifdef CONFIG_FREERTOS_SMP
         &xPendingReadyList,
     #else /* CONFIG_FREERTOS_SMP */
@@ -1104,7 +1087,8 @@ UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
         pxCurTaskList = pxGetNextTaskList( pxCurTaskList );
     }
 
-    if (pxTCBSize != NULL) {
+    if( pxTCBSize != NULL )
+    {
         *pxTCBSize = sizeof( TCB_t );
     }
 
@@ -1151,7 +1135,8 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
         ESP_FREERTOS_DEBUG_TABLE_END,
     };
 
-    const DRAM_ATTR uint8_t FreeRTOS_openocd_params[ ESP_FREERTOS_DEBUG_TABLE_END ] = {
+    const DRAM_ATTR uint8_t FreeRTOS_openocd_params[ ESP_FREERTOS_DEBUG_TABLE_END ] =
+    {
         ESP_FREERTOS_DEBUG_TABLE_END, /* table size */
         1,                            /* table version */
         tskKERNEL_VERSION_MAJOR,
