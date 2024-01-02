@@ -20,7 +20,7 @@ The examples are grouped into sub-directories by category. Each category directo
 * `smart_config` shows how ESP connects to a target AP with ESPTOUCH.
 * `wifi_eap_fast` shows how ESP connects to AP with Wi-Fi enterprise encryption using the EAP-FAST method.
 * `wifi_easy_connect` shows how to configure an ESP device as an enrollee using Device Provisioning Protocol (DPP).
-* `wpa2_enterprise` shows how ESP connects to AP with WPA2 enterprise encryption.
+* `wifi_enterprise` shows how ESP connects to AP with WPA2 enterprise encryption.
 * `wps` contains a how to use the Wi-Fi Protected Setup protocol.
 
 # More
