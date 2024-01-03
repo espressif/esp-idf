@@ -1,5 +1,4 @@
-set(srcs "test_app_main.c"
-         "src/ieee802154_cmd.c")
+set(srcs "esp_ieee802154_cli.c")
 
 set(include "."
             "include")
@@ -7,6 +6,5 @@ set(include "."
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS include
-                       PRIV_REQUIRES ieee802154 console fatfs nvs_flash esp_phy
+                       PRIV_REQUIRES ieee802154 console fatfs nvs_flash esp_phy cmd_ieee802154 cmd_system
                        WHOLE_ARCHIVE)

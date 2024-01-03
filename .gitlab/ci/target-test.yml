@@ -1306,12 +1306,12 @@ pytest_components_esp32c6_adc:
       artifacts: false
   tags: [ esp32c6, adc ]
 
-pytest_components_esp32c6_i154:
+pytest_examples_esp32c6_i154:
   extends:
-    - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32c6-i154
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c6
   needs:
-    - job: build_pytest_components_esp32c6
+    - job: build_pytest_examples_esp32c6
       artifacts: false
   tags: [ esp32c6, ieee802154 ]
 

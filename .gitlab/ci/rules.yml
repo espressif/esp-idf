@@ -1830,19 +1830,6 @@
     - <<: *if-dev-push
       changes: *patterns-target_test-adc
 
-.rules:test:component_ut-esp32c6-i154:
-  rules:
-    - <<: *if-revert-branch
-      when: never
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32c6
-    - <<: *if-label-target_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut-i154
-
 .rules:test:component_ut-esp32h2:
   rules:
     - <<: *if-revert-branch
