@@ -1,0 +1,12 @@
+components/vfs/test_apps:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c2", "esp32c3", "esp32c6", "esp32h2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+  depends_components:
+    - vfs
+    - fatfs
+    - spiffs
+    - console
+    - driver

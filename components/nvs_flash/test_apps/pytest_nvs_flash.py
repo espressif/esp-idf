@@ -10,8 +10,8 @@ CONFIGS_NVS_ENCR_FLASH_ENC = [
 ]
 
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
+@pytest.mark.esp32
+@pytest.mark.esp32c3
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 def test_nvs_flash(dut: IdfDut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
