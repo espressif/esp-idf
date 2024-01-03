@@ -711,6 +711,9 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
 
                 return false;
             } else {
+#if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
+                rx->replay_msg = 1;
+#endif
                 return true;
             }
         }
