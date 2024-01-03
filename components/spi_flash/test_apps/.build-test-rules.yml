@@ -52,7 +52,7 @@ components/spi_flash/test_apps/mspi_test:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8985
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:

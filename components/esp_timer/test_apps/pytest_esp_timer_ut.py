@@ -4,6 +4,7 @@
 import pytest
 from pytest_embedded import Dut
 
+# TODO: IDF-8979
 CONFIGS = [
     pytest.param('general', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32h2', 'esp32p4'], reason='h2/p4 support TBD')]),
     pytest.param('release', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32h2', 'esp32p4'], reason='h2/p4 support TBD')]),

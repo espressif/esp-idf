@@ -11,4 +11,4 @@ components/esp_rom/test_apps/rom_tests:
       reason: lack of memory for testing miniz compressing
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8977

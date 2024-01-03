@@ -212,7 +212,7 @@ examples/peripherals/mcpwm/mcpwm_capture_hc_sr04:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8963
 
 examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
   disable:
@@ -232,7 +232,7 @@ examples/peripherals/mcpwm/mcpwm_servo_control:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8963
 
 examples/peripherals/mcpwm/mcpwm_sync:
   disable:
@@ -242,7 +242,7 @@ examples/peripherals/mcpwm/mcpwm_sync:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8963
 
 examples/peripherals/parlio:
   disable:

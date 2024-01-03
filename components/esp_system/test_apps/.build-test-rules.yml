@@ -6,7 +6,7 @@ components/esp_system/test_apps/esp_system_unity_tests:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8978
 
 components/esp_system/test_apps/linux_apis:
   enable:

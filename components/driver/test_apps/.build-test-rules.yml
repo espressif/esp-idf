@@ -36,7 +36,7 @@ components/driver/test_apps/legacy_mcpwm_driver:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8963
   depends_filepatterns:
     - components/driver/deprecated/**/*mcpwm*
 
@@ -46,7 +46,7 @@ components/driver/test_apps/legacy_pcnt_driver:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8965
   depends_filepatterns:
     - components/driver/deprecated/**/*pcnt*
 
@@ -74,7 +74,7 @@ components/driver/test_apps/legacy_timer_driver:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8962
   depends_filepatterns:
     - components/driver/deprecated/**/*timer*
 
@@ -100,7 +100,7 @@ components/driver/test_apps/twai:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: test not pass, should be re-enable
+      reason: test not pass, should be re-enable # TODO: IDF-8966
 
 components/driver/test_apps/usb_serial_jtag:
   disable:

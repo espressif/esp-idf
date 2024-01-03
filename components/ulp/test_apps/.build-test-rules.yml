@@ -6,7 +6,7 @@ components/ulp/test_apps/lp_core:
   disable_test:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: not tested yet
+      reason: not tested yet # TODO: IDF-8986
   depends_components:
     - ulp
 
