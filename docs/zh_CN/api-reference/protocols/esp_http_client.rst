@@ -83,6 +83,7 @@ ESP HTTP 客户端同时支持 **基本** 和 **摘要** 认证。
     * 用户可以在 ``url`` 或 ``esp_http_client_config_t`` 配置中的 ``username`` 和 ``password`` 处输入用户名和密码。对于 ``auth_type = HTTP_AUTH_TYPE_BASIC``，HTTP 客户端只需执行一项操作就可通过认证过程。
     * 如果 ``auth_type = HTTP_AUTH_TYPE_NONE``，但配置中有 ``username`` 和 ``password`` 字段，HTTP 客户端需要执行两项操作。客户端在第一次尝试连接服务器时，会收到 ``401 Unauthorized`` 头，而后再根据这些信息来选择认证方法，并在第二项操作中执行。
     * 如需了解实现细节，请参考应用示例中的函数 ``http_auth_basic``、 ``http_auth_basic_redirect`` （用于基本认证）和 ``http_auth_digest`` （用于摘要认证）。
+    * 目前，摘要认证仅支持 MD5 和 SHA-256 算法。
 
 
 认证配置示例

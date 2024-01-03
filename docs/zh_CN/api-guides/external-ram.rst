@@ -24,7 +24,15 @@
 
 .. note::
 
-    PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询相应 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 MTDI 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SIO 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
+    .. only:: esp32 or esp32s2 or esp32s3
+
+        PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询相应 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 MTDI 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SIO 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
+
+    .. only:: esp32p4
+
+        请查询相应 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。
+
+        PSRAM 默认由片上 LDO2 供电。可设置 :ref:`CONFIG_ESP_VDD_PSRAM_LDO_ID` 来切换相应的 LDO ID，将该值设为 -1 表示使用外部电源，即不使用片上 LDO。默认情况下，连接到 LDO 的 PSRAM 会基于所使用的乐鑫模组设置正确电压。如果未使用乐鑫模组，仍可设置 :ref:`CONFIG_ESP_VDD_PSRAM_LDO_VOLTAGE_MV` 来选择 LDO 输出电压。使用外部电源时，该选项不存在。
 
 .. note::
 
