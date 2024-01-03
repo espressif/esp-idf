@@ -8,6 +8,10 @@
 #define ESP_WIFI_OS_ADAPTER_H_
 
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {

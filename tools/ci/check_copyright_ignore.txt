@@ -621,7 +621,6 @@ components/esp_system/ubsan.c
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/include/esp_smartconfig.h
-components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/src/lib_printf.c
 components/esp_wifi/src/mesh_event.c
 components/esp_wifi/src/smartconfig.c
@@ -1220,7 +1219,6 @@ components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
-components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
 components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h
 components/wifi_provisioning/proto-c/wifi_config.pb-c.c
 components/wifi_provisioning/proto-c/wifi_config.pb-c.h
