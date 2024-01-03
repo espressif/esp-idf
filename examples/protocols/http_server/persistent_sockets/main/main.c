@@ -15,6 +15,7 @@
 #include "esp_netif.h"
 #include "esp_eth.h"
 #include "protocol_examples_common.h"
+#include "esp_check.h"
 
 #include <esp_http_server.h>
 
@@ -61,6 +62,7 @@ static esp_err_t adder_post_handler(httpd_req_t *req)
     if (! req->sess_ctx) {
         ESP_LOGI(TAG, "/adder allocating new session");
         req->sess_ctx = malloc(sizeof(int));
+        ESP_RETURN_ON_FALSE(req->sess_ctx, ESP_ERR_NO_MEM, TAG, "Failed to allocate sess_ctx");
         req->free_ctx = adder_free_func;
         *(int *)req->sess_ctx = 0;
     }
@@ -88,6 +90,7 @@ static esp_err_t adder_get_handler(httpd_req_t *req)
     if (! req->sess_ctx) {
         ESP_LOGI(TAG, "/adder GET allocating new session");
         req->sess_ctx = malloc(sizeof(int));
+        ESP_RETURN_ON_FALSE(req->sess_ctx, ESP_ERR_NO_MEM, TAG, "Failed to allocate sess_ctx");
         req->free_ctx = adder_free_func;
         *(int *)req->sess_ctx = 0;
     }
@@ -168,6 +171,7 @@ static esp_err_t adder_put_handler(httpd_req_t *req)
     if (! req->sess_ctx) {
         ESP_LOGI(TAG, "/adder PUT allocating new session");
         req->sess_ctx = malloc(sizeof(int));
+        ESP_RETURN_ON_FALSE(req->sess_ctx, ESP_ERR_NO_MEM, TAG, "Failed to allocate sess_ctx");
         req->free_ctx = adder_free_func;
     }
     *(int *)req->sess_ctx = val;
