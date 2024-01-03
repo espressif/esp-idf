@@ -83,6 +83,7 @@ static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
 static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
 {
     i2c_hal_context_t *hal = &i2c_master->base->hal;
+#if !SOC_I2C_SUPPORT_HW_FSM_RST
     i2c_hal_timing_config_t timing_config;
     uint8_t filter_cfg;
 
@@ -99,6 +100,10 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_hal_set_timing_config(hal, &timing_config);
     i2c_ll_master_set_filter(hal->dev, filter_cfg);
+#else
+    i2c_ll_master_fsm_rst(hal->dev);
+    s_i2c_master_clear_bus(i2c_master->base);
+#endif
     return ESP_OK;
 }
 
