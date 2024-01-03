@@ -430,6 +430,21 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 * :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS` 用于配置重置恢复时间。
 * :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS` 用于配置 ``SetAddress()`` 恢复时间。
 
+多项配置支持
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+对于具有多项配置的 USB 设备，可以在设备枚举过程中指定所需的配置编号。
+
+枚举过滤器
+""""""""""""""""""
+
+枚举过滤器是类型为 :cpp:type:`usb_host_enum_filter_cb_t` 的回调函数。从新连接的 USB 设备上读取设备描述符后，USB 主机栈会在枚举过程开始时调用枚举过滤器，从而为用户提供读取的设备描述符。借助此回调，用户得以：
+
+* 选择 USB 设备的配置。
+* 过滤应该进行枚举的 USB 设备。
+
+在 menuconfig 中启用 :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` 选项即可启用枚举过滤器。可以通过设置 :cpp:member:`usb_host_config_t::enum_filter_cb` 来指定回调函数，该函数会在调用 :cpp:func:`usb_host_install` 时传递至主机库。
+
 .. -------------------------------------------------- API Reference ----------------------------------------------------
 
 API 参考
