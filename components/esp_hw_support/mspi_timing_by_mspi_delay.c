@@ -353,7 +353,7 @@ static bool get_working_pll_freq(const uint8_t *reference_data, bool is_flash, u
     uint32_t big_num = MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MAX * 2;  //This number should be larger than MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MAX, for error handling
     uint32_t max_freq = 0;
     uint32_t min_freq = big_num;
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
 
     for (int pll_mhz_tuning = MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MIN; pll_mhz_tuning <= MSPI_TIMING_PLL_FREQ_SCAN_RANGE_MHZ_MAX; pll_mhz_tuning += 8) {
         //bbpll calibration start

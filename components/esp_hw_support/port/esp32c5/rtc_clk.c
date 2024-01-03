@@ -157,7 +157,7 @@ static void rtc_clk_enable_i2c_ana_master_clock(bool enable)
 #endif
 }
 
-static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
+static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 {
     assert((pll_freq == CLK_LL_PLL_160M_FREQ_MHZ) || \
             (pll_freq == CLK_LL_PLL_240M_FREQ_MHZ));
@@ -371,12 +371,12 @@ void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
     clk_ll_cpu_clk_src_lock_release();
 }
 
-rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     return CONFIG_XTAL_FREQ;
 }
 
-void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
+void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq)
 {
     clk_ll_xtal_store_freq_mhz(xtal_freq);
 }
@@ -434,8 +434,3 @@ bool rtc_dig_8m_enabled(void)
 {
     return clk_ll_rc_fast_digi_is_enabled();
 }
-
-/* Name used in libphy.a:phy_chip_v7.o
- * TODO: update the library to use rtc_clk_xtal_freq_get
- */
-rtc_xtal_freq_t rtc_get_xtal(void) __attribute__((alias("rtc_clk_xtal_freq_get")));

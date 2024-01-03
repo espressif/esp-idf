@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,14 +116,14 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
 
        Bootloaders pre-v2.1 don't do this.
     */
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
+    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    if (xtal_freq == SOC_XTAL_FREQ_AUTO) {
         ESP_EARLY_LOGW(TAG, "RTC domain not initialised by bootloader");
         bootloader_clock_configure();
     }
 #else
     /* If this assertion fails, either upgrade the bootloader or enable CONFIG_APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS */
-    assert(rtc_clk_xtal_freq_get() != RTC_XTAL_FREQ_AUTO);
+    assert(rtc_clk_xtal_freq_get() != SOC_XTAL_FREQ_AUTO);
 #endif
 
     bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,17 +10,22 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "hal/hal_utils.h" // TODO: IDF-8941 Move rtc.h to esp_hw_support, so that dependency is correct
+#include "hal/hal_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/************************************************************************************/
+/***************** THIS FILE IS CONSIDERED AS A PRIVATE HEADER FILE *****************/
+/*** IT IS NOT RECOMMENDED TO USE THE APIS IN THIS FILE DIRECTLY IN APPLICATIONS ****/
+/************************************************************************************/
+
 /**
  * @file rtc.h
  * @brief Low-level RTC power, clock functions.
  *
- * Functions in this file facilitate configuration of ESP32's RTC_CNTL peripheral.
+ * Functions in this file facilitate configuration of ESP32P4's RTC_CNTL peripheral.
  * RTC_CNTL peripheral handles many functions:
  * - enables/disables clocks and power to various parts of the chip; this is
  *   done using direct register access (forcing power up or power down) or by
@@ -48,21 +53,6 @@ extern "C" {
 #define OTHER_BLOCKS_POWERUP        1
 #define OTHER_BLOCKS_WAIT           1
 
-// TODO: IDF-7528, TODO: IDF-7529
-/* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
- * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
- */
-#define RTC_CNTL_DBIAS_SLP  5 //sleep dig_dbias & rtc_dbias
-#define RTC_CNTL_DBIAS_0V90 13 //digital voltage
-#define RTC_CNTL_DBIAS_0V95 16
-#define RTC_CNTL_DBIAS_1V00 18
-#define RTC_CNTL_DBIAS_1V05 20
-#define RTC_CNTL_DBIAS_1V10 23
-#define RTC_CNTL_DBIAS_1V15 25
-#define RTC_CNTL_DBIAS_1V20 28
-#define RTC_CNTL_DBIAS_1V25 30
-#define RTC_CNTL_DBIAS_1V30 31 //voltage is about 1.34v in fact
-
 /* Delays for various clock sources to be enabled/switched.
  * All values are in microseconds.
  */
@@ -74,19 +64,8 @@ extern "C" {
 #define SOC_DELAY_LP_PLL_SWITCH             3
 #define SOC_DELAY_LP_PLL_ENABLE             50
 
-/* Core voltage: // TODO: IDF-7528, TODO: IDF-7529
- * Currently, ESP32C6 never adjust its wake voltage in runtime
- * Only sets dig/rtc voltage dbias at startup time
- */
-#define DIG_DBIAS_80M       RTC_CNTL_DBIAS_1V20
-#define DIG_DBIAS_160M      RTC_CNTL_DBIAS_1V20
-#define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
-#define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
-
 #define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
 #define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
-#define RTC_CNTL_CK8M_WAIT_DEFAULT  20
-#define RTC_CK8M_ENABLE_WAIT_DEFAULT 5
 
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT  100
 #define RTC_CNTL_SCK_DCAP_DEFAULT    128
@@ -124,15 +103,6 @@ storing in efuse (based on ATE 5k ECO3 chips)
 #define K_DIG_MID_MUL10000 213
 #define V_RTC_MID_MUL10000  10800
 #define V_DIG_MID_MUL10000  10860
-
-/**
- * @brief Possible main XTAL frequency values.
- *
- * Enum values should be equal to frequency in MHz.
- */
-typedef enum {
-    RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
-} rtc_xtal_freq_t;
 
 /**
  * @brief CPU clock configuration structure
@@ -175,7 +145,7 @@ typedef enum {
  * Initialization parameters for rtc_clk_init
  */
 typedef struct {
-    rtc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
+    soc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
     uint32_t cpu_freq_mhz : 10;                //!< CPU frequency to set, in MHz
     soc_rtc_fast_clk_src_t fast_clk_src : 2;   //!< RTC_FAST_CLK clock source to choose
     soc_rtc_slow_clk_src_t slow_clk_src : 3;   //!< RTC_SLOW_CLK clock source to choose
@@ -214,9 +184,9 @@ void rtc_clk_init(rtc_clk_config_t cfg);
  * This is the value stored in RTC register RTC_XTAL_FREQ_REG by the bootloader. As passed to
  * rtc_clk_init function
  *
- * @return XTAL frequency, one of rtc_xtal_freq_t
+ * @return XTAL frequency, one of soc_xtal_freq_t
  */
-rtc_xtal_freq_t rtc_clk_xtal_freq_get(void);
+soc_xtal_freq_t rtc_clk_xtal_freq_get(void);
 
 /**
  * @brief Update XTAL frequency
@@ -226,7 +196,7 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void);
  *
  * @param xtal_freq New frequency value
  */
-void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq);
+void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq);
 
 /**
  * @brief Enable or disable 32 kHz XTAL oscillator

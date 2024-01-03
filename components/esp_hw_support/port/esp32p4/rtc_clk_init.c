@@ -66,7 +66,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     esp_rom_delay_us(1000);
     CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_XPD);
 
-    rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
+    soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_output_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
 

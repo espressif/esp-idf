@@ -280,7 +280,7 @@ menu "Hardware Settings"
                 bool "Autodetect"
         endchoice
 
-        # rtc_xtal_freq_t enum in soc/rtc.h lists the XTAL frequencies can be supported
+        # soc_xtal_freq_t enum in soc/clk_tree_defs.h lists the XTAL frequencies can be supported
         # SOC_XTAL_SUPPORT_XXX in soc_caps.h lists the XTAL frequencies already supported
         config XTAL_FREQ
             int

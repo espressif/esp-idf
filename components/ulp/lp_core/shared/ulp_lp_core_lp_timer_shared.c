@@ -5,6 +5,8 @@
  */
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "hal/lp_timer_ll.h"
+#include "hal/clk_tree_ll.h"
+#include "soc/rtc.h"
 
 #define TIMER_ID 1
 
@@ -39,7 +41,7 @@ static uint64_t lp_timer_hal_get_cycle_count(void)
 void ulp_lp_core_lp_timer_set_wakeup_time(uint64_t sleep_duration_us)
 {
     uint64_t cycle_cnt = lp_timer_hal_get_cycle_count();
-    uint64_t alarm_target = cycle_cnt + lp_timer_ll_time_to_count(sleep_duration_us);
+    uint64_t alarm_target = cycle_cnt + sleep_duration_us * (1 << RTC_CLK_CAL_FRACT) / clk_ll_rtc_slow_load_cal();
 
     lp_timer_hal_set_alarm_target(alarm_target);
 }

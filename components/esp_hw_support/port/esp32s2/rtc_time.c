@@ -124,7 +124,7 @@ static uint32_t rtc_clk_cal_internal_cycling(rtc_cal_sel_t cal_clk, uint32_t slo
 static uint32_t rtc_clk_xtal_to_slowclk(uint64_t xtal_cycles, uint32_t slowclk_cycles)
 {
     assert(slowclk_cycles);
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     uint64_t divider = ((uint64_t)xtal_freq) * slowclk_cycles;
     uint64_t period_64 = ((xtal_cycles << RTC_CLK_CAL_FRACT) + divider / 2 - 1) / divider;
     uint32_t period = (uint32_t)(period_64 & UINT32_MAX);
@@ -199,7 +199,7 @@ uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     return ratio;
 }
 
-static inline bool rtc_clk_cal_32k_valid(rtc_xtal_freq_t xtal_freq, uint32_t slowclk_cycles, uint64_t actual_xtal_cycles)
+static inline bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, uint64_t actual_xtal_cycles)
 {
     uint64_t expected_xtal_cycles = (xtal_freq * 1000000ULL * slowclk_cycles) >> 15; // xtal_freq(hz) * slowclk_cycles / 32768
     uint64_t delta = expected_xtal_cycles / 2000;                                    // 5/10000
@@ -210,7 +210,7 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles, RTC_TIME_CAL_ONEOFF_MODE);
 
-    if ((cal_clk == RTC_CAL_32K_XTAL) && !rtc_clk_cal_32k_valid(rtc_clk_xtal_freq_get(), slowclk_cycles, xtal_cycles)) {
+    if ((cal_clk == RTC_CAL_32K_XTAL) && !rtc_clk_cal_32k_valid((uint32_t)rtc_clk_xtal_freq_get(), slowclk_cycles, xtal_cycles)) {
         return 0;
     }
 

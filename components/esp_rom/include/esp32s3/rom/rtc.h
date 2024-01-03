@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include "esp_assert.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/reset_reasons.h"

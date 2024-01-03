@@ -46,7 +46,7 @@ static const char *TAG = "clk";
 #if !CONFIG_IDF_ENV_FPGA
     pmu_init();
 
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_32M);
+    assert(rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_32M);
 
     rtc_clk_8m_enable(true);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);

@@ -47,7 +47,7 @@ static const char *TAG = "clk";
     pmu_init();
 #endif
 
-    assert((rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M) || (rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_48M));
+    assert((rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_40M) || (rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_48M));
 
     modem_lpcon_ll_set_pwr_tick_target(&MODEM_LPCON, rtc_clk_xtal_freq_get() - 1);
 

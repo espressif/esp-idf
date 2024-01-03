@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/lp_clkrst_struct.h"
@@ -337,7 +336,7 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
     uint8_t oc_enb_fcal = 0;
 
     // Currently, only supporting 40MHz XTAL
-    HAL_ASSERT(xtal_freq_mhz == RTC_XTAL_FREQ_40M);
+    HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
     switch (cpll_freq_mhz) {
     case CLK_LL_PLL_400M_FREQ_MHZ:
         /* Configure 400M CPLL */
@@ -381,7 +380,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_mpll_get_freq_mhz(u
  */
 static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_t mpll_freq_mhz, uint32_t xtal_freq_mhz)
 {
-    HAL_ASSERT(xtal_freq_mhz == RTC_XTAL_FREQ_40M);
+    HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
 
     // MPLL_Freq = XTAL_Freq * (div + 1) / (ref_div + 1)
     uint8_t ref_div = 1;
