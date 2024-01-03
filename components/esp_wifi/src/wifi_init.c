@@ -190,6 +190,7 @@ static void esp_wifi_config_info(void)
 #endif
 
 #ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
+    ESP_LOGI(TAG, "accept mbox: %d", CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE);
     ESP_LOGI(TAG, "tcpip mbox: %d", CONFIG_LWIP_TCPIP_RECVMBOX_SIZE);
     ESP_LOGI(TAG, "udp mbox: %d", CONFIG_LWIP_UDP_RECVMBOX_SIZE);
     ESP_LOGI(TAG, "tcp mbox: %d", CONFIG_LWIP_TCP_RECVMBOX_SIZE);

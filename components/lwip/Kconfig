@@ -665,6 +665,20 @@ menu "LWIP"
                 mail box is full, the LWIP drops the packets. So generally we need to make sure the TCP
                 receive mail box is big enough to avoid packet drop between LWIP core and application.
 
+        config LWIP_TCP_ACCEPTMBOX_SIZE
+            int "Default TCP accept mail box size"
+            default 6
+            range 1 64 if !LWIP_WND_SCALE
+            range 1 255 if LWIP_WND_SCALE
+            help
+                Set TCP accept mail box size. Generally bigger value means supporting larger backlogs
+                but more memory. The recommended value is 6, but applications can set it to a lower value
+                if listening servers are meant to have a smaller backlog.
+
+                TCP accept mail box is a per socket mail box, when the application listens for connections
+                with a given listening TCP socket. If the mailbox is full, LWIP will send a RST packet and
+                the client will fail to connect.
+
         config LWIP_TCP_QUEUE_OOSEQ
             bool "Queue incoming out-of-order segments"
             default y
