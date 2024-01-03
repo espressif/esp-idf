@@ -1,19 +1,20 @@
-/* cmd_i2ctools.h
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
+
+#include "driver/i2c_master.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void register_i2ctools(void);
+
+extern i2c_master_bus_handle_t tool_bus_handle;
 
 #ifdef __cplusplus
 }
