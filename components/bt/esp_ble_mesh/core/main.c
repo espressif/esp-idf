@@ -109,7 +109,7 @@ void bt_mesh_node_reset(void)
         return;
     }
 
-    if (bt_prov_active()) {
+    if (bt_mesh_prov_active()) {
         BT_WARN("%s, link is still active", __func__);
         return;
     }
