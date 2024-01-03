@@ -322,7 +322,7 @@ component_ut_pytest_esp32_lan8720:
     - .rules:labels-protected:lan8720  # FIXME: IDFCI-1176
   needs:
     - build_pytest_components_esp32
-  tags: [ esp32, lan8720 ]
+  tags: [ esp32, eth_lan8720 ]
 
 component_ut_pytest_esp32_flash_encryption:
   extends:

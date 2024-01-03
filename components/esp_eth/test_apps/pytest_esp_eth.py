@@ -24,6 +24,7 @@ class EthTestIntf(object):
     def find_target_if(self, my_if: str = '') -> None:
         # try to determine which interface to use
         netifs = os.listdir('/sys/class/net/')
+        netifs.sort(reverse=True)
         logging.info('detected interfaces: %s', str(netifs))
 
         for netif in netifs:
@@ -181,7 +182,7 @@ def test_esp_eth_ip101(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.lan8720
+@pytest.mark.eth_lan8720
 @pytest.mark.parametrize('config', [
     'lan8720',
 ], indirect=True)
