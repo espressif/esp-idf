@@ -424,7 +424,7 @@ NAPT and Port Forwarding
 
 IPV4 network address port translation (NAPT) and port forwarding are supported. However, the enabling of NAPT is limited to a single interface.
 
-- To use NAPT for forwarding packets between two interfaces, it needs to be enabled on the interface connecting to the target network. For example, to enable internet access for Ethernet traffic through the WiFi interface, NAPT must be enabled on the Ethernet interface.
+- To use NAPT for forwarding packets between two interfaces, it needs to be enabled on the interface connecting to the target network. For example, to enable internet access for Ethernet traffic through the Wi-Fi interface, NAPT must be enabled on the Ethernet interface.
 - Usage of NAPT is demonstrated in :example:`network/vlan_support`.
 
 .. _lwip-custom-hooks:
