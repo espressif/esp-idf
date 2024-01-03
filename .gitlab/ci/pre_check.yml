@@ -24,6 +24,7 @@ check_pre_commit_master_release:
     - .rules:protected
   script:
     - git diff-tree --no-commit-id --name-only -r $PIPELINE_COMMIT_SHA | xargs pre-commit run --files
+    - pre-commit run --hook-stage post-commit validate-sbom-manifest
 
 check_pre_commit_MR:
   extends:
@@ -31,6 +32,7 @@ check_pre_commit_MR:
     - .rules:mr
   script:
     - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs pre-commit run --files
+    - pre-commit run --hook-stage post-commit validate-sbom-manifest
 
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
