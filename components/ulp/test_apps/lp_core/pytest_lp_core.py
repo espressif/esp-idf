@@ -14,11 +14,7 @@ def test_lp_core(dut: Dut) -> None:
 @pytest.mark.esp32c6
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize(
-    'count, config',
-    [
-        (2, 'defaults',),
-    ],
-    indirect=True
+    'count', [2], indirect=True
 )
 def test_lp_core_multi_device(case_tester) -> None:        # type: ignore
     for case in case_tester.test_menu:
