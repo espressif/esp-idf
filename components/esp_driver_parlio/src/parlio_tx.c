@@ -120,7 +120,7 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
     }
     if (tx_unit->base.group) {
         // de-register from group
-        parlio_unregister_unit_from_group((parlio_unit_base_handle_t)&(tx_unit->base));
+        parlio_unregister_unit_from_group(&tx_unit->base);
     }
     free(tx_unit->dma_nodes);
     free(tx_unit);
@@ -275,7 +275,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     ESP_GOTO_ON_FALSE(unit->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no memory for DMA nodes");
     // Link the descriptors
     for (int i = 0; i < dma_nodes_num; i++) {
-        unit->dma_nodes[i].next = (i == dma_nodes_num - 1) ? NULL : &(unit->dma_nodes[i+1]);
+        unit->dma_nodes[i].next = (i == dma_nodes_num - 1) ? NULL : &(unit->dma_nodes[i + 1]);
     }
     unit->max_transfer_bits = config->max_transfer_size * 8;
     unit->base.dir = PARLIO_DIR_TX;
@@ -284,7 +284,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     ESP_GOTO_ON_ERROR(parlio_tx_create_trans_queue(unit, config), err, TAG, "create transaction queue failed");
 
     // register the unit to a group
-    ESP_GOTO_ON_ERROR(parlio_register_unit_to_group((parlio_unit_base_handle_t)&(unit->base)), err, TAG, "register unit to group failed");
+    ESP_GOTO_ON_ERROR(parlio_register_unit_to_group(&unit->base), err, TAG, "register unit to group failed");
     parlio_group_t *group = unit->base.group;
     parlio_hal_context_t *hal = &group->hal;
     // select the clock source

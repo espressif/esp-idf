@@ -300,8 +300,8 @@ static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_
         printf("\n");
         for (int j = 0; j < TEST_EOF_DATA_LEN; j++) {
             // Check if 0x12 0x34 0x56 0x78 appeared in the buffer
-            if (recv_buff[j] == 0x12 && recv_buff[j+1] == 0x34 &&
-                recv_buff[j+2] == 0x56 && recv_buff[j+3] == 0x78) {
+            if (recv_buff[j] == 0x12 && recv_buff[j + 1] == 0x34 &&
+                    recv_buff[j + 2] == 0x56 && recv_buff[j + 3] == 0x78) {
                 is_success = true;
                 break;
             }
