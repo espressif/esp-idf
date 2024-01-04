@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,23 +15,34 @@
 extern "C" {
 #endif
 
-#define PERIPHS_SPI_FLASH_CMD                 SPI_MEM_CMD_REG(1)
-#define PERIPHS_SPI_FLASH_ADDR                SPI_MEM_ADDR_REG(1)
-#define PERIPHS_SPI_FLASH_CTRL                SPI_MEM_CTRL_REG(1)
-#define PERIPHS_SPI_FLASH_CTRL1               SPI_MEM_CTRL1_REG(1)
-#define PERIPHS_SPI_FLASH_STATUS              SPI_MEM_RD_STATUS_REG(1)
-#define PERIPHS_SPI_FLASH_USRREG              SPI_MEM_USER_REG(1)
-#define PERIPHS_SPI_FLASH_USRREG1             SPI_MEM_USER1_REG(1)
-#define PERIPHS_SPI_FLASH_USRREG2             SPI_MEM_USER2_REG(1)
-#define PERIPHS_SPI_FLASH_C0                  SPI_MEM_W0_REG(1)
-#define PERIPHS_SPI_FLASH_C1                  SPI_MEM_W1_REG(1)
-#define PERIPHS_SPI_FLASH_C2                  SPI_MEM_W2_REG(1)
-#define PERIPHS_SPI_FLASH_C3                  SPI_MEM_W3_REG(1)
-#define PERIPHS_SPI_FLASH_C4                  SPI_MEM_W4_REG(1)
-#define PERIPHS_SPI_FLASH_C5                  SPI_MEM_W5_REG(1)
-#define PERIPHS_SPI_FLASH_C6                  SPI_MEM_W6_REG(1)
-#define PERIPHS_SPI_FLASH_C7                  SPI_MEM_W7_REG(1)
-#define PERIPHS_SPI_FLASH_TX_CRC              SPI_MEM_TX_CRC_REG(1)
+#define PERIPHS_SPI_FLASH_CMD                 SPI1_MEM_C_CMD_REG
+#define PERIPHS_SPI_FLASH_ADDR                SPI1_MEM_C_ADDR_REG
+#define PERIPHS_SPI_FLASH_CTRL                SPI1_MEM_C_CTRL_REG
+#define PERIPHS_SPI_FLASH_CTRL1               SPI1_MEM_C_CTRL1_REG
+#define PERIPHS_SPI_FLASH_STATUS              SPI1_MEM_C_RD_STATUS_REG
+#define PERIPHS_SPI_FLASH_USRREG              SPI1_MEM_C_USER_REG
+#define PERIPHS_SPI_FLASH_USRREG1             SPI1_MEM_C_USER1_REG
+#define PERIPHS_SPI_FLASH_USRREG2             SPI1_MEM_C_USER2_REG
+#define PERIPHS_SPI_FLASH_C0                  SPI1_MEM_C_W0_REG
+#define PERIPHS_SPI_FLASH_C1                  SPI1_MEM_C_W1_REG
+#define PERIPHS_SPI_FLASH_C2                  SPI1_MEM_C_W2_REG
+#define PERIPHS_SPI_FLASH_C3                  SPI1_MEM_C_W3_REG
+#define PERIPHS_SPI_FLASH_C4                  SPI1_MEM_C_W4_REG
+#define PERIPHS_SPI_FLASH_C5                  SPI1_MEM_C_W5_REG
+#define PERIPHS_SPI_FLASH_C6                  SPI1_MEM_C_W6_REG
+#define PERIPHS_SPI_FLASH_C7                  SPI1_MEM_C_W7_REG
+#define PERIPHS_SPI_FLASH_TX_CRC              SPI1_MEM_C_TX_CRC_REG
+
+#define SPI_MEM_FREAD_QIO  SPI1_MEM_C_FREAD_QIO
+#define SPI_MEM_FREAD_DIO  SPI1_MEM_C_FREAD_DIO
+#define SPI_MEM_FREAD_QUAD  SPI1_MEM_C_FREAD_QUAD
+#define SPI_MEM_FREAD_DUAL  SPI1_MEM_C_FREAD_DUAL
+#define SPI_MEM_FWRITE_QIO  SPI1_MEM_C_FWRITE_QIO
+#define SPI_MEM_FWRITE_DIO  SPI1_MEM_C_FWRITE_DIO
+#define SPI_MEM_FWRITE_QUAD  SPI1_MEM_C_FWRITE_QUAD
+#define SPI_MEM_FWRITE_DUAL  SPI1_MEM_C_FWRITE_DUAL
+#define SPI_MEM_FASTRD_MODE  SPI1_MEM_C_FASTRD_MODE
+
 
 #define SPI0_R_QIO_DUMMY_CYCLELEN             5
 #define SPI0_R_QIO_ADDR_BITSLEN               23
