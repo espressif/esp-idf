@@ -827,6 +827,7 @@ int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  * @param[in]  addr      The address to be added
+ * @param[in]  preferred The preferred status of the address
  *
  * @return
  *         - ESP_OK
@@ -834,7 +835,7 @@ int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
  *         - ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED
  *         - ESP_ERR_NO_MEM
  */
-esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t addr);
+esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t addr, bool preferred);
 
 /**
  * @brief  Cause the TCP/IP stack to remove an IPv6 address from the interface
