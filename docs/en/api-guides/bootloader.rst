@@ -3,8 +3,6 @@ Bootloader
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
-
 The ESP-IDF Software Bootloader performs the following functions:
 
 1. Minimal initial configuration of internal modules;
@@ -12,7 +10,7 @@ The ESP-IDF Software Bootloader performs the following functions:
 3. Select the application partition to boot, based on the partition table and ota_data (if any);
 4. Load this image to RAM (IRAM & DRAM) and transfer management to the image that was just loaded.
 
-Bootloader is located at the address {IDF_TARGET_BOOTLOADER_OFFSET} in the flash.
+Bootloader is located at the address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} in the flash.
 
 For a full description of the startup process including the ESP-IDF bootloader, see :doc:`startup`.
 
@@ -95,10 +93,10 @@ In addition, the following configuration options control the reset condition:
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
     If an application needs to know if the factory reset has occurred, users can call the function :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state`.
-    
+
     - If the status is read as true, the function will return the status, indicating that the factory reset has occurred. The function then resets the status to false for subsequent factory reset judgement.
     - If the status is read as false, the function will return the status, indicating that the factory reset has not occurred, or the memory where this status is stored is invalid.
-    
+
     Note that this feature reserves some RTC FAST memory (the same size as the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` feature).
 
 .. only:: not SOC_RTC_FAST_MEM_SUPPORTED

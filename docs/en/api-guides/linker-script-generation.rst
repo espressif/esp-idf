@@ -603,14 +603,3 @@ Then the corresponding excerpt from the generated linker script will be as follo
     Rule generated from the default scheme entry 	``iram -> iram0_text``. Since the default scheme specifies an ``iram -> iram0_text`` entry, it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first among all other rules collected under the same target name.
 
     The linker script template currently used is :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.
-
-.. _ldgen-migrate-lf-grammar :
-
-Migrate to ESP-IDF v5.0 Linker Script Fragment Files Grammar
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The old grammar supported in ESP-IDF v3.x would be dropped in ESP-IDF v5.0. Here are a few notes on how to migrate properly:
-
-1. Now indentation is enforced and improperly indented fragment files would generate a runtime parse exception. This was not enforced in the old version but previous documentation and examples demonstrate properly indented grammar.
-2. Migrate the old condition entry to the ``if...elif...else`` structure for conditionals. You can refer to the :ref:`earlier chapter <ldgen-conditional-placements>` for detailed grammar.
-3. mapping fragments now requires a name like other fragment types.
