@@ -30,6 +30,16 @@ components/esp_lcd/test_apps/i80_lcd:
   disable:
     - if: SOC_LCD_I80_SUPPORTED != 1
 
+components/esp_lcd/test_apps/mipi_dsi_lcd:
+  depends_components:
+    - esp_lcd
+  disable:
+    - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runners
+
 components/esp_lcd/test_apps/rgb_lcd:
   depends_components:
     - esp_lcd
