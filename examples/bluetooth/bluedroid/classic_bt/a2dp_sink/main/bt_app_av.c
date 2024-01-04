@@ -79,7 +79,7 @@ static esp_a2d_audio_state_t s_audio_state = ESP_A2D_AUDIO_STATE_STOPPED;
                                              /* audio stream datapath state */
 static const char *s_a2d_conn_state_str[] = {"Disconnected", "Connecting", "Connected", "Disconnecting"};
                                              /* connection state in string */
-static const char *s_a2d_audio_state_str[] = {"Suspended", "Stopped", "Started"};
+static const char *s_a2d_audio_state_str[] = {"Suspended", "Started"};
                                              /* audio stream datapath state in string */
 static esp_avrc_rn_evt_cap_mask_t s_avrc_peer_rn_cap;
                                              /* AVRC target notification capability bit mask */
