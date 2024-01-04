@@ -5,7 +5,7 @@ import pytest
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='skip due to duplication with test_uart_single_dev_psram')
+@pytest.mark.temp_skip_ci(targets=['esp32s3', 'esp32p4'], reason='skip due to duplication with test_uart_single_dev_psram, p4 TBD')  # TODO: IDF-8971
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

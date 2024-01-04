@@ -12,6 +12,7 @@ from pytest_embedded_idf.unity_tester import CaseTester
 @pytest.mark.esp32c2
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'release',
@@ -22,6 +23,7 @@ def test_temperature_sensor_driver(dut: Dut) -> None:
 
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'iram_safe',

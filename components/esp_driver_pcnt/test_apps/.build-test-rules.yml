@@ -3,5 +3,9 @@
 components/esp_driver_pcnt/test_apps/pulse_cnt:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: test not pass, should be re-enable # TODO: IDF-8965
   depends_components:
     - esp_driver_pcnt

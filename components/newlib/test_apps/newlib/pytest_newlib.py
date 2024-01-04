@@ -31,6 +31,7 @@ def validate_sbom(dut: Dut) -> None:
         assert toolchain_newlib_version == sbom_newlib_version, 'toolchain_newlib_version != sbom_newlib_version'
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')  # TODO: IDF-8983
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

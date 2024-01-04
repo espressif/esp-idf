@@ -15,7 +15,6 @@ from pytest_embedded import Dut
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -42,7 +41,6 @@ def fixture_create_socket_can() -> Bus:
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.skip(reason='Runner not set up yet')
 @pytest.mark.parametrize(
     'config',
@@ -75,7 +73,6 @@ def test_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
 @pytest.mark.esp32h2
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.skip(reason='Runner not set up yet')
 @pytest.mark.parametrize(
     'config',

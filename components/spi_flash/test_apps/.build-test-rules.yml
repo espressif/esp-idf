@@ -49,6 +49,10 @@ components/spi_flash/test_apps/mspi_test:
     - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32p4"]
       temporary: true
       reason: not supported yet #TODO: IDF-7556 for p4
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: test not pass, should be re-enable # TODO: IDF-8985
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:

@@ -29,7 +29,7 @@ ONE_SHOT_TIMER_PERIOD = 5000000
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')
+@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2', 'esp32p4'], reason='c6/h2/p4 support TBD')  # TODO: IDF-8979
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

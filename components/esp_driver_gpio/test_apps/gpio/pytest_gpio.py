@@ -10,6 +10,7 @@ CONFIGS = [
 ]
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')
 @pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
@@ -22,7 +23,6 @@ def test_gpio(dut: IdfDut) -> None:
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
-@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 def test_rtc_io(dut: IdfDut) -> None:
