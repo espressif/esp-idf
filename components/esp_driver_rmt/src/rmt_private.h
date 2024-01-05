@@ -127,7 +127,6 @@ struct rmt_channel_t {
     _Atomic rmt_fsm_t fsm;  // channel life cycle specific FSM
     rmt_channel_direction_t direction; // channel direction
     rmt_symbol_word_t *hw_mem_base;    // base address of RMT channel hardware memory
-    rmt_symbol_word_t *dma_mem_base;   // base address of RMT channel DMA buffer
     gdma_channel_handle_t dma_chan;    // DMA channel
     esp_pm_lock_handle_t pm_lock;      // power management lock
 #if CONFIG_PM_ENABLE
@@ -157,6 +156,8 @@ typedef struct {
 
 struct rmt_tx_channel_t {
     rmt_channel_t base; // channel base class
+    rmt_symbol_word_t *dma_mem_base;    // base address of RMT channel DMA buffer
+    rmt_symbol_word_t *dma_mem_base_nc; // base address of RMT channel DMA buffer, accessed in non-cached way
     size_t mem_off;     // runtime argument, indicating the next writing position in the RMT hardware memory
     size_t mem_end;     // runtime argument, indicating the end of current writing region
     size_t ping_pong_symbols;  // ping-pong size (half of the RMT channel memory)

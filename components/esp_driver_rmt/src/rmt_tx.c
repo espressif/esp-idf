@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,8 @@
 #include "soc/rtc.h"
 #include "hal/rmt_ll.h"
 #include "hal/gpio_hal.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "driver/gpio.h"
 #include "driver/rmt_tx.h"
 #include "rmt_private.h"
@@ -47,10 +49,16 @@ static bool rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t 
 
 static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx_channel_config_t *config)
 {
-    rmt_symbol_word_t *dma_mem_base = heap_caps_calloc(1, sizeof(rmt_symbol_word_t) * config->mem_block_symbols,
-                                                       RMT_MEM_ALLOC_CAPS | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    // For simplicity, the encoder will access the dma_mem_base in a non-cached way
+    // and we allocate the dma_mem_base from the internal SRAM for performance
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    // the alignment should meet both the DMA and cache requirement
+    size_t alignment = MAX(data_cache_line_size, sizeof(rmt_symbol_word_t));
+    rmt_symbol_word_t *dma_mem_base = heap_caps_aligned_calloc(alignment, config->mem_block_symbols, sizeof(rmt_symbol_word_t),
+                                                               RMT_MEM_ALLOC_CAPS | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     ESP_RETURN_ON_FALSE(dma_mem_base, ESP_ERR_NO_MEM, TAG, "no mem for tx DMA buffer");
-    tx_channel->base.dma_mem_base = dma_mem_base;
+    tx_channel->dma_mem_base = dma_mem_base;
+    tx_channel->dma_mem_base_nc = (rmt_symbol_word_t *)RMT_GET_NON_CACHE_ADDR(dma_mem_base);
     for (int i = 0; i < RMT_DMA_NODES_PING_PONG; i++) {
         // each descriptor shares half of the DMA buffer
         tx_channel->dma_nodes_nc[i].buffer = dma_mem_base + tx_channel->ping_pong_symbols * i;
@@ -193,8 +201,8 @@ static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
             vQueueDeleteWithCaps(tx_channel->trans_queues[i]);
         }
     }
-    if (tx_channel->base.dma_mem_base) {
-        free(tx_channel->base.dma_mem_base);
+    if (tx_channel->dma_mem_base) {
+        free(tx_channel->dma_mem_base);
     }
     if (tx_channel->base.group) {
         // de-register channel from RMT group
@@ -239,9 +247,12 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     ESP_GOTO_ON_FALSE(tx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for tx channel");
     // create DMA descriptors
     if (config->flags.with_dma) {
-        // DMA descriptors must be placed in internal SRAM
         mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
-        tx_channel->dma_nodes = heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, RMT_DMA_NODES_PING_PONG, sizeof(rmt_dma_descriptor_t), mem_caps);
+        // DMA descriptors must be placed in internal SRAM
+        uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+        // the alignment should meet both the DMA and cache requirement
+        size_t alignment = MAX(data_cache_line_size, RMT_DMA_DESC_ALIGN);
+        tx_channel->dma_nodes = heap_caps_aligned_calloc(alignment, RMT_DMA_NODES_PING_PONG, sizeof(rmt_dma_descriptor_t), mem_caps);
         ESP_GOTO_ON_FALSE(tx_channel->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for tx DMA nodes");
         // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
         tx_channel->dma_nodes_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(tx_channel->dma_nodes);
@@ -327,9 +338,9 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     tx_channel->base.disable = rmt_tx_disable;
     // return general channel handle
     *ret_chan = &tx_channel->base;
-    ESP_LOGD(TAG, "new tx channel(%d,%d) at %p, gpio=%d, res=%"PRIu32"Hz, hw_mem_base=%p, dma_mem_base=%p, dma_nodes_nc=%p,ping_pong_size=%zu, queue_depth=%zu",
+    ESP_LOGD(TAG, "new tx channel(%d,%d) at %p, gpio=%d, res=%"PRIu32"Hz, hw_mem_base=%p, dma_mem_base=%p, dma_nodes=%p, ping_pong_size=%zu, queue_depth=%zu",
              group_id, channel_id, tx_channel, config->gpio_num, tx_channel->base.resolution_hz,
-             tx_channel->base.hw_mem_base, tx_channel->base.dma_mem_base, tx_channel->dma_nodes_nc, tx_channel->ping_pong_symbols, tx_channel->queue_size);
+             tx_channel->base.hw_mem_base, tx_channel->dma_mem_base, tx_channel->dma_nodes, tx_channel->ping_pong_symbols, tx_channel->queue_size);
     return ESP_OK;
 
 err:
@@ -569,7 +580,7 @@ static void IRAM_ATTR rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan)
     rmt_tx_trans_desc_t *cur_trans = tx_chan->cur_trans;
     rmt_dma_descriptor_t *desc_nc = NULL;
     if (channel->dma_chan) {
-        mem_to_nc = (rmt_symbol_word_t *)RMT_GET_NON_CACHE_ADDR(channel->dma_mem_base);
+        mem_to_nc = tx_chan->dma_mem_base_nc;
     } else {
         mem_to_nc = channel->hw_mem_base;
     }
@@ -646,7 +657,7 @@ static void IRAM_ATTR rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_tr
             tx_chan->dma_nodes_nc[i].next = &tx_chan->dma_nodes[i + 1]; // note, we must use the cache address for the next pointer
             tx_chan->dma_nodes_nc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_CPU;
         }
-        tx_chan->dma_nodes_nc[1].next = &tx_chan->dma_nodes[0];
+        tx_chan->dma_nodes_nc[RMT_DMA_NODES_PING_PONG - 1].next = &tx_chan->dma_nodes[0];
     }
 #endif // SOC_RMT_SUPPORT_DMA
 
