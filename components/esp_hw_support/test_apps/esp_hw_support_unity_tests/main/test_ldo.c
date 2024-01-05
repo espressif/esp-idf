@@ -15,7 +15,7 @@
 TEST_CASE("LDO unit early / normal allocation", "[LDO]")
 {
     esp_ldo_unit_init_cfg_t init_early_unit_cfg = {
-        .unit_id = ESP_LDO_ID_3,
+        .unit_id = LDO_UNIT_3,
         .cfg = {
             .voltage_mv = 1800,
         },
@@ -27,7 +27,7 @@ TEST_CASE("LDO unit early / normal allocation", "[LDO]")
 
     esp_ldo_unit_handle_t unit = NULL;
     esp_ldo_unit_init_cfg_t init_unit_cfg = {
-        .unit_id = ESP_LDO_ID_4,
+        .unit_id = LDO_UNIT_4,
         .cfg = {
             .voltage_mv = 2500,
         },
@@ -48,7 +48,7 @@ TEST_CASE("LDO unit early / normal allocation", "[LDO]")
 TEST_CASE("LDO unit output", "[LDO][mannual][ignore]")
 {
     esp_ldo_unit_init_cfg_t early_unit_cfg = {
-        .unit_id = ESP_LDO_ID_2,
+        .unit_id = LDO_UNIT_2,
         .cfg = {
             .voltage_mv = 2500,
         },
@@ -57,12 +57,12 @@ TEST_CASE("LDO unit output", "[LDO][mannual][ignore]")
     esp_ldo_unit_handle_t early_unit2 = esp_ldo_init_unit_early(&early_unit_cfg);
     assert(early_unit2);
 
-    early_unit_cfg.unit_id = ESP_LDO_ID_3;
+    early_unit_cfg.unit_id = LDO_UNIT_3;
     early_unit_cfg.cfg.voltage_mv = 3300;
     esp_ldo_unit_handle_t early_unit3 = esp_ldo_init_unit_early(&early_unit_cfg);
     assert(early_unit3);
 
-    early_unit_cfg.unit_id = ESP_LDO_ID_4;
+    early_unit_cfg.unit_id = LDO_UNIT_4;
     early_unit_cfg.cfg.voltage_mv = 1100;
     esp_ldo_unit_handle_t early_unit4 = esp_ldo_init_unit_early(&early_unit_cfg);
     assert(early_unit4);

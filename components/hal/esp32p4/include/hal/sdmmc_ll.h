@@ -31,7 +31,6 @@ extern "C" {
 /**
  * SDMMC capabilities
  */
-#define SDMMC_LL_MAX_FREQ_KHZ_FPGA                    (4*1000)
 #define SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(SLOT_ID)    ((SLOT_ID == 0) ? 0 : 1)
 
 #define SDMMC_LL_IOMUX_FUNC    0

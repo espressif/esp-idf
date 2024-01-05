@@ -9,15 +9,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "hal/ldo_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define ESP_LDO_ID_1    0    ///< See datasheet `VFB/VO1`
-#define ESP_LDO_ID_2    1    ///< See datasheet `VFB/VO2`
-#define ESP_LDO_ID_3    2    ///< See datasheet `VFB/VO3`
-#define ESP_LDO_ID_4    3    ///< See datasheet `VFB/VO4`
 
 /**
  * @brief Type of LDO unit handle

@@ -59,6 +59,7 @@ esp_err_t esp_dma_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, 
 typedef enum {
     ESP_DMA_BUF_LOCATION_INTERNAL,    ///< DMA buffer is in internal memory
     ESP_DMA_BUF_LOCATION_PSRAM,       ///< DMA buffer is in PSRAM
+    ESP_DMA_BUF_LOCATION_AUTO,        ///< Auto detect buffer location, under this condition API will loop to search the buffer location
 } esp_dma_buf_location_t;
 
 /**
