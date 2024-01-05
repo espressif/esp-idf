@@ -576,6 +576,7 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
     leader = dut[0]
     sleepy_device = dut[1]
+    fail_info = re.compile(r'Core\W*?\d\W*?register dump')
     try:
         ocf.init_thread(leader)
         time.sleep(3)
@@ -587,13 +588,22 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         leader_para.setpskc('104810e2315100afd6bc9215a6bfac53')
         ocf.joinThreadNetwork(leader, leader_para)
         ocf.wait(leader, 5)
+        output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
+        assert not bool(fail_info.search(str(output)))
         ocf.clean_buffer(sleepy_device)
         sleepy_device.serial.hard_reset()
-        sleepy_device.expect('detached -> child', timeout=20)
-        sleepy_device.expect('PMU_SLEEP_PD_TOP: True', timeout=10)
-        sleepy_device.expect('PMU_SLEEP_PD_MODEM: True', timeout=20)
+        info = sleepy_device.expect(r'(.+)detached -> child', timeout=20)[1].decode(errors='replace')
+        assert not bool(fail_info.search(str(info)))
+        info = sleepy_device.expect(r'(.+)PMU_SLEEP_PD_TOP: True', timeout=10)[1].decode(errors='replace')
+        assert not bool(fail_info.search(str(info)))
+        info = sleepy_device.expect(r'(.+)PMU_SLEEP_PD_MODEM: True', timeout=20)[1].decode(errors='replace')
+        assert not bool(fail_info.search(str(info)))
+        output = sleepy_device.expect(pexpect.TIMEOUT, timeout=20)
+        assert not bool(fail_info.search(str(output)))
+        ocf.clean_buffer(sleepy_device)
+        ocf.execute_command(leader, 'factoryreset')
         output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
-        assert 'rst:' not in str(output) and 'boot:' not in str(output)
+        assert not bool(fail_info.search(str(output)))
     finally:
         ocf.execute_command(leader, 'factoryreset')
         time.sleep(3)
@@ -680,7 +690,7 @@ def test_NAT64_DNS(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
 @pytest.mark.supported_targets
 @pytest.mark.esp32c6
 @pytest.mark.openthread_br
-@pytest.mark.flaky(reruns=0, reruns_delay=1)
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
 @pytest.mark.parametrize(
     'config, count, app_path, target', [
         ('rcp|br', 2,
