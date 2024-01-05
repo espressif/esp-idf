@@ -105,6 +105,9 @@ DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
             return RES_ERROR;
 #if FF_USE_TRIM
         case CTRL_TRIM:
+            if (sdmmc_can_trim(card) != ESP_OK) {
+                return RES_PARERR;
+            }
             return ff_sdmmc_trim (pdrv, *((DWORD*)buff), //start_sector
                     (*((DWORD*)buff + 1) - *((DWORD*)buff) + 1)); //sector_count
 #endif //FF_USE_TRIM
