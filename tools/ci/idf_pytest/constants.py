@@ -108,7 +108,8 @@ ENV_MARKERS = {
     'twai_network': 'multiple runners form a TWAI network.',
     'sdio_master_slave': 'Test sdio multi board, esp32+esp32',
     'sdio_multidev_32_c6': 'Test sdio multi board, esp32+esp32c6',
-    'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)'
+    'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
+    'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter'
 }
 
 

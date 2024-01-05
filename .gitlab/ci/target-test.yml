@@ -926,6 +926,60 @@ pytest_components_esp32_psramv0:
       artifacts: false
   tags: [ esp32, psramv0 ]
 
+pytest_components_esp32_twai_std:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - job: build_pytest_components_esp32
+      artifacts: false
+  tags: [ esp32, twai_std ]
+
+pytest_components_esp32s2_twai_std:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - job: build_pytest_components_esp32s2
+      artifacts: false
+  tags: [ esp32s2, twai_std ]
+
+pytest_components_esp32s3_twai_std:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - job: build_pytest_components_esp32s3
+      artifacts: false
+  tags: [ esp32s3, twai_std ]
+
+pytest_components_esp32c3_twai_std:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - job: build_pytest_components_esp32c3
+      artifacts: false
+  tags: [ esp32c3, twai_std ]
+
+pytest_components_esp32c6_twai_std:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c6
+  needs:
+    - job: build_pytest_components_esp32c6
+      artifacts: false
+  tags: [ esp32c6, twai_std ]
+
+pytest_components_esp32h2_twai_std:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32h2
+  needs:
+    - job: build_pytest_components_esp32h2
+      artifacts: false
+  tags: [ esp32h2, twai_std ]
+
 pytest_components_esp32s2_generic:
   extends:
     - .pytest_components_dir_template

@@ -93,6 +93,10 @@ components/driver/test_apps/twai:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: test not pass, should be re-enable # TODO: IDF-8966
+  depends_filepatterns:
+    - components/driver/twai/**/*
+  depends_components:
+    - esp_driver_gpio
 
 components/driver/test_apps/usb_serial_jtag:
   disable:
