@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,6 +13,9 @@
 #include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ARCH_RISCV
 #include "riscv/rv_utils.h"
+#endif
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "hal/cache_ll.h"
 #endif
 
 #define RTC_BSS_ATTR __attribute__((section(".rtc.bss")))
@@ -131,6 +134,12 @@ static void setup_values(void)
     s_rtc_force_fast_val = CHECK_VALUE;
     s_rtc_force_slow_val = CHECK_VALUE;
 #endif //CHECK_RTC_MEM
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    /* If internal data is behind a cache it might not be written to the physical memory when we crash
+       force a full writeback here to ensure this */
+    cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
+#endif
 }
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7529
@@ -166,7 +175,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][rese
 static void do_exception(void)
 {
     setup_values();
-    *(int*) (0x40000001) = 0;
+    *(int*) (0x0) = 0;
 }
 
 static void do_abort(void)
