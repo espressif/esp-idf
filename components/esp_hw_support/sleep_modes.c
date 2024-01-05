@@ -864,6 +864,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             resume_cache();
         }
 
+#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+            if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+                rtc_sleep_systimer_enable(true);
+            }
+#endif
+    }
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
     if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
         /* Cache Suspend 2: If previous sleep powerdowned the flash, suspend cache here so that the
@@ -871,14 +877,6 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         suspend_cache();
     }
 #endif
-
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-            if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-                rtc_sleep_systimer_enable(true);
-            }
-#endif
-    }
-
     // Restore CPU frequency
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
     if (pmu_sleep_pll_already_enabled()) {
