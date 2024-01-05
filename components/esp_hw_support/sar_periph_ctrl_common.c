@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "soc/temperature_sensor_periph.h"
 #include "soc/periph_defs.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 
 extern __attribute__((unused)) portMUX_TYPE rtc_spinlock;
 
@@ -41,6 +42,9 @@ void temperature_sensor_power_acquire(void)
         periph_module_reset(PERIPH_TEMPSENSOR_MODULE);
         regi2c_saradc_enable();
         temperature_sensor_ll_clk_enable(true);
+#if !SOC_TEMPERATURE_SENSOR_IS_INDEPENDENT_FROM_ADC
+        adc_apb_periph_claim();
+#endif
         temperature_sensor_ll_enable(true);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
@@ -62,6 +66,9 @@ void temperature_sensor_power_release(void)
     } else if (s_temperature_sensor_power_cnt == 0) {
         temperature_sensor_ll_clk_enable(false);
         temperature_sensor_ll_enable(false);
+#if !SOC_TEMPERATURE_SENSOR_IS_INDEPENDENT_FROM_ADC
+        adc_apb_periph_free();
+#endif
         regi2c_saradc_disable();
         periph_module_disable(PERIPH_TEMPSENSOR_MODULE);
     }

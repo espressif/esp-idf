@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -236,10 +236,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     adc_ctx->fsm = ADC_FSM_INIT;
     *ret_handle = adc_ctx;
 
-    //enable ADC digital part
-    periph_module_enable(PERIPH_SARADC_MODULE);
-    //reset ADC digital part
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    adc_apb_periph_claim();
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_hal_calibration_init(ADC_UNIT_1);
@@ -475,7 +472,7 @@ esp_err_t adc_continuous_deinit(adc_continuous_handle_t handle)
     free(handle);
     handle = NULL;
 
-    periph_module_disable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_free();
 
     return ESP_OK;
 }
