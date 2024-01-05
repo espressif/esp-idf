@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -777,7 +777,7 @@ int adc1_get_raw(adc1_channel_t channel)
         return ESP_ERR_TIMEOUT;
     }
 
-    periph_module_enable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_claim();
     sar_periph_ctrl_adc_oneshot_power_acquire();
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
@@ -792,7 +792,7 @@ int adc1_get_raw(adc1_channel_t channel)
     ADC_REG_LOCK_EXIT();
 
     sar_periph_ctrl_adc_oneshot_power_release();
-    periph_module_disable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_free();
     adc_lock_release(ADC_UNIT_1);
 
     return raw_out;
@@ -834,7 +834,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
         return ESP_ERR_TIMEOUT;
     }
 
-    periph_module_enable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_claim();
     sar_periph_ctrl_adc_oneshot_power_acquire();
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
@@ -852,7 +852,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     ADC_REG_LOCK_EXIT();
 
     sar_periph_ctrl_adc_oneshot_power_release();
-    periph_module_disable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_free();
     adc_lock_release(ADC_UNIT_2);
 
     return ret;

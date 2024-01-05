@@ -1339,6 +1339,10 @@ config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     bool
     default y
 
+config SOC_TEMPERATURE_SENSOR_IS_INDEPENDENT_FROM_ADC
+    bool
+    default y
+
 config SOC_MEM_TCM_SUPPORTED
     bool
     default y

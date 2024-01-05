@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,23 +14,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*------------------------------------------------------------------------------
-* For those who use APB_SARADC periph
-*----------------------------------------------------------------------------*/
-/**
- * @brief Claim the usage of the APB_SARADC periph
- *
- * Reference count inside
- */
-void adc_apb_periph_claim(void);
-
-/**
- * @brief Free the usage of the APB_SARADC periph
- *
- * Reference count inside
- */
-void adc_apb_periph_free(void);
 
 /*---------------------------------------------------------------
             ADC IOs
