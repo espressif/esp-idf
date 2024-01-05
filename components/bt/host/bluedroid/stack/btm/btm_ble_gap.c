@@ -2090,7 +2090,7 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT8 type, UINT8 *p_length)
 
     STREAM_TO_UINT8(length, p);
 
-    while ( length && (p - p_adv <= BTM_BLE_CACHE_ADV_DATA_MAX)) {
+    while ( length && (p - p_adv < BTM_BLE_CACHE_ADV_DATA_MAX)) {
         STREAM_TO_UINT8(adv_type, p);
 
         if ( adv_type == type ) {
@@ -2098,7 +2098,15 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT8 type, UINT8 *p_length)
             *p_length = length - 1; /* minus the length of type */
             return p;
         }
+
         p += length - 1; /* skip the length of data */
+
+        /* Break loop if advertising data is in an incorrect format,
+           as it may lead to memory overflow */
+        if (p >= p_adv + BTM_BLE_CACHE_ADV_DATA_MAX) {
+            break;
+        }
+
         STREAM_TO_UINT8(length, p);
     }
 
