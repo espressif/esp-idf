@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@ typedef enum {
 #define USB_SER_JTAG_ENDP_SIZE          (64)
 #define USB_SER_JTAG_RX_MAX_SIZE        (64)
 
-typedef struct{
+typedef struct {
     intr_handle_t intr_handle;          /*!< USB-SERIAL-JTAG interrupt handler */
     portMUX_TYPE spinlock;              /*!< Spinlock for usb_serial_jtag */
     _Atomic fifo_status_t fifo_status;  /*!< Record the status of fifo */
@@ -63,7 +63,8 @@ static size_t usb_serial_jtag_write_and_flush(const uint8_t *buf, uint32_t wr_le
     return size;
 }
 
-static void usb_serial_jtag_isr_handler_default(void *arg) {
+static void usb_serial_jtag_isr_handler_default(void *arg)
+{
     BaseType_t xTaskWoken = 0;
     uint32_t usbjtag_intr_status = 0;
     usbjtag_intr_status = usb_serial_jtag_ll_get_intsts_mask();
@@ -154,7 +155,7 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     ESP_RETURN_ON_FALSE((usb_serial_jtag_config->rx_buffer_size > 0), ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "RX buffer is not prepared");
     ESP_RETURN_ON_FALSE((usb_serial_jtag_config->rx_buffer_size > USB_SER_JTAG_RX_MAX_SIZE), ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "RX buffer prepared is so small, should larger than 64");
     ESP_RETURN_ON_FALSE((usb_serial_jtag_config->tx_buffer_size > 0), ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "TX buffer is not prepared");
-    p_usb_serial_jtag_obj = (usb_serial_jtag_obj_t*) heap_caps_calloc(1, sizeof(usb_serial_jtag_obj_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    p_usb_serial_jtag_obj = (usb_serial_jtag_obj_t*) heap_caps_calloc(1, sizeof(usb_serial_jtag_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     p_usb_serial_jtag_obj->rx_buf_size = usb_serial_jtag_config->rx_buffer_size;
     p_usb_serial_jtag_obj->tx_buf_size = usb_serial_jtag_config->tx_buffer_size;
     p_usb_serial_jtag_obj->tx_stash_cnt = 0;
@@ -188,9 +189,9 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     // Configure PHY
     usb_fsls_phy_ll_int_jtag_enable(&USB_SERIAL_JTAG);
 
-    usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY|
-                                         USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
-    usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY|
+    usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY |
+                                       USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
+    usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY |
                                      USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
 
     err = esp_intr_alloc(ETS_USB_SERIAL_JTAG_INTR_SOURCE, 0, usb_serial_jtag_isr_handler_default, NULL, &p_usb_serial_jtag_obj->intr_handle);
@@ -245,7 +246,7 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
 
     // Blocking method, Sending data to ringbuffer, and handle the data in ISR.
     if (size - sent_data > 0) {
-        result = xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*) (buff+sent_data), size-sent_data, ticks_to_wait);
+        result = xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*)(buff + sent_data), size - sent_data, ticks_to_wait);
     } else {
         atomic_store(&p_usb_serial_jtag_obj->fifo_status, FIFO_IDLE);
     }
@@ -255,7 +256,7 @@ int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_t
 
 esp_err_t usb_serial_jtag_driver_uninstall(void)
 {
-    if(p_usb_serial_jtag_obj == NULL) {
+    if (p_usb_serial_jtag_obj == NULL) {
         ESP_LOGI(USB_SERIAL_JTAG_TAG, "ALREADY NULL");
         return ESP_OK;
     }
@@ -265,11 +266,11 @@ esp_err_t usb_serial_jtag_driver_uninstall(void)
     usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY | USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
     esp_intr_free(p_usb_serial_jtag_obj->intr_handle);
 
-    if(p_usb_serial_jtag_obj->rx_ring_buf) {
+    if (p_usb_serial_jtag_obj->rx_ring_buf) {
         vRingbufferDelete(p_usb_serial_jtag_obj->rx_ring_buf);
         p_usb_serial_jtag_obj->rx_ring_buf = NULL;
     }
-    if(p_usb_serial_jtag_obj->tx_ring_buf) {
+    if (p_usb_serial_jtag_obj->tx_ring_buf) {
         vRingbufferDelete(p_usb_serial_jtag_obj->tx_ring_buf);
         p_usb_serial_jtag_obj->tx_ring_buf = NULL;
     }

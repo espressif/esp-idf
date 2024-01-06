@@ -26,6 +26,7 @@ In order to control the dependence of other components on drivers at a smaller g
 - `esp_driver_uart` - Driver for UART
 - `esp_driver_ledc` - Driver for LEDC
 - `esp_driver_parlio` - Driver for Parallel IO
+- `esp_driver_usb_serial_jtag` - Driver for USB_SERIAL_JTAG
 
 For compatibility, the original `driver`` component is still treated as an all-in-one component by registering these `esp_driver_xyz`` components as its public dependencies. In other words, you do not need to modify the CMake file of an existing project, but you now have a way to specify the specific peripheral driver that your project depends on.
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include "esp_rom_sys.h"
 #include "esp_vfs_cdcacm.h"
 #include "esp_vfs_private.h"
-#include "esp_vfs_usb_serial_jtag.h"
 #include "esp_private/usb_console.h"
 #include "esp_vfs_console.h"
 #include "esp_private/esp_vfs_console.h"
@@ -59,7 +58,7 @@ int console_open(const char * path, int flags, int mode)
 #if CONFIG_ESP_CONSOLE_UART
     vfs_console.fd_primary = get_vfs_for_path(primary_path)->vfs.open("/"STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM), flags, mode);
 #elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    vfs_console.fd_primary = esp_vfs_usb_serial_jtag_get_vfs()->open("/", flags, mode);
+    vfs_console.fd_primary = get_vfs_for_path(primary_path)->vfs.open("/", flags, mode);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     vfs_console.fd_primary = esp_vfs_cdcacm_get_vfs()->open("/", flags, mode);
 #endif
@@ -199,7 +198,7 @@ esp_err_t esp_vfs_console_register(void)
 {
     esp_err_t err = ESP_OK;
 // Primary register part.
-#ifdef CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART || CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
     assert(primary_vfs);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     primary_vfs = esp_vfs_cdcacm_get_vfs();
@@ -207,9 +206,7 @@ esp_err_t esp_vfs_console_register(void)
     if (err != ESP_OK) {
         return err;
     }
-#elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    primary_vfs = esp_vfs_usb_serial_jtag_get_vfs();
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif
     err = esp_vfs_register_common(primary_path, strlen(primary_path), primary_vfs, NULL, &primary_vfs_index);
     if (err != ESP_OK) {
         return err;
@@ -217,7 +214,7 @@ esp_err_t esp_vfs_console_register(void)
 
 // Secondary register part.
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-    secondary_vfs = esp_vfs_usb_serial_jtag_get_vfs();
+    assert(secondary_vfs);
     err = esp_vfs_register_common(secondary_path, strlen(secondary_path), secondary_vfs, NULL, &secondary_vfs_index);
     if(err != ESP_OK) {
         return err;

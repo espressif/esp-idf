@@ -97,14 +97,3 @@ components/driver/test_apps/twai:
     - components/driver/twai/**/*
   depends_components:
     - esp_driver_gpio
-
-components/driver/test_apps/usb_serial_jtag:
-  disable:
-    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/usb_serial_jtag/**/*
-  depends_components:
-    - hal
-    - esp_hw_support # for clock
-    - vfs
-    - esp_driver_gpio

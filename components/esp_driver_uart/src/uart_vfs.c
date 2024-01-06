@@ -1071,7 +1071,7 @@ void uart_vfs_dev_use_driver(int uart_num)
     _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
 
-#if CONFIG_VFS_SUPPORT_IO && CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART
 ESP_SYSTEM_INIT_FN(init_vfs_uart, CORE, BIT(0), 110)
 {
     esp_vfs_set_primary_dev_vfs_def_struct(&uart_vfs);

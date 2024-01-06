@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,14 +16,17 @@
 #include <sys/param.h>
 #include "esp_timer.h"
 #include "esp_vfs.h"
-#include "esp_vfs_dev.h"
+#include "esp_vfs_dev.h" // Old headers for the aliasing functions
+#include "esp_vfs_usb_serial_jtag.h" // Old headers for the aliasing functions
+#include "esp_private/esp_vfs_console.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/usb_serial_jtag_ll.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
 #include "driver/usb_serial_jtag.h"
+#include "esp_private/startup_internal.h"
 
 // Token signifying that no character is available
 #define NONE -1
@@ -52,7 +55,6 @@ typedef int (*rx_func_t)(int);
 // Basic functions for sending and receiving bytes
 static void usb_serial_jtag_tx_char(int fd, int c);
 static int usb_serial_jtag_rx_char(int fd);
-
 
 //If no host is listening to the CDCACM port, the TX buffer
 //will never be able to flush to the host. Instead of the Tx
@@ -89,11 +91,11 @@ typedef struct {
     rx_func_t rx_func;
     // Timestamp of last time we managed to write something to the tx buffer
     int64_t last_tx_ts;
-} vfs_usb_serial_jtag_context_t;
+} usb_serial_jtag_vfs_context_t;
 
 //If the context should be dynamically initialized, remove this structure
 //and point s_ctx to allocated data.
-static vfs_usb_serial_jtag_context_t s_ctx = {
+static usb_serial_jtag_vfs_context_t s_ctx = {
     .peek_char = NONE,
     .tx_mode = DEFAULT_TX_MODE,
     .rx_mode = DEFAULT_RX_MODE,
@@ -109,7 +111,7 @@ static int usb_serial_jtag_open(const char * path, int flags, int mode)
 
 static void usb_serial_jtag_tx_char(int fd, int c)
 {
-    uint8_t cc=(uint8_t)c;
+    uint8_t cc = (uint8_t)c;
     // Try to write to the buffer as long as we still expect the buffer to have
     // a chance of being emptied by an active host. Just drop the data if there's
     // no chance anymore.
@@ -162,7 +164,6 @@ static ssize_t usb_serial_jtag_write(int fd, const void * data, size_t size)
     _lock_release_recursive(&s_ctx.write_lock);
     return size;
 }
-
 
 /* Helper function which returns a previous character or reads a new one from
  * the port. Previous character can be returned ("pushed back") using
@@ -281,7 +282,6 @@ static int usb_serial_jtag_fsync(int fd)
     return 0;
 }
 
-
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 static int usb_serial_jtag_tcsetattr(int fd, int optional_actions, const struct termios *p)
 {
@@ -291,18 +291,18 @@ static int usb_serial_jtag_tcsetattr(int fd, int optional_actions, const struct 
     }
 
     switch (optional_actions) {
-        case TCSANOW:
-            // nothing to do
-            break;
-        case TCSADRAIN:
-            usb_serial_jtag_fsync(fd);
-            break;
-        case TCSAFLUSH:
-            // Not applicable.
-            break;
-        default:
-            errno = EINVAL;
-            return -1;
+    case TCSANOW:
+        // nothing to do
+        break;
+    case TCSADRAIN:
+        usb_serial_jtag_fsync(fd);
+        break;
+    case TCSAFLUSH:
+        // Not applicable.
+        break;
+    default:
+        errno = EINVAL;
+        return -1;
     }
 
     if (p->c_iflag & IGNCR) {
@@ -354,17 +354,17 @@ static int usb_serial_jtag_tcflush(int fd, int select)
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-void esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(esp_line_endings_t mode)
+void usb_serial_jtag_vfs_set_tx_line_endings(esp_line_endings_t mode)
 {
     s_ctx.tx_mode = mode;
 }
 
-void esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(esp_line_endings_t mode)
+void usb_serial_jtag_vfs_set_rx_line_endings(esp_line_endings_t mode)
 {
     s_ctx.rx_mode = mode;
 }
 
-static const esp_vfs_t vfs = {
+static const esp_vfs_t usj_vfs = {
     .flags = ESP_VFS_FLAG_DEFAULT,
     .write = &usb_serial_jtag_write,
     .open = &usb_serial_jtag_open,
@@ -383,14 +383,30 @@ static const esp_vfs_t vfs = {
 
 const esp_vfs_t* esp_vfs_usb_serial_jtag_get_vfs(void)
 {
-    return &vfs;
+    return &usj_vfs;
 }
 
-esp_err_t esp_vfs_dev_usb_serial_jtag_register(void)
+esp_err_t usb_serial_jtag_vfs_register(void)
 {
     // "/dev/usb_serial_jtag" unfortunately is too long for vfs
-    return esp_vfs_register("/dev/usbserjtag", &vfs, NULL);
+    return esp_vfs_register("/dev/usbserjtag", &usj_vfs, NULL);
 }
+
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+ESP_SYSTEM_INIT_FN(init_vfs_usj, CORE, BIT(0), 111)
+{
+    esp_vfs_set_primary_dev_vfs_def_struct(&usj_vfs);
+    return ESP_OK;
+}
+#endif
+
+#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+ESP_SYSTEM_INIT_FN(init_vfs_usj_sec, CORE, BIT(0), 112)
+{
+    esp_vfs_set_secondary_dev_vfs_def_struct(&usj_vfs);
+    return ESP_OK;
+}
+#endif
 
 /***********************************************************
  * VFS uses USB-SERIAL-JTAG driver part.
@@ -425,7 +441,7 @@ static void usbjtag_tx_char_via_driver(int fd, int c)
     }
 }
 
-void esp_vfs_usb_serial_jtag_use_nonblocking(void)
+void usb_serial_jtag_vfs_use_nonblocking(void)
 {
     _lock_acquire_recursive(&s_ctx.read_lock);
     _lock_acquire_recursive(&s_ctx.write_lock);
@@ -435,7 +451,7 @@ void esp_vfs_usb_serial_jtag_use_nonblocking(void)
     _lock_release_recursive(&s_ctx.read_lock);
 }
 
-void esp_vfs_usb_serial_jtag_use_driver(void)
+void usb_serial_jtag_vfs_use_driver(void)
 {
     _lock_acquire_recursive(&s_ctx.read_lock);
     _lock_acquire_recursive(&s_ctx.write_lock);
@@ -444,3 +460,20 @@ void esp_vfs_usb_serial_jtag_use_driver(void)
     _lock_release_recursive(&s_ctx.write_lock);
     _lock_release_recursive(&s_ctx.read_lock);
 }
+
+void usb_serial_jtag_vfs_include_dev_init(void)
+{
+    // Linker hook function, exists to make the linker examine this file
+}
+
+// -------------------------- esp_vfs_usb_serial_jtag_xxx ALIAS (deprecated) ----------------------------
+
+esp_err_t esp_vfs_dev_usb_serial_jtag_register(void) __attribute__((alias("usb_serial_jtag_vfs_register")));
+
+void esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(esp_line_endings_t mode) __attribute__((alias("usb_serial_jtag_vfs_set_rx_line_endings")));
+
+void esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(esp_line_endings_t mode) __attribute__((alias("usb_serial_jtag_vfs_set_tx_line_endings")));
+
+void esp_vfs_usb_serial_jtag_use_nonblocking(void) __attribute__((alias("usb_serial_jtag_vfs_use_nonblocking")));
+
+void esp_vfs_usb_serial_jtag_use_driver(void) __attribute__((alias("usb_serial_jtag_vfs_use_driver")));

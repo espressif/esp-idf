@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,14 +60,14 @@ void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode) __attribute__
  * @note application must configure USB-SERIAL-JTAG driver before calling these functions
  * With these functions, read and write are blocking and interrupt-driven.
  */
-void esp_vfs_usb_serial_jtag_use_driver(void);
+void esp_vfs_usb_serial_jtag_use_driver(void) __attribute__((deprecated("Please use usb_serial_jtag_vfs_use_driver() instead")));
 
 /**
  * @brief set VFS to use simple functions for reading and writing UART
  * Read is non-blocking, write is busy waiting until TX FIFO has enough space.
  * These functions are used by default.
  */
-void esp_vfs_usb_serial_jtag_use_nonblocking(void);
+void esp_vfs_usb_serial_jtag_use_nonblocking(void) __attribute__((deprecated("Please use usb_serial_jtag_vfs_use_nonblocking() instead")));
 
 #ifdef __cplusplus
 }

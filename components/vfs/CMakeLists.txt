@@ -10,10 +10,9 @@ list(APPEND sources "vfs.c"
                     "vfs_console.c"
                     )
 
-list(APPEND pr driver
-               esp_timer
+list(APPEND pr esp_timer
                # for backwards compatibility (TODO: IDF-8799)
-               esp_driver_uart
+               esp_driver_uart esp_driver_usb_serial_jtag
                )
 
 idf_component_register(SRCS ${sources}
@@ -24,10 +23,6 @@ idf_component_register(SRCS ${sources}
 
 if(CONFIG_ESP_CONSOLE_USB_CDC)
     target_sources(${COMPONENT_LIB} PRIVATE "vfs_cdcacm.c")
-endif()
-
-if(CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG OR CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
-    target_sources(${COMPONENT_LIB} PRIVATE "vfs_usb_serial_jtag.c")
 endif()
 
 # Some newlib syscalls are implemented in vfs.c, make sure these are always

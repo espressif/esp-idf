@@ -11,8 +11,7 @@ set(srcs)
 set(includes "deprecated"
              "i2c/include"
              "touch_sensor/include"
-             "twai/include"
-             "usb_serial_jtag/include")
+             "twai/include")
 
 # Always included linker fragments
 set(ldfragments "")
@@ -86,12 +85,6 @@ if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND ldfragments "twai/linker.lf")
 endif()
 
-# USB Serial JTAG related source files
-if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
-    list(APPEND srcs "usb_serial_jtag/usb_serial_jtag.c"
-                     "usb_serial_jtag/usb_serial_jtag_connection_monitor.c")
-endif()
-
 # Other source files
 if(${target} STREQUAL "esp32")
     list(APPEND srcs "deprecated/adc_i2s_deprecated.c")
@@ -113,14 +106,7 @@ else()
                                     esp_driver_gpio esp_driver_pcnt esp_driver_gptimer esp_driver_spi esp_driver_mcpwm
                                     esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
                                     esp_driver_dac esp_driver_rmt esp_driver_tsens esp_driver_sdm esp_driver_i2c
-                                    esp_driver_uart esp_driver_ledc esp_driver_parlio
+                                    esp_driver_uart esp_driver_ledc esp_driver_parlio esp_driver_usb_serial_jtag
                            LDFRAGMENTS ${ldfragments}
                           )
-endif()
-
-# If system needs to monitor USJ connection status, then usb_serial_jtag_connection_monitor object file has to be linked
-# to the binary, to allow tick hook to be registered
-if(CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION OR
-   (CONFIG_SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP AND CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED))
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u usb_serial_jtag_connection_monitor_include")
 endif()

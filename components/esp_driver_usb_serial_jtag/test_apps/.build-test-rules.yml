@@ -1,0 +1,9 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_usb_serial_jtag/test_apps/usb_serial_jtag:
+  disable:
+    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+  depends_components:
+    - vfs
+    - esp_driver_gpio
+    - esp_driver_usb_serial_jtag
