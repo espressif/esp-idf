@@ -441,7 +441,7 @@ lwIP IPv6
 
   .. note::
 
-      IPv6 is required by some components such as ``coap`` and :doc:`/api-reference/protocols/asio`. These components will not be available if IPV6 is disabled.
+      IPv6 is required by some components such as :doc:`/api-reference/protocols/asio`. These components will not be available if IPV6 is disabled.
 
 lwIP IPv4
 @@@@@@@@@

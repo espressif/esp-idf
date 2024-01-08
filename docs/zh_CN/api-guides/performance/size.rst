@@ -441,7 +441,7 @@ lwIP IPv6
 
   .. note::
 
-      如果禁用 IPv6， ``coap`` 和 :doc:`/api-reference/protocols/asio` 等组件将无法使用。
+      如果禁用 IPv6，:doc:`/api-reference/protocols/asio` 等组件将无法使用。
 
 lwIP IPv4
 @@@@@@@@@

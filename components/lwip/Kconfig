@@ -465,7 +465,7 @@ menu "LWIP"
         default y
         help
             Enable IPv6 function. If not use IPv6 function, set this option to n.
-            If disabling LWIP_IPV6 then some other components (coap and asio) will
+            If disabling LWIP_IPV6 then some other components (asio) will
             no longer be available.
 
     config LWIP_IPV6_AUTOCONFIG
