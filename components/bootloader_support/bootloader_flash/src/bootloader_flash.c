@@ -641,7 +641,6 @@ IRAM_ATTR uint32_t bootloader_flash_execute_command_common(
         //set unused bits to 0
         ret &= ~(UINT32_MAX << miso_len);
     }
-    esp_rom_printf("val is %x\n", SPIFLASH.ctrl.val);
     return ret;
 }
 
