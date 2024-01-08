@@ -495,8 +495,7 @@ esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev)
 
 void* esp_netif_get_netif_impl(esp_netif_t *esp_netif)
 {
-    // get impl ptr only for vanilla lwip impl (ppp_pcb not supported)
-    if (esp_netif && !ESP_NETIF_IS_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
+    if (esp_netif) {
         return esp_netif->lwip_netif;
     }
     return NULL;
