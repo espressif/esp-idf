@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_memory_utils.h"
+#include "esp_cache.h"
 #include "esp_rom_gpio.h"
 #include "soc/rmt_periph.h"
 #include "soc/rtc.h"
@@ -26,7 +27,6 @@
 #include "driver/gpio.h"
 #include "driver/rmt_rx.h"
 #include "rmt_private.h"
-#include "rom/cache.h"
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
@@ -199,7 +199,10 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         num_dma_nodes = config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_DESC_BUF_MAX_SIZE + 1;
         num_dma_nodes = MAX(2, num_dma_nodes); // at least 2 DMA nodes for ping-pong
         // DMA descriptors must be placed in internal SRAM
-        rx_channel->dma_nodes = heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, num_dma_nodes, sizeof(rmt_dma_descriptor_t), mem_caps);
+        uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+        // the alignment should meet both the DMA and cache requirement
+        size_t alignment = MAX(data_cache_line_size, RMT_DMA_DESC_ALIGN);
+        rx_channel->dma_nodes = heap_caps_aligned_calloc(alignment, num_dma_nodes, sizeof(rmt_dma_descriptor_t), mem_caps);
         ESP_GOTO_ON_FALSE(rx_channel->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel DMA nodes");
         // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
         rx_channel->dma_nodes_nc = (rmt_dma_descriptor_t *)RMT_GET_NON_CACHE_ADDR(rx_channel->dma_nodes);
@@ -345,13 +348,14 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     size_t last_dma_block_size = 0;
 
     if (channel->dma_chan) {
-        ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "buffer must locate in internal RAM for DMA use");
-
-#if CONFIG_IDF_TARGET_ESP32P4
-        uint32_t data_cache_line_mask = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA) - 1;
-        ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buffer & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer must be aligned to cache line size");
-        ESP_RETURN_ON_FALSE_ISR((buffer_size & data_cache_line_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer size must be aligned to cache line size");
-#endif
+        // Currently we assume the user buffer is allocated from internal RAM, PSRAM is not supported yet.
+        ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(buffer), ESP_ERR_INVALID_ARG, TAG, "user buffer not allocated from internal RAM");
+        uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+        // DMA doesn't have alignment requirement for SRAM buffer if the burst mode is not enabled,
+        // but we need to make sure the buffer is aligned to cache line size
+        uint32_t align_mask = data_cache_line_size ? (data_cache_line_size - 1) : 0;
+        ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buffer & align_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer address not aligned");
+        ESP_RETURN_ON_FALSE_ISR((buffer_size & align_mask) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer size not aligned");
         ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * RMT_DMA_DESC_BUF_MAX_SIZE,
                                 ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity");
         per_dma_block_size = buffer_size / rx_chan->num_dma_nodes;
@@ -752,13 +756,11 @@ static bool IRAM_ATTR rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gd
     rmt_rx_trans_desc_t *trans_desc = &rx_chan->trans_desc;
     uint32_t channel_id = channel->channel_id;
 
-#if CONFIG_IDF_TARGET_ESP32P4
-    int invalidate_map = CACHE_MAP_L1_DCACHE;
-    if (esp_ptr_external_ram((const void *)trans_desc->buffer)) {
-        invalidate_map |= CACHE_MAP_L2_CACHE;
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    if (data_cache_line_size) {
+        // invalidate the user buffer, so that the DMA modified data can be seen by CPU
+        esp_cache_msync(trans_desc->buffer, trans_desc->buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
     }
-    Cache_Invalidate_Addr(invalidate_map, (uint32_t)trans_desc->buffer, trans_desc->buffer_size);
-#endif
 
     if (event_data->flags.normal_eof) {
         // if the DMA received an EOF, it means the RMT peripheral has received an "end marker"

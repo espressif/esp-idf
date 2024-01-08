@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,7 +107,8 @@ typedef struct {
     TaskHandle_t task_to_notify;
     size_t received_symbol_num;
     rmt_receive_config_t rx_config;
-    rmt_symbol_word_t remote_codes[128];
+    rmt_symbol_word_t* remote_codes;
+    size_t remote_codes_mem_size;
 } test_rx_user_data_t;
 
 IRAM_ATTR
@@ -121,7 +122,7 @@ static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx
         if (test_user_data->received_symbol_num == TEST_RMT_SYMBOLS) {
             vTaskNotifyGiveFromISR(test_user_data->task_to_notify, &high_task_wakeup);
         } else {
-            rmt_receive(channel, test_user_data->remote_codes, sizeof(test_user_data->remote_codes), &test_user_data->rx_config);
+            rmt_receive(channel, test_user_data->remote_codes, test_user_data->remote_codes_mem_size, &test_user_data->rx_config);
         }
     }
     return high_task_wakeup == pdTRUE;
@@ -129,6 +130,11 @@ static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx
 
 static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_clock_source_t clk_src)
 {
+    uint32_t const test_rx_buffer_symbols = 128;
+    rmt_symbol_word_t *remote_codes = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
+                                                               MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(remote_codes);
+
     rmt_rx_channel_config_t rx_channel_cfg = {
         .clk_src = clk_src,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
@@ -155,6 +161,8 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
             .signal_range_min_ns = 1250,
             .signal_range_max_ns = 12000000,
         },
+        .remote_codes = remote_codes,
+        .remote_codes_mem_size = test_rx_buffer_symbols * sizeof(rmt_symbol_word_t),
     };
     TEST_ESP_OK(rmt_rx_register_event_callbacks(rx_channel, &cbs, &test_user_data));
 
@@ -162,7 +170,7 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
     TEST_ESP_OK(rmt_enable(rx_channel));
 
     // ready to receive
-    TEST_ESP_OK(rmt_receive(rx_channel, test_user_data.remote_codes, sizeof(test_user_data.remote_codes), &test_user_data.rx_config));
+    TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, test_user_data.remote_codes_mem_size, &test_user_data.rx_config));
 
     // disable the flash cache, and simulate input signal by GPIO
     unity_utils_run_cache_disable_stub(test_simulate_input_post_cache_disable, TEST_RMT_GPIO_NUM_A);
@@ -174,6 +182,7 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
     TEST_ESP_OK(rmt_disable(rx_channel));
     printf("delete channels and encoder\r\n");
     TEST_ESP_OK(rmt_del_channel(rx_channel));
+    free(remote_codes);
 }
 
 TEST_CASE("rmt rx iram safe", "[rmt]")

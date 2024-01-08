@@ -66,7 +66,7 @@ static size_t IRAM_ATTR rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_han
     // where to put the encoded symbols? DMA buffer or RMT HW memory
     rmt_symbol_word_t *mem_to_nc = NULL;
     if (channel->dma_chan) {
-        mem_to_nc = (rmt_symbol_word_t *)RMT_GET_NON_CACHE_ADDR(channel->dma_mem_base);
+        mem_to_nc = tx_chan->dma_mem_base_nc;
     } else {
         mem_to_nc = channel->hw_mem_base;
     }
@@ -176,7 +176,7 @@ static size_t IRAM_ATTR rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_hand
     // where to put the encoded symbols? DMA buffer or RMT HW memory
     rmt_symbol_word_t *mem_to_nc = NULL;
     if (channel->dma_chan) {
-        mem_to_nc = (rmt_symbol_word_t *)RMT_GET_NON_CACHE_ADDR(channel->dma_mem_base);
+        mem_to_nc = tx_chan->dma_mem_base_nc;
     } else {
         mem_to_nc = channel->hw_mem_base;
     }
