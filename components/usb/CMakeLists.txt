@@ -10,7 +10,7 @@ set(priv_includes)
 # As CONFIG_SOC_USB_OTG_SUPPORTED comes from Kconfig, it is not evaluated yet
 # when components are being registered.
 # Thus, always add the (private) requirements, regardless of Kconfig
-set(priv_requires esp_driver_gpio)  # usb_phy driver relies on gpio driver API
+set(priv_requires esp_driver_gpio esp_mm)  # usb_phy driver relies on gpio driver API
 
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
     list(APPEND srcs "hcd_dwc.c"

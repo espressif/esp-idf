@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_heap_caps.h"
+#include "esp_dma_utils.h"
 #include "esp_intr_alloc.h"
 #include "soc/interrupts.h" // For interrupt index
 #include "esp_err.h"
@@ -20,6 +21,12 @@
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
+
+#include "soc/soc_caps.h"
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "esp_cache.h"
+#include "esp_private/esp_cache_private.h"
+#endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
 
@@ -84,6 +91,29 @@ const char *HCD_DWC_TAG = "HCD DWC";
             }                                                               \
 })
 
+// ----------------------- Cache sync ----------------------
+
+/**
+ * @brief Cache sync macros
+ *
+ * This macros are relevant only for SOCs that have L1 cache for internal memory
+ * For other SOCs this is no-operation
+ */
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define ALIGN_UP_BY(num, align)                     (((num) + ((align) - 1)) & ~((align) - 1))
+#define CACHE_SYNC_FRAME_LIST(frame_list)           cache_sync_frame_list(frame_list)
+#define CACHE_SYNC_XFER_DESCRIPTOR_LIST_M2C(buffer) cache_sync_xfer_descriptor_list(buffer, true)
+#define CACHE_SYNC_XFER_DESCRIPTOR_LIST_C2M(buffer) cache_sync_xfer_descriptor_list(buffer, false)
+#define CACHE_SYNC_DATA_BUFFER_M2C(pipe, urb)       cache_sync_data_buffer(pipe, urb, true)
+#define CACHE_SYNC_DATA_BUFFER_C2M(pipe, urb)       cache_sync_data_buffer(pipe, urb, false)
+#else // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define CACHE_SYNC_FRAME_LIST(frame_list)
+#define CACHE_SYNC_XFER_DESCRIPTOR_LIST_M2C(buffer)
+#define CACHE_SYNC_XFER_DESCRIPTOR_LIST_C2M(buffer)
+#define CACHE_SYNC_DATA_BUFFER_M2C(pipe, urb)
+#define CACHE_SYNC_DATA_BUFFER_C2M(pipe, urb)
+#endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+
 // ------------------------------------------------------ Types --------------------------------------------------------
 
 typedef struct pipe_obj pipe_t;
@@ -94,6 +124,7 @@ typedef struct port_obj port_t;
  */
 typedef struct {
     void *xfer_desc_list;
+    int xfer_desc_list_len_bytes;           // Only for cache msync
     urb_t *urb;
     union {
         struct {
@@ -235,6 +266,84 @@ static portMUX_TYPE hcd_lock = portMUX_INITIALIZER_UNLOCKED;
 static hcd_obj_t *s_hcd_obj = NULL;     // Note: "s_" is for the static pointer
 
 // ------------------------------------------------- Forward Declare ---------------------------------------------------
+
+// --------------------- Cache sync ------------------------
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+/**
+ * @brief Sync Frame List from cache to memory
+ */
+static inline void cache_sync_frame_list(void *frame_list)
+{
+    esp_err_t ret = esp_cache_msync(frame_list, FRAME_LIST_LEN * sizeof(uint32_t), 0);
+    assert(ret == ESP_OK);
+}
+
+/**
+ * @brief Sync Transfer Descriptor List
+ *
+ * @param[in] buffer       Buffer that holds the Transfer Descriptor List
+ * @param[in] mem_to_cache Direction of cache sync
+ */
+static inline void cache_sync_xfer_descriptor_list(dma_buffer_block_t *buffer, bool mem_to_cache)
+{
+    esp_err_t ret = esp_cache_msync(buffer->xfer_desc_list, buffer->xfer_desc_list_len_bytes, mem_to_cache ? ESP_CACHE_MSYNC_FLAG_DIR_M2C : 0);
+    assert(ret == ESP_OK);
+}
+
+/**
+ * @brief Sync Transfer data buffer
+ *
+ * This function must be called before a URB is enqueued or dequeued.
+ * Based on transfer direction (IN/OUT), this function will msync the data buffer associated with this URB.
+ *
+ * @note Here we also accept UNALIGNED data, for cases where the class drivers force overwrite the allocated data buffers
+ *
+ * @param[in] pipe Pipe belonging to this data buffer
+ * @param[in] urb  URB belonging to this data buffer
+ * @param[in] done Whether data buffer was just processed or is about to be processed
+ */
+static inline void cache_sync_data_buffer(pipe_t *pipe, urb_t *urb, bool done)
+{
+    const bool is_in = pipe->ep_char.bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK;
+    const bool is_ctrl = (pipe->ep_char.type == USB_DWC_XFER_TYPE_CTRL);
+    if ((is_in == done) || is_ctrl) {
+        uint32_t flags = (done) ? ESP_CACHE_MSYNC_FLAG_DIR_M2C : 0;
+        flags |= ESP_CACHE_MSYNC_FLAG_UNALIGNED;
+        esp_err_t ret = esp_cache_msync(urb->transfer.data_buffer, urb->transfer.data_buffer_size, flags);
+        assert(ret == ESP_OK);
+    }
+}
+#endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+
+// --------------------- Allocation ------------------------
+
+/**
+ * @brief Allocate Frame List
+ *
+ * - Frame list is allocated in DMA capable memory
+ * - Frame list is aligned to 512 and cache line size
+ *
+ * @note Free the memory with heap_caps_free() call
+ *
+ * @param[in] frame_list_len Length of the Frame List
+ * @return Pointer to allocated frame list
+ */
+static void *frame_list_alloc(size_t frame_list_len);
+
+/**
+ * @brief Allocate Transfer Descriptor List
+ *
+ * - Frame list is allocated in DMA capable memory
+ * - Frame list is aligned to 512 and cache line size
+ *
+ * @note Free the memory with heap_caps_free() call
+ *
+ * @param[in]  list_len           Required length
+ * @param[out] list_len_bytes_out Allocated length in bytes (can be greater than required)
+ * @return Pointer to allocated transfer descriptor list
+ */
+static void *transfer_descriptor_list_alloc(size_t list_len, size_t *list_len_bytes_out);
 
 // ------------------- Buffer Control ----------------------
 
@@ -891,7 +1000,7 @@ static port_t *port_obj_alloc(void)
 {
     port_t *port = calloc(1, sizeof(port_t));
     usb_dwc_hal_context_t *hal = malloc(sizeof(usb_dwc_hal_context_t));
-    void *frame_list = heap_caps_aligned_calloc(USB_DWC_FRAME_LIST_MEM_ALIGN, FRAME_LIST_LEN, sizeof(uint32_t), MALLOC_CAP_DMA);
+    void *frame_list = frame_list_alloc(FRAME_LIST_LEN);
     SemaphoreHandle_t port_mux = xSemaphoreCreateMutex();
     if (port == NULL || hal == NULL || frame_list == NULL || port_mux == NULL) {
         free(port);
@@ -917,6 +1026,45 @@ static void port_obj_free(port_t *port)
     free(port->frame_list);
     free(port->hal);
     free(port);
+}
+
+void *frame_list_alloc(size_t frame_list_len)
+{
+    void *frame_list = heap_caps_aligned_calloc(USB_DWC_FRAME_LIST_MEM_ALIGN, frame_list_len, sizeof(uint32_t), MALLOC_CAP_DMA);
+
+    // Both Frame List start address and size should be already cache aligned so this is only a sanity check
+    if (frame_list) {
+        if (!esp_dma_is_buffer_aligned(frame_list, frame_list_len * sizeof(uint32_t), ESP_DMA_BUF_LOCATION_AUTO)) {
+            // This should never happen
+            heap_caps_free(frame_list);
+            frame_list = NULL;
+        }
+    }
+    return frame_list;
+}
+
+void *transfer_descriptor_list_alloc(size_t list_len, size_t *list_len_bytes_out)
+{
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // Required Transfer Descriptor List size (in bytes) might not be aligned to cache line size, align the size up
+    size_t data_cache_line_size = 0;
+    esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, &data_cache_line_size);
+    const size_t required_list_len_bytes = list_len * sizeof(usb_dwc_ll_dma_qtd_t);
+    *list_len_bytes_out = ALIGN_UP_BY(required_list_len_bytes, data_cache_line_size);
+#else
+    *list_len_bytes_out = list_len * sizeof(usb_dwc_ll_dma_qtd_t);
+#endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+
+    void *qtd_list =  heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, *list_len_bytes_out, 1, MALLOC_CAP_DMA);
+
+    if (qtd_list) {
+        if (!esp_dma_is_buffer_aligned(qtd_list, *list_len_bytes_out * sizeof(usb_dwc_ll_dma_qtd_t), ESP_DMA_BUF_LOCATION_AUTO)) {
+            // This should never happen
+            heap_caps_free(qtd_list);
+            qtd_list = NULL;
+        }
+    }
+    return qtd_list;
 }
 
 // ----------------------- Public --------------------------
@@ -1026,6 +1174,7 @@ static void _port_recover_all_pipes(port_t *port)
         usb_dwc_hal_chan_alloc(port->hal, pipe->chan_obj, (void *)pipe);
         usb_dwc_hal_chan_set_ep_char(port->hal, pipe->chan_obj, &pipe->ep_char);
     }
+    CACHE_SYNC_FRAME_LIST(port->frame_list);
 }
 
 static bool _port_check_all_pipes_halted(port_t *port)
@@ -1472,13 +1621,15 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
         break;
     }
     dma_buffer_block_t *buffer = calloc(1, sizeof(dma_buffer_block_t));
-    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len, sizeof(usb_dwc_ll_dma_qtd_t), MALLOC_CAP_DMA);
+    size_t real_len = 0;
+    void *xfer_desc_list = transfer_descriptor_list_alloc(desc_list_len, &real_len);
     if (buffer == NULL || xfer_desc_list == NULL) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
         return NULL;
     }
     buffer->xfer_desc_list = xfer_desc_list;
+    buffer->xfer_desc_list_len_bytes = real_len;
     return buffer;
 }
 
@@ -1792,6 +1943,7 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
         goto err;
     }
     usb_dwc_hal_chan_set_ep_char(port->hal, pipe->chan_obj, &pipe->ep_char);
+    CACHE_SYNC_FRAME_LIST(port->frame_list);
     // Add the pipe to the list of idle pipes in the port object
     TAILQ_INSERT_TAIL(&port->pipes_idle_tailq, pipe, tailq_entry);
     port->num_pipes_idle++;
@@ -2154,6 +2306,8 @@ static void _buffer_fill(pipe_t *pipe)
         break;
     }
     }
+    // Sync transfer descriptor list to memory
+    CACHE_SYNC_XFER_DESCRIPTOR_LIST_C2M(buffer_to_fill);
     buffer_to_fill->urb = urb;
     urb->hcd_var = URB_HCD_STATE_INFLIGHT;
     // Update multi buffer flags
@@ -2390,6 +2544,9 @@ static void _buffer_parse(pipe_t *pipe)
     bool is_in = pipe->ep_char.bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK;
     int mps = pipe->ep_char.mps;
 
+    // Sync transfer descriptor list to cache
+    CACHE_SYNC_XFER_DESCRIPTOR_LIST_M2C(buffer_to_parse);
+
     // Parsing the buffer will update the buffer's corresponding URB
     if (buffer_to_parse->status_flags.pipe_event == HCD_PIPE_EVENT_URB_DONE) {
         // URB was successful
@@ -2457,6 +2614,9 @@ esp_err_t hcd_urb_enqueue(hcd_pipe_handle_t pipe_hdl, urb_t *urb)
     HCD_CHECK(urb->hcd_ptr == NULL && urb->hcd_var == URB_HCD_STATE_IDLE, ESP_ERR_INVALID_STATE);
     pipe_t *pipe = (pipe_t *)pipe_hdl;
 
+    // Sync user's data from cache to memory. For OUT and CTRL transfers
+    CACHE_SYNC_DATA_BUFFER_C2M(pipe, urb);
+
     HCD_ENTER_CRITICAL();
     // Check that pipe and port are in the correct state to receive URBs
     HCD_CHECK_FROM_CRIT(pipe->port->state == HCD_PORT_STATE_ENABLED         // The pipe's port must be in the correct state
@@ -2513,6 +2673,8 @@ urb_t *hcd_urb_dequeue(hcd_pipe_handle_t pipe_hdl)
             pipe->port->num_pipes_queued--;
             pipe->cs_flags.has_urb = 0;
         }
+        // Sync user's data in memory to cache. For IN and CTRL transfers
+        CACHE_SYNC_DATA_BUFFER_M2C(pipe, urb);
     } else {
         // No more URBs to dequeue from this pipe
         urb = NULL;
