@@ -4,6 +4,7 @@
 #include <esp_log.h>
 #include <esp_system.h>
 #include <esp_http_server.h>
+#include "esp_check.h"
 
 #include "tests.h"
 
@@ -221,6 +222,7 @@ static esp_err_t adder_post_handler(httpd_req_t *req)
     if (! req->sess_ctx) {
         ESP_LOGI(TAG, "/adder allocating new session");
         req->sess_ctx = malloc(sizeof(int));
+        ESP_RETURN_ON_FALSE(req->sess_ctx, ESP_ERR_NO_MEM, TAG, "Failed to allocate sess_ctx");
         req->free_ctx = adder_free_func;
         *(int *)req->sess_ctx = 0;
     }
@@ -286,6 +288,7 @@ static esp_err_t async_get_handler(httpd_req_t *req)
      * socket again
      */
     struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
+    ESP_RETURN_ON_FALSE(resp_arg, ESP_ERR_NO_MEM, TAG, "Failed to allocate resp_arg");
     resp_arg->hd = req->handle;
     resp_arg->fd = httpd_req_to_sockfd(req);
     if (resp_arg->fd < 0) {
