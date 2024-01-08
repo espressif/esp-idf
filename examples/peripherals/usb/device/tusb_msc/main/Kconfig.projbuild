@@ -1,4 +1,6 @@
-menu "USB Dev MSC Example Configuration"
+menu "TinyUSB MSC Example Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
 
     choice EXAMPLE_STORAGE_MEDIA
         prompt "Storage Media Used"
@@ -9,12 +11,12 @@ menu "USB Dev MSC Example Configuration"
         config EXAMPLE_STORAGE_MEDIA_SPIFLASH
             bool "SPI FLASH"
 
-        config EXAMPLE_STORAGE_MEDIA_SDMMCCARD
+        config EXAMPLE_STORAGE_MEDIA_SDMMC
             bool "SDMMC CARD"
-            depends on IDF_TARGET_ESP32S3
+            depends on IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4
     endchoice
 
-    if EXAMPLE_STORAGE_MEDIA_SDMMCCARD
+    if EXAMPLE_STORAGE_MEDIA_SDMMC
 
         choice EXAMPLE_SDMMC_BUS_WIDTH
             prompt "SD/MMC bus width"
@@ -36,34 +38,46 @@ menu "USB Dev MSC Example Configuration"
 
             config EXAMPLE_PIN_CMD
                 int "CMD GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
                 default 35 if IDF_TARGET_ESP32S3
+                default 44 if IDF_TARGET_ESP32P4
 
             config EXAMPLE_PIN_CLK
                 int "CLK GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
                 default 36 if IDF_TARGET_ESP32S3
+                default 43 if IDF_TARGET_ESP32P4
 
             config EXAMPLE_PIN_D0
                 int "D0 GPIO number"
+                range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
                 default 37 if IDF_TARGET_ESP32S3
+                default 39 if IDF_TARGET_ESP32P4
 
             if EXAMPLE_SDMMC_BUS_WIDTH_4
 
                 config EXAMPLE_PIN_D1
                     int "D1 GPIO number"
+                    range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
                     default 38 if IDF_TARGET_ESP32S3
+                    default 40 if IDF_TARGET_ESP32P4
 
                 config EXAMPLE_PIN_D2
                     int "D2 GPIO number"
+                    range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
                     default 33 if IDF_TARGET_ESP32S3
+                    default 41 if IDF_TARGET_ESP32P4
 
                 config EXAMPLE_PIN_D3
                     int "D3 GPIO number"
+                    range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
                     default 34 if IDF_TARGET_ESP32S3
+                    default 42 if IDF_TARGET_ESP32P4
 
             endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
 
         endif  # SOC_SDMMC_USE_GPIO_MATRIX
 
-    endif  # EXAMPLE_STORAGE_MEDIA_SDMMCCARD
+    endif  # EXAMPLE_STORAGE_MEDIA_SDMMC
 
 endmenu
