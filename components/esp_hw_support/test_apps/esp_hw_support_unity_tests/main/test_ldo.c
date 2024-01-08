@@ -50,8 +50,9 @@ TEST_CASE("LDO unit output", "[LDO][mannual][ignore]")
     esp_ldo_unit_init_cfg_t early_unit_cfg = {
         .unit_id = LDO_UNIT_2,
         .cfg = {
-            .voltage_mv = 2500,
+            .voltage_mv = 1800,
         },
+        .flags.shared_ldo = true,
         .flags.enable_unit = true,
     };
     esp_ldo_unit_handle_t early_unit2 = esp_ldo_init_unit_early(&early_unit_cfg);

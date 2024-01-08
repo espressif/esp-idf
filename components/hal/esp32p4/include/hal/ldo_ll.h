@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,17 @@ extern "C" {
  * LDO ID to real unit ID
  */
 #define LDO_ID2UNIT(ldo_id)    ((ldo_id) - 1)
+
+/**
+ * @brief Check if a LDO ID is valid
+ *
+ * @return True for valid
+ */
+__attribute__((always_inline))
+static inline bool ldo_ll_is_valid_ldo_id(int ldo_id)
+{
+    return ((ldo_id > 0) && (ldo_id <= LDO_LL_UNIT_NUM));
+}
 
 /**
  * @brief Enable a LDO
