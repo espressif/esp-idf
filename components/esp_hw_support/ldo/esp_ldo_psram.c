@@ -19,7 +19,7 @@ void esp_ldo_vdd_psram_early_init(void)
 {
     if (CONFIG_ESP_VDD_PSRAM_LDO_ID != -1) {
         esp_ldo_unit_init_cfg_t unit_cfg = {
-            .unit_id = LDO_ID2UNIT(CONFIG_ESP_VDD_PSRAM_LDO_ID),
+            .unit_id = CONFIG_ESP_VDD_PSRAM_LDO_ID,
             .cfg = {
                 .voltage_mv = CONFIG_ESP_VDD_PSRAM_LDO_VOLTAGE_MV,
             },
