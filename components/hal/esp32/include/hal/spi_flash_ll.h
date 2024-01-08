@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -445,6 +445,26 @@ static inline uint32_t spi_flash_ll_calculate_clock_reg(uint8_t host_id, uint8_t
 static inline void spi_flash_ll_set_extra_address(spi_dev_t *dev, uint32_t extra_addr)
 {
     // Not supported on ESP32.
+}
+
+/**
+ * @brief Write protect signal output when SPI is idle
+
+ * @param level 1: 1: output high, 0: output low
+ */
+static inline void spi_flash_ll_set_wp_level(spi_dev_t *dev, bool level)
+{
+    dev->ctrl.wp = level;
+}
+
+/**
+ * @brief Get the ctrl value of mspi
+ *
+ * @return uint32_t The value of ctrl register
+ */
+static inline uint32_t spi_flash_ll_get_ctrl_val(spi_dev_t *dev)
+{
+    return dev->ctrl.val;
 }
 
 #ifdef __cplusplus

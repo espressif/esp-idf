@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,9 +30,9 @@ void bootloader_flash_update_id()
 
 void IRAM_ATTR bootloader_flash_cs_timing_config()
 {
-    SET_PERI_REG_MASK(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
-    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME_V, 0, SPI_MEM_CS_HOLD_TIME_S);
-    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_SETUP_TIME_V, 0, SPI_MEM_CS_SETUP_TIME_S);
+    SET_PERI_REG_MASK(SPI_MEM_C_USER_REG, SPI_MEM_C_CS_HOLD_M | SPI_MEM_C_CS_SETUP_M);
+    SET_PERI_REG_BITS(SPI_MEM_C_CTRL2_REG, SPI_MEM_C_CS_HOLD_TIME_V, 0, SPI_MEM_C_CS_HOLD_TIME_S);
+    SET_PERI_REG_BITS(SPI_MEM_C_CTRL2_REG, SPI_MEM_C_CS_SETUP_TIME_V, 0, SPI_MEM_C_CS_SETUP_TIME_S);
 }
 
 void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t *pfhdr)

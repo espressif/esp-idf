@@ -1,10 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/spi_flash/test_apps/esp_flash:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet # TODO: IDF-7499
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:
@@ -28,9 +24,6 @@ components/spi_flash/test_apps/flash_encryption:
 components/spi_flash/test_apps/flash_suspend:
   disable:
     - if: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND != 1
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet # TODO: IDF-7499
   disable_test:
     - if: IDF_TARGET != "esp32c3"
       temporary: true
