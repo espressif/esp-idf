@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -208,6 +208,9 @@ static esp_err_t channel_destroy(dw_gdma_channel_t *chan)
     if (chan->group) {
         channel_unregister_from_group(chan);
     }
+    if (chan->intr) {
+        esp_intr_free(chan->intr);
+    }
     free(chan);
     return ESP_OK;
 }
@@ -379,9 +382,12 @@ esp_err_t dw_gdma_new_link_list(const dw_gdma_link_list_config_t *config, dw_gdm
     uint32_t num_items = config->num_items;
     list = heap_caps_calloc(1, sizeof(dw_gdma_link_list_t), DW_GDMA_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(list, ESP_ERR_NO_MEM, err, TAG, "no mem for link list");
-    // the link list item has a strict alignment requirement, so we allocate it separately
-    items = heap_caps_aligned_calloc(DW_GDMA_LL_LINK_LIST_ALIGNMENT, num_items,
-                                     sizeof(dw_gdma_link_list_item_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    // allocate memory for link list items, from SRAM
+    // the link list items has itw own alignment requirement
+    // also we should respect the data cache line size
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    uint32_t alignment = MAX(DW_GDMA_LL_LINK_LIST_ALIGNMENT, data_cache_line_size);
+    items = heap_caps_aligned_calloc(alignment, num_items, sizeof(dw_gdma_link_list_item_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     ESP_RETURN_ON_FALSE(items, ESP_ERR_NO_MEM, TAG, "no mem for link list items");
     list->num_items = num_items;
     list->items = items;

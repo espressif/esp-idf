@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -337,6 +337,8 @@ esp_err_t dw_gdma_channel_use_link_list(dw_gdma_channel_handle_t chan, dw_gdma_l
 
 /**
  * @brief A helper function to return an item from a given link list, by index
+ *
+ * @note The address of the returned item is not behind the cache
  *
  * @param[in] list Link list handle, allocated by `dw_gdma_new_link_list`
  * @param[in] item_index Index of the item
