@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,14 @@ extern "C" {
 /* SW defined level which the interrupt module will mask interrupt with priority less than threshold during critical sections
    and spinlocks */
 #define RVHAL_EXCM_LEVEL    4
+
+/* SW defined interrupt threshold level to allow all interrupts */
+#if SOC_INT_CLIC_SUPPORTED
+/* set global CLIC masking level. When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
+#define RVHAL_INTR_ENABLE_THRESH    0
+#else
+#define RVHAL_INTR_ENABLE_THRESH    1
+#endif /* SOC_INT_CLIC_SUPPORTED */
 
 /* --------------------------------------------------- CPU Control -----------------------------------------------------
  *

@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -144,11 +144,7 @@ BaseType_t xPortStartScheduler(void)
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
-#if !SOC_INT_CLIC_SUPPORTED
-    esprv_intc_int_set_threshold(1); /* set global INTC masking level */
-#else
-    esprv_intc_int_set_threshold(0); /* set global CLIC masking level. When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-#endif /* !SOC_INT_CLIC_SUPPORTED */
+    esprv_intc_int_set_threshold(RVHAL_INTR_ENABLE_THRESH); /* set global interrupt masking level */
     rv_utils_intr_global_enable();
 
     vPortYield();
