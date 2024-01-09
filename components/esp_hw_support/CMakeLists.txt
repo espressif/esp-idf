@@ -131,9 +131,12 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-        list(APPEND srcs "mspi_timing_tuning.c" "mspi_timing_config.c")
+        list(APPEND srcs "mspi_timing_tuning.c")
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
             list(APPEND srcs "mspi_timing_by_mspi_delay.c")
+        endif()
+        if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
+            list(APPEND srcs "mspi_timing_by_dqs.c")
         endif()
     endif()
 

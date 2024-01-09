@@ -22,7 +22,7 @@
 
 __attribute__((unused)) const static char *TAG = "PSRAM";
 
-TEST_CASE("test psram heap allocable", "[psram]")
+static void s_test_psram_heap_allocable(void)
 {
     size_t largest_size = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM);
     ESP_LOGI(TAG, "largest size is %zu", largest_size);
@@ -44,6 +44,18 @@ TEST_CASE("test psram heap allocable", "[psram]")
     }
 
     free(ext_buffer);
+}
+
+TEST_CASE("test psram heap allocable", "[psram]")
+{
+    s_test_psram_heap_allocable();
+}
+
+TEST_CASE("stress test psram heap allocable", "[psram][manual][ignore]")
+{
+    for (int times = 0; times < 50; times++) {
+        s_test_psram_heap_allocable();
+    }
 }
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA

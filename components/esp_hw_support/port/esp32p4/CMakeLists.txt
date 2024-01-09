@@ -1,3 +1,5 @@
+target_include_directories(${COMPONENT_LIB} PUBLIC .)
+
 set(srcs "rtc_clk_init.c"
          "rtc_clk.c"
          "pmu_param.c"
@@ -9,6 +11,10 @@ set(srcs "rtc_clk_init.c"
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_crypto_lock.c")
+
+    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+        list(APPEND srcs "mspi_timing_config.c")
+    endif()
 
     if(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
         list(APPEND srcs "esp_memprot.c" "../esp_memprot_conv.c")

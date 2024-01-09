@@ -11,22 +11,15 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"
-#include "mspi_timing_config.h"
-#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+#include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_tuning_configs.h"
 #include "hal/mspi_timing_tuning_ll.h"
-#endif
 
-
-#if SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM
 #define FLASH_LOW_SPEED_CORE_CLOCK_MHZ     MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT
 #define FLASH_HIGH_SPEED_CORE_CLOCK_MHZ    MSPI_TIMING_CORE_CLOCK_MHZ
 #define PSRAM_LOW_SPEED_CORE_CLOCK_MHZ     MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT
 #define PSRAM_HIGH_SPEED_CORE_CLOCK_MHZ    MSPI_TIMING_CORE_CLOCK_MHZ
-#endif  //SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM
 
-
-#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 /**
  * Currently we only need these on chips with timing tuning
  */
@@ -76,4 +69,3 @@ void mspi_timing_config_set_psram_clock(uint32_t psram_freq_mhz, mspi_timing_spe
     assert(freqdiv > 0);
     mspi_timing_ll_set_psram_clock(0, freqdiv);
 }
-#endif  //#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING

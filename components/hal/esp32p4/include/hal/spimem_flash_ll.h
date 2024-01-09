@@ -627,6 +627,11 @@ static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_
     // Not supported on esp32p4
 }
 
+static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t extra_dummy)
+{
+    //for compatibility
+}
+
 /**
  * Get the spi flash source clock frequency. Used for calculating
  * the divider parameters.
