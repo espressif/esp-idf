@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -175,6 +175,11 @@ esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens)
 
     temperature_sensor_ll_clk_sel(tsens->clk_src);
     temperature_sensor_power_acquire();
+    // After enabling/reseting the temperature sensor,
+    // the output value gradually approaches the true temperature
+    // value as the measurement time increases. 300us is recommended.
+    esp_rom_delay_us(300);
+
     tsens->fsm = TEMP_SENSOR_FSM_ENABLE;
     return ESP_OK;
 }

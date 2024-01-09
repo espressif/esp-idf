@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "sdkconfig.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 #include "hal/spi_ll.h"
 #include "hal/dac_ll.h"
 #include "hal/adc_ll.h"
@@ -128,7 +129,7 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     esp_err_t ret = ESP_OK;
     /* Acquire DMA peripheral */
     ESP_RETURN_ON_FALSE(spicommon_periph_claim(DAC_DMA_PERIPH_SPI_HOST, "dac_dma"), ESP_ERR_NOT_FOUND, TAG, "Failed to acquire DAC DMA peripheral");
-    periph_module_enable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_claim();
     /* Allocate DAC DMA peripheral object */
     s_ddp = (dac_dma_periph_spi_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_spi_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_ddp, ESP_ERR_NO_MEM, err, TAG, "No memory for DAC DMA object");
@@ -160,7 +161,7 @@ esp_err_t dac_dma_periph_deinit(void)
     }
     ESP_RETURN_ON_FALSE(spicommon_periph_free(DAC_DMA_PERIPH_SPI_HOST), ESP_FAIL, TAG, "Failed to release DAC DMA peripheral");
     spi_ll_disable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_OUT_TOTAL_EOF);
-    periph_module_disable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_free();
     if (s_ddp) {
         if (s_ddp->use_apll) {
             periph_rtc_apll_release();
