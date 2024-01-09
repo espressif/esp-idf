@@ -4,8 +4,8 @@ if(${idf_target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-if(IDF_TARGET STREQUAL "esp32p4")
-    # TODO: IDF-7460
+if(IDF_TARGET STREQUAL "esp32p4" OR IDF_TARGET STREQUAL "esp32c5")
+    # TODO: IDF-7460, IDF-8851
     return()
 endif()
 

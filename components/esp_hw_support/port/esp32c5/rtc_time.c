@@ -20,8 +20,6 @@
 
 static const char *TAG = "rtc_time";
 
-// TODO: [ESP32C5] IDF-8667
-
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
  * RTC_SLOW_CLK cycles.
@@ -252,6 +250,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 
 uint64_t rtc_time_get(void)
 {
+    // TODO: [ESP32C5] IDF-8667
     // return lp_timer_hal_get_cycle_count();
     ESP_EARLY_LOGW(TAG, "rtc_time_get has not been implemented yet");
     return 0;

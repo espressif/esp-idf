@@ -627,7 +627,7 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
             gpio_iomux_in(io_num, upin->signal);
         }
     }
-#if (SOC_UART_LP_NUM >= 1)
+#if (SOC_UART_LP_NUM >= 1) && (SOC_RTCIO_PIN_COUNT >= 1)
     else {
         if (upin->input) {
             rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_ONLY);

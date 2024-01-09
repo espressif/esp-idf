@@ -2,9 +2,9 @@
 
 examples/get-started/blink:
   disable:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
       temporary: true
-      reason: target esp32p4 is not supported yet # TODO: IDF-8074
+      reason: target esp32p4 and esp32c5 are not supported yet # TODO: IDF-8074, [ESP32C5] IDF-9006
 
 examples/get-started/hello_world:
   enable:

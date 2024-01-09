@@ -22,6 +22,5 @@
 #define ESP_ROM_HAS_SPI_FLASH               (1) // ROM has the implementation of SPI Flash driver
 #define ESP_ROM_WITHOUT_REGI2C              (1) // ROM has no regi2c APIs
 #define ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT    (1) // ROM has the newlib normal/full version of formatting functions (as opposed to the nano versions)
-#define ESP_ROM_REV0_HAS_NO_ECDSA_INTERFACE (1) // ECO 0 does not have ets_ecdsa_verify symbol, future revision will have it
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
 #define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init

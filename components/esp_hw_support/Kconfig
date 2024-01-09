@@ -245,6 +245,7 @@ menu "Hardware Settings"
     rsource "./dma/Kconfig.dma"
 
     menu "Main XTAL Config"
+        # TODO: IDF-8943
         choice XTAL_FREQ_SEL
             prompt "Main XTAL frequency"
             default XTAL_FREQ_48 if SOC_XTAL_SUPPORT_48M
