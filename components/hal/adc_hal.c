@@ -119,7 +119,7 @@ static adc_ll_digi_convert_mode_t get_convert_mode(adc_digi_convert_mode_t conve
 static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuous_clk_src_t clk_src, uint32_t clk_src_freq_hz, uint32_t sample_freq_hz)
 {
 #if !CONFIG_IDF_TARGET_ESP32
-    uint32_t interval = clk_src_freq_hz / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1) / 2 / sample_freq_hz;
+    uint32_t interval = (((long long)clk_src_freq_hz<<10) / (((long long)ADC_LL_CLKM_DIV_NUM_DEFAULT<<10) + ((long long)ADC_LL_CLKM_DIV_B_DEFAULT<<10) / ADC_LL_CLKM_DIV_A_DEFAULT) /sample_freq_hz +1) /2;
     //set sample interval
     adc_ll_digi_set_trigger_interval(interval);
     //Here we set the clock divider factor to make the digital clock to 5M Hz
