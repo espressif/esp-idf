@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -273,6 +273,15 @@ typedef void (* esp_gattc_cb_t)(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
  */
 esp_err_t esp_ble_gattc_register_callback(esp_gattc_cb_t callback);
 
+/**
+ * @brief           This function is called to get the current application callbacks
+ *                  with BTA GATTC module.
+ *
+ * @return
+ *                  - esp_gattC_cb_t : current callback
+ *
+ */
+esp_gattc_cb_t esp_ble_gattc_get_callback(void);
 
 /**
  * @brief           This function is called to register application callbacks
