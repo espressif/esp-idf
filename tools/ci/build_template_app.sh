@@ -63,6 +63,7 @@ build_stage2() {
         --build-dir ${BUILD_DIR} \
         --build-log ${BUILD_LOG_CMAKE} \
         --size-file size.json \
+        --keep-going \
         --collect-size-info size_info.txt \
         --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c6 esp32h2 esp32p4
 }
