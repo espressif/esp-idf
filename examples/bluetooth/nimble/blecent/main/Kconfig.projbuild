@@ -28,4 +28,12 @@ menu "Example Configuration"
         prompt "Enable Link Encryption"
         help
             This enables bonding and encryption after connection has been established.
+
+    config EXAMPLE_USE_CI_ADDRESS
+        bool
+        default n
+        prompt "Advertise using Test address(Internal Test ONLY)"
+        help
+            Used for internal test ONLY.
+            Use this option to advertise in a specific random address.
 endmenu
