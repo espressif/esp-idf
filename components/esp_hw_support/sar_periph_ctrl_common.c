@@ -38,20 +38,14 @@ void temperature_sensor_power_acquire(void)
     portENTER_CRITICAL(&rtc_spinlock);
     s_temperature_sensor_power_cnt++;
     if (s_temperature_sensor_power_cnt == 1) {
+        adc_apb_periph_claim();
         periph_module_enable(PERIPH_TEMPSENSOR_MODULE);
         periph_module_reset(PERIPH_TEMPSENSOR_MODULE);
         regi2c_saradc_enable();
         temperature_sensor_ll_clk_enable(true);
-#if !SOC_TEMPERATURE_SENSOR_IS_INDEPENDENT_FROM_ADC
-        adc_apb_periph_claim();
-#endif
         temperature_sensor_ll_enable(true);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
-    // After enabling/reseting the temperature sensor,
-    // the output value gradually approaches the true temperature
-    // value as the measurement time increases. 300us is recommended.
-    esp_rom_delay_us(300);
 }
 
 void temperature_sensor_power_release(void)
@@ -66,11 +60,9 @@ void temperature_sensor_power_release(void)
     } else if (s_temperature_sensor_power_cnt == 0) {
         temperature_sensor_ll_clk_enable(false);
         temperature_sensor_ll_enable(false);
-#if !SOC_TEMPERATURE_SENSOR_IS_INDEPENDENT_FROM_ADC
-        adc_apb_periph_free();
-#endif
         regi2c_saradc_disable();
         periph_module_disable(PERIPH_TEMPSENSOR_MODULE);
+        adc_apb_periph_free();
     }
     portEXIT_CRITICAL(&rtc_spinlock);
 }
