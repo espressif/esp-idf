@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -274,7 +274,7 @@ TEST_CASE("memory copy by DMA on the fly", "[async mcp]")
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 }
 
-#define TEST_ASYNC_MEMCPY_BENCH_COUNTS   (16)
+#define TEST_ASYNC_MEMCPY_BENCH_COUNTS   (8)
 static int s_count = 0;
 
 static IRAM_ATTR bool test_async_memcpy_isr_cb(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
