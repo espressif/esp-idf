@@ -112,6 +112,8 @@ typedef void* httpd_handle_t;
  */
 typedef enum http_method httpd_method_t;
 
+#define HTTP_ANY INT_MAX
+
 /**
  * @brief  Prototype for freeing context data (if any)
  * @param[in] ctx   object to free
@@ -367,7 +369,7 @@ esp_err_t httpd_stop(httpd_handle_t handle);
  */
 typedef struct httpd_req {
     httpd_handle_t  handle;                     /*!< Handle to server instance */
-    int             method;                     /*!< The type of HTTP request, -1 if unsupported method */
+    int             method;                     /*!< The type of HTTP request, -1 if unsupported method, HTTP_ANY for wildcard method to support every method */
     const char      uri[HTTPD_MAX_URI_LEN + 1]; /*!< The URI of this request (1 byte extra for null termination) */
     size_t          content_len;                /*!< Length of the request body */
     void           *aux;                        /*!< Internally used members */
@@ -423,7 +425,7 @@ typedef struct httpd_req {
  */
 typedef struct httpd_uri {
     const char       *uri;    /*!< The URI to handle */
-    httpd_method_t    method; /*!< Method supported by the URI */
+    httpd_method_t    method; /*!< Method supported by the URI, HTTP_ANY for wildcard method to support all methods*/
 
     /**
      * Handler to call for supported request method. This must
