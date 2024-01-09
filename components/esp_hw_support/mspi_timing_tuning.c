@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,9 +23,6 @@
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_DQS
 #include "mspi_timing_tuning_configs.h"
 #include "hal/mspi_timing_tuning_ll.h"
-#endif
-#if SOC_MEMSPI_TIMING_TUNING_BY_DQS
-#include "hal/psram_ctrlr_ll.h"
 #endif
 #if SOC_MEMSPI_CLK_SRC_IS_INDEPENDENT
 #include "hal/spimem_flash_ll.h"
@@ -215,6 +212,7 @@ static void s_sweep_for_success_sample_points(uint8_t *reference_data, void *con
     uint8_t read_data[MSPI_TIMING_TEST_DATA_LEN] = {0};
 
     for (config_idx = 0; config_idx < timing_config->available_config_num; config_idx++) {
+        out_array[config_idx] = 0;
         for (int i = 0; i < s_tuning_cfg_drv.sweep_test_nums; i++) {
             memset(read_data, 0, MSPI_TIMING_TEST_DATA_LEN);
 #if MSPI_TIMING_FLASH_NEEDS_TUNING
@@ -546,7 +544,7 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 /*------------------------------------------------------------------------------
  * APIs to inform SPI1 Flash driver of necessary timing configurations
  *----------------------------------------------------------------------------*/
-bool spi_timing_is_tuned(void)
+bool spi_flash_timing_is_tuned(void)
 {
 #if MSPI_TIMING_MSPI1_IS_INVOLVED
     //esp flash driver needs to be notified

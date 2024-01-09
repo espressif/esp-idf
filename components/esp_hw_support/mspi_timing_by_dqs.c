@@ -46,11 +46,11 @@
 #define WRONG_DELAYLINE 16
 
 const static char *TAG = "MSPI DQS";
-static uint32_t s_test_data[MSPI_TIMING_TEST_DATA_LEN] = {0x7f786655, 0xa5ff005a, 0x3f3c33aa, 0xa5ff5a00, 0x1f1e9955, 0xa5005aff, 0x0f0fccaa, 0xa55a00ff,
-                                                          0x07876655, 0xffa55a00, 0x03c333aa, 0xff00a55a, 0x01e19955, 0xff005aa5, 0x00f0ccaa, 0xff5a00a5,
-                                                          0x80786655, 0x00a5ff5a, 0xc03c33aa, 0x00a55aff, 0xe01e9355, 0x00ff5aa5, 0xf00fccaa, 0x005affa5,
-                                                          0xf8876655, 0x5aa5ff00, 0xfcc333aa, 0x5affa500, 0xfee19955, 0x5a00a5ff, 0x11f0ccaa, 0x5a00ffa5};
-static mspi_timing_config_t s_test_delayline_config = {
+const static uint32_t s_test_data[MSPI_TIMING_TEST_DATA_LEN] = {0x7f786655, 0xa5ff005a, 0x3f3c33aa, 0xa5ff5a00, 0x1f1e9955, 0xa5005aff, 0x0f0fccaa, 0xa55a00ff,
+                                                                0x07876655, 0xffa55a00, 0x03c333aa, 0xff00a55a, 0x01e19955, 0xff005aa5, 0x00f0ccaa, 0xff5a00a5,
+                                                                0x80786655, 0x00a5ff5a, 0xc03c33aa, 0x00a55aff, 0xe01e9355, 0x00ff5aa5, 0xf00fccaa, 0x005affa5,
+                                                                0xf8876655, 0x5aa5ff00, 0xfcc333aa, 0x5affa500, 0xfee19955, 0x5a00a5ff, 0x11f0ccaa, 0x5a00ffa5};
+const static mspi_timing_config_t s_test_delayline_config = {
         .delayline_table = {{15, 0}, {14, 0}, {13, 0}, {12, 0}, {11, 0}, {10, 0}, {9, 0}, {8, 0}, {7, 0}, {6, 0}, {5, 0}, {4, 0}, {3, 0}, {2, 0}, {1, 0}, {0, 0},
                             {0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7}, {0, 8}, {0, 9}, {0, 10}, {0, 11}, {0, 12}, {0, 13}, {0, 14}, {0, 15}},
         .available_config_num = 32,
@@ -153,7 +153,7 @@ uint32_t mspi_timing_psram_select_best_tuning_phase(const void *configs, uint32_
 
 void mspi_timing_psram_set_best_tuning_phase(const void *configs, uint8_t best_id)
 {
-    s_psram_best_phase = ((mspi_timing_config_t *)configs)->phase[best_id];
+    s_psram_best_phase = ((const mspi_timing_config_t *)configs)->phase[best_id];
 }
 
 void mspi_timing_get_psram_tuning_delaylines(mspi_timing_config_t *configs)
@@ -177,8 +177,6 @@ void mspi_timing_config_psram_set_tuning_delayline(const void *configs, uint8_t 
             mspi_timing_ll_set_delayline(i, delayline_config->data_delayline);
         }
     }
-
-    ESP_EARLY_LOGD(TAG, "set to delayline: {%d, %d}", delayline_config->data_delayline, delayline_config->dqs_delayline);
 }
 
 uint32_t mspi_timing_psram_select_best_tuning_delayline(const void *configs, uint32_t consecutive_length, uint32_t end, const uint8_t *reference_data, bool is_ddr)

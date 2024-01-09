@@ -532,14 +532,12 @@ static mspi_timing_tuning_param_t s_psram_best_timing_tuning_config;
 
 void mspi_timing_flash_set_best_tuning_config(const void *configs, uint8_t best_id)
 {
-    const mspi_timing_tuning_param_t params = ((const mspi_timing_config_t *)configs)->tuning_config_table[best_id];
-    s_flash_best_timing_tuning_config = params;
+    s_flash_best_timing_tuning_config = ((const mspi_timing_config_t *)configs)->tuning_config_table[best_id];
 }
 
 void mspi_timing_psram_set_best_tuning_config(const void *configs, uint8_t best_id)
 {
-    const mspi_timing_tuning_param_t params = ((const mspi_timing_config_t *)configs)->tuning_config_table[best_id];
-    s_psram_best_timing_tuning_config = params;
+    s_psram_best_timing_tuning_config = ((const mspi_timing_config_t *)configs)->tuning_config_table[best_id];
 }
 
 
