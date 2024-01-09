@@ -455,17 +455,26 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
+#if CONFIG_EXAMPLE_USE_CI_ADDRESS
+    uint32_t *addr_offset;
+#endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
 
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
+#if !CONFIG_EXAMPLE_USE_CI_ADDRESS
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+#else
+        addr_offset = (uint32_t *)&peer_addr[1];
+        *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
+        peer_addr[5] = 0xC3;
+#endif // !CONFIG_EXAMPLE_USE_CI_ADDRESS
         if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
@@ -501,6 +510,9 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
+#if CONFIG_EXAMPLE_USE_CI_ADDRESS
+    uint32_t *addr_offset;
+#endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
 
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
@@ -516,10 +528,16 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
+#if !CONFIG_EXAMPLE_USE_CI_ADDRESS
         /* Convert string to address */
         sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+#else
+        addr_offset = (uint32_t *)&peer_addr[1];
+        *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
+        peer_addr[5] = 0xC3;
+#endif // !CONFIG_EXAMPLE_USE_CI_ADDRESS
         if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }

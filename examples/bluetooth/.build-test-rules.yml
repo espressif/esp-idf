@@ -222,6 +222,22 @@ examples/bluetooth/nimble/ble_phy:
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
+examples/bluetooth/nimble/blecent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_components:
+    - bt
+    - esp_phy
+    - esp_event
+    - esp_coex
+    - esp_pm
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/blecent/**/*
+    - examples/bluetooth/nimble/power_save/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
+
 examples/bluetooth/nimble/blemesh:
   <<: *bt_default_depends
   enable:
@@ -266,6 +282,9 @@ examples/bluetooth/nimble/power_save:
     - esp_pm
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/blecent/**/*
+    - examples/bluetooth/nimble/power_save/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/throughput_app:
   <<: *bt_default_depends
