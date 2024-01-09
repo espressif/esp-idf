@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -972,6 +972,7 @@ found:
     chan_info->dir = handle->dir;
     chan_info->role = handle->role;
     chan_info->mode = handle->mode;
+    chan_info->total_dma_buf_size = handle->state >= I2S_CHAN_STATE_READY ? handle->dma.desc_num * handle->dma.buf_size : 0;
     if (handle->controller->full_duplex) {
         if (handle->dir == I2S_DIR_TX) {
             chan_info->pair_chan = handle->controller->rx_chan;
