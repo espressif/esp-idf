@@ -45,7 +45,7 @@ void temperature_sensor_power_acquire(void)
     s_temperature_sensor_power_cnt++;
     if (s_temperature_sensor_power_cnt == 1) {
         regi2c_saradc_enable();
-#if !SOC_TEMPERATURE_SENSOR_IS_INDEPENDENT_FROM_ADC
+#if !SOC_TSENS_IS_INDEPENDENT_FROM_ADC
         adc_apb_periph_claim();
 #endif
         TSENS_RCC_ATOMIC() {
@@ -55,10 +55,6 @@ void temperature_sensor_power_acquire(void)
         temperature_sensor_ll_enable(true);
     }
     portEXIT_CRITICAL(&rtc_spinlock);
-    // After enabling/reseting the temperature sensor,
-    // the output value gradually approaches the true temperature
-    // value as the measurement time increases. 300us is recommended.
-    esp_rom_delay_us(300);
 }
 
 void temperature_sensor_power_release(void)
@@ -75,7 +71,7 @@ void temperature_sensor_power_release(void)
         TSENS_RCC_ATOMIC() {
             temperature_sensor_ll_bus_clk_enable(false);
         }
-#if !SOC_TEMPERATURE_SENSOR_IS_INDEPENDENT_FROM_ADC
+#if !SOC_TSENS_IS_INDEPENDENT_FROM_ADC
         adc_apb_periph_free();
 #endif
         regi2c_saradc_disable();
