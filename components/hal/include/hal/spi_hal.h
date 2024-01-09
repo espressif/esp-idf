@@ -12,16 +12,15 @@
 
 // The HAL layer for SPI master (common part)
 
-// SPI HAL usages:
+// SPI HAL usages (without DMA):
 // 1. initialize the bus
-// 2. initialize the DMA descriptors if DMA used
-// 3. setup the clock speed (since this takes long time)
-// 4. call setup_device to update parameters for the specific device
-// 5. call setup_trans to update parameters for the specific transaction
-// 6. prepare data to send, and prepare the receiving buffer
-// 7. trigger user defined SPI transaction to start
-// 8. wait until the user transaction is done
-// 9. fetch the received data
+// 2. setup the clock speed (since this takes long time)
+// 3. call setup_device to update parameters for the specific device
+// 4. call setup_trans to update parameters for the specific transaction
+// 5. prepare data to send into hw registers
+// 6. trigger user defined SPI transaction to start
+// 7. wait until the user transaction is done
+// 8. fetch the received data
 // Parameter to be updated only during ``setup_device`` will be highlighted in the
 // field comments.
 
@@ -76,27 +75,6 @@ typedef struct {
 } spi_hal_timing_conf_t;
 
 /**
- * DMA configuration structure
- * Should be set by driver at initialization
- */
-typedef struct {
-    spi_dma_dev_t *dma_in;              ///< Input  DMA(DMA -> RAM) peripheral register address
-    spi_dma_dev_t *dma_out;             ///< Output DMA(RAM -> DMA) peripheral register address
-    bool dma_enabled;                   ///< Whether the DMA is enabled, do not update after initialization
-    spi_dma_desc_t *dmadesc_tx;        /**< Array of DMA descriptor used by the TX DMA.
-                                         *   The amount should be larger than dmadesc_n. The driver should ensure that
-                                         *   the data to be sent is shorter than the descriptors can hold.
-                                         */
-    spi_dma_desc_t *dmadesc_rx;         /**< Array of DMA descriptor used by the RX DMA.
-                                         *   The amount should be larger than dmadesc_n. The driver should ensure that
-                                         *   the data to be sent is shorter than the descriptors can hold.
-                                         */
-    uint32_t tx_dma_chan;               ///< TX DMA channel
-    uint32_t rx_dma_chan;               ///< RX DMA channel
-    int dmadesc_n;                      ///< The amount of descriptors of both ``dmadesc_tx`` and ``dmadesc_rx`` that the HAL can use.
-} spi_hal_config_t;
-
-/**
  * Transaction configuration structure, this should be assigned by driver each time.
  * All these parameters will be updated to the peripheral every transaction.
  */
@@ -118,25 +96,9 @@ typedef struct {
  * Context that should be maintained by both the driver and the HAL.
  */
 typedef struct {
-    /* These two need to be malloced by the driver first */
-    spi_dma_desc_t *dmadesc_tx;        /**< Array of DMA descriptor used by the TX DMA.
-                                         *   The amount should be larger than dmadesc_n. The driver should ensure that
-                                         *   the data to be sent is shorter than the descriptors can hold.
-                                         */
-    spi_dma_desc_t *dmadesc_rx;         /**< Array of DMA descriptor used by the RX DMA.
-                                         *   The amount should be larger than dmadesc_n. The driver should ensure that
-                                         *   the data to be sent is shorter than the descriptors can hold.
-                                         */
-
     /* Configured by driver at initialization, don't touch */
     spi_dev_t     *hw;                  ///< Beginning address of the peripheral registers.
-    spi_dma_dev_t *dma_in;              ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM (DMA -> RAM).
-    spi_dma_dev_t *dma_out;             ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral (RAM -> DMA).
     bool  dma_enabled;                  ///< Whether the DMA is enabled, do not update after initialization
-    uint32_t tx_dma_chan;               ///< TX DMA channel
-    uint32_t rx_dma_chan;               ///< RX DMA channel
-    int dmadesc_n;                      ///< The amount of descriptors of both ``dmadesc_tx`` and ``dmadesc_rx`` that the HAL can use.
-
     /* Internal parameters, don't touch */
     spi_hal_trans_config_t trans_config; ///< Transaction configuration
 } spi_hal_context_t;
@@ -172,9 +134,8 @@ typedef struct {
  *
  * @param hal        Context of the HAL layer.
  * @param host_id    Index of the SPI peripheral. 0 for SPI1, 1 for SPI2 and 2 for SPI3.
- * @param hal_config Configuration of the hal defined by the upper layer.
  */
-void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id, const spi_hal_config_t *hal_config);
+void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id);
 
 /**
  * Deinit the peripheral (and the context if needed).
@@ -201,13 +162,27 @@ void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *ha
 void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *hal_dev, const spi_hal_trans_config_t *hal_trans);
 
 /**
- * Prepare the data for the current transaction.
+ * Enable/Disable miso/mosi signals on peripheral side
  *
- * @param hal            Context of the HAL layer.
- * @param hal_dev        Device configuration
- * @param hal_trans      Transaction configuration
+ * @param hw        Beginning address of the peripheral registers.
+ * @param mosi_ena  enable/disable mosi line
+ * @param miso_ena  enable/disable miso line
  */
-void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *hal_dev, const spi_hal_trans_config_t *hal_trans);
+void spi_hal_enable_data_line(spi_dev_t *hw, bool mosi_ena, bool miso_ena);
+
+/**
+ * Prepare tx hardware for a new DMA trans
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+void spi_hal_hw_prepare_rx(spi_dev_t *hw);
+
+/**
+ * Prepare tx hardware for a new DMA trans
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+void spi_hal_hw_prepare_tx(spi_dev_t *hw);
 
 /**
  * Trigger start a user-defined transaction.
@@ -222,6 +197,14 @@ void spi_hal_user_start(const spi_hal_context_t *hal);
  * @param hal Context of the HAL layer.
  */
 bool spi_hal_usr_is_done(const spi_hal_context_t *hal);
+
+/**
+ * Setup transaction operations, write tx buffer to HW registers
+ *
+ * @param hal       Context of the HAL layer.
+ * @param hal_trans Transaction configuration.
+ */
+void spi_hal_push_tx_buffer(const spi_hal_context_t *hal, const spi_hal_trans_config_t *hal_trans);
 
 /**
  * Post transaction operations, mainly fetch data from the buffer.

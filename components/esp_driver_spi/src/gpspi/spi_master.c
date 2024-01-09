@@ -261,29 +261,10 @@ static esp_err_t spi_master_init_driver(spi_host_device_t host_id)
         }
     }
 
-    //assign the SPI, RX DMA and TX DMA peripheral registers beginning address
-    spi_hal_config_t hal_config = { .dma_enabled = bus_attr->dma_enabled, };
-    if (bus_attr->dma_enabled && dma_ctx) {
-        hal_config.dmadesc_tx = dma_ctx->dmadesc_tx;
-        hal_config.dmadesc_rx = dma_ctx->dmadesc_rx;
-        hal_config.dmadesc_n = dma_ctx->dma_desc_num;
-#if SOC_GDMA_SUPPORTED
-        //temporary used for gdma_ll alias in hal layer
-        gdma_get_channel_id(dma_ctx->tx_dma_chan, (int *)&hal_config.tx_dma_chan);
-        gdma_get_channel_id(dma_ctx->rx_dma_chan, (int *)&hal_config.rx_dma_chan);
-#else
-        //On ESP32-S2 and earlier chips, DMA registers are part of SPI registers. Pass the registers of SPI peripheral to control it.
-        hal_config.dma_in = SPI_LL_GET_HW(host_id);
-        hal_config.dma_out = SPI_LL_GET_HW(host_id);
-        hal_config.tx_dma_chan = dma_ctx->tx_dma_chan.chan_id;
-        hal_config.rx_dma_chan = dma_ctx->rx_dma_chan.chan_id;
-#endif
-    }
-
     SPI_MASTER_PERI_CLOCK_ATOMIC() {
         spi_ll_enable_clock(host_id, true);
     }
-    spi_hal_init(&host->hal, host_id, &hal_config);
+    spi_hal_init(&host->hal, host_id);
 
     if (host_id != SPI1_HOST) {
         //SPI1 attributes are already initialized at start up.
@@ -625,6 +606,56 @@ static void SPI_MASTER_ISR_ATTR spi_bus_intr_disable(void *host)
     esp_intr_disable(((spi_host_t*)host)->intr);
 }
 
+#if SOC_GDMA_SUPPORTED  // AHB_DMA_V1 and AXI_DMA
+// dma is provided by gdma driver on these targets
+#define spi_dma_reset               gdma_reset
+#define spi_dma_start(chan, addr)   gdma_start(chan, (intptr_t)(addr))
+#endif
+
+static void SPI_MASTER_ISR_ATTR s_spi_dma_prepare_data(spi_host_t *host, spi_hal_context_t *hal, const spi_hal_dev_config_t *dev, const spi_hal_trans_config_t *trans)
+{
+    const spi_dma_ctx_t *dma_ctx = host->dma_ctx;
+
+    if (trans->rcv_buffer) {
+        spicommon_dma_desc_setup_link(dma_ctx->dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
+
+        spi_dma_reset(dma_ctx->rx_dma_chan);
+        spi_hal_hw_prepare_rx(hal->hw);
+        spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
+    }
+#if CONFIG_IDF_TARGET_ESP32
+    else if (!dev->half_duplex) {
+        //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
+        spi_ll_dma_rx_enable(hal->hw, 1);
+        spi_dma_start(dma_ctx->rx_dma_chan, NULL);
+    }
+#endif
+    if (trans->send_buffer) {
+        spicommon_dma_desc_setup_link(dma_ctx->dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
+
+        spi_dma_reset(dma_ctx->tx_dma_chan);
+        spi_hal_hw_prepare_tx(hal->hw);
+        spi_dma_start(dma_ctx->tx_dma_chan, dma_ctx->dmadesc_tx);
+    }
+}
+
+static void SPI_MASTER_ISR_ATTR s_spi_prepare_data(spi_device_t *dev, const spi_hal_trans_config_t *hal_trans)
+{
+    spi_host_t *host = dev->host;
+    spi_hal_dev_config_t *hal_dev = &(dev->hal_dev);
+    spi_hal_context_t *hal = &(host->hal);
+
+    if (host->bus_attr->dma_enabled) {
+        s_spi_dma_prepare_data(host, hal, hal_dev, hal_trans);
+    } else {
+        //Need to copy data to registers manually
+        spi_hal_push_tx_buffer(hal, hal_trans);
+    }
+
+    //in ESP32 these registers should be configured after the DMA is set
+    spi_hal_enable_data_line(hal->hw, (!hal_dev->half_duplex && hal_trans->rcv_buffer) || hal_trans->send_buffer, !!hal_trans->rcv_buffer);
+}
+
 // The function is called to send a new transaction, in ISR or in the task.
 // Setup the transaction-specified registers and linked-list used by the DMA (or FIFO if DMA is not used)
 static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_t *trans_buf)
@@ -677,7 +708,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     }
 
     spi_hal_setup_trans(hal, hal_dev, &hal_trans);
-    spi_hal_prepare_data(hal, hal_dev, &hal_trans);
+    s_spi_prepare_data(dev, &hal_trans);
 
     //Call pre-transmission callback, if any
     if (dev->cfg.pre_cb) {
@@ -693,7 +724,9 @@ static void SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
 {
     spi_transaction_t *cur_trans = host->cur_trans_buf.trans;
 
-    spi_hal_fetch_result(&host->hal);
+    if (!host->bus_attr->dma_enabled) {
+        spi_hal_fetch_result(&host->hal);
+    }
     //Call post-transaction callback, if any
     spi_device_t* dev = host->device[host->cur_cs];
     if (dev->cfg.post_cb) {

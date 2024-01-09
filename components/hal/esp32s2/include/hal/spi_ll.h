@@ -388,6 +388,7 @@ static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
  * @param hw     Beginning address of the peripheral registers.
  * @param enable 1: enable; 2: disable
  */
+__attribute__((always_inline))
 static inline void spi_ll_dma_rx_enable(spi_dev_t *hw, bool enable)
 {
     //This is not used in esp32s2
@@ -399,6 +400,7 @@ static inline void spi_ll_dma_rx_enable(spi_dev_t *hw, bool enable)
  * @param hw     Beginning address of the peripheral registers.
  * @param enable 1: enable; 2: disable
  */
+__attribute__((always_inline))
 static inline void spi_ll_dma_tx_enable(spi_dev_t *hw, bool enable)
 {
     //This is not used in esp32s2
@@ -1266,6 +1268,7 @@ static inline void spi_dma_ll_reset_register(spi_host_device_t host_id) {
  * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
  * @param channel DMA channel, for chip version compatibility, not used.
  */
+__attribute__((always_inline))
 static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     dma_in->dma_conf.in_rst = 1;
@@ -1279,6 +1282,7 @@ static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param addr    Address of the beginning DMA descriptor.
  */
+__attribute__((always_inline))
 static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, lldesc_t *addr)
 {
     dma_in->dma_in_link.addr = (int) addr & 0xFFFFF;
@@ -1340,6 +1344,7 @@ static inline uint32_t spi_dma_ll_get_in_suc_eof_desc_addr(spi_dma_dev_t *dma_in
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
  * @param channel DMA channel, for chip version compatibility, not used.
  */
+__attribute__((always_inline))
 static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     //Reset TX DMA peripheral
@@ -1354,6 +1359,7 @@ static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param addr    Address of the beginning DMA descriptor.
  */
+__attribute__((always_inline))
 static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, lldesc_t *addr)
 {
     dma_out->dma_out_link.addr = (int) addr & 0xFFFFF;

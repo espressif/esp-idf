@@ -103,6 +103,16 @@ esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma
 esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *actual_max_sz);
 
 /**
+ * Setupt/Configure dma descriptor link list
+ *
+ * @param dmadesc start of dma descriptor memory
+ * @param data    start of data buffer to be configured in
+ * @param len     length of data buffer, in byte
+ * @param is_rx   if descriptor is for rx/receive direction
+ */
+void spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx);
+
+/**
  * @brief Free DMA for SPI
  *
  * @param dma_ctx  spi_dma_ctx_t struct pointer
