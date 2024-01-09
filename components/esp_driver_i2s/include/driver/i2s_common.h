@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +76,10 @@ typedef struct {
     i2s_dir_t           dir;                /*!< I2S channel direction */
     i2s_comm_mode_t     mode;               /*!< I2S channel communication mode */
     i2s_chan_handle_t   pair_chan;          /*!< I2S pair channel handle in duplex mode, always NULL in simplex mode */
+    uint32_t            total_dma_buf_size; /*!< Total size of all the allocated DMA buffers
+                                             *   - 0 if the channel has not been initialized
+                                             *   - non-zero if the channel has been initialized
+                                             */
 } i2s_chan_info_t;
 
 /**
