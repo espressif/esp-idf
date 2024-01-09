@@ -30,7 +30,7 @@ check_pylint:
   script:
     - |
       if [ -n "$CI_MERGE_REQUEST_IID" ]; then
-        export files=$(echo $GIT_DIFF_OUTPUT | grep ".py$" | xargs);
+        export files=$(echo "$GIT_DIFF_OUTPUT" | grep ".py$" | xargs);
       else
         export files=$(git ls-files "*.py" | xargs);
       fi
@@ -53,8 +53,10 @@ check_pylint:
 .sonar_scan_template:
   stage: build
   extends: .pre_check_template
-  image:
-    name: $SONARQUBE_SCANNER_IMAGE
+  # full clone since this image does not support fetch --shallow-since-cutoff
+  # shiny runners are used for full clone
+  tags: [build, shiny]
+  image: $SONARQUBE_SCANNER_IMAGE
   before_script:
     - source tools/ci/utils.sh
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
@@ -68,7 +70,7 @@ check_pylint:
     - export SONAR_SCANNER_OPTS="-Xmx2048m"
   variables:
     GIT_DEPTH: 0
-    REPORT_PATTERN: clang_tidy_reports/*.txt
+    REPORT_PATTERN: clang_tidy_reports/**/*.txt
   artifacts:
     when: always
     paths:
@@ -81,7 +83,7 @@ code_quality_check:
   extends:
     - .sonar_scan_template
     - .rules:patterns:static-code-analysis-preview
-  allow_failure: true  # since now it's using exit code to indicate the code analysis result,
+  allow_failure: true  # it's using exit code to indicate the code analysis result,
                        # we don't want to block ci when critical issues founded
   script:
     - export CI_MERGE_REQUEST_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits --src-branch ${CI_COMMIT_REF_NAME} | tr '\n' ',')
@@ -104,7 +106,7 @@ code_quality_report:
   extends:
     - .sonar_scan_template
     - .rules:protected
-  allow_failure: true  # since now it's using exit code to indicate the code analysis result,
+  allow_failure: true  # it's using exit code to indicate the code analysis result,
                        # we don't want to block ci when critical issues founded
   script:
     - sonar-scanner
