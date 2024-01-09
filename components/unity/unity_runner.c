@@ -91,6 +91,13 @@ static int multiple_function_option(const test_desc_t *test_ms)
     }
     selection = atoi((const char *) cmdline) - 1;
     if (selection >= 0 && selection < test_ms->test_fn_count) {
+        UnityPrint("Running stage ");
+        UnityPrintNumber(selection + 1);
+        UnityPrint("...");
+        UNITY_PRINT_EOL();
+        // Unit test runner expects to see test name before the test starts
+        UNITY_OUTPUT_FLUSH();
+
         unity_default_test_run(test_ms->fn[selection], test_ms->name, test_ms->line);
     } else {
         UnityPrint("Invalid selection, your should input number 1-");
