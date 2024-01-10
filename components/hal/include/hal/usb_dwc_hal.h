@@ -176,7 +176,7 @@ typedef struct {
     uint32_t *periodic_frame_list;                 /**< Pointer to scheduling frame list */
     usb_hal_frame_list_len_t frame_list_len;       /**< Length of the periodic scheduling frame list */
     //FIFO related
-    const usb_dwc_hal_fifo_config_t *fifo_config;  /**< FIFO sizes configuration */
+    usb_dwc_hal_fifo_config_t fifo_config;         /**< FIFO sizes configuration */
     union {
         struct {
             uint32_t dbnc_lock_enabled: 1;      /**< Debounce lock enabled */
