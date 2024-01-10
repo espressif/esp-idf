@@ -5,11 +5,12 @@ if(${target} STREQUAL "linux")
 endif()
 
 set(srcs "src/core_dump_common.c"
-         "src/core_dump_checksum.c"
          "src/core_dump_flash.c"
          "src/core_dump_uart.c"
          "src/core_dump_elf.c"
-         "src/core_dump_binary.c")
+         "src/core_dump_binary.c"
+         "src/core_dump_sha.c"
+         "src/core_dump_crc.c")
 
 set(includes "include")
 set(priv_includes "include_core_dump")
