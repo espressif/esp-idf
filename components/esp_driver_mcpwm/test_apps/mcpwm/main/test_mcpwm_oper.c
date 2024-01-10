@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "driver/mcpwm_gen.h"
 #include "driver/mcpwm_fault.h"
 #include "driver/gpio.h"
+#include "test_mcpwm_utils.h"
 
 TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
 {
@@ -71,7 +72,7 @@ TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
     TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
 
     mcpwm_generator_config_t generator_config = {
-        .gen_gpio_num = 0,
+        .gen_gpio_num = TEST_PWMA_GPIO,
     };
     mcpwm_gen_handle_t generator = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
@@ -155,8 +156,8 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     };
     mcpwm_fault_handle_t gpio_cbc_fault = NULL;
     mcpwm_fault_handle_t gpio_ost_fault = NULL;
-    const int cbc_fault_gpio = 4;
-    const int ost_fault_gpio = 5;
+    const int cbc_fault_gpio = TEST_FAULT_GPIO1;
+    const int ost_fault_gpio = TEST_FAULT_GPIO2;
 
     gpio_fault_config.gpio_num = cbc_fault_gpio;
     TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &gpio_cbc_fault));
@@ -179,8 +180,8 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("create generators\r\n");
-    const int gen_a_gpio = 0;
-    const int gen_b_gpio = 2;
+    const int gen_a_gpio = TEST_PWMA_GPIO;
+    const int gen_b_gpio = TEST_PWMB_GPIO;
     mcpwm_gen_handle_t gen_a = NULL;
     mcpwm_gen_handle_t gen_b = NULL;
     mcpwm_generator_config_t generator_config = {
@@ -285,8 +286,8 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("create generators\r\n");
-    const int gen_a_gpio = 0;
-    const int gen_b_gpio = 2;
+    const int gen_a_gpio = TEST_PWMA_GPIO;
+    const int gen_b_gpio = TEST_PWMB_GPIO;
     mcpwm_gen_handle_t gen_a = NULL;
     mcpwm_gen_handle_t gen_b = NULL;
     mcpwm_generator_config_t generator_config = {

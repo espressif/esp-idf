@@ -20,11 +20,19 @@
 #if CONFIG_IDF_TARGET_ESP32
 #define TEST_PWMA_GPIO (2)
 #define TEST_PWMB_GPIO (4)
+#define TEST_CAP_GPIO (21)
 #define TEST_FAULT_GPIO (21)
 #define TEST_SYNC_GPIO_0 (21)
 #define TEST_SYNC_GPIO_1 (18)
 #define TEST_SYNC_GPIO_2 (19)
-#define TEST_CAP_GPIO (21)
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define TEST_PWMA_GPIO (20)
+#define TEST_PWMB_GPIO (21)
+#define TEST_CAP_GPIO  (22)
+#define TEST_FAULT_GPIO  (22)
+#define TEST_SYNC_GPIO_0 (22)
+#define TEST_SYNC_GPIO_1 (32)
+#define TEST_SYNC_GPIO_2 (33)
 #else
 #define TEST_PWMA_GPIO (1)
 #define TEST_PWMB_GPIO (2)

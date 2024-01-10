@@ -153,6 +153,9 @@ static void mcpwm_module_enable(mcpwm_unit_t mcpwm_num)
             mcpwm_ll_enable_bus_clock(mcpwm_num, true);
             mcpwm_ll_reset_register(mcpwm_num);
         }
+        MCPWM_CLOCK_SRC_ATOMIC() {
+            mcpwm_ll_group_enable_clock(mcpwm_num, true);
+        }
     }
     context[mcpwm_num].module_ref_count++;
     mcpwm_critical_exit(mcpwm_num);
@@ -165,6 +168,9 @@ static void mcpwm_module_disable(mcpwm_unit_t mcpwm_num)
     if (context[mcpwm_num].module_ref_count == 0) {
         MCPWM_RCC_ATOMIC() {
             mcpwm_ll_enable_bus_clock(mcpwm_num, false);
+        }
+        MCPWM_CLOCK_SRC_ATOMIC() {
+            mcpwm_ll_group_enable_clock(mcpwm_num, false);
         }
     }
     mcpwm_critical_exit(mcpwm_num);
@@ -261,6 +267,7 @@ static inline uint32_t mcpwm_timer_get_resolution(mcpwm_unit_t mcpwm_num, mcpwm_
 
 esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, uint32_t resolution)
 {
+    mcpwm_module_enable(mcpwm_num);
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     uint32_t clk_src_hz = 0;
     esp_clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_hz);
@@ -460,7 +467,6 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
     uint32_t timer_pre_scale = group_resolution / timer_resolution;
 
     MCPWM_CLOCK_SRC_ATOMIC() {
-        mcpwm_ll_group_enable_clock(hal->dev, true);
         mcpwm_ll_group_set_clock_source(hal->dev, (soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT);
         mcpwm_ll_group_set_clock_prescale(hal->dev, group_pre_scale);
     }
@@ -858,7 +864,6 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     uint32_t group_pre_scale = clk_src_hz / group_resolution;
 
     MCPWM_CLOCK_SRC_ATOMIC() {
-        mcpwm_ll_group_enable_clock(hal->dev, true);
         mcpwm_ll_group_set_clock_source(hal->dev, (soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT);
         mcpwm_ll_group_set_clock_prescale(hal->dev, group_pre_scale);
     }
@@ -881,7 +886,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     if (context[mcpwm_num].mcpwm_intr_handle == NULL) {
         ret = esp_intr_alloc(mcpwm_periph_signals.groups[mcpwm_num].irq_id, MCPWM_INTR_FLAG,
                              mcpwm_default_isr_handler,
-                             (void *) (context + mcpwm_num), &(context[mcpwm_num].mcpwm_intr_handle));
+                             (void *)(context + mcpwm_num), &(context[mcpwm_num].mcpwm_intr_handle));
     }
     mcpwm_mutex_unlock(mcpwm_num);
 
