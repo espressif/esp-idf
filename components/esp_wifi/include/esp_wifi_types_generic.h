@@ -41,12 +41,15 @@ typedef enum {
     WIFI_IF_MAX                       /**< Maximum number of interfaces */
 } wifi_interface_t;
 
-#define WIFI_OFFCHAN_TX_REQ      1    /**< Request off-channel transmission */
-#define WIFI_OFFCHAN_TX_CANCEL   0    /**< Cancel off-channel transmission */
+enum {
+    WIFI_OFFCHAN_TX_CANCEL,   /**< Cancel off-channel transmission */
+    WIFI_OFFCHAN_TX_REQ,      /**< Request off-channel transmission */
+};
 
-#define WIFI_ROC_REQ     1    /**< Request remain on channel */
-#define WIFI_ROC_CANCEL  0    /**< Cancel remain on channel */
-
+enum {
+    WIFI_ROC_CANCEL,    /**< Cancel remain on channel */
+    WIFI_ROC_REQ,       /**< Request remain on channel */
+};
 /**
   * @brief Wi-Fi country policy
   */
@@ -793,7 +796,7 @@ typedef enum {
   *
   */
 typedef void (* wifi_action_roc_done_cb_t)(uint32_t context, uint8_t op_id,
-                                          wifi_roc_done_status_t status);
+                                           wifi_roc_done_status_t status);
 
 /**
  * @brief Remain on Channel request
@@ -804,6 +807,7 @@ typedef struct {
     wifi_interface_t ifx;              /**< WiFi interface to send request to */
     uint8_t type;                      /**< ROC operation type */
     uint8_t channel;                   /**< Channel on which to perform ROC Operation */
+    wifi_second_chan_t sec_channel;    /**< Secondary channel */
     uint32_t wait_time_ms;             /**< Duration to wait for on target channel */
     wifi_action_rx_cb_t rx_cb;         /**< Rx Callback to receive any response */
     uint8_t op_id;                     /**< ID of this specific ROC operation provided by wifi driver */
@@ -1253,8 +1257,9 @@ typedef struct {
   */
 typedef struct {
     uint32_t context;               /**< Context to identify the initiator of the request */
-    wifi_roc_done_status_t status;  /**< API request Identifier provided in ROC req */
+    wifi_roc_done_status_t status;  /**< ROC status */
     uint8_t op_id;                  /**< ID of the corresponding ROC operation */
+    uint8_t channel;                /**< Channel provided in tx request */
 } wifi_event_roc_done_t;
 
 /**
