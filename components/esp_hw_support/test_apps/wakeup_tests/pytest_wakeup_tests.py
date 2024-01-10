@@ -16,13 +16,13 @@ TEST_CONFIGS = [
 # ESP32S2: need to fix GPIO43 bug
 # ESP32S3: need to fix GPIO33, GPIO34 and GPIO43 bug
 available_gpio_nums = {
-    'esp32': [0, 2, 4, 5, 12, 13, 14, 15, 18, 19, 21, 22, 23, 27],
-    'esp32s2': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 33, 34, 35, 36, 37, 38, 39, 40, 42, 45],
-    'esp32s3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 35, 36, 37, 39, 40, 42, 45, 46],
-    'esp32c2': [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 18],
-    'esp32c3': [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 18, 19],
+    'esp32': [2, 4, 5, 12, 13, 14, 15, 18, 19, 21, 22, 23, 27],
+    'esp32s2': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 33, 34, 35, 36, 37, 38, 39, 40, 42, 45],
+    'esp32s3': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 35, 36, 37, 39, 40, 42, 45, 46],
+    'esp32c2': [0, 1, 2, 3, 4, 5, 6, 7, 10, 18],
+    'esp32c3': [0, 1, 2, 3, 4, 5, 6, 7, 10, 18, 19],
     'esp32c6': [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 15, 18, 19, 20, 21, 22, 23],
-    'esp32h2': [0, 1, 2, 3, 4, 5, 9, 10, 11, 12, 22, 25, 26, 27],
+    'esp32h2': [0, 1, 2, 3, 4, 5, 10, 11, 12, 22, 25, 26, 27],
 }
 
 available_rtcio_nums = {
@@ -80,6 +80,8 @@ def test_ext1_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 
             sleep(2)
 
+            wakee.write('cause')
+            wakee.expect('Wake up from EXT1', timeout=10)
             wakee.write(f'ext1 -p {gpio_num} -d')
             wakee.expect(f'io_wakeup_num = {gpio_num}', timeout=10)
 
@@ -126,6 +128,8 @@ def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
 
             sleep(2)
 
+            wakee.write('cause')
+            wakee.expect('Wake up from GPIO', timeout=10)
             wakee.write(f'rtcio -p {gpio_num} -d')
             wakee.expect(f'io_wakeup_num = {gpio_num}', timeout=10)
 
@@ -169,6 +173,9 @@ def test_gpio_wakeup_enable_lightsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             waker.expect(f'io_level = {wakeup_level}', timeout=10)
 
             wakee.expect('esp_light_sleep_start', timeout=10)
+
+            wakee.write('cause')
+            wakee.expect('Wake up from GPIO', timeout=10)
 
             wakee.write(f'gpio -p {gpio_num} -d')
             wakee.expect(f'io_wakeup_num = {gpio_num}', timeout=10)

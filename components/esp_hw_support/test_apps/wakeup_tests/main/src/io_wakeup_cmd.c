@@ -344,6 +344,48 @@ static void register_gpio_control(void)
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
 
+static struct {
+    struct arg_end *end;
+} wakeup_cause_args;
+
+static int process_get_wakeup_cause(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &wakeup_cause_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, sleep_args.end, argv[0]);
+        return 1;
+    }
+
+    switch (esp_sleep_get_wakeup_cause()) {
+    case ESP_SLEEP_WAKEUP_EXT1: {
+        printf("Wake up from EXT1\n");
+        break;
+    }
+    case ESP_SLEEP_WAKEUP_GPIO: {
+        printf("Wake up from GPIO\n");
+        break;
+    }
+    default: {
+        printf("Wakeup cause err\n");
+    }
+    }
+    return 0;
+}
+
+static void register_get_wakeup_cause(void)
+{
+    wakeup_cause_args.end = arg_end(1);
+
+    const esp_console_cmd_t cmd = {
+        .command = "cause",
+        .help = "get the wakeup cause",
+        .hint = NULL,
+        .func = &process_get_wakeup_cause,
+        .argtable = &wakeup_cause_args
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
+}
+
 void register_io_wakeup_cmd(void)
 {
     register_sleep();
@@ -355,4 +397,5 @@ void register_io_wakeup_cmd(void)
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
     register_rtcio_wakeup();
 #endif
+    register_get_wakeup_cause();
 }
