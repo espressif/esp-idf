@@ -1265,6 +1265,32 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
 esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
 
 /**
+  * @brief      Request extra reference of Wi-Fi radio.
+  *             Wi-Fi keep active state(RF opened) to be able to receive packets.
+  *
+  * @attention  Please pair the use of `esp_wifi_force_wakeup_acquire` with `esp_wifi_force_wakeup_release`.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  */
+esp_err_t esp_wifi_force_wakeup_acquire(void);
+
+/**
+  * @brief      Release extra reference of Wi-Fi radio.
+  *             Wi-Fi go to sleep state(RF closed) if no more use of radio.
+  *
+  * @attention  Please pair the use of `esp_wifi_force_wakeup_acquire` with `esp_wifi_force_wakeup_release`.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  */
+esp_err_t esp_wifi_force_wakeup_release(void);
+
+/**
   * @brief     configure country
   *
   * @attention 1. When ieee80211d_enabled, the country info of the AP to which
