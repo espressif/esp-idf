@@ -23,7 +23,6 @@ menu "Bootloader config"
             - The default "Size" setting will add the -0s flag to CFLAGS.
             - The "Debug" setting will add the -Og flag to CFLAGS.
             - The "Performance" setting will add the -O2 flag to CFLAGS.
-            - The "None" setting will add the -O0 flag to CFLAGS.
 
             Note that custom optimization levels may be unsupported.
 
@@ -34,7 +33,9 @@ menu "Bootloader config"
         config BOOTLOADER_COMPILER_OPTIMIZATION_PERF
             bool "Optimize for performance (-O2)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_NONE
-            bool "Debug without optimization (-O0)"
+            bool "Debug without optimization (-O0) (Deprecated, will be removed in IDF v6.0)"
+            depends on IDF_TARGET_ARCH_XTENSA || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2
+
     endchoice
 
     choice BOOTLOADER_LOG_LEVEL
