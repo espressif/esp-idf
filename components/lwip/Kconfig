@@ -718,8 +718,8 @@ menu "LWIP"
                 cause Wi-Fi/Ethernet fail to release RX buffer in time.
                 It is possible that all RX buffers for MAC layer are used by OOSEQ.
 
-                Control the number of out-of-order pbufs to ensure that the MAC layer has
-                enough RX buffer to receive packets.
+                Control the number of out-of-order pbufs to ensure
+                that the MAC layer has enough RX buffer to receive packets.
 
                 In the Wi-Fi scenario, recommended OOSEQ PBUFS Range:
                 0 <= TCP_OOSEQ_MAX_PBUFS <= CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM/(MAX_TCP_NUMBER + 1)

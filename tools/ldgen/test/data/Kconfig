@@ -5,15 +5,15 @@ menu "Test config"
         range 0 3
         prompt "Performance level"
 
-    config A
+    config PERFORMANCE_A
         bool
         default "y"
 
-    config B
+    config PERFORMANCE_B
         bool
         default "n"
 
-    config C
+    config PERFORMANCE_C
         bool
         default "y"
-endmenu
+endmenu # Test config
