@@ -1,17 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
+#include "sdkconfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#define TEST_PCNT_GPIO_A 20
+#define TEST_PCNT_GPIO_B 21
+#define TEST_PCNT_GPIO_Z 22
+#else
 #define TEST_PCNT_GPIO_A 0
 #define TEST_PCNT_GPIO_B 2
 #define TEST_PCNT_GPIO_Z 4
+#endif
 
 #if CONFIG_PCNT_ISR_IRAM_SAFE
 #define TEST_PCNT_CALLBACK_ATTR IRAM_ATTR
