@@ -58,6 +58,9 @@ static void print_auth_mode(int authmode)
     case WIFI_AUTH_WPA3_EXT_PSK:
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA3_EXT_PSK");
         break;
+    case WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE");
+        break;
     default:
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_UNKNOWN");
         break;
