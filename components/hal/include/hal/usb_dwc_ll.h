@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,75 +32,6 @@ extern "C" {
 
 #define USB_DWC_QTD_LIST_MEM_ALIGN              512
 #define USB_DWC_FRAME_LIST_MEM_ALIGN            512     // The frame list needs to be 512 bytes aligned (contrary to the databook)
-/*
-Although we have a 256 lines, only 200 lines are useable due to EPINFO_CTL.
-Todo: Check sizes again and express this macro in terms of DWC config options (IDF-7384)
-*/
-#define USB_DWC_FIFO_TOTAL_USABLE_LINES         200
-
-/* -----------------------------------------------------------------------------
------------------------------- DWC Configuration -------------------------------
------------------------------------------------------------------------------ */
-
-/**
- * @brief Default FIFO sizes (see 2.1.2.4 for programming guide)
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 48 - 48 = 104
- * - Worst case can accommodate two packets of 204 bytes, or one packet of 408
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 3 = 48
- * - Worst case can accommodate three packets of 64 bytes or one packet of 192
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 3 = 48
- * - Worst case can accommodate three packets of 64 bytes or one packet of 192
- */
-#define USB_DWC_FIFO_RX_LINES_DEFAULT    104
-#define USB_DWC_FIFO_NPTX_LINES_DEFAULT  48
-#define USB_DWC_FIFO_PTX_LINES_DEFAULT   48
-
-/**
- * @brief FIFO sizes that bias to giving RX FIFO more capacity
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 32 - 16 = 152
- * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 1 packets: (64/4) * 1 = 16
- * - Worst case can accommodate one packet of 64 bytes
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 2 = 32
- * - Worst case can accommodate two packets of 64 bytes or one packet of 128
- */
-#define USB_DWC_FIFO_RX_LINES_BIASRX     152
-#define USB_DWC_FIFO_NPTX_LINES_BIASRX   16
-#define USB_DWC_FIFO_PTX_LINES_BIASRX    32
-
-/**
- * @brief FIFO sizes that bias to giving Periodic TX FIFO more capacity (i.e., ISOC OUT)
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Assume LPS is 64, and 2 packets: ((64/4) * 2) + 2 = 34
- * - Worst case can accommodate two packets of 64 bytes or one packet of 128
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 1 packets: (64/4) * 1 = 16
- * - Worst case can accommodate one packet of 64 bytes
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 34 - 16 = 150
- * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
- */
-#define USB_DWC_FIFO_RX_LINES_BIASTX     34
-#define USB_DWC_FIFO_NPTX_LINES_BIASTX   16
-#define USB_DWC_FIFO_PTX_LINES_BIASTX    150
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
