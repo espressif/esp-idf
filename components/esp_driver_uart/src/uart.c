@@ -1326,10 +1326,10 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
             uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
         }
     } else {
-        while (size) {
-            //semaphore for tx_fifo available
-            if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (TickType_t)portMAX_DELAY)) {
-                uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) src, size);
+        // semaphore for tx_fifo available
+        if (size > 0 && pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (TickType_t)portMAX_DELAY)) {
+            while (size) {
+                uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *)src, size);
                 if (sent < size) {
                     p_uart_obj[uart_num]->tx_waiting_fifo = true;
                     uart_enable_tx_intr(uart_num, 1, UART_THRESHOLD_NUM(uart_num, UART_EMPTY_THRESH_DEFAULT));
@@ -1338,6 +1338,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
                 src += sent;
             }
         }
+
         if (brk_en) {
             uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
             UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
