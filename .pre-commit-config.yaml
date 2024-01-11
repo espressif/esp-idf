@@ -155,7 +155,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps~=2.0.0rc1
+          - idf-build-apps~=2.0
       - id: sort-build-test-rules-ymls
         name: sort .build-test-rules.yml files
         entry: tools/ci/check_build_test_rules.py sort-yaml

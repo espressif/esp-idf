@@ -3,7 +3,7 @@
 
 # ci
 coverage
-idf-build-apps~=2.0.0rc1
+idf-build-apps
 jsonschema
 junit_xml
 python-gitlab
