@@ -22,6 +22,10 @@ entries:
         esp_ieee802154_timer: ieee802154_timer0_stop (noflash)
         esp_ieee802154_timer: ieee802154_timer1_stop (noflash)
         esp_ieee802154_util: ieee802154_etm_channel_clear (noflash)
+
+        if IEEE802154_DEBUG = y:
+            esp_ieee802154_debug (noflash)
+
         if IEEE802154_TIMING_OPTIMIZATION = y:
             esp_ieee802154_dev: set_next_rx_buffer (noflash)
             esp_ieee802154_dev: stop_rx (noflash)

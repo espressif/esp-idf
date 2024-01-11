@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,6 +75,15 @@ static intr_handle_t s_ieee802154_isr_handle = NULL;
 
 static esp_err_t ieee802154_sleep_init(void);
 static void next_operation(void);
+static esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool cca);
+
+#if !CONFIG_IEEE802154_TEST
+typedef struct {
+    const uint8_t *frame;
+    bool cca;
+} pending_tx_t;
+static pending_tx_t s_pending_tx = { 0 };
+#endif
 
 #if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
 static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
@@ -367,10 +376,18 @@ static void enable_rx(void)
 
 static IRAM_ATTR void next_operation(void)
 {
-    if (ieee802154_pib_get_rx_when_idle()) {
-        enable_rx();
-    } else {
-        ieee802154_set_state(IEEE802154_STATE_IDLE);
+#if !CONFIG_IEEE802154_TEST
+    if (s_pending_tx.frame) {
+        ieee802154_transmit_internal(s_pending_tx.frame, s_pending_tx.cca);
+        s_pending_tx.frame = NULL;
+    } else
+#endif
+    {
+        if (ieee802154_pib_get_rx_when_idle()) {
+            enable_rx();
+        } else {
+            ieee802154_set_state(IEEE802154_STATE_IDLE);
+        }
     }
 }
 
@@ -802,7 +819,7 @@ IEEE802154_STATIC void tx_init(const uint8_t *frame)
     }
 }
 
-esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
+static inline esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool cca)
 {
     IEEE802154_RF_ENABLE();
     ieee802154_enter_critical();
@@ -819,8 +836,24 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
     }
 
     ieee802154_exit_critical();
-
     return ESP_OK;
+}
+
+esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
+{
+#if !CONFIG_IEEE802154_TEST
+    if ((s_ieee802154_state == IEEE802154_STATE_RX && ieee802154_ll_is_current_rx_frame())
+        || s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK) {
+        // If the current radio is processing an RX frame or sending an ACK, do not shut down the ongoing process.
+        // Instead, defer the transmission of the pending TX frame.
+        // Once the current process is completed, the pending transmit frame will be initiated.
+        s_pending_tx.frame = frame;
+        s_pending_tx.cca = cca;
+        IEEE802154_TX_DEFERRED_NUMS_UPDATE();
+        return ESP_OK;
+    }
+#endif
+    return ieee802154_transmit_internal(frame, cca);
 }
 
 static inline bool is_target_time_expired(uint32_t target, uint32_t now)

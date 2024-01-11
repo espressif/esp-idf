@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,6 +185,7 @@ void ieee802154_assert_print(void);
 typedef struct ieee802154_txrx_statistic{
     struct {
         uint64_t nums;
+        uint64_t deferred_nums;
         uint64_t done_nums;
         struct {
             uint64_t rx_ack_coex_break_nums;        // IEEE802154_RX_ACK_ABORT_COEX_CNT_REG
@@ -218,6 +219,10 @@ typedef struct ieee802154_txrx_statistic{
             ieee802154_txrx_statistic(a);\
             } while(0)
 
+#define IEEE802154_TX_DEFERRED_NUMS_UPDATE() do { \
+            ieee802154_tx_deferred_nums_update();\
+            } while(0)
+
 #define IEEE802154_TX_NUMS_UPDATE() do { \
             ieee802154_tx_nums_update();\
             } while(0)
@@ -230,10 +235,12 @@ void ieee802154_txrx_statistic_clear(void);
 void ieee802154_txrx_statistic_print(void);
 void ieee802154_txrx_statistic(ieee802154_ll_events events);
 void ieee802154_tx_nums_update(void);
+void ieee802154_tx_deferred_nums_update(void);
 void ieee802154_tx_break_coex_nums_update(void);
 #else
 #define IEEE802154_TXRX_STATISTIC(a)
 #define IEEE802154_TX_NUMS_UPDATE()
+#define IEEE802154_TX_DEFERRED_NUMS_UPDATE()
 #define IEEE802154_TXRX_STATISTIC_CLEAR()
 #define IEEE802154_TX_BREAK_COEX_NUMS_UPDATE()
 #endif // CONFIG_IEEE802154_TXRX_STATISTIC

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -289,6 +289,11 @@ void ieee802154_tx_nums_update(void)
     s_ieee802154_txrx_statistic.tx.nums++;
 }
 
+void ieee802154_tx_deferred_nums_update(void)
+{
+    s_ieee802154_txrx_statistic.tx.deferred_nums++;
+}
+
 void ieee802154_tx_break_coex_nums_update(void)
 {
     s_ieee802154_txrx_statistic.tx.abort.tx_coex_break_nums++;
@@ -302,9 +307,15 @@ void ieee802154_txrx_statistic_print(void)
                              s_ieee802154_txrx_statistic.tx.abort.cca_failed_nums + s_ieee802154_txrx_statistic.tx.abort.cca_busy_nums;
 
     uint64_t tx_nums = s_ieee802154_txrx_statistic.tx.nums;
+    uint64_t tx_direct_num = tx_nums - s_ieee802154_txrx_statistic.tx.deferred_nums;
+
     float tx_success_ratio = (tx_nums > 0 ? ((float)tx_success_nums / tx_nums) : 0);
     float tx_done_ratio = (tx_nums > 0 ? ((float)s_ieee802154_txrx_statistic.tx.done_nums / tx_nums) : 0);
     float tx_abort_ratio = (tx_nums > 0 ? ((float)tx_abort_nums / tx_nums) : 0);
+
+    float tx_direct_num_ratio = (tx_nums > 0 ? ((float)tx_direct_num / tx_nums) : 0);
+    float tx_deferred_num_ratio = (tx_nums > 0 ? ((float)s_ieee802154_txrx_statistic.tx.deferred_nums / tx_nums) : 0);
+
     float tx_abort_rx_ack_coex_break_ratio = (tx_nums > 0 ? ((float)s_ieee802154_txrx_statistic.tx.abort.rx_ack_coex_break_nums / tx_nums) : 0);
     float tx_abort_rx_ack_timeout_ratio = (tx_nums > 0 ? ((float)s_ieee802154_txrx_statistic.tx.abort.rx_ack_timeout_nums / tx_nums) : 0);
     float tx_abort_tx_coex_break_ratio = (tx_nums > 0 ? ((float)s_ieee802154_txrx_statistic.tx.abort.tx_coex_break_nums / tx_nums) : 0);
@@ -321,6 +332,10 @@ void ieee802154_txrx_statistic_print(void)
 
     ESP_LOGW(TAG, "+--------------------+-----------------------------------+--------------------------------------------------+");
     ESP_LOGW(TAG, "|%-20s|%-10s%-15llu%9.2f%%|%-25s%-15llu%9.2f%%|", "", "Done:", s_ieee802154_txrx_statistic.tx.done_nums, tx_done_ratio*100, "Success:", tx_success_nums, tx_success_ratio*100);
+    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "tx_direct_num:", tx_direct_num, tx_direct_num_ratio*100);
+    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "tx_deferred_num:", s_ieee802154_txrx_statistic.tx.deferred_nums, tx_deferred_num_ratio*100);
     ESP_LOGW(TAG, "+                    +-----------------------------------+--------------------------------------------------+");
     ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "rx_ack_coex_break:", s_ieee802154_txrx_statistic.tx.abort.rx_ack_coex_break_nums, tx_abort_rx_ack_coex_break_ratio*100);
     ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
