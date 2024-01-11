@@ -151,7 +151,7 @@ static void ieee802154_rx_frame_info_update(void)
     uint8_t lqi = s_rx_frame[s_rx_index][len];
 
     s_rx_frame_info[s_rx_index].channel = ieee802154_freq_to_channel(ieee802154_ll_get_freq());
-    s_rx_frame_info[s_rx_index].rssi = rssi;
+    s_rx_frame_info[s_rx_index].rssi = rssi + IEEE802154_RSSI_COMPENSATION_VALUE;
     s_rx_frame_info[s_rx_index].lqi = lqi;
 
     s_recent_rx_frame_info_index = s_rx_index;
