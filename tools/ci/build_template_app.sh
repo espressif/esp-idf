@@ -12,9 +12,6 @@ set -euo pipefail
 gen_configs() {
     # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
     echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" > esp-idf-template/sdkconfig.ci.O0
-    echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE=y" >> esp-idf-template/sdkconfig.ci.O0
-    # -O0 makes the bootloader too large to fit in the default space, otherwise(!)
-    echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> esp-idf-template/sdkconfig.ci.O0
 
     # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
     echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" > esp-idf-template/sdkconfig.ci.Os
