@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,15 +16,21 @@
 /***************************************
  Group rvfplibdf
  ***************************************/
+/*
+ * These functions cannot work when compiling with floating point ABI
+ * implementation assumes argument is passed in a0, but floats will be passed
+ * in the floating point registers instead
+ *
+ * __fixsfdi = 0x4fc00878;
+ * __fixunssfdi = 0x4fc00880;
+ */
 
 /* Functions */
 __adddf3 = 0x4fc00868;
 __eqdf2 = 0x4fc0086c;
 __fixdfdi = 0x4fc00870;
 __fixdfsi = 0x4fc00874;
-__fixsfdi = 0x4fc00878;
 __fixunsdfsi = 0x4fc0087c;
-__fixunssfdi = 0x4fc00880;
 __floatdidf = 0x4fc00884;
 __floatsidf = 0x4fc00888;
 __floatundidf = 0x4fc0088c;
@@ -40,6 +46,10 @@ __subdf3 = 0x4fc008ac;
 /***************************************
  Group libgcc
 ***************************************/
+
+/* Not part of the orginal ROM interface, but RVFP versions cannot work with float-abi */
+__fixsfdi = 0x4fc007ac;
+__fixunssfdi = 0x4fc007b4;
 
 /* Functions */
 __absvdi2 = 0x4fc0073c;
