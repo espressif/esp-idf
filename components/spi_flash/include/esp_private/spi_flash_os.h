@@ -83,9 +83,9 @@ esp_err_t esp_flash_init_main(esp_flash_t *chip);
 void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config);
 
 /**
- * @brief Get the knowledge if the MSPI timing is tuned or not
+ * @brief Get the knowledge if the Flash timing is tuned or not
  */
-bool spi_timing_is_tuned(void);
+bool spi_flash_timing_is_tuned(void);
 
 /**
  * @brief Set Flash chip specifically required MSPI register settings here

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "esp_private/mspi_timing_types.h"
 
 #ifdef __cplusplus
