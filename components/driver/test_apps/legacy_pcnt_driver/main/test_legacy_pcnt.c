@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "driver/gpio.h"
 #include "driver/pcnt.h"
@@ -23,10 +24,18 @@
 #include "unity.h"
 #include "esp_rom_gpio.h"
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#define PULSE_IO 20
+#define PCNT_INPUT_IO 21
+#define PCNT_CTRL_VCC_IO 1
+#define PCNT_CTRL_GND_IO 0
+#else
 #define PULSE_IO 12
 #define PCNT_INPUT_IO 4
 #define PCNT_CTRL_VCC_IO 5
 #define PCNT_CTRL_GND_IO 2
+#endif
+
 #define HIGHEST_LIMIT 10
 #define LOWEST_LIMIT 0
 #define MAX_THRESHOLD 5
