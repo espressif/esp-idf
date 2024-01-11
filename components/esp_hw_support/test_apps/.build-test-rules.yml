@@ -5,6 +5,8 @@ components/esp_hw_support/test_apps/dma:
     - if: IDF_TARGET in ["esp32"]
       temporary: false
       reason: No general DMA controller on ESP32
+  depends_filepatterns:
+    - components/esp_hw_support/dma/**/*
 
 components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
   disable:

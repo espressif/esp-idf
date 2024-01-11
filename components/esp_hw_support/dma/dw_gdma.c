@@ -29,6 +29,7 @@
 #include "hal/dw_gdma_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "esp_cache.h"
 
 static const char *TAG = "dw-gdma";
 
@@ -58,6 +59,8 @@ static const char *TAG = "dw-gdma";
 #endif
 
 #define DW_GDMA_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
+
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
 typedef struct dw_gdma_group_t dw_gdma_group_t;
 typedef struct dw_gdma_channel_t dw_gdma_channel_t;
@@ -387,10 +390,23 @@ esp_err_t dw_gdma_new_link_list(const dw_gdma_link_list_config_t *config, dw_gdm
     // also we should respect the data cache line size
     uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     uint32_t alignment = MAX(DW_GDMA_LL_LINK_LIST_ALIGNMENT, data_cache_line_size);
-    items = heap_caps_aligned_calloc(alignment, num_items, sizeof(dw_gdma_link_list_item_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
-    ESP_RETURN_ON_FALSE(items, ESP_ERR_NO_MEM, TAG, "no mem for link list items");
+    // because we want to access the link list items via non-cache address, so the memory size should also align to the cache line size
+    uint32_t lli_size = num_items * sizeof(dw_gdma_link_list_item_t);
+    if (data_cache_line_size) {
+        lli_size = ALIGN_UP(lli_size, data_cache_line_size);
+    }
+    items = heap_caps_aligned_calloc(alignment, 1, lli_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    ESP_GOTO_ON_FALSE(items, ESP_ERR_NO_MEM, err, TAG, "no mem for link list items");
+    if (data_cache_line_size) { // do memory sync only when the cache exists
+        // write back and then invalidate the cache, we won't use the cache to operate the link list items afterwards
+        // even the cache auto-write back happens, there's no risk the link list items will be overwritten
+        ESP_GOTO_ON_ERROR(esp_cache_msync(items, lli_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
+                          err, TAG, "cache sync failed");
+    }
+
     list->num_items = num_items;
     list->items = items;
+    // want to use non-cached address to operate the link list items
     list->items_nc = (dw_gdma_link_list_item_t *)DW_GDMA_GET_NON_CACHE_ADDR(items);
 
     // set up the link list
