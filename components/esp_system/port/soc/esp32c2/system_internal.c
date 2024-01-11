@@ -9,7 +9,6 @@
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
-#include "esp_efuse.h"
 #include "esp_log.h"
 #include "riscv/rv_utils.h"
 #include "esp_rom_uart.h"

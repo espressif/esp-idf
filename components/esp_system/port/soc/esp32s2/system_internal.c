@@ -9,7 +9,6 @@
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
-#include "esp_efuse.h"
 #include "esp_log.h"
 #include "esp32s2/rom/cache.h"
 #include "esp_rom_uart.h"

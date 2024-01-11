@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,14 +23,6 @@ static volatile unsigned s_burn_counter = 0;
 // Array for emulate efuse registers.
 #ifdef CONFIG_EFUSE_VIRTUAL
 uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
-
-#ifndef BOOTLOADER_BUILD
-#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-/* Call the update function to seed virtual efuses during initialization */
-__attribute__((constructor)) void esp_efuse_utility_update_virt_blocks(void);
-#endif // CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-#endif // NOT BOOTLOADER_BUILD
-
 #endif // CONFIG_EFUSE_VIRTUAL
 
 extern const esp_efuse_range_addr_t range_read_addr_blocks[];

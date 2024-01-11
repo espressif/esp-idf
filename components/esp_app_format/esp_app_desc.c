@@ -10,7 +10,6 @@
 #include "esp_app_desc.h"
 #include "sdkconfig.h"
 
-#include "hal/efuse_hal.h"
 #include "esp_log.h"
 #include "esp_private/startup_internal.h"
 
@@ -125,13 +124,6 @@ ESP_SYSTEM_INIT_FN(init_show_app_info, CORE, BIT(0), 20)
         esp_app_get_elf_sha256(buf, sizeof(buf));
         ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
         ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", esp_app_desc.idf_ver);
-
-        // TODO: To be moved to the eFuse initialization routine
-        ESP_EARLY_LOGI(TAG, "Min chip rev:     v%d.%d", CONFIG_ESP_REV_MIN_FULL / 100, CONFIG_ESP_REV_MIN_FULL % 100);
-        ESP_EARLY_LOGI(TAG, "Max chip rev:     v%d.%d %s", CONFIG_ESP_REV_MAX_FULL / 100, CONFIG_ESP_REV_MAX_FULL % 100,
-                       efuse_hal_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
-        unsigned revision = efuse_hal_chip_revision();
-        ESP_EARLY_LOGI(TAG, "Chip rev:         v%d.%d", revision / 100, revision % 100);
     }
     return ESP_OK;
 }
