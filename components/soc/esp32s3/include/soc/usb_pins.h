@@ -1,12 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-/* GPIOs used to connect an external USB PHY */
+/*
+Note: These macros are deprecated. When connecting USB OTG to an external FSLS
+PHY, the FSLS Serial Interface signals can be routed to any GPIO via the GPIO
+matrix. Thus, these macros are meaningless.
+
+Todo: Remove in IDF v6.0 (IDF-9029)
+*/
 #define USBPHY_VP_NUM 42
 #define USBPHY_VM_NUM 41
 #define USBPHY_RCV_NUM 21
