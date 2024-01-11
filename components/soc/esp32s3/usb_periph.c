@@ -1,20 +1,19 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "soc/soc_caps.h"
 #include "soc/usb_periph.h"
 
+/*
+Note: These IO pins are deprecated. When connecting USB OTG to an external FSLS
+PHY, the FSLS Serial Interface signals can be routed to any GPIO via the GPIO
+matrix. Thus, this mapping of signals to IO pins is meaningless.
+
+Todo: Remove in IDF v6.0 (IDF-9029)
+*/
 const usb_iopin_dsc_t usb_periph_iopins[] = {
     {USBPHY_VP_NUM, USB_EXTPHY_VP_IDX, 0, 1},
     {USBPHY_VM_NUM, USB_EXTPHY_VM_IDX, 0, 1},

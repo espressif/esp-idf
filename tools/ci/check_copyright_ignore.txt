@@ -886,7 +886,6 @@ components/soc/esp32s2/include/soc/usbh_struct.h
 components/soc/esp32s2/include/soc/wdev_reg.h
 components/soc/esp32s2/ledc_periph.c
 components/soc/esp32s2/uart_periph.c
-components/soc/esp32s2/usb_periph.c
 components/soc/esp32s3/dedic_gpio_periph.c
 components/soc/esp32s3/i2c_periph.c
 components/soc/esp32s3/include/soc/apb_ctrl_reg.h
@@ -960,7 +959,6 @@ components/soc/esp32s3/ledc_periph.c
 components/soc/esp32s3/sdio_slave_periph.c
 components/soc/esp32s3/sdmmc_periph.c
 components/soc/esp32s3/uart_periph.c
-components/soc/esp32s3/usb_periph.c
 components/soc/include/soc/dedic_gpio_periph.h
 components/soc/include/soc/emac_periph.h
 components/soc/include/soc/gpio_periph.h
