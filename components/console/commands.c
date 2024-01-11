@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,8 +135,15 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         item->hint = buf;
     }
     item->argtable = cmd->argtable;
-    item->func = cmd->func;
-    item->func_w_context = cmd->func_w_context;
+
+    if (cmd->func) {
+        item->func = cmd->func;
+    } else {
+        // cmd->func_w_context is valid here according to check above
+        item->func_w_context = cmd->func_w_context;
+        item->context = cmd->context;
+    }
+
     cmd_item_t *last = NULL;
     cmd_item_t *it;
     SLIST_FOREACH(it, &s_cmd_list, next) {
@@ -151,22 +158,6 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         SLIST_INSERT_AFTER(last, item, next);
     }
     return ESP_OK;
-}
-
-esp_err_t esp_console_cmd_set_context(const char *cmd, void *context)
-{
-    if (cmd == NULL ) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    cmd_item_t *it;
-    SLIST_FOREACH(it, &s_cmd_list, next) {
-        if (strcmp(cmd, it->command) == 0) {
-            it->context = context;
-            return ESP_OK;
-        }
-    }
-    return ESP_ERR_NOT_FOUND;
 }
 
 void esp_console_get_completion(const char *buf, linenoiseCompletions *lc)

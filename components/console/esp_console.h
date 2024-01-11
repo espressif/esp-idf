@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -206,15 +206,19 @@ typedef struct {
      * @note: Setting both \c func and \c func_w_context is not allowed.
      */
     esp_console_cmd_func_with_context_t func_w_context;
+    /**
+     * Context pointer to user-defined per-command context data.
+     * This is used if context aware function \c func_w_context is set.
+     */
+    void *context;
 } esp_console_cmd_t;
 
 /**
  * @brief Register console command
  * @param cmd pointer to the command description; can point to a temporary value
  *
- * @note If the member func_w_context of cmd is set instead of func, then there
- *       MUST be a subsequent call to \c esp_console_cmd_set_context to initialize the
- *       function context before it is used!
+ * @note If the member \c func_w_context of cmd is set instead of func, then the member \c context
+ *       is passed to the function pointed to by \c func_w_context.
  *
  * @return
  *      - ESP_OK on success
@@ -224,20 +228,6 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG if both func and func_w_context members of cmd are NULL
  */
 esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd);
-
-/**
- * @brief Register context for a command registered with \c func_w_context before
- *
- *        \c context is only used if \c func_w_context has been set in the structure
- *        passed to esp_console_cmd_register()
- * @param cmd pointer to the command name
- * @param context pointer to user-defined per-command context data
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_NOT_FOUND if command was not found
- *      - ESP_ERR_INVALID_ARG if invalid arguments
- */
-esp_err_t esp_console_cmd_set_context(const char *cmd, void *context);
 
 /**
  * @brief Run command line
