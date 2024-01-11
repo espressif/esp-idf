@@ -152,8 +152,8 @@ pipeline_variables:
     # for non MR pipeline, these are empty lists
     - |
       if [ $IS_MR_PIPELINE == "0" ]; then
-        echo "MR_MODIFIED_FILES=" >> pipeline.env
-        echo "MR_MODIFIED_COMPONENTS=" >> pipeline.env
+        echo "MR_MODIFIED_FILES=\"\"" >> pipeline.env
+        echo "MR_MODIFIED_COMPONENTS=\"\"" >> pipeline.env
       else
         MR_MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | tr '\n' ';')
         echo "MR_MODIFIED_FILES=\"$MR_MODIFIED_FILES\"" >> pipeline.env
