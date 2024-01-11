@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -25,16 +25,15 @@
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
 
-#define I2C_SLAVE_SCL_IO     0     /*!<gpio number for i2c slave clock  */
-#define I2C_SLAVE_SDA_IO     2     /*!<gpio number for i2c slave data */
+#define I2C_SLAVE_SCL_IO     4     /*!<gpio number for i2c slave clock  */
+#define I2C_SLAVE_SDA_IO     5     /*!<gpio number for i2c slave data  */
 
 #define I2C_SLAVE_NUM I2C_NUM_0    /*!<I2C port number for slave dev */
 #define I2C_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave tx buffer size */
 #define I2C_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave rx buffer size */
 
-
-#define I2C_MASTER_SCL_IO     0     /*!<gpio number for i2c master clock  */
-#define I2C_MASTER_SDA_IO     2     /*!<gpio number for i2c master data */
+#define I2C_MASTER_SCL_IO     4     /*!<gpio number for i2c master clock  */
+#define I2C_MASTER_SDA_IO     5     /*!<gpio number for i2c master data  */
 
 #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
