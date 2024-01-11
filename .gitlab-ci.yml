@@ -28,5 +28,4 @@ include:
   - '.gitlab/ci/build.yml'
   - '.gitlab/ci/integration_test.yml'
   - '.gitlab/ci/host-test.yml'
-  - '.gitlab/ci/target-test.yml'
   - '.gitlab/ci/deploy.yml'

@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+
 import argparse
 import logging
 import os
@@ -10,7 +11,7 @@ import tempfile
 import time
 import zipfile
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import gitlab
 
@@ -63,7 +64,7 @@ class Gitlab(object):
 
     DOWNLOAD_ERROR_MAX_RETRIES = 3
 
-    def __init__(self, project_id: Optional[int] = None):
+    def __init__(self, project_id: Union[int, str, None] = None):
         config_data_from_env = os.getenv('PYTHON_GITLAB_CONFIG')
         if config_data_from_env:
             # prefer to load config from env variable
@@ -129,7 +130,7 @@ class Gitlab(object):
             archive_file.extractall(destination)
 
     @retry
-    def download_artifact(self, job_id: int, artifact_path: str, destination: Optional[str] = None) -> List[bytes]:
+    def download_artifact(self, job_id: int, artifact_path: List[str], destination: Optional[str] = None) -> List[bytes]:
         """
         download specific path of job artifacts and extract to destination.
 

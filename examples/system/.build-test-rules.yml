@@ -1,5 +1,11 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+.ethernet_dependencies: &ethernet_dependencies
+  # TODO: IDFCI-1821
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - components/esp_netif/esp_netif_handlers.c
+
 examples/system/app_trace_basic:
   disable:
     - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4"]
@@ -151,6 +157,21 @@ examples/system/ota/advanced_https_ota:
     - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
+  depends_filepatterns:
+    - components/esp_netif/esp_netif_handlers.c
+    - components/mbedtls/port/dynamic/*
+    - examples/common_components/**/*
+    - examples/ethernet/iperf/**/*
+    - examples/network/simple_sniffer/**/*
+    - examples/network/vlan_support/**/*
+    - examples/protocols/**/*
+    - examples/system/ota/**/*
+    - examples/wifi/**/*
+    - tools/ci/python_packages/common_test_methods.py
+  depends_components:
+    - app_update
+    - esp_https_ota
+    - esp_eth
 
 examples/system/ota/native_ota_example:
   disable:
@@ -161,6 +182,7 @@ examples/system/ota/native_ota_example:
     - if: IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/system/ota/otatool:
   disable:
@@ -173,10 +195,14 @@ examples/system/ota/pre_encrypted_ota:
     - if: IDF_TARGET in ["esp32h2", "esp32p4"]
       temporary: true
       reason: target esp32h2, esp32p4 is not supported yet
+    - if: CONFIG_NAME == "partial_download" and IDF_TARGET == "esp32c3"
+      temporary: true
+      reason: build failed
   disable_test:
     - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/system/ota/simple_ota_example:
   disable:
@@ -188,6 +214,9 @@ examples/system/ota/simple_ota_example:
     - if: IDF_TARGET == "esp32c2" or IDF_TARGET == "esp32c6"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - app_update
+    - esp_https_ota
 
 examples/system/perfmon:
   enable:

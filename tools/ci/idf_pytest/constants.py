@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 """
@@ -7,8 +7,12 @@ Pytest Related Constants. Don't import third-party packages here.
 import os
 import typing as t
 from dataclasses import dataclass
+from enum import Enum
+from functools import cached_property
+from pathlib import Path
 
 from _pytest.python import Function
+from idf_ci_utils import IDF_PATH
 from pytest_embedded.utils import to_list
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4']
@@ -35,10 +39,11 @@ SPECIAL_MARKERS = {
     'temp_skip': 'temp skip tests for specified targets both in ci and locally',
     'nightly_run': 'tests should be executed as part of the nightly trigger pipeline',
     'host_test': 'tests which should not be built at the build stage, and instead built in host_test stage',
-    'qemu': 'build and test using qemu-system-xtensa, not real target',
 }
 
 ENV_MARKERS = {
+    # special markers
+    'qemu': 'build and test using qemu, not real target',
     # single-dut markers
     'generic': 'tests should be run on generic runners',
     'flash_suspend': 'support flash suspend feature',
@@ -89,7 +94,6 @@ ENV_MARKERS = {
     'adc': 'ADC related tests should run on adc runners',
     'xtal32k': 'Runner with external 32k crystal connected',
     'no32kXtal': 'Runner with no external 32k crystal connected',
-    'multi_dut_modbus_rs485': 'a pair of runners connected by RS485 bus',
     'psramv0': 'Runner with PSRAM version 0',
     'esp32eco3': 'Runner with esp32 eco3 connected',
     'ecdsa_efuse': 'Runner with test ECDSA private keys programmed in efuse',
@@ -98,6 +102,7 @@ ENV_MARKERS = {
     'i2c_oled': 'Runner with ssd1306 I2C oled connected',
     'httpbin': 'runner for tests that need to access the httpbin service',
     # multi-dut markers
+    'multi_dut_modbus_rs485': 'a pair of runners connected by RS485 bus',
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
     'openthread_br': 'tests should be used for openthread border router.',
     'openthread_bbr': 'tests should be used for openthread border router linked to Internet.',
@@ -109,8 +114,40 @@ ENV_MARKERS = {
     'sdio_master_slave': 'Test sdio multi board, esp32+esp32',
     'sdio_multidev_32_c6': 'Test sdio multi board, esp32+esp32c6',
     'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
-    'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter'
+    'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter',
 }
+
+DEFAULT_CONFIG_RULES_STR = ['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default']
+DEFAULT_IGNORE_WARNING_FILEPATH = os.path.join(IDF_PATH, 'tools', 'ci', 'ignore_build_warnings.txt')
+DEFAULT_BUILD_TEST_RULES_FILEPATH = os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml')
+DEFAULT_FULL_BUILD_TEST_FILEPATTERNS = [
+    # tools
+    'tools/cmake/**/*',
+    'tools/tools.json',
+    # components
+    'components/cxx/**/*',
+    'components/esp_common/**/*',
+    'components/esp_hw_support/**/*',
+    'components/esp_rom/**/*',
+    'components/esp_system/**/*',
+    'components/esp_timer/**/*',
+    'components/freertos/**/*',
+    'components/hal/**/*',
+    'components/heap/**/*',
+    'components/log/**/*',
+    'components/newlib/**/*',
+    'components/riscv/**/*',
+    'components/soc/**/*',
+    'components/xtensa/**/*',
+]
+DEFAULT_BUILD_LOG_FILENAME = 'build_log.txt'
+
+
+class CollectMode(str, Enum):
+    SINGLE_SPECIFIC = 'single_specific'
+    MULTI_SPECIFIC = 'multi_specific'
+    MULTI_ALL_WITH_PARAM = 'multi_all_with_param'
+    ALL = 'all'
 
 
 @dataclass
@@ -122,38 +159,47 @@ class PytestApp:
     def __hash__(self) -> int:
         return hash((self.path, self.target, self.config))
 
+    @cached_property
+    def build_dir(self) -> str:
+        return os.path.join(self.path, f'build_{self.target}_{self.config}')
+
 
 @dataclass
 class PytestCase:
-    path: str
-    name: str
-
-    apps: t.Set[PytestApp]
-    target: str
+    apps: t.List[PytestApp]
 
     item: Function
 
     def __hash__(self) -> int:
         return hash((self.path, self.name, self.apps, self.all_markers))
 
+    @cached_property
+    def path(self) -> str:
+        return str(self.item.path)
+
+    @cached_property
+    def name(self) -> str:
+        return self.item.originalname  # type: ignore
+
+    @cached_property
+    def targets(self) -> t.List[str]:
+        return [app.target for app in self.apps]
+
+    @cached_property
+    def is_single_dut_test_case(self) -> bool:
+        return True if len(self.apps) == 1 else False
+
+    @cached_property
+    def is_host_test(self) -> bool:
+        return 'host_test' in self.all_markers or 'linux' in self.targets
+
+    # the following markers could be changed dynamically, don't use cached_property
     @property
     def all_markers(self) -> t.Set[str]:
         return {marker.name for marker in self.item.iter_markers()}
 
     @property
-    def is_nightly_run(self) -> bool:
-        return 'nightly_run' in self.all_markers
-
-    @property
     def target_markers(self) -> t.Set[str]:
-        return {marker for marker in self.all_markers if marker in TARGET_MARKERS}
-
-    @property
-    def env_markers(self) -> t.Set[str]:
-        return {marker for marker in self.all_markers if marker in ENV_MARKERS}
-
-    @property
-    def skipped_targets(self) -> t.Set[str]:
         def _get_temp_markers_disabled_targets(marker_name: str) -> t.Set[str]:
             temp_marker = self.item.get_closest_marker(marker_name)
 
@@ -179,4 +225,65 @@ class PytestCase:
         else:  # we use `temp_skip` locally
             skip_targets = temp_skip_targets
 
-        return skip_targets
+        return {marker for marker in self.all_markers if marker in TARGET_MARKERS} - skip_targets
+
+    @property
+    def env_markers(self) -> t.Set[str]:
+        return {marker for marker in self.all_markers if marker in ENV_MARKERS}
+
+    @property
+    def target_selector(self) -> str:
+        return ','.join(app.target for app in self.apps)
+
+    @property
+    def requires_elf_or_map(self) -> bool:
+        """
+        This property determines whether the test case requires elf or map file. By default, one app in the test case
+        only requires .bin files.
+
+        :return: True if the test case requires elf or map file, False otherwise
+        """
+        if 'jtag' in self.env_markers or 'usb_serial_jtag' in self.env_markers:
+            return True
+
+        if any('panic' in Path(app.path).parts for app in self.apps):
+            return True
+
+        return False
+
+    def all_built_in_app_lists(self, app_lists: t.Optional[t.List[str]] = None) -> t.Optional[str]:
+        """
+        Check if all binaries of the test case are built in the app lists.
+
+        :param app_lists: app lists to check
+        :return: debug string if not all binaries are built in the app lists, None otherwise
+        """
+        if app_lists is None:
+            # ignore this feature
+            return None
+
+        bin_found = [0] * len(self.apps)
+        for i, app in enumerate(self.apps):
+            if app.build_dir in app_lists:
+                bin_found[i] = 1
+
+        if sum(bin_found) == 0:
+            msg = f'Skip test case {self.name} because all following binaries are not listed in the app lists: '
+            for app in self.apps:
+                msg += f'\n - {app.build_dir}'
+
+            print(msg)
+            return msg
+
+        if sum(bin_found) == len(self.apps):
+            return None
+
+        # some found, some not, looks suspicious
+        msg = f'Found some binaries of test case {self.name} are not listed in the app lists.'
+        for i, app in enumerate(self.apps):
+            if bin_found[i] == 0:
+                msg += f'\n - {app.build_dir}'
+
+        msg += '\nMight be a issue of .build-test-rules.yml files'
+        print(msg)
+        return msg

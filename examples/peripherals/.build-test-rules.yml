@@ -1,5 +1,12 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+.adc_dependencies: &adc_dependencies
+  depends_components:
+    - esp_adc
+    - efuse
+    - esp_driver_i2s
+    - esp_driver_spi
+
 .i2c_dependencies: &i2c_dependencies
   depends_filepatterns:
     # components
@@ -10,10 +17,12 @@
 examples/peripherals/adc/continuous_read:
   disable:
     - if: SOC_ADC_DMA_SUPPORTED != 1
+  <<: *adc_dependencies
 
 examples/peripherals/adc/oneshot_read:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
+  <<: *adc_dependencies
 
 examples/peripherals/analog_comparator:
   disable:
@@ -29,6 +38,16 @@ examples/peripherals/analog_comparator:
 examples/peripherals/dac:
   disable:
     - if: SOC_DAC_SUPPORTED != 1
+
+examples/peripherals/dac/dac_cosine_wave:
+  disable:
+    - if: SOC_DAC_SUPPORTED != 1
+  depends_components:
+    - esp_adc
+    - efuse
+    - esp_driver_i2s
+    - esp_driver_spi
+    - esp_driver_dac
 
 examples/peripherals/gpio:
   depends_components:
@@ -445,6 +464,21 @@ examples/peripherals/uart/uart_echo_rs485:
 examples/peripherals/usb:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
+
+examples/peripherals/usb/device:
+  enable:
+    - if: SOC_USB_OTG_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - usb
+  depends_filepatterns:
+    - components/hal/usb*.c
+    - components/hal/esp32*/include/hal/usb*.h
+    - examples/peripherals/usb/host/**/*
+    - examples/peripherals/usb/device/**/*
 
 examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
   disable:

@@ -28,7 +28,6 @@ test_nvs_coverage:
   artifacts:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report
-    expire_in: 1 week
   script:
     - cd components/nvs_flash/test_nvs_host
     - make coverage_report
@@ -65,7 +64,6 @@ test_reproducible_build:
       - "**/build*/*.bin"
       - "**/build*/bootloader/*.bin"
       - "**/build*/partition_table/*.bin"
-    expire_in: 1 week
 
 test_spiffs_on_host:
   extends: .host_test_template
@@ -110,7 +108,6 @@ test_cli_installer:
     paths:
       - tools/tools.new.json
       - tools/test_idf_tools/test_python_env_logs.txt
-    expire_in: 1 week
   image:
     name: $ESP_ENV_IMAGE
     entrypoint: [""]  # use system python3. no extra pip package installed
@@ -130,7 +127,6 @@ test_cli_installer:
     when: on_failure
     paths:
       - components/efuse/${IDF_TARGET}/esp_efuse_table.c
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/components/efuse/
     - ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
@@ -173,7 +169,6 @@ test_logtrace_proc:
     paths:
       - tools/esp_app_trace/test/logtrace/output
       - tools/esp_app_trace/test/logtrace/.coverage
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/logtrace
     - ./test.sh
@@ -185,7 +180,6 @@ test_sysviewtrace_proc:
     paths:
       - tools/esp_app_trace/test/sysview/output
       - tools/esp_app_trace/test/sysview/.coverage
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
     - ./test.sh
@@ -194,13 +188,11 @@ test_tools:
   extends:
     - .host_test_template
   artifacts:
-    when: always
     paths:
       - ${IDF_PATH}/*.out
       - ${IDF_PATH}/XUNIT_*.xml
     reports:
       junit: ${IDF_PATH}/XUNIT_*.xml
-    expire_in: 1 week
   variables:
     LC_ALL: C.UTF-8
     INSTALL_QEMU: 1  # for test_idf_qemu.py
@@ -280,13 +272,11 @@ test_pytest_qemu:
     - .host_test_template
     - .before_script:build
   artifacts:
-    when: always
     paths:
       - XUNIT_RESULT.xml
       - pytest_embedded_log/
     reports:
       junit: XUNIT_RESULT.xml
-    expire_in: 1 week
   allow_failure: true # IDFCI-1752
   parallel:
     matrix:
@@ -299,8 +289,8 @@ test_pytest_qemu:
       --pytest-apps
       -m qemu
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - run_cmd pytest
       --target $IDF_TARGET
@@ -316,22 +306,20 @@ test_pytest_linux:
     - .host_test_template
     - .before_script:build
   artifacts:
-    when: always
     paths:
       - XUNIT_RESULT.xml
       - pytest_embedded_log/
       - "**/build*/build_log.txt"
     reports:
       junit: XUNIT_RESULT.xml
-    expire_in: 1 week
   script:
     - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
       --target linux
       --pytest-apps
       -m host_test
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MODIFIED_COMPONENTS}
-      --modified-files ${MODIFIED_FILES}
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --modified-files ${MR_MODIFIED_FILES}
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     - run_cmd pytest
       --target linux
@@ -339,3 +327,16 @@ test_pytest_linux:
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files known_failure_cases/known_failure_cases.txt
       --app-info-filepattern \"list_job_*.txt\"
+
+test_idf_pytest_plugin:
+  extends:
+    - .host_test_template
+    - .rules:patterns:idf-pytest-plugin
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+  artifacts:
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - cd tools/ci/idf_pytest
+    - pytest --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml

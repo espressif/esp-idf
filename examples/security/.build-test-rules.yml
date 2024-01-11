@@ -13,3 +13,8 @@ examples/security/nvs_encryption_hmac:
     - if: IDF_TARGET not in ["esp32c3"]
       temporary: true
       reason: lack of runners
+  depends_components:
+    - nvs_flash
+    - nvs_sec_provider
+  depends_filepatterns:
+    - examples/security/nvs_encryption_hmac/**/*

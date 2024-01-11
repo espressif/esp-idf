@@ -85,6 +85,7 @@ variables:
 ################################################
 .common_before_scripts: &common-before_scripts |
   source tools/ci/utils.sh
+
   is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
 
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
@@ -208,6 +209,10 @@ variables:
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
 .after_script:build:ccache:
+  after_script:
+    - *show_ccache_statistics
+
+.after_script:build:ccache:upload-when-fail:
   after_script:
     - *show_ccache_statistics
     - *upload_failed_job_log_artifacts
@@ -345,6 +350,9 @@ default:
     - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys
     - fetch_submodules
+  artifacts:
+    expire_in: 1 week
+    when: always
   retry:
     max: 2
     when:

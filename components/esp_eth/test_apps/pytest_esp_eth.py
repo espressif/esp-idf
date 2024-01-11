@@ -204,6 +204,7 @@ def test_esp_emac_hal(dut: IdfDut) -> None:
 
 @pytest.mark.esp32
 @pytest.mark.ip101
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='runner under maintenance')
 @pytest.mark.parametrize('config', [
     'default_ip101',
 ], indirect=True)

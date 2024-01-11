@@ -101,6 +101,7 @@ def actual_test(dut: Dut) -> None:
 
 @pytest.mark.esp32  # internally tested using ESP32 with IP101 but may support all targets with SPI Ethernet
 @pytest.mark.ip101
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='runner under maintenance')
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_netif_l2tap_example(dut: Dut) -> None:
     actual_test(dut)

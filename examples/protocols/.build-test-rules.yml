@@ -1,5 +1,24 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+.ethernet_dependencies: &ethernet_dependencies
+  # TODO: IDFCI-1821
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - components/esp_netif/esp_netif_handlers.c
+
+.wifi_dependencies: &wifi_dependencies
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - examples/common_components/protocol_examples_common/**/*
+    - examples/protocols/**/*
+    - examples/wifi/**/*
+    - examples/network/simple_sniffer/**/*
+    - components/mbedtls/port/dynamic/*
+    - examples/system/ota/**/*
+  depends_components:
+    - app_update
+    - esp_https_ota
+
 examples/protocols/esp_http_client:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
@@ -11,6 +30,7 @@ examples/protocols/esp_http_client:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: not supported on p4
+  <<: *ethernet_dependencies
 
 examples/protocols/esp_local_ctrl:
   disable:
@@ -22,6 +42,7 @@ examples/protocols/esp_local_ctrl:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
+  <<: *wifi_dependencies
 
 examples/protocols/http_request:
   disable:
@@ -32,6 +53,7 @@ examples/protocols/http_request:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
+  <<: *ethernet_dependencies
 
 examples/protocols/http_server:
   disable:
@@ -42,6 +64,7 @@ examples/protocols/http_server:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
+  <<: *wifi_dependencies
 
 examples/protocols/http_server/captive_portal:
   disable:
@@ -52,12 +75,14 @@ examples/protocols/http_server/captive_portal:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
+  <<: *wifi_dependencies
 
 examples/protocols/http_server/restful_server:
   disable:
     - if: IDF_TARGET in ["esp32h2", "esp32p4"]
       temporary: true
       reason: not supported on p4 # TODO: IDF-8076
+  <<: *wifi_dependencies
 
 examples/protocols/http_server/ws_echo_server:
   disable:
@@ -68,6 +93,7 @@ examples/protocols/http_server/ws_echo_server:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
+  <<: *wifi_dependencies
 
 examples/protocols/https_mbedtls:
   disable:
@@ -78,6 +104,7 @@ examples/protocols/https_mbedtls:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/https_request:
   disable:
@@ -88,6 +115,7 @@ examples/protocols/https_request:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/https_server/simple:
   disable:
@@ -98,6 +126,7 @@ examples/protocols/https_server/simple:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
+  <<: *wifi_dependencies
 
 examples/protocols/https_server/wss_server:
   disable:
@@ -108,6 +137,7 @@ examples/protocols/https_server/wss_server:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: only test on esp32
+  <<: *wifi_dependencies
 
 examples/protocols/https_x509_bundle:
   disable:
@@ -118,6 +148,7 @@ examples/protocols/https_x509_bundle:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/icmp_echo:
   disable:
@@ -126,6 +157,7 @@ examples/protocols/icmp_echo:
       reason: not supported on p4
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
+  <<: *wifi_dependencies
 
 examples/protocols/l2tap:
   disable:
@@ -158,6 +190,7 @@ examples/protocols/mqtt/ssl:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/mqtt/ssl_ds:
   disable:
@@ -186,6 +219,7 @@ examples/protocols/mqtt/tcp:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/mqtt/ws:
   disable:
@@ -196,6 +230,7 @@ examples/protocols/mqtt/ws:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/mqtt/wss:
   disable:
@@ -206,6 +241,7 @@ examples/protocols/mqtt/wss:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/mqtt5:
   disable:
@@ -216,6 +252,7 @@ examples/protocols/mqtt5:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
+  <<: *ethernet_dependencies
 
 examples/protocols/smtp_client:
   disable:
@@ -228,6 +265,7 @@ examples/protocols/sntp:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
+  <<: *wifi_dependencies
 
 examples/protocols/sockets:
   disable:
@@ -244,12 +282,12 @@ examples/protocols/sockets/non_blocking:
 examples/protocols/sockets/tcp_client:
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
-  enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  # linux target won't work with CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN=y
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: not supported on p4
+  <<: *wifi_dependencies
 
 examples/protocols/sockets/tcp_server:
   disable:
@@ -258,6 +296,7 @@ examples/protocols/sockets/tcp_server:
       reason: not supported on p4
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
+  <<: *wifi_dependencies
 
 examples/protocols/sockets/udp_client:
   disable:
@@ -266,6 +305,7 @@ examples/protocols/sockets/udp_client:
       reason: not supported on p4
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
+  <<: *wifi_dependencies
 
 examples/protocols/sockets/udp_server:
   disable:
@@ -274,6 +314,7 @@ examples/protocols/sockets/udp_server:
       reason: not supported on p4
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
+  <<: *wifi_dependencies
 
 examples/protocols/static_ip:
   disable:

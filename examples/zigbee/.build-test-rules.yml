@@ -1,8 +1,9 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 .zigbee_dependencies: &zigbee_dependencies
+  depends_components:
+    - ieee802154
   depends_filepatterns:
-    - components/ieee802154/**/*
     - examples/zigbee/light_sample/**/*
 
 examples/zigbee/esp_zigbee_gateway:

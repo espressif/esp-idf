@@ -10,7 +10,7 @@ pytest-timeout
 pytest-ignore-test-results
 
 # build
-idf-build-apps
+idf-build-apps~=2.0.0rc1
 
 # dependencies in pytest test scripts
 scapy

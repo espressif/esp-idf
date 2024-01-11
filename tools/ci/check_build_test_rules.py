@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import yaml
-from idf_ci_utils import IDF_PATH
+from idf_ci_utils import IDF_PATH, get_all_manifest_files
 
 YES = u'\u2713'
 NO = u'\u2717'
@@ -148,9 +148,7 @@ def check_readme(
             'all',
             recursive=True,
             exclude_list=exclude_dirs or [],
-            manifest_files=[
-                str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
-            ],
+            manifest_files=get_all_manifest_files(),
             default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
         )
     )
@@ -304,9 +302,7 @@ def check_test_scripts(
             'all',
             recursive=True,
             exclude_list=exclude_dirs or [],
-            manifest_files=[
-                str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
-            ],
+            manifest_files=get_all_manifest_files(),
             default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
         )
     )
@@ -382,7 +378,7 @@ def sort_yaml(files: List[str]) -> None:
 def check_exist() -> None:
     exit_code = 0
 
-    config_files = [str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')]
+    config_files = get_all_manifest_files()
     for file in config_files:
         if 'managed_components' in Path(file).parts:
             continue
