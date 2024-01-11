@@ -80,7 +80,7 @@ esp_lcd_new_panel_nt35510(const esp_lcd_panel_io_handle_t io, const esp_lcd_pane
         nt35510->madctl_val |= LCD_CMD_BGR_BIT;
         break;
     default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported color space");
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported RGB element order");
         break;
     }
 

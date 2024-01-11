@@ -498,5 +498,8 @@ API Reference
 .. include-build-file:: inc/esp_lcd_types.inc
 .. include-build-file:: inc/esp_lcd_panel_io.inc
 .. include-build-file:: inc/esp_lcd_panel_ops.inc
-.. include-build-file:: inc/esp_lcd_panel_rgb.inc
 .. include-build-file:: inc/esp_lcd_panel_vendor.inc
+
+.. only:: SOC_LCD_RGB_SUPPORTED
+
+    .. include-build-file:: inc/esp_lcd_panel_rgb.inc
