@@ -299,6 +299,7 @@ build_child_pipeline:
   stage: build
   needs:
     - job: fast_template_app
+      optional: true
       artifacts: false
     - pipeline_variables
     - generate_build_child_pipeline
