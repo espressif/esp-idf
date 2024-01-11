@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -523,6 +523,8 @@ void IRAM_ATTR sleep_retention_do_system_retention(bool backup_or_restore)
         s_retention.highpri <= SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY) {
         // Set extra linked list head pointer to hardware
         pau_regdma_set_system_link_addr(s_retention.lists[s_retention.highpri].entries[SYSTEM_LINK_NUM]);
+        // When PD TOP, we need to prevent the PMU from triggering the REGDMA backup, because REGDMA will power off
+        pmu_sleep_disable_regdma_backup();
         if (backup_or_restore) {
             pau_regdma_trigger_system_link_backup();
         } else {
