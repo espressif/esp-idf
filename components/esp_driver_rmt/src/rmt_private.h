@@ -67,6 +67,9 @@ typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 #define RMT_GET_NON_CACHE_ADDR(addr) (addr)
 #endif
 
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
+
 typedef struct {
     struct {
         rmt_symbol_word_t symbols[SOC_RMT_MEM_WORDS_PER_CHANNEL];
