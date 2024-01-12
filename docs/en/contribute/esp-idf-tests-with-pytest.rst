@@ -576,6 +576,10 @@ Run pytest with ``--pipeline-id <pipeline_id>`` to force pytest to download the 
 
 Even if you have ``build_esp32_default``, or ``build`` directory locally, pytest would still download the binaries from pipeline 123456 and place the binaries in ``build_esp32_default``. Then run the test case with this binary.
 
+.. note::
+
+    <pipeline_id> should be the parent pipeline id. You can copy it in your MR page.
+
 Pytest Tips and Tricks
 ======================
 

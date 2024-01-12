@@ -124,7 +124,7 @@ class BuildReportDownloader:
             f.seek(0)
 
             with zipfile.ZipFile(f) as zip_ref:
-                zip_ref.extractall()
+                zip_ref.extractall(IDF_PATH)
 
 
 @pytest.fixture(scope='session')
