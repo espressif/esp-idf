@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 from pathlib import Path
 
 from idf_pytest.constants import CollectMode
@@ -45,10 +44,13 @@ def test_get_pytest_cases_single_specific(tmp_path: Path) -> None:
 def test_get_pytest_cases_multi_specific(tmp_path: Path) -> None:
     script = tmp_path / 'pytest_get_pytest_cases_multi_specific.py'
     script.write_text(TEMPLATE_SCRIPT)
-    cases = get_pytest_cases([str(tmp_path)], 'esp32s3,esp32s2, esp32s2')
+    cases = get_pytest_cases([str(tmp_path)], 'esp32s2,esp32s2, esp32s3')
 
     assert len(cases) == 1
     assert cases[0].targets == ['esp32s2', 'esp32s2', 'esp32s3']
+
+    cases = get_pytest_cases([str(tmp_path)], 'esp32s3,esp32s2,esp32s2')  # order matters
+    assert len(cases) == 0
 
 
 def test_get_pytest_cases_multi_all(tmp_path: Path) -> None:

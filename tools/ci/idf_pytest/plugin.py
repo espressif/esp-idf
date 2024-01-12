@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import os
 import typing as t
 from collections import defaultdict
@@ -16,11 +15,20 @@ from idf_build_apps import App
 from idf_build_apps.constants import BuildStatus
 from pytest_embedded import Dut
 from pytest_embedded.plugin import parse_multi_dut_args
-from pytest_embedded.utils import find_by_suffix, to_list
-from pytest_ignore_test_results.ignore_results import ChildCase, ChildCasesStashKey
+from pytest_embedded.utils import find_by_suffix
+from pytest_embedded.utils import to_list
+from pytest_ignore_test_results.ignore_results import ChildCase
+from pytest_ignore_test_results.ignore_results import ChildCasesStashKey
 
-from .constants import DEFAULT_SDKCONFIG, PREVIEW_TARGETS, SUPPORTED_TARGETS, CollectMode, PytestApp, PytestCase
-from .utils import comma_sep_str_to_list, format_case_id, merge_junit_files
+from .constants import CollectMode
+from .constants import DEFAULT_SDKCONFIG
+from .constants import PREVIEW_TARGETS
+from .constants import PytestApp
+from .constants import PytestCase
+from .constants import SUPPORTED_TARGETS
+from .utils import comma_sep_str_to_list
+from .utils import format_case_id
+from .utils import merge_junit_files
 
 IDF_PYTEST_EMBEDDED_KEY = pytest.StashKey['IdfPytestEmbedded']()
 ITEM_FAILED_CASES_KEY = pytest.StashKey[list]()
@@ -43,9 +51,10 @@ class IdfPytestEmbedded:
         apps: t.Optional[t.List[App]] = None,
     ):
         if isinstance(target, str):
-            self.target = sorted(comma_sep_str_to_list(target))
+            # sequence also matters
+            self.target = comma_sep_str_to_list(target)
         else:
-            self.target = sorted(target)
+            self.target = target
 
         if not self.target:
             raise ValueError('`target` should not be empty')

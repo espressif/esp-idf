@@ -1,14 +1,13 @@
 # SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # pylint: disable=W0621  # redefined-outer-name
-
+#
 # IDF is using [pytest](https://github.com/pytest-dev/pytest) and
 # [pytest-embedded plugin](https://github.com/espressif/pytest-embedded) as its test framework.
-
+#
 # if you found any bug or have any question,
 # please report to https://github.com/espressif/pytest-embedded/issues
 # or discuss at https://github.com/espressif/pytest-embedded/discussions
-
 import os
 import sys
 
@@ -432,11 +431,12 @@ def pytest_configure(config: Config) -> None:
         for f in glob.glob(os.path.join(IDF_PATH, app_info_filepattern)):
             apps.extend(import_apps_from_txt(f))
 
-    config.stash[IDF_PYTEST_EMBEDDED_KEY] = IdfPytestEmbedded(
-        target=target,
-        apps=apps,
-    )
-    config.pluginmanager.register(config.stash[IDF_PYTEST_EMBEDDED_KEY])
+    if '--collect-only' not in config.invocation_params.args:
+        config.stash[IDF_PYTEST_EMBEDDED_KEY] = IdfPytestEmbedded(
+            target=target,
+            apps=apps,
+        )
+        config.pluginmanager.register(config.stash[IDF_PYTEST_EMBEDDED_KEY])
 
 
 def pytest_unconfigure(config: Config) -> None:
