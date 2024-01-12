@@ -31,6 +31,7 @@ def test_examples_protocol_http_server_file_serving(env, _):  # type: (tiny_test
     dut1.start_app()
 
     dut1.expect('Initializing SPIFFS', timeout=30)
+    dut1.expect('Partition size:', timeout=60)
     # Parse IP address of STA
     Utility.console_log('Waiting to connect with AP')
     got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
