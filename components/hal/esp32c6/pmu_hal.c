@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,26 +11,26 @@
 #include "hal/pmu_hal.h"
 #include "hal/pmu_types.h"
 
-void IRAM_ATTR pmu_hal_hp_set_digital_power_up_wait_cycle(pmu_hal_context_t *hal, uint32_t power_supply_wait_cycle, uint32_t power_up_wait_cycle)
+void pmu_hal_hp_set_digital_power_up_wait_cycle(pmu_hal_context_t *hal, uint32_t power_supply_wait_cycle, uint32_t power_up_wait_cycle)
 {
     pmu_ll_hp_set_digital_power_supply_wait_cycle(hal->dev, power_supply_wait_cycle);
     pmu_ll_hp_set_digital_power_up_wait_cycle(hal->dev, power_up_wait_cycle);
 }
 
-uint32_t IRAM_ATTR pmu_hal_hp_get_digital_power_up_wait_cycle(pmu_hal_context_t *hal)
+uint32_t pmu_hal_hp_get_digital_power_up_wait_cycle(pmu_hal_context_t *hal)
 {
     uint32_t power_supply_wait_cycle = pmu_ll_hp_get_digital_power_supply_wait_cycle(hal->dev);
     uint32_t power_up_wait_cycle = pmu_ll_hp_get_digital_power_up_wait_cycle(hal->dev);
     return power_supply_wait_cycle + power_up_wait_cycle;
 }
 
-void IRAM_ATTR pmu_hal_lp_set_digital_power_up_wait_cycle(pmu_hal_context_t *hal, uint32_t power_supply_wait_cycle, uint32_t power_up_wait_cycle)
+void pmu_hal_lp_set_digital_power_up_wait_cycle(pmu_hal_context_t *hal, uint32_t power_supply_wait_cycle, uint32_t power_up_wait_cycle)
 {
     pmu_ll_lp_set_digital_power_supply_wait_cycle(hal->dev, power_supply_wait_cycle);
     pmu_ll_lp_set_digital_power_up_wait_cycle(hal->dev, power_up_wait_cycle);
 }
 
-uint32_t IRAM_ATTR pmu_hal_lp_get_digital_power_up_wait_cycle(pmu_hal_context_t *hal)
+uint32_t pmu_hal_lp_get_digital_power_up_wait_cycle(pmu_hal_context_t *hal)
 {
     uint32_t power_supply_wait_cycle = pmu_ll_lp_get_digital_power_supply_wait_cycle(hal->dev);
     uint32_t power_up_wait_cycle = pmu_ll_lp_get_digital_power_up_wait_cycle(hal->dev);
