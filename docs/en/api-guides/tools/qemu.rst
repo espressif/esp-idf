@@ -8,7 +8,33 @@ Espressif maintains a `fork <https://github.com/espressif/qemu>`_ of the QEMU em
 Prerequisites
 -------------
 
-To use QEMU with ``idf.py`` you first need to install the above-mentioned fork of QEMU. ESP-IDF provides pre-built binaries for x86_64 and arm64 Linux and macOS, as well as x86_64 Windows. If you are using this platform, you can install the pre-built binaries with the following command:
+To use QEMU with ``idf.py`` you first need to install the above-mentioned fork of QEMU. ESP-IDF provides pre-built binaries for x86_64 and arm64 Linux and macOS, as well as x86_64 Windows. Before you use the pre-built binaries on Linux and macOS platroms please install system dependencies:
+
+- Ubuntu and Debian:
+
+.. code-block:: console
+
+    sudo apt-get install -y libgcrypt20 libglib2.0-0 libpixman-1-0 libsdl2-2.0-0 libslirp0
+
+- CentOS:
+
+.. code-block:: console
+
+    sudo yum install -y --enablerepo=powertools libgcrypt glib2 pixman SDL2 libslirp
+
+- Arch:
+
+.. code-block:: console
+
+    sudo pacman -S --needed libgcrypt glib2 pixman sdl2 libslirp
+
+- macOS:
+
+.. code-block:: console
+
+    brew install libgcrypt glib pixman sdl2 libslirp
+
+Then install the pre-built binaries with the following command:
 
 .. code-block:: console
 
