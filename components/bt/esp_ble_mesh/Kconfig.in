@@ -545,6 +545,20 @@ if BLE_MESH
             Provisioner can provision up to 20 nodes and each node contains two elements,
             then the replay protection list size of Provisioner should be at least 40.
 
+    config BLE_MESH_NOT_RELAY_REPLAY_MSG
+        bool "Not relay replayed messages in a mesh network"
+        depends on BLE_MESH_EXPERIMENTAL
+        default n
+        help
+            There may be many expired messages in a complex mesh network that would be
+            considered replayed messages.
+            Enable this option will refuse to relay such messages, which could help to
+            reduce invalid packets in the mesh network.
+            However, it should be noted that enabling this option may result in packet
+            loss in certain environments.
+            Therefore, users need to decide whether to enable this option according to
+            the actual usage situation.
+
     config BLE_MESH_MSG_CACHE_SIZE
         int "Network message cache size"
         default 10
@@ -1247,5 +1261,13 @@ if BLE_MESH
         endif # BLE_MESH_DEBUG
 
     endmenu
+
+    config BLE_MESH_EXPERIMENTAL
+        bool "Make BLE Mesh experimental features visible"
+        default n
+        help
+            Make BLE Mesh Experimental features visible.
+            Experimental features list:
+            - CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
 
 endif # BLE_MESH
