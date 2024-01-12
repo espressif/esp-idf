@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,17 +15,16 @@
 #include "esp_private/adc_share_hw_ctrl.h"
 
 static const char *TAG = "ulp_adc";
+static adc_oneshot_unit_handle_t s_adc1_handle = NULL;
 
 esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg)
 {
     esp_err_t ret = ESP_OK;
 
-    ESP_GOTO_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, err, TAG, "cfg == NULL");
-    ESP_GOTO_ON_FALSE(cfg->adc_n == ADC_UNIT_1, ESP_ERR_INVALID_ARG, err, TAG, "Only ADC_UNIT_1 is supported for now");
+    ESP_RETURN_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, TAG, "cfg == NULL");
+    ESP_RETURN_ON_FALSE(cfg->adc_n == ADC_UNIT_1, ESP_ERR_INVALID_ARG, TAG, "Only ADC_UNIT_1 is supported for now");
 
     //-------------ADC1 Init---------------//
-    adc_oneshot_unit_handle_t adc1_handle;
-
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = cfg->adc_n,
         .ulp_mode = cfg->ulp_mode,
@@ -37,21 +36,31 @@ esp_err_t ulp_adc_init(const ulp_adc_cfg_t *cfg)
         init_config1.ulp_mode = ADC_ULP_MODE_RISCV;
     }
 
-
-    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+    ret = adc_oneshot_new_unit(&init_config1, &s_adc1_handle);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     //-------------ADC1 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = cfg->width,
         .atten = cfg->atten,
     };
-    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, cfg->channel, &config));
+    ret = adc_oneshot_config_channel(s_adc1_handle, cfg->channel, &config);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     //Calibrate the ADC
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_set_hw_calibration_code(cfg->adc_n, cfg->atten);
 #endif
 
-err:
     return ret;
+}
+
+esp_err_t ulp_adc_deinit(void)
+{
+    // No need to check for null-pointer and stuff, oneshot driver already does that
+    return adc_oneshot_del_unit(s_adc1_handle);
 }
