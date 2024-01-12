@@ -209,7 +209,7 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 #define WIFI_STA_DISCONNECTED_PM_ENABLED false
 #endif
 
-#if CONFIG_ESP_WIFI_ENABLE_WPA3_SAE
+#if CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE
 #define WIFI_ENABLE_WPA3_SAE (1<<0)
 #else
 #define WIFI_ENABLE_WPA3_SAE 0
