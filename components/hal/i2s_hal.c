@@ -244,8 +244,13 @@ void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
     uint32_t chan_num = 2;
     uint32_t chan_bits = hal_cfg->chan_bits;
     uint32_t data_bits = hal_cfg->sample_bits;
+#if SOC_I2S_SUPPORTS_TDM
+    bool is_mono = (hal_cfg->chan_fmt == I2S_CHANNEL_FMT_ALL_RIGHT) ||
+                   (hal_cfg->chan_fmt == I2S_CHANNEL_FMT_ALL_LEFT);
+#else
     bool is_mono = (hal_cfg->chan_fmt == I2S_CHANNEL_FMT_ONLY_RIGHT) ||
                    (hal_cfg->chan_fmt == I2S_CHANNEL_FMT_ONLY_LEFT);
+#endif
 
     /* Set channel number and valid data bits */
 #if SOC_I2S_SUPPORTS_TDM
