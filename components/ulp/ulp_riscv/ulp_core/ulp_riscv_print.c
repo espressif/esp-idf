@@ -49,3 +49,33 @@ void ulp_riscv_print_hex(int h)
         h <<= 4; // move the 2nd leftmost byte to the left, to be extracted next
     }
 }
+
+void ulp_riscv_print_hex_with_number_of_digits(int h, int number_of_digits)
+{
+    int x;
+    int c;
+
+    if (!s_print_ctx.putc) {
+        return;
+    }
+
+    if (number_of_digits < 1) {
+        return;
+    }
+
+    if (number_of_digits >= 8) {
+        ulp_riscv_print_hex(h);
+        return;
+    }
+
+    // Does not print '0x', only the digits specified by the number_of_digits argument
+    for (x = 0; x < number_of_digits; x++) {
+        c = (h >> ((number_of_digits - 1)*4)) & 0xf; // extract the leftmost byte
+        if (c < 10) {
+            s_print_ctx.putc(s_print_ctx.putc_ctx ,'0' + c);
+        } else {
+            s_print_ctx.putc(s_print_ctx.putc_ctx ,'a' + c - 10);
+        }
+        h <<= 4; // move the 2nd leftmost byte to the left, to be extracted next
+    }
+}

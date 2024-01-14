@@ -38,6 +38,14 @@ void ulp_riscv_print_str(const char *str);
  */
 void ulp_riscv_print_hex(int h);
 
+/**
+ * @brief Prints a hex number with the specified number of digits. Does not print 0x, only the digits
+ *
+ * @param Hex number to print
+ * @param number_of_digits Number of digits to print.
+ */
+void ulp_riscv_print_hex_with_number_of_digits(int h, int number_of_digits);
+
 #ifdef __cplusplus
 }
 #endif
