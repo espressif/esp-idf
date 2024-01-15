@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1530,6 +1530,19 @@ static inline void spi_ll_set_conf_base_bitslen(spi_dev_t *hw, uint8_t conf_base
     // 7 bits wide
     if(conf_base < 128) {
         hw->slv_wrbuf_dlen.conf_base_bitlen = conf_base;
+    }
+}
+
+/**
+ * Set conf phase bits len to HW for segment config trans mode.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param conf_bitlen Value of field conf_bitslen in cmd reg.
+ */
+static inline void spi_ll_set_conf_phase_bits_len(spi_dev_t *hw, uint32_t conf_bitlen)
+{
+    if (conf_bitlen <= SOC_SPI_SCT_CONF_BITLEN_MAX) {
+        hw->cmd.conf_bitlen = conf_bitlen;
     }
 }
 

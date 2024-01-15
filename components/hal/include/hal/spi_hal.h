@@ -49,15 +49,6 @@ typedef dma_descriptor_align8_t spi_dma_desc_t;
 #endif
 
 /**
- * @brief Enum for DMA descriptor status
- */
-typedef enum spi_hal_dma_desc_status_t {
-    SPI_HAL_DMA_DESC_NULL = 0,          ///< Null descriptos
-    SPI_HAL_DMA_DESC_RUN_OUT = 1,       ///< DMA descriptors are not enough for data
-    SPI_HAL_DMA_DESC_LINKED = 2,        ///< DMA descriptors are linked successfully
-} spi_hal_dma_desc_status_t;
-
-/**
  * Input parameters to the ``spi_hal_cal_clock_conf`` to calculate the timing configuration
  */
 typedef struct {
@@ -112,17 +103,6 @@ typedef struct {
     /* Configured by driver at initialization, don't touch */
     spi_dev_t     *hw;                  ///< Beginning address of the peripheral registers.
     bool  dma_enabled;                  ///< Whether the DMA is enabled, do not update after initialization
-
-#if SOC_SPI_SCT_SUPPORTED
-    /* Segmented-Configure-Transfer required, configured by driver, don't touch */
-    uint32_t tx_free_desc_num;
-    uint32_t rx_free_desc_num;
-    lldesc_t *cur_tx_seg_link;          ///< Current TX DMA descriptor used for sct mode.
-    lldesc_t *cur_rx_seg_link;          ///< Current RX DMA descriptor used for sct mode.
-    lldesc_t *tx_seg_link_tail;         ///< Tail of the TX DMA descriptor link
-    lldesc_t *rx_seg_link_tail;         ///< Tail of the RX DMA descriptor link
-#endif  //#if SOC_SPI_SCT_SUPPORTED
-
     /* Internal parameters, don't touch */
     spi_hal_trans_config_t trans_config; ///< Transaction configuration
 } spi_hal_context_t;
@@ -342,92 +322,6 @@ void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t conf_buffer[S
 void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_config_t *config, const spi_hal_dev_config_t *dev, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX]);
 
 /**
- * Format tx dma descriptor(s) for a SCT head
- *
- * @param hal                 Context of the HAL layer.
- * @param conf_buffer         Conf buffer
- * @param send_buffer         TX buffer
- * @param buf_len_bytes       TX buffer length, in bytes
- * @param[out] trans_head     SCT dma descriptor head
- * @param[out] used_desc_num  After formatting, `used_desc_num` number of descriptors are used
- *
- * @return
- *        - SPI_HAL_DMA_DESC_LINKED:   Successfully format these dma descriptors, and link together
- *        - SPI_HAL_DMA_DESC_RUN_OUT:  Run out of dma descriptors, should alloc more, or wait until enough number of descriptors are recycled (by `spi_hal_sct_tx_dma_desc_recycle`)
- */
-spi_hal_dma_desc_status_t spi_hal_sct_new_tx_dma_desc_head(spi_hal_context_t *hal, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, lldesc_t **trans_head, uint32_t *used_desc_num);
-
-/**
- * Format tx dma descriptor(s) for a segment, and linked it to its previous segment
- *
- * @param hal                 Context of the HAL layer.
- * @param conf_buffer         Conf buffer
- * @param send_buffer         TX buffer
- * @param buf_len_bytes       TX buffer length, in bytes
- * @param[out] used_desc_num  After formatting, `used_desc_num` number of descriptors are used
- *
- * @return
- *        - SPI_HAL_DMA_DESC_LINKED:   Successfully format these dma descriptors, and link together
- *        - SPI_HAL_DMA_DESC_RUN_OUT:  Run out of dma descriptors, should alloc more, or wait until enough number of descriptors are recycled (by `spi_hal_sct_tx_dma_desc_recycle`)
- */
-spi_hal_dma_desc_status_t spi_hal_sct_link_tx_seg_dma_desc(spi_hal_context_t *hal, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, uint32_t *used_desc_num);
-
-/**
- * Recycle used tx dma descriptors (back to available state, NOT a memory free)
- *
- * @param hal            Context of the HAL layer.
- * @param recycle_num    Number of the to-be-recycled descriptors
- */
-void spi_hal_sct_tx_dma_desc_recycle(spi_hal_context_t *hal, uint32_t recycle_num);
-
-/**
- * Format rx dma descriptor(s) for a SCT head
- *
- * @param hal                 Context of the HAL layer.
- * @param recv_buffer         RX buffer
- * @param buf_len_bytes       RX buffer length, in bytes
- * @param[out] trans_head     SCT dma descriptor head
- * @param[out] used_desc_num  After formatting, `used_desc_num` number of descriptors are used
- *
- * @return
- *        - SPI_HAL_DMA_DESC_LINKED:   Successfully format these dma descriptors, and link together
- *        - SPI_HAL_DMA_DESC_RUN_OUT:  Run out of dma descriptors, should alloc more, or wait until enough number of descriptors are recycled (by `spi_hal_sct_tx_dma_desc_recycle`)
- */
-spi_hal_dma_desc_status_t spi_hal_sct_new_rx_dma_desc_head(spi_hal_context_t *hal, const void *recv_buffer, uint32_t buf_len_bytes, lldesc_t **trans_head, uint32_t *used_desc_num);
-
-/**
- * Format rx dma descriptor(s) for a segment, and linked it to its previous segment
- *
- * @param hal                 Context of the HAL layer.
- * @param send_buffer         RX buffer
- * @param buf_len_bytes       RX buffer length, in bytes
- * @param[out] used_desc_num  After formatting, `used_desc_num` number of descriptors are used
- *
- * @return
- *        - SPI_HAL_DMA_DESC_LINKED:   Successfully format these dma descriptors, and link together
- *        - SPI_HAL_DMA_DESC_RUN_OUT:  Run out of dma descriptors, should alloc more, or wait until enough number of descriptors are recycled (by `spi_hal_sct_tx_dma_desc_recycle`)
- */
-spi_hal_dma_desc_status_t spi_hal_sct_link_rx_seg_dma_desc(spi_hal_context_t *hal, const void *recv_buffer, uint32_t buf_len_bytes,  uint32_t *used_desc_num);
-
-/**
- * Recycle used rx dma descriptors (back to available state, NOT a memory free)
- *
- * @param hal            Context of the HAL layer.
- * @param recycle_num    Number of the to-be-recycled descriptors
- */
-void spi_hal_sct_rx_dma_desc_recycle(spi_hal_context_t *hal, uint32_t recycle_num);
-
-/**
- * Load dma descriptors to dma
- * Will do nothing to TX or RX dma, when `tx_seg_head` or `rx_seg_head` is NULL
- *
- * @param hal            Context of the HAL layer.
- * @param rx_seg_head Head of the SCT RX dma descriptors
- * @param tx_seg_head Head of the SCT TX dma descriptors
- */
-void spi_hal_sct_load_dma_link(spi_hal_context_t *hal, lldesc_t *rx_seg_head, lldesc_t *tx_seg_head);
-
-/**
  * Deinit SCT mode related registers and hal states
  */
 void spi_hal_sct_deinit(spi_hal_context_t *hal);
@@ -435,13 +329,22 @@ void spi_hal_sct_deinit(spi_hal_context_t *hal);
 /**
  * Set conf_bitslen to HW for sct.
  */
-#define spi_hal_sct_set_conf_bits_len(hal, conf_len)    spi_ll_set_conf_phase_bits_len((hal)->hw, conf_len)
+void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len);
+
+/**
+ * Clear SPI interrupt bits by mask
+ */
+void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask);
+
+/**
+ * Get SPI interrupt bits status by mask
+ */
+bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask);
 
 /**
  * Set conf_bitslen base to HW for sct, only supported on s2.
  */
 #define spi_hal_sct_setup_conf_base(hal, conf_base)     spi_ll_set_conf_base_bitslen((hal)->hw, conf_base)
-
 #endif  //#if SOC_SPI_SCT_SUPPORTED
 #endif  //#if SOC_GPSPI_SUPPORTED
 

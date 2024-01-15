@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -167,6 +167,18 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal)
 /*------------------------------------------------------------------------------
  * Segmented-Configure-Transfer
  *----------------------------------------------------------------------------*/
+void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
+    spi_ll_clear_intr(hal->hw, mask);
+}
+
+bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
+    return spi_ll_get_intr(hal->hw, mask);
+}
+
+void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len) {
+    spi_ll_set_conf_phase_bits_len(hal->hw, conf_len);
+}
+
 void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
 {
     spi_ll_init_conf_buffer(hal->hw, conf_buffer);
@@ -189,155 +201,4 @@ void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_co
 #endif
 }
 
-void spi_hal_sct_load_dma_link(spi_hal_context_t *hal, lldesc_t *rx_seg_head, lldesc_t *tx_seg_head)
-{
-    spi_ll_clear_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
-
-    HAL_ASSERT(hal->dma_enabled);
-    if (rx_seg_head) {
-        spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
-        spi_ll_dma_rx_fifo_reset(hal->hw);
-        spi_ll_infifo_full_clr(hal->hw);
-        spi_ll_dma_rx_enable(hal->hw, 1);
-        spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, rx_seg_head);
-    }
-
-    if (tx_seg_head) {
-        spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
-        spi_ll_dma_tx_fifo_reset(hal->hw);
-        spi_ll_outfifo_empty_clr(hal->hw);
-        spi_ll_dma_tx_enable(hal->hw, 1);
-        spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, tx_seg_head);
-    }
-}
-
-/*-----------------------------------------------------------
- * Below hal functions should be in the same spinlock
- *-----------------------------------------------------------*/
-/*-------------------------
- *            TX
- *------------------------*/
-void spi_hal_sct_tx_dma_desc_recycle(spi_hal_context_t *hal, uint32_t recycle_num)
-{
-    hal->tx_free_desc_num += recycle_num;
-}
-
-static void s_sct_prepare_tx_seg(spi_hal_context_t *hal, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, lldesc_t **trans_head)
-{
-    HAL_ASSERT(hal->tx_free_desc_num >= 1 + lldesc_get_required_num(buf_len_bytes));
-
-    *trans_head = hal->cur_tx_seg_link;
-    lldesc_setup_link(hal->cur_tx_seg_link, conf_buffer, SOC_SPI_SCT_BUFFER_NUM_MAX * 4, false);
-    lldesc_t *conf_buffer_link = hal->cur_tx_seg_link;
-    hal->tx_free_desc_num -= 1;
-
-    hal->tx_seg_link_tail = hal->cur_tx_seg_link;
-    hal->cur_tx_seg_link++;
-    if (hal->cur_tx_seg_link == hal->dmadesc_tx + hal->dmadesc_n) {
-        //As there is enough space, so we simply point this to the pool head
-        hal->cur_tx_seg_link = hal->dmadesc_tx;
-    }
-
-    if(send_buffer && buf_len_bytes) {
-        lldesc_setup_link(hal->cur_tx_seg_link, send_buffer, buf_len_bytes, false);
-        STAILQ_NEXT(conf_buffer_link, qe) = hal->cur_tx_seg_link;
-        for (int i = 0; i < lldesc_get_required_num(buf_len_bytes); i++) {
-            hal->tx_seg_link_tail = hal->cur_tx_seg_link;
-            hal->cur_tx_seg_link++;
-            if (hal->cur_tx_seg_link == hal->dmadesc_tx + hal->dmadesc_n) {
-                //As there is enough space, so we simply point this to the pool head
-                hal->cur_tx_seg_link = hal->dmadesc_tx;
-            }
-        }
-        hal->tx_free_desc_num -= lldesc_get_required_num(buf_len_bytes);
-    }
-}
-
-spi_hal_dma_desc_status_t spi_hal_sct_new_tx_dma_desc_head(spi_hal_context_t *hal, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, lldesc_t **trans_head, uint32_t *used_desc_num)
-{
-    //1 desc for the conf_buffer, other for data.
-    if (hal->tx_free_desc_num < 1 + lldesc_get_required_num(buf_len_bytes)) {
-        return SPI_HAL_DMA_DESC_RUN_OUT;
-    }
-
-    s_sct_prepare_tx_seg(hal, conf_buffer, send_buffer, buf_len_bytes, trans_head);
-    *used_desc_num = 1 + lldesc_get_required_num(buf_len_bytes);
-
-    return SPI_HAL_DMA_DESC_LINKED;
-}
-
-spi_hal_dma_desc_status_t spi_hal_sct_link_tx_seg_dma_desc(spi_hal_context_t *hal, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, uint32_t *used_desc_num)
-{
-    //1 desc for the conf_buffer, other for data.
-    if (hal->tx_free_desc_num < 1 + lldesc_get_required_num(buf_len_bytes)) {
-        return SPI_HAL_DMA_DESC_RUN_OUT;
-    }
-
-    if (hal->tx_seg_link_tail) {
-        //Connect last segment to the current segment, as we're sure the `s_sct_prepare_tx_seg` next won't fail.
-        STAILQ_NEXT(hal->tx_seg_link_tail, qe) = hal->cur_tx_seg_link;
-    }
-
-    lldesc_t *internal_head = NULL;
-    s_sct_prepare_tx_seg(hal, conf_buffer, send_buffer, buf_len_bytes, &internal_head);
-    *used_desc_num += 1 + lldesc_get_required_num(buf_len_bytes);
-
-    return SPI_HAL_DMA_DESC_LINKED;
-}
-
-/*-------------------------
- *            RX
- *------------------------*/
-void spi_hal_sct_rx_dma_desc_recycle(spi_hal_context_t *hal, uint32_t recycle_num)
-{
-    hal->rx_free_desc_num += recycle_num;
-}
-
-static void s_sct_prepare_rx_seg(spi_hal_context_t *hal, const void *recv_buffer, uint32_t buf_len_bytes, lldesc_t **trans_head)
-{
-    HAL_ASSERT(hal->rx_free_desc_num >= lldesc_get_required_num(buf_len_bytes));
-
-    *trans_head = hal->cur_rx_seg_link;
-    lldesc_setup_link(hal->cur_rx_seg_link, recv_buffer, buf_len_bytes, true);
-    for (int i = 0; i< lldesc_get_required_num(buf_len_bytes); i++) {
-        hal->rx_seg_link_tail = hal->cur_rx_seg_link;
-        hal->cur_rx_seg_link++;
-        if (hal->cur_rx_seg_link == hal->dmadesc_rx + hal->dmadesc_n) {
-            //As there is enough space, so we simply point this to the pool head
-            hal->cur_rx_seg_link = hal->dmadesc_rx;
-        }
-    }
-
-    hal->rx_free_desc_num -= lldesc_get_required_num(buf_len_bytes);
-}
-
-spi_hal_dma_desc_status_t spi_hal_sct_new_rx_dma_desc_head(spi_hal_context_t *hal, const void *recv_buffer, uint32_t buf_len_bytes, lldesc_t **trans_head, uint32_t *used_desc_num)
-{
-    if (hal->rx_free_desc_num < lldesc_get_required_num(buf_len_bytes)) {
-        return SPI_HAL_DMA_DESC_RUN_OUT;
-    }
-
-    s_sct_prepare_rx_seg(hal, recv_buffer, buf_len_bytes, trans_head);
-    *used_desc_num = lldesc_get_required_num(buf_len_bytes);
-
-    return SPI_HAL_DMA_DESC_LINKED;
-}
-
-spi_hal_dma_desc_status_t spi_hal_sct_link_rx_seg_dma_desc(spi_hal_context_t *hal, const void *recv_buffer, uint32_t buf_len_bytes,  uint32_t *used_desc_num)
-{
-    if (hal->rx_free_desc_num < lldesc_get_required_num(buf_len_bytes)) {
-        return SPI_HAL_DMA_DESC_RUN_OUT;
-    }
-
-    if (hal->rx_seg_link_tail) {
-        //Connect last segment to the current segment, as we're sure the `s_sct_prepare_tx_seg` next won't fail.
-        STAILQ_NEXT(hal->rx_seg_link_tail, qe) = hal->cur_rx_seg_link;
-    }
-
-    lldesc_t *internal_head = NULL;
-    s_sct_prepare_rx_seg(hal, recv_buffer, buf_len_bytes, &internal_head);
-    *used_desc_num += lldesc_get_required_num(buf_len_bytes);
-
-    return SPI_HAL_DMA_DESC_LINKED;
-}
 #endif  //#if SOC_SPI_SCT_SUPPORTED

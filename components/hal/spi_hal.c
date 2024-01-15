@@ -53,19 +53,8 @@ void spi_hal_deinit(spi_hal_context_t *hal)
 }
 
 #if SOC_SPI_SCT_SUPPORTED
-static void s_sct_reset_dma_link(spi_hal_context_t *hal)
-{
-    hal->tx_free_desc_num = hal->dmadesc_n;
-    hal->rx_free_desc_num = hal->dmadesc_n;
-    hal->cur_tx_seg_link = hal->dmadesc_tx;
-    hal->cur_rx_seg_link = hal->dmadesc_rx;
-    hal->tx_seg_link_tail = NULL;
-    hal->rx_seg_link_tail = NULL;
-}
-
 void spi_hal_sct_init(spi_hal_context_t *hal)
 {
-    s_sct_reset_dma_link(hal);
     spi_ll_conf_state_enable(hal->hw, true);
     spi_ll_set_magic_number(hal->hw, SPI_LL_SCT_MAGIC_NUMBER);
     spi_ll_disable_int(hal->hw);    //trans_done intr enabled in `add device` phase, sct mode shoud use sct_trans_done only

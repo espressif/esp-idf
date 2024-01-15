@@ -14,11 +14,11 @@
 #include "test_utils.h"
 #include "esp_heap_caps.h"
 #include "driver/spi_master.h"
+#include "esp_private/spi_master_internal.h"
 #include "driver/spi_slave_hd.h"
 #include "driver/spi_slave.h"
 #include "soc/spi_pins.h"
 #include "test_spi_utils.h"
-
 
 __attribute__((unused)) static const char *TAG = "SCT";
 
@@ -62,18 +62,18 @@ static void hd_master(void)
     uint8_t *master_rx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint32_t master_rx_val = 0;
     uint8_t *slave_tx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    get_tx_buffer(199, master_tx_buf, slave_tx_buf, TEST_HD_DATA_LEN);
+    test_fill_random_to_buffers_dualboard(199, master_tx_buf, slave_tx_buf, TEST_HD_DATA_LEN);
 
-    spi_seg_transaction_t *ret_seg_trans = NULL;
+    spi_multi_transaction_t *ret_seg_trans = NULL;
 
     //---------------------Master TX---------------------------//
-    spi_seg_transaction_t tx_seg_trans[TEST_HD_TIMES] = {
+    spi_multi_transaction_t tx_seg_trans[TEST_HD_TIMES] = {
         {
             .base = {
                 .cmd = 0x1,
                 .addr = TEST_HD_BUF_0_ID,
                 .length = 4 * 8,
-                .tx_buffer = (uint8_t *)&master_tx_val,
+                .tx_buffer = (uint8_t *) &master_tx_val,
             },
         },
         //TEST_HD_DATA_LEN of TX data, splitted into 2 segments. `TEST_HD_DATA_LEN_PER_SEG` per segment
@@ -84,7 +84,7 @@ static void hd_master(void)
                 .tx_buffer = master_tx_buf,
             },
             .dummy_bits = 8,
-            .seg_trans_flags = SPI_SEG_TRANS_DUMMY_LEN_UPDATED,
+            .seg_trans_flags = SPI_MULTI_TRANS_DUMMY_LEN_UPDATED,
         },
         {
             .base = {
@@ -93,7 +93,7 @@ static void hd_master(void)
                 .tx_buffer = master_tx_buf + TEST_HD_DATA_LEN_PER_SEG,
             },
             .dummy_bits = 8,
-            .seg_trans_flags = SPI_SEG_TRANS_DUMMY_LEN_UPDATED,
+            .seg_trans_flags = SPI_MULTI_TRANS_DUMMY_LEN_UPDATED,
         },
         {
             .base = {
@@ -102,23 +102,22 @@ static void hd_master(void)
         },
     };
 
-    TEST_ESP_OK(spi_bus_segment_trans_mode_enable(handle, true));
+    TEST_ESP_OK(spi_bus_multi_trans_mode_enable(handle, true));
     unity_wait_for_signal("Slave ready");
-    TEST_ESP_OK(spi_device_queue_segment_trans(handle, tx_seg_trans, TEST_HD_TIMES, portMAX_DELAY));
-    TEST_ESP_OK(spi_device_get_segment_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_queue_multi_trans(handle, tx_seg_trans, TEST_HD_TIMES, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_get_multi_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
     TEST_ASSERT(ret_seg_trans == tx_seg_trans);
     ESP_LOG_BUFFER_HEX("Master tx", master_tx_buf, TEST_HD_DATA_LEN);
-    TEST_ESP_OK(spi_bus_segment_trans_mode_enable(handle, false));
-
+    TEST_ESP_OK(spi_bus_multi_trans_mode_enable(handle, false));
 
     //---------------------Master RX---------------------------//
-    spi_seg_transaction_t rx_seg_trans[TEST_HD_TIMES] = {
+    spi_multi_transaction_t rx_seg_trans[TEST_HD_TIMES] = {
         {
             .base = {
                 .cmd = 0x2,
                 .addr = TEST_HD_BUF_1_ID,
                 .rxlength = 4 * 8,
-                .rx_buffer = (uint8_t *)&master_rx_val,
+                .rx_buffer = (uint8_t *) &master_rx_val,
             },
         },
         // TEST_HD_DATA_LEN of TX data, splitted into 2 segments. `TEST_HD_DATA_LEN_PER_SEG` per segment
@@ -129,7 +128,7 @@ static void hd_master(void)
                 .rx_buffer = master_rx_buf,
             },
             .dummy_bits = 8,
-            .seg_trans_flags = SPI_SEG_TRANS_DUMMY_LEN_UPDATED,
+            .seg_trans_flags = SPI_MULTI_TRANS_DUMMY_LEN_UPDATED,
         },
         {
             .base = {
@@ -138,7 +137,7 @@ static void hd_master(void)
                 .rx_buffer = master_rx_buf + TEST_HD_DATA_LEN_PER_SEG,
             },
             .dummy_bits = 8,
-            .seg_trans_flags = SPI_SEG_TRANS_DUMMY_LEN_UPDATED,
+            .seg_trans_flags = SPI_MULTI_TRANS_DUMMY_LEN_UPDATED,
         },
         {
             .base = {
@@ -146,11 +145,11 @@ static void hd_master(void)
             }
         },
     };
-    TEST_ESP_OK(spi_bus_segment_trans_mode_enable(handle, true));
+    TEST_ESP_OK(spi_bus_multi_trans_mode_enable(handle, true));
 
     unity_wait_for_signal("Slave ready");
-    TEST_ESP_OK(spi_device_queue_segment_trans(handle, rx_seg_trans, TEST_HD_TIMES, portMAX_DELAY));
-    TEST_ESP_OK(spi_device_get_segment_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_queue_multi_trans(handle, rx_seg_trans, TEST_HD_TIMES, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_get_multi_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
     TEST_ASSERT(ret_seg_trans == rx_seg_trans);
 
     ESP_LOGI("Master", "Slave Reg[%d] value is: 0x%" PRIx32, TEST_HD_BUF_1_ID, master_rx_val);
@@ -184,7 +183,7 @@ static void hd_slave(void)
     uint8_t *slave_rx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint32_t slave_rx_val = 0;
     uint8_t *master_tx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    get_tx_buffer(199, master_tx_buf, slave_tx_buf, TEST_HD_DATA_LEN);
+    test_fill_random_to_buffers_dualboard(199, master_tx_buf, slave_tx_buf, TEST_HD_DATA_LEN);
 
     unity_wait_for_signal("Master ready");
 
@@ -194,7 +193,7 @@ static void hd_slave(void)
         .len = TEST_HD_DATA_LEN,
     };
     TEST_ESP_OK(spi_slave_hd_queue_trans(SPI2_HOST, SPI_SLAVE_CHAN_RX, &slave_rx_trans, portMAX_DELAY));
-    unity_send_signal("slave ready");
+    unity_send_signal("Slave ready");
     TEST_ESP_OK(spi_slave_hd_get_trans_res(SPI2_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
     TEST_ASSERT(ret_trans == &slave_rx_trans);
 
@@ -212,7 +211,7 @@ static void hd_slave(void)
         .len = TEST_HD_DATA_LEN,
     };
     TEST_ESP_OK(spi_slave_hd_queue_trans(SPI2_HOST, SPI_SLAVE_CHAN_TX, &slave_tx_trans, portMAX_DELAY));
-    unity_send_signal("slave ready");
+    unity_send_signal("Slave ready");
     TEST_ESP_OK(spi_slave_hd_get_trans_res(SPI2_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
     TEST_ASSERT(ret_trans == &slave_tx_trans);
     ESP_LOG_BUFFER_HEX("Slave tx", slave_tx_buf, TEST_HD_DATA_LEN);
