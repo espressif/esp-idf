@@ -180,7 +180,7 @@ else()
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS include include/soc include/soc/${target}
+                       INCLUDE_DIRS include include/soc include/soc/${target} dma/include
                        PRIV_INCLUDE_DIRS port/include include/esp_private
                        REQUIRES ${requires}
                        PRIV_REQUIRES "${priv_requires}"
