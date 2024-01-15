@@ -141,7 +141,8 @@ menu "Power Management"
 
     config PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         bool "Power down Digital Peripheral in light sleep (EXPERIMENTAL)"
-        depends on SOC_PAU_SUPPORTED
+        depends on SOC_PM_SUPPORT_TOP_PD
+        select PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         default n #TODO: enable by default if periph init/deinit management supported (WIFI-5252)
         help
             If enabled, digital peripherals will be powered down in light sleep, it will reduce sleep

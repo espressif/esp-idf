@@ -572,7 +572,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep)
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
         gpio_sleep_mode_config_apply();
 #endif
-#if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
         sleep_enable_cpu_retention();
 #endif
 #if REGI2C_ANA_CALI_PD_WORKAROUND
@@ -601,7 +601,7 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(void)
     sar_periph_ctrl_power_enable();
 #endif
 
-#if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
 #if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
@@ -828,6 +828,9 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
     if (should_skip_sleep) {
         result = ESP_ERR_SLEEP_REJECT;
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && !CONFIG_FREERTOS_UNICORE && SOC_PM_CPU_RETENTION_BY_SW
+        esp_sleep_cpu_skip_retention();
+#endif
     } else {
 #if CONFIG_ESP_SLEEP_DEBUG
     if (s_sleep_ctx != NULL) {
@@ -884,13 +887,17 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
 
 #if SOC_PMU_SUPPORTED
-#if SOC_PM_CPU_RETENTION_BY_SW
+#if SOC_PM_CPU_RETENTION_BY_SW && CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
             esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_GOTO_SLEEP, (void *)0);
-            if (pd_flags & PMU_SLEEP_PD_CPU) {
+            if (pd_flags & (PMU_SLEEP_PD_CPU | PMU_SLEEP_PD_TOP)) {
                 result = esp_sleep_cpu_retention(pmu_sleep_start, s_config.wakeup_triggers, reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
             } else
 #endif
             {
+#if !CONFIG_FREERTOS_UNICORE && CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_SW
+                // Skip smp retention if CPU power domain power-down is not allowed
+                esp_sleep_cpu_skip_retention();
+#endif
                 result = call_rtc_sleep_start(reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
             }
             esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_EXIT_SLEEP, (void *)0);
@@ -1179,7 +1186,13 @@ esp_err_t esp_light_sleep_start(void)
     }
 #endif
 
+#if !CONFIG_FREERTOS_UNICORE
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_SW
+    sleep_smp_cpu_sleep_prepare();
+#else
     esp_ipc_isr_stall_other_cpu();
+#endif
+#endif
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
     /* Cache Suspend 0: if CONFIG_PM_SLP_IRAM_OPT is enabled, suspend cache here so that the access to flash
@@ -1291,6 +1304,11 @@ esp_err_t esp_light_sleep_start(void)
         // Enter sleep, then wait for flash to be ready on wakeup
         err = esp_light_sleep_inner(pd_flags, flash_enable_time_us);
     }
+#if !CONFIG_FREERTOS_UNICORE && CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_SW
+        if (err != ESP_OK) {
+            esp_sleep_cpu_skip_retention();
+        }
+#endif
 
     // light sleep wakeup flag only makes sense after a successful light sleep
     s_light_sleep_wakeup = (err == ESP_OK);
@@ -1322,7 +1340,14 @@ esp_err_t esp_light_sleep_start(void)
     resume_cache();
 #endif
 
+#if !CONFIG_FREERTOS_UNICORE
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_SW
+    sleep_smp_cpu_wakeup_prepare();
+#else
     esp_ipc_isr_release_other_cpu();
+#endif
+#endif
+
     if (!wdt_was_enabled) {
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_disable(&rtc_wdt_ctx);

@@ -4,7 +4,7 @@ endif()
 
 set(srcs)
 
-if(CONFIG_SOC_PM_SUPPORT_CPU_PD)
+if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
     list(APPEND srcs "cpu_retention/port/${target}/sleep_cpu.c")
     if(CONFIG_SOC_PM_CPU_RETENTION_BY_SW)
         list(APPEND srcs "cpu_retention/port/${target}/sleep_cpu_asm.S")

@@ -713,7 +713,7 @@ void esp_default_wake_deep_sleep(void);
  */
 void esp_deep_sleep_disable_rom_logging(void);
 
-#ifdef SOC_PM_SUPPORT_CPU_PD
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 
 #if SOC_PM_CPU_RETENTION_BY_RTCCNTL
 /**
@@ -752,7 +752,7 @@ esp_err_t esp_sleep_cpu_retention_init(void);
  * Release system retention memory.
  */
 esp_err_t esp_sleep_cpu_retention_deinit(void);
-#endif
+#endif // CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 
 /**
  * @brief Configure to isolate all GPIO pins in sleep state
