@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,7 +50,11 @@ void esp_cpu_stall(int core_id)
 #if SOC_CPU_CORES_NUM > 1   // We don't allow stalling of the current core
 #if CONFIG_IDF_TARGET_ESP32P4
     //TODO: IDF-7848
-    REG_SET_FIELD(PMU_CPU_SW_STALL_REG, core_id ? PMU_HPCORE1_SW_STALL_CODE : PMU_HPCORE0_SW_STALL_CODE, 0x86);
+    if (core_id == 0) {
+        REG_SET_FIELD(PMU_CPU_SW_STALL_REG, PMU_HPCORE0_SW_STALL_CODE, 0x86);
+    } else {
+        REG_SET_FIELD(PMU_CPU_SW_STALL_REG, PMU_HPCORE1_SW_STALL_CODE, 0x86);
+    }
 #else
     /*
     We need to write the value "0x86" to stall a particular core. The write location is split into two separate
@@ -79,7 +83,8 @@ void esp_cpu_unstall(int core_id)
 #if SOC_CPU_CORES_NUM > 1   // We don't allow stalling of the current core
 #if CONFIG_IDF_TARGET_ESP32P4
     //TODO: IDF-7848
-    REG_SET_FIELD(PMU_CPU_SW_STALL_REG, core_id ? PMU_HPCORE1_SW_STALL_CODE : PMU_HPCORE0_SW_STALL_CODE, 0);
+    int pmu_core_stall_mask = (core_id == 0) ? PMU_HPCORE0_SW_STALL_CODE_M : PMU_HPCORE1_SW_STALL_CODE_M;
+    CLEAR_PERI_REG_MASK(PMU_CPU_SW_STALL_REG, pmu_core_stall_mask);
 #else
     /*
     We need to write clear the value "0x86" to unstall a particular core. The location of this value is split into
