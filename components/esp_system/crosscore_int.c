@@ -74,9 +74,11 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg)
         esp_backtrace_print(100);
     }
 
+#if !defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
     if(my_reason_val & REASON_IPC_HANDLE) {
         ipc_handle(esp_cpu_get_core_id());
     }
+#endif
 
 #if CONFIG_ESP_TASK_WDT_EN
     if (my_reason_val & REASON_TWDT_ABORT) {
