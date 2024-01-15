@@ -100,6 +100,9 @@ def main(arguments: argparse.Namespace) -> None:
             )
             build_jobs.append(non_test_apps_build_job)
 
+    if mr_labels := os.getenv('CI_MERGE_REQUEST_LABELS'):
+        print(f'MR labels: {mr_labels}')
+
     # check if there's no jobs
     if not build_jobs:
         print('No apps need to be built. Create one empty job instead')

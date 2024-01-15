@@ -15,8 +15,8 @@ import typing as t
 from collections import Counter, defaultdict
 
 import __init__  # noqa: F401 # inject the system path
-from dynamic_pipelines.constants import (DEFAULT_CASES_TEST_PER_JOB, DEFAULT_TARGET_TEST_CHILD_PIPELINE_FILEPATH,
-                                         DEFAULT_TEST_PATHS)
+from dynamic_pipelines.constants import (BUILD_ONLY_LABEL, DEFAULT_CASES_TEST_PER_JOB,
+                                         DEFAULT_TARGET_TEST_CHILD_PIPELINE_FILEPATH, DEFAULT_TEST_PATHS)
 from dynamic_pipelines.models import EmptyJob, Job, TargetTestJob
 from dynamic_pipelines.utils import dump_jobs_to_yaml
 from gitlab.v4.objects import Project
@@ -41,7 +41,17 @@ def get_tags_with_amount(s: str) -> t.List[str]:
     return sorted(res)
 
 
-def generate_target_test_child_pipeline(project: Project, paths: str, apps: t.List[App], output_filepath: str) -> None:
+def get_target_test_jobs(project: Project, paths: str, apps: t.List[App]) -> t.Tuple[t.List[Job], t.List[str]]:
+    """
+    Return the target test jobs and the extra yaml files to include
+    """
+    if mr_labels := os.getenv('CI_MERGE_REQUEST_LABELS'):
+        print(f'MR labels: {mr_labels}')
+
+        if BUILD_ONLY_LABEL in mr_labels.split(','):
+            print('MR has build only label, skip generating target test child pipeline')
+            return [EmptyJob()], []
+
     pytest_cases = get_pytest_cases(
         paths,
         apps=apps,
@@ -78,13 +88,18 @@ def generate_target_test_child_pipeline(project: Project, paths: str, apps: t.Li
 
         target_test_jobs.append(target_test_job)
 
+    extra_include_yml: t.List[str] = []
     if not target_test_jobs:
         print('No target test cases required, create one empty job instead')
         target_test_jobs.append(EmptyJob())
-        extra_include_yml = []
     else:
         extra_include_yml = ['tools/ci/dynamic_pipelines/templates/generate_target_test_report.yml']
 
+    return target_test_jobs, extra_include_yml
+
+
+def generate_target_test_child_pipeline(project: Project, paths: str, apps: t.List[App], output_filepath: str) -> None:
+    target_test_jobs, extra_include_yml = get_target_test_jobs(project, paths, apps)
     dump_jobs_to_yaml(target_test_jobs, output_filepath, extra_include_yml)
     print(f'Generate child pipeline yaml file {output_filepath} with {sum(j.parallel for j in target_test_jobs)} jobs')
 

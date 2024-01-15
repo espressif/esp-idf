@@ -71,6 +71,7 @@ class ReportGenerator:
 Full {self.title} here: {url}/-/jobs/{job_id}/artifacts/{self.output_filepath} (with commit {commit_id})
 
 '''
+        print(comment)
 
         if self.mr is None:
             print('No MR found, skip posting comment')

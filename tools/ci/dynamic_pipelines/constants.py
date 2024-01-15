@@ -29,3 +29,5 @@ TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME = 'test_related_apps_download_urls.yml'
 REPORT_TEMPLATE_FILEPATH = os.path.join(
     IDF_PATH, 'tools', 'ci', 'dynamic_pipelines', 'templates', 'report.template.html'
 )
+
+BUILD_ONLY_LABEL = 'For Maintainers: Only Build Tests'
