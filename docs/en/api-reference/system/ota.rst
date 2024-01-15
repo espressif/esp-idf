@@ -232,7 +232,7 @@ The starting point for using the tool's Python API to do is create a ``OtatoolTa
 
 .. code-block:: python
 
-  # Create a partool.py target device connected on serial port /dev/ttyUSB1
+  # Create a parttool.py target device connected on serial port /dev/ttyUSB1
   target = OtatoolTarget("/dev/ttyUSB1")
 
 The created object can now be used to perform operations on the target device:

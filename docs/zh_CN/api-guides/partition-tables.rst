@@ -277,7 +277,7 @@ Python API
 
 .. code-block:: python
 
-  # 创建 partool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
+  # 创建 parttool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
   target = ParttoolTarget("/dev/ttyUSB1")
 
 现在，可使用创建的 `ParttoolTarget` 在目标设备上完成操作：
