@@ -126,6 +126,8 @@ The arguments of the function are as follows:
 
 #. flag ``PRESERVE_TIME`` - optionally, users can force preserving the timestamps from the source folder to the target image. Without preserving the time, every timestamp will be set to the FATFS default initial time (1st January 1980).
 
+#. flag ``ONE_FAT`` - optionally, users can still choose to generate a FATFS volume with a single FAT (file allocation table) instead of two. This makes the free space in the FATFS volume a little bit larger (by ``number of sectors used by FAT * sector size``) but also more prone to corruption.
+
 
 For example::
 

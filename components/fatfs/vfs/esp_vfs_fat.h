@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,7 +95,25 @@ typedef struct {
      * Doesn't do anything for other memory storage media.
      */
     bool disk_status_check_enable;
+    /**
+     * Use 1 FAT (File Allocation Tables) instead of 2.
+     * This decreases reliability, but makes more space available
+     * (usually only one sector).
+     * Note that this option has effect only when the filesystem is formatted.
+     * When mounting an already-formatted partition, the actual number of FATs
+     * may be different.
+     */
+    bool use_one_fat;
 } esp_vfs_fat_mount_config_t;
+
+#define VFS_FAT_MOUNT_DEFAULT_CONFIG() \
+    { \
+        .format_if_mount_failed = false, \
+        .max_files = 5, \
+        .allocation_unit_size = 0, \
+        .disk_status_check_enable = false, \
+        .use_one_fat = false, \
+    }
 
 // Compatibility definition
 typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;

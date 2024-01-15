@@ -207,7 +207,7 @@ static esp_err_t partition_card(const esp_vfs_fat_mount_config_t *mount_config,
                 card->csd.sector_size,
                 mount_config->allocation_unit_size);
     ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
-    const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, alloc_unit_size};
+    const MKFS_PARM opt = {(BYTE)FM_ANY, (mount_config->use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
     res = f_mkfs(drv, &opt, workbuf, workbuf_size);
     if (res != FR_OK) {
         err = ESP_FAIL;
@@ -486,7 +486,7 @@ esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card)
                 card->csd.sector_size,
                 s_ctx[id]->mount_config.allocation_unit_size);
     ESP_LOGI(TAG, "Formatting card, allocation unit size=%d", alloc_unit_size);
-    const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, alloc_unit_size};
+    const MKFS_PARM opt = {(BYTE)FM_ANY, (s_ctx[id]->mount_config.use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
     res = f_mkfs(drv, &opt, workbuf, workbuf_size);
     free(workbuf);
     if (res != FR_OK) {

@@ -152,6 +152,7 @@ class BootSectorState:
     def non_data_sectors(self) -> int:
         non_data_sectors_: int = get_non_data_sectors_cnt(self.reserved_sectors_cnt,
                                                           self.sectors_per_fat_cnt,
+                                                          self.fat_tables_cnt,
                                                           self.root_dir_sectors_cnt)
         return non_data_sectors_
 
@@ -166,5 +167,5 @@ class BootSectorState:
 
     @property
     def root_directory_start(self) -> int:
-        root_dir_start: int = (self.reserved_sectors_cnt + self.sectors_per_fat_cnt) * self.sector_size
+        root_dir_start: int = (self.reserved_sectors_cnt + self.sectors_per_fat_cnt * self.fat_tables_cnt) * self.sector_size
         return root_dir_start

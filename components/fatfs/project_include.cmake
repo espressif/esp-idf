@@ -3,7 +3,7 @@
 # Create a fatfs image of the specified directory on the host during build and optionally
 # have the created image flashed using `idf.py flash`
 function(fatfs_create_partition_image partition base_dir)
-    set(options FLASH_IN_PROJECT WL_INIT PRESERVE_TIME)
+    set(options FLASH_IN_PROJECT WL_INIT PRESERVE_TIME ONE_FAT)
     cmake_parse_arguments(arg "${options}" "" "${multi}" "${ARGN}")
 
 
@@ -20,6 +20,12 @@ function(fatfs_create_partition_image partition base_dir)
         set(default_datetime_option)
     else()
         set(default_datetime_option --use_default_datetime)
+    endif()
+
+    if(arg_ONE_FAT)
+        set(fatfsgen_fat_count --fat_count=1)
+    else()
+        set(fatfsgen_fat_count)
     endif()
 
     if("${CONFIG_FATFS_SECTOR_512}")
@@ -52,6 +58,7 @@ function(fatfs_create_partition_image partition base_dir)
             COMMAND ${fatfsgen_py} ${base_dir_full_path}
             ${fatfs_long_names_option}
             ${default_datetime_option}
+            ${fatfsgen_fat_count}
             --partition_size ${size}
             --output_file ${image_file}
             --sector_size "${fatfs_sector_size}"
@@ -81,39 +88,39 @@ endfunction()
 
 
 function(fatfs_create_rawflash_image partition base_dir)
-    set(options FLASH_IN_PROJECT PRESERVE_TIME)
+    set(options FLASH_IN_PROJECT PRESERVE_TIME ONE_FAT)
     cmake_parse_arguments(arg "${options}" "" "${multi}" "${ARGN}")
 
+    set(argument_list)
+
     if(arg_FLASH_IN_PROJECT)
-        if(arg_PRESERVE_TIME)
-            fatfs_create_partition_image(${partition} ${base_dir} FLASH_IN_PROJECT PRESERVE_TIME)
-        else()
-            fatfs_create_partition_image(${partition} ${base_dir} FLASH_IN_PROJECT)
-        endif()
-    else()
-        if(arg_PRESERVE_TIME)
-            fatfs_create_partition_image(${partition} ${base_dir} PRESERVE_TIME)
-        else()
-            fatfs_create_partition_image(${partition} ${base_dir})
-        endif()
+        list(APPEND argument_list FLASH_IN_PROJECT)
     endif()
+    if(arg_PRESERVE_TIME)
+        list(APPEND argument_list PRESERVE_TIME)
+    endif()
+    if(arg_ONE_FAT)
+        list(APPEND argument_list ONE_FAT)
+    endif()
+
+    fatfs_create_partition_image(${partition} ${base_dir} ${argument_list})
 endfunction()
 
 function(fatfs_create_spiflash_image partition base_dir)
-    set(options FLASH_IN_PROJECT PRESERVE_TIME)
+    set(options FLASH_IN_PROJECT PRESERVE_TIME ONE_FAT)
     cmake_parse_arguments(arg "${options}" "" "${multi}" "${ARGN}")
 
+    set(argument_list WL_INIT)
+
     if(arg_FLASH_IN_PROJECT)
-        if(arg_PRESERVE_TIME)
-            fatfs_create_partition_image(${partition} ${base_dir} FLASH_IN_PROJECT WL_INIT PRESERVE_TIME)
-        else()
-            fatfs_create_partition_image(${partition} ${base_dir} FLASH_IN_PROJECT WL_INIT)
-        endif()
-    else()
-        if(arg_PRESERVE_TIME)
-            fatfs_create_partition_image(${partition} ${base_dir} WL_INIT PRESERVE_TIME)
-        else()
-            fatfs_create_partition_image(${partition} ${base_dir} WL_INIT)
-        endif()
+        list(APPEND argument_list FLASH_IN_PROJECT)
     endif()
+    if(arg_PRESERVE_TIME)
+        list(APPEND argument_list PRESERVE_TIME)
+    endif()
+    if(arg_ONE_FAT)
+        list(APPEND argument_list ONE_FAT)
+    endif()
+
+    fatfs_create_partition_image(${partition} ${base_dir} ${argument_list})
 endfunction()
