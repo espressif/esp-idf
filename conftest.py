@@ -80,6 +80,17 @@ def config(request: FixtureRequest) -> str:
 
 
 @pytest.fixture
+@multi_dut_fixture
+def target(request: FixtureRequest, dut_total: int,  dut_index: int) -> str:
+    plugin = request.config.stash[IDF_PYTEST_EMBEDDED_KEY]
+
+    if dut_total == 1:
+        return plugin.target[0]  # type: ignore
+
+    return plugin.target[dut_index]  # type: ignore
+
+
+@pytest.fixture
 def test_func_name(request: FixtureRequest) -> str:
     return request.node.function.__name__  # type: ignore
 
