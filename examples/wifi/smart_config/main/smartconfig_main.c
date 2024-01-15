@@ -13,13 +13,14 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
-#include "esp_wpa2.h"
+#include "esp_eap_client.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "esp_netif.h"
 #include "esp_smartconfig.h"
+#include "esp_mac.h"
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t s_wifi_event_group;
@@ -59,10 +60,14 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         bzero(&wifi_config, sizeof(wifi_config_t));
         memcpy(wifi_config.sta.ssid, evt->ssid, sizeof(wifi_config.sta.ssid));
         memcpy(wifi_config.sta.password, evt->password, sizeof(wifi_config.sta.password));
+
+#ifdef CONFIG_SET_MAC_ADDRESS_OF_TARGET_AP
         wifi_config.sta.bssid_set = evt->bssid_set;
         if (wifi_config.sta.bssid_set == true) {
+            ESP_LOGI(TAG, "Set MAC address of target AP: "MACSTR" ", MAC2STR(evt->bssid));
             memcpy(wifi_config.sta.bssid, evt->bssid, sizeof(wifi_config.sta.bssid));
         }
+#endif
 
         memcpy(ssid, evt->ssid, sizeof(evt->ssid));
         memcpy(password, evt->password, sizeof(evt->password));
