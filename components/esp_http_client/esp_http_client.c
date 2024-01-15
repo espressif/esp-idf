@@ -598,7 +598,6 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
             client->auth_data->uri = client->connection_info.path;
             client->auth_data->cnonce = ((uint64_t)esp_random() << 32) + esp_random();
             auth_response = http_auth_digest(client->connection_info.username, client->connection_info.password, client->auth_data);
-            client->auth_data->nc ++;
 #endif
         }
 
