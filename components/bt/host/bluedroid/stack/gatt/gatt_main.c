@@ -194,9 +194,7 @@ void gatt_free(void)
 #endif /* #if (GATTS_INCLUDED == TRUE) */
     }
     list_free(gatt_cb.p_tcb_list);
-#if (GATTC_INCLUDED == TRUE)
     list_free(gatt_cb.p_clcb_list);
-#endif //(GATTC_INCLUDED == TRUE)
 
 #if (GATTS_INCLUDED == TRUE)
     for (int i = 0; i < GATT_MAX_SR_PROFILES; i++) {
