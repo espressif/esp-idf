@@ -218,6 +218,15 @@ To generate a UF2 binary for the application only (not including the bootloader 
 
   idf.py uf2-app
 
+Read Otadata Partition: ``read-otadata``
+----------------------------------------
+
+.. code-block:: bash
+
+  idf.py read-otadata
+
+This command prints the contents of the ``otadata`` partition which stores the information about the currently selected OTA app slot. Refer to :doc:`/api-reference/system/ota` for more about the ``otadata`` partition.
+
 Global Options
 ==============
 

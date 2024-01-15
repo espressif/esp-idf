@@ -218,6 +218,15 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py uf2-app
 
+读取 Otadata 分区：``read-otadata``
+--------------------------------------
+
+.. code-block:: bash
+
+  idf.py read-otadata
+
+此命令将打印 ``otadata`` 分区的内容，该分区存储当前所选 OTA 应用程序分区的信息。有关 ``otadata`` 分区的更多信息，请参阅 :doc:`/api-reference/system/ota`。
+
 全局选项
 ==============
 
