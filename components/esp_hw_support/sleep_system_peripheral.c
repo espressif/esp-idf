@@ -105,6 +105,10 @@ esp_err_t sleep_sys_periph_retention_init(void)
     err = sleep_sys_periph_spimem_retention_init();
     if(err) goto error;
     err = sleep_sys_periph_systimer_retention_init();
+#if SOC_PAU_IN_TOP_DOMAIN
+    if(err) goto error;
+    err = sleep_pau_retention_init();
+#endif
 
 error:
     return err;
