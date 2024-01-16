@@ -1,11 +1,8 @@
-/* i2c-tools example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -15,8 +12,14 @@
 #include "esp_vfs_fat.h"
 #include "cmd_system.h"
 #include "cmd_i2ctools.h"
+#include "driver/i2c_master.h"
 
 static const char *TAG = "i2c-tools";
+
+static gpio_num_t i2c_gpio_sda = CONFIG_EXAMPLE_I2C_MASTER_SDA;
+static gpio_num_t i2c_gpio_scl = CONFIG_EXAMPLE_I2C_MASTER_SCL;
+
+static i2c_port_t i2c_port = I2C_NUM_0;
 
 #if CONFIG_EXAMPLE_STORE_HISTORY
 
@@ -60,6 +63,17 @@ void app_main(void)
     esp_console_dev_usb_serial_jtag_config_t usbjtag_config = ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&usbjtag_config, &repl_config, &repl));
 #endif
+
+    i2c_master_bus_config_t i2c_bus_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = i2c_port,
+        .scl_io_num = i2c_gpio_scl,
+        .sda_io_num = i2c_gpio_sda,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+
+    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_config, &tool_bus_handle));
 
     register_i2ctools();
 

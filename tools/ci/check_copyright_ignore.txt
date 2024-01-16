@@ -1136,9 +1136,6 @@ examples/network/simple_sniffer/main/simple_sniffer_example_main.c
 examples/peripherals/gpio/generic_gpio/main/gpio_example_main.c
 examples/peripherals/gpio/matrix_keyboard/components/matrix_keyboard/include/matrix_keyboard.h
 examples/peripherals/gpio/matrix_keyboard/main/matrix_keyboard_example_main.c
-examples/peripherals/i2c/i2c_simple/main/i2c_simple_main.c
-examples/peripherals/i2c/i2c_tools/main/cmd_i2ctools.h
-examples/peripherals/i2c/i2c_tools/main/i2ctools_example_main.c
 examples/peripherals/ledc/ledc_basic/main/ledc_basic_example_main.c
 examples/peripherals/ledc/ledc_fade/main/ledc_fade_example_main.c
 examples/peripherals/sdio/host/main/app_main.c

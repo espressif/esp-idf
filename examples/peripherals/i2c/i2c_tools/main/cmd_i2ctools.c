@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -12,35 +12,17 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <string.h>
 #include "argtable3/argtable3.h"
-#include "driver/i2c.h"
+#include "driver/i2c_master.h"
 #include "esp_console.h"
 #include "esp_log.h"
 
-#define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
-#define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
-#define WRITE_BIT I2C_MASTER_WRITE  /*!< I2C master write */
-#define READ_BIT I2C_MASTER_READ    /*!< I2C master read */
-#define ACK_CHECK_EN 0x1            /*!< I2C master will check ack from slave*/
-#define ACK_CHECK_DIS 0x0           /*!< I2C master will not check ack from slave */
-#define ACK_VAL 0x0                 /*!< I2C ack value */
-#define NACK_VAL 0x1                /*!< I2C nack value */
-
 static const char *TAG = "cmd_i2ctools";
 
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2
-static gpio_num_t i2c_gpio_sda = 1;
-static gpio_num_t i2c_gpio_scl = 2;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-static gpio_num_t i2c_gpio_sda = 5;
-static gpio_num_t i2c_gpio_scl = 6;
-#else
-static gpio_num_t i2c_gpio_sda = 18;
-static gpio_num_t i2c_gpio_scl = 19;
-#endif
-
-static uint32_t i2c_frequency = 100000;
-static i2c_port_t i2c_port = I2C_NUM_0;
+#define I2C_TOOL_TIMEOUT_VALUE_MS (50)
+static uint32_t i2c_frequency = 100 * 1000;
+i2c_master_bus_handle_t tool_bus_handle;
 
 static esp_err_t i2c_get_port(int port, i2c_port_t *i2c_port)
 {
@@ -50,20 +32,6 @@ static esp_err_t i2c_get_port(int port, i2c_port_t *i2c_port)
     }
     *i2c_port = port;
     return ESP_OK;
-}
-
-static esp_err_t i2c_master_driver_initialize(void)
-{
-    i2c_config_t conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = i2c_gpio_sda,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = i2c_gpio_scl,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = i2c_frequency,
-        // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
-    };
-    return i2c_param_config(i2c_port, &conf);
 }
 
 static struct {
@@ -77,6 +45,9 @@ static struct {
 static int do_i2cconfig_cmd(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **)&i2cconfig_args);
+    i2c_port_t i2c_port = I2C_NUM_0;
+    int i2c_gpio_sda = 0;
+    int i2c_gpio_scl = 0;
     if (nerrors != 0) {
         arg_print_errors(stderr, i2cconfig_args.end, argv[0]);
         return 0;
@@ -96,6 +67,25 @@ static int do_i2cconfig_cmd(int argc, char **argv)
     i2c_gpio_sda = i2cconfig_args.sda->ival[0];
     /* Check "--scl" option */
     i2c_gpio_scl = i2cconfig_args.scl->ival[0];
+
+    // re-init the bus
+    if (i2c_del_master_bus(tool_bus_handle) != ESP_OK) {
+        return 1;
+    }
+
+    i2c_master_bus_config_t i2c_bus_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = i2c_port,
+        .scl_io_num = i2c_gpio_scl,
+        .sda_io_num = i2c_gpio_sda,
+        .glitch_ignore_cnt = 7,
+        .flags.enable_internal_pullup = true,
+    };
+
+    if (i2c_new_master_bus(&i2c_bus_config, &tool_bus_handle) != ESP_OK) {
+        return 1;
+    }
+
     return 0;
 }
 
@@ -118,8 +108,6 @@ static void register_i2cconfig(void)
 
 static int do_i2cdetect_cmd(int argc, char **argv)
 {
-    i2c_driver_install(i2c_port, I2C_MODE_MASTER, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
-    i2c_master_driver_initialize();
     uint8_t address;
     printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n");
     for (int i = 0; i < 128; i += 16) {
@@ -127,12 +115,7 @@ static int do_i2cdetect_cmd(int argc, char **argv)
         for (int j = 0; j < 16; j++) {
             fflush(stdout);
             address = i + j;
-            i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-            i2c_master_start(cmd);
-            i2c_master_write_byte(cmd, (address << 1) | WRITE_BIT, ACK_CHECK_EN);
-            i2c_master_stop(cmd);
-            esp_err_t ret = i2c_master_cmd_begin(i2c_port, cmd, 50 / portTICK_PERIOD_MS);
-            i2c_cmd_link_delete(cmd);
+            esp_err_t ret = i2c_master_probe(tool_bus_handle, address, I2C_TOOL_TIMEOUT_VALUE_MS);
             if (ret == ESP_OK) {
                 printf("%02x ", address);
             } else if (ret == ESP_ERR_TIMEOUT) {
@@ -144,7 +127,6 @@ static int do_i2cdetect_cmd(int argc, char **argv)
         printf("\r\n");
     }
 
-    i2c_driver_delete(i2c_port);
     return 0;
 }
 
@@ -189,23 +171,16 @@ static int do_i2cget_cmd(int argc, char **argv)
     }
     uint8_t *data = malloc(len);
 
-    i2c_driver_install(i2c_port, I2C_MODE_MASTER, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
-    i2c_master_driver_initialize();
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    if (data_addr != -1) {
-        i2c_master_write_byte(cmd, chip_addr << 1 | WRITE_BIT, ACK_CHECK_EN);
-        i2c_master_write_byte(cmd, data_addr, ACK_CHECK_EN);
-        i2c_master_start(cmd);
+    i2c_device_config_t i2c_dev_conf = {
+        .scl_speed_hz = i2c_frequency,
+        .device_address = chip_addr,
+    };
+    i2c_master_dev_handle_t dev_handle;
+    if (i2c_master_bus_add_device(tool_bus_handle, &i2c_dev_conf, &dev_handle) != ESP_OK) {
+        return 1;
     }
-    i2c_master_write_byte(cmd, chip_addr << 1 | READ_BIT, ACK_CHECK_EN);
-    if (len > 1) {
-        i2c_master_read(cmd, data, len - 1, ACK_VAL);
-    }
-    i2c_master_read_byte(cmd, data + len - 1, NACK_VAL);
-    i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(cmd);
+
+    esp_err_t ret = i2c_master_transmit_receive(dev_handle, (uint8_t*)&data_addr, 1, data, len, I2C_TOOL_TIMEOUT_VALUE_MS);
     if (ret == ESP_OK) {
         for (int i = 0; i < len; i++) {
             printf("0x%02x ", data[i]);
@@ -222,7 +197,9 @@ static int do_i2cget_cmd(int argc, char **argv)
         ESP_LOGW(TAG, "Read failed");
     }
     free(data);
-    i2c_driver_delete(i2c_port);
+    if (i2c_master_bus_rm_device(dev_handle) != ESP_OK) {
+        return 1;
+    }
     return 0;
 }
 
@@ -267,20 +244,21 @@ static int do_i2cset_cmd(int argc, char **argv)
     /* Check data: "-d" option */
     int len = i2cset_args.data->count;
 
-    i2c_driver_install(i2c_port, I2C_MODE_MASTER, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
-    i2c_master_driver_initialize();
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, chip_addr << 1 | WRITE_BIT, ACK_CHECK_EN);
-    if (i2cset_args.register_address->count) {
-        i2c_master_write_byte(cmd, data_addr, ACK_CHECK_EN);
+    i2c_device_config_t i2c_dev_conf = {
+        .scl_speed_hz = i2c_frequency,
+        .device_address = chip_addr,
+    };
+    i2c_master_dev_handle_t dev_handle;
+    if (i2c_master_bus_add_device(tool_bus_handle, &i2c_dev_conf, &dev_handle) != ESP_OK) {
+        return 1;
     }
+
+    uint8_t *data = malloc(len + 1);
+    data[0] = data_addr;
     for (int i = 0; i < len; i++) {
-        i2c_master_write_byte(cmd, i2cset_args.data->ival[i], ACK_CHECK_EN);
+        data[i + 1] = i2cset_args.data->ival[i];
     }
-    i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(i2c_port, cmd, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(cmd);
+    esp_err_t ret = i2c_master_transmit(dev_handle, data, len + 1, I2C_TOOL_TIMEOUT_VALUE_MS);
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "Write OK");
     } else if (ret == ESP_ERR_TIMEOUT) {
@@ -288,7 +266,11 @@ static int do_i2cset_cmd(int argc, char **argv)
     } else {
         ESP_LOGW(TAG, "Write Failed");
     }
-    i2c_driver_delete(i2c_port);
+
+    free(data);
+    if (i2c_master_bus_rm_device(dev_handle) != ESP_OK) {
+        return 1;
+    }
     return 0;
 }
 
@@ -333,8 +315,16 @@ static int do_i2cdump_cmd(int argc, char **argv)
         ESP_LOGE(TAG, "Wrong read size. Only support 1,2,4");
         return 1;
     }
-    i2c_driver_install(i2c_port, I2C_MODE_MASTER, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
-    i2c_master_driver_initialize();
+
+    i2c_device_config_t i2c_dev_conf = {
+        .scl_speed_hz = i2c_frequency,
+        .device_address = chip_addr,
+    };
+    i2c_master_dev_handle_t dev_handle;
+    if (i2c_master_bus_add_device(tool_bus_handle, &i2c_dev_conf, &dev_handle) != ESP_OK) {
+        return 1;
+    }
+
     uint8_t data_addr;
     uint8_t data[4];
     int32_t block[16];
@@ -345,19 +335,7 @@ static int do_i2cdump_cmd(int argc, char **argv)
         for (int j = 0; j < 16; j += size) {
             fflush(stdout);
             data_addr = i + j;
-            i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-            i2c_master_start(cmd);
-            i2c_master_write_byte(cmd, chip_addr << 1 | WRITE_BIT, ACK_CHECK_EN);
-            i2c_master_write_byte(cmd, data_addr, ACK_CHECK_EN);
-            i2c_master_start(cmd);
-            i2c_master_write_byte(cmd, chip_addr << 1 | READ_BIT, ACK_CHECK_EN);
-            if (size > 1) {
-                i2c_master_read(cmd, data, size - 1, ACK_VAL);
-            }
-            i2c_master_read_byte(cmd, data + size - 1, NACK_VAL);
-            i2c_master_stop(cmd);
-            esp_err_t ret = i2c_master_cmd_begin(i2c_port, cmd, 50 / portTICK_PERIOD_MS);
-            i2c_cmd_link_delete(cmd);
+            esp_err_t ret = i2c_master_transmit_receive(dev_handle, &data_addr, 1, data, size, I2C_TOOL_TIMEOUT_VALUE_MS);
             if (ret == ESP_OK) {
                 for (int k = 0; k < size; k++) {
                     printf("%02x ", data[k]);
@@ -385,7 +363,9 @@ static int do_i2cdump_cmd(int argc, char **argv)
         }
         printf("\r\n");
     }
-    i2c_driver_delete(i2c_port);
+    if (i2c_master_bus_rm_device(dev_handle) != ESP_OK) {
+        return 1;
+    }
     return 0;
 }
 
