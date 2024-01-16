@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,8 +26,13 @@ static inline bool __is_valid_memory_region(intptr_t addr)
            (addr >= SOC_RTC_IRAM_LOW && addr < SOC_RTC_IRAM_HIGH) ||
            /* RTC DRAM and RTC DATA are identical with RTC IRAM, hence we skip them */
 #endif
-           (addr >= SOC_PERIPHERAL_LOW && addr < SOC_PERIPHERAL_HIGH) ||
-           (addr >= SOC_DEBUG_LOW && addr < SOC_DEBUG_HIGH);
+#if defined(SOC_DEBUG_LOW) && defined(SOC_DEBUG_HIGH)
+           (addr >= SOC_DEBUG_LOW && addr < SOC_DEBUG_HIGH) ||
+#endif
+#if defined(SOC_CPU_SUBSYSTEM_LOW) && defined(SOC_CPU_SUBSYSTEM_HIGH)
+           (addr >= SOC_CPU_SUBSYSTEM_LOW && addr < SOC_CPU_SUBSYSTEM_HIGH) ||
+#endif
+           (addr >= SOC_PERIPHERAL_LOW && addr < SOC_PERIPHERAL_HIGH);
 }
 
 static inline bool is_valid_memory_region(intptr_t addr)
