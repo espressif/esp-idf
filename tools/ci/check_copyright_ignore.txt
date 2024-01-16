@@ -491,7 +491,6 @@ components/esp_rom/patches/esp_rom_crc.c
 components/esp_system/include/esp_expression_with_stack.h
 components/esp_system/include/esp_freertos_hooks.h
 components/esp_system/include/esp_private/dbg_stubs.h
-components/esp_system/port/soc/esp32/intr.c
 components/esp_system/port/soc/esp32c3/apb_backup_dma.c
 components/esp_system/test_eh_frame_parser/esp_private/panic_internal.h
 components/esp_system/test_eh_frame_parser/linker.ld
