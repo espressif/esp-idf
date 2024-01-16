@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,12 +9,13 @@
 #include "driver/mcpwm_fault.h"
 #include "driver/mcpwm_oper.h"
 #include "driver/gpio.h"
+#include "test_mcpwm_utils.h"
 
 TEST_CASE("mcpwm_fault_install_uninstall", "[mcpwm]")
 {
     printf("install and uninstall gpio faults\r\n");
     mcpwm_gpio_fault_config_t gpio_fault_config = {
-        .gpio_num = 0,
+        .gpio_num = TEST_FAULT_GPIO,
     };
     int total_gpio_faults = SOC_MCPWM_GPIO_FAULTS_PER_GROUP * SOC_MCPWM_GROUPS;
     mcpwm_fault_handle_t gpio_faults[total_gpio_faults];
@@ -58,7 +59,7 @@ static bool IRAM_ATTR test_fault_exit_callback(mcpwm_fault_handle_t detector, co
 TEST_CASE("mcpwm_gpio_fault_event_callbacks", "[mcpwm]")
 {
     printf("create gpio fault\r\n");
-    const int fault_gpio = 0;
+    const int fault_gpio = TEST_FAULT_GPIO;
     mcpwm_fault_handle_t fault = NULL;
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .group_id = 0,

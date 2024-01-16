@@ -35,7 +35,7 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
 
     printf("install mcpwm capture channels\r\n");
     mcpwm_capture_channel_config_t cap_chan_config = {
-        .gpio_num = 0,
+        .gpio_num = TEST_CAP_GPIO,
         .prescale = 2,
         .flags.pos_edge = true,
         .flags.pull_up = true,
@@ -80,7 +80,7 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
 
-    const int cap_gpio = 0;
+    const int cap_gpio = TEST_CAP_GPIO;
     // put the GPIO into a preset state
     gpio_set_level(cap_gpio, 0);
 

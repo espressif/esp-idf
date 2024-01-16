@@ -39,10 +39,6 @@ components/driver/test_apps/legacy_i2c_driver:
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8963
   depends_filepatterns:
     - components/driver/deprecated/**/*mcpwm*
 

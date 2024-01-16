@@ -228,10 +228,6 @@ examples/peripherals/mcpwm/mcpwm_capture_hc_sr04:
     - if: SOC_MCPWM_SUPPORTED != 1
   depends_components:
     - esp_driver_mcpwm
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8963
 
 examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
   disable:
@@ -248,20 +244,12 @@ examples/peripherals/mcpwm/mcpwm_servo_control:
     - if: SOC_MCPWM_SUPPORTED != 1
   depends_components:
     - esp_driver_mcpwm
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8963
 
 examples/peripherals/mcpwm/mcpwm_sync:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
   depends_components:
     - esp_driver_mcpwm
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8963
 
 examples/peripherals/parlio:
   disable:

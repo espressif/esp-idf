@@ -42,7 +42,7 @@ TEST_CASE("mcpwm_sync_source_install_uninstall", "[mcpwm]")
 
     printf("install gpio sync_src\r\n");
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
-        .gpio_num = 0,
+        .gpio_num = TEST_SYNC_GPIO,
     };
     const int total_gpio_sync_srcs = SOC_MCPWM_GROUPS * SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP;
     mcpwm_sync_handle_t gpio_sync_srcs[total_gpio_sync_srcs];
@@ -127,7 +127,7 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
         .direction = MCPWM_TIMER_DIRECTION_UP,
     };
     mcpwm_sync_handle_t gpio_sync_src;
-    const int gpio_num = 0;
+    const int gpio_num = TEST_SYNC_GPIO;
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
         .group_id = 0,
         .gpio_num = gpio_num,

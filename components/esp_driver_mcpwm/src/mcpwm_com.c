@@ -62,6 +62,12 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
                 mcpwm_ll_enable_bus_clock(group_id, true);
                 mcpwm_ll_reset_register(group_id);
             }
+            // enable function clock before initialize HAL context
+            // MCPWM registers are in the core clock domain, there's a bridge between APB and the Core clock domain
+            // if the core clock is not enabled, then even the APB clock is enabled, the MCPWM registers are still not accessible
+            MCPWM_CLOCK_SRC_ATOMIC() {
+                mcpwm_ll_group_enable_clock(group_id, true);
+            }
             // initialize HAL context
             mcpwm_hal_init_config_t hal_config = {
                 .group_id = group_id
@@ -71,11 +77,6 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
             // disable all interrupts and clear pending status
             mcpwm_ll_intr_enable(hal->dev, UINT32_MAX, false);
             mcpwm_ll_intr_clear_status(hal->dev, UINT32_MAX);
-
-            // enable function clock
-            MCPWM_CLOCK_SRC_ATOMIC() {
-                mcpwm_ll_group_enable_clock(group->hal.dev, true);
-            }
         }
     } else { // group already install
         group = s_platform.groups[group_id];
@@ -101,9 +102,9 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
     s_platform.group_ref_counts[group_id]--;
     if (s_platform.group_ref_counts[group_id] == 0) {
         do_deinitialize = true;
-        s_platform.groups[group_id] = NULL; // deregister from platfrom
+        s_platform.groups[group_id] = NULL; // deregister from platform
         MCPWM_CLOCK_SRC_ATOMIC() {
-            mcpwm_ll_group_enable_clock(group->hal.dev, false);
+            mcpwm_ll_group_enable_clock(group_id, false);
         }
         // hal layer deinitialize
         mcpwm_hal_deinit(&group->hal);
