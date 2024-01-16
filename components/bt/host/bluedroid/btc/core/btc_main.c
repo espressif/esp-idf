@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "btc/btc_task.h"
 #include "btc/btc_main.h"
@@ -123,4 +115,78 @@ void btc_main_call_handler(btc_msg_t *msg)
         BTC_TRACE_ERROR("%s UNKNOWN ACT %d\n", __func__, msg->act);
         break;
     }
+}
+
+uint32_t btc_get_ble_status(void)
+{
+    uint32_t status = BTC_BLE_STATUS_IDLE;
+
+    #if (BLE_INCLUDED == TRUE)
+    // Number of active advertising
+    extern uint8_t btm_ble_adv_active_count(void);
+    if (btm_ble_adv_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_ADV);
+    }
+
+    // Number of active scanning
+    extern uint8_t btm_ble_scan_active_count(void);
+    if (btm_ble_scan_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_SCAN);
+    }
+
+    // Number of active GATT tcb
+    extern uint8_t gatt_tcb_active_count(void);
+    if (gatt_tcb_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_CONN);
+    }
+
+    #if (SMP_INCLUDED == TRUE)
+    // Number of saved bonded devices
+    if (btc_storage_get_num_ble_bond_devices()) {
+        status |= BIT(BTC_BLE_STATUS_BOND);
+    }
+    #endif
+    #endif
+
+    // Number of recorded devices
+    extern uint8_t btdm_sec_dev_active_count(void);
+    if (btdm_sec_dev_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_DEV);
+    }
+
+    // Number of active ACL connection
+    extern uint8_t btm_acl_active_count(void);
+    if (btm_acl_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_CONN);
+    }
+
+    // Number of active L2C plcb
+    extern uint8_t l2cu_plcb_active_count(void);
+    if (l2cu_plcb_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_CONN);
+    }
+
+    #if (GATTC_INCLUDED == TRUE)
+    // Number of registered GATTC APP
+    extern uint8_t bta_gattc_cl_rcb_active_count(void);
+    if (bta_gattc_cl_rcb_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_GATTC_APP);
+    }
+
+    // Number of saved GATTC cache
+    extern UINT8 bta_gattc_co_get_addr_num(void);
+    if (bta_gattc_co_get_addr_num()) {
+        status |= BIT(BTC_BLE_STATUS_GATTC_CACHE);
+    }
+    #endif
+
+    #if (GATTS_INCLUDED == TRUE)
+    // Number of registered GATTS service
+    extern uint8_t bta_gatts_srvc_active_count(void);
+    if (bta_gatts_srvc_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_GATTS_SRVC);
+    }
+    #endif
+
+    return status;
 }
