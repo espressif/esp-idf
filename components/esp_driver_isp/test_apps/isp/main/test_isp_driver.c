@@ -18,11 +18,10 @@ TEST_CASE("ISP processor exhausted allocation", "[isp]")
         .input_data_color_type = ISP_COLOR_RAW8,
         .output_data_color_type = ISP_COLOR_RGB565,
     };
-    isp_proc_t isp_proc[SOC_ISP_NUMS + 1] = {};
+    isp_proc_handle_t isp_proc[SOC_ISP_NUMS + 1] = {};
 
     for (int i = 0; i < SOC_ISP_NUMS; i++) {
         TEST_ESP_OK(esp_isp_new_processor(&isp_config, &isp_proc[i]));
-        esp_rom_printf("first alloc ok\n");
     }
 
     TEST_ASSERT(esp_isp_new_processor(&isp_config, &isp_proc[SOC_ISP_NUMS]) == ESP_ERR_NOT_FOUND);
@@ -40,7 +39,7 @@ TEST_CASE("ISP AF controller exhausted allocation", "[isp]")
         .input_data_color_type = ISP_COLOR_RAW8,
         .output_data_color_type = ISP_COLOR_RGB565,
     };
-    isp_proc_t isp_proc = NULL;
+    isp_proc_handle_t isp_proc = NULL;
     TEST_ESP_OK(esp_isp_new_processor(&isp_config, &isp_proc));
 
     esp_isp_af_config_t af_config = {
@@ -67,7 +66,7 @@ TEST_CASE("ISP AF env detector exhausted allocation", "[isp]")
         .input_data_color_type = ISP_COLOR_RAW8,
         .output_data_color_type = ISP_COLOR_RGB565,
     };
-    isp_proc_t isp_proc = NULL;
+    isp_proc_handle_t isp_proc = NULL;
     TEST_ESP_OK(esp_isp_new_processor(&isp_config, &isp_proc));
 
     esp_isp_af_config_t af_config = {
