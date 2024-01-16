@@ -195,6 +195,8 @@ private:
     UartSpinelInterface &operator=(const UartSpinelInterface &);
 
     esp_openthread_rcp_failure_handler mRcpFailureHandler;
+
+    ot::Spinel::FrameBuffer<kMaxFrameSize> encoder_buffer;
 };
 
 } // namespace openthread

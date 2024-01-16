@@ -112,7 +112,9 @@ esp_err_t esp_openthread_rcp_init(void)
 #endif  // CONFIG_OPENTHREAD_RADIO_SPINEL_UART
 
     ESP_RETURN_ON_FALSE(s_radio.Enable(esp_openthread_get_instance()) == OT_ERROR_NONE, ESP_FAIL, OT_PLAT_LOG_TAG, "Fail to enable radio");
+#if OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT > 0
     s_radio.RestoreProperties();
+#endif
     return esp_openthread_platform_workflow_register(&esp_openthread_radio_update, &esp_openthread_radio_process,
                                                      radiospinel_workflow);
 }
