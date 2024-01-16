@@ -9,10 +9,15 @@ if(NOT BOOTLOADER_BUILD)
     # Set PARTITION_CSV_PATH to the configured partition CSV file
     # absolute path
     if(CONFIG_PARTITION_TABLE_CUSTOM)
-        idf_build_get_property(project_dir PROJECT_DIR)
-        # Custom filename expands any path relative to the project
-        get_filename_component(PARTITION_CSV_PATH "${CONFIG_PARTITION_TABLE_FILENAME}"
-                                ABSOLUTE BASE_DIR "${project_dir}")
+        # If the partition CSV file config already has the absolute path then set PARTITION_CSV_PATH directly
+        if(IS_ABSOLUTE ${CONFIG_PARTITION_TABLE_FILENAME})
+            set(PARTITION_CSV_PATH "${CONFIG_PARTITION_TABLE_FILENAME}")
+        else()
+            idf_build_get_property(project_dir PROJECT_DIR)
+            # Custom filename expands any path relative to the project
+            get_filename_component(PARTITION_CSV_PATH "${CONFIG_PARTITION_TABLE_FILENAME}"
+                                    ABSOLUTE BASE_DIR "${project_dir}")
+        endif()
 
         if(NOT EXISTS "${PARTITION_CSV_PATH}")
             message(WARNING "Partition table CSV file ${PARTITION_CSV_PATH} not found. "
