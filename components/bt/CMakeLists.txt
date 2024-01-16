@@ -693,11 +693,14 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/store/ram/src/ble_store_ram.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_config.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_nvs.c"
+                    "host/nimble/nimble/nimble/host/src/ble_gattc_cache.c"
+                    "host/nimble/nimble/nimble/host/src/ble_gattc_cache_conn.c"
                 )
 
             list(APPEND srcs
                 "host/nimble/nimble/porting/nimble/src/nimble_port.c"
                 "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
+                "host/nimble/port/src/nvs_port.c"
             )
             list(APPEND include_dirs
                 porting/include
