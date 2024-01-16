@@ -713,8 +713,6 @@ components/soc/esp32s2/include/soc/touch_sensor_pins.h
 components/soc/esp32s2/include/soc/uart_pins.h
 components/soc/esp32s2/include/soc/uart_reg.h
 components/soc/esp32s2/include/soc/uhci_reg.h
-components/soc/esp32s2/include/soc/usb_struct.h
-components/soc/esp32s2/include/soc/usb_types.h
 components/soc/esp32s2/include/soc/usb_wrap_reg.h
 components/soc/esp32s2/include/soc/usb_wrap_struct.h
 components/soc/esp32s2/include/soc/wdev_reg.h
@@ -776,8 +774,6 @@ components/soc/esp32s3/include/soc/uart_struct.h
 components/soc/esp32s3/include/soc/uhci_reg.h
 components/soc/esp32s3/include/soc/uhci_struct.h
 components/soc/esp32s3/include/soc/usb_serial_jtag_struct.h
-components/soc/esp32s3/include/soc/usb_struct.h
-components/soc/esp32s3/include/soc/usb_types.h
 components/soc/esp32s3/include/soc/usb_wrap_reg.h
 components/soc/esp32s3/include/soc/usb_wrap_struct.h
 components/soc/esp32s3/include/soc/wdev_reg.h
