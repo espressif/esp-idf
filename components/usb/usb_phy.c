@@ -11,7 +11,7 @@
 #include "esp_check.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/usb_phy.h"
-#include "soc/usb_otg_periph.h"
+#include "soc/usb_dwc_periph.h"
 #include "hal/usb_fsls_phy_hal.h"
 #include "hal/usb_fsls_phy_ll.h"
 #include "esp_rom_gpio.h"
