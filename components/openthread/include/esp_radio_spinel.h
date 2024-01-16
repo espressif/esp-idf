@@ -110,8 +110,12 @@ void esp_radio_spinel_init(esp_radio_spinel_idx_t idx);
  *
  * @param[in]  idx  The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_enable(esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_enable(esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Set the pending mode.
@@ -119,8 +123,12 @@ void esp_radio_spinel_enable(esp_radio_spinel_idx_t idx);
  * @param[in]  pending_mode The pending mode.
  * @param[in]  idx          The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_set_pending_mode(esp_ieee802154_pending_mode_t pending_mode, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_set_pending_mode(esp_ieee802154_pending_mode_t pending_mode, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Get the EUI-64.
@@ -128,8 +136,12 @@ void esp_radio_spinel_set_pending_mode(esp_ieee802154_pending_mode_t pending_mod
  * @param[in]  eui64    A pointer to the EUI-64.
  * @param[in]  idx      The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_get_eui64(uint8_t *eui64, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_get_eui64(uint8_t *eui64, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Set the panid.
@@ -137,8 +149,12 @@ void esp_radio_spinel_get_eui64(uint8_t *eui64, esp_radio_spinel_idx_t idx);
  * @param[in]  panid    The panid.
  * @param[in]  idx      The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_set_panid(uint16_t panid, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_set_panid(uint16_t panid, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Set the short address.
@@ -146,8 +162,12 @@ void esp_radio_spinel_set_panid(uint16_t panid, esp_radio_spinel_idx_t idx);
  * @param[in]  short_address    The short address.
  * @param[in]  idx              The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_set_short_address(uint16_t short_address, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_set_short_address(uint16_t short_address, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Set the extended address.
@@ -155,8 +175,12 @@ void esp_radio_spinel_set_short_address(uint16_t short_address, esp_radio_spinel
  * @param[in]  ext_address  The extended address.
  * @param[in]  idx          The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_set_extended_address(uint8_t *ext_address, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_set_extended_address(uint8_t *ext_address, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Set the coordinator mode.
@@ -164,8 +188,12 @@ void esp_radio_spinel_set_extended_address(uint8_t *ext_address, esp_radio_spine
  * @param[in]  enable   Enable or disable the coordinator mode.
  * @param[in]  idx      The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Enable the RCP reception.
@@ -173,8 +201,12 @@ void esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx);
  * @param[in]  channel  The channel of reception.
  * @param[in]  idx      The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_receive(uint8_t channel, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_receive(uint8_t channel, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Perform the energy scan.
@@ -183,8 +215,12 @@ void esp_radio_spinel_receive(uint8_t channel, esp_radio_spinel_idx_t idx);
  * @param[in]  scan_duration    The duration for energy scan.
  * @param[in]  idx              The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_energy_scan(uint8_t scan_channel, uint16_t scan_duration, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_energy_scan(uint8_t scan_channel, uint16_t scan_duration, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Perform the transmission.
@@ -194,16 +230,24 @@ void esp_radio_spinel_energy_scan(uint8_t scan_channel, uint16_t scan_duration, 
  * @param[in]  cca      Perform clear channel assessment(if it's true) or not(if it's false)
  * @param[in]  idx      The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Clear all short addresses from the source address match table.
  *
  * @param[in]  idx  The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_clear_short_entries(esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_clear_short_entries(esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Add a short address to the source address match table.
@@ -223,8 +267,12 @@ esp_err_t esp_radio_spinel_add_short_entry(uint16_t short_address, esp_radio_spi
  *
  * @param[in]  idx  The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_clear_extened_entries(esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_clear_extended_entries(esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Add an extended address to the source address match table.
@@ -237,7 +285,7 @@ void esp_radio_spinel_clear_extened_entries(esp_radio_spinel_idx_t idx);
  *      - ESP_FAIL on failures
  *
  */
-esp_err_t esp_radio_spinel_add_extened_entry(uint8_t *ext_address, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_add_extended_entry(uint8_t *ext_address, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Sets the status of promiscuous mode.
@@ -245,8 +293,12 @@ esp_err_t esp_radio_spinel_add_extened_entry(uint8_t *ext_address, esp_radio_spi
  * @param[in]  enable   Whether to enable or disable promiscuous mode.
  * @param[in]  idx      The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_set_promiscuous_mode(bool enable, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_set_promiscuous_mode(bool enable, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Update the ESP radio spinel.
@@ -271,8 +323,12 @@ void esp_radio_spinel_radio_process(esp_radio_spinel_mainloop_context_t *mainloo
  *
  * @param[in]  idx  The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_sleep(esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_sleep(esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Set the radio's transmit power in dBm.
@@ -280,8 +336,12 @@ void esp_radio_spinel_sleep(esp_radio_spinel_idx_t idx);
  * @param[in]  power    The transmit power in dBm.
  * @param[in]  idx      The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_set_tx_power(int8_t power, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_set_tx_power(int8_t power, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Get the radio's transmit power in dBm.
@@ -289,8 +349,12 @@ void esp_radio_spinel_set_tx_power(int8_t power, esp_radio_spinel_idx_t idx);
  * @param[in]  power    A pointer to the transmit power.
  * @param[in]  idx      The index of 802.15.4 related protocol stack.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
  */
-void esp_radio_spinel_get_tx_power(int8_t *power, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_get_tx_power(int8_t *power, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Register a handler to process the RCP failure.

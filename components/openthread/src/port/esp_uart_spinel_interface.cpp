@@ -86,7 +86,7 @@ esp_err_t UartSpinelInterface::Disable(void)
 otError UartSpinelInterface::SendFrame(const uint8_t *frame, uint16_t length)
 {
     otError error = OT_ERROR_NONE;
-    ot::Spinel::FrameBuffer<kMaxFrameSize> encoder_buffer;
+    encoder_buffer.Clear();
     ot::Hdlc::Encoder hdlc_encoder(encoder_buffer);
 
     SuccessOrExit(error = hdlc_encoder.BeginFrame());

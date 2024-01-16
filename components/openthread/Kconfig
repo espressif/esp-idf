@@ -260,7 +260,7 @@ menu "OpenThread"
 
     config OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
         int "The size of openthread spinel rx frame buffer"
-        depends on OPENTHREAD_ENABLED
+        depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
         default 1024
         range 512 8192
 
