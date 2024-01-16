@@ -1,9 +1,11 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import os
 import sys
+import tempfile
 from pathlib import Path
+
+import pytest
 
 tools_ci_dir = os.path.join(os.path.dirname(__file__), '..', '..')
 if tools_ci_dir not in sys.path:
@@ -12,6 +14,8 @@ if tools_ci_dir not in sys.path:
 tools_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..')
 if tools_dir not in sys.path:
     sys.path.append(tools_dir)
+
+from idf_ci_utils import IDF_PATH  # noqa: E402
 
 
 def create_project(name: str, folder: Path) -> Path:
@@ -46,3 +50,10 @@ void app_main(void) {}
         )
 
     return p
+
+
+@pytest.fixture
+def tmp_path() -> Path:
+    os.makedirs(os.path.join(IDF_PATH, 'pytest_embedded_log'), exist_ok=True)
+
+    return Path(tempfile.mkdtemp(prefix=os.path.join(IDF_PATH, 'pytest_embedded_log') + os.sep))

@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 from pathlib import Path
 
-from idf_pytest.script import SUPPORTED_TARGETS, get_all_apps
+from idf_pytest.script import get_all_apps
+from idf_pytest.script import SUPPORTED_TARGETS
 
 from conftest import create_project
 
@@ -36,6 +36,26 @@ def test_foo(dut):
 
     assert len(test_related_apps) == 2
     assert len(non_test_related_apps) == 2 * len(SUPPORTED_TARGETS) - 2
+
+
+def test_get_all_apps_multi_dut_with_markers_test_script(tmp_path: Path) -> None:
+    create_project('foo', tmp_path)
+
+    (tmp_path / 'foo' / 'pytest_get_all_apps_multi_dut_with_markers_test_script.py').write_text(
+        """import pytest
+
+@pytest.mark.esp32
+@pytest.mark.parametrize('count', [2, 3], indirect=True)
+def test_foo(dut):
+    pass
+""",
+        encoding='utf-8',
+    )
+
+    test_related_apps, non_test_related_apps = get_all_apps([str(tmp_path)], target='all')
+
+    assert len(test_related_apps) == 1
+    assert len(non_test_related_apps) == len(SUPPORTED_TARGETS) - 1
 
 
 def test_get_all_apps_multi_dut_test_script(tmp_path: Path) -> None:

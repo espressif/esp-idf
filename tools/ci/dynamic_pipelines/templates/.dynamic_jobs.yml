@@ -83,6 +83,5 @@
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       ${PYTEST_EXTRA_FLAGS}
-      --app-info-filepattern "list_job_*.txt"
   after_script:
     - python tools/ci/artifacts_handler.py upload --type logs junit_reports
