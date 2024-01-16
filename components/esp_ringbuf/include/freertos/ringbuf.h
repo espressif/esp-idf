@@ -492,7 +492,7 @@ BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueS
  * free/read/write/acquire pointer positions, and number of items waiting to be retrieved.
  * Arguments can be set to NULL if they are not required.
  *
- * @param[in]   xRingbuffer     Ring buffer to remove from the queue set
+ * @param[in]   xRingbuffer     Ring buffer handle
  * @param[out]  uxFree          Pointer use to store free pointer position
  * @param[out]  uxRead          Pointer use to store read pointer position
  * @param[out]  uxWrite         Pointer use to store write pointer position
