@@ -343,7 +343,7 @@ typedef union {
 } csi_brg_host_ctrl_reg_t;
 
 
-typedef struct {
+typedef struct csi_brg_dev_t {
     volatile csi_brg_clk_en_reg_t clk_en;
     volatile csi_brg_csi_en_reg_t csi_en;
     volatile csi_brg_dma_req_cfg_reg_t dma_req_cfg;
@@ -361,6 +361,7 @@ typedef struct {
     volatile csi_brg_host_ctrl_reg_t host_ctrl;
 } csi_brg_dev_t;
 
+extern csi_brg_dev_t MIPI_CSI_BRIDGE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(csi_brg_dev_t) == 0x44, "Invalid size of csi_brg_dev_t structure");

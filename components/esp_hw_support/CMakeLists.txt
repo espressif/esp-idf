@@ -45,6 +45,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "adc_share_hw_ctrl.c")
     endif()
 
+    if(CONFIG_SOC_ISP_SHARE_CSI_BRG)
+        list(APPEND srcs "mipi_csi_share_hw_ctrl.c")
+    endif()
+
     if(CONFIG_SOC_PM_SUPPORT_CPU_PD)
         list(APPEND srcs "sleep_cpu.c")
     endif()
