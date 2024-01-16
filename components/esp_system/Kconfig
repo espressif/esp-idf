@@ -59,7 +59,8 @@ menu "ESP System Settings"
         default "y"
         depends on FREERTOS_UNICORE
         help
-            Only initialize and use the main core. (EXPERIMENTAL, Leave this as default if you don't know what this changes)
+            Only initialize and use the main core. 
+            (EXPERIMENTAL, Leave this as default if you don't know what this changes)
 
     config ESP_SYSTEM_RTC_EXT_XTAL
         # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
