@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_attr.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "hal/hal_utils.h"
 #include "hal/isp_types.h"
 #include "hal/color_types.h"
 #include "soc/isp_struct.h"
@@ -22,6 +23,11 @@ extern "C" {
 
 
 #define ISP_LL_GET_HW(num)            (((num) == 0) ? (&ISP) : NULL)
+
+/*---------------------------------------------------------------
+                      Clock
+---------------------------------------------------------------*/
+#define ISP_LL_TX_MAX_CLK_INT_DIV             0x100
 
 
 /*---------------------------------------------------------------
@@ -151,11 +157,12 @@ static inline void isp_ll_select_clk_source(isp_dev_t *hw, soc_periph_isp_clk_sr
  * @brief Set ISP clock div
  *
  * @param hw     Hardware instance address
- * @param div    divider value
+ * @param div    Clock division with integral and decimal part
  */
-static inline void isp_ll_set_clock_div(isp_dev_t *hw, uint32_t div)
+static inline void isp_ll_set_clock_div(isp_dev_t *hw, const hal_utils_clk_div_t *clk_div)
 {
-    HP_SYS_CLKRST.peri_clk_ctrl26.reg_isp_clk_div_num = div;
+    HAL_ASSERT(clk_div->integer > 0 && clk_div->integer <= ISP_LL_TX_MAX_CLK_INT_DIV);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl26, reg_isp_clk_div_num, clk_div->integer - 1);
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -518,6 +525,7 @@ static inline void isp_ll_af_set_window_range(isp_dev_t *hw, uint32_t window_id,
         break;
     default:
         HAL_ASSERT(false);
+        break;
     }
 }
 
@@ -540,6 +548,7 @@ static inline uint32_t isp_ll_af_get_window_sum(isp_dev_t *hw, uint32_t window_i
         return hw->af_sum_c.af_sumc;
     default:
         HAL_ASSERT(false);
+        return 0;
     }
 }
 
@@ -562,6 +571,7 @@ static inline uint32_t isp_ll_af_get_window_lum(isp_dev_t *hw, uint32_t window_i
         return hw->af_lum_c.af_lumc;
     default:
         HAL_ASSERT(false);
+        return 0;
     }
 }
 

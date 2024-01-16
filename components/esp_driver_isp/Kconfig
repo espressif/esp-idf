@@ -1,0 +1,11 @@
+menu "ESP-Driver:ISP Configurations"
+    depends on SOC_ISP_SUPPORTED
+
+    config ISP_ISR_IRAM_SAFE
+        bool "ISP driver ISR IRAM-Safe"
+        default n
+        help
+            Ensure the ISP driver ISR is IRAM-Safe. When enabled, the ISR handler
+            will be available when the cache is disabled.
+
+endmenu # ISP Configuration

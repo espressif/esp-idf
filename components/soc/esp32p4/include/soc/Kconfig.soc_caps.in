@@ -127,6 +127,10 @@ config SOC_LEDC_SUPPORTED
     bool
     default y
 
+config SOC_ISP_SUPPORTED
+    bool
+    default y
+
 config SOC_I2C_SUPPORTED
     bool
     default y
