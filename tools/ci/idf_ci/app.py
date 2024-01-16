@@ -1,17 +1,26 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
+import os
 import sys
 import typing as t
 from typing import Literal
 
-from idf_build_apps import App, CMakeApp, json_to_app
-from idf_ci.uploader import AppUploader, get_app_uploader
+from idf_build_apps import App
+from idf_build_apps import CMakeApp
+from idf_build_apps import json_to_app
+from idf_ci.uploader import AppUploader
+from idf_ci.uploader import get_app_uploader
 
 
 class IdfCMakeApp(CMakeApp):
     uploader: t.ClassVar[t.Optional['AppUploader']] = get_app_uploader()
     build_system: Literal['idf_cmake'] = 'idf_cmake'
+
+    def _initialize_hook(self, **kwargs: t.Any) -> None:
+        # ensure this env var exists
+        os.environ['IDF_TARGET'] = self.target
+
+        super()._initialize_hook(**kwargs)
 
     def _post_build(self) -> None:
         super()._post_build()
