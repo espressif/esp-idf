@@ -510,6 +510,10 @@ UINT8 bta_gattc_co_find_hash_in_cache(hash_key_t hash_key)
 
 UINT8 bta_gattc_co_get_addr_num(void)
 {
+    if (cache_env == NULL) {
+        return 0;
+    }
+
     return cache_env->num_addr;
 }
 

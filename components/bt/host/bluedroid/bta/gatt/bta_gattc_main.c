@@ -534,4 +534,17 @@ void bta_gattc_deinit(void)
     FREE_AND_RESET(bta_gattc_cb_ptr);
 #endif /* #if BTA_DYNAMIC_MEMORY */
 }
+
+uint8_t bta_gattc_cl_rcb_active_count(void)
+{
+    uint8_t count = 0;
+
+    for (uint8_t i = 0; i < BTA_GATTC_CL_MAX; i ++) {
+        if (bta_gattc_cb.cl_rcb[i].in_use) {
+            count++;
+        }
+    }
+
+    return count;
+}
 #endif /* GATTC_INCLUDED == TRUE && BLE_INCLUDED == TRUE */
