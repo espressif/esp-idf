@@ -123,6 +123,11 @@ class BuildReportDownloader:
     def download_app(
         self, app_build_path: str, artifact_type: ArtifactType = ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES
     ) -> None:
+        if app_build_path not in self.app_presigned_urls_dict:
+            raise ValueError(f'No presigned url found for {app_build_path}. '
+                             f'Usually this should not happen, please re-trigger a pipeline.'
+                             f'If this happens again, please report this bug to the CI channel.')
+
         url = self.app_presigned_urls_dict[app_build_path][artifact_type.value]
 
         logging.debug('Downloading app from %s', url)
