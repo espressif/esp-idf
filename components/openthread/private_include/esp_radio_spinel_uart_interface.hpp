@@ -198,6 +198,8 @@ private:
     esp_radio_spinel_rcp_failure_handler mRcpFailureHandler;
     esp_radio_spinel_uart_init_handler mUartInitHandler;
     esp_radio_spinel_uart_deinit_handler mUartDeinitHandler;
+
+    ot::Spinel::FrameBuffer<kMaxFrameSize> encoder_buffer;
 };
 
 } // namespace radio_spinel

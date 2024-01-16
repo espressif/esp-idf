@@ -215,67 +215,67 @@ void esp_radio_spinel_init(esp_radio_spinel_idx_t idx)
     s_radio[idx].Init(s_spinel_interface[idx].GetSpinelInterface(), /*reset_radio=*/true, /*skip_rcp_compatibility_check=*/false, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
 }
 
-void esp_radio_spinel_enable(esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_enable(esp_radio_spinel_idx_t idx)
 {
     otInstance *instance = get_instance_from_index(idx);
-    s_radio[idx].Enable(instance);
+    return (s_radio[idx].Enable(instance) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_set_pending_mode(esp_ieee802154_pending_mode_t pending_mode, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_set_pending_mode(esp_ieee802154_pending_mode_t pending_mode, esp_radio_spinel_idx_t idx)
 {
-    s_radio[idx].Set(SPINEL_PROP_VENDOR_ESP_SET_PENDINGMODE, SPINEL_DATATYPE_INT32_S, static_cast<int32_t>(pending_mode));
+    return (s_radio[idx].Set(SPINEL_PROP_VENDOR_ESP_SET_PENDINGMODE, SPINEL_DATATYPE_INT32_S, static_cast<int32_t>(pending_mode)) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_get_eui64(uint8_t *eui64, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_get_eui64(uint8_t *eui64, esp_radio_spinel_idx_t idx)
 {
-    SuccessOrDie(s_radio[idx].GetIeeeEui64(eui64));
+    return (s_radio[idx].GetIeeeEui64(eui64) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_set_panid(uint16_t panid, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_set_panid(uint16_t panid, esp_radio_spinel_idx_t idx)
 {
-    SuccessOrDie(s_radio[idx].SetPanId(panid));
+    return (s_radio[idx].SetPanId(panid) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_set_short_address(uint16_t short_address, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_set_short_address(uint16_t short_address, esp_radio_spinel_idx_t idx)
 {
-    SuccessOrDie(s_radio[idx].SetShortAddress(short_address));
+    return (s_radio[idx].SetShortAddress(short_address) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_set_extended_address(uint8_t *ext_address, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_set_extended_address(uint8_t *ext_address, esp_radio_spinel_idx_t idx)
 {
     otExtAddress aExtAddress;
     memcpy(aExtAddress.m8, (void *)ext_address, OT_EXT_ADDRESS_SIZE);
-    SuccessOrDie(s_radio[idx].SetExtendedAddress(aExtAddress));
+    return (s_radio[idx].SetExtendedAddress(aExtAddress) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_set_pan_coord(bool enable, esp_radio_spinel_idx_t idx)
 {
-    s_radio[idx].Set(SPINEL_PROP_VENDOR_ESP_SET_COORDINATOR, SPINEL_DATATYPE_BOOL_S, enable);
+    return (s_radio[idx].Set(SPINEL_PROP_VENDOR_ESP_SET_COORDINATOR, SPINEL_DATATYPE_BOOL_S, enable) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_receive(uint8_t channel, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_receive(uint8_t channel, esp_radio_spinel_idx_t idx)
 {
-    s_radio[idx].Receive(channel);
+    return (s_radio[idx].Receive(channel) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_energy_scan(uint8_t scan_channel, uint16_t scan_duration, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_energy_scan(uint8_t scan_channel, uint16_t scan_duration, esp_radio_spinel_idx_t idx)
 {
-    s_radio[idx].EnergyScan(scan_channel, scan_duration);
+    return (s_radio[idx].EnergyScan(scan_channel, scan_duration) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, esp_radio_spinel_idx_t idx)
 {
     s_transmit_frame.mLength = frame[0];
     s_transmit_frame.mPsdu = frame + 1;
     s_transmit_frame.mInfo.mTxInfo.mCsmaCaEnabled = cca;
     s_transmit_frame.mChannel = channel;
     s_transmit_frame.mInfo.mTxInfo.mRxChannelAfterTxDone = channel;
-    SuccessOrDie(s_radio[idx].Transmit(s_transmit_frame));
+    return (s_radio[idx].Transmit(s_transmit_frame) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_clear_short_entries(esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_clear_short_entries(esp_radio_spinel_idx_t idx)
 {
-    SuccessOrDie(s_radio[idx].ClearSrcMatchShortEntries());
+    return (s_radio[idx].ClearSrcMatchShortEntries() == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_radio_spinel_add_short_entry(uint16_t short_address, esp_radio_spinel_idx_t idx)
@@ -283,21 +283,21 @@ esp_err_t esp_radio_spinel_add_short_entry(uint16_t short_address, esp_radio_spi
     return (s_radio[idx].AddSrcMatchShortEntry(short_address) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_clear_extened_entries(esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_clear_extended_entries(esp_radio_spinel_idx_t idx)
 {
-    SuccessOrDie(s_radio[idx].ClearSrcMatchExtEntries());
+    return (s_radio[idx].ClearSrcMatchExtEntries() == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_radio_spinel_add_extened_entry(uint8_t *ext_address, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_add_extended_entry(uint8_t *ext_address, esp_radio_spinel_idx_t idx)
 {
     otExtAddress aExtAddress;
     memcpy(aExtAddress.m8, (void *)ext_address, OT_EXT_ADDRESS_SIZE);
     return (s_radio[idx].AddSrcMatchExtEntry(aExtAddress) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_set_promiscuous_mode(bool enable, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_set_promiscuous_mode(bool enable, esp_radio_spinel_idx_t idx)
 {
-    SuccessOrDie(s_radio[idx].SetPromiscuous(enable));
+    return (s_radio[idx].SetPromiscuous(enable) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
 void esp_radio_spinel_radio_update(esp_radio_spinel_mainloop_context_t *mainloop_context, esp_radio_spinel_idx_t idx)
@@ -310,21 +310,23 @@ void esp_radio_spinel_radio_process(esp_radio_spinel_mainloop_context_t *mainloo
     s_radio[idx].Process(static_cast<void *>(mainloop_context));
 }
 
-void esp_radio_spinel_sleep(esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_sleep(esp_radio_spinel_idx_t idx)
 {
-    s_radio[idx].Sleep();
+    return (s_radio[idx].Sleep() == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_set_tx_power(int8_t power, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_set_tx_power(int8_t power, esp_radio_spinel_idx_t idx)
 {
-    s_radio[idx].SetTransmitPower(power);
+    return (s_radio[idx].SetTransmitPower(power) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
-void esp_radio_spinel_get_tx_power(int8_t *power, esp_radio_spinel_idx_t idx)
+esp_err_t esp_radio_spinel_get_tx_power(int8_t *power, esp_radio_spinel_idx_t idx)
 {
+    otError error = OT_ERROR_NONE;
     int8_t aPower;
-    s_radio[idx].GetTransmitPower(aPower);
+    error = s_radio[idx].GetTransmitPower(aPower);
     *power = aPower;
+    return (error == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
 }
 
 void esp_radio_spinel_register_rcp_failure_handler(esp_radio_spinel_rcp_failure_handler handler, esp_radio_spinel_idx_t idx)
