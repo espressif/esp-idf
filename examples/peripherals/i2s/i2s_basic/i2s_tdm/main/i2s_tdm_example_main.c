@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -12,21 +12,22 @@
 #include "driver/gpio.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
+#include "i2s_example_pins.h"
 
 /* Set 1 to allocate rx & tx channels in duplex mode on a same I2S controller, they will share the BCLK and WS signal
  * Set 0 to allocate rx & tx channels in simplex mode, these two channels will be totally separated */
 #define EXAMPLE_I2S_DUPLEX_MODE     1
 
-#define EXAMPLE_TDM_BCLK_IO1        GPIO_NUM_2      // I2S bit clock io number
-#define EXAMPLE_TDM_WS_IO1          GPIO_NUM_3      // I2S word select io number
-#define EXAMPLE_TDM_DOUT_IO1        GPIO_NUM_4      // I2S data out io number
-#define EXAMPLE_TDM_DIN_IO1         GPIO_NUM_5      // I2S data in io number
+#define EXAMPLE_TDM_BCLK_IO1        EXAMPLE_I2S_BCLK_IO1    // I2S bit clock io number
+#define EXAMPLE_TDM_WS_IO1          EXAMPLE_I2S_WS_IO1      // I2S word select io number
+#define EXAMPLE_TDM_DOUT_IO1        EXAMPLE_I2S_DOUT_IO1    // I2S data out io number
+#define EXAMPLE_TDM_DIN_IO1         EXAMPLE_I2S_DIN_IO1     // I2S data in io number
 #if !EXAMPLE_I2S_DUPLEX_MODE
-#define EXAMPLE_TDM_BCLK_IO2    GPIO_NUM_6      // I2S bit clock io number
-#define EXAMPLE_TDM_WS_IO2      GPIO_NUM_7      // I2S word select io number
-#define EXAMPLE_TDM_DOUT_IO2    GPIO_NUM_8      // I2S data out io number
-#define EXAMPLE_TDM_DIN_IO2     GPIO_NUM_9      // I2S data in io number
-#endif
+#define EXAMPLE_TDM_BCLK_IO2        EXAMPLE_I2S_BCLK_IO2    // I2S bit clock io number
+#define EXAMPLE_TDM_WS_IO2          EXAMPLE_I2S_WS_IO2      // I2S word select io number
+#define EXAMPLE_TDM_DOUT_IO2        EXAMPLE_I2S_DOUT_IO2    // I2S data out io number
+#define EXAMPLE_TDM_DIN_IO2         EXAMPLE_I2S_DIN_IO2     // I2S data in io number
+#endif  // !EXAMPLE_I2S_DUPLEX_MODE
 
 #define EXAMPLE_BUFF_SIZE               2048
 

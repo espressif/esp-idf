@@ -45,13 +45,13 @@ extern "C" {
 #define DATA_IN_IO 19
 #define DATA_OUT_IO 18
 #elif CONFIG_IDF_TARGET_ESP32P4
-#define MASTER_MCK_IO 36
-#define MASTER_BCK_IO 4
-#define MASTER_WS_IO 5
-#define SLAVE_BCK_IO 7
-#define SLAVE_WS_IO 8
-#define DATA_IN_IO 2
-#define DATA_OUT_IO 3
+#define MASTER_MCK_IO 51
+#define MASTER_BCK_IO 45
+#define MASTER_WS_IO 46
+#define SLAVE_BCK_IO 22
+#define SLAVE_WS_IO 23
+#define DATA_IN_IO 47
+#define DATA_OUT_IO 48
 #else
 #define MASTER_MCK_IO 0
 #define MASTER_BCK_IO 4
