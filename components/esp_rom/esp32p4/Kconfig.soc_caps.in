@@ -17,7 +17,11 @@ config ESP_ROM_UART_CLK_IS_XTAL
 
 config ESP_ROM_USB_SERIAL_DEVICE_NUM
     int
-    default 3
+    default 6
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default 5
 
 config ESP_ROM_HAS_RETARGETABLE_LOCKING
     bool

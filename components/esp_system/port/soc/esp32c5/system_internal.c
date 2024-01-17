@@ -32,8 +32,8 @@
 void IRAM_ATTR esp_system_reset_modules_on_exit(void)
 {
     // Flush any data left in UART FIFOs before reset the UART peripheral
-    esp_rom_uart_tx_wait_idle(0);
-    esp_rom_uart_tx_wait_idle(1);
+    esp_rom_output_tx_wait_idle(0);
+    esp_rom_output_tx_wait_idle(1);
 
     modem_syscon_ll_reset_all(&MODEM_SYSCON);
     modem_lpcon_ll_reset_all(&MODEM_LPCON);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,7 +44,7 @@ void bootloader_console_init(void)
     esp_rom_install_uart_printf();
 
     // Wait for UART FIFO to be empty.
-    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_output_tx_wait_idle(0);
 
 #if CONFIG_ESP_CONSOLE_UART_CUSTOM
     // Some constants to make the following code less upper-case
@@ -52,7 +52,7 @@ void bootloader_console_init(void)
     const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
 
     // Switch to the new UART (this just changes UART number used for esp_rom_printf in ROM code).
-    esp_rom_uart_set_as_console(uart_num);
+    esp_rom_output_set_as_console(uart_num);
 
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
@@ -102,8 +102,8 @@ void bootloader_console_init(void)
     rom_usb_cdc_set_descriptor_patch();
 #endif
 
-    esp_rom_uart_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
-    esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
+    esp_rom_output_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
+    esp_rom_output_set_as_console(ESP_ROM_USB_OTG_NUM);
     esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
     usb_fsls_phy_ll_usb_wrap_pad_enable(&USB_WRAP, true);
@@ -115,6 +115,6 @@ void bootloader_console_init(void)
 #ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 void bootloader_console_init(void)
 {
-    esp_rom_uart_switch_buffer(ESP_ROM_USB_SERIAL_DEVICE_NUM);
+    esp_rom_output_switch_buffer(ESP_ROM_USB_SERIAL_DEVICE_NUM);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG

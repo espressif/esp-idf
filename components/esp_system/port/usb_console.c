@@ -298,7 +298,7 @@ esp_err_t esp_usb_console_init(void)
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
     /* Install esp_rom_printf handler */
-    esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
+    esp_rom_output_set_as_console(ESP_ROM_USB_OTG_NUM);
     esp_rom_install_channel_putc(1, &esp_usb_console_write_char);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 

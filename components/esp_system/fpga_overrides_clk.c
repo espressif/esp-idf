@@ -42,7 +42,7 @@ static void s_warn(void)
 void bootloader_clock_configure(void)
 {
     s_warn();
-    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_output_tx_wait_idle(0);
 
     uint32_t xtal_freq_mhz = 40;
 #ifdef CONFIG_IDF_TARGET_ESP32S2

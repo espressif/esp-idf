@@ -301,6 +301,17 @@ menu "ESP System Settings"
         default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
         default -1 if !ESP_CONSOLE_UART
 
+    config ESP_CONSOLE_ROM_SERIAL_PORT_NUM
+        # This config is used for the correct serial number used in ROM uart function.
+        int
+        default 0 if ESP_CONSOLE_UART_DEFAULT
+        default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
+        default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
+        # Can be extended if we have more uarts.
+        default ESP_ROM_USB_SERIAL_DEVICE_NUM if ESP_CONSOLE_USB_SERIAL_JTAG
+        default ESP_ROM_USB_OTG_NUM if ESP_CONSOLE_USB_CDC
+        default -1 if ESP_CONSOLE_NONE
+
     config ESP_CONSOLE_UART_TX_GPIO
         int "UART TX on GPIO#"
         depends on ESP_CONSOLE_UART_CUSTOM
