@@ -217,8 +217,8 @@ extern "C" {
 
 /**
  * IP_NAPT==1: Enables IPv4 Network Address and Port Translation.
- * Note that both CONFIG_LWIP_IP_FORWARD and CONFIG_LWIP_L2_TO_L3_COPY options
- * need to be enabled in system configuration for the NAPT to work on ESP platform
+ * Note that CONFIG_LWIP_IP_FORWARD option need to be enabled in
+ * system configuration for the NAPT to work on ESP platform
  */
 #ifdef CONFIG_LWIP_IPV4_NAPT
 #define IP_NAPT                         1
