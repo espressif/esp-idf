@@ -3,5 +3,3 @@ idf_component_register(
     INCLUDE_DIRS "."
     PRIV_REQUIRES usb
     )
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-missing-field-initializers")
