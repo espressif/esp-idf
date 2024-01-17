@@ -100,7 +100,7 @@ def remove_wear_levelling_if_exists(fs_: bytes) -> bytes:
         boot_sector__.parse_boot_sector(fs_)
         if boot_sector__.boot_sector_state.size == len(fs_):
             return fs_
-    except UnicodeDecodeError:
+    except (UnicodeDecodeError, construct.core.StringError):
         pass
     plain_fs: bytes = remove_wl(fs_)
     return plain_fs
