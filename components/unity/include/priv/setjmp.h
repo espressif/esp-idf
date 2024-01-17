@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include_next <setjmp.h>
 #include "esp_debug_helpers.h"
 
