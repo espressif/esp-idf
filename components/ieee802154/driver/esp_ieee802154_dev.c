@@ -526,19 +526,19 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
 #if !CONFIG_IEEE802154_TEST
         ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
-        next_operation();
 #else
         esp_ieee802154_receive_failed(rx_status);
 #endif
+        next_operation();
         break;
     case IEEE802154_RX_ABORT_BY_ENHACK_SECURITY_ERROR:
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
 #if !CONFIG_IEEE802154_TEST
         ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
-        next_operation();
 #else
         esp_ieee802154_receive_failed(rx_status);
 #endif
+        next_operation();
         break;
     default:
         IEEE802154_ASSERT(false);
