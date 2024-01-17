@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,6 +70,8 @@ typedef struct {
 typedef struct {
     spi_ll_clock_val_t clock_reg;       ///< Register value used by the LL layer
     spi_clock_source_t clock_source;    ///< Clock source of each device used by LL layer
+    uint32_t source_pre_div;            ///< Pre divider befor enter SPI peripheral
+    int real_freq;                      ///< Output of the actual frequency
     int timing_dummy;                   ///< Extra dummy needed to compensate the timing
     int timing_miso_delay;              ///< Extra miso delay clocks to compensate the timing
 } spi_hal_timing_conf_t;
@@ -222,12 +224,11 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal);
  * It is highly suggested to do this at initialization, since it takes long time.
  *
  * @param timing_param   Input parameters to calculate timing configuration
- * @param out_freq       Output of the actual frequency, left NULL if not required.
  * @param timing_conf    Output of the timing configuration.
  *
  * @return ESP_OK if desired is available, otherwise fail.
  */
-esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int *out_freq, spi_hal_timing_conf_t *timing_conf);
+esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi_hal_timing_conf_t *timing_conf);
 
 /**
  * Get the frequency actual used.
