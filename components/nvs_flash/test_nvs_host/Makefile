@@ -15,6 +15,7 @@ SOURCE_FILES = \
 		nvs_partition.cpp \
 		nvs_encrypted_partition.cpp \
 		nvs_cxx_api.cpp \
+		nvs_platform.cpp \
 	) \
 	spi_flash_emulation.cpp \
 	test_compressed_enum_table.cpp \

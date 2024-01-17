@@ -1,82 +1,24 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
-#ifdef LINUX_TARGET
-namespace nvs
-{
-class Lock
-{
-public:
-    Lock() { }
-    ~Lock() { }
-    static esp_err_t init()
-    {
-        return ESP_OK;
-    }
-
-    static void uninit() {}
-};
-} // namespace nvs
-
-#else // LINUX_TARGET
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
+#include "esp_err.h"
 
 namespace nvs
 {
-
-class Lock
-{
-public:
-    Lock()
+    class Lock
     {
-        if (mSemaphore) {
-            xSemaphoreTake(mSemaphore, portMAX_DELAY);
-        }
-    }
-
-    ~Lock()
-    {
-        if (mSemaphore) {
-            xSemaphoreGive(mSemaphore);
-        }
-    }
-
-    static esp_err_t init()
-    {
-        if (mSemaphore) {
-            return ESP_OK;
-        }
-        mSemaphore = xSemaphoreCreateMutex();
-        if (!mSemaphore) {
-            return ESP_ERR_NO_MEM;
-        }
-        return ESP_OK;
-    }
-
-    static void uninit()
-    {
-        if (mSemaphore) {
-            vSemaphoreDelete(mSemaphore);
-        }
-        mSemaphore = nullptr;
-    }
-
-    static SemaphoreHandle_t mSemaphore;
-};
+    public:
+        Lock();
+        ~Lock();
+        static esp_err_t init();
+        static void uninit();
+#ifndef LINUX_TARGET
+    private:
+        static _lock_t mSemaphore;
+#endif
+    };
 } // namespace nvs
-
-#endif // LINUX_TARGET
