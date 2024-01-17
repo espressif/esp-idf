@@ -291,6 +291,7 @@ bool esp_wifi_is_ft_enabled_internal(uint8_t if_index);
 uint8_t esp_wifi_sta_get_config_sae_pk_internal(void);
 void esp_wifi_sta_disable_sae_pk_internal(void);
 void esp_wifi_sta_disable_wpa2_authmode_internal(void);
+void esp_wifi_sta_disable_owe_trans_internal(void);
 uint8_t esp_wifi_ap_get_max_sta_conn(void);
 uint8_t esp_wifi_get_config_sae_pwe_h2e_internal(uint8_t ifx);
 bool esp_wifi_ap_notify_node_sae_auth_done(uint8_t *mac);

@@ -93,7 +93,8 @@ int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
 
 }
 
-static void disable_wpa_wpa2() {
+static void disable_wpa_wpa2(void)
+{
     esp_wifi_sta_disable_wpa2_authmode_internal();
 }
 
@@ -119,6 +120,10 @@ void wpa_supplicant_transition_disable(struct wpa_sm *sm, u8 bitmap)
         disable_wpa_wpa2();
     }
 
+    if ((bitmap & TRANSITION_DISABLE_ENHANCED_OPEN) &&
+        wpa_key_mgmt_owe(sm->key_mgmt)) {
+        esp_wifi_sta_disable_owe_trans_internal();
+    }
 }
 
 u8 *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
