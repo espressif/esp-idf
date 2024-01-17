@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,8 +62,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_ISP;
     case PERIPH_DMA2D_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_DMA2D;
-    case PERIPH_PPA_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_PPA;
     case PERIPH_UHCI_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_UHCI;
     case PERIPH_I3C_MODULE:
@@ -145,7 +143,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_ISP_MODULE:
     case PERIPH_DMA2D_MODULE:
         return HP_SYS_CLKRST_HP_RST_EN0_REG;
-    case PERIPH_PPA_MODULE:
     case PERIPH_UHCI_MODULE:
     case PERIPH_I3C_MODULE:
     case PERIPH_SARADC_MODULE:
