@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,9 @@
 #include "hal/misc.h"
 #include "soc/mipi_dsi_host_struct.h"
 #include "hal/mipi_dsi_types.h"
+
+#define MIPI_DSI_LL_MIN_PHY_MBPS 80
+#define MIPI_DSI_LL_MAX_PHY_MBPS 1500
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +35,6 @@ static inline void mipi_dsi_phy_ll_enable_clock_lane(dsi_host_dev_t *dev, bool e
  * @brief Reset the digital section of the PHY
  *
  * @param dev Pointer to the DSI Host controller register base address
- * @param enable True to place the PHY in the reset state, False to release the reset
  */
 static inline void mipi_dsi_phy_ll_reset(dsi_host_dev_t *dev)
 {
@@ -76,14 +78,16 @@ static inline bool mipi_dsi_phy_ll_is_pll_locked(dsi_host_dev_t *dev)
 }
 
 /**
- * @brief Check if the Lane0 in stop state
+ * @brief Check if the all active lanes are in the stop state
  *
  * @param dev Pointer to the DSI Host controller register base address
- * @return True if the Lane0 in stop state, False otherwise
+ * @return True if the lanes are all in stop state, False otherwise
  */
-static inline bool mipi_dsi_phy_ll_is_lane0_stoped(dsi_host_dev_t *dev)
+static inline bool mipi_dsi_phy_ll_are_lanes_stoped(dsi_host_dev_t *dev)
 {
-    return dev->phy_status.phy_stopstate0lane;
+    uint32_t status = dev->phy_status.val;
+    const uint32_t mask = 1 << 2 | 1 << 4 | 1 << 7;
+    return (status & mask) == mask;
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,8 @@
 #include "hal/mipi_dsi_host_ll.h"
 #include "hal/mipi_dsi_brg_ll.h"
 #include "hal/mipi_dsi_phy_ll.h"
+
+#define MIPI_DSI_LL_NUM_BUS 1 // 1 MIPI DSI bus
 
 #ifdef __cplusplus
 extern "C" {

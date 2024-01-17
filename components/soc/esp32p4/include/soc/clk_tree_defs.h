@@ -375,7 +375,7 @@ typedef enum {
     MIPI_DSI_PHY_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,    /*!< Select RC_FAST as MIPI DSI PHY source clock */
     MIPI_DSI_PHY_CLK_SRC_PLL_F25M = SOC_MOD_CLK_PLL_F25M,  /*!< Select PLL_F25M as MIPI DSI PHY source clock */
     MIPI_DSI_PHY_CLK_SRC_PLL_F20M = SOC_MOD_CLK_PLL_F20M,  /*!< Select PLL_F20M as MIPI DSI PHY source clock */
-    MIPI_DSI_PHY_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F25M,   /*!< Select PLL_F25M as default clock */
+    MIPI_DSI_PHY_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F20M,   /*!< Select PLL_F20M as default clock */
 } soc_periph_mipi_dsi_phy_clk_src_t;
 
 /////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////

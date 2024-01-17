@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@
 #include "soc/mipi_dsi_bridge_struct.h"
 #include "hal/mipi_dsi_types.h"
 #include "hal/lcd_types.h"
+
+#define MIPI_DSI_LL_GET_BRG(bus_id) (bus_id == 0 ? &MIPI_DSI_BRIDGE : NULL)
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +46,19 @@ static inline void mipi_dsi_brg_ll_enable(dsi_brg_dev_t *dev, bool en)
 static inline void mipi_dsi_brg_ll_set_burst_len(dsi_brg_dev_t *dev, uint32_t burst_len)
 {
     dev->dma_req_cfg.dma_burst_len = burst_len;
+}
+
+/**
+ * @brief Set the fifo empty threshold
+ *
+ * @note valid only when dsi_bridge is the flow controller
+ *
+ * @param dev Pointer to the DSI bridge controller register base address
+ * @param threshold Threshold value
+ */
+static inline void mipi_dsi_brg_ll_set_empty_threshold(dsi_brg_dev_t *dev, uint32_t threshold)
+{
+    dev->raw_buf_almost_empty_thrd.dsi_raw_buf_almost_empty_thrd = threshold;
 }
 
 /**
@@ -201,11 +216,11 @@ static inline void mipi_dsi_brg_ll_enable_dpi_output(dsi_brg_dev_t *dev, bool en
 }
 
 /**
- * @brief Update the configuration of DSI bridge
+ * @brief Update the DPI configuration of DSI bridge
  *
  * @param dev Pointer to the DSI bridge controller register base address
  */
-static inline void mipi_dsi_brg_ll_update_config(dsi_brg_dev_t *dev)
+static inline void mipi_dsi_brg_ll_update_dpi_config(dsi_brg_dev_t *dev)
 {
     dev->dpi_config_update.dpi_config_update = 1;
 }
