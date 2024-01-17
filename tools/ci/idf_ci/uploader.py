@@ -1,14 +1,16 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import glob
 import os
 import typing as t
 from datetime import timedelta
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED
+from zipfile import ZipFile
 
 import minio
-from artifacts_handler import ArtifactType, get_minio_client, getenv
+from artifacts_handler import ArtifactType
+from artifacts_handler import get_minio_client
+from artifacts_handler import getenv
 from idf_build_apps import App
 from idf_build_apps.utils import rmdir
 from idf_ci_utils import IDF_PATH
@@ -103,7 +105,7 @@ class AppUploader:
                 try:
                     self._client.stat_object(getenv('IDF_S3_BUCKET'), obj_name)
                 except minio.error.S3Error as e:
-                    raise SystemExit(
+                    raise RuntimeError(
                         f'No such file on minio server: {obj_name}. '
                         f'Probably the build failed or the artifacts got expired. '
                         f'Full error message: {str(e)}'
@@ -112,7 +114,7 @@ class AppUploader:
                     self._client.fget_object(getenv('IDF_S3_BUCKET'), obj_name, zip_filename)
                     print(f'Downloaded to {zip_filename}')
             except minio.error.S3Error as e:
-                raise SystemExit('Shouldn\'t happen, please report this bug in the CI channel' + str(e))
+                raise RuntimeError('Shouldn\'t happen, please report this bug in the CI channel' + str(e))
 
             with ZipFile(zip_filename, 'r') as zr:
                 zr.extractall()
