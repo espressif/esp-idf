@@ -204,7 +204,6 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
     if (mNamespaceUsage.set(255, true) != ESP_OK) {
         return ESP_FAIL;
     }
-    mState = StorageState::ACTIVE;
 
     // Populate list of multi-page index entries.
     TBlobIndexList blobIdxList;
@@ -222,6 +221,8 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
 
     // Purge the blob index list
     blobIdxList.clearAndFreeNodes();
+
+    mState = StorageState::ACTIVE;
 
 #ifdef DEBUG_STORAGE
     debugCheck();

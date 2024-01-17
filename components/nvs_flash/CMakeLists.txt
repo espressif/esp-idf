@@ -11,10 +11,12 @@ set(srcs "src/nvs_api.cpp"
          "src/nvs_partition.cpp"
          "src/nvs_partition_lookup.cpp"
          "src/nvs_partition_manager.cpp"
-         "src/nvs_types.cpp")
+         "src/nvs_types.cpp"
+         "src/nvs_platform.cpp")
 
 idf_component_register(SRCS "${srcs}"
-                    REQUIRES "spi_flash"
+                    REQUIRES "esp_partition"
+                    PRIV_REQUIRES spi_flash newlib
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "private_include")
 
