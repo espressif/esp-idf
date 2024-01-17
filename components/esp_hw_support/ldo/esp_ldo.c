@@ -114,7 +114,7 @@ esp_err_t esp_ldo_init_unit(const esp_ldo_unit_init_cfg_t *init_config, esp_ldo_
 
 esp_err_t esp_ldo_deinit_unit(esp_ldo_unit_handle_t unit)
 {
-    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument: uninitialized handler");
     ESP_RETURN_ON_FALSE(unit->enabled == false, ESP_ERR_INVALID_STATE, TAG, "invalid state: ldo unit is still enabled");
 
     bool needs_free = false;

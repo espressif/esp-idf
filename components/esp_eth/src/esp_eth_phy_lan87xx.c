@@ -292,6 +292,7 @@ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
     /* It was observed that assert nRST signal on LAN87xx needs to be a little longer than the minimum specified in datasheet */
     return esp_eth_phy_802_3_reset_hw(esp_eth_phy_into_phy_802_3(phy), 150);
 }
+
 static esp_err_t lan87xx_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;

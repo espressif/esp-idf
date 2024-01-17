@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "esp_eth_com.h"
 #include "sdkconfig.h"
 #if CONFIG_ETH_USE_SPI_ETHERNET
@@ -328,6 +329,8 @@ typedef enum {
     /**
      * @brief Default values configured using Kconfig are going to be used when "Default" selected.
      *
+     * @note May not be supported on all targets.
+     *
      */
     EMAC_CLK_DEFAULT,
 
@@ -340,14 +343,15 @@ typedef enum {
     EMAC_CLK_EXT_IN,
 
     /**
-     * @brief Output RMII Clock from internal APLL Clock. EMAC Clock GPIO number needs to be configured when this option is selected.
+     * @brief Output RMII Clock from internal (A/M)PLL Clock. EMAC Clock GPIO number needs to be configured when this option is selected.
      *
      */
     EMAC_CLK_OUT
 } emac_rmii_clock_mode_t;
 
+#if CONFIG_IDF_TARGET_ESP32
 /**
- * @brief RMII Clock GPIO number Options
+ * @brief RMII Clock GPIO number Options for ESP32
  *
  */
 typedef enum {
@@ -382,6 +386,13 @@ typedef enum {
      */
     EMAC_CLK_OUT_180_GPIO = 17
 } emac_rmii_clock_gpio_t;
+#else
+/**
+ * @brief RMII Clock GPIO number
+ *
+ */
+typedef int emac_rmii_clock_gpio_t;
+#endif // CONFIG_IDF_TARGET_ESP32
 
 /**
  * @brief Ethernet MAC Clock Configuration
@@ -397,6 +408,27 @@ typedef union {
         emac_rmii_clock_gpio_t clock_gpio; /*!< RMII Clock GPIO Configuration */
     } rmii; /*!< EMAC RMII Clock Configuration */
 } eth_mac_clock_config_t;
+
+#if SOC_EMAC_USE_IO_MUX
+/**
+ * @brief Ethernet MAC MII/RMII data plane GPIO configuration
+ *
+ */
+typedef union {
+    struct {
+        // MII interface is not fully implemented...
+        // Reserved for data interface GPIO numbers in MII mode
+    } mii; /*!< EMAC MII Data GPIO Configuration */
+    struct {
+        int32_t tx_en_num;  /*!< TX_EN GPIO number */
+        int32_t txd0_num;   /*!< TXD0 GPIO number */
+        int32_t txd1_num;   /*!< TXD1 GPIO number */
+        int32_t crs_dv_num; /*!< CRS_DV GPIO number */
+        int32_t rxd0_num;   /*!< RXD0 GPIO number */
+        int32_t rxd1_num;   /*!< RXD1 GPIO number */
+    } rmii; /*!< EMAC RMII Data GPIO Configuration */
+} eth_mac_dataif_gpio_config_t;
+#endif // SOC_EMAC_USE_IO_MUX
 
 /**
 * @brief Configuration of Ethernet MAC object
@@ -430,17 +462,24 @@ typedef struct {
 *
 */
 typedef struct {
-    int smi_mdc_gpio_num;                   /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
-    int smi_mdio_gpio_num;                  /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
-    eth_data_interface_t interface;         /*!< EMAC Data interface to PHY (MII/RMII) */
-    eth_mac_clock_config_t clock_config;    /*!< EMAC Interface clock configuration */
-    eth_mac_dma_burst_len_t dma_burst_len;  /*!< EMAC DMA burst length for both Tx and Rx */
+    int smi_mdc_gpio_num;                           /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    int smi_mdio_gpio_num;                          /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    eth_data_interface_t interface;                 /*!< EMAC Data interface to PHY (MII/RMII) */
+    eth_mac_clock_config_t clock_config;            /*!< EMAC Interface clock configuration */
+    eth_mac_dma_burst_len_t dma_burst_len;          /*!< EMAC DMA burst length for both Tx and Rx */
+#if SOC_EMAC_USE_IO_MUX
+    eth_mac_dataif_gpio_config_t emac_dataif_gpio;  /*!< EMAC MII/RMII data plane GPIO configuration */
+#endif // SOC_EMAC_USE_IO_MUX
+#if !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+    eth_mac_clock_config_t clock_config_out_in;     /*!< EMAC input clock configuration for internally generated output clock (when output clock is looped back externally) */
+#endif //SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 } eth_esp32_emac_config_t;
 
 /**
  * @brief Default ESP32's EMAC specific configuration
  *
  */
+#if CONFIG_IDF_TARGET_ESP32
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()               \
     {                                                 \
         .smi_mdc_gpio_num = 23,                       \
@@ -454,8 +493,46 @@ typedef struct {
                 .clock_gpio = EMAC_CLK_IN_GPIO        \
             }                                         \
         },                                            \
-        .dma_burst_len = ETH_DMA_BURST_LEN_32         \
+        .dma_burst_len = ETH_DMA_BURST_LEN_32,        \
     }
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define ETH_ESP32_EMAC_DEFAULT_CONFIG()               \
+    {                                                 \
+        .smi_mdc_gpio_num = 31,                       \
+        .smi_mdio_gpio_num = 27,                      \
+        .interface = EMAC_DATA_INTERFACE_RMII,        \
+        .clock_config =                               \
+        {                                             \
+            .rmii =                                   \
+            {                                         \
+                .clock_mode = EMAC_CLK_EXT_IN,        \
+                .clock_gpio = 50                      \
+            }                                         \
+        },                                            \
+        .clock_config_out_in =                        \
+        {                                             \
+            .rmii =                                   \
+            {                                         \
+                .clock_mode = EMAC_CLK_DEFAULT,       \
+                .clock_gpio = -1                      \
+            }                                         \
+        },                                            \
+        .dma_burst_len = ETH_DMA_BURST_LEN_32,        \
+        .emac_dataif_gpio =                           \
+        {                                             \
+            .rmii =                                   \
+            {                                         \
+                .tx_en_num = 49,                      \
+                .txd0_num = 34,                       \
+                .txd1_num = 35,                       \
+                .crs_dv_num = 28,                     \
+                .rxd0_num = 29,                       \
+                .rxd1_num = 30                        \
+            }                                         \
+        },                                            \
+    }
+#endif // CONFIG_IDF_TARGET_ESP32P4
+
 
 /**
 * @brief Create ESP32 Ethernet MAC instance

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32 eMAC register operations
+// The LL layer for ESP32P4 eMAC register operations
 
 #pragma once
 
@@ -20,8 +20,10 @@
 #include "hal/eth_types.h"
 #include "soc/emac_dma_struct.h"
 #include "soc/emac_mac_struct.h"
-#include "soc/emac_ext_struct.h"
-#include "soc/dport_reg.h"
+
+#include "soc/hp_system_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/lp_clkrst_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -142,41 +144,6 @@ extern "C" {
 
 /* Enable needed interrupts (recv/recv_buf_unavailabal/normal must be enabled to make eth work) */
 #define EMAC_LL_CONFIG_ENABLE_INTR_MASK    (EMAC_LL_INTR_RECEIVE_ENABLE | EMAC_LL_INTR_NORMAL_SUMMARY_ENABLE)
-
-/**
- * @brief Enable the bus clock for the EMAC module
- *
- * @param group_id Group ID
- * @param enable true to enable, false to disable
- */
-static inline void emac_ll_enable_bus_clock(int group_id, bool enable)
-{
-    (void)group_id;
-    uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_WIFI_CLK_EN_REG);
-    reg_val &= ~DPORT_WIFI_CLK_EMAC_EN;
-    reg_val |= enable << 14;
-    DPORT_WRITE_PERI_REG(DPORT_WIFI_CLK_EN_REG, reg_val);
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_enable_bus_clock(__VA_ARGS__)
-
-/**
- * @brief Reset the EMAC module
- *
- * @param group_id Group ID
- */
-static inline void emac_ll_reset_register(int group_id)
-{
-    (void)group_id;
-    DPORT_WRITE_PERI_REG(DPORT_CORE_RST_EN_REG, DPORT_EMAC_RST);
-    DPORT_WRITE_PERI_REG(DPORT_CORE_RST_EN_REG, 0);
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define emac_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_reset_register(__VA_ARGS__)
 
 /************** Start of mac regs operation ********************/
 /* emacgmiiaddr */
@@ -384,6 +351,11 @@ static inline uint32_t emac_ll_receive_read_ctrl_state(emac_mac_dev_t *mac_regs)
     return mac_regs->emacdebug.mtlrfrcs;
 }
 
+static inline uint32_t emac_ll_read_debug_reg(emac_mac_dev_t *mac_regs)
+{
+    return mac_regs->emacdebug.val;
+}
+
 /* emacmiidata */
 static inline void emac_ll_set_phy_data(emac_mac_dev_t *mac_regs, uint32_t data)
 {
@@ -402,6 +374,8 @@ static inline void emac_ll_set_addr(emac_mac_dev_t *mac_regs, const uint8_t *add
     mac_regs->emacaddr0low = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | (addr[0]);
 }
 /*************** End of mac regs operation *********************/
+
+
 
 /************** Start of dma regs operation ********************/
 /* dmabusmode */
@@ -585,6 +559,7 @@ __attribute__((always_inline)) static inline void emac_ll_clear_all_pending_intr
     dma_regs->dmastatus.val = 0xFFFFFFFF;
 }
 
+
 /* dmatxpolldemand / dmarxpolldemand */
 static inline void emac_ll_transmit_poll_demand(emac_dma_dev_t *dma_regs, uint32_t val)
 {
@@ -597,53 +572,122 @@ static inline void emac_ll_receive_poll_demand(emac_dma_dev_t *dma_regs, uint32_
 
 /*************** End of dma regs operation *********************/
 
-/************** Start of ext regs operation ********************/
 
-static inline eth_data_interface_t emac_ll_get_phy_intf(emac_ext_dev_t *ext_regs)
+/**
+ * @brief Enable the bus clock for the EMAC module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void emac_ll_enable_bus_clock(int group_id, bool enable)
 {
-    if (ext_regs->ex_phyinf_conf.phy_intf_sel == 4) {
+    (void)group_id;
+    HP_SYS_CLKRST.soc_clk_ctrl1.reg_emac_sys_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the EMAC module
+ *
+ * @param group_id Group ID
+ */
+static inline void emac_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    LP_AON_CLKRST.hp_sdmmc_emac_rst_ctrl.rst_en_emac = 1;
+    LP_AON_CLKRST.hp_sdmmc_emac_rst_ctrl.rst_en_emac = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_reset_register(__VA_ARGS__)
+
+static inline eth_data_interface_t emac_ll_get_phy_intf(void *ext_regs)
+{
+    if (HP_SYSTEM.sys_gmac_ctrl0.sys_phy_intf_sel == 0x04) {
         return EMAC_DATA_INTERFACE_RMII;
     }
     return EMAC_DATA_INTERFACE_MII;
 }
 
-static inline void emac_ll_clock_enable_mii(emac_ext_dev_t *ext_regs)
+static inline void emac_ll_clock_enable_mii(void *ext_regs)
 {
-    /* 0 for mii mode */
-    ext_regs->ex_phyinf_conf.phy_intf_sel = 0;
-    ext_regs->ex_clk_ctrl.mii_clk_rx_en = 1;
-    ext_regs->ex_clk_ctrl.mii_clk_tx_en = 1;
+    HP_SYSTEM.sys_gmac_ctrl0.sys_phy_intf_sel = 0x0;
+
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_pad_emac_ref_clk_en = 0;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rmii_clk_en = 0;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rmii_clk_src_sel = 0;
+
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rx_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rx_clk_src_sel = 1; // 0-pad_emac_txrx_clk, 1-pad_emac_rx_clk
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_rx_clk_div_num = 0; // 25MHz
+
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_src_sel = 1; // 0-pad_emac_txrx_clk, 1-pad_emac_tx_clk
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_div_num = 0; // 25MHz
+
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_tx_clk_en = 1;
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_rx_clk_en = 1;
 }
 
-static inline void emac_ll_clock_enable_rmii_input(emac_ext_dev_t *ext_regs)
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_clock_enable_mii(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_enable_mii(__VA_ARGS__)
+
+static inline void emac_ll_clock_enable_rmii_input(void *ext_regs)
 {
-    /* 4 for rmii mode */
-    ext_regs->ex_phyinf_conf.phy_intf_sel = 4;
-    /* ref clk for phy is input in rmii mode, the clk can be offered by mac layer or external crystal.
-    config pin as output to generate ref clk by esp32 mac layer or input to obtain the clock from external crystal */
-    ext_regs->ex_clk_ctrl.ext_en = 1;
-    ext_regs->ex_clk_ctrl.int_en = 0;
-    ext_regs->ex_oscclk_conf.clk_sel = 1;
+    HP_SYSTEM.sys_gmac_ctrl0.sys_phy_intf_sel = 0x4; // set RMII
+
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_pad_emac_ref_clk_en = 0;
+
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rmii_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rmii_clk_src_sel = 0; // 0-pad_emac_txrx_clk, 1-pad_emac_rx_clk, 2-pad_emac_tx_clk
+
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rx_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rx_clk_src_sel = 0; // 0-pad_emac_txrx_clk, 1-pad_emac_rx_clk
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_rx_clk_div_num = 1; // set default divider
+
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_src_sel = 0; // 0-pad_emac_txrx_clk, 1-pad_emac_tx_clk
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_div_num = 1; // set default divider
+
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_tx_clk_en = 0;
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_rx_clk_en = 0;
+    LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_txrx_clk_en = 1;
 }
 
-static inline void emac_ll_clock_enable_rmii_output(emac_ext_dev_t *ext_regs)
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_clock_enable_rmii_input(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_enable_rmii_input(__VA_ARGS__)
+
+static inline void emac_ll_clock_rmii_rx_tx_div(void *ext_regs, int div)
 {
-    /* 4 for rmii mode */
-    ext_regs->ex_phyinf_conf.phy_intf_sel = 4;
-    /* ref clk for phy is input in rmii mode, the clk can be offered by mac layer or external crystal.
-    config pin as output to generate ref clk by esp32 mac layer or input to obtain the clock from external crystal */
-    ext_regs->ex_clk_ctrl.ext_en = 0;
-    ext_regs->ex_clk_ctrl.int_en = 1;
-    ext_regs->ex_oscclk_conf.clk_sel = 0;
-    ext_regs->ex_clkout_conf.div_num = 0;
-    ext_regs->ex_clkout_conf.h_div_num = 0;
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_rx_clk_div_num = div;
+    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_div_num = div;
 }
 
-static inline void emac_ll_pause_frame_enable(emac_ext_dev_t *ext_regs, bool enable)
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_clock_rmii_rx_tx_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_rmii_rx_tx_div(__VA_ARGS__)
+
+static inline void emac_ll_clock_enable_rmii_output(void *ext_regs)
 {
-    ext_regs->ex_phyinf_conf.sbd_flowctrl = enable;
+    HP_SYSTEM.sys_gmac_ctrl0.sys_phy_intf_sel = 0x4; // set RMII
+
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_pad_emac_ref_clk_en = 1;
 }
-/*************** End of ext regs operation *********************/
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_clock_enable_rmii_output(...) (void)__DECLARE_RCC_ATOMIC_ENV; emac_ll_clock_enable_rmii_output(__VA_ARGS__)
+
+static inline void emac_ll_pause_frame_enable(void *ext_regs, bool enable)
+{
+    HP_SYSTEM.sys_gmac_ctrl0.sys_phy_intf_sel = enable;
+}
 
 #ifdef __cplusplus
 }

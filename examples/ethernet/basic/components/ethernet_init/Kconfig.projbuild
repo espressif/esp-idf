@@ -61,31 +61,35 @@ menu "Example Ethernet Configuration"
         config EXAMPLE_ETH_MDC_GPIO
             int "SMI MDC GPIO number"
             range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-            default 23
+            default 23 if IDF_TARGET_ESP32
+            default 31 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SMI MDC.
 
         config EXAMPLE_ETH_MDIO_GPIO
             int "SMI MDIO GPIO number"
             range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-            default 18
+            default 18 if IDF_TARGET_ESP32
+            default 27 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SMI MDIO.
 
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"
             range -1 ENV_GPIO_OUT_RANGE_MAX
-            default 5
+            default 5 if IDF_TARGET_ESP32
+            default 26 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used to reset PHY chip.
                 Set to -1 to disable PHY chip hardware reset.
 
         config EXAMPLE_ETH_PHY_ADDR
             int "PHY Address"
-            range 0 31
+            range -1 31
             default 1
             help
                 Set PHY address according your board schematic.
+                Set to -1 to driver find the PHY address automatically.
     endif # EXAMPLE_USE_INTERNAL_ETHERNET
 
     config EXAMPLE_USE_SPI_ETHERNET

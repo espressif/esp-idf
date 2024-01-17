@@ -107,3 +107,6 @@ PROVIDE ( JPEG               = 0x50086000 );
 PROVIDE ( USB_WRAP           = 0x50080000 );
 PROVIDE ( USB_DWC_HS         = 0x50000000 );
 PROVIDE ( USB_DWC_FS         = 0x50040000 );
+
+PROVIDE ( EMAC_MAC           = 0x50098000 );
+PROVIDE ( EMAC_DMA           = 0x50099000 );
