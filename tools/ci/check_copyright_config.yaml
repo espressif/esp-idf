@@ -141,6 +141,20 @@ md5_hash:
     - BSD-3-Clause
     - Apache-2.0
 
+# OpenOCD project is licensed under GPLv2.0, which is incompatible with Apache-2.0
+# The source files built by the OpenOCD stub flasher, need to be dual-licensed for the upstreaming.
+# MIT is chosen as the dual license, ensuring compatibility with GPLv2.0.
+app_trace:
+  include:
+    - components/app_trace/app_trace.c
+    - components/app_trace/app_trace_membufs_proto.c
+    - components/app_trace/app_trace_util.c
+    - components/app_trace/port/riscv/port.c
+    - components/app_trace/port/xtensa/port.c
+  allowed_licenses:
+    - Apache-2.0
+    - MIT
+
 xtensa:
   include:
     - 'components/xtensa/**'
