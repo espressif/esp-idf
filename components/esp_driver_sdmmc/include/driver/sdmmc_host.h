@@ -165,7 +165,8 @@ esp_err_t sdmmc_host_set_cclk_always_on(int slot, bool cclk_always_on);
  *       can call sdmmc_host_do_transaction as long as other sdmmc_host_*
  *       functions are not called.
  *
- * @attention Data buffer passed in cmdinfo->data must be in DMA capable memory
+ * @attention Data buffer passed in cmdinfo->data must be in DMA capable memory and aligned to 4 byte boundary. If it's
+ *            behind the cache, both cmdinfo->data and cmdinfo->buflen need to be aligned to cache line boundary.
  *
  * @param slot  slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
  * @param cmdinfo   pointer to structure describing command and data to transfer

@@ -266,15 +266,27 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
     uint32_t reg, int arg, void *datap, size_t datalen)
 {
     esp_err_t err;
-    const size_t max_byte_transfer_size = 512;
+    const int buflen = (datalen + 3) & (~3); //round up to 4
     sdmmc_command_t cmd = {
         .flags = SCF_CMD_AC | SCF_RSP_R5,
         .arg = 0,
         .opcode = SD_IO_RW_EXTENDED,
         .data = datap,
         .datalen = datalen,
-        .blklen = max_byte_transfer_size /* TODO: read max block size from CIS */
+        .buflen = buflen,
+        .blklen = SDMMC_IO_BLOCK_SIZE /* TODO: read max block size from CIS */
     };
+
+    if (unlikely(datalen > 0 && !esp_dma_is_buffer_aligned(datap, buflen, ESP_DMA_BUF_LOCATION_AUTO))) {
+        if (datalen > SDMMC_IO_BLOCK_SIZE || card->host.dma_aligned_buffer == NULL) {
+            // User gives unaligned buffer while `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` not set.
+            return ESP_ERR_INVALID_ARG;
+        }
+        memset(card->host.dma_aligned_buffer, 0xcc, SDMMC_IO_BLOCK_SIZE);
+        memcpy(card->host.dma_aligned_buffer, datap, datalen);
+        cmd.data = card->host.dma_aligned_buffer;
+        cmd.buflen = SDMMC_IO_BLOCK_SIZE;
+    }
 
     uint32_t count; /* number of bytes or blocks, depending on transfer mode */
     if (arg & SD_ARG_CMD53_BLOCK_MODE) {
@@ -283,11 +295,11 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
         }
         count = cmd.datalen / cmd.blklen;
     } else {
-        if (datalen > max_byte_transfer_size) {
+        if (datalen > SDMMC_IO_BLOCK_SIZE) {
             /* TODO: split into multiple operations? */
             return ESP_ERR_INVALID_SIZE;
         }
-        if (datalen == max_byte_transfer_size) {
+        if (datalen == SDMMC_IO_BLOCK_SIZE) {
             count = 0;  // See 5.3.1 SDIO simplifed spec
         } else {
             count = datalen;
@@ -305,6 +317,12 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
     }
 
     err = sdmmc_send_cmd(card, &cmd);
+
+    if (datalen > 0 && cmd.data == card->host.dma_aligned_buffer) {
+        assert(datalen <= SDMMC_IO_BLOCK_SIZE);
+        memcpy(datap, card->host.dma_aligned_buffer, datalen);
+    }
+
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
         return err;
@@ -368,8 +386,8 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, void* dst, size_t size)
 {
-    if (unlikely(size % 4 != 0)) {
-        return ESP_ERR_INVALID_SIZE;
+    if (unlikely(!esp_dma_is_buffer_aligned(dst, size, ESP_DMA_BUF_LOCATION_INTERNAL))) {
+        return ESP_ERR_INVALID_ARG;
     }
     return sdmmc_io_rw_extended(card, function, addr,
             SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT | SD_ARG_CMD53_BLOCK_MODE,
@@ -379,8 +397,8 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_write_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, const void* src, size_t size)
 {
-    if (unlikely(size % 4 != 0)) {
-        return ESP_ERR_INVALID_SIZE;
+    if (unlikely(!esp_dma_is_buffer_aligned(src, size, ESP_DMA_BUF_LOCATION_INTERNAL))) {
+        return ESP_ERR_INVALID_ARG;
     }
     return sdmmc_io_rw_extended(card, function, addr,
             SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT | SD_ARG_CMD53_BLOCK_MODE,

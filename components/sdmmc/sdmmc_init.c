@@ -35,9 +35,13 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 {
     memset(card, 0, sizeof(*card));
     memcpy(&card->host, config, sizeof(*config));
+
     const bool is_spi = host_is_spi(card);
     const bool always = true;
     const bool io_supported = true;
+
+    /* Allocate cache-aligned buffer for SDIO over SDMMC.*/
+    SDMMC_INIT_STEP(!is_spi, sdmmc_allocate_aligned_buf);
 
     /* Check if host flags are compatible with slot configuration. */
     SDMMC_INIT_STEP(!is_spi, sdmmc_fix_host_flags);
