@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -528,12 +528,14 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
 	return wnm_send_bss_transition_mgmt_query(wpa_s, query_reason, btm_candidates, cand_list);
 }
 
+#ifdef CONFIG_MBO
 int esp_mbo_update_non_pref_chan(struct non_pref_chan_s *non_pref_chan)
 {
 	int ret = wpas_mbo_update_non_pref_chan(&g_wpa_supp, non_pref_chan);
 
 	return ret;
 }
+#endif /* CONFIG_MBO */
 
 void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
 			    struct wpa_bss *bss, char *ssid)
@@ -840,10 +842,6 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
 	return -1;
 }
 
-int esp_mbo_update_non_pref_chan(struct non_pref_chan_s *non_pref_chan)
-{
-	return -1;
-}
 void esp_set_scan_ie(void) { }
 #endif /* defined(CONFIG_WPA_11KV_SUPPORT) || defined(CONFIG_IEEE80211R) */
 
