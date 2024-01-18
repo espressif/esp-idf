@@ -201,6 +201,17 @@ config BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION
     help
             Enable encryption connection
 
+config BT_NIMBLE_SM_SC_LVL
+    int "Security level"
+    depends on BT_NIMBLE_SECURITY_ENABLE
+    default 0
+    help
+        LE Security Mode 1 Levels:
+        1. No Security
+        2. Unauthenticated pairing with encryption
+        3. Authenticated pairing with encryption
+        4. Authenticated LE Secure Connections pairing with encryption using a 128-bit strength encryption key.
+
 config BT_NIMBLE_DEBUG
     bool "Enable extra runtime asserts and host debugging"
     default n
