@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -126,6 +126,7 @@ We have two bits to control the interrupt:
 #include "driver/gpio.h"
 #include "hal/spi_hal.h"
 #include "hal/spi_ll.h"
+#include "hal/hal_utils.h"
 #include "esp_heap_caps.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
@@ -163,7 +164,6 @@ typedef struct {
 
 struct spi_device_t {
     int id;
-    int real_clk_freq_hz;
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
     spi_device_interface_config_t cfg;
@@ -368,11 +368,30 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
 #endif
     spi_clock_source_t clk_src = SPI_CLK_SRC_DEFAULT;
     uint32_t clock_source_hz = 0;
+    uint32_t clock_source_div = 1;
     if (dev_config->clock_source) {
         clk_src = dev_config->clock_source;
     }
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
+#if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
+    SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= MIN(clock_source_hz / 2, (80 * 1000000))), "invalid sclk speed", ESP_ERR_INVALID_ARG);
+
+    if (clock_source_hz / 2 > (80 * 1000000)) {    //clock_source_hz beyond peripheral HW limitation, calc pre-divider
+        hal_utils_clk_info_t clk_cfg = {
+            .src_freq_hz = clock_source_hz,
+            .exp_freq_hz = dev_config->clock_speed_hz * 2,  //we have (hs_clk = 2*mst_clk), calc hs_clk first
+            .round_opt = HAL_DIV_ROUND,
+        };
+        hal_utils_calc_clk_div_integer(&clk_cfg, &clock_source_div);
+    }
+    clock_source_div *= 2; //convert to mst_clk function divider
+    if (clock_source_div > SPI_LL_CLK_SRC_PRE_DIV_MAX) {
+        clock_source_div = SPI_LL_CLK_SRC_PRE_DIV_MAX;
+    }
+    clock_source_hz /= clock_source_div;    //actual freq enter to SPI peripheral
+#else
     SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= clock_source_hz), "invalid sclk speed", ESP_ERR_INVALID_ARG);
+#endif
 #ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full
     //duplex mode does absolutely nothing on the ESP32.
@@ -416,10 +435,10 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
 
     //output values of timing configuration
     spi_hal_timing_conf_t temp_timing_conf;
-    int freq;
-    esp_err_t ret = spi_hal_cal_clock_conf(&timing_param, &freq, &temp_timing_conf);
-    temp_timing_conf.clock_source = clk_src;
+    esp_err_t ret = spi_hal_cal_clock_conf(&timing_param, &temp_timing_conf);
     SPI_CHECK(ret == ESP_OK, "assigned clock speed not supported", ret);
+    temp_timing_conf.clock_source = clk_src;
+    temp_timing_conf.source_pre_div = clock_source_div;
 
     //Allocate memory for device
     dev = malloc(sizeof(spi_device_t));
@@ -447,7 +466,6 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     //We want to save a copy of the dev config in the dev struct.
     memcpy(&dev->cfg, dev_config, sizeof(spi_device_interface_config_t));
     dev->cfg.duty_cycle_pos = duty_cycle;
-    dev->real_clk_freq_hz = freq;
     // TODO: if we have to change the apb clock among transactions, re-calculate this each time the apb clock lock is locked.
 
     //Set CS pin, CS options
@@ -483,7 +501,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     hal_dev->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
 
     *handle = dev;
-    ESP_LOGD(SPI_TAG, "SPI%d: New device added to CS%d, effective clock: %dkHz", host_id + 1, freecs, freq / 1000);
+    ESP_LOGD(SPI_TAG, "SPI%d: New device added to CS%d, effective clock: %d Hz", host_id + 1, freecs, temp_timing_conf.real_freq);
 
     return ESP_OK;
 
@@ -545,7 +563,7 @@ esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz)
         return ESP_ERR_INVALID_ARG;
     }
 
-    *freq_khz = handle->real_clk_freq_hz / 1000;
+    *freq_khz = handle->hal_dev.timing_conf.real_freq / 1000;
     return ESP_OK;
 }
 
@@ -567,6 +585,11 @@ static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev)
         /* Configuration has not been applied yet. */
         spi_hal_setup_device(hal, hal_dev);
         SPI_MASTER_PERI_CLOCK_ATOMIC() {
+#if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
+            //we set mst_div as const 2, then (hs_clk = 2*mst_clk) to ensure timing turning work as past
+            //and sure (hs_div * mst_div = source_pre_div)
+            spi_ll_clk_source_pre_div(hal->hw, hal_dev->timing_conf.source_pre_div / 2, 2);
+#endif
             spi_ll_set_clk_source(hal->hw, hal_dev->timing_conf.clock_source);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,7 +52,7 @@ void spi_hal_deinit(spi_hal_context_t *hal)
     }
 }
 
-esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int *out_freq, spi_hal_timing_conf_t *timing_conf)
+esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi_hal_timing_conf_t *timing_conf)
 {
     spi_hal_timing_conf_t temp_conf = {};
 
@@ -73,11 +73,9 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
                   ESP_ERR_NOT_SUPPORTED, freq_limit / 1000. / 1000 );
 #endif
 
+    temp_conf.real_freq = eff_clk_n;
     if (timing_conf) {
         *timing_conf = temp_conf;
-    }
-    if (out_freq) {
-        *out_freq = eff_clk_n;
     }
     return ESP_OK;
 }
