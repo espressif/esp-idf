@@ -822,6 +822,7 @@ void esp_ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, esp_
     if (ack != NULL) {
         ESP_EARLY_LOGI(TAG, "Rx ack %d bytes", ack[0]);
         esp_ieee802154_frame_print(ack);
+        esp_ieee802154_receive_handle_done(ack);
     }
 }
 
@@ -829,6 +830,7 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
 {
     ESP_EARLY_LOGI(TAG, "Rx Done %d bytes", frame[0]);
     esp_ieee802154_frame_print(frame);
+    esp_ieee802154_receive_handle_done(frame);
 }
 
 void esp_ieee802154_energy_detect_done(int8_t power)
