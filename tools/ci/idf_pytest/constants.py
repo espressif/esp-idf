@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """
 Pytest Related Constants. Don't import third-party packages here.
 """
@@ -47,7 +46,7 @@ ENV_MARKERS = {
     # single-dut markers
     'generic': 'tests should be run on generic runners',
     'flash_suspend': 'support flash suspend feature',
-    'ip101': 'connected via wired 10/100M ethernet',
+    'eth_ip101': 'connected via IP101 ethernet transceiver',
     'eth_lan8720': 'connected via LAN8720 ethernet transceiver',
     'eth_rtl8201': 'connected via RTL8201 ethernet transceiver',
     'eth_ksz8041': 'connected via KSZ8041 ethernet transceiver',
