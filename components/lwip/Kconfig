@@ -168,6 +168,13 @@ menu "LWIP"
             Enabling this option allows checking for the destination address
             of a received IPv4 Packet.
 
+    config LWIP_IP_DEFAULT_TTL
+        int "The value for Time-To-Live used by transport layers"
+        range 1 255
+        default 64
+        help
+            Set value for Time-To-Live used by transport layers.
+
     config LWIP_IP4_FRAG
         bool "Enable fragment outgoing IP4 packets"
         default y
