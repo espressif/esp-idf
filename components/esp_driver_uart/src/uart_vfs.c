@@ -357,7 +357,7 @@ static int uart_fsync(int fd)
 {
     assert(fd >= 0 && fd < 3);
     _lock_acquire_recursive(&s_ctx[fd]->write_lock);
-    esp_rom_uart_tx_wait_idle((uint8_t) fd);
+    esp_rom_output_tx_wait_idle((uint8_t) fd);
     _lock_release_recursive(&s_ctx[fd]->write_lock);
     return 0;
 }

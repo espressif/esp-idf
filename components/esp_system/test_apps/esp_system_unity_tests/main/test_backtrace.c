@@ -107,7 +107,7 @@ TEST_CASE_MULTIPLE_STAGES("Test backtrace from interrupt watchdog timeout", "[re
 
 static void write_char_crash(char c)
 {
-    esp_rom_uart_putc(c);
+    esp_rom_output_putc(c);
     hal_memset((void *)0x00000001, 0, 1);
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,9 +120,9 @@ int test_tp_print_to_scope(float *data, unsigned char channel_num)
         return 0;
     } else {
 #if ROM_UART_DRIVER_ENABLE
-        esp_rom_uart_tx_wait_idle(uart_num);   // Default print uart mumber is 0.
+        esp_rom_output_tx_wait_idle(uart_num);   // Default print uart mumber is 0.
         for(int i=0; i<out_len; i++) {
-            esp_rom_uart_tx_one_char(out_data[i]);
+            esp_rom_output_tx_one_char(out_data[i]);
         }
         return out_len;
 #else
@@ -154,9 +154,9 @@ int test_tp_print_to_scope(float *data, unsigned char channel_num)
 esp_err_t test_tp_scope_debug_init(uint8_t uart_num, int tx_io_num, int rx_io_num, int baud_rate)
 {
 #if ROM_UART_DRIVER_ENABLE
-    esp_rom_uart_tx_wait_idle(0);   // Default print uart mumber is 0.
+    esp_rom_output_tx_wait_idle(0);   // Default print uart mumber is 0.
     if(uart_num != 0) {
-        esp_rom_uart_set_as_console(uart_num);
+        esp_rom_output_set_as_console(uart_num);
     }
 #else
     if(uart_used == uart_num) {

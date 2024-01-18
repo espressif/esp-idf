@@ -74,3 +74,7 @@ config ESP_ROM_WDT_INIT_PATCH
 config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
     bool
     default y
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default -1

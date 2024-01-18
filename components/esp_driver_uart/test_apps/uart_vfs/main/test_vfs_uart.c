@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,11 +25,11 @@
 
 static void fwrite_str_loopback(const char* str, size_t size)
 {
-    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
     uart_ll_set_loop_back(&UART0, 1);
     fwrite(str, 1, size, stdout);
     fflush(stdout);
-    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
     vTaskDelay(2 / portTICK_PERIOD_MS);
     uart_ll_set_loop_back(&UART0, 0);
 }
@@ -42,7 +42,7 @@ static void flush_stdin_stdout(void)
         ;
     }
     fflush(stdout);
-    esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
 }
 
 TEST_CASE("can read from stdin", "[vfs_uart]")

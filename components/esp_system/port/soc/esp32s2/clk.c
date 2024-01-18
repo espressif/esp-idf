@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,8 +69,8 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
         /* Ocode calibration will switch to XTAL frequency, need to wait for UART FIFO
          * to be empty, to avoid garbled output.
          */
-        if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
-            esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+        if (CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM >= 0) {
+            esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
         }
     }
     rtc_init(cfg);
@@ -123,8 +123,8 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
-    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
-        esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    if (CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM >= 0) {
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
     }
 
     if (res) {

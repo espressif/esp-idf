@@ -31,7 +31,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     // This is not needed on power on reset, when ROM bootloader is running at
     // 40 MHz. But in case of TG WDT reset, CPU may still be running at >80 MHZ,
     // and will be done with the bootloader much earlier than UART FIFO is empty.
-    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_output_tx_wait_idle(0);
 
     /* Set CPU to a higher certain frequency. Keep other clocks unmodified. */
     int cpu_freq_mhz = CPU_CLK_FREQ_MHZ_BTLD;

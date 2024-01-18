@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,14 @@ PROVIDE ( esp_rom_uart_rx_one_char    = uart_rx_one_char );
 PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
 PROVIDE ( esp_rom_uart_set_as_console = uart_tx_switch );
 PROVIDE ( esp_rom_uart_putc           = ets_write_char_uart );
+
+PROVIDE ( esp_rom_output_flush_tx       = uart_tx_flush );
+PROVIDE ( esp_rom_output_tx_one_char    = uart_tx_one_char );
+PROVIDE ( esp_rom_output_tx_wait_idle   = uart_tx_wait_idle );
+PROVIDE ( esp_rom_output_rx_one_char    = uart_rx_one_char );
+PROVIDE ( esp_rom_output_rx_string      = UartRxString );
+PROVIDE ( esp_rom_output_set_as_console = uart_tx_switch );
+PROVIDE ( esp_rom_output_putc           = ets_write_char_uart );
 
 PROVIDE ( esp_rom_md5_init   = MD5Init );
 PROVIDE ( esp_rom_md5_update = MD5Update );
