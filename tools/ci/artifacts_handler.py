@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import fnmatch
 import glob
 import os
+import re
 import typing as t
 import zipfile
 from enum import Enum
@@ -149,7 +149,8 @@ def _upload_files(
 
     try:
         if has_file:
-            obj_name = f'{pipeline_id}/{artifact_type.value}/{job_name.rsplit(" ", maxsplit=1)[0]}/{job_id}.zip'
+            job_name_sanitized = re.sub(r' \[\d+]', '', job_name)
+            obj_name = f'{pipeline_id}/{artifact_type.value}/{job_name_sanitized}/{job_id}.zip'
             print(f'Created archive file: {job_id}.zip, uploading as {obj_name}')
 
             client.fput_object(getenv('IDF_S3_BUCKET'), obj_name, f'{job_id}.zip')
