@@ -265,7 +265,7 @@ Sphinx 新手怎么办
    
     * 在 `Read the Docs <https://readthedocs.org/>`_ 建立账号，在云端生成文档。 Read the Docs 免费提供文档生成和存储，且速度快、质量高。
 
-4. 在生成文档前预览，可使用 `Sublime Text <https://www.sublimetext.com/>`_ 编辑器和 `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ 插件。 
+4. 在生成文档前预览，可使用 `Sublime Text <https://www.sublimetext.com/>`_ , `Codelobster <https://codelobster.com/>`_ 编辑器和 `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ 插件。 
 
 
 .. _setup-for-building-documentation:
