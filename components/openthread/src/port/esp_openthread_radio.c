@@ -174,9 +174,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
                 otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
             } else {
                 otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
-#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
-            esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
-#endif
+                esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
                 s_ack_frame.mPsdu = NULL;
             }
         }
@@ -228,9 +226,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
             {
                 otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             }
-#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
             esp_ieee802154_receive_handle_done(s_receive_frame[s_recv_queue.head].mPsdu - 1);
-#endif
             s_receive_frame[s_recv_queue.head].mPsdu = NULL;
             s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
             s_recv_queue.used--;
