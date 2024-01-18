@@ -34,3 +34,5 @@ entries:
         gpio_hal: gpio_hal_intr_disable (noflash)
     if LCD_RGB_ISR_IRAM_SAFE = y:
         lcd_hal: lcd_hal_cal_pclk_freq (noflash)
+    if SOC_PMU_SUPPORTED = y:
+        pmu_hal (noflash)
