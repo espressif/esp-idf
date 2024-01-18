@@ -31,12 +31,6 @@ CONFIG_LOG_BOOTLOADER_LEVEL_INFO=n
 # End of deprecated options
 
 #
-# IEEE 802.15.4
-#
-CONFIG_IEEE802154_RECEIVE_DONE_HANDLER=y
-# end of IEEE 802.15.4
-
-#
 # Configurations for optimizing the size of ot_rcp firmware
 #
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y

@@ -31,9 +31,3 @@ CONFIG_ZB_ENABLED=y
 CONFIG_ZB_ZCZR=y
 # end of Zboss
 # end of Component config
-
-#
-# IEEE802154
-#
-CONFIG_IEEE802154_RECEIVE_DONE_HANDLER=y
-# end of IEEE802154
