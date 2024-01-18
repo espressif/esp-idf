@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1195,18 +1195,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     btdm_controller_mem_init();
 
-#if CONFIG_MAC_BB_PD
-    if (esp_register_mac_bb_pd_callback(btdm_mac_bb_power_down_cb) != 0) {
-        err = ESP_ERR_INVALID_ARG;
-        goto error;
-    }
-
-    if (esp_register_mac_bb_pu_callback(btdm_mac_bb_power_up_cb) != 0) {
-        err = ESP_ERR_INVALID_ARG;
-        goto error;
-    }
-#endif
-
     osi_funcs_p = (struct osi_funcs_t *)malloc_internal_wrapper(sizeof(struct osi_funcs_t));
     if (osi_funcs_p == NULL) {
         return ESP_ERR_NO_MEM;
@@ -1447,11 +1435,6 @@ static void bt_controller_deinit_internal(void)
         btdm_lpcycle_us = 0;
     } while (0);
 
-#if CONFIG_MAC_BB_PD
-    esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
-    esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
-#endif
-
     esp_bt_power_domain_off();
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_deinit();
@@ -1500,6 +1483,18 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         s_lp_stat.pm_lock_released = 0;
 #endif
 
+#if CONFIG_MAC_BB_PD
+        if (esp_register_mac_bb_pd_callback(btdm_mac_bb_power_down_cb) != 0) {
+            ret = ESP_ERR_INVALID_ARG;
+            goto error;
+        }
+
+        if (esp_register_mac_bb_pu_callback(btdm_mac_bb_power_up_cb) != 0) {
+            ret = ESP_ERR_INVALID_ARG;
+            goto error;
+        }
+#endif
+
         if (s_lp_cntl.enable) {
             btdm_controller_enable_sleep(true);
         }
@@ -1519,6 +1514,11 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 error:
     // disable low power mode
     do {
+#if CONFIG_MAC_BB_PD
+        esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
+        esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
+#endif
+
         btdm_controller_enable_sleep(false);
 #ifdef CONFIG_PM_ENABLE
         if (s_lp_cntl.no_light_sleep) {
@@ -1565,6 +1565,11 @@ esp_err_t esp_bt_controller_disable(void)
 
     // disable low power mode
     do {
+#if CONFIG_MAC_BB_PD
+        esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
+        esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
+#endif
+
 #ifdef CONFIG_PM_ENABLE
         if (s_lp_cntl.no_light_sleep) {
             esp_pm_lock_release(s_light_sleep_pm_lock);
