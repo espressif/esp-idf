@@ -35,8 +35,8 @@ typedef struct lwip_peer2peer_ctx {
     bool ppp_lcp_echo_disabled;
 #endif
 #ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
-    uint32_t ppp_our_ip4_addr;      // our desired IP (0 if no preference)
-    uint32_t ppp_their_ip4_addr;    // their desired IP (0 if no preference)
+    esp_ip4_addr_t ppp_our_ip4_addr;      // our desired IP (IPADDR_ANY if no preference)
+    esp_ip4_addr_t ppp_their_ip4_addr;    // their desired IP (IPADDR_ANY if no preference)
 #endif
     ppp_pcb *ppp;
 } lwip_peer2peer_ctx_t;
@@ -251,14 +251,14 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
     }
 #endif
 #ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
-    if (ppp_ctx->ppp_our_ip4_addr != 0) {
+    if (ppp_ctx->ppp_our_ip4_addr.addr != IPADDR_ANY) {
         // Set our preferred address, and accept the remote
-        ppp_ctx->ppp->ipcp_wantoptions.ouraddr = ppp_ctx->ppp_our_ip4_addr;
+        ppp_ctx->ppp->ipcp_wantoptions.ouraddr = ppp_ctx->ppp_our_ip4_addr.addr;
         ppp_ctx->ppp->ipcp_wantoptions.accept_remote = 1;
     }
-    if (ppp_ctx->ppp_their_ip4_addr != 0) {
+    if (ppp_ctx->ppp_their_ip4_addr.addr != IPADDR_ANY) {
         // Set their preferred address, and accept the local
-        ppp_ctx->ppp->ipcp_wantoptions.hisaddr = ppp_ctx->ppp_their_ip4_addr;
+        ppp_ctx->ppp->ipcp_wantoptions.hisaddr = ppp_ctx->ppp_their_ip4_addr.addr;
         ppp_ctx->ppp->ipcp_wantoptions.accept_local = 1;
     }
 #endif // CONFIG_LWIP_PPP_SERVER_SUPPORT
