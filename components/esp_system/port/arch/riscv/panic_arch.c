@@ -60,20 +60,21 @@ static inline void print_cache_err_details(const void *frame)
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 static inline void print_assist_debug_details(const void *frame)
 {
-    uint32_t core_id = esp_cpu_get_core_id();
+    uint32_t core_id = esp_hw_stack_guard_get_fired_cpu();
+    if (core_id == ESP_HW_STACK_GUARD_NOT_FIRED) {
+        panic_print_str("ASSIST_DEBUG is not triggered BUT interrupt occured!\r\n\r\n");
+        core_id = 0;
+    }
     uint32_t sp_min, sp_max;
     const char *task_name = pcTaskGetName(xTaskGetCurrentTaskHandleForCore(core_id));
-    esp_hw_stack_guard_get_bounds(&sp_min, &sp_max);
+    esp_hw_stack_guard_get_bounds(core_id, &sp_min, &sp_max);
 
     panic_print_str("\r\n");
-    if (!esp_hw_stack_guard_is_fired()) {
-        panic_print_str("ASSIST_DEBUG is not triggered BUT interrupt occured!\r\n\r\n");
-    }
 
     panic_print_str("Detected in task \"");
     panic_print_str(task_name);
     panic_print_str("\" at 0x");
-    panic_print_hex((int) esp_hw_stack_guard_get_pc());
+    panic_print_hex((int) esp_hw_stack_guard_get_pc(core_id));
     panic_print_str("\r\n");
     panic_print_str("Stack pointer: 0x");
     panic_print_hex((int)((RvExcFrame *)frame)->sp);
@@ -250,7 +251,10 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     else if (frame->mcause == ETS_ASSIST_DEBUG_INUM) {
-        info->core = esp_cache_err_get_cpuid();
+        info->core = esp_hw_stack_guard_get_fired_cpu();
+        if (info->core == ESP_HW_STACK_GUARD_NOT_FIRED) {
+            info->core = 0;
+        }
         info->reason = "Stack protection fault";
         info->details = print_assist_debug_details;
     }
