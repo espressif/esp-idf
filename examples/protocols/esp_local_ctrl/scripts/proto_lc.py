@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -36,7 +36,7 @@ def get_prop_count_request(security_ctx):
     payload = local_ctrl_pb2.CmdGetPropertyCount()
     req.cmd_get_prop_count.MergeFrom(payload)
     enc_cmd = security_ctx.encrypt_data(req.SerializeToString())
-    return enc_cmd
+    return enc_cmd.decode('latin-1')
 
 
 def get_prop_count_response(security_ctx, response_data):
@@ -56,7 +56,7 @@ def get_prop_vals_request(security_ctx, indices):
     payload.indices.extend(indices)
     req.cmd_get_prop_vals.MergeFrom(payload)
     enc_cmd = security_ctx.encrypt_data(req.SerializeToString())
-    return enc_cmd
+    return enc_cmd.decode('latin-1')
 
 
 def get_prop_vals_response(security_ctx, response_data):
@@ -85,7 +85,7 @@ def set_prop_vals_request(security_ctx, indices, values):
         prop.value = v
     req.cmd_set_prop_vals.MergeFrom(payload)
     enc_cmd = security_ctx.encrypt_data(req.SerializeToString())
-    return enc_cmd
+    return enc_cmd.decode('latin-1')
 
 
 def set_prop_vals_response(security_ctx, response_data):
