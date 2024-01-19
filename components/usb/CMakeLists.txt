@@ -18,8 +18,12 @@ if(CONFIG_SOC_USB_OTG_SUPPORTED)
                      "usb_helpers.c"
                      "usb_host.c"
                      "usb_private.c"
-                     "usbh.c"
-                     "usb_phy.c")
+                     "usbh.c")
+    if(NOT ${target} STREQUAL "esp32p4")
+        list(APPEND srcs "usb_phy.c")
+    else()
+        list(APPEND srcs "usb_phy_p4.c")
+    endif()
     list(APPEND include "include")
     list(APPEND priv_includes "private_include")
 endif()
