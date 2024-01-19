@@ -360,6 +360,12 @@ examples/system/ulp/ulp_riscv/i2c:
   depends_components:
     - ulp
 
+examples/system/ulp/ulp_riscv/interrupts:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  depends_components:
+    - ulp
+
 examples/system/ulp/ulp_riscv/touch:
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
