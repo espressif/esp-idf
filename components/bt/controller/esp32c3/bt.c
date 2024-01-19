@@ -463,9 +463,8 @@ static void interrupt_set_wrapper(int cpu_no, int intr_source, int intr_num, int
 {
     esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
 #if __riscv
-    esprv_intc_int_set_priority(intr_num, intr_prio);
-    //esprv_intc_int_enable_level(1 << intr_num);
-    esprv_intc_int_set_type(intr_num, 0);
+    esprv_int_set_priority(intr_num, intr_prio);
+    esprv_int_set_type(intr_num, 0);
 #endif
 }
 

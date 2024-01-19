@@ -10,22 +10,13 @@
 #include "esp_intr_alloc.h"
 #include "esp_debug_helpers.h"
 #include "soc/periph_defs.h"
-
+#include "hal/crosscore_int_ll.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 
 #if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #include "esp_gdbstub.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-#include "soc/dport_reg.h"
-#else
-#include "soc/system_reg.h"
-#endif
-#if CONFIG_IDF_TARGET_ESP32P4
-#include "soc/hp_system_reg.h"
 #endif
 
 #define REASON_YIELD            BIT(0)
@@ -53,29 +44,7 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
     volatile uint32_t *my_reason=arg;
 
     //Clear the interrupt first.
-#if CONFIG_IDF_TARGET_ESP32
-    if (esp_cpu_get_core_id()==0) {
-        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
-    } else {
-        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
-    }
-#elif CONFIG_IDF_TARGET_ESP32S2
-    DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
-#elif CONFIG_IDF_TARGET_ESP32S3
-    if (esp_cpu_get_core_id()==0) {
-        WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
-    } else {
-        WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
-    }
-#elif CONFIG_IDF_TARGET_ESP32P4
-    if (esp_cpu_get_core_id() == 0) {
-        WRITE_PERI_REG(HP_SYSTEM_CPU_INT_FROM_CPU_0_REG, 0);
-    } else {
-        WRITE_PERI_REG(HP_SYSTEM_CPU_INT_FROM_CPU_1_REG, 0);
-    }
-#elif CONFIG_IDF_TARGET_ARCH_RISCV
-    WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
-#endif
+    crosscore_int_ll_clear_interrupt(esp_cpu_get_core_id());
 
     //Grab the reason and clear it.
     portENTER_CRITICAL_ISR(&reason_spinlock);
@@ -142,29 +111,7 @@ static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask) 
     reason[core_id] |= reason_mask;
     portEXIT_CRITICAL_ISR(&reason_spinlock);
     //Poke the other CPU.
-#if CONFIG_IDF_TARGET_ESP32
-    if (core_id==0) {
-        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
-    } else {
-        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
-    }
-#elif CONFIG_IDF_TARGET_ESP32S2
-    DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
-#elif CONFIG_IDF_TARGET_ESP32S3
-    if (core_id==0) {
-        WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
-    } else {
-        WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, SYSTEM_CPU_INTR_FROM_CPU_1);
-    }
-#elif CONFIG_IDF_TARGET_ESP32P4
-    if (core_id==0) {
-        WRITE_PERI_REG(HP_SYSTEM_CPU_INT_FROM_CPU_0_REG, HP_SYSTEM_CPU_INT_FROM_CPU_0);
-    } else {
-        WRITE_PERI_REG(HP_SYSTEM_CPU_INT_FROM_CPU_1_REG, HP_SYSTEM_CPU_INT_FROM_CPU_1);
-    }
-#elif CONFIG_IDF_TARGET_ARCH_RISCV
-    WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
-#endif
+    crosscore_int_ll_trigger_interrupt(core_id);
 }
 
 void IRAM_ATTR esp_crosscore_int_send_yield(int core_id)

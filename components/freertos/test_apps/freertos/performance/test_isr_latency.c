@@ -23,8 +23,8 @@
 #define TEST_CLR_INT_MASK(mask) xt_set_intclear(mask)
 #elif CONFIG_IDF_TARGET_ARCH_RISCV
 #include "riscv/interrupt.h"
-#define TEST_SET_INT_MASK(mask) esprv_intc_int_enable(mask)
-#define TEST_CLR_INT_MASK(mask) esprv_intc_int_disable(mask)
+#define TEST_SET_INT_MASK(mask) esprv_int_enable(mask)
+#define TEST_CLR_INT_MASK(mask) esprv_int_disable(mask)
 #endif
 
 #ifndef __riscv // TODO: IDF-4416

@@ -159,7 +159,7 @@ FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 {
     // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    esprv_intc_int_enable(intr_mask);
+    esprv_int_enable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
@@ -167,7 +167,7 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 {
     // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    esprv_intc_int_disable(intr_mask);
+    esprv_int_disable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
