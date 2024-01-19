@@ -296,6 +296,9 @@ static void vPortCleanUpCoprocArea(void *pvTCB)
     /* If the Task used any coprocessor, check if it is the actual owner of any.
      * If yes, reset the owner. */
     if (sa->sa_enable != 0) {
+        /* Restore the original lowest address of the stack in the TCB */
+        task->pxDummy6 = sa->sa_tcbstack;
+
         /* Get the core the task is pinned on */
         #if ( configNUM_CORES > 1 )
             const BaseType_t coreID = task->xDummyCoreID;
@@ -774,30 +777,56 @@ void vPortTaskPinToCore(StaticTask_t* task, int coreid)
 }
 #endif /* configNUM_CORES > 1 */
 
+
+/**
+ * @brief Function to call to simulate an `abort()` occurring in a different context than the one it's called from.
+ */
+extern void xt_unhandled_exception(void *frame);
+
 /**
  * @brief Get coprocessor save area out of the given task. If the coprocessor area is not created,
  *        it shall be allocated.
+ *
+ * @param task Task to get the coprocessor save area of
+ * @param allocate When true, memory will be allocated for the coprocessor if it hasn't been allocated yet.
+ *                 When false, the coprocessor memory will be left as NULL if not allocated.
+ * @param coproc Coprocessor number to allocate memory for
  */
-RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, int coproc)
+RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int coproc)
 {
+    assert(coproc < SOC_CPU_COPROC_NUM);
+
     const UBaseType_t bottomstack = (UBaseType_t) task->pxDummy8;
     RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(bottomstack);
     /* Check if the allocator is NULL. Since we don't have a way to get the end of the stack
      * during its initialization, we have to do this here */
     if (sa->sa_allocator == 0) {
+        /* Since the lowest stack address shall not be used as `sp` anymore, we will modify it */
+        sa->sa_tcbstack = task->pxDummy6;
         sa->sa_allocator = (UBaseType_t) task->pxDummy6;
     }
 
     /* Check if coprocessor area is allocated */
-    if (sa->sa_coprocs[coproc] == NULL) {
+    if (allocate && sa->sa_coprocs[coproc] == NULL) {
         const uint32_t coproc_sa_sizes[] = {
             RV_COPROC0_SIZE, RV_COPROC1_SIZE
         };
-        /* Allocate the save area at end of the allocator */
-        UBaseType_t allocated = sa->sa_allocator + coproc_sa_sizes[coproc];
-        sa->sa_coprocs[coproc] = (void*) allocated;
-        /* Update the allocator address for next use */
-        sa->sa_allocator = allocated;
+        /* The allocator points to a usable part of the stack, use it for the coprocessor */
+        sa->sa_coprocs[coproc] = (void*) (sa->sa_allocator);
+        sa->sa_allocator += coproc_sa_sizes[coproc];
+        /* Update the lowest address of the stack to prevent FreeRTOS performing overflow/watermark checks on the coprocessors contexts */
+        task->pxDummy6 = (void*) (sa->sa_allocator);
+        /* Make sure the Task stack pointer is not pointing to the coprocessor context area, in other words, make
+         * sure we don't have a stack overflow */
+        void* task_sp = task->pxDummy1;
+        if (task_sp <= task->pxDummy6) {
+            /* In theory we need to call vApplicationStackOverflowHook to trigger the stack overflow callback,
+             * but in practice, since we are already in an exception handler, this won't work, so let's manually
+             * trigger an exception with the previous FPU owner's TCB */
+            g_panic_abort = true;
+            g_panic_abort_details = (char *) "ERROR: Stack overflow while saving FPU context!\n";
+            xt_unhandled_exception(task_sp);
+        }
     }
     return sa;
 }
@@ -825,7 +854,8 @@ RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* 
     StaticTask_t* former = Atomic_SwapPointers_p32((void**) owner_addr, owner);
     /* Get the save area of former owner */
     if (former != NULL) {
-        sa = pxPortGetCoprocArea(former, coproc);
+        /* Allocate coprocessor memory if not available yet */
+        sa = pxPortGetCoprocArea(former, true, coproc);
     }
     return sa;
 }
@@ -836,7 +866,6 @@ RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* 
  */
 void vPortCoprocUsedInISR(void* frame)
 {
-    extern void xt_unhandled_exception(void*);
     /* Since this function is called from an exception handler, the interrupts are disabled,
      * as such, it is not possible to trigger another exception as would `abort` do.
      * Simulate an abort without actually triggering an exception. */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -193,6 +193,12 @@ rtos_save_fpu_coproc_nosave:
 #endif /* configNUM_CORES > 1 */
     /* Check if we have to restore a previous FPU context from the current TCB */
     mv    a0, s1
+    /* Do not allocate memory for the FPU yet, delay this until another task wants to use it.
+     * This guarantees that if a stack overflow occurs when allocating FPU context on the stack,
+     * the current task context is flushed and updated in the TCB, generating a correct backtrace
+     * from the panic handler.  */
+    li    a1, 0
+    li    a2, FPU_COPROC_IDX
     call  pxPortGetCoprocArea
     /* Get the enable flags from the coprocessor save area */
     lw    a1, RV_COPROC_ENABLE(a0)

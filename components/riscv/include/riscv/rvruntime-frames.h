@@ -148,6 +148,8 @@ STRUCT_END(RvFPUSaveArea)
 STRUCT_BEGIN
 /* Enable bitmap: BIT(i) represents coprocessor i, 1 is used, 0 else */
 STRUCT_FIELD  (long, 4, RV_COPROC_ENABLE, sa_enable)
+/* Address of the original lowest stack address, convenient when the stack needs to re-initialized */
+STRUCT_FIELD  (void*, 4, RV_COPROC_TCB_STACK, sa_tcbstack)
 /* Address of the pool of memory used to allocate coprocessors save areas */
 STRUCT_FIELD  (long, 4, RV_COPROC_ALLOCATOR, sa_allocator)
 /* Pointer to the coprocessors save areas */
