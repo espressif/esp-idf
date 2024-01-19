@@ -208,10 +208,8 @@ tools/test_apps/system/no_embedded_paths:
       reason: the other targets are not tested yet
 
 tools/test_apps/system/panic:
-  disable:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) not supported yet # TODO: IDF-7511
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
 
 tools/test_apps/system/ram_loadable_app:
   disable_test:
