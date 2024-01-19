@@ -228,7 +228,7 @@ The ROM ELF file is automatically loaded from a location based on the ``IDF_PATH
 Target Reset on Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default, IDF Monitor will reset the target when connecting to it. The reset of the target chip is performed using the DTR and RTS serial lines. To prevent IDF Monitor from automatically resetting the target on connection, call IDF Monitor with the ``--no-reset`` option (e.g., ``idf.py monitor --no-reset``).
+By default, IDF Monitor will reset the target when connecting to it. The reset of the target chip is performed using the DTR and RTS serial lines. To prevent IDF Monitor from automatically resetting the target on connection, call IDF Monitor with the ``--no-reset`` option (e.g., ``idf.py monitor --no-reset``). You can also set the environment variable ``ESP_IDF_MONITOR_NO_RESET`` to ``1`` to achieve the same behavior.
 
 .. note::
 
