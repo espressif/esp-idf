@@ -13,7 +13,7 @@ The ULP RISC-V coprocessor code is written in C (assembly is also possible) and 
 If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../../get-started/index>`, then the toolchain should already be installed.
 
 .. note::
-    
+
     In earlier versions of ESP-IDF, RISC-V toolchain had a different prefix: ``riscv-none-embed-gcc``.
 
 Compiling the ULP RISC-V Code
@@ -23,8 +23,8 @@ To compile the ULP RISC-V code as part of the component, the following steps mus
 
 1. The ULP RISC-V code, written in C or assembly (must use the ``.S`` extension), must be placed in a separate directory inside the component directory, for instance, ``ulp/``.
 
-.. note:: 
-    
+.. note::
+
     When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument as it is currently done for the ULP FSM. See the step below for how to properly add ULP source files.
 
 2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
@@ -167,12 +167,12 @@ The RTC I2C controller provides I2C master functionality in the RTC domain. The 
 
 Once the RTC I2C controller is initialized, the I2C slave device address must be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_addr` API before any read or write operation is performed.
 
-.. note:: 
-    
+.. note::
+
     The RTC I2C peripheral always expects a slave sub-register address to be programmed via the :cpp:func:`ulp_riscv_i2c_master_set_slave_reg_addr` API. If it is not, the I2C peripheral uses the ``SENS_SAR_I2C_CTRL_REG[18:11]`` as the sub-register address for the subsequent read or write operations. This could make the RTC I2C peripheral incompatible with certain I2C devices or sensors which do not need any sub-register to be programmed.
 
-.. note:: 
-    
+.. note::
+
     There is no hardware atomicity protection in accessing the RTC I2C peripheral between the main CPU and the ULP RISC-V core. Therefore, care must be taken that both cores are not accessing the peripheral simultaneously.
 
 In case your RTC I2C based ULP RISC-V program is not working as expected, the following sanity checks can help in debugging the issue:

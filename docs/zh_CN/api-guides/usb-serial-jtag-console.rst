@@ -61,7 +61,7 @@ USB 串行/JTAG 控制器可以自动将 {IDF_TARGET_NAME} 置于下载模式。
 .. note::
 
     USB 串行/JTAG 控制器的串行端口通常：
-    
+
     - 在 Linux 系统上显示为 ``/dev/ttyACM*``
     - 在 MAC 系统上显示为 ``/dev/cu*``
     - 在 Windows 设备管理器上显示为 ``COM*`` 端口

@@ -401,7 +401,7 @@ flash 断电
 
     在函数 :cpp:func:`esp_deep_sleep_start` 前增加以下代码即可避免额外电流消耗::
 
-	rtc_gpio_isolate(GPIO_NUM_12);
+        rtc_gpio_isolate(GPIO_NUM_12);
 
 .. only:: esp32c2 or esp32c3
 

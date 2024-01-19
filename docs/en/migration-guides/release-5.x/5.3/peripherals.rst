@@ -6,7 +6,7 @@ Peripherals
 Drivers
 -------
 
-In order to control the dependence of other components on drivers at a smaller granularity, the original peripheral drivers under the `driver`` component were split into separate components:
+In order to control the dependence of other components on drivers at a smaller granularity, the original peripheral drivers under the ``driver`` component were split into separate components:
 
 - `esp_driver_gptimer` - Driver for general purpose timers
 - `esp_driver_pcnt` - Driver for pulse counter
@@ -28,7 +28,7 @@ In order to control the dependence of other components on drivers at a smaller g
 - `esp_driver_parlio` - Driver for Parallel IO
 - `esp_driver_usb_serial_jtag` - Driver for USB_SERIAL_JTAG
 
-For compatibility, the original `driver`` component is still treated as an all-in-one component by registering these `esp_driver_xyz`` components as its public dependencies. In other words, you do not need to modify the CMake file of an existing project, but you now have a way to specify the specific peripheral driver that your project depends on.
+For compatibility, the original ``driver`` component is still treated as an all-in-one component by registering these `esp_driver_xyz` components as its public dependencies. In other words, you do not need to modify the CMake file of an existing project, but you now have a way to specify the specific peripheral driver that your project depends on.
 
 Originally, you may have used **linker.lf** to specify the link location of some driver functions in memory space, but now, because the location of the driver files have been moved, you need to make changes your **linker.lf** file accordingly. For example, a linker.lf file with the following entries:
 

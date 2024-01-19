@@ -64,28 +64,28 @@ If an IO pin is routed to a peripheral signal through the GPIO matrix, the signa
     GPIO Glitch Filter
     ------------------
 
-	The {IDF_TARGET_NAME} chip features hardware filters to remove unwanted glitch pulses from the input GPIO, which can help reduce false triggering of the interrupt and prevent a noise being routed to the peripheral side.
+    The {IDF_TARGET_NAME} chip features hardware filters to remove unwanted glitch pulses from the input GPIO, which can help reduce false triggering of the interrupt and prevent a noise being routed to the peripheral side.
 
-	.. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
+    .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
 
-		Each GPIO can be configured with a glitch filter, which can be used to filter out pulses shorter than **two** sample clock cycles. The duration of the filter is not configurable. The sample clock is the clock source of the IO_MUX. In the driver, we call this kind of filter as ``pin glitch filter``. You can create the filter handle by calling :cpp:func:`gpio_new_pin_glitch_filter`. All the configurations for a pin glitch filter are listed in the :cpp:type:`gpio_pin_glitch_filter_config_t` structure.
+        Each GPIO can be configured with a glitch filter, which can be used to filter out pulses shorter than **two** sample clock cycles. The duration of the filter is not configurable. The sample clock is the clock source of the IO_MUX. In the driver, we call this kind of filter as ``pin glitch filter``. You can create the filter handle by calling :cpp:func:`gpio_new_pin_glitch_filter`. All the configurations for a pin glitch filter are listed in the :cpp:type:`gpio_pin_glitch_filter_config_t` structure.
 
-		- :cpp:member:`gpio_pin_glitch_filter_config_t::gpio_num` sets the GPIO number to enable the glitch filter.
+        - :cpp:member:`gpio_pin_glitch_filter_config_t::gpio_num` sets the GPIO number to enable the glitch filter.
 
-	.. only:: SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    .. only:: SOC_GPIO_FLEX_GLITCH_FILTER_NUM
 
-		{IDF_TARGET_FLEX_GLITCH_FILTER_NUM:default="8"}
+        {IDF_TARGET_FLEX_GLITCH_FILTER_NUM:default="8"}
 
-		{IDF_TARGET_NAME} provides {IDF_TARGET_FLEX_GLITCH_FILTER_NUM} flexible glitch filters, whose duration is configurable. We refer to this kind of filter as ``flex flitch filter``. Each of them can be applied to any input GPIO. However, applying multiple filters to the same GPIO does not make difference from one. You can create the filter handle by calling :cpp:func:`gpio_new_flex_glitch_filter`. All the configurations for a flexible glitch filter are listed in the :cpp:type:`gpio_flex_glitch_filter_config_t` structure.
+        {IDF_TARGET_NAME} provides {IDF_TARGET_FLEX_GLITCH_FILTER_NUM} flexible glitch filters, whose duration is configurable. We refer to this kind of filter as ``flex flitch filter``. Each of them can be applied to any input GPIO. However, applying multiple filters to the same GPIO does not make difference from one. You can create the filter handle by calling :cpp:func:`gpio_new_flex_glitch_filter`. All the configurations for a flexible glitch filter are listed in the :cpp:type:`gpio_flex_glitch_filter_config_t` structure.
 
-		- :cpp:member:`gpio_flex_glitch_filter_config_t::gpio_num` sets the GPIO that will be applied to the flex glitch filter.
-		- :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns` and :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` are the key parameters of the glitch filter. During :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns`, any pulse whose width is shorter than :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` will be discarded. Please note that, you can not set :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` bigger than :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns`.
+        - :cpp:member:`gpio_flex_glitch_filter_config_t::gpio_num` sets the GPIO that will be applied to the flex glitch filter.
+        - :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns` and :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` are the key parameters of the glitch filter. During :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns`, any pulse whose width is shorter than :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` will be discarded. Please note that, you can not set :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` bigger than :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns`.
 
-	.. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER and SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER and SOC_GPIO_FLEX_GLITCH_FILTER_NUM
 
-		Please note, the ``pin glitch filter`` and ``flex glitch filter`` are independent. You can enable both of them for the same GPIO.
+        Please note, the ``pin glitch filter`` and ``flex glitch filter`` are independent. You can enable both of them for the same GPIO.
 
-	The glitch filter is disabled by default, and can be enabled by calling :cpp:func:`gpio_glitch_filter_enable`. To recycle the filter, you can call :cpp:func:`gpio_del_glitch_filter`. Please note, before deleting the filter, you should disable it first by calling :cpp:func:`gpio_glitch_filter_disable`.
+    The glitch filter is disabled by default, and can be enabled by calling :cpp:func:`gpio_glitch_filter_enable`. To recycle the filter, you can call :cpp:func:`gpio_del_glitch_filter`. Please note, before deleting the filter, you should disable it first by calling :cpp:func:`gpio_glitch_filter_disable`.
 
 
 .. only:: SOC_GPIO_SUPPORT_PIN_HYS_FILTER

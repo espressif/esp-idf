@@ -162,7 +162,7 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
 
    主任务的内核亲和性也是可以配置的，请参考 :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`。
 
-与普通的 FreeRTOS 任务（或嵌入式 C 的 ``main`` 函数）不同，``app_main`` 任务可以返回。如果``app_main`` 函数返回，那么主任务将会被删除。系统将继续运行其他的 RTOS 任务。因此可以将 ``app_main`` 实现为一个创建其他应用任务然后返回的函数，或主应用任务本身。
+与普通的 FreeRTOS 任务（或嵌入式 C 的 ``main`` 函数）不同，``app_main`` 任务可以返回。如果 ``app_main`` 函数返回，那么主任务将会被删除。系统将继续运行其他的 RTOS 任务。因此可以将 ``app_main`` 实现为一个创建其他应用任务然后返回的函数，或主应用任务本身。
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 

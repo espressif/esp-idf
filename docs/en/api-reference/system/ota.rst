@@ -153,9 +153,9 @@ If you want to avoid the download/erase overhead in case of the app from the ser
                 if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)) {
                     // check current version with downloading
                     if (esp_efuse_check_secure_version(new_app_info.secure_version) == false) {
-                    	ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
-                    	http_cleanup(client);
-                    	task_fatal_error();
+                      ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
+                      http_cleanup(client);
+                      task_fatal_error();
                     }
 
                     image_header_was_checked = true;
@@ -322,4 +322,3 @@ Debugging OTA Failure
     :figclass: align-center
 
     How to Debug When OTA Fails (click to enlarge)
-

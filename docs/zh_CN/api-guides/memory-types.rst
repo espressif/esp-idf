@@ -92,12 +92,12 @@ IRAM（指令 RAM）
 
 或者，也可以通过使用 ``IRAM_ATTR`` 宏在源代码中指定需要放入 IRAM 的代码::
 
-	#include "esp_attr.h"
+    #include "esp_attr.h"
 
-	void IRAM_ATTR gpio_isr_handler(void* arg)
-	{
-		// ...
-	}
+    void IRAM_ATTR gpio_isr_handler(void* arg)
+    {
+        // ...
+    }
 
 放入 IRAM 后可能会导致 IRAM 安全中断处理程序出现问题：
 

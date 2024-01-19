@@ -121,15 +121,15 @@ ESP系列芯片最多支持三种射频收发模块: Bluetooth（BT 和 BLE）, 
       default_group_color = none;
 
       # node labels
-   	  Wi-Fi [shape = box];
-   	  Bluetooth [shape = box];
-   	  Coexistence [shape = box, label = 'Coexistence module'];
-   	  RF [shape = box, label = 'RF module'];
+      Wi-Fi [shape = box];
+      Bluetooth [shape = box];
+      Coexistence [shape = box, label = 'Coexistence module'];
+      RF [shape = box, label = 'RF module'];
 
       # node connections
-   	  Wi-Fi -> Coexistence;
-   	  Bluetooth  -> Coexistence;
-   	  Coexistence -> RF;
+      Wi-Fi -> Coexistence;
+      Bluetooth  -> Coexistence;
+      Coexistence -> RF;
     }
 
 
@@ -253,4 +253,4 @@ BLE MESH 共存状态描述
 
 .. note::
 
-  由于共存配置选项依赖于任何两个已启用的射频收发模块的存在，请在配置任何共存功能之前，确保至少使能了两个射频收发模块。 
+  由于共存配置选项依赖于任何两个已启用的射频收发模块的存在，请在配置任何共存功能之前，确保至少使能了两个射频收发模块。

@@ -104,7 +104,7 @@ ESP-WIFI-MESH 在正常启动前必须先初始化 LwIP 和 Wi-Fi 软件栈。�
 
 .. _mesh-initialize-mesh:
 
-初始化 Mesh 
+初始化 Mesh
 ^^^^^^^^^^^^^^^
 
 下方代码片段展示如何初始化 ESP-WIFI-MESH。
@@ -126,28 +126,28 @@ ESP-WIFI-MESH 在正常启动前必须先初始化 LwIP 和 Wi-Fi 软件栈。�
 ESP-WIFI-MESH 可通过 :cpp:func:`esp_mesh_set_config` 进行配置，并使用 :cpp:type:`mesh_cfg_t` 结构体传递参数。该结构体包含以下 ESP-WIFI-MESH 的配置参数：
 
 
-.. list-table::         
-   :header-rows: 1          
-   :widths: 15 25           
-            
+.. list-table::
+   :header-rows: 1
+   :widths: 15 25
+
    * - 参数
      - 描述
-          
+
    * - Channel（信道）
      - 1 到 14 信道
-          
+
    * - Mesh ID
-     - ESP-WIFI-MESH 网络的 ID，见 :cpp:type:`mesh_addr_t`。 
-          
+     - ESP-WIFI-MESH 网络的 ID，见 :cpp:type:`mesh_addr_t`。
+
    * - Router（路由器）
-     - 路由器配置，见 :cpp:type:`mesh_router_t`。  
-          
+     - 路由器配置，见 :cpp:type:`mesh_router_t`。
+
    * - Mesh AP
-     - Mesh AP 配置，见 :cpp:type:`mesh_ap_cfg_t` 
+     - Mesh AP 配置，见 :cpp:type:`mesh_ap_cfg_t`
 
    * - Crypto Functions（加密函数）
-     - Mesh IE 的加密函数，见 :cpp:type:`mesh_crypto_funcs_t`。 
-          
+     - Mesh IE 的加密函数，见 :cpp:type:`mesh_crypto_funcs_t`。
+
 
 下方代码片段展示如何配置 ESP-WIFI-MESH。
 

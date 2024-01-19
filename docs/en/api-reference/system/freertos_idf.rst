@@ -81,9 +81,9 @@ However, in an SMP system, tasks need to be assigned a particular affinity. Ther
 
 The ``...PinnedToCore()`` versions of the task creation function API differ from their vanilla counterparts by having an extra ``xCoreID`` parameter that is used to specify the created task's core affinity. The valid values for core affinity are:
 
--	``0``, which pins the created task to Core 0
--	``1``, which pins the created task to Core 1
--	``tskNO_AFFINITY``, which allows the task to be run on both cores
+- ``0``, which pins the created task to Core 0
+- ``1``, which pins the created task to Core 1
+- ``tskNO_AFFINITY``, which allows the task to be run on both cores
 
 Note that IDF FreeRTOS still supports the vanilla versions of the task creation functions. However, these standard functions have been modified to essentially invoke their respective ``...PinnedToCore()`` counterparts while setting the core affinity to ``tskNO_AFFINITY``.
 

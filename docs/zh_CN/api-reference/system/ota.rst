@@ -56,7 +56,7 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
                                则仅会选取一次。在引导加载程序中，状态立即变为
                                ``ESP_OTA_IMG_PENDING_VERIFY``。
  ESP_OTA_IMG_PENDING_VERIFY    如使能 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`，
-                               则不会选取，状态变为``ESP_OTA_IMG_ABORTED``。
+                               则不会选取，状态变为 ``ESP_OTA_IMG_ABORTED``。
 =============================  ========================================================
 
 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 没有使能（默认情况），则 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 和 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 为可选功能，``ESP_OTA_IMG_NEW`` 和 ``ESP_OTA_IMG_PENDING_VERIFY`` 不会使用。
@@ -153,9 +153,9 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
                 if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)) {
                     // check current version with downloading
                     if (esp_efuse_check_secure_version(new_app_info.secure_version) == false) {
-                    	ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
-                    	http_cleanup(client);
-                    	task_fatal_error();
+                      ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
+                      http_cleanup(client);
+                      task_fatal_error();
                     }
 
                     image_header_was_checked = true;
@@ -322,4 +322,3 @@ OTA 升级失败排查
     :figclass: align-center
 
     OTA 升级失败时如何排查（点击放大）
-

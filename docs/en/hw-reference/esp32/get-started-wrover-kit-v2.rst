@@ -81,7 +81,7 @@ The table below provides description in the following manner:
     :widths: 25 75
     :header-rows: 1
 
-    * - Key Component 
+    * - Key Component
       - Description
     * - 32.768 kHz
       - External precision 32.768 kHz crystal oscillator serves as a clock with low-power consumption while the chip is in Deep-sleep mode.

@@ -120,15 +120,15 @@ The RF resource allocation mechanism is based on priority. As shown below, both 
       default_group_color = none;
 
       # node labels
-   	  Wi-Fi [shape = box];
-   	  Bluetooth [shape = box];
-   	  Coexistence [shape = box, label = 'Coexistence module'];
-   	  RF [shape = box, label = 'RF module'];
+       Wi-Fi [shape = box];
+       Bluetooth [shape = box];
+       Coexistence [shape = box, label = 'Coexistence module'];
+       RF [shape = box, label = 'RF module'];
 
       # node connections
-   	  Wi-Fi -> Coexistence;
-   	  Bluetooth  -> Coexistence;
-   	  Coexistence -> RF;
+       Wi-Fi -> Coexistence;
+       Bluetooth  -> Coexistence;
+       Coexistence -> RF;
     }
 
 

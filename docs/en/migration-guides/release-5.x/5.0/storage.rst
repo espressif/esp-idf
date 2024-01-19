@@ -22,7 +22,7 @@ Updated dependency setup:
    idf_component_register(...
                           REQUIRES spi_flash esp_partition)
 
-.. note:: 
+.. note::
 
    Please update relevant ``REQUIRES`` or ``PRIV_REQUIRES`` section according to your project. The above-presented code snippet is just an example.
 
