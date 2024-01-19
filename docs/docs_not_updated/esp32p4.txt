@@ -109,7 +109,6 @@ api-reference/system/misc_system_api.rst
 api-reference/system/inc/power_management_esp32p4.rst
 api-reference/system/esp_https_ota.rst
 api-reference/system/ulp-risc-v.rst
-api-reference/system/intr_alloc.rst
 api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_serial_slave_link.rst
