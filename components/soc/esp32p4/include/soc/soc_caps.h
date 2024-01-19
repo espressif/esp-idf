@@ -85,7 +85,7 @@
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
 // #define SOC_TOUCH_SENSOR_SUPPORTED      1  //TODO: IDF-7477
-// #define SOC_RNG_SUPPORTED               1  //TODO: IDF-6522
+#define SOC_RNG_SUPPORTED               1
 #define SOC_GP_LDO_SUPPORTED            1 // General purpose LDO
 // #define SOC_PPA_SUPPORTED               1  //TODO: IDF-6878
 #define SOC_LIGHT_SLEEP_SUPPORTED       1

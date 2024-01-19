@@ -36,21 +36,12 @@
 #elif defined CONFIG_IDF_TARGET_ESP32H2
 #define APB_CYCLE_WAIT_NUM (96 * 16) /* Same reasoning as for ESP32C6, but the CPU frequency on ESP32H2 is
                                       * 96MHz instead of 160 MHz */
+#elif defined CONFIG_IDF_TARGET_ESP32P4
+/* On ESP32P4, the RNG has been tested with around 75 KHz bytes reading frequency */
+#define APB_CYCLE_WAIT_NUM (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 14)
 #else
 #define APB_CYCLE_WAIT_NUM (16)
 #endif
-
-#if CONFIG_IDF_TARGET_ESP32P4
-#include "esp_log.h"
-static const char *TAG = "hw_random";
-
-uint32_t IRAM_ATTR esp_random(void)
-{
-    // TODO: IDF-6522
-    ESP_EARLY_LOGW(TAG, "esp_random() has not been implemented yet");
-    return 0xDEADBEEF;
-}
-#else // !CONFIG_IDF_TARGET_ESP32P4
 
 uint32_t IRAM_ATTR esp_random(void)
 {
@@ -61,7 +52,7 @@ uint32_t IRAM_ATTR esp_random(void)
      * clock cycles after reading previous word. This implementation may actually
      * wait a bit longer due to extra time spent in arithmetic and branch statements.
      *
-     * As a (probably unncessary) precaution to avoid returning the
+     * As a (probably unnecessary) precaution to avoid returning the
      * RNG state as-is, the result is XORed with additional
      * WDEV_RND_REG reads while waiting.
      */
@@ -95,7 +86,6 @@ uint32_t IRAM_ATTR esp_random(void)
     last_ccount = ccount;
     return result ^ REG_READ(WDEV_RND_REG);
 }
-#endif //!CONFIG_IDF_TARGET_ESP32P4
 
 void esp_fill_random(void *buf, size_t len)
 {

@@ -9,6 +9,5 @@
 #include "soc.h"
 #include "soc/lpperi_reg.h"
 
-//TODO: IDF-6522
 /* Hardware random number generator register */
-#define WDEV_RND_REG    0x600260b0
+#define WDEV_RND_REG    0x501101a4
