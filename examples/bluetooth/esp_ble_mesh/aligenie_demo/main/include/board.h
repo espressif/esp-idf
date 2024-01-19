@@ -11,7 +11,7 @@
 
 #include "driver/gpio.h"
 
-#include "light_driver.h"
+#include "lightbulb.h"
 
 #ifdef __cplusplus
 extern "C" {
