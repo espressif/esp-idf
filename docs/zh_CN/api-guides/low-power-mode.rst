@@ -123,9 +123,9 @@ DFS 有如下可配置选项：
     esp_pm_config_t pm_config = {
             .max_freq_mhz = CONFIG_EXAMPLE_MAX_CPU_FREQ_MHZ,
             .min_freq_mhz = CONFIG_EXAMPLE_MIN_CPU_FREQ_MHZ,
-            .light_sleep_enable = flase
+            .light_sleep_enable = false
     };
-    ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
+    ESP_ERROR_CHECK(esp_pm_configure(&pm_config));
 
 推荐配置：
 
@@ -166,10 +166,10 @@ Auto Light-sleep 有如下可配置选项：
     该参数表示系统自动进入休眠的阈值。该参数单位为 RTOS Tick，故其表示的时间与 RTOS Tick rate 相关，例该参数值为 3，RTOS Tick rate 配置为 1000 Hz 时，即当系统空闲时间大于等于 3 ms 时进入 休眠。
 
 - Put light sleep related codes in internal RAM
-    如果使能该选项，一些 light-sleep 功能将被移至 IRAM，减少代码运行时间，降低系统功耗，IRAM 使用量将增加 1.8kB。
+    如果使能该选项，一些 light-sleep 功能将被移至 IRAM，减少代码运行时间，降低系统功耗，IRAM 使用量将增加 1.8 kB。
 
 - Put RTOS IDLE related codes in internal RAM
-    如果使能该选项，一些 RTOS IDLE 功能将被移至 IRAM，减少代码运行时间，降低系统功耗，IRAM 使用量将增加 260B。
+    如果使能该选项，一些 RTOS IDLE 功能将被移至 IRAM，减少代码运行时间，降低系统功耗，IRAM 使用量将增加 260 B。
 
 - RTC slow clock source
     该参数表表示 RTC 慢速时钟源。系统休眠时计时器模块的时钟被门控，此时使用 RTC Timer 进行计时，唤醒后使用 RTC Timer 的计数值对系统时间进行补偿。
@@ -182,12 +182,12 @@ Auto Light-sleep 有如下可配置选项：
     - 精度
     - 频偏
 
-  * - Internal 150kHz OSC
-    - 约6.7us/cycle
+  * - Internal 150 kHz OSC
+    - 约 6.7 us/cycle
     - 大
 
-  * - External 32kHz XTAL
-    - 约30.5us/cycle
+  * - External 32 kHz XTAL
+    - 约 30.5 us/cycle
     - 小
 
 - Disable all GPIO when chip at sleep
@@ -199,7 +199,7 @@ Auto Light-sleep 有如下可配置选项：
         如果使能该选项，系统将在休眠时关闭 Wi-Fi 和蓝牙的 MAC 和 baseband 来降低功耗，休眠电流约降低 100 uA， 但是为保存上下文信息，将额外消耗 5.3 K DRAM。
 
     - Power down CPU
-        如果使能该选项，系统将在休眠时将关闭 CPU 来降低功耗，对于 esp32c3，休眠电流减小 100 uA 左右，对于 esp32s3，休眠电流减小 650 uA 左右。但是为保存上下文信息，对于 esp32c3，将消耗 1.6 KB 的 DRAM 空间，对于 esp32s3，将消耗 8.58 KB 的 DRAM 空间。
+        如果使能该选项，系统将在休眠时将关闭 CPU 来降低功耗，对于 ESP32-C3，休眠电流减小 100 uA 左右，对于 ESP32-S3，休眠电流减小 650 uA 左右。但是为保存上下文信息，对于 ESP32-C3，将消耗 1.6 KB 的 DRAM 空间，对于 ESP32-S3，将消耗 8.58 KB 的 DRAM 空间。
 
     - Power down I/D-cache tag memory
         如果使能该选项，系统将在休眠时关闭 I/D cache tag memory 来降低功耗， 但是为保存 tag memory 信息，将额外消耗最大约 9 KB DRAM，同时因为 tag memory 信息特殊性，如需打开该选项，建议多进行测试。
@@ -237,7 +237,7 @@ Auto Light-sleep 有如下可配置选项：
       .light_sleep_enable = true
       #endif
     };
-    ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
+    ESP_ERROR_CHECK(esp_pm_configure(&pm_config));
 
 - 6. 配置介绍的其余相关参数
 
@@ -280,7 +280,7 @@ Auto Light-sleep 有如下可配置选项：
      - OFF
 
    * - RTC slow clock source
-     - Internal 150kHz OSC
+     - Internal 150 kHz OSC
 
    * - Disable all GPIO when chip at sleep
      - ON
@@ -337,7 +337,7 @@ Auto Light-sleep 有如下可配置选项：
       - OFF
 
     * - RTC slow clock source
-      - Internal 150kHz OSC
+      - Internal 150 kHz OSC
 
     * - Disable all GPIO when chip at sleep
       - ON
@@ -382,7 +382,7 @@ Auto Light-sleep 有如下可配置选项：
      - OFF
 
    * - RTC slow clock source
-     - Internal 150kHz OSC
+     - Internal 150 kHz OSC
 
    * - Disable all GPIO when chip at sleep
      - ON
@@ -442,7 +442,7 @@ Deep-sleep 有如下可配置选项：
       ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC8M, ESP_PD_OPTION_OFF));
 
 .. only:: SOC_WIFI_SUPPORTED
-  
+
   Wi-Fi 场景下低功耗模式介绍
   ----------------------------------
 
@@ -523,7 +523,7 @@ Deep-sleep 有如下可配置选项：
       Modem sleep 工作流程图
 
 
-  根据上文的基本电流图，结合 Modem-sleep 的 工作原理，以 Min Modem（下文介绍）为例可得理想情况下电流变化图。
+  根据上文的基本电流图，结合 Modem-sleep 的工作原理，以 Min Modem（下文介绍）为例可得理想情况下电流变化图。
 
   .. figure:: ../../_static/Low-power-modem-current.png
       :align: center
@@ -532,7 +532,7 @@ Deep-sleep 有如下可配置选项：
 
   Modem-sleep 一般用于 CPU 持续处于工作状态并需要保持 Wi-Fi 连接的应用场景，例如，使用 {IDF_TARGET_NAME} 本地语音唤醒功能，CPU 需要持续采集和处理音频数据。
 
-  DFS+Modem sleep
+  DFS + Modem sleep
   ++++++++++++++++++
 
   Modem sleep 模式休眠状态中 CPU 仍处在工作状态，而 DFS 机制主要作用于 CPU 和 APB 工作频率来降低功耗，因此 DFS + Modem sleep 可以进一步优化功耗表现，又因为 Wi-Fi task 会申请 ESP_PM_CPU_FREQ_MAX 电源锁来保证 Wi-Fi 任务快速运行，所以 DFS + Modem sleep 产生调频只会发生在 base current 阶段，即 Wi-Fi task 结束后。
@@ -544,19 +544,19 @@ Deep-sleep 有如下可配置选项：
   .. figure:: ../../_static/Low-power-DFS-process.png
       :align: center
 
-      Wi-Fi场景 DFS 简化流程图
+      Wi-Fi 场景 DFS 简化流程图
 
   在 Wi-Fi 工作的 active 状态与系统空闲的 IDLE 状态转换，Wi-Fi task 结束后，系统经过一段时间释放了所有锁进入 IDLE 状态，此时 DFS 机制降低频率到设定最低值，忽略了转换状态期间的调频动作，方便理解。
 
-  简化过后的 DFS+Modem sleep 模式理想状态下的电流大小如下图所示：
+  简化过后的 DFS + Modem sleep 模式理想状态下的电流大小如下图所示：
 
   .. figure:: ../../_static/Low-power-DFS-modem-current.png
       :align: center
 
-      DFS+Modem sleep 模式理想电流图
+      DFS + Modem sleep 模式理想电流图
 
 
-  Auto Light-sleep+Wi-Fi 场景
+  Auto Light-sleep + Wi-Fi 场景
   +++++++++++++++++++++++++++++++
 
   Auto Light-sleep 模式在 Wi-Fi 场景下是 ESP-IDF 电源管理机制、DTIM 机制和 light-sleep 的结合。开启电源管理是其前置条件，auto 体现在系统进入 IDLE 状态超过设定值后自动进入 light-sleep。同时 auto light sleep 模式同样遵循 DTIM 机制，会自动苏醒，可以与 AP 保持 Wi-Fi 连接。
@@ -572,17 +572,17 @@ Deep-sleep 有如下可配置选项：
 
       Auto Light-sleep 工作流程图
 
-  Auto Light-sleep 模式在 Wi-Fi 场景下经常与 modem sleep 同时开启，这里给出 modem+auto light-sleep 模式的理想电流图，关键节点均在图上标出。
+  Auto Light-sleep 模式在 Wi-Fi 场景下经常与 modem sleep 同时开启，这里给出 modem + auto light-sleep 模式的理想电流图，关键节点均在图上标出。
 
   .. figure:: ../../_static/Low-power-wifi-auto-light-current.png
       :align: center
 
-      modem+auto light-sleep 模式理想电流图
+      modem + auto light-sleep 模式理想电流图
 
   Auto Light-sleep 模式在 Wi-Fi 场景下可用于需要保持 Wi-Fi 连接，可以实时响应 AP 发来数据的场景。并且在未接收到命令时，CPU 可以处于空闲状态。比如 Wi-Fi 开关的应用，大部分时间 CPU 都是空闲的，直到收到控制命令，CPU 才需要进行 GPIO 的操作。
 
 
-  Deep-sleep+Wi-Fi 场景
+  Deep-sleep + Wi-Fi 场景
   +++++++++++++++++++++++++++++++++
 
   Deep-sleep 模式在 Wi-Fi 场景下与纯系统下基本相同，详情可以参考 `Deep-sleep`_ 这里不再介绍。
@@ -731,5 +731,3 @@ Deep-sleep 有如下可配置选项：
   .. only:: esp32c2
 
     平均电流约 4.9 μA
-
-
