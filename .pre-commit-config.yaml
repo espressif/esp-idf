@@ -225,3 +225,9 @@ repos:
     hooks:
       - id: validate-sbom-manifest
         stages: [post-commit]
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.9.1
+    hooks:
+      - id: 'sphinx-lint'
+        name: Lint rST files in docs folder using Sphinx Lint
+        files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
