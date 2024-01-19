@@ -126,6 +126,10 @@ if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
     list(APPEND srcs "${target}/sdio_slave_periph.c")
 endif()
 
+if(CONFIG_SOC_PAU_SUPPORTED)
+    list(APPEND srcs "${target}/system_retention_periph.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        LDFRAGMENTS "linker.lf")
