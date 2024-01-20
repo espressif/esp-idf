@@ -1006,7 +1006,7 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
     // so we use a dedicated DMA node to restart the DMA transaction
     // see also `lcd_rgb_panel_try_restart_transmission`
     memcpy(&panel->dma_restart_node, &panel->dma_nodes[0], sizeof(panel->dma_restart_node));
-    int restart_skip_bytes = LCD_FIFO_PRESERVE_SIZE_PX * sizeof(uint16_t);
+    int restart_skip_bytes = LCD_FIFO_PRESERVE_SIZE_PX * (panel->fb_bits_per_pixel/8);
     uint8_t *p = (uint8_t *)panel->dma_restart_node.buffer;
     panel->dma_restart_node.buffer = &p[restart_skip_bytes];
     panel->dma_restart_node.dw0.length -= restart_skip_bytes;
@@ -1048,6 +1048,7 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
 // time to reset DMA.
 static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *panel)
 {
+    int bb_size_px = panel->bb_size / (panel->fb_bits_per_pixel / 8);
     bool do_restart = false;
 #if CONFIG_LCD_RGB_RESTART_IN_VSYNC
     do_restart = true;
@@ -1070,11 +1071,11 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
 
     if (panel->bb_size) {
         // Catch de-synced frame buffer and reset if needed.
-        if (panel->bounce_pos_px > panel->bb_size) {
+        if (panel->bounce_pos_px > bb_size_px*2) {
             panel->bounce_pos_px = 0;
         }
         // Pre-fill bounce buffer 0, if the EOF ISR didn't do that already
-        if (panel->bounce_pos_px < panel->bb_size / 2) {
+        if (panel->bounce_pos_px < bb_size_px) {
             lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[0]);
         }
     }
@@ -1085,10 +1086,11 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
 
     if (panel->bb_size) {
         // Fill 2nd bounce buffer while 1st is being sent out, if needed.
-        if (panel->bounce_pos_px < panel->bb_size) {
-            lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[0]);
+        if (panel->bounce_pos_px < bb_size_px*2) {
+            lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[1]);
         }
     }
+    
 }
 
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
