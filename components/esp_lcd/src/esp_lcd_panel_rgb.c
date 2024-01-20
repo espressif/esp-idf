@@ -329,6 +329,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 
     // install DMA service
     rgb_panel->flags.stream_mode = !rgb_panel_config->flags.refresh_on_demand;
+    rgb_panel->fb_bits_per_pixel = fb_bits_per_pixel;
     ret = lcd_rgb_panel_create_trans_link(rgb_panel);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
     // configure GPIO
@@ -338,7 +339,6 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     memcpy(rgb_panel->data_gpio_nums, rgb_panel_config->data_gpio_nums, SOC_LCD_RGB_DATA_WIDTH);
     rgb_panel->timings = rgb_panel_config->timings;
     rgb_panel->data_width = rgb_panel_config->data_width;
-    rgb_panel->fb_bits_per_pixel = fb_bits_per_pixel;
     rgb_panel->output_bits_per_pixel = fb_bits_per_pixel; // by default, the output bpp is the same as the frame buffer bpp
     rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
