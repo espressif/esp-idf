@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,8 +72,10 @@ static void _btc_storage_save(void)
             BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_LE);
             BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_BR_EDR);
             //delete config info
-            if(btc_config_remove_section(need_remove_section)) {
-                BTIF_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the last device info : %s", need_remove_section);
+            if (btc_config_remove_section(need_remove_section)) {
+                // The need_remove_section has been freed
+                BTIF_TRACE_WARNING("Exceeded the maximum number of bonded devices. Deleting the last device info: %02x:%02x:%02x:%02x:%02x:%02x",
+                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
             }
         }
     }
