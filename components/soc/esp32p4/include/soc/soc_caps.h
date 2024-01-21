@@ -396,6 +396,7 @@
 #define SOC_SDMMC_NUM_SLOTS          2
 /* Supported host clock delay phase number */
 #define SOC_SDMMC_DELAY_PHASE_NUM    4
+#define SOC_SDMMC_IO_POWER_EXTERNAL  1    ///< SDMMC IO power controlled by external power supply
 
 // TODO: IDF-5353 (Copy from esp32c3, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/

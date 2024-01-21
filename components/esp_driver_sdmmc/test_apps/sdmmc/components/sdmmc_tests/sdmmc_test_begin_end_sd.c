@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,8 @@
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_sd.h"
 #include "hal/gpio_hal.h"
+#include "sd_pwr_ctrl.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
 void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr)
 {
@@ -25,14 +27,22 @@ void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz,
         TEST_IGNORE_MESSAGE("Board doesn't have the required slot");
     }
     sdmmc_test_board_get_config_sdmmc(slot, &config, &slot_config);
+
     int board_max_freq_khz = sdmmc_test_board_get_slot_info(slot)->max_freq_khz;
     if (board_max_freq_khz > 0 && board_max_freq_khz < freq_khz) {
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+        TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
+#endif
         TEST_IGNORE_MESSAGE("Board doesn't support required max_freq_khz");
     }
     if (slot_config.width < width) {
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+        TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
+#endif
         TEST_IGNORE_MESSAGE("Board doesn't support required bus width");
     }
 }
+
 void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_t *out_card)
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
@@ -115,4 +125,7 @@ void sdmmc_test_sd_end(sdmmc_card_t *card)
 
     //Need to reset GPIO first, otherrwise cannot discharge VDD of card completely.
     sdmmc_test_board_card_power_set(false);
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+    TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(card->host.pwr_ctrl_handle));
+#endif
 }

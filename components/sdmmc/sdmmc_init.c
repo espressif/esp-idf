@@ -16,6 +16,8 @@
  */
 
 #include "sdmmc_common.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#include "sd_pwr_ctrl.h"
 
 static const char* TAG = "sdmmc_init";
 
@@ -33,12 +35,22 @@ static const char* TAG = "sdmmc_init";
 
 esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 {
+    esp_err_t ret = ESP_FAIL;
     memset(card, 0, sizeof(*card));
     memcpy(&card->host, config, sizeof(*config));
 
     const bool is_spi = host_is_spi(card);
     const bool always = true;
     const bool io_supported = true;
+
+    if (config->pwr_ctrl_handle) {
+        int voltage_mv = config->io_voltage * 1000;
+        ret = sd_pwr_ctrl_set_io_voltage(config->pwr_ctrl_handle, voltage_mv);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "failed to set voltage (0x%x)", ret);
+            return ret;
+        }
+    }
 
     /* Allocate cache-aligned buffer for SDIO over SDMMC.*/
     SDMMC_INIT_STEP(!is_spi, sdmmc_allocate_aligned_buf);
