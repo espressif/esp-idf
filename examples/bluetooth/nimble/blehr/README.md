@@ -5,7 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example creates GATT server demonstrating standard Heart Rate measurement service. It simulates Hear rate measurement and notifies to client when the notifications are enabled.
+This example creates GATT server demonstrating standard Heart Rate measurement service. It simulates Heart rate measurement and notifies to client when the notifications are enabled.
 
 It uses ESP32's Bluetooth controller and NimBLE stack based BLE host
 
