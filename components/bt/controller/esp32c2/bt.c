@@ -1019,7 +1019,7 @@ void esp_ble_controller_log_dump_all(bool output)
     esp_panic_handler_reconfigure_wdts(5000);
     BT_ASSERT_PRINT("\r\n[DUMP_START:");
     ble_log_async_output_dump_all(output);
-    BT_ASSERT_PRINT("]\r\n");
+    BT_ASSERT_PRINT(":DUMP_END]\r\n");
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
