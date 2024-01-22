@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "soc/clk_tree_defs.h"
+#include "soc/clkout_channel.h"
 #include "soc/soc_caps.h"
 
 #ifdef __cplusplus
@@ -65,13 +66,13 @@ uint32_t clk_hal_apll_get_freq_hz(void);
  * @param clk_sig    The clock signal source to be mapped to GPIOs
  * @param channel_id The clock output channel to setup
  */
-void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, uint8_t channel_id);
+void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id);
 
 /**
  * @brief Teardown clock output channel configuration
  * @param channel_id The clock output channel to teardown
  */
-void clk_hal_clock_output_teardown(uint8_t channel_id);
+void clk_hal_clock_output_teardown(clock_out_channel_t channel_id);
 
 #ifdef __cplusplus
 }

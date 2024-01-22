@@ -21,7 +21,7 @@
 typedef struct clkout_channel_handle {
     bool is_mapped;
     soc_clkout_sig_id_t mapped_clock;
-    uint8_t channel_id;
+    clock_out_channel_t channel_id;
     uint8_t ref_cnt;
     uint64_t mapped_io_bmap;
     portMUX_TYPE clkout_channel_lock;

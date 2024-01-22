@@ -203,6 +203,10 @@ config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
     bool
     default y
 
+config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
+    int
+    default 3
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
