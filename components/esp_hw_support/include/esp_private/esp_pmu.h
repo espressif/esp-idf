@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,6 +144,12 @@ extern "C" {
 #define PMU_SLEEP_PD_XTAL32K        BIT(12)
 #define PMU_SLEEP_PD_RC32K          BIT(13)
 #define PMU_SLEEP_PD_LP_PERIPH      BIT(14)
+
+/**
+ * This macro only used for detecting whether the enums are declared
+ * So that to avoid use the enum when PMU is not supported
+ */
+#define ESP_PMU_ENUMS_DECLARED
 
 typedef struct {
     pmu_hal_context_t *hal;

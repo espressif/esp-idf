@@ -23,7 +23,6 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/modem_syscon_ll.h"
 #include "hal/modem_lpcon_ll.h"
-#include "soc/pmu_reg.h"
 #include "pmu_param.h"
 
 static const char *TAG = "rtc_clk_init";
@@ -42,6 +41,10 @@ static const char *TAG = "rtc_clk_init";
  */
 static void rtc_clk_modem_clock_domain_active_state_icg_map_preinit(void)
 {
+// If PMU has not supported yet, the enum has not declared, use macro instead
+#ifndef ESP_PMU_ENUMS_DECLARED
+#define PMU_HP_ICG_MODEM_CODE_ACTIVE 2
+#endif
     /* Configure modem ICG code in PMU_ACTIVE state */
     pmu_ll_hp_set_icg_modem(&PMU, PMU_MODE_HP_ACTIVE, PMU_HP_ICG_MODEM_CODE_ACTIVE);
 
@@ -53,6 +56,9 @@ static void rtc_clk_modem_clock_domain_active_state_icg_map_preinit(void)
     /* Software trigger force update modem ICG code and ICG switch */
     pmu_ll_imm_update_dig_icg_modem_code(&PMU, true);
     pmu_ll_imm_update_dig_icg_switch(&PMU, true);
+#ifndef ESP_PMU_ENUMS_DECLARED
+#undef PMU_HP_ICG_MODEM_CODE_ACTIVE
+#endif
 }
 
 

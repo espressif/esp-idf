@@ -10,10 +10,8 @@
 #include <stdlib.h>
 #include <esp_types.h>
 #include "soc/soc_caps.h"
-#if SOC_PMU_SUPPORTED
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
-#endif
 
 // TODO: [ESP32C5] IDF-8643
 
@@ -24,8 +22,6 @@ extern "C" {
 
 #define HP_CALI_DBIAS   25
 #define LP_CALI_DBIAS   26
-
-#if SOC_PMU_SUPPORTED
 
 // FOR  XTAL FORCE PU IN SLEEP
 #define PMU_PD_CUR_SLEEP_ON    0
@@ -473,8 +469,6 @@ typedef struct pmu_sleep_machine_constant {
         .pll_wait_stable_time_us        = 1     \
     }                                           \
 }
-
-#endif  // SOC_PMU_SUPPORTED
 
 #ifdef __cplusplus
 }
