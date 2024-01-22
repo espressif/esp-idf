@@ -75,7 +75,6 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     int offsety2 = area->y2;
     // pass the draw buffer to the driver
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
-    lv_disp_flush_ready(drv);
 }
 
 static void example_increase_lvgl_tick(void *arg)
@@ -115,6 +114,13 @@ static void example_lvgl_port_task(void *arg)
         }
         vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
     }
+}
+
+static bool example_notify_lvgl_flush_ready(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
+{
+    lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
+    lv_disp_flush_ready(disp_driver);
+    return false;
 }
 
 static void example_bsp_enable_dsi_phy_power(void)
@@ -210,8 +216,16 @@ void app_main(void)
             .vsync_pulse_width = EXAMPLE_MIPI_DSI_LCD_VSYNC,
             .vsync_front_porch = EXAMPLE_MIPI_DSI_LCD_VFP,
         },
+#if CONFIG_EXAMPLE_USE_DMA2D_COPY_FRAME
+        .flags.use_dma2d = true,
+#endif
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
+    // register event callbacks
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {
+        .on_color_trans_done = example_notify_lvgl_flush_ready,
+    };
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &cbs, &disp_drv));
     ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
 
     // turn on backlight
