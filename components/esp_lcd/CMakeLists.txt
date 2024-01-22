@@ -31,6 +31,11 @@ if(CONFIG_SOC_LCDCAM_SUPPORTED)
     list(APPEND srcs "i80/esp_lcd_panel_io_i80.c" "rgb/esp_lcd_panel_rgb.c")
 endif()
 
+if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
+    list(APPEND includes "dsi/include")
+    list(APPEND srcs "dsi/esp_lcd_mipi_dsi_bus.c" "dsi/esp_lcd_panel_io_dbi.c" "dsi/esp_lcd_panel_dpi.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS "priv_include"

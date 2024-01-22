@@ -149,6 +149,12 @@ examples/peripherals/lcd/i80_controller:
     - esp_lcd
     - esp_driver_i2s
 
+examples/peripherals/lcd/mipi_dsi:
+  disable:
+    - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+
 examples/peripherals/lcd/rgb_panel:
   disable:
     - if: SOC_LCD_RGB_SUPPORTED != 1
