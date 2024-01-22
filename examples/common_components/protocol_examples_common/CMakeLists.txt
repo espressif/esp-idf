@@ -36,7 +36,7 @@ if(CONFIG_EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD)
 endif()
 
 if(CONFIG_EXAMPLE_CONNECT_ETHERNET)
-    idf_component_optional_requires(PRIVATE esp_eth)
+    idf_component_optional_requires(PUBLIC esp_eth)
 endif()
 
 if(CONFIG_EXAMPLE_CONNECT_PPP)
