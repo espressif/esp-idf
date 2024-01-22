@@ -782,8 +782,16 @@ UT_S3_FLASH:
     - ESP32S3_IDF
     - UT_T1_ESP_FLASH
 
-component_ut_test_lan8720:
+component_ut_test_ip101:
   extends: .component_ut_esp32_template
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env
   tags:
     - ESP32
-    - COMPONENT_UT_LAN8720
+    - eth_ip101
+
+component_ut_test_lan8720:
+  extends: .component_ut_esp32_template
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env
+  tags:
+    - ESP32
+    - eth_lan8720

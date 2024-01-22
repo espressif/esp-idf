@@ -58,6 +58,7 @@ TEST_CASE("start_and_stop", "[esp_eth]")
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
 #elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
+    phy_config.phy_addr = 0;
     esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
@@ -109,6 +110,7 @@ TEST_CASE("get_set_mac", "[esp_eth]")
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
 #elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
+    phy_config.phy_addr = 0;
     esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
@@ -139,6 +141,8 @@ TEST_CASE("get_set_mac", "[esp_eth]")
     vSemaphoreDelete(mutex);
 }
 
+static uint8_t local_mac_addr[6] = {};
+
 TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
 {
     void eth_event_handler(void *arg, esp_event_base_t event_base,
@@ -162,6 +166,7 @@ TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
 #elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
+    phy_config.phy_addr = 0;
     esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
@@ -173,19 +178,22 @@ TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, mutex));
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_start(eth_handle)); // start Ethernet driver state machine
 
+    TEST_ASSERT_EQUAL(ESP_OK, mac->get_addr(mac, local_mac_addr));
+
     TEST_ASSERT(xSemaphoreTake(mutex, pdMS_TO_TICKS(3000)));
-    // even if PHY (IP101) indicates autonegotiation done and link up, it sometimes may miss few packets after atonego reset, hence wait a bit
-    vTaskDelay(pdMS_TO_TICKS(100));
+    // even if PHY indicates link up, it sometimes may miss few packets since switch port may not be forwarding yet (executing RSTP)
+    vTaskDelay(pdMS_TO_TICKS(500));
 
     emac_frame_t *pkt = malloc(1024);
     pkt->proto = 0x2222;
+    memcpy(pkt->src, local_mac_addr, 6);
     memset(pkt->dest, 0xff, 6);     // broadcast addr
     for (int i = 0; i < (1024 - ETH_HEADER_LEN); ++i){
         pkt->data[i] = i & 0xff;
     }
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_transmit(eth_handle, pkt, 1024));
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(500));
     free(pkt);
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_stop(eth_handle));
@@ -195,8 +203,6 @@ TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
     mac->del(mac);
     vSemaphoreDelete(mutex);
 }
-
-static uint8_t local_mac_addr[6] = {};
 
 esp_err_t l2_packet_txrx_test_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv) {
     EventGroupHandle_t eth_event_group = (EventGroupHandle_t)priv;
@@ -224,6 +230,20 @@ esp_err_t l2_packet_txrx_test_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t
 
 TEST_CASE("recv_pkt", "[esp_eth]")
 {
+    void eth_event_handler(void *arg, esp_event_base_t event_base,
+                                  int32_t event_id, void *event_data){
+        SemaphoreHandle_t mutex = (SemaphoreHandle_t)arg;
+        switch (event_id) {
+        case ETHERNET_EVENT_CONNECTED:
+            xSemaphoreGive(mutex);
+            break;
+        default:
+            break;
+        }
+    }
+    SemaphoreHandle_t mutex = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(mutex);
+
     EventGroupHandle_t eth_event_group = xEventGroupCreate();
     TEST_ASSERT(eth_event_group != NULL);
 
@@ -234,6 +254,7 @@ TEST_CASE("recv_pkt", "[esp_eth]")
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
 #elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
+    phy_config.phy_addr = 0;
     esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
@@ -242,7 +263,12 @@ TEST_CASE("recv_pkt", "[esp_eth]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_driver_install(&config, &eth_handle)); // install driver
     TEST_ASSERT_NOT_NULL(eth_handle);
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create_default());
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, mutex));
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_start(eth_handle)); // start Ethernet driver state machine
+
+    TEST_ASSERT(xSemaphoreTake(mutex, pdMS_TO_TICKS(3000)));
+    // even if PHY indicates link up, it sometimes may miss few packets since switch port may not be forwarding yet (executing RSTP)
+    vTaskDelay(pdMS_TO_TICKS(500));
 
     TEST_ASSERT_EQUAL(ESP_OK, mac->get_addr(mac, local_mac_addr));
     // test app will parse the DUT MAC from this line of log output
@@ -254,6 +280,7 @@ TEST_CASE("recv_pkt", "[esp_eth]")
     EventBits_t bits = 0;
     bits = xEventGroupWaitBits(eth_event_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
                                true, true, pdMS_TO_TICKS(3000));
+    printf("recv bits 0x%x\n", bits);
     TEST_ASSERT((bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT)) ==
                                  (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
 
@@ -263,6 +290,7 @@ TEST_CASE("recv_pkt", "[esp_eth]")
     phy->del(phy);
     mac->del(mac);
     vEventGroupDelete(eth_event_group);
+    vSemaphoreDelete(mutex);
 }
 
 typedef struct
@@ -328,6 +356,7 @@ TEST_CASE("start_stop_stress_test", "[esp_eth]")
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
 #elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
+    phy_config.phy_addr = 0;
     esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
@@ -357,7 +386,7 @@ TEST_CASE("start_stop_stress_test", "[esp_eth]")
 
     // create dummy data packet used for traffic generation
     emac_frame_t *pkt = calloc(1, 1500);
-    pkt->proto = 0x2222;
+    pkt->proto = 0x2223;
     // we don't care about dest MAC address much, however it is better to not be broadcast or multifcast to not flood
     // other network nodes
     memset(pkt->dest, 0xBA, 6);
@@ -368,8 +397,8 @@ TEST_CASE("start_stop_stress_test", "[esp_eth]")
         TEST_ASSERT_EQUAL(ESP_OK, esp_eth_start(eth_handle)); // start Ethernet driver state machine
         bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(3000));
         TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
-        // even if PHY (IP101) indicates autonegotiation done and link up, it sometimes may miss few packets after atonego reset, hence wait a bit
-        vTaskDelay(pdMS_TO_TICKS(100));
+        // even if PHY indicates link up, it sometimes may miss few packets since switch port may not be forwarding yet (executing RSTP)
+        vTaskDelay(pdMS_TO_TICKS(500));
 
         // at first, check that Tx/Rx path works as expected by poking the test script
         // this also serves as main PASS/FAIL criteria
@@ -384,7 +413,7 @@ TEST_CASE("start_stop_stress_test", "[esp_eth]")
         for (int j = 0; j < 150; j++) {
             // return value is not checked on purpose since it is expected that it may fail time to time because
             // we may try to queue more packets than hardware is able to handle
-            pkt->data[0] = j & 0xFF;
+            pkt->data[0] = j & 0xFF; // just for debug purposes
             esp_eth_transmit(eth_handle, pkt, 1500);
         }
         TEST_ASSERT_EQUAL(ESP_OK, esp_eth_stop(eth_handle));
@@ -399,8 +428,8 @@ TEST_CASE("start_stop_stress_test", "[esp_eth]")
         TEST_ASSERT_EQUAL(ESP_OK, esp_eth_start(eth_handle)); // start Ethernet driver state machine
         bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(3000));
         TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
-        // even if PHY (IP101) indicates autonegotiation done and link up, it sometimes may miss few packets after atonego reset, hence wait a bit
-        vTaskDelay(pdMS_TO_TICKS(100));
+        // even if PHY indicates link up, it sometimes may miss few packets since switch port may not be forwarding yet (executing RSTP)
+        vTaskDelay(pdMS_TO_TICKS(500));
 
         ctrl_pkt->data[0] = POKE_REQ;
         ctrl_pkt->data[1] = rx_i;
