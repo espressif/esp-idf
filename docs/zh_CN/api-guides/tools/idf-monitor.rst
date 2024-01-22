@@ -228,7 +228,7 @@ ROM ELF 文件会根据 ``IDF_PATH`` 和 ``ESP_ROM_ELF_DIR`` 环境变量的路�
 连接时复位目标芯片
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-默认情况下，IDF 监视器会在目标芯片连接时通过 DTR 和 RTS 串行线自动复位芯片。要防止 IDF 监视器在连接时自动复位，请在调用 IDF 监视器时加上选项 ``--no-reset``，如 ``idf.py monitor --no-reset``。
+默认情况下，IDF 监视器会在目标芯片连接时通过 DTR 和 RTS 串行线自动复位芯片。要防止 IDF 监视器在连接时自动复位，请在调用 IDF 监视器时加上选项 ``--no-reset``，如 ``idf.py monitor --no-reset``，或者将环境变量 ``ESP_IDF_MONITOR_NO_RESET`` 设置成 1。
 
 .. note::
 
