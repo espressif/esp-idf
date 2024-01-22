@@ -22,7 +22,6 @@ typedef struct {
     gpio_num_t tx_pin;            // TX pin number
 } ulp_riscv_uart_t;               // Context for the driver, initialized by ulp_riscv_uart_init
 
-
 /**
  * @brief Initialize the bit-banged UART driver
  *

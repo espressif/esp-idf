@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,27 +43,27 @@
  * |----------|----------|---------|---------|----------|------------|---------|
  */
 static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t ack_val,
-        uint8_t ack_expected, uint8_t ack_check_en, uint8_t byte_num)
+                                     uint8_t ack_expected, uint8_t ack_check_en, uint8_t byte_num)
 {
-    uint32_t reg_addr = RTC_I2C_CMD0_REG + 4*cmd_idx;
+    uint32_t reg_addr = RTC_I2C_CMD0_REG + 4 * cmd_idx;
 
     CLEAR_PERI_REG_MASK(reg_addr, 0xFFFFFFFF);
 
     WRITE_PERI_REG(reg_addr,
-            (0 << 31) |                     // CMD Done
+                   (0 << 31) |                     // CMD Done
 
-            ((op_code & 0x3) << 11) |       // Opcode
+                   ((op_code & 0x3) << 11) |       // Opcode
 
-            ((ack_val & 0x1) << 10) |       // ACK bit sent by I2C controller during READ.
-                                            // Ignored during RSTART, STOP, END and WRITE cmds.
+                   ((ack_val & 0x1) << 10) |       // ACK bit sent by I2C controller during READ.
+                   // Ignored during RSTART, STOP, END and WRITE cmds.
 
-            ((ack_expected & 0x1) << 9) |   // ACK bit expected by I2C controller during WRITE.
-                                            // Ignored during RSTART, STOP, END and READ cmds.
+                   ((ack_expected & 0x1) << 9) |   // ACK bit expected by I2C controller during WRITE.
+                   // Ignored during RSTART, STOP, END and READ cmds.
 
-            ((ack_check_en & 0x1) << 8) |   // I2C controller verifies that the ACK bit sent by the slave device matches
-                                            // the ACK expected bit during WRITE.
-                                            // Ignored during RSTART, STOP, END and READ cmds.
-            ((byte_num & 0xFF) << 0));      // Byte Num
+                   ((ack_check_en & 0x1) << 8) |   // I2C controller verifies that the ACK bit sent by the slave device matches
+                   // the ACK expected bit during WRITE.
+                   // Ignored during RSTART, STOP, END and READ cmds.
+                   ((byte_num & 0xFF) << 0));      // Byte Num
 }
 
 static inline int32_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
@@ -76,9 +76,9 @@ static inline int32_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
 
         /* Return 0 if Tx or Rx data interrupt bits are set. */
         if ((status & RTC_I2C_TX_DATA_INT_ST) ||
-            (status & RTC_I2C_RX_DATA_INT_ST)) {
+                (status & RTC_I2C_RX_DATA_INT_ST)) {
             return 0;
-        /* In case of error status, break and return -1 */
+            /* In case of error status, break and return -1 */
 #if CONFIG_IDF_TARGET_ESP32S2
         } else if ((status & RTC_I2C_TIMEOUT_INT_ST) ||
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -176,7 +176,7 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
 
     for (i = 0; i < size; i++) {
         /* Poll for RTC I2C Rx Data interrupt bit to be set */
-        if(!ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT)) {
+        if (!ulp_riscv_i2c_wait_for_interrupt(ULP_RISCV_I2C_RW_TIMEOUT)) {
             /* Read the data
              *
              * Unfortunately, the RTC I2C has no fifo buffer to help us with reading and storing

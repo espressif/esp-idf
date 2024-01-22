@@ -9,7 +9,6 @@
 #include "soc/soc.h"
 #include "esp_assert.h"
 
-
 /* The last CONFIG_ULP_SHARED_MEM bytes of the reserved memory are reserved for a shared cfg struct
    The main cpu app and the ulp binary can share variables automatically through the linkerscript generated from
    esp32ulp_mapgen.py, but this is not available when compiling the ULP library.
@@ -24,5 +23,5 @@ ESP_STATIC_ASSERT(CONFIG_ULP_SHARED_MEM == sizeof(ulp_lp_core_memory_shared_cfg_
 
 ulp_lp_core_memory_shared_cfg_t* ulp_lp_core_memory_shared_cfg_get(void)
 {
-   return s_shared_mem;
+    return s_shared_mem;
 }

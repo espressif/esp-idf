@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,19 +17,19 @@ volatile lp_core_test_command_reply_t write_test_cmd = LP_CORE_COMMAND_INVALID;
 uint8_t data_rd[DATA_LENGTH] = {};
 uint8_t data_wr[DATA_LENGTH] = {};
 
-int main (void)
+int main(void)
 {
     lp_core_i2c_master_read_from_device(LP_I2C_NUM_0, I2C_SLAVE_ADDRESS, data_rd, RW_TEST_LENGTH, LP_I2C_TRANS_WAIT_FOREVER);
     read_test_reply = LP_CORE_COMMAND_OK;
 
     /* Wait for write command from main CPU */
-    while(write_test_cmd != LP_CORE_COMMAND_OK) {
+    while (write_test_cmd != LP_CORE_COMMAND_OK) {
     }
 
     lp_core_i2c_master_write_to_device(LP_I2C_NUM_0, I2C_SLAVE_ADDRESS, data_wr, RW_TEST_LENGTH, LP_I2C_TRANS_WAIT_FOREVER);
 
     write_test_cmd = LP_CORE_COMMAND_NOK;
 
-    while(1) {
+    while (1) {
     }
 }

@@ -107,7 +107,6 @@ components_not_formatted_temporary:
     - "/components/spiffs/"
     - "/components/tcp_transport/"
     - "/components/touch_element/"
-    - "/components/ulp/"
     - "/components/unity/"
     - "/components/vfs/"
     - "/components/wear_levelling/"

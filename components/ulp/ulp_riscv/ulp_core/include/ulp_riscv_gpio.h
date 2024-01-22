@@ -63,13 +63,13 @@ static inline void ulp_riscv_gpio_init(gpio_num_t gpio_num)
 #elif CONFIG_IDF_TARGET_ESP32S3
     SET_PERI_REG_MASK(SENS_SAR_PERI_CLK_GATE_CONF_REG, SENS_IOMUX_CLK_EN_M);
 #endif
-    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_MUX_SEL);
-    REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_FUN_SEL, 0);
+    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_MUX_SEL);
+    REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_FUN_SEL, 0);
 }
 
 static inline void ulp_riscv_gpio_deinit(gpio_num_t gpio_num)
 {
-    CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_MUX_SEL);
+    CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_MUX_SEL);
 }
 
 static inline void ulp_riscv_gpio_output_enable(gpio_num_t gpio_num)
@@ -84,12 +84,12 @@ static inline void ulp_riscv_gpio_output_disable(gpio_num_t gpio_num)
 
 static inline void ulp_riscv_gpio_input_enable(gpio_num_t gpio_num)
 {
-    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_FUN_IE);
+    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_FUN_IE);
 }
 
 static inline void ulp_riscv_gpio_input_disable(gpio_num_t gpio_num)
 {
-    CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_FUN_IE);
+    CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_FUN_IE);
 }
 
 static inline void ulp_riscv_gpio_output_level(gpio_num_t gpio_num, uint8_t level)
@@ -108,27 +108,27 @@ static inline uint8_t ulp_riscv_gpio_get_level(gpio_num_t gpio_num)
 
 static inline void ulp_riscv_gpio_set_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t mode)
 {
-    REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_DRV, mode);
+    REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_DRV, mode);
 }
 
 static inline void ulp_riscv_gpio_pullup(gpio_num_t gpio_num)
 {
-    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_RUE);
+    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_RUE);
 }
 
 static inline void ulp_riscv_gpio_pullup_disable(gpio_num_t gpio_num)
 {
-    CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_RUE);
+    CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_RUE);
 }
 
 static inline void ulp_riscv_gpio_pulldown(gpio_num_t gpio_num)
 {
-    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_RDE);
+    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_RDE);
 }
 
 static inline void ulp_riscv_gpio_pulldown_disable(gpio_num_t gpio_num)
 {
-    CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_RDE);
+    CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_RDE);
 }
 
 /**

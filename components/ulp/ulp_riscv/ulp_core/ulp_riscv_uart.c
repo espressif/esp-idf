@@ -33,10 +33,10 @@ void ulp_riscv_uart_putc(const ulp_riscv_uart_t *uart, const char c)
 {
     ulp_riscv_gpio_output_level(uart->tx_pin, 0);
 
-    for (int i = 0; i<8; i++) {
+    for (int i = 0; i < 8; i++) {
         /* Offset the delay to account for cycles spent setting the bit */
         ulp_riscv_delay_cycles(uart->bit_duration_cycles - 100);
-        if ( (1 <<  i) & c) {
+        if ((1 <<  i) & c) {
             ulp_riscv_gpio_output_level(uart->tx_pin, 1);
         } else {
             ulp_riscv_gpio_output_level(uart->tx_pin, 0);

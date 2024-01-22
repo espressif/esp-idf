@@ -24,7 +24,6 @@ extern "C" {
  */
 void ulp_lp_core_lp_timer_set_wakeup_time(uint64_t sleep_duration_us);
 
-
 /**
  * @brief Disables the lp timer alarm and clears any pending alarm interrupts
  *

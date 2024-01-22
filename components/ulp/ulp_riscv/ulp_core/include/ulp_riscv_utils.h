@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,7 +67,6 @@ void __attribute__((__noreturn__)) ulp_riscv_halt(void);
  */
 void ulp_riscv_timer_stop(void);
 
-
 /**
  * @brief Resumes the ULP timer
  *
@@ -76,10 +75,9 @@ void ulp_riscv_timer_stop(void);
  */
 void ulp_riscv_timer_resume(void);
 
-#define ULP_RISCV_GET_CCOUNT()	({ int __ccount; \
-				asm volatile("rdcycle %0;" : "=r"(__ccount)); \
-				__ccount; })
-
+#define ULP_RISCV_GET_CCOUNT()  ({ int __ccount; \
+                asm volatile("rdcycle %0;" : "=r"(__ccount)); \
+                __ccount; })
 
 #if CONFIG_IDF_TARGET_ESP32S2
 /* These are only approximate default numbers, the default frequency
@@ -99,7 +97,7 @@ void ulp_riscv_timer_resume(void);
 void static inline ulp_riscv_delay_cycles(uint32_t cycles)
 {
     uint32_t start = ULP_RISCV_GET_CCOUNT();
-	/* Off with an estimate of cycles in this function to improve accuracy */
+    /* Off with an estimate of cycles in this function to improve accuracy */
     uint32_t end = start + cycles - 20;
 
     while (ULP_RISCV_GET_CCOUNT()  < end) {

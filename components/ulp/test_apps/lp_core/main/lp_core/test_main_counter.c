@@ -10,7 +10,7 @@
 volatile uint32_t counter;
 volatile uint32_t counter_wakeup_limit;
 
-int main (void)
+int main(void)
 {
     counter++;
 
