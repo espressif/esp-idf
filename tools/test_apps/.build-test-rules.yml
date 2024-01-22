@@ -19,6 +19,12 @@ tools/test_apps/linux_compatible/linux_freertos:
   enable:
     - if: IDF_TARGET == "linux"
 
+tools/test_apps/linux_compatible/wifi_build_test:
+  enable:
+    - if: IDF_TARGET == "linux"
+  disable_test:
+    - if: IDF_TARGET == "linux"
+
 tools/test_apps/peripherals/i2c_wifi:
   disable:
     - if: SOC_I2C_SUPPORTED != 1 or SOC_WIFI_SUPPORTED != 1

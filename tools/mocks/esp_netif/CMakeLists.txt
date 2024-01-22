@@ -6,8 +6,7 @@ idf_component_get_property(original_esp_netif_dir esp_netif COMPONENT_OVERRIDEN_
 
 set(include_dirs
     "include"
-    "${original_esp_netif_dir}/include"
-    "${original_esp_netif_dir}/linux/stubs/include")
+    "${original_esp_netif_dir}/include")
 
 idf_component_mock(INCLUDE_DIRS ${include_dirs}
     REQUIRES esp_event
