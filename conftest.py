@@ -39,7 +39,7 @@ from _pytest.fixtures import FixtureRequest
 from artifacts_handler import ArtifactType
 from dynamic_pipelines.constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
 from idf_ci.app import import_apps_from_txt
-from idf_ci.uploader import AppUploader
+from idf_ci.uploader import AppDownloader, AppUploader
 from idf_ci_utils import IDF_PATH
 from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS, PytestCase
 from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, ITEM_PYTEST_CASE_KEY, IdfPytestEmbedded
@@ -81,7 +81,7 @@ def config(request: FixtureRequest) -> str:
 
 @pytest.fixture
 @multi_dut_fixture
-def target(request: FixtureRequest, dut_total: int,  dut_index: int) -> str:
+def target(request: FixtureRequest, dut_total: int, dut_index: int) -> str:
     plugin = request.config.stash[IDF_PYTEST_EMBEDDED_KEY]
 
     if dut_total == 1:
@@ -116,21 +116,14 @@ def pipeline_id(request: FixtureRequest) -> t.Optional[str]:
     return request.config.getoption('pipeline_id', None) or os.getenv('PARENT_PIPELINE_ID', None)  # type: ignore
 
 
-class BuildReportDownloader:
+class BuildReportDownloader(AppDownloader):
     def __init__(self, presigned_url_yaml: str) -> None:
         self.app_presigned_urls_dict: t.Dict[str, t.Dict[str, str]] = yaml.safe_load(presigned_url_yaml)
 
-    def download_app(
-        self, app_build_path: str, artifact_type: ArtifactType = ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES
-    ) -> None:
-        if app_build_path not in self.app_presigned_urls_dict:
-            raise ValueError(f'No presigned url found for {app_build_path}. '
-                             f'Usually this should not happen, please re-trigger a pipeline.'
-                             f'If this happens again, please report this bug to the CI channel.')
-
+    def _download_app(self, app_build_path: str, artifact_type: ArtifactType) -> None:
         url = self.app_presigned_urls_dict[app_build_path][artifact_type.value]
 
-        logging.debug('Downloading app from %s', url)
+        logging.info('Downloading app from %s', url)
         with io.BytesIO() as f:
             for chunk in requests.get(url).iter_content(chunk_size=1024 * 1024):
                 if chunk:
@@ -141,9 +134,19 @@ class BuildReportDownloader:
             with zipfile.ZipFile(f) as zip_ref:
                 zip_ref.extractall(IDF_PATH)
 
+    def download_app(self, app_build_path: str, artifact_type: t.Optional[ArtifactType] = None) -> None:
+        if app_build_path not in self.app_presigned_urls_dict:
+            raise ValueError(
+                f'No presigned url found for {app_build_path}. '
+                f'Usually this should not happen, please re-trigger a pipeline.'
+                f'If this happens again, please report this bug to the CI channel.'
+            )
+
+        super().download_app(app_build_path, artifact_type)
+
 
 @pytest.fixture(scope='session')
-def app_downloader(pipeline_id: t.Optional[str]) -> t.Union[AppUploader, BuildReportDownloader, None]:
+def app_downloader(pipeline_id: t.Optional[str]) -> t.Optional[AppDownloader]:
     if not pipeline_id:
         return None
 
@@ -199,7 +202,7 @@ def build_dir(
     app_path: str,
     target: t.Optional[str],
     config: t.Optional[str],
-    app_downloader: t.Optional[AppUploader],
+    app_downloader: t.Optional[AppDownloader],
 ) -> str:
     """
     Check local build dir with the following priority:
