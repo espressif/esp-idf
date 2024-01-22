@@ -30,6 +30,15 @@
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
 
+// ------------------ Target specific ----------------------
+// TODO: Remove target specific section after support for multiple USB peripherals is implemented
+#include "sdkconfig.h"
+#if (CONFIG_IDF_TARGET_ESP32P4)
+#define USB_INTR ETS_USB_OTG_INTR_SOURCE
+#else
+#define USB_INTR ETS_USB_INTR_SOURCE
+#endif
+
 // --------------------- Constants -------------------------
 
 #define INIT_DELAY_MS                           30  // A delay of at least 25ms to enter Host mode. Make it 30ms to be safe
@@ -1088,7 +1097,7 @@ esp_err_t hcd_install(const hcd_config_t *config)
         goto port_alloc_err;
     }
     // Allocate interrupt
-    err_ret = esp_intr_alloc(ETS_USB_INTR_SOURCE,
+    err_ret = esp_intr_alloc(USB_INTR,
                              config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,  // The interrupt must be disabled until the port is initialized
                              intr_hdlr_main,
                              (void *)p_hcd_obj_dmy->port_obj,
@@ -1096,7 +1105,6 @@ esp_err_t hcd_install(const hcd_config_t *config)
     if (err_ret != ESP_OK) {
         goto intr_alloc_err;
     }
-    // Assign the
     HCD_ENTER_CRITICAL();
     if (s_hcd_obj != NULL) {
         HCD_EXIT_CRITICAL();

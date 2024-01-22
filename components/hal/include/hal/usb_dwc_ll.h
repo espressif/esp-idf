@@ -217,6 +217,20 @@ static inline void usb_dwc_ll_gusbcfg_dis_srp_cap(usb_dwc_dev_t *hw)
     hw->gusbcfg_reg.srpcap = 0;
 }
 
+static inline void usb_dwc_ll_gusbcfg_set_timeout_cal(usb_dwc_dev_t *hw, uint8_t tout_cal)
+{
+    hw->gusbcfg_reg.toutcal = tout_cal;
+}
+
+#if (OTG_HSPHY_INTERFACE != 0)
+static inline void usb_dwc_ll_gusbcfg_set_utmi_phy(usb_dwc_dev_t *hw)
+{
+    hw->gusbcfg_reg.phyif = 1;       // 16 bits interface
+    hw->gusbcfg_reg.ulpiutmisel = 0; // UTMI+
+    hw->gusbcfg_reg.physel = 0;      // HS PHY
+}
+#endif // (OTG_HSPHY_INTERFACE != 0)
+
 // --------------------------- GRSTCTL Register --------------------------------
 
 static inline bool usb_dwc_ll_grstctl_is_ahb_idle(usb_dwc_dev_t *hw)
@@ -431,19 +445,20 @@ static inline void usb_dwc_ll_hcfg_set_fsls_pclk_sel(usb_dwc_dev_t *hw)
 /**
  * @brief Sets some default values to HCFG to operate in Host mode with scatter/gather DMA
  *
- * @param hw Start address of the DWC_OTG registers
- * @param speed Speed to initialize the host port at
+ * @param[in] hw    Start address of the DWC_OTG registers
+ * @param[in] speed Speed to initialize the host port at
  */
 static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
 {
     hw->hcfg_reg.descdma = 1;   //Enable scatt/gatt
-    hw->hcfg_reg.fslssupp = 1;  //FS/LS support only
+#if (OTG_HSPHY_INTERFACE == 0)
     /*
     Indicate to the OTG core what speed the PHY clock is at
-    Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
+    Note: It seems like S2/S3 PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
     hw->hcfg_reg.fslspclksel = (speed == USB_DWC_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
+#endif // (OTG_HSPHY_INTERFACE == 0)
     hw->hcfg_reg.perschedena = 0;   //Disable perio sched
 }
 
@@ -451,6 +466,7 @@ static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed
 
 static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
 {
+#if (OTG_HSPHY_INTERFACE == 0)
     usb_dwc_hfir_reg_t hfir;
     hfir.val = hw->hfir_reg.val;
     hfir.hfirrldctrl = 0;       //Disable dynamic loading
@@ -461,6 +477,7 @@ static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed
     */
     hfir.frint = (speed == USB_DWC_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
     hw->hfir_reg.val = hfir.val;
+#endif // (OTG_HSPHY_INTERFACE == 0)
 }
 
 // ----------------------------- HFNUM Register --------------------------------

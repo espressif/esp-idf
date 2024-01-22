@@ -9,12 +9,21 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "soc/chip_revision.h"
+#include "soc/usb_dwc_cfg.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
 #include "hal/efuse_hal.h"
 #include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
+
+// TODO: Remove target specific section after support for multiple USB peripherals is implemented
+#include "sdkconfig.h"
+#if (CONFIG_IDF_TARGET_ESP32P4)
+#define USB_BASE USB_DWC_HS
+#else
+#define USB_BASE USB_DWC
+#endif
 
 // ---------------------- Constants ------------------------
 
@@ -108,6 +117,10 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     //GUSBCFG register
     usb_dwc_ll_gusbcfg_dis_hnp_cap(hal->dev);       //Disable HNP
     usb_dwc_ll_gusbcfg_dis_srp_cap(hal->dev);       //Disable SRP
+#if (OTG_HSPHY_INTERFACE != 0)
+    usb_dwc_ll_gusbcfg_set_timeout_cal(hal->dev, 5); // 5 PHY clocks for our HS PHY
+    usb_dwc_ll_gusbcfg_set_utmi_phy(hal->dev);
+#endif // (OTG_HSPHY_INTERFACE != 0)
     //Enable interruts
     usb_dwc_ll_gintmsk_dis_intrs(hal->dev, 0xFFFFFFFF);     //Mask all interrupts first
     usb_dwc_ll_gintmsk_en_intrs(hal->dev, CORE_INTRS_EN_MSK);   //Unmask global interrupts
@@ -120,7 +133,7 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
 void usb_dwc_hal_init(usb_dwc_hal_context_t *hal)
 {
     //Check if a peripheral is alive by reading the core ID registers
-    usb_dwc_dev_t *dev = &USB_DWC;
+    usb_dwc_dev_t *dev = &USB_BASE;
     uint32_t core_id = usb_dwc_ll_gsnpsid_get_id(dev);
     HAL_ASSERT(core_id == CORE_REG_GSNPSID);
     (void) core_id;     //Suppress unused variable warning if asserts are disabled
