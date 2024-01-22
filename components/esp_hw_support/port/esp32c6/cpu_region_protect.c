@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,10 +32,10 @@ static void esp_cpu_configure_invalid_regions(void)
     __attribute__((unused)) const unsigned PMA_RWX     = PMA_L | PMA_EN | PMA_R | PMA_W | PMA_X;
 
     // 1. Gap at bottom of address space
-    PMA_ENTRY_SET_TOR(0, SOC_DEBUG_LOW, PMA_TOR | PMA_NONE);
+    PMA_ENTRY_SET_TOR(0, SOC_CPU_SUBSYSTEM_LOW, PMA_TOR | PMA_NONE);
 
-    // 2. Gap between debug region & IROM
-    PMA_ENTRY_SET_TOR(1, SOC_DEBUG_HIGH, PMA_NONE);
+    // 2. Gap between CPU subsystem region & IROM
+    PMA_ENTRY_SET_TOR(1, SOC_CPU_SUBSYSTEM_HIGH, PMA_NONE);
     PMA_ENTRY_SET_TOR(2, SOC_IROM_MASK_LOW, PMA_TOR | PMA_NONE);
 
     // 3. Gap between ROM & RAM
@@ -111,10 +111,10 @@ void esp_cpu_configure_region_protection(void)
     // Configure all the valid address regions using PMP
     //
 
-    // 1. Debug region
-    const uint32_t pmpaddr0 = PMPADDR_NAPOT(SOC_DEBUG_LOW, SOC_DEBUG_HIGH);
+    // 1. CPU Subsystem region - contains debug mode code and interrupt config registers
+    const uint32_t pmpaddr0 = PMPADDR_NAPOT(SOC_CPU_SUBSYSTEM_LOW, SOC_CPU_SUBSYSTEM_HIGH);
     PMP_ENTRY_SET(0, pmpaddr0, PMP_NAPOT | RWX);
-    _Static_assert(SOC_DEBUG_LOW < SOC_DEBUG_HIGH, "Invalid CPU debug region");
+    _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
     // 2.1 I-ROM
     PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
