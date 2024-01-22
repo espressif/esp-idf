@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -447,11 +447,11 @@ TEST_CASE("I2S_TDM_loopback_test_with_master_tx_and_rx", "[i2s_legacy]")
     i2s_test_io_config(I2S_TEST_MODE_LOOPBACK);
     printf("\r\nheap size: %"PRIu32"\n", esp_get_free_heap_size());
 
-    uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
+    uint8_t *data_wr = (uint8_t *)calloc(1, sizeof(uint8_t) * 400);
     size_t i2s_bytes_write = 0;
     size_t bytes_read = 0;
     int length = 0;
-    uint8_t *i2s_read_buff = (uint8_t *)malloc(sizeof(uint8_t) * 10000);
+    uint8_t *i2s_read_buff = (uint8_t *)calloc(1, sizeof(uint8_t) * 10000);
 
     for (int i = 0; i < 100; i++) {
         data_wr[i] = i + 1;
@@ -880,7 +880,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
         96000, 128000, 144000, 196000
     };
     int real_pulse = 0;
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_IDF_ENV_FPGA || CONFIG_IDF_TARGET_ESP32P4
     // Limit the test sample rate on FPGA platform due to the low frequency it supports.
     int case_cnt = 10;
 #else

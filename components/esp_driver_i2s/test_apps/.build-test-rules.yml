@@ -3,13 +3,8 @@
 components/esp_driver_i2s/test_apps/i2s:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
   depends_components:
     - esp_driver_i2s
-    - esp_driver_gpio
     - esp_driver_pcnt
 
 components/esp_driver_i2s/test_apps/i2s_multi_dev:
@@ -22,4 +17,3 @@ components/esp_driver_i2s/test_apps/i2s_multi_dev:
       reason: lack of runners
   depends_components:
     - esp_driver_i2s
-    - esp_driver_gpio

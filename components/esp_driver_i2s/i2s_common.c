@@ -432,6 +432,9 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
         handle->dma.desc[i]->offset = 0;
         handle->dma.bufs[i] = (uint8_t *) i2s_dma_calloc(1, bufsize * sizeof(uint8_t), I2S_DMA_ALLOC_CAPS, NULL);
         ESP_GOTO_ON_FALSE(handle->dma.bufs[i], ESP_ERR_NO_MEM, err, TAG,  "allocate DMA buffer failed");
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        esp_cache_msync(handle->dma.bufs[i], bufsize * sizeof(uint8_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+#endif
         handle->dma.desc[i]->buf = handle->dma.bufs[i];
         ESP_LOGV(TAG, "desc addr: %8p\tbuffer addr:%8p", handle->dma.desc[i], handle->dma.bufs[i]);
     }
