@@ -665,7 +665,7 @@ void ble_controller_scan_duplicate_config(void)
     uint32_t duplicate_mode = FILTER_DUPLICATE_DEFAULT;
     uint32_t cache_size = 100;
 #if CONFIG_BT_LE_SCAN_DUPL == true
-    cache_size = CONFIG_BT_LE_SCAN_DUPL_CACHE_SIZE;
+    cache_size = CONFIG_BT_LE_LL_DUP_SCAN_LIST_COUNT;
     if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 0) {
         duplicate_mode = FILTER_DUPLICATE_ADDRESS | FILTER_DUPLICATE_PDUTYPE;
     } else if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 1) {
@@ -911,9 +911,9 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         esp_pm_lock_acquire(s_pm_lock);
 #endif  // CONFIG_PM_ENABLE
         esp_phy_enable(PHY_MODEM_BT);
-        esp_btbb_enable();
         s_ble_active = true;
     }
+    esp_btbb_enable();
 #if CONFIG_SW_COEXIST_ENABLE
     coex_enable();
 #endif // CONFIG_SW_COEXIST_ENABLE
@@ -929,8 +929,8 @@ error:
 #if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
+    esp_btbb_disable();
     if (s_ble_active) {
-        esp_btbb_disable();
         esp_phy_disable(PHY_MODEM_BT);
 #if CONFIG_PM_ENABLE
         esp_pm_lock_release(s_pm_lock);
@@ -952,8 +952,8 @@ esp_err_t esp_bt_controller_disable(void)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
+    esp_btbb_disable();
     if (s_ble_active) {
-        esp_btbb_disable();
         esp_phy_disable(PHY_MODEM_BT);
 #if CONFIG_PM_ENABLE
         esp_pm_lock_release(s_pm_lock);
@@ -1192,7 +1192,7 @@ void esp_ble_controller_log_dump_all(bool output)
     esp_panic_handler_reconfigure_wdts(5000);
     BT_ASSERT_PRINT("\r\n[DUMP_START:");
     ble_log_async_output_dump_all(output);
-    BT_ASSERT_PRINT("]\r\n");
+    BT_ASSERT_PRINT(":DUMP_END]\r\n");
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
