@@ -136,13 +136,13 @@ menu "Example Connection Configuration"
 
         choice EXAMPLE_ETHERNET_TYPE
             prompt "Ethernet Type"
-            default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
+            default EXAMPLE_USE_INTERNAL_ETHERNET if SOC_EMAC_SUPPORTED
             default EXAMPLE_USE_W5500
             help
                 Select which kind of Ethernet will be used in the example.
 
             config EXAMPLE_USE_INTERNAL_ETHERNET
-                depends on IDF_TARGET_ESP32
+                depends on SOC_EMAC_SUPPORTED
                 select ETH_USE_ESP32_EMAC
                 bool "Internal EMAC"
                 help
@@ -227,14 +227,16 @@ menu "Example Connection Configuration"
             config EXAMPLE_ETH_MDC_GPIO
                 int "SMI MDC GPIO number"
                 range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 23
+                default 23 if IDF_TARGET_ESP32
+                default 31 if IDF_TARGET_ESP32P4
                 help
                     Set the GPIO number used by SMI MDC.
 
             config EXAMPLE_ETH_MDIO_GPIO
                 int "SMI MDIO GPIO number"
                 range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 18
+                default 18 if IDF_TARGET_ESP32
+                default 27 if IDF_TARGET_ESP32P4
                 help
                     Set the GPIO number used by SMI MDIO.
         endif
@@ -293,6 +295,7 @@ menu "Example Connection Configuration"
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"
             range -1 ENV_GPIO_OUT_RANGE_MAX
+            default 26 if IDF_TARGET_ESP32P4
             default 5
             help
                 Set the GPIO number used to reset PHY chip.
