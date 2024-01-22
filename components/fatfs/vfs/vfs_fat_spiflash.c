@@ -93,7 +93,7 @@ static esp_err_t s_f_mount_rw(FATFS *fs, const char *drv, const esp_vfs_fat_moun
 
         size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, mount_config->allocation_unit_size);
         ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
-        const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 0, alloc_unit_size};
+        const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (mount_config->use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
         fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
         free(workbuf);
         workbuf = NULL;
@@ -236,7 +236,7 @@ esp_err_t esp_vfs_fat_spiflash_format_rw_wl(const char* base_path, const char* p
     }
     size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, s_ctx[id]->mount_config.allocation_unit_size);
     ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
-    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 0, alloc_unit_size};
+    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (s_ctx[id]->mount_config.use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
     fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
     free(workbuf);
     workbuf = NULL;

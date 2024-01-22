@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -68,8 +68,8 @@ def number_of_clusters(number_of_sectors: int, sectors_per_cluster: int) -> int:
     return number_of_sectors // sectors_per_cluster
 
 
-def get_non_data_sectors_cnt(reserved_sectors_cnt: int, sectors_per_fat_cnt: int, root_dir_sectors_cnt: int) -> int:
-    return reserved_sectors_cnt + sectors_per_fat_cnt + root_dir_sectors_cnt
+def get_non_data_sectors_cnt(reserved_sectors_cnt: int, sectors_per_fat_cnt: int, fat_tables_cnt: int, root_dir_sectors_cnt: int) -> int:
+    return reserved_sectors_cnt + sectors_per_fat_cnt * fat_tables_cnt + root_dir_sectors_cnt
 
 
 def get_fatfs_type(clusters_count: int) -> int:
@@ -203,9 +203,14 @@ def get_args_for_partition_generator(desc: str, wl: bool) -> argparse.Namespace:
                         type=int,
                         choices=[FAT12, FAT16, 0],
                         help="""
-                        Type of fat. Select 12 for fat12, 16 for fat16. Don't set, or set to 0 for automatic
-                        calculation using cluster size and partition size.
+                        Type of the FAT file-system. Select '12' for FAT12, '16' for FAT16.
+                        Leave unset or select 0 for automatic file-system type detection.
                         """)
+    parser.add_argument('--fat_count',
+                        default=FATDefaults.FAT_TABLES_COUNT,
+                        type=int,
+                        choices=[1, 2],
+                        help='Number of file allocation tables (FATs) in the filesystem.')
 
     args = parser.parse_args()
     if args.fat_type == 0:
@@ -276,7 +281,7 @@ class FATDefaults:
     # FATFS defaults
     SIZE: int = 1024 * 1024
     RESERVED_SECTORS_COUNT: int = 1
-    FAT_TABLES_COUNT: int = 1
+    FAT_TABLES_COUNT: int = 2
     SECTORS_PER_CLUSTER: int = 1
     SECTOR_SIZE: int = 0x1000
     HIDDEN_SECTORS: int = 0

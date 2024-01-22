@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 from inspect import getmembers, isroutine
 from typing import Optional
@@ -64,12 +64,13 @@ class BootSector:
             raise NotInitialized('The BootSectorState instance is not initialized!')
         volume_uuid = generate_4bytes_random()
         pad_header: bytes = (boot_sector_state.sector_size - BootSector.BOOT_HEADER_SIZE) * EMPTY_BYTE
-        data_content: bytes = boot_sector_state.data_sectors * boot_sector_state.sector_size * FULL_BYTE
-        root_dir_content: bytes = boot_sector_state.root_dir_sectors_cnt * boot_sector_state.sector_size * EMPTY_BYTE
         fat_tables_content: bytes = (boot_sector_state.sectors_per_fat_cnt
                                      * boot_sector_state.fat_tables_cnt
                                      * boot_sector_state.sector_size
                                      * EMPTY_BYTE)
+        root_dir_content: bytes = boot_sector_state.root_dir_sectors_cnt * boot_sector_state.sector_size * EMPTY_BYTE
+        data_content: bytes = boot_sector_state.data_sectors * boot_sector_state.sector_size * FULL_BYTE
+
         self.boot_sector_state.binary_image = (
             BootSector.BOOT_SECTOR_HEADER.build(
                 dict(BS_jmpBoot=(b'\xeb\xfe\x90'),
