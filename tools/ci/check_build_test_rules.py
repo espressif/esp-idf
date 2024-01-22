@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import inspect
 import os
@@ -10,10 +8,14 @@ import re
 import sys
 from io import StringIO
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import yaml
-from idf_ci_utils import IDF_PATH, get_all_manifest_files
+from idf_ci_utils import get_all_manifest_files
+from idf_ci_utils import IDF_PATH
 
 YES = u'\u2713'
 NO = u'\u2717'
@@ -94,7 +96,7 @@ def check_readme(
         if not _readme_path:
             return None, SUPPORTED_TARGETS
 
-        with open(_readme_path) as _fr:
+        with open(_readme_path, encoding='utf8') as _fr:
             _readme_str = _fr.read()
 
         support_string = SUPPORTED_TARGETS_TABLE_REGEX.findall(_readme_str)
