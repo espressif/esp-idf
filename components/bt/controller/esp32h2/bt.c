@@ -640,7 +640,7 @@ void ble_controller_scan_duplicate_config(void)
     uint32_t duplicate_mode = FILTER_DUPLICATE_DEFAULT;
     uint32_t cache_size = 100;
 #if CONFIG_BT_LE_SCAN_DUPL == true
-    cache_size = CONFIG_BT_LE_SCAN_DUPL_CACHE_SIZE;
+    cache_size = CONFIG_BT_LE_LL_DUP_SCAN_LIST_COUNT;
     if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 0) {
         duplicate_mode = FILTER_DUPLICATE_ADDRESS | FILTER_DUPLICATE_PDUTYPE;
     } else if (CONFIG_BT_LE_SCAN_DUPL_TYPE == 1) {
@@ -1164,7 +1164,7 @@ void esp_ble_controller_log_dump_all(bool output)
     esp_panic_handler_reconfigure_wdts(5000);
     BT_ASSERT_PRINT("\r\n[DUMP_START:");
     ble_log_async_output_dump_all(output);
-    BT_ASSERT_PRINT("]\r\n");
+    BT_ASSERT_PRINT(":DUMP_END]\r\n");
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
