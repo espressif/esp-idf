@@ -157,13 +157,19 @@ repos:
         additional_dependencies:
           - PyYAML == 5.3.1
           - idf-build-apps~=2.0
-      - id: sort-build-test-rules-ymls
-        name: sort .build-test-rules.yml files
-        entry: tools/ci/check_build_test_rules.py sort-yaml
+      - id: sort-yaml-files
+        name: sort yaml files
+        entry: tools/ci/sort_yaml.py
         language: python
-        files: '\.build-test-rules\.yml'
+        files: '\.build-test-rules\.yml$'
         additional_dependencies:
-          - PyYAML == 5.3.1
+          - ruamel.yaml
+      - id: sort-yaml-test
+        name: sort yaml test
+        entry: python -m unittest tools/ci/sort_yaml.py
+        language: python
+        files: 'tools/ci/sort_yaml\.py$'
+        additional_dependencies:
           - ruamel.yaml
       - id: check-build-test-rules-path-exists
         name: check path in .build-test-rules.yml exists

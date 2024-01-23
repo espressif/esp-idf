@@ -50,3 +50,4 @@ tools/ci/python_packages/gitlab_api.py
 tools/ci/python_packages/idf_http_server_test/**/*
 tools/ci/python_packages/idf_iperf_test_util/**/*
 tools/esp_prov/**/*
+tools/ci/sort_yaml.py
