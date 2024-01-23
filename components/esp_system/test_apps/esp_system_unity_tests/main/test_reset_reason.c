@@ -389,7 +389,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
 #include "xt_instr_macros.h"
 #include "xtensa/config/specreg.h"
 
-static int size_stack = 1024 * 3;
+static int size_stack = 1024 * 4;
 static StackType_t *start_addr_stack;
 
 static int fibonacci(int n, void* func(void))

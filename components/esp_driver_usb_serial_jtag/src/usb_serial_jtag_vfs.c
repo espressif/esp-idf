@@ -18,7 +18,6 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h" // Old headers for the aliasing functions
 #include "esp_vfs_usb_serial_jtag.h" // Old headers for the aliasing functions
-#include "esp_private/esp_vfs_console.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -395,7 +394,7 @@ esp_err_t usb_serial_jtag_vfs_register(void)
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 ESP_SYSTEM_INIT_FN(init_vfs_usj, CORE, BIT(0), 111)
 {
-    esp_vfs_set_primary_dev_vfs_def_struct(&usj_vfs);
+    usb_serial_jtag_vfs_register();
     return ESP_OK;
 }
 #endif
@@ -403,7 +402,8 @@ ESP_SYSTEM_INIT_FN(init_vfs_usj, CORE, BIT(0), 111)
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 ESP_SYSTEM_INIT_FN(init_vfs_usj_sec, CORE, BIT(0), 112)
 {
-    esp_vfs_set_secondary_dev_vfs_def_struct(&usj_vfs);
+    // "/dev/seccondary_usb_serial_jtag" unfortunately is too long for vfs
+    esp_vfs_register("/dev/secondary", &usj_vfs, NULL);
     return ESP_OK;
 }
 #endif
