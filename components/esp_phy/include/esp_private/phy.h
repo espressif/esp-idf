@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,6 +174,12 @@ esp_phy_modem_t phy_get_modem_flag(void);
  *
  */
 _lock_t phy_get_lock(void);
+
+/**
+ * @brief Call this funnction to track pll immediately.
+ *
+ */
+void phy_track_pll(void);
 #ifdef __cplusplus
 }
 #endif
