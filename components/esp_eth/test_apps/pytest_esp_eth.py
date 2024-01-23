@@ -1,16 +1,18 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import contextlib
 import logging
 import os
 import socket
-from multiprocessing import Pipe, Process, connection
+from multiprocessing import connection
+from multiprocessing import Pipe
+from multiprocessing import Process
 from typing import Iterator
 
 import pytest
 from pytest_embedded_idf import IdfDut
-from scapy.all import Ether, raw
+from scapy.all import Ether
+from scapy.all import raw
 
 ETH_TYPE = 0x3300
 
@@ -24,6 +26,7 @@ class EthTestIntf(object):
     def find_target_if(self, my_if: str = '') -> None:
         # try to determine which interface to use
         netifs = os.listdir('/sys/class/net/')
+        # order matters - ETH NIC with the highest number is connected to DUT on CI runner
         netifs.sort(reverse=True)
         logging.info('detected interfaces: %s', str(netifs))
 
@@ -203,8 +206,7 @@ def test_esp_emac_hal(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.ip101
-@pytest.mark.temp_skip_ci(targets=['esp32'], reason='runner under maintenance')
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize('config', [
     'default_ip101',
 ], indirect=True)
@@ -215,7 +217,6 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
 # ----------- LAN8720 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_lan8720
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_lan8720',
 ], indirect=True)
@@ -228,7 +229,6 @@ def test_esp_eth_lan8720(dut: IdfDut) -> None:
 # ----------- RTL8201 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_rtl8201
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_rtl8201',
 ], indirect=True)
@@ -241,7 +241,6 @@ def test_esp_eth_rtl8201(dut: IdfDut) -> None:
 # ----------- KSZ8041 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_ksz8041
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_ksz8041',
 ], indirect=True)
@@ -254,7 +253,6 @@ def test_esp_eth_ksz8041(dut: IdfDut) -> None:
 # ----------- DP83848 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_dp83848
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_dp83848',
 ], indirect=True)
@@ -267,7 +265,6 @@ def test_esp_eth_dp83848(dut: IdfDut) -> None:
 # ----------- W5500 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_w5500
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_w5500',
 ], indirect=True)
@@ -280,7 +277,6 @@ def test_esp_eth_w5500(dut: IdfDut) -> None:
 # ----------- KSZ8851SNL -----------
 @pytest.mark.esp32
 @pytest.mark.eth_ksz8851snl
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_ksz8851snl',
 ], indirect=True)
@@ -293,7 +289,6 @@ def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
 # ----------- DM9051 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_dm9051
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_dm9051',
 ], indirect=True)
