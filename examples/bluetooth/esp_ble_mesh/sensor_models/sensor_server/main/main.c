@@ -49,22 +49,22 @@ static int8_t outdoor_temp = 60;    /* Outdoor temperature is 30 Degrees Celsius
 static uint8_t dev_uuid[ESP_BLE_MESH_OCTET16_LEN] = { 0x32, 0x10 };
 
 static esp_ble_mesh_cfg_srv_t config_server = {
+    /* 3 transmissions with 20ms interval */
+    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .relay = ESP_BLE_MESH_RELAY_ENABLED,
+    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
-#if defined(CONFIG_BLE_MESH_FRIEND)
-    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
-#else
-    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
-#endif
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
 #endif
+#if defined(CONFIG_BLE_MESH_FRIEND)
+    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
+#else
+    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
+#endif
     .default_ttl = 7,
-    /* 3 transmissions with 20ms interval */
-    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
-    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 
 NET_BUF_SIMPLE_DEFINE_STATIC(sensor_data_0, 1);
@@ -89,41 +89,53 @@ static esp_ble_mesh_sensor_state_t sensor_states[2] = {
          * Sensor Descriptor state represents the attributes describing the sensor
          * data. This state does not change throughout the lifetime of an element.
          */
-        .descriptor.positive_tolerance = SENSOR_POSITIVE_TOLERANCE,
-        .descriptor.negative_tolerance = SENSOR_NEGATIVE_TOLERANCE,
-        .descriptor.sampling_function = SENSOR_SAMPLE_FUNCTION,
-        .descriptor.measure_period = SENSOR_MEASURE_PERIOD,
-        .descriptor.update_interval = SENSOR_UPDATE_INTERVAL,
-        .sensor_data.format = ESP_BLE_MESH_SENSOR_DATA_FORMAT_A,
-        .sensor_data.length = 0, /* 0 represents the length is 1 */
-        .sensor_data.raw_value = &sensor_data_0,
+        .descriptor = {
+            .positive_tolerance = SENSOR_POSITIVE_TOLERANCE,
+            .negative_tolerance = SENSOR_NEGATIVE_TOLERANCE,
+            .sampling_function = SENSOR_SAMPLE_FUNCTION,
+            .measure_period = SENSOR_MEASURE_PERIOD,
+            .update_interval = SENSOR_UPDATE_INTERVAL,
+        },
+        .sensor_data = {
+            .format = ESP_BLE_MESH_SENSOR_DATA_FORMAT_A,
+            .length = 0, /* 0 represents the length is 1 */
+            .raw_value = &sensor_data_0,
+        },
     },
     [1] = {
         .sensor_property_id = SENSOR_PROPERTY_ID_1,
-        .descriptor.positive_tolerance = SENSOR_POSITIVE_TOLERANCE,
-        .descriptor.negative_tolerance = SENSOR_NEGATIVE_TOLERANCE,
-        .descriptor.sampling_function = SENSOR_SAMPLE_FUNCTION,
-        .descriptor.measure_period = SENSOR_MEASURE_PERIOD,
-        .descriptor.update_interval = SENSOR_UPDATE_INTERVAL,
-        .sensor_data.format = ESP_BLE_MESH_SENSOR_DATA_FORMAT_A,
-        .sensor_data.length = 0, /* 0 represents the length is 1 */
-        .sensor_data.raw_value = &sensor_data_1,
+        .descriptor = {
+            .positive_tolerance = SENSOR_POSITIVE_TOLERANCE,
+            .negative_tolerance = SENSOR_NEGATIVE_TOLERANCE,
+            .sampling_function = SENSOR_SAMPLE_FUNCTION,
+            .measure_period = SENSOR_MEASURE_PERIOD,
+            .update_interval = SENSOR_UPDATE_INTERVAL,
+        },
+        .sensor_data = {
+            .format = ESP_BLE_MESH_SENSOR_DATA_FORMAT_A,
+            .length = 0, /* 0 represents the length is 1 */
+            .raw_value = &sensor_data_1,
+        },
     },
 };
 
 /* 20 octets is large enough to hold two Sensor Descriptor state values. */
 ESP_BLE_MESH_MODEL_PUB_DEFINE(sensor_pub, 20, ROLE_NODE);
 static esp_ble_mesh_sensor_srv_t sensor_server = {
-    .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
-    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+    .rsp_ctrl = {
+        .get_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+        .set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+    },
     .state_count = ARRAY_SIZE(sensor_states),
     .states = sensor_states,
 };
 
 ESP_BLE_MESH_MODEL_PUB_DEFINE(sensor_setup_pub, 20, ROLE_NODE);
 static esp_ble_mesh_sensor_setup_srv_t sensor_setup_server = {
-    .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
-    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+    .rsp_ctrl = {
+        .get_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+        .set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+    },
     .state_count = ARRAY_SIZE(sensor_states),
     .states = sensor_states,
 };
@@ -140,8 +152,8 @@ static esp_ble_mesh_elem_t elements[] = {
 
 static esp_ble_mesh_comp_t composition = {
     .cid = CID_ESP,
-    .elements = elements,
     .element_count = ARRAY_SIZE(elements),
+    .elements = elements,
 };
 
 static esp_ble_mesh_prov_t provision = {
@@ -244,7 +256,7 @@ static void example_ble_mesh_send_sensor_descriptor_status(esp_ble_mesh_sensor_s
     esp_err_t err;
     int i;
 
-    status = calloc(1, ARRAY_SIZE(sensor_states) * ESP_BLE_MESH_SENSOR_DESCRIPTOR_LEN);
+    status = (uint8_t *)calloc(1, ARRAY_SIZE(sensor_states) * ESP_BLE_MESH_SENSOR_DESCRIPTOR_LEN);
     if (!status) {
         ESP_LOGE(TAG, "No memory for sensor descriptor status!");
         return;
@@ -427,7 +439,7 @@ static void example_ble_mesh_send_sensor_status(esp_ble_mesh_sensor_server_cb_pa
         }
     }
 
-    status = calloc(1, buf_size);
+    status = (uint8_t *)calloc(1, buf_size);
     if (!status) {
         ESP_LOGE(TAG, "No memory for sensor status!");
         return;
@@ -485,7 +497,7 @@ static void example_ble_mesh_send_sensor_column_status(esp_ble_mesh_sensor_serve
 
     length = ESP_BLE_MESH_SENSOR_PROPERTY_ID_LEN +param->value.get.sensor_column.raw_value_x->len;
 
-    status = calloc(1, length);
+    status = (uint8_t *)calloc(1, length);
     if (!status) {
         ESP_LOGE(TAG, "No memory for sensor column status!");
         return;
@@ -599,7 +611,7 @@ static esp_err_t ble_mesh_init(void)
         return err;
     }
 
-    err = esp_ble_mesh_node_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    err = esp_ble_mesh_node_prov_enable((esp_ble_mesh_prov_bearer_t)(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to enable mesh node");
         return err;

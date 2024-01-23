@@ -238,6 +238,11 @@ typedef union {
     esp_ble_mesh_rpr_link_report_t      link_report;        /*!< For ESP_BLE_MESH_MODEL_OP_RPR_LINK_REPORT */
 } esp_ble_mesh_rpr_client_recv_cb_t;
 
+/** This enum value is the event type of the performed action */
+typedef enum {
+    ESP_BLE_MESH_START_RPR_COMP_SUB_EVT,
+} esp_ble_mesh_rpr_client_act_evt_t;
+
 /** Remote Provisioning Client model callback parameters */
 typedef union {
     /** Event parameters of sending messages */
@@ -252,10 +257,7 @@ typedef union {
     } recv;                                             /*!< Event parameters of receiving messages */
     /** Event parameters of performed actions */
     struct {
-        /** Event type of the performed action */
-        enum {
-            ESP_BLE_MESH_START_RPR_COMP_SUB_EVT,
-        } sub_evt;                                      /*!< Event type of the performed action */
+        esp_ble_mesh_rpr_client_act_evt_t sub_evt;      /*!< Event type of the performed action */
         /**
          * @brief ESP_BLE_MESH_START_RPR_COMP_SUB_EVT
          */
