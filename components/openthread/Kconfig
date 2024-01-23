@@ -374,5 +374,24 @@ menu "OpenThread"
         default n
         help
             Select this option to enable the OpenThread Radio Spinel for external protocol stack, such as Zigbee.
+    menu "Thread Address Query Config"
+        config OPENTHREAD_ADDRESS_QUERY_TIMEOUT
+            int "Timeout value (in seconds) for a address notification response after sending an address query."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 3
+            range 1 10
+
+        config OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
+            int "Initial retry delay for address query (in seconds)."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 15
+            range 1 120
+
+        config OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
+            int "Maximum retry delay for address query (in seconds)."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 120
+            range OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY 960
+    endmenu
 
 endmenu
