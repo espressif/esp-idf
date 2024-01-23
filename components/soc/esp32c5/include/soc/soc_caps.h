@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,7 +71,6 @@
 // #define SOC_ECDSA_SUPPORTED             1  // TODO: [ESP32C5] IDF-8618
 // #define SOC_KEY_MANAGER_SUPPORTED       1  // TODO: [ESP32C5] IDF-8621
 // #define SOC_HUK_SUPPORTED               1  // TODO: [ESP32C5] IDF-8617
-#define SOC_INT_HW_NESTED_SUPPORTED        1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -265,7 +264,7 @@
 // TODO: [ESP32C5] 8684
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
-// #define SOC_LEDC_CHANNEL_NUM                (6)
+#define SOC_LEDC_CHANNEL_NUM                (6)
 // #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
 // #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
 // #define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
@@ -461,7 +460,7 @@
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)  // TODO: [ESP32C5] IDF-8622
-// #define SOC_FLASH_ENCRYPTION_XTS_AES        1
+#define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1  // TODO: [ESP32C5] IDF-8622
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
