@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "soc/soc_caps.h"
 
 #if SOC_KEY_MANAGER_SUPPORTED
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -32,12 +33,12 @@ static inline void huk_ll_configure_mode(const esp_huk_mode_t huk_mode)
     REG_SET_FIELD(HUK_CONF_REG, HUK_MODE, huk_mode);
 }
 
-void huk_ll_write_info(const uint8_t *buffer, const size_t size)
+static inline void huk_ll_write_info(const uint8_t *buffer, const size_t size)
 {
     memcpy((uint8_t *)HUK_INFO_MEM, buffer, size);
 }
 
-void huk_ll_read_info(uint8_t *buffer, const size_t size)
+static inline void huk_ll_read_info(uint8_t *buffer, const size_t size)
 {
     memcpy(buffer, (uint8_t *)HUK_INFO_MEM, size);
 }
@@ -91,15 +92,15 @@ static inline void huk_ll_clear_int(const esp_huk_interrupt_type_t intr)
  */
 static inline esp_huk_state_t huk_ll_get_state(void)
 {
-    return REG_GET_FIELD(HUK_STATE_REG, HUK_STATE);
+    return (esp_huk_state_t) REG_GET_FIELD(HUK_STATE_REG, HUK_STATE);
 }
 
 /**
- * @brief Get the HUK generation status: esp_huk_gen_status_t
+ * @brief Get the HUK generation status
  */
 static inline esp_huk_gen_status_t huk_ll_get_gen_status(void)
 {
-    return REG_GET_FIELD(HUK_STATUS_REG, HUK_STATUS);
+    return (esp_huk_gen_status_t) REG_GET_FIELD(HUK_STATUS_REG, HUK_STATUS);
 }
 
 /**

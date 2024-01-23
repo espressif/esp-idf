@@ -68,7 +68,10 @@
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rtc.h"
 #include "soc/hp_sys_clkrst_reg.h"
-#include "soc/keymng_reg.h"
+#endif
+
+#if SOC_KEY_MANAGER_SUPPORTED
+#include "hal/key_mgr_hal.h"
 #endif
 
 #include "esp_private/rtc_clk.h"
@@ -305,11 +308,14 @@ static void start_other_core(void)
     if(REG_GET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL)){
         REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
     }
+#endif
+
+#if SOC_KEY_MANAGER_SUPPORTED
     // The following operation makes the Key Manager to use eFuse key for ECDSA and XTS-AES operation by default
     // This is to keep the default behavior same as the other chips
     // If the Key Manager configuration is already locked then following operation does not have any effect
-    // TODO-IDF 7925 (Move this under SOC_KEY_MANAGER_SUPPORTED)
-    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 3);
+    key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 #endif
     ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
 

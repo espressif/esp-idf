@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,8 @@
 #include "esp_log.h"
 #include "hal/wdt_hal.h"
 
-#if CONFIG_IDF_TARGET_ESP32P4 //TODO-IDF-7925
-#include "soc/keymng_reg.h"
+#if SOC_KEY_MANAGER_SUPPORTED
+#include "hal/key_mgr_hal.h"
 #endif
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
@@ -214,12 +214,6 @@ static esp_err_t check_and_generate_encryption_keys(void)
         }
         ESP_LOGI(TAG, "Using pre-loaded flash encryption key in efuse");
     }
-
-#if CONFIG_IDF_TARGET_ESP32P4 //TODO - IDF-7925
-    // Force Key Manager to use eFuse key for XTS-AES operation
-    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 2);
-#endif
-
     return ESP_OK;
 }
 

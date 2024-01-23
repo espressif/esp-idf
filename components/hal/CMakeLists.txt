@@ -26,6 +26,11 @@ if(CONFIG_SOC_WDT_SUPPORTED AND NOT CONFIG_HAL_WDT_USE_ROM_IMPL)
     list(APPEND srcs "wdt_hal_iram.c")
 endif()
 
+if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
+    list(APPEND srcs "key_mgr_hal.c")
+    list(APPEND srcs "huk_hal.c")
+endif()
+
 if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     if(CONFIG_SOC_MMU_PERIPH_NUM)
         list(APPEND srcs "mmu_hal.c")
@@ -240,11 +245,6 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_DIG_SIGN_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32S2)
         # For ESP32-S2 we do not have DS HAL layer implementation yet
         list(APPEND srcs "ds_hal.c")
-    endif()
-
-    if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
-        list(APPEND srcs "key_mgr_hal.c")
-        list(APPEND srcs "huk_hal.c")
     endif()
 
     if(CONFIG_SOC_USB_OTG_SUPPORTED)

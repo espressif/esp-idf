@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #define HUK_INFO_SIZE           384
+#define HUK_RISK_ALERT_LEVEL    4
 
 /**
  * @brief Mode for Hardware Unique Key Process: recovery, generation
