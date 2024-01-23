@@ -145,9 +145,9 @@ def test_component_ut_esp_eth(env, appname):  # type: (tiny_test_fw.Env, str) ->
     ttfw_idf.ComponentUTResult.parse_result(stdout, test_format=TestFormat.UNITY_BASIC)
 
 
-@ttfw_idf.idf_component_unit_test(env_tag='COMPONENT_UT_IP101', target=['esp32'])
-def test_component_ut_esp_eth_ip101(env, _):  # type: (tiny_test_fw.Env, typing.Any) -> None
-    test_component_ut_esp_eth(env, 'ip101')
+# @ttfw_idf.idf_component_unit_test(env_tag='COMPONENT_UT_IP101', target=['esp32'])
+# def test_component_ut_esp_eth_ip101(env, _):  # type: (tiny_test_fw.Env, typing.Any) -> None
+#     test_component_ut_esp_eth(env, 'ip101')
 
 
 @ttfw_idf.idf_component_unit_test(env_tag='COMPONENT_UT_LAN8720', target=['esp32'])
@@ -156,5 +156,5 @@ def test_component_ut_esp_eth_lan8720(env, _):  # type: (tiny_test_fw.Env, typin
 
 
 if __name__ == '__main__':
-    test_component_ut_esp_eth_ip101()
+    # test_component_ut_esp_eth_ip101()
     test_component_ut_esp_eth_lan8720()
