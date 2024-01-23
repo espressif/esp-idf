@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,24 @@ TEST_CASE("esp console init/deinit test", "[console]")
         .help = "Print Hello World",
         .hint = NULL,
         .func = do_hello_cmd,
+    };
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    // re-register the same command, just for test
+    TEST_ESP_OK(esp_console_cmd_register(&cmd));
+    TEST_ESP_OK(esp_console_deinit());
+}
+
+TEST_CASE("esp console init/deinit with context test", "[console]")
+{
+    int dummy = 47;
+    esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_init(&console_config));
+    const esp_console_cmd_t cmd = {
+        .command = "hello",
+        .help = "Print Hello World",
+        .hint = NULL,
+        .func_w_context = do_not_call,
+        .context = &dummy,
     };
     TEST_ESP_OK(esp_console_cmd_register(&cmd));
     // re-register the same command, just for test
@@ -196,22 +214,6 @@ TEST_CASE("esp console init/deinit test, minimal config", "[console]")
     TEST_ESP_OK(esp_console_deinit());
 }
 
-TEST_CASE("esp console test set_context", "[console]")
-{
-    /* Test with minimal init config */
-    esp_console_config_t console_config = {
-        .max_cmdline_args = 2,
-        .max_cmdline_length = 100,
-    };
-
-    TEST_ESP_OK(esp_console_init(&console_config));
-
-    TEST_ASSERT_EQUAL(esp_console_cmd_set_context(NULL, NULL), ESP_ERR_INVALID_ARG);
-    TEST_ASSERT_EQUAL(esp_console_cmd_set_context("invalid", NULL), ESP_ERR_NOT_FOUND);
-
-    TEST_ESP_OK(esp_console_deinit());
-}
-
 TEST_CASE("esp console test with context", "[console]")
 {
     /* Test with minimal init config */
@@ -222,44 +224,43 @@ TEST_CASE("esp console test with context", "[console]")
 
     TEST_ESP_OK(esp_console_init(&console_config));
 
-    const esp_console_cmd_t cmds[] = {
-        {
-            .command = "hello-c1",
-            .help = "Print Hello World in context c1",
-            .hint = NULL,
-            .func_w_context = do_hello_cmd_with_context,
-        },
-        {
-            .command = "hello-c2",
-            .help = "Print Hello World in context c2",
-            .hint = NULL,
-            .func_w_context = do_hello_cmd_with_context,
-        },
-    };
-    cmd_context_t contexts[] = {
-        {
-            .in = "c1",
-            .out = NULL,
-        },
-        {
-            .in = "c2",
-            .out = NULL,
-        },
+    cmd_context_t context0 = {
+        .in = "c1",
+        .out = NULL,
     };
 
-    static_assert((sizeof(contexts) / sizeof(contexts[0])) == (sizeof(cmds) / sizeof(cmds[0])));
+    cmd_context_t context1 = {
+       .in = "c2",
+       .out = NULL,
+    };
 
-    for (int i=0; i < sizeof(cmds) / sizeof(cmds[0]); i++) {
-        TEST_ESP_OK(esp_console_cmd_register(&cmds[i]));
-        TEST_ESP_OK(esp_console_cmd_set_context(cmds[i].command, &contexts[i]));
-    }
+    const esp_console_cmd_t cmd0 = {
+        .command = "hello-c1",
+        .help = "Print Hello World in context c1",
+        .hint = NULL,
+        .func_w_context = do_hello_cmd_with_context,
+        .context = &context0,
+    };
 
-    for (int i=0; i < sizeof(cmds) / sizeof(cmds[0]); i++) {
-        int ret;
-        TEST_ESP_OK(esp_console_run(cmds[i].command, &ret));
-        TEST_ASSERT_EQUAL(ret, 0);
-        TEST_ASSERT_EQUAL(contexts[i].in, contexts[i].out);
-    }
+    const esp_console_cmd_t cmd1 = {
+       .command = "hello-c2",
+       .help = "Print Hello World in context c2",
+       .hint = NULL,
+       .func_w_context = do_hello_cmd_with_context,
+       .context = &context1,
+    };
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd0));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd1));
+
+    int ret;
+    TEST_ESP_OK(esp_console_run(cmd0.command, &ret));
+    TEST_ASSERT_EQUAL(ret, 0);
+    TEST_ASSERT_EQUAL(context0.in, context0.out);
+
+    TEST_ESP_OK(esp_console_run(cmd1.command, &ret));
+    TEST_ASSERT_EQUAL(ret, 0);
+    TEST_ASSERT_EQUAL(context1.in, context1.out);
 
     TEST_ESP_OK(esp_console_deinit());
 }
