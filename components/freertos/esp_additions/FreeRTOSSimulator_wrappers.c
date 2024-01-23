@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <pthread.h>
+#include <dlfcn.h>
+#include <sys/types.h>
 #include "esp_err.h"
 #include "errno.h"
 
@@ -12,7 +14,7 @@
  *  EINTR event on every FreeRTOS interrupt; we workaround this problem by wrapping select()
  *  to bypass and silence these events.
  */
-extern int __real_select (int fd, fd_set * rfds, fd_set * wfds, fd_set *efds, struct timeval *tval);
+typedef int (*select_func_t) (int fd, fd_set * rfds, fd_set * wfds, fd_set *efds, struct timeval *tval);
 
 static inline int64_t get_us(void)
 {
@@ -21,13 +23,14 @@ static inline int64_t get_us(void)
     return spec.tv_nsec / 1000 + spec.tv_sec * 1000000;
 }
 
-int __wrap_select (int fd, fd_set * rfds, fd_set * wfds, fd_set *efds, struct timeval *tval)
+int select (int fd, fd_set * rfds, fd_set * wfds, fd_set *efds, struct timeval *tval)
 {
     int ret;
     struct timeval *tv = tval;
     struct timeval timeval_local = {};
     int64_t start = 0;
     int64_t timeout_us = 0;
+    select_func_t real_select = (select_func_t) dlsym(RTLD_NEXT, "select");
     if (tv != NULL) {
         start = get_us();
         timeout_us = tval->tv_sec * 1000000 + tval->tv_usec;
@@ -35,7 +38,7 @@ int __wrap_select (int fd, fd_set * rfds, fd_set * wfds, fd_set *efds, struct ti
         timeval_local.tv_usec = tval->tv_usec;
         tv = &timeval_local;  // this (tv != NULL) indicates that we should handle timeouts
     }
-    while ((ret = __real_select(fd, rfds, wfds, efds, tv)) < 0 && errno == EINTR) {
+    while ((ret = real_select(fd, rfds, wfds, efds, tv)) < 0 && errno == EINTR) {
         if (tv != NULL) {
             int64_t now = get_us();
             timeout_us -= now - start;
