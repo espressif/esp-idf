@@ -352,6 +352,11 @@ static void do_core_init(void)
     esp_efuse_disable_basic_rom_console();
 #endif
 
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    // For anti-rollback case, recheck security version before we boot-up the current application
+    assert(esp_efuse_check_secure_version(esp_ota_get_app_description()->secure_version) == true && "Incorrect secure version of app");
+#endif
+
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     esp_flash_encryption_init_checks();
 #endif

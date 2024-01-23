@@ -130,4 +130,5 @@ typedef struct {
 
 /** @cond */
 _Static_assert(sizeof(esp_app_desc_t) == 256, "esp_app_desc_t should be 256 bytes");
+_Static_assert(offsetof(esp_app_desc_t, secure_version) == 4, "secure_version field must be at 4 offset");
 /** @endcond */
