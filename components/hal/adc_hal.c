@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -358,3 +358,10 @@ void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal)
     //disconnect DMA and peripheral
     adc_ll_digi_dma_disable();
 }
+
+#if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
+void adc_hal_digi_clr_eof(void)
+{
+    adc_ll_digi_dma_clr_eof();
+}
+#endif
