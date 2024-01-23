@@ -248,3 +248,16 @@ def sanitize_job_name(name: str) -> str:
     :return: sanitized job name
     """
     return re.sub(r' \d+/\d+', '', name)
+
+
+def idf_relpath(p: str) -> str:
+    """
+    Turn all paths under IDF_PATH to relative paths
+    :param p: path
+    :return: relpath to IDF_PATH, or absolute path if not under IDF_PATH
+    """
+    abs_path = os.path.abspath(p)
+    if abs_path.startswith(IDF_PATH):
+        return os.path.relpath(abs_path, IDF_PATH)
+    else:
+        return abs_path

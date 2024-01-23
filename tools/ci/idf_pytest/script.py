@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import fnmatch
 import io
 import logging
@@ -11,14 +10,22 @@ from pathlib import Path
 
 import pytest
 from _pytest.config import ExitCode
-from idf_build_apps import App, find_apps
-from idf_build_apps.constants import SUPPORTED_TARGETS, BuildStatus
+from idf_build_apps import App
+from idf_build_apps import find_apps
+from idf_build_apps.constants import BuildStatus
+from idf_build_apps.constants import SUPPORTED_TARGETS
 from idf_ci.app import IdfCMakeApp
-from idf_ci_utils import IDF_PATH, get_all_manifest_files, to_list
+from idf_ci_utils import get_all_manifest_files
+from idf_ci_utils import IDF_PATH
+from idf_ci_utils import idf_relpath
+from idf_ci_utils import to_list
 from idf_py_actions.constants import PREVIEW_TARGETS as TOOLS_PREVIEW_TARGETS
 from idf_py_actions.constants import SUPPORTED_TARGETS as TOOLS_SUPPORTED_TARGETS
 
-from .constants import DEFAULT_BUILD_LOG_FILENAME, DEFAULT_CONFIG_RULES_STR, CollectMode, PytestCase
+from .constants import CollectMode
+from .constants import DEFAULT_BUILD_LOG_FILENAME
+from .constants import DEFAULT_CONFIG_RULES_STR
+from .constants import PytestCase
 from .plugin import IdfPytestEmbedded
 
 
@@ -176,27 +183,30 @@ def get_all_apps(
             )
 
     # app_path, target, config
-    pytest_app_path_tuple_dict: t.Dict[t.Tuple[Path, str, str], PytestCase] = {}
+    pytest_app_path_tuple_dict: t.Dict[t.Tuple[str, str, str], PytestCase] = {}
     for case in pytest_cases:
         for app in case.apps:
-            pytest_app_path_tuple_dict[(Path(app.path), app.target, app.config)] = case
+            pytest_app_path_tuple_dict[(app.path, app.target, app.config)] = case
 
-    modified_pytest_app_path_tuple_dict: t.Dict[t.Tuple[Path, str, str], PytestCase] = {}
+    modified_pytest_app_path_tuple_dict: t.Dict[t.Tuple[str, str, str], PytestCase] = {}
     for case in modified_pytest_cases:
         for app in case.apps:
-            modified_pytest_app_path_tuple_dict[(Path(app.path), app.target, app.config)] = case
+            modified_pytest_app_path_tuple_dict[(app.path, app.target, app.config)] = case
 
     test_related_apps: t.Set[App] = set()
     non_test_related_apps: t.Set[App] = set()
     for app in all_apps:
+        # PytestCase.app.path is idf_relpath
+        app_path = idf_relpath(app.app_dir)
+
         # override build_status if test script got modified
-        if case := modified_pytest_app_path_tuple_dict.get((Path(app.app_dir), app.target, app.config_name)):
+        if case := modified_pytest_app_path_tuple_dict.get((app_path, app.target, app.config_name)):
             test_related_apps.add(app)
             app.build_status = BuildStatus.SHOULD_BE_BUILT
             app.preserve = True
             logging.debug('Found app: %s - required by modified test case %s', app, case.path)
         elif app.build_status != BuildStatus.SKIPPED:
-            if case := pytest_app_path_tuple_dict.get((Path(app.app_dir), app.target, app.config_name)):
+            if case := pytest_app_path_tuple_dict.get((app_path, app.target, app.config_name)):
                 test_related_apps.add(app)
                 # should be built if
                 app.build_status = BuildStatus.SHOULD_BE_BUILT

@@ -13,6 +13,7 @@ from _pytest.python import Function
 from _pytest.runner import CallInfo
 from idf_build_apps import App
 from idf_build_apps.constants import BuildStatus
+from idf_ci_utils import idf_relpath
 from pytest_embedded import Dut
 from pytest_embedded.plugin import parse_multi_dut_args
 from pytest_embedded.utils import find_by_suffix
@@ -73,7 +74,7 @@ class IdfPytestEmbedded:
         self._single_target_duplicate_mode = single_target_duplicate_mode
 
         self.apps_list = (
-            [os.path.join(app.app_dir, app.build_dir) for app in apps if app.build_status == BuildStatus.SUCCESS]
+            [os.path.join(idf_relpath(app.app_dir), app.build_dir) for app in apps if app.build_status == BuildStatus.SUCCESS]
             if apps
             else None
         )
@@ -114,14 +115,8 @@ class IdfPytestEmbedded:
         configs = to_list(parse_multi_dut_args(count, self.get_param(item, 'config', DEFAULT_SDKCONFIG)))
         targets = to_list(parse_multi_dut_args(count, self.get_param(item, 'target', self.target[0])))
 
-        def abspath_or_relpath(s: str) -> str:
-            if os.path.abspath(s) and s.startswith(os.getcwd()):
-                return os.path.relpath(s)
-
-            return s
-
         return PytestCase(
-            [PytestApp(abspath_or_relpath(app_paths[i]), targets[i], configs[i]) for i in range(count)], item
+            [PytestApp(app_paths[i], targets[i], configs[i]) for i in range(count)], item
         )
 
     @pytest.hookimpl(tryfirst=True)
