@@ -24,7 +24,7 @@ MacOS 环境下从源码编译 OpenOCD
 
 使用 Homebrew 安装编译 OpenOCD 所需的软件包::
 
-	brew install automake libtool libusb wget gcc@4.9 pkg-config
+    brew install automake libtool libusb wget gcc@4.9 pkg-config
 
 
 构建 OpenOCD

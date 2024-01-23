@@ -279,7 +279,7 @@ The output from the heap trace has a similar format to the following example:
         total allocations 2 total frees 0
 
 .. note::
-    
+
     The above example output uses :doc:`IDF Monitor </api-guides/tools/idf-monitor>` to automatically decode PC addresses to their source files and line numbers.
 
 The first line indicates how many allocation entries are in the buffer, compared to its total size.

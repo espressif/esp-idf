@@ -98,7 +98,7 @@ USB 连接
 Udev 规则（仅限 Linux）
 --------------------------------
 
-Udev 是 Linux 内核的设备管理器，允许用户在没有 ``sudo`` 的情况下运行 ``dfu-util``（和 ``idf.py dfu-flash``）从而访问芯片。
+Udev 是 Linux 内核的设备管理器，允许用户在没有 ``sudo`` 的情况下运行 ``dfu-util`` （和 ``idf.py dfu-flash``）从而访问芯片。
 
 创建文件 ``/etc/udev/rules.d/40-dfuse.rules``，并在文件中添加如下内容::
 

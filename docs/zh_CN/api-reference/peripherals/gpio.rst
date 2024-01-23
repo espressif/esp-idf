@@ -64,28 +64,28 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
     GPIO 毛刺过滤器
     ---------------
 
-	{IDF_TARGET_NAME} 内置硬件的过滤器可以过滤掉 GPIO 输入端口上的毛刺信号，在一定程度上避免错误触发中断或者是错把噪声当成有效的外设信号。
+    {IDF_TARGET_NAME} 内置硬件的过滤器可以过滤掉 GPIO 输入端口上的毛刺信号，在一定程度上避免错误触发中断或者是错把噪声当成有效的外设信号。
 
-	.. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
+    .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
 
-		每个 GPIO 都可以使用独立的毛刺过滤器，该过滤器可以将那些脉冲宽度窄于 **2** 个采样时钟的信号剔除掉，该宽度无法配置。GPIO 对输入信号的采样时钟通常是 IO_MUX 的时钟源。在驱动中，此类过滤器称为 ``管脚毛刺过滤器``。可以调用 :cpp:func:`gpio_new_pin_glitch_filter` 函数创建一个过滤器句柄。过滤器的相关配置保存在 :cpp:type:`gpio_pin_glitch_filter_config_t` 结构体中。
+        每个 GPIO 都可以使用独立的毛刺过滤器，该过滤器可以将那些脉冲宽度窄于 **2** 个采样时钟的信号剔除掉，该宽度无法配置。GPIO 对输入信号的采样时钟通常是 IO_MUX 的时钟源。在驱动中，此类过滤器称为 ``管脚毛刺过滤器``。可以调用 :cpp:func:`gpio_new_pin_glitch_filter` 函数创建一个过滤器句柄。过滤器的相关配置保存在 :cpp:type:`gpio_pin_glitch_filter_config_t` 结构体中。
 
-		- :cpp:member:`gpio_pin_glitch_filter_config_t::gpio_num` 设置启用毛刺过滤器的 GPIO 编号。
+        - :cpp:member:`gpio_pin_glitch_filter_config_t::gpio_num` 设置启用毛刺过滤器的 GPIO 编号。
 
-	.. only:: SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    .. only:: SOC_GPIO_FLEX_GLITCH_FILTER_NUM
 
-		{IDF_TARGET_FLEX_GLITCH_FILTER_NUM:default="8"}
+        {IDF_TARGET_FLEX_GLITCH_FILTER_NUM:default="8"}
 
-		{IDF_TARGET_NAME} 提供了 {IDF_TARGET_FLEX_GLITCH_FILTER_NUM} 个灵活的毛刺过滤器，被过滤信号的脉冲宽度可以由软件进行配置。此类过滤器则称为 ``灵活毛刺过滤器``。每个过滤器都可以应用于任意 GPIO 输入，然而，将多个过滤器应用于同一 GPIO 上效果并不会叠加。可以调用 :cpp:func:`gpio_new_flex_glitch_filter` 函数来创建一个过滤器句柄。过滤器的相关配置保存在 :cpp:type:`gpio_flex_glitch_filter_config_t` 结构体中。
+        {IDF_TARGET_NAME} 提供了 {IDF_TARGET_FLEX_GLITCH_FILTER_NUM} 个灵活的毛刺过滤器，被过滤信号的脉冲宽度可以由软件进行配置。此类过滤器则称为 ``灵活毛刺过滤器``。每个过滤器都可以应用于任意 GPIO 输入，然而，将多个过滤器应用于同一 GPIO 上效果并不会叠加。可以调用 :cpp:func:`gpio_new_flex_glitch_filter` 函数来创建一个过滤器句柄。过滤器的相关配置保存在 :cpp:type:`gpio_flex_glitch_filter_config_t` 结构体中。
 
-		- :cpp:member:`gpio_flex_glitch_filter_config_t::gpio_num` 设置启用毛刺过滤器的 GPIO 编号。
-		- :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns` 和 :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` 是毛刺过滤器的关键参数。在:cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns` 时间内，任何脉冲信号，如果它的宽度小于 :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` ，那么该脉冲信号就会被滤除掉。:cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` 的值不能大于 :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns`。
+        - :cpp:member:`gpio_flex_glitch_filter_config_t::gpio_num` 设置启用毛刺过滤器的 GPIO 编号。
+        - :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns` 和 :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` 是毛刺过滤器的关键参数。在:cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns` 时间内，任何脉冲信号，如果它的宽度小于 :cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` ，那么该脉冲信号就会被滤除掉。:cpp:member:`gpio_flex_glitch_filter_config_t::window_thres_ns` 的值不能大于 :cpp:member:`gpio_flex_glitch_filter_config_t::window_width_ns`。
 
-	.. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER and SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER and SOC_GPIO_FLEX_GLITCH_FILTER_NUM
 
-		请注意，``管脚毛刺过滤器`` 和 ``灵活毛刺过滤器`` 是各自独立的，支持为同一 GPIO 同时启用这两种过滤器。
+        请注意，``管脚毛刺过滤器`` 和 ``灵活毛刺过滤器`` 是各自独立的，支持为同一 GPIO 同时启用这两种过滤器。
 
-	毛刺过滤器默认关闭，可调用 :cpp:func:`gpio_glitch_filter_enable` 使能过滤器。如需回收这个过滤器，可以调用 :cpp:func:`gpio_del_glitch_filter` 函数。在回收句柄前，请确保过滤器处于关闭状态，否则需调用 :cpp:func:`gpio_glitch_filter_disable`。
+    毛刺过滤器默认关闭，可调用 :cpp:func:`gpio_glitch_filter_enable` 使能过滤器。如需回收这个过滤器，可以调用 :cpp:func:`gpio_del_glitch_filter` 函数。在回收句柄前，请确保过滤器处于关闭状态，否则需调用 :cpp:func:`gpio_glitch_filter_disable`。
 
 
 .. only:: SOC_GPIO_SUPPORT_PIN_HYS_FILTER

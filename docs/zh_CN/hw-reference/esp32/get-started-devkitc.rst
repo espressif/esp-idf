@@ -88,7 +88,7 @@ ESP32-DevKitC V4 开发板的主要组件、接口及控制方式见下。
 
 .. warning::
 
-	上述供电模式 **不可同时连接**，否则可能会损坏开发板和/或电源。
+  上述供电模式 **不可同时连接**，否则可能会损坏开发板和/或电源。
 
 
 排针
@@ -220,6 +220,6 @@ ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 
 
 .. toctree::
-	:hidden:
+  :hidden:
 
-	get-started-devkitc-v2
+  get-started-devkitc-v2

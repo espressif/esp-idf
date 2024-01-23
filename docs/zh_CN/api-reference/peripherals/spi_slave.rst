@@ -72,7 +72,7 @@ SPI 传输事务
 使用驱动程序
 ------------
 
-- 调用函数 cpp:func:`spi_slave_initialize`，将 SPI 外设初始化为从机设备。请确保在 `bus_config` 中设置正确的 I/O 管脚，并将未使用的信号设置为 ``-1``。
+- 调用函数  :cpp:func:`spi_slave_initialize`，将 SPI 外设初始化为从机设备。请确保在 `bus_config` 中设置正确的 I/O 管脚，并将未使用的信号设置为 ``-1``。
 
 .. only:: esp32
 

@@ -229,7 +229,7 @@ DUT2 (slave) 终端::
 -  方括号中的模块名字，运行指定模块所有的测试用例。
 -  星号，运行所有测试用例。
 
-``[multi_device]`` 和 ``[multi_stage]``标签告诉测试运行者该用例是多设备测试还是多阶段测试。这些标签由 ``TEST_CASE_MULTIPLE_STAGES`` 和 ``TEST_CASE_MULTIPLE_DEVICES`` 宏自动生成。
+``[multi_device]`` 和 ``[multi_stage]`` 标签告诉测试运行者该用例是多设备测试还是多阶段测试。这些标签由 ``TEST_CASE_MULTIPLE_STAGES`` 和 ``TEST_CASE_MULTIPLE_DEVICES`` 宏自动生成。
 
 一旦选择了多设备测试用例，它会打印一个子菜单::
 

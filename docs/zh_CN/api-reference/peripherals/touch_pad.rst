@@ -18,7 +18,7 @@
 
 .. only:: esp32
 
-	如果想评估触摸传感器的多种应用场景，请查看 `ESP32 触摸功能开发套件 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32/esp32-sense-kit/user_guide.html>`_。
+  如果想评估触摸传感器的多种应用场景，请查看 `ESP32 触摸功能开发套件 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32/esp32-sense-kit/user_guide.html>`_。
 
 功能介绍
 ----------------------

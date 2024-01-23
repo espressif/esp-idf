@@ -221,7 +221,7 @@
         Backtrace:
 
         0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
-        18	    *ptr = 0x42424242;
+        18      *ptr = 0x42424242;
         #0  0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
         #1  0x42006692 in foo () at ../main/hello_world_main.c:22
         #2  0x420066ac in app_main () at ../main/hello_world_main.c:28
@@ -533,7 +533,7 @@ FreeRTOS 堆栈检查
 - 移位基数或指数错误（如移位超过 32 位）
 - 整数转换错误
 
-请参考 `GCC 文档 <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`_ 中的``-fsanitize=undefined`` 选项，查看支持检查的完整列表。
+请参考 `GCC 文档 <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`_ 中的 ``-fsanitize=undefined`` 选项，查看支持检查的完整列表。
 
 使能 UBSAN
 """"""""""""""

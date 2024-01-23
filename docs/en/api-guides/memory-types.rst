@@ -92,12 +92,12 @@ If some specific application code needs to be placed into IRAM, it can be done b
 
 Alternatively, it is possible to specify IRAM placement in the source code using the ``IRAM_ATTR`` macro::
 
-	#include "esp_attr.h"
+    #include "esp_attr.h"
 
-	void IRAM_ATTR gpio_isr_handler(void* arg)
-	{
-		// ...
-	}
+    void IRAM_ATTR gpio_isr_handler(void* arg)
+    {
+        // ...
+    }
 
 There are some possible issues with placement in IRAM, that may cause problems with IRAM-safe interrupt handlers:
 

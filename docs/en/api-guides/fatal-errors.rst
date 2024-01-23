@@ -221,7 +221,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
         Backtrace:
 
         0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
-        18	    *ptr = 0x42424242;
+        18      *ptr = 0x42424242;
         #0  0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
         #1  0x42006692 in foo () at ../main/hello_world_main.c:22
         #2  0x420066ac in app_main () at ../main/hello_world_main.c:28

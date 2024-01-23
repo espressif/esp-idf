@@ -91,7 +91,7 @@ Getting Started
   def test_hello_world(dut) -> None:
       dut.expect('Hello world!')
 
-This is a simple test script that could run with our getting-started example :example:`get-started/hello_world`. 
+This is a simple test script that could run with our getting-started example :example:`get-started/hello_world`.
 
 First two lines are the target markers:
 
@@ -109,7 +109,7 @@ Next, we have the environment marker:
 * The ``@pytest.mark.generic`` is a marker that indicates that this test case should be run on the ``generic`` board type.
 
 .. note::
-  
+
   For the detailed explanation of the environment markers, please refer to :idf_file:`ENV_MARKERS definition <tools/ci/idf_pytest/constants.py>`
 
 Finally, we have the test function. With a ``dut`` fixture. In single-dut test cases, the ``dut`` fixture is an instance of ``IdfDut`` class, for multi-dut test cases, it is a tuple of ``IdfDut`` instances. For more details regarding the ``IdfDut`` class, please refer to `pytest-embedded IdfDut API reference <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__.
@@ -271,7 +271,7 @@ After setting the param ``count`` to 2, all the fixtures are changed into tuples
     def test_hello_world(dut) -> None:
         dut[0].expect('Hello world!')
         dut[1].expect('Hello world!')
-      
+
   should be replaced with:
 
   .. code-block:: python
@@ -286,7 +286,7 @@ After setting the param ``count`` to 2, all the fixtures are changed into tuples
     def test_hello_world(dut) -> None:
         dut[0].expect('Hello world!')
         dut[1].expect('Hello world!')
-  
+
   This could help avoid the ambiguity of the target markers when multi-DUT test cases are using different type of targets.
 
 Multi-Target Tests with Different Apps
@@ -307,7 +307,7 @@ In some cases, a test may involve multiple targets running different test apps (
   │   └── CMakeLists.txt
   └── pytest_master_slave.py
 
-In this case, we can parametrize the ``app_path`` to the path of the test apps you want to test with. 
+In this case, we can parametrize the ``app_path`` to the path of the test apps you want to test with.
 
 .. code-block:: python
 
@@ -316,13 +316,13 @@ In this case, we can parametrize the ``app_path`` to the path of the test apps y
         2,
     ], indirect=True)
     @pytest.mark.parametrize('app_path, target', [
-        (f'{os.path.join(os.path.dirname(__file__), "master")}|{os.path.join(os.path.dirname(__file__), "slave")}', 'esp32|esp32s2'),  
+        (f'{os.path.join(os.path.dirname(__file__), "master")}|{os.path.join(os.path.dirname(__file__), "slave")}', 'esp32|esp32s2'),
         (f'{os.path.join(os.path.dirname(__file__), "master")}|{os.path.join(os.path.dirname(__file__), "slave")}', 'esp32s2|esp32'),
     ], indirect=True)
     def test_master_slave(dut) -> None:
         master = dut[0]
         slave = dut[1]
-        
+
         master.write('Hello world!')
         slave.expect_exact('Hello world!')
 
@@ -381,7 +381,7 @@ We also provide a fixture ``case_tester`` to trigger all kinds of test cases eas
       case_tester.run_all_normal_cases()       # to run all normal test cases
       case_tester.run_all_multi_dev_cases()    # to run all multi-device test cases
       case_tester.run_all_multi_stage_cases()  # to run all multi-stage test cases
- 
+
 For a full list of the available functions, please refer to `pytest-embedded case_tester API reference <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.unity_tester.CaseTester>`__.
 
 Running Target Tests in CI
@@ -512,7 +512,7 @@ Some test cases may need to run with different sdkconfig files. Let's take :proj
 
 .. note::
 
-    Here if we use ``pytest --target esp32 -k history``, both test cases will be selected, since ``pytest -k`` will use string matching to filter the test cases. 
+    Here if we use ``pytest --target esp32 -k history``, both test cases will be selected, since ``pytest -k`` will use string matching to filter the test cases.
 
 If you want to build and test with all sdkconfig files at the same time, you should use our CI script as an helper script:
 
@@ -697,7 +697,7 @@ Sometimes you may need to add some extra logging lines while running the test ca
 
 You can use `Python logging module <https://docs.python.org/3/library/logging.html>`__ to achieve this.
 
-Here are some logging functions provided as fixtures, 
+Here are some logging functions provided as fixtures,
 
 ``log_performance``
 ^^^^^^^^^^^^^^^^^^^
