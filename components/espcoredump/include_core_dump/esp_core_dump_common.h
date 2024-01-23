@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #define ESP_CORE_DUMP_COMMON_H_
 
 #include "freertos/FreeRTOS.h"
+#include "esp_private/freertos_debug.h"
 #include "esp_app_format.h"
 #include "esp_core_dump_types.h"
 
@@ -29,22 +30,6 @@ typedef enum {
     COREDUMP_MEMORY_MAX,
     COREDUMP_MEMORY_START = COREDUMP_MEMORY_DRAM
 } coredump_region_t;
-
-/**
- * @brief Get the (FreeRTOS) task handle for the current task.
- *
- * @return Task handle of the current task.
- */
-core_dump_task_handle_t esp_core_dump_get_current_task_handle(void);
-
-/**
- * @brief Get next task handle of a given handle.
- *
- * @param handle Task handle to get the next handle from.
- *
- * @return Next task handle.
- */
-core_dump_task_handle_t esp_core_dump_get_next_task(core_dump_task_handle_t handle);
 
 /**
  * @brief Get a task snapshot from a given handle.
@@ -124,6 +109,16 @@ static inline uint32_t esp_core_dump_get_tcb_len(void)
 }
 
 /**
+ * @brief Get the (FreeRTOS) task handle for the current task.
+ *
+ * @return Task handle of the current task.
+ */
+static inline core_dump_task_handle_t esp_core_dump_get_current_task_handle(void)
+{
+    return (core_dump_task_handle_t) xTaskGetCurrentTaskHandleForCore(xPortGetCoreID());
+}
+
+/**
  * @brief Get the length, in bytes, of a given memory location. Padding is
  * taken into account in this calculation.
  *
@@ -139,6 +134,31 @@ static inline uint32_t esp_core_dump_get_memory_len(uint32_t start, uint32_t end
     return (len + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
 }
 
+/**
+ * @brief Initialize the task iterator to start traversing task lists.
+ */
+static inline void esp_core_dump_task_iterator_init(TaskIterator_t *iter)
+{
+    if (iter) {
+        iter->uxCurrentListIndex = 0;
+        iter->pxNextListItem = NULL;
+        iter->pxTaskHandle = NULL;
+    }
+}
+
+/**
+ * @brief Get the next task using the task iterator
+ *
+ * This function retrieves the next task in the traversal sequence.
+ *
+ * @param task_iterator Pointer to the task iterator structure.
+ *
+ * @return The index of the current task list. Returns -1 if all tasks have been traversed.
+ */
+static inline int esp_core_dump_task_iterator_next(TaskIterator_t *task_iterator)
+{
+    return xTaskGetNext(task_iterator);
+}
 
 #ifdef __cplusplus
 }
