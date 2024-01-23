@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
 import importlib
@@ -8,10 +8,17 @@ import re
 import subprocess
 import sys
 from asyncio.subprocess import Process
-from io import open
 from pkgutil import iter_modules
 from types import FunctionType
-from typing import Any, Dict, Generator, List, Match, Optional, TextIO, Tuple, Union
+from typing import Any
+from typing import Dict
+from typing import Generator
+from typing import List
+from typing import Match
+from typing import Optional
+from typing import TextIO
+from typing import Tuple
+from typing import Union
 
 import click
 import yaml
@@ -404,7 +411,11 @@ class RunTool:
         is_progression_processing_enabled = self.force_progression and output_stream.isatty() and '-v' not in self.args
 
         try:
-            with open(output_filename, 'w', encoding='utf8') as output_file:
+            # The command output from asyncio stream already contains OS specific line ending,
+            # because it's read in as bytes and decoded to string. On Windows "output" already
+            # contains CRLF. Use "newline=''" to prevent python to convert CRLF into CRCRLF.
+            # Please see "newline" description at https://docs.python.org/3/library/functions.html#open
+            with open(output_filename, 'w', encoding='utf8', newline='') as output_file:
                 while True:
                     if self.interactive:
                         output = await read_interactive_stream()
