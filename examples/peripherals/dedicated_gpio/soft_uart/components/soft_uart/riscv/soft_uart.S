@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -33,11 +33,6 @@ emulate_uart_send:
     sll a2, t0, a2
     /* Save return address in a4 */
     mv a4, ra
-    /* As UART is very time sensitive, we want each bit sent to be very precise in terms of duration.
-     * The first toggle of the fast GPIO register may be slow, ~1us, so let's send a dummy byte here
-     * before the actual UART emulation start, else the first byte sent would be corrupted.*/
-    li t0, 0
-    call uart_send_byte
     /* Reading the characters 4 by 4 would be much faster, but in our case, we don't need
      * the process to be fast as the bottleneck is the UART speed */
 uart_read_next:
