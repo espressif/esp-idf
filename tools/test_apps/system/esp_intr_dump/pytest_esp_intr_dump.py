@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import os
 
 import pytest
@@ -11,6 +10,7 @@ PROMPT = 'test_intr_dump>'
 
 @pytest.mark.esp32
 @pytest.mark.qemu
+@pytest.mark.host_test
 def test_esp_intr_dump_nonshared(dut: Dut) -> None:
     dut.expect_exact(PROMPT, timeout=10)
 
@@ -24,6 +24,7 @@ def test_esp_intr_dump_nonshared(dut: Dut) -> None:
 
 @pytest.mark.esp32
 @pytest.mark.qemu
+@pytest.mark.host_test
 def test_esp_intr_dump_shared(dut: Dut) -> None:
     dut.expect_exact(PROMPT, timeout=10)
 
