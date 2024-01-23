@@ -17,7 +17,6 @@
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
 #include "esp_newlib.h"
-#include "esp_timer.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_flash_encrypt.h"
@@ -79,12 +78,6 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
 ESP_SYSTEM_INIT_FN(init_heap, CORE, BIT(0), 100)
 {
     heap_caps_init();
-    return ESP_OK;
-}
-
-ESP_SYSTEM_INIT_FN(init_timer, CORE, BIT(0), 101)
-{
-    esp_timer_early_init();
     return ESP_OK;
 }
 

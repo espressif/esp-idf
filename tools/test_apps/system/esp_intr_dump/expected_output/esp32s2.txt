@@ -10,7 +10,7 @@ CPU 0 interrupt status:
   7     1    Level  CPU-internal
   8     1    Level  Reserved
   9     1    Level  Used: TG0_WDT_LEVEL
- 10     1    Edge   Used: SYSTIMER_TARGET2
+ 10     1    Edge   Free (not general-use)
  11     3    Level  CPU-internal
  12     1    Level  Used: UART0
  13     1    Level  Free

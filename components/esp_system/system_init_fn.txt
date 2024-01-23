@@ -35,7 +35,7 @@ CORE: 100: init_heap in components/esp_system/startup_funcs.c on BIT(0)
 # SEGGER_SYSVIEW relies on apptrace module
 # apptrace module uses esp_timer_get_time to determine timeout conditions.
 # esp_timer early initialization is required for esp_timer_get_time to work.
-CORE: 101: init_timer in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 101: esp_timer_init_nonos in components/esp_timer/src/esp_timer_init.c on BIT(0)
 
 CORE: 102: init_newlib in components/newlib/newlib_init.c on BIT(0)
 CORE: 103: init_psram_heap in components/esp_system/startup_funcs.c on BIT(0)
@@ -61,7 +61,7 @@ CORE: 170: init_xt_wdt in components/esp_system/startup_funcs.c on BIT(0)
 ########### SECONDARY startup stage ###########
 
 # esp_timer has to be initialized early, since it is used by several other components
-SECONDARY: 100: esp_timer_startup_init in components/esp_timer/src/esp_timer.c on ESP_TIMER_INIT_MASK
+SECONDARY: 100: esp_timer_init_os in components/esp_timer/src/esp_timer.c on ESP_TIMER_INIT_MASK
 
 # HW stack guard via assist-debug module.
 SECONDARY: 101: esp_hw_stack_guard_init in components/esp_system/hw_stack_guard.c on ESP_SYSTEM_INIT_ALL_CORES
@@ -89,7 +89,7 @@ SECONDARY: 204: init_coexist in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 205: init_cxx_exceptions in components/esp_system/startup_funcs.c on BIT(0)
 
 # usb_console needs to create an esp_timer at startup.
-# This can be done only after esp_timer initialization (esp_timer_startup_init).
+# This can be done only after esp_timer initialization (esp_timer_init_os).
 SECONDARY: 220: esp_usb_console_init_restart_timer in components/esp_system/port/usb_console.c on BIT(0)
 
 # usb_serial_jtag needs to create and acquire a PM lock at startup.
