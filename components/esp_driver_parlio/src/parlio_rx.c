@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,9 @@
 #include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "esp_attr.h"
+#include "esp_dma_utils.h"
 #include "esp_private/gdma.h"
+#include "esp_cache.h"
 
 static const char *TAG = "parlio-rx";
 
@@ -81,8 +83,9 @@ typedef struct parlio_rx_unit_t {
     gdma_channel_handle_t           dma_chan;               /*!< DMA channel */
     size_t                          max_recv_size;          /*!< Maximum receive size for a normal transaction */
     size_t                          desc_num;               /*!< DMA descriptor number */
-    dma_descriptor_t                *dma_descs;             /*!< DMA descriptor array pointer */
-    dma_descriptor_t                *curr_desc;             /*!< The pointer of the current descriptor */
+    size_t                          desc_size;              /*!< DMA descriptors total size */
+    parlio_dma_desc_t               **dma_descs;            /*!< DMA descriptor array pointer */
+    parlio_dma_desc_t               *curr_desc;             /*!< The pointer of the current descriptor */
     void                            *usr_recv_buf;          /*!< The pointe to the user's receiving buffer */
     /* Infinite transaction specific */
     void                            *dma_buf;               /*!< Additional internal DMA buffer only for infinite transactions */
@@ -125,19 +128,21 @@ typedef struct parlio_rx_delimiter_t {
     } flags;
 } parlio_rx_delimiter_t;
 
+#define PRALIO_RX_MOUNT_SIZE_CALC(total_size, div, align)    ((((total_size) / (align)) / (div)) * (align))
+
 static portMUX_TYPE s_rx_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
 static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parlio_rx_transaction_t *trans)
 {
-    dma_descriptor_t *p_desc = rx_unit->dma_descs;
+    parlio_dma_desc_t **p_desc = rx_unit->dma_descs;
     /* Update the current transaction to the next one, and declare the delimiter is under using of the rx unit */
     memcpy(&rx_unit->curr_trans, trans, sizeof(parlio_rx_transaction_t));
     portENTER_CRITICAL_SAFE(&s_rx_spinlock);
     trans->delimiter->under_using = true;
     portEXIT_CRITICAL_SAFE(&s_rx_spinlock);
 
-    uint32_t desc_num = trans->size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-    uint32_t remain_num = trans->size % DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+    uint32_t desc_num = trans->size / PARLIO_MAX_ALIGNED_DMA_BUF_SIZE;
+    uint32_t remain_num = trans->size % PARLIO_MAX_ALIGNED_DMA_BUF_SIZE;
     /* If there are still data remained, need one more descriptor */
     desc_num += remain_num ? 1 : 0;
     if (trans->flags.infinite && desc_num < 2) {
@@ -146,30 +151,40 @@ static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_
     }
     size_t mount_size = 0;
     size_t offset = 0;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    uint32_t alignment = rx_unit->base.group->dma_align;
+#else
+    uint32_t alignment = 4;
+#endif
     /* Loop the descriptors to assign the data */
     for (int i = 0; i < desc_num; i++) {
         size_t rest_size = trans->size - offset;
-        if (rest_size >= 2 * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
-            mount_size = trans->size / desc_num;
-        } else if (rest_size <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
-            mount_size = (desc_num == 2) && (i == 0) ? rest_size / 2 : rest_size;
+
+        if (rest_size >= 2 * PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
+            mount_size = PRALIO_RX_MOUNT_SIZE_CALC(trans->size, desc_num, alignment);
+        } else if (rest_size <= PARLIO_MAX_ALIGNED_DMA_BUF_SIZE) {
+            mount_size = (desc_num == 2) && (i == 0) ? PRALIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment) : rest_size;
         } else {
-            mount_size = rest_size / 2;
+            mount_size = PRALIO_RX_MOUNT_SIZE_CALC(rest_size, 2, alignment);
         }
-        p_desc[i].buffer = (void *)((uint8_t *)trans->payload + offset);
-        p_desc[i].dw0.size = mount_size;
-        p_desc[i].dw0.length = mount_size;
-        p_desc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+        p_desc[i]->buffer = (void *)((uint8_t *)trans->payload + offset);
+        p_desc[i]->dw0.size = mount_size;
+        p_desc[i]->dw0.length = mount_size;
+        p_desc[i]->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
         // Link the descriptor
-        if (i > 0) {
-            p_desc[i - 1].next = &p_desc[i];
+        if (i < desc_num - 1) {
+            p_desc[i]->next = p_desc[i + 1];
+        } else {
+            /* For infinite transaction, link the descriptor as a ring */
+            p_desc[i]->next = trans->flags.infinite ? p_desc[0] : NULL;
         }
         offset += mount_size;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        esp_cache_msync(p_desc[i], rx_unit->desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+#endif
     }
-    /* For infinite transaction, link the descriptor as a ring */
-    p_desc[desc_num - 1].next = trans->flags.infinite ? &p_desc[0] : NULL;
     /* Reset the current DMA node */
-    rx_unit->curr_desc = p_desc;
+    rx_unit->curr_desc = p_desc[0];
 
     return offset;
 }
@@ -251,6 +266,8 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
             gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_INPUT;
             gpio_conf.pin_bit_mask = BIT64(config->clk_in_gpio_num);
             ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk in GPIO failed");
+        } else {
+            gpio_ll_input_enable(&GPIO, config->clk_in_gpio_num);
         }
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].rx_units[unit_id].clk_in_sig, false);
@@ -275,6 +292,8 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
         if (!config->flags.io_no_init) {
             gpio_conf.pin_bit_mask = BIT64(config->valid_gpio_num);
             ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config data GPIO failed");
+        } else {
+            gpio_ll_input_enable(&GPIO, config->valid_gpio_num);
         }
         /* Not connect the signal here, the signal is lazy connected until the delimiter takes effect */
     }
@@ -286,7 +305,8 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
             if (!config->flags.io_no_init) {
                 gpio_conf.pin_bit_mask = BIT64(config->data_gpio_nums[i]);
                 ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config data GPIO failed");
-                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->data_gpio_nums[i]], PIN_FUNC_GPIO);
+            } else {
+                gpio_ll_input_enable(&GPIO, config->data_gpio_nums[i]);
             }
             esp_rom_gpio_connect_in_signal(config->data_gpio_nums[i],
                                            parlio_periph_signals.groups[group_id].rx_units[unit_id].data_sigs[i], false);
@@ -330,18 +350,22 @@ static IRAM_ATTR bool s_parlio_rx_default_eof_callback(gdma_channel_handle_t dma
         /* The current transaction finished, try to get the next transaction from the transaction queue */
         if (xQueueReceiveFromISR(rx_unit->trans_que, &next_trans, &high_task_woken) == pdTRUE) {
             if (rx_unit->cfg.flags.free_clk) {
-                parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, false);
+                PARLIO_CLOCK_SRC_ATOMIC() {
+                    parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, false);
+                }
             }
             /* If the delimiter of the next transaction is not same as the current one, need to re-config the hardware */
-            if (next_trans.delimiter != rx_unit->curr_trans.delimiter) {
+            if ((next_trans.delimiter != NULL) && (next_trans.delimiter != rx_unit->curr_trans.delimiter)) {
                 s_parlio_set_delimiter_config(rx_unit, next_trans.delimiter);
             }
             /* Mount the new transaction buffer and start the new transaction */
             s_parlio_mount_transaction_buffer(rx_unit, &next_trans);
-            gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->dma_descs);
+            gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->dma_descs[0]);
             if (rx_unit->cfg.flags.free_clk) {
                 parlio_ll_rx_start(rx_unit->base.group->hal.regs, true);
-                parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, true);
+                PARLIO_CLOCK_SRC_ATOMIC() {
+                    parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, true);
+                }
             }
         } else if (rx_unit->curr_trans.delimiter) {  // Add condition in case the curr_trans has been cleared in the last timeout isr
             /* No more transaction pending to receive, clear the current transaction */
@@ -368,7 +392,15 @@ static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle
     }
 
     /* Get the finished descriptor from the current descriptor */
-    dma_descriptor_t *finished_desc = rx_unit->curr_desc;
+    parlio_dma_desc_t *finished_desc = rx_unit->curr_desc;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    esp_err_t ret = ESP_OK;
+    ret |= esp_cache_msync((void *)finished_desc, rx_unit->desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    ret |= esp_cache_msync((void *)(finished_desc->buffer), finished_desc->dw0.size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGW(TAG, "failed to sync dma buffer from memory to cache");
+    }
+#endif
     parlio_rx_event_data_t evt_data = {
         .delimiter = rx_unit->curr_trans.delimiter,
         .data = finished_desc->buffer,
@@ -399,21 +431,41 @@ static IRAM_ATTR bool s_parlio_rx_default_desc_done_callback(gdma_channel_handle
 static esp_err_t s_parlio_rx_create_dma_descriptors(parlio_rx_unit_handle_t rx_unit, uint32_t max_recv_size)
 {
     ESP_RETURN_ON_FALSE(rx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid param");
-
+    esp_err_t ret = ESP_OK;
     uint32_t desc_num = max_recv_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED + 1;
     /* set at least 2 descriptors */
     if (desc_num < 2) {
-        desc_num = 4;
+        desc_num = 2;
     }
     rx_unit->desc_num = desc_num;
 
     /* Allocated and link the descriptor nodes */
-    rx_unit->dma_descs = (dma_descriptor_t *)heap_caps_calloc(desc_num, sizeof(dma_descriptor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
-    ESP_RETURN_ON_FALSE(rx_unit->dma_descs, ESP_ERR_NO_MEM, TAG, "no memory for DMA descriptors");
+    rx_unit->dma_descs = heap_caps_calloc(desc_num, sizeof(parlio_dma_desc_t *), MALLOC_CAP_DMA);
+    ESP_RETURN_ON_FALSE(rx_unit->dma_descs, ESP_ERR_NO_MEM, TAG, "no memory for DMA descriptor array");
+    uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    size_t alignment = MAX(cache_line_size, PARLIO_DMA_DESC_ALIGNMENT);
+    rx_unit->desc_size = ALIGN_UP(sizeof(parlio_dma_desc_t), alignment);
+    for (int i = 0; i < desc_num; i++) {
+        rx_unit->dma_descs[i] = heap_caps_aligned_calloc(alignment, 1, rx_unit->desc_size, PARLIO_DMA_MEM_ALLOC_CAPS);
+        ESP_GOTO_ON_FALSE(rx_unit->dma_descs[i], ESP_ERR_NO_MEM, err, TAG, "no memory for DMA descriptors");
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        esp_cache_msync(rx_unit->dma_descs[i], rx_unit->desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+#endif
+    }
 
     rx_unit->max_recv_size = max_recv_size;
 
-    return ESP_OK;
+    return ret;
+err:
+    for (int i = 0; i < desc_num; i++) {
+        if (rx_unit->dma_descs[i]) {
+            free(rx_unit->dma_descs[i]);
+            rx_unit->dma_descs[i] = NULL;
+        }
+    }
+    free(rx_unit->dma_descs);
+    rx_unit->dma_descs = NULL;
+    return ret;
 }
 
 static esp_err_t s_parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit)
@@ -422,7 +474,7 @@ static esp_err_t s_parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit)
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
     };
-    ESP_RETURN_ON_ERROR(gdma_new_channel(&dma_chan_config, &rx_unit->dma_chan), TAG, "allocate RX DMA channel failed");
+    ESP_RETURN_ON_ERROR(PARLIO_GDMA_NEW_CHANNEL(&dma_chan_config, &rx_unit->dma_chan), TAG, "allocate RX DMA channel failed");
     gdma_connect(rx_unit->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_PARLIO, 0));
 
     /* Set GDMA strategy */
@@ -487,8 +539,10 @@ static esp_err_t s_parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, c
 #endif
 
     /* Set clock configuration */
-    parlio_ll_rx_set_clock_source(hal->regs, clk_src);
-    parlio_ll_rx_set_clock_div(hal->regs, &clk_div);
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_rx_set_clock_source(hal->regs, clk_src);
+        parlio_ll_rx_set_clock_div(hal->regs, &clk_div);
+    }
 
     rx_unit->clk_src = clk_src;
     /* warning if precision lost due to division */
@@ -525,7 +579,14 @@ static esp_err_t s_parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
     }
     /* Free the DMA descriptors */
     if (rx_unit->dma_descs) {
+        for (int i = 0; i < rx_unit->desc_num; i++) {
+            if (rx_unit->dma_descs[i]) {
+                free(rx_unit->dma_descs[i]);
+                rx_unit->dma_descs[i] = NULL;
+            }
+        }
         free(rx_unit->dma_descs);
+        rx_unit->dma_descs = NULL;
     }
     /* Free the internal DMA buffer */
     if (rx_unit->dma_buf) {
@@ -591,9 +652,13 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     /* Install DMA service */
     ESP_GOTO_ON_ERROR(s_parlio_rx_unit_init_dma(unit), err, TAG, "install rx DMA failed");
     /* Reset RX module */
-    parlio_ll_rx_reset_clock(hal->regs);
+    PARLIO_RCC_ATOMIC() {
+        parlio_ll_rx_reset_clock(hal->regs);
+    }
     parlio_ll_rx_reset_fifo(hal->regs);
-    parlio_ll_rx_enable_clock(hal->regs, false);
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_rx_enable_clock(hal->regs, false);
+    }
     parlio_ll_rx_start(hal->regs, false);
     /* parlio_ll_clock_source_t and parlio_clock_source_t are binary compatible if the clock source is from internal */
     ESP_GOTO_ON_ERROR(s_parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
@@ -651,7 +716,9 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
     if (!rx_unit->cfg.flags.free_clk) {
         parlio_ll_rx_reset_fifo(hal->regs);
         parlio_ll_rx_start(hal->regs, true);
-        parlio_ll_rx_enable_clock(hal->regs, true);
+        PARLIO_CLOCK_SRC_ATOMIC() {
+            parlio_ll_rx_enable_clock(hal->regs, true);
+        }
     }
 
     /* Check if we need to start a pending transaction */
@@ -663,14 +730,18 @@ esp_err_t parlio_rx_unit_enable(parlio_rx_unit_handle_t rx_unit, bool reset_queu
         // The semaphore always supposed to be taken successfully
         assert(xSemaphoreTake(rx_unit->trans_sem, 0) == pdTRUE);
         if (rx_unit->cfg.flags.free_clk) {
-            parlio_ll_rx_enable_clock(hal->regs, false);
+            PARLIO_CLOCK_SRC_ATOMIC() {
+                parlio_ll_rx_enable_clock(hal->regs, false);
+            }
         }
         s_parlio_set_delimiter_config(rx_unit, trans.delimiter);
         s_parlio_mount_transaction_buffer(rx_unit, &trans);
         gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->curr_desc);
         if (rx_unit->cfg.flags.free_clk) {
             parlio_ll_rx_start(hal->regs, true);
-            parlio_ll_rx_enable_clock(hal->regs, true);
+            PARLIO_CLOCK_SRC_ATOMIC() {
+                parlio_ll_rx_enable_clock(hal->regs, true);
+            }
         }
     }
 err:
@@ -691,7 +762,9 @@ esp_err_t parlio_rx_unit_disable(parlio_rx_unit_handle_t rx_unit)
     rx_unit->is_enabled = false;
     /* stop the RX engine */
     gdma_stop(rx_unit->dma_chan);
-    parlio_ll_rx_enable_clock(hal->regs, false);
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_rx_enable_clock(hal->regs, false);
+    }
     parlio_ll_rx_start(hal->regs, false);
     if (rx_unit->curr_trans.delimiter) {
         portENTER_CRITICAL(&s_rx_spinlock);
@@ -842,7 +915,9 @@ static esp_err_t s_parlio_rx_unit_do_transaction(parlio_rx_unit_handle_t rx_unit
     portEXIT_CRITICAL_ISR(&s_rx_spinlock);
     if (is_stopped) {
         if (rx_unit->cfg.flags.free_clk) {
-            parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, false);
+            PARLIO_CLOCK_SRC_ATOMIC() {
+                parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, false);
+            }
         }
         if (trans->delimiter != rx_unit->curr_trans.delimiter) {
             s_parlio_set_delimiter_config(rx_unit, trans->delimiter);
@@ -853,7 +928,9 @@ static esp_err_t s_parlio_rx_unit_do_transaction(parlio_rx_unit_handle_t rx_unit
         gdma_start(rx_unit->dma_chan, (intptr_t)rx_unit->curr_desc);
         if (rx_unit->cfg.flags.free_clk) {
             parlio_ll_rx_start(rx_unit->base.group->hal.regs, true);
-            parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, true);
+            PARLIO_CLOCK_SRC_ATOMIC() {
+                parlio_ll_rx_enable_clock(rx_unit->base.group->hal.regs, true);
+            }
         }
     } else { // Otherwise send to the queue
         /* Send the transaction to the queue */
@@ -871,8 +948,17 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
     ESP_RETURN_ON_FALSE(rx_unit && payload && recv_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(recv_cfg->delimiter, ESP_ERR_INVALID_ARG, TAG, "no delimiter specified");
     ESP_RETURN_ON_FALSE(payload_size <= rx_unit->max_recv_size, ESP_ERR_INVALID_ARG, TAG, "trans length too large");
+    uint32_t alignment = rx_unit->base.group->dma_align;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    ESP_RETURN_ON_FALSE(payload_size % alignment == 0, ESP_ERR_INVALID_ARG, TAG, "The payload size should align with %"PRIu32, alignment);
+    if (recv_cfg->flags.partial_rx_en) {
+        ESP_RETURN_ON_FALSE(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG, TAG, "The payload size should greater than %"PRIu32, 2 * alignment);
+    }
+#endif
 #if CONFIG_GDMA_ISR_IRAM_SAFE
     ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
+#else
+    ESP_RETURN_ON_FALSE(recv_cfg->flags.indirect_mount || esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
 #endif
     if (recv_cfg->delimiter->eof_data_len) {
         ESP_RETURN_ON_FALSE(payload_size >= recv_cfg->delimiter->eof_data_len, ESP_ERR_INVALID_ARG,
@@ -895,7 +981,7 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
     if (recv_cfg->flags.partial_rx_en && recv_cfg->flags.indirect_mount) {
         ESP_RETURN_ON_FALSE(!rx_unit->dma_buf, ESP_ERR_INVALID_STATE, TAG, "infinite transaction is using the internal DMA buffer");
         /* Allocate the internal DMA buffer to store the data temporary */
-        rx_unit->dma_buf = heap_caps_calloc(1, payload_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+        rx_unit->dma_buf = heap_caps_aligned_calloc(alignment, 1, payload_size, PARLIO_DMA_MEM_ALLOC_CAPS);
         ESP_RETURN_ON_FALSE(rx_unit->dma_buf, ESP_ERR_NO_MEM, TAG, "No memory for the internal DMA buffer");
         /* Use the internal DMA buffer so that the user buffer can always be available */
         p_buffer = rx_unit->dma_buf;
