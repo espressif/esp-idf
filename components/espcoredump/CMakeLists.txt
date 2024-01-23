@@ -4,7 +4,8 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-set(srcs "src/core_dump_common.c"
+set(srcs "src/core_dump_init.c"
+         "src/core_dump_common.c"
          "src/core_dump_flash.c"
          "src/core_dump_uart.c"
          "src/core_dump_elf.c"
@@ -36,6 +37,9 @@ idf_component_register(SRCS ${srcs}
                                      # [refactor-todo] esp_flash_internal.h -> spi_common_internal.h requires cleanup
                                      driver
                       )
+
+# make sure 'core_dump_init' object file is considered by the linker
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_system_include_coredump_init")
 
 if(CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF)
   target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_app_format)

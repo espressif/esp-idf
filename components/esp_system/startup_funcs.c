@@ -41,10 +41,6 @@
 #include "esp_app_desc.h"
 #endif
 
-#if CONFIG_ESP_COREDUMP_ENABLE
-#include "esp_core_dump.h"
-#endif
-
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
@@ -278,14 +274,6 @@ ESP_SYSTEM_INIT_FN(init_pm, SECONDARY, BIT(0), 201)
     return ESP_OK;
 }
 #endif // CONFIG_PM_ENABLE
-
-#if CONFIG_ESP_COREDUMP_ENABLE
-ESP_SYSTEM_INIT_FN(init_coredump, SECONDARY, BIT(0), 202)
-{
-    esp_core_dump_init();
-    return ESP_OK;
-}
-#endif // CONFIG_ESP_COREDUMP_ENABLE
 
 #if SOC_APB_BACKUP_DMA
 ESP_SYSTEM_INIT_FN(init_apb_dma, SECONDARY, BIT(0), 203)
