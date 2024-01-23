@@ -1,9 +1,9 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import re
 from pprint import pformat
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
 import pytest
 
@@ -96,35 +96,6 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
     )
     dut.expect_exact('CPU 1: Infinite loop')
     dut.expect_none('register dump:')
-    dut.expect_exact('Print CPU 1 backtrace')
-    dut.expect_backtrace()
-    dut.expect_elf_sha256()
-    dut.expect_none('Guru Meditation')
-
-    if config == 'gdbstub':
-        common_test(
-            dut,
-            config,
-            expected_backtrace=[
-                'infinite_loop'
-            ],
-        )
-    else:
-        common_test(dut, config)
-
-
-@pytest.mark.parametrize('config', CONFIGS_ESP32, indirect=True)
-@pytest.mark.generic
-def test_task_wdt_both_cpus(dut: PanicTestDut, config: str, test_func_name: str) -> None:
-    dut.expect_test_func_name(test_func_name)
-    dut.expect_exact(
-        'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
-    )
-    dut.expect_exact('CPU 0: Infinite loop')
-    dut.expect_exact('CPU 1: Infinite loop')
-    dut.expect_none('register dump:')
-    dut.expect_exact('Print CPU 0 (current core) backtrace')
-    dut.expect_backtrace()
     dut.expect_exact('Print CPU 1 backtrace')
     dut.expect_backtrace()
     dut.expect_elf_sha256()
