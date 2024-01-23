@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,4 +177,16 @@ static esp_err_t sntp_start_api(void* ctx)
 esp_err_t esp_netif_sntp_start(void)
 {
     return esp_netif_tcpip_exec(sntp_start_api, NULL);
+}
+
+esp_err_t esp_netif_sntp_reachability(unsigned int index, unsigned int *reachability)
+{
+    if (index >= SNTP_MAX_SERVERS || reachability == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_storage == NULL || sntp_enabled() == 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    *reachability = sntp_getreachability(index);
+    return ESP_OK;
 }
