@@ -399,12 +399,8 @@ components/bt/host/bluedroid/stack/smp/smp_utils.c
 components/console/linenoise/linenoise.c
 components/console/linenoise/linenoise.h
 components/esp_eth/src/ksz8851.h
-components/esp_event/esp_event_private.c
 components/esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp
 components/esp_event/host_test/fixtures.hpp
-components/esp_event/include/esp_event_loop.h
-components/esp_event/private_include/esp_event_internal.h
-components/esp_event/private_include/esp_event_private.h
 components/esp_hid/include/esp_hid_common.h
 components/esp_hid/include/esp_hidd.h
 components/esp_hid/include/esp_hidd_gatts.h
@@ -419,7 +415,6 @@ components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_phy/test/test_phy_rtc.c
-components/esp_pm/include/esp_private/pm_trace.h
 components/esp_rom/esp32/ld/esp32.rom.api.ld
 components/esp_rom/esp32/ld/esp32.rom.eco3.ld
 components/esp_rom/esp32/ld/esp32.rom.ld
@@ -488,13 +483,6 @@ components/esp_rom/include/linux/soc/reset_reasons.h
 components/esp_rom/linux/esp_rom_crc.c
 components/esp_rom/linux/esp_rom_md5.c
 components/esp_rom/patches/esp_rom_crc.c
-components/esp_system/include/esp_expression_with_stack.h
-components/esp_system/include/esp_freertos_hooks.h
-components/esp_system/include/esp_private/dbg_stubs.h
-components/esp_system/port/soc/esp32/intr.c
-components/esp_system/port/soc/esp32c3/apb_backup_dma.c
-components/esp_system/test_eh_frame_parser/esp_private/panic_internal.h
-components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/ubsan.c
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
@@ -541,13 +529,8 @@ components/freertos/FreeRTOS-Kernel-SMP/timers.c
 components/hal/include/hal/dac_types.h
 components/hal/spi_slave_hal.c
 components/hal/spi_slave_hal_iram.c
-components/heap/test_multi_heap_host/main.cpp
-components/heap/test_multi_heap_host/test_multi_heap.cpp
 components/idf_test/include/idf_performance.h
-components/linux/include/sys/queue.h
-components/log/esp_log_private.h
 components/log/host_test/log_test/main/log_test.cpp
-components/log/log_linux.c
 components/lwip/apps/ping/ping.c
 components/lwip/include/apps/dhcpserver/dhcpserver_options.h
 components/lwip/include/apps/esp_ping.h
@@ -592,8 +575,6 @@ components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/riscv/include/riscv/csr.h
 components/riscv/include/riscv/encoding.h
-components/riscv/include/riscv/instruction_decode.h
-components/riscv/instruction_decode.c
 components/sdmmc/sdmmc_common.c
 components/sdmmc/sdmmc_common.h
 components/sdmmc/sdmmc_init.c
@@ -794,9 +775,6 @@ components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c
 components/spi_flash/spi_flash_chip_mxic.c
 components/tcp_transport/include/esp_transport_ws.h
-components/unity/include/priv/setjmp.h
-components/unity/include/unity_config.h
-components/unity/include/unity_fixture_extras.h
 components/vfs/include/esp_vfs_common.h
 components/vfs/include/esp_vfs_eventfd.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
