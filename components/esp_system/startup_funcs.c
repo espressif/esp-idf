@@ -200,6 +200,12 @@ ESP_SYSTEM_INIT_FN(init_virtual_efuse, CORE, BIT(0), 140)
 
 ESP_SYSTEM_INIT_FN(init_secure, CORE, BIT(0), 150)
 {
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    // For anti-rollback case, recheck security version before we boot-up the current application
+    const esp_app_desc_t *desc = esp_app_get_description();
+    ESP_RETURN_ON_FALSE(esp_efuse_check_secure_version(desc->secure_version), ESP_FAIL, TAG, "Incorrect secure version of app");
+#endif
+
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     esp_flash_encryption_init_checks();
 #endif
