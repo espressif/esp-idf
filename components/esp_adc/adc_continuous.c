@@ -393,6 +393,11 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     //stop ADC
     adc_hal_digi_stop(&handle->hal);
 
+#if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
+    periph_module_reset(PERIPH_SARADC_MODULE);
+    adc_hal_digi_clr_eof();
+#endif
+
     adc_hal_digi_deinit(&handle->hal);
 
     if (handle->use_adc2) {

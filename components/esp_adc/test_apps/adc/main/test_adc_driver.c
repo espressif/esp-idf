@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -142,8 +142,6 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
 #define ADC_DRIVER_TEST_GET_DATA(p_data)        ((p_data)->type2.data)
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32C3 //TODO: DIG-270
-
 #define ADC_RESTART_TEST_SIZE   4096
 #define ADC_READ_TEST_COUNT     10
 
@@ -191,7 +189,6 @@ TEST_CASE("ADC continuous test after restarting", "[adc_continuous]")
     TEST_ESP_OK(adc_continuous_deinit(handle));
     free(result);
 }
-#endif //!CONFIG_IDF_TARGET_ESP32C3
 
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
 TEST_CASE("ADC filter exhausted allocation", "[adc_oneshot]")
