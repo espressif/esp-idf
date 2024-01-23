@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import os
 
 from idf_ci_utils import IDF_PATH
@@ -31,3 +30,7 @@ REPORT_TEMPLATE_FILEPATH = os.path.join(
 )
 
 BUILD_ONLY_LABEL = 'For Maintainers: Only Build Tests'
+
+KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH = os.path.join(
+    IDF_PATH, 'tools', 'ci', 'dynamic_pipelines', 'templates', 'known_generate_test_child_pipeline_warnings.yml'
+)
