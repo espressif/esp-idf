@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import abc
 import glob
 import os
 import typing as t
@@ -17,7 +18,28 @@ from idf_ci_utils import IDF_PATH
 from idf_pytest.constants import DEFAULT_BUILD_LOG_FILENAME
 
 
-class AppUploader:
+class AppDownloader:
+    ALL_ARTIFACT_TYPES = [ArtifactType.MAP_AND_ELF_FILES, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES]
+
+    @abc.abstractmethod
+    def _download_app(self, app_build_path: str, artifact_type: ArtifactType) -> None:
+        pass
+
+    def download_app(self, app_build_path: str, artifact_type: t.Optional[ArtifactType] = None) -> None:
+        """
+        Download the app
+        :param app_build_path: the path to the build directory
+        :param artifact_type: if not specify, download all types of artifacts
+        :return: None
+        """
+        if not artifact_type:
+            for _artifact_type in self.ALL_ARTIFACT_TYPES:
+                self._download_app(app_build_path, _artifact_type)
+        else:
+            self._download_app(app_build_path, artifact_type)
+
+
+class AppUploader(AppDownloader):
     TYPE_PATTERNS_DICT = {
         ArtifactType.MAP_AND_ELF_FILES: [
             'bootloader/*.map',
@@ -122,13 +144,6 @@ class AppUploader:
             os.remove(zip_filename)
         finally:
             os.chdir(current_dir)
-
-    def download_app(self, app_build_path: str, artifact_type: t.Optional[ArtifactType] = None) -> None:
-        if not artifact_type:
-            for _artifact_type in [ArtifactType.MAP_AND_ELF_FILES, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES]:
-                self._download_app(app_build_path, _artifact_type)
-        else:
-            self._download_app(app_build_path, artifact_type)
 
     def get_app_presigned_url(self, app: App, artifact_type: ArtifactType) -> str:
         obj_name = self.get_app_object_name(app.app_dir, f'{app.build_dir}.zip', artifact_type)

@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """
 Pytest Related Constants. Don't import third-party packages here.
 """
@@ -246,7 +245,7 @@ class PytestCase:
         if 'jtag' in self.env_markers or 'usb_serial_jtag' in self.env_markers:
             return True
 
-        if any('panic' in Path(app.path).parts for app in self.apps):
+        if any('panic' in Path(app.path).resolve().parts for app in self.apps):
             return True
 
         return False
