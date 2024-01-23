@@ -199,6 +199,8 @@ esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop,
  * @note the event loop library does not maintain a copy of event_handler_arg, therefore the user should
  * ensure that event_handler_arg still points to a valid location by the time the handler gets called
  *
+ * @note Calling this function with instance set to NULL is equivalent to calling esp_event_handler_register_with.
+ *
  * @return
  *  - ESP_OK: Success
  *  - ESP_ERR_NO_MEM: Cannot allocate memory for the handler
@@ -231,6 +233,8 @@ esp_err_t esp_event_handler_instance_register_with(esp_event_loop_handle_t event
  *
  * @note the event loop library does not maintain a copy of event_handler_arg, therefore the user should
  * ensure that event_handler_arg still points to a valid location by the time the handler gets called
+ *
+ * @note Calling this function with instance set to NULL is equivalent to calling esp_event_handler_register.
  *
  * @return
  *  - ESP_OK: Success
