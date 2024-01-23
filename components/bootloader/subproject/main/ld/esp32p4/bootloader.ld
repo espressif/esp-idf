@@ -24,7 +24,7 @@
 /* These lengths can be adjusted, if necessary: */
 bootloader_usable_dram_end = 0x4ff3abd0;
 bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
-bootloader_dram_seg_len = 0x4000;
+bootloader_dram_seg_len = 0x5000;
 bootloader_iram_loader_seg_len = 0x7000;
 bootloader_iram_seg_len = 0x2000;
 
@@ -47,7 +47,7 @@ MEMORY
  * 2. Update the value in this assert.
  * 3. Update SRAM_DRAM_END in components/esp_system/ld/esp32p4/memory.ld.in to the same value.
  */
-ASSERT(bootloader_iram_loader_seg_start == 0x4FF2DBD0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
+ASSERT(bootloader_iram_loader_seg_start == 0x4FF2CBD0, "bootloader_iram_loader_seg_start inconsistent with SRAM_DRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);
