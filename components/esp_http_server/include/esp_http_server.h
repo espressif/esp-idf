@@ -1045,8 +1045,8 @@ esp_err_t httpd_req_get_cookie_val(httpd_req_t *req, const char *cookie_name, ch
 /**
  * @brief Test if a URI matches the given wildcard template.
  *
- * Template may end with "?" to make the previous character optional (typically a slash),
- * "*" for a wildcard match, and "?*" to make the previous character optional, and if present,
+ * Template may end with '?' to make the previous character optional (typically a slash),
+ * '*' for a wildcard match, and '?*' to make the previous character optional, and if present,
  * allow anything to follow.
  *
  * Example:
@@ -1055,7 +1055,7 @@ esp_err_t httpd_req_get_cookie_val(httpd_req_t *req, const char *cookie_name, ch
  *   - /api/\* (sans the backslash) matches /api/ and /api/status, but not /api or /ap
  *   - /api/?* or /api/\*?  (sans the backslash) matches /api/, /api/status, and also /api, but not /apix or /ap
  *
- * The special characters "?" and "*" anywhere else in the template will be taken literally.
+ * The special characters '?' and '*' anywhere else in the template will be taken literally.
  *
  * @param[in] uri_template   URI template (pattern)
  * @param[in] uri_to_match   URI to be matched
