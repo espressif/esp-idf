@@ -112,9 +112,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 
     For details of supported dedicated GPIO instructions, please refer to **{IDF_TARGET_NAME} Technical Reference Manual** > **Processor Instruction Extensions (PIE) (to be added later)** [`PDF <{IDF_TARGET_TRM_EN_URL}#pie>`__].
 
-.. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
-
-    Code examples for manipulating dedicated GPIOs from assembly are provided in the :example:`peripherals/dedicated_gpio` directory of ESP-IDF examples. These examples show how to emulate a UART, an I2C and an SPI bus in assembly thanks to dedicated GPIOs.
+.. only:: not (esp32s2 or esp32s3)
 
     For details of supported dedicated GPIO instructions, please refer to **{IDF_TARGET_NAME} Technical Reference Manual** > **ESP-RISC-V CPU** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__].
 
@@ -152,12 +150,14 @@ Some of the dedicated CPU instructions are also wrapped inside ``hal/dedic_gpio_
         // wait for done semaphore
         xSemaphoreTake(sem, portMAX_DELAY);
 
-.. only:: SOC_DEDIC_GPIO_HAS_INTERRUPT
 
-    Application Example
-    -------------------
+Application Example
+-------------------
 
-    Matrix keyboard example based on dedicated GPIO: :example:`peripherals/gpio/matrix_keyboard`.
+.. list::
+
+    * Emulate UART/I2C/SPI peripherals in assembly with dedicate CPU instructions designed for manipulating the GPIOs: :example:`peripherals/dedicated_gpio`.
+    :SOC_DEDIC_GPIO_HAS_INTERRUPT: * Matrix keyboard example based on dedicated GPIO: :example:`peripherals/gpio/matrix_keyboard`.
 
 
 API Reference

@@ -112,9 +112,7 @@ GPIO 捆绑包操作
 
     有关支持的专用 GPIO 指令的详细信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **处理器指令拓展 (PIE)（稍后发布）** [`PDF <{IDF_TARGET_TRM_CN_URL}#pie>`__].
 
-.. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
-
-    通过汇编操作专用 GPIO 的示例代码存放在 ESP-IDF 示例项目的 :example:`peripherals/dedicated_gpio` 目录下。示例演示了如何通过汇编操作专用 GPIO 来模拟 UART、I2C 和 SPI 总线。
+.. only:: not (esp32s2 or esp32s3)
 
     有关支持的专用 GPIO 指令的详细信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > **ESP-RISC-V CPU** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
@@ -152,12 +150,14 @@ GPIO 捆绑包操作
         // 等待完成信号量
         xSemaphoreTake(sem, portMAX_DELAY);
 
-.. only:: SOC_DEDIC_GPIO_HAS_INTERRUPT
 
-    应用示例
-    -------------------
+应用示例
+-------------------
 
-    基于专用 GPIO 的矩阵键盘示例：:example:`peripherals/gpio/matrix_keyboard`.
+.. list::
+
+    * 通过汇编代码使用专用的 CPU 指令来操作 GPIO 以模拟 UART/I2C/SPI 外设 :example:`peripherals/dedicated_gpio`.
+    :SOC_DEDIC_GPIO_HAS_INTERRUPT: * 基于专用 GPIO 驱动的矩阵键盘：:example:`peripherals/gpio/matrix_keyboard`.
 
 
 API 参考

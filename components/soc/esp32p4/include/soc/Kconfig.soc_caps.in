@@ -7,6 +7,10 @@ config SOC_ANA_CMPR_SUPPORTED
     bool
     default y
 
+config SOC_DEDICATED_GPIO_SUPPORTED
+    bool
+    default y
+
 config SOC_UART_SUPPORTED
     bool
     default y

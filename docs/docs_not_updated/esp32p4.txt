@@ -77,7 +77,6 @@ api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/parlio.rst
 api-reference/peripherals/i2c.rst
-api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/index.rst
 api-reference/network/esp_openthread.rst
