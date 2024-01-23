@@ -261,9 +261,11 @@ examples/peripherals/parlio:
 
 examples/peripherals/parlio/parlio_rx:
   disable:
-    - if: SOC_PARLIO_SUPPORTED != 1 or IDF_TARGET == "esp32p4"
+    - if: SOC_PARLIO_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not support esp32p4 yet (IDF-7471)
+      reason: lack of runner
   depends_components:
     - esp_driver_parlio
 
