@@ -25,6 +25,7 @@
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_AXI_GDMA_SUPPORTED          1
 #define SOC_DW_GDMA_SUPPORTED           1
+#define SOC_DMA2D_SUPPORTED             1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 // #define SOC_LCDCAM_SUPPORTED            1 // TODO: IDF-7465
@@ -179,6 +180,12 @@
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
 #define SOC_AXI_GDMA_SUPPORT_PSRAM      1
 #define SOC_GDMA_SUPPORT_ETM            1
+
+/*-------------------------- 2D-DMA CAPS -------------------------------------*/
+#define SOC_DMA2D_GROUPS                            (1U) // Number of 2D-DMA groups
+#define SOC_DMA2D_TX_CHANNELS_PER_GROUP             (3)  // Number of 2D-DMA TX (OUT) channels in each group
+#define SOC_DMA2D_RX_CHANNELS_PER_GROUP             (2)  // Number of 2D-DMA RX (IN) channels in each group
+// #define SOC_DMA2D_SUPPORT_ETM              (1)  // Support ETM submodule
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups

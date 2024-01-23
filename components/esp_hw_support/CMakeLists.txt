@@ -97,6 +97,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "dma/dw_gdma.c")
     endif()
 
+    if(CONFIG_SOC_DMA2D_SUPPORTED)
+        list(APPEND srcs "dma/dma2d.c")
+    endif()
+
     if(CONFIG_SOC_SYSTIMER_SUPPORTED)
         list(APPEND srcs "port/${target}/systimer.c")
     endif()

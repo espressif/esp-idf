@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,9 +215,9 @@ static inline void ahb_dma_ll_rx_enable_auto_return(ahb_dma_dev_t *dev, uint32_t
 }
 
 /**
- * @brief Check if DMA RX FSM is in IDLE state
+ * @brief Check if DMA RX descriptor FSM is in IDLE state
  */
-static inline bool ahb_dma_ll_rx_is_fsm_idle(ahb_dma_dev_t *dev, uint32_t channel)
+static inline bool ahb_dma_ll_rx_is_desc_fsm_idle(ahb_dma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.in_link.inlink_park_chn;
 }
@@ -451,9 +451,9 @@ static inline void ahb_dma_ll_tx_restart(ahb_dma_dev_t *dev, uint32_t channel)
 }
 
 /**
- * @brief Check if DMA TX FSM is in IDLE state
+ * @brief Check if DMA TX descriptor FSM is in IDLE state
  */
-static inline bool ahb_dma_ll_tx_is_fsm_idle(ahb_dma_dev_t *dev, uint32_t channel)
+static inline bool ahb_dma_ll_tx_is_desc_fsm_idle(ahb_dma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].out.out_link.outlink_park_chn;
 }

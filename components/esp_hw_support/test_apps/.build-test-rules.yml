@@ -8,6 +8,12 @@ components/esp_hw_support/test_apps/dma:
   depends_filepatterns:
     - components/esp_hw_support/dma/**/*
 
+components/esp_hw_support/test_apps/dma2d:
+  disable:
+    - if: SOC_DMA2D_SUPPORTED != 1
+  depends_filepatterns:
+    - components/esp_hw_support/dma/**/*
+
 components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
