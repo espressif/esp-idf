@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,9 +30,11 @@ typedef struct wifi_sta_list_t {
     int       num; /**< number of stations in the list (other entries are invalid) */
 } wifi_sta_list_t;
 
-#if !CONFIG_SOC_WIFI_HE_SUPPORT
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+typedef esp_wifi_rxctrl_t wifi_pkt_rx_ctrl_t;
+#else
 /** @brief Received packet radio metadata header, this is the common header at the beginning of all promiscuous mode RX callback buffers */
-typedef struct wifi_pkt_rx_ctrl_t{
+typedef struct {
     signed rssi:8;                /**< Received Signal Strength Indicator(RSSI) of packet. unit: dBm */
     unsigned rate:5;              /**< PHY rate encoding of the packet. Only valid for non HT(11bg) packet */
     unsigned :1;                  /**< reserved */
@@ -82,12 +84,16 @@ typedef struct wifi_pkt_rx_ctrl_t{
     unsigned :12;                 /**< reserved */
     unsigned rx_state:8;          /**< state of the packet. 0: no error; others: error numbers which are not public */
 } wifi_pkt_rx_ctrl_t;
+#endif
 
 /**
   * @brief Channel state information(CSI) configuration type
   *
   */
-typedef struct wifi_csi_config_t{
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+typedef wifi_csi_acquire_config_t wifi_csi_config_t;
+#else
+typedef struct {
     bool lltf_en;           /**< enable to receive legacy long training field(lltf) data. Default enabled */
     bool htltf_en;          /**< enable to receive HT long training field(htltf) data. Default enabled */
     bool stbc_htltf2_en;    /**< enable to receive space time block code HT long training field(stbc-htltf2) data. Default enabled */
@@ -99,7 +105,6 @@ typedef struct wifi_csi_config_t{
 } wifi_csi_config_t;
 #endif // !CONFIG_SOC_WIFI_HE_SUPPORT
 
-typedef wifi_pkt_rx_ctrl_t esp_wifi_rxctrl_t;
 
 /** @brief Payload passed to 'buf' parameter of promiscuous mode RX callback.
  */

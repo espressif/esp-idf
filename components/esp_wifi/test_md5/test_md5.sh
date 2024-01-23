@@ -73,7 +73,7 @@ check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_private/wifi_os_adapter.h 
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_crypto_types.h g_wifi_crypto_funcs_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_types.h g_wifi_type_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_types_generic.h g_wifi_types_generic_md5
-check_md5 ${IDF_PATH}/components/esp_wifi/include/local/esp_wifi_native.h g_wifi_types_native_md5
+check_md5 ${IDF_PATH}/components/esp_wifi/include/local/esp_wifi_types_native.h g_wifi_types_native_md5
 check_md5 ${IDF_PATH}/components/esp_wifi/include/esp_wifi_he_types.h g_wifi_he_type_md5
 check_md5 ${IDF_PATH}/components/wpa_supplicant/esp_supplicant/src/esp_wifi_driver.h g_wifi_supplicant_funcs_md5
 

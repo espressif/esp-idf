@@ -434,17 +434,6 @@ typedef struct {
 } vendor_ie_data_t;
 
 /**
- * @brief Forward declare the Rx ctrl packet struct, as it is TARGET dependent and will be defined
- * in the "native" wifi types (types tightly coupled to wifi-lib implementation)
- */
-typedef struct wifi_pkt_rx_ctrl_t wifi_pkt_rx_ctrl_t;
-
-/**
- * @brief Rx Control Packet alias used in wifi-lib implementation
- */
-typedef struct wifi_pkt_rx_ctrl_t esp_wifi_rxctrl_t;
-
-/**
   * @brief Promiscuous frame type
   *
   * Passed to promiscuous mode RX callback to indicate the type of parameter in the buffer.
@@ -486,12 +475,6 @@ typedef struct {
 #define WIFI_EVENT_MASK_ALL                 (0xFFFFFFFF)  /**< mask all WiFi events */
 #define WIFI_EVENT_MASK_NONE                (0)           /**< mask none of the WiFi events */
 #define WIFI_EVENT_MASK_AP_PROBEREQRECVED   (BIT(0))      /**< mask SYSTEM_EVENT_AP_PROBEREQRECVED event */
-
-/**
-  * @brief Channel state information(CSI) configuration type
-  *
-  */
-typedef struct wifi_csi_config_t wifi_csi_config_t;
 
 /**
   * @brief CSI data type
