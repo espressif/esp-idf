@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -206,6 +206,13 @@ void adc_hal_digi_dis_intr(adc_hal_dma_ctx_t *hal, uint32_t mask);
  * @param hal Context of the HAL
  */
 void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal);
+
+#if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
+/**
+ * @brief Clear the ADC sample counter
+ */
+void adc_hal_digi_clr_eof(void);
+#endif
 
 #ifdef __cplusplus
 }
