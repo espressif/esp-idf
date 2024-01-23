@@ -278,6 +278,10 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #endif
     }
     phy_set_modem_flag(modem);
+#if !CONFIG_IDF_TARGET_ESP32
+    // Immediately track pll when phy enabled.
+    phy_track_pll();
+#endif
 
     _lock_release(&s_phy_access_lock);
 }
