@@ -158,6 +158,10 @@ typedef enum {
     // For LP peripherals
     SOC_MOD_CLK_XTAL_D2,                       /*!< XTAL_D2_CLK comes from the external 40MHz crystal, passing a div of 2 to the LP peripherals */
     SOC_MOD_CLK_LP_PLL,                        /*!< LP_PLL is from 32kHz XTAL oscillator frequency multipliers, it has a fixed frequency of 8MHz */
+    SOC_MOD_CLK_LP_DYN_FAST,                   /*!< LP_DYN_FAST can be derived from RTC_SLOW_CLK or RTC_FAST_CLK depending on the chip’s power mode:
+                                                    in active mode, select RTC_FAST_CLK as the clock source;
+                                                    in light/deep sleep mode, select RTC_SLOW_CLK as the clock source */
+    SOC_MOD_CLK_LP_PERI,                       /*!< LP_PERI_CLK is derived from LP_DYN_FAST (configurable divider) */
     SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 
@@ -616,14 +620,14 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of Temperature Sensor
  */
-#define SOC_TEMP_SENSOR_CLKS {SOC_MOD_CLK_LP_PLL}
+#define SOC_TEMP_SENSOR_CLKS {SOC_MOD_CLK_LP_PERI}
 
 /**
  * @brief Type of Temp Sensor clock source
  */
 typedef enum {
-    TEMPERATURE_SENSOR_CLK_SRC_LP_PLL = SOC_MOD_CLK_LP_PLL,     /*!< Select LP_PLL as the source clock */
-    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PLL,    /*!< Select LP_PLL as the default choice */
+    TEMPERATURE_SENSOR_CLK_SRC_LP_PERI = SOC_MOD_CLK_LP_PERI,     /*!< Select LP_PERI as the source clock */
+    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PERI,    /*!< Select LP_PERI as the default choice */
 } soc_periph_temperature_sensor_clk_src_t;
 
 #ifdef __cplusplus

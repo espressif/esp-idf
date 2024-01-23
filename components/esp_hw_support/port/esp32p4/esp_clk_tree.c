@@ -59,6 +59,8 @@ uint32_t *freq_value)
         clk_src_freq = esp_clk_tree_lp_slow_get_freq_hz(precision);
         break;
     case SOC_MOD_CLK_RTC_FAST:
+    case SOC_MOD_CLK_LP_DYN_FAST: // This clock can be derived from RTC_SLOW_CLK or RTC_FAST_CLK depending on the chip’s power mode.
+                                  // However, this function is only supposed to run under active mode, so its frequency is the same as RTC_FAST_CLK.
         clk_src_freq = esp_clk_tree_lp_fast_get_freq_hz(precision);
         break;
     case SOC_MOD_CLK_RC_FAST:
