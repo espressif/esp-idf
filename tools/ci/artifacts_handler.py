@@ -1,10 +1,9 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import fnmatch
 import glob
 import os
-import re
 import typing as t
 import zipfile
 from enum import Enum
@@ -12,6 +11,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import urllib3
+from idf_ci_utils import sanitize_job_name
 from idf_pytest.constants import DEFAULT_BUILD_LOG_FILENAME
 from minio import Minio
 
@@ -149,8 +149,7 @@ def _upload_files(
 
     try:
         if has_file:
-            job_name_sanitized = re.sub(r' \[\d+]', '', job_name)
-            obj_name = f'{pipeline_id}/{artifact_type.value}/{job_name_sanitized}/{job_id}.zip'
+            obj_name = f'{pipeline_id}/{artifact_type.value}/{sanitize_job_name(job_name)}/{job_id}.zip'
             print(f'Created archive file: {job_id}.zip, uploading as {obj_name}')
 
             client.fput_object(getenv('IDF_S3_BUCKET'), obj_name, f'{job_id}.zip')
