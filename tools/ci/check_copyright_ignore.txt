@@ -499,7 +499,6 @@ components/fatfs/src/ff.h
 components/fatfs/src/ffconf.h
 components/fatfs/src/ffsystem.c
 components/fatfs/src/ffunicode.c
-components/fatfs/vfs/vfs_fat_internal.h
 components/freertos/FreeRTOS-Kernel-SMP/croutine.c
 components/freertos/FreeRTOS-Kernel-SMP/event_groups.c
 components/freertos/FreeRTOS-Kernel-SMP/include/freertos/FreeRTOS.h

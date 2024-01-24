@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "wear_levelling.h"
 #include "esp_partition.h"
 #include "esp_memory_utils.h"
+#include "vfs_fat_internal.h"
 
 void app_main(void)
 {
@@ -32,7 +33,7 @@ void app_main(void)
 static wl_handle_t s_test_wl_handle;
 static void test_setup(void)
 {
-    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+    esp_vfs_fat_mount_config_t mount_config = {
         .format_if_mount_failed = true,
         .max_files = 5,
     };
@@ -45,14 +46,32 @@ static void test_teardown(void)
     TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", s_test_wl_handle));
 }
 
-TEST_CASE("(WL) can format partition", "[fatfs][wear_levelling][timeout=180]")
+TEST_CASE("(WL) can format partition", "[fatfs][wear_levelling][timeout=120]")
 {
     TEST_ESP_OK(esp_vfs_fat_spiflash_format_rw_wl("/spiflash", NULL));
     test_setup();
+    vfs_fat_spiflash_ctx_t* ctx = get_vfs_fat_spiflash_ctx(s_test_wl_handle);
+    TEST_ASSERT_NOT_NULL(ctx);
+    TEST_ASSERT_TRUE(ctx->fs->n_fats == 2); // 2 FATs are created by default
     test_teardown();
 }
 
-TEST_CASE("(WL) can format when the FAT is mounted already", "[fatfs][wear_levelling][timeout=180]")
+TEST_CASE("(WL) can format partition with config", "[fatfs][wear_levelling][timeout=120]")
+{
+    esp_vfs_fat_mount_config_t format_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5,
+        .use_one_fat = true,
+    };
+    TEST_ESP_OK(esp_vfs_fat_spiflash_format_cfg_rw_wl("/spiflash", NULL, &format_config));
+    test_setup();
+    vfs_fat_spiflash_ctx_t* ctx = get_vfs_fat_spiflash_ctx(s_test_wl_handle);
+    TEST_ASSERT_NOT_NULL(ctx);
+    TEST_ASSERT_TRUE(ctx->fs->n_fats == 1);
+    test_teardown();
+}
+
+TEST_CASE("(WL) can format when the FAT is mounted already", "[fatfs][wear_levelling][timeout=120]")
 {
     test_setup();
     TEST_ESP_OK(esp_vfs_fat_spiflash_format_rw_wl("/spiflash", NULL));
@@ -61,9 +80,28 @@ TEST_CASE("(WL) can format when the FAT is mounted already", "[fatfs][wear_level
     test_teardown();
 }
 
-TEST_CASE("(WL) can format specified FAT when more are mounted", "[fatfs][wear_levelling][timeout=180]")
+TEST_CASE("(WL) can format when the FAT is mounted already with config", "[fatfs][wear_levelling][timeout=120]")
 {
-    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+    TEST_ESP_OK(esp_vfs_fat_spiflash_format_rw_wl("/spiflash", NULL)); // To reset the FAT number to 2
+    test_setup();
+    vfs_fat_spiflash_ctx_t* ctx = get_vfs_fat_spiflash_ctx(s_test_wl_handle);
+    TEST_ASSERT_NOT_NULL(ctx);
+    TEST_ASSERT_TRUE(ctx->fs->n_fats == 2);
+    esp_vfs_fat_mount_config_t format_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5,
+        .use_one_fat = true,
+    };
+    TEST_ESP_OK(esp_vfs_fat_spiflash_format_cfg_rw_wl("/spiflash", NULL, &format_config));
+    TEST_ASSERT_TRUE(ctx->fs->n_fats == 1);
+    test_fatfs_create_file_with_text("/spiflash/hello.txt", fatfs_test_hello_str);
+    test_fatfs_pread_file("/spiflash/hello.txt");
+    test_teardown();
+}
+
+TEST_CASE("(WL) can format specified FAT when more are mounted", "[fatfs][wear_levelling][timeout=120]")
+{
+    esp_vfs_fat_mount_config_t mount_config = {
         .format_if_mount_failed = true,
         .max_files = 5,
     };
@@ -126,7 +164,7 @@ TEST_CASE("(WL) pwrite() works well", "[fatfs][wear_levelling]")
 TEST_CASE("(WL) can open maximum number of files", "[fatfs][wear_levelling]")
 {
     size_t max_files = FOPEN_MAX - 3; /* account for stdin, stdout, stderr */
-    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+    esp_vfs_fat_mount_config_t mount_config = {
         .format_if_mount_failed = true,
         .max_files = max_files
     };
