@@ -104,6 +104,13 @@ ethernet_component:
     - Apache-2.0
     - MIT           # To allow contributed drivers
 
+linux_component:
+  include:
+    - 'components/linux/fls.c'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-4-Clause-UC
+
 systemview:
   include:
     - 'components/app_trace/sys_view'
