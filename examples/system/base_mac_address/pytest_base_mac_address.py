@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -44,7 +43,10 @@ def test_base_mac_address(dut: Dut) -> None:
     if dut.target != 'esp32s2' and dut.target != 'esp32h2':
         if sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_BT'):
             dut.expect_exact('BT MAC: ' + get_expected_mac_string(2, dut.target))
-        dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(3, dut.target))
+        if sdkconfig.get('SOC_WIFI_SUPPORTED') or sdkconfig.get('ESP_MAC_ADDR_UNIVERSE_BT'):
+            dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(3, dut.target))
+        else:
+            dut.expect_exact('Ethernet MAC: ' + get_expected_mac_string(0, dut.target))  # for esp32p4
         dut.expect_exact('New Ethernet MAC: ' + get_expected_mac_string(6, dut.target))
     elif dut.target == 'esp32h2':
         dut.expect_exact('BT MAC: ' + get_expected_mac_string(0, dut.target))
