@@ -161,7 +161,7 @@ repos:
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
         language: python
-        files: '\.build-test-rules\.yml$'
+        files: '\.build-test-rules\.yml$|known_generate_test_child_pipeline_warnings\.yml$'
         additional_dependencies:
           - ruamel.yaml
       - id: sort-yaml-test
