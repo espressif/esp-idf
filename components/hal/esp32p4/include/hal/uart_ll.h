@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,9 +100,9 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
     case 1:
         *source_clk = (soc_module_clk_t)LP_UART_SCLK_XTAL_D2;
         break;
-    case 2:
-        *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_PLL;
-        break;
+    // case 2:
+    //     *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_PLL;
+    //     break;
     }
 }
 
@@ -122,9 +122,9 @@ static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_
     case LP_UART_SCLK_XTAL_D2:
         LPPERI.core_clk_sel.lp_uart_clk_sel = 1;
         break;
-    case LP_UART_SCLK_LP_PLL:
-        LPPERI.core_clk_sel.lp_uart_clk_sel = 2;
-        break;
+    // case LP_UART_SCLK_LP_PLL: // TODO: LP_PLL clock requires extra support
+    //     LPPERI.core_clk_sel.lp_uart_clk_sel = 2;
+    //     break;
     default:
         // Invalid LP_UART clock source
         HAL_ASSERT(false);
@@ -202,8 +202,7 @@ static inline void lp_uart_ll_reset_register(int hw_id)
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
-    bool uart_rst_en = false;
+    bool uart_rst_en = true;
     bool uart_apb_en = false;
     bool uart_sys_en = false;
     switch (uart_num) {
@@ -232,7 +231,14 @@ FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
         uart_apb_en = HP_SYS_CLKRST.soc_clk_ctrl2.reg_uart4_apb_clk_en;
         uart_sys_en = HP_SYS_CLKRST.soc_clk_ctrl1.reg_uart4_sys_clk_en;
         break;
+    case 5:
+        uart_rst_en = LPPERI.reset_en.rst_en_lp_uart;
+        uart_apb_en = LPPERI.clk_en.ck_en_lp_uart;
+        uart_sys_en = true;
+        break;
     default:
+        // Unknown uart port number
+        HAL_ASSERT(false);
         break;
     }
     return (!uart_rst_en && uart_apb_en && uart_sys_en);
