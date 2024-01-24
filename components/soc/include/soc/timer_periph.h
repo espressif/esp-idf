@@ -16,6 +16,9 @@
 extern "C" {
 #endif
 
+/* The value that needs to be written to TIMG_WDT_WKEY to write-enable the wdt registers */
+#define TIMG_WDT_WKEY_VALUE 0x50D83AA1
+
 typedef struct {
     struct {
         const periph_module_t module; // Peripheral module
