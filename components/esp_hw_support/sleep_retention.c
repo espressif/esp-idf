@@ -91,14 +91,14 @@ typedef struct {
     } lists[SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES];
     _lock_t lock;
     regdma_link_priority_t highpri;
-    uint32_t modules;
+    uint32_t created_modules;
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
 #define EXTRA_LINK_NUM  (REGDMA_LINK_ENTRY_NUM - 1)
 #endif
 } sleep_retention_t;
 
 static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
-    .highpri = (uint8_t)-1, .modules = 0
+    .highpri = (uint8_t)-1, .created_modules = 0
 };
 
 #define SLEEP_RETENTION_ENTRY_BITMAP_MASK       (BIT(REGDMA_LINK_ENTRY_NUM) - 1)
@@ -322,7 +322,7 @@ static void sleep_retention_entries_check_and_distroy_final_default(void)
 {
     _lock_acquire_recursive(&s_retention.lock);
     assert(s_retention.highpri == SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY);
-    assert(s_retention.modules == 0);
+    assert(s_retention.created_modules == 0);
     sleep_retention_entries_destroy_wrapper(&s_retention.lists[SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY].entries);
     _lock_release_recursive(&s_retention.lock);
 }
@@ -348,7 +348,7 @@ static void sleep_retention_entries_all_destroy_wrapper(uint32_t module)
             priority++;
         }
     } while (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES);
-    s_retention.modules &= ~module;
+    s_retention.created_modules &= ~module;
     _lock_release_recursive(&s_retention.lock);
 }
 
@@ -367,7 +367,7 @@ void sleep_retention_entries_destroy(int module)
     assert(module != 0);
     _lock_acquire_recursive(&s_retention.lock);
     sleep_retention_entries_do_destroy(module);
-    if (s_retention.modules == 0) {
+    if (s_retention.created_modules == 0) {
         sleep_retention_entries_check_and_distroy_final_default();
         pmu_sleep_disable_regdma_backup();
         memset((void *)s_retention.lists, 0, sizeof(s_retention.lists));
@@ -451,7 +451,7 @@ static esp_err_t sleep_retention_entries_create_wrapper(const sleep_retention_en
     if(err) goto error;
     err = sleep_retention_entries_create_bonding(priority, module);
     if(err) goto error;
-    s_retention.modules |= module;
+    s_retention.created_modules |= module;
     sleep_retention_entries_join();
 
 error:
@@ -495,7 +495,7 @@ void sleep_retention_entries_get(sleep_retention_entries_t *entries)
 
 uint32_t IRAM_ATTR sleep_retention_get_modules(void)
 {
-    return s_retention.modules;
+    return s_retention.created_modules;
 }
 
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
