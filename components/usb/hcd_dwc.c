@@ -1040,11 +1040,18 @@ static void port_obj_free(port_t *port)
 
 void *frame_list_alloc(size_t frame_list_len)
 {
-    void *frame_list = heap_caps_aligned_calloc(USB_DWC_FRAME_LIST_MEM_ALIGN, frame_list_len, sizeof(uint32_t), MALLOC_CAP_DMA);
+    esp_err_t ret = ESP_FAIL;
+    void *frame_list = NULL;
+    esp_dma_mem_info_t dma_mem_info = {
+        .heap_caps = MALLOC_CAP_DMA,
+        .custom_alignment = USB_DWC_FRAME_LIST_MEM_ALIGN,
+    };
+    ret = esp_dma_capable_calloc(frame_list_len, sizeof(uint32_t), &dma_mem_info, &frame_list, NULL);
+    assert(ret != ESP_ERR_INVALID_ARG);
 
     // Both Frame List start address and size should be already cache aligned so this is only a sanity check
     if (frame_list) {
-        if (!esp_dma_is_buffer_aligned(frame_list, frame_list_len * sizeof(uint32_t), ESP_DMA_BUF_LOCATION_AUTO)) {
+        if (!esp_dma_is_buffer_alignment_satisfied(frame_list, frame_list_len * sizeof(uint32_t), &dma_mem_info)) {
             // This should never happen
             heap_caps_free(frame_list);
             frame_list = NULL;
@@ -1065,10 +1072,17 @@ void *transfer_descriptor_list_alloc(size_t list_len, size_t *list_len_bytes_out
     *list_len_bytes_out = list_len * sizeof(usb_dwc_ll_dma_qtd_t);
 #endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
-    void *qtd_list =  heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, *list_len_bytes_out, 1, MALLOC_CAP_DMA);
+    esp_err_t ret = ESP_FAIL;
+    void *qtd_list = NULL;
+    esp_dma_mem_info_t dma_mem_info = {
+        .heap_caps = MALLOC_CAP_DMA,
+        .custom_alignment = USB_DWC_QTD_LIST_MEM_ALIGN,
+    };
+    ret = esp_dma_capable_calloc(*list_len_bytes_out, 1, &dma_mem_info, &qtd_list, NULL);
+    assert(ret != ESP_ERR_INVALID_ARG);
 
     if (qtd_list) {
-        if (!esp_dma_is_buffer_aligned(qtd_list, *list_len_bytes_out * sizeof(usb_dwc_ll_dma_qtd_t), ESP_DMA_BUF_LOCATION_AUTO)) {
+        if (!esp_dma_is_buffer_alignment_satisfied(qtd_list, *list_len_bytes_out * sizeof(usb_dwc_ll_dma_qtd_t), &dma_mem_info)) {
             // This should never happen
             heap_caps_free(qtd_list);
             qtd_list = NULL;

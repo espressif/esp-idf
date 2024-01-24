@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -447,12 +447,16 @@ void app_main(void)
     // it's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
     lv_color_t *buf1 = NULL;
     lv_color_t *buf2 = NULL;
-    uint32_t malloc_flags = 0;
+    esp_dma_mem_info_t dma_mem_info = {
+        .dma_alignment = 4,
 #if CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
-    malloc_flags |= ESP_DMA_MALLOC_FLAG_PSRAM;
+        .heap_caps = MALLOC_CAP_SPIRAM,
+#else
+        .heap_caps = MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL,
 #endif // CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
-    ESP_ERROR_CHECK(esp_dma_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), malloc_flags, (void *)&buf1, NULL));
-    ESP_ERROR_CHECK(esp_dma_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), malloc_flags, (void *)&buf2, NULL));
+    };
+    ESP_ERROR_CHECK(esp_dma_capable_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), &dma_mem_info, (void *)&buf1, NULL));
+    ESP_ERROR_CHECK(esp_dma_capable_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), &dma_mem_info, (void *)&buf2, NULL));
     assert(buf1);
     assert(buf2);
     ESP_LOGI(TAG, "buf1@%p, buf2@%p", buf1, buf2);

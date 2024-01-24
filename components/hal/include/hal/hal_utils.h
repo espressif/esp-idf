@@ -102,6 +102,59 @@ static inline uint8_t hal_utils_bitwise_reverse8(uint8_t n)
     return n;
 }
 
+/**
+ * @brief helper function, calculate the Greatest Common Divisor
+ * @note gcd(a, b) = gcd(b, a % b)
+ * @param a bigger value
+ * @param b smaller value
+ * @return result of gcd(a, b)
+ */
+__attribute__((always_inline))
+static inline uint32_t _gcd(uint32_t a, uint32_t b)
+{
+    uint32_t c = a % b;
+    while (c != 0) {
+        a = b;
+        b = c;
+        c = a % b;
+    }
+    return b;
+}
+
+/**
+ * @brief Get the least common multiple of two integer
+ *
+ * @param[in]  Integer A
+ * @param[in]  Integer B
+ *
+ * @return     LCM of A and B
+ */
+__attribute__((always_inline))
+static inline uint32_t _lcm(uint32_t a, uint32_t b)
+{
+    a = a == 0 ? 1 : a;
+    b = b == 0 ? 1 : b;
+    return (a * b / _gcd(a, b));
+}
+
+/**
+ * @brief Get the least common multiple of three integer
+ *
+ * @param[in]  Integer A
+ * @param[in]  Integer B
+ * @param[in]  Integer C
+ *
+ * @return     LCM of A, B and C
+ */
+__attribute__((always_inline))
+static inline uint32_t _lcm_3(uint32_t a, uint32_t b, uint32_t c)
+{
+    a = a == 0 ? 1 : a;
+    b = b == 0 ? 1 : b;
+    c = c == 0 ? 1 : c;
+    return _lcm(a, _lcm(b, c));
+}
+
 #ifdef __cplusplus
 }
 #endif

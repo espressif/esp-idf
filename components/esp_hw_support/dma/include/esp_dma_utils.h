@@ -9,11 +9,86 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "esp_heap_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @breif DMA Mem info
+ */
+typedef struct {
+    int heap_caps;                     ///< See heap caps
+    size_t dma_alignment;              ///< DMA alignment
+    size_t custom_alignment;           ///< Set this if you have custom alignment. E.g. if `psram_trans_align` is set when using GDMA driver, or you're using IP self DMA (e.g. SDMMC)
+} esp_dma_mem_info_t;
+
+/**
+ * @brief Helper function for malloc a DMA capable memory buffer
+ *
+ * @param[in]  size          Size in bytes, the amount of memory to allocate
+ * @param[in]  dma_mem_info  DMA and memory info, see `esp_dma_mem_info_t`
+ * @param[out] out_ptr       A pointer to the memory allocated successfully
+ * @param[out] actual_size   Actual size for allocation in bytes, when the size you specified doesn't meet the DMA alignment requirements, this value might be bigger than the size you specified. Set null if you don't care this value.
+ *
+ * @return
+ *        - ESP_OK:
+ *        - ESP_ERR_INVALID_ARG: Invalid argument
+ *        - ESP_ERR_NO_MEM:      No enough memory for allocation
+ */
+esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size);
+
+/**
+ * @brief Helper function for calloc a DMA capable memory buffer
+ *
+ * @param[in]  size          Size in bytes, the amount of memory to allocate
+ * @param[in]  dma_mem_info  DMA and memory info, see `esp_dma_mem_info_t`
+ * @param[out] out_ptr       A pointer to the memory allocated successfully
+ * @param[out] actual_size   Actual size for allocation in bytes, when the size you specified doesn't meet the DMA alignment requirements, this value might be bigger than the size you specified. Set null if you don't care this value.
+ *
+ * @return
+ *        - ESP_OK:
+ *        - ESP_ERR_INVALID_ARG: Invalid argument
+ *        - ESP_ERR_NO_MEM:      No enough memory for allocation
+ */
+esp_err_t esp_dma_capable_calloc(size_t n, size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size);
+
+/**
+ * @brief Helper function to check if a DMA buffer meets alignment requirements
+ *
+ * @param[in]  ptr           Pointer to the buffer
+ * @param[in]  size          Size of the buffer
+ * @param[in]  dma_mem_info  DMA and memory info, see `esp_dma_mem_info_t`
+ *
+ * @return
+ *        - True:  Buffer is aligned
+ *        - False: Buffer is not aligned, or buffer is not DMA capable
+ */
+bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma_mem_info_t *dma_mem_info);
+
+/**
+ * @brief Needed info to get GDMA alignment
+ */
+typedef struct {
+    bool is_desc;
+    bool on_psram;
+} dma_alignment_info_t;
+
+/**
+ * @brief Helper to get DMA alignment
+ *
+ * @param[in]  gdma_chan_handle  GDMA channel handle, if no GDMA supported, set it to NULL
+ * @param[in]  info              DMA alignment info
+ * @param[out] alignment         Alignment
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_ARG  Invalid argument
+ */
+esp_err_t esp_dma_get_alignment(void *gdma_chan_handle, const dma_alignment_info_t *info, size_t *alignment);
+
+//-----------------------Deprecated APIs-----------------------//
 /**
  * DMA malloc flags
  */
@@ -23,35 +98,16 @@ extern "C" {
 #define ESP_DMA_MALLOC_FLAG_PSRAM        BIT(0)
 
 /**
- * @brief Helper function for malloc a DMA capable memory buffer
- *
- * @param[in]  size         Size in bytes, the amount of memory to allocate
- * @param[in]  flags        Flags, see `ESP_DMA_MALLOC_FLAG_x`
- * @param[out] out_ptr      A pointer to the memory allocated successfully
- * @param[out] actual_size  Actual size for allocation in bytes, when the size you specified doesn't meet the DMA alignment requirements, this value might be bigger than the size you specified. Set null if you don't care this value.
- *
- * @return
- *        - ESP_OK:
- *        - ESP_ERR_INVALID_ARG: Invalid argument
- *        - ESP_ERR_NO_MEM:      No enough memory for allocation
+ * @note This API will use MAX alignment requirement
  */
-esp_err_t esp_dma_malloc(size_t size, uint32_t flags, void **out_ptr, size_t *actual_size);
+esp_err_t esp_dma_malloc(size_t size, uint32_t flags, void **out_ptr, size_t *actual_size)
+__attribute__((deprecated("esp_dma_malloc is deprecated, please use esp_dma_capable_malloc")));
 
 /**
- * @brief Helper function for calloc a DMA capable memory buffer
- *
- * @param[in]  n            Number of continuing chunks of memory to allocate
- * @param[in]  size         Size of one chunk, in bytes
- * @param[in]  flags        Flags, see `ESP_DMA_MALLOC_FLAG_x`
- * @param[out] out_ptr      A pointer to the memory allocated successfully
- * @param[out] actual_size  Actual size for allocation in bytes, when the size you specified doesn't meet the cache alignment requirements, this value might be bigger than the size you specified. Set null if you don't care this value.
- *
- * @return
- *        - ESP_OK:
- *        - ESP_ERR_INVALID_ARG: Invalid argument
- *        - ESP_ERR_NO_MEM:      No enough memory for allocation
+ * @note This API will use MAX alignment requirement
  */
-esp_err_t esp_dma_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, size_t *actual_size);
+esp_err_t esp_dma_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, size_t *actual_size)
+__attribute__((deprecated("esp_dma_calloc is deprecated, please use esp_dma_capable_calloc")));
 
 /**
  * @brief DMA buffer location
@@ -63,17 +119,10 @@ typedef enum {
 } esp_dma_buf_location_t;
 
 /**
- * @brief Helper function to check if a buffer meets DMA alignment requirements
- *
- * @param[in]  ptr       Pointer to the buffer
- * @param[in]  size      Size of the buffer
- * @param[in]  location  Location of the DMA buffer, see `esp_dma_buf_location_t`
- *
- * @return
- *        - True:  Buffer is aligned
- *        - False: Buffer is not aligned, or buffer is not DMA capable
+ * @note This API will use MAX alignment requirement
  */
-bool esp_dma_is_buffer_aligned(const void *ptr, size_t size, esp_dma_buf_location_t location);
+bool esp_dma_is_buffer_aligned(const void *ptr, size_t size, esp_dma_buf_location_t location)
+__attribute__((deprecated("esp_dma_is_buffer_aligned is deprecated, please use esp_dma_is_buffer_alignment_satisfied")));
 
 #ifdef __cplusplus
 }

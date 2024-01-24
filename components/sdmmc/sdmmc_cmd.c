@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -328,7 +328,11 @@ esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_scr)
     esp_err_t err = ESP_FAIL;
     uint32_t *buf = NULL;
     size_t actual_size = 0;
-    err = esp_dma_malloc(datalen, 0, (void *)&buf, &actual_size);
+    esp_dma_mem_info_t dma_mem_info = {
+        .heap_caps = MALLOC_CAP_DMA,
+        .custom_alignment = 4,
+    };
+    err = esp_dma_capable_malloc(datalen, &dma_mem_info, (void *)&buf, &actual_size);
     if (err != ESP_OK) {
         return err;
     }
@@ -401,7 +405,11 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
 
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
-    if (esp_dma_is_buffer_aligned(src, block_size * block_count, ESP_DMA_BUF_LOCATION_INTERNAL)) {
+    esp_dma_mem_info_t dma_mem_info = {
+        .heap_caps = MALLOC_CAP_DMA,
+        .custom_alignment = 4,
+    };
+    if (esp_dma_is_buffer_alignment_satisfied(src, block_size * block_count, &dma_mem_info)) {
         err = sdmmc_write_sectors_dma(card, src, start_block, block_count, block_size * block_count);
     } else {
         // SDMMC peripheral needs DMA-capable buffers. Split the write into
@@ -409,7 +417,7 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         // DMA-capable buffer.
         void *tmp_buf = NULL;
         size_t actual_size = 0;
-        err = esp_dma_malloc(block_size, 0, &tmp_buf, &actual_size);
+        err = esp_dma_capable_malloc(block_size, &dma_mem_info, &tmp_buf, &actual_size);
         if (err != ESP_OK) {
             return err;
         }
@@ -519,7 +527,11 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
 
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
-    if (esp_dma_is_buffer_aligned(dst, block_size * block_count, ESP_DMA_BUF_LOCATION_INTERNAL)) {
+    esp_dma_mem_info_t dma_mem_info = {
+        .heap_caps = MALLOC_CAP_DMA,
+        .custom_alignment = 4,
+    };
+    if (esp_dma_is_buffer_alignment_satisfied(dst, block_size * block_count, &dma_mem_info)) {
         err = sdmmc_read_sectors_dma(card, dst, start_block, block_count, block_size * block_count);
     } else {
         // SDMMC peripheral needs DMA-capable buffers. Split the read into
@@ -527,7 +539,7 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         // DMA-capable buffer.
         void *tmp_buf = NULL;
         size_t actual_size = 0;
-        err = esp_dma_malloc(block_size, 0, &tmp_buf, &actual_size);
+        err = esp_dma_capable_malloc(block_size, &dma_mem_info, &tmp_buf, &actual_size);
         if (err != ESP_OK) {
             return err;
         }

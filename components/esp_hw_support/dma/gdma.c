@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -943,4 +943,35 @@ static esp_err_t gdma_install_tx_interrupt(gdma_tx_channel_t *tx_chan)
 
 err:
     return ret;
+}
+
+esp_err_t gdma_get_alignment(gdma_channel_handle_t dma_chan, const gdma_alignment_info_t *info, size_t *alignment)
+{
+    ESP_RETURN_ON_FALSE(dma_chan && info && alignment, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+    bool desc_on_psram = info->is_desc && info->on_psram;
+    ESP_RETURN_ON_FALSE(!desc_on_psram, ESP_ERR_INVALID_ARG, TAG, "should not place descriptor on psram");
+
+    if (info->is_desc) {
+        if (dma_chan->pair->group->bus_id == SOC_GDMA_BUS_AHB) {
+            *alignment = GDMA_LL_AHB_DESC_ALIGNMENT;
+        }
+#if SOC_AXI_GDMA_SUPPORTED
+        else if (dma_chan->pair->group->bus_id == SOC_GDMA_BUS_AXI) {
+            *alignment = GDMA_LL_AXI_DESC_ALIGNMENT;
+        }
+#endif
+    } else {
+        if (dma_chan->psram_alignment == 0 && dma_chan->sram_alignment == 0) {
+            ESP_LOGI(TAG, "gdma_set_transfer_ability isn't called before, use fallback alignment");
+            *alignment = 4;
+        } else {
+            if (info->on_psram) {
+                *alignment = dma_chan->psram_alignment;
+            } else {
+                *alignment = dma_chan->sram_alignment;
+            }
+        }
+    }
+
+    return ESP_OK;
 }

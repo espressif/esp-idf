@@ -47,6 +47,8 @@ extern "C" {
 #define GDMA_LL_AHB_PAIRS_PER_GROUP        3 // Number of GDMA pairs in each AHB group
 #define GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT  1  // TX and RX channel in the same pair will share the same interrupt source number
 
+#define GDMA_LL_AHB_DESC_ALIGNMENT    4
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 
 /**

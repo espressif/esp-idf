@@ -91,7 +91,11 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
      */
     uint32_t* sd_ssr = NULL;
     size_t actual_size = 0;
-    err = esp_dma_calloc(1, SD_SSR_SIZE, 0, (void *)&sd_ssr, &actual_size);
+    esp_dma_mem_info_t dma_mem_info = {
+        .heap_caps = MALLOC_CAP_DMA,
+        .custom_alignment = 4,
+    };
+    err = esp_dma_capable_calloc(1, SD_SSR_SIZE, &dma_mem_info, (void *)&sd_ssr, &actual_size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: could not allocate sd_ssr", __func__);
         return err;
@@ -239,7 +243,11 @@ esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card)
 
     size_t actual_size = 0;
     sdmmc_switch_func_rsp_t *response = NULL;
-    esp_err_t err = esp_dma_malloc(sizeof(*response), 0, (void *)&response, &actual_size);
+    esp_dma_mem_info_t dma_mem_info = {
+        .heap_caps = MALLOC_CAP_DMA,
+        .custom_alignment = 4,
+    };
+    esp_err_t err = esp_dma_capable_malloc(sizeof(*response), &dma_mem_info, (void *)&response, &actual_size);
     assert(actual_size == sizeof(*response));
     if (err != ESP_OK) {
         return err;

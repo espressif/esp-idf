@@ -7,25 +7,6 @@
 #include "hal/hal_utils.h"
 #include "hal/assert.h"
 
-/**
- * @brief helper function, calculate the Greatest Common Divisor
- * @note gcd(a, b) = gcd(b, a % b)
- * @param a bigger value
- * @param b smaller value
- * @return result of gcd(a, b)
- */
-__attribute__((always_inline))
-static inline uint32_t _gcd(uint32_t a, uint32_t b)
-{
-    uint32_t c = a % b;
-    while (c != 0) {
-        a = b;
-        b = c;
-        c = a % b;
-    }
-    return b;
-}
-
 __attribute__((always_inline))
 static inline uint32_t _sub_abs(uint32_t a, uint32_t b)
 {

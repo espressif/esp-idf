@@ -575,14 +575,19 @@ static esp_err_t i2s_alloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
     size_t desc_size = 0;
     for (int cnt = 0; cnt < buf_cnt; cnt++) {
         /* Allocate DMA buffer */
-        esp_dma_calloc(1, sizeof(char) * dma_obj->buf_size, (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA), (void **)&dma_obj->buf[cnt], NULL);
+        esp_dma_mem_info_t dma_mem_info = {
+            .heap_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA,
+            .dma_alignment = 4,
+        };
+        esp_dma_capable_calloc(1, sizeof(char) * dma_obj->buf_size, &dma_mem_info, (void **)&dma_obj->buf[cnt], NULL);
         ESP_GOTO_ON_FALSE(dma_obj->buf[cnt], ESP_ERR_NO_MEM, err, TAG, "Error malloc dma buffer");
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         esp_cache_msync(dma_obj->buf[cnt], dma_obj->buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 #endif
 
         /* Allocate DMA descriptor */
-        esp_dma_calloc(1, sizeof(lldesc_t), MALLOC_CAP_DEFAULT, (void **)&dma_obj->desc[cnt], &desc_size);
+        esp_dma_capable_calloc(1, sizeof(lldesc_t), &dma_mem_info, (void **)&dma_obj->desc[cnt], &desc_size);
+        // esp_dma_calloc(1, sizeof(lldesc_t), MALLOC_CAP_DEFAULT, (void **)&dma_obj->desc[cnt], &desc_size);
         ESP_GOTO_ON_FALSE(dma_obj->desc[cnt], ESP_ERR_NO_MEM, err, TAG,  "Error malloc dma description entry");
     }
     /* DMA descriptor must be initialize after all descriptor has been created, otherwise they can't be linked together as a chain */
