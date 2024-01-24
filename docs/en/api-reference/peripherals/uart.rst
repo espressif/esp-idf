@@ -245,6 +245,26 @@ Macros
 The API also defines several macros. For example, :c:macro:`UART_HW_FIFO_LEN` defines the length of hardware FIFO buffers; :c:macro:`UART_BITRATE_MAX` gives the maximum baud rate supported by the UART controllers, etc.
 
 
+.. only:: SOC_UART_LP_NUM
+
+    Use LP UART Controller with HP Core
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The UART driver also supports to control the LP UART controller when the chip is in active mode. The configuration steps for the LP UART are no difference with the steps for a normal UART controller, except:
+
+    1. The port number for the LP UART controller is defined by :c:macro:`LP_UART_NUM_0`.
+    2. The available clock sources for the LP UART controller can be found in :cpp:type:`lp_uart_sclk_t`.
+    3. The size of the hardware FIFO for the LP UART controller is much smaller, which is defined in :c:macro:`SOC_LP_UART_FIFO_LEN`.
+
+    .. only:: SOC_LP_GPIO_MATRIX_SUPPORTED
+
+        4. The GPIO pins for the LP UART controller can only be selected from the LP GPIO pins.
+
+    .. only:: not SOC_LP_GPIO_MATRIX_SUPPORTED
+
+        4. The GPIO pins for the LP UART controller are unalterable, because there is no LP GPIO matrix on the target. Please see **{IDF_TARGET_NAME} Technical Reference Manual** > **IO MUX and GPIO Matrix (GPIO, IO MUX)** > **LP IO MUX Functions List** [`PDF <{IDF_TARGET_TRM_EN_URL}#lp-io-mux-func-list>`__] for the specific pin numbers.
+
+
 .. _uart-api-deleting-driver:
 
 Deleting a Driver
