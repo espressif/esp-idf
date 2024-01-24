@@ -235,6 +235,11 @@ extern "C" {
  */
 #define IP_REASS_MAX_PBUFS              CONFIG_LWIP_IP_REASS_MAX_PBUFS
 
+/**
+ * IP_DEFAULT_TTL: Default value for Time-To-Live used by transport layers.
+ */
+#define IP_DEFAULT_TTL                   CONFIG_LWIP_IP_DEFAULT_TTL
+
 /*
    ----------------------------------
    ---------- ICMP options ----------
