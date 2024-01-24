@@ -1,0 +1,13 @@
+IEEE 802.15.4
+=============
+
+:link_to_translation:`en:[English]`
+
+Receive Handle Done
+-------------------
+
+.. note::
+
+    这个功能仅包括在 IDF v5.1.3 以及之后的发布中。
+
+当收到的数据帧被处理后， 用户需要调用函数 :cpp:func:`esp_ieee802154_receive_handle_done` 通知 802.15.4 驱动层，否则这个数据空间将不会被释放。
