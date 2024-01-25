@@ -78,14 +78,14 @@ void sleep_clock_modem_retention_deinit(void)
 
 bool IRAM_ATTR clock_domain_pd_allowed(void)
 {
-    const uint32_t modules = sleep_retention_get_modules();
+    const uint32_t created_modules = sleep_retention_get_created_modules();
     const uint32_t mask = (const uint32_t) (
             SLEEP_RETENTION_MODULE_CLOCK_SYSTEM
 #if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
           | SLEEP_RETENTION_MODULE_CLOCK_MODEM
 #endif
           );
-    return ((modules & mask) == mask);
+    return ((created_modules & mask) == mask);
 }
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP || CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
