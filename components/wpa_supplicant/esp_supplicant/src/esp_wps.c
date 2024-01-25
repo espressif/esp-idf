@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,8 +33,8 @@
 
 const char *wps_model_number = CONFIG_IDF_TARGET;
 
-void *s_wps_api_lock = NULL;  /* Used in WPS public API only, never be freed */
-void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS publi API caller task and WPS task */
+void *s_wps_api_lock = NULL;  /* Used in WPS/WPS-REG public API only, never be freed */
+void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS/WPS-REG public API caller task and WPS task, never be freed */
 bool s_wps_enabled = false;
 #ifdef USE_WPS_TASK
 struct wps_rx_param {
@@ -44,11 +44,6 @@ struct wps_rx_param {
     STAILQ_ENTRY(wps_rx_param) bqentry;
 };
 static STAILQ_HEAD(,wps_rx_param) s_wps_rxq;
-
-typedef struct {
-    void *arg;
-    int ret; /* return value */
-} wps_ioctl_param_t;
 
 static void *s_wps_task_hdl = NULL;
 static void *s_wps_queue = NULL;
