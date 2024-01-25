@@ -11,7 +11,7 @@ The ESP Zigbee SDK provides more examples and tools for productization:
 
 ## Hardware Required
 
-* One development board with ESP32-H2 SoC acting as Zigbee end device (loaded with HA_on_off_light example)
+* One development board with ESP32-H2 SoC acting as Zigbee end-device (loaded with HA_on_off_light example)
 * A USB cable for power supply and programming
 * Choose another ESP32-H2 as Zigbee coordinator (see [HA_on_off_switch example](../HA_on_off_switch))
 
@@ -33,18 +33,25 @@ Build the project, flash it to the board, and start the monitor tool to view the
 
 As you run the example, you will see the following log:
 
-light bulb:
 ```
-I (918) ESP_ZB_LIGHT: status: 255
-I (901) ESP_ZB_LIGHT: Zigbee stack initialized
-I (901) ESP_ZB_LIGHT: Start network steering
-I (2611) ESP_ZB_LIGHT: Joined network successfully (Extended PAN ID: aa:98:48:01:a0:03:f7:84, PAN ID: 0x0e8b)
-I (5651) ESP_ZB_LIGHT: on/off light set to 1
-I (6631) ESP_ZB_LIGHT: on/off light set to 0
-I (7331) ESP_ZB_LIGHT: on/off light set to 1
-I (8251) ESP_ZB_LIGHT: on/off light set to 0
-I (9111) ESP_ZB_LIGHT: on/off light set to 1
-I (9671) ESP_ZB_LIGHT: on/off light set to 0
+I (394) main_task: Calling app_main()
+I (404) gpio: GPIO[8]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (404) phy_init: phy_version 220,2dbbbe7,Sep 25 2023,20:39:25
+I (464) phy: libbtbb version: 90c587c, Sep 25 2023, 20:39:57
+I (474) ESP_ZB_COLOR_DIMM_LIGHT: ZDO signal: ZDO Config Ready (0x17), status: ESP_FAIL
+I (474) ESP_ZB_COLOR_DIMM_LIGHT: Zigbee stack initialized
+I (484) ESP_ZB_COLOR_DIMM_LIGHT: Start network steering
+I (484) main_task: Returned from app_main()
+I (9614) ESP_ZB_COLOR_DIMM_LIGHT: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
+I (9834) ESP_ZB_COLOR_DIMM_LIGHT: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
+I (9834) ESP_ZB_COLOR_DIMM_LIGHT: Joined network successfully (Extended PAN ID: 60:55:f9:00:00:f6:07:b4, PAN ID: 0x2a74, Channel:13)
+I (32944) ESP_ZB_COLOR_DIMM_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
+I (32944) ESP_ZB_COLOR_DIMM_LIGHT: Light sets to On
+I (33984) ESP_ZB_COLOR_DIMM_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
+I (33984) ESP_ZB_COLOR_DIMM_LIGHT: Light sets to Off
+I (35304) ESP_ZB_COLOR_DIMM_LIGHT: ZDO signal: NLME Status Indication (0x32), status: ESP_OK
+I (35534) ESP_ZB_COLOR_DIMM_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
+I (35534) ESP_ZB_COLOR_DIMM_LIGHT: Light sets to On
 ```
 
 ## Light Control Functions
