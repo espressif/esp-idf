@@ -84,6 +84,8 @@ typedef struct {
     mipi_dsi_dpi_clock_source_t dpi_clk_src;   /*!< MIPI DSI DPI clock source */
     uint32_t dpi_clock_freq_mhz;               /*!< DPI clock frequency in MHz */
     lcd_color_rgb_pixel_format_t pixel_format; /*!< Pixel format that used by the MIPI LCD device */
+    uint8_t num_fbs;                           /*!< Number of screen-sized frame buffers that allocated by the driver
+                                                    By default (set to either 0 or 1) only one frame buffer will be created */
     esp_lcd_video_timing_t video_timing;       /*!< Video timing */
     /// Extra configuration flags for MIPI DSI DPI panel
     struct extra_flags {
@@ -105,6 +107,19 @@ typedef struct {
  *      - ESP_FAIL: Create MIPI DSI data panel failed because of other error
  */
 esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_panel_config_t *panel_config, esp_lcd_panel_handle_t *ret_panel);
+
+/**
+ * @brief Get the address of the frame buffer(s) that allocated by the driver
+ *
+ * @param[in] dpi_panel MIPI DPI panel handle, returned from esp_lcd_new_panel_dpi()
+ * @param[in] fb_num Number of frame buffer(s) to get. This value must be the same as the number of the followed parameters.
+ * @param[out] fb0 Address of the frame buffer 0 (first frame buffer)
+ * @param[out] ... List of other frame buffers if any
+ * @return
+ *      - ESP_ERR_INVALID_ARG: Get frame buffer address failed because of invalid argument
+ *      - ESP_OK: Get frame buffer address successfully
+ */
+esp_err_t esp_lcd_dpi_panel_get_frame_buffer(esp_lcd_panel_handle_t dpi_panel, uint32_t fb_num, void **fb0, ...);
 
 /**
  * @brief Set pre-defined pattern to the screen for testing or debugging purpose
