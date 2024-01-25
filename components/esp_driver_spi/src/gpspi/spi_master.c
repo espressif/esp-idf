@@ -381,13 +381,12 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
             .src_freq_hz = clock_source_hz,
             .exp_freq_hz = dev_config->clock_speed_hz * 2,  //we have (hs_clk = 2*mst_clk), calc hs_clk first
             .round_opt = HAL_DIV_ROUND,
+            .min_integ = 1,
+            .max_integ = SPI_LL_CLK_SRC_PRE_DIV_MAX / 2,
         };
         hal_utils_calc_clk_div_integer(&clk_cfg, &clock_source_div);
     }
     clock_source_div *= 2; //convert to mst_clk function divider
-    if (clock_source_div > SPI_LL_CLK_SRC_PRE_DIV_MAX) {
-        clock_source_div = SPI_LL_CLK_SRC_PRE_DIV_MAX;
-    }
     clock_source_hz /= clock_source_div;    //actual freq enter to SPI peripheral
 #else
     SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= clock_source_hz), "invalid sclk speed", ESP_ERR_INVALID_ARG);
