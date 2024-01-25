@@ -245,7 +245,7 @@ error:
 
 bool peripheral_domain_pd_allowed(void)
 {
-    const uint32_t modules = sleep_retention_get_modules();
+    const uint32_t created_modules = sleep_retention_get_created_modules();
     const uint32_t mask = (const uint32_t) (
             SLEEP_RETENTION_MODULE_INTR_MATRIX | \
             SLEEP_RETENTION_MODULE_HP_SYSTEM   | \
@@ -255,7 +255,7 @@ bool peripheral_domain_pd_allowed(void)
             SLEEP_RETENTION_MODULE_IOMUX       | \
             SLEEP_RETENTION_MODULE_SPIMEM      | \
             SLEEP_RETENTION_MODULE_SYSTIMER);
-    return ((modules & mask) == mask);
+    return ((created_modules & mask) == mask);
 }
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP

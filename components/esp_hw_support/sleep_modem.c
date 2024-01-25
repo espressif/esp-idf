@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -285,16 +285,16 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 bool modem_domain_pd_allowed(void)
 {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
-    const uint32_t modules = sleep_retention_get_modules();
+    const uint32_t created_modules = sleep_retention_get_created_modules();
     const uint32_t mask_wifi = (const uint32_t) (SLEEP_RETENTION_MODULE_WIFI_MAC |
                                                  SLEEP_RETENTION_MODULE_WIFI_BB);
     const uint32_t mask_ble = (const uint32_t) (SLEEP_RETENTION_MODULE_BLE_MAC |
                                                 SLEEP_RETENTION_MODULE_BT_BB);
     const uint32_t mask_154 = (const uint32_t) (SLEEP_RETENTION_MODULE_802154_MAC |
                                                 SLEEP_RETENTION_MODULE_BT_BB);
-    return (((modules & mask_wifi) == mask_wifi) ||
-            ((modules & mask_ble)  == mask_ble) ||
-            ((modules & mask_154)  == mask_154));
+    return (((created_modules & mask_wifi) == mask_wifi) ||
+            ((created_modules & mask_ble)  == mask_ble) ||
+            ((created_modules & mask_154)  == mask_154));
 #else
     return false; /* MODEM power domain is controlled by each module (WiFi, Bluetooth or 15.4) of modem */
 #endif
