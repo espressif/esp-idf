@@ -125,13 +125,25 @@ class GitlabYmlConfig:
 
         all_config = dict()
         root_yml = yaml.load(open(root_yml_filepath), Loader=yaml.FullLoader)
-        for item in root_yml['include']:
+
+        # expanding "include"
+        for item in root_yml.pop('include', []) or []:
             all_config.update(yaml.load(open(os.path.join(IDF_PATH, item)), Loader=yaml.FullLoader))
 
         if 'default' in all_config:
             self._defaults = all_config.pop('default')
 
         self._config = all_config
+
+        # anchor is the string that will be reused in templates
+        self._anchor_keys: t.Set[str] = set()
+        # template is a dict that will be extended
+        self._template_keys: t.Set[str] = set()
+        self._used_template_keys: t.Set[str] = set()  # tracing the used templates
+        # job is a dict that will be executed
+        self._job_keys: t.Set[str] = set()
+
+        self.expand_extends()
 
     @property
     def default(self) -> t.Dict[str, t.Any]:
@@ -147,33 +159,66 @@ class GitlabYmlConfig:
 
     @cached_property
     def anchors(self) -> t.Dict[str, t.Any]:
-        return {k: v for k, v in self.config.items() if k.startswith('.')}
+        return {k: v for k, v in self.config.items() if k in self._anchor_keys}
 
     @cached_property
     def jobs(self) -> t.Dict[str, t.Any]:
-        return {k: v for k, v in self.config.items() if not k.startswith('.') and k not in self.global_keys}
+        return {k: v for k, v in self.config.items() if k in self._job_keys}
 
     @cached_property
-    def rules(self) -> t.Set[str]:
-        return {k for k, _ in self.anchors.items() if self._is_rule_key(k)}
+    def templates(self) -> t.Dict[str, t.Any]:
+        return {k: v for k, v in self.config.items() if k in self._template_keys}
 
     @cached_property
-    def used_rules(self) -> t.Set[str]:
-        res = set()
+    def used_templates(self) -> t.Set[str]:
+        return self._used_template_keys
 
-        for v in self.config.values():
-            if not isinstance(v, dict):
+    def expand_extends(self) -> None:
+        """
+        expand the `extends` key in-place.
+        """
+        for k, v in self.config.items():
+            if k in self.global_keys:
                 continue
 
-            for item in to_list(v.get('extends')):
-                if self._is_rule_key(item):
-                    res.add(item)
+            if isinstance(v, (str, list)):
+                self._anchor_keys.add(k)
+            elif k.startswith('.if-'):
+                self._anchor_keys.add(k)
+            elif k.startswith('.'):
+                self._template_keys.add(k)
+            elif isinstance(v, dict):
+                self._job_keys.add(k)
+            else:
+                raise ValueError(f'Unknown type for key {k} with value {v}')
 
-        return res
+        # no need to expand anchor
 
-    @staticmethod
-    def _is_rule_key(key: str) -> bool:
-        return key.startswith('.rules:') or key.endswith('template')
+        # expand template first
+        for k in self._template_keys:
+            self._expand_extends(k)
+
+        # expand job
+        for k in self._job_keys:
+            self._expand_extends(k)
+
+    def _expand_extends(self, name: str) -> t.Dict[str, t.Any]:
+        extends = to_list(self.config[name].pop('extends', None))
+        original_d = self.config[name].copy()
+        if not extends:
+            return self.config[name]  # type: ignore
+
+        d = {}
+        while extends:
+            self._used_template_keys.update(extends)
+
+            for i in extends:
+                d.update(self._expand_extends(i))
+
+            extends = to_list(self.config[name].pop('extends', None))
+
+        self.config[name] = {**d, **original_d}
+        return self.config[name]  # type: ignore
 
 
 def get_all_manifest_files() -> t.List[str]:

@@ -172,6 +172,7 @@ build_clang_test_apps_esp32c6:
   extends:
     - .build_template
     - .rules:build:check
+  dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
       artifacts: false
@@ -272,6 +273,7 @@ build_template_app:
     - .build_template_app_template
     - .rules:build
   stage: host_test
+  dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
       artifacts: false

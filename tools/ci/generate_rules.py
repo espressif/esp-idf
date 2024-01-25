@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import inspect
 import os
@@ -11,7 +10,8 @@ from collections import defaultdict
 from itertools import product
 
 import yaml
-from idf_ci_utils import IDF_PATH, GitlabYmlConfig
+from idf_ci_utils import GitlabYmlConfig
+from idf_ci_utils import IDF_PATH
 
 try:
     import pygraphviz as pgv
@@ -201,9 +201,13 @@ class RulesWriter:
     def new_rules_str(self):  # type: () -> str
         res = []
         for k, v in sorted(self.rules.items()):
-            if '.rules:' + k not in self.yml_config.used_rules:
+            if k.startswith('pattern'):
+                continue
+
+            if '.rules:' + k not in self.yml_config.used_templates:
                 print(f'WARNING: unused rule: {k}, skipping...')
                 continue
+
             res.append(self.RULES_TEMPLATE.format(k, self._format_rule(k, v)))
         return '\n\n'.join(res)
 
