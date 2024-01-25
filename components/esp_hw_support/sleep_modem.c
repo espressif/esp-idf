@@ -286,21 +286,21 @@ bool modem_domain_pd_allowed(void)
 {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool modem_domain_pd_allowed = false;
-    const uint32_t modules = sleep_retention_get_modules();
+    const uint32_t created_modules = sleep_retention_get_created_modules();
 #if SOC_WIFI_SUPPORTED
     const uint32_t mask_wifi = (const uint32_t) (SLEEP_RETENTION_MODULE_WIFI_MAC |
                                                  SLEEP_RETENTION_MODULE_WIFI_BB);
-    modem_domain_pd_allowed |= ((modules & mask_wifi) == mask_wifi);
+    modem_domain_pd_allowed |= ((created_modules & mask_wifi) == mask_wifi);
 #endif
 #if SOC_BT_SUPPORTED
     const uint32_t mask_ble = (const uint32_t) (SLEEP_RETENTION_MODULE_BLE_MAC |
                                                 SLEEP_RETENTION_MODULE_BT_BB);
-    modem_domain_pd_allowed |= ((modules & mask_ble) == mask_ble);
+    modem_domain_pd_allowed |= ((created_modules & mask_ble) == mask_ble);
 #endif
 #if SOC_IEEE802154_SUPPORTED
     const uint32_t mask_154 = (const uint32_t) (SLEEP_RETENTION_MODULE_802154_MAC |
                                                 SLEEP_RETENTION_MODULE_BT_BB);
-    modem_domain_pd_allowed |= ((modules & mask_154)  == mask_154);
+    modem_domain_pd_allowed |= ((created_modules & mask_154)  == mask_154);
 #endif
     return modem_domain_pd_allowed;
 #else

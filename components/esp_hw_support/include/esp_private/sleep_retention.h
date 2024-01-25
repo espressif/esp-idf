@@ -71,6 +71,18 @@ void * sleep_retention_find_link_by_id(int id);
  */
 void sleep_retention_entries_get(sleep_retention_entries_t *entries);
 
+/**
+ * @brief Get all created modules that require sleep retention
+ *
+ * This is an unprotected interface for getting a bitmap of all modules that
+ * require sleep retention.
+ *
+ * It can only be called by the sleep procedure.
+ *
+ * @return the bitmap of all modules requiring sleep retention
+ */
+uint32_t sleep_retention_get_created_modules(void);
+
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
 /**
  * @brief Software trigger REGDMA to do extra linked list retention
@@ -80,18 +92,6 @@ void sleep_retention_entries_get(sleep_retention_entries_t *entries);
  */
 void sleep_retention_do_extra_retention(bool backup_or_restore);
 #endif
-
-/**
- * @brief Get all registered modules that require sleep retention
- *
- * This is an unprotected interface for getting a bitmap of all modules that
- * require sleep retention.
- *
- * It can only be called by the sleep procedure.
- *
- * @return the bitmap of all modules requiring sleep retention
- */
-uint32_t sleep_retention_get_modules(void);
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 /**

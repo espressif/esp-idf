@@ -145,27 +145,26 @@ error:
 
 bool peripheral_domain_pd_allowed(void)
 {
-    const uint32_t modules = sleep_retention_get_modules();
-    uint32_t mask = 0;
+    const uint32_t created_modules = sleep_retention_get_created_modules();
+    uint32_t mask = (uint32_t) (
+            SLEEP_RETENTION_MODULE_INTR_MATRIX | \
+            SLEEP_RETENTION_MODULE_HP_SYSTEM   | \
+            SLEEP_RETENTION_MODULE_UART0       | \
+            SLEEP_RETENTION_MODULE_TG0         | \
+            SLEEP_RETENTION_MODULE_IOMUX       | \
+            SLEEP_RETENTION_MODULE_SPIMEM      | \
+            SLEEP_RETENTION_MODULE_SYSTIMER);
 
-    mask |= SLEEP_RETENTION_MODULE_INTR_MATRIX;
-    mask |= SLEEP_RETENTION_MODULE_HP_SYSTEM;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     mask |= SLEEP_RETENTION_MODULE_L2_CACHE;
 #endif
 #if SOC_APM_SUPPORTED
     mask |= SLEEP_RETENTION_MODULE_TEE_APM;
 #endif
-    mask |= SLEEP_RETENTION_MODULE_UART0;
-    mask |= SLEEP_RETENTION_MODULE_TG0;
-    mask |= SLEEP_RETENTION_MODULE_IOMUX;
-    mask |= SLEEP_RETENTION_MODULE_SPIMEM;
-    mask |= SLEEP_RETENTION_MODULE_SYSTIMER;
 #if SOC_PAU_IN_TOP_DOMAIN
     mask |= SLEEP_RETENTION_MODULE_REGDMA_SYSTEM;
 #endif
-
-    return ((modules & mask) == mask);
+    return ((created_modules & mask) == mask);
 }
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP

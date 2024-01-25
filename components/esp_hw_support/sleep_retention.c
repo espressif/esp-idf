@@ -493,7 +493,7 @@ void sleep_retention_entries_get(sleep_retention_entries_t *entries)
     _lock_release_recursive(&s_retention.lock);
 }
 
-uint32_t IRAM_ATTR sleep_retention_get_modules(void)
+uint32_t IRAM_ATTR sleep_retention_get_created_modules(void)
 {
     return s_retention.created_modules;
 }
