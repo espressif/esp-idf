@@ -129,8 +129,7 @@ static struct syscall_stub_table s_stub_table = {
     ._printf_float = NULL,
     ._scanf_float = NULL,
 #endif
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 \
-    || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S2
     /* TODO IDF-2570 : mark that this assert failed in ROM, to avoid confusion between IDF & ROM
        assertion failures (as function names & source file names will be similar)
     */
