@@ -2409,7 +2409,7 @@ class ChecksumFileParser():
         try:
             for bytes_str, hash_str in zip(self.checksum[0::2], self.checksum[1::2]):
                 bytes_filename = self.parseLine(r'^# (\S*):', bytes_str)
-                hash_filename = self.parseLine(r'^\S* \*(\S*)', hash_str)
+                hash_filename = self.parseLine(r'^\S* [\* ](\S*)', hash_str)
                 if hash_filename != bytes_filename:
                     fatal('filename in hash-line and in bytes-line are not the same')
                     raise SystemExit(1)
