@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#define HP_CALI_DBIAS   25
-#define LP_CALI_DBIAS   26
+#define HP_CALI_DBIAS_DEFAULT   25
+#define LP_CALI_DBIAS_DEFAULT   26
 
 // FOR  XTAL FORCE PU IN SLEEP
 #define PMU_PD_CUR_SLEEP_ON    0
@@ -36,8 +36,11 @@ extern "C" {
 #define PMU_HP_XPD_LIGHTSLEEP       1
 
 #define PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT    0
-#define PMU_HP_DBIAS_LIGHTSLEEP_0V6 1
-#define PMU_LP_DBIAS_LIGHTSLEEP_0V7 12
+#define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 1
+#define PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT 12
+
+// FOR LIGHTSLEEP: XTAL FORCE PU
+#define PMU_DBG_ATTEN_ACTIVE_DEFAULT    0
 
 // FOR DEEPSLEEP
 #define PMU_DBG_HP_DEEPSLEEP    0
@@ -46,8 +49,14 @@ extern "C" {
 
 #define PMU_REGDMA_S2A_WORK_TIME_US     480
 
-#define PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT 12
-#define PMU_LP_DBIAS_DEEPSLEEP_0V7      23
+#define PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT     12
+#define PMU_LP_DBIAS_DEEPSLEEP_0V7_DEFAULT  23
+
+#define EFUSE_BURN_OFFSET_DSLP_DBG     8
+#define EFUSE_BURN_OFFSET_DSLP_LP_DBIAS   23
+
+uint32_t get_act_hp_dbias(void);
+uint32_t get_act_lp_dbias(void);
 
 typedef struct {
     pmu_hp_dig_power_reg_t  dig_power;
@@ -335,7 +344,7 @@ typedef struct {
             .bias_sleep      = PMU_BIASSLP_SLEEP_DEFAULT,           \
             .xpd             = PMU_HP_XPD_LIGHTSLEEP,               \
             .dbg_atten       = PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT,    \
-            .dbias           = PMU_HP_DBIAS_LIGHTSLEEP_0V6          \
+            .dbias           = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT  \
         }                                                           \
     },                                                              \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                                  \
@@ -347,7 +356,7 @@ typedef struct {
             .slp_dbias     = PMU_LP_SLP_DBIAS_SLEEP_DEFAULT,        \
             .xpd           = PMU_LP_XPD_SLEEP_DEFAULT,              \
             .dbg_atten     = PMU_DBG_ATTEN_LIGHTSLEEP_DEFAULT,      \
-            .dbias         = PMU_LP_DBIAS_LIGHTSLEEP_0V7            \
+            .dbias         = PMU_LP_DBIAS_LIGHTSLEEP_0V7_DEFAULT    \
         }                                                           \
     }                                                               \
 }
@@ -370,7 +379,7 @@ typedef struct {
             .slp_dbias     = PMU_LP_SLP_DBIAS_SLEEP_DEFAULT,        \
             .xpd           = PMU_LP_XPD_SLEEP_DEFAULT,              \
             .dbg_atten     = PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT,       \
-            .dbias         = PMU_LP_DBIAS_DEEPSLEEP_0V7             \
+            .dbias         = PMU_LP_DBIAS_DEEPSLEEP_0V7_DEFAULT     \
         }                                                           \
     }                                                               \
 }
