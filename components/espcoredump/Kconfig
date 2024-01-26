@@ -44,7 +44,7 @@ menu "Core dump"
             bool "Use CRC32 for integrity verification"
         config ESP_COREDUMP_CHECKSUM_SHA256
             bool "Use SHA256 for integrity verification"
-            depends on ESP_COREDUMP_DATA_FORMAT_ELF && IDF_TARGET_ESP32
+            depends on ESP_COREDUMP_DATA_FORMAT_ELF
     endchoice
 
     config ESP_COREDUMP_CHECK_BOOT
