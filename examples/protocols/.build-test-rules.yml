@@ -101,6 +101,8 @@ examples/protocols/http_server/ws_echo_server:
 
 examples/protocols/https_mbedtls:
   <<: *default_dependencies
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
