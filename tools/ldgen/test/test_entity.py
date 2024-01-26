@@ -236,6 +236,9 @@ class EntityDBTest(unittest.TestCase):
         sections = self.entities.get_sections('ěščřžýáíé.a', 'FreeRTOS-ěščřžýáíé')
         self.assertEqual(set(sections), set(['.literal.ěščřžýáíé']))
 
+        sections = self.entities.get_sections('ěščřžýáíé.a', 'o_suffix')
+        self.assertEqual(set(sections), set(['.find_me']))
+
 
 if __name__ == '__main__':
     unittest.main()
