@@ -180,10 +180,6 @@ examples/protocols/l2tap:
 
 examples/protocols/modbus:
   <<: *default_dependencies
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-7869
   depends_filepatterns:
     - examples/common_components/protocol_examples_common/**/*
     - examples/protocols/modbus/mb_example_common/**/*
