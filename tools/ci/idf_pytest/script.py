@@ -55,6 +55,8 @@ def get_pytest_cases(
     apps: t.Optional[t.List[App]] = None,
 ) -> t.List[PytestCase]:
     """
+    Return the list of test cases
+
     For single-dut test cases, `target` could be
     - [TARGET], e.g. `esp32`, to get the test cases for the given target
     - or `single_all`, to get all single-dut test cases
@@ -143,24 +145,27 @@ def get_all_apps(
     :param ignore_app_dependencies_filepatterns: ignore app dependencies filepatterns
     :return: tuple of test-required apps and non-test-related apps
     """
-    all_apps = find_apps(
-        paths,
-        target,
-        build_system=IdfCMakeApp,
-        recursive=True,
-        build_dir='build_@t_@w',
-        config_rules_str=config_rules_str or DEFAULT_CONFIG_RULES_STR,
-        build_log_filename=DEFAULT_BUILD_LOG_FILENAME,
-        size_json_filename='size.json',
-        check_warnings=True,
-        manifest_rootpath=IDF_PATH,
-        manifest_files=get_all_manifest_files(),
-        default_build_targets=SUPPORTED_TARGETS + (extra_default_build_targets or []),
-        modified_components=modified_components,
-        modified_files=modified_files,
-        ignore_app_dependencies_filepatterns=ignore_app_dependencies_filepatterns,
-        include_skipped_apps=True,
-    )
+    # target could be comma separated list
+    all_apps: t.List[App] = []
+    for _t in set(target.split(',')):
+        all_apps.extend(find_apps(
+            paths,
+            _t,
+            build_system=IdfCMakeApp,
+            recursive=True,
+            build_dir='build_@t_@w',
+            config_rules_str=config_rules_str or DEFAULT_CONFIG_RULES_STR,
+            build_log_filename=DEFAULT_BUILD_LOG_FILENAME,
+            size_json_filename='size.json',
+            check_warnings=True,
+            manifest_rootpath=IDF_PATH,
+            manifest_files=get_all_manifest_files(),
+            default_build_targets=SUPPORTED_TARGETS + (extra_default_build_targets or []),
+            modified_components=modified_components,
+            modified_files=modified_files,
+            ignore_app_dependencies_filepatterns=ignore_app_dependencies_filepatterns,
+            include_skipped_apps=True,
+        ))
 
     pytest_cases = get_pytest_cases(
         paths,

@@ -75,10 +75,21 @@ def test_foo(dut):
 """
         )
 
-    test_related_apps, non_test_related_apps = get_all_apps([str(work_dirpath)], target='all')
+    test_related_apps, non_test_related_apps = get_all_apps([str(work_dirpath)], target='esp32s2,esp32s3')
+    assert len(test_related_apps) == 2
+    assert len(non_test_related_apps) == 0
 
-    assert len(test_related_apps) == 3  # 32, s2, s3
+    test_related_apps, non_test_related_apps = get_all_apps([str(work_dirpath)], target='esp32,esp32s3,esp32')
+    assert len(test_related_apps) == 2
+    assert len(non_test_related_apps) == 0
+
+    test_related_apps, non_test_related_apps = get_all_apps([str(work_dirpath)], target='all')
+    assert len(test_related_apps) == 3
     assert len(non_test_related_apps) == len(SUPPORTED_TARGETS) - 3
+
+    test_related_apps, non_test_related_apps = get_all_apps([str(work_dirpath)], target='foo,bar')
+    assert len(test_related_apps) == 0
+    assert len(non_test_related_apps) == 0
 
 
 def test_get_all_apps_modified_pytest_script(work_dirpath: Path) -> None:
