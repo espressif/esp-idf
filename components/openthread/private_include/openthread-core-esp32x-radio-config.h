@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -218,3 +218,15 @@
 #define OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE 1
 #endif
 #endif //CONFIG_OPENTHREAD_LINK_METRICS
+
+#if CONFIG_OPENTHREAD_NCP_VENDOR_HOOK
+/**
+ * @def OPENTHREAD_ENABLE_NCP_VENDOR_HOOK
+ *
+ * Define as 1 to support ESP OpenThread NCP vendor commands
+ *
+ */
+#ifndef OPENTHREAD_ENABLE_NCP_VENDOR_HOOK
+#define OPENTHREAD_ENABLE_NCP_VENDOR_HOOK 1
+#endif
+#endif //CONFIG_OPENTHREAD_NCP_VENDOR_HOOK
