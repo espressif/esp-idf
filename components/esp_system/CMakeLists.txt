@@ -86,7 +86,7 @@ else()
 
     # Disable stack protection in files which are involved in initialization of that feature
     set_source_files_properties(
-        "startup.c" "stack_check.c"
+        "startup.c" "stack_check.c" "port/cpu_start.c"
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
 
