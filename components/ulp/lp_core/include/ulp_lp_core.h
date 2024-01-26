@@ -15,7 +15,6 @@
 extern "C" {
 #endif
 
-
 #define ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU    BIT(0) // Started by HP core (1 single wakeup)
 #define ULP_LP_CORE_WAKEUP_SOURCE_LP_UART   BIT(1) // Enable wake-up by a certain number of LP UART RX pulses
 #define ULP_LP_CORE_WAKEUP_SOURCE_LP_IO     BIT(2) // Enable wake-up by LP IO interrupt

@@ -117,7 +117,7 @@ static inline void ulp_lp_core_gpio_set_output_mode(lp_io_num_t lp_io_num, rtcio
 static inline void ulp_lp_core_gpio_pullup_enable(lp_io_num_t lp_io_num)
 {
     /* Enable internal weak pull-up */
-   rtcio_ll_pullup_enable(lp_io_num);
+    rtcio_ll_pullup_enable(lp_io_num);
 }
 
 /**

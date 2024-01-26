@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,19 +25,17 @@ static const char* TAG = "lp_core_i2c_test";
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_t* firmware_start, const uint8_t* firmware_end)
 {
     TEST_ASSERT(ulp_lp_core_load_binary(firmware_start,
-                        (firmware_end - firmware_start)) == ESP_OK);
+                                        (firmware_end - firmware_start)) == ESP_OK);
 
     TEST_ASSERT(ulp_lp_core_run(cfg) == ESP_OK);
 
 }
-
 
 #define I2C_SCL_IO     7                        /*!<gpio number for i2c clock, for C6 only GPIO7 is valid  */
 #define I2C_SDA_IO     6                        /*!<gpio number for i2c data, for C6 only GPIO6 is valid */
 #define I2C_SLAVE_NUM I2C_NUM_0                 /*!<I2C port number for slave dev */
 #define I2C_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH)   /*!<I2C slave tx buffer size */
 #define I2C_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH)   /*!<I2C slave rx buffer size */
-
 
 static uint8_t expected_master_write_data[DATA_LENGTH];
 static uint8_t expected_master_read_data[DATA_LENGTH];
@@ -50,7 +48,7 @@ static void init_test_data(size_t len)
     }
 
     for (int i = 0; i < len; i++) {
-        expected_master_read_data[i] = i/2;
+        expected_master_read_data[i] = i / 2;
     }
 }
 
@@ -73,7 +71,7 @@ static void i2c_master_write_read_test(void)
     load_and_start_lp_core_firmware(&cfg, lp_core_main_i2c_bin_start, lp_core_main_i2c_bin_end);
 
     /* Wait for ULP to finish reading */
-    while(ulp_read_test_reply == LP_CORE_COMMAND_INVALID) {
+    while (ulp_read_test_reply == LP_CORE_COMMAND_INVALID) {
     }
 
     uint8_t *read_data = (uint8_t*)&ulp_data_rd;
@@ -82,7 +80,7 @@ static void i2c_master_write_read_test(void)
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_master_read_data, read_data, RW_TEST_LENGTH);
 
     uint8_t *wr_data = (uint8_t*)&ulp_data_wr;
-    for(int i = 0; i < RW_TEST_LENGTH; i++) {
+    for (int i = 0; i < RW_TEST_LENGTH; i++) {
         wr_data[i] = expected_master_write_data[i];
     }
 
@@ -93,11 +91,9 @@ static void i2c_master_write_read_test(void)
     unity_send_signal("slave read");
 
     /* Wait for ULP to finish writing */
-    while( *write_test_cmd != LP_CORE_COMMAND_NOK) {
+    while (*write_test_cmd != LP_CORE_COMMAND_NOK) {
     }
 }
-
-
 
 static i2c_config_t i2c_slave_init(void)
 {
@@ -122,7 +118,7 @@ static void i2c_slave_read_write_test(void)
     int size_rd;
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
@@ -135,7 +131,7 @@ static void i2c_slave_read_write_test(void)
     unity_send_signal("master write");
     unity_wait_for_signal("slave read");
 
-    size_rd = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd, RW_TEST_LENGTH, 10000 / portTICK_PERIOD_MS);
+    size_rd = i2c_slave_read_buffer(I2C_SLAVE_NUM, data_rd, RW_TEST_LENGTH, 10000 / portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "Slave read data:");
     ESP_LOG_BUFFER_HEX(TAG, data_rd, size_rd);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_master_write_data, data_rd, RW_TEST_LENGTH);

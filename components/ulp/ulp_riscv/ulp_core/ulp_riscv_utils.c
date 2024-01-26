@@ -30,7 +30,7 @@ void ulp_riscv_halt(void)
     /* Suspends the ulp operation and reset the ULP core. Must be the final operation before going to halt. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE | RTC_CNTL_COCPU_SHUT_RESET_EN);
 
-    while(1);
+    while (1);
 }
 
 void ulp_riscv_timer_stop(void)
@@ -55,7 +55,7 @@ void ulp_riscv_enable_sw_intr(intr_handler_t handler, void *arg)
 
     /* Register interrupt handler */
     if (handler) {
-       ulp_riscv_intr_alloc(ULP_RISCV_SW_INTR_SOURCE, handler, arg);
+        ulp_riscv_intr_alloc(ULP_RISCV_SW_INTR_SOURCE, handler, arg);
     }
 }
 

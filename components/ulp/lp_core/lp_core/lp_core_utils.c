@@ -1,9 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #include <stdint.h>
 #include "riscv/csr.h"
@@ -29,31 +28,31 @@ static uint32_t lp_wakeup_cause = 0;
 void ulp_lp_core_update_wakeup_cause(void)
 {
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_HP_CPU) \
-        && (pmu_ll_lp_get_interrupt_raw(&PMU) & PMU_HP_SW_TRIGGER_INT_RAW)) {
+            && (pmu_ll_lp_get_interrupt_raw(&PMU) & PMU_HP_SW_TRIGGER_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_HP_CPU;
         pmu_ll_lp_clear_intsts_mask(&PMU, PMU_HP_SW_TRIGGER_INT_CLR);
     }
 
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_UART) \
-        && (uart_ll_get_intraw_mask(&LP_UART) & LP_UART_WAKEUP_INT_RAW)) {
+            && (uart_ll_get_intraw_mask(&LP_UART) & LP_UART_WAKEUP_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_UART;
         uart_ll_clr_intsts_mask(&LP_UART, LP_UART_WAKEUP_INT_CLR);
     }
 
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_IO) \
-        && rtcio_ll_get_interrupt_status()) {
+            && rtcio_ll_get_interrupt_status()) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_IO;
         rtcio_ll_clear_interrupt_status();
     }
 
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_ETM) \
-        && etm_ll_is_lpcore_wakeup_triggered()) {
+            && etm_ll_is_lpcore_wakeup_triggered()) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_ETM;
         etm_ll_clear_lpcore_wakeup_status();
     }
 
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER) \
-        && (lp_timer_ll_get_lp_intr_raw(&LP_TIMER) & LP_TIMER_MAIN_TIMER_LP_INT_RAW)) {
+            && (lp_timer_ll_get_lp_intr_raw(&LP_TIMER) & LP_TIMER_MAIN_TIMER_LP_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER;
         lp_timer_ll_clear_lp_intsts_mask(&LP_TIMER, LP_TIMER_MAIN_TIMER_LP_INT_CLR);
     }
@@ -76,7 +75,6 @@ void ulp_lp_core_wakeup_main_processor(void)
 {
     REG_SET_FIELD(PMU_HP_LP_CPU_COMM_REG, PMU_LP_TRIGGER_HP, 1);
 }
-
 
 /**
  * @brief Makes the co-processor busy wait for a certain number of microseconds
@@ -112,7 +110,7 @@ void ulp_lp_core_halt(void)
 {
     REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_SLEEP_REQ, 1);
 
-    while(1);
+    while (1);
 }
 
 void ulp_lp_core_stop_lp_core(void)

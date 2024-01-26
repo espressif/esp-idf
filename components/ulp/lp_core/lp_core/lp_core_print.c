@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,115 +103,117 @@ static int lp_core_ets_vprintf(void (*putc)(char c), const char *fmt, va_list ap
                 }
             }
             switch (c) {
-                case 'p':
-                    islong = 1;
-                case 'd':
-                case 'D':
-                case 'x':
-                case 'X':
-                case 'u':
-                case 'U':
+            case 'p':
+                islong = 1;
+            case 'd':
+            case 'D':
+            case 'x':
+            case 'X':
+            case 'u':
+            case 'U':
 #ifdef BINARY_SUPPORT
-                case 'b':
-                case 'B':
+            case 'b':
+            case 'B':
 #endif
-                    if (islonglong) {
-                        val = va_arg(ap, long long);
-                    } else if (islong) {
-                        val = (long long)va_arg(ap, long);
-                    } else {
-                        val = (long long)va_arg(ap, int);
-                    }
+                if (islonglong) {
+                    val = va_arg(ap, long long);
+                } else if (islong) {
+                    val = (long long)va_arg(ap, long);
+                } else {
+                    val = (long long)va_arg(ap, int);
+                }
 
-                    if ((c == 'd') || (c == 'D')) {
-                        if (val < 0) {
-                            sign = '-';
-                            val = -val;
-                        }
-                    } else {
-                        if (islonglong) {
-                            ;
-                        } else if (islong) {
-                            val &= ((long long)1 << (sizeof(long) * 8)) - 1;
-                        } else {
-                            val &= ((long long)1 << (sizeof(int) * 8)) - 1;
-                        }
+                if ((c == 'd') || (c == 'D')) {
+                    if (val < 0) {
+                        sign = '-';
+                        val = -val;
                     }
-                    break;
-                default:
-                    break;
+                } else {
+                    if (islonglong) {
+                        ;
+                    } else if (islong) {
+                        val &= ((long long)1 << (sizeof(long) * 8)) - 1;
+                    } else {
+                        val &= ((long long)1 << (sizeof(int) * 8)) - 1;
+                    }
+                }
+                break;
+            default:
+                break;
             }
 
             switch (c) {
-                case 'p':
-                    (*putc)('0');
-                    (*putc)('x');
-                    zero_fill = true;
-                    left_prec = sizeof(unsigned long) * 2;
+            case 'p':
+                (*putc)('0');
+                (*putc)('x');
+                zero_fill = true;
+                left_prec = sizeof(unsigned long) * 2;
+            case 'd':
+            case 'D':
+            case 'u':
+            case 'U':
+            case 'x':
+            case 'X':
+                switch (c) {
                 case 'd':
                 case 'D':
                 case 'u':
                 case 'U':
+                    length = lp_core_cvt(val, buf, 10, "0123456789");
+                    break;
+                case 'p':
                 case 'x':
+                    length = lp_core_cvt(val, buf, 16, "0123456789abcdef");
+                    break;
                 case 'X':
-                    switch (c) {
-                        case 'd':
-                        case 'D':
-                        case 'u':
-                        case 'U':
-                            length = lp_core_cvt(val, buf, 10, "0123456789");
-                            break;
-                        case 'p':
-                        case 'x':
-                            length = lp_core_cvt(val, buf, 16, "0123456789abcdef");
-                            break;
-                        case 'X':
-                            length = lp_core_cvt(val, buf, 16, "0123456789ABCDEF");
-                            break;
-                    }
-                    cp = buf;
+                    length = lp_core_cvt(val, buf, 16, "0123456789ABCDEF");
                     break;
-                case 's':
-                case 'S':
-                    cp = va_arg(ap, char *);
-                    if (cp == NULL) {
-                        cp = "<null>";
-                    }
-                    length = 0;
-                    while (cp[length] != '\0')
-                        length++;
-                    break;
-                case 'c':
-                case 'C':
-                    c = va_arg(ap, int /*char*/);
-                    (*putc)(c);
-                    res++;
-                    continue;
+                }
+                cp = buf;
+                break;
+            case 's':
+            case 'S':
+                cp = va_arg(ap, char *);
+                if (cp == NULL) {
+                    cp = "<null>";
+                }
+                length = 0;
+                while (cp[length] != '\0') {
+                    length++;
+                }
+                break;
+            case 'c':
+            case 'C':
+                c = va_arg(ap, int /*char*/);
+                (*putc)(c);
+                res++;
+                continue;
 #ifdef BINARY_SUPPORT
-                case 'b':
-                case 'B':
-                    length = left_prec;
-                    if (left_prec == 0) {
-                        if (islonglong)
-                            length = sizeof(long long) * 8;
-                        else if (islong)
-                            length = sizeof(long) * 8;
-                        else
-                            length = sizeof(int) * 8;
+            case 'b':
+            case 'B':
+                length = left_prec;
+                if (left_prec == 0) {
+                    if (islonglong) {
+                        length = sizeof(long long) * 8;
+                    } else if (islong) {
+                        length = sizeof(long) * 8;
+                    } else {
+                        length = sizeof(int) * 8;
                     }
-                    for (int i = 0; i < length - 1; i++) {
-                        buf[i] = ((val & ((long long)1 << i)) ? '1' : '.');
-                    }
-                    cp = buf;
-                    break;
+                }
+                for (int i = 0; i < length - 1; i++) {
+                    buf[i] = ((val & ((long long)1 << i)) ? '1' : '.');
+                }
+                cp = buf;
+                break;
 #endif
-                case '%':
-                    (*putc)('%');
-                    break;
-                default:
-                    (*putc)('%');
-                    (*putc)(c);
-                    res += 2;
+            case '%':
+                (*putc)('%');
+                break;
+            default:
+                (*putc)('%');
+                (*putc)(c);
+                res += 2;
             }
             pad = left_prec - length;
             if (sign != '\0') {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,7 @@ static uint32_t wakeup_src_sw_to_hw_flag_lookup[WAKEUP_SOURCE_MAX_NUMBER] = {
 static uint32_t lp_core_get_wakeup_source_hw_flags(uint32_t flags)
 {
     uint32_t hw_flags = 0;
-    for(int i = 0; i < WAKEUP_SOURCE_MAX_NUMBER; i++) {
+    for (int i = 0; i < WAKEUP_SOURCE_MAX_NUMBER; i++) {
         if (flags & (1 << i)) {
             hw_flags |= wakeup_src_sw_to_hw_flag_lookup[i];
         }
@@ -99,11 +99,10 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
         ulp_lp_core_lp_timer_set_wakeup_time(cfg->lp_timer_sleep_duration_us);
     }
 
-    if (cfg->wakeup_source & (ULP_LP_CORE_WAKEUP_SOURCE_LP_UART | ULP_LP_CORE_WAKEUP_SOURCE_LP_IO | ULP_LP_CORE_WAKEUP_SOURCE_ETM )) {
+    if (cfg->wakeup_source & (ULP_LP_CORE_WAKEUP_SOURCE_LP_UART | ULP_LP_CORE_WAKEUP_SOURCE_LP_IO | ULP_LP_CORE_WAKEUP_SOURCE_ETM)) {
         ESP_LOGE(TAG, "Wake-up source not yet supported");
         return ESP_ERR_INVALID_ARG;
     }
-
 
     return ESP_OK;
 }
@@ -128,7 +127,6 @@ esp_err_t ulp_lp_core_load_binary(const uint8_t* program_binary, size_t program_
 
     return ESP_OK;
 }
-
 
 void ulp_lp_core_stop(void)
 {

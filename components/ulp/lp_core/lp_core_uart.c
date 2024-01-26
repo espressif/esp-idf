@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,8 +29,8 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
 
     /* Argument sanity check */
     if ((cfg->uart_proto_cfg.rx_flow_ctrl_thresh > SOC_LP_UART_FIFO_LEN) ||
-        (cfg->uart_proto_cfg.flow_ctrl > UART_HW_FLOWCTRL_MAX) ||
-        (cfg->uart_proto_cfg.data_bits > UART_DATA_BITS_MAX)) {
+            (cfg->uart_proto_cfg.flow_ctrl > UART_HW_FLOWCTRL_MAX) ||
+            (cfg->uart_proto_cfg.data_bits > UART_DATA_BITS_MAX)) {
         // Invalid config
         return ESP_ERR_INVALID_ARG;
     }
@@ -93,9 +93,9 @@ static esp_err_t lp_core_uart_set_pin(const lp_core_uart_cfg_t *cfg)
 
     /* Argument sanity check */
     if ((cfg->uart_pin_cfg.tx_io_num != GPIO_NUM_5) ||
-        (cfg->uart_pin_cfg.rx_io_num != GPIO_NUM_4) ||
-        (cfg->uart_pin_cfg.rts_io_num != GPIO_NUM_2) ||
-        (cfg->uart_pin_cfg.cts_io_num != GPIO_NUM_3)) {
+            (cfg->uart_pin_cfg.rx_io_num != GPIO_NUM_4) ||
+            (cfg->uart_pin_cfg.rts_io_num != GPIO_NUM_2) ||
+            (cfg->uart_pin_cfg.cts_io_num != GPIO_NUM_3)) {
         // Invalid IO config
         return ESP_ERR_INVALID_ARG;
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -261,8 +261,6 @@ TEST_CASE("ULP-RISC-V can stop itself and be resumed from the main CPU", "[ulp]"
     TEST_ASSERT(ulp_riscv_is_running(&ulp_riscv_counter));
 }
 
-
-
 TEST_CASE("ULP-RISC-V mutex", "[ulp]")
 {
     /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
@@ -281,16 +279,15 @@ TEST_CASE("ULP-RISC-V mutex", "[ulp]")
         ulp_riscv_lock_release(lock);
     }
 
-    while(ulp_main_cpu_reply != RISCV_COMMAND_OK) {
+    while (ulp_main_cpu_reply != RISCV_COMMAND_OK) {
         // Wait for ULP to finish
     }
 
     /* If the variable is protected there should be no race conditions
        results should be the sum of increments made by ULP and by main CPU
     */
-    TEST_ASSERT_EQUAL(2*MUTEX_TEST_ITERATIONS, ulp_riscv_incrementer);
+    TEST_ASSERT_EQUAL(2 * MUTEX_TEST_ITERATIONS, ulp_riscv_incrementer);
 }
-
 
 static void do_ulp_wakeup_deepsleep(riscv_test_commands_t ulp_cmd, bool rtc_periph_pd)
 {
@@ -325,9 +322,8 @@ static void do_ulp_wakeup_after_long_delay_deepsleep(void)
 
 /* Certain erroneous wake-up triggers happen only after sleeping for a few seconds  */
 TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a long delay", "[ulp]",
-        do_ulp_wakeup_after_long_delay_deepsleep,
-        check_reset_reason_ulp_wakeup);
-
+                          do_ulp_wakeup_after_long_delay_deepsleep,
+                          check_reset_reason_ulp_wakeup);
 
 static void do_ulp_wakeup_after_long_delay_deepsleep_rtc_perip_on(void)
 {
@@ -335,8 +331,8 @@ static void do_ulp_wakeup_after_long_delay_deepsleep_rtc_perip_on(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a long delay, RTC periph powerup", "[ulp]",
-        do_ulp_wakeup_after_long_delay_deepsleep_rtc_perip_on,
-        check_reset_reason_ulp_wakeup);
+                          do_ulp_wakeup_after_long_delay_deepsleep_rtc_perip_on,
+                          check_reset_reason_ulp_wakeup);
 
 static void do_ulp_wakeup_after_short_delay_deepsleep(void)
 {
@@ -344,9 +340,8 @@ static void do_ulp_wakeup_after_short_delay_deepsleep(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a short delay", "[ulp]",
-        do_ulp_wakeup_after_short_delay_deepsleep,
-        check_reset_reason_ulp_wakeup);
-
+                          do_ulp_wakeup_after_short_delay_deepsleep,
+                          check_reset_reason_ulp_wakeup);
 
 static void do_ulp_wakeup_after_short_delay_deepsleep_rtc_perip_on(void)
 {
@@ -354,8 +349,8 @@ static void do_ulp_wakeup_after_short_delay_deepsleep_rtc_perip_on(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("ULP-RISC-V is able to wakeup main CPU from deep sleep after a short delay, RTC periph powerup", "[ulp]",
-        do_ulp_wakeup_after_short_delay_deepsleep_rtc_perip_on,
-        check_reset_reason_ulp_wakeup);
+                          do_ulp_wakeup_after_short_delay_deepsleep_rtc_perip_on,
+                          check_reset_reason_ulp_wakeup);
 
 typedef struct {
     SemaphoreHandle_t ulp_isr_sw_sem;
@@ -393,7 +388,7 @@ TEST_CASE("ULP-RISC-V interrupt signals can be handled via ISRs on the main core
 
     /* Register ULP RISC-V signal ISR */
     TEST_ASSERT_EQUAL(ESP_OK, ulp_riscv_isr_register(ulp_riscv_isr, (void *)&test_sem_cfg,
-            (ULP_RISCV_SW_INT | ULP_RISCV_TRAP_INT)));
+                                                     (ULP_RISCV_SW_INT | ULP_RISCV_TRAP_INT)));
 
     /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
     printf("Loading good ULP firmware\n");
@@ -425,7 +420,7 @@ TEST_CASE("ULP-RISC-V interrupt signals can be handled via ISRs on the main core
 
     /* Deregister the ISR */
     TEST_ASSERT_EQUAL(ESP_OK, ulp_riscv_isr_deregister(ulp_riscv_isr, (void *)&test_sem_cfg,
-            (ULP_RISCV_SW_INT | ULP_RISCV_TRAP_INT)));
+                                                       (ULP_RISCV_SW_INT | ULP_RISCV_TRAP_INT)));
 
     /* Delete test semaphores */
     vSemaphoreDelete(test_sem_cfg.ulp_isr_sw_sem);
@@ -444,7 +439,6 @@ TEST_CASE("ULP-RISC-V interrupt signals can be handled via ISRs on the main core
 
 TEST_CASE("ULP ADC can init-deinit-init", "[ulp]")
 {
-
 
     ulp_adc_cfg_t riscv_adc_cfg = {
         .adc_n    = ADC_UNIT,

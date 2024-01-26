@@ -21,7 +21,7 @@ esp_err_t ulp_riscv_gpio_isr_register(gpio_num_t gpio_num, ulp_riscv_gpio_int_ty
     }
 
     /* Set the interrupt type */
-    REG_SET_FIELD(RTC_GPIO_PIN0_REG + 4*gpio_num, RTC_GPIO_PIN0_INT_TYPE, intr_type);
+    REG_SET_FIELD(RTC_GPIO_PIN0_REG + 4 * gpio_num, RTC_GPIO_PIN0_INT_TYPE, intr_type);
 
     /* Set the interrupt handler */
     return ulp_riscv_intr_alloc(ULP_RISCV_RTCIO0_INTR_SOURCE + gpio_num, handler, arg);
