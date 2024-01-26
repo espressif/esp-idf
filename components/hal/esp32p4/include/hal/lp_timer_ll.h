@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,8 @@
 #pragma once
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "soc/soc.h"
-#include "soc/rtc.h"
 #include "soc/lp_timer_struct.h"
 #include "soc/lp_timer_reg.h"
 #include "soc/lp_system_reg.h"
@@ -70,12 +70,6 @@ FORCE_INLINE_ATTR uint32_t lp_timer_ll_get_lp_intr_raw(lp_timer_dev_t *dev)
 FORCE_INLINE_ATTR void lp_timer_ll_clear_lp_intsts_mask(lp_timer_dev_t *dev, uint32_t mask)
 {
     dev->lp_int_clr.val = mask;
-}
-
-FORCE_INLINE_ATTR uint64_t lp_timer_ll_time_to_count(uint64_t time_in_us)
-{
-    uint32_t slow_clk_value = REG_READ(LP_SYSTEM_REG_LP_STORE1_REG);
-    return ((time_in_us * (1 << RTC_CLK_CAL_FRACT)) / slow_clk_value);
 }
 
 #ifdef __cplusplus

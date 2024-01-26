@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -329,7 +329,7 @@ static void rtc_clk_bbpll_enable(void)
     clk_ll_bbpll_enable();
 }
 
-static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
+static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 {
     /* Raise the voltage */
     if (pll_freq == CLK_LL_PLL_320M_FREQ_MHZ) {
@@ -459,7 +459,7 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* ou
 
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
 {
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
     if (old_cpu_clk_src != SOC_CPU_CLK_SRC_XTAL) {
         rtc_clk_cpu_freq_to_xtal(xtal_freq, 1);
@@ -544,16 +544,16 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t* config)
     }
 }
 
-rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
     if (xtal_freq_mhz == 0) {
-        return RTC_XTAL_FREQ_AUTO;
+        return SOC_XTAL_FREQ_AUTO;
     }
-    return (rtc_xtal_freq_t)xtal_freq_mhz;
+    return (soc_xtal_freq_t)xtal_freq_mhz;
 }
 
-void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
+void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq)
 {
     clk_ll_xtal_store_freq_mhz((uint32_t)xtal_freq);
 }

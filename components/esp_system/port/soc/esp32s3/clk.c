@@ -65,7 +65,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
     }
     rtc_init(cfg);
 
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
+    assert(rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_40M);
 
     bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
     rtc_clk_8m_enable(true, rc_fast_d256_is_enabled);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/pmu_reg.h"
@@ -309,7 +308,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     uint8_t lref = 1;
     /* Configure 480M PLL */
     switch (xtal_freq_mhz) {
-    case RTC_XTAL_FREQ_40M:
+    case SOC_XTAL_FREQ_40M:
         div_ref = 1;
         div7_0 = 12;
         dr1 = 0;
@@ -317,7 +316,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
         dchgp = 5;
         dbias = 2;
         break;
-    case RTC_XTAL_FREQ_48M:
+    case SOC_XTAL_FREQ_48M:
         div_ref = 1;
         div7_0 = 10;
         dr1 = 1;

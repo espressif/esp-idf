@@ -6,7 +6,6 @@
 
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "soc/rtc.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 
@@ -89,7 +88,7 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
 {
     uint32_t freq = clk_ll_xtal_load_freq_mhz();
     if (freq == 0) {
-        return (uint32_t)RTC_XTAL_FREQ_AUTO;
+        return (uint32_t)SOC_XTAL_FREQ_AUTO;
     }
     return freq;
 }

@@ -1,9 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #pragma once
 
 #include <stdbool.h>
@@ -16,11 +15,16 @@
 extern "C" {
 #endif
 
+/************************************************************************************/
+/***************** THIS FILE IS CONSIDERED AS A PRIVATE HEADER FILE *****************/
+/*** IT IS NOT RECOMMENDED TO USE THE APIS IN THIS FILE DIRECTLY IN APPLICATIONS ****/
+/************************************************************************************/
+
 /**
  * @file rtc.h
  * @brief Low-level RTC power, clock, and sleep functions.
  *
- * Functions in this file facilitate configuration of ESP32's RTC_CNTL peripheral.
+ * Functions in this file facilitate configuration of ESP32C3's RTC_CNTL peripheral.
  * RTC_CNTL peripheral handles many functions:
  * - enables/disables clocks and power to various parts of the chip; this is
  *   done using direct register access (forcing power up or power down) or by
@@ -57,8 +61,7 @@ extern "C" {
 /* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
  */
-#define RTC_CNTL_DBIAS_SLP  5   ///< sleep dig_dbias & rtc_dbias
-#define RTC_CNTL_DBIAS_0V90 13  ///< digital voltage
+#define RTC_CNTL_DBIAS_0V90 13 //digital voltage
 #define RTC_CNTL_DBIAS_0V95 16
 #define RTC_CNTL_DBIAS_1V00 18
 #define RTC_CNTL_DBIAS_1V05 20
@@ -66,7 +69,7 @@ extern "C" {
 #define RTC_CNTL_DBIAS_1V15 25
 #define RTC_CNTL_DBIAS_1V20 28
 #define RTC_CNTL_DBIAS_1V25 30
-#define RTC_CNTL_DBIAS_1V30 31 ///< voltage is about 1.34v in fact
+#define RTC_CNTL_DBIAS_1V30 31 //voltage is about 1.34v in fact
 
 /* Delays for various clock sources to be enabled/switched.
  * All values are in microseconds.
@@ -76,82 +79,68 @@ extern "C" {
 #define SOC_DELAY_RC_FAST_ENABLE            50
 #define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
 
-/* Core voltage needs to be increased in two cases:
- * 1. running at 240 MHz
- * 2. running with 80MHz or 120M Flash frequency
+/* Core voltage:
+ * Currently, ESP32C3 never adjust its wake voltage in runtime
+ * Only sets dig/rtc voltage dbias at startup time
  */
-#if CONFIG_ESPTOOLPY_FLASHFREQ_80M || CONFIG_ESPTOOLPY_FLASHFREQ_120M
-#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V25
-#else
-#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
-#endif
-#define DIG_DBIAS_240M      RTC_CNTL_DBIAS_1V25
+#define DIG_DBIAS_80M       RTC_CNTL_DBIAS_1V20
+#define DIG_DBIAS_160M      RTC_CNTL_DBIAS_1V20
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
 #define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
 #define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
-#define RTC_CNTL_CK8M_WAIT_DEFAULT  20
-#define RTC_CK8M_ENABLE_WAIT_DEFAULT 5
-
-/* Various delays to be programmed into power control state machines */
-#define RTC_CNTL_XTL_BUF_WAIT_SLP_US        (250)
-#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES    (1)
-#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES       (4)
-#define RTC_CNTL_WAKEUP_DELAY_CYCLES        (4)
-#define RTC_CNTL_MIN_SLP_VAL_MIN            (2)
+#define RTC_CNTL_CK8M_WAIT_DEFAULT     20       // Equivalent macro as `CLK_LL_RC_FAST_WAIT_DEFAULT`
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT   5        // Equivalent macro as `CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT`
 
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT 100
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
-#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_IN_SLEEP    (0xFF)
-#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT     (0x10)
+/* Various delays to be programmed into power control state machines */
+#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (250)
+#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES        (1)
+#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES           (4)
+#define RTC_CNTL_WAKEUP_DELAY_CYCLES            (5)
+#define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
+#define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
+#define RTC_CNTL_MIN_SLP_VAL_MIN                (2)
 
 /*
 set sleep_init default param
 */
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
-#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  14
-#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_ULTRA_LOW 15
+#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_NODROP  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
 #define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 #define RTC_CNTL_PD_CUR_SLEEP_ON  0
-#define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 0xf
+#define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
 
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  1
-#define RTC_CNTL_BIASSLP_MONITOR_ON  0
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_ON  0
+#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
+#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
+
+/*
+use together with RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT
+*/
+#define RTC_CNTL_RTC_DBIAS_DEEPSLEEP_0V7 25
+
+/*
+use together with RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT
+*/
+#define RTC_CNTL_RTC_DBIAS_LIGHTSLEEP_0V6   5
+#define RTC_CNTL_DIG_DBIAS_LIGHTSLEEP_0V6   5
 
 /*
 The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
-storing in efuse
+storing in efuse (based on ATE 5k ECO3 chips)
 */
-#define K_RTC_MID_MUL10000 198
-#define K_DIG_MID_MUL10000 211
-#define V_RTC_MID_MUL10000  10181
-#define V_DIG_MID_MUL10000  10841
-
-/*
-set LDO slave during CPU switch
-*/
-#define DEFAULT_LDO_SLAVE 0x7
-
-
-
-/**
- * @brief Possible main XTAL frequency values.
- *
- * Enum values should be equal to frequency in MHz.
- */
-typedef enum {
-    RTC_XTAL_FREQ_32M = 32,
-    RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
-} rtc_xtal_freq_t;
+#define K_RTC_MID_MUL10000 215
+#define K_DIG_MID_MUL10000 213
+#define V_RTC_MID_MUL10000  10800
+#define V_DIG_MID_MUL10000  10860
 
 /**
  * @brief CPU clock configuration structure
@@ -182,7 +171,7 @@ typedef enum {
  * Initialization parameters for rtc_clk_init
  */
 typedef struct {
-    rtc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
+    soc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
     uint32_t cpu_freq_mhz : 10;                //!< CPU frequency to set, in MHz
     soc_rtc_fast_clk_src_t fast_clk_src : 2;   //!< RTC_FAST_CLK clock source to choose
     soc_rtc_slow_clk_src_t slow_clk_src : 2;   //!< RTC_SLOW_CLK clock source to choose
@@ -211,16 +200,12 @@ typedef struct {
     uint16_t wifi_wait_cycles : 9;
     uint16_t bt_powerup_cycles : 7;
     uint16_t bt_wait_cycles : 9;
-    uint16_t rtc_powerup_cycles : 7;
-    uint16_t rtc_wait_cycles : 9;
     uint16_t cpu_top_powerup_cycles : 7;
     uint16_t cpu_top_wait_cycles : 9;
     uint16_t dg_wrap_powerup_cycles : 7;
     uint16_t dg_wrap_wait_cycles : 9;
     uint16_t dg_peri_powerup_cycles : 7;
     uint16_t dg_peri_wait_cycles : 9;
-    uint16_t rtc_mem_powerup_cycles : 7;
-    uint16_t rtc_mem_wait_cycles : 9;
 } rtc_init_config_t;
 
 #define RTC_INIT_CONFIG_DEFAULT() { \
@@ -228,16 +213,12 @@ typedef struct {
     .wifi_wait_cycles = OTHER_BLOCKS_WAIT, \
     .bt_powerup_cycles = OTHER_BLOCKS_POWERUP, \
     .bt_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .rtc_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .rtc_wait_cycles = OTHER_BLOCKS_WAIT, \
     .cpu_top_powerup_cycles = OTHER_BLOCKS_POWERUP, \
     .cpu_top_wait_cycles = OTHER_BLOCKS_WAIT, \
     .dg_wrap_powerup_cycles = OTHER_BLOCKS_POWERUP, \
     .dg_wrap_wait_cycles = OTHER_BLOCKS_WAIT, \
     .dg_peri_powerup_cycles = OTHER_BLOCKS_POWERUP, \
     .dg_peri_wait_cycles = OTHER_BLOCKS_WAIT, \
-    .rtc_mem_powerup_cycles = OTHER_BLOCKS_POWERUP, \
-    .rtc_mem_wait_cycles = OTHER_BLOCKS_WAIT, \
 }
 
 void rtc_clk_divider_set(uint32_t div);
@@ -257,9 +238,9 @@ void rtc_clk_init(rtc_clk_config_t cfg);
  * This is the value stored in RTC register RTC_XTAL_FREQ_REG by the bootloader. As passed to
  * rtc_clk_init function
  *
- * @return XTAL frequency, one of rtc_xtal_freq_t
+ * @return XTAL frequency, one of soc_xtal_freq_t
  */
-rtc_xtal_freq_t rtc_clk_xtal_freq_get(void);
+soc_xtal_freq_t rtc_clk_xtal_freq_get(void);
 
 /**
  * @brief Update XTAL frequency
@@ -269,7 +250,7 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void);
  *
  * @param xtal_freq New frequency value
  */
-void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq);
+void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq);
 
 /**
  * @brief Enable or disable 32 kHz XTAL oscillator
@@ -432,13 +413,14 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
 void rtc_clk_cpu_freq_set_xtal(void);
 
 /**
- * @brief Store new APB frequency value in RAM
+ * @brief Store new APB frequency value into RTC_APB_FREQ_REG
  *
  * This function doesn't change any hardware clocks.
  *
  * Functions which perform frequency switching and change APB frequency call
- * this function to update the value of APB frequency stored in RAM.
- * (This should not normally be called from application code.)
+ * this function to update the value of APB frequency stored in RTC_APB_FREQ_REG
+ * (one of RTC general purpose retention registers). This should not normally
+ * be called from application code.
  *
  * @param apb_freq  new APB frequency, in Hz
  */
@@ -550,7 +532,7 @@ bool rtc_dig_8m_enabled(void);
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
 /**
- * @brief Power up flags for rtc_sleep_pd function
+ * @brief Power down flags for rtc_sleep_pd function
  */
 typedef struct {
     uint32_t dig_fpu : 1;    //!< Set to 1 to power UP digital part in sleep
@@ -590,7 +572,8 @@ typedef struct {
     uint32_t rtc_fastmem_pd_en : 1;     //!< power down RTC fast memory
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
-    uint32_t modem_pd_en : 1;           //!< power down Modem(wifi and ble)
+    uint32_t wifi_pd_en : 1;            //!< power down WiFi
+    uint32_t bt_pd_en : 1;              //!< power down BT
     uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
     uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
     uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
@@ -598,10 +581,8 @@ typedef struct {
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
     uint32_t dig_dbias_slp : 5;         //!< set bias for digital domain, in sleep mode
     uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
-    uint32_t bias_sleep_monitor : 1;    //!< circuit control parameter, in monitor mode
     uint32_t dbg_atten_slp : 4;         //!< voltage parameter, in sleep mode
     uint32_t bias_sleep_slp : 1;        //!< circuit control parameter, in sleep mode
-    uint32_t pd_cur_monitor : 1;        //!< circuit control parameter, in monitor mode
     uint32_t pd_cur_slp : 1;            //!< circuit control parameter, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
@@ -616,7 +597,8 @@ typedef struct {
 #define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
-#define RTC_SLEEP_PD_MODEM              BIT(6)  //!< Power down Modem(wifi and ble)
+#define RTC_SLEEP_PD_WIFI               BIT(6)  //!< Power down WIFI
+#define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
 #define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
 #define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
 #define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
@@ -664,40 +646,40 @@ void rtc_sleep_init(rtc_sleep_config_t cfg);
  */
 void rtc_sleep_low_init(uint32_t slowclk_period);
 
-#define RTC_EXT0_TRIG_EN    BIT(0)  //!< EXT0 GPIO wakeup
-#define RTC_EXT1_TRIG_EN    BIT(1)  //!< EXT1 GPIO wakeup
-#define RTC_GPIO_TRIG_EN    BIT(2)  //!< GPIO wakeup (light sleep only)
-#define RTC_TIMER_TRIG_EN   BIT(3)  //!< Timer wakeup
-#define RTC_SDIO_TRIG_EN    BIT(4)  //!< SDIO wakeup (light sleep only)
-#define RTC_WIFI_TRIG_EN    BIT(5)  //!< WIFI wakeup (light sleep only)
-#define RTC_UART0_TRIG_EN   BIT(6)  //!< UART0 wakeup (light sleep only)
-#define RTC_UART1_TRIG_EN   BIT(7)  //!< UART1 wakeup (light sleep only)
-#define RTC_TOUCH_TRIG_EN   BIT(8)  //!< Touch wakeup
-#define RTC_ULP_TRIG_EN     BIT(9)  //!< ULP wakeup
-#define RTC_BT_TRIG_EN      BIT(10) //!< BT wakeup (light sleep only)
-#define RTC_COCPU_TRIG_EN   BIT(11)
+#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+/**
+ * @brief Configure systimer for esp32c3 systimer stall issue workaround
+ *
+ * This function configures related systimer for esp32c3 systimer stall issue.
+ * Only apply workaround when xtal powered up.
+ *
+ * @param en enable systimer or not
+ */
+void rtc_sleep_systimer_enable(bool en);
+#endif
+
+#define RTC_GPIO_TRIG_EN            BIT(2)  //!< GPIO wakeup
+#define RTC_TIMER_TRIG_EN           BIT(3)  //!< Timer wakeup
+#define RTC_WIFI_TRIG_EN            BIT(5)  //!< WIFI wakeup (light sleep only)
+#define RTC_UART0_TRIG_EN           BIT(6)  //!< UART0 wakeup (light sleep only)
+#define RTC_UART1_TRIG_EN           BIT(7)  //!< UART1 wakeup (light sleep only)
+#define RTC_BT_TRIG_EN              BIT(10) //!< BT wakeup (light sleep only)
 #define RTC_XTAL32K_DEAD_TRIG_EN    BIT(12)
-#define RTC_COCPU_TRAP_TRIG_EN      BIT(13)
 #define RTC_USB_TRIG_EN             BIT(14)
+#define RTC_BROWNOUT_DET_TRIG_EN    BIT(16)
 
 /**
  * RTC_SLEEP_REJECT_MASK records sleep reject sources supported by chip
  */
-#define RTC_SLEEP_REJECT_MASK (RTC_EXT0_TRIG_EN         | \
-                               RTC_EXT1_TRIG_EN         | \
-                               RTC_GPIO_TRIG_EN         | \
+#define RTC_SLEEP_REJECT_MASK (RTC_GPIO_TRIG_EN         | \
                                RTC_TIMER_TRIG_EN        | \
-                               RTC_SDIO_TRIG_EN         | \
                                RTC_WIFI_TRIG_EN         | \
                                RTC_UART0_TRIG_EN        | \
                                RTC_UART1_TRIG_EN        | \
-                               RTC_TOUCH_TRIG_EN        | \
-                               RTC_ULP_TRIG_EN          | \
                                RTC_BT_TRIG_EN           | \
-                               RTC_COCPU_TRIG_EN        | \
                                RTC_XTAL32K_DEAD_TRIG_EN | \
-                               RTC_COCPU_TRAP_TRIG_EN   | \
-                               RTC_USB_TRIG_EN)
+                               RTC_USB_TRIG_EN          | \
+                               RTC_BROWNOUT_DET_TRIG_EN)
 
 /**
  * @brief Enter deep or light sleep mode
@@ -722,10 +704,6 @@ void rtc_sleep_low_init(uint32_t slowclk_period);
  *                      - RTC_CNTL_SDIO_REJECT_EN
  *                    These flags are used to prevent entering sleep when e.g.
  *                    an external host is communicating via SDIO slave
- * @param lslp_mem_inf_fpu If non-zero then the low power config is restored
- *                         immediately on wake. Recommended for light sleep,
- *                         has no effect if the system goes into deep sleep.
- *
  * @return non-zero if sleep was rejected by hardware
  */
 uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu);
@@ -785,7 +763,7 @@ typedef struct {
     .xtal_fpu = 0, \
     .bbpll_fpu = 0, \
     .cpu_waiti_clk_gate = 1, \
-    .cali_ocode = 0 \
+    .cali_ocode = 0\
 }
 
 /**
@@ -793,37 +771,6 @@ typedef struct {
  * @param cfg configuration options as rtc_config_t
  */
 void rtc_init(rtc_config_t cfg);
-
-/**
- * Structure describing vddsdio configuration
- */
-typedef struct {
-    uint32_t force : 1;     //!< If 1, use configuration from RTC registers; if 0, use EFUSE/bootstrapping pins.
-    uint32_t enable : 1;    //!< Enable VDDSDIO regulator
-    uint32_t tieh  : 1;     //!< Select VDDSDIO voltage. One of RTC_VDDSDIO_TIEH_1_8V, RTC_VDDSDIO_TIEH_3_3V
-    uint32_t drefh : 2;     //!< Tuning parameter for VDDSDIO regulator
-    uint32_t drefm : 2;     //!< Tuning parameter for VDDSDIO regulator
-    uint32_t drefl : 2;     //!< Tuning parameter for VDDSDIO regulator
-} rtc_vddsdio_config_t;
-
-/**
- * Get current VDDSDIO configuration
- * If VDDSDIO configuration is overridden by RTC, get values from RTC
- * Otherwise, if VDDSDIO is configured by EFUSE, get values from EFUSE
- * Otherwise, use default values and the level of MTDI bootstrapping pin.
- * @return currently used VDDSDIO configuration
- */
-rtc_vddsdio_config_t rtc_vddsdio_get_config(void);
-
-/**
- * Set new VDDSDIO configuration using RTC registers.
- * If config.force == 1, this overrides configuration done using bootstrapping
- * pins and EFUSE.
- *
- * @param config new VDDSDIO configuration
- */
-void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
-
 
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.
@@ -850,6 +797,13 @@ typedef soc_rtc_slow_clk_src_t rtc_slow_freq_t;
 typedef soc_rtc_fast_clk_src_t rtc_fast_freq_t;
 #define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_DIV  //!< Main XTAL, divided by 2
 #define RTC_FAST_FREQ_8M SOC_RTC_FAST_CLK_SRC_RC_FAST       //!< Internal 17.5 MHz RC oscillator
+
+/**
+ * @brief Possible main XTAL frequency values.
+ */
+typedef soc_xtal_freq_t rtc_xtal_freq_t;
+#define RTC_XTAL_FREQ_40M SOC_XTAL_FREQ_40M                 //!< 40 MHz XTAL
+#define RTC_XTAL_FREQ_32M SOC_XTAL_FREQ_32M                 //!< 32 MHz XTAL
 
 /* Alias of frequency related macros */
 #define RTC_FAST_CLK_FREQ_APPROX    SOC_CLK_RC_FAST_FREQ_APPROX
