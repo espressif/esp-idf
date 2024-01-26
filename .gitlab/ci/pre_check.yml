@@ -3,7 +3,7 @@
   image: $ESP_ENV_IMAGE
   tags:
     - host_test
-  dependencies: []
+  dependencies: # set dependencies to null to avoid missing artifacts issue
 
 check_pre_commit:
   extends:

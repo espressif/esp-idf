@@ -1,18 +1,17 @@
 #!/usr/bin/env python
-
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """
 Check gitlab ci yaml files
 """
-
 import argparse
 import os
 import typing as t
 from functools import cached_property
 
-from idf_ci_utils import IDF_PATH, GitlabYmlConfig, get_submodule_dirs
+from idf_ci_utils import get_submodule_dirs
+from idf_ci_utils import GitlabYmlConfig
+from idf_ci_utils import IDF_PATH
 
 
 class YmlLinter:
@@ -50,9 +49,10 @@ class YmlLinter:
             if (
                 k not in self.yml_config.global_keys
                 and k not in self.yml_config.anchors
+                and k not in self.yml_config.templates
                 and k not in self.yml_config.jobs
             ):
-                raise SystemExit(f'Parser incorrect. Key {k} not in global keys, rules or jobs')
+                raise SystemExit(f'Parser incorrect. Key {k} not in global keys, anchors, templates,  or jobs')
 
     def _lint_default_values_artifacts(self) -> None:
         defaults_artifacts = self.yml_config.default.get('artifacts', {})
@@ -79,13 +79,30 @@ class YmlLinter:
                 for item in undefined_patterns:
                     self._errors.append(f'undefined pattern {item}. Please add {item} to .patterns-submodule')
 
-    def _lint_gitlab_yml_rules(self) -> None:
-        unused_rules = self.yml_config.rules - self.yml_config.used_rules
-        for item in unused_rules:
-            self._errors.append(f'Unused rule: {item}, please remove it')
-        undefined_rules = self.yml_config.used_rules - self.yml_config.rules
-        for item in undefined_rules:
-            self._errors.append(f'Undefined rule: {item}')
+    def _lint_gitlab_yml_templates(self) -> None:
+        unused_templates = self.yml_config.templates.keys() - self.yml_config.used_templates
+        for item in unused_templates:
+            # known unused ones
+            if item not in [
+                '.before_script:fetch:target_test',  # used in dynamic pipeline
+            ]:
+                self._errors.append(f'Unused template: {item}, please remove it')
+
+        undefined_templates = self.yml_config.used_templates - self.yml_config.templates.keys()
+        for item in undefined_templates:
+            self._errors.append(f'Undefined template: {item}')
+
+    def _lint_dependencies_and_needs(self) -> None:
+        """
+        Use `dependencies: []` together with `needs: []` could cause missing artifacts issue.
+        """
+        for job_name, d in self.yml_config.jobs.items():
+            if 'dependencies' in d and 'needs' in d:
+                if d['dependencies'] is not None and d['needs']:
+                    self._errors.append(
+                        f'job {job_name} has both `dependencies` and `needs` defined. '
+                        f'Please set `dependencies:` (to null) explicitly to avoid missing artifacts issue'
+                    )
 
 
 if __name__ == '__main__':
