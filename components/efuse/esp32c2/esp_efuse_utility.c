@@ -11,7 +11,6 @@
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
 #include "esp_private/esp_clk.h"
-#include "esp32c2/rom/efuse.h"
 #include "hal/efuse_hal.h"
 
 static const char *TAG = "efuse";

@@ -18,7 +18,7 @@
 #include "../esp_psram_impl.h"
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/opi_flash.h"
-#include "esp32s2/rom/efuse.h"
+#include "rom/efuse.h"
 #include "esp_rom_efuse.h"
 #include "soc/spi_reg.h"
 #include "soc/io_mux_reg.h"

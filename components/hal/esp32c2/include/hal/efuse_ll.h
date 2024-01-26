@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
-#include "esp32c2/rom/efuse.h"
+#include "rom/efuse.h"
 
 #ifdef __cplusplus
 extern "C" {
