@@ -41,7 +41,6 @@ static void other_task(void* arg)
     vTaskDelete(NULL);
 }
 
-
 TEST_CASE("FPU: Context save does not affect stack watermark", "[freertos]")
 {
     TaskHandle_t pvCreatedTask;
@@ -56,13 +55,13 @@ TEST_CASE("FPU: Context save does not affect stack watermark", "[freertos]")
     /* Use the FPU unit, the context will NOT be flushed until another task starts using it */
     add_floats(s_float, s_float);
 
-    xTaskCreatePinnedToCore( other_task,
-                             "OtherTask",
-                             2048,
-                             (void*) current_handle,
-                             CONFIG_UNITY_FREERTOS_PRIORITY - 1,
-                             &pvCreatedTask,
-                             core_id);
+    xTaskCreatePinnedToCore(other_task,
+                            "OtherTask",
+                            2048,
+                            (void*) current_handle,
+                            CONFIG_UNITY_FREERTOS_PRIORITY - 1,
+                            &pvCreatedTask,
+                            core_id);
 
     vTaskDelay(10);
 

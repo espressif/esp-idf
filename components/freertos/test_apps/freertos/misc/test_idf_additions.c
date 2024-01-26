@@ -202,7 +202,7 @@ static void IRAM_ATTR tick_hook(void)
 
 static void suspend_task(void *arg)
 {
-    TaskHandle_t main_task_hdl = ( TaskHandle_t )arg;
+    TaskHandle_t main_task_hdl = (TaskHandle_t)arg;
 
     /* Fetch the current core ID */
     BaseType_t xCoreID = portGET_CORE_ID();

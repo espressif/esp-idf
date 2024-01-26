@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,7 @@ We simply allocate the IDLE/Timer tasks memory from the FreeRTOS heap.
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
                                    StackType_t **ppxIdleTaskStackBuffer,
-                                   uint32_t *pulIdleTaskStackSize )
+                                   uint32_t *pulIdleTaskStackSize)
 {
     StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
@@ -37,17 +37,17 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
      * If the stack grows down then allocate the stack then the TCB so the stack
      * does not grow into the TCB.  Likewise if the stack grows up then allocate
      * the TCB then the stack. */
-    #if (portSTACK_GROWTH > 0)
+#if (portSTACK_GROWTH > 0)
     {
         pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
         pxStackBufferTemp = pvPortMalloc(configMINIMAL_STACK_SIZE);
     }
-    #else /* portSTACK_GROWTH */
+#else /* portSTACK_GROWTH */
     {
         pxStackBufferTemp = pvPortMalloc(configMINIMAL_STACK_SIZE);
         pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
     }
-    #endif /* portSTACK_GROWTH */
+#endif /* portSTACK_GROWTH */
 
     assert(pxTCBBufferTemp != NULL);
     assert(pxStackBufferTemp != NULL);
@@ -59,7 +59,7 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
                                     StackType_t **ppxTimerTaskStackBuffer,
-                                    uint32_t *pulTimerTaskStackSize )
+                                    uint32_t *pulTimerTaskStackSize)
 {
     StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
@@ -69,17 +69,17 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
      * If the stack grows down then allocate the stack then the TCB so the stack
      * does not grow into the TCB.  Likewise if the stack grows up then allocate
      * the TCB then the stack. */
-    #if (portSTACK_GROWTH > 0)
+#if (portSTACK_GROWTH > 0)
     {
         pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
         pxStackBufferTemp = pvPortMalloc(configTIMER_TASK_STACK_DEPTH);
     }
-    #else /* portSTACK_GROWTH */
+#else /* portSTACK_GROWTH */
     {
         pxStackBufferTemp = pvPortMalloc(configTIMER_TASK_STACK_DEPTH);
         pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
     }
-    #endif /* portSTACK_GROWTH */
+#endif /* portSTACK_GROWTH */
 
     assert(pxTCBBufferTemp != NULL);
     assert(pxStackBufferTemp != NULL);

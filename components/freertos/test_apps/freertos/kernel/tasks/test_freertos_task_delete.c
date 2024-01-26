@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,8 +33,7 @@
 /* Caps of all memory which is allocated from when a task is created */
 #define HEAP_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 
-#define DELAY_US_ITERATIONS	1000
-
+#define DELAY_US_ITERATIONS 1000
 
 static void tsk_self_del(void *param)
 {
@@ -55,11 +54,11 @@ static void tsk_self_del_us_delay(void *param)
 
 TEST_CASE("FreeRTOS Delete Tasks", "[freertos]")
 {
-/* -------------- Test vTaskDelete() on currently running tasks ----------------*/
+    /* -------------- Test vTaskDelete() on currently running tasks ----------------*/
     uint32_t before_count = uxTaskGetNumberOfTasks();
     uint32_t before_heap = heap_caps_get_free_size(HEAP_CAPS);
-    for(int i = 0; i < portNUM_PROCESSORS; i++){
-        for(int j = 0; j < NO_OF_TSKS; j++){
+    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+        for (int j = 0; j < NO_OF_TSKS; j++) {
             TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(tsk_self_del, "tsk_self", 1024, NULL, configMAX_PRIORITIES - 1, NULL, i));
         }
     }
@@ -67,29 +66,28 @@ TEST_CASE("FreeRTOS Delete Tasks", "[freertos]")
     TEST_ASSERT_EQUAL(before_count, uxTaskGetNumberOfTasks());
     TEST_ASSERT_EQUAL(before_heap, heap_caps_get_free_size(HEAP_CAPS));
 
-/* ------------- Test vTaskDelete() on not currently running tasks ------------ */
+    /* ------------- Test vTaskDelete() on not currently running tasks ------------ */
     TaskHandle_t handles[NO_OF_TSKS];
     before_heap = heap_caps_get_free_size(HEAP_CAPS);
     //Create task pinned to the same core that will not run during task deletion
-    for(int j = 0 ; j < NO_OF_TSKS; j++){
+    for (int j = 0 ; j < NO_OF_TSKS; j++) {
         TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(tsk_extern_del, "tsk_extern", 4096, NULL, configMAX_PRIORITIES - 1, &handles[j], xPortGetCoreID()));
     }
     TEST_ASSERT_NOT_EQUAL(before_heap, heap_caps_get_free_size(HEAP_CAPS));    //Check tasks have been created
     //Delete the tasks, memory should be freed immediately
-    for(int j = 0; j < NO_OF_TSKS; j++){
+    for (int j = 0; j < NO_OF_TSKS; j++) {
         vTaskDelete(handles[j]);
     }
     TEST_ASSERT_EQUAL(before_heap, heap_caps_get_free_size(HEAP_CAPS));
 
-/* Test self deleting no affinity task is not removed by idle task of other core before context switch */
-    for(int i = 0; i < DELAY_US_ITERATIONS; i+= 10){
+    /* Test self deleting no affinity task is not removed by idle task of other core before context switch */
+    for (int i = 0; i < DELAY_US_ITERATIONS; i += 10) {
         vTaskDelay(1);                          //Sync to next tick interrupt
         xTaskCreatePinnedToCore(tsk_self_del_us_delay, "delay", 1024, (void *)i, UNITY_FREERTOS_PRIORITY - 1, NULL, tskNO_AFFINITY);
         esp_rom_delay_us(10);                       //Busy wait to ensure no affinity task runs on opposite core
     }
 
 }
-
 
 typedef struct {
     SemaphoreHandle_t sem;
@@ -130,10 +128,10 @@ TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
 
        (1000 iterations takes about 9 seconds on ESP32 dual core)
      */
-    for(unsigned iter = 0; iter < 1000; iter++) {
+    for (unsigned iter = 0; iter < 1000; iter++) {
         // Create everything
         SemaphoreHandle_t sem = xSemaphoreCreateMutex();
-        for(unsigned i = 0; i < portNUM_PROCESSORS + 1; i++) {
+        for (unsigned i = 0; i < portNUM_PROCESSORS + 1; i++) {
             params[i].deleted = false;
             params[i].sem = sem;
 
@@ -145,7 +143,7 @@ TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
 
         vTaskDelay(5); // Let the tasks juggle the mutex for a bit
 
-        for(unsigned i = 0; i < portNUM_PROCESSORS + 1; i++) {
+        for (unsigned i = 0; i < portNUM_PROCESSORS + 1; i++) {
             vTaskDelete(blocking_tasks[i]);
             params[i].deleted = true;
         }

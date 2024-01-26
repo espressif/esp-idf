@@ -26,7 +26,7 @@ Expected:
 
 static void blocked_task(void *arg)
 {
-    vTaskDelay(portMAX_DELAY-1);
+    vTaskDelay(portMAX_DELAY - 1);
     // Shouldn't need to self delete, but added for extra safety
     vTaskDelete(NULL);
 }
