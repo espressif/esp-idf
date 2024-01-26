@@ -42,13 +42,9 @@ warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"4MB"' in .*/
 warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"8MB"' in .*/components/wear_levelling/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"8MB"' in .*/components/fatfs/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_MONITOR_BAUD_921600B' assigned to 'y' in .*/examples/bluetooth/esp_ble_mesh/vendor_models/*
-warning: unknown kconfig symbol 'FMB_TIMER_GROUP' assigned to '0' in .*/examples/protocols/modbus/tcp/*
-warning: unknown kconfig symbol 'FMB_TIMER_INDEX' assigned to '0' in .*/examples/protocols/modbus/tcp/*
-warning: unknown kconfig symbol 'FMB_TIMER_ISR_IN_IRAM' assigned to 'y' in .*/examples/protocols/modbus/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in .*/examples/bluetooth/esp_ble_mesh/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in .*/examples/wifi/iperf/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in .*/idf-app-test/apps/iperf/*
-warning: unknown kconfig symbol 'MB_SLAVE_IP_FROM_STDIN' assigned to 'y' in .*/examples/protocols/modbus/*
 warning: unknown kconfig symbol 'SPI_FLASH_USE_LEGACY_IMPL' assigned to '1' in .*/components/wear_levelling/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY' assigned to 'y' in .*/examples/bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/sdkconfig.ci.psram
 warning: unknown kconfig symbol 'SPIRAM_FETCH_INSTRUCTIONS' assigned to 'y' in .*/components/spi_flash/test_apps/mspi_test/sdkconfig.ci.psram
