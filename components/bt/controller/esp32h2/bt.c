@@ -1382,4 +1382,3 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
 
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
-
