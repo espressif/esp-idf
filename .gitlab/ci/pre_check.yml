@@ -170,3 +170,9 @@ pipeline_variables:
   artifacts:
     reports:
       dotenv: pipeline.env
+
+check_test_cases_env_markers_and_required_runners:
+  extends:
+    - .pre_check_template
+  script:
+    - python tools/ci/dynamic_pipelines/scripts/generate_target_test_child_pipeline.py --check

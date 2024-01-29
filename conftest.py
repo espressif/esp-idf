@@ -11,8 +11,6 @@
 import os
 import sys
 
-import gitlab
-
 if os.path.join(os.path.dirname(__file__), 'tools', 'ci') not in sys.path:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
 
@@ -161,22 +159,8 @@ def app_downloader(pipeline_id: t.Optional[str]) -> t.Optional[AppDownloader]:
 
     logging.info('Downloading build report from the build pipeline %s', pipeline_id)
     test_app_presigned_urls_file = None
-    try:
-        gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
-    except gitlab.exceptions.GitlabAuthenticationError:
-        msg = """To download artifacts from gitlab, please create ~/.python-gitlab.cfg with the following content:
 
-[global]
-default = internal
-ssl_verify = true
-timeout = 5
-
-[internal]
-url = <OUR INTERNAL HTTPS SERVER URL>
-private_token = <YOUR PERSONAL ACCESS TOKEN>
-api_version = 4
-"""
-        raise SystemExit(msg)
+    gl = gitlab_api.Gitlab(os.getenv('CI_PROJECT_ID', 'espressif/esp-idf'))
 
     for child_pipeline in gl.project.pipelines.get(pipeline_id, lazy=True).bridges.list(iterator=True):
         if child_pipeline.name == 'build_child_pipeline':
