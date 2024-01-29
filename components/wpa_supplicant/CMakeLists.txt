@@ -1,3 +1,5 @@
+set(linker_fragments linker.lf)
+
 set(srcs "port/os_xtensa.c"
     "src/ap/ap_config.c"
     "src/ap/ieee802_1x.c"
@@ -180,6 +182,7 @@ idf_component_register(SRCS "${srcs}" ${esp_srcs} "${tls_src}" "${roaming_src}"
                             "${crypto_src}" "${mbo_src}" "${dpp_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src
+                    LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings)
