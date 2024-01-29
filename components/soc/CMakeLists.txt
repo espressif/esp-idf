@@ -83,6 +83,10 @@ if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
     list(APPEND srcs "${target}/mipi_dsi_periph.c")
 endif()
 
+if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
+    list(APPEND srcs "${target}/mipi_csi_periph.c")
+endif()
+
 if(CONFIG_SOC_PARLIO_SUPPORTED)
     list(APPEND srcs "${target}/parlio_periph.c")
 endif()

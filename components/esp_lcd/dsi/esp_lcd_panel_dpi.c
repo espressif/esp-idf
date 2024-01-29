@@ -310,7 +310,7 @@ static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel)
             .width = DW_GDMA_TRANS_WIDTH_64,
         },
         .dst = {
-            .addr = MIPI_DSI_MEM_BASE,
+            .addr = MIPI_DSI_BRG_MEM_BASE,
             .burst_mode = DW_GDMA_BURST_MODE_FIXED,
             .burst_items = DW_GDMA_BURST_ITEMS_256,
             .burst_len = 16,

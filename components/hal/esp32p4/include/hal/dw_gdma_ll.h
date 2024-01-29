@@ -377,7 +377,7 @@ static inline void dw_gdma_ll_channel_set_trans_block_size(dw_gdma_dev_t *dev, u
 __attribute__((always_inline))
 static inline void dw_gdma_ll_channel_set_src_master_port(dw_gdma_dev_t *dev, uint8_t channel, intptr_t mem_addr)
 {
-    if (mem_addr == MIPI_CSI_MEM_BASE) {
+    if (mem_addr == MIPI_CSI_BRG_MEM_BASE) {
         dev->ch[channel].ctl0.sms = DW_GDMA_LL_MASTER_PORT_MIPI_CSI;
     } else {
         dev->ch[channel].ctl0.sms = DW_GDMA_LL_MASTER_PORT_MEMORY;
@@ -394,7 +394,7 @@ static inline void dw_gdma_ll_channel_set_src_master_port(dw_gdma_dev_t *dev, ui
 __attribute__((always_inline))
 static inline void dw_gdma_ll_channel_set_dst_master_port(dw_gdma_dev_t *dev, uint8_t channel, intptr_t mem_addr)
 {
-    if (mem_addr == MIPI_DSI_MEM_BASE) {
+    if (mem_addr == MIPI_DSI_BRG_MEM_BASE) {
         dev->ch[channel].ctl0.dms = DW_GDMA_LL_MASTER_PORT_MIPI_DSI;
     } else {
         dev->ch[channel].ctl0.dms = DW_GDMA_LL_MASTER_PORT_MEMORY;
@@ -986,7 +986,7 @@ static inline void dw_gdma_ll_lli_set_dst_trans_width(dw_gdma_link_list_item_t *
 __attribute__((always_inline))
 static inline void dw_gdma_ll_lli_set_src_master_port(dw_gdma_link_list_item_t *lli, intptr_t mem_addr)
 {
-    if (mem_addr == MIPI_CSI_MEM_BASE) {
+    if (mem_addr == MIPI_CSI_BRG_MEM_BASE) {
         lli->ctrl_lo.sms = DW_GDMA_LL_MASTER_PORT_MIPI_CSI;
     } else {
         lli->ctrl_lo.sms = DW_GDMA_LL_MASTER_PORT_MEMORY;
@@ -1002,7 +1002,7 @@ static inline void dw_gdma_ll_lli_set_src_master_port(dw_gdma_link_list_item_t *
 __attribute__((always_inline))
 static inline void dw_gdma_ll_lli_set_dst_master_port(dw_gdma_link_list_item_t *lli, intptr_t mem_addr)
 {
-    if (mem_addr == MIPI_DSI_MEM_BASE) {
+    if (mem_addr == MIPI_DSI_BRG_MEM_BASE) {
         lli->ctrl_lo.dms = DW_GDMA_LL_MASTER_PORT_MIPI_DSI;
     } else {
         lli->ctrl_lo.dms = DW_GDMA_LL_MASTER_PORT_MEMORY;

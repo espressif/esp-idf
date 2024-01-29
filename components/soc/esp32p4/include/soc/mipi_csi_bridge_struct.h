@@ -170,11 +170,11 @@ typedef union {
          *  endianness order in bytes. 2'h0 is normal mode and 2'h3 is useful to YUV420(Legacy)
          *  when isp is bapassed.
          */
-        uint32_t byte_endian_order:1;
+        uint32_t byte_endian_order:1;    //byte_swap_en
         /** bit_endian_order : R/W; bitpos: [1]; default: 0;
          *  N/A
          */
-        uint32_t bit_endian_order:1;
+        uint32_t bit_endian_order:1;     //reserved
         uint32_t reserved_2:30;
     };
     uint32_t val;
