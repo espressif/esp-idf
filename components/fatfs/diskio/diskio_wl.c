@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,7 @@ DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
     assert(wl_handle + 1);
     esp_err_t err = wl_read(wl_handle, sector * wl_sector_size(wl_handle), buff, count * wl_sector_size(wl_handle));
     if (unlikely(err != ESP_OK)) {
-        ESP_LOGE(TAG, "wl_read failed (%d)", err);
+        ESP_LOGE(TAG, "wl_read failed (0x%x)", err);
         return RES_ERROR;
     }
     return RES_OK;
@@ -49,12 +49,12 @@ DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
     assert(wl_handle + 1);
     esp_err_t err = wl_erase_range(wl_handle, sector * wl_sector_size(wl_handle), count * wl_sector_size(wl_handle));
     if (unlikely(err != ESP_OK)) {
-        ESP_LOGE(TAG, "wl_erase_range failed (%d)", err);
+        ESP_LOGE(TAG, "wl_erase_range failed (0x%x)", err);
         return RES_ERROR;
     }
     err = wl_write(wl_handle, sector * wl_sector_size(wl_handle), buff, count * wl_sector_size(wl_handle));
     if (unlikely(err != ESP_OK)) {
-        ESP_LOGE(TAG, "wl_write failed (%d)", err);
+        ESP_LOGE(TAG, "wl_write failed (0x%x)", err);
         return RES_ERROR;
     }
     return RES_OK;
