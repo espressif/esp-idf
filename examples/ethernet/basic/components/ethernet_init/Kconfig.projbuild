@@ -198,23 +198,54 @@ menu "Example Ethernet Configuration"
 
         config EXAMPLE_ETH_SPI_INT0_GPIO
             int "Interrupt GPIO number SPI Ethernet module #1"
-            range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+            range -1 ENV_GPIO_IN_RANGE_MAX
             default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             default 4 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
             default 10 if IDF_TARGET_ESP32H2
             help
                 Set the GPIO number used by the first SPI Ethernet module interrupt line.
+                Set -1 to use SPI Ethernet module in polling mode.
 
         config EXAMPLE_ETH_SPI_INT1_GPIO
             depends on EXAMPLE_SPI_ETHERNETS_NUM > 1
             int "Interrupt GPIO number SPI Ethernet module #2"
-            range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+            range -1 ENV_GPIO_IN_RANGE_MAX
             default 33 if IDF_TARGET_ESP32
             default 5 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
             default 5 if IDF_TARGET_ESP32C6
             default 9 if IDF_TARGET_ESP32H2
             help
                 Set the GPIO number used by the second SPI Ethernet module interrupt line.
+                Set -1 to use SPI Ethernet module in polling mode.
+
+        config EXAMPLE_ETH_SPI_POLLING0_MS_VAL
+            depends on EXAMPLE_ETH_SPI_INT0_GPIO < 0
+            int "Polling period in msec of SPI Ethernet Module #1"
+            default 10
+            help
+                Set SPI Ethernet module polling period.
+
+        config EXAMPLE_ETH_SPI_POLLING1_MS_VAL
+            depends on EXAMPLE_SPI_ETHERNETS_NUM > 1 && EXAMPLE_ETH_SPI_INT1_GPIO < 0
+            int "Polling period in msec of SPI Ethernet Module #2"
+            default 10
+            help
+                Set SPI Ethernet module polling period.
+
+        # Hidden variable to ensure that polling period option is visible only when interrupt is set disabled and
+        # it is set to known value (0) when interrupt is enabled at the same time.
+        config EXAMPLE_ETH_SPI_POLLING0_MS
+            int
+            default EXAMPLE_ETH_SPI_POLLING0_MS_VAL if EXAMPLE_ETH_SPI_POLLING0_MS_VAL > 0
+            default 0
+
+        # Hidden variable to ensure that polling period option is visible only when interrupt is set disabled and
+        # it is set to known value (0) when interrupt is enabled at the same time.
+        config EXAMPLE_ETH_SPI_POLLING1_MS
+            depends on EXAMPLE_SPI_ETHERNETS_NUM > 1
+            int
+            default EXAMPLE_ETH_SPI_POLLING1_MS_VAL if EXAMPLE_ETH_SPI_POLLING1_MS_VAL > 0
+            default 0
 
         config EXAMPLE_ETH_SPI_PHY_RST0_GPIO
             int "PHY Reset GPIO number of SPI Ethernet Module #1"
