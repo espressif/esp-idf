@@ -169,6 +169,43 @@ print_adv_fields(const struct ble_hs_adv_fields *fields)
         MODLOG_DFLT(DEBUG, "\n");
     }
 
+    if (fields->sm_tk_value_is_present) {
+        MODLOG_DFLT(DEBUG, "    sm_tk_value=");
+        print_bytes(fields->sm_tk_value, 16);
+        MODLOG_DFLT(DEBUG, "\n");
+    }
+
+    if (fields->sm_oob_flag_is_present) {
+        MODLOG_DFLT(DEBUG, "    sm_oob_flag=%d\n", fields->sm_oob_flag);
+    }
+
+    if (fields->sol_uuids16 != NULL) {
+        MODLOG_DFLT(DEBUG, "    sol_uuids16=");
+        for (i = 0; i < fields->sol_num_uuids16; i++) {
+            print_uuid(&fields->sol_uuids16[i].u);
+            MODLOG_DFLT(DEBUG, " ");
+        }
+        MODLOG_DFLT(DEBUG, "\n");
+    }
+
+    if (fields->sol_uuids32 != NULL) {
+        MODLOG_DFLT(DEBUG, "    sol_uuids32=");
+        for (i = 0; i < fields->sol_num_uuids32; i++) {
+            print_uuid(&fields->sol_uuids32[i].u);
+            MODLOG_DFLT(DEBUG, "\n");
+        }
+        MODLOG_DFLT(DEBUG, "\n");
+    }
+
+    if (fields->sol_uuids128 != NULL) {
+        MODLOG_DFLT(DEBUG, "    sol_uuids128=");
+        for (i = 0; i < fields->sol_num_uuids128; i++) {
+            print_uuid(&fields->sol_uuids128[i].u);
+            MODLOG_DFLT(DEBUG, " ");
+        }
+        MODLOG_DFLT(DEBUG, "\n");
+    }
+
     if (fields->svc_data_uuid16 != NULL) {
         MODLOG_DFLT(DEBUG, "    svc_data_uuid16=");
         print_bytes(fields->svc_data_uuid16, fields->svc_data_uuid16_len);
@@ -185,12 +222,35 @@ print_adv_fields(const struct ble_hs_adv_fields *fields)
         MODLOG_DFLT(DEBUG, "\n");
     }
 
+    if (fields->random_tgt_addr != NULL) {
+        MODLOG_DFLT(DEBUG, "    random_tgt_addr=");
+        u8p = fields->random_tgt_addr;
+        for (i = 0; i < fields->num_random_tgt_addrs; i++) {
+            MODLOG_DFLT(DEBUG, "random_tgt_addr=%s ", addr_str(u8p));
+            u8p += BLE_HS_ADV_PUBLIC_TGT_ADDR_ENTRY_LEN;
+        }
+        MODLOG_DFLT(DEBUG, "\n");
+    }
+
     if (fields->appearance_is_present) {
         MODLOG_DFLT(DEBUG, "    appearance=0x%04x\n", fields->appearance);
     }
 
     if (fields->adv_itvl_is_present) {
         MODLOG_DFLT(DEBUG, "    adv_itvl=0x%04x\n", fields->adv_itvl);
+    }
+
+    if (fields->device_addr_is_present) {
+        MODLOG_DFLT(DEBUG, "    device_addr=");
+	u8p = fields->device_addr;
+	MODLOG_DFLT(DEBUG, "%s ", addr_str(u8p));
+
+	u8p += BLE_HS_ADV_PUBLIC_TGT_ADDR_ENTRY_LEN;
+	MODLOG_DFLT(DEBUG, "addr_type %d ", *u8p);
+    }
+
+    if (fields->le_role_is_present) {
+        MODLOG_DFLT(DEBUG, "    le_role=%d\n", fields->le_role);
     }
 
     if (fields->svc_data_uuid32 != NULL) {
