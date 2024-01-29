@@ -269,6 +269,7 @@ def test_esp_eth_dp83848(dut: IdfDut) -> None:
 @pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_w5500',
+    'poll_w5500',
 ], indirect=True)
 def test_esp_eth_w5500(dut: IdfDut) -> None:
     ethernet_test(dut)
@@ -282,6 +283,7 @@ def test_esp_eth_w5500(dut: IdfDut) -> None:
 @pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_ksz8851snl',
+    'poll_ksz8851snl',
 ], indirect=True)
 def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
     ethernet_test(dut)
@@ -295,6 +297,7 @@ def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
 @pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_dm9051',
+    'poll_dm9051',
 ], indirect=True)
 def test_esp_eth_dm9051(dut: IdfDut) -> None:
     ethernet_test(dut)
