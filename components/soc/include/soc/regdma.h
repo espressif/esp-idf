@@ -30,6 +30,7 @@ extern "C" {
 #define REGDMA_PCR_LINK(_pri)               ((0x01 << 8) | _pri)
 #define REGDMA_MODEMSYSCON_LINK(_pri)       ((0x02 << 8) | _pri)
 #define REGDMA_MODEMLPCON_LINK(_pri)        ((0x03 << 8) | _pri)
+#define REGDMA_PAU_LINK(_pri)               ((0x04 << 8) | _pri)
 
 #define REGDMA_INTMTX_LINK(_pri)            ((0x0d << 8) | _pri)
 #define REGDMA_HPSYS_LINK(_pri)             ((0x0e << 8) | _pri)

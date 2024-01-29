@@ -6,8 +6,8 @@
 
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 #include "sdkconfig.h"
-#include "stdbool.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 
@@ -55,7 +55,7 @@ void sleep_enable_cpu_retention(void);
  * @brief Disable cpu retention of some modules.
  *
  * In light sleep mode, after the system exits sleep, disable the cpu
- * retention of moudles such as CPU and I/D-cache tag memory.
+ * retention of modules such as CPU and I/D-cache tag memory.
  */
 void sleep_disable_cpu_retention(void);
 #endif // SOC_PM_CPU_RETENTION_BY_RTCCNTL

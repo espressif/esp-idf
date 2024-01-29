@@ -698,7 +698,7 @@ static void gdma_release_pair_handle(gdma_pair_t *pair)
 
     if (do_deinitialize) {
         free(pair);
-#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD
+#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-8461
         gdma_sleep_retention_deinit(group->group_id, pair_id);
 #endif
         ESP_LOGD(TAG, "del pair (%d,%d)", group->group_id, pair_id);
@@ -738,7 +738,7 @@ static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
         s_platform.group_ref_counts[group->group_id]++;
         portEXIT_CRITICAL(&s_platform.spinlock);
 
-#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD
+#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-8461
         gdma_sleep_retention_init(group->group_id, pair_id);
 #endif
         ESP_LOGD(TAG, "new pair (%d,%d) at %p", group->group_id, pair_id, pair);
