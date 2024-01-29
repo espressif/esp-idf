@@ -91,7 +91,6 @@ RingbufHandle_t xRingbufferCreate(size_t xBufferSize, RingbufferType_t xBufferTy
  */
 RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum);
 
-
 /**
  * @brief       Create a ring buffer but manually provide the required memory
  *
@@ -449,7 +448,6 @@ size_t xRingbufferGetCurFreeSize(RingbufHandle_t xRingbuffer);
  *      - pdTRUE on success, pdFALSE otherwise
  */
 BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHandle_t xQueueSet);
-
 
 /**
  * @brief   Check if the selected queue set member is a particular ring buffer
