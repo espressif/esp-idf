@@ -107,6 +107,11 @@ int bt_mesh_host_init(void)
     return 0;
 }
 
+int bt_mesh_host_deinit(void)
+{
+    return 0;
+}
+
 void bt_mesh_hci_init(void)
 {
     const uint8_t *features = controller_get_interface()->get_features_ble()->as_array;
