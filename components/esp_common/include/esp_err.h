@@ -36,7 +36,6 @@ typedef int esp_err_t;
 #define ESP_ERR_NOT_FINISHED        0x10C   /*!< Operation has not fully completed */
 #define ESP_ERR_NOT_ALLOWED         0x10D   /*!< Operation is not allowed */
 
-
 #define ESP_ERR_WIFI_BASE           0x3000  /*!< Starting number of WiFi error codes */
 #define ESP_ERR_MESH_BASE           0x4000  /*!< Starting number of MESH error codes */
 #define ESP_ERR_FLASH_BASE          0x6000  /*!< Starting number of flash error codes */

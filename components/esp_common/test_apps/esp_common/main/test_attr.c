@@ -29,7 +29,6 @@ extern int _ext_ram_noinit_end;
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 
-
 //Variables for test: Attributes place variables into correct sections
 static __NOINIT_ATTR uint32_t s_noinit;
 #if SOC_RTC_MEM_SUPPORTED
@@ -118,7 +117,6 @@ static void check_spiram_contents(void)
 TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[psram][ld]", write_spiram_and_reset, check_spiram_contents);
 
 #endif // CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 #define TEST_BSS_NUM    (256 * 1024)
