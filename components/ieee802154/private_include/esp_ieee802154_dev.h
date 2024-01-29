@@ -110,7 +110,6 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca);
  */
 esp_err_t ieee802154_receive(void);
 
-#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
 /**
  * @brief  Notify the IEEE 802.15.4 Radio that the frame is handled done by upper layer.
  *
@@ -122,8 +121,7 @@ esp_err_t ieee802154_receive(void);
  *      - ESP_FAIL if frame is invalid.
  *
  */
-esp_err_t ieee802154_receive_handle_done(uint8_t* frame);
-#endif
+esp_err_t ieee802154_receive_handle_done(const uint8_t* frame);
 
 /**
  * @brief  Transmit the given frame at a specific time.

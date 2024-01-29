@@ -875,6 +875,7 @@ void esp_ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, esp_
             ack[idx], ack[idx+1], ack[idx+2], ack[idx+3],
             ack[idx+4], ack[idx+5], ack[idx+6], ack[idx+7]);
         }
+        esp_ieee802154_receive_handle_done(ack);
     }
 }
 
@@ -886,6 +887,7 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
         frame[idx], frame[idx+1], frame[idx+2], frame[idx+3],
         frame[idx+4], frame[idx+5], frame[idx+6], frame[idx+7]);
     }
+    esp_ieee802154_receive_handle_done(frame);
 }
 
 void esp_ieee802154_energy_detect_done(int8_t power)
