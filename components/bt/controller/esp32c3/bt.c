@@ -766,14 +766,14 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles)
     uint32_t us_to_sleep = btdm_lpcycles_2_hus(lpcycles, NULL) >> 1;
 
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (1800)
-#define BTDM_RTC_SLOW_CLK_RC_DRIFT         (7 / 100)
+#define BTDM_RTC_SLOW_CLK_RC_DRIFT_PERCENT 7
     assert(us_to_sleep > BTDM_MIN_TIMER_UNCERTAINTY_US);
     // allow a maximum time uncertainty to be about 488ppm(1/2048) at least as clock drift
     // and set the timer in advance
     uint32_t uncertainty = (us_to_sleep >> 11);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) {
-        uncertainty = us_to_sleep * BTDM_RTC_SLOW_CLK_RC_DRIFT;
+        uncertainty = us_to_sleep * BTDM_RTC_SLOW_CLK_RC_DRIFT_PERCENT / 100;
     }
 #endif
 
