@@ -1,0 +1,24 @@
+menu "OpenThread Device Role LED"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config OPENTHREAD_STATE_INDICATOR_ENABLE
+        depends on SOC_RMT_SUPPORTED
+        bool 'Enable the LED for openthread deivce'
+        default False
+        help
+            If enabled, the LED of ESP Openthread Device will display different colors based on the current role.
+
+    config OPENTHREAD_STATE_INDICATOR_GPIO
+        depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+        int "Blink GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 5 if IDF_TARGET_ESP32
+        default 18 if IDF_TARGET_ESP32S2
+        default 48 if IDF_TARGET_ESP32S3
+        default 8
+        help
+            GPIO number (IOxx) to blink on and off the LED.
+            Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
+
+endmenu

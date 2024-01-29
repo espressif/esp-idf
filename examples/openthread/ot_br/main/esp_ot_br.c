@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_event.h"
@@ -35,7 +36,6 @@
 #include "mdns.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
-#include "sdkconfig.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -43,6 +43,10 @@
 #include "openthread/error.h"
 #include "openthread/logging.h"
 #include "openthread/tasklet.h"
+
+#if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
+#include "ot_led_strip.h"
+#endif
 
 #define TAG "esp_ot_br"
 
@@ -72,6 +76,9 @@ static void ot_task_worker(void *aContext)
 
     // Initialize border routing features
     esp_openthread_lock_acquire(portMAX_DELAY);
+#if CONFIG_OPENTHREAD_STATE_INDICATOR_ENABLE
+    ESP_ERROR_CHECK(esp_openthread_state_indicator_init(esp_openthread_get_instance()));
+#endif
     ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
 
     (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
