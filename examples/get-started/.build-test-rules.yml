@@ -8,4 +8,8 @@ examples/get-started/blink:
 
 examples/get-started/hello_world:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["linux", "esp32c5"]
+  disable_test:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: lack of runner
