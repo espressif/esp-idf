@@ -123,6 +123,8 @@ DEFAULT_FULL_BUILD_TEST_FILEPATTERNS = [
     # tools
     'tools/cmake/**/*',
     'tools/tools.json',
+    # ci
+    'tools/ci/ignore_build_warnings.txt',
     # components
     'components/cxx/**/*',
     'components/esp_common/**/*',
