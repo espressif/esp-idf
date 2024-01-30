@@ -13,13 +13,26 @@
 
 #include "soc/soc_caps.h"
 
+#if SOC_PMU_SUPPORTED
+#include "hal/pmu_hal.h"
+#include "pmu_param.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief PMU ICG modem code of HP system
+ * @note  This type is required in rtc_clk_init.c when PMU not fully supported
+ */
+typedef enum {
+    PMU_HP_ICG_MODEM_CODE_SLEEP = 0,
+    PMU_HP_ICG_MODEM_CODE_MODEM = 1,
+    PMU_HP_ICG_MODEM_CODE_ACTIVE = 2,
+} pmu_hp_icg_modem_mode_t;
+
 #if SOC_PMU_SUPPORTED
-#include "hal/pmu_hal.h"
-#include "pmu_param.h"
 
 #define RTC_SLEEP_PD_DIG                PMU_SLEEP_PD_TOP        //!< Deep sleep (power down digital domain, includes all power domains
                                                                 //   except CPU, Modem, LP peripheral, AON，VDDSDIO, MEM and clock power domains)
@@ -145,12 +158,6 @@ extern "C" {
 #define PMU_SLEEP_PD_RC32K          BIT(13)
 #define PMU_SLEEP_PD_LP_PERIPH      BIT(14)
 
-/**
- * This macro only used for detecting whether the enums are declared
- * So that to avoid use the enum when PMU is not supported
- */
-#define ESP_PMU_ENUMS_DECLARED
-
 typedef struct {
     pmu_hal_context_t *hal;
     void *mc;
@@ -178,16 +185,6 @@ typedef enum pmu_sleep_regdma_entry {
     PMU_SLEEP_REGDMA_ENTRY_3,
     PMU_SLEEP_REGDMA_ENTRY_MAX
 } pmu_sleep_regdma_entry_t;
-
-/**
- * @brief PMU ICG modem code of HP system
- */
-typedef enum {
-    PMU_HP_ICG_MODEM_CODE_SLEEP = 0,
-    PMU_HP_ICG_MODEM_CODE_MODEM = 1,
-    PMU_HP_ICG_MODEM_CODE_ACTIVE = 2,
-} pmu_hp_icg_modem_mode_t;
-
 
 /**
   * @brief  Enable_regdma_backup.

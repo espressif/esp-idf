@@ -9,7 +9,8 @@
 extra_default_build_targets:
  - esp32p4
 
-# bypass_check_test_targets:
+bypass_check_test_targets:
+  - esp32c5
 #  - esp32p4
 #
 # These lines would
