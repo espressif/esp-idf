@@ -4,7 +4,7 @@
   stage: host_test
   image: $ESP_ENV_IMAGE
   tags:
-    - windows-target
+    - windows-build
   dependencies: # set dependencies to null to avoid missing artifacts issue
   # run host_test jobs immediately, only after upload cache
   needs:
@@ -81,7 +81,7 @@ pytest_build_system_win:
     - .rules:labels:windows_pytest_build_system
   needs: []
   tags:
-    - windows-target
+    - windows-build
   artifacts:
     paths:
       - XUNIT_RESULT.xml
