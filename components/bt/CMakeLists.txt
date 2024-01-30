@@ -615,6 +615,7 @@ if(CONFIG_BT_ENABLED)
         list(APPEND include_dirs
 
                     host/nimble/nimble/nimble/host/include
+                    host/nimble/nimble/nimble/include
                     host/nimble/nimble/nimble/host/services/ans/include
                     host/nimble/nimble/nimble/host/services/bas/include
                     host/nimble/nimble/nimble/host/services/dis/include
