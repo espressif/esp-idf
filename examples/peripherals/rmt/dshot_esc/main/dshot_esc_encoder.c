@@ -111,7 +111,7 @@ esp_err_t rmt_new_dshot_esc_encoder(const dshot_esc_encoder_config_t *config, rm
     esp_err_t ret = ESP_OK;
     rmt_dshot_esc_encoder_t *dshot_encoder = NULL;
     ESP_GOTO_ON_FALSE(config && ret_encoder, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    dshot_encoder = calloc(1, sizeof(rmt_dshot_esc_encoder_t));
+    dshot_encoder = rmt_alloc_encoder_mem(sizeof(rmt_dshot_esc_encoder_t));
     ESP_GOTO_ON_FALSE(dshot_encoder, ESP_ERR_NO_MEM, err, TAG, "no mem for musical score encoder");
     dshot_encoder->base.encode = rmt_encode_dshot_esc;
     dshot_encoder->base.del = rmt_del_dshot_encoder;

@@ -148,6 +148,14 @@ esp_err_t rmt_del_encoder(rmt_encoder_handle_t encoder);
  */
 esp_err_t rmt_encoder_reset(rmt_encoder_handle_t encoder);
 
+/**
+ * @brief A helper function to allocate a proper memory for RMT encoder
+ *
+ * @param size Size of memory to be allocated
+ * @return Pointer to the allocated memory if the allocation is successful, NULL otherwise
+ */
+void* rmt_alloc_encoder_mem(size_t size);
+
 #ifdef __cplusplus
 }
 #endif
