@@ -192,8 +192,9 @@ function(__component_add component_dir prefix)
     # Set Kconfig related properties on the component
     __kconfig_component_init(${component_target})
 
-    # set BUILD_COMPONENT_DIRS build property
+    # these two properties are used to keep track of the components known to the build system
     idf_build_set_property(BUILD_COMPONENT_DIRS ${component_dir} APPEND)
+    idf_build_set_property(BUILD_COMPONENT_TARGETS ${component_target} APPEND)
 endfunction()
 
 #
