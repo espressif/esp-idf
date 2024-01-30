@@ -49,6 +49,7 @@
   - "tools/idf.py"
   - "tools/idf_py_actions/**/*"
   - "tools/requirements.json"
+  - "tools/ci/ignore_build_warnings.txt"
   - "tools/ci/test_build_system*.sh"
   - "tools/ci/test_build_system*.py"
   - "tools/ci/ci_build_apps.py"
