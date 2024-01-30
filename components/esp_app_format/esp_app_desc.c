@@ -10,7 +10,6 @@
 #include "esp_app_desc.h"
 #include "sdkconfig.h"
 
-
 // Application version info
 const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_desc_t esp_app_desc = {
     .magic_word = ESP_APP_DESC_MAGIC_WORD,
@@ -41,7 +40,6 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
     .date = "",
 #endif
 };
-
 
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
 _Static_assert(sizeof(PROJECT_VER) <= sizeof(esp_app_desc.version), "PROJECT_VER is longer than version field in structure");
