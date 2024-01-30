@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -463,6 +463,108 @@ esp_err_t esp_eth_phy_802_3_read_manufac_info(phy_802_3_t *phy_802_3, uint8_t *m
     if (rev != NULL) {
         *rev = id2.model_revision;
     }
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_get_mmd_addr(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t *mmd_addr)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    ESP_GOTO_ON_FALSE(devaddr <= 31, ESP_ERR_INVALID_ARG, err, TAG, "MMD device address can not be greater then 31 (0x1F)");
+
+    mmdctrl_reg_t mmdctrl;
+    mmdad_reg_t mmdad;
+    mmdctrl.function = MMD_FUNC_ADDRESS;
+    mmdctrl.devaddr = devaddr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDCTRL_REG_ADDR, mmdctrl.val), err, TAG, "write MMDCTRL failed");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_MMDAD_REG_ADDR, &mmdad.val), err, TAG, "read MMDAD failed");
+    *mmd_addr = mmdad.adrdata;
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_set_mmd_addr(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    ESP_GOTO_ON_FALSE(devaddr <= 31, ESP_ERR_INVALID_ARG, err, TAG, "MMD device address can not be greater then 31 (0x1F)");
+
+    mmdctrl_reg_t mmdctrl;
+    mmdad_reg_t mmdad;
+    mmdctrl.function = MMD_FUNC_ADDRESS;
+    mmdctrl.devaddr = devaddr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDCTRL_REG_ADDR, mmdctrl.val), err, TAG, "write MMDCTRL failed");
+    mmdad.adrdata = mmd_addr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDAD_REG_ADDR, mmdad.val), err, TAG, "write MMDAD failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_read_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint32_t *data)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    ESP_GOTO_ON_FALSE(devaddr <= 31, ESP_ERR_INVALID_ARG, err, TAG, "MMD device address can not be greater then 31 (0x1F)");
+    ESP_GOTO_ON_FALSE(function != MMD_FUNC_ADDRESS, ESP_ERR_INVALID_ARG, err, TAG, "Invalid MMD mode for accessing data");
+
+    mmdctrl_reg_t mmdctrl;
+    mmdad_reg_t mmdad;
+    mmdctrl.devaddr = devaddr;
+    mmdctrl.function = function;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDCTRL_REG_ADDR, mmdctrl.val), err, TAG, "write MMDCTRL failed");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_MMDAD_REG_ADDR, &mmdad.val), err, TAG, "read MMDAD failed");
+    *data = mmdad.adrdata;
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_write_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint32_t data)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    ESP_GOTO_ON_FALSE(devaddr <= 31, ESP_ERR_INVALID_ARG, err, TAG, "MMD device address can not be greater then 31 (0x1F)");
+    ESP_GOTO_ON_FALSE(function != MMD_FUNC_ADDRESS, ESP_ERR_INVALID_ARG, err, TAG, "Invalid MMD function for accessing data");
+
+    mmdctrl_reg_t mmdctrl;
+    mmdad_reg_t mmdad;
+    mmdctrl.devaddr = devaddr;
+    mmdctrl.function = function;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDCTRL_REG_ADDR, mmdctrl.val), err, TAG, "write MMDCTRL failed");
+    mmdad.adrdata = data;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDAD_REG_ADDR, mmdad.val), err, TAG, "read MMDAD failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_read_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint32_t *data){
+    esp_err_t ret = ESP_OK;
+
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_mmd_addr(phy_802_3, devaddr, mmd_addr), err, TAG, "Set MMD address failed");
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_read_mmd_data(phy_802_3, devaddr, MMD_FUNC_DATA_NOINCR, data), err, TAG, "Read MMD data failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_write_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint32_t data){
+    esp_err_t ret = ESP_OK;
+
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_mmd_addr(phy_802_3, devaddr, mmd_addr), err, TAG, "Set MMD address failed");
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_write_mmd_data(phy_802_3, devaddr, MMD_FUNC_DATA_NOINCR, data), err, TAG, "Write MMD data failed");
 
     return ESP_OK;
 err:
