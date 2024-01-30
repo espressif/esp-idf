@@ -28,6 +28,7 @@ extern "C" {
 #define LCD_LL_CLK_FRAC_DIV_N_MAX  256 // LCD_CLK = LCD_CLK_S / (N + b/a), the N register is 8 bit-width
 #define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
 #define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
+#define LCD_LL_FIFO_DEPTH          16  // Async FIFO depth
 
 #define LCD_LL_COLOR_RANGE_TO_REG(range) (uint8_t[]){0,1}[(range)]
 #define LCD_LL_CONV_STD_TO_REG(std)      (uint8_t[]){0,1}[(std)]
