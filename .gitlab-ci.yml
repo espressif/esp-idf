@@ -24,6 +24,7 @@ include:
   - '.gitlab/ci/upload_cache.yml'
   - '.gitlab/ci/docs.yml'
   - '.gitlab/ci/static-code-analysis.yml'
+  - '.gitlab/ci/pre_commit.yml'
   - '.gitlab/ci/pre_check.yml'
   - '.gitlab/ci/build.yml'
   - '.gitlab/ci/integration_test.yml'

@@ -5,18 +5,6 @@
     - host_test
   dependencies: # set dependencies to null to avoid missing artifacts issue
 
-check_pre_commit:
-  extends:
-    - .pre_check_template
-    - .before_script:minimal
-  image: $PRE_COMMIT_IMAGE
-  needs:
-    - pipeline_variables
-  script:
-    - fetch_submodules
-    - pre-commit run --files $MODIFIED_FILES
-    - pre-commit run --hook-stage post-commit validate-sbom-manifest
-
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
   # esp_idf_version.h in a branch before tagging the next version.
@@ -142,8 +130,7 @@ pipeline_variables:
   extends:
     - .pre_check_template
     - .before_script:fetch:git_diff
-  tags:
-    - build
+  tags: [fast_run, shiny]
   script:
     # MODIFIED_FILES is a list of files that changed, could be used everywhere
     - MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | xargs)
@@ -174,5 +161,6 @@ pipeline_variables:
 check_test_cases_env_markers_and_required_runners:
   extends:
     - .pre_check_template
+  tags: [fast_run, shiny]
   script:
     - python tools/ci/dynamic_pipelines/scripts/generate_target_test_child_pipeline.py --check
