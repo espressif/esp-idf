@@ -77,7 +77,7 @@ ENV_MARKERS = {
     'wifi_router': 'both the runner and dut connect to the same wifi router',
     'wifi_high_traffic': 'wifi high traffic runners',
     'wifi_wlan': 'wifi runner with a wireless NIC',
-    'Example_ShieldBox_Basic': 'basic configuration of the AP and ESP DUT placed in shielded box',
+    'wifi_iperf': 'the AP and ESP dut were placed in a shielded box - for iperf test',
     'Example_ShieldBox': 'multiple shielded APs connected to shielded ESP DUT via RF cable with programmable attenuator',
     'xtal_26mhz': 'runner with 26MHz xtal on board',
     'xtal_40mhz': 'runner with 40MHz xtal on board',
