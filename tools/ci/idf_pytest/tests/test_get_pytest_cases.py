@@ -32,41 +32,41 @@ def test_foo_multi_with_marker(dut):
 '''
 
 
-def test_get_pytest_cases_single_specific(tmp_path: Path) -> None:
-    script = tmp_path / 'pytest_get_pytest_cases_single_specific.py'
+def test_get_pytest_cases_single_specific(work_dirpath: Path) -> None:
+    script = work_dirpath / 'pytest_get_pytest_cases_single_specific.py'
     script.write_text(TEMPLATE_SCRIPT)
-    cases = get_pytest_cases([str(tmp_path)], 'esp32')
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32')
 
     assert len(cases) == 1
     assert cases[0].targets == ['esp32']
 
 
-def test_get_pytest_cases_multi_specific(tmp_path: Path) -> None:
-    script = tmp_path / 'pytest_get_pytest_cases_multi_specific.py'
+def test_get_pytest_cases_multi_specific(work_dirpath: Path) -> None:
+    script = work_dirpath / 'pytest_get_pytest_cases_multi_specific.py'
     script.write_text(TEMPLATE_SCRIPT)
-    cases = get_pytest_cases([str(tmp_path)], 'esp32s2,esp32s2, esp32s3')
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32s2,esp32s2, esp32s3')
 
     assert len(cases) == 1
     assert cases[0].targets == ['esp32s2', 'esp32s2', 'esp32s3']
 
-    cases = get_pytest_cases([str(tmp_path)], 'esp32s3,esp32s2,esp32s2')  # order matters
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32s3,esp32s2,esp32s2')  # order matters
     assert len(cases) == 0
 
 
-def test_get_pytest_cases_multi_all(tmp_path: Path) -> None:
-    script = tmp_path / 'pytest_get_pytest_cases_multi_all.py'
+def test_get_pytest_cases_multi_all(work_dirpath: Path) -> None:
+    script = work_dirpath / 'pytest_get_pytest_cases_multi_all.py'
     script.write_text(TEMPLATE_SCRIPT)
-    cases = get_pytest_cases([str(tmp_path)], CollectMode.MULTI_ALL_WITH_PARAM)
+    cases = get_pytest_cases([str(work_dirpath)], CollectMode.MULTI_ALL_WITH_PARAM)
 
     assert len(cases) == 2
     assert cases[0].targets == ['esp32', 'esp32s2']
     assert cases[1].targets == ['esp32s2', 'esp32s2', 'esp32s3']
 
 
-def test_get_pytest_cases_all(tmp_path: Path) -> None:
-    script = tmp_path / 'pytest_get_pytest_cases_all.py'
+def test_get_pytest_cases_all(work_dirpath: Path) -> None:
+    script = work_dirpath / 'pytest_get_pytest_cases_all.py'
     script.write_text(TEMPLATE_SCRIPT)
-    cases = get_pytest_cases([str(tmp_path)], CollectMode.ALL)
+    cases = get_pytest_cases([str(work_dirpath)], CollectMode.ALL)
 
     assert len(cases) == 6
     assert cases[0].targets == ['esp32', 'esp32s2']

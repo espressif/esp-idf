@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import logging
 import os
+import shutil
 import sys
 import tempfile
+import typing as t
 from pathlib import Path
 
 import pytest
@@ -53,7 +56,15 @@ void app_main(void) {}
 
 
 @pytest.fixture
-def tmp_path() -> Path:
+def work_dirpath() -> t.Generator[Path, None, None]:
     os.makedirs(os.path.join(IDF_PATH, 'pytest_embedded_log'), exist_ok=True)
 
-    return Path(tempfile.mkdtemp(prefix=os.path.join(IDF_PATH, 'pytest_embedded_log') + os.sep))
+    p = Path(tempfile.mkdtemp(prefix=os.path.join(IDF_PATH, 'pytest_embedded_log') + os.sep))
+
+    try:
+        yield p
+    except Exception:
+        logging.critical('Test is failing, Please check the log in %s', p)
+        raise
+    else:
+        shutil.rmtree(p)
