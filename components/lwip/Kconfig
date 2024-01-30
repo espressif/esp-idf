@@ -945,6 +945,23 @@ menu "LWIP"
         help
             Enable Microsoft Point-to-Point Encryption (MPPE) support
 
+    config LWIP_PPP_SERVER_SUPPORT
+        bool "Enable PPP server support"
+        depends on LWIP_PPP_SUPPORT
+        default n
+        help
+            Enable to use PPP server
+
+    config LWIP_PPP_VJ_HEADER_COMPRESSION
+        bool "Enable VJ IP Header compression"
+        depends on LWIP_PPP_SUPPORT
+        default y
+        help
+            Enable support for VJ header compression.
+            Please disable this if you're using NAPT on PPP interface,
+            since the compressed IP header might not be correctly interpreted
+            in NAT causing the compressed packet to be dropped.
+
     config LWIP_ENABLE_LCP_ECHO
         bool "Enable LCP ECHO"
         depends on LWIP_PPP_SUPPORT

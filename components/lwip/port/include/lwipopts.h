@@ -1091,6 +1091,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define MPPE_SUPPORT                    CONFIG_LWIP_PPP_MPPE_SUPPORT
 
 /**
+ * PPP_SERVER==1: Enable PPP server support (waiting for incoming PPP session).
+ */
+#define PPP_SERVER                      CONFIG_LWIP_PPP_SERVER_SUPPORT
+
+/**
+ * VJ_SUPPORT==1: Support VJ header compression.
+ */
+#define VJ_SUPPORT                      CONFIG_LWIP_PPP_VJ_HEADER_COMPRESSION
+
+/**
  * PPP_MAXIDLEFLAG: Max Xmit idle time (in ms) before resend flag char.
  * TODO: If PPP_MAXIDLEFLAG > 0 and next package is send during PPP_MAXIDLEFLAG time,
  *       then 0x7E is not added at the begining of PPP package but 0x7E termination
