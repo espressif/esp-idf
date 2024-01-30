@@ -19,6 +19,7 @@
 #include "usb/usb_types_ch9.h"
 #include "test_hcd_common.h"
 #include "test_usb_common.h"
+#include "test_usb_mock_msc.h"
 #include "unity.h"
 #include "esp_dma_utils.h"
 
@@ -327,4 +328,15 @@ uint8_t test_hcd_enum_device(hcd_pipe_handle_t default_pipe)
     //Free URB
     test_hcd_free_urb(urb);
     return ENUM_ADDR;
+}
+
+void test_hcd_set_mock_msc_ep_descriptor(usb_speed_t port_speed)
+{
+    if (port_speed == USB_SPEED_HIGH) {
+        mock_msc_scsi_bulk_out_ep_desc = mock_msc_scsi_bulk_out_ep_desc_hs;     // HS wMaxPacketSize = 512
+        mock_msc_scsi_bulk_in_ep_desc = mock_msc_scsi_bulk_in_ep_desc_hs;
+    } else {
+        mock_msc_scsi_bulk_out_ep_desc = mock_msc_scsi_bulk_out_ep_desc_fs;     // FS wMaxPacketSize = 64
+        mock_msc_scsi_bulk_in_ep_desc = mock_msc_scsi_bulk_in_ep_desc_fs;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,7 @@ typedef struct {
     usb_device_handle_t dev_hdl;
     int num_data_transfers;
     int event_count;
+    usb_speed_t dev_speed;
 } msc_client_obj_t;
 
 static void msc_reset_cbw_transfer_cb(usb_transfer_t *transfer)
@@ -188,6 +189,10 @@ void msc_client_async_dconn_task(void *arg)
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_device_descriptor(msc_obj.dev_hdl, &device_desc));
             TEST_ASSERT_EQUAL(msc_obj.test_param.idVendor, device_desc->idVendor);
             TEST_ASSERT_EQUAL(msc_obj.test_param.idProduct, device_desc->idProduct);
+            //Get device info to get device speed
+            usb_device_info_t dev_info;
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_info(msc_obj.dev_hdl, &dev_info));
+            msc_obj.dev_speed = dev_info.speed;
             //Claim the MSC interface
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_claim(msc_obj.client_hdl, msc_obj.dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
             msc_obj.next_stage = TEST_STAGE_MSC_RESET;
@@ -216,8 +221,11 @@ void msc_client_async_dconn_task(void *arg)
         case TEST_STAGE_MSC_DATA_DCONN: {
             ESP_LOGD(MSC_CLIENT_TAG, "Data and disconnect");
             //Setup the Data IN transfers
+            const int bulk_ep_mps = (msc_obj.dev_speed == USB_SPEED_HIGH)
+                                    ? MOCK_MSC_SCSI_BULK_EP_MPS_HS
+                                    : MOCK_MSC_SCSI_BULK_EP_MPS_FS;
             for (int i = 0; i < msc_obj.num_data_transfers; i++) {
-                xfer_in[i]->num_bytes = usb_round_up_to_mps(MOCK_MSC_SCSI_SECTOR_SIZE, MOCK_MSC_SCSI_BULK_EP_MPS);
+                xfer_in[i]->num_bytes = usb_round_up_to_mps(MOCK_MSC_SCSI_SECTOR_SIZE, bulk_ep_mps);
                 xfer_in[i]->bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR;
             }
             //Submit those transfers

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,6 +61,7 @@ TEST_CASE("Test HCD bulk pipe URBs", "[bulk][full_speed]")
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, 0, port_speed); //Create a default pipe (using a NULL EP descriptor)
     uint8_t dev_addr = test_hcd_enum_device(default_pipe);
     mock_msc_reset_req(default_pipe);
+    test_hcd_set_mock_msc_ep_descriptor(port_speed);
 
     //Create BULK IN and BULK OUT pipes for SCSI
     hcd_pipe_handle_t bulk_out_pipe = test_hcd_pipe_alloc(port_hdl, &mock_msc_scsi_bulk_out_ep_desc, dev_addr, port_speed);
