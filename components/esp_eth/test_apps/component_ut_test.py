@@ -19,6 +19,8 @@ def configure_eth_if(func):         # type: (typing.Any) -> typing.Any
     def inner(*args, **kwargs):     # type: (typing.Any, typing.Any) -> typing.Any
         # try to determine which interface to use
         netifs = os.listdir('/sys/class/net/')
+        # order matters - ETH NIC with the highest number is connected to DUT on CI runner
+        netifs.sort(reverse=True)
         target_if = ''
         print('detected interfaces: ' + str(netifs))
         for netif in netifs:
@@ -65,17 +67,19 @@ def send_eth_packet(so, mac):    # type: (socket.socket, str) -> None
 
 @configure_eth_if
 def recv_resp_poke(so, i):    # type: (socket.socket, int) -> None
-    so.settimeout(10)
+    so.settimeout(30)
     try:
-        eth_frame = Ether(so.recv(60))
+        for _ in range(10):
+            eth_frame = Ether(so.recv(60))
 
-        if eth_frame.type == 0x2222 and eth_frame.load[0] == 0xfa:
-            if eth_frame.load[1] != i:
-                raise Exception('Missed Poke Packet')
-            eth_frame.dst = eth_frame.src
-            eth_frame.src = so.getsockname()[4]
-            eth_frame.load = bytes.fromhex('fb')    # POKE_RESP code
-            so.send(raw(eth_frame))
+            if eth_frame.type == 0x2222 and eth_frame.load[0] == 0xfa:
+                if eth_frame.load[1] != i:
+                    raise Exception('Missed Poke Packet')
+                eth_frame.dst = eth_frame.src
+                eth_frame.src = so.getsockname()[4]
+                eth_frame.load = bytes.fromhex('fb')    # POKE_RESP code
+                so.send(raw(eth_frame))
+                break
     except Exception as e:
         raise e
 
@@ -145,16 +149,16 @@ def test_component_ut_esp_eth(env, appname):  # type: (tiny_test_fw.Env, str) ->
     ttfw_idf.ComponentUTResult.parse_result(stdout, test_format=TestFormat.UNITY_BASIC)
 
 
-# @ttfw_idf.idf_component_unit_test(env_tag='COMPONENT_UT_IP101', target=['esp32'])
-# def test_component_ut_esp_eth_ip101(env, _):  # type: (tiny_test_fw.Env, typing.Any) -> None
-#     test_component_ut_esp_eth(env, 'ip101')
+@ttfw_idf.idf_component_unit_test(env_tag='eth_ip101', target=['esp32'])
+def test_component_ut_esp_eth_ip101(env, _):  # type: (tiny_test_fw.Env, typing.Any) -> None
+    test_component_ut_esp_eth(env, 'ip101')
 
 
-@ttfw_idf.idf_component_unit_test(env_tag='COMPONENT_UT_LAN8720', target=['esp32'])
+@ttfw_idf.idf_component_unit_test(env_tag='eth_lan8720', target=['esp32'])
 def test_component_ut_esp_eth_lan8720(env, _):  # type: (tiny_test_fw.Env, typing.Any) -> None
     test_component_ut_esp_eth(env, 'lan8720')
 
 
 if __name__ == '__main__':
-    # test_component_ut_esp_eth_ip101()
+    test_component_ut_esp_eth_ip101()
     test_component_ut_esp_eth_lan8720()
