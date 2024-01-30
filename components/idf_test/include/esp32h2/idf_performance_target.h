@@ -6,6 +6,8 @@
 
 #pragma once
 
+#define IDF_PERFORMANCE_MAX_ESP_TIMER_GET_TIME_PER_CALL                         1900
+
 #define IDF_PERFORMANCE_MIN_AES_CBC_THROUGHPUT_MBSEC                            43
 
 // SHA256 hardware throughput at 160 MHz, threshold set lower than worst case
