@@ -8,3 +8,4 @@ jsonschema
 junit_xml
 python-gitlab
 pyyaml
+minio
