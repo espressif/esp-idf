@@ -43,6 +43,7 @@ no_runner_tags:
   - esp32c3,sdcard_sdmode
   - esp32c6,jtag
   - esp32h2,jtag
+  - esp32p4,jtag
   - esp32s2,Example_ShieldBox_Basic
   - esp32s2,ethernet_flash_8m
   - esp32s2,ethernet_ota
