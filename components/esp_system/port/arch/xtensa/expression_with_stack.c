@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ static void esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
     StackType_t *top_of_stack = stack + stack_size;
 
     //Align stack to a 16byte boundary, as required by CPU specific:
-    top_of_stack =  (StackType_t *)(((UBaseType_t)(top_of_stack - 16) & ~0xf));
+    top_of_stack = (StackType_t *)(((UBaseType_t)(top_of_stack - 16) & ~0xf));
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
     vPortSetStackWatchpoint(stack);
@@ -41,7 +41,6 @@ static void esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
 
     xtensa_shared_stack = top_of_stack;
 }
-
 
 void esp_execute_shared_stack_function(SemaphoreHandle_t lock, void *stack, size_t stack_size, shared_stack_function function)
 {
@@ -58,7 +57,7 @@ void esp_execute_shared_stack_function(SemaphoreHandle_t lock, void *stack, size
     portEXIT_CRITICAL(&xtensa_shared_stack_spinlock);
 
     setjmp(xtensa_shared_stack_env);
-    if(!xtensa_shared_stack_function_done) {
+    if (!xtensa_shared_stack_function_done) {
         esp_shared_stack_invoke_function();
     }
 

@@ -67,19 +67,19 @@ void IRAM_ATTR esp_restart_noos_dig(void)
 }
 #endif
 
-uint32_t esp_get_free_heap_size( void )
+uint32_t esp_get_free_heap_size(void)
 {
-    return heap_caps_get_free_size( MALLOC_CAP_DEFAULT );
+    return heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
 }
 
-uint32_t esp_get_free_internal_heap_size( void )
+uint32_t esp_get_free_internal_heap_size(void)
 {
-    return heap_caps_get_free_size( MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL );
+    return heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 }
 
-uint32_t esp_get_minimum_free_heap_size( void )
+uint32_t esp_get_minimum_free_heap_size(void)
 {
-    return heap_caps_get_minimum_free_size( MALLOC_CAP_DEFAULT );
+    return heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
 }
 
 const char *esp_get_idf_version(void)

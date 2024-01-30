@@ -27,7 +27,7 @@ const static char *TAG = "esp_dbg_stubs";
 #define ESP_DBG_STUBS_CODE_BUF_SIZE         32
 #define ESP_DBG_STUBS_STACK_MIN_SIZE        2048
 
-#define DBG_STUB_TRAMP_ATTR					IRAM_ATTR
+#define DBG_STUB_TRAMP_ATTR                 IRAM_ATTR
 
 static struct {
     uint32_t    tramp_addr;
@@ -46,7 +46,7 @@ extern void esp_dbg_stubs_ll_init(void *stub_table_addr);
 static void * esp_dbg_stubs_data_alloc(uint32_t size)
 {
     ESP_LOGV(TAG, "%s %"PRIu32, __func__, size);
-	void *p = malloc(size);
+    void *p = malloc(size);
     ESP_LOGV(TAG, "%s EXIT %p", __func__, p);
     return p;
 }

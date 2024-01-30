@@ -47,7 +47,6 @@ ESP_SYSTEM_INIT_FN(esp_hw_stack_guard_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES
     return ESP_OK;
 }
 
-
 /* The functions below are designed to be used in interrupt/panic handler
  * In case using them in user's code put them into critical section */
 

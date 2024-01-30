@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,8 +55,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 
 static const char *TAG = "clk";
 
-
- __attribute__((weak)) void esp_clk_init(void)
+__attribute__((weak)) void esp_clk_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
@@ -64,9 +63,9 @@ static const char *TAG = "clk";
     rst_reas = esp_rom_get_reset_reason(0);
     if (rst_reas == RESET_REASON_CHIP_POWER_ON
 #if SOC_EFUSE_HAS_EFUSE_RST_BUG
-        || rst_reas == RESET_REASON_CORE_EFUSE_CRC
+            || rst_reas == RESET_REASON_CORE_EFUSE_CRC
 #endif
-        ) {
+       ) {
         cfg.cali_ocode = 1;
     }
     rtc_init(cfg);
@@ -129,7 +128,7 @@ static const char *TAG = "clk";
     }
 
     // Re calculate the ccount to make time calculation correct.
-    esp_cpu_set_cycle_count( (uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz );
+    esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
 }
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
@@ -179,7 +178,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
             cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
         } else {
             const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
-            cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
+            cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
         }
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);

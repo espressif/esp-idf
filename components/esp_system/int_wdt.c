@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,16 +123,16 @@ void esp_int_wdt_init(void)
     wdt_hal_write_protect_enable(&iwdt_context);
 
 #if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
-    #define APB_DCRSET      (0x200c)
-    #define APB_ITCTRL      (0x3f00)
-    #define ERI_ADDR(APB)   (0x100000 + (APB))
-    #define _SYM2STR(x)     # x
-    #define SYM2STR(x)      _SYM2STR(x)
+#define APB_DCRSET      (0x200c)
+#define APB_ITCTRL      (0x3f00)
+#define ERI_ADDR(APB)   (0x100000 + (APB))
+#define _SYM2STR(x)     # x
+#define SYM2STR(x)      _SYM2STR(x)
 
     uint32_t eriadrs, scratch = 0, immediate = 0;
     if (soc_has_cache_lock_bug()) {
         if (xPortGetCoreID() != CONFIG_BTDM_CTRL_PINNED_TO_CORE) {
-            __asm__ __volatile__ (
+            __asm__ __volatile__(
                 /* Enable Xtensa Debug Module Integration Mode */
                 "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_ITCTRL)) "\n"
                 "rer    %[REG], %[ERI]\n"
@@ -145,7 +145,7 @@ void esp_int_wdt_init(void)
                 "movi   %[IMM], 0x10000\n"
                 "or     %[REG], %[IMM], %[REG]\n"
                 "wer    %[REG], %[ERI]\n"
-                : [ERI] "=r" (eriadrs), [REG] "+r" (scratch), [IMM] "+r" (immediate)
+                : [ERI] "=r"(eriadrs), [REG] "+r"(scratch), [IMM] "+r"(immediate)
             );
         }
     }

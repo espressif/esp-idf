@@ -20,7 +20,6 @@
 
 static const char *TAG = "CACHE_ERR";
 
-
 const char cache_error_msg[] = "Cache access error";
 
 const char *esp_cache_err_panic_string(void)

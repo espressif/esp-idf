@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief initialize cache invalid access interrupt
  *
@@ -24,7 +23,6 @@ extern "C" {
  */
 void esp_cache_err_int_init(void);
 
-
 /**
  * @brief get the CPU which caused cache invalid access interrupt. Helper function in
  * panic handling.
@@ -34,7 +32,6 @@ void esp_cache_err_int_init(void);
  *  - (-1) otherwise
  */
 int esp_cache_err_get_cpuid(void);
-
 
 /**
  * @brief Returns a pointer to the cache error message

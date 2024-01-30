@@ -89,8 +89,8 @@ const register_bit_t cache_ilg_bits[] = {
  * be set in the register will have its associated message printed.
  */
 static inline const char* test_and_print_register_bits(const uint32_t status,
-        const register_bit_t *reg_bits,
-        const uint32_t size)
+                                                       const register_bit_t *reg_bits,
+                                                       const uint32_t size)
 {
     /* Browse the flag/bit array and test each one with the given status
      * register. */

@@ -15,7 +15,6 @@
 #include "esp_attr.h"
 #include "sdkconfig.h"
 
-
 void esp_ipc_isr_port_init(const int cpuid)
 {
     uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE + cpuid; // ETS_FROM_CPU_INTR2_SOURCE and ETS_FROM_CPU_INTR3_SOURCE

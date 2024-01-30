@@ -23,7 +23,6 @@ extern "C" {
  */
 void esp_crosscore_int_init(void);
 
-
 /**
  * Send an interrupt to a CPU indicating it should yield its
  * currently running task in favour of a higher-priority task
@@ -35,7 +34,6 @@ void esp_crosscore_int_init(void);
  * @param core_id Core that should do the yielding
  */
 void esp_crosscore_int_send_yield(int core_id);
-
 
 /**
  * Send an interrupt to a CPU indicating it should update its

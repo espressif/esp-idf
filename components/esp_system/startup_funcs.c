@@ -248,7 +248,7 @@ ESP_SYSTEM_INIT_FN(init_secure, CORE, BIT(0), 150)
 #ifdef ROM_LOG_MODE
 ESP_SYSTEM_INIT_FN(init_rom_log, CORE, BIT(0), 160)
 {
-    if(ets_efuse_get_uart_print_control() == ROM_LOG_MODE) {
+    if (ets_efuse_get_uart_print_control() == ROM_LOG_MODE) {
         return ESP_OK;
     }
 

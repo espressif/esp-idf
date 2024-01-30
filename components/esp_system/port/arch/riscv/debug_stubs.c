@@ -14,7 +14,6 @@
 
 const static char *TAG = "esp_dbg_stubs";
 
-
 /* Advertises apptrace control block address to host */
 static int esp_dbg_stubs_advertise_table(void *stub_table_addr)
 {

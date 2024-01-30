@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,8 +14,8 @@
 #include "esp_expression_with_stack.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-8832: RISC-V FPU does not work on shared stack,
-                                             // esp_execute_shared_stack_function might be deprecated because of
-                                             // the FPU issue and all the other issues with it.
+// esp_execute_shared_stack_function might be deprecated because of
+// the FPU issue and all the other issues with it.
 
 #define SHARED_STACK_SIZE 8192
 
@@ -56,22 +56,21 @@ TEST_CASE("test printf using shared buffer stack", "[shared_stack]")
     printf("shared_stack: %p\n", (void *)shared_stack);
     printf("shared_stack expected top: %p\n", (void *)(shared_stack + SHARED_STACK_SIZE));
 
-
     esp_execute_shared_stack_function(printf_lock,
-                                    shared_stack,
-                                    SHARED_STACK_SIZE,
-                                    external_stack_function);
+                                      shared_stack,
+                                      SHARED_STACK_SIZE,
+                                      external_stack_function);
 
     TEST_ASSERT(((shared_stack_sp >= shared_stack) &&
-                (shared_stack_sp < (shared_stack + SHARED_STACK_SIZE))));
+                 (shared_stack_sp < (shared_stack + SHARED_STACK_SIZE))));
 
     esp_execute_shared_stack_function(printf_lock,
-                                    shared_stack,
-                                    SHARED_STACK_SIZE,
-                                    another_external_stack_function);
+                                      shared_stack,
+                                      SHARED_STACK_SIZE,
+                                      another_external_stack_function);
 
     TEST_ASSERT(((shared_stack_sp >= shared_stack) &&
-                (shared_stack_sp < (shared_stack + SHARED_STACK_SIZE))));
+                 (shared_stack_sp < (shared_stack + SHARED_STACK_SIZE))));
 
     vSemaphoreDelete(printf_lock);
     free(shared_stack);

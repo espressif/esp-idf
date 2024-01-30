@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,12 +48,12 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
     void *frame = snapshot.pxTopOfStack;
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
-        esp_rom_printf("Print CPU %d (current core) backtrace\n", current_core);
-        esp_eh_frame_print_backtrace(frame);
+    esp_rom_printf("Print CPU %d (current core) backtrace\n", current_core);
+    esp_eh_frame_print_backtrace(frame);
 #else // CONFIG_ESP_SYSTEM_USE_EH_FRAME
-        esp_rom_printf("Print CPU %d (current core) registers\n", current_core);
-        panic_print_registers(frame, current_core);
-        esp_rom_printf("\r\n");
+    esp_rom_printf("Print CPU %d (current core) registers\n", current_core);
+    panic_print_registers(frame, current_core);
+    esp_rom_printf("\r\n");
 #endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
 
     return ESP_OK;

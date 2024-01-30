@@ -44,7 +44,6 @@ esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handler)
     return ESP_ERR_INVALID_STATE;
 }
 
-
 void esp_restart(void)
 {
     for (int i = SHUTDOWN_HANDLERS_NO - 1; i >= 0; i--) {
