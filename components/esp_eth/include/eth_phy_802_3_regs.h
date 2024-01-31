@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,6 +153,32 @@ typedef union {
     uint32_t val;
 } aner_reg_t;
 #define ETH_PHY_ANER_REG_ADDR (0x06)
+
+/**
+ * @brief MMD Access control register
+ *
+ */
+typedef union {
+    struct {
+        uint32_t devaddr : 5;       /*!< MMD address */
+        uint32_t reserved0 : 9;     /*!< Reserved */
+        uint32_t function : 2;      /*!< MMD function */
+    };
+    uint32_t val;
+} mmdctrl_reg_t;
+#define ETH_PHY_MMDCTRL_REG_ADDR (0x0D)
+
+/**
+ * @brief MMD Access address register
+ *
+ */
+typedef union {
+    struct {
+        uint32_t adrdata : 16;      /*!< MMD address/data */
+    };
+    uint32_t val;
+} mmdad_reg_t;
+#define ETH_PHY_MMDAD_REG_ADDR (0x0E)
 
 #ifdef __cplusplus
 }
