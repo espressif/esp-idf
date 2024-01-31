@@ -213,7 +213,7 @@ extern "C" {
 
 #endif
 
-#if SOC_ESP_NIMBLE_CONTROLLER
+#if SOC_ESP_NIMBLE_CONTROLLER && CONFIG_BT_CONTROLLER_ENABLED
 void r_put_le16(void *buf, uint16_t x);
 #define put_le16 r_put_le16
 

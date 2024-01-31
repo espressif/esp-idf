@@ -53,7 +53,9 @@ set(ble_mesh_include_dirs
 
 set(bluedroid_include_dirs host/bluedroid/api/include/api)
 
+if(CONFIG_BT_CONTROLLER_ENABLED OR CONFIG_IDF_DOC_BUILD)
 set(nimble_hci_include_dirs host/nimble/esp-hci/include)
+endif()
 
 if(CONFIG_IDF_DOC_BUILD)
     list(APPEND include_dirs
@@ -567,6 +569,11 @@ if(CONFIG_BT_ENABLED)
                     "porting/nimble/src/os_msys_init.c"
             )
 
+            if(CONFIG_BT_CONTROLLER_DISABLED)
+                list(APPEND srcs
+                        "host/nimble/nimble/porting/nimble/src/hal_uart.c"
+                    )
+            endif()
             list(APPEND include_dirs
                     porting/include
                     porting/nimble/include
@@ -697,6 +704,13 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/src/ble_gattc_cache_conn.c"
                 )
 
+            if(CONFIG_BT_CONTROLLER_DISABLED AND CONFIG_BT_NIMBLE_TRANSPORT_UART)
+                list(APPEND srcs
+                        "host/nimble/nimble/nimble/transport/uart_ll/src/hci_uart.c"
+                        "host/nimble/nimble/nimble/transport/common/hci_h4/src/hci_h4.c"
+                )
+            endif()
+
             list(APPEND srcs
                 "host/nimble/nimble/porting/nimble/src/nimble_port.c"
                 "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
@@ -709,6 +723,12 @@ if(CONFIG_BT_ENABLED)
                 host/nimble/nimble/nimble/transport/include
             )
 
+            if(CONFIG_BT_CONTROLLER_DISABLED)
+                list(APPEND include_dirs
+                    host/nimble/nimble/nimble/transport/common/hci_h4/include
+                )
+            endif()
+
         if(NOT CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
             list(APPEND srcs
                     "host/nimble/nimble/porting/nimble/src/endian.c"
@@ -718,6 +738,13 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/porting/nimble/src/os_msys_init.c"
                     "host/nimble/nimble/porting/npl/freertos/src/npl_os_freertos.c"
                     )
+
+            if(CONFIG_BT_CONTROLLER_DISABLED AND CONFIG_BT_NIMBLE_TRANSPORT_UART)
+                list(APPEND srcs
+                    "host/nimble/nimble/porting/nimble/src/hal_uart.c"
+                )
+            endif()
+
             list(APPEND include_dirs
                     host/nimble/nimble/porting/npl/freertos/include
                     host/nimble/nimble/porting/nimble/include
@@ -725,7 +752,7 @@ if(CONFIG_BT_ENABLED)
             )
         endif()
 
-        if(CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE)
+        if(CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE AND CONFIG_BT_CONTROLLER_ENABLED)
             list(APPEND srcs
                 "host/nimble/esp-hci/src/esp_nimble_hci.c"
             )

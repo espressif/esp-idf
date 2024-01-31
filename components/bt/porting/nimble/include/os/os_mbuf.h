@@ -244,7 +244,7 @@ _os_mbuf_trailingspace(struct os_mbuf *om)
 #define OS_MBUF_TRAILINGSPACE(__om) _os_mbuf_trailingspace(__om)
 
 
-#if SOC_ESP_NIMBLE_CONTROLLER
+#if SOC_ESP_NIMBLE_CONTROLLER && CONFIG_BT_CONTROLLER_ENABLED
 /**
  * Initializes an mqueue.  An mqueue is a queue of mbufs that ties to a
  * particular task's event queue.  Mqueues form a helper API around a common
