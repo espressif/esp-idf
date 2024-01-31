@@ -45,10 +45,9 @@ typedef void (*shared_stack_function)(void);
  *          be called using the current stack.
  */
 void esp_execute_shared_stack_function(SemaphoreHandle_t lock,
-                                      void *stack,
-                                      size_t stack_size,
-                                      shared_stack_function function);
-
+                                       void *stack,
+                                       size_t stack_size,
+                                       shared_stack_function function);
 
 #ifdef __cplusplus
 }

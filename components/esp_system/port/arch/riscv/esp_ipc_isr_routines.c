@@ -8,5 +8,5 @@
 
 void esp_ipc_isr_waiting_for_finish_cmd(void* ipc_isr_finish_cmd)
 {
-    while (*(volatile uint32_t*)ipc_isr_finish_cmd == 0) { };
+    while (*(volatile uint32_t *)ipc_isr_finish_cmd == 0) { };
 }

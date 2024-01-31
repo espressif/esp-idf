@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,16 +25,13 @@
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/esp_task_wdt_impl.h"
 
-
 #if CONFIG_IDF_TARGET_ARCH_RISCV
 #include "riscv/rvruntime-frames.h"
 #endif //CONFIG_IDF_TARGET_ARCH_RISCV
 
-
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 #include "esp_private/eh_frame_parser.h"
 #endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
-
 
 #if CONFIG_IDF_TARGET_ARCH_RISCV && !CONFIG_ESP_SYSTEM_USE_EH_FRAME
 /* Function used to print all the registers pointed by the given frame .*/
@@ -291,7 +288,6 @@ static void unsubscribe_idle(uint32_t core_mask)
     }
 }
 
-
 /**
  * @brief Subscribes the idle tasks of one or more cores
  *
@@ -318,7 +314,6 @@ static void subscribe_idle(uint32_t core_mask)
     }
 }
 
-
 /**
  * The behavior of the Task Watchdog depends on the configuration from the `menuconfig`.
  * It can be summarized as follow, regardless of the target:
@@ -341,8 +336,8 @@ static void subscribe_idle(uint32_t core_mask)
 static UBaseType_t get_task_affinity(const TaskHandle_t xTask)
 {
     if (xTask == NULL) {
-    /* User entry, we cannot predict on which core it is scheduled to run,
-     * so let's mark all cores as failing */
+        /* User entry, we cannot predict on which core it is scheduled to run,
+         * so let's mark all cores as failing */
 #if configNUM_CORES > 1
         return BIT(1) | BIT(0);
 #else
@@ -351,16 +346,16 @@ static UBaseType_t get_task_affinity(const TaskHandle_t xTask)
     }
 
 #if CONFIG_FREERTOS_SMP
-    #if configNUM_CORES > 1
-        return vTaskCoreAffinityGet(xTask);
-    #else
-        return BIT(0);
-    #endif
+#if configNUM_CORES > 1
+    return vTaskCoreAffinityGet(xTask);
 #else
-	BaseType_t task_affinity = xTaskGetCoreID(xTask);
-	if (task_affinity == 0 || task_affinity == 1) {
-		return BIT(task_affinity);
-	}
+    return BIT(0);
+#endif
+#else
+    BaseType_t task_affinity = xTaskGetCoreID(xTask);
+    if (task_affinity == 0 || task_affinity == 1) {
+        return BIT(task_affinity);
+    }
     return BIT(1) | BIT(0);
 #endif
 }
@@ -406,8 +401,6 @@ void task_wdt_timeout_abort(bool current_core)
     xt_unhandled_exception(frame);
 }
 
-
-
 static void task_wdt_timeout_handling(int cores_fail, bool panic)
 {
     const int current_core = xPortGetCoreID();
@@ -450,7 +443,6 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
     }
 }
 
-
 // ---------------------- Callbacks ------------------------
 
 /**
@@ -488,11 +480,11 @@ static void task_wdt_isr(void *arg)
     int cpus_fail = 0;
     bool panic = p_twdt_obj->panic;
 
-	if (esp_task_wdt_print_triggered_tasks(NULL, NULL, &cpus_fail) != ESP_OK) {
+    if (esp_task_wdt_print_triggered_tasks(NULL, NULL, &cpus_fail) != ESP_OK) {
         // If there are no entries, there's nothing to do.
         portEXIT_CRITICAL_ISR(&spinlock);
         return;
-	}
+    }
 
     ESP_EARLY_LOGE(TAG, "%s", DRAM_STR("Tasks currently running:"));
     for (int x = 0; x < portNUM_PROCESSORS; x++) {
@@ -794,7 +786,7 @@ esp_err_t esp_task_wdt_print_triggered_tasks(task_wdt_msg_handler msg_handler, v
 
     twdt_entry_t *entry;
     const char *caption = "Task watchdog got triggered. "
-        "The following tasks/users did not reset the watchdog in time:";
+                          "The following tasks/users did not reset the watchdog in time:";
 
     if (msg_handler == NULL) {
         ESP_EARLY_LOGE(TAG, "%s", caption);

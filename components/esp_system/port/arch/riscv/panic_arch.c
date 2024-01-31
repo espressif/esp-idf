@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,6 @@
 #include "esp_cpu.h"
 #include "esp_private/hw_stack_guard.h"
 #endif
-
 
 #define DIM(array) (sizeof(array)/sizeof(*array))
 
@@ -77,7 +76,7 @@ static inline void print_assist_debug_details(const void *frame)
     panic_print_hex((int) esp_hw_stack_guard_get_pc());
     panic_print_str("\r\n");
     panic_print_str("Stack pointer: 0x");
-    panic_print_hex((int) ((RvExcFrame *)frame)->sp);
+    panic_print_hex((int)((RvExcFrame *)frame)->sp);
     panic_print_str("\r\n");
     panic_print_str("Stack bounds: 0x");
     panic_print_hex((int) sp_min);
@@ -123,7 +122,7 @@ static inline void print_memprot_err_details(const void *frame __attribute__((un
         PRINT_MEMPROT_ERROR(res);
     }
 
-    panic_print_str( "\r\n  world: ");
+    panic_print_str("\r\n  world: ");
     esp_mprot_pms_world_t world;
     res = esp_mprot_get_violate_world(s_memp_intr.mem_type, &world, s_memp_intr.core);
     if (res == ESP_OK) {
@@ -132,7 +131,7 @@ static inline void print_memprot_err_details(const void *frame __attribute__((un
         PRINT_MEMPROT_ERROR(res);
     }
 
-    panic_print_str( "\r\n  operation type: ");
+    panic_print_str("\r\n  operation type: ");
     uint32_t operation;
     res = esp_mprot_get_violate_operation(s_memp_intr.mem_type, &operation, s_memp_intr.core);
     if (res == ESP_OK) {
@@ -142,7 +141,7 @@ static inline void print_memprot_err_details(const void *frame __attribute__((un
     }
 
     if (esp_mprot_has_byte_enables(s_memp_intr.mem_type)) {
-        panic_print_str("\r\n  byte-enables: " );
+        panic_print_str("\r\n  byte-enables: ");
         uint32_t byte_enables;
         res = esp_mprot_get_violate_byte_enables(s_memp_intr.mem_type, &byte_enables, s_memp_intr.core);
         if (res == ESP_OK) {
@@ -169,7 +168,6 @@ static void panic_print_register_array(const char* names[], const uint32_t* regs
         panic_print_str("  ");
     }
 }
-
 
 void panic_print_registers(const void *f, int core)
 {
@@ -203,7 +201,7 @@ bool panic_soc_check_pseudo_cause(void *f, panic_info_t *info)
     /* Cache errors when reading instructions will result in an illegal instructions,
        before any cache error interrupts trigger. We override the exception cause if
        any cache errors are active to more accurately report the actual reason */
-    if(esp_cache_err_has_active_err() && (frame->mcause == MCAUSE_ILLEGAL_INSTRUCTION) ) {
+    if (esp_cache_err_has_active_err() && (frame->mcause == MCAUSE_ILLEGAL_INSTRUCTION)) {
         pseudo_cause = true;
         frame->mcause = ETS_CACHEERR_INUM;
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@ static StackType_t *esp_shared_stack_setup_context(StaticTask_t *tcb, void **sp_
     memset(stack, 0xa5U, stack_size * sizeof(StackType_t));
 
     //Align stack to a 16-byte boundary, as required by CPU specific:
-    StackType_t *top_of_stack = (StackType_t *) ALIGNUP(0x10, (uint32_t) (stack + stack_size));
+    StackType_t *top_of_stack = (StackType_t *) ALIGNUP(0x10, (uint32_t)(stack + stack_size));
     StackType_t *adjusted_top_of_stack = top_of_stack - RV_STK_FRMSZ;
 
     //Then put the fake stack inside of TCB:
@@ -41,7 +41,8 @@ static StackType_t *esp_shared_stack_setup_context(StaticTask_t *tcb, void **sp_
     return ((StackType_t *)adjusted_top_of_stack);
 }
 
-static void esp_shared_stack_restore_context(StaticTask_t *tcb, void *sp_min, void *sp_max) {
+static void esp_shared_stack_restore_context(StaticTask_t *tcb, void *sp_min, void *sp_max)
+{
     tcb->pxDummy6 = sp_min;
     tcb->pxDummy8 = sp_max;
 
@@ -70,11 +71,11 @@ void esp_execute_shared_stack_function(SemaphoreHandle_t lock, void *stack, size
 
     portENTER_CRITICAL(&shared_stack_spinlock);
     stack = esp_shared_stack_setup_context(tcb, &sp_min, &sp_max, stack, stack_size);
-    __asm__ volatile ("mv   t0, sp      \n"     /* save current SP */
-                      "mv   sp, %0      \n"     /* set shared stack as new SP */
-                      "addi sp, sp, -16 \n"     /* allocate memory for previous SP */
-                      "sw   t0, 0(sp)   \n"     /* store previous SP in a safe place */
-                      :: "r"(stack));
+    __asm__ volatile("mv   t0, sp      \n"      /* save current SP */
+                     "mv   sp, %0      \n"     /* set shared stack as new SP */
+                     "addi sp, sp, -16 \n"     /* allocate memory for previous SP */
+                     "sw   t0, 0(sp)   \n"     /* store previous SP in a safe place */
+                     :: "r"(stack));
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     esp_hw_stack_guard_monitor_start();
 #endif
@@ -86,7 +87,7 @@ void esp_execute_shared_stack_function(SemaphoreHandle_t lock, void *stack, size
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     esp_hw_stack_guard_monitor_stop();
 #endif
-    __asm__ volatile ("lw   sp, 0(sp)");        /* restore real SP of current task */
+    __asm__ volatile("lw   sp, 0(sp)");         /* restore real SP of current task */
     esp_shared_stack_restore_context(tcb, sp_min, sp_max);
     portEXIT_CRITICAL(&shared_stack_spinlock);
 

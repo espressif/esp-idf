@@ -13,8 +13,9 @@
 static inline void panic_print_str(const char* str)
 {
     /* Ignore "Backtrace:" string. */
-    if (strcmp(str, "Backtrace:") != 0)
+    if (strcmp(str, "Backtrace:") != 0) {
         printf("%s", str);
+    }
 }
 
 static inline void panic_print_hex(const uint32_t value)

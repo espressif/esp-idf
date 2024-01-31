@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,6 @@
 #define REASON_GDB_CALL         BIT(3)
 #define REASON_TWDT_ABORT       BIT(4)
 
-
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[portNUM_PROCESSORS];
 
@@ -38,18 +37,19 @@ static inline void IRAM_ATTR esp_crosscore_isr_handle_yield(void)
     portYIELD_FROM_ISR();
 }
 
-static void IRAM_ATTR esp_crosscore_isr(void *arg) {
+static void IRAM_ATTR esp_crosscore_isr(void *arg)
+{
     uint32_t my_reason_val;
     //A pointer to the correct reason array item is passed to this ISR.
-    volatile uint32_t *my_reason=arg;
+    volatile uint32_t *my_reason = arg;
 
     //Clear the interrupt first.
     crosscore_int_ll_clear_interrupt(esp_cpu_get_core_id());
 
     //Grab the reason and clear it.
     portENTER_CRITICAL_ISR(&reason_spinlock);
-    my_reason_val=*my_reason;
-    *my_reason=0;
+    my_reason_val = *my_reason;
+    *my_reason = 0;
     portEXIT_CRITICAL_ISR(&reason_spinlock);
 
     //Check what we need to do.
@@ -72,8 +72,6 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
         esp_backtrace_print(100);
     }
 
-
-
 #if CONFIG_ESP_TASK_WDT_EN
     if (my_reason_val & REASON_TWDT_ABORT) {
         extern void task_wdt_timeout_abort(bool);
@@ -87,13 +85,14 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
 
 //Initialize the crosscore interrupt on this core. Call this once
 //on each active core.
-void esp_crosscore_int_init(void) {
+void esp_crosscore_int_init(void)
+{
     portENTER_CRITICAL(&reason_spinlock);
-    reason[esp_cpu_get_core_id()]=0;
+    reason[esp_cpu_get_core_id()] = 0;
     portEXIT_CRITICAL(&reason_spinlock);
     esp_err_t err __attribute__((unused)) = ESP_OK;
 #if portNUM_PROCESSORS > 1
-    if (esp_cpu_get_core_id()==0) {
+    if (esp_cpu_get_core_id() == 0) {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
     } else {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[1], NULL);
@@ -104,8 +103,9 @@ void esp_crosscore_int_init(void) {
     ESP_ERROR_CHECK(err);
 }
 
-static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask) {
-    assert(core_id<portNUM_PROCESSORS);
+static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask)
+{
+    assert(core_id < portNUM_PROCESSORS);
     //Mark the reason we interrupt the other CPU
     portENTER_CRITICAL_ISR(&reason_spinlock);
     reason[core_id] |= reason_mask;
@@ -135,7 +135,8 @@ void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
 }
 
 #if CONFIG_ESP_TASK_WDT_EN
-void IRAM_ATTR esp_crosscore_int_send_twdt_abort(int core_id) {
+void IRAM_ATTR esp_crosscore_int_send_twdt_abort(int core_id)
+{
     esp_crosscore_int_send(core_id, REASON_TWDT_ABORT);
 }
 #endif // CONFIG_ESP_TASK_WDT_EN

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,8 +40,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
 static const char *TAG = "clk";
 
-
- __attribute__((weak)) void esp_clk_init(void)
+__attribute__((weak)) void esp_clk_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
     pmu_init();
@@ -106,7 +105,7 @@ static const char *TAG = "clk";
     }
 
     // Re calculate the ccount to make time calculation correct.
-    esp_cpu_set_cycle_count( (uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz );
+    esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
 }
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
@@ -158,7 +157,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
             cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
         } else {
             const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
-            cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
+            cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
         }
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
@@ -186,12 +185,12 @@ __attribute__((weak)) void esp_perip_clk_init(void)
      * scenarios), the module needs to switch to the required clock source by
      * itself. */ //TODO - WIFI-5233
     soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
-    modem_clock_lpclk_src_t modem_lpclk_src = (modem_clock_lpclk_src_t) ( \
-                  (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW)  ? MODEM_CLOCK_LPCLK_SRC_RC_SLOW \
-                : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)  ? MODEM_CLOCK_LPCLK_SRC_XTAL32K  \
-                : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K)    ? MODEM_CLOCK_LPCLK_SRC_RC32K    \
-                : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K   \
-                : SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
+    modem_clock_lpclk_src_t modem_lpclk_src = (modem_clock_lpclk_src_t)(\
+                                                                        (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW)  ? MODEM_CLOCK_LPCLK_SRC_RC_SLOW \
+                                                                        : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)  ? MODEM_CLOCK_LPCLK_SRC_XTAL32K  \
+                                                                        : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K)    ? MODEM_CLOCK_LPCLK_SRC_RC32K    \
+                                                                        : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K   \
+                                                                        : SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
 
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");

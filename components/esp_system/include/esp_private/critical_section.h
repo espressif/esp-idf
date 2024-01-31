@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -227,9 +227,9 @@ typedef spinlock_t esp_os_spinlock_t;
  * @endcode
  */
 #if OS_SPINLOCK == 1
-#define esp_os_enter_critical(lock)			portENTER_CRITICAL(lock)
+#define esp_os_enter_critical(lock)         portENTER_CRITICAL(lock)
 #else
-#define esp_os_enter_critical(lock)			vPortEnterCritical()
+#define esp_os_enter_critical(lock)         vPortEnterCritical()
 #endif
 
 /**
@@ -256,9 +256,9 @@ typedef spinlock_t esp_os_spinlock_t;
  * @endcode
  */
 #if OS_SPINLOCK == 1
-#define esp_os_exit_critical(lock)			portEXIT_CRITICAL(lock)
+#define esp_os_exit_critical(lock)          portEXIT_CRITICAL(lock)
 #else
-#define esp_os_exit_critical(lock)			vPortExitCritical()
+#define esp_os_exit_critical(lock)          vPortExitCritical()
 #endif
 
 /**
@@ -285,9 +285,9 @@ typedef spinlock_t esp_os_spinlock_t;
  * @endcode
  */
 #if OS_SPINLOCK == 1
-#define esp_os_enter_critical_isr(lock)		portENTER_CRITICAL_ISR(lock)
+#define esp_os_enter_critical_isr(lock)     portENTER_CRITICAL_ISR(lock)
 #else
-#define esp_os_enter_critical_isr(lock)		vPortEnterCritical()
+#define esp_os_enter_critical_isr(lock)     vPortEnterCritical()
 #endif
 
 /**
@@ -314,9 +314,9 @@ typedef spinlock_t esp_os_spinlock_t;
  * @endcode
  */
 #if OS_SPINLOCK == 1
-#define esp_os_exit_critical_isr(lock)		portEXIT_CRITICAL_ISR(lock)
+#define esp_os_exit_critical_isr(lock)      portEXIT_CRITICAL_ISR(lock)
 #else
-#define esp_os_exit_critical_isr(lock)		vPortExitCritical()
+#define esp_os_exit_critical_isr(lock)      vPortExitCritical()
 #endif
 
 /**
@@ -344,9 +344,9 @@ typedef spinlock_t esp_os_spinlock_t;
  * @endcode
  */
 #if OS_SPINLOCK == 1
-#define esp_os_enter_critical_safe(lock)	portENTER_CRITICAL_SAFE(lock)
+#define esp_os_enter_critical_safe(lock)    portENTER_CRITICAL_SAFE(lock)
 #else
-#define esp_os_enter_critical_safe(lock)	vPortEnterCritical()
+#define esp_os_enter_critical_safe(lock)    vPortEnterCritical()
 #endif
 
 /**
@@ -373,9 +373,9 @@ typedef spinlock_t esp_os_spinlock_t;
  * @endcode
  */
 #if OS_SPINLOCK == 1
-#define esp_os_exit_critical_safe(lock)		portEXIT_CRITICAL_SAFE(lock)
+#define esp_os_exit_critical_safe(lock)     portEXIT_CRITICAL_SAFE(lock)
 #else
-#define esp_os_exit_critical_safe(lock)		vPortExitCritical()
+#define esp_os_exit_critical_safe(lock)     vPortExitCritical()
 #endif
 
 #ifdef __cplusplus

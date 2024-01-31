@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,7 @@
 // Ensure that system configuration matches the underlying number of cores.
 // This should enable us to avoid checking for both everytime.
 #if !(SOC_CPU_CORES_NUM > 1) && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    #error "System has been configured to run on multiple cores, but target SoC only has a single core."
+#error "System has been configured to run on multiple cores, but target SoC only has a single core."
 #endif
 
 uint64_t g_startup_time = 0;
@@ -45,9 +45,9 @@ static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
 
 const sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
 #if SOC_CPU_CORES_NUM > 1
-    [1 ... SOC_CPU_CORES_NUM - 1] = start_cpu_other_cores
+                                                           [1 ... SOC_CPU_CORES_NUM - 1] = start_cpu_other_cores
 #endif
-};
+                                                         };
 
 static volatile bool s_system_full_inited = false;
 #else
@@ -55,7 +55,6 @@ const sys_startup_fn_t g_startup_fn[1] = { start_cpu0 };
 #endif
 
 static const char* TAG = "cpu_start";
-
 
 /**
  * Xtensa gcc is configured to emit a .ctors section, RISC-V gcc is configured with --enable-initfini-array
@@ -78,12 +77,14 @@ static void do_global_ctors(void)
     extern void (*__init_array_end)(void);
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
-    struct object { long placeholder[ 10 ]; };
-    void __register_frame_info (const void *begin, struct object *ob);
+    struct object {
+        long placeholder[ 10 ];
+    };
+    void __register_frame_info(const void *begin, struct object * ob);
     extern char __eh_frame[];
 
     static struct object ob;
-    __register_frame_info( __eh_frame, &ob );
+    __register_frame_info(__eh_frame, &ob);
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
 
     void (**p)(void);

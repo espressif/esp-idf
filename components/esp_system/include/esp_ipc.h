@@ -52,7 +52,6 @@ typedef void (*esp_ipc_func_t)(void* arg);
  */
 esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 
-
 /**
  * @brief Execute a callback on a given CPU until and block until it completes
  *

@@ -60,7 +60,7 @@ typedef enum {
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 
- __attribute__((weak)) void esp_clk_init(void)
+__attribute__((weak)) void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     soc_reset_reason_t rst_reas = esp_rom_get_reset_reason(0);
@@ -132,7 +132,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
     }
 
     // Re calculate the ccount to make time calculation correct.
-    esp_cpu_set_cycle_count( (uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz );
+    esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
 }
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
@@ -185,7 +185,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
             cal_val = rtc_clk_cal(RTC_CAL_RTC_MUX, SLOW_CLK_CAL_CYCLES);
         } else {
             const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
-            cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
+            cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
         }
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
@@ -308,7 +308,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     DPORT_REG_SET_FIELD(DPORT_BT_LPCK_DIV_INT_REG, DPORT_BT_LPCK_DIV_NUM, 0);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_8M);
     DPORT_SET_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_RTC_SLOW);
-
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);

@@ -43,7 +43,6 @@
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
 __attribute__((unused)) static struct timeval tv_start, tv_stop;
 
-
 static void check_sleep_reset(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
@@ -89,7 +88,6 @@ static void do_deep_sleep_timer(void)
 TEST_CASE_MULTIPLE_STAGES("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]",
                           do_deep_sleep_timer,
                           check_sleep_reset)
-
 
 static void do_light_sleep_deep_sleep_timer(void)
 {
@@ -155,7 +153,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
     esp_sleep_enable_timer_wakeup(1000);
     esp_timer_handle_t timer;
     esp_timer_create_args_t config = {
-            .callback = &timer_func,
+        .callback = &timer_func,
     };
     TEST_ESP_OK(esp_timer_create(&config, &timer));
     esp_timer_start_periodic(timer, 500);
@@ -179,7 +177,6 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 #define MAX_SLEEP_TIME_ERROR_US 100
 #endif
 
-
 TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
 {
     // don't power down XTAL — powering it up takes different time on
@@ -191,11 +188,11 @@ TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
     esp_light_sleep_start();
 
     const int sleep_intervals_ms[] = {
-            1, 1, 2, 3, 4, 5, 6, 7, 8, 10, 15,
-            20, 25, 50, 100, 200, 500,
+        1, 1, 2, 3, 4, 5, 6, 7, 8, 10, 15,
+        20, 25, 50, 100, 200, 500,
     };
 
-    const int sleep_intervals_count = sizeof(sleep_intervals_ms)/sizeof(sleep_intervals_ms[0]);
+    const int sleep_intervals_count = sizeof(sleep_intervals_ms) / sizeof(sleep_intervals_ms[0]);
     for (int i = 0; i < sleep_intervals_count; ++i) {
         uint64_t sleep_time = sleep_intervals_ms[i] * 1000;
         esp_sleep_enable_timer_wakeup(sleep_time);
@@ -206,19 +203,18 @@ TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
             int64_t stop_hs = esp_timer_get_time();
             uint64_t stop = esp_clk_rtc_time();
 
-            int diff_us = (int) (stop - start);
-            int diff_hs_us = (int) (stop_hs - start_hs);
-            printf("%lld %d\n", sleep_time, (int) (diff_us - sleep_time));
+            int diff_us = (int)(stop - start);
+            int diff_hs_us = (int)(stop_hs - start_hs);
+            printf("%lld %d\n", sleep_time, (int)(diff_us - sleep_time));
             int32_t threshold = MAX(sleep_time / 100, MAX_SLEEP_TIME_ERROR_US);
             TEST_ASSERT_INT32_WITHIN(threshold, sleep_time, diff_us);
             TEST_ASSERT_INT32_WITHIN(threshold, sleep_time, diff_hs_us);
             fflush(stdout);
         }
 
-        vTaskDelay(10/portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
-
 
 TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 {
@@ -270,10 +266,10 @@ static void check_sleep_reset_and_sleep(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("enter deep sleep more than once", "[deepsleep][reset=DEEPSLEEP_RESET,DEEPSLEEP_RESET,DEEPSLEEP_RESET]",
-        do_deep_sleep,
-        check_sleep_reset_and_sleep,
-        check_sleep_reset_and_sleep,
-        check_sleep_reset);
+                          do_deep_sleep,
+                          check_sleep_reset_and_sleep,
+                          check_sleep_reset_and_sleep,
+                          check_sleep_reset);
 
 static void do_abort(void)
 {
@@ -288,9 +284,9 @@ static void check_abort_reset_and_sleep(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abort,SW_CPU_RESET,DEEPSLEEP_RESET]",
-        do_abort,
-        check_abort_reset_and_sleep,
-        check_sleep_reset);
+                          do_abort,
+                          check_abort_reset_and_sleep,
+                          check_sleep_reset);
 
 #if SOC_RTC_FAST_MEM_SUPPORTED
 static RTC_DATA_ATTR uint32_t s_wake_stub_var;
@@ -319,10 +315,9 @@ static void check_wake_stub(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEEP_RESET]",
-        prepare_wake_stub,
-        check_wake_stub);
+                          prepare_wake_stub,
+                          check_wake_stub);
 #endif // SOC_RTC_FAST_MEM_SUPPORTED
-
 
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 
@@ -349,7 +344,7 @@ static void prepare_wake_stub_from_rtc(void)
        a memory capability (as it's an implementation detail). So to test this we need to allocate
        the stack statically.
     */
-   #define STACK_SIZE 1500
+#define STACK_SIZE 1500
 #if CONFIG_IDF_TARGET_ESP32S3
     uint8_t *sleep_stack = (uint8_t *)heap_caps_malloc(STACK_SIZE, MALLOC_CAP_RTCRAM);
     TEST_ASSERT((uint32_t)sleep_stack >= SOC_RTC_DRAM_LOW && (uint32_t)sleep_stack < SOC_RTC_DRAM_HIGH);
@@ -366,25 +361,25 @@ static void prepare_wake_stub_from_rtc(void)
 
     /* to make things extra sure, start a periodic timer to write to RTC FAST RAM at high frequency */
     const esp_timer_create_args_t timer_args = {
-                                          .callback = increment_rtc_memory_cb,
-                                          .arg = NULL,
-                                          .dispatch_method = ESP_TIMER_TASK,
-                                          .name = "Write RTC MEM"
+        .callback = increment_rtc_memory_cb,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "Write RTC MEM"
     };
     esp_timer_handle_t timer;
-    ESP_ERROR_CHECK( esp_timer_create(&timer_args, &timer) );
-    ESP_ERROR_CHECK( esp_timer_start_periodic(timer, 200) );
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 200));
 
     printf("Creating test task with stack %p\n", sleep_stack);
-    TEST_ASSERT_NOT_NULL(xTaskCreateStatic( (void *)prepare_wake_stub, "sleep", STACK_SIZE, NULL,
-                                            UNITY_FREERTOS_PRIORITY, sleep_stack, &sleep_task));
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic((void *)prepare_wake_stub, "sleep", STACK_SIZE, NULL,
+                                           UNITY_FREERTOS_PRIORITY, sleep_stack, &sleep_task));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_FAIL_MESSAGE("Should be asleep by now");
 }
 
 TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[deepsleep][reset=DEEPSLEEP_RESET]",
-        prepare_wake_stub_from_rtc,
-        check_wake_stub);
+                          prepare_wake_stub_from_rtc,
+                          check_wake_stub);
 
 #endif // CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 
@@ -395,7 +390,7 @@ __attribute__((unused)) static float get_time_ms(void)
     gettimeofday(&tv_stop, NULL);
 
     float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
-                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
+               (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     return fabs(dt);
 }
 
@@ -520,7 +515,7 @@ static void trigger_deepsleep(void)
     esp_set_time_from_rtc();
 
     // Delay for time error accumulation.
-    vTaskDelay(10000/portTICK_PERIOD_MS);
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
 
     // Save start time. Deep sleep.
     gettimeofday(&start, NULL);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,20 +49,20 @@ void esp_cache_err_int_init(void)
 
     if (core_id == PRO_CPU_NUM) {
         DPORT_SET_PERI_REG_MASK(DPORT_CACHE_IA_INT_EN_REG,
-            DPORT_CACHE_IA_INT_PRO_OPPOSITE |
-            DPORT_CACHE_IA_INT_PRO_DRAM1 |
-            DPORT_CACHE_IA_INT_PRO_DROM0 |
-            DPORT_CACHE_IA_INT_PRO_IROM0 |
-            DPORT_CACHE_IA_INT_PRO_IRAM0 |
-            DPORT_CACHE_IA_INT_PRO_IRAM1);
+                                DPORT_CACHE_IA_INT_PRO_OPPOSITE |
+                                DPORT_CACHE_IA_INT_PRO_DRAM1 |
+                                DPORT_CACHE_IA_INT_PRO_DROM0 |
+                                DPORT_CACHE_IA_INT_PRO_IROM0 |
+                                DPORT_CACHE_IA_INT_PRO_IRAM0 |
+                                DPORT_CACHE_IA_INT_PRO_IRAM1);
     } else {
         DPORT_SET_PERI_REG_MASK(DPORT_CACHE_IA_INT_EN_REG,
-            DPORT_CACHE_IA_INT_APP_OPPOSITE |
-            DPORT_CACHE_IA_INT_APP_DRAM1 |
-            DPORT_CACHE_IA_INT_APP_DROM0 |
-            DPORT_CACHE_IA_INT_APP_IROM0 |
-            DPORT_CACHE_IA_INT_APP_IRAM0 |
-            DPORT_CACHE_IA_INT_APP_IRAM1);
+                                DPORT_CACHE_IA_INT_APP_OPPOSITE |
+                                DPORT_CACHE_IA_INT_APP_DRAM1 |
+                                DPORT_CACHE_IA_INT_APP_DROM0 |
+                                DPORT_CACHE_IA_INT_APP_IROM0 |
+                                DPORT_CACHE_IA_INT_APP_IRAM0 |
+                                DPORT_CACHE_IA_INT_APP_IRAM1);
     }
     ESP_INTR_ENABLE(ETS_MEMACCESS_ERR_INUM);
 }
@@ -70,24 +70,24 @@ void esp_cache_err_int_init(void)
 int esp_cache_err_get_cpuid(void)
 {
     const uint32_t pro_mask =
-            DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1 |
-            DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0 |
-            DPORT_PRO_CPU_DISABLED_CACHE_IA_IROM0 |
-            DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM0 |
-            DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM1 |
-            DPORT_APP_CPU_DISABLED_CACHE_IA_OPPOSITE;
+        DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1 |
+        DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0 |
+        DPORT_PRO_CPU_DISABLED_CACHE_IA_IROM0 |
+        DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM0 |
+        DPORT_PRO_CPU_DISABLED_CACHE_IA_IRAM1 |
+        DPORT_APP_CPU_DISABLED_CACHE_IA_OPPOSITE;
 
     if (DPORT_GET_PERI_REG_MASK(DPORT_PRO_DCACHE_DBUG3_REG, pro_mask)) {
         return PRO_CPU_NUM;
     }
 
     const uint32_t app_mask =
-            DPORT_APP_CPU_DISABLED_CACHE_IA_DRAM1 |
-            DPORT_APP_CPU_DISABLED_CACHE_IA_DROM0 |
-            DPORT_APP_CPU_DISABLED_CACHE_IA_IROM0 |
-            DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM0 |
-            DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM1 |
-            DPORT_PRO_CPU_DISABLED_CACHE_IA_OPPOSITE;
+        DPORT_APP_CPU_DISABLED_CACHE_IA_DRAM1 |
+        DPORT_APP_CPU_DISABLED_CACHE_IA_DROM0 |
+        DPORT_APP_CPU_DISABLED_CACHE_IA_IROM0 |
+        DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM0 |
+        DPORT_APP_CPU_DISABLED_CACHE_IA_IRAM1 |
+        DPORT_PRO_CPU_DISABLED_CACHE_IA_OPPOSITE;
 
     if (DPORT_GET_PERI_REG_MASK(DPORT_APP_DCACHE_DBUG3_REG, app_mask)) {
         return APP_CPU_NUM;

@@ -24,5 +24,4 @@ void esp_eh_frame_print_backtrace(const void *frame_or);
 }
 #endif
 
-
 #endif // EH_FRAME_PARSER_H
