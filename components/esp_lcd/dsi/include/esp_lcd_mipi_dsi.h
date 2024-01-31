@@ -83,8 +83,12 @@ typedef struct {
     uint8_t virtual_channel;                   /*!< Virtual channel ID, index from 0 */
     mipi_dsi_dpi_clock_source_t dpi_clk_src;   /*!< MIPI DSI DPI clock source */
     uint32_t dpi_clock_freq_mhz;               /*!< DPI clock frequency in MHz */
-    lcd_color_rgb_pixel_format_t pixel_format; /*!< Pixel format */
+    lcd_color_rgb_pixel_format_t pixel_format; /*!< Pixel format that used by the MIPI LCD device */
     esp_lcd_video_timing_t video_timing;       /*!< Video timing */
+    /// Extra configuration flags for MIPI DSI DPI panel
+    struct extra_flags {
+        uint32_t use_dma2d: 1; /*!< Use DMA2D to copy user buffer to the frame buffer when necessary */
+    } flags;                   /*!< Extra configuration flags */
 } esp_lcd_dpi_panel_config_t;
 
 /**
@@ -97,6 +101,7 @@ typedef struct {
  *      - ESP_OK: Create MIPI DSI data panel successfully
  *      - ESP_ERR_INVALID_ARG: Create MIPI DSI data panel failed because of invalid argument
  *      - ESP_ERR_NO_MEM: Create MIPI DSI data panel failed because of out of memory
+ *      - ESP_ERR_NOT_SUPPORTED: Create MIPI DSI data panel failed because of unsupported feature
  *      - ESP_FAIL: Create MIPI DSI data panel failed because of other error
  */
 esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_panel_config_t *panel_config, esp_lcd_panel_handle_t *ret_panel);
@@ -104,14 +109,49 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
 /**
  * @brief Set pre-defined pattern to the screen for testing or debugging purpose
  *
- * @param[in] dbi_panel MIPI DBI panel handle, returned from `esp_lcd_new_panel_dpi`
+ * @param[in] dpi_panel MIPI DPI panel handle, returned from esp_lcd_new_panel_dpi()
  * @param[in] pattern Pattern type
  * @return
  *      - ESP_OK: Set pattern successfully
  *      - ESP_ERR_INVALID_ARG: Set pattern failed because of invalid argument
  *      - ESP_FAIL: Set pattern failed because of other error
  */
-esp_err_t esp_lcd_dpi_panel_set_pattern(esp_lcd_panel_handle_t dbi_panel, mipi_dsi_pattern_type_t pattern);
+esp_err_t esp_lcd_dpi_panel_set_pattern(esp_lcd_panel_handle_t dpi_panel, mipi_dsi_pattern_type_t pattern);
+
+/**
+ * @brief Type of LCD DPI panel event data
+ */
+typedef struct {
+} esp_lcd_dpi_panel_event_data_t;
+
+/**
+ * @brief Declare the prototype of the function that will be invoked when DPI panel finishes transferring color data
+ *
+ * @param[in] panel LCD panel handle, which is created by factory API like esp_lcd_new_panel_dpi()
+ * @param[in] edata DPI panel event data, fed by driver
+ * @param[in] user_ctx User data
+ * @return Whether a high priority task has been waken up by this function
+ */
+typedef bool (*esp_lcd_dpi_panel_color_trans_done_cb_t)(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx);
+
+/**
+ * @brief Type of LCD DPI panel callbacks
+ */
+typedef struct {
+    esp_lcd_dpi_panel_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
+} esp_lcd_dpi_panel_event_callbacks_t;
+
+/**
+ * @brief Register LCD DPI panel callbacks
+ *
+ * @param[in] dpi_panel LCD DPI panel handle, which is returned from esp_lcd_new_panel_dpi()
+ * @param[in] cbs structure with all LCD panel callbacks
+ * @param[in] user_ctx User private data, passed directly to callback's user_ctx
+ * @return
+ *      - ESP_ERR_INVALID_ARG: Register callbacks failed because of invalid argument
+ *      - ESP_OK: Register callbacks successfully
+ */
+esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_dpi_panel_event_callbacks_t *cbs, void *user_ctx);
 
 #ifdef __cplusplus
 }

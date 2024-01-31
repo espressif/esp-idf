@@ -14,6 +14,10 @@ set(includes "include" "interface")
 set(priv_requires "esp_mm" "esp_psram" "esp_pm" "esp_driver_spi" "esp_driver_i2s")
 set(public_requires "driver" "esp_driver_gpio" "esp_driver_i2c")
 
+if(CONFIG_SOC_DMA2D_SUPPORTED)
+    list(APPEND srcs "src/esp_async_fbcpy.c")
+endif()
+
 if(CONFIG_SOC_I2C_SUPPORTED)
     list(APPEND srcs "i2c/esp_lcd_panel_io_i2c_v1.c" "i2c/esp_lcd_panel_io_i2c_v2.c")
 endif()

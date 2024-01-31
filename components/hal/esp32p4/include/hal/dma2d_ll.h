@@ -69,6 +69,8 @@ extern "C" {
 // Peripheral selection ID register field width
 #define DMA2D_LL_CHANNEL_PERIPH_SEL_BIT_WIDTH      (3)
 
+#define DMA2D_LL_DESC_ALIGNMENT 8 // Descriptor must be aligned to 8 bytes
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 /**
  * @brief Enable the bus clock for 2D-DMA module
