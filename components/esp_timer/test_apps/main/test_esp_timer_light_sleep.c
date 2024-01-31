@@ -13,7 +13,7 @@
 #include "esp_rom_sys.h"
 #include "esp_sleep.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7528
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO Light Sleep support - IDF-7528
 
 static void timer_cb1(void *arg)
 {

@@ -71,11 +71,7 @@ examples/system/esp_timer:
   disable:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-7529
-  disable_test:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
-      temporary: true
-      reason: lack of runner
+      reason: Light Sleep support TBD # TODO: IDF-7528
   depends_components:
     - esp_timer
 
