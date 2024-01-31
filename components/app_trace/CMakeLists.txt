@@ -9,6 +9,11 @@ set(srcs
     "app_trace_util.c"
     "host_file_io.c")
 
+if(CONFIG_ESP_DEBUG_STUBS_ENABLE)
+    list(APPEND srcs
+        "debug_stubs.c")
+endif()
+
 if(CONFIG_APPTRACE_GCOV_ENABLE)
     if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
         list(APPEND srcs

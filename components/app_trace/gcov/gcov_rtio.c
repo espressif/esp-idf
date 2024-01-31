@@ -14,7 +14,7 @@
 #include "soc/timer_periph.h"
 #include "esp_app_trace.h"
 #include "esp_freertos_hooks.h"
-#include "esp_private/dbg_stubs.h"
+#include "dbg_stubs.h"
 #include "esp_ipc.h"
 #include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ESP32

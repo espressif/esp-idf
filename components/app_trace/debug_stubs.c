@@ -8,7 +8,8 @@
 // Currently one stub is used for GCOV functionality
 //
 
-#include "esp_private/dbg_stubs.h"
+#include "esp_private/startup_internal.h"
+#include "dbg_stubs.h"
 #include "esp_attr.h"
 
 /*
@@ -90,5 +91,11 @@ esp_err_t esp_dbg_stub_entry_get(esp_dbg_stub_id_t id, uint32_t *entry)
     }
     *entry = s_stub_entry[id];
 
+    return ESP_OK;
+}
+
+ESP_SYSTEM_INIT_FN(init_dbg_stubs, SECONDARY, BIT(0), 140)
+{
+    esp_dbg_stubs_init();
     return ESP_OK;
 }

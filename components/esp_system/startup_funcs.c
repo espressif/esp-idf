@@ -45,8 +45,6 @@
 #include "esp_core_dump.h"
 #endif
 
-#include "esp_private/dbg_stubs.h"
-
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
@@ -272,14 +270,6 @@ ESP_SYSTEM_INIT_FN(init_xt_wdt, CORE, BIT(0), 170)
     return esp_xt_wdt_init(&cfg);
 }
 #endif // CONFIG_ESP_XT_WDT
-
-#if CONFIG_ESP_DEBUG_STUBS_ENABLE
-ESP_SYSTEM_INIT_FN(init_dbg_stubs, SECONDARY, BIT(0), 200)
-{
-    esp_dbg_stubs_init();
-    return ESP_OK;
-}
-#endif // CONFIG_ESP_DEBUG_STUBS_ENABLE
 
 #if CONFIG_PM_ENABLE
 ESP_SYSTEM_INIT_FN(init_pm, SECONDARY, BIT(0), 201)
