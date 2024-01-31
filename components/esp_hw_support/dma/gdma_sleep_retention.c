@@ -23,7 +23,7 @@ static const char *TAG = "gdma";
 esp_err_t gdma_sleep_retention_init(int group_id, int pair_id)
 {
     sleep_retention_module_bitmap_t module = GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id);
-    esp_err_t err = sleep_retention_entries_create(gdma_chx_regs_retention[group_id][pair_id].link_list, gdma_chx_regs_retention[group_id][pair_id].link_num, REGDMA_LINK_PRI_7, module);
+    esp_err_t err = sleep_retention_entries_create(gdma_chx_regs_retention[group_id][pair_id].link_list, gdma_chx_regs_retention[group_id][pair_id].link_num, REGDMA_LINK_PRI_GDMA, module);
     if (err == ESP_OK) {
         ESP_LOGI(TAG, "GDMA pair (%d, %d) retention initialization", group_id, pair_id);
     }
