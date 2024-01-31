@@ -846,7 +846,8 @@ Following reason codes are renamed to their shorter form to wrap the table in pa
 
 .. list-table::
    :header-rows: 1
-   :widths: 5 10 52
+   :widths: 41 10 49
+   :class: longtable
 
    * - Reason code
      - Value
