@@ -54,7 +54,6 @@ components_not_formatted_temporary:
     - "/components/efuse/"
     - "/components/esp_coex/"
     - "/components/esp_eth/"
-    - "/components/esp_event/"
     - "/components/esp_gdbstub/"
     - "/components/esp_hid/"
     - "/components/esp_http_client/"
