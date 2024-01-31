@@ -74,6 +74,11 @@ void* memalign(size_t alignment, size_t n)
     return heap_caps_aligned_alloc_default(alignment, n);
 }
 
+void* aligned_alloc(size_t alignment, size_t n)
+{
+    return heap_caps_aligned_alloc_default(alignment, n);
+}
+
 int posix_memalign(void **out_ptr, size_t alignment, size_t size)
 {
     if (size == 0) {
