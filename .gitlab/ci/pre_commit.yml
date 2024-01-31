@@ -1,0 +1,47 @@
+.check_pre_commit_template:
+  extends:
+    - .before_script:minimal
+  stage: pre_check
+  image: $PRE_COMMIT_IMAGE
+  tags: [cache, shiny]
+  needs:
+    - pipeline_variables
+  variables:
+    # cache pre_commit
+    PRE_COMMIT_HOME: "$CI_PROJECT_DIR/.cache/pre-commit"
+  script:
+    - fetch_submodules
+    - pre-commit run --files $MODIFIED_FILES
+    - pre-commit run --hook-stage post-commit validate-sbom-manifest
+
+check_pre_commit_upload_cache:
+  extends:
+    - .check_pre_commit_template
+  rules:
+    - if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/) && $CI_PIPELINE_SOURCE == "push"'
+  cache:
+    - key: pre_commit-cache-${LATEST_GIT_TAG}
+      paths:
+        - .cache/pre-commit
+      policy: pull-push
+    - key: submodule-cache-${LATEST_GIT_TAG}
+      paths:
+        - .cache/submodule_archives
+      policy: pull
+
+check_pre_commit:
+  extends:
+    - .check_pre_commit_template
+  rules:
+    - if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/) && $CI_PIPELINE_SOURCE == "push"'
+      when: never
+    - when: on_success
+  cache:
+    - key: pre_commit-cache-${LATEST_GIT_TAG}
+      paths:
+        - .cache/pre-commit
+      policy: pull
+    - key: submodule-cache-${LATEST_GIT_TAG}
+      paths:
+        - .cache/submodule_archives
+      policy: pull

@@ -34,8 +34,7 @@ gen_integration_pipeline:
   image: ${CI_INTEGRATION_ASSIGN_ENV}
   stage: assign_test
   cache: []
-  tags:
-    - assign_test
+  tags: [fast_run, shiny]
   variables:
     SUBMODULES_TO_FETCH: "none"
     GIT_LFS_SKIP_SMUDGE: 1

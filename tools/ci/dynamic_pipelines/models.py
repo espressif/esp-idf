@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import inspect
 import typing as t
 from dataclasses import dataclass
@@ -83,7 +82,7 @@ class EmptyJob(Job):
     ) -> None:
         super().__init__(
             name=name or 'fake_pass_job',
-            tags=tags or ['build', 'shiny'],
+            tags=tags or ['fast_run', 'shiny'],
             stage=stage or 'build',
             script=['echo "This is a fake job to pass the pipeline"'],
             before_script=before_script or [],
