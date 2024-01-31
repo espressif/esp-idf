@@ -8,6 +8,8 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='lack of runners with usb_device tag')
 @pytest.mark.usb_device
 def test_usb_device_ncm_example(dut: Dut) -> None:
     netif_mac = dut.expect(r'Network interface HW address: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})')

@@ -114,8 +114,10 @@ if(CONFIG_SOC_IEEE802154_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
-    list(APPEND srcs "${target}/usb_periph.c"
-                     "${target}/usb_dwc_periph.c")
+    if(NOT ${target} STREQUAL "esp32p4")
+        list(APPEND srcs "${target}/usb_periph.c"
+                         "${target}/usb_dwc_periph.c")
+    endif()
 endif()
 
 if(CONFIG_SOC_DAC_SUPPORTED)

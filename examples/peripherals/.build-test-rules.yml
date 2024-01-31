@@ -421,24 +421,49 @@ examples/peripherals/uart/uart_echo_rs485:
   enable:
     - if: INCLUDE_DEFAULT == 1
 
-examples/peripherals/usb:
+examples/peripherals/usb/device:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
-
-examples/peripherals/usb/device:
-  enable:
-    - if: SOC_USB_OTG_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32s3"
+    - if: IDF_TARGET not in ["esp32s2"]
       temporary: true
-      reason: lack of runners
+      reason: lack of runners with usb_device tag
+  depends_components:
+    - usb
+  depends_filepatterns:
+    - examples/peripherals/usb/device/**/*
+
+examples/peripherals/usb/device/tusb_ncm:
+  disable:
+    - if: SOC_USB_OTG_SUPPORTED != 1 or SOC_WIFI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s2"]
+      temporary: true
+      reason: lack of runners with usb_device tag
+  depends_components:
+    - usb
+    - esp_wifi
+  depends_filepatterns:
+    - examples/peripherals/usb/device/tusb_ncm/**/*
+
+examples/peripherals/usb/host:
+  disable:
+    - if: SOC_USB_OTG_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s3"]
+      temporary: true
+      reason: lack of runners with usb_host_flash_disk tag
   depends_components:
     - usb
   depends_filepatterns:
     - components/hal/usb*.c
+    - components/hal/include/hal/usb*.h
     - components/hal/esp32*/include/hal/usb*.h
+    - components/soc/esp32*/usb*.c
+    - components/soc/include/soc/usb*.h
+    - components/soc/esp32*/include/soc/usb_dwc_*.h
+    - components/soc/esp32*/include/soc/usb_wrap_*.h
     - examples/peripherals/usb/host/**/*
-    - examples/peripherals/usb/device/**/*
 
 examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
   disable:

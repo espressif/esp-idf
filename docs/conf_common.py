@@ -109,9 +109,12 @@ USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_arch.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_design.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst',
-            'api-reference/peripherals/usb_host/usb_host_notes_index.rst',
-            'api-guides/usb-otg-console.rst',
-            'api-guides/dfu.rst']
+            'api-reference/peripherals/usb_host/usb_host_notes_index.rst']
+
+# TODO: Merge this back with `USB_DOCS` IDF-9919 IDF-9920 IDF-9133
+USB_OTG_DFU_DOCS = ['api-guides/dfu.rst']
+
+USB_OTG_CONSOLE_DOCS = ['api-guides/usb-otg-console.rst']
 
 FTDI_JTAG_DOCS = ['api-guides/jtag-debugging/configure-ft2232h-jtag.rst']
 
@@ -164,13 +167,13 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
                 'api-reference/peripherals/touch_element.rst',
-                'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
+                'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
-                'api-guides/RF_calibration.rst']
+                'api-guides/RF_calibration.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
