@@ -78,7 +78,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REG_SET_FIELD(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, HP_CALI_DBIAS);
     REG_SET_FIELD(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS, LP_CALI_DBIAS);
 
-    clk_ll_rc_fast_tick_conf();
+    clk_ll_rc_fast_tick_conf(); // TODO: IDF-8642 Unnecessary or not?
 
     soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_output_tx_wait_idle(0);

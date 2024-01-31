@@ -180,15 +180,6 @@ if(NOT BOOTLOADER_BUILD)
                 "port/esp_clk_tree_common.c"    # TODO: [ESP32C5] IDF-8638, IDF-8640
             )
     endif()
-    if(CONFIG_IDF_TARGET_ESP32C5)
-        list(REMOVE_ITEM srcs
-                "sleep_cpu.c"         # TODO: [ESP32C5] IDF-8638, IDF-8640
-                "sleep_modes.c"       # TODO: [ESP32C5] IDF-8638, IDF-8640
-                "sleep_wake_stub.c"   # TODO: [ESP32C5] IDF-8638, IDF-8640
-                "sleep_gpio.c"        # TODO: [ESP32C5] IDF-8638, IDF-8640
-                "port/esp_clk_tree_common.c"    # TODO: [ESP32C5] IDF-8638, IDF-8640
-            )
-    endif()
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")

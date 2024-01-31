@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,9 +16,9 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
     switch (cpu_clk_src) {
     case SOC_CPU_CLK_SRC_XTAL:
         return clk_hal_xtal_get_freq_mhz();
-    case SOC_CPU_CLK_SRC_PLL_F160:
+    case SOC_CPU_CLK_SRC_PLL_F160M:
         return CLK_LL_PLL_160M_FREQ_MHZ;
-    case SOC_CPU_CLK_SRC_PLL_F240:
+    case SOC_CPU_CLK_SRC_PLL_F240M:
         return CLK_LL_PLL_240M_FREQ_MHZ;
     case SOC_CPU_CLK_SRC_RC_FAST:
         return SOC_CLK_RC_FAST_FREQ_APPROX / MHZ;

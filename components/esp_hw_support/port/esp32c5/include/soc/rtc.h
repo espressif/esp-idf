@@ -134,7 +134,7 @@ typedef enum {
     RTC_CAL_RC32K = SOC_RTC_SLOW_CLK_SRC_RC32K,            //!< Internal 32kHz RC oscillator, as one type of 32k clock
     RTC_CAL_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,       //!< External 32kHz XTAL, as one type of 32k clock
     RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External slow clock signal input by lp_pad_gpio0, as one type of 32k clock
-    RTC_CAL_RC_FAST                                        //!< Internal 20MHz RC oscillator
+    // RTC_CAL_RC_FAST                                        //!< Internal 20MHz RC oscillator
 } rtc_cal_sel_t;
 
 /**
@@ -450,6 +450,10 @@ bool rtc_dig_8m_enabled(void);
  */
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
+
+// -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
+// **WARNING**: The following are only for backwards compatibility.
+// Please use the declarations in soc/clk_tree_defs.h instead.
 /**
  * @brief Possible main XTAL frequency values. TODO: To be removed!
  */

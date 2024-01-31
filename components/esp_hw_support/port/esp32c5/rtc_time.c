@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,13 +69,13 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     if (cal_clk == RTC_CAL_RTC_MUX) {
         cal_clk = (rtc_cal_sel_t)slow_clk_src;
     }
-    if (cal_clk == RTC_CAL_RC_FAST) {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_FAST;
-#if !CONFIG_IDF_TARGET_ESP32C5  // TODO: [ESP32C5] IDF-8642 Seems RC_SLOW can't be calibrated
-    } else if (cal_clk == RTC_CAL_RC_SLOW) {
-        cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_SLOW;
-#endif // !CONFIG_IDF_TARGET_ESP32C5
-    } else {
+    // TODO: [ESP32C5] IDF-8642 Seems RC_SLOW, RC_FAST can't be calibrated on beta3
+    // if (cal_clk == RTC_CAL_RC_FAST) {
+    //     cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_FAST;
+    // } else if (cal_clk == RTC_CAL_RC_SLOW) {
+    //     cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_RC_SLOW;
+    // } else
+    {
         cali_clk_sel = TIMG_RTC_CALI_CLK_SEL_32K;
         clk_ll_32k_calibration_set_target((soc_rtc_slow_clk_src_t)cal_clk);
     }
@@ -90,16 +90,16 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
             clk_ll_xtal32k_digi_enable();
     }
 
-    bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
-    bool dig_rc_fast_enabled = clk_ll_rc_fast_digi_is_enabled();
-    if (cal_clk == RTC_CAL_RC_FAST) {
-        if (!rc_fast_enabled) {
-            rtc_clk_8m_enable(true);
-        }
-        if (!dig_rc_fast_enabled) {
-            rtc_dig_clk8m_enable();
-        }
-    }
+    // bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
+    // bool dig_rc_fast_enabled = clk_ll_rc_fast_digi_is_enabled();
+    // if (cal_clk == RTC_CAL_RC_FAST) {
+    //     if (!rc_fast_enabled) {
+    //         rtc_clk_8m_enable(true);
+    //     }
+    //     if (!dig_rc_fast_enabled) {
+    //         rtc_dig_clk8m_enable();
+    //     }
+    // }
 
     bool rc32k_enabled = clk_ll_rc32k_is_enabled();
     bool dig_rc32k_enabled = clk_ll_rc32k_digi_is_enabled();
@@ -155,14 +155,12 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         if (GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)) {
             cal_val = REG_GET_FIELD(TIMG_RTCCALICFG1_REG(0), TIMG_RTC_CALI_VALUE);
 
-            /*The Fosc CLK of calibration circuit is divided by 32 for ECO1.
-              So we need to multiply the frequency of the Fosc for ECO1 and above chips by 32 times.
-              And ensure that this modification will not affect ECO0.*/
-            if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-                if (cal_clk == RTC_CAL_RC_FAST) {
-                    cal_val = cal_val >> 5;
-                }
-            }
+            // TODO: IDF-8642 Check whether this workaround still need for C5
+            // /*The Fosc CLK of calibration circuit is divided by 32.
+            //   So we need to multiply the frequency of the FOSC by 32 times.*/
+            // if (cal_clk == RTC_CAL_RC_FAST) {
+            //     cal_val = cal_val >> 5;
+            // }
             break;
         }
         if (GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT)) {
@@ -177,14 +175,14 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         clk_ll_xtal32k_digi_disable();
     }
 
-    if (cal_clk == RTC_CAL_RC_FAST) {
-        if (!dig_rc_fast_enabled) {
-            rtc_dig_clk8m_disable();
-        }
-        if (!rc_fast_enabled) {
-            rtc_clk_8m_enable(false);
-        }
-    }
+    // if (cal_clk == RTC_CAL_RC_FAST) {
+    //     if (!dig_rc_fast_enabled) {
+    //         rtc_dig_clk8m_disable();
+    //     }
+    //     if (!rc_fast_enabled) {
+    //         rtc_clk_8m_enable(false);
+    //     }
+    // }
 
     if (cal_clk == RTC_CAL_RC32K) {
         if (!dig_rc32k_enabled) {
@@ -214,14 +212,13 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
 
-    /*The Fosc CLK of calibration circuit is divided by 32 for ECO1.
-      So we need to divide the calibrate cycles of the FOSC for ECO1 and above chips by 32 to
-      avoid excessive calibration time.*/
-    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-        if (cal_clk == RTC_CAL_RC_FAST) {
-            slowclk_cycles = slowclk_cycles >> 5;
-        }
-    }
+    // TODO: IDF-8642 Check whether this workaround still need for C5
+    // /*The Fosc CLK of calibration circuit is divided by 32.
+    //   So we need to divide the calibrate cycles of the FOSC by 32 to
+    //   avoid excessive calibration time.*/
+    // if (cal_clk == RTC_CAL_RC_FAST) {
+    //     slowclk_cycles = slowclk_cycles >> 5;
+    // }
 
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
 

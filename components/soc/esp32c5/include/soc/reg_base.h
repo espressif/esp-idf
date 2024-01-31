@@ -70,6 +70,7 @@
  */
 #define DR_REG_MODEM_BASE                         0x600A4000
 #define DR_REG_MODEM_PWR_BASE                     0x600AD000
+#define DR_REG_I2C_ANA_MST_BASE                   0x600AF800
 
 /**
  * @brief LP System (RTC) Modules
