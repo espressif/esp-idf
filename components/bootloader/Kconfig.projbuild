@@ -293,8 +293,11 @@ menu "Bootloader config"
             If this option is not set (default), then rtc_wdt will be disabled by ESP-IDF before calling
             the app_main() function.
 
-            Use function rtc_wdt_feed() for resetting counter of rtc_wdt.
-            Use function rtc_wdt_disable() for disabling rtc_wdt.
+            Use function wdt_hal_feed() for resetting counter of RTC_WDT.
+            For esp32/s2 you can also use rtc_wdt_feed().
+
+            Use function wdt_hal_disable() for disabling RTC_WDT.
+            For esp32/s2 you can also use rtc_wdt_disable().
 
     config BOOTLOADER_WDT_TIME_MS
         int "Timeout for RTC watchdog (ms)"

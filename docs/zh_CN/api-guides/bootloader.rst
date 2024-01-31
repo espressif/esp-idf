@@ -129,14 +129,16 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 请参考 :doc:`OTA API 参考文档 </api-reference/system/ota>` 中的 :ref:`app_rollback` 和 :ref:`anti-rollback` 章节。
 
+.. _bootloader-watchdog:
+
 看门狗
 ----------
 
-默认情况下，硬件 RTC 看门狗定时器在引导加载程序运行时保持运行，如果 9 秒后没有应用程序成功启动，它将自动重置芯片。
+芯片配备两组看门狗定时器：主系统看门狗定时器 (MWDT_WDT) 和 RTC 看门狗定时器 (RTC_WDT)。芯片上电时，两组看门狗定时器都会被启用，但在引导加载程序中，两组看门狗定时器都会被禁用。设置 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` （默认设置）可以重新启用 RTC 看门狗定时器，用于跟踪从启用引导加载程序到调用用户主函数的时间。此期间内 RTC 看门狗定时器始终可用，并且如果在 9 秒内没有应用程序成功启动，则 RTC 看门狗定时器会自动重置芯片。这一功能可以有效防止启动过程中由于电源不稳定而导致的死机。
 
 - 可以通过设置 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 并重新编译引导加载程序来调整超时时间。
-- 可以通过调整应用程序的行为使 RTC 看门狗在应用程序启动后保持启用。看门狗需要由应用程序显示地重置（即“喂狗”），以避免重置。为此，请设置 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 选项，根据需要修改应用程序，然后重新编译应用程序。
 - 通过禁用 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` 设置并重新编译引导加载程序，可以在引导加载程序中禁用 RTC 看门狗，但并不建议这样做。
+- 请参阅 :ref:`app-hardware-watchdog-timers`，了解如何在应用程序中使用 RTC_WDT。
 
 .. _bootloader-size:
 
