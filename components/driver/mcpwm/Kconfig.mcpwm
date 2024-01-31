@@ -17,7 +17,7 @@ menu "MCPWM Configuration"
             Enabling this option can improve driver performance as well.
 
     config MCPWM_SUPPRESS_DEPRECATE_WARN
-        bool "Suppress leagcy driver deprecated warning"
+        bool "Suppress legacy driver deprecated warning"
         default n
         help
             Wether to suppress the deprecation warnings when using legacy MCPWM driver (driver/mcpwm.h).
