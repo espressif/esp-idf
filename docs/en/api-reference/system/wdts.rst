@@ -28,9 +28,9 @@ The chips have two groups of watchdog timers:
 
 .. list::
 
-    :not esp32c2: - Main System Watchdog Timer (``MWDT_WDT``) - used by Interrupt Watchdog Timer (``IWDT``) and Task Watchdog Timer (TWDT).
-    :esp32c2: - Main System Watchdog Timer (``MWDT_WDT``) - used by Interrupt Watchdog Timer (``IWDT``).
-    - RTC Watchdog Timer (``RTC_WDT``) - used to track the boot time from power-up until the user's main function (by default RTC Watchdog is disabled immediately before the user's main function).
+    :not esp32c2: - Main System Watchdog Timer (MWDT_WDT) - used by Interrupt Watchdog Timer (IWDT) and Task Watchdog Timer (TWDT).
+    :esp32c2: - Main System Watchdog Timer (MWDT_WDT) - used by Interrupt Watchdog Timer (IWDT).
+    - RTC Watchdog Timer (RTC_WDT) - used to track the boot time from power-up until the user's main function (by default RTC Watchdog is disabled immediately before the user's main function).
 
 Refer to the :ref:`bootloader-watchdog` section to understand how watchdogs are utilized in the bootloader.
 
@@ -38,12 +38,12 @@ The app's behaviour can be adjusted so the RTC Watchdog remains enabled after ap
 
 .. list::
 
-    - :cpp:func:`wdt_hal_disable`, see :ref:`hw-abstraction-hal-layer-disable-rtc-wdt`,
-    - :cpp:func:`wdt_hal_feed`, see :ref:`hw-abstraction-hal-layer-feed-rtc-wdt`,
-    :esp32 or esp32s2: - :cpp:func:`rtc_wdt_feed`,
-    :esp32 or esp32s2: - :cpp:func:`rtc_wdt_disable`.
+    - :cpp:func:`wdt_hal_disable`: see :ref:`hw-abstraction-hal-layer-disable-rtc-wdt`
+    - :cpp:func:`wdt_hal_feed`: see :ref:`hw-abstraction-hal-layer-feed-rtc-wdt`
+    :esp32 or esp32s2: - :cpp:func:`rtc_wdt_feed`
+    :esp32 or esp32s2: - :cpp:func:`rtc_wdt_disable`
 
-If ``RTC_WDT`` is not reset/disabled in time, the chip will be automatically reset. See :ref:`RTC-Watchdog-Timeout` for more information.
+If RTC_WDT is not reset/disabled in time, the chip will be automatically reset. See :ref:`RTC-Watchdog-Timeout` for more information.
 
 Interrupt Watchdog Timer (IWDT)
 -------------------------------
@@ -56,7 +56,7 @@ The purpose of the IWDT is to ensure that interrupt service routines (ISRs) are 
 - Critical Sections (also disables interrupts)
 - Other same/higher priority ISRs which block same/lower priority ISRs from running
 
-The IWDT utilizes the ``MWDT_WDT`` watchdog timer in {IDF_TARGET_IWDT_TIMER_GROUP} as its underlying hardware timer and leverages the FreeRTOS tick interrupt on each CPU to feed the watchdog timer. If the tick interrupt on a particular CPU is not run at within the IWDT timeout period, it is indicative that something is blocking ISRs from being run on that CPU (see the list of reasons above).
+The IWDT utilizes the MWDT_WDT watchdog timer in {IDF_TARGET_IWDT_TIMER_GROUP} as its underlying hardware timer and leverages the FreeRTOS tick interrupt on each CPU to feed the watchdog timer. If the tick interrupt on a particular CPU is not run at within the IWDT timeout period, it is indicative that something is blocking ISRs from being run on that CPU (see the list of reasons above).
 
 When the IWDT times out, the default action is to invoke the panic handler and display the panic reason as ``Interrupt wdt timeout on CPU0`` or ``Interrupt wdt timeout on CPU1`` (as applicable). Depending on the panic handler's configured behavior (see :ref:`CONFIG_ESP_SYSTEM_PANIC`), users can then debug the source of the IWDT timeout (via the backtrace, OpenOCD, gdbstub etc) or simply reset the chip (which may be preferred in a production environment).
 
@@ -90,7 +90,7 @@ The Task Watchdog Timer (TWDT) is used to monitor particular tasks, ensuring tha
 
 .. only:: not esp32c2
 
-    The TWDT is built around the ``MWDT_WDT`` watchdog timer in Timer Group 0. When a timeout occurs, an interrupt is triggered.
+    The TWDT is built around the MWDT_WDT watchdog timer in Timer Group 0. When a timeout occurs, an interrupt is triggered.
 
 .. only:: esp32c2
 

@@ -142,7 +142,7 @@ The following HAL function examples are selected from the Watchdog Timer HAL as 
 
 .. _hw-abstraction-hal-layer-disable-rtc-wdt:
 
-To disable RTC_WDT
+To Disable RTC_WDT
 ^^^^^^^^^^^^^^^^^^
 
 .. code-block:: c
@@ -154,7 +154,7 @@ To disable RTC_WDT
 
 .. _hw-abstraction-hal-layer-feed-rtc-wdt:
 
-To reset the RTC_WDT counter
+To Reset the RTC_WDT Counter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: c
