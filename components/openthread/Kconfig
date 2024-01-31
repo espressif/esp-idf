@@ -114,6 +114,7 @@ menu "OpenThread"
                 Select this to use the native 15.4 radio.
 
         config OPENTHREAD_RADIO_SPINEL_UART
+            select UART_ISR_IN_IRAM
             bool "Connect via UART"
             help
                 Select this to connect to a Radio Co-Processor via UART.
@@ -157,6 +158,7 @@ menu "OpenThread"
         default OPENTHREAD_RCP_UART
 
         config OPENTHREAD_RCP_UART
+            select UART_ISR_IN_IRAM
             bool "UART RCP"
             help
                 Select this to enable UART connection to host.
@@ -293,7 +295,7 @@ menu "OpenThread"
     config OPENTHREAD_UART_BUFFER_SIZE
         int "The uart received buffer size of openthread"
         depends on OPENTHREAD_ENABLED
-        default 256
+        default 768
         range 128 1024
         help
             Set the OpenThread UART buffer size.
