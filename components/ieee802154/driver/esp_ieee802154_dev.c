@@ -351,6 +351,8 @@ static IRAM_ATTR void next_operation(void)
 {
 #if !CONFIG_IEEE802154_TEST
     if (s_pending_tx.frame) {
+        // Here the driver needs to recover the setting of rx aborts, see function `ieee802154_transmit`.
+        ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
         ieee802154_transmit_internal(s_pending_tx.frame, s_pending_tx.cca);
         s_pending_tx.frame = NULL;
     } else
@@ -482,18 +484,18 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_RX);
 #if CONFIG_IEEE802154_TEST
         esp_ieee802154_receive_failed(rx_status);
-        next_operation();
 #endif
         break;
     case IEEE802154_RX_ABORT_BY_COEX_BREAK:
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_RX);
+#if CONFIG_IEEE802154_TEST
         esp_ieee802154_receive_failed(rx_status);
+#endif
         break;
     case IEEE802154_RX_ABORT_BY_ED_ABORT:
     case IEEE802154_RX_ABORT_BY_ED_COEX_REJECT:
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_ED || s_ieee802154_state == IEEE802154_STATE_CCA);
         esp_ieee802154_ed_failed(rx_status);
-        next_operation();
         break;
     case IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK:
@@ -503,7 +505,6 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
 #else
         esp_ieee802154_receive_failed(rx_status);
 #endif
-        next_operation();
         break;
     case IEEE802154_RX_ABORT_BY_ENHACK_SECURITY_ERROR:
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
@@ -512,11 +513,11 @@ static IRAM_ATTR void isr_handle_rx_abort(void)
 #else
         esp_ieee802154_receive_failed(rx_status);
 #endif
-        next_operation();
         break;
     default:
         IEEE802154_ASSERT(false);
     }
+    next_operation();
 }
 
 static IRAM_ATTR void isr_handle_tx_abort(void)
@@ -816,6 +817,7 @@ static inline esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool 
 esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
 {
 #if !CONFIG_IEEE802154_TEST
+    ieee802154_enter_critical();
     if ((s_ieee802154_state == IEEE802154_STATE_RX && ieee802154_ll_is_current_rx_frame())
         || s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK) {
         // If the current radio is processing an RX frame or sending an ACK, do not shut down the ongoing process.
@@ -824,8 +826,13 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
         s_pending_tx.frame = frame;
         s_pending_tx.cca = cca;
         IEEE802154_TX_DEFERRED_NUMS_UPDATE();
+        // Here we enable all rx interrupts due to the driver needs to know when the current RX has finished.
+        // Will recover the setting of rx abort in function `next_operation`.
+        ieee802154_ll_enable_rx_abort_events(IEEE802154_RX_ABORT_ALL);
+        ieee802154_exit_critical();
         return ESP_OK;
     }
+    ieee802154_exit_critical();
 #endif
     return ieee802154_transmit_internal(frame, cca);
 }

@@ -89,6 +89,7 @@ typedef enum {
 } ieee802154_ll_rx_abort_reason_t;
 
 typedef uint32_t ieee802154_ll_rx_abort_events;
+#define IEEE802154_RX_ABORT_ALL 0x7fffffff
 
 /**
  * @brief IEEE802154 transmission failed reason.
@@ -112,6 +113,7 @@ typedef enum {
 } ieee802154_ll_tx_abort_reason_t;
 
 typedef uint32_t ieee802154_ll_tx_abort_events;
+#define IEEE802154_TX_ABORT_ALL 0x7fffffff
 
 /**
  * @brief IEEE802154 CCA mode.
