@@ -376,6 +376,15 @@ menu "OpenThread"
         default n
         help
             Select this option to enable the OpenThread Radio Spinel for external protocol stack, such as Zigbee.
+
+    config OPENTHREAD_RX_ON_WHEN_IDLE
+        bool "Enable OpenThread radio capibility rx on when idle"
+        default y if !ESP_COEX_SW_COEXIST_ENABLE
+        default n if ESP_COEX_SW_COEXIST_ENABLE
+        help
+            Select this option to enable OpenThread radio capibility rx on when idle. Do not support this feature when
+            SW coexistence is enabled.
+
     menu "Thread Address Query Config"
         config OPENTHREAD_ADDRESS_QUERY_TIMEOUT
             int "Timeout value (in seconds) for a address notification response after sending an address query."

@@ -343,7 +343,11 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 {
-    return (otRadioCaps)(OT_RADIO_CAPS_ENERGY_SCAN | OT_RADIO_CAPS_RX_ON_WHEN_IDLE |
+//  FIXME: Remove `CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE` when JIRA: TZ-609 fixed.
+    return (otRadioCaps)(OT_RADIO_CAPS_ENERGY_SCAN |
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
+                        OT_RADIO_CAPS_RX_ON_WHEN_IDLE |
+#endif
                         OT_RADIO_CAPS_TRANSMIT_SEC | OT_RADIO_CAPS_RECEIVE_TIMING | OT_RADIO_CAPS_TRANSMIT_TIMING |
                         OT_RADIO_CAPS_ACK_TIMEOUT | OT_RADIO_CAPS_SLEEP_TO_TX);
 }
@@ -771,8 +775,10 @@ otError otPlatRadioSetChannelMaxTransmitPower(otInstance *aInstance, uint8_t aCh
     return OT_ERROR_NONE;
 }
 
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
 void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
 {
     OT_UNUSED_VARIABLE(aInstance);
     esp_ieee802154_set_rx_when_idle(aEnable);
 }
+#endif
