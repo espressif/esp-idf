@@ -65,6 +65,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
     bta_dm_cfg_coex_status,                 /* BTA_DM_API_CFG_COEX_ST_EVT */
 #endif
+    bta_dm_send_vendor_hci,                 /* BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT */
 #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_config_eir,                      /* BTA_DM_API_CONFIG_EIR_EVT */
     bta_dm_set_page_timeout,                /* BTA_DM_API_PAGE_TO_SET_EVT */
