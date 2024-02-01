@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "ulp_riscv_print.h"
+#include "ulp_riscv_utils.h"
 
 typedef struct {
     putc_fn_t putc; // Putc function of the underlying driver, e.g. UART
@@ -24,9 +25,14 @@ void ulp_riscv_print_str(const char *str)
         return;
     }
 
+    /* Perform the bit-banged UART operation in a critical section */
+    ULP_RISCV_ENTER_CRITICAL();
+
     for (int i = 0; str[i] != 0; i++) {
         s_print_ctx.putc(s_print_ctx.putc_ctx, str[i]);
     }
+
+    ULP_RISCV_EXIT_CRITICAL();
 }
 
 void ulp_riscv_print_hex(int h)
@@ -38,6 +44,9 @@ void ulp_riscv_print_hex(int h)
         return;
     }
 
+    /* Perform the bit-banged UART operation in a critical section */
+    ULP_RISCV_ENTER_CRITICAL();
+
     // Does not print '0x', only the digits (8 digits to print)
     for (x = 0; x < 8; x++) {
         c = (h >> 28) & 0xf; // extract the leftmost byte
@@ -48,4 +57,6 @@ void ulp_riscv_print_hex(int h)
         }
         h <<= 4; // move the 2nd leftmost byte to the left, to be extracted next
     }
+
+    ULP_RISCV_EXIT_CRITICAL();
 }
