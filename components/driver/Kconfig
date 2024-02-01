@@ -1,6 +1,8 @@
 menu "Driver Configurations"
 
-    menu "Legacy ADC Configuration"
+    orsource "./twai/Kconfig.twai"
+
+    menu "Legacy ADC Driver Configuration"
 
         config ADC_DISABLE_DAC
             depends on SOC_DAC_SUPPORTED
@@ -58,10 +60,18 @@ menu "Driver Configurations"
                     If you want to continue using the legacy driver, and don't want to see related
                     deprecation warnings, you can enable this option.
 
-        endmenu
+        endmenu # Legacy ADC Calibration Configuration
+    endmenu  # Legacy ADC Driver Configuration
 
-    endmenu  # ADC Configuration
-
-    orsource "./twai/Kconfig.twai"
+    menu "Legacy MCPWM Driver Configurations"
+        depends on SOC_MCPWM_SUPPORTED
+        config MCPWM_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy MCPWM driver (driver/mcpwm.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy MCPWM Driver Configurations
 
 endmenu  # Driver configurations
