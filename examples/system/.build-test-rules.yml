@@ -236,6 +236,13 @@ examples/system/pthread:
   depends_components:
     - pthread
 
+examples/system/rt_mqueue:
+  disable_test:
+    - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
+      reason: no target specific functionality, testing on a single target is sufficient
+  depends_components:
+    - rt
+
 examples/system/select:
   disable:
     - if: IDF_TARGET != "esp32c3" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")

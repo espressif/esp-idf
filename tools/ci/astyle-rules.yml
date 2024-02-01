@@ -152,6 +152,8 @@ components_not_formatted_permanent:
     - "/components/app_trace/sys_view/Config/"
     - "/components/app_trace/sys_view/Sample/"
     - "/components/app_trace/sys_view/SEGGER/"
+    # FreeRTOS-Plux-POSIX files (upstream source code)
+    - "/components/rt/"
     # SoC header files (generated)
     - "/components/soc/*/include/soc/"
     # Example resource files (generated)
