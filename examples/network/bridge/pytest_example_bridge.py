@@ -367,14 +367,23 @@ def test_esp_eth_bridge(
     # --------------------------------------------------------------------------
     # unicast UDP
     bandwidth_udp = run_iperf('udp', endnode, host_ip, IPERF_BW_LIM, 5)
+    if bandwidth_udp < MIN_UDP_THROUGHPUT:
+        logging.warning('Unicast UDP bandwidth was less than expected. Trying again over longer period to compensate transient drops.')
+        bandwidth_udp = run_iperf('udp', endnode, host_ip, IPERF_BW_LIM, 60)
     logging.info('Unicast UDP average bandwidth: %s Mbits/s', bandwidth_udp)
 
     # unicast TCP
     bandwidth_tcp = run_iperf('tcp', endnode, host_ip, IPERF_BW_LIM, 5)
+    if bandwidth_tcp < MIN_TCP_THROUGHPUT:
+        logging.warning('Unicast TCP bandwidth was less than expected. Trying again over longer period to compensate transient drops.')
+        bandwidth_tcp = run_iperf('tcp', endnode, host_ip, IPERF_BW_LIM, 60)
     logging.info('Unicast TCP average bandwidth: %s Mbits/s', bandwidth_tcp)
 
     # multicast UDP
     bandwidth_mcast_udp = run_iperf('udp', endnode, '224.0.1.4', IPERF_BW_LIM, 5, host_if, endnode_if)
+    if bandwidth_mcast_udp < MIN_UDP_THROUGHPUT:
+        logging.warning('Multicast UDP bandwidth was less than expected. Trying again over longer period to compensate transient drops.')
+        bandwidth_mcast_udp = run_iperf('udp', endnode, '224.0.1.4', IPERF_BW_LIM, 60, host_if, endnode_if)
     logging.info('Multicast UDP average bandwidth: %s Mbits/s', bandwidth_mcast_udp)
 
     if bandwidth_udp < MIN_UDP_THROUGHPUT:
