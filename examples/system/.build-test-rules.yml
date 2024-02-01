@@ -11,10 +11,6 @@ examples/system/base_mac_address:
     - esp_hw_support
 
 examples/system/console/advanced:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8078
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: Sufficient to run this app on one chip with each architecture
@@ -30,10 +26,6 @@ examples/system/console/advanced_usb_cdc:
     - vfs
 
 examples/system/console/basic:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported on p4 # TODO: IDF-8078
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: Sufficient to run this app on one chip with each architecture
@@ -43,9 +35,7 @@ examples/system/console/basic:
 
 examples/system/deep_sleep:
   disable:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-7529
+    - if: SOC_DEEP_SLEEP_SUPPORTED != 1
 
 examples/system/deep_sleep_wake_stub:
   disable:
@@ -63,9 +53,7 @@ examples/system/efuse:
 
 examples/system/esp_timer:
   disable:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: Light Sleep support TBD # TODO: IDF-7528
+    - if: SOC_LIGHT_SLEEP_SUPPORTED != 1
   depends_components:
     - esp_timer
 
@@ -134,9 +122,7 @@ examples/system/ipc/ipc_isr/xtensa:
 
 examples/system/light_sleep:
   disable:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet
+    - if: SOC_LIGHT_SLEEP_SUPPORTED != 1
 
 examples/system/ota/advanced_https_ota:
   disable:

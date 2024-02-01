@@ -86,6 +86,8 @@
 // #define SOC_RNG_SUPPORTED               1  //TODO: IDF-6522
 #define SOC_MULTI_USAGE_LDO_SUPPORTED   1
 // #define SOC_PPA_SUPPORTED               1  //TODO: IDF-6878
+// #define SOC_LIGHT_SLEEP_SUPPORTED       1  //TODO: IDF-7528
+// #define SOC_DEEP_SLEEP_SUPPORTED        1  //TODO: IDF-7529
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
