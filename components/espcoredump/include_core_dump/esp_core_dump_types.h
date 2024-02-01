@@ -19,7 +19,7 @@ extern "C" {
 #include "core_dump_checksum.h"
 
 #if CONFIG_ESP_COREDUMP_LOGS
-#define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { esp_rom_printf((format), esp_log_early_timestamp(), (const char *)TAG, ##__VA_ARGS__); }
+#define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { esp_rom_printf((format), esp_log_early_timestamp(), (const char *)TAG, LOG_ADDITIONAL_ARGS, ##__VA_ARGS__); }
 #else
 #define ESP_COREDUMP_LOG( level, format, ... )  // dummy define doing nothing
 #endif
