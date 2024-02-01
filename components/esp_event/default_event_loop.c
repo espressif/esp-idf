@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,14 +15,14 @@ static esp_event_loop_handle_t s_default_loop = NULL;
 /* ---------------------------- Public API ---------------------------------- */
 
 esp_err_t esp_event_handler_register(esp_event_base_t event_base, int32_t event_id,
-        esp_event_handler_t event_handler, void* event_handler_arg)
+                                     esp_event_handler_t event_handler, void* event_handler_arg)
 {
     if (s_default_loop == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
 
     return esp_event_handler_register_with(s_default_loop, event_base, event_id,
-            event_handler, event_handler_arg);
+                                           event_handler, event_handler_arg);
 }
 
 esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base,
@@ -44,14 +44,14 @@ esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base,
 }
 
 esp_err_t esp_event_handler_unregister(esp_event_base_t event_base, int32_t event_id,
-        esp_event_handler_t event_handler)
+                                       esp_event_handler_t event_handler)
 {
     if (s_default_loop == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
 
     return esp_event_handler_unregister_with(s_default_loop, event_base, event_id,
-            event_handler);
+                                             event_handler);
 }
 
 esp_err_t esp_event_handler_instance_unregister(esp_event_base_t event_base,
@@ -66,30 +66,28 @@ esp_err_t esp_event_handler_instance_unregister(esp_event_base_t event_base,
 }
 
 esp_err_t esp_event_post(esp_event_base_t event_base, int32_t event_id,
-        const void* event_data, size_t event_data_size, TickType_t ticks_to_wait)
+                         const void* event_data, size_t event_data_size, TickType_t ticks_to_wait)
 {
     if (s_default_loop == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
 
     return esp_event_post_to(s_default_loop, event_base, event_id,
-            event_data, event_data_size, ticks_to_wait);
+                             event_data, event_data_size, ticks_to_wait);
 }
-
 
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
 esp_err_t esp_event_isr_post(esp_event_base_t event_base, int32_t event_id,
-        const void* event_data, size_t event_data_size, BaseType_t* task_unblocked)
+                             const void* event_data, size_t event_data_size, BaseType_t* task_unblocked)
 {
     if (s_default_loop == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
 
     return esp_event_isr_post_to(s_default_loop, event_base, event_id,
-            event_data, event_data_size, task_unblocked);
+                                 event_data, event_data_size, task_unblocked);
 }
 #endif
-
 
 esp_err_t esp_event_loop_create_default(void)
 {

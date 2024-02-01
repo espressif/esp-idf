@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -208,11 +208,11 @@ esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop,
  *  - Others: Fail
  */
 esp_err_t esp_event_handler_instance_register_with(esp_event_loop_handle_t event_loop,
-                                                  esp_event_base_t event_base,
-                                                  int32_t event_id,
-                                                  esp_event_handler_t event_handler,
-                                                  void *event_handler_arg,
-                                                  esp_event_handler_instance_t *instance);
+                                                   esp_event_base_t event_base,
+                                                   int32_t event_id,
+                                                   esp_event_handler_t event_handler,
+                                                   void *event_handler_arg,
+                                                   esp_event_handler_instance_t *instance);
 
 /**
  * @brief Register an instance of event handler to the default loop.
@@ -243,10 +243,10 @@ esp_err_t esp_event_handler_instance_register_with(esp_event_loop_handle_t event
  *  - Others: Fail
  */
 esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base,
-                                             int32_t event_id,
-                                             esp_event_handler_t event_handler,
-                                             void *event_handler_arg,
-                                             esp_event_handler_instance_t *instance);
+                                              int32_t event_id,
+                                              esp_event_handler_t event_handler,
+                                              void *event_handler_arg,
+                                              esp_event_handler_instance_t *instance);
 
 /**
  * @brief Unregister a handler with the system event loop (legacy).
