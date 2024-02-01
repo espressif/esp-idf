@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@ static void task_event_group_call_response(void *param)
     for (int i = 0; i < COUNT; i++) {
         /* Wait until the common "call" bit is set, starts off all tasks
            (clear on return) */
-        TEST_ASSERT( xEventGroupWaitBits(eg, BIT_CALL(task_num), true, false, portMAX_DELAY) );
+        TEST_ASSERT(xEventGroupWaitBits(eg, BIT_CALL(task_num), true, false, portMAX_DELAY));
 
         /* Set our individual "response" bit */
         xEventGroupSetBits(eg, BIT_RESPONSE(task_num));
@@ -78,7 +78,7 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
 
     /* Ensure all tasks have suspend themselves */
     for (int c = 0; c < NUM_TASKS; c++) {
-        TEST_ASSERT( xSemaphoreTake(done_sem, 100 / portTICK_PERIOD_MS) );
+        TEST_ASSERT(xSemaphoreTake(done_sem, 100 / portTICK_PERIOD_MS));
     }
 
     for (int c = 0; c < NUM_TASKS; c++) {
@@ -120,12 +120,12 @@ TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
 
     for (int c = 0; c < NUM_TASKS; c++) {
         printf("Waiting on %d (0x%08x)\n", c, BIT_RESPONSE(c));
-        TEST_ASSERT( xEventGroupWaitBits(eg, BIT_RESPONSE(c), false, false, portMAX_DELAY) );
+        TEST_ASSERT(xEventGroupWaitBits(eg, BIT_RESPONSE(c), false, false, portMAX_DELAY));
     }
 
     /* Ensure all tasks cleaned up correctly */
     for (int c = 0; c < NUM_TASKS; c++) {
-        TEST_ASSERT( xSemaphoreTake(done_sem, 100 / portTICK_PERIOD_MS) );
+        TEST_ASSERT(xSemaphoreTake(done_sem, 100 / portTICK_PERIOD_MS));
     }
 
     vSemaphoreDelete(done_sem);

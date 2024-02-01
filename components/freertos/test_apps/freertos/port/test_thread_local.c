@@ -25,7 +25,6 @@
 #define GET_THREADPTR(tp_dest)  do { register uint32_t _tp asm("tp"); tp_dest = _tp; } while(0)
 #endif
 
-
 static __thread int tl_test_var1;
 static __thread uint8_t tl_test_var2 = 55;
 static __thread uint16_t tl_test_var3 = 44;

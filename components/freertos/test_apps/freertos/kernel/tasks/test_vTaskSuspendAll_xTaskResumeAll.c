@@ -637,7 +637,6 @@ TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
     vTaskDelay(10);
 }
 
-
 /* ---------------------------------------------------------------------------------------------------------------------
 Test xTaskSuspendAll on both cores pends all tasks and xTaskResumeAll on both cores resumes all tasks
 
@@ -790,7 +789,7 @@ void test_blocked_task(void *arg)
     has_run = false;
 
     // Got to blocked state
-    vTaskDelay( TEST_BLOCKED_TASK_DELAY_MS / portTICK_PERIOD_MS );
+    vTaskDelay(TEST_BLOCKED_TASK_DELAY_MS / portTICK_PERIOD_MS);
 
     // Mark when this task runs
     has_run = true;
