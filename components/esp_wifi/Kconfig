@@ -498,7 +498,7 @@ menu "Wi-Fi"
             bool "Enable EAP-TLS v1.3 Support for WiFi Enterprise connection"
             default n
             select MBEDTLS_SSL_PROTO_TLS1_3
-            depends on ESP_WIFI_MBEDTLS_TLS_CLIENT
+            depends on ESP_WIFI_MBEDTLS_TLS_CLIENT && IDF_EXPERIMENTAL_FEATURES
             help
                 Select this option to support EAP with TLS v1.3.
                 This configuration still supports compatibility with EAP-TLS v1.2.

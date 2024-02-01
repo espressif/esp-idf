@@ -627,3 +627,4 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_SPIRAM_SPEED_120M && CONFIG_SPIRAM_MODE_OCT
             - CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
             - CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL
+            - CONFIG_ESP_WIFI_EAP_TLS1_3
