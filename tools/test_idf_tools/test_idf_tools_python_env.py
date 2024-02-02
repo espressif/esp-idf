@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 # NOTE: unittest is by default sorting tests based on their names,
 # so the order if which the tests are started may be different from
 # the order in which they are defined. Please make sure all tests
@@ -9,7 +8,6 @@
 # If test needs to change global state, it should return it to the
 # original state after it's finished. For more information please see
 # https://docs.python.org/3/library/unittest.html#organizing-test-code
-
 import inspect
 import os
 import shutil
@@ -29,11 +27,12 @@ IDF_PATH = os.environ.get('IDF_PATH', '../..')
 TOOLS_DIR = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF_TOOLS_PATH_DEFAULT)
 PYTHON_DIR = os.path.join(TOOLS_DIR, 'python_env')
 PYTHON_DIR_BACKUP = tempfile.mkdtemp()
+PYTHON_BINARY = os.path.join('Scripts', 'python.exe') if sys.platform == 'win32' else os.path.join('bin', 'python')
 REQ_SATISFIED = 'Python requirements are satisfied'
-REQ_MISSING = "'{}' - was not found and is required by the application"
+REQ_MISSING = "{}' - was not found and is required by the application"
 REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
 REQ_GDBGUI = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.gdbgui.txt'))
-CONSTR = 'Constraint file: {}/espidf.constraints'.format(TOOLS_DIR)
+CONSTR = 'Constraint file: {}'.format(os.path.join(TOOLS_DIR, 'espidf.constraints'))
 
 # Set default global paths for idf_tools. If some test needs to
 # use functions from idf_tools with custom paths, it should
@@ -183,7 +182,7 @@ class TestPythonInstall(BasePythonInstall):
     def test_default_arguments(self):  # type: () -> None
         output = self.run_idf_tools(['check-python-dependencies'])
         self.assertNotIn(REQ_SATISFIED, output)
-        self.assertIn('bin/python doesn\'t exist', output)
+        self.assertIn(f'{PYTHON_BINARY} doesn\'t exist', output)
 
         output = self.run_idf_tools(['install-python-env'])
         self.assertIn(CONSTR, output)
@@ -232,7 +231,7 @@ class TestCustomPythonPathInstall(BasePythonInstall):
 
     def test_default_arguments(self):  # type: () -> None
         output = self.run_idf_tools(['check-python-dependencies'])
-        self.assertIn(f"{self.CUSTOM_PYTHON_DIR}/bin/python doesn't exist", output)
+        self.assertIn(f"{os.path.join(self.CUSTOM_PYTHON_DIR, PYTHON_BINARY)} doesn't exist", output)
         self.assertNotIn(PYTHON_DIR, output)
 
         output = self.run_idf_tools(['install-python-env'])
