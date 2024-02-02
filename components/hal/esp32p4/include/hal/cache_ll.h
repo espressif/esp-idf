@@ -26,6 +26,12 @@ extern "C" {
 #define CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) ((intptr_t)(addr) + SOC_NON_CACHEABLE_OFFSET)
 
 /**
+ * @brief Given a non-cacheable address, get the corresponding L2MEM cached address
+ * @example 0x8FF0_0000 => 0x4FF0_0000
+ */
+#define CACHE_LL_L2MEM_CACHE_ADDR(non_cache_addr) ((intptr_t)(non_cache_addr) - SOC_NON_CACHEABLE_OFFSET)
+
+/**
  * Cache capabilities
  */
 #define CACHE_LL_ENABLE_DISABLE_STATE_SW            1   //There's no register indicating cache enable/disable state, we need to use software way for this state.
@@ -43,7 +49,6 @@ extern "C" {
 
 //TODO: IDF-7515
 #define CACHE_LL_L1_ACCESS_EVENT_MASK               (0x3f)
-
 
 /*------------------------------------------------------------------------------
  * Autoload

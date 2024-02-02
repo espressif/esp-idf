@@ -364,6 +364,18 @@ dw_gdma_lli_handle_t dw_gdma_link_list_get_item(dw_gdma_link_list_handle_t list,
 esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, dw_gdma_block_transfer_config_t *config);
 
 /**
+ * @brief Set the next link list item for a given DMA link list item
+ *
+ * @param[in] lli Link list item
+ * @param[in] next Next link list item
+ * @return
+ *      - ESP_OK: Set next link list item successfully
+ *      - ESP_ERR_INVALID_ARG: Set next link list item failed because of invalid argument
+ *      - ESP_FAIL: Set next link list item failed because of other error
+ */
+esp_err_t dw_gdma_lli_set_next(dw_gdma_lli_handle_t lli, dw_gdma_lli_handle_t next);
+
+/**
  * @brief Markers of a DW_GDMA block
  */
 typedef struct {
