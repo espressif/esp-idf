@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <sys/time.h>
+#include "esp_rom_caps.h"
 #include "lp_core_test_app.h"
 #include "lp_core_test_app_counter.h"
 #include "lp_core_test_app_set_timer_wakeup.h"
@@ -215,6 +216,10 @@ TEST_CASE("LP Timer can wakeup lp core periodically", "[lp_core]")
     ulp_lp_core_cfg_t cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
         .lp_timer_sleep_duration_us = LP_TIMER_TEST_SLEEP_DURATION_US,
+#if ESP_ROM_HAS_LP_ROM
+        /* ROM Boot takes quite a bit longer, which skews the numbers of wake-ups. skip rom boot to keep the calculation simple */
+        .skip_lp_rom_boot = true,
+#endif
     };
 
     load_and_start_lp_core_firmware(&cfg, lp_core_main_counter_bin_start, lp_core_main_counter_bin_end);
@@ -273,6 +278,10 @@ TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
     /* Load ULP firmware and start the coprocessor */
     ulp_lp_core_cfg_t cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
+#if ESP_ROM_HAS_LP_ROM
+        /* ROM Boot takes quite a bit longer, which skews the numbers of wake-ups. skip rom boot to keep the calculation simple */
+        .skip_lp_rom_boot = true,
+#endif
     };
 
     load_and_start_lp_core_firmware(&cfg, lp_core_main_set_timer_wakeup_bin_start, lp_core_main_set_timer_wakeup_bin_end);

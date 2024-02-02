@@ -20,7 +20,7 @@
 #if CONFIG_IDF_TARGET_ESP32C6
 #define LP_CORE_CPU_FREQUENCY_HZ 16000000
 #elif CONFIG_IDF_TARGET_ESP32P4
-#define LP_CORE_CPU_FREQUENCY_HZ 20000000
+#define LP_CORE_CPU_FREQUENCY_HZ 16000000 // TRM says 20 MHz by default, but we tune it closer to 16 MHz
 #endif
 
 static uint32_t lp_wakeup_cause = 0;
@@ -108,7 +108,7 @@ void ulp_lp_core_delay_cycles(uint32_t cycles)
 
 void ulp_lp_core_halt(void)
 {
-    REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_SLEEP_REQ, 1);
+    lp_core_ll_request_sleep();
 
     while (1);
 }
@@ -116,8 +116,8 @@ void ulp_lp_core_halt(void)
 void ulp_lp_core_stop_lp_core(void)
 {
     /* Disable wake-up source and put lp core to sleep */
-    REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_WAKEUP_EN, 0);
-    REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_SLEEP_REQ, 1);
+    lp_core_ll_set_wakeup_source(0);
+    lp_core_ll_request_sleep();
 }
 
 void __attribute__((noreturn)) abort(void)
