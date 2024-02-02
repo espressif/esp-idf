@@ -1,4 +1,6 @@
 menu "LCD and Touch Panel"
+    comment "LCD Touch Drivers are maintained in the IDF Component Registry"
+
     menu "LCD Peripheral Configuration"
         config LCD_PANEL_IO_FORMAT_BUF_SIZE
             int "LCD panel io format buffer size"
