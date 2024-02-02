@@ -3262,4 +3262,29 @@ typedef StaticStreamBuffer_t StaticMessageBuffer_t;
 #endif
 /* *INDENT-ON* */
 
+/*-----------------------------------------------------------
+* IDF Compatibility
+*----------------------------------------------------------*/
+
+#ifdef ESP_PLATFORM
+
+/*
+ * Include ESP-IDF API additions implicitly for compatibility reasons.
+ *
+ * ESP-IDF API additions were previously added directly to FreeRTOS headers
+ * (e.g., task.h, queue.h). These APIs have now been moved to
+ * idf_additions.h.
+ *
+ * To ensure there are no breaking changes, we include idf_additions.h
+ * implicitly here so that those API additions are still accessible. Given
+ * that FreeRTOS.h must be included first before calling any FreeRTOS API,
+ * any existing source code can continue using these relocated APIs without
+ * any additional header inclusions via this implicit inclusion.
+ *
+ * Todo: Deprecate this implicit inclusion by ESP-IDF v6.0 (IDF-8126)
+ */
+    #include "freertos/idf_additions.h"
+
+#endif /* ESP_PLATFORM */
+
 #endif /* INC_FREERTOS_H */

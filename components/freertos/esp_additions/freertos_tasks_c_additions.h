@@ -440,7 +440,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 }
 /*----------------------------------------------------------*/
 
-#if ( INCLUDE_xTaskGetIdleTaskHandle == 1 )
+#if ( ( !CONFIG_FREERTOS_SMP ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
     TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID )
     {
@@ -451,10 +451,10 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         return xIdleTaskHandle[ xCoreID ];
     }
 
-#endif /* INCLUDE_xTaskGetIdleTaskHandle */
+#endif /* ( ( !CONFIG_FREERTOS_SMP ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
 /*----------------------------------------------------------*/
 
-#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) )
+#if ( ( !CONFIG_FREERTOS_SMP ) && ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) )
 
     TaskHandle_t xTaskGetCurrentTaskHandleForCore( BaseType_t xCoreID )
     {
@@ -478,7 +478,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         return xReturn;
     }
 
-#endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
+#endif /* ( ( !CONFIG_FREERTOS_SMP ) && ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) ) */
 /*----------------------------------------------------------*/
 
 #if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
@@ -743,7 +743,11 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
 
                         if( xYieldRequired != pdFALSE )
                         {
-                            taskYIELD_IF_USING_PREEMPTION();
+                            #if CONFIG_FREERTOS_SMP
+                                taskYIELD_TASK_CORE_IF_USING_PREEMPTION( pxTCB );
+                            #else
+                                taskYIELD_IF_USING_PREEMPTION();
+                            #endif
                         }
                     }
                 }
@@ -849,16 +853,8 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
         }
         else
         {
-            /* We have a task; return its reentrant struct. */
-            #if ( CONFIG_FREERTOS_SMP )
-            {
-                ret = &pxCurTask->xNewLib_reent;
-            }
-            #else /* CONFIG_FREERTOS_SMP */
-            {
-                ret = &pxCurTask->xTLSBlock;
-            }
-            #endif /* CONFIG_FREERTOS_SMP */
+            /* We have a currently executing task. Return its reentrant struct. */
+            ret = &pxCurTask->xTLSBlock;
         }
 
         return ret;

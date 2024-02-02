@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,17 +131,21 @@
  */
 BaseType_t xTaskGetCoreID( TaskHandle_t xTask );
 
+#if ( ( !CONFIG_FREERTOS_SMP ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+
 /**
  * @brief Get the handle of idle task for the given core.
  *
  * [refactor-todo] See if this needs to be deprecated (IDF-8145)
  *
- * @note If CONFIG_FREERTOS_SMP is enabled, please call xTaskGetIdleTaskHandle()
- * instead.
  * @param xCoreID The core to query
  * @return Handle of the idle task for the queried core
  */
-TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID );
+    TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID );
+
+#endif /* ( ( !CONFIG_FREERTOS_SMP ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+
+#if ( ( !CONFIG_FREERTOS_SMP ) && ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) )
 
 /**
  * @brief Get the handle of the task currently running on a certain core
@@ -152,13 +156,12 @@ TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID );
  *
  * [refactor-todo] See if this needs to be deprecated (IDF-8145)
  *
- * @note If CONFIG_FREERTOS_SMP is enabled, please call xTaskGetCurrentTaskHandleCPU()
- * instead.
  * @param xCoreID The core to query
  * @return Handle of the current task running on the queried core
  */
-TaskHandle_t xTaskGetCurrentTaskHandleForCore( BaseType_t xCoreID );
+    TaskHandle_t xTaskGetCurrentTaskHandleForCore( BaseType_t xCoreID );
 
+#endif /* ( ( !CONFIG_FREERTOS_SMP ) && ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) ) */
 
 #if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
