@@ -88,6 +88,8 @@ entries:
     port_common (noflash_text)      # Default all functions to internal RAM
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
         port_common:vApplicationGetIdleTaskMemory (default)
+        if FREERTOS_SMP = y && FREERTOS_UNICORE = n:
+            port_common:vApplicationGetPassiveIdleTaskMemory (default)
         port_common:vApplicationGetTimerTaskMemory (default)
 
     # ------------------------------------------------------------------------------------------------------------------

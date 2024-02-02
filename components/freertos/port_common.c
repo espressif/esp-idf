@@ -57,6 +57,16 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
     *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
 
+#if ( ( CONFIG_FREERTOS_SMP ) && ( configNUMBER_OF_CORES > 1 ) )
+void vApplicationGetPassiveIdleTaskMemory(StaticTask_t ** ppxIdleTaskTCBBuffer,
+                                          StackType_t ** ppxIdleTaskStackBuffer,
+                                          uint32_t * pulIdleTaskStackSize,
+                                          BaseType_t xPassiveIdleTaskIndex)
+{
+    vApplicationGetIdleTaskMemory(ppxIdleTaskTCBBuffer, ppxIdleTaskStackBuffer, pulIdleTaskStackSize);
+}
+#endif /* ( ( CONFIG_FREERTOS_SMP ) && ( configNUMBER_OF_CORES > 1 ) ) */
+
 void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
                                     StackType_t **ppxTimerTaskStackBuffer,
                                     uint32_t *pulTimerTaskStackSize)

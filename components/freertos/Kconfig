@@ -3,6 +3,7 @@ menu "FreeRTOS"
     menu "Kernel"
         # Upstream FreeRTOS configurations go here
 
+
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
             depends on !IDF_TARGET_ESP32P4 #TODO: IDF-8113: Enable P4 support on AMZ SMP
@@ -116,7 +117,7 @@ menu "FreeRTOS"
                 - The FreeRTOS idle hook is NOT the same as the ESP-IDF Idle Hook, but both can be enabled
                   simultaneously.
 
-        config FREERTOS_USE_MINIMAL_IDLE_HOOK
+        config FREERTOS_USE_PASSIVE_IDLE_HOOK
             bool "Use FreeRTOS minimal idle hook"
             depends on FREERTOS_SMP
             default n
@@ -126,8 +127,8 @@ menu "FreeRTOS"
 
                 Note:
 
-                - The application must provide the hook function ``void vApplicationMinimalIdleHook( void );``
-                - ``vApplicationMinimalIdleHook()`` is called from FreeRTOS minimal idle task(s)
+                - The application must provide the hook function ``void vApplicationPassiveIdleHook( void );``
+                - ``vApplicationPassiveIdleHook()`` is called from FreeRTOS minimal idle task(s)
 
         config FREERTOS_USE_TICK_HOOK
             bool "configUSE_TICK_HOOK"

@@ -298,7 +298,7 @@ void vPortYieldFromISR( void )
 
     xThreadToSuspend = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
-    vTaskSwitchContext(xPortGetCoreID());
+    vTaskSwitchContext();
 
     xThreadToResume = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
@@ -419,7 +419,7 @@ static void vPortSystemTickHandler( int sig )
 #if ( configUSE_PREEMPTION == 1 )
     if (xSwitchRequired == pdTRUE) {
         /* Select Next Task. */
-        vTaskSwitchContext(xPortGetCoreID());
+        vTaskSwitchContext();
 
         pxThreadToResume = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 

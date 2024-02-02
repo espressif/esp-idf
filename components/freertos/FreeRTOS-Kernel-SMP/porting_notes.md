@@ -1,20 +1,17 @@
 # Overview
 
-This document outlines some useful notes about
-
-- The porting of SMP FreeRTOS to ESP-IDF
-- And the difference between IDF FreeRTOS and SMP FreeRTOS
+This document outlines some notes regarding the Amazon AMP FreeRTOS port in ESP-IDF
 
 # Terminology
 
 The following terms will be used in this document to avoid confusion between the different FreeRTOS versions currently in ESP-IDF
 
-- SMP FreeRTOS: The SMP branch of the FreeRTOS kernel found [here](https://github.com/FreeRTOS/FreeRTOS-Kernel/tree/smp)
+- SMP FreeRTOS: An SMP capable release of the FreeRTOS kernel described [here](https://github.com/FreeRTOS/FreeRTOS-Kernel/tree/smp)
 - IDF FreeRTOS: The version of FreeRTOS used in mainline ESP-IDF that contained custom modifications to support SMP features specific to the ESP chips.
 
 # Organization
 
-This directory contains a copy of SMP FreeRTOS based off of upstream commit [8128208](https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/8128208bdee1f997f83cae631b861f36aeea9b1f)
+This directory contains a copy of upstream [v11.0.1](https://github.com/FreeRTOS/FreeRTOS-Kernel/tree/V11.0.1) FreeRTOS which is SMP capable.
 
 - IDF FreeRTOS remains in  `components/freertos/FreeRTOS-Kernel`
 - SMP FreeRTOS is entirely contained in `components/freertos/FreeRTOS-Kernel-SMP`
@@ -104,15 +101,15 @@ IDF FreeRTOS:
 
 SMP FreeRTOS:
 
-- There are now two types of idle task functions. The `prvIdleTask()` and `prvMinimalIdleTask()`
-  - `prvMinimalIdleTask()` simply calls the `vApplicationMinimalIdleHook()`
-  - `prvIdleTask()` calls `prvCheckTasksWaitingTermination()`, `vApplicationIdleHook()`, `vApplicationMinimalIdleHook()`, and handles tickless idle.
-  - On an N core build, one `prvIdleTask()` task is created and N-1 `prvMinimalIdleTask()` tasks are created.
+- There are now two types of idle task functions. The `prvIdleTask()` and `prvPassiveIdleTask()`
+  - `prvPassiveIdleTask()` simply calls the `vApplicationPassiveIdleHook()`
+  - `prvIdleTask()` calls `prvCheckTasksWaitingTermination()`, `vApplicationIdleHook()`, `vApplicationPassiveIdleHook()`, and handles tickless idling.
+  - On an N core build, one `prvIdleTask()` task is created and N-1 `prvPassiveIdleTask()` tasks are created.
 - The created idle tasks are all unpinned. The idle tasks are run on a "first come first serve" basis meaning when a core goes idle, it selects whatever available idle task it can run.
 
 Changes Made:
 
-- The `esp_vApplicationIdleHook()` is now called from `vApplicationMinimalIdleHook()` since every idle task calls the `vApplicationMinimalIdleHook()`.
+- The `esp_vApplicationIdleHook()` is now called from `vApplicationPassiveIdleHook()` since every idle task calls the `vApplicationPassiveIdleHook()`.
 - Since the idle tasks are unpinned, the task WDT has been updated to use the "User" feature. Thus, feeding the task watchdog now tracks which "core" has fed the task WDT instead of which specific idle task has fed.
 - Since `prvIdleTask()` is solely responsible for calling `prvCheckTasksWaitingTermination()` but can run on any core, multiple IDF cleanup routines are now routed through `portCLEAN_UP_TCB()`
   - FPU registers of a task are now cleaned up via `portCLEAN_UP_TCB() -> vPortCleanUpCoprocArea()` and can clean FPU save areas across cores.
@@ -169,25 +166,3 @@ IDF FreeRTOS added multiple features/APIs that are specific to IDF. For SMP Free
 - If TLSP deletion callbacks are used, `configNUM_THREAD_LOCAL_STORAGE_POINTERS` will be doubled (in order to store the callback pointers in the same array as the TLSPs themselves)
 - `vTaskSetThreadLocalStoragePointerAndDelCallback()` moved to `freertos_tasks_c_additions.h`/`idf_additions.h`
 - Deletion callbacks invoked from the main idle task via `portCLEAN_UP_TCB()`
-
-### `xTaskGetCurrentTaskHandleForCPU()`
-
-- Convenience function to the get current task of a particular CPU
-- Moved to `freertos_tasks_c_additions.h`/`idf_additions.h` for now
-
-Todo: Check if this can be upstreamed
-
-### `xTaskGetIdleTaskHandleForCPU()`
-
-- Currently moved to `freertos_tasks_c_additions.h`/`idf_additions.h`
-
-Todo: This needs to be deprecated as there is no longer the concept of idle tasks pinned to a particular CPU
-
-### `xTaskGetAffinity()`
-
-- Returns what core a task is pinned to, and not the task's affinity mask.
-- Moved to  `freertos_tasks_c_additions.h`/`idf_additions.h` and simple wraps `vTaskCoreAffinityGet()`
-- If the task's affinity mask has more than one permissible core, we simply return `tskNO_AFFINITY` even if the task is not completely unpinned.
-
-Todo: This needs to be deprecated and users should call `vTaskCoreAffinityGet()` instead
-

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,15 +10,28 @@
 
 /* Macros used instead ofsetoff() for better performance of interrupt handler */
 #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
+/*
+pxTopOfStack (4) +
+xStateListItem (28) +
+xEventListItem (28) +
+uxPriority (4)
+*/
 #define PORT_OFFSET_PX_STACK 0x40
 #else
+/*
+pxTopOfStack (4) +
+xStateListItem (20) +
+xEventListItem (20) +
+uxPriority (4)
+*/
 #define PORT_OFFSET_PX_STACK 0x30
 #endif /* #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
-#define PORT_OFFSET_PX_END_OF_STACK (PORT_OFFSET_PX_STACK + \
-                                     /* void * pxDummy6 */ 4 + \
-                                     /* BaseType_t xDummy23[ 2 ] */ 8 + \
-                                     /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ CONFIG_FREERTOS_MAX_TASK_NAME_LEN + \
-                                     /* BaseType_t xDummy24 */ 4)
+
+#define PORT_OFFSET_PX_END_OF_STACK ( \
+    PORT_OFFSET_PX_STACK \
+    + 4                                 /* StackType_t * pxStack */ \
+    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* pcTaskName[ configMAX_TASK_NAME_LEN ] */ \
+)
 
 #ifndef __ASSEMBLER__
 
@@ -102,15 +115,16 @@ BaseType_t xPortCheckIfInISR(void);
 
 // ------------------ Critical Sections --------------------
 
+#if ( configNUMBER_OF_CORES > 1 )
 /*
 These are always called with interrupts already disabled. We simply need to get/release the spinlocks
 */
-
 extern portMUX_TYPE port_xTaskLock;
 extern portMUX_TYPE port_xISRLock;
 
 void vPortTakeLock( portMUX_TYPE *lock );
 void vPortReleaseLock( portMUX_TYPE *lock );
+#endif /* configNUMBER_OF_CORES > 1 */
 
 // ---------------------- Yielding -------------------------
 
@@ -175,11 +189,12 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 
 // ------------------ Critical Sections --------------------
 
+#if ( configNUMBER_OF_CORES > 1 )
 #define portGET_TASK_LOCK()                         vPortTakeLock(&port_xTaskLock)
 #define portRELEASE_TASK_LOCK()                     vPortReleaseLock(&port_xTaskLock)
 #define portGET_ISR_LOCK()                          vPortTakeLock(&port_xISRLock)
 #define portRELEASE_ISR_LOCK()                      vPortReleaseLock(&port_xISRLock)
-
+#endif /* configNUMBER_OF_CORES > 1 */
 
 //Critical sections used by FreeRTOS SMP
 extern void vTaskEnterCritical( void );
@@ -314,8 +329,8 @@ static inline bool IRAM_ATTR xPortCanYield(void)
     return (threshold <= 1);
 }
 
-// Added for backward compatibility with IDF
-#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
+// Defined even for configNUMBER_OF_CORES > 1 for IDF compatibility
+#define portYIELD_WITHIN_API()                      esp_crosscore_int_send_yield(xPortGetCoreID())
 
 // ----------------------- System --------------------------
 

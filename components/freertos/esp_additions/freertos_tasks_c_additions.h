@@ -29,7 +29,9 @@
  */
 _Static_assert( offsetof( StaticTask_t, pxDummy6 ) == offsetof( TCB_t, pxStack ) );
 _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfStack ) );
+#if !CONFIG_IDF_TARGET_LINUX    // Disabled for linux builds due to differences in types
 _Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY" );
+#endif
 
 /* ------------------------------------------------- Kernel Control ------------------------------------------------- */
 
