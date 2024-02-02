@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,6 +152,11 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .utime_p = &vfs_fat_utime,
 #endif // CONFIG_VFS_SUPPORT_DIR
     };
+
+    if (max_files < 1) {
+        max_files = 1;  // ff_memalloc(max_files * sizeof(bool)) below will fail if max_files == 0
+    }
+
     size_t ctx_size = sizeof(vfs_fat_ctx_t) + max_files * sizeof(FIL);
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ff_memalloc(ctx_size);
     if (fat_ctx == NULL) {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "ff.h"
 #include "test_fatfs_common.h"
 #include "soc/soc_caps.h"
+#include "vfs_fat_internal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #define SDSPI_MISO_PIN 2
@@ -89,7 +90,7 @@ static void test_teardown_sdspi(sdspi_mem_t* mem)
     HEAP_SIZE_CHECK(mem->heap_size, 0);
 }
 
-TEST_CASE("(SDSPI) write/read speed test", "[fatfs][sdspi]")
+TEST_CASE("(SDSPI) write/read speed test", "[fatfs][sdspi][timeout=120]")
 {
     sdspi_mem_t mem;
     size_t file_size = 1 * 1024 * 1024;
@@ -194,6 +195,58 @@ TEST_CASE("(SDSPI) can format card", "[fatfs][sdspi][timeout=180]")
     TEST_ESP_OK(esp_vfs_fat_sdcard_format("/sdcard", card));
     test_fatfs_create_file_with_text(s_test_filename, fatfs_test_hello_str);
     test_fatfs_read_file(s_test_filename);
+    TEST_ESP_OK(esp_vfs_fat_sdcard_unmount(path, card));
+    test_teardown_sdspi(&mem);
+}
+
+
+TEST_CASE("(SDSPI) can format card with config", "[fatfs][sdspi][timeout=180]")
+{
+    sdspi_mem_t mem;
+    test_setup_sdspi(&mem);
+
+    const char path[] = "/sdcard";
+    sdmmc_card_t *card;
+    card = NULL;
+    sdspi_device_config_t device_cfg = {
+        .gpio_cs = SDSPI_CS_PIN,
+        .host_id = SDSPI_HOST_ID,
+        .gpio_cd = SDSPI_SLOT_NO_CD,
+        .gpio_wp = SDSPI_SLOT_NO_WP,
+        .gpio_int = SDSPI_SLOT_NO_INT,
+    };
+
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    host.slot = SDSPI_HOST_ID;
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5,
+        .allocation_unit_size = 64 * 1024,
+    };
+    TEST_ESP_OK(esp_vfs_fat_sdspi_mount(path, &host, &device_cfg, &mount_config, &card));
+
+    vfs_fat_sd_ctx_t* ctx = get_vfs_fat_get_sd_ctx(card);
+    TEST_ASSERT_NOT_NULL(ctx);
+
+    esp_vfs_fat_mount_config_t format_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5,
+        .allocation_unit_size = 64 * 1024,
+        .use_one_fat = true,
+    };
+    TEST_ESP_OK(esp_vfs_fat_sdcard_format_cfg("/sdcard", card, &format_config));
+    TEST_ASSERT_TRUE(ctx->fs->n_fats == 1);
+
+    test_fatfs_create_file_with_text(s_test_filename, fatfs_test_hello_str);
+    test_fatfs_read_file(s_test_filename);
+
+    format_config.use_one_fat = false;
+    TEST_ESP_OK(esp_vfs_fat_sdcard_format_cfg("/sdcard", card, &format_config));
+    TEST_ASSERT_TRUE(ctx->fs->n_fats == 2);
+
+    test_fatfs_create_file_with_text(s_test_filename, fatfs_test_hello_str);
+    test_fatfs_read_file(s_test_filename);
+
     TEST_ESP_OK(esp_vfs_fat_sdcard_unmount(path, card));
     test_teardown_sdspi(&mem);
 }
