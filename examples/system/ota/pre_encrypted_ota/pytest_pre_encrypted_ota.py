@@ -53,9 +53,6 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_pre_encrypted_ota_example(dut: Dut) -> None:
     server_port = 8001
