@@ -305,9 +305,7 @@ void neighbor_report_recv_cb(void *ctx, const uint8_t *report, size_t report_len
 			goto cleanup;
 		}
 		/* cleanup from net802.11 */
-		uint16_t number = 1;
-		wifi_ap_record_t ap_records;
-		esp_wifi_scan_get_ap_records(&number, &ap_records);
+		esp_wifi_clear_ap_list();
 		cand_list = 1;
 	}
 	/* send AP btm query, this will cause STA to roam as well */

@@ -67,6 +67,7 @@ static void scan_done_handler(void)
     ap_list_buffer = malloc(sta_number * sizeof(wifi_ap_record_t));
     if (ap_list_buffer == NULL) {
         ESP_LOGE(TAG, "Failed to malloc buffer to print scan results");
+        esp_wifi_clear_ap_list();
         return;
     }
 

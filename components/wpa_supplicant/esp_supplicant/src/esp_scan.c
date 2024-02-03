@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,13 +66,10 @@ static void handle_wnm_scan_done(struct wpa_supplicant *wpa_s)
 
 static void scan_done_cleanup(struct wpa_supplicant *wpa_s)
 {
-	uint16_t number = 1;
-	wifi_ap_record_t ap_records;
-
 	wpa_s->scanning = 0;
 	wpa_s->scan_reason = 0;
 	/* clean scan list from net80211 */
-	esp_wifi_scan_get_ap_records(&number, &ap_records);
+	esp_wifi_clear_ap_list();
 }
 
 void esp_supplicant_handle_scan_done_evt(void)
