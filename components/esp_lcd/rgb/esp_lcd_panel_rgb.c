@@ -830,26 +830,16 @@ static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config)
 {
     int panel_id = panel->panel_id;
-    // check validation of GPIO number
-    bool valid_gpio = true;
-    if (panel_config->de_gpio_num < 0) {
-        // Hsync and Vsync are required in HV mode
-        valid_gpio = valid_gpio && (panel_config->hsync_gpio_num >= 0) && (panel_config->vsync_gpio_num >= 0);
-    }
-    for (size_t i = 0; i < panel_config->data_width; i++) {
-        valid_gpio = valid_gpio && (panel_config->data_gpio_nums[i] >= 0);
-    }
-    if (!valid_gpio) {
-        return ESP_ERR_INVALID_ARG;
-    }
     // Set the number of output data lines
     lcd_ll_set_data_wire_width(panel->hal.dev, panel_config->data_width);
     // connect peripheral signals via GPIO matrix
     for (size_t i = 0; i < panel_config->data_width; i++) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
-        gpio_set_direction(panel_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
-        esp_rom_gpio_connect_out_signal(panel_config->data_gpio_nums[i],
-                                        lcd_periph_signals.panels[panel_id].data_sigs[i], false, false);
+        if (panel_config->data_gpio_nums[i] >= 0) {
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
+            gpio_set_direction(panel_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
+            esp_rom_gpio_connect_out_signal(panel_config->data_gpio_nums[i],
+                                            lcd_periph_signals.panels[panel_id].data_sigs[i], false, false);
+        }
     }
     if (panel_config->hsync_gpio_num >= 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->hsync_gpio_num], PIN_FUNC_GPIO);
