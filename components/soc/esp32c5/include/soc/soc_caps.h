@@ -508,7 +508,7 @@
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
-#define SOC_PM_SUPPORT_TOP_PD           (1)
+// #define SOC_PM_SUPPORT_TOP_PD           (1) // TODO: IDF-8643
 #define SOC_PM_SUPPORT_HP_AON_PD        (1)
 // #define SOC_PM_SUPPORT_MAC_BB_PD        (1)
 #define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)

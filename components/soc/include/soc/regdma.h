@@ -44,6 +44,7 @@ extern "C" {
 #define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x16 << 8) | _pri)
 #define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x17 << 8) | _pri)
 #define REGDMA_GDMA_LINK(_pri)              ((0x18 << 8) | _pri)
+#define REGDMA_I2C_LINK(_pri)               ((0x19 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
