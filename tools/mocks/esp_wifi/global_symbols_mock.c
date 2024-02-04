@@ -5,6 +5,7 @@
  */
 
 #include "esp_wifi.h"
+#include "esp_private/wifi_os_adapter.h"
 
 /**
  * The following global objects are defined when WiFi is mocked.

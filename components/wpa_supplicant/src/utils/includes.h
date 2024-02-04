@@ -20,6 +20,7 @@
 #define INCLUDES_H
 
 #include "supplicant_opt.h"
+#include "esp_private/esp_wifi_private.h"
 
 #define AES_SMALL_TABLES
 #define CONFIG_NO_RANDOM_POOL

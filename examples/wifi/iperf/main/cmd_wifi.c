@@ -23,7 +23,6 @@
 #include "iperf.h"
 #include "esp_coexist.h"
 #include "wifi_cmd.h"
-#include "esp_wifi_he.h"
 
 typedef struct {
     struct arg_str *ip;
