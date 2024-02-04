@@ -10,7 +10,13 @@ GPIO Summary
     :start-after: gpio-summary
     :end-before: ---
 
-GPIO driver offers a dump function :cpp:func:`gpio_dump_io_configuration` to show the configurations of the IOs at the moment, such as pull-up / pull-down, input / output enable, pin mapping etc. Below is an example dump:
+GPIO driver offers a dump function :cpp:func:`gpio_dump_io_configuration` to show the current configurations of IOs, such as pull-up/pull-down, input/output enable, pin mapping, etc. Below is an example of how to dump the configuration of GPIO4, GPIO18, and GPIO26:
+
+::
+
+    gpio_dump_io_configuration(stdout, (1ULL << 4) | (1ULL << 18) | (1ULL << 26));
+
+The dump will be like this:
 
 ::
 
@@ -36,6 +42,12 @@ GPIO driver offers a dump function :cpp:func:`gpio_dump_io_configuration` to sho
       SleepSelEn: 1
 
     =================IO DUMP End==================
+
+In addition, if you would like to dump the configurations of all IOs, you can use:
+
+::
+
+    gpio_dump_all_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
 
 If an IO pin is routed to a peripheral signal through the GPIO matrix, the signal ID printed in the dump information is defined in the ``soc/gpio_sig_map.h`` file. The word ``**RESERVED**`` indicates the IO is occupied by either FLASH or PSRAM. It is strongly not recommended to reconfigure them for other application purposes.
 
