@@ -13,7 +13,6 @@
 #include "esp_timer.h"
 #include "sdkconfig.h"
 
-
 static const char * TAG = "log_test";
 
 static int calc_time_of_logging(int iterations)

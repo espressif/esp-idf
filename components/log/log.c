@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,7 +75,6 @@ static vprintf_like_t s_log_print_func = &vprintf;
 #ifdef LOG_BUILTIN_CHECKS
 static uint32_t s_log_cache_misses = 0;
 #endif
-
 
 static inline bool get_cached_log_level(const char *tag, esp_log_level_t *level);
 static inline bool get_uncached_log_level(const char *tag, esp_log_level_t *level);
@@ -156,7 +155,6 @@ void esp_log_level_set(const char *tag, esp_log_level_t level)
     esp_log_impl_unlock();
 }
 
-
 /* Common code for getting the log level from cache, esp_log_impl_lock()
    should be called before calling this function. The function unlocks,
    as indicated in the name.
@@ -200,9 +198,9 @@ void clear_log_level_list(void)
 }
 
 void esp_log_writev(esp_log_level_t level,
-                   const char *tag,
-                   const char *format,
-                   va_list args)
+                    const char *tag,
+                    const char *format,
+                    va_list args)
 {
     if (!esp_log_impl_lock_timeout()) {
         return;

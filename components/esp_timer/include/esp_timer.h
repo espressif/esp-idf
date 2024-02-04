@@ -52,7 +52,6 @@ typedef struct esp_timer* esp_timer_handle_t;
  */
 typedef void (*esp_timer_cb_t)(void* arg);
 
-
 /**
  * @brief Method for dispatching timer callback
  */
@@ -74,7 +73,6 @@ typedef struct {
     const char* name;               //!< Timer name, used in esp_timer_dump function
     bool skip_unhandled_events;     //!< Skip unhandled events for periodic timers
 } esp_timer_create_args_t;
-
 
 /**
  * @brief Minimal initialization of esp_timer

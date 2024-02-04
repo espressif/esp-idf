@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -168,7 +168,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id
                 // finish if either (alarm > counter) or the interrupt flag is already set.
                 break;
             }
-        } while(1);
+        } while (1);
     }
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
@@ -202,10 +202,10 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
                 (*s_alarm_handler)(arg);
 
                 portENTER_CRITICAL_ISR(&s_time_update_lock);
-               // Another alarm could have occurred while were handling the previous alarm.
-               // Check if we need to call the s_alarm_handler again:
-               //   1) if the alarm has already been fired, it helps to handle it immediately without an additional ISR call.
-               //   2) handle pending alarm that was cleared by the other core in time when this core worked with the current alarm.
+                // Another alarm could have occurred while were handling the previous alarm.
+                // Check if we need to call the s_alarm_handler again:
+                //   1) if the alarm has already been fired, it helps to handle it immediately without an additional ISR call.
+                //   2) handle pending alarm that was cleared by the other core in time when this core worked with the current alarm.
             } while (REG_GET_FIELD(INT_ST_REG, TIMG_LACT_INT_ST) || pending_alarm);
             processed_by = NOT_USED;
         } else {
@@ -262,8 +262,8 @@ esp_err_t esp_timer_impl_early_init(void)
     REG_SET_BIT(INT_CLR_REG, TIMG_LACT_INT_CLR);
     REG_SET_FIELD(CONFIG_REG, TIMG_LACT_DIVIDER, APB_CLK_FREQ / 1000000 / TICKS_PER_US);
     REG_SET_BIT(CONFIG_REG, TIMG_LACT_INCREASE |
-        TIMG_LACT_LEVEL_INT_EN |
-        TIMG_LACT_EN);
+                TIMG_LACT_LEVEL_INT_EN |
+                TIMG_LACT_EN);
 
     return ESP_OK;
 }
