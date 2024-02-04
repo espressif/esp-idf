@@ -2907,5 +2907,28 @@ BOOLEAN btm_get_current_conn_params(BD_ADDR bda, UINT16 *interval, UINT16 *laten
     return FALSE;
 }
 
+uint8_t btm_ble_adv_active_count(void)
+{
+    uint8_t count = 0;
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+
+    if (p_cb->state & BTM_BLE_ADVERTISING) {
+        count++;
+    }
+
+    return count;
+}
+
+uint8_t btm_ble_scan_active_count(void)
+{
+    uint8_t count = 0;
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+
+    if (p_cb->state & BTM_BLE_SCANNING) {
+        count++;
+    }
+
+    return count;
+}
 
 #endif /* BLE_INCLUDED */
