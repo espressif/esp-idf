@@ -1339,10 +1339,6 @@ config SOC_PM_SUPPORT_VDDSDIO_PD
     bool
     default y
 
-config SOC_PM_SUPPORT_TOP_PD
-    bool
-    default y
-
 config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     bool
     default y

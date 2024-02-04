@@ -142,7 +142,6 @@ Light-sleep 外设下电
     - SYSTIMER
 
     以下外设尚未支持：
-    - GDMA
     - ETM
     - TIMG1
     - ASSIST_DEBUG

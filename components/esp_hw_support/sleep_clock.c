@@ -40,7 +40,7 @@ esp_err_t sleep_clock_system_retention_init(void)
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(0), DR_REG_PCR_BASE, DR_REG_PCR_BASE, N_REGS_PCR(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* pcr */
     };
 
-    esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_0, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
+    esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention");
     ESP_LOGI(TAG, "System Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
@@ -69,7 +69,7 @@ esp_err_t sleep_clock_modem_retention_init(void)
 #endif
     };
 
-    esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_1, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
+    esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_MODEM_CLK, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (SYSCON) retention, 2 level priority");
     ESP_LOGI(TAG, "Modem Power, Clock and Reset sleep retention initialization");
     return ESP_OK;

@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "esp_assert.h"
+#include "esp_bit_defs.h"
 #include "soc/soc_caps.h"
 
 #ifdef __cplusplus
@@ -42,7 +43,19 @@ extern "C" {
 #define REGDMA_BLE_MAC_LINK(_pri)           ((0x15 << 8) | _pri)
 #define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x16 << 8) | _pri)
 #define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x17 << 8) | _pri)
+#define REGDMA_GDMA_LINK(_pri)              ((0x18 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
+
+#define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
+#define REGDMA_LINK_PRI_MODEM_CLK               REGDMA_LINK_PRI_1
+#define REGDMA_LINK_PRI_CRITICAL_TEE_APM        REGDMA_LINK_PRI_2
+#define REGDMA_LINK_PRI_WIFI_MAC_BB             REGDMA_LINK_PRI_3
+#define REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM    REGDMA_LINK_PRI_4
+#define REGDMA_LINK_PRI_BT_MAC_BB               REGDMA_LINK_PRI_5
+#define REGDMA_LINK_PRI_SYS_PERIPH_HIGH         REGDMA_LINK_PRI_5 // INT_MTX & HP_SYSTEM & Console UART
+#define REGDMA_LINK_PRI_SYS_PERIPH_LOW          REGDMA_LINK_PRI_6 // TG0 & IO MUX & SPI MEM & Systimer
+#define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_7
+#define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_7
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,
