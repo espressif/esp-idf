@@ -31,10 +31,11 @@
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # git clone the known failure cases repo, run test
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - pip install minio
+    - python tools/ci/get_known_failure_cases_file.py
     # run test
     - cd tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
+    - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/${KNOWN_FAILURE_CASES_FILE_NAME}
 
 .example_test_template:
   extends: .target_test_job_template
@@ -427,10 +428,11 @@ test_app_test_flash_psram_esp32:
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # git clone the known failure cases repo, run test
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - pip install minio
+    - python tools/ci/get_known_failure_cases_file.py
     # run test
     - cd tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
+    - run_cmd python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/${KNOWN_FAILURE_CASES_FILE_NAME}
 
 .component_ut_esp32_template:
   extends:
