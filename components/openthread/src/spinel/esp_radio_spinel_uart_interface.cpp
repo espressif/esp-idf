@@ -11,6 +11,8 @@
 #include "esp_openthread_common_macro.h"
 #include "openthread/platform/time.h"
 #include "hdlc.hpp"
+#include "esp_heap_caps.h"
+#include "driver/uart.h"
 
 namespace esp {
 namespace radio_spinel {
@@ -105,7 +107,7 @@ void UartSpinelInterface::Process(const void *aMainloopContext)
 
 int UartSpinelInterface::TryReadAndDecode(void)
 {
-    uint8_t buffer[UART_HW_FIFO_LEN(m_uart_config.port)];
+    uint8_t buffer[UART_FIFO_LEN];
     ssize_t rval;
     do {
             rval = read(m_uart_fd, buffer, sizeof(buffer));
