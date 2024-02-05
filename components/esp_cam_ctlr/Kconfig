@@ -1,0 +1,11 @@
+menu "ESP Camera Controller Configurations"
+    depends on SOC_MIPI_CSI_SUPPORTED
+
+    config MIPI_CSI_ISR_IRAM_SAFE
+        bool "CSI ISR IRAM-Safe"
+        default n
+        help
+            Ensure the CSI driver ISR is IRAM-Safe. When enabled, the ISR handler
+            will be available when the cache is disabled.
+
+endmenu # ESP Camera Controller Configurations

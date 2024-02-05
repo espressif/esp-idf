@@ -39,6 +39,10 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_MIPI_CSI_SUPPORTED
+    bool
+    default y
+
 config SOC_MIPI_DSI_SUPPORTED
     bool
     default y

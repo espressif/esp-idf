@@ -160,8 +160,8 @@
 /**
  * @brief: Special memory address
  */
-#define MIPI_CSI_MEM_BASE             0x50104000
-#define MIPI_DSI_MEM_BASE             0x50105000
+#define MIPI_CSI_BRG_MEM_BASE         0x50104000
+#define MIPI_DSI_BRG_MEM_BASE         0x50105000
 
 /**
  * This are module helper MACROs for quick module reference
