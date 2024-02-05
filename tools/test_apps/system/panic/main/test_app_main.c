@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,6 +133,12 @@ void app_main(void)
 #if CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
     HANDLE_TEST(test_name, test_rtc_slow_reg1_execute_violation);
     HANDLE_TEST(test_name, test_rtc_slow_reg2_execute_violation);
+#endif
+
+#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+    HANDLE_TEST(test_name, test_irom_reg_write_violation);
+    HANDLE_TEST(test_name, test_drom_reg_write_violation);
+    HANDLE_TEST(test_name, test_drom_reg_execute_violation);
 #endif
 
 #endif
