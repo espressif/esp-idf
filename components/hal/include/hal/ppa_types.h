@@ -39,6 +39,11 @@ typedef enum {
     PPA_SR_COLOR_MODE_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),           /*!< PPA SR color mode: RGB888 */
     PPA_SR_COLOR_MODE_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),           /*!< PPA SR color mode: RGB565 */
     PPA_SR_COLOR_MODE_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),           /*!< PPA SR color mode: YUV420 */
+    PPA_SR_COLOR_MODE_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),           /*!< PPA SR color mode: YUV444 (limited range only)*/
+    PPA_SR_COLOR_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),           /*!< PPA SR color mode: YUV422 (input only, limited range only) */
+    // YUV444 and YUV422 not supported by PPA hardware, but seems like we can use 2D-DMA to do conversion before sending into and after coming out from the PPA module
+    // If in_pic is YUV444/422, then TX DMA channnel could do DMA2D_CSC_TX_YUV444/422_TO_RGB888_601/709, so PPA in_color_mode is RGB888
+    // If out_pic is YUV444, then RX DMA channel could do DMA2D_CSC_RX_YUV420_TO_YUV444, so PPA out_color_mode is YUV420
 } ppa_sr_color_mode_t;
 
 /**
@@ -53,6 +58,16 @@ typedef enum {
     PPA_BLEND_COLOR_MODE_A8 = COLOR_TYPE_ID(COLOR_SPACE_ALPHA, COLOR_PIXEL_A8),              /*!< PPA Blending color mode: A8, only available on blending foreground input */
     PPA_BLEND_COLOR_MODE_A4 = COLOR_TYPE_ID(COLOR_SPACE_ALPHA, COLOR_PIXEL_A4),              /*!< PPA Blending color mode: A4, only available on blending foreground input */
 } ppa_blend_color_mode_t;
+
+/**
+ * @brief Enumeration of PPA alpha compositing mode
+ */
+typedef enum {
+    PPA_ALPHA_NO_CHANGE = 0,  /*!< Do not replace alpha value. If input format does not contain alpha info, alpha value 255 will be used. */
+    PPA_ALPHA_FIX_VALUE,      /*!< Replace the alpha value in received pixel with a new, fixed alpha value */
+    PPA_ALPHA_SCALE,          /*!< Scale the alpha value in received pixel to be a new alpha value */
+    PPA_ALPHA_INVERT,         /*!< Invert the alpha value in received pixel */
+} ppa_alpha_mode_t;
 
 #ifdef __cplusplus
 }

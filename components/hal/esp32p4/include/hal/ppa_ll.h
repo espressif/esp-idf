@@ -24,15 +24,8 @@ extern "C" {
 #define PPA_LL_BLEND0_CLUT_MEM_ADDR_OFFSET  0x400
 #define PPA_LL_BLEND1_CLUT_MEM_ADDR_OFFSET  0x800
 
-/**
- * @brief Enumeration of alpha value transformation mode
- */
-typedef enum {
-    PPA_LL_RX_ALPHA_NO_CHANGE,      /*!< Do not replace alpha value. If input format does not contain alpha info, alpha value 255 will be used. */
-    PPA_LL_RX_ALPHA_FIX_VALUE,      /*!< Replace the alpha value in received pixel with a new, fixed alpha value */
-    PPA_LL_RX_ALPHA_SCALE,          /*!< Scale the alpha value in received pixel to be a new alpha value */
-    PPA_LL_RX_ALPHA_INVERT,         /*!< Invert the alpha value in received pixel */
-} ppa_ll_rx_alpha_mode_t;
+#define PPA_LL_SR_SCALING_INT_MAX   PPA_SR_SCAL_X_INT_V
+#define PPA_LL_SR_SCALING_FRAG_MAX  PPA_SR_SCAL_X_FRAG_V
 
 /**
  * @brief Enumeration of PPA blending mode
@@ -231,7 +224,7 @@ static inline void ppa_ll_sr_set_tx_color_mode(ppa_dev_t *dev, ppa_sr_color_mode
 }
 
 /**
- * @brief Set YUV to RGB protocol when PPA SR pixel color space conversion from RX to TX is YUV to RGB
+ * @brief Set YUV to RGB protocol when PPA SR RX pixel color space is YUV
  *
  * @param dev Peripheral instance address
  * @param std One of the RGB-YUV conversion standards in color_conv_std_rgb_yuv_t
@@ -252,7 +245,7 @@ static inline void ppa_ll_sr_set_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_rgb_
 }
 
 /**
- * @brief Set RGB to YUV protocol when PPA SR pixel color space conversion from RX to TX is RGB to YUV
+ * @brief Set RGB to YUV protocol when PPA SR TX pixel color space is YUV
  *
  * @param dev Peripheral instance address
  * @param std One of the RGB-YUV conversion standards in color_conv_std_rgb_yuv_t
@@ -342,31 +335,32 @@ static inline void ppa_ll_sr_enable_rx_byte_swap(ppa_dev_t *dev, bool enable)
  * @brief Configure PPA SR alpha value transformation mode
  *
  * @param dev Peripheral instance address
- * @param mode Alpha value transformation mode, one of the values in ppa_ll_rx_alpha_mode_t
- * @param val When PPA_LL_RX_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
- *            When PPA_LL_RX_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
+ * @param mode Alpha value transformation mode, one of the values in ppa_alpha_mode_t
+ * @param val When PPA_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
+ *            When PPA_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
  *            When other modes are selected, this field is not used
  */
-static inline void ppa_ll_sr_configure_rx_alpha(ppa_dev_t *dev, ppa_ll_rx_alpha_mode_t mode, uint32_t val)
+static inline void ppa_ll_sr_configure_rx_alpha(ppa_dev_t *dev, ppa_alpha_mode_t mode, uint32_t val)
 {
     switch (mode) {
-    case PPA_LL_RX_ALPHA_NO_CHANGE:
+    case PPA_ALPHA_NO_CHANGE:
         dev->sr_fix_alpha.sr_rx_alpha_mod = 0;
         dev->sr_fix_alpha.sr_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_FIX_VALUE:
+    case PPA_ALPHA_FIX_VALUE:
         dev->sr_fix_alpha.sr_rx_alpha_mod = 1;
         HAL_FORCE_MODIFY_U32_REG_FIELD(dev->sr_fix_alpha, sr_rx_fix_alpha, val);
         dev->sr_fix_alpha.sr_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_SCALE:
+    case PPA_ALPHA_SCALE:
         dev->sr_fix_alpha.sr_rx_alpha_mod = 2;
         HAL_FORCE_MODIFY_U32_REG_FIELD(dev->sr_fix_alpha, sr_rx_fix_alpha, val);
         dev->sr_fix_alpha.sr_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_INVERT:
+    case PPA_ALPHA_INVERT:
         dev->sr_fix_alpha.sr_rx_alpha_mod = 0;
         dev->sr_fix_alpha.sr_rx_alpha_inv = 1;
+        break;
     default:
         // Unsupported alpha transformation mode
         abort();
@@ -570,31 +564,32 @@ static inline void ppa_ll_blend_enable_rx_fg_byte_swap(ppa_dev_t *dev, bool enab
  * @brief Configure PPA blending input background alpha value transformation mode
  *
  * @param dev Peripheral instance address
- * @param mode Alpha value transformation mode, one of the values in ppa_ll_rx_alpha_mode_t
- * @param val When PPA_LL_RX_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
- *            When PPA_LL_RX_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
+ * @param mode Alpha value transformation mode, one of the values in ppa_alpha_mode_t
+ * @param val When PPA_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
+ *            When PPA_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
  *            When other modes are selected, this field is not used
  */
-static inline void ppa_ll_blend_configure_rx_bg_alpha(ppa_dev_t *dev, ppa_ll_rx_alpha_mode_t mode, uint32_t val)
+static inline void ppa_ll_blend_configure_rx_bg_alpha(ppa_dev_t *dev, ppa_alpha_mode_t mode, uint32_t val)
 {
     switch (mode) {
-    case PPA_LL_RX_ALPHA_NO_CHANGE:
+    case PPA_ALPHA_NO_CHANGE:
         dev->blend_fix_alpha.blend0_rx_alpha_mod = 0;
         dev->blend_fix_alpha.blend0_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_FIX_VALUE:
+    case PPA_ALPHA_FIX_VALUE:
         dev->blend_fix_alpha.blend0_rx_alpha_mod = 1;
         HAL_FORCE_MODIFY_U32_REG_FIELD(dev->blend_fix_alpha, blend0_rx_fix_alpha, val);
         dev->blend_fix_alpha.blend0_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_SCALE:
+    case PPA_ALPHA_SCALE:
         dev->blend_fix_alpha.blend0_rx_alpha_mod = 2;
         HAL_FORCE_MODIFY_U32_REG_FIELD(dev->blend_fix_alpha, blend0_rx_fix_alpha, val);
         dev->blend_fix_alpha.blend0_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_INVERT:
+    case PPA_ALPHA_INVERT:
         dev->blend_fix_alpha.blend0_rx_alpha_mod = 0;
         dev->blend_fix_alpha.blend0_rx_alpha_inv = 1;
+        break;
     default:
         // Unsupported alpha transformation mode
         abort();
@@ -605,31 +600,32 @@ static inline void ppa_ll_blend_configure_rx_bg_alpha(ppa_dev_t *dev, ppa_ll_rx_
  * @brief Configure PPA blending input foreground alpha value transformation mode
  *
  * @param dev Peripheral instance address
- * @param mode Alpha value transformation mode, one of the values in ppa_ll_rx_alpha_mode_t
- * @param val When PPA_LL_RX_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
- *            When PPA_LL_RX_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
+ * @param mode Alpha value transformation mode, one of the values in ppa_alpha_mode_t
+ * @param val When PPA_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
+ *            When PPA_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
  *            When other modes are selected, this field is not used
  */
-static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_ll_rx_alpha_mode_t mode, uint32_t val)
+static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_mode_t mode, uint32_t val)
 {
     switch (mode) {
-    case PPA_LL_RX_ALPHA_NO_CHANGE:
+    case PPA_ALPHA_NO_CHANGE:
         dev->blend_fix_alpha.blend1_rx_alpha_mod = 0;
         dev->blend_fix_alpha.blend1_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_FIX_VALUE:
+    case PPA_ALPHA_FIX_VALUE:
         dev->blend_fix_alpha.blend1_rx_alpha_mod = 1;
         HAL_FORCE_MODIFY_U32_REG_FIELD(dev->blend_fix_alpha, blend1_rx_fix_alpha, val);
         dev->blend_fix_alpha.blend1_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_SCALE:
+    case PPA_ALPHA_SCALE:
         dev->blend_fix_alpha.blend1_rx_alpha_mod = 2;
         HAL_FORCE_MODIFY_U32_REG_FIELD(dev->blend_fix_alpha, blend1_rx_fix_alpha, val);
         dev->blend_fix_alpha.blend1_rx_alpha_inv = 0;
         break;
-    case PPA_LL_RX_ALPHA_INVERT:
+    case PPA_ALPHA_INVERT:
         dev->blend_fix_alpha.blend1_rx_alpha_mod = 0;
         dev->blend_fix_alpha.blend1_rx_alpha_inv = 1;
+        break;
     default:
         // Unsupported alpha transformation mode
         abort();
