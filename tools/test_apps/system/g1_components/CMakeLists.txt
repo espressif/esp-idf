@@ -62,8 +62,7 @@ set(extra_components_which_shouldnt_be_included
     # esp_partition is a new component for separated IDF partition APIs. Added due to its involvement in the spi_flash
     #   code. To be possibly removed (?)
     esp_partition
-    # pthread is required by esp_system (for initialization only, can be made a weak dependency)
-    #   and cxx. See also [refactor-todo] about cxx, can it work without pthread?
+    # pthread is required by cxx. See [refactor-todo] about cxx, can it work without pthread?
     pthread
 )
 

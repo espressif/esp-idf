@@ -15,6 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_private/startup_internal.h"
 #if CONFIG_SPIRAM
 #include "esp_private/freertos_idf_additions_priv.h"
 #endif
@@ -69,6 +70,11 @@ static int pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo)
 static void esp_pthread_cfg_key_destructor(void *value)
 {
     free(value);
+}
+
+ESP_SYSTEM_INIT_FN(init_pthread, CORE, BIT(0), 120)
+{
+    return esp_pthread_init();
 }
 
 esp_err_t esp_pthread_init(void)

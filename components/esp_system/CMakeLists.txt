@@ -69,7 +69,7 @@ else()
                                     # link-time registration is used.
                                     # [refactor-todo] esp_partition required for virtual efuse
                                     # init code. Move to esp_efuse component.
-                                    pthread bootloader_support efuse esp_partition esp_pm
+                                    bootloader_support efuse esp_partition esp_pm
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
