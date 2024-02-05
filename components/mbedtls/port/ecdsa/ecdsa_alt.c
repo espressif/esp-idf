@@ -82,10 +82,12 @@ static void ecdsa_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t l
 int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
 {
     int ret = -1;
-
-    if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
-        ESP_LOGE(TAG, "Invalid efuse block selected");
-        return ret;
+    bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
+    if (!use_km_key) {
+        if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
+            ESP_LOGE(TAG, "Invalid efuse block selected");
+            return ret;
+        }
     }
 
     ecdsa_curve_t curve;
@@ -105,20 +107,27 @@ int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, &blk)) {
-        ESP_LOGE(TAG, "No efuse block with purpose ECDSA_KEY found");
-        return MBEDTLS_ERR_ECP_INVALID_KEY;
+    if (!use_km_key) {
+        if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, &blk)) {
+            ESP_LOGE(TAG, "No efuse block with purpose ECDSA_KEY found");
+            return MBEDTLS_ERR_ECP_INVALID_KEY;
+        }
     }
 
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_EXPORT_PUBKEY,
         .curve = curve,
-        .use_km_key = 0, //TODO: IDF-7992
-        .efuse_key_blk = efuse_blk,
     };
 
-    esp_ecdsa_acquire_hardware();
+    if (use_km_key) {
+        conf.use_km_key = 1;
+        conf.efuse_key_blk = -1;
+    } else {
+        conf.use_km_key = 0;
+        conf.efuse_key_blk = efuse_blk;
+    }
 
+    esp_ecdsa_acquire_hardware();
     bool process_again = false;
 
     do {
@@ -151,9 +160,12 @@ int esp_ecdsa_privkey_load_mpi(mbedtls_mpi *key, int efuse_blk)
         return -1;
     }
 
-    if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
-        ESP_LOGE(TAG, "Invalid efuse block");
-        return -1;
+    bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
+    if (!use_km_key) {
+        if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
+            ESP_LOGE(TAG, "Invalid efuse block");
+            return -1;
+        }
     }
 
     mbedtls_mpi_init(key);
@@ -166,7 +178,11 @@ int esp_ecdsa_privkey_load_mpi(mbedtls_mpi *key, int efuse_blk)
      * `n` is used to store the efuse block which should be used as key
      */
     key->MBEDTLS_PRIVATE(s) = ECDSA_KEY_MAGIC;
-    key->MBEDTLS_PRIVATE(n) = efuse_blk;
+    if (!use_km_key) {
+        key->MBEDTLS_PRIVATE(n) = efuse_blk;
+    } else {
+        key->MBEDTLS_PRIVATE(n) = (unsigned short) USE_ECDSA_KEY_FROM_KEY_MANAGER;
+    }
     key->MBEDTLS_PRIVATE(p) = NULL;
 
     return 0;
@@ -182,9 +198,12 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
         return -1;
     }
 
-    if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
-        ESP_LOGE(TAG, "Invalid efuse block");
-        return -1;
+    bool use_km_key = (efuse_blk == USE_ECDSA_KEY_FROM_KEY_MANAGER)? true: false;
+    if (!use_km_key) {
+        if (efuse_blk < EFUSE_BLK_KEY0 || efuse_blk >= EFUSE_BLK_KEY_MAX) {
+            ESP_LOGE(TAG, "Invalid efuse block");
+            return -1;
+        }
     }
 
     mbedtls_pk_init(key_ctx);
@@ -198,7 +217,12 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
 int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *conf)
 {
     int ret = -1;
-
+    int efuse_key_block = -1;
+    if (conf->use_km_key) {
+        efuse_key_block = USE_ECDSA_KEY_FROM_KEY_MANAGER;
+    } else {
+        efuse_key_block = conf->efuse_block;
+    }
     if (!key_ctx) {
         ESP_LOGE(TAG, "mbedtls_pk_context cannot be NULL");
         return ret;
@@ -214,7 +238,7 @@ int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *c
         return ret;
     }
 
-    if ((ret = esp_ecdsa_privkey_load_pk_context(key_ctx, conf->efuse_block)) != 0) {
+    if ((ret = esp_ecdsa_privkey_load_pk_context(key_ctx, efuse_key_block)) != 0) {
         ESP_LOGE(TAG, "Loading private key context failed, esp_ecdsa_privkey_load_pk_context() returned %d", ret);
         return ret;
     }
@@ -227,7 +251,7 @@ int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *c
 
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
     if (conf->load_pubkey) {
-        if ((ret = esp_ecdsa_load_pubkey(keypair, conf->efuse_block)) != 0) {
+        if ((ret = esp_ecdsa_load_pubkey(keypair, efuse_key_block)) != 0) {
             ESP_LOGE(TAG, "Loading public key context failed, esp_ecdsa_load_pubkey() returned %d", ret);
             return ret;
         }
@@ -267,9 +291,15 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, &blk)) {
-        ESP_LOGE(TAG, "No efuse block with purpose ECDSA_KEY found");
-        return MBEDTLS_ERR_ECP_INVALID_KEY;
+    bool use_km_key = false;
+    if (d->MBEDTLS_PRIVATE(n) == (unsigned short) USE_ECDSA_KEY_FROM_KEY_MANAGER) {
+        use_km_key = true;
+    }
+    if (!use_km_key) {
+        if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, &blk)) {
+            ESP_LOGE(TAG, "No efuse block with purpose ECDSA_KEY found");
+            return MBEDTLS_ERR_ECP_INVALID_KEY;
+        }
     }
 
     ecdsa_be_to_le(msg, sha_le, len);
@@ -287,14 +317,19 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
             .mode = ECDSA_MODE_SIGN_GEN,
             .curve = curve,
             .sha_mode = ECDSA_Z_USER_PROVIDED,
-            .efuse_key_blk = d->MBEDTLS_PRIVATE(n),
-            .use_km_key = 0, //TODO: IDF-7992
             .sign_type = k_type,
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
             .loop_number = deterministic_loop_number++,
 #endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
         };
 
+        if (use_km_key) {
+            conf.use_km_key = 1;
+            conf.efuse_key_blk = -1;
+        } else {
+            conf.use_km_key = 0;
+            conf.efuse_key_blk = d->MBEDTLS_PRIVATE(n);
+        }
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
 
         process_again = !ecdsa_hal_get_operation_result()

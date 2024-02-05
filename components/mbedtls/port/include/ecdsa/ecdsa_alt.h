@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#define USE_ECDSA_KEY_FROM_KEY_MANAGER INT_MAX
+
 /**
  * @brief ECDSA private key context initialization config structure
  * @note  Contains configuration information like the efuse key block that should be used as the private key,
@@ -28,7 +30,10 @@ typedef struct {
     uint8_t efuse_block;                    /*!< EFuse block id for ECDSA private key */
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
     bool load_pubkey;                       /*!< Export ECDSA public key from the hardware */
+
 #endif
+    bool use_km_key;                        /*!< Use key deployed in the key manager for ECDSA operation.
+                                                 Note: The key must be already deployed by the application and it must be activated for the lifetime of this context */
 } esp_ecdsa_pk_conf_t;  //TODO: IDF-9008 (Add a config to select the ecdsa key from the key manager peripheral)
 
 #if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || __DOXYGEN__
