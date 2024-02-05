@@ -9,7 +9,7 @@
 
 static __attribute__((unused)) const char *TAG = "sleep_clock";
 
-esp_err_t sleep_clock_system_retention_init(void)
+esp_err_t sleep_clock_system_retention_init(void *arg)
 {
     #define N_REGS_PCR()    (((HP_SYS_CLKRST_HPCORE_WDT_RESET_SOURCE0_REG - DR_REG_HP_SYS_CLKRST_BASE) / 4) + 1)
 
@@ -25,9 +25,4 @@ esp_err_t sleep_clock_system_retention_init(void)
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention");
     ESP_LOGI(TAG, "System Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
-}
-
-void sleep_clock_system_retention_deinit(void)
-{
-    sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
 }

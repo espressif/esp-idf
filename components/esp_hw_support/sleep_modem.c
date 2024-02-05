@@ -285,24 +285,21 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 bool modem_domain_pd_allowed(void)
 {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
-    bool modem_domain_pd_allowed = false;
+    const uint32_t inited_modules = sleep_retention_get_inited_modules();
     const uint32_t created_modules = sleep_retention_get_created_modules();
+
+    uint32_t mask = 0;
 #if SOC_WIFI_SUPPORTED
-    const uint32_t mask_wifi = (const uint32_t) (BIT(SLEEP_RETENTION_MODULE_WIFI_MAC) |
-                                                 BIT(SLEEP_RETENTION_MODULE_WIFI_BB));
-    modem_domain_pd_allowed |= ((created_modules & mask_wifi) == mask_wifi);
+    mask |= BIT(SLEEP_RETENTION_MODULE_WIFI_MAC) | BIT(SLEEP_RETENTION_MODULE_WIFI_BB);
 #endif
 #if SOC_BT_SUPPORTED
-    const uint32_t mask_ble = (const uint32_t) (BIT(SLEEP_RETENTION_MODULE_BLE_MAC) |
-                                                BIT(SLEEP_RETENTION_MODULE_BT_BB));
-    modem_domain_pd_allowed |= ((created_modules & mask_ble) == mask_ble);
+    mask |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC) | BIT(SLEEP_RETENTION_MODULE_BT_BB);
 #endif
 #if SOC_IEEE802154_SUPPORTED
-    const uint32_t mask_154 = (const uint32_t) (BIT(SLEEP_RETENTION_MODULE_802154_MAC) |
-                                                BIT(SLEEP_RETENTION_MODULE_BT_BB));
-    modem_domain_pd_allowed |= ((created_modules & mask_154)  == mask_154);
+    mask |= BIT(SLEEP_RETENTION_MODULE_802154_MAC) | BIT(SLEEP_RETENTION_MODULE_BT_BB);
 #endif
-    return modem_domain_pd_allowed;
+
+    return ((inited_modules & mask) == (created_modules & mask));
 #else
     return false; /* MODEM power domain is controlled by each module (WiFi, Bluetooth or 15.4) of modem */
 #endif
