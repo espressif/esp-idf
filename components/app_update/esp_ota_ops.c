@@ -924,8 +924,8 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
 
         if (trusted_keys.key_digests[i] != NULL) {
             bool all_zeroes = true;
-            for (unsigned j = 0; j < ESP_SECURE_BOOT_DIGEST_LEN; j++) {
-                all_zeroes = all_zeroes && (*(uint8_t *)(trusted_keys.key_digests[i] + j) == 0);
+            for (unsigned j = 0; j < ESP_SECURE_BOOT_DIGEST_LEN; j+=4) {
+                all_zeroes = all_zeroes && (*(uint32_t *)(trusted_keys.key_digests[i] + j) == 0);
             }
             if (!all_zeroes) {
                 memcpy(trusted_digests.key_digests[trusted_digests.num_digests++], (uint8_t *)trusted_keys.key_digests[i], ESP_SECURE_BOOT_DIGEST_LEN);
