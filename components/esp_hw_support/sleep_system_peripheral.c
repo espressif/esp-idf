@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -247,14 +247,14 @@ bool IRAM_ATTR peripheral_domain_pd_allowed(void)
 {
     const uint32_t created_modules = sleep_retention_get_created_modules();
     const uint32_t mask = (const uint32_t) (
-            SLEEP_RETENTION_MODULE_INTR_MATRIX | \
-            SLEEP_RETENTION_MODULE_HP_SYSTEM   | \
-            SLEEP_RETENTION_MODULE_TEE_APM     | \
-            SLEEP_RETENTION_MODULE_UART0       | \
-            SLEEP_RETENTION_MODULE_TG0         | \
-            SLEEP_RETENTION_MODULE_IOMUX       | \
-            SLEEP_RETENTION_MODULE_SPIMEM      | \
-            SLEEP_RETENTION_MODULE_SYSTIMER);
+            BIT(SLEEP_RETENTION_MODULE_INTR_MATRIX) | \
+            BIT(SLEEP_RETENTION_MODULE_HP_SYSTEM)   | \
+            BIT(SLEEP_RETENTION_MODULE_TEE_APM)     | \
+            BIT(SLEEP_RETENTION_MODULE_UART0)       | \
+            BIT(SLEEP_RETENTION_MODULE_TG0)         | \
+            BIT(SLEEP_RETENTION_MODULE_IOMUX)       | \
+            BIT(SLEEP_RETENTION_MODULE_SPIMEM)      | \
+            BIT(SLEEP_RETENTION_MODULE_SYSTIMER));
     return ((created_modules & mask) == mask);
 }
 

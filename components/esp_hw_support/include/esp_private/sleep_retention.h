@@ -23,34 +23,63 @@ extern "C" {
  * includes sleep retention list creation, destruction and debugging interfaces.
  */
 
-typedef enum sleep_retention_module_bitmap {
+typedef enum sleep_retention_module {
+    SLEEP_RETENTION_MODULE_MIN          = 0,
     /* clock module, which includes system and modem */
-    SLEEP_RETENTION_MODULE_CLOCK_SYSTEM = BIT(1),
-    SLEEP_RETENTION_MODULE_CLOCK_MODEM  = BIT(2),
+    SLEEP_RETENTION_MODULE_CLOCK_SYSTEM = 1,
+    SLEEP_RETENTION_MODULE_CLOCK_MODEM  = 2,
 
     /* modem module, which includes WiFi, BLE and 802.15.4 */
-    SLEEP_RETENTION_MODULE_WIFI_MAC     = BIT(10),
-    SLEEP_RETENTION_MODULE_WIFI_BB      = BIT(11),
-    SLEEP_RETENTION_MODULE_BLE_MAC      = BIT(12),
-    SLEEP_RETENTION_MODULE_BT_BB        = BIT(13),
-    SLEEP_RETENTION_MODULE_802154_MAC   = BIT(14),
+    SLEEP_RETENTION_MODULE_WIFI_MAC     = 10,
+    SLEEP_RETENTION_MODULE_WIFI_BB      = 11,
+    SLEEP_RETENTION_MODULE_BLE_MAC      = 12,
+    SLEEP_RETENTION_MODULE_BT_BB        = 13,
+    SLEEP_RETENTION_MODULE_802154_MAC   = 14,
 
     /* digital peripheral module, which includes Interrupt Matrix, HP_SYSTEM,
      * TEE, APM, UART, Timer Group, IOMUX, SPIMEM, SysTimer, etc.. */
-    SLEEP_RETENTION_MODULE_INTR_MATRIX  = BIT(16),
-    SLEEP_RETENTION_MODULE_HP_SYSTEM    = BIT(17),
-    SLEEP_RETENTION_MODULE_TEE_APM      = BIT(18),
-    SLEEP_RETENTION_MODULE_UART0        = BIT(19),
-    SLEEP_RETENTION_MODULE_TG0          = BIT(20),
-    SLEEP_RETENTION_MODULE_IOMUX        = BIT(21),
-    SLEEP_RETENTION_MODULE_SPIMEM       = BIT(22),
-    SLEEP_RETENTION_MODULE_SYSTIMER     = BIT(23),
-    SLEEP_RETENTION_MODULE_GDMA_CH0     = BIT(24),
-    SLEEP_RETENTION_MODULE_GDMA_CH1     = BIT(25),
-    SLEEP_RETENTION_MODULE_GDMA_CH2     = BIT(26),
+    SLEEP_RETENTION_MODULE_INTR_MATRIX  = 16,
+    SLEEP_RETENTION_MODULE_HP_SYSTEM    = 17,
+    SLEEP_RETENTION_MODULE_TEE_APM      = 18,
+    SLEEP_RETENTION_MODULE_UART0        = 19,
+    SLEEP_RETENTION_MODULE_TG0          = 20,
+    SLEEP_RETENTION_MODULE_IOMUX        = 21,
+    SLEEP_RETENTION_MODULE_SPIMEM       = 22,
+    SLEEP_RETENTION_MODULE_SYSTIMER     = 23,
+    SLEEP_RETENTION_MODULE_GDMA_CH0     = 24,
+    SLEEP_RETENTION_MODULE_GDMA_CH1     = 25,
+    SLEEP_RETENTION_MODULE_GDMA_CH2     = 26,
 
+    SLEEP_RETENTION_MODULE_MAX          = 31
+} sleep_retention_module_t;
 
-    SLEEP_RETENTION_MODULE_ALL          = (uint32_t)-1
+typedef enum sleep_retention_module_bitmap {
+    /* clock module, which includes system and modem */
+    SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
+    SLEEP_RETENTION_MODULE_BM_CLOCK_MODEM  = BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM),
+
+    /* modem module, which includes WiFi, BLE and 802.15.4 */
+    SLEEP_RETENTION_MODULE_BM_WIFI_MAC     = BIT(SLEEP_RETENTION_MODULE_WIFI_MAC),
+    SLEEP_RETENTION_MODULE_BM_WIFI_BB      = BIT(SLEEP_RETENTION_MODULE_WIFI_BB),
+    SLEEP_RETENTION_MODULE_BM_BLE_MAC      = BIT(SLEEP_RETENTION_MODULE_BLE_MAC),
+    SLEEP_RETENTION_MODULE_BM_BT_BB        = BIT(SLEEP_RETENTION_MODULE_BT_BB),
+    SLEEP_RETENTION_MODULE_BM_802154_MAC   = BIT(SLEEP_RETENTION_MODULE_802154_MAC),
+
+    /* digital peripheral module, which includes Interrupt Matrix, HP_SYSTEM,
+     * TEE, APM, UART, Timer Group, IOMUX, SPIMEM, SysTimer, etc.. */
+    SLEEP_RETENTION_MODULE_BM_INTR_MATRIX  = BIT(SLEEP_RETENTION_MODULE_INTR_MATRIX),
+    SLEEP_RETENTION_MODULE_BM_HP_SYSTEM    = BIT(SLEEP_RETENTION_MODULE_HP_SYSTEM),
+    SLEEP_RETENTION_MODULE_BM_TEE_APM      = BIT(SLEEP_RETENTION_MODULE_TEE_APM),
+    SLEEP_RETENTION_MODULE_BM_UART0        = BIT(SLEEP_RETENTION_MODULE_UART0),
+    SLEEP_RETENTION_MODULE_BM_TG0          = BIT(SLEEP_RETENTION_MODULE_TG0),
+    SLEEP_RETENTION_MODULE_BM_IOMUX        = BIT(SLEEP_RETENTION_MODULE_IOMUX),
+    SLEEP_RETENTION_MODULE_BM_SPIMEM       = BIT(SLEEP_RETENTION_MODULE_SPIMEM),
+    SLEEP_RETENTION_MODULE_BM_SYSTIMER     = BIT(SLEEP_RETENTION_MODULE_SYSTIMER),
+    SLEEP_RETENTION_MODULE_BM_GDMA_CH0     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH0),
+    SLEEP_RETENTION_MODULE_BM_GDMA_CH1     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH1),
+    SLEEP_RETENTION_MODULE_BM_GDMA_CH2     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH2),
+
+    SLEEP_RETENTION_MODULE_BM_ALL          = (uint32_t)-1
 } sleep_retention_module_bitmap_t;
 
 typedef regdma_entry_buf_t sleep_retention_entries_t;
@@ -67,21 +96,21 @@ typedef struct {
  * @param num      the total number of sleep retention linked list configuration
  *                 items
  * @param priority the priority of the created sleep retention linked list
- * @param module   the bitmap of the module to which the created sleep retention
+ * @param module   the number of the module to which the created sleep retention
  *                 linked list belongs
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NO_MEM not enough memory for sleep retention
  *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
  */
-esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module);
+esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module);
 
 /**
  * @brief Destroy a runtime sleep retention linked list
  *
  * @param module   the bitmap of the module to be destroyed
  */
-void sleep_retention_entries_destroy(int module);
+void sleep_retention_entries_destroy(sleep_retention_module_t module);
 
 /**
  * @brief Print all runtime sleep retention linked lists

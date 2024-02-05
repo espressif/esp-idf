@@ -286,12 +286,15 @@ bool IRAM_ATTR modem_domain_pd_allowed(void)
 {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
     const uint32_t created_modules = sleep_retention_get_created_modules();
-    const uint32_t mask_wifi = (const uint32_t) (SLEEP_RETENTION_MODULE_WIFI_MAC |
-                                                 SLEEP_RETENTION_MODULE_WIFI_BB);
-    const uint32_t mask_ble = (const uint32_t) (SLEEP_RETENTION_MODULE_BLE_MAC |
-                                                SLEEP_RETENTION_MODULE_BT_BB);
-    const uint32_t mask_154 = (const uint32_t) (SLEEP_RETENTION_MODULE_802154_MAC |
-                                                SLEEP_RETENTION_MODULE_BT_BB);
+    const uint32_t mask_wifi = (const uint32_t) (    \
+            BIT(SLEEP_RETENTION_MODULE_WIFI_MAC)   | \
+            BIT(SLEEP_RETENTION_MODULE_WIFI_BB));
+    const uint32_t mask_ble = (const uint32_t) (     \
+            BIT(SLEEP_RETENTION_MODULE_BLE_MAC)    | \
+            BIT(SLEEP_RETENTION_MODULE_BT_BB));
+    const uint32_t mask_154 = (const uint32_t) (     \
+            BIT(SLEEP_RETENTION_MODULE_802154_MAC) | \
+            BIT(SLEEP_RETENTION_MODULE_BT_BB));
     return (((created_modules & mask_wifi) == mask_wifi) ||
             ((created_modules & mask_ble)  == mask_ble) ||
             ((created_modules & mask_154)  == mask_154));
