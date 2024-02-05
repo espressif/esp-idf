@@ -305,4 +305,7 @@ API Reference
 .. include-build-file:: inc/protocomm_security2.inc
 .. include-build-file:: inc/esp_srp.inc
 .. include-build-file:: inc/protocomm_httpd.inc
-.. include-build-file:: inc/protocomm_ble.inc
+
+.. only:: SOC_BLE_SUPPORTED
+
+    .. include-build-file:: inc/protocomm_ble.inc

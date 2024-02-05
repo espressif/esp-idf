@@ -42,10 +42,6 @@ api-guides/wifi-security.rst
 api-guides/host-apps.rst
 api-guides/index.rst
 api-guides/openthread.rst
-api-reference/provisioning/protocomm.rst
-api-reference/provisioning/provisioning.rst
-api-reference/provisioning/index.rst
-api-reference/provisioning/wifi_provisioning.rst
 api-reference/storage/vfs.rst
 api-reference/storage/spiffs.rst
 api-reference/storage/nvs_encryption.rst
