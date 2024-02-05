@@ -74,6 +74,7 @@ static void esp_key_mgr_acquire_hardware(void)
     // Reset the Key Manager Clock
     KEY_MANAGER_RCC_ATOMIC() {
         key_mgr_ll_enable_bus_clock(true);
+        key_mgr_ll_enable_peripheral_clock(true);
         key_mgr_ll_reset_register();
     }
 }
@@ -83,6 +84,7 @@ static void esp_key_mgr_release_hardware(void)
     esp_crypto_key_manager_lock_release();
     // Reset the Key Manager Clock
     KEY_MANAGER_RCC_ATOMIC() {
+        key_mgr_ll_enable_peripheral_clock(false);
         key_mgr_ll_enable_bus_clock(false);
         key_mgr_ll_reset_register();
     }
