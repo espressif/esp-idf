@@ -9,6 +9,9 @@ if(CONFIG_OPENTHREAD_ENABLED OR CONFIG_IDF_DOC_BUILD OR CONFIG_OPENTHREAD_SPINEL
     set(public_include_dirs
         "include"
         "openthread/include")
+endif()
+
+if(CONFIG_OPENTHREAD_ENABLED)
 
     set(private_include_dirs
         "openthread/examples/platforms"
