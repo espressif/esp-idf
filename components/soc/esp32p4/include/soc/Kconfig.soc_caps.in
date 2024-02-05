@@ -259,6 +259,10 @@ config SOC_GP_LDO_SUPPORTED
     bool
     default y
 
+config SOC_PPA_SUPPORTED
+    bool
+    default y
+
 config SOC_LIGHT_SLEEP_SUPPORTED
     bool
     default y
