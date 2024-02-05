@@ -57,8 +57,8 @@ void esp_cache_err_int_init(void)
     esp_rom_route_intr_matrix(core_id, ETS_CACHE_INTR_SOURCE, ETS_CACHEERR_INUM);
 
     /* Set the type and priority to cache error interrupts. */
-    esprv_intc_int_set_type(ETS_CACHEERR_INUM, INTR_TYPE_LEVEL);
-    esprv_intc_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
+    esprv_int_set_type(ETS_CACHEERR_INUM, INTR_TYPE_LEVEL);
+    esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
     /* On the hardware side, start by clearing all the bits reponsible for cache access error */

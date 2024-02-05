@@ -8,4 +8,4 @@ examples/get-started/blink:
 
 examples/get-started/hello_world:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["linux", "esp32c5"]

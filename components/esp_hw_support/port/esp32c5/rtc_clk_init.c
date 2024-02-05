@@ -23,7 +23,6 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/modem_syscon_ll.h"
 #include "hal/modem_lpcon_ll.h"
-#include "soc/pmu_reg.h"
 #include "pmu_param.h"
 
 static const char *TAG = "rtc_clk_init";
