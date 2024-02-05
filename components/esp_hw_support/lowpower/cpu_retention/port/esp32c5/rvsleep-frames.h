@@ -138,7 +138,6 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMPCFG2,          pmpcfg2)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMPCFG3,          pmpcfg3)
 
-#if SOC_CPU_HAS_PMA
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMAADDR0,         pmaaddr0)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMAADDR1,         pmaaddr1)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMAADDR2,         pmaaddr2)
@@ -171,7 +170,6 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMACFG13,         pmacfg13)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMACFG14,         pmacfg14)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMACFG15,         pmacfg15)
-#endif // SOC_CPU_HAS_PMA
 
     STRUCT_FIELD (long, 4, RV_SLP_CTX_UTVEC,            utvec)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_USTATUS,          ustatus)

@@ -48,11 +48,6 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_ISP_SHARE_CSI_BRG)
         list(APPEND srcs "mipi_csi_share_hw_ctrl.c")
     endif()
-
-    if(CONFIG_SOC_PM_SUPPORT_CPU_PD)
-        list(APPEND srcs "sleep_cpu.c")
-    endif()
-
     if(CONFIG_SOC_PAU_SUPPORTED)
         list(APPEND srcs "sleep_retention.c"  "sleep_system_peripheral.c" "sleep_clock.c")
     endif()
@@ -132,14 +127,6 @@ if(NOT BOOTLOADER_BUILD)
                          "port/regdma_link.c")
     endif()
 
-    if(CONFIG_SOC_PM_CPU_RETENTION_BY_SW)
-        list(APPEND srcs "sleep_cpu_asm.S")
-        set_property(TARGET ${COMPONENT_LIB}
-                    APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_save")
-        set_property(TARGET ${COMPONENT_LIB}
-                    APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u rv_core_critical_regs_restore")
-    endif()
-
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT AND CONFIG_SOC_MODEM_CLOCK_SUPPORTED)
         list(APPEND srcs "modem_clock.c")
     endif()
@@ -164,13 +151,11 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_IDF_TARGET_ESP32P4)
         list(REMOVE_ITEM srcs
-                "sleep_cpu.c"         # TODO: IDF-7528, IDF-7529
                 "sleep_wake_stub.c"   # TODO: IDF-7529
             )
     endif()
     if(CONFIG_IDF_TARGET_ESP32C5)
         list(REMOVE_ITEM srcs
-                "sleep_cpu.c"         # TODO: [ESP32C5] IDF-8638, IDF-8640
                 "sleep_modes.c"       # TODO: [ESP32C5] IDF-8638, IDF-8640
                 "sleep_wake_stub.c"   # TODO: [ESP32C5] IDF-8638, IDF-8640
                 "sleep_gpio.c"        # TODO: [ESP32C5] IDF-8638, IDF-8640
@@ -191,6 +176,7 @@ idf_component_register(SRCS ${srcs}
 
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
+add_subdirectory(lowpower)
 
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SPIRAM)
