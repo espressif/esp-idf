@@ -224,7 +224,7 @@ void IRAM_ATTR call_start_cpu1(void)
 #if CONFIG_ESP_CONSOLE_NONE
     esp_rom_install_channel_putc(1, NULL);
     esp_rom_install_channel_putc(2, NULL);
-#else // CONFIG_ESP_CONSOLE_NONE
+#elif !CONFIG_ESP_CONSOLE_USB_CDC
     esp_rom_install_uart_printf();
     esp_rom_output_set_as_console(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
 #endif
