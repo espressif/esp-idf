@@ -6,6 +6,7 @@
 
 #include "esp_openthread_radio.h"
 
+#include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_openthread_border_router.h"
@@ -413,7 +414,9 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 }
 #endif
 
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
 void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
 {
     s_radio.SetRxOnWhenIdle(aEnable);
 }
+#endif
