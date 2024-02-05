@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import re
-from typing import List, Optional, Union
+from typing import List
+from typing import Optional
+from typing import Union
 
 import pexpect
 import pytest
@@ -544,6 +545,11 @@ CONFIGS_MEMPROT_RTC_SLOW_MEM = [
     pytest.param('memprot_esp32s2', marks=[pytest.mark.esp32s2]),
 ]
 
+CONFIGS_MEMPROT_FLASH_IDROM = [
+    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
+    pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2])
+]
+
 
 @pytest.mark.parametrize('config', CONFIGS_MEMPROT_DCACHE, indirect=True)
 @pytest.mark.generic
@@ -777,6 +783,36 @@ def test_rtc_slow_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect(r'Read operation at address [0-9xa-f]+ not permitted \((\S+)\)')
     dut.expect_reg_dump(0)
     dut.expect_corrupted_backtrace()
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', CONFIGS_MEMPROT_FLASH_IDROM, indirect=True)
+@pytest.mark.generic
+def test_irom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    if dut.target == 'esp32c6':
+        dut.expect_gme('Store access fault')
+    elif dut.target == 'esp32h2':
+        dut.expect_gme('Cache error')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', CONFIGS_MEMPROT_FLASH_IDROM, indirect=True)
+@pytest.mark.generic
+def test_drom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', CONFIGS_MEMPROT_FLASH_IDROM, indirect=True)
+@pytest.mark.generic
+def test_drom_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Instruction access fault')
+    dut.expect_reg_dump(0)
     dut.expect_cpu_reset()
 
 
