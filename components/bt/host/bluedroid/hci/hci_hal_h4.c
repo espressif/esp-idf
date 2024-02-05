@@ -134,14 +134,19 @@ static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thr
 
 static void hci_hal_env_deinit(void)
 {
-    fixed_queue_free(hci_hal_env.rx_q, osi_free_func);
+    fixed_queue_t *rx_q = hci_hal_env.rx_q;
+    struct pkt_queue *adv_rpt_q = hci_hal_env.adv_rpt_q;
+    struct osi_event *upstream_data_ready = hci_hal_env.upstream_data_ready;
+
     hci_hal_env.rx_q = NULL;
-
-    pkt_queue_destroy(hci_hal_env.adv_rpt_q, NULL);
     hci_hal_env.adv_rpt_q = NULL;
-
-    osi_event_delete(hci_hal_env.upstream_data_ready);
     hci_hal_env.upstream_data_ready = NULL;
+
+    fixed_queue_free(rx_q, osi_free_func);
+
+    pkt_queue_destroy(adv_rpt_q, NULL);
+
+    osi_event_delete(upstream_data_ready);
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     hci_hal_env.cmd_buf_in_use = true;
