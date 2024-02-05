@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __BTC_BT_MAIN_H__
 #define __BTC_BT_MAIN_H__
@@ -35,6 +27,18 @@ typedef enum {
     BTC_MAIN_DISABLE_FUTURE,
     BTC_MAIN_FUTURE_NUM,
 } btc_main_future_type_t;
+
+#define BTC_BLE_STATUS_IDLE 0
+typedef enum {
+    BTC_BLE_STATUS_ADV = 0,     // Advertising exist
+    BTC_BLE_STATUS_SCAN,        // Scanning exist
+    BTC_BLE_STATUS_CONN,        // Connection exist
+    BTC_BLE_STATUS_DEV,         // Device record exist
+    BTC_BLE_STATUS_BOND,        // Bond info exist
+    BTC_BLE_STATUS_GATTC_CACHE, // GATTC cache exist
+    BTC_BLE_STATUS_GATTC_APP,   // GATTC application exist
+    BTC_BLE_STATUS_GATTS_SRVC,  // GATTS service exist
+} tBTC_BLE_STATUS;
 
 future_t **btc_main_get_future_p(btc_main_future_type_t type);
 
