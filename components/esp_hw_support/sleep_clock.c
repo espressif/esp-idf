@@ -10,9 +10,9 @@ bool clock_domain_pd_allowed(void)
 {
     const uint32_t created_modules = sleep_retention_get_created_modules();
     const uint32_t mask = (const uint32_t) (
-            SLEEP_RETENTION_MODULE_CLOCK_SYSTEM
+            BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
 #if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
-          | SLEEP_RETENTION_MODULE_CLOCK_MODEM
+          | BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM)
 #endif
           );
     return ((created_modules & mask) == mask);

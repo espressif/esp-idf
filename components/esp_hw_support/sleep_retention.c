@@ -82,6 +82,7 @@ typedef struct {
 #define SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES       (8u)
 #define SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY    (0)
 #define SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY     (SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES - 1)
+#define SLEEP_RETENTION_MODULE_INVALID                  ((sleep_retention_module_t)(-1)) /* the final node does not belong to any module */
     struct {
         sleep_retention_entries_t entries;
         uint32_t entries_bitmap: REGDMA_LINK_ENTRY_NUM,
@@ -104,8 +105,13 @@ static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention = {
 #define SLEEP_RETENTION_ENTRY_BITMAP_MASK       (BIT(REGDMA_LINK_ENTRY_NUM) - 1)
 #define SLEEP_RETENTION_ENTRY_BITMAP(bitmap)    ((bitmap) & SLEEP_RETENTION_ENTRY_BITMAP_MASK)
 
-static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module);
+static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module);
 static void sleep_retention_entries_join(void);
+
+static inline sleep_retention_module_bitmap_t module_num2map(sleep_retention_module_t module)
+{
+    return (module == SLEEP_RETENTION_MODULE_INVALID) ? 0 : BIT(module);
+}
 
 static inline bool sleep_retention_entries_require_branch(uint32_t owner, uint32_t runtime_bitmap)
 {
@@ -114,7 +120,7 @@ static inline bool sleep_retention_entries_require_branch(uint32_t owner, uint32
     return use_new_entry && intersection_exist;
 }
 
-static esp_err_t sleep_retention_entries_check_and_create_default(uint32_t owner, uint32_t runtime_bitmap, uint32_t entries_bitmap, regdma_link_priority_t priority, uint32_t module)
+static esp_err_t sleep_retention_entries_check_and_create_default(uint32_t owner, uint32_t runtime_bitmap, uint32_t entries_bitmap, regdma_link_priority_t priority, sleep_retention_module_t module)
 {
     assert(sleep_retention_entries_require_branch(owner, runtime_bitmap));
 
@@ -133,7 +139,7 @@ static esp_err_t sleep_retention_entries_check_and_create_final_default(void)
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
     if (s_retention.lists[SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY].entries_bitmap == 0) {
-        err = sleep_retention_entries_create_impl(&final_dummy, 1, SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY, 0);
+        err = sleep_retention_entries_create_impl(&final_dummy, 1, SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY, SLEEP_RETENTION_MODULE_INVALID);
     }
     _lock_release_recursive(&s_retention.lock);
     return err;
@@ -157,7 +163,7 @@ static void sleep_retention_entries_update(uint32_t owner, void *new_link, regdm
     _lock_release_recursive(&s_retention.lock);
 }
 
-static void * sleep_retention_entries_try_create(const regdma_link_config_t *config, uint32_t owner, regdma_link_priority_t priority, uint32_t module)
+static void * sleep_retention_entries_try_create(const regdma_link_config_t *config, uint32_t owner, regdma_link_priority_t priority, sleep_retention_module_t module)
 {
     void *link = NULL;
     assert(owner > 0 && owner < BIT(REGDMA_LINK_ENTRY_NUM));
@@ -165,9 +171,9 @@ static void * sleep_retention_entries_try_create(const regdma_link_config_t *con
     _lock_acquire_recursive(&s_retention.lock);
     if (sleep_retention_entries_require_branch(owner, s_retention.lists[priority].runtime_bitmap)) {
         if (sleep_retention_entries_check_and_create_default(owner, s_retention.lists[priority].runtime_bitmap,
-            s_retention.lists[priority].entries_bitmap, priority, module) == ESP_OK) { /* branch node can't as tail node */
+            s_retention.lists[priority].entries_bitmap, priority, module_num2map(module)) == ESP_OK) { /* branch node can't as tail node */
             link = regdma_link_init_safe(
-                        config, true, module,
+                        config, true, module_num2map(module),
                         (owner & BIT(0)) ? s_retention.lists[priority].entries[0] : NULL,
                         (owner & BIT(1)) ? s_retention.lists[priority].entries[1] : NULL,
                         (owner & BIT(2)) ? s_retention.lists[priority].entries[2] : NULL,
@@ -175,18 +181,18 @@ static void * sleep_retention_entries_try_create(const regdma_link_config_t *con
                     );
         }
     } else {
-        link = regdma_link_init_safe(config, false, module, s_retention.lists[priority].entries[__builtin_ffs(owner) - 1]);
+        link = regdma_link_init_safe(config, false, module_num2map(module), s_retention.lists[priority].entries[__builtin_ffs(owner) - 1]);
     }
     _lock_release_recursive(&s_retention.lock);
     return link;
 }
 
-static void * sleep_retention_entries_try_create_bonding(const regdma_link_config_t *config, uint32_t owner, regdma_link_priority_t priority, uint32_t module)
+static void * sleep_retention_entries_try_create_bonding(const regdma_link_config_t *config, uint32_t owner, regdma_link_priority_t priority, sleep_retention_module_t module)
 {
     assert(owner > 0 && owner < BIT(REGDMA_LINK_ENTRY_NUM));
     _lock_acquire_recursive(&s_retention.lock);
     void *link = regdma_link_init_safe(
-                config, true, module,
+                config, true, module_num2map(module),
                 (owner & BIT(0)) ? s_retention.lists[priority].entries[0] : NULL,
                 (owner & BIT(1)) ? s_retention.lists[priority].entries[1] : NULL,
                 (owner & BIT(2)) ? s_retention.lists[priority].entries[2] : NULL,
@@ -246,7 +252,7 @@ static uint32_t sleep_retention_entries_owner_bitmap(sleep_retention_entries_t *
     return owner;
 }
 
-static bool sleep_retention_entries_get_destroy_context(regdma_link_priority_t priority, uint32_t module, sleep_retention_entries_t *destroy_entries, void **destroy_tail, sleep_retention_entries_t *next_entries, void **prev_tail)
+static bool sleep_retention_entries_get_destroy_context(regdma_link_priority_t priority, sleep_retention_module_t module, sleep_retention_entries_t *destroy_entries, void **destroy_tail, sleep_retention_entries_t *next_entries, void **prev_tail)
 {
     bool exist = false;
     sleep_retention_entries_t destroy_tails, prev_tails;
@@ -257,13 +263,13 @@ static bool sleep_retention_entries_get_destroy_context(regdma_link_priority_t p
     _lock_acquire_recursive(&s_retention.lock);
     for (int entry = 0; entry < ARRAY_SIZE(s_retention.lists[priority].entries); entry++) {
         (*destroy_entries)[entry] = regdma_find_module_link_head(
-                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module);
+                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module_num2map(module));
         destroy_tails     [entry] = regdma_find_module_link_tail(
-                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module);
+                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module_num2map(module));
         (*next_entries)   [entry] = regdma_find_next_module_link_head(
-                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module);
+                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module_num2map(module));
         prev_tails        [entry] = regdma_find_prev_module_link_tail(
-                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module);
+                s_retention.lists[priority].entries[entry], s_retention.lists[priority].entries_tail, entry, module_num2map(module));
         if ((*destroy_entries)[entry] && destroy_tails[entry]) {
             exist = true;
         }
@@ -327,7 +333,7 @@ static void sleep_retention_entries_check_and_distroy_final_default(void)
     _lock_release_recursive(&s_retention.lock);
 }
 
-static void sleep_retention_entries_all_destroy_wrapper(uint32_t module)
+static void sleep_retention_entries_all_destroy_wrapper(sleep_retention_module_t module)
 {
     void *destroy_tail = NULL, *prev_tail = NULL;
     sleep_retention_entries_t destroy_entries, next_entries;
@@ -348,13 +354,13 @@ static void sleep_retention_entries_all_destroy_wrapper(uint32_t module)
             priority++;
         }
     } while (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES);
-    s_retention.created_modules &= ~module;
+    s_retention.created_modules &= ~module_num2map(module);
     _lock_release_recursive(&s_retention.lock);
 }
 
-static void sleep_retention_entries_do_destroy(int module)
+static void sleep_retention_entries_do_destroy(sleep_retention_module_t module)
 {
-    assert(module != 0);
+    assert(SLEEP_RETENTION_MODULE_MIN <= module && module <= SLEEP_RETENTION_MODULE_MAX);
     _lock_acquire_recursive(&s_retention.lock);
     sleep_retention_entries_join();
     sleep_retention_entries_stats();
@@ -362,9 +368,9 @@ static void sleep_retention_entries_do_destroy(int module)
     _lock_release_recursive(&s_retention.lock);
 }
 
-void sleep_retention_entries_destroy(int module)
+void sleep_retention_entries_destroy(sleep_retention_module_t module)
 {
-    assert(module != 0);
+    assert(SLEEP_RETENTION_MODULE_MIN <= module && module <= SLEEP_RETENTION_MODULE_MAX);
     _lock_acquire_recursive(&s_retention.lock);
     sleep_retention_entries_do_destroy(module);
     if (s_retention.created_modules == 0) {
@@ -380,7 +386,7 @@ void sleep_retention_entries_destroy(int module)
     _lock_release_recursive(&s_retention.lock);
 }
 
-static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module)
+static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module)
 {
     _lock_acquire_recursive(&s_retention.lock);
     for (int i = num - 1; i >= 0; i--) {
@@ -403,7 +409,7 @@ static esp_err_t sleep_retention_entries_create_impl(const sleep_retention_entri
     return ESP_OK;
 }
 
-static esp_err_t sleep_retention_entries_create_bonding(regdma_link_priority_t priority, uint32_t module)
+static esp_err_t sleep_retention_entries_create_bonding(regdma_link_priority_t priority, sleep_retention_module_t module)
 {
     static const sleep_retention_entries_config_t bonding_dummy = { REGDMA_LINK_WAIT_INIT(0xffff, 0, 0, 0, 1, 1), SLEEP_RETENTION_ENTRY_BITMAP_MASK };
 
@@ -442,7 +448,7 @@ static void sleep_retention_entries_join(void)
     _lock_release_recursive(&s_retention.lock);
 }
 
-static esp_err_t sleep_retention_entries_create_wrapper(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, uint32_t module)
+static esp_err_t sleep_retention_entries_create_wrapper(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module)
 {
     _lock_acquire_recursive(&s_retention.lock);
     esp_err_t err = sleep_retention_entries_create_bonding(priority, module);
@@ -451,7 +457,7 @@ static esp_err_t sleep_retention_entries_create_wrapper(const sleep_retention_en
     if(err) goto error;
     err = sleep_retention_entries_create_bonding(priority, module);
     if(err) goto error;
-    s_retention.created_modules |= module;
+    s_retention.created_modules |= module_num2map(module);
     sleep_retention_entries_join();
 
 error:
@@ -459,9 +465,15 @@ error:
     return err;
 }
 
-esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module)
+esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module)
 {
-    if (!(retent && num > 0 && (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES) && (module != 0))) {
+    if (retent == NULL || num <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (priority >= SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
     if (s_retention.lock == NULL) {

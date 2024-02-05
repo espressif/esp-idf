@@ -23,6 +23,7 @@ extern "C" {
  * This file contains declarations of sleep retention related functions, it
  * includes sleep retention list creation, destruction and debugging interfaces.
  */
+typedef periph_retention_module_t           sleep_retention_module_t;
 typedef periph_retention_module_bitmap_t    sleep_retention_module_bitmap_t;
 typedef regdma_entry_buf_t                  sleep_retention_entries_t;
 typedef regdma_entries_config_t             sleep_retention_entries_config_t;
@@ -34,21 +35,21 @@ typedef regdma_entries_config_t             sleep_retention_entries_config_t;
  * @param num      the total number of sleep retention linked list configuration
  *                 items
  * @param priority the priority of the created sleep retention linked list
- * @param module   the bitmap of the module to which the created sleep retention
+ * @param module   the number of the module to which the created sleep retention
  *                 linked list belongs
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NO_MEM not enough memory for sleep retention
  *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
  */
-esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, int module);
+esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module);
 
 /**
  * @brief Destroy a runtime sleep retention linked list
  *
  * @param module   the bitmap of the module to be destroyed
  */
-void sleep_retention_entries_destroy(int module);
+void sleep_retention_entries_destroy(sleep_retention_module_t module);
 
 /**
  * @brief Print all runtime sleep retention linked lists

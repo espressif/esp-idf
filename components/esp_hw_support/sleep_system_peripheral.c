@@ -146,23 +146,23 @@ error:
 bool peripheral_domain_pd_allowed(void)
 {
     const uint32_t created_modules = sleep_retention_get_created_modules();
-    uint32_t mask = (uint32_t) (
-            SLEEP_RETENTION_MODULE_INTR_MATRIX | \
-            SLEEP_RETENTION_MODULE_HP_SYSTEM   | \
-            SLEEP_RETENTION_MODULE_UART0       | \
-            SLEEP_RETENTION_MODULE_TG0         | \
-            SLEEP_RETENTION_MODULE_IOMUX       | \
-            SLEEP_RETENTION_MODULE_SPIMEM      | \
-            SLEEP_RETENTION_MODULE_SYSTIMER);
 
+    uint32_t mask = (uint32_t) (
+            BIT(SLEEP_RETENTION_MODULE_INTR_MATRIX) | \
+            BIT(SLEEP_RETENTION_MODULE_HP_SYSTEM)   | \
+            BIT(SLEEP_RETENTION_MODULE_UART0)       | \
+            BIT(SLEEP_RETENTION_MODULE_TG0)         | \
+            BIT(SLEEP_RETENTION_MODULE_IOMUX)       | \
+            BIT(SLEEP_RETENTION_MODULE_SPIMEM)      | \
+            BIT(SLEEP_RETENTION_MODULE_SYSTIMER));
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    mask |= SLEEP_RETENTION_MODULE_L2_CACHE;
+    mask |= BIT(SLEEP_RETENTION_MODULE_L2_CACHE);
 #endif
 #if SOC_APM_SUPPORTED
-    mask |= SLEEP_RETENTION_MODULE_TEE_APM;
+    mask |= BIT(SLEEP_RETENTION_MODULE_TEE_APM);
 #endif
 #if SOC_PAU_IN_TOP_DOMAIN
-    mask |= SLEEP_RETENTION_MODULE_REGDMA_SYSTEM;
+    mask |= BIT(SLEEP_RETENTION_MODULE_REGDMA_SYSTEM);
 #endif
     return ((created_modules & mask) == mask);
 }
