@@ -832,15 +832,6 @@ static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config)
 {
     int panel_id = panel->panel_id;
-    // check validation of GPIO number
-    bool valid_gpio = true;
-    if (panel_config->de_gpio_num < 0) {
-        // Hsync and Vsync are required in HV mode
-        valid_gpio = valid_gpio && (panel_config->hsync_gpio_num >= 0) && (panel_config->vsync_gpio_num >= 0);
-    }
-    if (!valid_gpio) {
-        return ESP_ERR_INVALID_ARG;
-    }
     // Set the number of output data lines
     lcd_ll_set_data_wire_width(panel->hal.dev, panel_config->data_width);
     // connect peripheral signals via GPIO matrix
