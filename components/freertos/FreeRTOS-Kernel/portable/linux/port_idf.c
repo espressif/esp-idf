@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,12 +17,22 @@
 #include <assert.h>
 #include <time.h>
 #include <unistd.h>
+#include <execinfo.h>
+#include <signal.h>
 
 /* Scheduler includes. */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "utils/wait_for_event.h"
 #include "esp_log.h"
+
+#define BACKTRACE_PC_ARRAY_SIZE 20
+#define ON_SEGFAULT_MESSAGE "ERROR: Segmentation Fault, here's your backtrace:\n"
+#define ON_ABORT_MESSAGE "ERROR: Aborted\n"
+
+#if (defined(__APPLE__) && defined(__MACH__))
+typedef sig_t sighandler_t;
+#endif
 
 static const char *TAG = "port";
 
@@ -40,6 +50,52 @@ BaseType_t xPortCheckIfInISR(void)
     return uxInterruptNesting;
 }
 
+#if CONFIG_COMPILER_OPTIMIZATION_DEBUG
+#define BACKTRACE_PC_ARRAY_SIZE_DUMMY 1
+/**
+ * This function calls backtrace once to ensure that libgcc is loaded already.
+ */
+static void load_libgcc(void)
+{
+    void *array[BACKTRACE_PC_ARRAY_SIZE_DUMMY];
+    size_t size = backtrace(array, BACKTRACE_PC_ARRAY_SIZE_DUMMY);
+    assert(size == 1); // Since this function can be called, the first stack frame should be present
+}
+
+/*
+ * Print a rudimentary backtrace to help users a bit with segfaults.
+ */
+static void segfault_handler(int sig)
+{
+    void *array[BACKTRACE_PC_ARRAY_SIZE];
+    size_t size;
+
+    // get void*'s for all entries on the stack
+    size = backtrace(array, BACKTRACE_PC_ARRAY_SIZE);
+
+    // we need a raw file write here because other functions are not async-signal-safe
+    int written = write(STDERR_FILENO, ON_SEGFAULT_MESSAGE, sizeof(ON_SEGFAULT_MESSAGE));
+    (void) written; // The return value is ignored for now, as we don't have a lot of options in case of failure
+                    // and EINTR can't happen in a signal handler anyways
+
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    _exit(1);
+}
+
+/*
+ * Print a message to signal abort, even in idf.py monitor.
+ */
+static void abort_handler(int sig)
+{
+    // we need a raw file write here because other functions are not async-signal-safe
+    int written = write(STDERR_FILENO, ON_ABORT_MESSAGE, sizeof(ON_ABORT_MESSAGE));
+    (void) written; // The return value is ignored for now, as we don't have a lot of options in case of failure
+                    // and EINTR can't happen in a signal handler anyways
+
+    _exit(1);
+}
+#endif // CONFIG_COMPILER_OPTIMIZATION_DEBUG
+
 void app_main(void);
 
 static void main_task(void* args)
@@ -50,9 +106,30 @@ static void main_task(void* args)
 
 int main(int argc, const char **argv)
 {
-    // This makes sure that stdio is always syncronized so that idf.py monitor
+    // This makes sure that stdio is always synchronized so that idf.py monitor
     // and other tools read text output on time.
     setvbuf(stdout, NULL, _IONBF, 0);
+
+#if CONFIG_COMPILER_OPTIMIZATION_DEBUG
+    // Ensures that libgcc is loaded to avoid problems when loading it later in
+    // the signal handler (see NOTES section in glibc backtrace man page)
+    load_libgcc();
+    sighandler_t sig_res;
+
+    // Enable backtraces
+    sig_res = signal(SIGSEGV, segfault_handler);
+    if (sig_res == SIG_ERR) {
+        perror("Failed setting the segfault handler");
+        abort();
+    }
+
+    // Enable error message on abort
+    sig_res = signal(SIGABRT, abort_handler);
+    if (sig_res == SIG_ERR) {
+        perror("Failed setting the abort handler");
+        abort();
+    }
+#endif // CONFIG_COMPILER_OPTIMIZATION_DEBUG
 
     usleep(1000);
     BaseType_t res = xTaskCreatePinnedToCore(&main_task, "main",
