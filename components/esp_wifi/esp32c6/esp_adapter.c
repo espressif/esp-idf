@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -535,6 +535,18 @@ static void esp_phy_disable_wrapper(void)
     esp_phy_disable(PHY_MODEM_WIFI);
 }
 
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+static void regdma_link_set_write_wait_content_wrapper(void *addr, uint32_t value, uint32_t mask)
+{
+    regdma_link_set_write_wait_content(addr, value, mask);
+}
+
+static void *sleep_retention_find_link_by_id_wrapper(int id)
+{
+    return sleep_retention_find_link_by_id(id);
+}
+#endif
+
 wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._version = ESP_WIFI_OS_ADAPTER_VERSION,
     ._env_is_chip = esp_coex_common_env_is_chip_wrapper,
@@ -650,10 +662,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_curr_phase_get = coex_schm_curr_phase_get_wrapper,
     ._coex_register_start_cb = coex_register_start_cb_wrapper,
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
-    ._regdma_link_set_write_wait_content = regdma_link_set_write_wait_content,
-    ._sleep_retention_find_link_by_id = sleep_retention_find_link_by_id,
-    ._sleep_retention_entries_create = (int (*)(const void *, int, int, int))sleep_retention_entries_create,
-    ._sleep_retention_entries_destroy = sleep_retention_entries_destroy,
+    ._regdma_link_set_write_wait_content = regdma_link_set_write_wait_content_wrapper,
+    ._sleep_retention_find_link_by_id = sleep_retention_find_link_by_id_wrapper,
 #endif
     ._coex_schm_process_restart = coex_schm_process_restart_wrapper,
     ._coex_schm_register_cb = coex_schm_register_cb_wrapper,

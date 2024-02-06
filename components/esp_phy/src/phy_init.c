@@ -21,6 +21,7 @@
 #include "esp_efuse.h"
 #include "esp_timer.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_check.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
@@ -412,7 +413,20 @@ static uint8_t s_macbb_backup_mem_ref = 0;
 /* Reference of powering down MAC and BB */
 static bool s_mac_bb_pu = true;
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
-static void *s_mac_bb_tx_base = NULL;
+static esp_err_t sleep_retention_wifi_bb_init(void *arg)
+{
+    const static sleep_retention_entries_config_t bb_regs_retention[] = {
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, 121, 0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, 14,  0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
+        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, 136, 0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
+        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, 53,  0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
+        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, 58,  0, 0), .owner = BIT(0) | BIT(1) }  /* FE COEX */
+    };
+    esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (%s) retention", "WiFi BB");
+    ESP_LOGD(TAG, "WiFi BB sleep retention initialization");
+    return ESP_OK;
+}
 #endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
 void esp_mac_bb_pd_mem_init(void)
@@ -425,22 +439,18 @@ void esp_mac_bb_pd_mem_init(void)
     }
     _lock_release(&s_phy_access_lock);
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
-    const static sleep_retention_entries_config_t bb_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, 121, 0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, 14,  0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
-        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, 136, 0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
-        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, 53,  0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
-        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, 58,  0, 0), .owner = BIT(0) | BIT(1) }  /* FE COEX */
+    sleep_retention_module_init_param_t init_param = {
+        .cbs     = { .create = { .handle = sleep_retention_wifi_bb_init, .arg = NULL } },
+        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM)
     };
-    esp_err_t err = ESP_OK;
-    _lock_acquire(&s_phy_access_lock);
-    s_mac_bb_tx_base = sleep_retention_find_link_by_id(0x0b01);
-    if (s_mac_bb_tx_base == NULL) {
-        err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
-    }
-    _lock_release(&s_phy_access_lock);
+    esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_WIFI_BB, &init_param);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "failed to allocate memory for WiFi baseband retention");
+        ESP_LOGW(TAG, "WiFi BB sleep retention init failed");
+        return;
+    }
+    err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_WIFI_BB);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to allocate sleep retention linked list for wifi bb retention");
     }
 #endif
 }
@@ -456,10 +466,15 @@ void esp_mac_bb_pd_mem_deinit(void)
     }
     _lock_release(&s_phy_access_lock);
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
-    _lock_acquire(&s_phy_access_lock);
-    sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_WIFI_BB);
-    s_mac_bb_tx_base = NULL;
-    _lock_release(&s_phy_access_lock);
+    esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_WIFI_BB);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to free sleep retention linked list for wifi bb retention");
+        return;
+    }
+    err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_WIFI_BB);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "WiFi BB sleep retention deinit defailed");
+    }
 #endif
 }
 
