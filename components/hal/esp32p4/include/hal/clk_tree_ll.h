@@ -16,6 +16,7 @@
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_cpll.h"
 #include "soc/regi2c_mpll.h"
+#include "soc/regi2c_bias.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32p4/rom/rtc.h"
@@ -381,6 +382,12 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_mpll_get_freq_mhz(u
 static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_t mpll_freq_mhz, uint32_t xtal_freq_mhz)
 {
     HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
+
+    uint8_t mpll_dhref_val = REGI2C_READ(I2C_MPLL, I2C_MPLL_DHREF);
+    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_DHREF,  mpll_dhref_val | (3 << I2C_MPLL_DHREF_LSB));
+    uint8_t mpll_rstb_val = REGI2C_READ(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB);
+    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val & 0xdf);
+    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val | (1 << I2C_MPLL_IR_CAL_RSTB_lSB));
 
     // MPLL_Freq = XTAL_Freq * (div + 1) / (ref_div + 1)
     uint8_t ref_div = 1;

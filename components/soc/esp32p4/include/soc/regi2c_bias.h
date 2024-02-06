@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,22 @@
 
 #define I2C_BIAS        0x6A
 #define I2C_BIAS_HOSTID 0
+
+#define I2C_BIAS_DREG_1P6       0
+#define I2C_BIAS_DREG_1P6_MSB   3
+#define I2C_BIAS_DREG_1P6_LSB   0
+
+#define I2C_BIAS_DREG_1P1       0
+#define I2C_BIAS_DREG_1P1_MSB   7
+#define I2C_BIAS_DREG_1P1_LSB   4
+
+#define I2C_BIAS_DREG_1P1_PVT       1
+#define I2C_BIAS_DREG_1P1_PVT_MSB   3
+#define I2C_BIAS_DREG_1P1_PVT_LSB   0
+
+#define I2C_BIAS_DREG_2P2_PVT       1
+#define I2C_BIAS_DREG_2P2_PVT_MSB   7
+#define I2C_BIAS_DREG_2P2_PVT_LSB   4
 
 #define I2C_BIAS_OR_FORCE_XPD_CK        4
 #define I2C_BIAS_OR_FORCE_XPD_CK_MSB    0
