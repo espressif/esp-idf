@@ -405,10 +405,10 @@ static int tls_disable_key_usages(void *data, mbedtls_x509_crt *cert, int depth,
 #endif /*CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK*/
 
 #if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
-#define TLS1_3_CIPHER_SUITES \
+#define TLS1_3_CIPHER_SUITES 				\
 	MBEDTLS_TLS1_3_CHACHA20_POLY1305_SHA256,	\
-	MBEDTLS_TLS1_3_AES_256_GCM_SHA384,			\
-	MBEDTLS_TLS1_3_AES_128_GCM_SHA256,			\
+	MBEDTLS_TLS1_3_AES_256_GCM_SHA384,		\
+	MBEDTLS_TLS1_3_AES_128_GCM_SHA256,		\
 	MBEDTLS_TLS1_3_AES_128_CCM_8_SHA256,		\
 	MBEDTLS_TLS1_3_AES_128_CCM_SHA256
 #endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
@@ -534,7 +534,7 @@ static const int eap_ciphersuite_preference[] =
 static const int suiteb_rsa_ciphersuite_preference[] =
 {
 #if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
-	TLS1_3_CIPHER_SUITES,
+	MBEDTLS_TLS1_3_AES_256_GCM_SHA384,
 #endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
 #if defined(MBEDTLS_SHA512_C)
@@ -548,7 +548,7 @@ static const int suiteb_rsa_ciphersuite_preference[] =
 static const int suiteb_ecc_ciphersuite_preference[] =
 {
 #if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
-	TLS1_3_CIPHER_SUITES,
+	MBEDTLS_TLS1_3_AES_256_GCM_SHA384,
 #endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
 #if defined(MBEDTLS_SHA512_C)
@@ -560,7 +560,7 @@ static const int suiteb_ecc_ciphersuite_preference[] =
 static const int suiteb_ciphersuite_preference[] =
 {
 #if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
-	TLS1_3_CIPHER_SUITES,
+	MBEDTLS_TLS1_3_AES_256_GCM_SHA384,
 #endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
 #if defined(MBEDTLS_GCM_C)
 #if defined(MBEDTLS_SHA512_C)
@@ -797,6 +797,13 @@ struct tls_connection * tls_connection_init(void *tls_ctx)
 		wpa_printf(MSG_ERROR, "TLS: Failed to allocate connection memory");
 		return NULL;
 	}
+#ifdef CONFIG_TLSV13
+	psa_status_t status = psa_crypto_init();
+	if (status != PSA_SUCCESS) {
+		wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
+		return NULL;
+	}
+#endif /* CONFIG_TLSV13 */
 	return conn;
 }
 
@@ -902,7 +909,6 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	tls_context_t *tls = conn->tls;
 	int ret = 0;
 	struct wpabuf *resp;
-	int cli_state;
 
 	/* data freed by sender */
 	conn->tls_io_data.out_data = NULL;
@@ -912,9 +918,11 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 
 	/* Multiple reads */
 	while (!mbedtls_ssl_is_handshake_over(&tls->ssl)) {
-		cli_state = tls->ssl.MBEDTLS_PRIVATE(state);
+#ifdef CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
+		int cli_state = tls->ssl.MBEDTLS_PRIVATE(state);
+#endif /* CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER */
 		ret = mbedtls_ssl_handshake_step(&tls->ssl);
-		if (ret < 0)
+		if (ret < 0) {
 			break;
 		}
 #ifdef CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER

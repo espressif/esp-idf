@@ -18,10 +18,6 @@
 #include "eap_peer/eap_config.h"
 #include "eap_peer/eap_methods.h"
 
-#ifdef CONFIG_TLSV13
-#include "psa/crypto.h"
-#endif /* CONFIG_TLSV13 */
-
 /* Maximum supported PEAP version
  * 0 = Microsoft's PEAP version 0; draft-kamath-pppext-peapv0-00.txt
  * 1 = draft-josefsson-ppext-eap-tls-eap-05.txt
@@ -164,13 +160,6 @@ eap_peap_init(struct eap_sm *sm)
 {
 	struct eap_peap_data *data;
 	struct eap_peer_config *config = eap_get_config(sm);
-#ifdef CONFIG_TLSV13
-	psa_status_t status = psa_crypto_init();
-	if (status != PSA_SUCCESS) {
-		wpa_printf(MSG_ERROR, "EAP-PEAP: Failed to initialize PSA crypto, returned %d", (int) status);
-		return NULL;
-	}
-#endif /* CONFIG_TLSV13 */
 
 	data = (struct eap_peap_data *)os_zalloc(sizeof(*data));
 	if (data == NULL)

@@ -494,18 +494,18 @@ menu "Wi-Fi"
                     it is advisable to update your server.
                     Please disable this option for compatibilty with older TLS versions.
 
-        config ESP_WIFI_EAP_TLS1_3
-            bool "Enable EAP-TLS v1.3 Support for WiFi Enterprise connection"
-            default n
-            select MBEDTLS_SSL_PROTO_TLS1_3
-            depends on ESP_WIFI_MBEDTLS_TLS_CLIENT && IDF_EXPERIMENTAL_FEATURES
-            help
-                Select this option to support EAP with TLS v1.3.
-                This configuration still supports compatibility with EAP-TLS v1.2.
-                Please note that enabling this configuration will cause every application which
-                uses TLS go for TLS1.3 if server supports that. TLS1.3 is still in development in mbedtls
-                and there may be interoperability issues with this. Please modify your application to set
-                max version as TLS1.2 if you want to enable TLS1.3 only for WiFi connection.
+            config ESP_WIFI_EAP_TLS1_3
+                bool "Enable EAP-TLS v1.3 Support for WiFi Enterprise connection"
+                default n
+                select MBEDTLS_SSL_PROTO_TLS1_3
+                depends on ESP_WIFI_MBEDTLS_TLS_CLIENT && IDF_EXPERIMENTAL_FEATURES
+                help
+                    Select this option to support EAP with TLS v1.3.
+                    This configuration still supports compatibility with EAP-TLS v1.2.
+                    Please note that enabling this configuration will cause every application which
+                    uses TLS go for TLS1.3 if server supports that. TLS1.3 is still in development in mbedtls
+                    and there may be interoperability issues with this. Please modify your application to set
+                    max version as TLS1.2 if you want to enable TLS1.3 only for WiFi connection.
 
         endif
 
