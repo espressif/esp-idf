@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "esp_err.h"
 #include "ulp_common.h"
+#include "esp_rom_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +30,11 @@ extern "C" {
 typedef struct {
     uint32_t wakeup_source;                  /*!< Wakeup source flags */
     uint32_t lp_timer_sleep_duration_us;     /*!< Sleep duration when ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER is specified. Measurement unit: us */
+#if ESP_ROM_HAS_LP_ROM
+    bool    skip_lp_rom_boot;               /* !< Skips the LP rom code and boots directly into the app code placed in LP RAM,
+                                                  this gives faster boot time for time sensitive use-cases at the cost of skipping
+                                                  setup e.g. of UART */
+#endif //ESP_ROM_HAS_LP_ROM
 } ulp_lp_core_cfg_t;
 
 /**

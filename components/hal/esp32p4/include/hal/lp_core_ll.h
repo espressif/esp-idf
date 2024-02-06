@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,6 +138,14 @@ static inline void lp_core_ll_set_boot_address(intptr_t boot_address)
 static inline void lp_core_ll_set_app_boot_address(intptr_t boot_address)
 {
     LP_SYS.boot_addr_hp_lp_reg.boot_addr_hp_lp = boot_address;
+}
+
+/**
+ * @brief Request PMU to put LP core to sleep
+ */
+static inline void lp_core_ll_request_sleep(void)
+{
+    PMU.lp_ext.pwr1.sleep_req = 1;
 }
 
 #ifdef __cplusplus

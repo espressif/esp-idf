@@ -59,7 +59,14 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
 
 #if ESP_ROM_HAS_LP_ROM
     /* If we have a LP ROM we boot from it, before jumping to the app code */
-    lp_core_ll_set_boot_address(SOC_LP_ROM_LOW);
+    intptr_t boot_addr;
+    if (cfg->skip_lp_rom_boot) {
+        boot_addr = RTC_SLOW_MEM;
+    } else {
+        boot_addr = SOC_LP_ROM_LOW;
+    }
+
+    lp_core_ll_set_boot_address(boot_addr);
     lp_core_ll_set_app_boot_address(RTC_SLOW_MEM);
 #endif //ESP_ROM_HAS_LP_ROM
 
@@ -131,6 +138,6 @@ esp_err_t ulp_lp_core_load_binary(const uint8_t* program_binary, size_t program_
 void ulp_lp_core_stop(void)
 {
     /* Disable wake-up source and put lp core to sleep */
-    REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_WAKEUP_EN, 0);
-    REG_SET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_SLEEP_REQ, 1);
+    lp_core_ll_set_wakeup_source(0);
+    lp_core_ll_request_sleep();
 }
