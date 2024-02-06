@@ -209,25 +209,25 @@ The ULP RISC-V core supports interrupt handling from certain internal and extern
     * - EBREAK or ECALL or Illegal Instruction
       - Internal
       - 1
-    * - Unalligned Memory Access
+    * - Unaligned Memory Access
       - Internal
       - 2
     * - RTC Peripheral Sources
       - External
       - 31
 
-Interrupt handling is enabled via special 32-bit registers q0-q3 and custom R-type instructions. For more information, see *{IDF_TARGET_NAME} Technical Reference Manual* > *ULP Coprocessor* > *ULP-RISC-V* > *ULP-RISC-V Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}>`__].
+Interrupt handling is enabled via special 32-bit registers Q0-Q3 and custom R-type instructions. For more information, see *{IDF_TARGET_NAME} Technical Reference Manual* > *ULP Coprocessor* > *ULP-RISC-V* > *ULP-RISC-V Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}>`__].
 
-All interrupts are enabled globally during start up. When an interrupt occurs, the processor jumps to the IRQ vector. The IRQ vector performs the task of saving the register context and then calling the global interrupt dispatcher. The ULP RISC-V driver implements a *weak* interrupt dispatcher :cpp:func:`_ulp_riscv_interrupt_handler` which serves as the central point for handling all interrupts. This global dispatcher calls respective interrupt handlers which have been allocated via the :cpp:func:`ulp_riscv_intr_alloc`.
+All interrupts are enabled globally during start-up. When an interrupt occurs, the processor jumps to the IRQ vector. The IRQ vector performs the task of saving the register context and then calling the global interrupt dispatcher. The ULP RISC-V driver implements a *weak* interrupt dispatcher :cpp:func:`_ulp_riscv_interrupt_handler` which serves as the central point for handling all interrupts. This global dispatcher calls respective interrupt handlers which have been allocated via the :cpp:func:`ulp_riscv_intr_alloc`.
 
-Interrupt handling on the ULP RISC-V is not full featured yet. At present, interrupt handling for internal interrupt source is not supported. Support is provided for 2 RTC peripheral sources, viz., software triggered interrupt and RTC IO triggered interrupts. ULP RISC-V does not support nested interrupts. If users need custom interrupt handling then they may override the default global interrupt dispatcher by defining their own :cpp:func:`_ulp_riscv_interrupt_handler`.
+Interrupt handling on the ULP RISC-V is not fully featured yet. At present, interrupt handling for internal interrupt sources is not supported. Support is provided for two RTC peripheral sources, viz., software-triggered interrupts and RTC IO-triggered interrupts. ULP RISC-V does not support nested interrupts. If users need custom interrupt handling then they may override the default global interrupt dispatcher by defining their own :cpp:func:`_ulp_riscv_interrupt_handler`.
 
 Debugging Your ULP RISC-V Program
 ----------------------------------
 
 When programming the ULP RISC-V, it can sometimes be challenging to figure out why the program is not behaving as expected. Due to the simplicity of the core, many of the standard methods of debugging, e.g., JTAG or ``printf``, are simply not available.
 
-Keeping this in mind, here are some ways that may help you debug you ULP RISC-V program:
+Keeping this in mind, here are some ways that may help you debug your ULP RISC-V program:
 
  * Share program state through shared variables: as described in :ref:`ulp-riscv-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
 
