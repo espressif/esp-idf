@@ -300,6 +300,7 @@ static bool wifi_perform_scan(const char *ssid, bool internal)
     g_ap_list_buffer = malloc(g_scan_ap_num * sizeof(wifi_ap_record_t));
     if (g_ap_list_buffer == NULL) {
         ESP_LOGE(TAG_STA, "Failed to malloc buffer to print scan results");
+        esp_wifi_clear_ap_list();
         return false;
     }
 
