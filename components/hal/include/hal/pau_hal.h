@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,6 +109,15 @@ void pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal);
  * @param hal           regdma hal context
  */
 void pau_hal_regdma_clock_configure(pau_hal_context_t *hal, bool enable);
+#endif
+
+#if SOC_PAU_IN_TOP_DOMAIN
+/**
+ * If PAU is in TOP power domain, configuration will be lost after sleep, it is necessary
+ * to use LP_SYS_BACKUP_DMA_CFG2_REG to override restore link address, do related logic
+ * initialization by this function.
+ */
+void pau_hal_lp_sys_initialize(void);
 #endif
 
 #endif

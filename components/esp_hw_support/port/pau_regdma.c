@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/soc.h"
-#include "soc/pcr_reg.h"
+#include "soc/soc_caps.h"
 #include "esp_private/esp_pau.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -32,6 +32,9 @@ pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
     if (pau_hal.dev == NULL) {
         pau_hal.dev = &PAU;
         periph_module_enable(PERIPH_REGDMA_MODULE);
+#if SOC_PAU_IN_TOP_DOMAIN
+        pau_hal_lp_sys_initialize();
+#endif
     }
 
     return &pau_context;

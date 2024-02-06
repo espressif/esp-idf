@@ -70,7 +70,7 @@
 // #define SOC_APM_SUPPORTED               1  //TODO: IDF-7542
 #define SOC_PMU_SUPPORTED               1
 #define SOC_DCDC_SUPPORTED              1
-// #define SOC_PAU_SUPPORTED               1  //TODO: IDF-7531
+#define SOC_PAU_SUPPORTED               1     //TODO: IDF-7531
 #define SOC_LP_TIMER_SUPPORTED          1
 #define SOC_ULP_LP_UART_SUPPORTED       1
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
@@ -589,6 +589,7 @@
 #define SOC_PM_CPU_RETENTION_BY_SW      (1)
 
 #define SOC_PM_PAU_LINK_NUM             (4)
+#define SOC_PAU_IN_TOP_DOMAIN           (1)
 
 /*-------------------------- PSRAM CAPS ----------------------------*/
 #define SOC_PSRAM_VDD_POWER_MPLL    (1)

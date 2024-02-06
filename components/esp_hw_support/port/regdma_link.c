@@ -531,18 +531,21 @@ static void regdma_link_update_continuous_next_wrapper(void *link, void *next)
 {
     regdma_link_continuous_t *continuous = __containerof(link, regdma_link_continuous_t, head);
     continuous->body.next = next;
+    continuous->head.eof = !next;
 }
 
 static void regdma_link_update_addr_map_next_wrapper(void *link, void *next)
 {
     regdma_link_addr_map_t *addr_map = __containerof(link, regdma_link_addr_map_t, head);
     addr_map->body.next = next;
+    addr_map->head.eof = !next;
 }
 
 static void regdma_link_update_write_wait_next_wrapper(void *link, void *next)
 {
     regdma_link_write_wait_t *write_wait = __containerof(link, regdma_link_write_wait_t, head);
     write_wait->body.next = next;
+    write_wait->head.eof = !next;
 }
 
 static void regdma_link_update_branch_continuous_next_wrapper(void *link, regdma_entry_buf_t *next)

@@ -100,14 +100,9 @@ static inline __attribute__((always_inline)) void pau_ll_set_regdma_backup_done_
     dev->int_ena.done_int_ena = 0;
 }
 
-static inline __attribute__((always_inline)) void pau_ll_set_regdma_backup_error_intr_enable(pau_dev_t *dev)
+static inline void pau_ll_set_regdma_backup_error_intr_enable(pau_dev_t *dev, bool enable)
 {
-    dev->int_ena.error_int_ena = 1;
-}
-
-static inline __attribute__((always_inline)) void pau_ll_set_regdma_backup_error_intr_disable(pau_dev_t *dev)
-{
-    dev->int_ena.error_int_ena = 0;
+    dev->int_ena.error_int_ena = enable;
 }
 
 static inline __attribute__((always_inline)) void pau_ll_clear_regdma_backup_done_intr_state(pau_dev_t *dev)
