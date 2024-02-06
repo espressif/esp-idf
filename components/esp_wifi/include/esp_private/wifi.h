@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -538,6 +538,18 @@ void esp_wifi_power_domain_on(void);
  * @brief Wifi power domain power off
  */
 void esp_wifi_power_domain_off(void);
+
+
+#if (CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_MODEM_RETENTION_BY_REGDMA)
+/**
+  * @brief     Get wifi mac sleep retention hardware context configuration and size
+  *
+  * @param     config_size: the wifi mac hardware context configuration size
+  *
+  * @return    A pointer that point to wifi mac sleep renteiton hardware context configuration table
+  */
+void * esp_wifi_internal_mac_retention_context_get(int *config_size);
+#endif
 
 #if CONFIG_MAC_BB_PD
 /**
