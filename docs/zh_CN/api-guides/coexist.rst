@@ -73,7 +73,6 @@ ESP系列芯片最多支持三种射频收发模块: Bluetooth（BT 和 BLE）, 
 
   .. table:: 表 3  Thread (IEEE802.15.4) 和 BLE 共存支持功能
 
-
       +--------+-----------------+-----+------------+-----------+----------+
       |                          |BLE                                      |
       +                          +-----+------------+-----------+----------+
@@ -178,7 +177,6 @@ ESP系列芯片最多支持三种射频收发模块: Bluetooth（BT 和 BLE）, 
 
 共存模块为每个模块的不同状态分配不同的优先级。每种状态下的优先级并不是一成不变的，例如对于 BLE，每 N 个广播事件 (Advertising event) 中会有一个广播事件使用高优先级。如果高优先级的广播事件发生在 Wi-Fi 时间片内，RF 的使用权可能会被 BLE 抢占。
 
-
 .. only:: SOC_WIFI_SUPPORTED
 
     Wi-Fi 非连接模块的共存
@@ -245,11 +243,12 @@ BLE MESH 共存状态描述
       #) :ref:`CONFIG_ESP_WIFI_RX_BA_WIN` 选择减少 Wi-Fi Block Ack RX 窗口的数量。
       #) :ref:`CONFIG_ESP_WIFI_MGMT_SBUF_NUM` 选择减少 Wi-Fi 管理短缓冲区的数量。
       #) :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 选择关闭此配置选项，关闭此配置选项将会减少大约 17 KB 的 IRAM 内存。
-      #) :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT` 选择减小 TCP 套接字默认发送缓存区大小。
-      #) :ref:`CONFIG_LWIP_TCP_WND_DEFAULT` 选择减小 TCP 套接字默认接收窗口的大小。
-      #) :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 选择减小 TCP 接收邮箱的大小。
-      #) :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 选择减小 UDP 接收邮箱的大小。
-      #) :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE` 选择减小 TCPIP 任务接收邮箱大小。
+      #) :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT` 选择减小 TCP 套接字默认发送缓存区。
+      #) :ref:`CONFIG_LWIP_TCP_WND_DEFAULT` 选择减小 TCP 套接字默认接收窗口。
+      #) :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 可配置减小 TCP 接收邮箱。接受邮箱负责缓冲 TCP 连接中的数据，确保数据流畅传输。
+      #) :ref:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE` 管理传入的连接请求，可配置减小 TCP 接受邮箱。接受邮箱负责管理传入的连接请求，促进建立新的 TCP 连接。
+      #) :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 选择减小 UDP 接收邮箱。
+      #) :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE` 选择减小 TCPIP 任务接收邮箱。
 
 .. note::
 
