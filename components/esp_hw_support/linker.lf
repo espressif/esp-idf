@@ -18,7 +18,7 @@ entries:
     if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y:
         rtc_init:rtc_vddsdio_get_config (noflash)
         rtc_init:rtc_vddsdio_set_config (noflash)
-    if SOC_PMU_SUPPORTED = n:
+    if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y || IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C2 = y || IDF_TARGET_ESP32C3 = y:
         rtc_sleep (noflash_text)
     rtc_time (noflash_text)
     if SOC_PMU_SUPPORTED = y:
