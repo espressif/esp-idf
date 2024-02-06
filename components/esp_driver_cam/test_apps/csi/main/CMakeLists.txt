@@ -6,7 +6,7 @@ endif()
 
 set(priv_requires
         unity
-        esp_cam_ctlr
+        esp_driver_cam
         esp_psram
 )
 
