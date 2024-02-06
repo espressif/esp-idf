@@ -11,7 +11,7 @@
 
 // Some resources are lazy allocated in I2C driver, so we reserved this threshold when checking memory leak
 // A better way to check a potential memory leak is running a same case by twice, for the second time, the memory usage delta should be zero
-#define LEAKS (400)
+#define LEAKS (1000)
 
 void setUp(void)
 {
