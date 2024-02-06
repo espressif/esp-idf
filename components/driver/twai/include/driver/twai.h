@@ -22,15 +22,25 @@ extern "C" {
 /**
  * @brief Initializer macro for general configuration structure.
  *
- * This initializer macros allows the TX GPIO, RX GPIO, and operating mode to be
- * configured. The other members of the general configuration structure are
+ * This initializer macros allows the controller ID, TX GPIO, RX GPIO, and operating
+ * mode to be configured. The other members of the general configuration structure are
  * assigned default values.
  */
-#define TWAI_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) {.mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,        \
+#define TWAI_GENERAL_CONFIG_DEFAULT_V2(controller_num, tx_io_num, rx_io_num, op_mode) {.controller_id = controller_num,             \
+                                                                    .mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,        \
                                                                     .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,      \
                                                                     .tx_queue_len = 5, .rx_queue_len = 5,                           \
                                                                     .alerts_enabled = TWAI_ALERT_NONE,  .clkout_divider = 0,        \
                                                                     .intr_flags = ESP_INTR_FLAG_LEVEL1}
+
+/**
+ * @brief Initializer macro for general configuration structure.
+ *
+ * This initializer macros allows the TX GPIO, RX GPIO, and operating mode to be
+ * configured. Controller ID is set to 0 and he other members of the general configuration
+ * structure are assigned default values.
+ */
+#define TWAI_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) TWAI_GENERAL_CONFIG_DEFAULT_V2(0, tx_io_num, rx_io_num, op_mode)
 
 /**
  * @brief   Alert flags
