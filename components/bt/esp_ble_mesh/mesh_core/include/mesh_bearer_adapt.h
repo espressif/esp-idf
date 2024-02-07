@@ -659,6 +659,7 @@ struct bt_mesh_gatt_attr {
 }
 
 int bt_mesh_host_init(void);
+int bt_mesh_host_deinit(void);
 
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
