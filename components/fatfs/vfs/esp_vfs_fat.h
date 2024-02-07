@@ -17,9 +17,19 @@ extern "C" {
 #endif
 
 /**
+ * @brief Configuration structure for esp_vfs_fat_register
+ */
+typedef struct {
+    const char* base_path; /*!< Path prefix where FATFS should be registered, */
+    const char* fat_drive; /*!< FATFS drive specification; if only one drive is used, can be an empty string. */
+    size_t max_files;      /*!< Maximum number of files which can be open at the same time. */
+} esp_vfs_fat_conf_t;
+
+/**
  * @brief Register FATFS with VFS component
  *
  * This function registers given FAT drive in VFS, at the specified base path.
+ * Input arguments are held in esp_vfs_fat_conf_t structure.
  * If only one drive is used, fat_drive argument can be an empty string.
  * Refer to FATFS library documentation on how to specify FAT drive.
  * This function also allocates FATFS structure which should be used for f_mount
@@ -29,17 +39,14 @@ extern "C" {
  *       POSIX and C standard library IO function with FATFS. You need to mount
  *       desired drive into FATFS separately.
  *
- * @param base_path  path prefix where FATFS should be registered
- * @param fat_drive  FATFS drive specification; if only one drive is used, can be an empty string
- * @param max_files  maximum number of files which can be open at the same time
+ * @param conf  pointer to esp_vfs_fat_conf_t configuration structure
  * @param[out] out_fs  pointer to FATFS structure which can be used for FATFS f_mount call is returned via this argument.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_register was already called
  *      - ESP_ERR_NO_MEM if not enough memory or too many VFSes already registered
  */
-esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive,
-        size_t max_files, FATFS** out_fs);
+esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs);
 
 /**
  * @brief Un-register FATFS from VFS
@@ -395,6 +402,12 @@ esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* par
 esp_err_t esp_vfs_fat_info(const char* base_path, uint64_t* out_total_bytes, uint64_t* out_free_bytes);
 
 /** @cond */
+/**
+ * @deprecated Please use `esp_vfs_fat_register_cfg` instead
+ */
+esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive,
+        size_t max_files, FATFS** out_fs) __attribute__((deprecated("Please use esp_vfs_fat_register_cfg instead")));
+
 /**
  * @deprecated Please use `esp_vfs_fat_spiflash_mount_rw_wl` instead
  */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,17 +46,17 @@ extern "C" {
 /**
  * Default value of flags member in esp_vfs_t structure.
  */
-#define ESP_VFS_FLAG_DEFAULT        0
+#define ESP_VFS_FLAG_DEFAULT (1 << 0)
 
 /**
  * Flag which indicates that FS needs extra context pointer in syscalls.
  */
-#define ESP_VFS_FLAG_CONTEXT_PTR    1
+#define ESP_VFS_FLAG_CONTEXT_PTR (1 << 1)
 
 /**
  * Flag which indicates that FS is located on read-only partition.
  */
-#define ESP_VFS_FLAG_READONLY_FS  2
+#define ESP_VFS_FLAG_READONLY_FS (1 << 2)
 
 /*
  * @brief VFS identificator used for esp_vfs_register_with_id()
