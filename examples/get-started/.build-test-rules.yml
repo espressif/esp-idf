@@ -2,9 +2,11 @@
 
 examples/get-started/blink:
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
-      temporary: true
-      reason: target esp32p4 and esp32c5 are not supported yet # TODO: IDF-8074, [ESP32C5] IDF-9006
+    - if: SOC_GPSPI_SUPPORTED != 1 and SOC_RMT_SUPPORTED != 1 # The blink example relies on the RMT or GPSPI to drive the led strip
+  depends_components:
+    - esp_driver_gpio
+    - esp_driver_spi
+    - esp_driver_rmt
 
 examples/get-started/hello_world:
   enable:
