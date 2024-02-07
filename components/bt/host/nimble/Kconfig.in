@@ -201,7 +201,7 @@ config BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION
     help
             Enable encryption connection
 
-config BT_NIMBLE_SM_SC_LVL
+config BT_NIMBLE_SM_LVL
     int "Security level"
     depends on BT_NIMBLE_SECURITY_ENABLE
     default 0
@@ -340,6 +340,13 @@ menu "Memory Settings"
             buffers are only used for advertising reports. If there are no free
             low-priority event buffers, then an incoming advertising report will
             get dropped
+
+    config BT_NIMBLE_L2CAP_COC_SDU_BUFF_COUNT
+        int "L2cap coc Service Data Unit Buffer count"
+        depends on BT_NIMBLE_ENABLED
+        default 1
+        help
+            This is the service data unit buffer count for l2cap coc.
 
 endmenu
 
