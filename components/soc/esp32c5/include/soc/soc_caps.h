@@ -20,15 +20,15 @@
 // #define SOC_ADC_SUPPORTED               1  // TODO: [ESP32C5] IDF-8701
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1  // TODO: [ESP32C5] IDF-8725
 #define SOC_UART_SUPPORTED              1     // TODO: [ESP32C5] IDF-8722
-// #define SOC_GDMA_SUPPORTED              1  // TODO: [ESP32C5] IDF-8710
-// #define SOC_AHB_GDMA_SUPPORTED          1  // TODO: [ESP32C5] IDF-8710
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_PCNT_SUPPORTED              1  // TODO: [ESP32C5] IDF-8683
 // #define SOC_MCPWM_SUPPORTED             1  // TODO: [ESP32C5] IDF-8709
 // #define SOC_TWAI_SUPPORTED              1  // TODO: [ESP32C5] IDF-8691
 // #define SOC_ETM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8693
 // #define SOC_PARLIO_SUPPORTED            1  // TODO: [ESP32C5] IDF-8685, IDF-8686
-// #define SOC_ASYNC_MEMCPY_SUPPORTED      1  // TODO: [ESP32C5] IDF-8716
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1  // TODO: [ESP32C5] IDF-8721
 // #define SOC_TEMP_SENSOR_SUPPORTED       1  // TODO: [ESP32C5] IDF-8727
 // #define SOC_WIFI_SUPPORTED              1  // TODO: [ESP32C5] IDF-8851
@@ -56,7 +56,7 @@
 #define SOC_FLASH_ENC_SUPPORTED         1     // TODO: [ESP32C5] IDF-8622
 // #define SOC_SECURE_BOOT_SUPPORTED       1  // TODO: [ESP32C5] IDF-8623
 // #define SOC_BOD_SUPPORTED               1  // TODO: [ESP32C5] IDF-8647
-// #define SOC_APM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8614
+// #define SOC_APM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8614, IDF-8615
 // #define SOC_PMU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8667
 // #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638, IDF-8640
 // #define SOC_LP_TIMER_SUPPORTED          1  // TODO: [ESP32C5] IDF-8636
@@ -164,10 +164,11 @@
 // #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-// #define SOC_AHB_GDMA_VERSION            1U
-// #define SOC_GDMA_NUM_GROUPS_MAX         1U
-// #define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
-// #define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
+#define SOC_AHB_GDMA_VERSION                1U
+#define SOC_GDMA_NUM_GROUPS_MAX             1U
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX        3
+// #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule TODO: IDF-9224
+// #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1  // TODO: IDF-9225
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 // #define SOC_ETM_GROUPS                  1U  // Number of ETM groups

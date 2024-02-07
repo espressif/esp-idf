@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 // #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
+#include "esp32c5/rom/cache.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,13 +47,12 @@ __attribute__((always_inline))
 static inline bool cache_ll_is_cache_autoload_enabled(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
-    // bool enabled = false;
-    // if (REG_GET_BIT(EXTMEM_L1_CACHE_AUTOLOAD_CTRL_REG, EXTMEM_L1_CACHE_AUTOLOAD_ENA)) {
-    //     enabled = true;
-    // }
-    // return enabled;
-    return (bool)0;
+    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
+    bool enabled = false;
+    if (REG_GET_BIT(CACHE_L1_CACHE_AUTOLOAD_CTRL_REG, CACHE_L1_CACHE_AUTOLOAD_ENA)) {
+        enabled = true;
+    }
+    return enabled;
 }
 
 /**
@@ -66,8 +66,8 @@ __attribute__((always_inline))
 static inline void cache_ll_disable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // (void) type;
-    // Cache_Disable_ICache();
+    (void) type;
+    Cache_Disable_ICache();
 }
 
 /**
@@ -83,7 +83,7 @@ __attribute__((always_inline))
 static inline void cache_ll_enable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // Cache_Enable_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
+    Cache_Enable_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
 }
 
 /**
@@ -97,7 +97,7 @@ __attribute__((always_inline))
 static inline void cache_ll_suspend_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // Cache_Suspend_ICache();
+    Cache_Suspend_ICache();
 }
 
 /**
@@ -113,7 +113,7 @@ __attribute__((always_inline))
 static inline void cache_ll_resume_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // Cache_Resume_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
+    Cache_Resume_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
 }
 
 /**
@@ -131,7 +131,7 @@ __attribute__((always_inline))
 static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // Cache_Invalidate_Addr(vaddr, size);
+    Cache_Invalidate_Addr(vaddr, size);
 }
 
 /**
@@ -145,7 +145,7 @@ __attribute__((always_inline))
 static inline void cache_ll_freeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
+    Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
 }
 
 /**
@@ -159,7 +159,7 @@ __attribute__((always_inline))
 static inline void cache_ll_unfreeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // Cache_Freeze_ICache_Disable();
+    Cache_Freeze_ICache_Disable();
 }
 
 /**
@@ -175,10 +175,9 @@ __attribute__((always_inline))
 static inline uint32_t cache_ll_get_line_size(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // uint32_t size = 0;
-    // size = Cache_Get_ICache_Line_Size();
-    // return size;
-    return (uint32_t)0;
+    uint32_t size = 0;
+    size = Cache_Get_ICache_Line_Size();
+    return size;
 }
 
 /**
@@ -243,6 +242,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+    abort();
     // HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     // //On esp32c5, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     // HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
@@ -268,6 +268,7 @@ __attribute__((always_inline))
 static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32_t len, uint32_t *out_level, uint32_t *out_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+    abort();
     // bool valid = false;
     // uint32_t vaddr_end = vaddr_start + len - 1;
     //     // valid |= (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_end));
@@ -292,7 +293,7 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
 static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // SET_PERI_REG_MASK(EXTMEM_L1_CACHE_ACS_FAIL_INT_ENA_REG, mask);
+    SET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_ENA_REG, mask);
 }
 
 /**
@@ -304,7 +305,7 @@ static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint3
 static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
-    // SET_PERI_REG_MASK(EXTMEM_L1_CACHE_ACS_FAIL_INT_CLR_REG, mask);
+    SET_PERI_REG_MASK(CACHE_L1_CACHE_ACS_FAIL_INT_CLR_REG, mask);
 }
 
 /**

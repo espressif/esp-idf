@@ -176,12 +176,13 @@
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_AHB_GDMA_VERSION            2
-#define SOC_GDMA_SUPPORT_CRC            1
-#define SOC_GDMA_NUM_GROUPS_MAX         2
-#define SOC_GDMA_PAIRS_PER_GROUP_MAX    3
-#define SOC_AXI_GDMA_SUPPORT_PSRAM      1
-#define SOC_GDMA_SUPPORT_ETM            1
+#define SOC_AHB_GDMA_VERSION                2
+#define SOC_GDMA_SUPPORT_CRC                1
+#define SOC_GDMA_NUM_GROUPS_MAX             2
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX        3
+#define SOC_AXI_GDMA_SUPPORT_PSRAM          1
+#define SOC_GDMA_SUPPORT_ETM                1
+// #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- 2D-DMA CAPS -------------------------------------*/
 #define SOC_DMA2D_GROUPS                            (1U) // Number of 2D-DMA groups
