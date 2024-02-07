@@ -5,6 +5,8 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
+__WARNING:__ This example can potentially delete all data from your SD card (when formatting is enabled). Back up your data first before proceeding.
+
 This example demonstrates how to use an SD card with an ESP device over an SPI interface. Example does the following steps:
 
 1. Use an "all-in-one" `esp_vfs_fat_sdspi_mount` function to:
@@ -12,10 +14,11 @@ This example demonstrates how to use an SD card with an ESP device over an SPI i
     - probe and initialize the card connected to SPI bus (DMA channel 1, MOSI, MISO and CLK lines, chip-specific SPI host id),
     - mount FAT filesystem using FATFS library (and format card, if the filesystem cannot be mounted),
     - register FAT filesystem in VFS, enabling C standard library and POSIX functions to be used.
-2. Print information about the card, such as name, type, capacity, and maximum supported frequency.
-3. Create a file using `fopen` and write to it using `fprintf`.
-4. Rename the file. Before renaming, check if destination file already exists using `stat` function, and remove it using `unlink` function.
-5. Open renamed file for reading, read back the line, and print it to the terminal.
+1. Print information about the card, such as name, type, capacity, and maximum supported frequency.
+1. Create a file using `fopen` and write to it using `fprintf`.
+1. Rename the file. Before renaming, check if destination file already exists using `stat` function, and remove it using `unlink` function.
+1. Open renamed file for reading, read back the line, and print it to the terminal.
+1. __OPTIONAL:__ Format the SD card, check if the file doesn't exist anymore.
 
 This example support SD (SDSC, SDHC, SDXC) cards.
 
