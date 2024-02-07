@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include "esp_timer.h"
+#include "bt_user_config.h"
 
 typedef struct alarm_t osi_alarm_t;
 typedef uint64_t period_ms_t;
@@ -33,7 +34,7 @@ typedef enum {
     OSI_ALARM_ERR_INVALID_STATE = -3,
 } osi_alarm_err_t;
 
-#define ALARM_CBS_NUM   50
+#define ALARM_CBS_NUM   UC_ALARM_MAX_NUM
 #define ALARM_ID_BASE   1000
 
 int osi_alarm_create_mux(void);
