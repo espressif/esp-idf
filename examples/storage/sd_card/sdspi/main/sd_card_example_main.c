@@ -166,6 +166,7 @@ void app_main(void)
     }
 
     // Format FATFS
+#ifdef CONFIG_EXAMPLE_FORMAT_SD_CARD
     ret = esp_vfs_fat_sdcard_format(mount_point, card);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format FATFS (%s)", esp_err_to_name(ret));
@@ -178,6 +179,7 @@ void app_main(void)
     } else {
         ESP_LOGI(TAG, "file doesnt exist, format done");
     }
+#endif // CONFIG_EXAMPLE_FORMAT_SD_CARD
 
     const char *file_nihao = MOUNT_POINT"/nihao.txt";
     memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);
