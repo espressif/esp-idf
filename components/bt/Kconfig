@@ -80,6 +80,12 @@ menu "Bluetooth"
             We cannot split the memory into 3 different regions (IRAM, BLE-IRAM, DRAM).
             So this option will disable the PMP (ESP_SYSTEM_PMP_IDRAM_SPLIT)
 
+    menu "Common Options"
+        visible if (BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED)
+
+        source "$IDF_PATH/components/bt/common/Kconfig.in"
+    endmenu
+
 endmenu
 
 menuconfig BLE_MESH
