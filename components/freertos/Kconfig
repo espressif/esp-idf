@@ -170,7 +170,8 @@ menu "FreeRTOS"
             prompt "configTIMER_SERVICE_TASK_CORE_AFFINITY"
             default FREERTOS_TIMER_TASK_NO_AFFINITY
             help
-                Sets the timer task's core affinity (see configTIMER_SERVICE_TASK_CORE_AFFINITY documentation for more details).
+                Sets the timer task's core affinity
+                (see configTIMER_SERVICE_TASK_CORE_AFFINITY documentation for more details).
 
             config FREERTOS_TIMER_TASK_AFFINITY_CPU0
                 bool "CPU0"
@@ -250,7 +251,8 @@ menu "FreeRTOS"
             #TODO: Enable by default for debug builds (IDF-8517)
             default n
             help
-                Enable list integrity checker (see configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES documentation for more details).
+                Enable list integrity checker
+                (see configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES documentation for more details).
 
         config FREERTOS_VTASKLIST_INCLUDE_COREID
             # Core affinity is supported in stats for Amazon FreeRTOS SMP by default

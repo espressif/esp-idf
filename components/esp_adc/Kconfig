@@ -79,10 +79,10 @@ menu "ADC and ADC Calibration"
 
     config ADC_ENABLE_DEBUG_LOG
         bool "Enable ADC debug log"
-            default n
-            help
-                Wether to enable the debug log message for ADC driver.
-                Note that this option only controls the ADC driver log, will not affect other drivers.
+        default n
+        help
+            Wether to enable the debug log message for ADC driver.
+            Note that this option only controls the ADC driver log, will not affect other drivers.
 
-                note: This cannot be used in the ADC legacy driver.
+            note: This cannot be used in the ADC legacy driver.
 endmenu

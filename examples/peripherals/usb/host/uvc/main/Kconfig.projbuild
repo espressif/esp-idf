@@ -31,10 +31,10 @@ menu "Example Configuration"
     endchoice
 
     config EXAMPLE_NEGOTIATION_ATTEMPTS
-            int "Negotiation attempts"
-            default 3
-            help
-                Number of attempts to negotiate custom protocol parameters.
+        int "Negotiation attempts"
+        default 3
+        help
+            Number of attempts to negotiate custom protocol parameters.
 
     menu "UVC Protocol parameters"
         depends on EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM

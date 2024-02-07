@@ -111,28 +111,33 @@ menu "Power Management"
         select PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP if ESP32S3_DATA_CACHE_16KB
         default y
         help
-            If enabled, the CPU will be powered down in light sleep, ESP chips supports saving and restoring CPU's running
-            context before and after light sleep, the feature provides applications with seamless CPU powerdowned lightsleep
-            without user awareness.
-            But this will takes up some internal memory. On esp32c3 soc, enabling this option will consume 1.68 KB of internal
-            RAM and will reduce sleep current consumption by about 100 uA. On esp32s3 soc, enabling this option will consume
-            8.58 KB of internal RAM and will reduce sleep current consumption by about 650 uA.
+            If enabled, the CPU will be powered down in light sleep,
+            ESP chips supports saving and restoring CPU's running context before and after light sleep,
+            the feature provides applications with seamless CPU powerdowned lightsleep without user awareness.
+            But this will takes up some internal memory.
+            On esp32c3 soc, enabling this option will consume 1.68 KB of internal RAM
+            and will reduce sleep current consumption by about 100 uA.
+            On esp32s3 soc, enabling this option will consume 8.58 KB of internal RAM
+            and will reduce sleep current consumption by about 650 uA.
 
     config PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
         bool "Restore I/D-cache tag memory after power down CPU light sleep"
         depends on IDF_TARGET_ESP32S3 && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         default y
         help
-            Cache tag memory and CPU both belong to the CPU power domain. ESP chips supports saving and restoring Cache tag memory
-            before and after sleep, this feature supports accesses to the external memory that was cached before sleep still
-            be cached when the CPU wakes up from a powerdowned CPU lightsleep. This option controls the restore method for Cache
-            tag memory in lightsleep.
-            If this option is enabled, the I/D-cache tag memory will be backuped to the internal RAM before sleep and restored
-            upon wakeup. Depending on the the cache configuration, if this option is enabled, it will consume up to 9 KB
-            of internal RAM.
-            If this option is disabled, all cached data won't be kept after sleep, the DCache will be writeback before
-            sleep and invalid all cached data after sleep, all accesses to external memory(Flash/PSRAM) will be cache
-            missed after waking up, resulting in performance degradation due to increased memory accesses latency.
+            Cache tag memory and CPU both belong to the CPU power domain.
+            ESP chips supports saving and restoring Cache tag memory before and after sleep,
+            this feature supports accesses to the external memory that was cached before sleep still
+            be cached when the CPU wakes up from a powerdowned CPU lightsleep.
+            This option controls the restore method for Cache tag memory in lightsleep.
+            If this option is enabled, the I/D-cache tag memory will be backuped to the internal RAM
+            before sleep and restored upon wakeup.
+            Depending on the the cache configuration, if this option is enabled,
+            it will consume up to 9 KB of internal RAM.
+            If this option is disabled, all cached data won't be kept after sleep,
+            the DCache will be writeback before sleep and invalid all cached data after sleep,
+            all accesses to external memory(Flash/PSRAM) will be cache missed after waking up,
+            resulting in performance degradation due to increased memory accesses latency.
 
     config PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         bool "Power down Digital Peripheral in light sleep (EXPERIMENTAL)"
