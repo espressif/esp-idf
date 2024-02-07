@@ -225,7 +225,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(dut: Dut)
         dut.expect('Starting Advanced OTA example', timeout=30)
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name)
-        dut.expect('advanced_https_ota_example: esp_https_ota_read_img_desc failed', timeout=30)
+        dut.expect('advanced_https_ota_example: esp_https_ota_get_img_desc failed', timeout=30)
         try:
             os.remove(binary_file)
         except OSError:

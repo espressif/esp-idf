@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -451,11 +451,11 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
     if (handle == NULL || new_app_info == NULL)  {
-        ESP_LOGE(TAG, "esp_https_ota_read_img_desc: Invalid argument");
+        ESP_LOGE(TAG, "esp_https_ota_get_img_desc: Invalid argument");
         return ESP_ERR_INVALID_ARG;
     }
     if (handle->state < ESP_HTTPS_OTA_BEGIN) {
-        ESP_LOGE(TAG, "esp_https_ota_read_img_desc: Invalid state");
+        ESP_LOGE(TAG, "esp_https_ota_get_img_desc: Invalid state");
         return ESP_ERR_INVALID_STATE;
     }
     if (read_header(handle) != ESP_OK) {
@@ -508,7 +508,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 return err;
             }
             handle->state = ESP_HTTPS_OTA_IN_PROGRESS;
-            /* In case `esp_https_ota_read_img_desc` was invoked first,
+            /* In case `esp_https_ota_get_img_desc` was invoked first,
                then the image data read there should be written to OTA partition
                */
             int binary_file_len = 0;
