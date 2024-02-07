@@ -245,6 +245,26 @@ API 提供了一种便利的方法来处理本文所讨论的特定中断，即�
 API 还定义了一些宏指令。例如，:c:macro:`UART_HW_FIFO_LEN` 定义了硬件 FIFO 缓冲区的长度，:c:macro:`UART_BITRATE_MAX` 定义了 UART 控制器支持的最大波特率。
 
 
+.. only:: SOC_UART_LP_NUM
+
+    使用主核驱动 LP UART 控制器
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+    UART 驱动程序还适配了在 Active 模式下对 LP UART 控制器的驱动。LP UART 的配置流程和普通 UART 没有本质上的差别，除了有以下几点需要注意：
+
+    1. LP UART 控制器的端口号为 :c:macro:`LP_UART_NUM_0`。
+    2. LP UART 控制器的可选时钟源可以在 :cpp:type:`lp_uart_sclk_t` 中找到。
+    3. LP UART 控制器的硬件 FIFO 大小要远小于普通 UART 控制器的硬件 FIFO 大小，其值为 :c:macro:`SOC_LP_UART_FIFO_LEN`。
+
+    .. only:: SOC_LP_GPIO_MATRIX_SUPPORTED
+
+        4. LP UART 控制器的 GPIO 引脚只能从 LP GPIO 引脚中选择。
+
+    .. only:: not SOC_LP_GPIO_MATRIX_SUPPORTED
+
+        4. 由于该芯片没有 LP GPIO 交换矩阵，LP UART 控制器的 GPIO 引脚不可改变。具体的引脚号请查看 **{IDF_TARGET_NAME} 技术参考手册** > **IO MUX 和 GPIO 交换矩阵 (GPIO, IO MUX)** > **LP IO MUX 管脚功能列表** [`PDF <{IDF_TARGET_TRM_CN_URL}#lp-io-mux-func-list>`__]。
+
+
 .. _uart-api-deleting-driver:
 
 删除驱动程序
@@ -258,7 +278,7 @@ RS485 特定通信模式简介
 
 .. note::
 
-     下文将使用 ``[UART_REGISTER_NAME].[UART_FIELD_BIT]`` 指代 UART 寄存器字段/位。了解特定模式位的更多信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > UART 控制器 (UART) > 寄存器摘要 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart-reg-summ>`__]。请搜索寄存器名称导航至寄存器描述，找到相应字段/位。
+     下文将使用 ``[UART_REGISTER_NAME].[UART_FIELD_BIT]`` 指代 UART 寄存器字段/位。了解特定模式位的更多信息，请参考 **{IDF_TARGET_NAME} 技术参考手册** > UART 控制器 (UART) > 寄存器摘要 [`PDF <{IDF_TARGET_TRM_CN_URL}#uart-reg-summ>`__]。请搜索寄存器名称导航至寄存器描述，找到相应字段/位。
 
 - ``UART_RS485_CONF_REG.UART_RS485_EN``：设置此位将启用 RS485 通信模式支持。
 - ``UART_RS485_CONF_REG.UART_RS485TX_RX_EN``：设置此位，发送器的输出信号将环回到接收器的输入信号。

@@ -2,6 +2,6 @@
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(
     SRCS "test_app_main.c" "test_uart.c"
-    REQUIRES esp_driver_uart unity esp_psram
+    REQUIRES esp_driver_uart unity esp_psram test_utils esp_driver_gpio
     WHOLE_ARCHIVE
 )

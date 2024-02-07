@@ -246,6 +246,8 @@ bool rtc_clk_8m_enabled(void);
 
 /**
  * @brief Enable or disable LP_PLL_CLK
+ * Note that to be able to use LP_PLL clock, besides turn on the power for LP_PLL, also needs to turn on the power for
+ * the LP_PLL clock source (either XTAL32K or RC32K).
  * @param enable true to enable, false to disable
  */
 void rtc_clk_lp_pll_enable(bool enable);
