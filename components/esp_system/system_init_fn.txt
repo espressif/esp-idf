@@ -75,13 +75,15 @@ SECONDARY: 107: sleep_sys_periph_startup_init in components/esp_hw_support/sleep
 SECONDARY: 115: esp_apptrace_init in components/app_trace/app_trace.c on ESP_SYSTEM_INIT_ALL_CORES
 SECONDARY: 120: sysview_init in components/app_trace/sys_view/esp/SEGGER_RTT_esp.c on BIT(0)
 
+# coredump doesn't have init dependencies
+SECONDARY: 130: init_coredump in components/espcoredump/src/core_dump_init.c on BIT(0)
+
 # esp_debug_stubs doesn't have init dependencies
 SECONDARY: 140: init_dbg_stubs in components/app_trace/debug_stubs.c on BIT(0)
 
 # the rest of the components which are initialized from startup_funcs.c
 # [refactor-todo]: move init calls into respective components
 SECONDARY: 201: init_pm in components/esp_system/startup_funcs.c on BIT(0)
-SECONDARY: 202: init_coredump in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 203: init_apb_dma in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 204: init_coexist in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 205: init_cxx_exceptions in components/esp_system/startup_funcs.c on BIT(0)
