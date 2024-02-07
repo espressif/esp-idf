@@ -186,7 +186,7 @@ TEST_CASE("(SD) can truncate", "[fatfs][sdmmc]")
 {
     sdmmc_card_t *card = NULL;
     test_setup_sdmmc(&card);
-    test_fatfs_truncate_file("/sdcard/truncate.txt");
+    test_fatfs_truncate_file("/sdcard/truncate.txt", true);
     test_teardown_sdmmc(card);
 }
 
@@ -194,7 +194,7 @@ TEST_CASE("(SD) can ftruncate", "[fatfs][sdmmc]")
 {
     sdmmc_card_t *card = NULL;
     test_setup_sdmmc(&card);
-    test_fatfs_ftruncate_file("/sdcard/ftrunc.txt");
+    test_fatfs_ftruncate_file("/sdcard/ftrunc.txt", true);
     test_teardown_sdmmc(card);
 }
 

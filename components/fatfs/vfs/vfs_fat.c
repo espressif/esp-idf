@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/errno.h>
@@ -15,6 +16,8 @@
 #include "esp_log.h"
 #include "ff.h"
 #include "diskio_impl.h"
+
+#define F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT 512
 
 typedef struct {
     char fat_drive[8];  /* FAT drive name */
@@ -981,6 +984,49 @@ static int vfs_fat_access(void* ctx, const char *path, int amode)
     return ret;
 }
 
+static FRESULT f_write_zero_mem(FIL* fp, FSIZE_t data_size, FSIZE_t buf_size, UINT* bytes_written)
+{
+    if (fp == NULL || data_size <= 0 || buf_size <= 0) {
+        return FR_INVALID_PARAMETER;
+    }
+
+    void* buf = ff_memalloc(buf_size);
+    if (buf == NULL) {
+        return FR_DISK_ERR;
+    }
+    memset(buf, 0, buf_size);
+
+    FRESULT res = FR_OK;
+    UINT bw = 0;
+    FSIZE_t i = 0;
+    if (bytes_written != NULL) {
+        *bytes_written = 0;
+    }
+
+    if (data_size > buf_size) { // prevent unsigned underflow
+        for (; i < (data_size - buf_size); i += buf_size) { // write chunks of buf_size
+            res = f_write(fp, buf, (UINT) buf_size, &bw);
+            if (res != FR_OK) {
+                goto out;
+            }
+            if (bytes_written != NULL) {
+                *bytes_written += bw;
+            }
+        }
+    }
+
+    if (i < data_size) { // write the remaining data
+        res = f_write(fp, buf, (UINT) (data_size - i), &bw);
+        if (res == FR_OK && bytes_written != NULL) {
+            *bytes_written += bw;
+        }
+    }
+
+out:
+    ff_memfree(buf);
+    return res;
+}
+
 static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
 {
     FRESULT res;
@@ -1019,32 +1065,55 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
         goto out;
     }
 
-    long sz = f_size(file);
-    if (sz < length) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "truncate does not support extending size");
-        errno = EPERM;
-        ret = -1;
-        goto close;
-    }
+    FSIZE_t seek_ptr_pos = (FSIZE_t) f_tell(file); // current seek pointer position
+    FSIZE_t sz = (FSIZE_t) f_size(file); // current file size (end of file position)
 
     res = f_lseek(file, length);
-    if (res != FR_OK) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto close;
+    if (res != FR_OK || f_tell(file) != length) {
+        goto lseek_or_write_fail;
     }
 
-    res = f_truncate(file);
+    if (sz < length) {
+        res = f_lseek(file, sz); // go to the previous end of file
+        if (res != FR_OK) {
+            goto lseek_or_write_fail;
+        }
 
-    if (res != FR_OK) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto close;
+        FSIZE_t new_free_space = ((FSIZE_t) length) - sz;
+        UINT written;
+
+        if (new_free_space > UINT32_MAX) {
+            _lock_release(&fat_ctx->lock);
+            ESP_LOGE(TAG, "%s: Cannot extend the file more than 4GB at once", __func__);
+            ret = -1;
+            goto close;
+        }
+
+        FSIZE_t buf_size_limit = F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT;
+        FSIZE_t buf_size = new_free_space < buf_size_limit ? new_free_space : buf_size_limit;
+        res = f_write_zero_mem(file, new_free_space, buf_size, &written);
+
+        if (res != FR_OK) {
+            goto lseek_or_write_fail;
+        } else if (written != (UINT) new_free_space) {
+            res = FR_DISK_ERR;
+            goto lseek_or_write_fail;
+        }
+
+        res = f_lseek(file, seek_ptr_pos); // return to the original position
+        if (res != FR_OK) {
+            goto lseek_or_write_fail;
+        }
+    } else {
+        res = f_truncate(file);
+
+        if (res != FR_OK) {
+            _lock_release(&fat_ctx->lock);
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            ret = -1;
+            goto close;
+        }
     }
 
 #if CONFIG_FATFS_IMMEDIATE_FSYNC
@@ -1072,6 +1141,13 @@ close:
 out:
     free(file);
     return ret;
+
+lseek_or_write_fail:
+    _lock_release(&fat_ctx->lock);
+    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+    errno = fresult_to_errno(res);
+    ret = -1;
+    goto close;
 }
 
 static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
@@ -1098,29 +1174,50 @@ static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
         goto out;
     }
 
-    long sz = f_size(file);
-    if (sz < length) {
-        ESP_LOGD(TAG, "ftruncate does not support extending size");
-        errno = EPERM;
-        ret = -1;
-        goto out;
-    }
+    FSIZE_t seek_ptr_pos = (FSIZE_t) f_tell(file); // current seek pointer position
+    FSIZE_t sz = (FSIZE_t) f_size(file); // current file size (end of file position)
 
     res = f_lseek(file, length);
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto out;
+    if (res != FR_OK || f_tell(file) != length) {
+        goto fail;
     }
 
-    res = f_truncate(file);
+    if (sz < length) {
+        res = f_lseek(file, sz); // go to the previous end of file
+        if (res != FR_OK) {
+            goto fail;
+        }
 
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto out;
+        FSIZE_t new_free_space = ((FSIZE_t) length) - sz;
+        UINT written;
+
+        if (new_free_space > UINT32_MAX) {
+            ESP_LOGE(TAG, "%s: Cannot extend the file more than 4GB at once", __func__);
+            ret = -1;
+            goto out;
+        }
+
+        FSIZE_t buf_size_limit = F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT;
+        FSIZE_t buf_size = new_free_space < buf_size_limit ? new_free_space : buf_size_limit;
+        res = f_write_zero_mem(file, new_free_space, buf_size, &written);
+
+        if (res != FR_OK) {
+            goto fail;
+        } else if (written != (UINT) new_free_space) {
+            res = FR_DISK_ERR;
+            goto fail;
+        }
+
+        res = f_lseek(file, seek_ptr_pos); // return to the original position
+        if (res != FR_OK) {
+            goto fail;
+        }
+    } else {
+        res = f_truncate(file);
+
+        if (res != FR_OK) {
+            goto fail;
+        }
     }
 
 #if CONFIG_FATFS_IMMEDIATE_FSYNC
@@ -1135,6 +1232,12 @@ static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
 out:
     _lock_release(&fat_ctx->lock);
     return ret;
+
+fail:
+    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+    errno = fresult_to_errno(res);
+    ret = -1;
+    goto out;
 }
 
 static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *times)

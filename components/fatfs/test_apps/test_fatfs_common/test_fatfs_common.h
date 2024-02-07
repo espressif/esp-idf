@@ -45,9 +45,9 @@ void test_fatfs_open_max_files(const char* filename_prefix, size_t files_count);
 
 void test_fatfs_lseek(const char* filename);
 
-void test_fatfs_truncate_file(const char* path);
+void test_fatfs_truncate_file(const char* path, bool allow_expanding_files);
 
-void test_fatfs_ftruncate_file(const char* path);
+void test_fatfs_ftruncate_file(const char* path, bool allow_expanding_files);
 
 void test_fatfs_stat(const char* filename, const char* root_dir);
 

@@ -190,7 +190,14 @@ TEST_CASE("(WL) can lseek", "[fatfs][wear_levelling]")
 TEST_CASE("(WL) can truncate", "[fatfs][wear_levelling]")
 {
     test_setup();
-    test_fatfs_truncate_file("/spiflash/truncate.txt");
+    test_fatfs_truncate_file("/spiflash/truncate.txt", true);
+    test_teardown();
+}
+
+TEST_CASE("(WL) can ftruncate", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_ftruncate_file("/spiflash/ftrunc.txt", true);
     test_teardown();
 }
 
