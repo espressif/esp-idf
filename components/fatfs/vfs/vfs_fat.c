@@ -1040,6 +1040,7 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
     res = f_truncate(file);
 
     if (res != FR_OK) {
+        _lock_release(&fat_ctx->lock);
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
         ret = -1;
