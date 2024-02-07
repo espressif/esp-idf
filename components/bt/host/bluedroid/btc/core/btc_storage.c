@@ -1,4 +1,4 @@
-// Copyright 2015-2023 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2024 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,8 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
 
         // delete config info
         if (btc_config_remove_section(remove_section)) {
-            BTC_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the first device info : %s\n", remove_section);
+            BTC_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the first device info : %02x:%02x:%02x:%02x:%02x:%02x",
+                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
         }
     }
 
@@ -139,6 +140,7 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
     bt_status_t status = BT_STATUS_FAIL;
     uint16_t dev_cnt = 0;
     const btc_config_section_iter_t *remove_iter = NULL;
+    bt_bdaddr_t bd_addr;
 
     btc_config_lock();
     for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end(); iter = btc_config_section_next(iter)) {
@@ -165,6 +167,7 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
             remove_iter = iter;
             while (remove_iter != btc_config_section_end()) {
                 const char *remove_section = btc_config_section_name(remove_iter);
+                string_to_bdaddr(remove_section, &bd_addr);
                 if (!string_is_bdaddr(remove_section)) {
                     remove_iter = btc_config_section_next(remove_iter);
                     continue;
@@ -172,7 +175,8 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
                 remove_iter = btc_config_section_next(remove_iter);
                 /* delete config info */
                 if (btc_config_remove_section(remove_section)) {
-                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the exceed device info : %s", remove_section);
+                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the exceed device info : %02x:%02x:%02x:%02x:%02x:%02x",
+                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
                 }
             }
             /* write into nvs */
