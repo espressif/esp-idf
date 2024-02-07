@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -48,7 +48,15 @@ TEST(esp_netif, init_and_destroy_sntp)
 {
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("127.0.0.1");
     config.start = false;
-    esp_netif_sntp_init(&config);
+    TEST_ESP_OK(esp_netif_sntp_init(&config));
+    // Cannot initialize multiple times
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_sntp_init(&config));
+    // Try again to see that the state didn't change
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_sntp_init(&config));
+    esp_netif_sntp_deinit();
+
+    // Can initialize again once it's destroyed
+    TEST_ESP_OK(esp_netif_sntp_init(&config));
     esp_netif_sntp_deinit();
 }
 
