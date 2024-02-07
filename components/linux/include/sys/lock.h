@@ -12,12 +12,10 @@
 extern "C" {
 #endif
 
-
 /* newlib locks implementation for CONFIG_IDF_TARGET_LINUX, single threaded.
  * Note, currently this doesn't implement the functions required
  * when _RETARGETABLE_LOCKING is defined. They should be added.
  */
-
 
 /* Compatibility definitions for legacy newlib locking functions */
 typedef int _lock_t;
@@ -38,7 +36,6 @@ static inline int _lock_try_acquire_recursive(_lock_t *plock)
 }
 static inline void _lock_release(_lock_t *plock) {}
 static inline void _lock_release_recursive(_lock_t *plock) {}
-
 
 #ifdef __cplusplus
 }

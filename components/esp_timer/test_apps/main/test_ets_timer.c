@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,7 +123,7 @@ static void test_timers_ordered_correctly_timer_func(void* arg)
     size_t count = p_args->common->count;
     int expected_index = p_args->common->order[count];
     printf("At count %d, expected timer %d, got timer %d\n",
-            count, expected_index, p_args->timer_index);
+           count, expected_index, p_args->timer_index);
     if (expected_index != p_args->timer_index) {
         p_args->pass = false;
         ets_timer_disarm(p_args->timer);
@@ -138,7 +138,7 @@ static void test_timers_ordered_correctly_timer_func(void* arg)
     }
     int next_interval = p_args->intervals[p_args->intervals_count];
     printf("timer %d interval #%d, %d ms\n",
-            p_args->timer_index, p_args->intervals_count, next_interval);
+           p_args->timer_index, p_args->intervals_count, next_interval);
     ets_timer_arm(p_args->timer, next_interval, false);
 }
 
@@ -156,30 +156,30 @@ TEST_CASE("multiple ETSTimers are ordered correctly", "[ets_timer]")
     SemaphoreHandle_t done = xSemaphoreCreateCounting(3, 0);
 
     test_timers_ordered_correctly_args_t args1 = {
-            .timer_index = 1,
-            .intervals = {10, 40, 20, 40, 30},
-            .timer = &timer1,
-            .common = &common,
-            .pass = true,
-            .done = done
+        .timer_index = 1,
+        .intervals = {10, 40, 20, 40, 30},
+        .timer = &timer1,
+        .common = &common,
+        .pass = true,
+        .done = done
     };
 
     test_timers_ordered_correctly_args_t args2 = {
-            .timer_index = 2,
-            .intervals = {20, 20, 60, 30, 40},
-            .timer = &timer2,
-            .common = &common,
-            .pass = true,
-            .done = done
+        .timer_index = 2,
+        .intervals = {20, 20, 60, 30, 40},
+        .timer = &timer2,
+        .common = &common,
+        .pass = true,
+        .done = done
     };
 
     test_timers_ordered_correctly_args_t args3 = {
-            .timer_index = 3,
-            .intervals = {30, 30, 60, 30, 10},
-            .timer = &timer3,
-            .common = &common,
-            .pass = true,
-            .done = done
+        .timer_index = 3,
+        .intervals = {30, 30, 60, 30, 10},
+        .timer = &timer3,
+        .common = &common,
+        .pass = true,
+        .done = done
     };
 
     ets_timer_setfn(&timer1, &test_timers_ordered_correctly_timer_func, &args1);

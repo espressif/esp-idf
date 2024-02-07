@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <unistd.h>
 
-
 // getrandom() is not available on macOS, so we read from /dev/urandom instead.
 
 int getrandom(void *buf, size_t buflen, unsigned int flags)

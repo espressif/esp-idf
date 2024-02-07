@@ -15,7 +15,6 @@
 #include "esp_log.h"
 #include "esp_log_private.h"
 
-
 // Maximum time to wait for the mutex in a logging statement.
 //
 // We don't expect this to happen in most cases, as contention is low. The most likely case is if a
