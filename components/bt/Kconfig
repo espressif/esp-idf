@@ -82,6 +82,12 @@ menu "Bluetooth"
             This option is to configure the buffer size of the hci adv report cache in hci debug mode.
             This is a ring buffer, the new data will overwrite the oldest data if the buffer is full.
 
+    menu "Common Options"
+        visible if (BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED)
+
+        source "$IDF_PATH/components/bt/common/Kconfig.in"
+    endmenu
+
 endmenu
 
 menuconfig BLE_MESH

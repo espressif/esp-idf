@@ -53,6 +53,15 @@
 #endif
 
 /**********************************************************
+ * Alarm reference
+ **********************************************************/
+#ifdef CONFIG_BT_ALARM_MAX_NUM
+#define UC_ALARM_MAX_NUM                    CONFIG_BT_ALARM_MAX_NUM
+#else
+#define UC_ALARM_MAX_NUM                    50
+#endif
+
+/**********************************************************
  * Trace reference
  **********************************************************/
 
