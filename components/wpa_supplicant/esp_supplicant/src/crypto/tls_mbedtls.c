@@ -404,132 +404,6 @@ static int tls_disable_key_usages(void *data, mbedtls_x509_crt *cert, int depth,
 }
 #endif /*CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK*/
 
-#if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
-#define TLS1_3_CIPHER_SUITES 				\
-	MBEDTLS_TLS1_3_CHACHA20_POLY1305_SHA256,	\
-	MBEDTLS_TLS1_3_AES_256_GCM_SHA384,		\
-	MBEDTLS_TLS1_3_AES_128_GCM_SHA256,		\
-	MBEDTLS_TLS1_3_AES_128_CCM_8_SHA256,		\
-	MBEDTLS_TLS1_3_AES_128_CCM_SHA256
-#endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
-
-static const int eap_ciphersuite_preference[] =
-{
-#if defined(CONFIG_ESP_WIFI_EAP_TLS1_3)
-	TLS1_3_CIPHER_SUITES,
-#endif /* CONFIG_ESP_WIFI_EAP_TLS1_3 */
-#if defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CCM,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256,
-	MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA,
-#endif
-
-#if defined(MBEDTLS_GCM_C)
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_DHE_RSA_WITH_AES_128_CCM_8,
-#endif
-#endif
-#if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED)
-	MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CCM,
-	MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CBC_SHA,
-	MBEDTLS_TLS_DHE_PSK_WITH_AES_256_CCM_8,
-
-	MBEDTLS_TLS_DHE_PSK_WITH_AES_128_GCM_SHA256,
-	MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CCM,
-	MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CBC_SHA256,
-	MBEDTLS_TLS_DHE_PSK_WITH_AES_128_CCM_8,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_RSA_WITH_AES_256_CCM,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA256,
-	MBEDTLS_TLS_RSA_WITH_AES_256_CBC_SHA,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_RSA_WITH_AES_256_CCM_8,
-#endif
-
-#if defined(MBEDTLS_GCM_C)
-	MBEDTLS_TLS_RSA_WITH_AES_128_GCM_SHA256,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_RSA_WITH_AES_128_CCM,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA256,
-	MBEDTLS_TLS_RSA_WITH_AES_128_CBC_SHA,
-#endif
-#if defined(MBEDTLS_GCM_C)
-	MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,
-	MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,
-#endif
-#if defined(MBEDTLS_GCM_C)
-	MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,
-	MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_RSA_WITH_AES_128_CCM_8,
-#endif
-
-#if defined(MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
-#if defined(MBEDTLS_GCM_C)
-	MBEDTLS_TLS_RSA_PSK_WITH_AES_128_GCM_SHA256,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_RSA_PSK_WITH_AES_128_CBC_SHA256,
-	MBEDTLS_TLS_RSA_PSK_WITH_AES_128_CBC_SHA,
-#endif
-	/* The PSK suites */
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_PSK_WITH_AES_256_CCM,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_PSK_WITH_AES_256_CBC_SHA,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_PSK_WITH_AES_256_CCM_8,
-#endif
-
-#if defined(MBEDTLS_GCM_C)
-	MBEDTLS_TLS_PSK_WITH_AES_128_GCM_SHA256,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_PSK_WITH_AES_128_CCM,
-#endif
-#if defined(MBEDTLS_CIPHER_MODE_CBC)
-	MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA256,
-	MBEDTLS_TLS_PSK_WITH_AES_128_CBC_SHA,
-#endif
-#if defined(MBEDTLS_CCM_C)
-	MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8,
-#endif
-#endif
-	0
-};
-
 #ifdef CONFIG_SUITEB192
 static const int suiteb_rsa_ciphersuite_preference[] =
 {
@@ -594,23 +468,12 @@ static void tls_set_ciphersuite(const struct tls_connection_params *cfg, tls_con
 		}
 	} else
 #endif
-#ifdef CONFIG_TLSV13
-	/* Enable TLS1.3 ciphers if TLS1.3 is enabled */
-	mbedtls_ssl_conf_ciphersuites(&tls->conf, eap_ciphersuite_preference);
-#else
 	/* Set cipher suites if User has explicitly set those
 	 * TODO: public API to set EAP ciphers */
 	if (tls->ciphersuite[0]) {
 		mbedtls_ssl_conf_ciphersuites(&tls->conf, tls->ciphersuite);
-	} else if (mbedtls_pk_get_bitlen(&tls->clientkey) > 2048 ||
-		(tls->cacert_ptr && mbedtls_pk_get_bitlen(&tls->cacert_ptr->pk) > 2048)) {
-		/* Incase of big RSA keylen, ESP chips do not have sufficient processing
-		 * power to use high computation ciphers. This code will limit the ciphers
-		 * to less computational ones */
-		mbedtls_ssl_conf_ciphersuites(&tls->conf, eap_ciphersuite_preference);
 	}
 
-#endif /* CONFIG_TLSV13 */
 }
 
 static int set_client_config(const struct tls_connection_params *cfg, tls_context_t *tls)

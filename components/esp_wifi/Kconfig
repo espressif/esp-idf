@@ -643,6 +643,11 @@ menu "Wi-Fi"
                 disabling this will reduce binary size.
                 disabling this will disable the use of any esp_wifi_sta_wpa2_ent_* (as APIs will be meaningless)
 
+                Note that when using bigger certificates on low-power chips without crypto
+                hardware acceleration, it is recommended to adjust the task watchdog timer (TWDT)
+                if it is enabled. For precise information on timing requirements, you can check
+                performance numbers at https://github.com/espressif/mbedtls/wiki/Performance-Numbers.
+
         config ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
             bool "Free dynamic buffers during WiFi enterprise connection"
             depends on ESP_WIFI_ENTERPRISE_SUPPORT
