@@ -10,7 +10,13 @@ GPIO 汇总
     :start-after: gpio-summary
     :end-before: ---
 
-GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来输出指定管脚的实时配置状态，包括上下拉、输入输出使能、管脚映射等。输出示例如下：
+GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来输出指定管脚的实时配置状态，包括上下拉、输入输出使能、管脚映射等。例如，以下命令可用于输出 GPIO4，GPIO8 与 GPIO26 的配置状态：
+
+::
+
+    gpio_dump_io_configuration(stdout, (1ULL << 4) | (1ULL << 18) | (1ULL << 26));
+
+其输出信息如下：
 
 ::
 
@@ -36,6 +42,12 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
       SleepSelEn: 1
 
     =================IO DUMP End==================
+
+如果你想要查看所有管脚的配置状态，可以使用命令
+
+::
+
+    gpio_dump_all_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
 
 当 IO 管脚是通过 GPIO 交换矩阵连接到内部外设信号，输出信息打印中的外设信号 ID 定义可以在 ``soc/gpio_sig_map.h`` 文件中查看。``**RESERVED**`` 字样则表示此 IO 被用于连接 FLASH 或 PSRAM，因此该引脚不应该被其他任何应用场景所征用并进行重新配置。
 
