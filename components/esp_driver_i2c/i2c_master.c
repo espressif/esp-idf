@@ -325,7 +325,7 @@ static void s_i2c_start_end_command(i2c_master_bus_handle_t i2c_master, i2c_oper
 #if SOC_I2C_SUPPORT_10BIT_ADDR
             if (i2c_master->addr_10bits_bus == I2C_ADDR_BIT_LEN_10) {
                 i2c_ll_hw_cmd_t hw_write_cmd = {
-                    .ack_en = false,
+                    .ack_en = true,
                     .op_code = I2C_LL_CMD_WRITE,
                     .byte_num = 2,
                 };
@@ -345,7 +345,7 @@ static void s_i2c_start_end_command(i2c_master_bus_handle_t i2c_master, i2c_oper
             }
 #endif
             i2c_ll_hw_cmd_t hw_write_cmd = {
-                .ack_en = false,
+                .ack_en = true,
                 .op_code = I2C_LL_CMD_WRITE,
                 .byte_num = 1,
             };
