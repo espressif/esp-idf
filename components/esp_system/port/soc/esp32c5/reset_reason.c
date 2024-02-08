@@ -14,8 +14,6 @@ static void esp_reset_reason_clear_hint(void);
 
 static esp_reset_reason_t s_reset_reason;
 
-// TODO: [ESP32C5] IDF-8660
-
 static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, esp_reset_reason_t reset_reason_hint)
 {
     switch (rtc_reset_reason) {
@@ -55,6 +53,18 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CORE_USB_UART:
     case RESET_REASON_CORE_USB_JTAG:
         return ESP_RST_USB;
+
+    case RESET_REASON_CPU0_JTAG:
+        return ESP_RST_JTAG;
+
+    case RESET_REASON_CPU0_LOCKUP:
+        return ESP_RST_CPU_LOCKUP;
+
+    case RESET_REASON_CORE_EFUSE_CRC:
+        return ESP_RST_EFUSE;
+
+    case RESET_REASON_CORE_PWR_GLITCH:
+        return ESP_RST_PWR_GLITCH;
 
     default:
         return ESP_RST_UNKNOWN;

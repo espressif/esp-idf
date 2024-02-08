@@ -23,7 +23,6 @@ extern "C" {
 #endif
 
 
-// TODO: [ESP32C5] IDF-8660 (inherit from C6)
 /**
  * @brief Naming conventions: RESET_REASON_{reset level}_{reset reason}
  * @note refer to TRM: <Reset and Clock> chapter
@@ -33,7 +32,6 @@ typedef enum {
     RESET_REASON_CHIP_BROWN_OUT  = 0x01, // VDD voltage is not stable and resets the chip
     RESET_REASON_CORE_SW         = 0x03, // Software resets the digital core (hp system) by LP_AON_HPSYS_SW_RESET
     RESET_REASON_CORE_DEEP_SLEEP = 0x05, // Deep sleep reset the digital core (hp system)
-    RESET_REASON_CORE_SDIO       = 0x06, // SDIO module resets the digital core (hp system)
     RESET_REASON_CORE_MWDT0      = 0x07, // Main watch dog 0 resets digital core (hp system)
     RESET_REASON_CORE_MWDT1      = 0x08, // Main watch dog 1 resets digital core (hp system)
     RESET_REASON_CORE_RTC_WDT    = 0x09, // RTC watch dog resets digital core (hp system)
@@ -48,6 +46,8 @@ typedef enum {
     RESET_REASON_CORE_USB_UART   = 0x15, // USB UART resets the digital core (hp system)
     RESET_REASON_CORE_USB_JTAG   = 0x16, // USB JTAG resets the digital core (hp system)
     RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
+    RESET_REASON_CORE_PWR_GLITCH = 0x19, // Glitch on power resets the digital core and rtc module
+    RESET_REASON_CPU0_LOCKUP     = 0x1A, // Triggered when the CPU enters lockup (exception inside the execption handler would cause this)
 } soc_reset_reason_t;
 
 
