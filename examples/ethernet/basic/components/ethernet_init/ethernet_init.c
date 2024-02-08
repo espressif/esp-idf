@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -31,13 +31,15 @@ static const char *TAG = "example_eth_init";
     do {                                                                                        \
         eth_module_config[num].spi_cs_gpio = CONFIG_EXAMPLE_ETH_SPI_CS ##num## _GPIO;           \
         eth_module_config[num].int_gpio = CONFIG_EXAMPLE_ETH_SPI_INT ##num## _GPIO;             \
+        eth_module_config[num].polling_ms = CONFIG_EXAMPLE_ETH_SPI_POLLING ##num## _MS;         \
         eth_module_config[num].phy_reset_gpio = CONFIG_EXAMPLE_ETH_SPI_PHY_RST ##num## _GPIO;   \
         eth_module_config[num].phy_addr = CONFIG_EXAMPLE_ETH_SPI_PHY_ADDR ##num;                \
     } while(0)
 
 typedef struct {
     uint8_t spi_cs_gpio;
-    uint8_t int_gpio;
+    int8_t int_gpio;
+    uint32_t polling_ms;
     int8_t phy_reset_gpio;
     uint8_t phy_addr;
     uint8_t *mac_addr;
@@ -187,16 +189,19 @@ static esp_eth_handle_t eth_init_spi(spi_eth_module_config_t *spi_eth_module_con
 #if CONFIG_EXAMPLE_USE_KSZ8851SNL
     eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     ksz8851snl_config.int_gpio_num = spi_eth_module_config->int_gpio;
+    ksz8851snl_config.poll_period_ms = spi_eth_module_config->polling_ms;
     esp_eth_mac_t *mac = esp_eth_mac_new_ksz8851snl(&ksz8851snl_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_ksz8851snl(&phy_config);
 #elif CONFIG_EXAMPLE_USE_DM9051
     eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     dm9051_config.int_gpio_num = spi_eth_module_config->int_gpio;
+    dm9051_config.poll_period_ms = spi_eth_module_config->polling_ms;
     esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
 #elif CONFIG_EXAMPLE_USE_W5500
     eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     w5500_config.int_gpio_num = spi_eth_module_config->int_gpio;
+    w5500_config.poll_period_ms = spi_eth_module_config->polling_ms;
     esp_eth_mac_t *mac = esp_eth_mac_new_w5500(&w5500_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_w5500(&phy_config);
 #endif //CONFIG_EXAMPLE_USE_W5500
