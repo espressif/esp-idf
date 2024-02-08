@@ -58,7 +58,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-### Run HTTPS Server
+### Configure HTTPS Server
 
 After a successful build, we need to create a self-signed certificate and run a simple HTTPS server as follows:
 
@@ -67,14 +67,42 @@ After a successful build, we need to create a self-signed certificate and run a 
 * Enter the directory containing build artifact/s of project, that will be hosted by HTTPS server, e.g. `cd build`.
 * To create a new self-signed certificate and key, run the command `openssl req -x509 -newkey rsa:2048 -keyout ca_key.pem -out ca_cert.pem -days 365 -nodes`.
   * When prompted for the `Common Name (CN)`, enter the name of the server that the "ESP-Dev-Board" will connect to. When running this example from a development machine, this is probably the IP address. The HTTPS client will check that the `CN` matches the address given in the HTTPS URL.
-* To start the HTTPS server, run the command `openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070`.
 * This directory should contain the firmware (e.g. `hello_world.bin`) to be used in the update process. This can be any valid ESP-IDF application, as long as its filename corresponds to the name configured using `Firmware Upgrade URL` in menuconfig. The only difference to flashing a firmware via the serial interface is that the binary is flashed to the `factory` partition, while OTA update use one of the OTA partitions.
+
+### Start HTTPS Server
+
+#### OpenSSL based server
+
+* To start openssl based HTTPS server, run the command `openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070`.
+
+Sample console output as:
+```bash
+$ openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070
+FILE:hello_world.bin
+ACCEPT
+```
+
+* **Note:** The OpenSSL server cannot handle partial HTTP requests, so it does not support partial downloading. Alternatively you can start python based server using [Python based server](#Python-based-server)
 * **Note:** Make sure incoming access to port *8070* is not prevented by firewall rules.
 * **Note:** Windows users may encounter issues while running `openssl s_server -WWW`, due to CR/LF translation and/or closing the connection prematurely
   (Some windows builds of openssl translate CR/LF sequences to LF in the served files, leading to corrupted images received by the OTA client; others interpret the `0x1a`/`SUB` character in a binary as an escape sequence, i.e. end of file, and close the connection prematurely thus preventing the OTA client from receiving a complete image).
   * We recommend  using the `openssl` binary bundled in `Git For Windows` from the [ESP-IDF Tool installer](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html):
   Open the ESP-IDF command prompt and add the internal openssl binary to your path: `set PATH=%LocalAppData%\Git\usr\bin;%PATH%` and run openssl's http server command as above.
-  * Alternatively, use any windows based openssl with version `v1.1.1i` or greater built on the `Msys-x86_64` platform, or a simple python https server -- see `start_https_server` in the [example_test](simple_ota_example/pytest_simple_ota.py) script.
+
+#### Python based server
+
+* To start python based HTTPS server using [example_test_scipt](simple_ota_example/pytest_simple_ota.py), run `pytest_simple_ota.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
+    - `<BIN_DIR>` is a directory containing the firmware (e.g. `hello_world.bin`) to be used in the update process.`
+    - `<PORT>` is the server's port, here `8070`
+    - `[CERT_DIR]` is an optional argument pointing to a specific directory with the certificate and key file:`ca_cert.pem` and `ca_key.pem'.
+
+Sample console output as:
+``` bash
+$ cd idf/examples/system/ota/simple_ota_example
+$ python pytest_simple_ota.py build 8070
+Starting HTTPS server at "https://:8070"
+192.168.10.106 - - [02/Mar/2021 14:32:26] "GET /simple_ota.bin HTTP/1.1" 200 -
+```
 
 ### Flash Certificate to "ESP-Dev-Board"
 
@@ -98,14 +126,6 @@ After booting, the firmware:
 If you want to rollback to the `factory` app after the upgrade (or to the first OTA partition in case the `factory` partition does not exist), run the command `idf.py erase_otadata`. This restores the `ota_data` partition to its initial state.
 
 **Note:** This assumes that the partition table of this project is the one present on the device.
-
-### Output from the HTTPS server
-
-```bash
-FILE:hello_world.bin
-ACCEPT
-```
-
 
 ## Supporting Rollback
 
@@ -149,17 +169,7 @@ Running a local https server might be tricky in some cases (due to self signed c
     - Execute `python -m http.server 8070` in the directory with the firmware image
     - Use http://<host-ip>:8070/<firmware-name> as the firmware upgrade URL
     - Enable *Allow HTTP for OTA* (`CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI without TLS is accepted
-* Start the HTTPS server using [example_test](simple_ota_example/pytest_simple_ota.py) with two or more parameters: `pytest_simple_ota.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
-    - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`
-    - `<PORT>` is the server's port, here `8070`
-    - `[CERT_DIR]` is an optional argument pointing to a specific directory with the certificate and key file.
-    - example of the script output:
-``` bash
-$ cd idf/examples/system/ota/simple_ota_example
-$ python pytest_simple_ota.py build 8070
-Starting HTTPS server at "https://:8070"
-192.168.10.106 - - [02/Mar/2021 14:32:26] "GET /simple_ota.bin HTTP/1.1" 200 -
-```
+
 * Publish the firmware image on a public server (e.g. github.com) and copy its root certificate to the `server_certs` directory as `ca_cert.pem`. The certificate can be downloaded using the `s_client` openssl command as shown below:
 
 ```

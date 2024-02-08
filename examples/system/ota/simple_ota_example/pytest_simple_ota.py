@@ -10,9 +10,14 @@ from typing import Tuple
 
 import pexpect
 import pytest
-from common_test_methods import get_env_config_variable
-from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
+
+try:
+    from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
+except ModuleNotFoundError:
+    idf_path = os.environ['IDF_PATH']
+    sys.path.insert(0, idf_path + '/tools/ci/python_packages')
+    from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
 
 server_cert = '-----BEGIN CERTIFICATE-----\n' \
               'MIIDWDCCAkACCQCbF4+gVh/MLjANBgkqhkiG9w0BAQsFADBuMQswCQYDVQQGEwJJ\n'\
