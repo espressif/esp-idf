@@ -54,6 +54,15 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CORE_USB_JTAG:
         return ESP_RST_USB;
 
+    case RESET_REASON_CORE_EFUSE_CRC:
+        return ESP_RST_EFUSE;
+
+    case RESET_REASON_CORE_PWR_GLITCH:
+        return ESP_RST_PWR_GLITCH;
+
+    case RESET_REASON_CPU0_JTAG:
+        return ESP_RST_JTAG;
+
     default:
         return ESP_RST_UNKNOWN;
     }
