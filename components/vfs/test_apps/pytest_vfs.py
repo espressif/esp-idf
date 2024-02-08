@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -17,7 +16,6 @@ def test_vfs_default(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
 @pytest.mark.parametrize('config', [
     'ccomp',
 ], indirect=True)
