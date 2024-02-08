@@ -86,7 +86,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
        need to change back SPLL(480M) and set divider to 6 to use the 80M MSPI，
        and we need to check flash freq before restart as well */
     clk_ll_mspi_fast_set_divider(1);
-    clk_ll_mspi_fast_sel_clk(MSPI_CLK_SRC_XTAL);
+    clk_ll_mspi_fast_set_src(MSPI_CLK_SRC_XTAL);
 #endif
 
     /* As a slight optimization, if 32k XTAL was enabled in sdkconfig, we enable

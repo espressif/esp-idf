@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,21 +159,20 @@ static void rtc_clk_enable_i2c_ana_master_clock(bool enable)
 
 static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 {
-    assert((pll_freq == CLK_LL_PLL_160M_FREQ_MHZ) || \
-            (pll_freq == CLK_LL_PLL_240M_FREQ_MHZ));
     /* Digital part */
-    clk_ll_bbpll_set_freq_mhz(CLK_LL_PLL_480M_FREQ_MHZ);
+    clk_ll_bbpll_set_freq_mhz(pll_freq);
     /* Analog part */
     rtc_clk_enable_i2c_ana_master_clock(true);
     /* BBPLL CALIBRATION START */
     regi2c_ctrl_ll_bbpll_calibration_start();
-    clk_ll_bbpll_set_config(CLK_LL_PLL_480M_FREQ_MHZ, xtal_freq);
+    clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
     while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    esp_rom_delay_us(10); // wait for true stop // TODO: check this
     /* BBPLL CALIBRATION STOP */
     regi2c_ctrl_ll_bbpll_calibration_stop();
     rtc_clk_enable_i2c_ana_master_clock(false);
-    s_cur_pll_freq = CLK_LL_PLL_480M_FREQ_MHZ;
+    s_cur_pll_freq = pll_freq;
 }
 
 /**
@@ -184,24 +183,26 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
     /* Configure clk mspi fast to XTAL*/
-    clk_ll_mspi_fast_sel_clk(SOC_MOD_CLK_XTAL);
+    clk_ll_mspi_fast_set_src(MSPI_CLK_SRC_XTAL);
     clk_ll_mspi_fast_set_divider(1);
 
-    clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
-    clk_ll_ahb_set_divider(div);
     clk_ll_cpu_set_divider(div);
+    clk_ll_ahb_set_divider(div);
+    clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_XTAL);
+    clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
 }
 
 static void rtc_clk_cpu_freq_to_8m(void)
 {
     /* Configure clk mspi fast to XTAL*/
-    clk_ll_mspi_fast_sel_clk(SOC_MOD_CLK_XTAL);
+    clk_ll_mspi_fast_set_src(MSPI_CLK_SRC_XTAL);
     clk_ll_mspi_fast_set_divider(1);
 
-    clk_ll_ahb_set_divider(1);
     clk_ll_cpu_set_divider(1);
+    clk_ll_ahb_set_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_RC_FAST);
+    clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(20);
 }
 
@@ -218,11 +219,12 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     clk_ll_ahb_set_divider(cfg.source_freq_mhz / 40);
     clk_ll_cpu_set_divider(cfg.div);
     clk_ll_cpu_set_src(cfg.source);
+    clk_ll_bus_update();
     esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
 
     /* Configure clk mspi fast to 80m*/
     clk_ll_mspi_fast_set_divider(6);
-    clk_ll_mspi_fast_sel_clk(MSPI_CLK_SRC_SPLL);
+    clk_ll_mspi_fast_set_src(MSPI_CLK_SRC_SPLL);
 }
 
 bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *out_config)
@@ -233,19 +235,34 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
     uint32_t real_freq_mhz;
 
     uint32_t xtal_freq = (uint32_t)rtc_clk_xtal_freq_get();
-    if (freq_mhz == 48 || freq_mhz == 24 || freq_mhz == 16 || freq_mhz == 12 || freq_mhz == 8) {
+#if (CONFIG_XTAL_FREQ == 48)
+    // To maintain APB_MAX (40MHz) while lowering CPU frequency when using a 48MHz XTAL, have to let CPU frequnecy be
+    // 40MHz with PLL_F160M or PLL_F240M clock source. This is a special case, has to handle separately.
+    if (freq_mhz == 40) {
+        real_freq_mhz = freq_mhz;
+        source = SOC_CPU_CLK_SRC_PLL_F160M;
+        source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
+        divider = CLK_LL_PLL_160M_FREQ_MHZ / freq_mhz;
+    } else
+#endif
+    if (freq_mhz <= xtal_freq && freq_mhz != 0) {
         divider = xtal_freq / freq_mhz;
+        real_freq_mhz = (xtal_freq + divider / 2) / divider; /* round */
+        if (real_freq_mhz != freq_mhz) {
+            // no suitable divider
+            return false;
+        }
+
         source_freq_mhz = xtal_freq;
         source = SOC_CPU_CLK_SRC_XTAL;
+    } else if (freq_mhz == 240) {
         real_freq_mhz = freq_mhz;
-    } else if (freq_mhz == 240 || freq_mhz == 120) {
-        real_freq_mhz = freq_mhz;
-        source = SOC_CPU_CLK_SRC_PLL_F240;
+        source = SOC_CPU_CLK_SRC_PLL_F240M;
         source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
         divider = CLK_LL_PLL_240M_FREQ_MHZ / freq_mhz;
-    }else if (freq_mhz == 160 || freq_mhz == 80 || freq_mhz == 40) {
+    } else if (freq_mhz == 160 || freq_mhz == 80) { // TODO: 80MHz can be get from PLL_F240M or PLL_F160M, which is better?
         real_freq_mhz = freq_mhz;
-        source = SOC_CPU_CLK_SRC_PLL_F160;
+        source = SOC_CPU_CLK_SRC_PLL_F160M;
         source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
         divider = CLK_LL_PLL_160M_FREQ_MHZ / freq_mhz;
     } else {
@@ -271,21 +288,22 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
     if (config->source == SOC_CPU_CLK_SRC_XTAL) {
         /* Configure clk mspi fast to 80m*/
         rtc_clk_cpu_freq_to_xtal(config->freq_mhz, config->div);
-        if (((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F160) || (old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F240)) && !s_bbpll_digi_consumers_ref_count) {
+        if (((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F160M) || (old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F240M)) && !s_bbpll_digi_consumers_ref_count) {
             // We don't turn off the bbpll if some consumers depend on bbpll
             rtc_clk_bbpll_disable();
         }
-    } else if ((config->source == SOC_CPU_CLK_SRC_PLL_F160) || (config->source == SOC_CPU_CLK_SRC_PLL_F240)) {
-        if ((old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL_F160) && (old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL_F240)) {
+    } else if ((config->source == SOC_CPU_CLK_SRC_PLL_F160M) || (config->source == SOC_CPU_CLK_SRC_PLL_F240M)) {
+        if ((old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL_F160M) && (old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL_F240M)) {
+            // PLL_F160M and PLL_F240M both derived from S(BB)PLL (480MHz)
             rtc_clk_set_cpu_switch_to_bbpll(SLEEP_EVENT_HW_BBPLL_EN_START);
             rtc_clk_bbpll_enable();
-            rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), config->source_freq_mhz);
+            rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), CLK_LL_PLL_480M_FREQ_MHZ);
         }
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
         rtc_clk_set_cpu_switch_to_bbpll(SLEEP_EVENT_HW_BBPLL_EN_STOP);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
         rtc_clk_cpu_freq_to_8m();
-        if (((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F160) || (old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F240)) && !s_bbpll_digi_consumers_ref_count) {
+        if (((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F160M) || (old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F240M)) && !s_bbpll_digi_consumers_ref_count) {
             // We don't turn off the bbpll if some consumers depend on bbpll
             rtc_clk_bbpll_disable();
         }
@@ -305,13 +323,13 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         freq_mhz = source_freq_mhz / div;
         break;
     }
-    case SOC_CPU_CLK_SRC_PLL_F160: {
+    case SOC_CPU_CLK_SRC_PLL_F160M: {
         div = clk_ll_cpu_get_divider();
         source_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
         freq_mhz = source_freq_mhz / div;
         break;
     }
-    case SOC_CPU_CLK_SRC_PLL_F240: {
+    case SOC_CPU_CLK_SRC_PLL_F240M: {
         div = clk_ll_cpu_get_divider();
         source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
         freq_mhz = source_freq_mhz / div;
@@ -338,7 +356,7 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
 {
     if (config->source == SOC_CPU_CLK_SRC_XTAL) {
         rtc_clk_cpu_freq_to_xtal(config->freq_mhz, config->div);
-    } else if (((config->source == SOC_CPU_CLK_SRC_PLL_F160) || (config->source == SOC_CPU_CLK_SRC_PLL_F240)) &&
+    } else if (((config->source == SOC_CPU_CLK_SRC_PLL_F160M) || (config->source == SOC_CPU_CLK_SRC_PLL_F240M)) &&
                s_cur_pll_freq == config->source_freq_mhz) {
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
@@ -391,11 +409,11 @@ static uint32_t rtc_clk_ahb_freq_get(void)
         soc_root_freq_mhz = rtc_clk_xtal_freq_get();
         divider = clk_ll_ahb_get_divider();
         break;
-    case SOC_CPU_CLK_SRC_PLL_F160:
+    case SOC_CPU_CLK_SRC_PLL_F160M:
         soc_root_freq_mhz = CLK_LL_PLL_160M_FREQ_MHZ;
         divider = clk_ll_ahb_get_divider();
         break;
-    case SOC_CPU_CLK_SRC_PLL_F240:
+    case SOC_CPU_CLK_SRC_PLL_F240M:
         soc_root_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
         divider = clk_ll_ahb_get_divider();
         break;

@@ -645,17 +645,17 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         if (switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }
-        if (new_config.source == SOC_CPU_CLK_SRC_PLL) {
-            rtc_clk_cpu_freq_set_config_fast(&new_config);
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-            mspi_timing_change_speed_mode_cache_safe(false);
+    if (new_config.source == SOC_CPU_CLK_SRC_PLL) {
+        rtc_clk_cpu_freq_set_config_fast(&new_config);
+        mspi_timing_change_speed_mode_cache_safe(false);
+    } else {
+        mspi_timing_change_speed_mode_cache_safe(true);
+        rtc_clk_cpu_freq_set_config_fast(&new_config);
+    }
+#else
+    rtc_clk_cpu_freq_set_config_fast(&new_config);
 #endif
-        } else {
-#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-            mspi_timing_change_speed_mode_cache_safe(true);
-#endif
-            rtc_clk_cpu_freq_set_config_fast(&new_config);
-        }
         if (!switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }

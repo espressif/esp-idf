@@ -39,7 +39,7 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
     modem_lpcon_ll_reset_all(&MODEM_LPCON);
 
     // Set SPI Flash Freq to 40M
-    clk_ll_mspi_fast_sel_clk(MSPI_CLK_SRC_XTAL);
+    clk_ll_mspi_fast_set_src(MSPI_CLK_SRC_XTAL);
     clk_ll_mspi_fast_set_divider(1);
 
     // Set Peripheral clk rst

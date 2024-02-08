@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@ extern "C" {
  *
  *    The exact frequency of RC_FAST_CLK can be computed in runtime through calibration.
  *
- * 2) External 40MHz Crystal Clock: XTAL
+ * 2) External 40/48MHz Crystal Clock: XTAL
  *
  * 3) Internal 136kHz RC Oscillator: RC_SLOW (may also referrred as SOSC in TRM or reg. description)
  *
@@ -74,9 +74,8 @@ typedef enum {  // TODO: [ESP32C5] IDF-8642 (inherit from C6)
 typedef enum {  // TODO: [ESP32C5] IDF-8642 (inherit from C6)
     SOC_CPU_CLK_SRC_XTAL = 0,              /*!< Select XTAL_CLK as CPU_CLK source */
     SOC_CPU_CLK_SRC_RC_FAST = 1,           /*!< Select RC_FAST_CLK as CPU_CLK source */
-    SOC_CPU_CLK_SRC_PLL_F160 = 2,          /*!< Select PLL_CLK as CPU_CLK source (PLL_CLK is the output of 40MHz crystal oscillator frequency multiplier, 480MHz) */
-    SOC_CPU_CLK_SRC_PLL = SOC_CPU_CLK_SRC_PLL_F160, /*!< Select PLL_CLK as CPU_CLK source (PLL_CLK is the output of 40MHz crystal oscillator frequency multiplier, 480MHz) */
-    SOC_CPU_CLK_SRC_PLL_F240 = 3,          /*!< Select PLL_CLK as CPU_CLK source (PLL_CLK is the output of 40MHz crystal oscillator frequency multiplier, 480MHz) */
+    SOC_CPU_CLK_SRC_PLL_F160M = 2,         /*!< Select PLL_F160M_CLK as CPU_CLK source (PLL_F160M_CLK is derived from SPLL (480MHz), which is the output of the main crystal oscillator frequency multiplier) */
+    SOC_CPU_CLK_SRC_PLL_F240M = 3,         /*!< Select PLL_F240M_CLK as CPU_CLK source (PLL_F240M_CLK is derived from SPLL (480MHz), which is the output of the main crystal oscillator frequency multiplier) */
     SOC_CPU_CLK_SRC_INVALID,               /*!< Invalid CPU_CLK source */
 } soc_cpu_clk_src_t;
 
@@ -99,8 +98,8 @@ typedef enum {  // TODO: [ESP32C5] IDF-8642 (inherit from C6)
 typedef enum {  // TODO: [ESP32C5] IDF-8642 (inherit from C6)
     SOC_RTC_FAST_CLK_SRC_RC_FAST = 0,      /*!< Select RC_FAST_CLK as RTC_FAST_CLK source */
     SOC_RTC_FAST_CLK_SRC_XTAL_D2 = 1,      /*!< Select XTAL_D2_CLK as RTC_FAST_CLK source */
-    SOC_RTC_FAST_CLK_SRC_XTAL_D1 = 2,      /*!< Select XTAL_D1_CLK as RTC_FAST_CLK source */
     SOC_RTC_FAST_CLK_SRC_XTAL_DIV = SOC_RTC_FAST_CLK_SRC_XTAL_D2, /*!< Alias name for `SOC_RTC_FAST_CLK_SRC_XTAL_D2` */
+    SOC_RTC_FAST_CLK_SRC_XTAL = 2,         /*!< Select XTAL_CLK as RTC_FAST_CLK source */
     SOC_RTC_FAST_CLK_SRC_INVALID,          /*!< Invalid RTC_FAST_CLK source */
 } soc_rtc_fast_clk_src_t;
 
@@ -133,7 +132,7 @@ typedef enum {  // TODO: [ESP32C5] IDF-8642 (inherit from C6)
     SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from PLL (clock gating + fixed divider of 6), it has a fixed frequency of 80MHz */
     SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from PLL (clock gating + fixed divider of 3), it has a fixed frequency of 160MHz */
     SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from PLL (clock gating + fixed divider of 2), it has a fixed frequency of 240MHz */
-    SOC_MOD_CLK_PLL_F480M,
+    SOC_MOD_CLK_SPLL,                          /*!< SPLL is from the main XTAL oscillator frequency multipliers, it has a "fixed" frequency of 480MHz */
     SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */
@@ -483,14 +482,14 @@ typedef enum {  // TODO: [ESP32C5] IDF-8685, IDF-8686 (inherit from C6)
 /**
  * @brief Array initializer for all supported clock sources of MSPI digital controller
  */
-#define SOC_MSPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F480M}
+#define SOC_MSPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_SPLL}
 /**
  * @brief MSPI digital controller clock source
  */
 typedef enum {  // TODO: [ESP32C5] IDF-8649
     MSPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
     MSPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
-    MSPI_CLK_SRC_SPLL = SOC_MOD_CLK_PLL_F480M,   /*!< Select PLL_F64M as the source clock */
+    MSPI_CLK_SRC_SPLL = SOC_MOD_CLK_SPLL,           /*!< Select SPLL as the source clock */
     MSPI_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
 } soc_periph_mspi_clk_src_t;
 

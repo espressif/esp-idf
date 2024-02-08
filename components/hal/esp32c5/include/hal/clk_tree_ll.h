@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,10 +42,10 @@ extern "C" {
 
 /*
 Set the frequency division factor of ref_tick
-The FOSC of rtc calibration uses the 32 frequency division clock for ECO1,
+The FOSC of rtc calibration uses the 32 frequency division clock,
 So the frequency division factor of ref_tick must be greater than or equal to 32
 */
-#define REG_FOSC_TICK_NUM  255
+#define REG_FOSC_TICK_NUM  255 // TODO: IDF-8642 No need? Can calibrate on RC_FAST directly?
 
 /**
  * @brief XTAL32K_CLK enable modes
@@ -345,6 +345,15 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
 }
 
 /**
+ * @brief To enable the change of soc_clk_sel, cpu_div_num, and ahb_div_num
+ */
+static inline __attribute__((always_inline)) void clk_ll_bus_update(void)
+{
+    PCR.bus_clk_update.bus_clock_update = 1;
+    while (PCR.bus_clk_update.bus_clock_update);
+}
+
+/**
  * @brief Select the clock source for CPU_CLK (SOC Clock Root)
  *
  * @param in_sel One of the clock sources in soc_cpu_clk_src_t
@@ -358,17 +367,16 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_src(soc_cpu_clk
     case SOC_CPU_CLK_SRC_RC_FAST:
         PCR.sysclk_conf.soc_clk_sel = 1;
         break;
-    case SOC_CPU_CLK_SRC_PLL_F160:
+    case SOC_CPU_CLK_SRC_PLL_F160M:
         PCR.sysclk_conf.soc_clk_sel = 2;
         break;
-    case SOC_CPU_CLK_SRC_PLL_F240:
+    case SOC_CPU_CLK_SRC_PLL_F240M:
         PCR.sysclk_conf.soc_clk_sel = 3;
         break;
     default:
         // Unsupported SOC_CLK mux input sel
         abort();
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.bus_clk_update, bus_clock_update, 1);
 }
 
 /**
@@ -385,25 +393,13 @@ static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_sr
     case 1:
         return SOC_CPU_CLK_SRC_RC_FAST;
     case 2:
-        return SOC_CPU_CLK_SRC_PLL_F160;
+        return SOC_CPU_CLK_SRC_PLL_F160M;
     case 3:
-        return SOC_CPU_CLK_SRC_PLL_F240;
+        return SOC_CPU_CLK_SRC_PLL_F240M;
     default:
         // Invalid SOC_CLK_SEL value
         return SOC_CPU_CLK_SRC_INVALID;
     }
-}
-
-/**
- * @brief Get AHB_CLK's low-speed divider
- *
- * @return Divider. Divider = (PCR_LS_DIV_NUM + 1) * (PCR_AHB_LS_DIV_NUM + 1).
- */
-static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_divider(void)
-{
-    uint32_t ahb_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_div_num);
-    uint32_t hp_root_ls_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.sysclk_conf, ls_div_num);
-    return (hp_root_ls_div + 1) * (ahb_div + 1);
 }
 
 /**
@@ -418,19 +414,6 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_divider(uint32_
     //  divider option: 1, 2, 4 (PCR_CPU_HS_DIV_NUM=0, 1, 3)
     HAL_ASSERT(divider == 1 || divider == 2 || divider == 3 || divider == 4 || divider == 6);
     HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_div_num, (divider) - 1);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.bus_clk_update, bus_clock_update, 1);
-}
-
-/**
- * @brief Set AHB_CLK's low-speed divider (valid when SOC_ROOT clock source is XTAL/RC_FAST)
- *
- * @param divider Divider. (PCR_LS_DIV_NUM + 1) * (PCR_AHB_LS_DIV_NUM + 1) = divider.
- */
-static inline __attribute__((always_inline)) void clk_ll_ahb_set_divider(uint32_t divider)
-{
-    // SOC_ROOT_CLK ---(1)---> HP_ROOT_CLK ---(2)---> AHB_CLK
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_div_num, divider - 1);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.bus_clk_update, bus_clock_update, 1);
 }
 
 /**
@@ -442,6 +425,29 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(voi
 {
     uint32_t cpu_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_div_num);
     return (cpu_div + 1);
+}
+
+/**
+ * @brief Set AHB_CLK's low-speed divider (valid when SOC_ROOT clock source is XTAL/RC_FAST)
+ *
+ * @param divider Divider. (PCR_LS_DIV_NUM + 1) * (PCR_AHB_LS_DIV_NUM + 1) = divider.
+ */
+static inline __attribute__((always_inline)) void clk_ll_ahb_set_divider(uint32_t divider)
+{
+    // SOC_ROOT_CLK ---(1)---> HP_ROOT_CLK ---(2)---> AHB_CLK
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_div_num, divider - 1);
+}
+
+/**
+ * @brief Get AHB_CLK's low-speed divider
+ *
+ * @return Divider. Divider = (PCR_LS_DIV_NUM + 1) * (PCR_AHB_LS_DIV_NUM + 1).
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_divider(void)
+{
+    uint32_t ahb_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_div_num);
+    uint32_t hp_root_ls_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.sysclk_conf, ls_div_num);
+    return (hp_root_ls_div + 1) * (ahb_div + 1);
 }
 
 /**
@@ -467,25 +473,31 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(voi
     return HAL_FORCE_READ_U32_REG_FIELD(PCR.apb_freq_conf, apb_div_num) + 1;
 }
 
-static inline __attribute__((always_inline)) void clk_ll_mspi_fast_sel_clk(soc_periph_mspi_clk_src_t mspi_clk_src)
+/**
+ * @brief Select the clock source for MSPI_FAST_CLK
+ *
+ * @param in_sel One of the clock sources in soc_periph_mspi_clk_src_t
+ */
+static inline __attribute__((always_inline)) void clk_ll_mspi_fast_set_src(soc_periph_mspi_clk_src_t in_sel)
 {
-    switch (mspi_clk_src) {
-        case MSPI_CLK_SRC_XTAL:
-            PCR.mspi_clk_conf.mspi_func_clk_sel = 0;
-            break;
-        case MSPI_CLK_SRC_RC_FAST:
-            PCR.mspi_clk_conf.mspi_func_clk_sel = 1;
-            break;
-        case SOC_MOD_CLK_PLL_F480M:
-            PCR.mspi_clk_conf.mspi_func_clk_sel = 2;
-            break;
-        default:
-            abort();
+    switch (in_sel) {
+    case MSPI_CLK_SRC_XTAL:
+        PCR.mspi_clk_conf.mspi_func_clk_sel = 0;
+        break;
+    case MSPI_CLK_SRC_RC_FAST:
+        PCR.mspi_clk_conf.mspi_func_clk_sel = 1;
+        break;
+    case MSPI_CLK_SRC_SPLL:
+        PCR.mspi_clk_conf.mspi_func_clk_sel = 2;
+        break;
+    default:
+        // Unsupported MSPI_FAST_CLK mux input sel
+        abort();
     }
 }
 
 /**
- * @brief Set MSPI_FAST_CLK's low-speed divider (valid when SOC_ROOT clock source is XTAL/RC_FAST)
+ * @brief Set MSPI_FAST_CLK's divider
  *
  * @param divider Divider.
  */
@@ -515,7 +527,6 @@ static inline __attribute__((always_inline)) void clk_ll_32k_calibration_set_tar
         // Unsupported 32K_SEL mux input
         abort();
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.bus_clk_update, bus_clock_update, 1);
 }
 
 /**
@@ -600,7 +611,7 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_fast_set_src(soc_rt
     case SOC_RTC_FAST_CLK_SRC_XTAL_D2:
         LP_CLKRST.lp_clk_conf.fast_clk_sel = 1;
         break;
-    case SOC_RTC_FAST_CLK_SRC_XTAL_D1:
+    case SOC_RTC_FAST_CLK_SRC_XTAL:
         LP_CLKRST.lp_clk_conf.fast_clk_sel = 2;
         break;
     default:
@@ -622,8 +633,10 @@ static inline __attribute__((always_inline)) soc_rtc_fast_clk_src_t clk_ll_rtc_f
         return SOC_RTC_FAST_CLK_SRC_RC_FAST;
     case 1:
         return SOC_RTC_FAST_CLK_SRC_XTAL_D2;
+    case 2:
+        return SOC_RTC_FAST_CLK_SRC_XTAL;
     default:
-        return SOC_RTC_FAST_CLK_SRC_XTAL_D1;
+        return SOC_RTC_FAST_CLK_SRC_INVALID;
     }
 }
 
