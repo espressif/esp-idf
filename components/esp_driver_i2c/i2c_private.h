@@ -58,7 +58,7 @@ extern "C" {
 #define NACK_VAL 1
 
 #define I2C_TRANS_READ_COMMAND(ack_value)    {.ack_val = (ack_value), .op_code = I2C_LL_CMD_READ}
-#define I2C_TRANS_WRITE_COMMAND(ack_check)   {.ack_en = (ack_check), .op_code = I2C_LL_CMD_WRITE}
+#define I2C_TRANS_WRITE_COMMAND              {.ack_en = true, .op_code = I2C_LL_CMD_WRITE}
 #define I2C_TRANS_STOP_COMMAND               {.op_code = I2C_LL_CMD_STOP}
 #define I2C_TRANS_START_COMMAND              {.op_code = I2C_LL_CMD_RESTART}
 

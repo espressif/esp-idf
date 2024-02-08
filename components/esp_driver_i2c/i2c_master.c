@@ -974,7 +974,7 @@ esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *wr
 
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
-        {.hw_cmd = I2C_TRANS_WRITE_COMMAND(false), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
+        {.hw_cmd = I2C_TRANS_WRITE_COMMAND, .data = (uint8_t *)write_buffer, .total_bytes = write_size},
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
     };
 
@@ -994,7 +994,7 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
 
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
-        {.hw_cmd = I2C_TRANS_WRITE_COMMAND(false), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
+        {.hw_cmd = I2C_TRANS_WRITE_COMMAND, .data = (uint8_t *)write_buffer, .total_bytes = write_size},
         {.hw_cmd = I2C_TRANS_START_COMMAND},
         {.hw_cmd = I2C_TRANS_READ_COMMAND(ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
         {.hw_cmd = I2C_TRANS_READ_COMMAND(NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
