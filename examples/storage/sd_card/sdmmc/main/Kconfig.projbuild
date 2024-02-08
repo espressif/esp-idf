@@ -7,6 +7,12 @@ menu "SD/MMC Example Configuration"
             If this config item is set, format_if_mount_failed will be set to true and the card will be formatted if
             the mount has failed.
 
+    config EXAMPLE_FORMAT_SD_CARD
+        bool "Format the card as a part of the example"
+        default n
+        help
+            If this config item is set, the card will be formatted as a part of the example.
+
     choice EXAMPLE_SDMMC_BUS_WIDTH
         prompt "SD/MMC bus width"
         default EXAMPLE_SDMMC_BUS_WIDTH_4
