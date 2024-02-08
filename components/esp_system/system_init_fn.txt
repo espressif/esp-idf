@@ -50,7 +50,7 @@ CORE: 112: init_vfs_usj_sec in components/esp_driver_usb_serial_jtag/src/usb_ser
 CORE: 114: init_vfs_console in components/vfs/vfs_console.c on BIT(0)
 CORE: 115: init_newlib_stdio in components/newlib/newlib_init.c on BIT(0)
 
-CORE: 120: init_pthread in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 120: init_pthread in components/pthread/pthread.c on BIT(0)
 CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 140: init_virtual_efuse in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 150: init_secure in components/esp_system/startup_funcs.c on BIT(0)

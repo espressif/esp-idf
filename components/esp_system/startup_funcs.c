@@ -46,7 +46,6 @@
 #include "esp_private/pm_impl.h"
 #endif
 
-#include "esp_pthread.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
@@ -155,11 +154,6 @@ ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 105)
 {
     esp_newlib_time_init();
     return ESP_OK;
-}
-
-ESP_SYSTEM_INIT_FN(init_pthread, CORE, BIT(0), 120)
-{
-    return esp_pthread_init();
 }
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
