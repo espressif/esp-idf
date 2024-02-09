@@ -1,14 +1,16 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import shutil
-import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
 import pytest
-from test_build_system_helpers import EnvDict, IdfPyFunc, file_contains, run_cmake
+from test_build_system_helpers import EnvDict
+from test_build_system_helpers import file_contains
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import run_cmake
 
 ESP32C3_TARGET = 'esp32c3'
 ESP32C2_TARGET = 'esp32c2'
@@ -32,7 +34,6 @@ def test_target_from_environment_cmake(default_idf_env: EnvDict) -> None:
     assert file_contains('build/CMakeCache.txt', 'IDF_TARGET:STRING={}'.format(ESP32S2_TARGET))
 
 
-@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 def test_target_from_environment_idf_py(idf_py: IdfPyFunc, default_idf_env: EnvDict, test_app_copy: Path) -> None:
     def reconfigure_and_check_return_values(errmsg: str, opts: Optional[List[str]] = None) -> None:
         opts = opts or []
@@ -43,7 +44,7 @@ def test_target_from_environment_idf_py(idf_py: IdfPyFunc, default_idf_env: EnvD
     idf_py('set-target', ESP32S2_TARGET)
     default_idf_env.update({'IDF_TARGET': ESP32_TARGET})
 
-    cfg_path = (test_app_copy / 'sdkconfig')
+    cfg_path = (test_app_copy / 'sdkconfig').as_posix()
 
     logging.info("idf.py fails if IDF_TARGET settings don't match the environment")
     reconfigure_and_check_return_values("Project sdkconfig '{}' was generated for target '{}', but environment "
@@ -74,7 +75,6 @@ def test_target_from_environment_idf_py(idf_py: IdfPyFunc, default_idf_env: EnvD
                                         ['-D', 'IDF_TARGET={}'.format(ESP32_TARGET)])
 
 
-@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 def test_target_consistency_cmake(default_idf_env: EnvDict, test_app_copy: Path) -> None:
     def reconfigure_and_check_return_values(errmsg: str, opts: Optional[List[str]] = None) -> None:
         opts = opts or []
@@ -84,7 +84,7 @@ def test_target_consistency_cmake(default_idf_env: EnvDict, test_app_copy: Path)
 
     run_cmake('-G', 'Ninja', '..')
 
-    cfg_path = (test_app_copy / 'sdkconfig')
+    cfg_path = (test_app_copy / 'sdkconfig').as_posix()
 
     logging.info("cmake fails if IDF_TARGET settings don't match the environment")
     default_idf_env.update({'IDF_TARGET': ESP32S2_TARGET})

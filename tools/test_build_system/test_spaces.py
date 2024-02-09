@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -20,21 +20,21 @@ def clean_app_dir(app_path: Path) -> None:
     shutil.rmtree(app_path / 'build', ignore_errors=True)
 
 
-@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 @pytest.mark.idf_copy('esp idf with spaces')
 def test_spaces_bundle1(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 1')
     # test_build
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'get-started' / 'hello_world'))
-    # test build ulp_fsm
-    run_idf_py('build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_fsm' / 'ulp'))
-    # test build ulp_riscv
-    run_idf_py('-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio'))
     # test spiffsgen
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'storage' / 'spiffsgen'))
+    # bug reported in IDF-9151
+    if sys.platform != 'win32':
+        # test build ulp_fsm
+        run_idf_py('build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_fsm' / 'ulp'))
+        # test build ulp_riscv
+        run_idf_py('-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio'))
 
 
-@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 @pytest.mark.idf_copy('esp idf with spaces')
 def test_spaces_bundle2(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 2')
@@ -50,7 +50,6 @@ def test_spaces_bundle2(idf_copy: Path) -> None:
     run_idf_py('uf2', workdir=hello_world_app_path)
 
 
-@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 @pytest.mark.idf_copy('esp idf with spaces')
 def test_spaces_bundle3(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 3')
@@ -89,7 +88,6 @@ def test_install_export_unix(idf_copy: Path) -> None:
     subprocess.check_call(export_cmd, env=env, shell=True, cwd=idf_copy, executable='/bin/bash')
 
 
-@pytest.mark.skipif(sys.platform == 'win32', reason='Failing on Windows runner. TODO')
 @pytest.mark.skipif(sys.platform != 'win32', reason='Windows test')
 @pytest.mark.idf_copy('esp idf with spaces')
 def test_install_export_win(idf_copy: Path) -> None:
