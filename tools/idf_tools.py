@@ -96,211 +96,6 @@ IDF_TOOLS_EXPORT_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_DL_URL = 'https://dl.espressif.com/dl/esp-idf'
 IDF_PIP_WHEELS_URL = os.environ.get('IDF_PIP_WHEELS_URL', 'https://dl.espressif.com/pypi')
 
-PYTHON_PLATFORM = f'{platform.system()}-{platform.machine()}'
-
-# Identifiers used in tools.json for different platforms.
-PLATFORM_WIN32 = 'win32'
-PLATFORM_WIN64 = 'win64'
-PLATFORM_MACOS = 'macos'
-PLATFORM_MACOS_ARM64 = 'macos-arm64'
-PLATFORM_LINUX32 = 'linux-i686'
-PLATFORM_LINUX64 = 'linux-amd64'
-PLATFORM_LINUX_ARM32 = 'linux-armel'
-PLATFORM_LINUX_ARMHF = 'linux-armhf'
-PLATFORM_LINUX_ARM64 = 'linux-arm64'
-
-
-class Platforms:
-    """
-    Mappings from various other names these platforms are known as, to the identifiers above.
-    This includes strings produced from "platform.system() + '-' + platform.machine()", see PYTHON_PLATFORM
-    definition above.
-    """
-    # Mappings from various other names these platforms are known as, to the identifiers above.
-    # This includes strings produced from "platform.system() + '-' + platform.machine()", see PYTHON_PLATFORM
-    # definition above.
-    # This list also includes various strings used in release archives of xtensa-esp32-elf-gcc, OpenOCD, etc.
-    PLATFORM_FROM_NAME = {
-        # Windows
-        PLATFORM_WIN32: PLATFORM_WIN32,
-        'Windows-i686': PLATFORM_WIN32,
-        'Windows-x86': PLATFORM_WIN32,
-        'i686-w64-mingw32': PLATFORM_WIN32,
-        PLATFORM_WIN64: PLATFORM_WIN64,
-        'Windows-x86_64': PLATFORM_WIN64,
-        'Windows-AMD64': PLATFORM_WIN64,
-        'x86_64-w64-mingw32': PLATFORM_WIN64,
-        'Windows-ARM64': PLATFORM_WIN64,
-        # macOS
-        PLATFORM_MACOS: PLATFORM_MACOS,
-        'osx': PLATFORM_MACOS,
-        'darwin': PLATFORM_MACOS,
-        'Darwin-x86_64': PLATFORM_MACOS,
-        'x86_64-apple-darwin': PLATFORM_MACOS,
-        PLATFORM_MACOS_ARM64: PLATFORM_MACOS_ARM64,
-        'Darwin-arm64': PLATFORM_MACOS_ARM64,
-        'aarch64-apple-darwin': PLATFORM_MACOS_ARM64,
-        'arm64-apple-darwin': PLATFORM_MACOS_ARM64,
-        # Linux
-        PLATFORM_LINUX64: PLATFORM_LINUX64,
-        'linux64': PLATFORM_LINUX64,
-        'Linux-x86_64': PLATFORM_LINUX64,
-        'FreeBSD-amd64': PLATFORM_LINUX64,
-        'x86_64-linux-gnu': PLATFORM_LINUX64,
-        PLATFORM_LINUX32: PLATFORM_LINUX32,
-        'linux32': PLATFORM_LINUX32,
-        'Linux-i686': PLATFORM_LINUX32,
-        'FreeBSD-i386': PLATFORM_LINUX32,
-        'i586-linux-gnu': PLATFORM_LINUX32,
-        'i686-linux-gnu': PLATFORM_LINUX32,
-        PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
-        'Linux-arm64': PLATFORM_LINUX_ARM64,
-        'Linux-aarch64': PLATFORM_LINUX_ARM64,
-        'Linux-armv8l': PLATFORM_LINUX_ARM64,
-        'aarch64': PLATFORM_LINUX_ARM64,
-        PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
-        'arm-linux-gnueabihf': PLATFORM_LINUX_ARMHF,
-        PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
-        'arm-linux-gnueabi': PLATFORM_LINUX_ARM32,
-        'Linux-armv7l': PLATFORM_LINUX_ARM32,
-        'Linux-arm': PLATFORM_LINUX_ARM32,
-    }
-
-    @staticmethod
-    def detect_linux_arm_platform(supposed_platform: Optional[str]) -> Optional[str]:
-        """
-        We probe the python binary to check exactly what environment the script is running in.
-
-        ARM platform may run on armhf hardware but having armel installed packages.
-        To avoid possible armel/armhf libraries mixing need to define user's
-        packages architecture to use the same
-        See note section in https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html#index-mfloat-abi
-
-        ARM platform may run on aarch64 hardware but having armhf installed packages
-        (it happens if a docker container is running on arm64 hardware, but using an armhf image).
-        """
-        if supposed_platform not in (PLATFORM_LINUX_ARM32, PLATFORM_LINUX_ARMHF, PLATFORM_LINUX_ARM64):
-            return supposed_platform
-
-        # suppose that installed python was built with the right ABI
-        with open(sys.executable, 'rb') as f:
-            # see ELF header description in https://man7.org/linux/man-pages/man5/elf.5.html, offsets depend on ElfN size
-            if int.from_bytes(f.read(4), sys.byteorder) != int.from_bytes(b'\x7fELF', sys.byteorder):
-                return supposed_platform  # ELF magic not found. Use the default platform name from PLATFORM_FROM_NAME
-            f.seek(18)  # seek to e_machine
-            e_machine = int.from_bytes(f.read(2), sys.byteorder)
-            if e_machine == 183:  # EM_AARCH64, https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
-                supposed_platform = PLATFORM_LINUX_ARM64
-            elif e_machine == 40:  # EM_ARM, https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst
-                f.seek(36)  # seek to e_flags
-                e_flags = int.from_bytes(f.read(4), sys.byteorder)
-                if e_flags & 0x400:
-                    supposed_platform = PLATFORM_LINUX_ARMHF
-                else:
-                    supposed_platform = PLATFORM_LINUX_ARM32
-
-        return supposed_platform
-
-    @staticmethod
-    def get(platform_alias: Optional[str]) -> Optional[str]:
-        """
-        Get a proper platform name based on PLATFORM_FROM_NAME dict.
-        """
-        if not platform_alias:
-            return None
-
-        if platform_alias == 'any' and CURRENT_PLATFORM:
-            platform_alias = CURRENT_PLATFORM
-        platform_name = Platforms.PLATFORM_FROM_NAME.get(platform_alias, None)
-        platform_name = Platforms.detect_linux_arm_platform(platform_name)
-        return platform_name
-
-    @staticmethod
-    def get_by_filename(file_name: str) -> Optional[str]:
-        """
-        Guess the right platform based on the file name.
-        """
-        found_alias = ''
-        for platform_alias in Platforms.PLATFORM_FROM_NAME:
-            # Find the longest alias which matches with file name to avoid mismatching
-            if platform_alias in file_name and len(found_alias) < len(platform_alias):
-                found_alias = platform_alias
-        return Platforms.get(found_alias)
-
-
-def parse_platform_arg(platform_str: str) -> str:
-    """
-    Parses platform from input string and checks whether it is a valid platform.
-    If not, raises SystemExit exception.
-    """
-    platform = Platforms.get(platform_str)
-    if platform is None:
-        fatal(f'unknown platform: {platform}')
-        raise SystemExit(1)
-    return platform
-
-
-CURRENT_PLATFORM = parse_platform_arg(PYTHON_PLATFORM)
-
-
-EXPORT_SHELL = 'shell'
-EXPORT_KEY_VALUE = 'key-value'
-
-# the older "DigiCert Global Root CA" certificate used with github.com
-DIGICERT_ROOT_CA_CERT = """
------BEGIN CERTIFICATE-----
-MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
-MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
-d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD
-QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT
-MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
-b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG
-9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB
-CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97
-nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt
-43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P
-T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4
-gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO
-BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR
-TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw
-DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr
-hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg
-06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF
-PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls
-YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk
-CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=
------END CERTIFICATE-----
-"""
-
-# the newer "DigiCert Global Root G2" certificate used with dl.espressif.com
-DIGICERT_ROOT_G2_CERT = """
------BEGIN CERTIFICATE-----
-MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh
-MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
-d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBH
-MjAeFw0xMzA4MDExMjAwMDBaFw0zODAxMTUxMjAwMDBaMGExCzAJBgNVBAYTAlVT
-MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
-b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IEcyMIIBIjANBgkqhkiG
-9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzfNNNx7a8myaJCtSnX/RrohCgiN9RlUyfuI
-2/Ou8jqJkTx65qsGGmvPrC3oXgkkRLpimn7Wo6h+4FR1IAWsULecYxpsMNzaHxmx
-1x7e/dfgy5SDN67sH0NO3Xss0r0upS/kqbitOtSZpLYl6ZtrAGCSYP9PIUkY92eQ
-q2EGnI/yuum06ZIya7XzV+hdG82MHauVBJVJ8zUtluNJbd134/tJS7SsVQepj5Wz
-tCO7TG1F8PapspUwtP1MVYwnSlcUfIKdzXOS0xZKBgyMUNGPHgm+F6HmIcr9g+UQ
-vIOlCsRnKPZzFBQ9RnbDhxSJITRNrw9FDKZJobq7nMWxM4MphQIDAQABo0IwQDAP
-BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUTiJUIBiV
-5uNu5g/6+rkS7QYXjzkwDQYJKoZIhvcNAQELBQADggEBAGBnKJRvDkhj6zHd6mcY
-1Yl9PMWLSn/pvtsrF9+wX3N3KjITOYFnQoQj8kVnNeyIv/iPsGEMNKSuIEyExtv4
-NeF22d+mQrvHRAiGfzZ0JFrabA0UWTW98kndth/Jsw1HKj2ZL7tcu7XUIOGZX1NG
-Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91
-8rGOmaFvE7FBcf6IKshPECBV1/MUReXgRPTqh5Uykw7+U0b6LJ3/iyK5S9kJRaTe
-pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl
-MrY=
------END CERTIFICATE-----
-"""
-
-DL_CERT_DICT = {'dl.espressif.com': DIGICERT_ROOT_G2_CERT,
-                'github.com': DIGICERT_ROOT_CA_CERT}
-
 
 class GlobalVarsStore:
     """
@@ -390,6 +185,226 @@ def print_hints_on_download_error(err: str) -> None:
     if sys.platform == 'win32':
         info('By downloading and using the offline installer from https://dl.espressif.com/dl/esp-idf '
              'you might be able to work around this issue.')
+
+
+PYTHON_PLATFORM = f'{platform.system()}-{platform.machine()}'
+
+# Identifiers used in tools.json for different platforms.
+PLATFORM_WIN32 = 'win32'
+PLATFORM_WIN64 = 'win64'
+PLATFORM_MACOS = 'macos'
+PLATFORM_MACOS_ARM64 = 'macos-arm64'
+PLATFORM_LINUX32 = 'linux-i686'
+PLATFORM_LINUX64 = 'linux-amd64'
+PLATFORM_LINUX_ARM32 = 'linux-armel'
+PLATFORM_LINUX_ARMHF = 'linux-armhf'
+PLATFORM_LINUX_ARM64 = 'linux-arm64'
+
+
+class Platforms:
+    """
+    Mappings from various other names these platforms are known as, to the identifiers above.
+    This includes strings produced from "platform.system() + '-' + platform.machine()", see PYTHON_PLATFORM
+    definition above.
+    """
+    # Mappings from various other names these platforms are known as, to the identifiers above.
+    # This includes strings produced from "platform.system() + '-' + platform.machine()", see PYTHON_PLATFORM
+    # definition above.
+    # This list also includes various strings used in release archives of xtensa-esp32-elf-gcc, OpenOCD, etc.
+    PLATFORM_FROM_NAME = {
+        # Windows
+        PLATFORM_WIN32: PLATFORM_WIN32,
+        'Windows-i686': PLATFORM_WIN32,
+        'Windows-x86': PLATFORM_WIN32,
+        'i686-w64-mingw32': PLATFORM_WIN32,
+        PLATFORM_WIN64: PLATFORM_WIN64,
+        'Windows-x86_64': PLATFORM_WIN64,
+        'Windows-AMD64': PLATFORM_WIN64,
+        'x86_64-w64-mingw32': PLATFORM_WIN64,
+        'Windows-ARM64': PLATFORM_WIN64,
+        # macOS
+        PLATFORM_MACOS: PLATFORM_MACOS,
+        'osx': PLATFORM_MACOS,
+        'darwin': PLATFORM_MACOS,
+        'Darwin-x86_64': PLATFORM_MACOS,
+        'x86_64-apple-darwin': PLATFORM_MACOS,
+        PLATFORM_MACOS_ARM64: PLATFORM_MACOS_ARM64,
+        'Darwin-arm64': PLATFORM_MACOS_ARM64,
+        'aarch64-apple-darwin': PLATFORM_MACOS_ARM64,
+        'arm64-apple-darwin': PLATFORM_MACOS_ARM64,
+        # Linux
+        PLATFORM_LINUX64: PLATFORM_LINUX64,
+        'linux64': PLATFORM_LINUX64,
+        'Linux-x86_64': PLATFORM_LINUX64,
+        'FreeBSD-amd64': PLATFORM_LINUX64,
+        'x86_64-linux-gnu': PLATFORM_LINUX64,
+        PLATFORM_LINUX32: PLATFORM_LINUX32,
+        'linux32': PLATFORM_LINUX32,
+        'Linux-i686': PLATFORM_LINUX32,
+        'FreeBSD-i386': PLATFORM_LINUX32,
+        'i586-linux-gnu': PLATFORM_LINUX32,
+        'i686-linux-gnu': PLATFORM_LINUX32,
+        PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
+        'Linux-arm64': PLATFORM_LINUX_ARM64,
+        'Linux-aarch64': PLATFORM_LINUX_ARM64,
+        'Linux-armv8l': PLATFORM_LINUX_ARM64,
+        'aarch64': PLATFORM_LINUX_ARM64,
+        PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
+        'arm-linux-gnueabihf': PLATFORM_LINUX_ARMHF,
+        PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
+        'arm-linux-gnueabi': PLATFORM_LINUX_ARM32,
+        'Linux-armv7l': PLATFORM_LINUX_ARM32,
+        'Linux-arm': PLATFORM_LINUX_ARM32,
+    }
+
+    # List of platforms that are not supported by ESP-IDF
+    UNSUPPORTED_PLATFORMS = [
+        'Linux-armv6l'
+    ]
+
+    @staticmethod
+    def detect_linux_arm_platform(supposed_platform: Optional[str]) -> Optional[str]:
+        """
+        We probe the python binary to check exactly what environment the script is running in.
+
+        ARM platform may run on armhf hardware but having armel installed packages.
+        To avoid possible armel/armhf libraries mixing need to define user's
+        packages architecture to use the same
+        See note section in https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html#index-mfloat-abi
+
+        ARM platform may run on aarch64 hardware but having armhf installed packages
+        (it happens if a docker container is running on arm64 hardware, but using an armhf image).
+        """
+        if supposed_platform not in (PLATFORM_LINUX_ARM32, PLATFORM_LINUX_ARMHF, PLATFORM_LINUX_ARM64):
+            return supposed_platform
+
+        # suppose that installed python was built with the right ABI
+        with open(sys.executable, 'rb') as f:
+            # see ELF header description in https://man7.org/linux/man-pages/man5/elf.5.html, offsets depend on ElfN size
+            if int.from_bytes(f.read(4), sys.byteorder) != int.from_bytes(b'\x7fELF', sys.byteorder):
+                return supposed_platform  # ELF magic not found. Use the default platform name from PLATFORM_FROM_NAME
+            f.seek(18)  # seek to e_machine
+            e_machine = int.from_bytes(f.read(2), sys.byteorder)
+            if e_machine == 183:  # EM_AARCH64, https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst
+                supposed_platform = PLATFORM_LINUX_ARM64
+            elif e_machine == 40:  # EM_ARM, https://github.com/ARM-software/abi-aa/blob/main/aaelf32/aaelf32.rst
+                f.seek(36)  # seek to e_flags
+                e_flags = int.from_bytes(f.read(4), sys.byteorder)
+                if e_flags & 0x400:
+                    supposed_platform = PLATFORM_LINUX_ARMHF
+                else:
+                    supposed_platform = PLATFORM_LINUX_ARM32
+
+        return supposed_platform
+
+    @staticmethod
+    def get(platform_alias: Optional[str]) -> str:
+        """
+        Get a proper platform name based on PLATFORM_FROM_NAME dict.
+        """
+        if not platform_alias:
+            raise ValueError('System platform could not be identified.')
+
+        if platform_alias in Platforms.UNSUPPORTED_PLATFORMS:
+            raise ValueError(f'Platform \'{platform_alias}\' is not supported by ESP-IDF.')
+
+        if platform_alias == 'any' and CURRENT_PLATFORM:
+            platform_alias = CURRENT_PLATFORM
+        platform_name = Platforms.PLATFORM_FROM_NAME.get(platform_alias, None)
+        platform_name = Platforms.detect_linux_arm_platform(platform_name)
+
+        if not platform_name:
+            raise ValueError(f'Support for platform \'{platform_alias}\' hasn\'t been added yet.')
+
+        return platform_name
+
+    @staticmethod
+    def get_by_filename(file_name: str) -> str:
+        """
+        Guess the right platform based on the file name.
+        """
+        found_alias = ''
+        for platform_alias in Platforms.PLATFORM_FROM_NAME:
+            # Find the longest alias which matches with file name to avoid mismatching
+            if platform_alias in file_name and len(found_alias) < len(platform_alias):
+                found_alias = platform_alias
+        return Platforms.get(found_alias)
+
+
+def parse_platform_arg(platform_str: str) -> str:
+    """
+    Parses platform from input string and checks whether it is a valid platform.
+    If not, raises SystemExit exception with error message.
+    """
+    try:
+        platform = Platforms.get(platform_str)
+    except ValueError as e:
+        fatal(str(e))
+        raise SystemExit(1)
+
+    return platform
+
+
+CURRENT_PLATFORM = parse_platform_arg(PYTHON_PLATFORM)
+
+
+EXPORT_SHELL = 'shell'
+EXPORT_KEY_VALUE = 'key-value'
+
+# the older "DigiCert Global Root CA" certificate used with github.com
+DIGICERT_ROOT_CA_CERT = """
+-----BEGIN CERTIFICATE-----
+MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD
+QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT
+MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB
+CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97
+nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt
+43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P
+T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4
+gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO
+BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR
+TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw
+DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr
+hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg
+06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF
+PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls
+YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk
+CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=
+-----END CERTIFICATE-----
+"""
+
+# the newer "DigiCert Global Root G2" certificate used with dl.espressif.com
+DIGICERT_ROOT_G2_CERT = """
+-----BEGIN CERTIFICATE-----
+MIIDjjCCAnagAwIBAgIQAzrx5qcRqaC7KGSxHQn65TANBgkqhkiG9w0BAQsFADBh
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBH
+MjAeFw0xMzA4MDExMjAwMDBaFw0zODAxMTUxMjAwMDBaMGExCzAJBgNVBAYTAlVT
+MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IEcyMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzfNNNx7a8myaJCtSnX/RrohCgiN9RlUyfuI
+2/Ou8jqJkTx65qsGGmvPrC3oXgkkRLpimn7Wo6h+4FR1IAWsULecYxpsMNzaHxmx
+1x7e/dfgy5SDN67sH0NO3Xss0r0upS/kqbitOtSZpLYl6ZtrAGCSYP9PIUkY92eQ
+q2EGnI/yuum06ZIya7XzV+hdG82MHauVBJVJ8zUtluNJbd134/tJS7SsVQepj5Wz
+tCO7TG1F8PapspUwtP1MVYwnSlcUfIKdzXOS0xZKBgyMUNGPHgm+F6HmIcr9g+UQ
+vIOlCsRnKPZzFBQ9RnbDhxSJITRNrw9FDKZJobq7nMWxM4MphQIDAQABo0IwQDAP
+BgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjAdBgNVHQ4EFgQUTiJUIBiV
+5uNu5g/6+rkS7QYXjzkwDQYJKoZIhvcNAQELBQADggEBAGBnKJRvDkhj6zHd6mcY
+1Yl9PMWLSn/pvtsrF9+wX3N3KjITOYFnQoQj8kVnNeyIv/iPsGEMNKSuIEyExtv4
+NeF22d+mQrvHRAiGfzZ0JFrabA0UWTW98kndth/Jsw1HKj2ZL7tcu7XUIOGZX1NG
+Fdtom/DzMNU+MeKNhJ7jitralj41E6Vf8PlwUHBHQRFXGU7Aj64GxJUTFy8bJZ91
+8rGOmaFvE7FBcf6IKshPECBV1/MUReXgRPTqh5Uykw7+U0b6LJ3/iyK5S9kJRaTe
+pLiaWN0bfVKfjllDiIGknibVb63dDcY3fe0Dkhvld1927jyNxF1WW6LZZm6zNTfl
+MrY=
+-----END CERTIFICATE-----
+"""
+
+DL_CERT_DICT = {'dl.espressif.com': DIGICERT_ROOT_G2_CERT,
+                'github.com': DIGICERT_ROOT_CA_CERT}
 
 
 def run_cmd_check_output(cmd: List[str], input_text: Optional[str]=None, extra_paths: Optional[List[str]]=None) -> bytes:
@@ -741,9 +756,13 @@ class IDFToolVersion(object):
         """
         Get download for given platform if usable download already exists.
         """
-        platform_name = Platforms.get(platform_name)
-        if platform_name and platform_name in self.downloads.keys():
-            return self.downloads[platform_name]
+        try:
+            platform_name = Platforms.get(platform_name)
+            if platform_name in self.downloads.keys():
+                return self.downloads[platform_name]
+        # exception can be ommited, as not detected platform is handled without err message
+        except ValueError:
+            pass
         if 'any' in self.downloads.keys():
             return self.downloads['any']
         return None
@@ -1257,7 +1276,9 @@ class IDFTool(object):
             for platform_id, platform_dict in version_dict.items():  # type: ignore
                 if platform_id in ['name', 'status']:
                     continue
-                if Platforms.get(platform_id) is None:
+                try:
+                    Platforms.get(platform_id)
+                except ValueError:
                     raise RuntimeError('invalid platform %s for tool %s version %s' %
                                        (platform_id, tool_name, version))
 
@@ -2763,8 +2784,9 @@ def action_add_version(args: Any) -> None:
                                          else ChecksumCalculator(args.artifact_file))  # type: ignore
     for file_size, file_sha256, file_name in checksum_info:
         # Guess which platform this file is for
-        found_platform = Platforms.get_by_filename(file_name)
-        if found_platform is None:
+        try:
+            found_platform = Platforms.get_by_filename(file_name)
+        except ValueError:
             info(f'Could not guess platform for file {file_name}')
             found_platform = TODO_MESSAGE
         url = urljoin(url_prefix, file_name)
