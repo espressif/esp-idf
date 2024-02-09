@@ -21,10 +21,10 @@
 #define UART_NO                  (1)
 #define UART_BUF_SZ              (1024)
 
-#define UART_TX_PIN              (4)
-#define UART_RX_PIN              (5)
-#define UART_RTS_PIN             (19)
-#define UART_CTS_PIN             (23)
+#define UART_TX_PIN              (CONFIG_EXAMPLE_HCI_UART_TX_PIN)
+#define UART_RX_PIN              (CONFIG_EXAMPLE_HCI_UART_RX_PIN)
+#define UART_RTS_PIN             (CONFIG_EXAMPLE_HCI_UART_RTS_PIN)
+#define UART_CTS_PIN             (CONFIG_EXAMPLE_HCI_UART_CTS_PIN)
 #define HCI_H4_ACL               (0x02)
 #define HCI_H4_CMD               (0x01)
 #define HCI_H4_EVT               (0x04)
@@ -86,11 +86,11 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
 
         case UART_RX_DATA: {
             uint8_t *data = buf;
+            int rc;
 
             if (data[0] == HCI_H4_EVT) {
                 uint8_t *evbuf;
                 int totlen;
-                int rc;
 
                 totlen = BLE_HCI_EVENT_HDR_LEN + data[2];
                 assert(totlen <= UINT8_MAX + BLE_HCI_EVENT_HDR_LEN);
@@ -131,6 +131,13 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
                 if (!m) {
                     ESP_LOGE(TAG, "No buffers");
                 }
+
+                if ((rc = os_mbuf_append(m, &data[1], len_total_read - 1)) != 0) {
+                    ESP_LOGE(TAG, "%s failed to os_mbuf_append; rc = %d", __func__, rc);
+                    os_mbuf_free_chain(m);
+                    return;
+                }
+
                 ble_transport_to_hs_acl(m);
             }
 
@@ -172,6 +179,7 @@ ble_transport_to_ll_acl_impl(struct os_mbuf *om)
     rc = ble_hs_mbuf_to_flat(om, buf + 1, OS_MBUF_PKTLEN(om), NULL);
     if(rc) {
         ESP_LOGE(TAG, "Error copying data %d", rc);
+        os_mbuf_free_chain(om);
         return rc;
     }
     hci_uart_send(buf, OS_MBUF_PKTLEN(om) + 1);
@@ -198,7 +206,7 @@ void hci_uart_open(void)
         .data_bits  = UART_DATA_8_BITS,
         .parity     = UART_PARITY_DISABLE,
         .stop_bits  = UART_STOP_BITS_1,
-        .flow_ctrl  = 0, // UART_HW_FLOWCTRL_CTS_RTS,
+        .flow_ctrl  = CONFIG_EXAMPLE_HCI_UART_FLOW_CTRL,
         .source_clk = UART_SCLK_DEFAULT,
     };
 
