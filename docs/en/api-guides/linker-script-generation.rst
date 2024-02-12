@@ -532,26 +532,53 @@ The linker script template is the skeleton in which the generated placement rule
 
 To reference the placement rules collected under a ``target`` token, the following syntax is used:
 
-.. code-block:: none
+.. only:: SOC_MEM_NON_CONTIGUOUS_SRAM
 
-    mapping[target]
+    .. code-block:: none
+
+        arrays[target]      /* refers to objects under the SURROUND keyword */
+        mapping[target]     /* refers to all other data */
+
+.. only:: not SOC_MEM_NON_CONTIGUOUS_SRAM
+
+    .. code-block:: none
+
+        mapping[target]
 
 Example:
 
 The example below is an excerpt from a possible linker script template. It defines an output section ``.iram0.text``, and inside is a marker referencing the target ``iram0_text``.
 
-.. code-block:: none
+.. only:: SOC_MEM_NON_CONTIGUOUS_SRAM
 
-    .iram0.text :
-    {
-        /* Code marked as runnning out of IRAM */
-        _iram_text_start = ABSOLUTE(.);
+    .. code-block:: none
 
-        /* Marker referencing iram0_text */
-        mapping[iram0_text]
+        .iram0.text :
+        {
+            /* Code marked as runnning out of IRAM */
+            _iram_text_start = ABSOLUTE(.);
 
-        _iram_text_end = ABSOLUTE(.);
-    } > iram0_0_seg
+            /* Markers referencing iram0_text */
+            arrays[iram0_text]
+            mapping[iram0_text]
+
+            _iram_text_end = ABSOLUTE(.);
+        } > iram0_0_seg
+
+.. only:: not SOC_MEM_NON_CONTIGUOUS_SRAM
+
+    .. code-block:: none
+
+        .iram0.text :
+        {
+            /* Code marked as runnning out of IRAM */
+            _iram_text_start = ABSOLUTE(.);
+
+            /* Marker referencing iram0_text */
+            mapping[iram0_text]
+
+            _iram_text_end = ABSOLUTE(.);
+        } > iram0_0_seg
 
 Suppose the generator collected the fragment definitions below:
 

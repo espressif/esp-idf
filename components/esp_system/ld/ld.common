@@ -7,26 +7,26 @@
 #include "sdkconfig.h"
 
 /* CPU instruction prefetch padding size for flash mmap scenario */
-_esp_flash_mmap_prefetch_pad_size = 16;
+#define _esp_flash_mmap_prefetch_pad_size 16
 
 /* CPU instruction prefetch padding size for memory protection scenario */
 #ifdef CONFIG_SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
-_esp_memprot_prefetch_pad_size = CONFIG_SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE;
+#define _esp_memprot_prefetch_pad_size CONFIG_SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
 #else
-_esp_memprot_prefetch_pad_size = 0;
+#define _esp_memprot_prefetch_pad_size 0
 #endif
 
 /* Memory alignment size for PMS */
 #ifdef CONFIG_SOC_MEMPROT_MEM_ALIGN_SIZE
-_esp_memprot_align_size = CONFIG_SOC_MEMPROT_MEM_ALIGN_SIZE;
+#define _esp_memprot_align_size CONFIG_SOC_MEMPROT_MEM_ALIGN_SIZE
 #else
-_esp_memprot_align_size = 0;
+#define _esp_memprot_align_size 0
 #endif
 
 #if CONFIG_APP_BUILD_TYPE_RAM
-_esp_mmu_block_size = 0;
+#define _esp_mmu_block_size 0
 #else
-_esp_mmu_block_size = (CONFIG_MMU_PAGE_SIZE);
+#define _esp_mmu_block_size CONFIG_MMU_PAGE_SIZE
 #endif
 
 #if CONFIG_SOC_RTC_MEM_SUPPORTED
@@ -49,3 +49,8 @@ _esp_mmu_block_size = (CONFIG_MMU_PAGE_SIZE);
         #define RESERVE_RTC_MEM (ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC)
     #endif
 #endif // SOC_RTC_MEM_SUPPORTED
+
+#define QUOTED_STRING(STRING) #STRING
+#define ASSERT_SECTIONS_GAP(PREV_SECTION, NEXT_SECTION)                   \
+ASSERT((ADDR(NEXT_SECTION) == ADDR(PREV_SECTION) + SIZEOF(PREV_SECTION)), \
+        QUOTED_STRING(The gap between PREV_SECTION and NEXT_SECTION must not exist to produce the final bin image.))

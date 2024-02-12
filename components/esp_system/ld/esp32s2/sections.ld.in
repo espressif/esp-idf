@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "ld.common"
+
 /*  Default entry point:  */
 ENTRY(call_start_cpu0);
 
@@ -295,6 +297,7 @@ SECTIONS
      * will be merged when creating the final bin image. */
     . = ALIGN(ALIGNOF(.flash.rodata));
   } >default_rodata_seg
+  ASSERT_SECTIONS_GAP(.flash.appdesc, .flash.rodata)
 
   .flash.rodata : ALIGN(0x10)
   {

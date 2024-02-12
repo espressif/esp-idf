@@ -16,6 +16,10 @@ tools/test_apps/build_system/embed_test:
       temporary: false
       reason: Hardware independent feature, no need to test on all targets
 
+tools/test_apps/build_system/ld_non_contiguous_memory:
+  disable:
+    - if: SOC_MEM_NON_CONTIGUOUS_SRAM != 1
+
 tools/test_apps/linux_compatible/driver_mock:
   enable:
     - if: IDF_TARGET == "linux"

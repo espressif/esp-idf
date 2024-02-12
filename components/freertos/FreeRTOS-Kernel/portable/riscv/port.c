@@ -189,18 +189,14 @@ void vPortEndScheduler(void)
 FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, uint32_t *ret_threadptr_reg_init)
 {
     /*
-    TLS layout at link-time, where 0xNNN is the offset that the linker calculates to a particular TLS variable.
-
     LOW ADDRESS
             |---------------------------|   Linker Symbols
             | Section                   |   --------------
-            | .flash.rodata             |
-         0x0|---------------------------| <- _flash_rodata_start
-          ^ | Other Data                |
-          | |---------------------------| <- _thread_local_start
-          | | .tbss                     | ^
-          V |                           | |
-      0xNNN | int example;              | | tls_area_size
+            | .flash.tls                |
+         0x0|---------------------------| <- _thread_local_start
+            | .tbss                     | ^
+            |                           | |
+            | int example;              | | tls_area_size
             |                           | |
             | .tdata                    | V
             |---------------------------| <- _thread_local_end
@@ -210,7 +206,7 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
     HIGH ADDRESS
     */
     // Calculate TLS area size and round up to multiple of 16 bytes.
-    extern char _thread_local_start, _thread_local_end, _flash_rodata_start;
+    extern char _thread_local_start, _thread_local_end;
     const uint32_t tls_area_size = ALIGNUP(16, (uint32_t)&_thread_local_end - (uint32_t)&_thread_local_start);
     // TODO: check that TLS area fits the stack
 
@@ -219,27 +215,8 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
     // Initialize the TLS area with the initialization values of each TLS variable
     memcpy((void *)uxStackPointer, &_thread_local_start, tls_area_size);
 
-    /*
-    Calculate the THREADPTR register's initialization value based on the link-time offset and the TLS area allocated on
-    the stack.
-
-    HIGH ADDRESS
-            |---------------------------|
-            | .tdata (*)                |
-          ^ | int example;              |
-          | |                           |
-          | | .tbss (*)                 |
-          | |---------------------------| <- uxStackPointer (start of TLS area)
-    0xNNN | |                           | ^
-          | |                           | |
-          |             ...               | _thread_local_start - _rodata_start
-          | |                           | |
-          | |                           | V
-          V |                           | <- threadptr register's value
-
-    LOW ADDRESS
-    */
-    *ret_threadptr_reg_init = (uint32_t)uxStackPointer - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start);
+    // Save tls start address
+    *ret_threadptr_reg_init = (uint32_t)uxStackPointer;
     return uxStackPointer;
 }
 
