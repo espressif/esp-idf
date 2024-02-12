@@ -8,44 +8,46 @@ Overview
 
 ESP Local Control (**esp_local_ctrl**) component in ESP-IDF provides capability to control an ESP device over HTTPS or Bluetooth® Low Energy. It provides access to application defined **properties** that are available for reading/writing via a set of configurable handlers.
 
-Initialization of the **esp_local_ctrl** service over Bluetooth Low Energy transport is performed as follows:
+.. only:: SOC_BT_SUPPORTED
 
-    .. code-block:: c
+    Initialization of the **esp_local_ctrl** service over Bluetooth Low Energy transport is performed as follows:
 
-        esp_local_ctrl_config_t config = {
-            .transport = ESP_LOCAL_CTRL_TRANSPORT_BLE,
-            .transport_config = {
-                .ble = & (protocomm_ble_config_t) {
-                    .device_name  = SERVICE_NAME,
-                    .service_uuid = {
-                        /* LSB <---------------------------------------
-                        * ---------------------------------------> MSB */
-                        0x21, 0xd5, 0x3b, 0x8d, 0xbd, 0x75, 0x68, 0x8a,
-                        0xb4, 0x42, 0xeb, 0x31, 0x4a, 0x1e, 0x98, 0x3d
+        .. code-block:: c
+
+            esp_local_ctrl_config_t config = {
+                .transport = ESP_LOCAL_CTRL_TRANSPORT_BLE,
+                .transport_config = {
+                    .ble = & (protocomm_ble_config_t) {
+                        .device_name  = SERVICE_NAME,
+                        .service_uuid = {
+                            /* LSB <---------------------------------------
+                            * ---------------------------------------> MSB */
+                            0x21, 0xd5, 0x3b, 0x8d, 0xbd, 0x75, 0x68, 0x8a,
+                            0xb4, 0x42, 0xeb, 0x31, 0x4a, 0x1e, 0x98, 0x3d
+                        }
                     }
-                }
-            },
-            .proto_sec = {
-                .version = PROTOCOM_SEC0,
-                .custom_handle = NULL,
-                .sec_params = NULL,
-            },
-            .handlers = {
-                /* User defined handler functions */
-                .get_prop_values = get_property_values,
-                .set_prop_values = set_property_values,
-                .usr_ctx         = NULL,
-                .usr_ctx_free_fn = NULL
-            },
-            /* Maximum number of properties that may be set */
-            .max_properties = 10
-        };
+                },
+                .proto_sec = {
+                    .version = PROTOCOM_SEC0,
+                    .custom_handle = NULL,
+                    .sec_params = NULL,
+                },
+                .handlers = {
+                    /* User defined handler functions */
+                    .get_prop_values = get_property_values,
+                    .set_prop_values = set_property_values,
+                    .usr_ctx         = NULL,
+                    .usr_ctx_free_fn = NULL
+                },
+                /* Maximum number of properties that may be set */
+                .max_properties = 10
+            };
 
-        /* Start esp_local_ctrl service */
-        ESP_ERROR_CHECK(esp_local_ctrl_start(&config));
+            /* Start esp_local_ctrl service */
+            ESP_ERROR_CHECK(esp_local_ctrl_start(&config));
 
 
-Similarly for HTTPS transport:
+Initialization of the **esp_local_ctrl** service over HTTPS transport is performed as follows:
 
     .. code-block:: c
 
