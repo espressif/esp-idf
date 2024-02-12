@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@ static void lp_timer_hal_set_alarm_target(uint64_t value)
     lp_timer_ll_set_target_enable(lp_timer_context.dev, TIMER_ID, true);
 }
 
-static uint64_t lp_timer_hal_get_cycle_count(void)
+uint64_t ulp_lp_core_lp_timer_get_cycle_count(void)
 {
     lp_timer_ll_counter_snapshot(lp_timer_context.dev);
 
@@ -38,7 +38,7 @@ static uint64_t lp_timer_hal_get_cycle_count(void)
 
 void ulp_lp_core_lp_timer_set_wakeup_time(uint64_t sleep_duration_us)
 {
-    uint64_t cycle_cnt = lp_timer_hal_get_cycle_count();
+    uint64_t cycle_cnt = ulp_lp_core_lp_timer_get_cycle_count();
     uint64_t alarm_target = cycle_cnt + sleep_duration_us * (1 << RTC_CLK_CAL_FRACT) / clk_ll_rtc_slow_load_cal();
 
     lp_timer_hal_set_alarm_target(alarm_target);
