@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,27 +143,27 @@ esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_publi
 
 static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t *public_key_digests)
 {
-#ifdef CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
-    // Gets key digests from running app
-    ESP_LOGI(TAG, "Take trusted digest key(s) from running app");
-    return esp_secure_boot_get_signature_blocks_for_running_app(true, public_key_digests);
-#elif CONFIG_SECURE_BOOT_V2_ENABLED
-    ESP_LOGI(TAG, "Take trusted digest key(s) from eFuse block(s)");
-    // Read key digests from efuse
-    esp_secure_boot_key_digests_t efuse_trusted;
-    if (esp_secure_boot_read_key_digests(&efuse_trusted) == ESP_OK) {
-        for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-            if (efuse_trusted.key_digests[i] != NULL) {
-                memcpy(public_key_digests->key_digests[i], (uint8_t *)efuse_trusted.key_digests[i], ESP_SECURE_BOOT_KEY_DIGEST_LEN);
-                public_key_digests->num_digests++;
+    if (!esp_secure_boot_enabled()) { // CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+        // Gets key digests from running app
+        ESP_LOGI(TAG, "Take trusted digest key(s) from running app");
+        return esp_secure_boot_get_signature_blocks_for_running_app(true, public_key_digests);
+     } else { // CONFIG_SECURE_BOOT_V2_ENABLED
+        ESP_LOGI(TAG, "Take trusted digest key(s) from eFuse block(s)");
+        // Read key digests from efuse
+        esp_secure_boot_key_digests_t efuse_trusted;
+        if (esp_secure_boot_read_key_digests(&efuse_trusted) == ESP_OK) {
+            for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+                if (efuse_trusted.key_digests[i] != NULL) {
+                    memcpy(public_key_digests->key_digests[i], (uint8_t *)efuse_trusted.key_digests[i], ESP_SECURE_BOOT_KEY_DIGEST_LEN);
+                    public_key_digests->num_digests++;
+                }
             }
         }
-    }
-    if (public_key_digests->num_digests > 0) {
-        return ESP_OK;
-    }
+        if (public_key_digests->num_digests > 0) {
+            return ESP_OK;
+        }
+     }
     return ESP_ERR_NOT_FOUND;
-#endif // CONFIG_SECURE_BOOT_V2_ENABLED
 }
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
