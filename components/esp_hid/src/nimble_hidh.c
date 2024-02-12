@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include "ble_hidh.h"
-#include "esp_hidh_private.h"
+#include "esp_private/esp_hidh_private.h"
 #include "esp_err.h"
 #include "esp_log.h"
 
@@ -847,7 +847,7 @@ static esp_err_t esp_ble_hidh_dev_report_read(esp_hidh_dev_t *dev, size_t map_in
 
 static void esp_ble_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
 {
-    fprintf(fp, "BDA:" ESP_BD_ADDR_STR ", Appearance: 0x%04x, Connection ID: %d\n", ESP_BD_ADDR_HEX(dev->bda),
+    fprintf(fp, "BDA:" ESP_BD_ADDR_STR ", Appearance: 0x%04x, Connection ID: %d\n", ESP_BD_ADDR_HEX(dev->addr.bda),
             dev->ble.appearance, dev->ble.conn_id);
     fprintf(fp, "Name: %s, Manufacturer: %s, Serial Number: %s\n", dev->config.device_name ? dev->config.device_name : "",
             dev->config.manufacturer_name ? dev->config.manufacturer_name : "",
@@ -978,7 +978,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(uint8_t *bda, uint8_t address_type)
 
     dev->in_use = true;
     dev->transport = ESP_HID_TRANSPORT_BLE;
-    memcpy(dev->bda, bda, sizeof(dev->bda));
+    memcpy(dev->addr.bda, bda, sizeof(dev->addr.bda));
     dev->ble.address_type = address_type;
     dev->ble.appearance = ESP_HID_APPEARANCE_GENERIC;
 

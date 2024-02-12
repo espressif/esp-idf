@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #include <string.h>
 #include "ble_hidh.h"
 #if CONFIG_GATTC_ENABLE
-#include "esp_hidh_private.h"
+#include "esp_private/esp_hidh_private.h"
 #include "esp_err.h"
 #include "esp_log.h"
 
@@ -302,7 +302,7 @@ static void attach_report_listeners(esp_gatt_if_t gattc_if, esp_hidh_dev_t *dev)
 
     //subscribe to battery notifications
     if (dev->ble.battery_handle) {
-        register_for_notify(gattc_if, dev->bda, dev->ble.battery_handle);
+        register_for_notify(gattc_if, dev->addr.bda, dev->ble.battery_handle);
         if (dev->ble.battery_ccc_handle) {
             //Write CCC descr to enable notifications
             write_char_descr(gattc_if, dev->ble.conn_id, dev->ble.battery_ccc_handle, 2, (uint8_t *)&ccc_data, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NO_MITM);
@@ -312,7 +312,7 @@ static void attach_report_listeners(esp_gatt_if_t gattc_if, esp_hidh_dev_t *dev)
     while (report) {
         //subscribe to notifications
         if ((report->permissions & ESP_GATT_CHAR_PROP_BIT_NOTIFY) != 0 && report->protocol_mode == ESP_HID_PROTOCOL_MODE_REPORT) {
-            register_for_notify(gattc_if, dev->bda, report->handle);
+            register_for_notify(gattc_if, dev->addr.bda, report->handle);
             if (report->ccc_handle) {
                 //Write CCC descr to enable notifications
                 write_char_descr(gattc_if, dev->ble.conn_id, report->ccc_handle, 2, (uint8_t *)&ccc_data, ESP_GATT_WRITE_TYPE_NO_RSP, ESP_GATT_AUTH_REQ_NO_MITM);
@@ -596,7 +596,7 @@ static esp_err_t esp_ble_hidh_dev_report_read(esp_hidh_dev_t *dev, size_t map_in
 
 static void esp_ble_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
 {
-    fprintf(fp, "BDA:" ESP_BD_ADDR_STR ", Appearance: 0x%04x, Connection ID: %d\n", ESP_BD_ADDR_HEX(dev->bda), dev->ble.appearance, dev->ble.conn_id);
+    fprintf(fp, "BDA:" ESP_BD_ADDR_STR ", Appearance: 0x%04x, Connection ID: %d\n", ESP_BD_ADDR_HEX(dev->addr.bda), dev->ble.appearance, dev->ble.conn_id);
     fprintf(fp, "Name: %s, Manufacturer: %s, Serial Number: %s\n", dev->config.device_name ? dev->config.device_name : "", dev->config.manufacturer_name ? dev->config.manufacturer_name : "", dev->config.serial_number ? dev->config.serial_number : "");
     fprintf(fp, "PID: 0x%04x, VID: 0x%04x, VERSION: 0x%04x\n", dev->config.product_id, dev->config.vendor_id, dev->config.version);
     fprintf(fp, "Battery: Handle: %u, CCC Handle: %u\n", dev->ble.battery_handle, dev->ble.battery_ccc_handle);
@@ -719,11 +719,11 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
 
     dev->in_use = true;
     dev->transport = ESP_HID_TRANSPORT_BLE;
-    memcpy(dev->bda, bda, sizeof(esp_bd_addr_t));
+    memcpy(dev->addr.bda, bda, sizeof(esp_bd_addr_t));
     dev->ble.address_type = address_type;
     dev->ble.appearance = ESP_HID_APPEARANCE_GENERIC;
 
-    ret = esp_ble_gattc_open(hid_gattc_if, dev->bda, dev->ble.address_type, true);
+    ret = esp_ble_gattc_open(hid_gattc_if, dev->addr.bda, dev->ble.address_type, true);
     if (ret) {
         esp_hidh_dev_free_inner(dev);
         ESP_LOGE(TAG, "esp_ble_gattc_open failed: %d", ret);

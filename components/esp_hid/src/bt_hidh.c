@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "bt_hidh.h"
 #if CONFIG_BT_HID_HOST_ENABLED
-#include "esp_hidh_private.h"
+#include "esp_private/esp_hidh_private.h"
 #include <string.h>
 #include <stdbool.h>
 
@@ -185,7 +185,7 @@ static void open_failed_cb(esp_hidh_dev_t *dev, esp_hidh_status_t status, esp_hi
     if (dev != NULL) {
         esp_hidh_dev_lock(dev);
         if (dev->connected) {
-            esp_bt_hid_host_disconnect(dev->bda);
+            esp_bt_hid_host_disconnect(dev->addr.bda);
         } else {
             dev->in_use = false;
         }
@@ -750,7 +750,7 @@ static esp_err_t esp_bt_hidh_dev_close(esp_hidh_dev_t *dev)
             ret = ESP_ERR_INVALID_STATE;
             break;
         }
-        ret = esp_bt_hid_host_disconnect(dev->bda);
+        ret = esp_bt_hid_host_disconnect(dev->addr.bda);
     } while (0);
     return ret;
 }
@@ -797,7 +797,7 @@ static esp_err_t esp_bt_hidh_dev_report_write(esp_hidh_dev_t *dev, size_t map_in
             len = len + 1;
         }
 
-        ret = esp_bt_hid_host_send_data(dev->bda, data, len);
+        ret = esp_bt_hid_host_send_data(dev->addr.bda, data, len);
         if (p_data) {
             free(p_data);
         }
@@ -844,7 +844,7 @@ static esp_err_t esp_bt_hidh_dev_set_report(esp_hidh_dev_t *dev, size_t map_inde
             len = len + 1;
         }
 
-        ret = esp_bt_hid_host_set_report(dev->bda, report_type, data, len);
+        ret = esp_bt_hid_host_set_report(dev->addr.bda, report_type, data, len);
         if (p_data) {
             free(p_data);
         }
@@ -875,7 +875,7 @@ static esp_err_t esp_bt_hidh_dev_report_read(esp_hidh_dev_t *dev, size_t map_ind
             ret = ESP_FAIL;
             break;
         }
-        ret = esp_bt_hid_host_get_report(dev->bda, report_type, report_id, max_length);
+        ret = esp_bt_hid_host_get_report(dev->addr.bda, report_type, report_id, max_length);
         if (ret == ESP_OK) {
             dev->trans_type = ESP_HID_TRANS_GET_REPORT;
             dev->report_id = report_id;
@@ -899,7 +899,7 @@ static esp_err_t esp_bt_hidh_dev_get_idle(esp_hidh_dev_t *dev)
             ret = ESP_ERR_INVALID_STATE;
             break;
         }
-        ret = esp_bt_hid_host_get_idle(dev->bda);
+        ret = esp_bt_hid_host_get_idle(dev->addr.bda);
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_GET_IDLE);
         }
@@ -922,7 +922,7 @@ static esp_err_t esp_bt_hidh_dev_set_idle(esp_hidh_dev_t *dev, uint8_t idle_time
             ret = ESP_ERR_INVALID_STATE;
             break;
         }
-        ret = esp_bt_hid_host_set_idle(dev->bda, idle_time);
+        ret = esp_bt_hid_host_set_idle(dev->addr.bda, idle_time);
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_SET_IDLE);
         }
@@ -945,7 +945,7 @@ static esp_err_t esp_bt_hidh_dev_get_protocol(esp_hidh_dev_t *dev)
             ret = ESP_ERR_INVALID_STATE;
             break;
         }
-        ret = esp_bt_hid_host_get_protocol(dev->bda);
+        ret = esp_bt_hid_host_get_protocol(dev->addr.bda);
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_GET_PROTOCOL);
         }
@@ -969,7 +969,7 @@ static esp_err_t esp_bt_hidh_dev_set_protocol(esp_hidh_dev_t *dev, uint8_t proto
             ret = ESP_ERR_INVALID_STATE;
             break;
         }
-        ret = esp_bt_hid_host_set_protocol(dev->bda, protocol_mode);
+        ret = esp_bt_hid_host_set_protocol(dev->addr.bda, protocol_mode);
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_SET_PROTOCOL);
         }
@@ -980,7 +980,7 @@ static esp_err_t esp_bt_hidh_dev_set_protocol(esp_hidh_dev_t *dev, uint8_t proto
 
 static void esp_bt_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
 {
-    fprintf(fp, "BDA:" ESP_BD_ADDR_STR ", Status: %s, Connected: %s, Handle: %d, Usage: %s\n", ESP_BD_ADDR_HEX(dev->bda), s_esp_hh_status_names[dev->status], dev->connected ? "YES" : "NO", dev->bt.handle, esp_hid_usage_str(dev->usage));
+    fprintf(fp, "BDA:" ESP_BD_ADDR_STR ", Status: %s, Connected: %s, Handle: %d, Usage: %s\n", ESP_BD_ADDR_HEX(dev->addr.bda), s_esp_hh_status_names[dev->status], dev->connected ? "YES" : "NO", dev->bt.handle, esp_hid_usage_str(dev->usage));
     fprintf(fp, "Name: %s, Manufacturer: %s, Serial Number: %s\n", dev->config.device_name ? dev->config.device_name : "", dev->config.manufacturer_name ? dev->config.manufacturer_name : "", dev->config.serial_number ? dev->config.serial_number : "");
     fprintf(fp, "PID: 0x%04x, VID: 0x%04x, VERSION: 0x%04x\n", dev->config.product_id, dev->config.vendor_id, dev->config.version);
     fprintf(fp, "Report Map Length: %d\n", dev->config.report_maps[0].len);
@@ -1077,7 +1077,7 @@ static esp_hidh_dev_t *hidh_dev_ctor(esp_bd_addr_t bda)
     dev->reports_len = 0;
     dev->tmp = NULL;
     dev->tmp_len = 0;
-    memcpy(dev->bda, bda, sizeof(esp_bd_addr_t));
+    memcpy(dev->addr.bda, bda, sizeof(esp_bd_addr_t));
     dev->bt.handle = 0xff;
 
     dev->close = esp_bt_hidh_dev_close;
@@ -1106,7 +1106,7 @@ esp_hidh_dev_t *esp_bt_hidh_dev_open(esp_bd_addr_t bda)
     }
 
     if (!dev->connected) {
-        esp_bt_hid_host_connect(dev->bda);
+        esp_bt_hid_host_connect(dev->addr.bda);
     }
     return dev;
 }

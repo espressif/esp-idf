@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "ble_hidd.h"
 #if CONFIG_GATTS_ENABLE
 
-#include "esp_hidd_private.h"
+#include "esp_private/esp_hidd_private.h"
 #include "esp_log.h"
 #include "esp_bt_main.h"
 #include "esp_bt_defs.h"

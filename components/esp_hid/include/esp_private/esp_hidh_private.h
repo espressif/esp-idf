@@ -1,20 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ESP_HIDH_PRIVATE_H_
-#define _ESP_HIDH_PRIVATE_H_
+#pragma once
 
 #include "esp_hidh.h"
-#if CONFIG_BLUEDROID_ENABLED
-#include "esp_gap_bt_api.h"
-#endif /* CONFIG_BLUEDROID_ENABLED */
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_event.h"
 #include "sys/queue.h"
 #include "esp_timer.h"
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -46,8 +40,7 @@ typedef struct esp_hidh_dev_report_s {
  * @brief HIDH device data
  */
 struct esp_hidh_dev_s {
-    struct esp_hidh_dev_s   *next;
-
+    esp_hid_address_t       addr;
     esp_hid_device_config_t config;
     esp_hid_usage_t         usage;
     esp_hid_transport_t     transport;      //BT, BLE or USB
@@ -86,21 +79,10 @@ struct esp_hidh_dev_s {
     esp_err_t               (*set_protocol) (esp_hidh_dev_t *dev, uint8_t protocol_mode);
     void                    (*dump)         (esp_hidh_dev_t *dev, FILE *fp);
 
-#if CONFIG_BLUEDROID_ENABLED
-    esp_bd_addr_t bda;
-#endif /* CONFIG_BLUEDROID_ENABLED */
-#if CONFIG_BT_NIMBLE_ENABLED
-    uint8_t bda[6];
-#endif
-
     union {
 #if CONFIG_BT_HID_HOST_ENABLED
         struct {
-            esp_bt_cod_t cod;
             uint8_t handle;
-            // uint8_t sub_class;
-            // uint8_t app_id;
-            // uint16_t attr_mask;
         } bt;
 #endif /* CONFIG_BT_HID_HOST_ENABLED */
 #if CONFIG_GATTC_ENABLE
@@ -158,5 +140,3 @@ esp_err_t esp_hidh_dev_free_inner(esp_hidh_dev_t *dev);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ESP_HIDH_PRIVATE_H_ */

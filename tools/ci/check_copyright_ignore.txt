@@ -401,16 +401,13 @@ components/console/linenoise/linenoise.h
 components/esp_eth/src/ksz8851.h
 components/esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp
 components/esp_event/host_test/fixtures.hpp
-components/esp_hid/include/esp_hid_common.h
 components/esp_hid/include/esp_hidd.h
 components/esp_hid/include/esp_hidd_gatts.h
 components/esp_hid/include/esp_hidd_transport.h
-components/esp_hid/include/esp_hidh.h
 components/esp_hid/include/esp_hidh_bluedroid.h
 components/esp_hid/include/esp_hidh_gattc.h
 components/esp_hid/private/bt_hidd.h
 components/esp_hid/private/bt_hidh.h
-components/esp_hid/private/esp_hidd_private.h
 components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
