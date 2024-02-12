@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "ulp_riscv_utils.h"
 #include "ulp_riscv_register_ops.h"
 #include "soc/soc.h"
@@ -48,6 +49,8 @@ void ulp_riscv_gpio_wakeup_clear(void)
     SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_GPIO_WAKEUP_CLR);
 }
 
+#if CONFIG_ULP_RISCV_INTERRUPT_ENABLE
+
 void ulp_riscv_enable_sw_intr(intr_handler_t handler, void *arg)
 {
     /* Enable ULP RISC-V SW interrupt */
@@ -72,3 +75,5 @@ void ulp_riscv_trigger_sw_intr(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SW_INT_TRIGGER);
 }
+
+#endif /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */

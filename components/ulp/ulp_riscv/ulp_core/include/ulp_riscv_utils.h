@@ -111,6 +111,7 @@ void static inline ulp_riscv_delay_cycles(uint32_t cycles)
  */
 void ulp_riscv_gpio_wakeup_clear(void);
 
+#if CONFIG_ULP_RISCV_INTERRUPT_ENABLE
 /**
  * @brief Enable ULP RISC-V SW Interrupt
  *
@@ -130,6 +131,8 @@ void ulp_riscv_disable_sw_intr(void);
  * @note The SW interrupt will only trigger if it has been enabled previously using ulp_riscv_enable_sw_intr().
  */
 void ulp_riscv_trigger_sw_intr(void);
+
+#endif /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */
 
 #ifdef __cplusplus
 }

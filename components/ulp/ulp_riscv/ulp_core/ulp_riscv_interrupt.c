@@ -1,14 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "include/ulp_riscv_interrupt.h"
 #include "ulp_riscv_register_ops.h"
 #include "ulp_riscv_interrupt.h"
 #include "ulp_riscv_gpio.h"
 #include "soc/sens_reg.h"
+
+#if CONFIG_ULP_RISCV_INTERRUPT_ENABLE
 
 #define ULP_RISCV_TIMER_INT                         (1 << 0U)   /* Internal Timer Interrupt */
 #define ULP_RISCV_EBREAK_ECALL_ILLEGAL_INSN_INT     (1 << 1U)   /* EBREAK, ECALL or Illegal instruction */
@@ -130,3 +133,5 @@ void __attribute__((weak)) _ulp_riscv_interrupt_handler(uint32_t q1)
         /* TODO: RTC I2C interrupt */
     }
 }
+
+#endif /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */
