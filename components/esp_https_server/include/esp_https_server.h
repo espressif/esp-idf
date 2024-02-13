@@ -12,9 +12,23 @@
 #include "esp_http_server.h"
 #include "esp_tls.h"
 
+#include "esp_event.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+ESP_EVENT_DECLARE_BASE(ESP_HTTPS_SERVER_EVENT);
+
+typedef enum {
+    HTTPS_SERVER_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */
+    HTTPS_SERVER_EVENT_START,           /*!< This event occurs when HTTPS Server is started */
+    HTTPS_SERVER_EVENT_ON_CONNECTED,    /*!< Once the HTTPS Server has been connected to the client */
+    HTTPS_SERVER_EVENT_ON_DATA,         /*!< Occurs when receiving data from the client */
+    HTTPS_SERVER_EVENT_SENT_DATA,       /*!< Occurs when an ESP HTTPS server sends data to the client */
+    HTTPS_SERVER_EVENT_DISCONNECTED,    /*!< The connection has been disconnected */
+    HTTPS_SERVER_EVENT_STOP,            /*!< This event occurs when HTTPS Server is stopped */
+} esp_https_server_event_id_t;
 
 typedef enum {
     HTTPD_SSL_TRANSPORT_SECURE,      // SSL Enabled
@@ -38,6 +52,8 @@ typedef struct esp_https_server_user_cb_arg {
     httpd_ssl_user_cb_state_t user_cb_state; /*!< State of user callback */
     esp_tls_t *tls;                    /*!< ESP-TLS connection handle */
 } esp_https_server_user_cb_arg_t;
+
+typedef esp_tls_last_error_t esp_https_server_last_error_t;
 
 /**
  * @brief Callback function prototype
