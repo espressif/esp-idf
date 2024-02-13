@@ -507,7 +507,7 @@ err:
     return ret;
 }
 
-esp_err_t esp_eth_phy_802_3_read_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint16_t *data)
+esp_err_t esp_eth_phy_802_3_read_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint32_t *data)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_mediator_t *eth = phy_802_3->eth;
@@ -528,7 +528,7 @@ err:
     return ret;
 }
 
-esp_err_t esp_eth_phy_802_3_write_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint16_t data)
+esp_err_t esp_eth_phy_802_3_write_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint32_t data)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_mediator_t *eth = phy_802_3->eth;
@@ -549,7 +549,7 @@ err:
     return ret;
 }
 
-esp_err_t esp_eth_phy_802_3_read_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint16_t *data){
+esp_err_t esp_eth_phy_802_3_read_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint32_t *data){
     esp_err_t ret = ESP_OK;
 
     ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_mmd_addr(phy_802_3, devaddr, mmd_addr), err, TAG, "Set MMD address failed");
@@ -559,8 +559,7 @@ esp_err_t esp_eth_phy_802_3_read_mmd_register(phy_802_3_t *phy_802_3, uint8_t de
 err:
     return ret;
 }
-
-esp_err_t esp_eth_phy_802_3_write_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint16_t data){
+esp_err_t esp_eth_phy_802_3_write_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint32_t data){
     esp_err_t ret = ESP_OK;
 
     ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_mmd_addr(phy_802_3, devaddr, mmd_addr), err, TAG, "Set MMD address failed");
