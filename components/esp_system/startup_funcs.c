@@ -37,7 +37,6 @@
 #endif
 
 #if __has_include("esp_app_desc.h")
-#define WITH_APP_IMAGE_INFO
 #include "esp_app_desc.h"
 #endif
 
@@ -76,40 +75,6 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
 
     return ESP_OK;
 }
-
-#ifdef WITH_APP_IMAGE_INFO
-ESP_SYSTEM_INIT_FN(init_show_app_info, CORE, BIT(0), 20)
-{
-    // Display information about the current running image.
-    if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
-        const esp_app_desc_t *app_desc = esp_app_get_description();
-        ESP_EARLY_LOGI(TAG, "Application information:");
-#ifndef CONFIG_APP_EXCLUDE_PROJECT_NAME_VAR
-        ESP_EARLY_LOGI(TAG, "Project name:     %s", app_desc->project_name);
-#endif
-#ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
-        ESP_EARLY_LOGI(TAG, "App version:      %s", app_desc->version);
-#endif
-#ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
-        ESP_EARLY_LOGI(TAG, "Secure version:   %d", app_desc->secure_version);
-#endif
-#ifdef CONFIG_APP_COMPILE_TIME_DATE
-        ESP_EARLY_LOGI(TAG, "Compile time:     %s %s", app_desc->date, app_desc->time);
-#endif
-        char buf[17];
-        esp_app_get_elf_sha256(buf, sizeof(buf));
-        ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
-        ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
-
-        ESP_EARLY_LOGI(TAG, "Min chip rev:     v%d.%d", CONFIG_ESP_REV_MIN_FULL / 100, CONFIG_ESP_REV_MIN_FULL % 100);
-        ESP_EARLY_LOGI(TAG, "Max chip rev:     v%d.%d %s", CONFIG_ESP_REV_MAX_FULL / 100, CONFIG_ESP_REV_MAX_FULL % 100,
-                       efuse_hal_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
-        unsigned revision = efuse_hal_chip_revision();
-        ESP_EARLY_LOGI(TAG, "Chip rev:         v%d.%d", revision / 100, revision % 100);
-    }
-    return ESP_OK;
-}
-#endif // WITH_APP_IMAGE_INFO
 
 ESP_SYSTEM_INIT_FN(init_heap, CORE, BIT(0), 100)
 {
