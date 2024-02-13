@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -677,7 +677,7 @@ static esp_err_t emac_w5500_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     remain_bytes -= rx_len + 2;
     emac->packets_remain = remain_bytes > 0;
 
-    *length = rx_len;
+    *length = copy_len;
     return ret;
 err:
     *length = 0;
@@ -700,12 +700,13 @@ static esp_err_t emac_w5500_flush_recv_frame(emac_w5500_t *emac)
         // read head first
         ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, &rx_len, sizeof(rx_len), offset), err, TAG, "read frame header failed");
         // update read pointer
-        offset = rx_len;
+        rx_len = __builtin_bswap16(rx_len);
+        offset += rx_len;
+        offset = __builtin_bswap16(offset);
         ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_RX_RD(0), &offset, sizeof(offset)), err, TAG, "write RX RD failed");
         /* issue RECV command */
         ESP_GOTO_ON_ERROR(w5500_send_command(emac, W5500_SCR_RECV, 100), err, TAG, "issue RECV command failed");
         // check if there're more data need to process
-        rx_len = __builtin_bswap16(rx_len);
         remain_bytes -= rx_len;
         emac->packets_remain = remain_bytes > 0;
     }
@@ -731,6 +732,7 @@ static void emac_w5500_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t frame_len = 0;
     uint32_t buf_len = 0;
+    esp_err_t ret;
     while (1) {
         /* check if the task receives any notification */
         if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
@@ -747,29 +749,33 @@ static void emac_w5500_task(void *arg)
             do {
                 /* define max expected frame len */
                 frame_len = ETH_MAX_PACKET_SIZE;
-                emac_w5500_alloc_recv_buf(emac, &buffer, &frame_len);
-                /* we have memory to receive the frame of maximal size previously defined */
-                if (buffer != NULL) {
-                    buf_len = W5500_ETH_MAC_RX_BUF_SIZE_AUTO;
-                    if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
-                        if (buf_len == 0) {
-                            free(buffer);
-                        } else if (frame_len > buf_len) {
-                            ESP_LOGE(TAG, "received frame was truncated");
-                            free(buffer);
+                if ((ret = emac_w5500_alloc_recv_buf(emac, &buffer, &frame_len)) == ESP_OK) {
+                    if (buffer != NULL) {
+                        /* we have memory to receive the frame of maximal size previously defined */
+                        buf_len = W5500_ETH_MAC_RX_BUF_SIZE_AUTO;
+                        if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
+                            if (buf_len == 0) {
+                                free(buffer);
+                            } else if (frame_len > buf_len) {
+                                ESP_LOGE(TAG, "received frame was truncated");
+                                free(buffer);
+                            } else {
+                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                /* pass the buffer to stack (e.g. TCP/IP layer) */
+                                emac->eth->stack_input(emac->eth, buffer, buf_len);
+                            }
                         } else {
-                            ESP_LOGD(TAG, "receive len=%u", buf_len);
-                            /* pass the buffer to stack (e.g. TCP/IP layer) */
-                            emac->eth->stack_input(emac->eth, buffer, buf_len);
+                            ESP_LOGE(TAG, "frame read from module failed");
+                            free(buffer);
                         }
-                    } else {
-                        ESP_LOGE(TAG, "frame read from module failed");
-                        free(buffer);
+                    } else if (frame_len) {
+                        ESP_LOGE(TAG, "invalid combination of frame_len(%u) and buffer pointer(%p)", frame_len, buffer);
                     }
-                /* if allocation failed and there is a waiting frame */
-                } else if (frame_len) {
+                } else if (ret == ESP_ERR_NO_MEM) {
                     ESP_LOGE(TAG, "no mem for receive buffer");
                     emac_w5500_flush_recv_frame(emac);
+                } else {
+                    ESP_LOGE(TAG, "unexpected error 0x%x", ret);
                 }
             } while (emac->packets_remain);
         }
