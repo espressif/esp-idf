@@ -776,17 +776,82 @@ menu "Host-controller Transport"
         help
             Use UART transport
 
+    config BT_NIMBLE_TRANSPORT_UART_PORT
+        int "Uart port"
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
+        default 1
+        help
+            Uart port
+
+    choice BT_NIMBLE_USE_HCI_UART_PARITY
+        prompt "Uart PARITY"
+        default UART_PARITY_NONE
+        help
+            Uart Parity
+
+        config UART_PARITY_NONE
+            bool "None"
+        config UART_PARITY_ODD
+            bool "Odd"
+        config UART_PARITY_EVEN
+            bool "Even"
+    endchoice
+
+    config BT_NIMBLE_TRANSPORT_UART_PARITY_NONE
+        int
+        default 0 if !UART_PARITY_NONE
+        default 1 if UART_PARITY_NONE
+
+    config BT_NIMBLE_TRANSPORT_UART_PARITY_ODD
+        int
+        default 0 if !UART_PARITY_ODD
+        default 1 if UART_PARITY_ODD
+
+    config BT_NIMBLE_TRANSPORT_UART_PARITY_EVEN
+        int
+        default 0 if !UART_PARITY_EVEN
+        default 1 if UART_PARITY_EVEN
+
     config BT_NIMBLE_UART_RX_PIN
-        int "Rx pin for Nimble Uart"
+        int "UART Rx pin"
         depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
         default 5
         help
             Rx pin for Nimble Transport
 
     config BT_NIMBLE_UART_TX_PIN
-        int "Tx pin for Nimble Uart"
+        int "UART Tx pin"
         depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
         default 4
         help
             Tx pin for Nimble Transport
+
+    choice BT_NIMBLE_USE_HCI_UART_FLOW_CTRL
+        prompt "Uart Flow Control"
+        default UART_HW_FLOWCTRL_DISABLE
+        help
+            Uart Flow Control
+
+        config UART_HW_FLOWCTRL_DISABLE
+            bool "Disable"
+        config UART_HW_FLOWCTRL_CTS_RTS
+            bool "Enable hardware flow control"
+    endchoice
+
+    config BT_NIMBLE_HCI_UART_FLOW_CTRL
+        int
+        default 0 if UART_HW_FLOWCTRL_DISABLE
+        default 1 if UART_HW_FLOWCTRL_CTS_RTS
+
+    config BT_NIMBLE_HCI_UART_RTS_PIN
+        int "UART Rts Pin"
+        default 19
+        help
+            UART HCI RTS pin
+
+    config BT_NIMBLE_HCI_UART_CTS_PIN
+        int "UART Cts Pin"
+        default 23
+        help
+            UART HCI CTS pin
 endmenu
