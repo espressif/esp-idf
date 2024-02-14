@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 # NOTE: unittest is by default sorting tests based on their names,
 # so the order if which the tests are started may be different from
 # the order in which they are defined. Please make sure all tests
@@ -9,7 +8,6 @@
 # If test needs to change global state, it should return it to the
 # original state after it's finished. For more information please see
 # https://docs.python.org/3/library/unittest.html#organizing-test-code
-
 import inspect
 import os
 import shutil
@@ -30,7 +28,7 @@ TOOLS_DIR = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF
 PYTHON_DIR = os.path.join(TOOLS_DIR, 'python_env')
 PYTHON_DIR_BACKUP = tempfile.mkdtemp()
 REQ_SATISFIED = 'Python requirements are satisfied'
-REQ_MISSING = "'{}' - was not found and is required by the application"
+REQ_MISSING = 'Package was not found and is required by the application: {}'
 REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
 REQ_GDBGUI = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.gdbgui.txt'))
 CONSTR = 'Constraint file: {}/espidf.constraints'.format(TOOLS_DIR)
