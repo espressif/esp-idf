@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -443,6 +443,48 @@ void heap_caps_dump_all(void);
  *
  */
 size_t heap_caps_get_allocated_size( void *ptr );
+
+/**
+ * @brief Structure used to store heap related data passed to
+ * the walker callback function
+ */
+typedef struct walker_heap_info {
+    intptr_t start; ///< Start address of the heap in which the block is located
+    intptr_t end; ///< End address of the heap in which the block is located
+} walker_heap_into_t;
+
+/**
+ * @brief Structure used to store block related data passed to
+ * the walker callback function
+ */
+typedef struct walker_block_info {
+    void *ptr; ///< Pointer to the block data
+    size_t size; ///< The size of the block
+    bool used; ///< Block status. True if free, false if used
+} walker_block_info_t;
+
+/**
+ * @brief Function callback used to walk the heaps
+ * @see Definition in multi_heap.h
+ */
+typedef void (*heap_caps_walker_cb_t)(walker_heap_into_t heap_info, walker_block_info_t block_info, void *user_data);
+
+/**
+ * @brief Function called to walk through the heaps with the given set of capabilities
+ *
+ * @param caps The set of capabilities assigned to the heaps to walk through
+ * @param walker_func Callback called for each block of the heaps being traversed
+ * @param user_data Opaque pointer to user defined data
+ */
+void heap_caps_walk(uint32_t caps, heap_caps_walker_cb_t walker_func, void *user_data);
+
+/**
+ * @brief Function called to walk through all heaps defined by the heap component
+ *
+ * @param walker_func Callback called for each block of the heaps being traversed
+ * @param user_data Opaque pointer to user defined data
+ */
+void heap_caps_walk_all(heap_caps_walker_cb_t walker_func, void *user_data);
 
 #ifdef __cplusplus
 }

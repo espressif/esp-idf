@@ -49,6 +49,11 @@ else()
         list(APPEND sources "patches/esp_rom_tlsf.c")
     endif()
 
+    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND CONFIG_ESP_ROM_MULTI_HEAP_WALK_PATCH)
+        # This file shall be included in the build if TLSF in ROM is activated
+        list(APPEND sources "patches/esp_rom_multi_heap.c")
+    endif()
+
     list(APPEND private_required_comp soc hal)
 endif()
 
@@ -63,6 +68,8 @@ endif()
 if(CONFIG_HAL_WDT_USE_ROM_IMPL)
     list(APPEND sources "patches/esp_rom_wdt.c")
 endif()
+
+
 
 if(CONFIG_ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG OR CONFIG_ESP_ROM_HAS_CACHE_WRITEBACK_BUG)
     list(APPEND sources "patches/esp_rom_cache_esp32s2_esp32s3.c")
@@ -214,6 +221,10 @@ else() # Regular app build
         # there as no explicit reference/call to it in IDF.
         if((CONFIG_ESP_ROM_TLSF_CHECK_PATCH OR CONFIG_HEAP_TLSF_CHECK_PATCH))
             target_link_libraries(${COMPONENT_LIB} PRIVATE "-u tlsf_set_rom_patches")
+        endif()
+
+        if((CONFIG_ESP_ROM_TLSF_CHECK_PATCH OR CONFIG_ESP_ROM_MULTI_HEAP_WALK_PATCH))
+            target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_rom_include_multi_heap_patch")
         endif()
 
         rom_linker_script("heap")

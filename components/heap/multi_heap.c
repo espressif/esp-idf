@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -355,13 +355,10 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
     return valid;
 }
 
-__attribute__((noinline)) static void multi_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
+__attribute__((noinline)) static void multi_heap_dump_tlsf(void *ptr, size_t size, int used, void *user)
 {
     (void)user;
-    MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n",
-                            (void *)ptr,
-                            size,
-                            used ? "No" : "Yes");
+    MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n", (void *)ptr, size, used ? "No" : "Yes");
 }
 
 void multi_heap_dump(multi_heap_handle_t heap)
@@ -428,6 +425,15 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
     info->minimum_free_bytes = heap->minimum_free_bytes;
     info->total_free_bytes = heap->free_bytes;
     info->largest_free_block = tlsf_fit_size(heap->heap_data, info->largest_free_block);
+    multi_heap_internal_unlock(heap);
+}
+
+void multi_heap_walk(multi_heap_handle_t heap, multi_heap_walker_cb_t walker_func, void *user_data)
+{
+    assert(heap != NULL);
+
+    multi_heap_internal_lock(heap);
+    tlsf_walk_pool(tlsf_get_pool(heap->heap_data), walker_func, user_data);
     multi_heap_internal_unlock(heap);
 }
 

@@ -8,7 +8,8 @@ set(src_test "test_heap_main.c"
              "test_malloc.c"
              "test_realloc.c"
              "test_runtime_heap_reg.c"
-             "test_task_tracking.c")
+             "test_task_tracking.c"
+             "test_walker.c")
 
 idf_component_register(SRCS ${src_test}
                        INCLUDE_DIRS "."
