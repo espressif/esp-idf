@@ -56,7 +56,7 @@ When enabling the Flash Encryption and Secure Boot V2 externally we need to enab
 
 The reason for this order is as follows:
 
-To enable the Secure Boot (SB) V2, it is necessary to keep the SB V2 key readable. To protect the key's readability, the write protection for RD_DIS (ESP_EFUSE_WR_DIS_RD_DIS) is applied. However, this action poses a challenge when attempting to enable Flash Encryption, as the Flash Encryption (FE) key needs to remain unreadable. This conflict arises because the RD_DIS is already write-protected, making it impossible to read protect the FE key.
+To enable the Secure Boot (SB) V2, it is necessary to keep the SB V2 key readable. To protect the key's readability, the write protection for ``RD_DIS`` (``ESP_EFUSE_WR_DIS_RD_DIS``) is applied. However, this action poses a challenge when attempting to enable Flash Encryption, as the Flash Encryption (FE) key needs to remain unreadable. This conflict arises because the ``RD_DIS`` is already write-protected, making it impossible to read protect the FE key.
 
 .. _enable-flash-encryption-externally:
 
@@ -198,7 +198,7 @@ In this case, all the eFuses related to flash encryption are written with help o
 
 4. Burn the ``{IDF_TARGET_CRYPT_CNT}`` eFuse.
 
-  If you only want to enable flash encryption in **Development** mode and want to keep the ability to disable it in the future, Update the {IDF_TARGET_CRYPT_CNT} value in the below command from {IDF_TARGET_CRYPT_CNT_MAX_VAL} to 0x1. (not recommended for production)
+  If you only want to enable flash encryption in **Development** mode and want to keep the ability to disable it in the future, Update the {IDF_TARGET_CRYPT_CNT} value in the below command from {IDF_TARGET_CRYPT_CNT_MAX_VAL} to 0x1 (not recommended for production).
 
   .. code-block:: bash
 
@@ -270,13 +270,13 @@ In this case, all the eFuses related to flash encryption are written with help o
 6. Burn flash encryption-related security eFuses as listed below:
 
   A) Burn security eFuses:
-  
+
     .. important::
-  
+
       For production use cases, it is highly recommended to burn all the eFuses listed below.
-  
+
     .. list::
-  
+
         :esp32: - ``DISABLE_DL_ENCRYPT``: Disable the UART bootloader encryption access.
         :esp32: - ``DISABLE_DL_DECRYPT``: Disable the UART bootloader decryption access.
         :esp32: - ``DISABLE_DL_CACHE``: Disable the UART bootloader flash cache access.
@@ -290,68 +290,72 @@ In this case, all the eFuses related to flash encryption are written with help o
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``: Disable USB switch to JTAG
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``: Disable JTAG permanently
         :not esp32: - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``: Disable UART bootloader encryption access
-  
+
     The respective eFuses can be burned by running:
-  
+
     .. code:: bash
-  
+
         espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
-  
+
     .. note::
 
-        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
-  
+        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_.
+
   B) Write protect security eFuses:
-  
+
     After burning the respective eFuses we need to write_protect the security configurations
-  
+
   .. only:: esp32
-  
+
       .. code:: bash
-  
+
           espefuse.py --port PORT write_protect_efuse MAC
-  
+
       .. note::
-  
+
           The write disable bit for MAC also write disables DIS_CACHE which is required to prevent accidental burning of this bit.
-  
+
     C) Disable UART ROM DL mode:
-  
-  .. only:: not esp32
-  
-      .. code:: bash
-  
-          espefuse.py --port PORT write_protect_efuse DIS_ICACHE
-  
-      .. note::
-  
-          The write protection of above eFuse also write protects multiple other eFuses, Please refer to the {IDF_TARGET_NAME} eFuse table for more details.
-  
-    C) Enable Security Download mode:
-  
+
       .. warning::
-  
+
           Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
-  
+
       .. list::
-  
-          :esp32: - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
-          :not esp32: - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
-  
-      .. only:: esp32
-  
+
+          - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
+
           The eFuse can be burned by running:
-  
+
           .. code:: bash
-  
+
               espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
-  
-      .. only:: not esp32
-  
+
+
+  .. only:: not esp32
+
+      .. code:: bash
+
+          espefuse.py --port PORT write_protect_efuse DIS_ICACHE
+
+      .. note::
+
+          The write protection of above eFuse also write protects multiple other eFuses, Please refer to the {IDF_TARGET_NAME} eFuse table for more details.
+
+    C) Enable Security Download mode:
+
+      .. warning::
+
+          Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
+
+      .. list::
+
+          - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
+
           The eFuse can be burned by running:
-  
+
           .. code:: bash
-  
+
               espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
 
 .. important::
@@ -510,13 +514,13 @@ In this workflow, we shall use ``espsecure`` tool to generate signing keys and u
 7. Burn relevant eFuses.
 
   A) Burn security eFuses:
-  
+
     .. important::
-  
+
         For production use cases, it is highly recommended to burn all the eFuses listed below.
-  
+
     .. list::
-  
+
         :esp32: - ``JTAG_DISABLE``: Disable the JTAG
         :SOC_EFUSE_DIS_BOOT_REMAP: - ``DIS_BOOT_REMAP``: Disable capability to Remap ROM to RAM address space
         :SOC_EFUSE_HARD_DIS_JTAG: - ``HARD_DIS_JTAG``: Hard disable JTAG peripheral
@@ -526,76 +530,79 @@ In this workflow, we shall use ``espsecure`` tool to generate signing keys and u
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``: Disable USB switch to JTAG
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``: Disable JTAG permanently
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``: Aggressive revocation of key digests, see :ref:`secure-boot-v2-aggressive-key-revocation` for more details.
-  
+
     The respective eFuses can be burned by running:
-  
+
     .. code:: bash
-  
+
         espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
-  
+
     .. note::
 
         Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
-  
+
   B) Secure Boot V2-related eFuses:
-  
+
     i) Disable the ability for read protection:
-  
+
     The secure boot digest burned in the eFuse must be kept readable otherwise secure boot operation would result in a failure. To prevent the accidental enabling of read protection for this key block we need to burn the following eFuse:
-  
+
     .. code:: bash
-  
+
         espefuse.py -p $ESPPORT write_protect_efuse RD_DIS
-  
+
     .. important::
-  
+
         After this eFuse has been burned, read protection cannot be enabled for any key. E.g., if flash encryption which requires read protection for its key is not enabled at this point then it cannot be enabled afterwards. Please ensure that no eFuse keys are going to need read protection after this.
-  
-  
+
+
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
-  
+
         ii) Revoke key digests:
-  
+
         The unused digest slots need to be revoked when we are burning the secure boot key. The respective slots can be revoked by running
-  
+
         .. code:: bash
-  
+
             espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse EFUSE_REVOKE_BIT
-  
+
         The ``EFUSE_REVOKE_BIT`` in the above command can be ``SECURE_BOOT_KEY_REVOKE0`` or ``SECURE_BOOT_KEY_REVOKE1`` or ``SECURE_BOOT_KEY_REVOKE2``. Please note that only the unused key digests must be revoked. Once revoked, the respective digest cannot be used again.
-  
+
   .. only:: esp32
-  
+
     C) Disable UART ROM DL mode:
-  
-  .. only:: not esp32
-  
-    C) Enable Security Download mode:
-  
-  
+
       .. warning::
-  
+
           Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
-  
+
       .. list::
-  
-          :esp32: - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
-          :not esp32: - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
-  
-      .. only:: esp32
-  
+
+          - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
+
           The eFuse can be burned by running:
-  
+
           .. code:: bash
-  
+
             espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
-  
-      .. only:: not esp32
-  
-        The eFuse can be burned by running:
-  
-        .. code:: bash
-  
+
+
+  .. only:: not esp32
+
+    C) Enable Security Download mode:
+
+      .. warning::
+
+          Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
+
+      .. list::
+
+          - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
+
+          The eFuse can be burned by running:
+
+          .. code:: bash
+
             espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
 
 Secure Boot V2 Guidelines
@@ -606,5 +613,3 @@ Secure Boot V2 Guidelines
 .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
     * It is recommended to use all the available digest slots to reduce dependency on a single private key.
-
-
