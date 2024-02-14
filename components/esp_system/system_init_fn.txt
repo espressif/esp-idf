@@ -41,7 +41,7 @@ CORE: 100: init_heap in components/heap/heap_caps_init.c on BIT(0)
 CORE: 101: esp_timer_init_nonos in components/esp_timer/src/esp_timer_init.c on BIT(0)
 
 CORE: 102: init_newlib in components/newlib/newlib_init.c on BIT(0)
-CORE: 103: init_psram_heap in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 103: init_psram in components/esp_psram/esp_psram.c on BIT(0)
 CORE: 104: init_brownout in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 105: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
 

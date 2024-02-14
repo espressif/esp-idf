@@ -44,11 +44,6 @@
 #include "hal/brownout_ll.h"
 #endif
 
-#if CONFIG_SPIRAM
-#include "esp_psram.h"
-#include "esp_private/esp_psram_extram.h"
-#endif
-
 // Using the same tag as in startup.c to keep the logs unchanged
 static const char* TAG = "cpu_start";
 
@@ -65,23 +60,6 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
     int cpu_freq = esp_clk_cpu_freq();
     ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
-    return ESP_OK;
-}
-
-ESP_SYSTEM_INIT_FN(init_psram_heap, CORE, BIT(0), 103)
-{
-#if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
-    if (esp_psram_is_initialized()) {
-        esp_err_t r = esp_psram_extram_add_to_heap_allocator();
-        if (r != ESP_OK) {
-            ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
-            abort();
-        }
-#if CONFIG_SPIRAM_USE_MALLOC
-        heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
-#endif
-    }
-#endif
     return ESP_OK;
 }
 

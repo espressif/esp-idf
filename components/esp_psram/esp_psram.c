@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,7 @@
 #include "esp_psram.h"
 #include "esp_private/esp_mmu_map_private.h"
 #include "esp_mmu_map.h"
-
+#include "esp_private/startup_internal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/himem.h"
 #include "esp32/rom/cache.h"
@@ -81,6 +81,23 @@ typedef struct {
 
 static psram_ctx_t s_psram_ctx;
 static const char* TAG = "esp_psram";
+
+ESP_SYSTEM_INIT_FN(init_psram, CORE, BIT(0), 103)
+{
+#if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
+    if (esp_psram_is_initialized()) {
+        esp_err_t r = esp_psram_extram_add_to_heap_allocator();
+        if (r != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
+            abort();
+        }
+#if CONFIG_SPIRAM_USE_MALLOC
+        heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
+#endif
+    }
+#endif
+    return ESP_OK;
+}
 
 #if CONFIG_IDF_TARGET_ESP32
 //If no function in esp_himem.c is used, this function will be linked into the
