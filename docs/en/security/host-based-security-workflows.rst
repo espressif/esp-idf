@@ -56,7 +56,7 @@ When enabling the Flash Encryption and Secure Boot V2 externally we need to enab
 
 The reason for this order is as follows:
 
-To enable the Secure Boot (SB) V2, it is necessary to keep the SB V2 key readable. To protect the key's readability, the write protection for RD_DIS (ESP_EFUSE_WR_DIS_RD_DIS) is applied. However, this action poses a challenge when attempting to enable Flash Encryption, as the Flash Encryption (FE) key needs to remain unreadable. This conflict arises because the RD_DIS is already write-protected, making it impossible to read protect the FE key.
+To enable the Secure Boot (SB) V2, it is necessary to keep the SB V2 key readable. To protect the key's readability, the write protection for ``RD_DIS`` (``ESP_EFUSE_WR_DIS_RD_DIS``) is applied. However, this action poses a challenge when attempting to enable Flash Encryption, as the Flash Encryption (FE) key needs to remain unreadable. This conflict arises because the ``RD_DIS`` is already write-protected, making it impossible to read protect the FE key.
 
 .. _enable-flash-encryption-externally:
 
@@ -198,7 +198,7 @@ In this case, all the eFuses related to flash encryption are written with help o
 
 4. Burn the ``{IDF_TARGET_CRYPT_CNT}`` eFuse.
 
-  If you only want to enable flash encryption in **Development** mode and want to keep the ability to disable it in the future, Update the {IDF_TARGET_CRYPT_CNT} value in the below command from {IDF_TARGET_CRYPT_CNT_MAX_VAL} to 0x1. (not recommended for production)
+  If you only want to enable flash encryption in **Development** mode and want to keep the ability to disable it in the future, Update the {IDF_TARGET_CRYPT_CNT} value in the below command from {IDF_TARGET_CRYPT_CNT_MAX_VAL} to 0x1 (not recommended for production).
 
   .. code-block:: bash
 
@@ -300,7 +300,7 @@ In this case, all the eFuses related to flash encryption are written with help o
 
     .. note::
 
-        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
+        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_.
 
   B) Write protect security eFuses:
 
@@ -317,6 +317,21 @@ In this case, all the eFuses related to flash encryption are written with help o
           The write disable bit for MAC also write disables DIS_CACHE which is required to prevent accidental burning of this bit.
 
     C) Disable UART ROM DL mode:
+
+      .. warning::
+
+          Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
+
+      .. list::
+
+          - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
+
+          The eFuse can be burned by running:
+
+          .. code:: bash
+
+              espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
+
 
   .. only:: not esp32
 
@@ -336,18 +351,7 @@ In this case, all the eFuses related to flash encryption are written with help o
 
       .. list::
 
-          :esp32: - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
-          :not esp32: - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
-
-      .. only:: esp32
-
-          The eFuse can be burned by running:
-
-          .. code:: bash
-
-              espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
-
-      .. only:: not esp32
+          - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
 
           The eFuse can be burned by running:
 
@@ -569,21 +573,13 @@ In this workflow, we shall use ``espsecure`` tool to generate signing keys and u
 
     C) Disable UART ROM DL mode:
 
-  .. only:: not esp32
-
-    C) Enable Security Download mode:
-
-
       .. warning::
 
           Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
 
       .. list::
 
-          :esp32: - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
-          :not esp32: - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
-
-      .. only:: esp32
+          - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
 
           The eFuse can be burned by running:
 
@@ -591,11 +587,22 @@ In this workflow, we shall use ``espsecure`` tool to generate signing keys and u
 
             espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
 
-      .. only:: not esp32
 
-        The eFuse can be burned by running:
+  .. only:: not esp32
 
-        .. code:: bash
+    C) Enable Security Download mode:
+
+      .. warning::
+
+          Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
+
+      .. list::
+
+          - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
+
+          The eFuse can be burned by running:
+
+          .. code:: bash
 
             espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
 
