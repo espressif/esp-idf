@@ -28,6 +28,11 @@ void bootloader_flash_update_id()
     chip->device_id = bootloader_read_flash_id();
 }
 
+void bootloader_flash_update_size(uint32_t size)
+{
+    rom_spiflash_legacy_data->chip.chip_size = size;
+}
+
 void IRAM_ATTR bootloader_flash_cs_timing_config()
 {
     SET_PERI_REG_MASK(SPI_MEM_C_USER_REG, SPI_MEM_C_CS_HOLD_M | SPI_MEM_C_CS_SETUP_M);
