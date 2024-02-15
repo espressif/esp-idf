@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,6 +7,12 @@
 
 #define MUTEX_TEST_ITERATIONS 100000
 #define XOR_MASK 0xDEADBEEF
+
+/* I2C test params */
+#define I2C_SLAVE_ADDRESS 0x28
+#define DATA_LENGTH 200
+// TODO: Updated the test to perform multi-byte read/write (IDFGH-11056)
+#define RW_TEST_LENGTH       1  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
 
 typedef enum {
     RISCV_READ_WRITE_TEST = 1,
