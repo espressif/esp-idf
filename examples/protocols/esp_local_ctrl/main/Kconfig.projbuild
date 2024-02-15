@@ -2,19 +2,19 @@ menu "Example Configuration"
 
     choice EXAMPLE_LOCAL_CTRL_TRANSPORT
         bool "Local Control Transport"
-        default EXAMPLE_LOCAL_CTRL_TRANSPORT_BLE if !SOC_WIFI_SUPPORTED
-        default EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP
+        default EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
+        default EXAMPLE_LOCAL_CTRL_TRANSPORT_BLE if SOC_BT_SUPPORTED
         help
-            Local Control component offers both, SoftAP and BLE transports. Choose any one.
+            Local Control component offers both, HTTP/S and BLE transports. Choose any one.
 
-        config EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP
-            bool "Soft AP"
+        config EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
+            bool "HTTP/S"
             select LWIP_IPV4
-            depends on SOC_WIFI_SUPPORTED
 
         config EXAMPLE_LOCAL_CTRL_TRANSPORT_BLE
             bool "BLE"
             select BT_ENABLED
+            depends on SOC_BT_SUPPORTED
     endchoice
 
     choice EXAMPLE_PROTOCOMM_SECURITY_VERSION
