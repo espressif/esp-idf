@@ -44,7 +44,7 @@
 #define DR_REG_AES_BASE                           0x60088000
 #define DR_REG_SHA_BASE                           0x60089000
 #define DR_REG_RSA_BASE                           0x6008A000
-#define DR_REG_ECC_BASE                           0x6008B000
+#define DR_REG_ECC_MULT_BASE                      0x6008B000
 #define DR_REG_DS_BASE                            0x6008C000
 #define DR_REG_HMAC_BASE                          0x6008D000
 #define DR_REG_ECDSA_BASE                         0x6008E000
