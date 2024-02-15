@@ -17,7 +17,7 @@ The example also prints time spent in light sleep mode to illustrate that timeke
 
 Note: If you find that the bottom current measured by running this example is larger than what is declared on the datasheet, you can try the following methods:
 
-- configure the CPU to be powered down via menuconfig(not all esp series support this feature)
+- configure the CPU to be powered down via menuconfig (not all esp series support this feature)
 - configure the SPI Flash to be powered down via menuconfig
 
 ## How to Use Example
@@ -114,8 +114,6 @@ In this example, current consumption in light sleep mode is in the range of 0.8 
 
 ![Current consumption in active mode](image/light_sleep_scope_zoom.png)
 
-
 ## Troubleshooting
 
 If pressing the button attached to GPIO0 does not affect program behavior, check DTR/RTS configuration in the serial monitor. This is not necessary for IDF monitor, but for other tools it might be necessary to set DTR and RTS line state to "disabled" or "de-asserted".
-
