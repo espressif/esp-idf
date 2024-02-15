@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,7 +87,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
     core_owner_id = xt_utils_get_raw_core_id();
 #else  //__riscv
 
-    irq_status = rv_utils_mask_int_level_lower_than(RVHAL_EXCM_LEVEL);
+    irq_status = rv_utils_set_intlevel_regval(RVHAL_EXCM_LEVEL_CLIC);
     core_owner_id = rv_utils_get_core_id() == 0 ? SPINLOCK_OWNER_ID_0 : SPINLOCK_OWNER_ID_1;
 #endif
     other_core_owner_id = CORE_ID_REGVAL_XOR_SWAP ^ core_owner_id;
@@ -106,7 +106,7 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
 #if __XTENSA__
         XTOS_RESTORE_INTLEVEL(irq_status);
 #else
-        rv_utils_restore_intlevel(irq_status);
+        rv_utils_restore_intlevel_regval(irq_status);
 #endif
         return true;
     }
@@ -147,7 +147,7 @@ exit:
 #if __XTENSA__
     XTOS_RESTORE_INTLEVEL(irq_status);
 #else
-    rv_utils_restore_intlevel(irq_status);
+    rv_utils_restore_intlevel_regval(irq_status);
 #endif
     return lock_set;
 
@@ -181,7 +181,7 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
 
     core_owner_id = xt_utils_get_raw_core_id();
 #else
-    irq_status = rv_utils_mask_int_level_lower_than(RVHAL_EXCM_LEVEL);
+    irq_status = rv_utils_set_intlevel_regval(RVHAL_EXCM_LEVEL_CLIC);
     core_owner_id = rv_utils_get_core_id() == 0 ? SPINLOCK_OWNER_ID_0 : SPINLOCK_OWNER_ID_1;
 #endif
     assert(core_owner_id == lock->owner); // This is a lock that we didn't acquire, or the lock is corrupt
@@ -196,7 +196,7 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
 #if __XTENSA__
     XTOS_RESTORE_INTLEVEL(irq_status);
 #else
-    rv_utils_restore_intlevel(irq_status);
+    rv_utils_restore_intlevel_regval(irq_status);
 #endif  //#if __XTENSA__
 #endif  //#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !BOOTLOADER_BUILD
 }
