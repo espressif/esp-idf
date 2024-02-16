@@ -213,8 +213,7 @@ def get_all_apps(
         elif app.build_status != BuildStatus.SKIPPED:
             if case := pytest_app_path_tuple_dict.get((app_path, app.target, app.config_name)):
                 test_related_apps.add(app)
-                # should be built if
-                app.build_status = BuildStatus.SHOULD_BE_BUILT
+                # build or not should be decided by the build stage
                 app.preserve = True
                 logging.debug('Found test-related app: %s - required by %s', app, case.path)
             else:
