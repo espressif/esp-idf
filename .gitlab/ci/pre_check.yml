@@ -72,6 +72,7 @@ check_chip_support_components:
     paths:
       - esp_hw_support_part.h
       - bootloader_support_part.h
+    expire_in: 1 week
   script:
     - python tools/ci/check_soc_headers_leak.py
     - find ${IDF_PATH}/components/soc/*/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
@@ -85,6 +86,7 @@ check_esp_err_to_name:
     when: on_failure
     paths:
       - components/esp_common/esp_err_to_name.c
+    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/
     - ./gen_esp_err_to_name.py
@@ -157,6 +159,10 @@ pipeline_variables:
   artifacts:
     reports:
       dotenv: pipeline.env
+    paths:
+      - pipeline.env
+    expire_in: 1 week
+    when: always
 
 check_test_cases_env_markers_and_required_runners:
   extends:

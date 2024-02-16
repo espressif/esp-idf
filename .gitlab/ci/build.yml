@@ -32,6 +32,8 @@
       # keep the size info to help track the binary size
       - size_info.txt
       - "**/build*/size.json"
+    expire_in: 1 week
+    when: always
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -85,6 +87,8 @@
       - log_template_app/*
       - size_info.txt
       - build_template_app/**/size.json
+    expire_in: 1 week
+    when: always
   script:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
@@ -178,6 +182,14 @@ build_clang_test_apps_esp32c6:
     - job: fast_template_app
       artifacts: false
       optional: true
+  artifacts:
+    reports:
+      junit: XUNIT_RESULT.xml
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    expire_in: 1 week
+    when: always
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - cd ${IDF_PATH}/tools/test_build_system
@@ -189,13 +201,6 @@ build_clang_test_apps_esp32c6:
 pytest_build_system:
   extends: .test_build_system_template
   parallel: 3
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    expire_in: 2 days
-    reports:
-      junit: XUNIT_RESULT.xml
 
 pytest_build_system_macos:
   extends:
@@ -205,13 +210,6 @@ pytest_build_system_macos:
   tags:
     - macos_shell
   parallel: 3
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    expire_in: 2 days
-    reports:
-      junit: XUNIT_RESULT.xml
 
 build_docker:
   extends:
@@ -264,6 +262,8 @@ generate_build_child_pipeline:
       - build_child_pipeline.yml
       - test_related_apps.txt
       - non_test_related_apps.txt
+    expire_in: 1 week
+    when: always
   script:
     - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
       --modified-components ${MR_MODIFIED_COMPONENTS}

@@ -46,6 +46,7 @@ gen_integration_pipeline:
     paths:
       - idf-integration-ci/child_pipeline/
     expire_in: 2 weeks
+    when: always
   script:
     - add_gitlab_ssh_keys
     - retry_failed git clone ${CI_GEN_INTEGRATION_PIPELINE_REPO} idf-integration-ci

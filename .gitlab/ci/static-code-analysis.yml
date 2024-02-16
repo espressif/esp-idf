@@ -6,6 +6,8 @@ clang_tidy_check:
   artifacts:
     paths:
       - clang_tidy_reports/
+    expire_in: 1 week
+    when: always
   variables:
     IDF_TOOLCHAIN: clang
   script:
@@ -23,6 +25,10 @@ check_pylint:
   artifacts:
     reports:
       codequality: pylint.json
+    paths:
+      - pylint.json
+    expire_in: 1 week
+    when: always
   script:
     - |
       if [ -n "$CI_MERGE_REQUEST_IID" ]; then
@@ -70,6 +76,8 @@ check_pylint:
   artifacts:
     paths:
       - $REPORT_PATTERN
+    expire_in: 1 week
+    when: always
   dependencies:  # Here is not a hard dependency relationship, could be skipped when only python files changed. so we do not use "needs" here.
     - clang_tidy_check
 

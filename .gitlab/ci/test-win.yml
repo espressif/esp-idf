@@ -26,6 +26,7 @@ test_cli_installer_win:
     paths:
       - tools/tools.new.json
       - tools/test_idf_tools/test_python_env_logs.txt
+    expire_in: 1 week
   variables:
     IDF_PATH: "$CI_PROJECT_DIR"
   script:
@@ -46,6 +47,8 @@ test_tools_win:
       - ${IDF_PATH}/XUNIT_*.xml
     reports:
       junit: ${IDF_PATH}/XUNIT_*.xml
+    expire_in: 1 week
+    when: always
   variables:
     LC_ALL: C.UTF-8
     PYTHONPATH: "$PYTHONPATH;$IDF_PATH\\tools;$IDF_PATH\\tools\\esp_app_trace;$IDF_PATH\\components\\partition_table;$IDF_PATH\\tools\\ci\\python_packages"
@@ -90,3 +93,4 @@ pytest_build_system_win:
     expire_in: 2 days
     reports:
       junit: XUNIT_RESULT.xml
+    when: always
