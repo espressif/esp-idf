@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -552,17 +552,44 @@ TEST_CASE("ethernet start/stop stress test with IP stack", "[ethernet]")
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 
-    for (int i = 0; i < 10; i++) {
-        // start Ethernet driver
-        TEST_ESP_OK(esp_eth_start(eth_handle));
-        /* wait for IP lease */
-        bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
-        TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
-        // stop Ethernet driver
-        TEST_ESP_OK(esp_eth_stop(eth_handle));
-        /* wait for connection stop */
-        bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
-        TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+    for(int j = 0; j < 2; j++) {
+        // run the start/stop test with disabled auto-negotiation
+        if (j > 0) {
+            ESP_LOGI(TAG, "Run with auto-negotiation disabled...");
+            bool auto_nego_en = false;
+            bool exp_autoneg_en;
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+            TEST_ASSERT_EQUAL(false, exp_autoneg_en);
+// *** LAN8720 deviation ***
+// Rationale: When the device is in manual 100BASE-TX or 10BASE-T modes with Auto-MDIX enabled, the PHY does not link to a
+//            link partner that is configured for auto-negotiation. See LAN8720 errata for more details.
+#ifdef CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
+            esp_eth_phy_reg_rw_data_t reg;
+            uint32_t reg_val;
+            reg.reg_addr = 27;
+            reg.reg_value_p = &reg_val;
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg));
+            reg_val |= 0x8000;
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &reg));
+            uint32_t reg_val_act;
+            reg.reg_value_p = &reg_val_act;
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg));
+            TEST_ASSERT_EQUAL(reg_val, reg_val_act);
+#endif
+        }
+        for (int i = 0; i < 10; i++) {
+            // start Ethernet driver
+            TEST_ESP_OK(esp_eth_start(eth_handle));
+            /* wait for IP lease */
+            bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
+            TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
+            // stop Ethernet driver
+            TEST_ESP_OK(esp_eth_stop(eth_handle));
+            /* wait for connection stop */
+            bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+            TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+        }
     }
 
     TEST_ESP_OK(esp_eth_del_netif_glue(glue));

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,6 +111,21 @@ static esp_err_t w5500_get_link(esp_eth_phy_t *phy)
     /* Updata information about link, speed, duplex */
     ESP_GOTO_ON_ERROR(w5500_update_link_duplex_speed(w5500), err, TAG, "update link duplex speed failed");
     return ESP_OK;
+err:
+    return ret;
+}
+
+static esp_err_t w5500_set_link(esp_eth_phy_t *phy, eth_link_t link)
+{
+    esp_err_t ret = ESP_OK;
+    phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
+    esp_eth_mediator_t *eth   = w5500->eth;
+
+    if (w5500->link_status != link) {
+        w5500->link_status = link;
+        // link status changed, inmiedately report to upper layers
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)w5500->link_status), err, TAG, "change link failed");
+    }
 err:
     return ret;
 }
@@ -362,6 +377,7 @@ esp_eth_phy_t *esp_eth_phy_new_w5500(const eth_phy_config_t *config)
     w5500->parent.set_mediator = w5500_set_mediator;
     w5500->parent.autonego_ctrl = w5500_autonego_ctrl;
     w5500->parent.get_link = w5500_get_link;
+    w5500->parent.set_link = w5500_set_link;
     w5500->parent.pwrctl = w5500_pwrctl;
     w5500->parent.get_addr = w5500_get_addr;
     w5500->parent.set_addr = w5500_set_addr;
