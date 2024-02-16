@@ -198,6 +198,16 @@ TEST_CASE("(SD) can ftruncate", "[fatfs][sdmmc]")
     test_teardown_sdmmc(card);
 }
 
+#if FF_USE_EXPAND
+TEST_CASE("(SD) can esp_vfs_fat_create_contiguous_file", "[fatfs][sdmmc]")
+{
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
+    test_fatfs_create_contiguous_file("/sdcard", "/sdcard/expand.txt");
+    test_teardown_sdmmc(card);
+}
+#endif
+
 TEST_CASE("(SD) stat returns correct values", "[fatfs][sdmmc]")
 {
     sdmmc_card_t *card = NULL;

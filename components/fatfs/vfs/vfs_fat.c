@@ -1190,3 +1190,138 @@ static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *time
 }
 
 #endif // CONFIG_VFS_SUPPORT_DIR
+
+esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* full_path, uint64_t size, bool alloc_now)
+{
+    if (base_path == NULL || full_path == NULL || size <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t ctx = find_context_index_by_path(base_path);
+    if (ctx == FF_VOLUMES) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
+
+    _lock_acquire(&fat_ctx->lock);
+    const char* file_path = full_path + strlen(base_path); // shift the pointer and omit the base_path
+    prepend_drive_to_path(fat_ctx, &file_path, NULL);
+
+    FIL* file = (FIL*) ff_memalloc(sizeof(FIL));
+    if (file == NULL) {
+        _lock_release(&fat_ctx->lock);
+        ESP_LOGD(TAG, "esp_vfs_fat_create_contiguous_file alloc failed");
+        errno = ENOMEM;
+        return -1;
+    }
+    memset(file, 0, sizeof(*file));
+
+    FRESULT res = f_open(file, file_path, FA_WRITE | FA_OPEN_ALWAYS);
+    if (res != FR_OK) {
+        goto fail;
+    }
+
+    res = f_expand(file, size, alloc_now ? 1 : 0);
+    if (res != FR_OK) {
+        f_close(file);
+        goto fail;
+    }
+
+    res = f_close(file);
+    if (res != FR_OK) {
+        goto fail;
+    }
+
+    _lock_release(&fat_ctx->lock);
+
+    return 0;
+fail:
+    _lock_release(&fat_ctx->lock);
+    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+    errno = fresult_to_errno(res);
+    return -1;
+}
+
+static FRESULT test_contiguous_file( // From FATFS examples
+    FIL* fp,    /* [IN]  Open file object to be checked */
+    int* cont   /* [OUT] 1:Contiguous, 0:Fragmented or zero-length */
+) {
+    DWORD clst, clsz, step;
+    FSIZE_t fsz;
+    FRESULT fr;
+
+    *cont = 0;
+    fr = f_rewind(fp);              /* Validates and prepares the file */
+    if (fr != FR_OK) return fr;
+
+#if FF_MAX_SS == FF_MIN_SS
+    clsz = (DWORD)fp->obj.fs->csize * FF_MAX_SS;    /* Cluster size */
+#else
+    clsz = (DWORD)fp->obj.fs->csize * fp->obj.fs->ssize;
+#endif
+    fsz = f_size(fp);
+    if (fsz > 0) {
+        clst = fp->obj.sclust - 1;  /* A cluster leading the first cluster for first test */
+        while (fsz) {
+            step = (fsz >= clsz) ? clsz : (DWORD)fsz;
+            fr = f_lseek(fp, f_tell(fp) + step);    /* Advances file pointer a cluster */
+            if (fr != FR_OK) return fr;
+            if (clst + 1 != fp->clust) break;       /* Is not the cluster next to previous one? */
+            clst = fp->clust; fsz -= step;          /* Get current cluster for next test */
+        }
+        if (fsz == 0) *cont = 1;    /* All done without fail? */
+    }
+
+    return FR_OK;
+}
+
+esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* full_path, bool* is_contiguous)
+{
+    if (base_path == NULL || full_path == NULL || is_contiguous == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t ctx = find_context_index_by_path(base_path);
+    if (ctx == FF_VOLUMES) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
+
+    _lock_acquire(&fat_ctx->lock);
+    const char* file_path = full_path + strlen(base_path); // shift the pointer and omit the base_path
+    prepend_drive_to_path(fat_ctx, &file_path, NULL);
+
+    FIL* file = (FIL*) ff_memalloc(sizeof(FIL));
+    if (file == NULL) {
+        _lock_release(&fat_ctx->lock);
+        ESP_LOGD(TAG, "esp_vfs_fat_test_contiguous_file alloc failed");
+        errno = ENOMEM;
+        return -1;
+    }
+    memset(file, 0, sizeof(*file));
+
+    FRESULT res = f_open(file, file_path, FA_WRITE | FA_OPEN_ALWAYS);
+    if (res != FR_OK) {
+        goto fail;
+    }
+
+    res = test_contiguous_file(file, (int*) is_contiguous);
+    if (res != FR_OK) {
+        f_close(file);
+        goto fail;
+    }
+
+    res = f_close(file);
+    if (res != FR_OK) {
+        goto fail;
+    }
+
+    _lock_release(&fat_ctx->lock);
+
+    return 0;
+fail:
+    _lock_release(&fat_ctx->lock);
+    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+    errno = fresult_to_errno(res);
+    return -1;
+}

@@ -1011,3 +1011,28 @@ void test_fatfs_info(const char* base_path, const char* filepath)
     ESP_LOGD("fatfs info", "total_bytes=%llu, free_bytes_after_delete=%llu", total_bytes, free_bytes_new);
     TEST_ASSERT_EQUAL(free_bytes, free_bytes_new);
 }
+
+#if FF_USE_EXPAND
+void test_fatfs_create_contiguous_file(const char* base_path, const char* full_path)
+{
+    size_t desired_file_size = 64;
+
+    // Don't check for errors, file may not exist at first
+    remove(full_path); // esp_vfs_fat_create_contiguous_file will fail if the file already exists
+
+    esp_err_t err = esp_vfs_fat_create_contiguous_file(base_path, full_path, desired_file_size, true);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    struct stat st;
+    size_t size;
+
+    stat(full_path, &st);
+    size = st.st_size;
+    TEST_ASSERT_EQUAL(desired_file_size, size);
+
+    bool is_contiguous = false;
+    err = esp_vfs_fat_test_contiguous_file(base_path, full_path, &is_contiguous);
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+    TEST_ASSERT_TRUE(is_contiguous);
+}
+#endif
