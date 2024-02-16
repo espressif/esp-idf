@@ -111,18 +111,37 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
             goto _digest_exit;
         }
     } else {
+        /* Although as per RFC-2617, "qop" directive is optional in order to maintain backward compatibality, it is recommended
+           to use it if the server indicated that qop is supported. This enhancement was introduced to protect against attacks
+           like chosen-plaintext attack. */
+        ESP_LOGW(TAG, "\"qop\" directive not found. This may lead to attacks like chosen-plaintext attack");
         // response=MD5(HA1:nonce:HA2)
         if (md5_printf(digest, "%s:%s:%s", ha1, auth_data->nonce, ha2) <= 0) {
             goto _digest_exit;
         }
     }
     int rc = asprintf(&auth_str, "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", algorithm=\"MD5\", "
-             "response=\"%s\", qop=%s, nc=%08x, cnonce=%016"PRIx64,
-             username, auth_data->realm, auth_data->nonce, auth_data->uri, digest, auth_data->qop, auth_data->nc, auth_data->cnonce);
+                      "response=\"%s\"", username, auth_data->realm, auth_data->nonce, auth_data->uri, digest);
     if (rc < 0) {
         ESP_LOGE(TAG, "asprintf() returned: %d", rc);
         ret = ESP_FAIL;
         goto _digest_exit;
+    }
+
+    if (auth_data->qop) {
+        rc = asprintf(&temp_auth_str, ", qop=%s, nc=%08x, cnonce=\"%016"PRIx64"\"", auth_data->qop, auth_data->nc, auth_data->cnonce);
+        if (rc < 0) {
+            ESP_LOGE(TAG, "asprintf() returned: %d", rc);
+            ret = ESP_FAIL;
+            goto _digest_exit;
+        }
+        auth_str = http_utils_append_string(&auth_str, temp_auth_str, strlen(temp_auth_str));
+        if (!auth_str) {
+            ret = ESP_FAIL;
+            goto _digest_exit;
+        }
+        free(temp_auth_str);
+        auth_data->nc ++;
     }
     if (auth_data->opaque) {
         rc = asprintf(&temp_auth_str, "%s, opaque=\"%s\"", auth_str, auth_data->opaque);
