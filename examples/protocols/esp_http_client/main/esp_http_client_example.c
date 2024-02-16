@@ -631,6 +631,31 @@ static void https_async(void)
         ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
     }
     esp_http_client_cleanup(client);
+
+    // Test HTTP_METHOD_HEAD with is_async enabled
+    config.url = "https://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/get";
+    config.event_handler = _http_event_handler;
+    config.crt_bundle_attach = esp_crt_bundle_attach;
+    config.is_async = true;
+    config.timeout_ms = 5000;
+
+    client = esp_http_client_init(&config);
+    esp_http_client_set_method(client, HTTP_METHOD_HEAD);
+
+    while (1) {
+        err = esp_http_client_perform(client);
+        if (err != ESP_ERR_HTTP_EAGAIN) {
+            break;
+        }
+    }
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %"PRId64,
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
 }
 
 static void https_with_invalid_url(void)
