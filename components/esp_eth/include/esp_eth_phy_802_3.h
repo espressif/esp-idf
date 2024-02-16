@@ -140,6 +140,16 @@ esp_err_t esp_eth_phy_802_3_set_speed(phy_802_3_t *phy_802_3, eth_speed_t speed)
 esp_err_t esp_eth_phy_802_3_set_duplex(phy_802_3_t *phy_802_3, eth_duplex_t duplex);
 
 /**
+ * @brief Set Ethernet PHY link status
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param link new link status
+ * @return
+ *      - ESP_OK: Ethernet PHY link set successfuly
+ */
+esp_err_t esp_eth_phy_802_3_set_link(phy_802_3_t *phy_802_3, eth_link_t link);
+
+/**
  * @brief Initialize Ethernet PHY
  *
  * @param phy_802_3 IEEE 802.3 PHY object infostructure
