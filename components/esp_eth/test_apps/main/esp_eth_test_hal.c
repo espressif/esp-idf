@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -130,42 +130,6 @@ TEST_CASE("hal receive/transmit", "[emac_hal]")
     }
 
     uint16_t transmit_size;
-    size_t free_heap = 0;
-    uint8_t *memory_p[20] = { 0 };
-    int32_t mem_block;
-    ESP_LOGI(TAG, "Allocate all heap");
-    for (mem_block = 0; mem_block < 20; mem_block++) {
-        free_heap = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
-        ESP_LOGD(TAG, "free heap: %i B", free_heap);
-        memory_p[mem_block] = malloc(free_heap);
-        if (free_heap < 1024) {
-            break;
-        }
-    }
-    free_heap = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
-    ESP_LOGI(TAG, "remaining free heap: %i B", free_heap);
-    TEST_ASSERT_LESS_OR_EQUAL_INT(1024, free_heap);
-    transmit_size = ETH_MAX_PAYLOAD_LEN;
-    ESP_LOGI(TAG, "Verify that the driver is able to recover from `no mem` error"); // IDF-8993
-    for (int32_t i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM + 2; i++) { // be sure to fill all the descriptors
-        ESP_LOGI(TAG, "transmit frame size: %" PRIu16 ", i = %" PRIi32, transmit_size, i);
-        recv_info.expected_size = transmit_size;
-        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
-        TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(100)) == pdFALSE); // we don't received the frame due to "no mem"
-    }
-    ESP_LOGI(TAG, "\nFree previously allocated heap");
-    while(mem_block > 0) {
-        free(memory_p[mem_block]);
-        mem_block--;
-    }
-    free_heap = heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
-    ESP_LOGI(TAG, "free heap: %i B", free_heap);
-    for (int32_t i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM + 2; i++) {
-        ESP_LOGD(TAG, "transmit frame size: %" PRIu16 ", i = %" PRIi32, transmit_size, i);
-        recv_info.expected_size = transmit_size;
-        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
-        TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(100))); // now, we should be able to receive frames again
-    }
 
     ESP_LOGI(TAG, "Verify DMA descriptors are returned back to owner");
     // find if Rx or Tx buffer number is bigger and work with bigger number

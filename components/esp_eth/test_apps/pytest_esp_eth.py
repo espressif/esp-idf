@@ -103,6 +103,25 @@ class EthTestIntf(object):
             except Exception as e:
                 raise e
 
+    def eth_loopback(self, mac: str, pipe_rcv:connection.Connection) -> None:
+        with self.configure_eth_if(self.eth_type) as so:
+            so.settimeout(30)
+            try:
+                while pipe_rcv.poll() is not True:
+                    try:
+                        eth_frame = Ether(so.recv(1522))
+                    except Exception as e:
+                        raise e
+                    if mac == eth_frame.src:
+                        eth_frame.dst = eth_frame.src
+                        eth_frame.src = so.getsockname()[4]
+                        so.send(raw(eth_frame))
+                    else:
+                        logging.warning('Received frame from unexpected source')
+                        logging.warning('Source MAC %s', eth_frame.src)
+            except Exception as e:
+                raise e
+
 
 def ethernet_test(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='ethernet', timeout=980)
@@ -166,7 +185,7 @@ def ethernet_l2_test(dut: IdfDut) -> None:
     # Start/stop under heavy Tx traffic
     for tx_i in range(10):
         target_if.recv_resp_poke(dut_mac, tx_i)
-        dut.expect_exact('Ethernet stopped')
+        dut.expect_exact('Ethernet Stopped')
 
     for rx_i in range(10):
         target_if.recv_resp_poke(dut_mac, rx_i)
@@ -174,13 +193,43 @@ def ethernet_l2_test(dut: IdfDut) -> None:
         pipe_rcv, pipe_send = Pipe(False)
         tx_proc = Process(target=target_if.traffic_gen, args=(dut_mac, pipe_rcv, ))
         tx_proc.start()
-        dut.expect_exact('Ethernet stopped')
+        dut.expect_exact('Ethernet Stopped')
         pipe_send.send(0)  # just send some dummy data
         tx_proc.join(5)
         if tx_proc.exitcode is None:
             tx_proc.terminate()
 
     dut.expect_unity_test_output(extra_before=res.group(1))
+
+
+def ethernet_heap_alloc_test(dut: IdfDut) -> None:
+    target_if = EthTestIntf(ETH_TYPE)
+
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('\n')
+    dut.expect_exact('Enter test for running.')
+    dut.write('"heap utilization"')
+    res = dut.expect(r'DUT PHY: (\w+)')
+    dut_phy = res.group(1).decode('utf-8')
+    # W5500 does not support internal loopback, we need to loopback for it
+    if 'W5500' in dut_phy:
+        logging.info('Starting loopback server...')
+        res = dut.expect(
+            r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
+        )
+        dut_mac = res.group(1).decode('utf-8')
+        pipe_rcv, pipe_send = Pipe(False)
+        loopback_proc = Process(target=target_if.eth_loopback, args=(dut_mac, pipe_rcv, ))
+        loopback_proc.start()
+
+        target_if.recv_resp_poke(mac=dut_mac)
+        dut.expect_exact('Ethernet Stopped')
+        pipe_send.send(0)  # just send some dummy data
+        loopback_proc.join(5)
+        if loopback_proc.exitcode is None:
+            loopback_proc.terminate()
+
+    dut.expect_unity_test_output()
 
 
 # ----------- IP101 -----------
@@ -203,6 +252,8 @@ def test_esp_ethernet(dut: IdfDut) -> None:
 ], indirect=True)
 def test_esp_emac_hal(dut: IdfDut) -> None:
     ethernet_int_emac_hal_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)
 
 
 @pytest.mark.esp32
@@ -273,6 +324,8 @@ def test_esp_eth_w5500(dut: IdfDut) -> None:
     ethernet_test(dut)
     dut.serial.hard_reset()
     ethernet_l2_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)
 
 
 # ----------- KSZ8851SNL -----------
@@ -286,6 +339,8 @@ def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
     ethernet_test(dut)
     dut.serial.hard_reset()
     ethernet_l2_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)
 
 
 # ----------- DM9051 -----------
@@ -299,3 +354,5 @@ def test_esp_eth_dm9051(dut: IdfDut) -> None:
     ethernet_test(dut)
     dut.serial.hard_reset()
     ethernet_l2_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)
