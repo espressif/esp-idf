@@ -25,7 +25,6 @@ warning: unknown kconfig symbol 'BTDM_CTRL_MODE_BR_EDR_ONLY' assigned to*
 warning: unknown kconfig symbol 'BTDM_CTRL_MODE_BTDM' assigned to*
 warning: unknown kconfig symbol 'BTDM_SCAN_DUPL_TYPE_DATA_DEVICE' assigned to*
 warning: unknown kconfig symbol 'CTRL_BTDM_MODEM_SLEEP' assigned to*
-warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_240' assigned to 'y' in .*/components/vfs/test_apps/*
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_240' assigned to 'y' in .*/examples/bluetooth/esp_ble_mesh/wifi_coexist/
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in .*/examples/system/deep_sleep/*
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in .*/examples/system/light_sleep/*
@@ -35,29 +34,14 @@ warning: unknown kconfig symbol 'ESP32_REV_MIN_3' assigned to 'y' in .*/examples
 warning: unknown kconfig symbol 'ESP32_REV_MIN' assigned to '3' in .*/examples/system/ota/simple_ota_example/sdkconfig.ci.on_update_no_sb_rsa
 warning: unknown kconfig symbol 'ESP32H4_RTC_CLK_CAL_CYCLES' assigned to '576' in .*/examples/bluetooth/nimble/blecent/sdkconfig.defaults.esp32h4
 warning: unknown kconfig symbol 'ESP32H4_RTC_CLK_SRC_EXT_CRYS' assigned to 'y' in .*/examples/bluetooth/nimble/blecent/sdkconfig.defaults.esp32h4
-warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE_4MB' assigned to 'y' in .*/components/esp_partition/host_test/partition_api_test/sdkconfig.defaults
-warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE_4MB' assigned to 'y' in .*/components/spiffs/host_test/sdkconfig.defaults
-warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"4MB"' in .*/components/esp_partition/host_test/partition_api_test/sdkconfig.defaults
-warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"4MB"' in .*/components/spiffs/host_test/sdkconfig.defaults
-warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"8MB"' in .*/components/wear_levelling/host_test/sdkconfig.defaults
-warning: unknown kconfig symbol 'ESPTOOLPY_FLASHSIZE' assigned to '"8MB"' in .*/components/fatfs/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'ESPTOOLPY_MONITOR_BAUD_921600B' assigned to 'y' in .*/examples/bluetooth/esp_ble_mesh/vendor_models/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in .*/examples/bluetooth/esp_ble_mesh/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in .*/examples/wifi/iperf/*
 warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in .*/idf-app-test/apps/iperf/*
-warning: unknown kconfig symbol 'SPI_FLASH_USE_LEGACY_IMPL' assigned to '1' in .*/components/wear_levelling/host_test/sdkconfig.defaults
 warning: unknown kconfig symbol 'SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY' assigned to 'y' in .*/examples/bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/sdkconfig.ci.psram
 warning: unknown kconfig symbol 'SPIRAM_FETCH_INSTRUCTIONS' assigned to 'y' in .*/components/spi_flash/test_apps/mspi_test/sdkconfig.ci.psram
 warning: unknown kconfig symbol 'SPIRAM_IGNORE_NOTFOUND' assigned to 'y' in .*/examples/network/simple_sniffer/sdkconfig.ci.mem
-warning: unknown kconfig symbol 'SPIRAM_MALLOC_ALWAYSINTERNAL' assigned to '0' in .*/components/fatfs/test_apps/flash_wl/sdkconfig.ci.psram
-warning: unknown kconfig symbol 'SPIRAM_MALLOC_ALWAYSINTERNAL' assigned to '0' in .*/components/fatfs/test_apps/sdcard/sdkconfig.ci.psram
-warning: unknown kconfig symbol 'SPIRAM_MALLOC_ALWAYSINTERNAL' assigned to '0' in .*/components/spiffs/test_apps/sdkconfig.ci.psram
-warning: unknown kconfig symbol 'SPIRAM_MALLOC_ALWAYSINTERNAL' assigned to '0' in .*/components/vfs/test_apps/*
 warning: unknown kconfig symbol 'SPIRAM_RODATA' assigned to 'y' in .*/components/spi_flash/test_apps/mspi_test/sdkconfig.ci.psram
-warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/components/fatfs/test_apps/flash_wl/sdkconfig.ci.psram
-warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/components/fatfs/test_apps/sdcard/sdkconfig.ci.psram
-warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/components/spiffs/test_apps/sdkconfig.ci.psram
-warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/components/vfs/test_apps/*
 warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/examples/bluetooth/esp_ble_mesh/fast_provisioning/fast_prov_server/sdkconfig.ci.psram
 warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/examples/network/simple_sniffer/sdkconfig.ci.mem
 warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/examples/protocols/http2_request/sdkconfig.ci
