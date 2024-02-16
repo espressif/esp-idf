@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -554,10 +554,10 @@ typedef union {
          *  Stores the high 16 bits of MAC address.
          */
         uint32_t mac_1:16;
-        /** mac_ext : RO; bitpos: [31:16]; default: 0;
+        /** reserved_1_16 : RO; bitpos: [31:16]; default: 0;
          *  Stores the extended bits of MAC address.
          */
-        uint32_t mac_ext:16;
+        uint32_t reserved_1_16:16;
     };
     uint32_t val;
 } efuse_rd_mac_sys_1_reg_t;
@@ -567,14 +567,62 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_1 : RO; bitpos: [13:0]; default: 0;
-         *  Reserved.
+        /** wafer_version_minor : R; bitpos: [3:0]; default: 0;
+         *  Minor chip version
          */
-        uint32_t mac_reserved_1:14;
-        /** mac_reserved_0 : RO; bitpos: [31:14]; default: 0;
-         *  Reserved.
+        uint32_t wafer_version_minor:4;
+        /** wafer_version_major : R; bitpos: [5:4]; default: 0;
+         *  Major chip version
          */
-        uint32_t mac_reserved_0:18;
+        uint32_t wafer_version_major:2;
+        /** disable_wafer_version_major : R; bitpos: [6]; default: 0;
+         *  Disables check of wafer version major
+         */
+        uint32_t disable_wafer_version_major:1;
+        /** disable_blk_version_major : R; bitpos: [7]; default: 0;
+         *  Disables check of blk version major
+         */
+        uint32_t disable_blk_version_major:1;
+        /** blk_version_minor : R; bitpos: [10:8]; default: 0;
+         *  BLK_VERSION_MINOR of BLOCK2
+         */
+        uint32_t blk_version_minor:3;
+        /** blk_version_major : R; bitpos: [12:11]; default: 0;
+         *  BLK_VERSION_MAJOR of BLOCK2
+         */
+        uint32_t blk_version_major:2;
+        /** flash_cap : R; bitpos: [15:13]; default: 0;
+         *  Flash capacity
+         */
+        uint32_t flash_cap:3;
+        /** flash_temp : R; bitpos: [17:16]; default: 0;
+         *  Flash temperature
+         */
+        uint32_t flash_temp:2;
+        /** flash_vendor : R; bitpos: [20:18]; default: 0;
+         *  Flash vendor
+         */
+        uint32_t flash_vendor:3;
+        /** psram_cap : R; bitpos: [22:21]; default: 0;
+         *  PSRAM capacity
+         */
+        uint32_t psram_cap:2;
+        /** psram_temp : R; bitpos: [24:23]; default: 0;
+         *  PSRAM temperature
+         */
+        uint32_t psram_temp:2;
+        /** psram_vendor : R; bitpos: [26:25]; default: 0;
+         *  PSRAM vendor
+         */
+        uint32_t psram_vendor:2;
+        /** pkg_version : R; bitpos: [29:27]; default: 0;
+         *  Package version
+         */
+        uint32_t pkg_version:3;
+        /** reserved_1_94 : R; bitpos: [31:30]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_94:2;
     };
     uint32_t val;
 } efuse_rd_mac_sys_2_reg_t;
@@ -627,10 +675,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_0 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the zeroth 32 bits of the first part of system data.
+        /** optional_unique_id : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_0:32;
+        uint32_t optional_unique_id:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data0_reg_t;
@@ -640,10 +688,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_1 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the first 32 bits of the first part of system data.
+        /** optional_unique_id_1 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_1:32;
+        uint32_t optional_unique_id_1:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data1_reg_t;
@@ -653,10 +701,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_2 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the second 32 bits of the first part of system data.
+        /** optional_unique_id_2 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_2:32;
+        uint32_t optional_unique_id_2:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data2_reg_t;
@@ -666,10 +714,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_3 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the third 32 bits of the first part of system data.
+        /** optional_unique_id_3 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_3:32;
+        uint32_t optional_unique_id_3:32;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data3_reg_t;
@@ -809,10 +857,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** usr_data6 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the sixth 32 bits of BLOCK3 (user).
+        /** reserved_3_192 : R; bitpos: [7:0]; default: 0;
+         *  reserved
          */
-        uint32_t usr_data6:32;
+        uint32_t reserved_3_192:8;
+        /** custom_mac : R; bitpos: [31:8]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac:24;
     };
     uint32_t val;
 } efuse_rd_usr_data6_reg_t;
@@ -822,10 +874,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** usr_data7 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the seventh 32 bits of BLOCK3 (user).
+        /** custom_mac_1 : R; bitpos: [23:0]; default: 0;
+         *  Custom MAC
          */
-        uint32_t usr_data7:32;
+        uint32_t custom_mac_1:24;
+        /** reserved_3_248 : R; bitpos: [31:24]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_248:8;
     };
     uint32_t val;
 } efuse_rd_usr_data7_reg_t;

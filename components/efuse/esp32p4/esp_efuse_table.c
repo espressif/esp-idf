@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 78dff63df528392f0f37f4880b83c6db
+// md5_digest_table 2eb36a43d52e9922e08cf545d0e23381
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -75,16 +75,72 @@ static const esp_efuse_desc_t WR_DIS_MAC[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [WR_DIS.MAC_FACTORY] wr_dis of MAC,
 };
 
-static const esp_efuse_desc_t WR_DIS_MAC_EXT[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of MAC_EXT,
+static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MINOR,
 };
 
-static const esp_efuse_desc_t WR_DIS_BLOCK_SYS_DATA1[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [WR_DIS.SYS_DATA_PART1] wr_dis of BLOCK_SYS_DATA1,
+static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DISABLE_WAFER_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DISABLE_BLK_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_CAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_CAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_TEMP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_TEMP,
+};
+
+static const esp_efuse_desc_t WR_DIS_FLASH_VENDOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_VENDOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_CAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_CAP,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_TEMP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_TEMP,
+};
+
+static const esp_efuse_desc_t WR_DIS_PSRAM_VENDOR[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PSRAM_VENDOR,
+};
+
+static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PKG_VERSION,
+};
+
+static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART1[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK2,
+};
+
+static const esp_efuse_desc_t WR_DIS_OPTIONAL_UNIQUE_ID[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OPTIONAL_UNIQUE_ID,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_USR_DATA[] = {
     {EFUSE_BLK0, 22, 1}, 	 // [WR_DIS.USER_DATA] wr_dis of BLOCK_USR_DATA,
+};
+
+static const esp_efuse_desc_t WR_DIS_CUSTOM_MAC[] = {
+    {EFUSE_BLK0, 22, 1}, 	 // [WR_DIS.MAC_CUSTOM WR_DIS.USER_DATA_MAC_CUSTOM] wr_dis of CUSTOM_MAC,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_KEY0[] = {
@@ -195,12 +251,8 @@ static const esp_efuse_desc_t USB_PHY_SEL[] = {
     {EFUSE_BLK0, 57, 1}, 	 // [] TBD,
 };
 
-static const esp_efuse_desc_t KM_HUK_GEN_STATE_LOW[] = {
-    {EFUSE_BLK0, 58, 6}, 	 // [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid,
-};
-
-static const esp_efuse_desc_t KM_HUK_GEN_STATE_HIGH[] = {
-    {EFUSE_BLK0, 64, 3}, 	 // [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid,
+static const esp_efuse_desc_t KM_HUK_GEN_STATE[] = {
+    {EFUSE_BLK0, 58, 9}, 	 // [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid,
 };
 
 static const esp_efuse_desc_t KM_RND_SWITCH_CYCLE[] = {
@@ -400,13 +452,60 @@ static const esp_efuse_desc_t MAC[] = {
     {EFUSE_BLK1, 0, 8}, 	 // [MAC_FACTORY] MAC address,
 };
 
-static const esp_efuse_desc_t MAC_EXT[] = {
-    {EFUSE_BLK1, 48, 8}, 	 // [] Stores the extended bits of MAC address [0],
-    {EFUSE_BLK1, 56, 8}, 	 // [] Stores the extended bits of MAC address [1],
+static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 64, 4}, 	 // [] Minor chip version,
 };
 
-static const esp_efuse_desc_t BLOCK_SYS_DATA1[] = {
-    {EFUSE_BLK2, 0, 256}, 	 // [SYS_DATA_PART1] System data part 1,
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 68, 2}, 	 // [] Major chip version,
+};
+
+static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 70, 1}, 	 // [] Disables check of wafer version major,
+};
+
+static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 71, 1}, 	 // [] Disables check of blk version major,
+};
+
+static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 72, 3}, 	 // [] BLK_VERSION_MINOR of BLOCK2,
+};
+
+static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 75, 2}, 	 // [] BLK_VERSION_MAJOR of BLOCK2,
+};
+
+static const esp_efuse_desc_t FLASH_CAP[] = {
+    {EFUSE_BLK1, 77, 3}, 	 // [] Flash capacity,
+};
+
+static const esp_efuse_desc_t FLASH_TEMP[] = {
+    {EFUSE_BLK1, 80, 2}, 	 // [] Flash temperature,
+};
+
+static const esp_efuse_desc_t FLASH_VENDOR[] = {
+    {EFUSE_BLK1, 82, 3}, 	 // [] Flash vendor,
+};
+
+static const esp_efuse_desc_t PSRAM_CAP[] = {
+    {EFUSE_BLK1, 85, 2}, 	 // [] PSRAM capacity,
+};
+
+static const esp_efuse_desc_t PSRAM_TEMP[] = {
+    {EFUSE_BLK1, 87, 2}, 	 // [] PSRAM temperature,
+};
+
+static const esp_efuse_desc_t PSRAM_VENDOR[] = {
+    {EFUSE_BLK1, 89, 2}, 	 // [] PSRAM vendor,
+};
+
+static const esp_efuse_desc_t PKG_VERSION[] = {
+    {EFUSE_BLK1, 91, 3}, 	 // [] Package version,
+};
+
+static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
+    {EFUSE_BLK2, 0, 128}, 	 // [] Optional unique 128-bit ID,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -414,7 +513,7 @@ static const esp_efuse_desc_t USER_DATA[] = {
 };
 
 static const esp_efuse_desc_t USER_DATA_MAC_CUSTOM[] = {
-    {EFUSE_BLK3, 200, 48}, 	 // [MAC_CUSTOM CUSTOM_MAC] Custom MAC (TODO,
+    {EFUSE_BLK3, 200, 48}, 	 // [MAC_CUSTOM CUSTOM_MAC] Custom MAC,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -524,18 +623,88 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[] = {
-    &WR_DIS_MAC_EXT[0],    		// [] wr_dis of MAC_EXT
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[] = {
+    &WR_DIS_WAFER_VERSION_MINOR[0],    		// [] wr_dis of WAFER_VERSION_MINOR
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA1[] = {
-    &WR_DIS_BLOCK_SYS_DATA1[0],    		// [WR_DIS.SYS_DATA_PART1] wr_dis of BLOCK_SYS_DATA1
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[] = {
+    &WR_DIS_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of WAFER_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &WR_DIS_DISABLE_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of DISABLE_WAFER_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_BLK_VERSION_MAJOR[] = {
+    &WR_DIS_DISABLE_BLK_VERSION_MAJOR[0],    		// [] wr_dis of DISABLE_BLK_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[] = {
+    &WR_DIS_BLK_VERSION_MINOR[0],    		// [] wr_dis of BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MAJOR[] = {
+    &WR_DIS_BLK_VERSION_MAJOR[0],    		// [] wr_dis of BLK_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[] = {
+    &WR_DIS_FLASH_CAP[0],    		// [] wr_dis of FLASH_CAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[] = {
+    &WR_DIS_FLASH_TEMP[0],    		// [] wr_dis of FLASH_TEMP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[] = {
+    &WR_DIS_FLASH_VENDOR[0],    		// [] wr_dis of FLASH_VENDOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_CAP[] = {
+    &WR_DIS_PSRAM_CAP[0],    		// [] wr_dis of PSRAM_CAP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_TEMP[] = {
+    &WR_DIS_PSRAM_TEMP[0],    		// [] wr_dis of PSRAM_TEMP
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[] = {
+    &WR_DIS_PSRAM_VENDOR[0],    		// [] wr_dis of PSRAM_VENDOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
+    &WR_DIS_PKG_VERSION[0],    		// [] wr_dis of PKG_VERSION
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[] = {
+    &WR_DIS_SYS_DATA_PART1[0],    		// [] wr_dis of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[] = {
+    &WR_DIS_OPTIONAL_UNIQUE_ID[0],    		// [] wr_dis of OPTIONAL_UNIQUE_ID
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[] = {
     &WR_DIS_BLOCK_USR_DATA[0],    		// [WR_DIS.USER_DATA] wr_dis of BLOCK_USR_DATA
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[] = {
+    &WR_DIS_CUSTOM_MAC[0],    		// [WR_DIS.MAC_CUSTOM WR_DIS.USER_DATA_MAC_CUSTOM] wr_dis of CUSTOM_MAC
     NULL
 };
 
@@ -674,13 +843,8 @@ const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE_LOW[] = {
-    &KM_HUK_GEN_STATE_LOW[0],    		// [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE_HIGH[] = {
-    &KM_HUK_GEN_STATE_HIGH[0],    		// [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid
+const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE[] = {
+    &KM_HUK_GEN_STATE[0],    		// [] Set this bit to control validation of HUK generate mode. Odd of 1 is invalid; even of 1 is valid
     NULL
 };
 
@@ -929,14 +1093,73 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
-    &MAC_EXT[0],    		// [] Stores the extended bits of MAC address [0]
-    &MAC_EXT[1],    		// [] Stores the extended bits of MAC address [1]
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
+    &WAFER_VERSION_MINOR[0],    		// [] Minor chip version
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK_SYS_DATA1[] = {
-    &BLOCK_SYS_DATA1[0],    		// [SYS_DATA_PART1] System data part 1
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
+    &WAFER_VERSION_MAJOR[0],    		// [] Major chip version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &DISABLE_WAFER_VERSION_MAJOR[0],    		// [] Disables check of wafer version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
+    &DISABLE_BLK_VERSION_MAJOR[0],    		// [] Disables check of blk version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
+    &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
+    &BLK_VERSION_MAJOR[0],    		// [] BLK_VERSION_MAJOR of BLOCK2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[] = {
+    &FLASH_CAP[0],    		// [] Flash capacity
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[] = {
+    &FLASH_TEMP[0],    		// [] Flash temperature
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[] = {
+    &FLASH_VENDOR[0],    		// [] Flash vendor
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[] = {
+    &PSRAM_CAP[0],    		// [] PSRAM capacity
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_TEMP[] = {
+    &PSRAM_TEMP[0],    		// [] PSRAM temperature
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[] = {
+    &PSRAM_VENDOR[0],    		// [] PSRAM vendor
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
+    &PKG_VERSION[0],    		// [] Package version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
+    &OPTIONAL_UNIQUE_ID[0],    		// [] Optional unique 128-bit ID
     NULL
 };
 
@@ -946,7 +1169,7 @@ const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[] = {
-    &USER_DATA_MAC_CUSTOM[0],    		// [MAC_CUSTOM CUSTOM_MAC] Custom MAC (TODO
+    &USER_DATA_MAC_CUSTOM[0],    		// [MAC_CUSTOM CUSTOM_MAC] Custom MAC
     NULL
 };
 
