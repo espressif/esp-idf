@@ -549,6 +549,12 @@ Secure Boot Best Practices
     * Applications should be signed with only one key at a time, to minimize the exposure of unused private keys.
     * The bootloader can be signed with multiple keys from the factory.
 
+    .. note::
+
+        Note that enabling the config :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` only makes sure that the **app** does not revoke the unused digest slots.
+        But if you plan to enable secure boot during the fist boot up, the bootloader will intentionally revoke the unused digest slots while enabling secure boot, even if the above config is enabled because keeping the unused key slots un-revoked would a security hazard.
+        In case for any development workflow if you need to avoid this revocation, you should enable secure boot externally (:ref:`enable-secure-boot-v2-externally`) rather than enabling it during the boot up, so that the bootloader would not need to enable secure boot and thus you could avoid its revocation strategy.
+
     Conservative Approach:
     ~~~~~~~~~~~~~~~~~~~~~~
 

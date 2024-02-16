@@ -990,6 +990,14 @@ menu "Security features"
                 Revoking unused digest slots makes ensures that no trusted keys can be added later by an attacker.
                 If set, it means that you have a plan to use unused digests slots later.
 
+                Note that if you plan to enable secure boot during the first boot up, the bootloader will intentionally
+                revoke the unused digest slots while enabling secure boot, even if the above config is enabled because
+                keeping the unused key slots un-revoked would a security hazard.
+                In case for any development workflow if you need to avoid this revocation, you should enable
+                secure boot externally (host based mechanism) rather than enabling it during the boot up,
+                so that the bootloader would not need to enable secure boot and thus you could avoid its revocation
+                strategy.
+
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"
             depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
