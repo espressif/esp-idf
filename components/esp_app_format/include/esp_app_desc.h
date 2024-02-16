@@ -38,6 +38,7 @@ typedef struct {
 
 /** @cond */
 ESP_STATIC_ASSERT(sizeof(esp_app_desc_t) == 256, "esp_app_desc_t should be 256 bytes");
+ESP_STATIC_ASSERT(offsetof(esp_app_desc_t, secure_version) == 4, "secure_version field must be at 4 offset");
 /** @endcond */
 
 /**
