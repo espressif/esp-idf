@@ -15,6 +15,7 @@
 #include "esp_random.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_crc.h"
+#include "esp_efuse.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "hal/key_mgr_types.h"
@@ -112,6 +113,7 @@ typedef struct aes_deploy {
     const uint8_t *k1_encrypted;
     const esp_key_mgr_aes_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
+    bool huk_deployed;
 } aes_deploy_config_t;
 
 static void check_huk_risk_level(void)
@@ -232,7 +234,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         return ESP_ERR_NO_MEM;
     }
     // Set key purpose (XTS/ECDSA)
-    ESP_LOGI(TAG, "purpose = %d", config->key_purpose);
+    ESP_LOGD(TAG, "Key purpose = %d", config->key_purpose);
     key_mgr_hal_set_key_purpose(config->key_purpose);
 
     // Set key length for XTS-AES key
@@ -246,6 +248,10 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 
     if (config->key_config->use_pre_generated_sw_init_key) {
         key_mgr_hal_use_sw_init_key();
+    } else {
+        if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY, NULL)) {
+            return ESP_FAIL;
+        }
     }
 
     key_mgr_hal_start();
@@ -261,7 +267,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     key_mgr_hal_write_assist_info(config->key_config->k2_info, KEY_MGR_K2_INFO_SIZE);
     ESP_LOG_BUFFER_HEX_LEVEL("K2_INFO", config->key_config->k2_info, KEY_MGR_K2_INFO_SIZE, ESP_LOG_DEBUG);
     key_mgr_hal_write_public_info(config->k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE);
-    ESP_LOG_BUFFER_HEX_LEVEL("K1_ENCRYPTED", config->k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE, ESP_LOG_INFO);
+    ESP_LOG_BUFFER_HEX_LEVEL("K1_ENCRYPTED", config->k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE, ESP_LOG_DEBUG);
     key_mgr_hal_continue();
     // Step 3: Gain phase
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_GAIN);
@@ -288,6 +294,8 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         config->key_info->key_info[0].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     }
     heap_caps_free(key_recovery_info);
+    config->key_info->key_type = config->key_config->key_type;
+    config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
 
     return ESP_OK;
 }
@@ -319,6 +327,7 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Key deployment in AES mode failed");
     }
+    aes_deploy_config.huk_deployed = true;
 
     if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2;
@@ -392,7 +401,7 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
             return ESP_FAIL;
         }
         key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        ESP_LOG_BUFFER_HEX_LEVEL("RECOVERY_INFO", config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_INFO);
+        ESP_LOG_BUFFER_HEX_LEVEL("RECOVERY_INFO", config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
     }
 
     key_mgr_hal_continue();
@@ -467,6 +476,7 @@ typedef struct ecdh0_config {
     const esp_key_mgr_ecdh0_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
     uint8_t *ecdh0_key_info;
+    bool huk_deployed;
 } ecdh0_deploy_config_t;
 
 static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
@@ -474,7 +484,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     esp_err_t esp_ret = ESP_FAIL;
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
-    if (!key_mgr_hal_is_huk_valid()) {
+    if (!key_mgr_hal_is_huk_valid() || !config->huk_deployed) {
         // For purpose ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 this part shall be already executed
         huk_deploy_config_t huk_deploy_config;
         huk_deploy_config.use_pre_generated_huk_info = config->key_config->use_pre_generated_huk_info;
@@ -543,6 +553,8 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     }
 
     config->key_info->key_type = config->key_config->key_type;
+    config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
+
     heap_caps_free(key_recovery_info);
     return ESP_OK;
 }
@@ -578,6 +590,7 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to deploy key in ECDH0 mode");
     }
+    ecdh0_deploy_config.huk_deployed = true;
 
     if (key_config->key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2;
@@ -600,13 +613,14 @@ typedef struct random_deploy {
     esp_key_mgr_key_purpose_t key_purpose;
     const esp_key_mgr_random_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
+    bool huk_deployed;
 } random_deploy_config_t;
 
 static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
 {
     esp_err_t esp_ret = ESP_FAIL;
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
-    if (!key_mgr_hal_is_huk_valid()) {
+    if (!key_mgr_hal_is_huk_valid() || !config->huk_deployed) {
         // For purpose ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 this part shall be already executed
         huk_deploy_config_t huk_deploy_config;
         huk_deploy_config.use_pre_generated_huk_info = config->key_config->use_pre_generated_huk_info;
@@ -668,6 +682,9 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
         config->key_info->key_info[0].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     }
     heap_caps_free(key_recovery_info);
+    config->key_info->key_type = config->key_config->key_type;
+    config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
+
     return ESP_OK;
 }
 
@@ -698,6 +715,7 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
         ESP_LOGE(TAG, "Key deployment in Random mode failed");
         return ESP_FAIL;
     }
+    random_deploy_config.huk_deployed = true;
 
     if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2;
