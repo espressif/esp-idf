@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -286,7 +286,9 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep2active_backup_en      = 0, \
         .hp_modem2active_backup_en      = 0, \
     }, \
-    .backup_clk = (BIT(PMU_ICG_FUNC_ENA_REGDMA) \
+    .backup_clk = (                             \
+        BIT(PMU_ICG_FUNC_ENA_GDMA)              \
+        | BIT(PMU_ICG_FUNC_ENA_REGDMA)          \
         | BIT(PMU_ICG_FUNC_ENA_TG0)             \
         | BIT(PMU_ICG_FUNC_ENA_HPBUS)           \
         | BIT(PMU_ICG_FUNC_ENA_MSPI)            \
@@ -333,14 +335,16 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_modem2sleep_backup_en       = 0, \
         .hp_active2sleep_backup_en      = 0, \
     }, \
-    .backup_clk = (BIT(PMU_ICG_FUNC_ENA_REGDMA) \
+    .backup_clk = (                             \
+        BIT(PMU_ICG_FUNC_ENA_GDMA)              \
+        | BIT(PMU_ICG_FUNC_ENA_REGDMA)          \
         | BIT(PMU_ICG_FUNC_ENA_TG0)             \
         | BIT(PMU_ICG_FUNC_ENA_HPBUS)           \
         | BIT(PMU_ICG_FUNC_ENA_MSPI)            \
         | BIT(PMU_ICG_FUNC_ENA_IOMUX)           \
         | BIT(PMU_ICG_FUNC_ENA_SPI2)            \
-        | BIT(PMU_ICG_FUNC_ENA_SEC)            \
-        | BIT(PMU_ICG_FUNC_ENA_PWM)            \
+        | BIT(PMU_ICG_FUNC_ENA_SEC)             \
+        | BIT(PMU_ICG_FUNC_ENA_PWM)             \
         | BIT(PMU_ICG_FUNC_ENA_SYSTIMER)        \
         | BIT(PMU_ICG_FUNC_ENA_UART0)),         \
 }
