@@ -623,7 +623,7 @@ if BLE_MESH
             number of each node should also be taken into consideration. For example, if
             Provisioner can provision up to 20 nodes and each node contains two elements,
             then the replay protection list size of Provisioner should be at least 40.
-    
+
     config BLE_MESH_NOT_RELAY_REPLAY_MSG
         bool "Not relay replayed messages in a mesh network"
         depends on BLE_MESH_EXPERIMENTAL
@@ -1625,7 +1625,7 @@ if BLE_MESH
     config BLE_MESH_EXPERIMENTAL
         bool "Make BLE Mesh experimental features visible"
         default n
-        help 
+        help
             Make BLE Mesh Experimental features visible.
             Experimental features list:
             - CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
