@@ -1086,6 +1086,7 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_READ_RSSI_DELTA_EVT:
     case BTC_GAP_BT_CONFIG_EIR_DATA_EVT:
     case BTC_GAP_BT_AUTH_CMPL_EVT:
+    case BTC_GAP_BT_ENC_CHG_EVT:
     case BTC_GAP_BT_PIN_REQ_EVT:
     case BTC_GAP_BT_SET_AFH_CHANNELS_EVT:
     case BTC_GAP_BT_READ_REMOTE_NAME_EVT:
@@ -1132,6 +1133,10 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BT_AUTH_CMPL_EVT:{
         btc_gap_bt_cb_to_app(ESP_BT_GAP_AUTH_CMPL_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_ENC_CHG_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_ENC_CHG_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
     case BTC_GAP_BT_PIN_REQ_EVT:{
