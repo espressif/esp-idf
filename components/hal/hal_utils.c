@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,6 +132,17 @@ uint32_t hal_utils_calc_clk_div_integer(const hal_utils_clk_info_t *clk_info, ui
     if ((freq_error && clk_info->round_opt == HAL_DIV_ROUND_UP) || (clk_info->round_opt == HAL_DIV_ROUND &&
         (freq_error >= clk_info->src_freq_hz / (2 * div_integ * (div_integ + 1))))) {
         div_integ++;
+    }
+    /* Check the integral division whether in range [min_integ, max_integ)  */
+    /* If the result is less than the minimum, set the division to the minimum but return 0 */
+    if (div_integ < clk_info->min_integ) {
+        *int_div = clk_info->min_integ;
+        return 0;
+    }
+    /* if the result is greater or equal to the maximum , set the division to the maximum but return 0 */
+    if (div_integ >= clk_info->max_integ) {
+        *int_div = clk_info->max_integ - 1;
+        return 0;
     }
 
     // Assign result
