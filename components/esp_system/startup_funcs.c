@@ -259,41 +259,6 @@ ESP_SYSTEM_INIT_FN(init_coexist, SECONDARY, BIT(0), 204)
 }
 #endif // CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 
-#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
-/**
- * This function overwrites a the same function of libsupc++ (part of libstdc++).
- * Consequently, libsupc++ will then follow our configured exception emergency pool size.
- *
- * It will be called even with -fno-exception for user code since the stdlib still uses exceptions.
- */
-size_t __cxx_eh_arena_size_get(void)
-{
-#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
-    return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
-#else
-    return 0;
-#endif
-}
-
-// workaround for C++ exception crashes
-void _Unwind_SetNoFunctionContextInstall(unsigned char enable) __attribute__((weak, alias("_Unwind_SetNoFunctionContextInstall_Default")));
-// workaround for C++ exception large memory allocation
-void _Unwind_SetEnableExceptionFdeSorting(unsigned char enable);
-
-static IRAM_ATTR void _Unwind_SetNoFunctionContextInstall_Default(unsigned char enable __attribute__((unused)))
-{
-    (void)0;
-}
-
-ESP_SYSTEM_INIT_FN(init_cxx_exceptions, SECONDARY, BIT(0), 205)
-{
-    ESP_EARLY_LOGD(TAG, "Setting C++ exception workarounds.");
-    _Unwind_SetNoFunctionContextInstall(1);
-    _Unwind_SetEnableExceptionFdeSorting(0);
-    return ESP_OK;
-}
-#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
-
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
 ESP_SYSTEM_INIT_FN(init_disable_rtc_wdt, SECONDARY, BIT(0), 999)
 {

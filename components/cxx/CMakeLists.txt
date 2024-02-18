@@ -6,8 +6,9 @@ endif()
 
 idf_component_register(SRCS "cxx_exception_stubs.cpp"
                             "cxx_guards.cpp"
+                            "cxx_init.cpp"
                         # Make sure that pthread is in component list
-                        PRIV_REQUIRES pthread)
+                        PRIV_REQUIRES pthread esp_system)
 
 if(NOT CONFIG_CXX_EXCEPTIONS)
     set(WRAP_FUNCTIONS
@@ -54,6 +55,7 @@ else()
     target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ gcc)
 endif()
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxa_guard_dummy")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxx_init_dummy")
 
 # Force libpthread to appear later than libstdc++ in link line since libstdc++ depends on libpthread.
 # Furthermore, force libcxx to appear later than libgcc because some libgcc unwind code is wrapped, if C++
