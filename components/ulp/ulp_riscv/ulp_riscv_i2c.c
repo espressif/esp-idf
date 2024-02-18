@@ -72,7 +72,7 @@ static esp_err_t i2c_configure_io(gpio_num_t io_num, bool pullup_en)
     /* Initialize IO Pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(io_num), RTCI2C_TAG, "RTC GPIO Init failed for GPIO %d", io_num);
     /* Set direction to input+output */
-    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_OUTPUT), RTCI2C_TAG, "RTC GPIO Set direction failed for %d", io_num);
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_OUTPUT_OD), RTCI2C_TAG, "RTC GPIO Set direction failed for %d", io_num);
     /* Disable pulldown on the io pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(io_num), RTCI2C_TAG, "RTC GPIO pulldown disable failed for %d", io_num);
     /* Enable pullup based on pullup_en flag */
@@ -478,6 +478,15 @@ esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
 
     /* Configure RTC I2C GPIOs */
     ESP_RETURN_ON_ERROR(i2c_set_pin(cfg), RTCI2C_TAG, "Failed to configure RTC I2C GPIOs");
+
+    /* Enable internal open-drain mode for SDA and SCL lines */
+#if CONFIG_IDF_TARGET_ESP32S2
+    i2c_dev->ctrl.sda_force_out = 0;
+    i2c_dev->ctrl.scl_force_out = 0;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    i2c_dev->i2c_ctrl.i2c_sda_force_out = 0;
+    i2c_dev->i2c_ctrl.i2c_scl_force_out = 0;
+#endif // CONFIG_IDF_TARGET_ESP32S2
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the RTC I2C controller in master mode */
