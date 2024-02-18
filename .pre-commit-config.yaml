@@ -41,11 +41,12 @@ repos:
     hooks:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0  # python 3.8 compatible
+  - repo: https://github.com/asottile/reorder-python-imports
+    rev: v3.12.0
     hooks:
-      - id: isort
-        name: isort (python)
+      - id: reorder-python-imports
+        name: Reorder Python imports
+        args: [--py38-plus]
         exclude: >
           (?x)^(
               .*_pb2.py
