@@ -105,8 +105,7 @@ examples/peripherals/lcd/i2c_oled:
     - if: SOC_I2C_SUPPORTED != 1
   depends_components:
     - esp_lcd
-  depends_filepatterns:
-    - components/driver/i2c/**/*
+    - esp_driver_i2c
 
 examples/peripherals/lcd/i80_controller:
   disable:
