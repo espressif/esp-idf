@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,10 @@
 #include "esp_private/periph_ctrl.h"
 #include "gdma_priv.h"
 #include "hal/cache_hal.h"
+
+#if CONFIG_PM_ENABLE && SOC_PAU_SUPPORTED
+#include "esp_private/gdma_sleep_retention.h"
+#endif
 
 static const char *TAG = "gdma";
 
@@ -606,6 +610,9 @@ static void gdma_release_pair_handle(gdma_pair_t *pair)
 
     if (do_deinitialize) {
         free(pair);
+#if CONFIG_PM_ENABLE && SOC_PAU_SUPPORTED
+        gdma_sleep_retention_deinit(group->group_id, pair_id);
+#endif
         ESP_LOGD(TAG, "del pair (%d,%d)", group->group_id, pair_id);
         gdma_release_group_handle(group);
     }
@@ -638,6 +645,10 @@ static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
         portENTER_CRITICAL(&s_platform.spinlock);
         s_platform.group_ref_counts[group->group_id]++; // pair obtains a reference to group
         portEXIT_CRITICAL(&s_platform.spinlock);
+
+#if CONFIG_PM_ENABLE && SOC_PAU_SUPPORTED
+        gdma_sleep_retention_init(group->group_id, pair->pair_id);
+#endif
         ESP_LOGD(TAG, "new pair (%d,%d) at %p", group->group_id, pair->pair_id, pair);
     } else {
         free(pre_alloc_pair);
