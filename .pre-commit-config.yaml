@@ -70,7 +70,7 @@ repos:
         entry: tools/ci/check_kconfigs.py
         language: python
         additional_dependencies:
-          - esp-idf-kconfig
+          - esp-idf-kconfig>=1.4.2,<2.0.0
         files: '^Kconfig$|Kconfig.*$'
       - id: check-deprecated-kconfigs-options
         name: Check if any Kconfig Options Deprecated
