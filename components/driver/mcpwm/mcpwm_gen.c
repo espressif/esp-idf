@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -118,6 +118,8 @@ esp_err_t mcpwm_del_generator(mcpwm_gen_handle_t gen)
     mcpwm_group_t *group = oper->group;
 
     ESP_LOGD(TAG, "del generator (%d,%d,%d)", group->group_id, oper->oper_id, gen->gen_id);
+    // reset GPIO
+    gpio_reset_pin(gen->gen_gpio_num);
     // recycle memory resource
     ESP_RETURN_ON_ERROR(mcpwm_generator_destroy(gen), TAG, "destroy generator failed");
     return ESP_OK;
