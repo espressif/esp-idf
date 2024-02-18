@@ -39,8 +39,8 @@ entries:
             tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
     # Task Snapshot
     if FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH = y:
-        tasks:pxGetNextTaskList (default)
-        tasks:pxTaskGetNext (default)
+        tasks:pxGetTaskListByIndex (default)
+        tasks:xTaskGetNext (default)
         tasks:uxTaskGetSnapshotAll (default)
 
     # ------------------------------------------------------------------------------------------------------------------

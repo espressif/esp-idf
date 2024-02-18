@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,18 +37,33 @@ typedef struct xTASK_SNAPSHOT
 } TaskSnapshot_t;
 
 /**
- * @brief Iterate over all tasks in the system
+ * @brief Task Snapshot iterator
  *
- * - This function can be used to iterate over every task in the system
- * - The first call to this function must set pxTask to NULL
- * - When all functions have been iterated, this function will return NULL.
- *
- * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
- *       does not acquire any locks.
- * @param pxTask Handle of the previous task (or NULL on the first call of this function)
- * @return TaskHandle_t Handle of the next task (or NULL when all tasks have been iterated over)
+ * Used in xTaskGetNext(). Must be zero/null initialized on the first call.
  */
-TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask );
+typedef struct TaskIterator
+{
+    UBaseType_t uxCurrentListIndex; /**< Current task list index being traversed. */
+    ListItem_t * pxNextListItem;    /**< Next task list item will being traversed. */
+    TaskHandle_t pxTaskHandle;      /**< Current task handle being traversed. */
+} TaskIterator_t;
+
+/**
+ * @brief Get the next task using the task iterator.
+ *
+ * This function retrieves the next task in the traversal sequence.
+ *
+ * @param xIterator Pointer to the task iterator structure.
+ *
+ * @return Index of the current task list. Returns -1 if all tasks have been traversed.
+ *
+ * @note The task iterator keeps track of the current state during task traversal,
+ *       including the index of the current task list and the pointer of the next task list item.
+ *       When all tasks have been traversed, this function returns -1.
+ *       If a broken or corrupted task is encountered, the task handle is set to NULL.
+ *
+ */
+int xTaskGetNext( TaskIterator_t * xIterator );
 
 /**
  * @brief Fill a TaskSnapshot_t structure for specified task.

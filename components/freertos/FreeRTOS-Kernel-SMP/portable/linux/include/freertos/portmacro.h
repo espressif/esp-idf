@@ -291,6 +291,7 @@ void vPortExitCriticalIDF(void);
 
 // ----------------------- System --------------------------
 
+bool portVALID_LIST_MEM(const void *ptr);
 bool portVALID_TCB_MEM(const void *ptr);
 bool portVALID_STACK_MEM(const void *ptr);
 

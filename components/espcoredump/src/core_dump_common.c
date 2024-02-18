@@ -194,11 +194,6 @@ inline void esp_core_dump_reset_tasks_snapshots_iter(void)
     esp_core_dump_reset_fake_stacks();
 }
 
-inline void *esp_core_dump_get_next_task(void *handle)
-{
-    return pxTaskGetNext(handle);
-}
-
 bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task,
                                      core_dump_mem_seg_header_t *interrupted_stack)
 {
@@ -317,11 +312,6 @@ inline bool esp_core_dump_in_isr_context(void)
 #else // CONFIG_ESP_TASK_WDT_EN
     return xPortInterruptedFromISRContext();
 #endif // CONFIG_ESP_TASK_WDT_EN
-}
-
-inline core_dump_task_handle_t esp_core_dump_get_current_task_handle()
-{
-    return (core_dump_task_handle_t) xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID());
 }
 
 #endif

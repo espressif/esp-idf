@@ -76,6 +76,15 @@ size_t xPortGetMinimumEverFreeHeapSize( void )
 }
 /*-----------------------------------------------------------*/
 
+bool xPortCheckValidListMem( const void * ptr )
+{
+    #if CONFIG_IDF_TARGET_LINUX
+        return true;
+    #else /* CONFIG_IDF_TARGET_LINUX */
+        return esp_ptr_internal( ptr ) && esp_ptr_byte_accessible( ptr );
+    #endif /* CONFIG_IDF_TARGET_LINUX */
+}
+
 bool xPortCheckValidTCBMem( const void * ptr )
 {
     #if CONFIG_IDF_TARGET_LINUX
