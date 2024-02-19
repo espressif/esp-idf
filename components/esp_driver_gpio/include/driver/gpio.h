@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -367,8 +367,9 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
   *
   * When a GPIO is set to hold, its state is latched at that moment and will not change when the internal
   * signal or the IO MUX/GPIO configuration is modified (including input enable, output enable, output value,
-  * function, and drive strength values). This function can be used to retain the state of GPIOs when the chip
-  * or system is reset, for example, when watchdog time-out or Deep-sleep events are triggered.
+  * function, and drive strength values). This function can be used to retain the state of GPIOs when the power
+  * domain of where GPIO/IOMUX belongs to becomes off. For example, chip or system is reset (e.g. watchdog
+  * time-out, deep-sleep events are triggered), or peripheral power-down in light-sleep.
   *
   * This function works in both input and output modes, and only applicable to output-capable GPIOs.
   * If this function is enabled:
@@ -392,9 +393,9 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
 /**
   * @brief Disable gpio pad hold function.
   *
-  * When the chip is woken up from Deep-sleep, the gpio will be set to the default mode, so, the gpio will output
-  * the default level if this function is called. If you don't want the level changes, the gpio should be configured to
-  * a known state before this function is called.
+  * When the chip is woken up from peripheral power-down sleep, the gpio will be set to the default mode,
+  * so, the gpio will output the default level if this function is called. If you don't want the level changes, the
+  * gpio should be configured to a known state before this function is called.
   *  e.g.
   *     If you hold gpio18 high during Deep-sleep, after the chip is woken up and `gpio_hold_dis` is called,
   *     gpio18 will output low level(because gpio18 is input mode by default). If you don't want this behavior,

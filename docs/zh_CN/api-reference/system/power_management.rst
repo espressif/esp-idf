@@ -169,6 +169,9 @@ Light-sleep 外设下电
 
     对于未支持 Light-sleep 上下文备份的外设，若启用了电源管理功能，应在外设工作时持有 ``ESP_PM_NO_LIGHT_SLEEP`` 锁以避免进入休眠导致外设工作上下文丢失。
 
+    .. note::
+
+        当外设电源域在睡眠期间断电时，IO_MUX 和 GPIO 模块都处于下电状态，这意味着芯片引脚的状态不会受这些模块控制。要在休眠期间保持 IO 的状态，需要在配置 GPIO 状态前后调用 :cpp:func:`gpio_hold_dis` 和 :cpp:func:`gpio_hold_en`。此操作可确保 IO 配置被锁存，防止 IO 在睡眠期间浮空。
 
 API 参考
 -------------
