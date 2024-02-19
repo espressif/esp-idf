@@ -356,7 +356,7 @@ config BTDM_SCAN_DUPL_CACHE_SIZE
     default 100
     help
         Maximum number of devices which can be recorded in scan duplicate filter.
-        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+        When the maximum amount of device in the filter is reached, the oldest device will be refreshed.
 
 config BTDM_SCAN_DUPL_CACHE_REFRESH_PERIOD
     int "Duplicate scan list refresh period (seconds)"

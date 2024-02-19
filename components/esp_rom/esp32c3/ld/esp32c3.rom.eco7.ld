@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,7 +107,6 @@ r_lld_con_terminate_max_evt_update = 0x40001c5c;
 r_llc_pref_param_compute_eco = 0x40001ce8;
 r_llc_hci_con_upd_info_send_eco = 0x40001cec;
 r_llc_rem_encrypt_proc_continue_eco = 0x40001cf0;
-r_llc_llcp_send_eco = 0x40001cf4;
 r_llc_start_eco = 0x40001cf8;
 r_lld_ext_adv_dynamic_aux_pti_process_eco = 0x40001cfc;
 r_lld_adv_start_eco = 0x40001d04;
@@ -134,7 +133,6 @@ r_llc_hci_command_handler_search = 0x40001d58;
 r_llc_llcp_pdu_handler_get_overwrite = 0x40001d5c;
 r_llc_llcp_pdu_handler_pre = 0x40001d60;
 r_llc_llcp_pdu_handler_end = 0x40001d64;
-r_llc_llcp_channel_map_ind_ack = 0x40001d68;
 r_llc_con_conflict_check = 0x40001d6c;
 r_sch_prog_hw_reset_try = 0x40001d70;
 r_sch_prog_et_state_reset = 0x40001d74;
@@ -199,7 +197,6 @@ r_lld_scan_process_pkt_rx_adv_rep = 0x40001284;
 r_register_esp_vendor_cmd_handler = 0x40001400;
 r_rf_txpwr_cs_get = 0x40001428;
 r_rf_txpwr_dbm_get = 0x4000142c;
-r_rwble_isr = 0x40001464;
 r_sch_arb_event_start_isr = 0x400014f8;
 r_sch_plan_set = 0x40001534;
 r_sch_prog_end_isr = 0x40001538;
@@ -207,7 +204,6 @@ r_lld_adv_ext_chain_scannable_construct = 0x40001b58;
 
 r_lld_scan_process_pkt_rx = 0x40001280;
 r_llm_le_features_get = 0x400013b0;
-r_lld_adv_ext_chain_none_construct = 0x40001b50;
 
 /* ble functions rename */
 r_lld_init_start_hack = 0x400011a4;
@@ -220,6 +216,10 @@ r_lld_res_list_rem = 0x40004680;
 r_lld_adv_start_hook = 0x40001c80;
 r_lld_con_evt_start_cbk_eco = 0x40001d1c;
 r_lld_con_tx_prog_new_packet = 0x40001b74;
+r_lld_adv_ext_chain_none_construct = 0x40001b50;
+r_llc_llcp_send_eco = 0x40001cf4;
+r_llc_llcp_channel_map_ind_ack = 0x40001d68;
+r_rwble_isr = 0x40001464;
 */
 
 

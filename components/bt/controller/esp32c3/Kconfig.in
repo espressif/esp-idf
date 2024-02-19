@@ -467,3 +467,11 @@ config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
         Disable active scan backoff. The bluetooth spec requires that scanners should run a backoff procedure to
         minimize collision of scan request PDUs from nultiple scanners. If scan backoff is disabled, in active
         scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.
+
+config BT_BLE_ADV_DATA_LENGTH_ZERO_AUX
+    bool "Enable aux packet when ext adv data length is zero"
+    default n
+    help
+        When this option is enabled, auxiliary packets will be present in the events of
+        'Non-Connectable and Non-Scannable' regardless of whether the advertising length is 0.
+        If this option is not enabled, auxiliary packets will only be present when the advertising length is not 0.

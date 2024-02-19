@@ -22,6 +22,11 @@ esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
     return (btc_profile_cb_set(BTC_PID_GAP_BLE, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
+esp_gap_ble_cb_t esp_ble_gap_get_callback(void)
+{
+    return (esp_gap_ble_cb_t) btc_profile_cb_get(BTC_PID_GAP_BLE);
+}
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gap_config_adv_data(esp_ble_adv_data_t *adv_data)
 {

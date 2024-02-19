@@ -296,6 +296,16 @@ typedef void (* esp_gatts_cb_t)(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback);
 
 /**
+ * @brief           This function is called to get the current application callbacks
+ *                  with BTA GATTS module.
+ *
+ * @return
+ *                  - esp_gatts_cb_t : current callback
+ *
+ */
+esp_gatts_cb_t esp_ble_gatts_get_callback(void);
+
+/**
  * @brief           This function is called to register application identifier
  *
  * @return
