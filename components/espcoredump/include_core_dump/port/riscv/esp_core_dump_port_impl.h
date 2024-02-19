@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,13 +35,12 @@ typedef struct {
  */
 FORCE_INLINE_ATTR void esp_core_dump_replace_sp(void* new_sp, core_dump_stack_context_t* old_ctx)
 {
-    asm volatile ("mv %0, sp \n\t\
+    asm volatile("mv %0, sp \n\t\
                    mv sp, %1 \n\t\
                   "
-                   : "=&r"(old_ctx->sp)
-                   : "r"(new_sp));
+                 : "=&r"(old_ctx->sp)
+                 : "r"(new_sp));
 }
-
 
 /**
  * @brief Restore the stack pointer that was returned when calling `esp_core_dump_replace_sp()` function.
@@ -50,7 +49,7 @@ FORCE_INLINE_ATTR void esp_core_dump_replace_sp(void* new_sp, core_dump_stack_co
  */
 FORCE_INLINE_ATTR void esp_core_dump_restore_sp(core_dump_stack_context_t* old_ctx)
 {
-    asm volatile ("mv sp, %0 \n\t" :: "r"(old_ctx->sp));
+    asm volatile("mv sp, %0 \n\t" :: "r"(old_ctx->sp));
 }
 
 #ifdef __cplusplus

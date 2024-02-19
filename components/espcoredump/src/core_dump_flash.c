@@ -19,8 +19,7 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
-typedef struct _core_dump_partition_t
-{
+typedef struct _core_dump_partition_t {
     /* Core dump partition start. */
     uint32_t start;
     /* Core dump partition size. */
@@ -35,8 +34,7 @@ typedef struct _core_dump_partition_t
 
 typedef uint32_t core_dump_crc_t;
 
-typedef struct _core_dump_flash_config_t
-{
+typedef struct _core_dump_flash_config_t {
     /* Core dump partition config. */
     core_dump_partition_t partition;
     /* CRC of core dump partition config. */
@@ -119,10 +117,11 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, ui
         /* Some bytes are in the cache, let's continue filling the cache
          * with the data received as parameter. Let's calculate the maximum
          * amount of bytes we can still fill the cache with. */
-        if ((COREDUMP_CACHE_SIZE - wr_data->cached_bytes) > data_size)
+        if ((COREDUMP_CACHE_SIZE - wr_data->cached_bytes) > data_size) {
             wr_sz = data_size;
-        else
+        } else {
             wr_sz = COREDUMP_CACHE_SIZE - wr_data->cached_bytes;
+        }
 
         /* Append wr_sz bytes from data parameter to the cache. */
         memcpy(&wr_data->cached_data[wr_data->cached_bytes], data, wr_sz);
@@ -366,7 +365,7 @@ void esp_core_dump_init(void)
     uint32_t size = 0;
 
     if (esp_core_dump_image_check() == ESP_OK
-        && esp_core_dump_partition_and_size_get(&partition, &size) == ESP_OK) {
+            && esp_core_dump_partition_and_size_get(&partition, &size) == ESP_OK) {
         ESP_COREDUMP_LOGI("Found core dump %d bytes in flash @ 0x%x", size, partition->address);
     }
 #endif

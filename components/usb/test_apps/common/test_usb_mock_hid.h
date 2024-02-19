@@ -22,7 +22,6 @@ extern "C" {
 
 // ---------------------------------------------------- HID Mouse ------------------------------------------------------
 
-
 /*
 Note: The mock HID mouse tests require that USB low speed mouse be connected. The mouse should...
 
