@@ -62,6 +62,9 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
         list(APPEND srcs "dma/gdma.c")
+        if(CONFIG_SOC_PAU_SUPPORTED)
+            list(APPEND srcs "dma/gdma_sleep_retention.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)

@@ -286,6 +286,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_modem2active_backup_en      = 0, \
     }, \
     .backup_clk = (                       \
+        BIT(PMU_ICG_FUNC_ENA_GDMA)      | \
         BIT(PMU_ICG_FUNC_ENA_REGDMA)    | \
         BIT(PMU_ICG_FUNC_ENA_TG0)       | \
         BIT(PMU_ICG_FUNC_ENA_TG1)       | \
@@ -335,6 +336,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_active2sleep_backup_en      = 0, \
     }, \
     .backup_clk = (                       \
+        BIT(PMU_ICG_FUNC_ENA_GDMA)      | \
         BIT(PMU_ICG_FUNC_ENA_REGDMA)    | \
         BIT(PMU_ICG_FUNC_ENA_TG0)       | \
         BIT(PMU_ICG_FUNC_ENA_TG1)       | \
