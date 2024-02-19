@@ -463,6 +463,15 @@ pytest_examples_esp32_ethernet_vlan:
       artifacts: false
   tags: [ esp32, ethernet_vlan ]
 
+pytest_examples_esp32_ethernet_ip101:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - job: build_pytest_examples_esp32
+      artifacts: false
+  tags: [ esp32, eth_ip101 ]
+
 pytest_examples_esp32_ethernet_bridge:
   extends:
     - .pytest_examples_dir_template
@@ -714,6 +723,15 @@ pytest_components_esp32_sdio:
     - job: build_pytest_components_esp32
       artifacts: false
   tags: [ esp32, sdio_master_slave ]
+
+pytest_components_esp32_ip101:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - job: build_pytest_components_esp32
+      artifacts: false
+  tags: [ esp32, eth_ip101 ]
 
 pytest_components_esp32_lan8720:
   extends:
