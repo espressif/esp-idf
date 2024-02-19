@@ -63,7 +63,7 @@ extern "C" {
 typedef int ble_hci_trans_rx_cmd_fn(uint8_t *cmd, void *arg);
 typedef int ble_hci_trans_rx_acl_fn(struct os_mbuf *om, void *arg);
 
-#if SOC_ESP_NIMBLE_CONTROLLER
+#if SOC_ESP_NIMBLE_CONTROLLER && CONFIG_BT_CONTROLLER_ENABLED
 #define ble_transport_alloc_cmd() ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_CMD)
 #define ble_transport_alloc_event(X) ble_hci_trans_buf_alloc(X ? BLE_HCI_TRANS_BUF_EVT_LO : BLE_HCI_TRANS_BUF_EVT_HI)
 #define ble_transport_free ble_hci_trans_buf_free

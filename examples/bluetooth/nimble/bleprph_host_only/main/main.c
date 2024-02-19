@@ -1,20 +1,7 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_log.h"
@@ -27,6 +14,7 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "bleprph.h"
+#include "uart_driver.h"
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
@@ -393,16 +381,6 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         }
         return 0;
 
-    case BLE_GAP_EVENT_AUTHORIZE:
-        MODLOG_DFLT(INFO, "authorize event: conn_handle=%d attr_handle=%d is_read=%d",
-                    event->authorize.conn_handle,
-                    event->authorize.attr_handle,
-                    event->authorize.is_read);
-
-        /* The default behaviour for the event is to reject authorize request */
-        event->authorize.out_response = BLE_GAP_AUTHORIZE_REJECT;
-        return 0;
-
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
     case BLE_GAP_EVENT_TRANSMIT_POWER:
         MODLOG_DFLT(INFO, "Transmit power event : status=%d conn_handle=%d reason=%d "
@@ -515,6 +493,7 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+    hci_uart_open();
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(tag, "Failed to init nimble %d ", ret);
