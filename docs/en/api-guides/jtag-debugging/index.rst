@@ -132,7 +132,7 @@ The output should be as follows (although the version may be more recent than li
 
 You may also verify that OpenOCD knows where its configuration scripts are located by printing the value of ``OPENOCD_SCRIPTS`` environment variable, by typing ``echo $OPENOCD_SCRIPTS`` (for Linux and macOS) or ``echo %OPENOCD_SCRIPTS%`` (for Windows). If a valid path is printed, then OpenOCD is set up correctly.
 
-If any of these steps do not work, please go back to the :ref:`setting up the tools <get-started-set-up-tools>` section of the Getting Started Guide.
+If any of these steps do not work, please go back to the :ref:`setting up the tools <get-started-set-up-tools>` section (for Linux and macOS) or :ref:`ESP-IDF Tools Installer <get-started-windows-tools-installer>` (for Windows) section of the Getting Started Guide.
 
 .. note::
 
