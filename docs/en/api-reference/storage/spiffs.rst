@@ -16,7 +16,7 @@ Notes
  - For now, it does not detect or handle bad blocks.
  - SPIFFS is able to reliably utilize only around 75% of assigned partition space.
  - When the filesystem is running out of space, the garbage collector is trying to find free space by scanning the filesystem multiple times, which can take up to several seconds per write function call, depending on required space. This is caused by the SPIFFS design and the issue has been reported multiple times (e.g., `here <https://github.com/espressif/esp-idf/issues/1737>`_) and in the official `SPIFFS github repository <https://github.com/pellepl/spiffs/issues/>`_. The issue can be partially mitigated by the `SPIFFS configuration <https://github.com/pellepl/spiffs/wiki/Configure-spiffs>`_.
- - Deleting a file does not always remove the whole file, which leaves unusable sections throughout the filesystem.
+ - When garbage collector is attempting to reclaim space by scanning the entire filesystem multiple times (usually 10 times by default), during each scan, the garbage collector frees up one block if available. Therefore, if the maximum number of runs set for the garbage collector is 'n' (SPIFFS_GC_MAX_RUNS: locate this configuration option in `SPIFFS configuration <https://github.com/pellepl/spiffs/wiki/Configure-spiffs>`_), then n times the block size will become available for data writing. If you attempt to write data exceeding n times the block size, the write operation may fail and return an error.
  - When the chip experiences a power loss during a file system operation it could result in SPIFFS corruption. However the file system still might be recovered via ``esp_spiffs_check`` function. More details in the official SPIFFS `FAQ <https://github.com/pellepl/spiffs/wiki/FAQ>`_.
 
 Tools
