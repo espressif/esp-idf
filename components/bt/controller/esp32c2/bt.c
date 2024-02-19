@@ -1024,13 +1024,11 @@ void esp_ble_controller_log_dump_all(bool output)
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
-#if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED == true)
-
+#if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
+#if CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #define BLE_SM_KEY_ERR 0x17
-
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 #include "mbedtls/aes.h"
-
 #if CONFIG_BT_LE_SM_SC
 #include "mbedtls/cipher.h"
 #include "mbedtls/entropy.h"
@@ -1038,7 +1036,9 @@ void esp_ble_controller_log_dump_all(bool output)
 #include "mbedtls/cmac.h"
 #include "mbedtls/ecdh.h"
 #include "mbedtls/ecp.h"
-#endif
+
+static mbedtls_ecp_keypair keypair;
+#endif // CONFIG_BT_LE_SM_SC
 
 #else
 #include "tinycrypt/aes.h"
@@ -1048,15 +1048,15 @@ void esp_ble_controller_log_dump_all(bool output)
 #if CONFIG_BT_LE_SM_SC
 #include "tinycrypt/cmac_mode.h"
 #include "tinycrypt/ecc_dh.h"
-#endif
+#endif // CONFIG_BT_LE_SM_SC
+#endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
-#endif
-
-#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
-#if CONFIG_BT_LE_SM_SC
-static mbedtls_ecp_keypair keypair;
-#endif
-#endif
+/* Based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
+static const uint8_t ble_sm_alg_dbg_priv_key[32] = {
+    0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38, 0x74, 0xc9, 0xb3, 0xe3,
+    0xd2, 0x10, 0x3f, 0x50, 0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
+    0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd
+};
 
 int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
                          const uint8_t *our_priv_key, uint8_t *out_dhkey)
@@ -1103,8 +1103,7 @@ int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_
     }
 
     /* Set PRNG */
-    if ((rc = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                    NULL, 0)) != 0) {
+    if ((rc = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0)) != 0) {
         goto exit;
     }
 
@@ -1148,18 +1147,11 @@ exit:
     if (rc == TC_CRYPTO_FAIL) {
         return BLE_SM_KEY_ERR;
     }
-#endif
+#endif // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
     swap_buf(out_dhkey, dh, 32);
     return 0;
 }
-
-/* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
-static const uint8_t ble_sm_alg_dbg_priv_key[32] = {
-    0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38, 0x74, 0xc9, 0xb3, 0xe3,
-    0xd2, 0x10, 0x3f, 0x50, 0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
-    0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd
-};
 
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 static int mbedtls_gen_keypair(uint8_t *public_key, uint8_t *private_key)
@@ -1206,7 +1198,7 @@ exit:
 
     return 0;
 }
-#endif
+#endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
 
 /**
  * pub: 64 bytes
@@ -1222,7 +1214,6 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
     uint8_t pk[64];
 
     do {
-
 #if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
         if (mbedtls_gen_keypair(pk, priv) != 0) {
             return BLE_SM_KEY_ERR;
@@ -1231,17 +1222,17 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
         if (uECC_make_key(pk, priv, &curve_secp256r1) != TC_CRYPTO_SUCCESS) {
             return BLE_SM_KEY_ERR;
         }
-#endif
-
+#endif  // CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
         /* Make sure generated key isn't debug key. */
     } while (memcmp(priv, ble_sm_alg_dbg_priv_key, 32) == 0);
 
     swap_buf(pub, pk, 32);
     swap_buf(&pub[32], &pk[32], 32);
     swap_in_place(priv, 32);
-#endif
-
+#endif // CONFIG_BT_LE_SM_SC_DEBUG_KEYS
     return 0;
 }
 
-#endif
+#endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
+#endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
+
