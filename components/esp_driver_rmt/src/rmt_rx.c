@@ -291,7 +291,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     esp_rom_gpio_connect_in_signal(config->gpio_num,
                                    rmt_periph_signals.groups[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
                                    config->flags.invert_in);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->gpio_num], PIN_FUNC_GPIO);
+    gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
 
     // initialize other members of rx channel
     portMUX_INITIALIZE(&rx_channel->base.spinlock);

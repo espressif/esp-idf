@@ -25,6 +25,7 @@
 #include "esp_attr.h"
 #include "esp_private/gdma.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "esp_private/gpio.h"
 #include "driver/rmt_common.h"
 
 #ifdef __cplusplus

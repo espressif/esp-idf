@@ -86,4 +86,15 @@ menu "Driver Configurations"
 
     endmenu # Legacy Timer Group Driver Configurations
 
+    menu "Legacy RMT Driver Configurations"
+        depends on SOC_RMT_SUPPORTED
+        config RMT_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy RMT Driver Configurations
+
 endmenu  # Driver configurations

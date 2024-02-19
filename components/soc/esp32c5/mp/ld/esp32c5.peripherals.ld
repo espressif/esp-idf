@@ -11,6 +11,7 @@ PROVIDE ( SPIMEM1             = 0x60003000 );
 PROVIDE ( I2C                 = 0x60004000 );
 PROVIDE ( UHCI                = 0x60005000 );
 PROVIDE ( RMT                 = 0x60006000 );
+PROVIDE ( RMTMEM              = 0x60006400 );
 PROVIDE ( LEDC                = 0x60007000 );
 PROVIDE ( TIMERG0             = 0x60008000 );
 PROVIDE ( TIMERG1             = 0x60009000 );
