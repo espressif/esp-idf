@@ -104,6 +104,21 @@ class YmlLinter:
                         f'Please set `dependencies:` (to null) explicitly to avoid missing artifacts issue'
                     )
 
+    def _lint_artifacts_expire_in_and_when(self) -> None:
+        """
+        Set `artifacts: expire_in` and `artifacts: when` together since gitlab has bugs:
+
+        - https://gitlab.com/gitlab-org/gitlab/-/issues/404563 (expire_in)
+        - https://gitlab.com/gitlab-org/gitlab/-/issues/440672 (when)
+        """
+        for job_name, d in self.yml_config.jobs.items():
+            if 'artifacts' in d:
+                if 'expire_in' not in d['artifacts']:
+                    self._errors.append(f'job {job_name} missing `artifacts: expire_in`. (suggest to set to `1 week`)')
+
+                if 'when' not in d['artifacts']:
+                    self._errors.append(f'job {job_name} missing `artifacts: when`. (suggest to set to `always`)')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

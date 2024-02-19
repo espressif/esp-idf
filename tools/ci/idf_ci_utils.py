@@ -202,22 +202,34 @@ class GitlabYmlConfig:
         for k in self._job_keys:
             self._expand_extends(k)
 
+    def _merge_dict(self, d1: t.Dict[str, t.Any], d2: t.Dict[str, t.Any]) -> t.Any:
+        for k, v in d2.items():
+            if k in d1:
+                if isinstance(v, dict) and isinstance(d1[k], dict):
+                    d1[k] = self._merge_dict(d1[k], v)
+                else:
+                    d1[k] = v
+            else:
+                d1[k] = v
+
+        return d1
+
     def _expand_extends(self, name: str) -> t.Dict[str, t.Any]:
         extends = to_list(self.config[name].pop('extends', None))
-        original_d = self.config[name].copy()
         if not extends:
             return self.config[name]  # type: ignore
 
+        original_d = self.config[name].copy()
         d = {}
         while extends:
-            self._used_template_keys.update(extends)
+            self._used_template_keys.update(extends)  # for tracking
 
             for i in extends:
                 d.update(self._expand_extends(i))
 
             extends = to_list(self.config[name].pop('extends', None))
 
-        self.config[name] = {**d, **original_d}
+        self.config[name] = self._merge_dict(d, original_d)
         return self.config[name]  # type: ignore
 
 

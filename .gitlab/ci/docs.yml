@@ -96,6 +96,9 @@ check_docs_lang_sync:
     - if [ -n "${BREATHE_ALT_INSTALL_URL}" ]; then pip uninstall -y breathe && pip install -U ${BREATHE_ALT_INSTALL_URL}; fi
     - cd docs
     - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
+  artifacts:
+    expire_in: 4 days
+    when: always
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
@@ -124,7 +127,6 @@ build_docs_html_full:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "html"
 
@@ -137,7 +139,6 @@ build_docs_html_full_prod:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "html"
 
@@ -153,7 +154,6 @@ build_docs_html_partial:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "html"
   parallel:
@@ -174,7 +174,6 @@ build_docs_pdf:
   artifacts:
     paths:
       - docs/_build/*/*/latex/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "latex"
 
@@ -186,7 +185,6 @@ build_docs_pdf_prod:
   artifacts:
     paths:
       - docs/_build/*/*/latex/*
-    expire_in: 4 days
   variables:
     DOC_BUILDERS: "latex"
 

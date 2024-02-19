@@ -353,9 +353,12 @@ default:
     - *setup_tools_and_idf_python_venv
     - add_gitlab_ssh_keys
     - fetch_submodules
-  artifacts:
-    expire_in: 1 week
-    when: always
+# gitlab bug, setting them here doesn't work
+# - expire_in: https://gitlab.com/gitlab-org/gitlab/-/issues/404563
+# - when: https://gitlab.com/gitlab-org/gitlab/-/issues/440672
+#  artifacts:
+#    expire_in: 1 week
+#    when: always
   retry:
     max: 2
     when:
