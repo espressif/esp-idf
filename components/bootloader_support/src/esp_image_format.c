@@ -667,12 +667,16 @@ static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t 
 #endif
     }
     uint32_t *dest = (uint32_t *)load_addr;
-#endif
+#endif // BOOTLOADER_BUILD
 
     const uint32_t *src = data;
 
 #if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
-    if (segment == 0) {
+    // Case I: Bootloader verifying application
+    // Case II: Bootloader verifying bootloader
+    // Anti-rollback check should handle only Case I from above.
+    if (segment == 0 && metadata->start_addr != ESP_BOOTLOADER_OFFSET) {
+        ESP_LOGD(TAG, "additional anti-rollback check 0x%"PRIx32, data_addr);
         // The esp_app_desc_t structure is located in DROM and is always in segment #0.
         size_t len = process_esp_app_desc_data(src, sha_handle, checksum, metadata);
         data_len -= len;
