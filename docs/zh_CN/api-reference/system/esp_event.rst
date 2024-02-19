@@ -91,13 +91,13 @@
 
 .. code-block:: c
 
-    ESP_EVENT_DECLARE_BASE(EVENT_BASE)
+    ESP_EVENT_DECLARE_BASE(EVENT_BASE);
 
 定义事件根基：
 
 .. code-block:: c
 
-    ESP_EVENT_DEFINE_BASE(EVENT_BASE)
+    ESP_EVENT_DEFINE_BASE(EVENT_BASE);
 
 .. note::
 
