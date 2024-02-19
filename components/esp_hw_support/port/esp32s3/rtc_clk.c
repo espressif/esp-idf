@@ -191,7 +191,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     uint8_t dr3;
     uint8_t dchgp;
     uint8_t dcur;
-    uint8_t dbias;
+    uint8_t dbias = 3;
 
     /* BBPLL CALIBRATION START */
     CLEAR_PERI_REG_MASK(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
@@ -209,7 +209,6 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             dr3 = 0;
             dchgp = 5;
             dcur = 3;
-            dbias = 2;
             break;
         case RTC_XTAL_FREQ_32M:
             div_ref = 1;
@@ -218,7 +217,6 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             dr3 = 1;
             dchgp = 4;
             dcur = 0;
-            dbias = 2;
             break;
         default:
             div_ref = 0;
@@ -227,7 +225,6 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             dr3 = 0;
             dchgp = 5;
             dcur = 3;
-            dbias = 2;
             break;
         }
         REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x6B);
@@ -243,7 +240,6 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             dr3 = 0;
             dchgp = 5;
             dcur = 3;
-            dbias = 2;
             break;
         case RTC_XTAL_FREQ_32M:
             div_ref = 1;
@@ -252,7 +248,6 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             dr3 = 0;
             dchgp = 5;
             dcur = 3;
-            dbias = 2;
             break;
         default:
             div_ref = 0;
@@ -261,7 +256,6 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             dr3 = 0;
             dchgp = 5;
             dcur = 3;
-            dbias = 2;
             break;
         }
         REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x69);
