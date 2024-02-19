@@ -214,6 +214,7 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
 # ----------- LAN8720 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_lan8720
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_lan8720',
 ], indirect=True)
@@ -226,6 +227,7 @@ def test_esp_eth_lan8720(dut: IdfDut) -> None:
 # ----------- RTL8201 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_rtl8201
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_rtl8201',
 ], indirect=True)
@@ -238,6 +240,7 @@ def test_esp_eth_rtl8201(dut: IdfDut) -> None:
 # ----------- KSZ8041 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_ksz8041
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_ksz8041',
 ], indirect=True)
@@ -250,6 +253,7 @@ def test_esp_eth_ksz8041(dut: IdfDut) -> None:
 # ----------- DP83848 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_dp83848
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_dp83848',
 ], indirect=True)
@@ -262,6 +266,7 @@ def test_esp_eth_dp83848(dut: IdfDut) -> None:
 # ----------- W5500 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_w5500
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_w5500',
 ], indirect=True)
@@ -274,6 +279,7 @@ def test_esp_eth_w5500(dut: IdfDut) -> None:
 # ----------- KSZ8851SNL -----------
 @pytest.mark.esp32
 @pytest.mark.eth_ksz8851snl
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_ksz8851snl',
 ], indirect=True)
@@ -286,6 +292,7 @@ def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
 # ----------- DM9051 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_dm9051
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', [
     'default_dm9051',
 ], indirect=True)

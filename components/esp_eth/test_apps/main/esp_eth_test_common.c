@@ -96,9 +96,9 @@ esp_eth_phy_t *phy_init(eth_phy_config_t *phy_config)
     phy_config->phy_addr = ESP_ETH_PHY_ADDR_AUTO;
 #if CONFIG_TARGET_ETH_PHY_DEVICE_IP101
     phy = esp_eth_phy_new_ip101(phy_config);
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX
+#elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
     phy = esp_eth_phy_new_lan87xx(phy_config);
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ80XX
+#elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8041
     phy = esp_eth_phy_new_ksz80xx(phy_config);
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201
     phy = esp_eth_phy_new_rtl8201(phy_config);

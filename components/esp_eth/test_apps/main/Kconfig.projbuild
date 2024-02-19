@@ -30,10 +30,10 @@ menu "esp_eth TEST_APPS Configuration"
 
             config TARGET_ETH_PHY_DEVICE_IP101
                 bool "IP101"
-            config TARGET_ETH_PHY_DEVICE_LAN87XX
+            config TARGET_ETH_PHY_DEVICE_LAN8720
                 bool "LAN8720"
-            config TARGET_ETH_PHY_DEVICE_KSZ80XX
-                bool "KSZ80xx"
+            config TARGET_ETH_PHY_DEVICE_KSZ8041
+                bool "KSZ8041"
             config TARGET_ETH_PHY_DEVICE_RTL8201
                 bool "RTL8201"
             config TARGET_ETH_PHY_DEVICE_DP83848
