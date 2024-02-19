@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,15 +14,11 @@ extern "C" {
 typedef union {
     struct {
         uint32_t reserved0    : 21;
-        // uint32_t vdd_spi_pd_en: 1;
-        uint32_t dcdc_switch_pd_en :1;//new
+        uint32_t dcdc_switch_pd_en :1;
         uint32_t mem_dslp     : 1;
         uint32_t mem_pd_en    : 1;
-        // uint32_t wifi_pd_en   : 1;
         uint32_t reserved1    : 6;
-        // uint32_t cpu_pd_en    : 1;
-        uint32_t cnnt_pd_en    : 1; //new
-        // uint32_t aon_pd_en  : 1;
+        uint32_t cnnt_pd_en   : 1;
         uint32_t top_pd_en    : 1;
     };
     uint32_t val;
@@ -30,16 +26,8 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0: 30;
-        uint32_t code     : 2;
-    };
-    uint32_t val;
-} pmu_hp_icg_modem_reg_t;
-
-typedef union {
-    struct {
         uint32_t reserved0      : 23;
-        uint32_t power_det_bypass : 1; //new
+        uint32_t power_det_bypass : 1;
         uint32_t uart_wakeup_en : 1;
         uint32_t lp_pad_hold_all: 1;
         uint32_t hp_pad_hold_all: 1;
@@ -56,9 +44,8 @@ typedef union {
         uint32_t reserved0    : 21;
         uint32_t i2c_iso_en   : 1;
         uint32_t i2c_retention: 1;
-        // uint32_t xpd_bb_i2c   : 1;
-        uint32_t xpd_pll_i2c  : 4; //cha
-        uint32_t xpd_pll      : 4; //cha
+        uint32_t xpd_pll_i2c  : 4;
+        uint32_t xpd_pll      : 4;
         uint32_t reserved1    : 1;
     };
     uint32_t val;
@@ -67,8 +54,8 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved0 : 18;
-        uint32_t dcm_vset  : 5; //new
-        uint32_t dcm_mode  : 2; //new
+        uint32_t dcm_vset  : 5;
+        uint32_t dcm_mode  : 2;
         uint32_t xpd_bias  : 1;
         uint32_t dbg_atten : 4;
         uint32_t pd_cur    : 1;
@@ -98,18 +85,7 @@ typedef union {
         uint32_t reserved5                            : 1;
     };
     struct {    /* HP: Modem State */
-        uint32_t reserved6                            : 4;
-        uint32_t hp_sleep2modem_backup_modem_clk_code : 2;
-        uint32_t reserved7                            : 4;
-        uint32_t hp_modem_retention_mode              : 1;
-        uint32_t hp_sleep2modem_retention_en          : 1;
-        uint32_t reserved8                            : 2;
-        uint32_t hp_sleep2modem_backup_clk_sel        : 2;
-        uint32_t reserved9                            : 4;
-        uint32_t hp_sleep2modem_backup_mode           : 3;
-        uint32_t reserved10                           : 6;
-        uint32_t hp_sleep2modem_backup_en             : 1;
-        uint32_t reserved11                           : 2;
+        uint32_t reserved6                            : 32;
     };
     struct {    /* HP: Sleep State */
         uint32_t reserved12                           : 6;
@@ -181,7 +157,7 @@ typedef struct pmu_hp_hw_regmap_t {
     pmu_hp_dig_power_reg_t     dig_power;
     uint32_t                   icg_func;
     uint32_t                   icg_apb;
-    pmu_hp_icg_modem_reg_t     icg_modem;
+    uint32_t                   icg_modem;
     pmu_hp_sys_cntl_reg_t      syscntl;
     pmu_hp_clk_power_reg_t     clk_power;
     pmu_hp_bias_reg_t          bias;
@@ -193,12 +169,11 @@ typedef struct pmu_hp_hw_regmap_t {
     pmu_hp_xtal_reg_t          xtal;
 } pmu_hp_hw_regmap_t;
 
-/** */
 typedef union {
     struct {
         uint32_t reserved0: 21;
         uint32_t slp_xpd  : 1;
-        uint32_t xpd	  : 1;
+        uint32_t xpd      : 1;
         uint32_t slp_dbias: 4;
         uint32_t dbias    : 5;
     };
@@ -207,8 +182,8 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0: 28;
-        uint32_t drv_b    : 4;
+        uint32_t reserved0: 26;
+        uint32_t drv_b    : 6;
     };
     uint32_t val;
 } pmu_lp_regulator1_reg_t;
@@ -224,9 +199,9 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved0 : 26;
-        uint32_t lp_pad_slp_sel : 1; //new
-        uint32_t bod_source_sel : 1; //new
-        uint32_t vddbat_mode : 2; //new
+        uint32_t lp_pad_slp_sel : 1;
+        uint32_t bod_source_sel : 1;
+        uint32_t vddbat_mode : 2;
         uint32_t mem_dslp  : 1;
         uint32_t peri_pd_en: 1;
     };
@@ -236,7 +211,7 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved0  : 27;
-        uint32_t xpd_lppll  : 1; //new
+        uint32_t xpd_lppll  : 1;
         uint32_t xpd_xtal32k: 1;
         uint32_t xpd_rc32k  : 1;
         uint32_t xpd_fosc   : 1;
@@ -268,25 +243,20 @@ typedef struct pmu_lp_hw_regmap_t {
 
 typedef union {
     struct {
-        uint32_t tie_low_cali_xtal_icg  : 1; //new
-        uint32_t tie_low_global_pll_icg : 4;
-        uint32_t tie_low_global_xtal_icg  : 1;
-        uint32_t tie_low_i2c_retention    : 1;
-        // uint32_t tie_low_xpd_bb_i2c       : 1;
-        uint32_t tie_low_xpd_pll_i2c    : 4;
-        uint32_t tie_low_xpd_pll        : 4;
-        uint32_t tie_low_xpd_xtal         : 1;
-        uint32_t tie_high_cali_xtal_icg   : 1; //new
-        uint32_t tie_high_global_pll_icg  : 4;
-        // uint32_t tie_high_global_bbpll_icg: 1;
-        uint32_t tie_high_global_xtal_icg : 1;
-        uint32_t tie_high_i2c_retention   : 1;
-        // uint32_t tie_high_xpd_bb_i2c      : 1;
-        uint32_t tie_high_xpd_pll_i2c   : 4;
-        // uint32_t tie_high_xpd_bbpll_i2c   : 1;
-        uint32_t tie_high_xpd_pll       : 4;
-        // uint32_t tie_high_xpd_bbpll       : 1;
-        uint32_t tie_high_xpd_xtal        : 1;
+        uint32_t tie_low_cali_xtal_icg      : 1;
+        uint32_t tie_low_global_pll_icg     : 4;
+        uint32_t tie_low_global_xtal_icg    : 1;
+        uint32_t tie_low_i2c_retention      : 1;
+        uint32_t tie_low_xpd_pll_i2c        : 4;
+        uint32_t tie_low_xpd_pll            : 4;
+        uint32_t tie_low_xpd_xtal           : 1;
+        uint32_t tie_high_cali_xtal_icg     : 1;
+        uint32_t tie_high_global_pll_icg    : 4;
+        uint32_t tie_high_global_xtal_icg   : 1;
+        uint32_t tie_high_i2c_retention     : 1;
+        uint32_t tie_high_xpd_pll_i2c       : 4;
+        uint32_t tie_high_xpd_pll           : 4;
+        uint32_t tie_high_xpd_xtal          : 1;
     };
     uint32_t val;
 } pmu_imm_hp_clk_power_reg_t;
@@ -337,12 +307,12 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t pad_slp_sel : 1;//new
-        uint32_t lp_pad_hold_all : 1;//new
-        uint32_t hp_pad_hold_all : 1;//new
+        uint32_t pad_slp_sel             : 1;
+        uint32_t lp_pad_hold_all         : 1;
+        uint32_t hp_pad_hold_all         : 1;
         uint32_t reserved0               : 23;
-        uint32_t tie_high_pad_slp_sel : 1;//new
-        uint32_t tie_low_pad_slp_sel : 1;//new
+        uint32_t tie_high_pad_slp_sel    : 1;
+        uint32_t tie_low_pad_slp_sel     : 1;
         uint32_t tie_high_lp_pad_hold_all: 1;
         uint32_t tie_low_lp_pad_hold_all : 1;
         uint32_t tie_high_hp_pad_hold_all: 1;
@@ -399,12 +369,10 @@ typedef union {
         uint32_t force_no_reset: 1;
         uint32_t force_no_iso  : 1;
         uint32_t force_pd      : 1;
-        // uint32_t pd_top_mask   : 5;
         uint32_t reserved0     : 26;    /* Invalid of lp peripherals */
-        // uint32_t top_pd_mask   : 5;
     };
     uint32_t val;
-} pmu_power_domain_cntl_t;
+} pmu_power_domain_cntl_reg_t;
 
 typedef union {
     struct {
@@ -413,39 +381,16 @@ typedef union {
         uint32_t top_pd_mask   : 5;
     };
     uint32_t val;
-} pmu_power_domain_mask_t;
+} pmu_power_domain_mask_reg_t;
 
 typedef union {
     struct {
-        uint32_t force_pu      :    1;  /*need_des*/
-        uint32_t force_pd      :    1;  /*need_des*/
+        uint32_t force_pu      :    1;
+        uint32_t force_pd      :    1;
         uint32_t reserved2     :    30;
     };
     uint32_t val;
-} pmu_power_dcdc_switch_t;
-// typedef union {
-//     struct {
-//         uint32_t force_hp_mem_iso   : 4;
-//         uint32_t force_hp_mem_pd    : 4;
-//         uint32_t reserved0          : 16;
-//         uint32_t force_hp_mem_no_iso: 4;
-//         uint32_t force_hp_mem_pu    : 4;
-//     };
-//     uint32_t val;
-// } pmu_power_memory_cntl_reg_t;
-
-// typedef union {
-//     struct {
-//         uint32_t mem2_pd_mask: 5;
-//         uint32_t mem1_pd_mask: 5;
-//         uint32_t mem0_pd_mask: 5;
-//         uint32_t reserved0   : 2;
-//         uint32_t mem2_mask   : 5;
-//         uint32_t mem1_mask   : 5;
-//         uint32_t mem0_mask   : 5;
-//     };
-//     uint32_t val;
-// } pmu_power_memory_mask_reg_t;
+} pmu_power_dcdc_switch_reg_t;
 
 typedef union {
     struct {
@@ -455,16 +400,6 @@ typedef union {
     };
     uint32_t val;
 } pmu_power_hp_pad_reg_t;
-
-// typedef union {
-//     struct {
-//         uint32_t reserved0 : 18;
-//         uint32_t pwr_wait  : 11;
-//         uint32_t pwr_sw    : 2;
-//         uint32_t pwr_sel_sw: 1;
-//     };
-//     uint32_t val;
-// } pmu_power_vdd_spi_cntl_reg_t;
 
 typedef union {
     struct {
@@ -477,15 +412,12 @@ typedef union {
 typedef struct pmu_power_hw_regmap_t {
     pmu_power_wait_timer0_reg_t    wait_timer0;
     pmu_power_wait_timer1_reg_t    wait_timer1;
-    pmu_power_domain_cntl_t        hp_pd[3];
-    pmu_power_domain_mask_t        hp_pd_mask[3];
-    pmu_power_dcdc_switch_t        dcdc_switch;
-    pmu_power_domain_cntl_t        lp_peri;
-    pmu_power_domain_mask_t        lp_peri_mask;
-    // pmu_power_memory_cntl_reg_t    mem_cntl;
-    // pmu_power_memory_mask_reg_t    mem_mask;
+    pmu_power_domain_cntl_reg_t    hp_pd[3];
+    pmu_power_domain_mask_reg_t    hp_pd_mask[3];
+    pmu_power_dcdc_switch_reg_t    dcdc_switch;
+    pmu_power_domain_cntl_reg_t    lp_peri;
+    pmu_power_domain_mask_reg_t    lp_peri_mask;
     pmu_power_hp_pad_reg_t         hp_pad;
-    // pmu_power_vdd_spi_cntl_reg_t   vdd_spi;
     pmu_power_clk_wait_cntl_reg_t  clk_wait;
 } pmu_power_hw_regmap_t;
 
@@ -504,6 +436,14 @@ typedef union {
     };
     uint32_t val;
 } pmu_slp_wakeup_cntl1_reg_t;
+
+typedef union {
+    struct {
+        uint32_t wakeup_ena: 31;
+        uint32_t reserved0 : 1;
+    };
+    uint32_t val;
+} pmu_slp_wakeup_cntl2_reg_t;
 
 typedef union {
     struct {
@@ -551,8 +491,8 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0      : 31;
-        uint32_t lp_lite_wakeup_ena: 1;
+        uint32_t reserved0          : 31;
+        uint32_t lp_lite_wakeup_ena : 1;
     };
     uint32_t val;
 } pmu_slp_wakeup_cntl8_reg_t;
@@ -560,16 +500,16 @@ typedef union {
 typedef struct pmu_wakeup_hw_regmap_t {
     pmu_slp_wakeup_cntl0_reg_t     cntl0;
     pmu_slp_wakeup_cntl1_reg_t     cntl1;
-    uint32_t                       cntl2;
+    pmu_slp_wakeup_cntl2_reg_t     cntl2;
     pmu_slp_wakeup_cntl3_reg_t     cntl3;
     pmu_slp_wakeup_cntl4_reg_t     cntl4;
     pmu_slp_wakeup_cntl5_reg_t     cntl5;
     pmu_slp_wakeup_cntl6_reg_t     cntl6;
     pmu_slp_wakeup_cntl7_reg_t     cntl7;
-    pmu_slp_wakeup_cntl8_reg_t     cntl8;//new
+    pmu_slp_wakeup_cntl8_reg_t     cntl8;
     uint32_t                       status0;
     uint32_t                       status1;
-    uint32_t                       status2;//new
+    uint32_t                       status2;
 } pmu_wakeup_hw_regmap_t;
 
 typedef union {
@@ -600,14 +540,13 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved0     : 24;
-        uint32_t mspi_phy_xpd  : 1;//new
-        uint32_t sdio_pll_xpd  : 1;//new
+        uint32_t mspi_phy_xpd  : 1;
+        uint32_t sdio_pll_xpd  : 1;
         uint32_t perif_i2c_rstb: 1;
         uint32_t xpd_perif_i2c : 1;
         uint32_t xpd_txrf_i2c  : 1;
         uint32_t xpd_rfrx_pbus : 1;
         uint32_t xpd_ckgen_i2c : 1;
-        // uint32_t xpd_pll_i2c   : 1;
         uint32_t reserved1     : 1;
     };
     uint32_t val;
@@ -624,18 +563,18 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved0   : 14;
-        uint32_t pmu_0p1a_cnt_target0_reach_0 : 1;//new
-        uint32_t pmu_0p1a_cnt_target1_reach_0 : 1;//new
-        uint32_t pmu_0p1a_cnt_target0_reach_1 : 1;//new
-        uint32_t pmu_0p1a_cnt_target1_reach_1 : 1;//new
-        uint32_t pmu_0p2a_cnt_target0_reach_0 : 1;//new
-        uint32_t pmu_0p2a_cnt_target1_reach_0 : 1;//new
-        uint32_t pmu_0p2a_cnt_target0_reach_1 : 1;//new
-        uint32_t pmu_0p2a_cnt_target1_reach_1 : 1;//new
-        uint32_t pmu_0p3a_cnt_target0_reach_0 : 1;//new
-        uint32_t pmu_0p3a_cnt_target1_reach_0 : 1;//new
-        uint32_t pmu_0p3a_cnt_target0_reach_1 : 1;//new
-        uint32_t pmu_0p3a_cnt_target1_reach_1 : 1;//new
+        uint32_t pmu_0p1a_cnt_target0_reach_0 : 1;
+        uint32_t pmu_0p1a_cnt_target1_reach_0 : 1;
+        uint32_t pmu_0p1a_cnt_target0_reach_1 : 1;
+        uint32_t pmu_0p1a_cnt_target1_reach_1 : 1;
+        uint32_t pmu_0p2a_cnt_target0_reach_0 : 1;
+        uint32_t pmu_0p2a_cnt_target1_reach_0 : 1;
+        uint32_t pmu_0p2a_cnt_target0_reach_1 : 1;
+        uint32_t pmu_0p2a_cnt_target1_reach_1 : 1;
+        uint32_t pmu_0p3a_cnt_target0_reach_0 : 1;
+        uint32_t pmu_0p3a_cnt_target1_reach_0 : 1;
+        uint32_t pmu_0p3a_cnt_target0_reach_1 : 1;
+        uint32_t pmu_0p3a_cnt_target1_reach_1 : 1;
         uint32_t reserved1   : 1;
         uint32_t lp_exception: 1;
         uint32_t sdio_idle: 1;
@@ -660,32 +599,26 @@ typedef struct pmu_hp_ext_hw_regmap_t {
 
 typedef union {
     struct {
-        uint32_t reserved0                : 13;
-        uint32_t sleep_reject             : 1;//new
-        uint32_t pmu_0p1a_cnt_target0_reach_0 : 1;//new
-        uint32_t pmu_0p1a_cnt_target1_reach_0 : 1;//new
-        uint32_t pmu_0p1a_cnt_target0_reach_1 : 1;//new
-        uint32_t pmu_0p1a_cnt_target1_reach_1 : 1;//new
-        uint32_t pmu_0p2a_cnt_target0_reach_0 : 1;//new
-        uint32_t pmu_0p2a_cnt_target1_reach_0 : 1;//new
-        uint32_t pmu_0p2a_cnt_target0_reach_1 : 1;//new
-        uint32_t pmu_0p2a_cnt_target1_reach_1 : 1;//new
-        uint32_t pmu_0p3a_cnt_target0_reach_0 : 1;//new
-        uint32_t pmu_0p3a_cnt_target1_reach_0 : 1;//new
-        uint32_t pmu_0p3a_cnt_target0_reach_1 : 1;//new
-        uint32_t pmu_0p3a_cnt_target1_reach_1 : 1;//new
-        uint32_t lp_wakeup                : 1;
-        // uint32_t modem_switch_active_end  : 1;
-        uint32_t sleep_switch_active_end  : 1;
-        // uint32_t sleep_switch_modem_end   : 1;
-        // uint32_t modem_switch_sleep_end   : 1;
-        uint32_t active_switch_sleep_end  : 1;
-        // uint32_t modem_switch_active_start: 1;
-        uint32_t sleep_switch_active_start: 1;
-        // uint32_t sleep_switch_modem_start : 1;
-        // uint32_t modem_switch_sleep_start : 1;
-        uint32_t active_switch_sleep_start: 1;
-        uint32_t hp_sw_trigger            : 1;
+        uint32_t reserved0                    : 13;
+        uint32_t sleep_reject                 : 1;
+        uint32_t pmu_0p1a_cnt_target0_reach_0 : 1;
+        uint32_t pmu_0p1a_cnt_target1_reach_0 : 1;
+        uint32_t pmu_0p1a_cnt_target0_reach_1 : 1;
+        uint32_t pmu_0p1a_cnt_target1_reach_1 : 1;
+        uint32_t pmu_0p2a_cnt_target0_reach_0 : 1;
+        uint32_t pmu_0p2a_cnt_target1_reach_0 : 1;
+        uint32_t pmu_0p2a_cnt_target0_reach_1 : 1;
+        uint32_t pmu_0p2a_cnt_target1_reach_1 : 1;
+        uint32_t pmu_0p3a_cnt_target0_reach_0 : 1;
+        uint32_t pmu_0p3a_cnt_target1_reach_0 : 1;
+        uint32_t pmu_0p3a_cnt_target0_reach_1 : 1;
+        uint32_t pmu_0p3a_cnt_target1_reach_1 : 1;
+        uint32_t lp_wakeup                    : 1;
+        uint32_t sleep_switch_active_end      : 1;
+        uint32_t active_switch_sleep_end      : 1;
+        uint32_t sleep_switch_active_start    : 1;
+        uint32_t active_switch_sleep_start    : 1;
+        uint32_t hp_sw_trigger                : 1;
     };
     uint32_t val;
 } pmu_lp_intr_reg_t;
@@ -708,7 +641,6 @@ typedef union {
 
 typedef union {
     struct {
-        // uint32_t wakeup_en: 16;
         uint32_t reserved0: 31;
         uint32_t sleep_req: 1;
     };
@@ -721,7 +653,7 @@ typedef union {
         uint32_t reserved0: 1;
     };
     uint32_t val;
-} pmu_lp_cpu_pwr2_reg_t; //new
+} pmu_lp_cpu_pwr2_reg_t;
 
 typedef union {
     struct {
@@ -729,7 +661,7 @@ typedef union {
         uint32_t reserved0: 1;
     };
     uint32_t val;
-} pmu_lp_cpu_pwr3_reg_t; //new
+} pmu_lp_cpu_pwr3_reg_t;
 
 typedef union {
     struct {
@@ -737,7 +669,7 @@ typedef union {
         uint32_t reserved0: 1;
     };
     uint32_t val;
-} pmu_lp_cpu_pwr4_reg_t; //new
+} pmu_lp_cpu_pwr4_reg_t;
 
 typedef union {
     struct {
@@ -745,7 +677,7 @@ typedef union {
         uint32_t reserved0: 1;
     };
     uint32_t val;
-} pmu_lp_cpu_pwr5_reg_t; //new
+} pmu_lp_cpu_pwr5_reg_t;
 
 typedef struct pmu_lp_ext_hw_regmap_t {
     pmu_lp_intr_reg_t          int_raw;
@@ -760,91 +692,39 @@ typedef struct pmu_lp_ext_hw_regmap_t {
     pmu_lp_cpu_pwr5_reg_t      pwr5;
 } pmu_lp_ext_hw_regmap_t;
 
-typedef struct {
-    volatile struct {
-    } common;
-} pmu_hp_lp_hw_regmap_t;
-
-
-/** Type of pmu_ext_ldo register
- *  need_des
- */
 typedef union {
     struct {
         uint32_t reserved_0:7;
-        /** force_tieh_sel : R/W; bitpos: [7]; default: 0;
-         *  need_des
-         */
         uint32_t force_tieh_sel:1;
-        /** xpd : R/W; bitpos: [8]; default: 1;
-         *  need_des
-         */
         uint32_t xpd:1;
-        /** tieh_sel : R/W; bitpos: [11:9]; default: 0;
-         *  need_des
-         */
         uint32_t tieh_sel:3;
-        /** tieh_pos_en : R/W; bitpos: [12]; default: 0;
-         *  need_des
-         */
         uint32_t tieh_pos_en:1;
-        /** tieh_neg_en : R/W; bitpos: [13]; default: 0;
-         *  need_des
-         */
         uint32_t tieh_neg_en:1;
-        /** tieh : R/W; bitpos: [14]; default: 0;
-         *  need_des
-         */
         uint32_t tieh:1;
-        /** target1 : R/W; bitpos: [22:15]; default: 64;
-         *  need_des
-         */
         uint32_t target1:8;
-        /** target0 : R/W; bitpos: [30:23]; default: 128;
-         *  need_des
-         */
         uint32_t target0:8;
-        /** ldo_cnt_prescaler_sel : R/W; bitpos: [31]; default: 0;
-         *  need_des
-         */
         uint32_t ldo_cnt_prescaler_sel:1;
     };
     uint32_t val;
 } pmu_ext_ldo_reg_t;
 
-/** Type of pmu_ext_ldo_ana register
- *  need_des
- */
 typedef union {
     struct {
         uint32_t reserved_0:23;
-        /** mul : R/W; bitpos: [25:23]; default: 2;
-         *  need_des
-         */
         uint32_t mul:3;
-        /** en_vdet : R/W; bitpos: [26]; default: 0;
-         *  need_des
-         */
         uint32_t en_vdet:1;
-        /** en_cur_lim : R/W; bitpos: [27]; default: 0;
-         *  need_des
-         */
         uint32_t en_cur_lim:1;
-        /** dref : R/W; bitpos: [31:28]; default: 11;
-         *  need_des
-         */
         uint32_t dref:4;
     };
     uint32_t val;
 } pmu_ext_ldo_ana_reg_t;
 
-/** Type of ahb_dma_in_chn_reg_t register
- *  need_des
- */
-typedef struct {
-    volatile pmu_ext_ldo_reg_t pmu_ext_ldo;
-    volatile pmu_ext_ldo_ana_reg_t pmu_ext_ldo_ana;
+
+typedef struct pmu_ext_ldo_info_t {
+    pmu_ext_ldo_reg_t pmu_ext_ldo;
+    pmu_ext_ldo_ana_reg_t pmu_ext_ldo_ana;
 } pmu_ext_ldo_info_t;
+
 
 typedef union {
     struct {
@@ -868,7 +748,7 @@ typedef union {
         uint32_t reserved2     : 2;
     };
     uint32_t val;
-} pmu_dcm_ctrl_reg_t; //new
+} pmu_dcm_ctrl_reg_t;
 
 typedef union {
     struct {
@@ -911,7 +791,7 @@ typedef struct pmu_dev_t {
 
     union {
         struct {
-            uint32_t reserved0    : 30;
+            volatile uint32_t reserved0    : 30;
             volatile uint32_t lp_trigger_hp: 1;
             volatile uint32_t hp_trigger_lp: 1;
         };
@@ -920,7 +800,7 @@ typedef struct pmu_dev_t {
 
     union {
         struct {
-            uint32_t reserved0           : 31;
+            volatile uint32_t reserved0           : 31;
             volatile uint32_t dig_regulator_en_cal: 1;
         };
         volatile uint32_t val;
@@ -928,8 +808,8 @@ typedef struct pmu_dev_t {
 
     union {
         struct {
-            volatile uint32_t en_cali_pmu_cntl : 1;//new
-            uint32_t reserved0 : 10;
+            volatile uint32_t en_cali_pmu_cntl : 1;
+            volatile uint32_t reserved0 : 10;
             volatile uint32_t last_st   : 7;
             volatile uint32_t target_st : 7;
             volatile uint32_t current_st: 7;
@@ -939,18 +819,17 @@ typedef struct pmu_dev_t {
 
     union {
         struct {
-            uint32_t reserved0: 13;
+            volatile uint32_t reserved0: 13;
             volatile uint32_t backup_st: 5;
             volatile uint32_t lp_pwr_st: 5;
             volatile uint32_t hp_pwr_st: 9;
         };
-        volatile uint32_t val;
+        volatile int32_t val;
     } pwr_state;
 
     union {
         struct {
-            // uint32_t stable_xpd_bbpll : 1;
-            volatile uint32_t stable_xpd_bbpll : 3;//new
+            volatile uint32_t stable_xpd_bbpll : 3;
             volatile uint32_t stable_xpd_xtal  : 1;
             volatile uint32_t ana_xpd_pll_i2c  : 3;
             volatile uint32_t reserved0        : 3;
@@ -966,10 +845,7 @@ typedef struct pmu_dev_t {
             volatile uint32_t ana_i2c_iso_en   : 1;
             volatile uint32_t ana_i2c_retention: 1;
             volatile uint32_t reserved1        : 1;
-            // uint32_t ana_xpd_bb_i2c   : 1;
-            // uint32_t ana_xpd_bbpll_i2c: 1;
-            // uint32_t ana_xpd_bbpll    : 1;
-            volatile uint32_t ana_xpd_pll      : 4;//new
+            volatile uint32_t ana_xpd_pll      : 4;
             volatile uint32_t ana_xpd_xtal     : 1;
         };
         volatile uint32_t val;
@@ -985,7 +861,7 @@ typedef struct pmu_dev_t {
     volatile uint32_t ext_wakeup_st;
     union {
         struct {
-            uint32_t reserved0             : 30;
+            volatile uint32_t reserved0      : 30;
             volatile uint32_t status_clr     : 1;
             volatile uint32_t filter         : 1;
         };
@@ -995,14 +871,14 @@ typedef struct pmu_dev_t {
     union {
         struct {
             volatile uint32_t act_dnum   : 10;
-            uint32_t reserved0  : 22;
+            volatile uint32_t reserved0  : 22;
         };
         volatile uint32_t val;
     } sdio_wakeup_cntl;
 
     union {
         struct {
-            uint32_t reserved0  : 16;
+            volatile uint32_t reserved0  : 16;
             volatile uint32_t cnt_target : 16;
         };
         volatile uint32_t val;
@@ -1010,22 +886,22 @@ typedef struct pmu_dev_t {
 
     union {
         struct {
-            uint32_t reserved0  : 16;
+            volatile uint32_t reserved0  : 16;
             volatile uint32_t hpcore1_stall_code : 8;
             volatile uint32_t hpcore0_stall_code : 8;
         };
         volatile uint32_t val;
     } cpu_sw_stall;
 
-    volatile pmu_dcm_ctrl_reg_t dcm_ctrl; //new
-    volatile pmu_dcm_wait_delay_t dcm_delay;//new
-    volatile pmu_vddbat_cfg_t vbat_cfg;//new
-    volatile pmu_touch_sensor_pwr_cntl_t touch_pwr_cntl;//new
+    volatile pmu_dcm_ctrl_reg_t dcm_ctrl;
+    volatile pmu_dcm_wait_delay_t dcm_delay;
+    volatile pmu_vddbat_cfg_t vbat_cfg;
+    volatile pmu_touch_sensor_pwr_cntl_t touch_pwr_cntl;
 
     union {
         struct {
             volatile uint32_t eco_result:1;
-            uint32_t reserved0  : 30;
+            volatile uint32_t reserved0  : 30;
             volatile uint32_t eco_en: 1;
 
         };

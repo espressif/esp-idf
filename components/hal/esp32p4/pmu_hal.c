@@ -1,13 +1,10 @@
-
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 // The HAL layer for PMU (ESP32-P4 specific part)
-
-// TODO: IDF-5731
 
 #include "soc/soc.h"
 #include "esp_attr.h"
@@ -50,14 +47,4 @@ void pmu_hal_hp_set_sleep_active_backup_disable(pmu_hal_context_t *hal)
 {
     pmu_ll_hp_set_sleep_to_active_backup_disable(hal->dev);
     pmu_ll_hp_set_active_to_sleep_backup_disable(hal->dev);
-}
-
-void pmu_hal_hp_set_modem_active_backup_enable(pmu_hal_context_t *hal)
-{
-    pmu_ll_hp_set_modem_to_active_backup_enable(hal->dev);
-}
-
-void pmu_hal_hp_set_modem_active_backup_disable(pmu_hal_context_t *hal)
-{
-    pmu_ll_hp_set_modem_to_active_backup_disable(hal->dev);
 }

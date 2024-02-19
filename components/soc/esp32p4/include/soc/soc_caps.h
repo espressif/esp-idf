@@ -68,7 +68,8 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 // #define SOC_BOD_SUPPORTED               1  //TODO: IDF-7519
 // #define SOC_APM_SUPPORTED               1  //TODO: IDF-7542
-#define SOC_PMU_SUPPORTED               1  //TODO: IDF-7531
+#define SOC_PMU_SUPPORTED               1
+#define SOC_DCDC_SUPPORTED              1
 // #define SOC_PAU_SUPPORTED               1  //TODO: IDF-7531
 #define SOC_LP_TIMER_SUPPORTED          1
 // #define SOC_ULP_LP_UART_SUPPORTED       1  //TODO: IDF-7533
@@ -560,13 +561,13 @@
 // TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
-#define SOC_PM_SUPPORT_CPU_PD           (1)
-#define SOC_PM_SUPPORT_MODEM_PD         (1)
+// #define SOC_PM_SUPPORT_CPU_PD        (1) //TODO: IDF-7528
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
-// #define SOC_PM_SUPPORT_TOP_PD           (1) // TODO: IDF-7531
+// #define SOC_PM_SUPPORT_TOP_PD        (1) //TODO: IDF-7528
+#define SOC_PM_SUPPORT_CNNT_PD          (1)
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 

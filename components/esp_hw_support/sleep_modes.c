@@ -140,6 +140,10 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)// TODO: IDF-6267
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US           (118)// TODO: IDF-6267
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US        (9)
+#define LDO_POWER_TAKEOVER_PREPARATION_TIME_US  (185)
 #endif
 
 // Actually costs 80us, using the fastest slow clock 150K calculation takes about 16 ticks
@@ -204,6 +208,9 @@ typedef struct {
     uint32_t rtc_clk_cal_period;
     uint32_t fast_clk_cal_period;
     uint64_t rtc_ticks_at_sleep_start;
+#if SOC_DCDC_SUPPORTED
+    uint64_t rtc_ticks_at_ldo_prepare;
+#endif
 } sleep_config_t;
 
 
@@ -767,6 +774,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     // Enter sleep
     esp_err_t result;
 #if SOC_PMU_SUPPORTED
+
+#if SOC_DCDC_SUPPORTED
+    s_config.rtc_ticks_at_ldo_prepare = rtc_time_get();
+    pmu_sleep_increase_ldo_volt();
+#endif
+
     pmu_sleep_config_t config;
     pmu_sleep_init(pmu_sleep_config_default(&config, sleep_flags, s_config.sleep_time_adjustment,
             s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period,
@@ -840,6 +853,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
                 gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
             }
 #endif
+#endif
+
+#if SOC_DCDC_SUPPORTED
+            uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
+            if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
+                esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
+            }
+            pmu_sleep_shutdown_dcdc();
 #endif
 
 #if SOC_PMU_SUPPORTED
@@ -1064,6 +1085,15 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         // Wait for the flash chip to start up
         esp_rom_delay_us(flash_enable_time_us);
     }
+
+#if SOC_DCDC_SUPPORTED
+    uint32_t dcdc_ready_hw_waited_time_us = pmu_sleep_calculate_hp_hw_wait_time(pd_flags, s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period);
+    uint32_t dcdc_ready_sw_waited_time_us = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / MHZ);
+    if (dcdc_ready_hw_waited_time_us + dcdc_ready_sw_waited_time_us < DCDC_POWER_STARTUP_TIME_US) {
+        esp_rom_delay_us(DCDC_POWER_STARTUP_TIME_US - dcdc_ready_hw_waited_time_us - dcdc_ready_sw_waited_time_us);
+    }
+    pmu_sleep_shutdown_ldo();
+#endif
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
     if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {

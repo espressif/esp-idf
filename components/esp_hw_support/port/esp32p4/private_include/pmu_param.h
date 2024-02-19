@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,8 @@ extern "C" {
 #define PMU_HP_XPD_DEEPSLEEP    0
 #define PMU_LP_DRVB_DEEPSLEEP   0
 
+#define PMU_REGDMA_S2A_WORK_TIME_US     685
+
 #define PMU_DBG_ATTEN_DEEPSLEEP_DEFAULT 12
 #define PMU_LP_DBIAS_DEEPSLEEP_0V7      23
 
@@ -55,7 +57,7 @@ const pmu_hp_system_power_param_t* pmu_hp_system_power_param_default(pmu_hp_mode
 typedef struct {
     uint32_t                icg_func;
     uint32_t                icg_apb;
-    pmu_hp_icg_modem_reg_t  icg_modem;
+    uint32_t                icg_modem;
     pmu_hp_sysclk_reg_t     sysclk;
 } pmu_hp_system_clock_param_t;
 
@@ -226,7 +228,7 @@ typedef struct {
 #define PMU_HP_WAKEUP_DELAY_CYCLES              (0)
 #define PMU_HP_XTAL_STABLE_WAIT_CYCLES          (3155)  /* Not used, Fast OSC as PMU work clock source is about 201 us, corresponding to PMU_LP_XTAL_STABLE_WAIT_SLOW_CLK_CYCLES */
 #define PMU_HP_PLL_STABLE_WAIT_CYCLES           (2)
-#define PMU_HP_ANALOG_WAIT_TARGET_CYCLES        (2419)  /* Fast OSC as PMU work clock source is about 154 us */
+#define PMU_HP_ANALOG_WAIT_TARGET_CYCLES        (23)    /* Slow OSC as PMU work clock source is about 400 us */
 #define PMU_HP_DIGITAL_POWER_SUPPLY_WAIT_CYCLES (32)
 #define PMU_HP_DIGITAL_POWER_UP_WAIT_CYCLES     (32)
 #define PMU_HP_MODEM_WAKEUP_WAIT_CYCLES         (20700) /* Fast OSC as PMU work clock source is about 1318.6 us */
@@ -258,7 +260,8 @@ typedef struct {
             .cnnt_pd_en    = ((pd_flags) & PMU_SLEEP_PD_CNNT)    ? 1 : 0,   \
             .top_pd_en     = ((pd_flags) & PMU_SLEEP_PD_TOP)     ? 1 : 0,   \
             .mem_pd_en     = ((pd_flags) & PMU_SLEEP_PD_MEM)     ? 1 : 0,   \
-            .mem_dslp      = 0                                              \
+            .mem_dslp      = 0,                                             \
+            .dcdc_switch_pd_en = 1                                          \
         },                                                                  \
         .clk_power = {                                                      \
             .i2c_iso_en    = 1,                                             \
@@ -340,7 +343,7 @@ typedef struct {
             .slp_xpd       = 0,                             \
             .slp_dbias     = 0,                             \
             .xpd           = 1,                             \
-            .dbias         = 0x1a,                          \
+            .dbias         = 29,                            \
             .drv_b         = 0x0                            \
         }                                                   \
     },                                                      \
@@ -454,6 +457,14 @@ typedef struct pmu_sleep_machine_constant {
     } hp;
 } pmu_sleep_machine_constant_t;
 
+
+// If TOP is power down, the time the regdma runs will cover some of the time
+// spent waiting for the DCDC to startup.
+#define PMU_HP_ANA_WAIT_TIME_PD_TOP_US      260
+// If TOP doamin is not powered down, we need to stay in HP_SWITCH longer to wait for the
+// DCDC startup, which saves more power compared to waiting in the Active state.
+#define PMU_HP_ANA_WAIT_TIME_PU_TOP_US      (PMU_HP_ANA_WAIT_TIME_PD_TOP_US + PMU_REGDMA_S2A_WORK_TIME_US) // 945
+
 #define PMU_SLEEP_MC_DEFAULT()      {           \
     .lp = {                                     \
         .min_slp_time_us                = 450,  \
@@ -469,13 +480,13 @@ typedef struct pmu_sleep_machine_constant {
         .min_slp_time_us                = 450,  \
         .clock_domain_sync_time_us      = 150,  \
         .system_dfs_up_work_time_us     = 124,  \
-        .analog_wait_time_us            = 154,  \
+        .analog_wait_time_us            = PMU_HP_ANA_WAIT_TIME_PD_TOP_US, \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
         .regdma_s2m_work_time_us        = 172,  \
-        .regdma_s2a_work_time_us        = 430,  \
-        .regdma_m2a_work_time_us        = 265,  \
-        .regdma_a2s_work_time_us        = 338,  \
+        .regdma_s2a_work_time_us        = PMU_REGDMA_S2A_WORK_TIME_US, \
+        .regdma_m2a_work_time_us        = 278,  \
+        .regdma_a2s_work_time_us        = 382,  \
         .regdma_rf_on_work_time_us      = 70,   \
         .regdma_rf_off_work_time_us     = 23,   \
         .xtal_wait_stable_time_us       = 250,  \

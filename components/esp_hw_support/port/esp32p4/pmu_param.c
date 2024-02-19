@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
 #endif
 
-// TODO: IDF-7531
 #define PMU_HP_ACTIVE_POWER_CONFIG_DEFAULT() { \
     .dig_power = {          \
         .mem_dslp      = 0, \
@@ -29,8 +28,8 @@
     .clk_power = {          \
         .i2c_iso_en    = 0, \
         .i2c_retention = 0, \
-        .xpd_pll_i2c   = 1, \
-        .xpd_pll       = 1  \
+        .xpd_pll_i2c   = 0xf, \
+        .xpd_pll       = 0xf  \
     }, \
     .xtal = {               \
         .xpd_xtal      = 1  \
@@ -60,7 +59,7 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
 {
     static const pmu_hp_system_power_param_t hp_power[] = {
         PMU_HP_ACTIVE_POWER_CONFIG_DEFAULT(),
-        PMU_HP_ACTIVE_POWER_CONFIG_DEFAULT(),
+        {{}, {}, {}}, // No Modem
         PMU_HP_SLEEP_POWER_CONFIG_DEFAULT()
     };
     assert(mode < ARRAY_SIZE(hp_power));
@@ -70,9 +69,7 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
 #define PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT() {  \
     .icg_func   = 0xffffffff,                   \
     .icg_apb    = 0xffffffff,                   \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_ACTIVE    \
-    }, \
+    .icg_modem  = 0,                            \
     .sysclk     = {                             \
         .dig_sysclk_nodiv = 0,                  \
         .icg_sysclk_en    = 1,                  \
@@ -85,9 +82,7 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
 #define PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT() {   \
     .icg_func   = 0,                            \
     .icg_apb    = 0,                            \
-    .icg_modem  = {                             \
-        .code = PMU_HP_ICG_MODEM_CODE_SLEEP     \
-    }, \
+    .icg_modem  = 0,                            \
     .sysclk     = {                             \
         .dig_sysclk_nodiv = 0,                  \
         .icg_sysclk_en    = 0,                  \
@@ -101,7 +96,7 @@ const pmu_hp_system_clock_param_t * pmu_hp_system_clock_param_default(pmu_hp_mod
 {
     static const pmu_hp_system_clock_param_t hp_clock[] = {
         PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT(),
-        PMU_HP_ACTIVE_CLOCK_CONFIG_DEFAULT(),
+        {0, 0, 0, {}}, // No Modem
         PMU_HP_SLEEP_CLOCK_CONFIG_DEFAULT()
     };
     assert(mode < ARRAY_SIZE(hp_clock));
@@ -134,7 +129,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 {
     static const pmu_hp_system_digital_param_t hp_digital[] = {
         PMU_HP_ACTIVE_DIGITAL_CONFIG_DEFAULT(),
-        PMU_HP_ACTIVE_DIGITAL_CONFIG_DEFAULT(),
+        {{}}, // No Modem
         PMU_HP_SLEEP_DIGITAL_CONFIG_DEFAULT()
     };
     assert(mode < ARRAY_SIZE(hp_digital));
@@ -143,6 +138,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 
 #define PMU_HP_ACTIVE_ANALOG_CONFIG_DEFAULT() { \
     .bias = {                   \
+        .dcm_vset        = 27,  \
         .dcm_mode        = 1,   \
         .xpd_bias        = 1,   \
         .dbg_atten       = 0x0, \
@@ -166,6 +162,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 
 #define PMU_HP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
     .bias = {                   \
+        .dcm_vset        = 0,   \
         .dcm_mode        = 0,   \
         .xpd_bias        = 0,   \
         .dbg_atten       = 0x0, \
@@ -187,7 +184,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
 {
     static const pmu_hp_system_analog_param_t hp_analog[] = {
         PMU_HP_ACTIVE_ANALOG_CONFIG_DEFAULT(),
-        PMU_HP_ACTIVE_ANALOG_CONFIG_DEFAULT(),
+        {{}, {}, {}}, // No Modem
         PMU_HP_SLEEP_ANALOG_CONFIG_DEFAULT()
     };
     assert(mode < ARRAY_SIZE(hp_analog));
@@ -256,7 +253,7 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
 {
     static const pmu_hp_system_retention_param_t hp_retention[] = {
         PMU_HP_ACTIVE_RETENTION_CONFIG_DEFAULT(),
-        PMU_HP_ACTIVE_RETENTION_CONFIG_DEFAULT(),
+        {{}, 0}, // No Modem
         PMU_HP_SLEEP_RETENTION_CONFIG_DEFAULT()
     };
     assert(mode < ARRAY_SIZE(hp_retention));
@@ -322,7 +319,7 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
 #define PMU_LP_ACTIVE_ANALOG_CONFIG_DEFAULT() { \
     .regulator0 = {         \
         .slp_xpd    = 0,    \
-        .slp_dbias  = 0,  \
+        .slp_dbias  = 0  \
     }, \
     .regulator1 = {         \
         .drv_b      = 0x0     \
@@ -338,7 +335,7 @@ const pmu_lp_system_power_param_t * pmu_lp_system_power_param_default(pmu_lp_mod
     }, \
     .regulator0 = {         \
         .slp_xpd    = 0,    \
-        .slp_dbias  = 0,  \
+        .slp_dbias  = 0  \
     }, \
     .regulator1 = {         \
         .drv_b      = 0x0     \
