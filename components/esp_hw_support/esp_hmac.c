@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -170,7 +170,7 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 
     ESP_LOGD(TAG, "HMAC computation in downstream mode is completed.");
 
-    ets_hmac_disable();
+    periph_module_disable(PERIPH_HMAC_MODULE);
 
     esp_crypto_hmac_lock_release();
 
@@ -180,9 +180,9 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 esp_err_t esp_hmac_jtag_disable()
 {
     esp_crypto_hmac_lock_acquire();
-    ets_hmac_enable();
+    periph_module_enable(PERIPH_HMAC_MODULE);
     REG_WRITE(HMAC_SET_INVALIDATE_JTAG_REG, 1);
-    ets_hmac_disable();
+    periph_module_disable(PERIPH_HMAC_MODULE);
     esp_crypto_hmac_lock_release();
 
     ESP_LOGD(TAG, "Invalidate JTAG result register. JTAG disabled.");
@@ -217,7 +217,6 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     } else {
         return ESP_OK;
     }
-
 }
 
 esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
