@@ -119,6 +119,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
 
+    # TODO: IDF-9197
     choice IDF_TARGET_ESP32C5_VERSION
         prompt "ESP32-C5 version"
         depends on IDF_TARGET_ESP32C5
@@ -131,6 +132,11 @@ mainmenu "Espressif IoT Development Framework Configuration"
         config IDF_TARGET_ESP32C5_BETA3_VERSION
             bool
             prompt "ESP32-C5 beta3"
+            select ESPTOOLPY_NO_STUB
+
+        config IDF_TARGET_ESP32C5_MP_VERSION
+            bool
+            prompt "ESP32-C5 MP"
             select ESPTOOLPY_NO_STUB
     endchoice
 
@@ -159,7 +165,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x000D if IDF_TARGET_ESP32C6
         default 0x0010 if IDF_TARGET_ESP32H2
         default 0x0012 if IDF_TARGET_ESP32P4
-        default 0x0011 if IDF_TARGET_ESP32C5
+        default 0x0011 if IDF_TARGET_ESP32C5 && IDF_TARGET_ESP32C5_BETA3_VERSION  # TODO: IDF-9197
+        default 0x0017 if IDF_TARGET_ESP32C5 && IDF_TARGET_ESP32C5_MP_VERSION     # TODO: IDF-9197
         default 0xFFFF
 
 
