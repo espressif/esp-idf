@@ -298,7 +298,7 @@ static inline void rtcio_ll_force_unhold_all(void)
 static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
 {
     SENS.sar_peri_clk_gate_conf.iomux_clk_en = 1;
-    RTCIO.pin[rtcio_num].wakeup_enable = 0x1;
+    RTCIO.pin[rtcio_num].wakeup_enable = 1;
     RTCIO.pin[rtcio_num].int_type = type;
 }
 

@@ -346,7 +346,7 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    hw->pin[gpio_num].wakeup_enable = 0x1;
+    hw->pin[gpio_num].wakeup_enable = 1;
 }
 
 /**

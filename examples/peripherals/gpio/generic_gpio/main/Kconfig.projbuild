@@ -5,7 +5,7 @@ menu "Example Configuration"
     config GPIO_OUTPUT_0
         int "GPIO output pin 0"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-        default 8 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+        default 8 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
         default 18
         help
             GPIO pin number to be used as GPIO_OUTPUT_IO_0.
@@ -13,7 +13,7 @@ menu "Example Configuration"
     config GPIO_OUTPUT_1
         int "GPIO output pin 1"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-        default 9 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+        default 9 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
         default 19
         help
             GPIO pin number to be used as GPIO_OUTPUT_IO_1.
