@@ -21,7 +21,8 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
  * explicitly the header for each board. */
 int esp_clk_cpu_freq(void);
 
-static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8_t *dst) {
+static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8_t *dst)
+{
     const static char b64[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int i, j, a, b, c;
@@ -97,7 +98,9 @@ static esp_err_t esp_core_dump_uart_write_data(core_dump_write_data_t *priv, voi
 
     while (addr < end) {
         size_t len = end - addr;
-        if (len > 48) len = 48;
+        if (len > 48) {
+            len = 48;
+        }
         /* Copy to stack to avoid alignment restrictions. */
         char *tmp = buf + (sizeof(buf) - len);
         memcpy(tmp, addr, len);
@@ -113,7 +116,8 @@ static esp_err_t esp_core_dump_uart_write_data(core_dump_write_data_t *priv, voi
     return err;
 }
 
-static int esp_core_dump_uart_get_char(void) {
+static int esp_core_dump_uart_get_char(void)
+{
     int i = -1;
     uint32_t reg = (READ_PERI_REG(UART_STATUS_REG(0)) >> UART_RXFIFO_CNT_S) & UART_RXFIFO_CNT;
     if (reg) {
@@ -130,7 +134,7 @@ void esp_core_dump_to_uart(panic_info_t *info)
         .start   = esp_core_dump_uart_write_start,
         .end     = esp_core_dump_uart_write_end,
         .write   = esp_core_dump_uart_write_data,
-        .priv    = (void*)&wr_data
+        .priv    = (void*) &wr_data
     };
     uint32_t tm_end = 0;
     uint32_t tm_cur = 0;
@@ -153,7 +157,7 @@ void esp_core_dump_to_uart(panic_info_t *info)
     ch = esp_core_dump_uart_get_char();
     while (!(ch == '\n' || ch == '\r')) {
         tm_cur = esp_cpu_get_cycle_count() / cpu_ticks_per_ms;
-        if (tm_cur >= tm_end){
+        if (tm_cur >= tm_end) {
             break;
         }
         ch = esp_core_dump_uart_get_char();

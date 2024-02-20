@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,11 +100,11 @@ typedef union {
  * Other fields are not strictly required by GDB, we can then replace them
  * by a padding. Among these fields, we can find PPID, SID or system time.
  */
-#define PRSTATUS_SIZE				204
-#define PRSTATUS_OFFSET_PR_CURSIG	12
-#define PRSTATUS_OFFSET_PR_PID		24
-#define PRSTATUS_OFFSET_PR_REG		72
-#define ELF_GREGSET_T_SIZE		    128
+#define PRSTATUS_SIZE               204
+#define PRSTATUS_OFFSET_PR_CURSIG   12
+#define PRSTATUS_OFFSET_PR_PID      24
+#define PRSTATUS_OFFSET_PR_REG      72
+#define ELF_GREGSET_T_SIZE          128
 
 /* We can determine the padding thanks to the previous macros */
 #define PRSTATUS_SIG_PADDING        (PRSTATUS_OFFSET_PR_CURSIG)
@@ -126,15 +126,15 @@ typedef struct {
  * Assert that our structure is designed the way we are expecting it to be.
  */
 _Static_assert(offsetof(riscv_prstatus, signal) == PRSTATUS_OFFSET_PR_CURSIG,
-                        "Wrong offset for signal field in riscv_prstatus structure");
+               "Wrong offset for signal field in riscv_prstatus structure");
 _Static_assert(offsetof(riscv_prstatus, pid) == PRSTATUS_OFFSET_PR_PID,
-                        "Wrong offset for pid field in riscv_prstatus structure");
+               "Wrong offset for pid field in riscv_prstatus structure");
 _Static_assert(offsetof(riscv_prstatus, regs) == PRSTATUS_OFFSET_PR_REG,
-                        "Wrong offset for regs field in riscv_prstatus structure");
+               "Wrong offset for regs field in riscv_prstatus structure");
 _Static_assert(sizeof(riscv_regs) == ELF_GREGSET_T_SIZE,
-                        "Wrong size for riscv_regs union");
+               "Wrong size for riscv_regs union");
 _Static_assert(sizeof(riscv_prstatus) == PRSTATUS_SIZE,
-                        "Wrong size for riscv_prstatus structure");
+               "Wrong size for riscv_prstatus structure");
 
 /**
  * Structure used to add some extra info inside core file.
@@ -143,7 +143,6 @@ typedef struct {
     uint32_t crashed_task_tcb;
     uint32_t isr_context;
 } riscv_extra_info_t;
-
 
 /* Allocate the fake stack that will be used by broken tasks. */
 static RvExcFrame s_fake_stack_frame = {
@@ -214,7 +213,7 @@ uint8_t* esp_core_dump_get_isr_stack_top(void)
 uint32_t esp_core_dump_get_isr_stack_end(void)
 {
     uint8_t* isr_top_stack = esp_core_dump_get_isr_stack_top();
-    return (uint32_t)(isr_top_stack + (xPortGetCoreID()+1)*configISR_STACK_SIZE);
+    return (uint32_t)(isr_top_stack + (xPortGetCoreID() + 1) * configISR_STACK_SIZE);
 }
 
 /**
@@ -224,21 +223,21 @@ static inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)
 {
     return esp_ptr_in_dram((void *)sp)
 #if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-        || esp_stack_ptr_in_extram(sp)
+           || esp_stack_ptr_in_extram(sp)
 #endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-        || esp_ptr_in_rtc_dram_fast((void*) sp)
+           || esp_ptr_in_rtc_dram_fast((void*) sp)
 #endif
-    ;
+           ;
 }
 
 bool esp_core_dump_check_stack(core_dump_task_header_t *task)
 {
     // Check task's stack
     if (!esp_stack_ptr_is_sane(task->stack_start) ||
-        !esp_core_dump_task_stack_end_is_sane(task->stack_end) ||
-        (task->stack_start >= task->stack_end) ||
-        ((task->stack_end-task->stack_start) > COREDUMP_MAX_TASK_STACK_SIZE)) {
+            !esp_core_dump_task_stack_end_is_sane(task->stack_end) ||
+            (task->stack_start >= task->stack_end) ||
+            ((task->stack_end - task->stack_start) > COREDUMP_MAX_TASK_STACK_SIZE)) {
         // Check if current task stack is corrupted
         ESP_COREDUMP_LOG_PROCESS("Invalid stack (%x...%x)!", task->stack_start, task->stack_end);
         return false;
@@ -264,7 +263,7 @@ uint32_t esp_core_dump_get_stack(core_dump_task_header_t *task,
     *stk_vaddr = stack_addr;
 
     if (stack_addr >= COREDUMP_FAKE_STACK_START &&
-        stack_addr < COREDUMP_FAKE_STACK_LIMIT) {
+            stack_addr < COREDUMP_FAKE_STACK_LIMIT) {
         /* In this case, the stack address pointed by the task is a fake stack
          * generated previously. So it doesn't really point to actual data.
          * Thus, we must provide the address of the fake stack data. */
@@ -308,11 +307,11 @@ bool esp_core_dump_check_task(core_dump_task_header_t *task)
  */
 bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz)
 {
-    return (esp_ptr_in_dram((void *)addr) && esp_ptr_in_dram((void *)(addr+sz-1)))
-        || (esp_ptr_in_rtc_slow((void *)addr) && esp_ptr_in_rtc_slow((void *)(addr+sz-1)))
-        || (esp_ptr_in_rtc_dram_fast((void *)addr) && esp_ptr_in_rtc_dram_fast((void *)(addr+sz-1)))
-        || (esp_ptr_external_ram((void *)addr) && esp_ptr_external_ram((void *)(addr+sz-1)))
-        || (esp_ptr_in_iram((void *)addr) && esp_ptr_in_iram((void *)(addr+sz-1)));
+    return (esp_ptr_in_dram((void *)addr) && esp_ptr_in_dram((void *)(addr + sz - 1)))
+           || (esp_ptr_in_rtc_slow((void *)addr) && esp_ptr_in_rtc_slow((void *)(addr + sz - 1)))
+           || (esp_ptr_in_rtc_dram_fast((void *)addr) && esp_ptr_in_rtc_dram_fast((void *)(addr + sz - 1)))
+           || (esp_ptr_external_ram((void *)addr) && esp_ptr_external_ram((void *)(addr + sz - 1)))
+           || (esp_ptr_in_iram((void *)addr) && esp_ptr_in_iram((void *)(addr + sz - 1)));
 }
 
 /**
@@ -355,7 +354,8 @@ uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **
 /**
  * Save the crashed task handle in the extra info structure.
  */
-void esp_core_dump_port_set_crashed_tcb(uint32_t handle) {
+void esp_core_dump_port_set_crashed_tcb(uint32_t handle)
+{
     s_extra_info.crashed_task_tcb = handle;
 }
 
@@ -401,7 +401,7 @@ void esp_core_dump_summary_parse_exc_regs(esp_core_dump_summary_t *summary, void
     summary->ex_info.ra = stack->ra;
     summary->ex_info.sp = stack->sp;
     ESP_COREDUMP_LOGD("mstatus:0x%x mtvec:0x%x mcause:0x%x mval:0x%x RA: 0x%x SP: 0x%x",
-                       stack->mstatus, stack->mtvec, stack->mcause, stack->mtval, stack->ra, stack->sp);
+                      stack->mstatus, stack->mtvec, stack->mcause, stack->mtval, stack->ra, stack->sp);
     a_reg = &stack->a0;
     for (i = 0; i < 8; i++) {
         summary->ex_info.exc_a[i] = a_reg[i];
@@ -420,7 +420,7 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     /* Check whether the stack is a fake stack created during coredump generation
      * If its a fake stack, we don't have any actual stack dump
      */
-    if (vaddr >= (void*) COREDUMP_FAKE_STACK_START && vaddr < (void*) COREDUMP_FAKE_STACK_LIMIT) {
+    if (vaddr >= (void *) COREDUMP_FAKE_STACK_START && vaddr < (void *) COREDUMP_FAKE_STACK_LIMIT) {
         bt_info->dump_size = 0;
         return;
     }

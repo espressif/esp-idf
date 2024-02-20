@@ -30,7 +30,7 @@ extern int _coredump_rtc_fast_end;
 static inline bool is_addr_in_region(void *addr, uint8_t *region, int region_size)
 {
     const void *start = (void *) region;
-    const void *end = (void *) (region + region_size);
+    const void *end = (void *)(region + region_size);
     return addr >= start && addr < end;
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -291,9 +291,9 @@ static bool enum_stage_start(enum_ctrl_t *enum_ctrl)
     enum_ctrl->pipe = enum_dflt_pipe_hdl;
 
     // Flag to gracefully exit the enumeration process if requested by the user in the enumeration filter cb
-    #ifdef ENABLE_ENUM_FILTER_CALLBACK
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
     enum_ctrl->graceful_exit = false;
-    #endif // ENABLE_ENUM_FILTER_CALLBACK
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     return true;
 }
 
@@ -339,7 +339,7 @@ static void get_string_desc_index_and_langid(enum_ctrl_t *enum_ctrl, uint8_t *in
 
 static bool set_config_index(enum_ctrl_t *enum_ctrl, const usb_device_desc_t *device_desc)
 {
-    #ifdef ENABLE_ENUM_FILTER_CALLBACK
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
     // Callback enabled in the menuncofig, but the callback function was not defined
     if (enum_ctrl->enum_filter_cb == NULL) {
         enum_ctrl->enum_config_index = ENUM_CONFIG_INDEX_DEFAULT;
@@ -363,9 +363,9 @@ static bool set_config_index(enum_ctrl_t *enum_ctrl, const usb_device_desc_t *de
     } else {
         enum_ctrl->enum_config_index = enum_config_index - 1;
     }
-    #else // ENABLE_ENUM_FILTER_CALLBACK
+#else // ENABLE_ENUM_FILTER_CALLBACK
     enum_ctrl->enum_config_index = ENUM_CONFIG_INDEX_DEFAULT;
-    #endif // ENABLE_ENUM_FILTER_CALLBACK
+#endif // ENABLE_ENUM_FILTER_CALLBACK
 
     return true;
 }
@@ -971,15 +971,15 @@ static void enum_handle_events(void)
     if (stage_pass) {
         ESP_LOGD(HUB_DRIVER_TAG, "Stage done: %s", enum_stage_strings[enum_ctrl->stage]);
     } else {
-        #ifdef ENABLE_ENUM_FILTER_CALLBACK
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
         if (!enum_ctrl->graceful_exit) {
             ESP_LOGE(HUB_DRIVER_TAG, "Stage failed: %s", enum_stage_strings[enum_ctrl->stage]);
         } else {
             ESP_LOGD(HUB_DRIVER_TAG, "Stage done: %s", enum_stage_strings[enum_ctrl->stage]);
         }
-        #else // ENABLE_ENUM_FILTER_CALLBACK
-            ESP_LOGE(HUB_DRIVER_TAG, "Stage failed: %s", enum_stage_strings[enum_ctrl->stage]);
-        #endif // ENABLE_ENUM_FILTER_CALLBACK
+#else // ENABLE_ENUM_FILTER_CALLBACK
+        ESP_LOGE(HUB_DRIVER_TAG, "Stage failed: %s", enum_stage_strings[enum_ctrl->stage]);
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     }
     enum_set_next_stage(enum_ctrl, stage_pass);
 }
@@ -1014,9 +1014,9 @@ esp_err_t hub_install(hub_config_t *hub_config)
     hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_INSTALLED;
     hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_NONE;
     hub_driver_obj->single_thread.enum_ctrl.urb = enum_urb;
-    #ifdef ENABLE_ENUM_FILTER_CALLBACK
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
     hub_driver_obj->single_thread.enum_ctrl.enum_filter_cb = hub_config->enum_filter_cb;
-    #endif // ENABLE_ENUM_FILTER_CALLBACK
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     hub_driver_obj->constant.root_port_hdl = port_hdl;
     hub_driver_obj->constant.proc_req_cb = hub_config->proc_req_cb;
     hub_driver_obj->constant.proc_req_cb_arg = hub_config->proc_req_cb_arg;

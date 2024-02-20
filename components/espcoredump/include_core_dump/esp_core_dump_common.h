@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,7 +50,6 @@ bool esp_core_dump_get_task_snapshot(core_dump_task_handle_t handle,
  */
 void esp_core_dump_reset_tasks_snapshots_iter(void);
 
-
 /**
  * @brief Check if the TCB passed as a parameter is sane.
  *
@@ -67,7 +66,6 @@ bool esp_core_dump_tcb_addr_is_sane(uint32_t addr);
  */
 uint32_t esp_core_dump_get_user_ram_segments(void);
 
-
 /**
  * @brief Get start address and size of a memory region.
  *
@@ -79,7 +77,6 @@ uint32_t esp_core_dump_get_user_ram_segments(void);
  */
 int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start);
 
-
 /**
  * @brief Check if the current task is in an ISR.
  *
@@ -87,14 +84,12 @@ int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start);
  */
 bool esp_core_dump_in_isr_context(void);
 
-
 /**
  * @brief Get the size all the memory regions (DRAM, RTC, RTC_FAST, IRAM)
  *
  * @return Size, in bytes, of all the memory regions.
  */
 uint32_t esp_core_dump_get_user_ram_size(void);
-
 
 /**
  * @brief Get TCB length, in bytes.

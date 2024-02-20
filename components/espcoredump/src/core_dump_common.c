@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,12 +46,11 @@ extern int _coredump_rtc_fast_end;
  * a stack that will be used during the whole core dump generation.
  */
 #if LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG
-    /* Increase stack size in verbose mode */
-    #define ESP_COREDUMP_STACK_SIZE (CONFIG_ESP_COREDUMP_STACK_SIZE+100)
+/* Increase stack size in verbose mode */
+#define ESP_COREDUMP_STACK_SIZE (CONFIG_ESP_COREDUMP_STACK_SIZE+100)
 #else
-    #define ESP_COREDUMP_STACK_SIZE CONFIG_ESP_COREDUMP_STACK_SIZE
+#define ESP_COREDUMP_STACK_SIZE CONFIG_ESP_COREDUMP_STACK_SIZE
 #endif
-
 
 #define COREDUMP_STACK_FILL_BYTE (0xa5U)
 
@@ -71,8 +70,8 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
     memset(s_coredump_stack, COREDUMP_STACK_FILL_BYTE, ESP_COREDUMP_STACK_SIZE);
 
     /* watchpoint 1 can be used for task stack overflow detection, re-use it, it is no more necessary */
-	//esp_cpu_clear_watchpoint(1);
-	//esp_cpu_set_watchpoint(1, s_coredump_stack, 1, ESP_WATCHPOINT_STORE);
+    //esp_cpu_clear_watchpoint(1);
+    //esp_cpu_set_watchpoint(1, s_coredump_stack, 1, ESP_WATCHPOINT_STORE);
 
     /* Replace the stack pointer depending on the architecture, but save the
      * current stack pointer, in order to be able too restore it later.
@@ -90,9 +89,8 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
 FORCE_INLINE_ATTR uint32_t esp_core_dump_free_stack_space(const uint8_t *pucStackByte)
 {
     uint32_t ulCount = 0U;
-    while ( ulCount < ESP_COREDUMP_STACK_SIZE &&
-           *pucStackByte == (uint8_t)COREDUMP_STACK_FILL_BYTE )
-    {
+    while (ulCount < ESP_COREDUMP_STACK_SIZE &&
+            *pucStackByte == (uint8_t)COREDUMP_STACK_FILL_BYTE) {
         pucStackByte -= portSTACK_GROWTH;
         ulCount++;
     }
@@ -109,7 +107,7 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 #if CONFIG_ESP_COREDUMP_LOGS
     uint32_t bytes_free = esp_core_dump_free_stack_space(s_coredump_stack);
     ESP_COREDUMP_LOGI("Core dump used %u bytes on stack. %u bytes left free.",
-        s_core_dump_sp - s_coredump_stack - bytes_free, bytes_free);
+                      s_core_dump_sp - s_coredump_stack - bytes_free, bytes_free);
 #endif
 
     /* Restore the stack pointer. */
@@ -121,7 +119,7 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 
 /* Here, we are not going to use a custom stack for coredump. Make sure the current configuration doesn't require one. */
 #if CONFIG_ESP_COREDUMP_USE_STACK_SIZE
-    #pragma error "CONFIG_ESP_COREDUMP_STACK_SIZE must not be 0 in the current configuration"
+#pragma error "CONFIG_ESP_COREDUMP_STACK_SIZE must not be 0 in the current configuration"
 #endif // ESP_COREDUMP_USE_STACK_SIZE
 
 FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
@@ -130,13 +128,12 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
     if (esp_core_dump_in_isr_context()) {
         uint8_t* topStack = esp_core_dump_get_isr_stack_top();
         esp_cpu_clear_watchpoint(1);
-        esp_cpu_set_watchpoint(1, topStack+xPortGetCoreID()*configISR_STACK_SIZE, 1, ESP_CPU_WATCHPOINT_STORE);
+        esp_cpu_set_watchpoint(1, topStack + xPortGetCoreID()*configISR_STACK_SIZE, 1, ESP_CPU_WATCHPOINT_STORE);
     } else {
         /* for tasks user should enable stack overflow detection in menuconfig
         TODO: if not enabled in menuconfig enable it ourselves */
     }
 }
-
 
 FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 {
@@ -185,8 +182,8 @@ static void esp_core_dump_switch_task_stack_to_isr(core_dump_task_header_t *task
     task->stack_start = (uint32_t) s_exc_frame;
     task->stack_end = esp_core_dump_get_isr_stack_end();
     ESP_COREDUMP_LOG_PROCESS("Switched task %x to ISR stack [%x...%x]", task->tcb_addr,
-                                                                        task->stack_start,
-                                                                        task->stack_end);
+                             task->stack_start,
+                             task->stack_end);
 }
 
 inline void esp_core_dump_reset_tasks_snapshots_iter(void)
@@ -263,30 +260,30 @@ int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start)
     ESP_COREDUMP_DEBUG_ASSERT(start != NULL);
 
     switch (region) {
-        case COREDUMP_MEMORY_DRAM:
-            *start = (uint32_t)&_coredump_dram_start;
-            total_sz = (uint8_t *)&_coredump_dram_end - (uint8_t *)&_coredump_dram_start;
-            break;
+    case COREDUMP_MEMORY_DRAM:
+        *start = (uint32_t)&_coredump_dram_start;
+        total_sz = (uint8_t *)&_coredump_dram_end - (uint8_t *)&_coredump_dram_start;
+        break;
 
-        case COREDUMP_MEMORY_IRAM:
-            *start = (uint32_t)&_coredump_iram_start;
-            total_sz = (uint8_t *)&_coredump_iram_end - (uint8_t *)&_coredump_iram_start;
-            break;
+    case COREDUMP_MEMORY_IRAM:
+        *start = (uint32_t)&_coredump_iram_start;
+        total_sz = (uint8_t *)&_coredump_iram_end - (uint8_t *)&_coredump_iram_start;
+        break;
 
 #if SOC_RTC_MEM_SUPPORTED
-        case COREDUMP_MEMORY_RTC:
-            *start = (uint32_t)&_coredump_rtc_start;
-            total_sz = (uint8_t *)&_coredump_rtc_end - (uint8_t *)&_coredump_rtc_start;
-            break;
+    case COREDUMP_MEMORY_RTC:
+        *start = (uint32_t)&_coredump_rtc_start;
+        total_sz = (uint8_t *)&_coredump_rtc_end - (uint8_t *)&_coredump_rtc_start;
+        break;
 
-        case COREDUMP_MEMORY_RTC_FAST:
-            *start = (uint32_t)&_coredump_rtc_fast_start;
-            total_sz = (uint8_t *)&_coredump_rtc_fast_end - (uint8_t *)&_coredump_rtc_fast_start;
-            break;
+    case COREDUMP_MEMORY_RTC_FAST:
+        *start = (uint32_t)&_coredump_rtc_fast_start;
+        total_sz = (uint8_t *)&_coredump_rtc_fast_end - (uint8_t *)&_coredump_rtc_fast_start;
+        break;
 #endif
 
-        default:
-            break;
+    default:
+        break;
     }
 
     return total_sz;

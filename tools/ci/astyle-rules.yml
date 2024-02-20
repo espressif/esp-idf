@@ -70,7 +70,6 @@ components_not_formatted_temporary:
     - "/components/esp_rom/"
     - "/components/esp_wifi/"
     - "/components/esp-tls/"
-    - "/components/espcoredump/"
     - "/components/esptool_py/"
     - "/components/fatfs/"
     - "/components/hal/"
@@ -165,6 +164,8 @@ components_not_formatted_permanent:
     # Example resource files (generated)
     - "/examples/peripherals/lcd/i80_controller/main/images/"
     - "/examples/peripherals/dac/dac_continuous/dac_audio/main/audio_example_file.h"
+    # Coredump (generated)
+    - /components/espcoredump/include_core_dump/elf.h
 
 docs:
   # Docs directory contains some .inc files, which are not C include files
