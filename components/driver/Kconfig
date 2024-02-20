@@ -74,4 +74,16 @@ menu "Driver Configurations"
                 you can enable this option.
     endmenu # Legacy MCPWM Driver Configurations
 
+    menu "Legacy Timer Group Driver Configurations"
+        depends on SOC_GPTIMER_SUPPORTED
+        config GPTIMER_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+
+    endmenu # Legacy Timer Group Driver Configurations
+
 endmenu  # Driver configurations
