@@ -183,11 +183,33 @@
 
     idf.py -p PORT [-b BAUD] flash
 
-如需改变烧录器的波特率，请用需要的波特率代替 ``BAUD``。默认的波特率为 ``460800``。
+将 ``PORT`` 替换为 {IDF_TARGET_NAME} 开发板的串口名称。``-b`` 为可选参数，默认的波特率为 ``460800``。如需改变烧录器的波特率，请用需要的波特率代替 ``BAUD``。
+
+要查看串口名称，Windows 用户请参考 `check-port-on-windows`_，Linux 与 macOS 用户请参考 `check-port-on-linux-and-macos`_。
+
+例如，Windows 平台上串口名称为 ``COM3``，所需波特率为 ``115200``，可使用如下命令烧录开发板：
+
+.. code-block:: bash
+
+    idf.py -p COM3 -b 115200 flash
+
+Linux 平台上串口名称为 ``/dev/ttyUSB0``，所需波特率为 ``115200``，可使用如下命令烧录开发板：
+
+.. code-block:: bash
+
+    idf.py -p /dev/ttyUSB0 -b 115200 flash
+
+macOS 平台上串口名称为 ``/dev/cu.usbserial-1401``，所需波特率为 ``115200``，可使用如下命令烧录开发板：
+
+.. code-block:: bash
+
+    idf.py -p /dev/cu.usbserial-1401 -b 115200 flash
 
 .. note::
 
     如果设备不支持自动下载模式，则需要手动进入下载模式。请按住 ``BOOT`` 按钮，同时按一下 ``RESET`` 按钮。之后，松开 ``BOOT`` 按钮。
+
+.. _check-port-on-windows:
 
 在 Windows 上查看端口
 ---------------------
@@ -209,6 +231,8 @@
     :figclass: align-center
 
     Windows 设备管理器中 ESP-WROVER-KIT 的两个 USB 串行端口
+
+.. _check-port-on-linux-and-macos:
 
 在 Linux 和 macOS 上查看端口
 -----------------------------

@@ -183,11 +183,33 @@ For devices downloaded using a USB-to-UART bridge, you can run the following com
 
     idf.py -p PORT [-b BAUD] flash
 
-You can change the flasher baud rate by replacing ``BAUD`` with the baud rate you need. The default baud rate is ``460800``.
+Replace ``PORT`` with the device name for the serial port of your {IDF_TARGET_NAME} board. Please note that ``-b`` is an optional argument. If you do not specify the baud rate, the default baud rate is ``460800``. If you need to specify the baud rate, replace ``BAUD`` with the baud rate you need.
+
+To check the port name on Windows, please refer to `check-port-on-windows`_. For Linux and macOS users, please see `check-port-on-linux-and-macos`_.
+
+For example, if the port name is ``COM3`` on Windows and your desired baud rate is ``115200``, you can run the following command to flash the device:
+
+.. code-block:: bash
+
+    idf.py -p COM3 -b 115200 flash
+
+For Linux users, if the port name is ``/dev/ttyUSB0`` and the desired baud rate is ``115200``, you can run the following command to flash the device:
+
+.. code-block:: bash
+
+    idf.py -p /dev/ttyUSB0 -b 115200 flash
+
+For macOS users, if the port name is ``/dev/cu.usbserial-1401`` and the desired baud rate is ``115200``, you can run the following command to flash the device:
+
+.. code-block:: bash
+
+    idf.py -p /dev/cu.usbserial-1401 -b 115200 flash
 
 .. note::
 
     If the device does not support the auto download mode, you need to get into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
+
+.. _check-port-on-windows:
 
 Check Port on Windows
 ---------------------
@@ -209,6 +231,8 @@ Figures below show serial port for ESP32 DevKitC and ESP32 WROVER KIT
     :figclass: align-center
 
     Two USB Serial Ports of ESP-WROVER-KIT in Windows Device Manager
+
+.. _check-port-on-linux-and-macos:
 
 Check Port on Linux and macOS
 -----------------------------
