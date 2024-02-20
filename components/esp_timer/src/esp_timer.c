@@ -514,15 +514,6 @@ static IRAM_ATTR inline bool is_initialized(void)
     return s_timer_task != NULL;
 }
 
-esp_err_t esp_timer_early_init(void)
-{
-    esp_timer_impl_early_init();
-#if CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER
-    esp_timer_impl_init_system_time();
-#endif
-    return ESP_OK;
-}
-
 static esp_err_t init_timer_task(void)
 {
     esp_err_t err = ESP_OK;
@@ -582,7 +573,14 @@ esp_err_t esp_timer_init(void)
 #define ESP_TIMER_INIT_MASK ESP_SYSTEM_INIT_ALL_CORES
 #endif // CONFIG_ESP_TIMER_ISR_AFFINITY_*
 
-ESP_SYSTEM_INIT_FN(esp_timer_startup_init, SECONDARY, ESP_TIMER_INIT_MASK, 100)
+/*
+ * This function initializes a task and ISR that esp_timer uses.
+ *
+ * We keep the esp_timer initialization function here to allow the linker
+ * to automatically include esp_timer_init_os if other components call esp_timer APIs.
+ * If no other code calls esp_timer APIs, then esp_timer_init_os will be skipped.
+*/
+ESP_SYSTEM_INIT_FN(esp_timer_init_os, SECONDARY, ESP_TIMER_INIT_MASK, 100)
 {
     return esp_timer_init();
 }

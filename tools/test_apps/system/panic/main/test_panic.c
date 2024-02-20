@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -64,10 +64,18 @@ void test_task_wdt_cpu0(void)
 }
 
 __attribute__((optimize("-O0")))
+static void test_hw_stack_guard_cpu(void* arg)
+{
+    uint32_t buf[256];
+    test_hw_stack_guard_cpu(arg);
+}
+
 void test_hw_stack_guard_cpu0(void)
 {
-    uint32_t buf[128];
-    test_hw_stack_guard_cpu0();
+    xTaskCreatePinnedToCore(test_hw_stack_guard_cpu, "HWSG0", 512, NULL, 1, NULL, 0);
+    while (true) {
+        vTaskDelay(100);
+    }
 }
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY

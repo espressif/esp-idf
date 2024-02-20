@@ -4,6 +4,7 @@ if(${target} STREQUAL "linux")
     idf_component_register(INCLUDE_DIRS include)
 else()
     set(srcs "src/esp_timer.c"
+             "src/esp_timer_init.c"
              "src/ets_timer_legacy.c"
              "src/system_time.c"
              "src/esp_timer_impl_common.c")
@@ -21,4 +22,7 @@ else()
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS include
                            PRIV_INCLUDE_DIRS private_include)
+
+    # Forces the linker to include esp_timer_init.c
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_timer_init_include_func")
 endif()
