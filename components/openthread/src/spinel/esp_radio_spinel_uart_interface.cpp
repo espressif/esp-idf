@@ -4,28 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_uart_spinel_interface.hpp"
-
+#include "esp_radio_spinel_uart_interface.hpp"
 #include <errno.h>
-#include <fcntl.h>
-#include <sys/select.h>
 #include <sys/unistd.h>
-
 #include "esp_check.h"
-#include "esp_err.h"
-#include "esp_log.h"
 #include "esp_openthread_common_macro.h"
-#include "esp_openthread_types.h"
-#include "esp_openthread_uart.h"
-#include "esp_vfs_dev.h"
-#include "core/common/code_utils.hpp"
-#include "core/common/logging.hpp"
-#include "driver/uart.h"
-#include "lib/platform/exit_code.h"
 #include "openthread/platform/time.h"
+#include "hdlc.hpp"
 
 namespace esp {
-namespace openthread {
+namespace radio_spinel {
 
 UartSpinelInterface::UartSpinelInterface(void)
     : m_receiver_frame_callback(nullptr)
@@ -60,7 +48,7 @@ void UartSpinelInterface::Deinit(void)
     m_receive_frame_buffer = nullptr;
 }
 
-esp_err_t UartSpinelInterface::Enable(const esp_openthread_uart_config_t &radio_uart_config)
+esp_err_t UartSpinelInterface::Enable(const esp_radio_spinel_uart_config_t &radio_uart_config)
 {
     esp_err_t error = ESP_OK;
     m_uart_rx_buffer = static_cast<uint8_t *>(heap_caps_malloc(kMaxFrameSize, MALLOC_CAP_8BIT));
@@ -69,7 +57,9 @@ esp_err_t UartSpinelInterface::Enable(const esp_openthread_uart_config_t &radio_
     }
 
     error = InitUart(radio_uart_config);
-    ESP_LOGI(OT_PLAT_LOG_TAG, "spinel UART interface initialization completed");
+    if (error == ESP_OK) {
+        ESP_LOGI(ESP_SPINEL_LOG_TAG, "spinel UART interface initialization completed");
+    }
     return error;
 }
 
@@ -97,9 +87,9 @@ otError UartSpinelInterface::SendFrame(const uint8_t *frame, uint16_t length)
 
 exit:
     if (error != OT_ERROR_NONE) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "send radio frame failed");
+        ESP_LOGE(ESP_SPINEL_LOG_TAG, "send radio frame failed");
     } else {
-        ESP_LOGD(OT_PLAT_LOG_TAG, "sent radio frame");
+        ESP_LOGD(ESP_SPINEL_LOG_TAG, "sent radio frame");
     }
 
     return error;
@@ -107,8 +97,8 @@ exit:
 
 void UartSpinelInterface::Process(const void *aMainloopContext)
 {
-    if (FD_ISSET(m_uart_fd, &((esp_openthread_mainloop_context_t *)aMainloopContext)->read_fds)) {
-        ESP_LOGD(OT_PLAT_LOG_TAG, "radio uart read event");
+    if (FD_ISSET(m_uart_fd, &((esp_radio_spinel_mainloop_context_t *)aMainloopContext)->read_fds)) {
+        ESP_LOGD(ESP_SPINEL_LOG_TAG, "radio uart read event");
         TryReadAndDecode();
     }
 }
@@ -117,9 +107,8 @@ int UartSpinelInterface::TryReadAndDecode(void)
 {
     uint8_t buffer[UART_HW_FIFO_LEN(m_uart_config.port)];
     ssize_t rval;
-
     do {
-        rval = read(m_uart_fd, buffer, sizeof(buffer));
+            rval = read(m_uart_fd, buffer, sizeof(buffer));
         if (rval > 0) {
             m_hdlc_decoder.Decode(buffer, static_cast<uint16_t>(rval));
         }
@@ -128,7 +117,6 @@ int UartSpinelInterface::TryReadAndDecode(void)
     if ((rval < 0) && (errno != EAGAIN) && (errno != EWOULDBLOCK)) {
         ESP_ERROR_CHECK(TryRecoverUart());
     }
-
     return rval;
 }
 
@@ -249,46 +237,39 @@ void UartSpinelInterface::HandleHdlcFrame(void *context, otError error)
 void UartSpinelInterface::HandleHdlcFrame(otError error)
 {
     if (error == OT_ERROR_NONE) {
-        ESP_LOGD(OT_PLAT_LOG_TAG, "received hdlc radio frame");
+        ESP_LOGD(ESP_SPINEL_LOG_TAG, "received hdlc radio frame");
         m_receiver_frame_callback(m_receiver_frame_context);
     } else {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "dropping radio frame: %s", otThreadErrorToString(error));
+        ESP_LOGE(ESP_SPINEL_LOG_TAG, "dropping radio frame: %s", otThreadErrorToString(error));
         m_receive_frame_buffer->DiscardFrame();
     }
 }
 
-esp_err_t UartSpinelInterface::InitUart(const esp_openthread_uart_config_t &radio_uart_config)
+esp_err_t UartSpinelInterface::InitUart(const esp_radio_spinel_uart_config_t &radio_uart_config)
 {
-    char uart_path[16];
-
-    m_uart_config = radio_uart_config;
-    ESP_RETURN_ON_ERROR(esp_openthread_uart_init_port(&radio_uart_config), OT_PLAT_LOG_TAG,
-                        "esp_openthread_uart_init_port failed");
-    // We have a driver now installed so set up the read/write functions to use driver also.
-    esp_vfs_dev_uart_port_set_tx_line_endings(m_uart_config.port, ESP_LINE_ENDINGS_LF);
-    esp_vfs_dev_uart_port_set_rx_line_endings(m_uart_config.port, ESP_LINE_ENDINGS_LF);
-
-    snprintf(uart_path, sizeof(uart_path), "/dev/uart/%d", radio_uart_config.port);
-    m_uart_fd = open(uart_path, O_RDWR | O_NONBLOCK);
-
-    return m_uart_fd >= 0 ? ESP_OK : ESP_FAIL;
+    if (mUartInitHandler) {
+        m_uart_config = radio_uart_config;
+        return mUartInitHandler(&m_uart_config, &m_uart_fd);
+    } else {
+        ESP_LOGE(ESP_SPINEL_LOG_TAG, "None mUartInitHandler");
+        return ESP_FAIL;
+    }
 }
 
 esp_err_t UartSpinelInterface::DeinitUart(void)
 {
-    if (m_uart_fd != -1) {
-        close(m_uart_fd);
-        m_uart_fd = -1;
-        return uart_driver_delete(m_uart_config.port);
+    if (mUartDeinitHandler) {
+        return mUartDeinitHandler(&m_uart_config, &m_uart_fd);
     } else {
-        return ESP_ERR_INVALID_STATE;
+        ESP_LOGE(ESP_SPINEL_LOG_TAG, "None mUartDeinitHandler");
+        return ESP_FAIL;
     }
 }
 
 esp_err_t UartSpinelInterface::TryRecoverUart(void)
 {
-    ESP_RETURN_ON_ERROR(DeinitUart(), OT_PLAT_LOG_TAG, "DeInitUart failed");
-    ESP_RETURN_ON_ERROR(InitUart(m_uart_config), OT_PLAT_LOG_TAG, "InitUart failed");
+    ESP_RETURN_ON_ERROR(DeinitUart(), ESP_SPINEL_LOG_TAG, "DeInitUart failed");
+    ESP_RETURN_ON_ERROR(InitUart(m_uart_config), ESP_SPINEL_LOG_TAG, "InitUart failed");
     return ESP_OK;
 }
 
@@ -305,9 +286,9 @@ void UartSpinelInterface::UpdateFdSet(void *aMainloopContext)
 {
     // Register only READ events for radio UART and always wait
     // for a radio WRITE to complete.
-    FD_SET(m_uart_fd, &((esp_openthread_mainloop_context_t *)aMainloopContext)->read_fds);
-    if (m_uart_fd > ((esp_openthread_mainloop_context_t *)aMainloopContext)->max_fd) {
-        ((esp_openthread_mainloop_context_t *)aMainloopContext)->max_fd = m_uart_fd;
+    FD_SET(m_uart_fd, &((esp_radio_spinel_mainloop_context_t *)aMainloopContext)->read_fds);
+    if (m_uart_fd > ((esp_radio_spinel_mainloop_context_t *)aMainloopContext)->max_fd) {
+        ((esp_radio_spinel_mainloop_context_t *)aMainloopContext)->max_fd = m_uart_fd;
     }
 }
 
@@ -315,6 +296,5 @@ uint32_t UartSpinelInterface::GetBusSpeed(void) const
 {
     return m_uart_config.uart_config.baud_rate;
 }
-
-} // namespace openthread
+} // namespace radio_spinel
 } // namespace esp

@@ -65,6 +65,9 @@ WIFI_DOCS = ['api-guides/wifi.rst',
              'api-reference/network/esp_dpp.rst',
              'migration-guides/release-5.x/5.2/wifi.rst']
 
+IEEE802154_DOCS = ['migration-guides/release-5.x/5.1/ieee802154.rst',
+                   'migration-guides/release-5.x/5.2/ieee802154.rst']
+
 NAN_DOCS = ['api-reference/network/esp_nan.rst']
 
 WIFI_MESH_DOCS = ['api-guides/esp-wifi-mesh.rst',
@@ -187,6 +190,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_BLUFI_SUPPORTED':BLUFI_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
                             'SOC_BT_CLASSIC_SUPPORTED':CLASSIC_BT_DOCS,
+                            'SOC_IEEE802154_SUPPORTED':IEEE802154_DOCS,
                             'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
                             'SOC_PSRAM_DMA_CAPABLE':MM_SYNC_DOCS,
                             'SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE':MM_SYNC_DOCS,

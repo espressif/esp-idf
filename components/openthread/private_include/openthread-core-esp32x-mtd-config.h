@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -272,6 +272,36 @@
  */
 #if CONFIG_OPENTHREAD_RADIO_STATS_ENABLE
 #define OPENTHREAD_CONFIG_RADIO_STATS_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT
+ *
+ * The timeout value (in seconds) waiting for a address notification response after sending an address query.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT CONFIG_OPENTHREAD_ADDRESS_QUERY_TIMEOUT
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY
+ *
+ * Initial retry delay for address query (in seconds).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY CONFIG_OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY
+ *
+ * Maximum retry delay for address query (in seconds).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY CONFIG_OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
 #endif
 
 #define OPENTHREAD_MTD 1

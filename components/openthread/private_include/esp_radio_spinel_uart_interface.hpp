@@ -6,16 +6,13 @@
 
 #pragma once
 
-#include "esp_err.h"
-#include "esp_openthread.h"
-#include "esp_openthread_types.h"
-#include "hal/uart_types.h"
+#include "esp_radio_spinel.h"
 #include "lib/spinel/spinel_interface.hpp"
 #include "lib/hdlc/hdlc.hpp"
 #include "openthread/error.h"
 
 namespace esp {
-namespace openthread {
+namespace radio_spinel {
 
 /**
  * This class defines an UART interface to the Radio Co-processor (RCP).
@@ -128,7 +125,7 @@ public:
      * @param[in] handler   The RCP failure handler.
      *
      */
-    void RegisterRcpFailureHandler(esp_openthread_rcp_failure_handler handler) { mRcpFailureHandler = handler; }
+    void RegisterRcpFailureHandler(esp_radio_spinel_rcp_failure_handler handler) { mRcpFailureHandler = handler; }
 
     /**
      * This method is called when RCP is reset to recreate the connection with it.
@@ -145,13 +142,17 @@ public:
      *      - ESP_ERR_NO_MEM if allocation has failed
      *      - ESP_ERROR on failure
      */
-    esp_err_t Enable(const esp_openthread_uart_config_t &radio_uart_config);
+    esp_err_t Enable(const esp_radio_spinel_uart_config_t &radio_uart_config);
 
     /**
      * @brief  This method disable the HDLC interface.
      *
      */
     esp_err_t Disable(void);
+
+    void RegisterUartInitHandler(esp_radio_spinel_uart_init_handler handler) { mUartInitHandler = handler; }
+
+    void RegisterUartDeinitHandler(esp_radio_spinel_uart_deinit_handler handler) { mUartDeinitHandler = handler; }
 
 private:
 
@@ -163,7 +164,7 @@ private:
         kMaxWaitTime = 2000,
     };
 
-    esp_err_t InitUart(const esp_openthread_uart_config_t &radio_uart_config);
+    esp_err_t InitUart(const esp_radio_spinel_uart_config_t &radio_uart_config);
 
     esp_err_t DeinitUart(void);
 
@@ -185,7 +186,7 @@ private:
     ot::Hdlc::Decoder m_hdlc_decoder;
     uint8_t *m_uart_rx_buffer;
 
-    esp_openthread_uart_config_t m_uart_config;
+    esp_radio_spinel_uart_config_t m_uart_config;
     int m_uart_fd;
 
     otRcpInterfaceMetrics mInterfaceMetrics;
@@ -194,10 +195,12 @@ private:
     UartSpinelInterface(const UartSpinelInterface &);
     UartSpinelInterface &operator=(const UartSpinelInterface &);
 
-    esp_openthread_rcp_failure_handler mRcpFailureHandler;
+    esp_radio_spinel_rcp_failure_handler mRcpFailureHandler;
+    esp_radio_spinel_uart_init_handler mUartInitHandler;
+    esp_radio_spinel_uart_deinit_handler mUartDeinitHandler;
 
     ot::Spinel::FrameBuffer<kMaxFrameSize> encoder_buffer;
 };
 
-} // namespace openthread
+} // namespace radio_spinel
 } // namespace esp

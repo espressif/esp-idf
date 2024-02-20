@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,9 +174,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
                 otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
             } else {
                 otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
-#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
-            esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
-#endif
+                esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
                 s_ack_frame.mPsdu = NULL;
             }
         }
@@ -228,9 +226,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
             {
                 otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             }
-#if CONFIG_IEEE802154_RECEIVE_DONE_HANDLER
             esp_ieee802154_receive_handle_done(s_receive_frame[s_recv_queue.head].mPsdu - 1);
-#endif
             s_receive_frame[s_recv_queue.head].mPsdu = NULL;
             s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
             s_recv_queue.used--;
@@ -347,7 +343,11 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 {
+//  FIXME: Remove `CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE` when JIRA: TZ-609 fixed.
     return (otRadioCaps)(OT_RADIO_CAPS_ENERGY_SCAN |
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
+                        OT_RADIO_CAPS_RX_ON_WHEN_IDLE |
+#endif
                         OT_RADIO_CAPS_TRANSMIT_SEC | OT_RADIO_CAPS_RECEIVE_TIMING | OT_RADIO_CAPS_TRANSMIT_TIMING |
                         OT_RADIO_CAPS_ACK_TIMEOUT | OT_RADIO_CAPS_SLEEP_TO_TX);
 }
@@ -774,3 +774,11 @@ otError otPlatRadioSetChannelMaxTransmitPower(otInstance *aInstance, uint8_t aCh
 
     return OT_ERROR_NONE;
 }
+
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
+void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    esp_ieee802154_set_rx_when_idle(aEnable);
+}
+#endif

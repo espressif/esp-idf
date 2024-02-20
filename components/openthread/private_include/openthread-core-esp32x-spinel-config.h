@@ -1,16 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- *   This file includes compile-time configuration constants for OpenThread.
- */
-
-#ifndef OPENTHREAD_SPINEL_CONFIG_H_
-#define OPENTHREAD_SPINEL_CONFIG_H_
+#pragma once
 
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE
@@ -30,6 +24,7 @@
  *
  */
 #ifndef OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT
+// TZ-567: Set OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT to 3 after adding rcp failure notification mechanism
 #define OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT 0
 #endif
 
@@ -43,4 +38,11 @@
 #define OPENTHREAD_SPINEL_CONFIG_RCP_CUSTOM_RESTORATION 0
 #endif
 
-#endif // OPENTHREAD_SPINEL_CONFIG_H_
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE
+ *
+ * Specifies the rx frame buffer size used by `SpinelInterface` in RCP host code. This is applicable/used when
+ * `RadioSpinel` platform is used.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE CONFIG_OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
