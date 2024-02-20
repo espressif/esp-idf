@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* ROM function interface esp32c5.rom.spiflash.ld for esp32c5
  *
  *
@@ -158,4 +163,3 @@ spi_flash_encryption_hal_prepare = 0x40000380;
 spi_flash_encryption_hal_done = 0x40000384;
 spi_flash_encryption_hal_destroy = 0x40000388;
 spi_flash_encryption_hal_check = 0x4000038c;
-

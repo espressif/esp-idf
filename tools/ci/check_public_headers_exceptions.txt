@@ -100,7 +100,6 @@ components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp_rom/include/esp32c6/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
 components/esp_rom/include/esp32p4/rom/rtc.h
-components/esp_rom/include/esp32c5/rom/rtc.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h

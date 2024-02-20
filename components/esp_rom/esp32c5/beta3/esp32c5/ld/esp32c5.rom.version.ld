@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* ROM version variables for esp32c5
  *
  * These addresses should be compatible with any ROM version for this chip.

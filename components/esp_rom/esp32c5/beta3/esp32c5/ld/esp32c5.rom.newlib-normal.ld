@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* ROM function interface esp32c5.rom.newlib-normal.ld for esp32c5
  *
  *
@@ -34,4 +39,3 @@ vsnprintf = 0x40000614;
 vsniprintf = 0x40000618;
 sscanf = 0x4000061c;
 siscanf = 0x40000620;
-

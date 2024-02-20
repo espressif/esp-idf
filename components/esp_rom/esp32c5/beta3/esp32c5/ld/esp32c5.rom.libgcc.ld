@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* ROM function interface esp32c5.rom.libgcc.ld for esp32c5
  *
  *
@@ -112,4 +117,3 @@ __umodsi3 = 0x400009d0;
 __unorddf2 = 0x400009d4;
 __extenddftf2 = 0x400009d8;
 __trunctfdf2 = 0x400009dc;
-

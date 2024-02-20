@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* ROM function interface esp32c5.rom.ld for esp32c5
  *
  *
@@ -575,4 +580,3 @@ slc_reattach = 0x40000c64;
 slc_send_to_host_chain = 0x40000c68;
 slc_set_host_io_max_window = 0x40000c6c;
 slc_to_host_chain_recycle = 0x40000c70;
-
